@@ -3,6 +3,7 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
+import { canGenerateDistance } from '@/lib/plan/canUseFeature'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan, enforceViolations } from '@/lib/plan/invariants'
 import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
@@ -54,6 +55,33 @@ export async function POST(req: NextRequest) {
     const guardError = validate(input)
     if (guardError) {
       return NextResponse.json({ error: guardError }, { status: 422 })
+    }
+
+    // ── The distance paywall, at the auth boundary (TIER-ENFORCE-01) ───────
+    //
+    // Marathon / 50K / 100K are PAID (feature-registry "Distance tier gating";
+    // data in PLAN_SIGNATURES.free_tier_available). Until now this boundary was
+    // enforced ONLY by `GeneratePlanScreen` rendering a locked tile, so the most
+    // commercially significant route in the product trusted the client — while
+    // ADR-003 names the API route as the auth boundary and ten other routes
+    // honour it.
+    //
+    // SAME PREDICATE AS THE WIZARD, deliberately: `canGenerateDistance` is the
+    // single owner, so the lock a runner sees and the 403 the server returns
+    // cannot disagree. A legitimate client therefore never reaches this branch.
+    //
+    // A TRIAL OR COMPED RUNNER IS NEVER BLOCKED. `getUserTier` resolves admin,
+    // subscription and charity grant to `paid` before it ever returns `free`
+    // (resolveTier, §single owner), so a Make-A-Wish runner meets no gate here.
+    // That mattered enough to pin as a test: `distancePaywall.test.ts`.
+    if (!canGenerateDistance(input.race_distance_km, tier)) {
+      await recordOpsEvent('plan_distance_gate_blocked',
+        { tier, race_distance_km: input.race_distance_km }, user.id)
+      return NextResponse.json({
+        error: 'That distance needs a subscription.',
+        reason: 'paid_distance',
+        race_distance_km: input.race_distance_km,
+      }, { status: 403 })
     }
 
     // Rule engine runs synchronously and may throw validation errors that

@@ -2,7 +2,6 @@ import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildDailyCoachNotePrompt } from '@/lib/coaching/prompts/dailyCoachNote'
@@ -16,6 +15,7 @@ import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 // GET /api/daily-coach-note?date=YYYY-MM-DD
 // Auth-gated (paid/trial). Returns the cached daily note if it exists; else
@@ -50,10 +50,12 @@ export async function GET(req: NextRequest) {
   const noteDate = dateParam ?? new Date().toISOString().slice(0, 10)
   const force    = req.nextUrl.searchParams.get('force') === 'true'
 
-  const serviceSupabase = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  // SEC-08 — user-scoped (JWT) client, not the service role. Queries run as the
+  // user, so RLS backstops the .eq(user_id) filters rather than the filter being
+  // the only thing between one runner's data and another's. Every table touched
+  // here is policy-covered; enforced on every build by rlsCoverage.test.ts.
+  const serviceSupabase = createUserScopedClient(req)
+  if (!serviceSupabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Cache hit?
   //

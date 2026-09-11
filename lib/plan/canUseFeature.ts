@@ -63,3 +63,54 @@ export function canUseFeature(feature: GatedFeature, tier: UserTier): CanUseResu
 export function isFeatureAllowed(feature: GatedFeature, tier: UserTier): boolean {
   return canUseFeature(feature, tier).allowed
 }
+
+// ── The distance paywall (TIER-ENFORCE-01) ──────────────────────────────────
+//
+// THE SINGLE OWNER of "may this tier build a plan for this distance?".
+//
+// It lived in exactly one place before: a private `isPaidDistance` inside
+// `GeneratePlanScreen.tsx`, a CLIENT component. So the commercial boundary was
+// enforced only in the browser, while ADR-003 names the API route as the auth
+// boundary and ten other routes honour that. `/api/generate-plan` read neither
+// this nor `free_tier_available`.
+//
+// Putting it here rather than duplicating the check server-side is the point:
+// the wizard's locked tile and the route's 403 must agree by construction, or a
+// runner meets a lock the server would have allowed (or worse, the reverse).
+// Same lesson as the tier resolution earlier today — a rule written twice is a
+// rule that drifts.
+//
+// `PLAN_SIGNATURES[d].free_tier_available` stays the DATA. This is the
+// predicate over it, so the per-distance answer still has exactly one source.
+
+import { PLAN_SIGNATURES } from './planSignatures'
+import { raceDistanceKey } from './generationConfig'
+
+/** Does this distance require a paid or trial tier? Data: PLAN_SIGNATURES. */
+export function isPaidDistance(raceDistanceKm: number): boolean {
+  return !PLAN_SIGNATURES[raceDistanceKey(raceDistanceKm)].free_tier_available
+}
+
+/**
+ * May a runner on `tier` GENERATE a plan for this distance?
+ *
+ * Trial counts as allowed — the reverse trial grants full access for 14 days,
+ * and a charity grant resolves to `paid` via `resolveTier`, so a comped runner
+ * never meets this gate.
+ *
+ * NOTE what this does NOT govern: reading a plan you already built. Option A
+ * retains the artefact (`plan_view`, `personalised_plan`), and nothing here is
+ * consulted on that path. A runner who built a marathon plan on trial keeps it
+ * after downgrading; they simply cannot build a NEW one. That is the intended
+ * conversion moment, per feature-registry "Distance tier gating".
+ */
+export function canGenerateDistance(raceDistanceKm: number, tier: UserTier): boolean {
+  if (!isPaidDistance(raceDistanceKm)) return true
+  // ALLOWLIST, not `tier !== 'free'`. The negative form fails OPEN: any value
+  // outside the union — a future tier, a typo, an empty string off a bad read —
+  // would have been granted a paid distance. `canUseFeature` above already ends
+  // "Unknown feature — fail closed" for the same reason. Caught by
+  // distancePaywall.test.ts before this shipped, which is why that test asserts
+  // on junk tiers rather than only on the three real ones.
+  return tier === 'paid' || tier === 'trial'
+}

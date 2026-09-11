@@ -14,7 +14,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { RLS_POLICIES, type PolicyOp } from '../lib/supabase/rlsPolicyManifest'
-import { extractTableUsage, withHelperUsage } from '../lib/supabase/routeTableUsage'
+import { extractTableUsage, withHelperUsage, acceptsInternalServiceCall } from '../lib/supabase/routeTableUsage'
 
 const ROOT = process.cwd()
 const API = join(ROOT, 'app', 'api')
@@ -41,6 +41,9 @@ for (const file of walk(API)) {
 
   const { usage } = withHelperUsage(src, extractTableUsage(src))
   const blockers: string[] = []
+  if (!alreadyScoped && acceptsInternalServiceCall(src)) {
+    blockers.push('accepts an internal x-service-key call — no user JWT on that path; needs branching, not a swap')
+  }
   for (const [table, ops] of Array.from(usage.entries())) {
     const allowed = RLS_POLICIES[table]
     if (!allowed) { blockers.push(`${table}: NOT IN MANIFEST`); continue }

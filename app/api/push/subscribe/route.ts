@@ -1,18 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
-import { createClient } from '@supabase/supabase-js'
-// push_subscriptions has RLS (auth.uid() = user_id). The native app authenticates
-// with a Bearer token (no Supabase cookies), so a cookie-based client has no
-// session and auth.uid() is NULL — every insert was being rejected by RLS and the
-// row silently never stored. The user is already authenticated via
-// getUserFromRequest and user_id is pinned server-side, so we write with the
-// service-role client (RLS-exempt) the same way delete-account / getUserTier do.
-function adminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
-}
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
+// push_subscriptions has RLS (auth.uid() = user_id). This route used the
+// SERVICE-ROLE client because the native app authenticates with a Bearer token
+// and no Supabase cookies, so a COOKIE-based server client had auth.uid() NULL
+// and every insert was silently rejected by RLS.
+//
+// SEC-08 (2026-09-11): that is precisely the problem `createUserScopedClient`
+// exists to solve — it puts the Bearer token in the Authorization header, which
+// IS what sets auth.uid(), on native as well as web. So the original diagnosis
+// was right and the remedy is no longer the right one: the route can satisfy RLS
+// instead of bypassing it. `push_subscriptions` has an ALL policy on
+// `auth.uid() = user_id`, covering the insert, update and delete this route
+// performs.
+
+
 
 // True when `tz` is an IANA zone the runtime recognises. Intl throws a
 // RangeError on an unknown zone — we treat that as "ignore", not "store".
@@ -55,7 +57,8 @@ type SubscriptionBody = WebSubscription | IosSubscription
 export async function POST(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = adminClient()
+  const supabase = createUserScopedClient(req)
+  if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json() as SubscriptionBody
 
@@ -126,7 +129,8 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ subscribed: false }, { status: 401 })
-  const supabase = adminClient()
+  const supabase = createUserScopedClient(req)
+  if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const platform = new URL(req.url).searchParams.get('platform')
   let query = supabase
@@ -150,7 +154,8 @@ export async function GET(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const user = await getUserFromRequest(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const supabase = adminClient()
+  const supabase = createUserScopedClient(req)
+  if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json() as { endpoint?: string; token?: string }
   const key = body.endpoint ?? body.token

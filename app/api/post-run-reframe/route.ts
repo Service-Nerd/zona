@@ -25,7 +25,6 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildSessionReframePrompt, REFRAME_PROMPT_VERSION } from '@/lib/coaching/prompts/sessionReframe'
@@ -37,6 +36,7 @@ import { inferLimiter } from '@/lib/coaching/limiter'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
 import { sessionHRBand } from '@/lib/coaching/zoneRules'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import {
   fetchRunHistory,
   findSimilarRuns,
@@ -88,10 +88,12 @@ export async function POST(req: NextRequest) {
   const weekN = body.week_n
   const sessionDay = body.session_day
 
-  const service = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
+  // SEC-08 — user-scoped (JWT) client, not the service role. Queries run as the
+  // user, so RLS backstops the .eq(user_id) filters rather than the filter being
+  // the only thing between one runner's data and another's. Every table touched
+  // here is policy-covered; enforced on every build by rlsCoverage.test.ts.
+  const service = createUserScopedClient(req)
+  if (!service) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Parallel: plan, settings, completion, analysis (if linked), tier
   const [planRes, settingsRes, completionRes, analysisRes, tierResult] = await Promise.all([

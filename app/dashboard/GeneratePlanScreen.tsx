@@ -10,6 +10,7 @@ import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
+import { isPaidDistance } from '@/lib/plan/canUseFeature'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import { DurationPicker } from '@/components/shared/DurationPicker'
@@ -48,8 +49,12 @@ const WIZARD_KEY = 'zona_wizard_draft'
 // broken, but §17 names the signature as the authority for per-distance shape
 // and this screen was quietly the real authority for who pays. Changing the
 // documented source of truth would not have moved the paywall.
-const isPaidDistance = (km: number) =>
-  !PLAN_SIGNATURES[raceDistanceKey(km)].free_tier_available
+//
+// TIER-ENFORCE-01 (2026-09-11): the predicate itself has now moved to
+// `lib/plan/canUseFeature.ts`, because `/api/generate-plan` enforces the same
+// boundary server-side and the lock a runner SEES must be the same rule the
+// server APPLIES. While it lived here, this client component was the only place
+// the paywall existed at all.
 
 const DISTANCES = [
   { label: '5K',       sub: '5 km',    value: 5,    paid: isPaidDistance(5)    },

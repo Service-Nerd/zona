@@ -34,6 +34,13 @@ export type OpsEventKind =
   // user per day. A cache that silently never hits is indistinguishable from a
   // cache that works, which is why this needs a trace and not a comment.
   | 'coach_note_cache_unavailable'
+  // TIER-ENFORCE-01 (2026-09-11) — the distance paywall now exists server-side.
+  // A legitimate client cannot reach it (the wizard locks the tile using the
+  // SAME predicate), so every firing is either a hand-crafted request or a bug
+  // in tier resolution. The second would be far worse than the first: it would
+  // mean a paying or comped runner being refused a plan. Recorded so the
+  // difference is visible rather than inferred from a support email.
+  | 'plan_distance_gate_blocked'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

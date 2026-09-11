@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
@@ -9,6 +8,7 @@ import { checkAdjustmentTriggers, type AdjustmentCheckInput } from '@/lib/coachi
 import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { READINESS, COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import type { Plan } from '@/types/plan'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 // GET /api/pre-session-readiness
 //
@@ -22,13 +22,17 @@ import type { Plan } from '@/types/plan'
 // CoachingPrinciples §59. The only adjustment trigger that fires *before*
 // the run, not after.
 
-let _supabase: ReturnType<typeof createServiceClient> | undefined
-function getSupabase(): any {
-  return (_supabase ??= createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  ))
-}
+// SEC-08 — user-scoped (JWT) client, created PER REQUEST.
+//
+// This was a module-scoped memoised service-role client (`_supabase ??= ...`).
+// Memoising is harmless for the service role, which has no identity, and is a
+// security hazard for a per-user JWT client: the first caller's token would be
+// captured in module scope and reused for every subsequent request on that warm
+// instance, serving one runner another runner's data. So the memo is gone, not
+// merely repointed — this is the restructure the backlog flagged, not a swap.
+//
+// plans / health_daily_samples / plan_adjustments are all policy-covered for the
+// operations below (rlsCoverage.test.ts enforces it on every build).
 
 export async function GET(req: NextRequest) {
   const user = await getUserFromRequest(req)
@@ -40,7 +44,8 @@ export async function GET(req: NextRequest) {
   }
 
   const userId = user.id
-  const supabase = getSupabase()
+  const supabase = createUserScopedClient(req)
+  if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Resolve today's planned session
   const { data: planRow } = await supabase
@@ -87,8 +92,13 @@ export async function GET(req: NextRequest) {
     .order('sample_date', { ascending: false })
 
   const todayDateStr = new Date().toISOString().slice(0, 10)
+  // `sleep_stages: null` was MISSING from this fallback. It went unnoticed
+  // because the client used to be typed `any` (a module-scoped
+  // `getSupabase(): any`), so nothing checked the shape; on a day with no
+  // sample, `todaySample.sleep_stages` was `undefined` rather than null. Removing
+  // the `any` when this route moved to the user-scoped client surfaced it.
   const todaySample = (samples ?? []).find((s: any) => s.sample_date === todayDateStr) ?? {
-    rhr_bpm: null, hrv_ms: null, sleep_hours: null,
+    rhr_bpm: null, hrv_ms: null, sleep_hours: null, sleep_stages: null,
   }
   const baselineWindow: DailyHealthSample[] = (samples ?? [])
     .filter((s: any) => s.sample_date !== todayDateStr)

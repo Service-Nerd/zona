@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
@@ -10,6 +9,7 @@ import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import type { Plan } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 // POST /api/phase-summary
 // Generates and caches a one-off AI coaching summary for the phase that just ended.
@@ -44,10 +44,12 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const serviceSupabase = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  )
+  // SEC-08 — user-scoped (JWT) client, not the service role. Queries run as the
+  // user, so RLS backstops the .eq(user_id) filters rather than the filter being
+  // the only thing between one runner's data and another's. Every table touched
+  // here is policy-covered; enforced on every build by rlsCoverage.test.ts.
+  const serviceSupabase = createUserScopedClient(req)
+  if (!serviceSupabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Idempotency check — return cached row if already generated.
   const { data: existing } = await serviceSupabase

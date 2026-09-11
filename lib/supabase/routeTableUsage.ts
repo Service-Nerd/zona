@@ -94,3 +94,22 @@ export function withHelperUsage(src: string, base: RouteTableUsage): RouteTableU
   }
   return { usage, dynamicTableRefs: base.dynamicTableRefs }
 }
+
+/**
+ * Does this route accept an INTERNAL call authenticated by the service key
+ * rather than by a user's JWT?
+ *
+ * `analyse-run` and `weekly-report` are invoked both by the runner's app AND by
+ * a cron on their behalf (`x-service-key` + `x-user-id`). On that path there is
+ * no user token at all, so `createUserScopedClient` returns null and the route
+ * has nothing to query with. Table-usage analysis cannot see this — both routes
+ * looked perfectly convertible — so it is asked separately.
+ *
+ * Such a route can still be converted, but only by BRANCHING: user-scoped client
+ * on the interactive path, service role on the internal one. That is a different
+ * and larger change than a client swap, so the report lists them as blocked
+ * rather than clearing them.
+ */
+export function acceptsInternalServiceCall(src: string): boolean {
+  return /x-service-key/.test(src)
+}
