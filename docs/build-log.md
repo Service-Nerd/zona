@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — GTM-CHARITY-02 · The qualifier was never in the sentence that mattered
+
+**Shipped:** Co-branding settled as no. The "1+ years' experience" qualifier removed from the stated audience.
+
+**Dev learning:** Not a code change, but the same failure shape as the ones that were. The brand doc had two audience statements — an internal positioning sentence that is purely behavioural, and a demographic sketch underneath it. Only the sketch carried "1+ years", and for months every decision that cited "the stated audience" was citing the sketch. Two docs and a source comment had copied the sketch forward as if it were the positioning. Same class as a numeric living in the wrong file: the authoritative thing and the thing everyone quotes had drifted apart.
+
+**Product/creator learning:** A first-time charity marathoner fits the positioning sentence better than the runner it was written for. They go hard on their easy days with a fundraising page watching. We had been excluding, on a demographic technicality, the people who most exactly match the problem the product solves.
+
+**AI-building learning:** I nearly proposed a reframing of the positioning before reading it. The positioning did not need changing — it was already right, and the fix was deleting six words from a sketch. Reading the authority doc before designing the change turned a positioning debate into a one-line edit.
+
+**The honest bit:** The interesting part is the timing, and it is uncomfortable. Widening this yesterday would have been a lie: the wizard would still have rejected a beginner who answered honestly, and 89% of their marathon plans would still have told them they would not improve. The decision was only available because five beginner defects got fixed the same day, and three of those were found by accident while doing something else. We earned the claim a few hours before making it, which is closer to luck than process.
+
+**Hook material:** We had been turning away, on a technicality in a demographic sketch, the exact people whose behaviour the product was built to interrupt.
+
+**Postable?:** maybe
+
+
 ## 2026-09-11 — SESSION-KM-02 · The checks that never ran, for the people who needed them most
 
 **Shipped:** Four constitutional checks and ADR-012's reshape-confirmation threshold now actually run for beginners. They never had.
