@@ -1796,7 +1796,10 @@ UI: `RaceResultSheet.tsx` (log result) + `PostRaceReshapeCard.tsx` (accept/rejec
 
 ---
 
-## 55. Fitness signal — benchmark recalibration prompt (ENGINE-01)
+## 103. Fitness signal — benchmark recalibration prompt (ENGINE-01)
+
+*(Renumbered 2026-09-11 — this section shared its number with another. Code and cross-references cited the OTHER one, so that kept the number and this took a fresh one. See the duplicate-number guard in `principlesIntegrity.test.ts`.)*
+
 
 When a runner consistently outperforms their target pace band on quality sessions *and* HR stays controlled, the prescription is too conservative. The correct response is not to harden individual sessions — it is to ask whether the benchmark (VDOT) has moved. All paces flow from VDOT; fixing the root is one recalibration, not session-by-session surgery.
 
@@ -2315,7 +2318,10 @@ The asymmetry in the resolution is deliberate: **volume is where injuries come f
 
 ---
 
-## 81. `compressed` means two different things, so it is two fields
+## 101. `compressed` means two different things, so it is two fields
+
+*(Renumbered 2026-09-11 — this section shared its number with another. Code and cross-references cited the OTHER one, so that kept the number and this took a fresh one. See the duplicate-number guard in `principlesIntegrity.test.ts`.)*
+
 
 **Principle.** A plan can be short of time or short of volume. These are unrelated failures with unrelated remedies, and they are reported separately: `time_compressed` (fewer calendar weeks than the distance's minimum) and `volume_constrained` (the ramp never reached target peak volume).
 
@@ -2329,7 +2335,10 @@ It is not merely cosmetic: the flag feeds the **paid** confidence score ("deduct
 
 ---
 
-## 82. An intentional downgrade is not a missing session
+## 102. An intentional downgrade is not a missing session
+
+*(Renumbered 2026-09-11 — this section shared its number with another. Code and cross-references cited the OTHER one, so that kept the number and this took a fresh one. See the duplicate-number guard in `principlesIntegrity.test.ts`.)*
+
 
 **Principle.** `INV-PLAN-QUALITY-EXPECTED` — build and peak weeks for intermediate/experienced runners must contain a quality session — is exempted when a reshape **deliberately removed** it in response to a fatigue or aerobic-efficiency signal, and the week records that it did (`Week.quality_downgraded`). Quality that is simply absent, with no recorded reason, still violates.
 

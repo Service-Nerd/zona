@@ -5820,6 +5820,46 @@ function buildRulePlanOnce(
     }
     return worst
   })()
+  // §81 DEFECT FIX (2026-09-11) — the obligation applies to STRUCTURED sessions
+  // too, and the engine only ever applied it to the long run.
+  //
+  // §81 states it plainly: "An exemption is not a licence to ignore the runner —
+  // it applies to the long run AND TO STRUCTURED SESSIONS ALIKE." The loop above
+  // does `if (!isLongRun(sn)) continue`, so a quality session running far past
+  // the runner's stated ceiling shipped with no note and no reclassification.
+  //
+  // Measured incidence: at max_weekday_mins 30, 54% of plans carry a weekday
+  // structured session over the cap and 44% are past the 150% limit (worst seen:
+  // 54 minutes against a stated 30). At a cap of 45 or above, NOTHING crosses
+  // the limit — so this binds only on the most time-constrained runners, which
+  // is exactly the cohort §81's closing paragraph is about.
+  //
+  // Restores documented intent, so it is board-EXEMPT per ADR-017 (the principle
+  // was already correct; the engine was not honouring half of it).
+  const structuredOverrun: { n: number; mins: number; cap: number } | null = (() => {
+    const cap = input.max_weekday_mins
+    if (!cap) return null
+    const limit = cap * (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100)
+    let worst: { n: number; mins: number; cap: number } | null = null
+    for (const w of weeks) {
+      if (w.type === 'race') continue
+      for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as Day[]) {
+        const sn = w.sessions?.[d]
+        if (!sn || isLongRun(sn) || !isStructuredSession(sn)) continue
+        const mins = sn.duration_mins ?? 0
+        if (mins > limit && (!worst || mins > worst.mins)) worst = { n: w.n, mins, cap }
+      }
+    }
+    return worst
+  })()
+
+  // Names the trade and the lever, per §81's Sims framing — a bare refusal reads
+  // as "you don't fit our app", and this constraint profile skews toward people
+  // with caregiving loads.
+  const structuredOverrunNote: string | null = structuredOverrun
+    ? `Plan generated as maintenance — your hard sessions do not fit the time you have. You've capped weekdays at ${structuredOverrun.cap} minutes, but by week ${structuredOverrun.n} the quality session this race needs runs about ${Math.round(structuredOverrun.mins)} minutes. It stays in the plan at full length, because shortening the label without shortening the intervals would just hand you the same work in less time. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
+    : null
+
   const longRunOverrunNote: string | null = longRunOverrun
     ? `Plan generated as maintenance — your long run does not fit the time you have. You've kept both weekend days clear of training and capped weekdays at ${longRunOverrun.cap} minutes, but by week ${longRunOverrun.n} the long run this race needs is about ${Math.round(longRunOverrun.mins)} minutes. It stays in the plan at full length, because a long run cut to ${longRunOverrun.cap} minutes stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
     : null
@@ -5839,7 +5879,7 @@ function buildRulePlanOnce(
     : null
 
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
-    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun || easyFloorProtectionOverrun)
+    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun || structuredOverrun || easyFloorProtectionOverrun)
       ? 'maintenance'
       : peakOverloadResult?.volume_profile  // 'build' or undefined
   // Order matters: the more specific diagnosis wins. A structural inversion
@@ -5854,7 +5894,7 @@ function buildRulePlanOnce(
       // run overrun is the more severe shape (the plan's pivotal session
       // doesn't fit at all, vs. easy runs running a few minutes long).
       // Appending keeps existing precedence untouched.
-      ?? longRunOverrunNote ?? easyFloorProtectionNote ?? undefined
+      ?? longRunOverrunNote ?? structuredOverrunNote ?? easyFloorProtectionNote ?? undefined
 
   // CoachingPrinciples §31 — persona-aware compression classification. Computed
   // here (not inline in meta) so the difficulty band below reads the SAME value,
