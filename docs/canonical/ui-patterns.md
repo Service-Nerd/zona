@@ -98,7 +98,25 @@ Always use these CSS custom property names. Never hardcode hex values.
 | `--coach-ink` | Warm dark brown — text on `--warn-bg` only (`#3D2600`) |
 | `--danger` | Errors, skipped (`#B84545`) — never in training UI |
 | `--line` | Standard border (`rgba(26,26,26,0.08)`) |
-| `--line-strong` | Stronger border for current/active states |
+| `--line-strong` | Stronger border for current/active states, **and for any bordered element sitting on its own fill** — see below |
+
+> **Which line token: does the FILL already separate them?**
+>
+> `--line` is 8% alpha. On a white card against the warm `--bg`, that is plenty
+> — the fill has already done the separating and the border is only a definition
+> edge. **When a bordered element has the SAME fill as its parent** (a `--card`
+> button on a `--card` surface, or `background: 'none'` over one), the border is
+> not decoration: it is the only thing saying a control is there. 8% at 0.5px is
+> not enough to say it. Use **`1px solid var(--line-strong)`**.
+>
+> Reported from a device, 2026-09-11: *"the continue with google has lost its
+> outline and blends into background."* It was `--card` on `--card` with an
+> 0.5px `--line` hairline. The redeem-code input (`RedeemCodeScreen.tsx`) is
+> white-on-white for the same reason and already used `--line-strong`; the rule
+> is now written down rather than rediscovered.
+>
+> Applies to the auth screens' Google button and secondary "Back to sign in"
+> button. Cards on `--bg` keep `--line`.
 
 ### v2 modernisation tokens (design_handoff_v2, 2026-09-10)
 

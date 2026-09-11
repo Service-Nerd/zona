@@ -191,7 +191,7 @@ export default function ResetPasswordPage() {
                 style={{
                   display: 'block', width: '100%', boxSizing: 'border-box', textAlign: 'center',
                   padding: '13px', background: 'none', color: 'var(--mute)',
-                  border: '1px solid var(--line)', borderRadius: '10px', textDecoration: 'none',
+                  border: '1px solid var(--line-strong)', borderRadius: '10px', textDecoration: 'none',
                   fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
                 }}
               >

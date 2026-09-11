@@ -354,7 +354,15 @@ export default function LoginPage() {
             {loading ? 'Redirecting...' : 'Continue with Apple'}
           </button>
 
-          {/* Google */}
+          {/* Google — `--line-strong`, not `--line`, and 1px rather than 0.5px.
+              This button's fill is `--card` and it sits ON a `--card` surface,
+              so the border is not a definition edge, it is the ONLY thing that
+              says a control is there. At 8% alpha and half a pixel it was not
+              saying it: reported from a device as "lost its outline and blends
+              into the background". Same rule, same token as the redeem-code
+              input (`RedeemCodeScreen.tsx`), which is white on white for the
+              same reason. Google's own light-theme branding wants exactly this
+              shape too — white surface, visible stroke. */}
           <button
             onClick={signInWithGoogle}
             disabled={loading}
@@ -363,7 +371,7 @@ export default function LoginPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
               background: 'var(--card)',
               color: 'var(--ink)',
-              border: '0.5px solid var(--line)',
+              border: '1px solid var(--line-strong)',
               borderRadius: '10px',
               padding: '13px 16px',
               fontFamily: 'var(--font-ui)',
@@ -380,32 +388,35 @@ export default function LoginPage() {
             {loading ? 'Redirecting...' : 'Continue with Google'}
           </button>
 
-          {/* UX-AUTH-02 — progressive disclosure. Everything below is the
-              email path; it stays closed until the runner asks for it. Apple
-              and Google remain visible once it opens, so nothing is taken away
-              and Apple keeps the prominence its HIG requires. */}
-          {!emailOpen ? (
-            <button
-              onClick={() => { setEmailOpen(true); setError(null); setMessage(null) }}
-              aria-expanded={false}
-              style={{
-                marginTop: '20px', width: '100%',
-                background: 'none', border: 'none',
-                fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-                cursor: 'pointer', padding: '4px 0',
-                textDecoration: 'underline', textUnderlineOffset: '3px',
-              }}
-            >
-              Use email instead
-            </button>
-          ) : (
-          <>
-          {/* Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 0' }}>
-            <div style={{ flex: 1, height: '0.5px', background: 'var(--line)' }} />
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>or</span>
-            <div style={{ flex: 1, height: '0.5px', background: 'var(--line)' }} />
-          </div>
+          {/* UX-AUTH-02 — progressive disclosure. Everything below the toggle is
+              the email path; it stays closed until the runner asks for it, and
+              it closes again. Apple and Google remain visible either way, so
+              nothing is taken away and Apple keeps the prominence its HIG
+              requires.
+
+              ONE button, in ONE place, with a label that flips — not a link to
+              open and a different control to close. It keeps `aria-expanded`
+              attached to a single element across both states, and it stands
+              exactly where the old "OR" rule stood, doing that rule's job as
+              well as its own. That is why the divider is gone rather than
+              stacked on top of it. */}
+          <button
+            onClick={() => { setEmailOpen(v => !v); setError(null); setMessage(null) }}
+            aria-expanded={emailOpen}
+            aria-controls="email-auth"
+            style={{
+              margin: '20px 0', width: '100%',
+              background: 'none', border: 'none',
+              fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+              cursor: 'pointer', padding: '4px 0',
+              textDecoration: 'underline', textUnderlineOffset: '3px',
+            }}
+          >
+            {emailOpen ? 'Hide email sign in' : 'Use email instead'}
+          </button>
+
+          {emailOpen && (
+          <div id="email-auth">
 
           {/* Mode toggle */}
           <div style={{ marginBottom: '16px' }}>
@@ -478,8 +489,7 @@ export default function LoginPage() {
               Forgot password?
             </button>
           )}
-
-          </>
+          </div>
           )}
 
           {error && (
