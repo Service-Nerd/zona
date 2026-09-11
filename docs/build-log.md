@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-11 — UX-AUTH-02 · Two bug reports that were both about the same thing
+
+**Shipped:** Sign-in shows Apple, Google and "Use email instead"; the email block opens and closes on one toggle. Plus the Google button got a visible outline back.
+
+**Dev learning:** `--line` is 8% alpha. That is plenty when the FILL already separates two surfaces — a white card on the warm `--bg`. It is nothing when the fills match, which is exactly what a `--card` button on a `--card` card is. The border stops being a definition edge and becomes the only thing saying a control exists. The codebase already knew this: the redeem-code input is white-on-white and uses `--line-strong`. Nobody had written the rule down, so it was rediscovered by a founder squinting at a phone. It is in `ui-patterns.md` now, next to the token.
+
+**Product/creator learning:** Both reports landed within minutes of the ship, and neither was caused by the change — the outline was always too faint, and the disclosure was always one-way. Simplifying the screen is what made them visible. Removing clutter does not just improve a screen, it exposes what was already wrong with what is left.
+
+**AI-building learning:** I built a one-way disclosure without noticing. Not because it was hard, but because I only ever tested the direction I was building — open it, look at it, ship it. The browser check I ran genuinely verified three states (collapsed, disclosed, sign-up) and still missed it, because "can I get back?" was not one of the states I had thought to name. The second time round I read the accessibility tree after collapsing, to confirm the controls were gone rather than merely hidden.
+
+**The honest bit:** The fix for the toggle was better than the thing I originally built — one button whose label flips, standing where the "OR" divider was and doing that job too, so the divider could go. That is a simpler screen than the one I shipped an hour earlier. The bug report improved the design.
+
+**Hook material:** "Continue with Google has lost its outline" — it never had one worth the name. `rgba(26,26,26,0.08)` at half a pixel, on white, on white.
+
+**Postable?:** yes
+
+## 2026-09-11 — Critical path opening run · UX-BEGINNER-01, MAINT-LABEL-01, UX-REDEEM-01 + the cohort-shape harness
+
+**Shipped:** A beginner can now answer "0" honestly and get a plan; a first-time marathoner is no longer told their plan "maintains current fitness rather than building it"; the charity code box stops demanding a format the parser never wanted. Underneath them, `npm run cohort:shape` — a regression that can see a population being reclassified.
+
+**Dev learning:** We had two verification questions and needed three. `verify` answers "are these plans VALID?", `verify:parity` answers "are they UNCHANGED?", and neither can answer "did the SHAPE of who-gets-what move?" A plan can be perfectly valid, structurally identical, and still have been silently downgraded for 60% of a cohort — which is exactly what a §81 fix did the same morning, with 16,038 plans and zero violations reported the whole time.
+
+**Product/creator learning:** 89% of beginner marathon plans were labelled "maintenance" and told the runner so. Measured, not guessed: 320 of 360, including a parkrun-er with a 24-week runway. A volume ratio that says nothing about whether someone will finish had been quietly made into a sentence about whether they will improve, and shown to the exact cohort going from 5km a week to 26.2 miles.
+
+**AI-building learning:** The harness's first cut understated delivered peak volume by 30% because it re-summed `distance_km`. Beginner plans are DURATION-anchored: `duration_mins` set, `distance_km` null. So the check built to catch beginners being misclassified was itself blind to how beginners' plans are stored. I found it only because a number looked implausibly low and I pulled on it instead of baselining it. A baseline captured from a broken measurement is worse than no baseline, because it makes every future run agree with the error.
+
+**The honest bit:** The rule for re-baselining is "say which number moved and why, in the commit". The rule I actually need is the one underneath it: never re-baseline to turn a test green. I wrote that in the file because I do not trust future-me not to.
+
+**Hook material:** 320 of 360 beginner marathon plans told the runner the plan "maintains current fitness rather than building it". They are training for their first marathon.
+
+**Postable?:** yes
+
+
 ## 2026-09-11 — UX-AUTH-01 + UX-AUTH-03 · Two ways out of the app, both of them wrong
 
 **Shipped:** Links to the legal pages now open in SFSafariViewController instead of replacing the app with the marketing site, and a failed password reset says which of three things actually went wrong instead of claiming the link is invalid.

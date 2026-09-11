@@ -60,12 +60,16 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > code.** So the path is everything between the email and a plan on screen.
 > Nothing else is on it.
 
-> **STATUS 2026-09-11, end of day: every engineering item on this path is shipped.**
-> The path has **one thing left, and it is not code** — the Supabase *Reset
-> Password* email template (UX-AUTH-03, item 5). Two minutes, account owner only,
-> `docs/runbooks/password-reset.md`. Until it is set, **password reset can never
-> succeed on iOS** — the request is made in the Capacitor webview and the email
-> opens in Safari, so PKCE's verifier is in the wrong browser every time.
+> **STATUS 2026-09-11, end of day: every item on this path is shipped, and the
+> one founder-owned setting is wired.**
+> The Supabase *Reset Password* template (UX-AUTH-03, item 5) was set by the
+> founder on 2026-09-11. **The last thing outstanding is a device test of it**,
+> which he holds: sign out on the iPhone, Forgot password?, open the email in
+> Mail. A URL carrying `token_hash=` and a "Set a new password" screen means it
+> took; a `?code=` URL and "This link cannot finish here" means the template did
+> not save. `docs/runbooks/password-reset.md` has the procedure. Nothing in the
+> repo can verify it — the template body is exposed neither to the service-role
+> key nor to the Management API tools available here.
 
 | # | Item | Owner | Effort | Why it is on the path |
 |---|------|-------|--------|----------------------|
@@ -74,7 +78,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | ~~2~~ | ~~**MAINT-LABEL-01 (copy half only)**~~ | me | S | ✅ **COPY HALF DONE 2026-09-11.** The `volume_profile` VALUE still needs a Coaching Board sitting and is NOT on this path. **89% of beginner marathon plans are labelled "maintenance"** — "maintains current fitness rather than building it" — to the exact cohort going 5km/week → 26.2 miles. Copy ships now; the `volume_profile` VALUE is load-bearing (confidence score, §38 notes) and needs a Coaching Board sitting. |
 | ~~3~~ | ~~**UX-REDEEM-01**~~ | me | XS | ✅ **DONE 2026-09-11.** The last screen between a Make-A-Wish runner and their free access, and it asks for work the parser does not require. |
 | ~~4~~ | ~~**BUG-KIT-DECIMALS-01**~~ | me | S | ✅ **DONE 2026-09-11.** Measured at **50.4% of prescribed session distances** disagreeing between prompt and card. `promptDistanceFormatters()` now owns the split; the raw-precision path survives only where both sides of a planned-vs-actual comparison need matching precision. |
-| ~~5~~ | ~~**UX-AUTH-01**~~ + **UX-AUTH-03** | me + **founder** | S + XS | ✅ **UX-AUTH-01 DONE 2026-09-11** — the four `/privacy` and `/terms` links now go through `ExternalLink`, which opens native in SFSafariViewController; the other two candidate causes were read in the code and are not live. 🔴 **UX-AUTH-03 code half done; the dashboard setting is OUTSTANDING and only the account owner can make it** — `docs/runbooks/password-reset.md`, two minutes. Until it is set, password reset can **never** succeed on iOS (the request is made in the Capacitor webview, the email opens in Safari, PKCE needs the same browser). The failure now names the real cause instead of claiming the link is invalid. |
+| ~~5~~ | ~~**UX-AUTH-01**~~ + **UX-AUTH-03** | me + **founder** | S + XS | ✅ **UX-AUTH-01 DONE 2026-09-11** — the four `/privacy` and `/terms` links now go through `ExternalLink`, which opens native in SFSafariViewController; the other two candidate causes were read in the code and are not live. 🟡 **UX-AUTH-03 code half done; template WIRED by the founder 2026-09-11, device test still owed.** Until it was set, password reset could **never** succeed on iOS (the request is made in the Capacitor webview, the email opens in Safari, PKCE needs the same browser). The failure now names the real cause instead of claiming the link is invalid, so a bad template shows as *"This link cannot finish here"* rather than silence. |
 | ~~6~~ | ~~**UX-AUTH-02**~~ | me | S | ✅ **DONE 2026-09-11.** The email form is now disclosed rather than displayed: Apple, Google, "Use email instead". Also fixed on the way through — a first-time runner typing their real email on the Sign in tab got GoTrue's "Invalid login credentials" verbatim, which never mentions that the account does not exist yet. |
 
 ### 🚫 Explicitly NOT before the demo — do not pick these up opportunistically
