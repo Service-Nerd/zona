@@ -76,6 +76,7 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
       }}
     >
       <nav
+        className="site-nav-row"
         style={{
           maxWidth: SITE_WIDTH,
           margin: '0 auto',
@@ -90,7 +91,7 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
           <Wordmark size="sm" />
         </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+        <div className="site-nav" style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           {NAV.map(item => {
             const active = current === item.section
             return (

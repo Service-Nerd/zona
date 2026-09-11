@@ -271,3 +271,83 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   0%, 100% { opacity: 0.5; transform: scale(0.82); }
   50%      { opacity: 1;   transform: scale(1.12); }
 }
+
+/* ── PhoneFrame fit (GTM-SITE-02) ───────────────────────────────────────────
+ * The device shot is a fixed 340 x 810 with flexShrink: 0. On a 375px phone a
+ * section with the site's standard 24px padding leaves 327px, so the frame
+ * forced the whole document to ~388px and the PAGE SCROLLED SIDEWAYS: the hero
+ * headline clipped mid-word and the frame ran off the right edge. It hit the
+ * homepage and /charity-runners alike, and mobile is exactly how a charity
+ * runner arrives from an email.
+ *
+ * Scale rather than reflow: the frame's internals are a measured composition
+ * (see PhoneFrame's crop note), so letting it reflow would break the still.
+ *
+ * THE WRAPPER MUST CARRY THE SCALED SIZE. `transform` changes painting, not
+ * layout — the first version of this rule scaled the frame and the page still
+ * overflowed by exactly as much as before, because the element kept its 340px
+ * layout box. So the wrapper is given the post-scale dimensions explicitly and
+ * the child is scaled from its top-left corner to match.
+ *
+ * 0.86: 340 * 0.86 = 292 and 810 * 0.86 = 697. Fits a 320px iPhone SE too.
+ */
+.phone-fit {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 420px) {
+  .phone-fit {
+    width: 292px;
+    height: 697px;
+    display: block;
+  }
+  .phone-fit > * {
+    transform: scale(0.86);
+    transform-origin: top left;
+  }
+}
+
+/* ── Site header on a phone (GTM-SITE-02) ───────────────────────────────────
+ * MEASURED BUG, not a precaution. At a 375px viewport the header row came to
+ * 433px — wordmark 60 + Plans 37 + Pricing 47 + Comparisons 90 + the 104px
+ * "Get the app" pill, plus gaps — so the whole DOCUMENT was 433 wide and every
+ * page scrolled sideways. The hero headline clipped mid-word on the homepage
+ * and /charity-runners, which is precisely how a charity runner arrives: on a
+ * phone, from an email.
+ *
+ * It was already a few pixels from overflowing with two nav items; adding
+ * Pricing tipped it over. Tightening type and gutters got it to 379, still 4px
+ * over at 375 and hopeless at a 320px iPhone SE, so shaving pixels was the
+ * wrong fix: five items on one row does not fit a phone at any type size.
+ *
+ * The links therefore WRAP to their own row below the wordmark and CTA. Nothing
+ * is hidden and no hamburger is introduced (chrome the design system rejects),
+ * so every destination stays one tap away at any width.
+ */
+@media (max-width: 430px) {
+  .site-nav-row {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  /* Links onto their own full-width row, under the wordmark.
+   *
+   * NOTE the "Get the app" CTA is INSIDE this group, not a sibling of it —
+   * measured, after assuming otherwise. So this row carries four items
+   * (36 + 46 + 87 + 104 = 273 plus gaps) and must be allowed to wrap: at 320px
+   * the available 288 cannot hold them and the CTA overflowed to 348. Wrapping
+   * drops the CTA to a third line on an SE and changes nothing at 375, where
+   * all four still fit on one. */
+  .site-nav {
+    order: 3;
+    width: 100%;
+    gap: 20px !important;
+    flex-wrap: wrap;
+    row-gap: 10px;
+  }
+  .site-nav a {
+    font-size: 13.5px !important;
+  }
+}

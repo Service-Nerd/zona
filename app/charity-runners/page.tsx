@@ -230,7 +230,7 @@ export default function CharityRunnersPage() {
           Light section only: the frame renders its screen ground dark inside a
           --ground section (known constraint, PhoneFrame header). */}
       <section style={{ padding: '8px 24px 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
-        <PhoneFrame />
+        <div className="phone-fit"><PhoneFrame /></div>
         <p style={{
           fontSize: '14px', lineHeight: 1.55, color: 'var(--mute)',
           margin: 0, maxWidth: '420px', textAlign: 'center',

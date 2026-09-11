@@ -238,7 +238,7 @@ export default async function Home() {
           v2 (design_handoff_v2) Change 2. Light section only (frame ground
           renders dark on --ground sections — known constraint). */}
       <section style={{ padding: '40px 24px 72px', display: 'flex', justifyContent: 'center' }}>
-        <PhoneFrame />
+        <div className="phone-fit"><PhoneFrame /></div>
       </section>
 
       {/* ── Thesis ───────────────────────────────────────────────────── */}
