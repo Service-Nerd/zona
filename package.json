@@ -18,7 +18,8 @@
     "verify:ios-plugins": "node scripts/verify-cap-config.mjs",
     "icons:pwa": "node scripts/generate-pwa-icons.mjs",
     "verify:parity": "tsx scripts/verify-parity.ts",
-    "check:db": "tsx scripts/check-db-drift.ts"
+    "check:db": "tsx scripts/check-db-drift.ts",
+    "cohort:shape": "tsx scripts/cohort-shape.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
