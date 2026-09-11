@@ -11,7 +11,7 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { WaitlistForm } from '@/components/marketing/WaitlistForm'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
-import { describeDerivedSet } from '@/lib/plan/resolveMainSet'
+import { stepParts } from '@/lib/plan/resolveMainSet'
 import { type MarketingPlan, planAnchor, faqsFor, getPlan, planCardTitle } from '@/lib/marketing/plans'
 import type { Session, Week } from '@/types/plan'
 
@@ -23,6 +23,77 @@ const DAY_LABEL: Record<string, string> = { mon: 'Mon', tue: 'Tue', wed: 'Wed', 
 
 const QUALITY_TYPES = new Set(['quality', 'intervals', 'tempo', 'hard'])
 const isQualitySession = (s: Session) => QUALITY_TYPES.has(s.type)
+
+/**
+ * The hard session, as something a runner can actually follow.
+ *
+ * Previously this rendered `describeDerivedSet()` — one flat sentence — and
+ * only when `derived_set` existed. Two problems, both measured across the nine
+ * live pages (73 quality sessions):
+ *
+ *  1. A 13-step pyramid came out as 433 unbroken characters. Nobody reads that
+ *     standing in a kitchen deciding whether to go out. Steps are now rows.
+ *  2. 11 of 73 (15%) rendered NOTHING, because a 5K time trial has no
+ *     catalogue row and so no derived set. Every one of those 11 already
+ *     carried `coach_notes` — including "Warm up easy for 10 minutes, then
+ *     5 km as hard as you can hold" — which this page simply never read.
+ *     100% of quality sessions carry coach_notes; none were being shown.
+ *
+ * Grammar is NOT re-derived here — `stepParts()` in resolveMainSet.ts stays the
+ * single owner of "jog" / "uphill" / "no faster than". This picks the layout.
+ */
+function MainSet({ s }: { s: Session }) {
+  const set = s.derived_set
+  const howTo = s.coach_notes?.[0]
+  if (!set && !howTo) return null
+
+  return (
+    <div style={{
+      marginTop: 7, padding: '10px 12px', background: 'var(--bg-soft)',
+      borderRadius: 8, borderLeft: '2px solid var(--s-quality)',
+    }}>
+      {set && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {set.blocks.map((b, bi) => (
+            <div key={bi} style={{ display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+              {b.repeat > 1 && (
+                <span style={{
+                  flexShrink: 0, fontSize: 12.5, fontWeight: 800, paddingTop: 1,
+                  color: 'var(--s-quality)', fontVariantNumeric: 'tabular-nums',
+                }}>{b.repeat}&times;</span>
+              )}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {b.steps.map((st, si) => {
+                  const { action, target } = stepParts(st)
+                  const isWork = st.role === 'work'
+                  return (
+                    <div key={si} style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                      <span style={{
+                        fontSize: 13, fontWeight: isWork ? 600 : 400,
+                        color: isWork ? 'var(--ink)' : 'var(--mute)',
+                      }}>{action}</span>
+                      {target && (
+                        <span style={{ fontSize: 12.5, color: isWork ? 'var(--ink-2)' : 'var(--mute)' }}>
+                          {target}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {howTo && (
+        <div style={{
+          fontSize: 12.5, lineHeight: 1.5, color: 'var(--mute)',
+          ...(set ? { marginTop: 9, paddingTop: 9, borderTop: '1px solid var(--line)' } : {}),
+        }}>{howTo}</div>
+      )}
+    </div>
+  )
+}
 
 function accentFor(s: Session): string {
   const label = (s.label ?? '').toLowerCase()
@@ -191,11 +262,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
                             <div style={{ fontSize: 13, color: 'var(--mute)', marginTop: 2 }}>
                               {[s.distance_km ? `${s.distance_km} km` : null, s.duration_mins ? `${s.duration_mins} min` : null, s.pace_target || null].filter(Boolean).join('  ·  ')}
                             </div>
-                            {isQualitySession(s) && s.derived_set && (
-                              <div style={{ fontSize: 13, lineHeight: 1.45, color: 'var(--ink-2)', marginTop: 7, padding: '8px 11px', background: 'var(--bg-soft)', borderRadius: 8, borderLeft: '2px solid var(--s-quality)' }}>
-                                {describeDerivedSet(s.derived_set)}
-                              </div>
-                            )}
+                            {isQualitySession(s) && <MainSet s={s} />}
                           </div>
                         </div>
                       ))}

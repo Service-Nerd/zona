@@ -166,7 +166,18 @@ export function resolveMainSet(structure: StructureV2, ctx: ResolveContext): Der
  * that is only getting the runner *to* a landmark — with the verb, weave the
  * terrain into work steps, and give `open` / `mirror` lengths their own phrasing.
  */
-function describeStep(s: DerivedStep): string {
+/**
+ * The two halves of a step instruction: WHAT you do, and WHAT to hit.
+ *
+ * Exported because a one-line sentence is not the only way a step needs to be
+ * rendered. The SEO plan pages show the set as a followable two-column list
+ * (a 13-step pyramid is 433 unreadable characters as prose), and that renderer
+ * must not re-derive the grammar — the "jog"/"uphill"/"no faster than" rules
+ * live here and nowhere else. This module stays the single owner; callers
+ * choose the layout. Same lesson as CAT-ROW-ELIGIBILITY-01: two resolvers for
+ * one question is how 859 sessions shipped with no pace at all.
+ */
+export function stepParts(s: DerivedStep): { action: string; target: string } {
   const paceStr = s.pace
     ? `${s.pace_mode === 'ceiling' ? 'no faster than ' : s.pace_mode === 'floor' ? 'no slower than ' : ''}${s.pace}`
     : null
@@ -194,8 +205,17 @@ function describeStep(s: DerivedStep): string {
     : isWork && s.terrain === 'downhill' ? ' downhill'
     : ''
 
-  return [verb, lengthPhrase + terrainWord, target]
-    .filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
+  return {
+    action: [verb, lengthPhrase + terrainWord].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(),
+    target,
+  }
+}
+
+/** Render one step as a natural-language instruction. Unchanged output —
+ *  the grammar now lives in stepParts(); this is the sentence layout of it. */
+function describeStep(s: DerivedStep): string {
+  const { action, target } = stepParts(s)
+  return [action, target].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()
 }
 
 /** One-line rendering, e.g. "5 × (3 min at 4:28–4:39 /km + jog 2 min at no faster than 6:10 /km)". */
