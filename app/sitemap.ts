@@ -45,6 +45,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     })),
+    // GTM-SITE-02 — about. Lower priority than pricing but a real due-diligence
+    // surface for a charity deciding whether to trust us with its fundraisers.
+    {
+      url: `${APP_URL}/about`,
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
     // GTM-SITE-02 — pricing. High priority: it is the page that decides
     // whether an evaluating visitor (or partner) can understand the offer.
     {

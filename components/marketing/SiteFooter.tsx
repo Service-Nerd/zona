@@ -32,6 +32,7 @@ const LINKS: Array<{ href: string; label: string }> = [
   { href: '/', label: 'Home' },
   { href: '/plans', label: 'Plans' },
   { href: '/pricing', label: 'Pricing' },
+  { href: '/about', label: 'About' },
   { href: '/comparisons', label: 'Comparisons' },
   // GTM-CHARITY-01. In the FOOTER, not the nav — the nav stays two items by SLT
   // ruling, and the charity's own email is the real front door for this page.

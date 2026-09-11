@@ -270,7 +270,7 @@ export default async function Home() {
       }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <Eyebrow>The problem</Eyebrow>
-          <SectionTitle>Every run ends up in the same grey zone.</SectionTitle>
+          <SectionTitle accent="the same grey zone.">Every run ends up in</SectionTitle>
 
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -295,7 +295,7 @@ export default async function Home() {
       {/* ── What it does — three pillars + product mockups ───────────── */}
       <section style={{ padding: '80px 24px', maxWidth: '1100px', margin: '0 auto' }}>
         <Eyebrow>The product</Eyebrow>
-        <SectionTitle>Three things, done with restraint.</SectionTitle>
+        <SectionTitle accent="done with restraint.">Three things,</SectionTitle>
 
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -616,7 +616,18 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 }
 
 /** Section title (+ optional sub line). Shared rhythm across all sections. */
-function SectionTitle({ children, sub }: { children: React.ReactNode; sub?: string }) {
+/** GTM-SITE-02 — optional `accent` renders a SECOND LINE in moss.
+ *
+ *  Borrowed from the competitor analysis, minus the thing that made it wrong
+ *  for us: they gradient the second half of every headline, and a gradient is
+ *  banned here. The useful part was never the gradient, it was the RHYTHM. A
+ *  coloured second line tells the eye which half of the sentence carries the
+ *  argument, and one moss line does that without touching the palette.
+ *
+ *  Split on the clause that IS the argument ("the same grey zone", "done with
+ *  restraint"), never at an arbitrary midpoint. A headline with a single clause
+ *  gets no accent rather than being forced into two. */
+function SectionTitle({ children, accent, sub }: { children: React.ReactNode; accent?: string; sub?: string }) {
   return (
     <div style={{ marginBottom: '48px' }}>
       <h2 style={{
@@ -627,6 +638,12 @@ function SectionTitle({ children, sub }: { children: React.ReactNode; sub?: stri
         maxWidth: '720px',
       }}>
         {children}
+        {accent && (
+          <>
+            <br />
+            <span style={{ color: 'var(--moss)' }}>{accent}</span>
+          </>
+        )}
       </h2>
       {sub && (
         <p style={{
@@ -861,11 +878,17 @@ function MockCoachNoteCard() {
       borderRadius: 'var(--radius-lg, 12px)',
       boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
       padding: '20px',
-      borderLeft: '3px solid var(--moss)',
+      // GTM-SITE-02 — was --moss, which is wrong and meant nothing. CLAUDE.md
+      // reserves --warn for COACHING ("moss is the primary accent; warn/amber
+      // is reserved for coaching only"), and the real coach note does use it:
+      // see PhoneFrame's Kit card and CoachNoteBlock. A marketing mock painting
+      // a coach note in the generic accent throws away the one thing the colour
+      // was carrying, which is that Kit is talking.
+      borderLeft: '3px solid var(--warn)',
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: '6px',
-        fontSize: '10px', fontWeight: 700, color: 'var(--moss)',
+        fontSize: '10px', fontWeight: 700, color: 'var(--warn)',
         textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px',
       }}>
         <span>✦</span>
