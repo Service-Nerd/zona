@@ -54,7 +54,44 @@ The tagline names a person, not a training philosophy — it speaks directly to 
 **Internal positioning sentence** (doesn't ship verbatim; every decision should trace to it):
 > Zonna is for runners who always go hard on their easy days — who have a life, a day job, and no business training like professionals.
 
-**Who they are** — adult runners, 1+ years' experience, training for a half / marathon / first ultra. Day job, family, or both. Run 2–5×/week. Use or have used Strava. Tried a free plan or generic app that didn't fit their life. **Age is not a target variable** — the psychographic travels from 25 to 65+.
+**Who they are** — adult runners with a day job, training for a 10K / half / marathon / first ultra. Day job, family, or both. Run 2–5×/week. Use or have used Strava. Tried a free plan or generic app that didn't fit their life. **Age is not a target variable** — the psychographic travels from 25 to 65+.
+
+> ### ⚠️ Experience is NOT the qualifier — the behaviour is *(founder decision, 2026-09-11)*
+>
+> This line used to read **"adult runners, 1+ years' experience"**. That qualifier
+> was never in the internal positioning sentence above — which is purely
+> behavioural, *"runners who always go hard on their easy days… no business
+> training like professionals"* — and a first-time charity marathoner meets that
+> description **more** completely than an experienced runner does, not less. They
+> hero their sessions early with a fundraising page watching. That is the same
+> mechanism the whole product exists to interrupt.
+>
+> **Why it changed now, and why it would have been dishonest this morning.**
+> Make-A-Wish is the first referral channel and sends predominantly first-timers
+> at 10K, half and marathon. The roadmap named two things that broke for them,
+> and until 2026-09-11 both were live: **the wizard refused an honest zero**
+> (a beginner who had never run was rejected in schema language, by a database
+> field name), and **89% of beginner marathon plans carried a note reading "you
+> will not improve"**. Three more beginner-specific defects were found and fixed
+> the same day: §24 told a third of them their peak long run was **0 km**, four
+> constitutional invariants were **silently inert** for them because their plans
+> are duration-anchored, and ADR-012's structural-change threshold was
+> unreachable for them, so a beginner's session could be reshaped **without the
+> confirmation an experienced runner's identical change would surface.**
+>
+> **Widening the stated audience before that work would have been an overclaim.**
+> It is not one now.
+>
+> **What we still do NOT claim.** Zonna is not couch-to-5K: it does not teach
+> someone to run, and the product's value still starts at "you are training for a
+> race and going too hard at it". Two beginner questions remain open with the
+> Coaching Board — whether ~13 km across 3 sessions is the right week 1 for
+> someone who has never run, and §47/§52 rules that are still inert on
+> duration-anchored plans. **This widens who we say we are for. It does not
+> declare the beginner experience finished.**
+>
+> Cohort detail and the charity-referral framing: `GTM-CHARITY-01/02`,
+> `app/charity-runners/page.tsx`.
 
 **What they believe now → what's actually true**
 

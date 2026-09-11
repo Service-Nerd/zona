@@ -18,12 +18,15 @@
 //      and reads as a downsell. The code is the headline now; the static plans
 //      are the honest fallback for someone without one.
 //
-// THE AUDIENCE IS NOT THE STATED ICP, AND THAT IS THE POINT OF THE PAGE.
-// brand.md defines the audience as "adult runners, 1+ years' experience".
-// Charity-place runners skew the other way: often a first race at the distance,
-// entered for a cause. The homepage is written for someone who already runs.
-// This is written for someone who may not yet, WITHOUT changing what the
-// product claims.
+// THIS AUDIENCE IS NOW INSIDE THE STATED ICP — it was not when the page shipped.
+// brand.md used to define the audience as "adult runners, 1+ years' experience",
+// and this page was deliberately written for people that line excluded. On
+// 2026-09-11 the founder removed the experience qualifier: it was never in the
+// internal positioning sentence (which is purely behavioural), and a first-time
+// charity marathoner meets that sentence MORE completely than an experienced
+// runner, not less. The page's framing does not change — the homepage is still
+// written for someone who already runs and this is written for someone who may
+// not yet — but it is no longer serving a cohort the brand disowned.
 //
 // The honest bridge: Zonna's core truth is "you're trying hard, that's the
 // problem". A charity runner's version of that failure is heroing sessions
