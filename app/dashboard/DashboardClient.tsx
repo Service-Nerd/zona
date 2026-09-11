@@ -11624,7 +11624,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '40px' }}>
 
         {/* Identity card — avatar + name + tier */}
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', padding: '16px', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', padding: '16px', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '14px' }}>
           <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--moss)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--card)', flexShrink: 0 }}>
             {initials}
           </div>
@@ -11686,7 +11686,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           }
 
           return (
-            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
               <div style={{ padding: '14px 16px 4px', fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.12em' }}>
                 What Kit knows about you
               </div>
@@ -11766,7 +11766,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
         {/* Read-only plan overview */}
         {hasPlan && (
-          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
             {[
               { label: 'Current race', value: plan.meta.race_name },
               { label: 'Race date',    value: raceDateFormatted ?? '—' },
@@ -11803,7 +11803,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         />
 
         {/* Plan + benchmark actions — moved below zones */}
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <button
             onClick={onOpenGenerate}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
@@ -11845,7 +11845,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         </div>
 
         {/* Display preferences — grouped with training since they affect session cards */}
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           {/* Units */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
             <div>
@@ -11913,7 +11913,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {hasPaidAccess && onDynamicAdjustmentsChange && (
           <>
             <SectionLabel>Plan adjustments</SectionLabel>
-            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
 
               {/* Last checked status — top of the card so the engine's activity is visible at a glance.
                *  Three honest states (PROFILE-ADJ-01):
@@ -12040,7 +12040,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {(!hasPaidAccess || trialDaysLeft != null) && onUpgrade && (
           <>
             <SectionLabel>Subscription</SectionLabel>
-            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
               <button
                 onClick={onUpgrade}
                 style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
@@ -12063,7 +12063,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
         {/* ── Support — in-app contact (FREE; SUPPORT-01) ──────── */}
         <SectionLabel>Support</SectionLabel>
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <button
             onClick={() => setActiveSection('support')}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
@@ -12080,7 +12080,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
         {/* ── Careful Now — destructive account actions ───────── */}
         <SectionLabel>Careful Now</SectionLabel>
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <button
             onClick={async () => {
               const supabase = createClient()
