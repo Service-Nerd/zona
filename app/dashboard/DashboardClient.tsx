@@ -9886,6 +9886,35 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           )
         })()}
 
+        {/* ── THE ARC — where I was · where I am · the goal I chose ─────
+            UX-COACH-01, both boards 2026-09-12. §109: this surface may REMEMBER
+            and COMPARE; it may not predict. `baselineSeconds` is the plan-start
+            estimate, `currentSeconds` is measured fitness with its confidence,
+            and the goal is the runner's OWN `target_time`. No projected
+            race-day finish, no rising line toward a date — §44.1's
+            fabricated-precision doctrine.
+
+            ⚠️ THIS IS THE COMPONENT'S OWN DOCUMENTED HOME. Its header has read
+            "Coach screen (variant='status') — canonical home" since it was
+            written, while it rendered inside a sheet on PlanScreen. Sutherland,
+            on the founder's "where I was, I am, and what the potential is":
+            it was filed next to a list of appointments.
+
+            🔴 AND IT WAKES R32. The recalibration nudge renders only on
+            `variant="status"`, and Plan passed `onDismissRecal={undefined}` +
+            `benchmarkRecalDismissedAt={undefined}`, so it has been DORMANT
+            EVERYWHERE. The working handlers were already plumbed to this screen
+            (`onDismissRecal={dismissBenchmarkRecal}`) and destructured here
+            unused — dead props waiting for the card that was documented to
+            live beside them. ── */}
+        <RaceTimesCard
+          variant="status"
+          stravaConnected={stravaConnected}
+          benchmarkRecalDismissedAt={benchmarkRecalDismissedAt}
+          onOpenBenchmark={onOpenBenchmark}
+          onDismissRecal={onDismissRecal}
+        />
+
         {/* ── SUPPORTING FACTS — UX-COACH-01 (boards 2026-09-12) ───────
             Was a 2×2 grid of four tiles. Now two, and both earn their place:
 
