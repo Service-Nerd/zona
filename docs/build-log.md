@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-12 — HOOKS-LINT-01 / HOOKS-ORDER-02 · Installing the check that had already proved itself
+
+**Shipped:** `rules-of-hooks` now runs in `npm run verify`, and `TodayScreen`'s empty-plan guard moved below its fourteen hooks.
+
+**Dev learning:** The gate found exactly fourteen violations and every one was in `DashboardClient.tsx`, in the range the backlog had already named. That is the part worth sitting with: the defect had been *written down*, with file and line, the night before, and it was still in the code this morning. A filed bug and a fixed bug feel similar in a backlog and are not remotely the same thing. What actually closed it was a machine that fails the build.
+
+**Product/creator learning:** The fix was to move the return down, not to hoist the hooks up. Hoisting fourteen hooks above a guard means fourteen hooks run on a render that is about to display "Unable to load plan", and every future edit has to remember why they are in that order. Moving one return preserves the intent — *this screen cannot render without a week* — and puts it where React's rules allow it. The cheaper-looking fix would have left a trap for the next person.
+
+**AI-building learning:** Wiring the linter took ten minutes. Making it *usable* took longer and was the real work: the first run reported 23 errors, and 9 of them were `eslint-disable` comments naming rules my hooks-only config does not load. A gate that fails for reasons unrelated to its job gets switched off, so those 9 were not noise to tolerate — they were the difference between a gate that survives and one that does not. `noInlineConfig` turned out to fix both that and a hole I had not consciously set out to close: with it on, nobody can silence this rule with an inline disable in the file it is policing.
+
+**The honest bit:** I found the real crash line while moving the guard, and it was not the hook count. `parseLocalDate((currentWeek as any).date)` calls `.split` on its argument — an absent week threw a TypeError before React's hook-order error could fire. The `as any` meant the compiler had nothing to say about it. I had described this defect twice, in a backlog entry and a registry row, as a hooks-order problem. It was two bugs sharing a line, and I only saw the second one because I had to touch the code rather than read it.
+
+**Hook material:** The bug was filed with file and line the night before. It was still there the next morning. Writing it down is not fixing it; a failing build is.
+
+**Postable?:** yes
+
+
 ## 2026-09-11 — HOOKS-ORDER-01 · The bug was invisible to every gate we have
 
 **Shipped:** Coach stops crashing. `TrendCard` rendered 1 hook in one state and 11 in another.

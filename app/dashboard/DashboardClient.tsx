@@ -6616,12 +6616,12 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const weekOrdinal = weekIndex + 1
   const totalWeeks = plan.weeks.length
 
-  // Guard against empty plan (e.g. failed Gist fetch)
-  if (!currentWeek) return (
-    <div style={{ padding: '32px 16px', textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>
-      Unable to load plan. Check your connection and try again.
-    </div>
-  )
+  // HOOKS-ORDER-02 — the empty-plan guard used to return HERE, above fourteen
+  // hooks. `currentWeek` flipping between renders then changed the hook COUNT,
+  // which is React error 310 and takes the whole screen down — the same defect
+  // that crashed Coach (HOOKS-ORDER-01, TrendCard). The guard now returns below
+  // the last hook; every `currentWeek` read between here and there is defensive
+  // for that one render, and none of those values reach the DOM.
 
   // Completions for this week — derived from shared allCompletions prop
   const completions = allCompletions[weekNum] ?? {}
@@ -6631,7 +6631,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   // only when the enricher ran). Distinct from the rule-engine card copy so the
   // provenance byline marks only the model output.
   const maintDebrief =
-    currentWeek.phase === 'maintenance_restoration' || currentWeek.phase === 'maintenance_base'
+    currentWeek?.phase === 'maintenance_restoration' || currentWeek?.phase === 'maintenance_base'
       ? currentWeek.coach_debrief
       : undefined
 
@@ -6722,9 +6722,12 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   const todayDow = ['sun','mon','tue','wed','thu','fri','sat'][now.getDay()]
-  const weekStartDate = parseLocalDate((currentWeek as any).date)
+  // HOOKS-ORDER-02: `parseLocalDate(undefined)` throws on `.split`, so this is
+  // the line the guard used to protect. Never rendered when the week is missing
+  // — the guard below returns before any of it reaches the DOM.
+  const weekStartDate = currentWeek ? parseLocalDate((currentWeek as any).date) : new Date()
   const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-  const ws = (currentWeek as any).sessions ?? {}
+  const ws = (currentWeek as any)?.sessions ?? {}
 
   // Pre-start state: viewing the first plan week before its start date.
   // Plans created with a future start date land here on the first open and
@@ -6732,7 +6735,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   // first session ("5km, slowly.") as if today, which falsely implies the
   // user should be running. Gated on weekIndex === 0 so a user swiping to
   // future weeks for a peek doesn't trip the pre-start view.
-  const planStartDate = parseLocalDate((plan.weeks[0] as any).date)
+  const planStartDate = plan.weeks[0] ? parseLocalDate((plan.weeks[0] as any).date) : new Date()
   const daysToPlanStart = Math.max(0, Math.ceil((planStartDate.getTime() - now.getTime()) / 86400000))
   const planNotStarted = planStartDate > now && weekIndex === 0
 
@@ -6868,6 +6871,15 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       setTimeout(() => setRetryingForHrUuid(cur => (cur === uuid ? null : cur)), 400)
     }
   }, [])
+
+  // Guard against empty plan (e.g. failed Gist fetch). HOOKS-ORDER-02: this
+  // returns BELOW every hook on purpose — moving it back above them reinstates
+  // React error 310. `rules-of-hooks` now enforces that in `npm run verify`.
+  if (!currentWeek) return (
+    <div style={{ padding: '32px 16px', textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>
+      Unable to load plan. Check your connection and try again.
+    </div>
+  )
 
   // Next run session after selected day
   const nextRunSession = sessions.find(s =>
