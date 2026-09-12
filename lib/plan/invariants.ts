@@ -110,6 +110,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
   'INV-PLAN-FOUNDATION-BLOCK',
   'INV-PLAN-5K10K-LR-PACE-CAP',
+  'INV-PLAN-LR-SEGMENT-RECORDED',
   'INV-PLAN-BUILD-LR-SEGMENT-CAP',
   'INV-PLAN-FINISH-GOAL-LR-CAP',
   'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
@@ -4482,6 +4483,46 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             })
           }
         }
+      }
+    }
+  }
+
+  // INV-PLAN-LR-SEGMENT-RECORDED — a §24b segmented long run must RECORD the
+  // pace it prescribes.
+  //
+  // ⚠️ DELIBERATELY NOT INSIDE THE `plan.meta.vdot` BLOCK BELOW. That block —
+  // including INV-PLAN-5K10K-LR-PACE-CAP — is gated on a VDOT, and a plan paced
+  // from `fitness_level` rather than a benchmark HAS NO VDOT, so none of it runs
+  // for those runners at all. This check needs no VDOT: it asks whether the
+  // session recorded what it prescribed, not whether the pace is correct.
+  // Found while falsification-testing this invariant — the first version sat in
+  // that block and could not be made to fire.
+  //
+  // The gap it closes: the cap check opens `if (!s.lr_segment_pace) continue`,
+  // so a session prescribing segments and storing none passed it SILENTLY — the
+  // same shape as the four SESSION-KM-02 silent passes and the §52 checker
+  // blindness. Measured 2026-09-12: 108 of 216 §24b sessions stored nothing, ALL
+  // beginners, whose marathon/HM paces are null by design (§24b) and whose notes
+  // therefore rendered the literal words ("at marathon pace: marathon pace").
+  // The producer is now gated on derivable paces; this proves it stays gated.
+  //
+  // Keyed on `session.zone`, which the engine authors and the AI enricher does
+  // not rewrite — never on the label or the notes (D-17).
+  if (isTimeTarget && (distKey === '5K' || distKey === '10K')) {
+    for (const w of plan.weeks) {
+      if (w.phase !== 'peak' || w.type === 'deload') continue
+      for (const [day, s] of Object.entries(w.sessions) as [string, Session | undefined][]) {
+        if (!s || !isLongRun(s)) continue
+        if (s.zone !== 'Zone 2–3' || s.lr_segment_pace) continue
+        violations.push({
+          code: 'INV-PLAN-LR-SEGMENT-RECORDED',
+          principle_ref: 'CoachingPrinciples §24b',
+          severity: 'error',
+          week: w.n, day,
+          message: `${s.label ?? 'long run'} carries §24b's segmented zone (Zone 2–3) but stores no lr_segment_pace — the session prescribes pace segments it does not record, so nothing downstream can check or render them`,
+          actual: 'lr_segment_pace absent',
+          expected: 'a real pace band',
+        })
       }
     }
   }

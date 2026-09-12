@@ -4244,6 +4244,84 @@ must not make it acceptable.
 
 ---
 
+
+## 107. A session may not prescribe work it does not record
+
+*(Coaching Board ZONE-BAND-02, 2026-09-12. CORRECT WITH AMENDMENT — the amendment
+being that the first step is not a display change.)*
+
+**Principle.** Where a session prescribes a **pace segment** — a portion of the
+session run at a named pace other than the session's own — that segment MUST be
+recorded in a structured field. The whole-session `pace_target`, `hr_target` and
+`rpe_target` describe the session's **aerobic body**; they are not its complete
+prescription and must not be read as one. A session that cannot express its
+segments — because the paces they need are not derivable for that runner — is
+not prescribed at all; the runner receives the unsegmented session instead.
+
+**Why.** §84 Amendment 1 settled that `hr_target` is the prescription and
+`session.zone` is a label derived from it, so the two cannot drift. The segmented
+long run was explicitly carved out of that invariant's scope (it is scoped to
+*range* targets, and this session carries a *ceiling*) and recorded rather than
+swept in. Measured 2026-09-12 across the 621-plan cohort, that carve-out was
+hiding three separate failures, not one label disagreement:
+
+1. **All three whole-session fields described the easy portion only.**
+   `pace_target: '7:30–9:00 /km'`, `hr_target: '< 145 bpm'`, `rpe_target: 6` — on
+   a session whose coach notes prescribe *"middle 20% at marathon pace, final 30%
+   at HM pace"*. `session.zone` (`Zone 2–3`) was the **only field telling the
+   truth**, which is why the board rejected the proposal to narrow it: that
+   option removed the one honest signal and left the card internally consistent
+   and wrong (Sims — disguising hard work as moderate is §84's own named failure
+   mode; Hutchinson — tidying, not correcting).
+2. **288 of 396 such sessions recorded no segment at all.** The structure existed
+   as prose in `coach_notes` and nowhere machine-readable, so no invariant could
+   check it and no surface could render it.
+3. **108 of those were a live text defect.** `buildFallbackPace` returns null
+   marathon and HM paces for beginners and says why in as many words — *"no pace
+   segments prescribed (§24b)"* — but the producer built the session anyway and
+   fell back to the literal **words**, so every beginner on a time-targeted 5K or
+   10K plan read *"Middle 20% (≈2.1 km) at marathon pace: marathon pace."* in
+   their final two peak weeks: a sentence that repeats itself and gives them no
+   number. 108 of 108 beginner sessions; 0 of 108 intermediate/experienced.
+
+Widening `hr_target` to a range covering the finish was rejected on the opposite
+ground (Seiler, Willy): 50–70% of that run must stay under the aerobic ceiling,
+and putting the fast work at the **end** is what makes that safe. Dissolving the
+ceiling to fix a display would delete the training constraint to solve a
+rendering problem — and half these sessions go to beginners.
+
+**Config.** No new numeric. §24b's `LR_5K10K_PEAK_MID_SEGMENT_PCT` (0.20) and
+`LR_5K10K_PEAK_FINAL_SEGMENT_PCT` (0.30), and §25's segment fractions, already
+exist and are already read. This principle records their output; it does not add
+a knob. The absence is deliberate and stated so it is not read as an oversight.
+
+**Enforcement.** `INV-PLAN-LR-SEGMENT-RECORDED` — a long run carrying §24b's
+segmented zone (`Zone 2–3`) must store `lr_segment_pace`. Keyed on
+`session.zone`, which the engine authors and the AI enricher does not rewrite
+(D-17), never on the label or the notes. Selection is gated in
+`buildWeekSessions()` on `pace.marathonPaceStr && pace.hmPaceStr`, and
+`fiveKTenKPeakLongRunSession` now **throws** rather than substituting placeholder
+text if that gate is ever removed.
+
+> ⚠️ **Scope, declared: §25's two producers are NOT yet covered.** The HM
+> (`hm_pace_long_run`, 108 sessions) and marathon (`mp_long_run`, 72) race-specific
+> long runs still record no segment, and `session.zone` is still authored beside
+> `hr_target` rather than derived from the segments. That is the remainder of the
+> board's ruling — steps 1 (for §25) and 2 — and it is open work, not a silent
+> gap. The invariant is deliberately scoped to §24b so it ships clean rather than
+> with a 180-session baseline.
+>
+> ⚠️ **A second scoping trap found while falsification-testing this invariant.**
+> The first version sat inside the `plan.meta.vdot` block alongside
+> `INV-PLAN-5K10K-LR-PACE-CAP` and **could not be made to fire** — a plan paced
+> from `fitness_level` rather than a benchmark has no VDOT, so that entire block,
+> including the pace cap, does not run for those runners. This check needs no
+> VDOT and now sits outside it. The cap's own VDOT gate is legitimate (it computes
+> a ceiling from one) but its reach is narrower than it looks.
+
+---
+
+
 ## 56. The constitution
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

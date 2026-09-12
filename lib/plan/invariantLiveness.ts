@@ -59,6 +59,12 @@ export const MUTATIONS: Mutation[] = [
   { name: 'strip catalogue_id',        apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).catalogue_id }) },
   { name: 'strip labels',              apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).label = '' }) },
   { name: 'strip zone',                apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).zone }) },
+  // §107 / INV-PLAN-LR-SEGMENT-RECORDED — strips the RECORD while leaving the
+  // prescription's zone marker in place. Deliberately not the same as 'strip
+  // zone' above: that removes the marker too, so the session stops claiming to
+  // be segmented and the check correctly stays silent. This is the case that
+  // matters — a session still saying "Zone 2–3" with nothing behind it.
+  { name: 'strip lr_segment_pace',     apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).lr_segment_pace }) },
   { name: 'strip stimulus',            apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).stimulus }) },
   { name: 'placeholder copy',          apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).coach_notes = ['TODO', 'TBD']; (s as unknown as Poke).label = 'TBD' }) },
   { name: 'all sessions quality',      apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).type = 'quality' }) },
@@ -100,9 +106,28 @@ export interface LivenessReport {
 }
 
 /** Break `sampleSize` valid plans every way we know, and see what wakes up. */
-export function probeLiveness(sampleSize = 14): LivenessReport {
+export function probeLiveness(sampleSize = 32): LivenessReport {
   const sample: { input: GeneratorInput; plan: Plan }[] = []
-  for (const input of cohortGrid()) {
+  // COVER SHAPES, never take the grid's head. `cohortGrid()` is ordered, so the
+  // first N entries share a distance, a level and a goal — a sample that cannot
+  // reach whole families of plan by construction, and those families then read
+  // as `corpus` debt ("the harness never builds this shape") when the truth is
+  // that the harness never LOOKED at them.
+  //
+  // Found 2026-09-12: §107's new invariant could not be woken because the
+  // segmented 5K/10K peak long run it guards needs a time-targeted, NON-beginner
+  // plan, and the head of the grid is none of those. Sampling one input per
+  // distinct (distance x level x goal) instead newly PROVED 16 invariants that
+  // had been sitting in the baseline as debt. The debt was mostly the sample.
+  const seen = new Set<string>()
+  const byShape = cohortGrid().filter(i => {
+    const k = `${(i as {race_distance_km?: number}).race_distance_km}|${(i as {fitness_level?: string}).fitness_level}|${(i as {goal?: string}).goal}`
+    if (seen.has(k)) return false
+    seen.add(k)
+    return true
+  })
+  const ordered = byShape.concat(cohortGrid())
+  for (const input of ordered) {
     if (sample.length >= sampleSize) break
     try {
       sample.push({

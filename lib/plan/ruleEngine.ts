@@ -2159,8 +2159,19 @@ function fiveKTenKPeakLongRunSession(
   // here. They were declared and hardcoded at the same time — the config keys
   // existed and this line ignored them, which is how a coaching choice ends up
   // living in two places that can disagree.
-  const mpStr    = pace[GENERATION_CONFIG.LR_5K10K_PEAK_MID_PACE]   ?? 'marathon pace'
-  const hmStr    = pace[GENERATION_CONFIG.LR_5K10K_PEAK_FINAL_PACE] ?? 'HM pace'
+  // No `?? 'marathon pace'` fallback. It read as a pace in the note it was
+  // interpolated into ("at marathon pace: marathon pace") and hid a missing
+  // prescription behind a sentence that looked complete. The caller gates on
+  // both strings existing; if that gate is ever removed this throws instead of
+  // shipping placeholder text to a runner.
+  const mpStr    = pace[GENERATION_CONFIG.LR_5K10K_PEAK_MID_PACE]
+  const hmStr    = pace[GENERATION_CONFIG.LR_5K10K_PEAK_FINAL_PACE]
+  if (!mpStr || !hmStr) {
+    throw new Error(
+      '§24b segmented long run requires derivable marathon AND HM paces — ' +
+      'caller must gate on pace.marathonPaceStr && pace.hmPaceStr (beginners have neither)',
+    )
+  }
   const easyPct  = Math.round((1 - midPct - finalPct) * 100)
   const coach_notes: [string, string?, string?] = [
     `Easy for the first ${easyPct}%. Let the aerobic base work.`,
@@ -2855,7 +2866,22 @@ function buildWeekSessions(
     const weeksUntilTaper = taperPhaseObj ? taperPhaseObj.start_week - weekN : 999
     const isFinalTwoPeak  = phase === 'peak' && !isDeload && weeksUntilTaper <= 2
 
-    if (is5K10K && input.goal === 'time_target' && isFinalTwoPeak) {
+    // §24b's segments ARE the session, so a runner with no derivable marathon /
+    // HM pace cannot be prescribed it. `buildFallbackPace` already says so in as
+    // many words — "Beginners: null — no pace segments prescribed
+    // (CoachingPrinciples §24b)" — and returns null for both. This gate is that
+    // sentence, enforced.
+    //
+    // ⚠️ MEASURED 2026-09-12, and it was shipping: without this gate the session
+    // was built anyway and the pace strings fell back to the literal WORDS, so
+    // every beginner on a time-targeted 5K/10K plan read
+    //   "Middle 20% (≈2.1 km) at marathon pace: marathon pace."
+    // in their final two peak weeks — a sentence that says the same thing twice
+    // and gives them no number. 108 of 108 beginner sessions in the 621-plan
+    // cohort; 0 of 108 intermediate/experienced. A defect fix restoring
+    // documented intent, so ADR-017-exempt from the Coaching Board.
+    const canPaceSegments = !!pace.marathonPaceStr && !!pace.hmPaceStr
+    if (is5K10K && input.goal === 'time_target' && isFinalTwoPeak && canPaceSegments) {
       // §24b — final two peak weeks: marathon pace + HM-pace finish
       sessions[longDay] = fiveKTenKPeakLongRunSession(weekN, longDay, longKm, metric, zones, pace)
     } else if (is5K10K && input.goal === 'finish' && isFinalTwoPeak) {

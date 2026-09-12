@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-12 — §107 / ZONE-BAND-02 · The board asked which number was wrong. Both were, and neither was the point
+
+**Shipped:** beginners stop being prescribed a long-run segment nobody could pace, §107, a new invariant, and a liveness harness that samples plan shapes instead of the top of a list.
+
+**Dev learning:** The board was handed a two-option question — widen the HR target, or narrow the zone label — and rejected both, because the premise was wrong. The card was not contradicting itself; the session was *incompletely described*, and `session.zone` was the only field telling the truth. The proposal on the table was to delete it. It is remarkable how convincing a false binary is when someone hands you two plausible options: the work is noticing there is a third thing nobody wrote down.
+
+**Product/creator learning:** Under the label sat a live text defect. Every beginner on a time-targeted 5K or 10K plan was told, in their final two peak weeks, to run the middle fifth of their long run "at marathon pace: marathon pace". The fallback string was the words themselves. 108 of 108 beginner sessions had it; 0 of 108 for everyone else — a perfect split on the one input that decides whether those paces exist. The engine already *knew*: `buildFallbackPace` returns null for beginners and has a comment saying "no pace segments prescribed". The producer just never asked.
+
+**AI-building learning:** My new invariant failed the build — because the invariant-liveness gate I shipped this morning refused to accept a rule nothing could wake. The gate caught its own author, eight hours later, which is the first time one of these has bitten me rather than something I was reviewing. And chasing *why* it could not be woken found the better bug: the liveness prober sampled the first 14 entries of an ordered grid, so it had never once looked at a non-beginner 5K plan. Twenty-three invariants were sitting in the debt register marked "the harness never builds this shape" when the harness had simply never looked. **Proven wakeable went 33/93 to 57/94 by changing how the sample is drawn, not by writing a single new check.**
+
+**The honest bit:** I wrote that debt register this morning and described the 48 unclassified entries as "the column that should shrink". I did not consider that a third of it might be my sampler. A debt register is only as honest as the measurement behind it, and I had not audited mine before publishing the number.
+
+**Hook material:** A quality gate I shipped in the morning blocked my own commit that evening. Fixing why found 23 checks that had never been tested — not because they were broken, because nothing had ever looked at them.
+
+**Postable?:** yes
+
+
 ## 2026-09-12 — PLAN-LONGRUN-COLOUR-01 · The marketing page promised a colour the app could not produce
 
 **Shipped:** long runs render in `--s-long` instead of easy blue, on every surface.
