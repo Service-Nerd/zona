@@ -9234,9 +9234,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // ADR-013 maintenance plans carry race_date === '' (no upcoming race), so the
   // date math below yields NaN. Detect that plan kind and guard the value — the
   // "Weeks left" tile is swapped for a Phase tile when there's no race to count to.
-  const isMaintenancePlan = (plan.meta as any)?.plan_kind === 'maintenance'
-  const rawWeeksToRace = Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / (7 * 24 * 60 * 60 * 1000))
-  const weeksToRace = Number.isFinite(rawWeeksToRace) ? Math.max(0, rawWeeksToRace) : 0
   // On a race week the zone-discipline % and load-ratio spike by design — a race
   // is run at race effort, not by holding easy zones. The verdict copy on those
   // two tiles must NOT scold ("ran too hot" / "overloading") on this week.
@@ -9324,17 +9321,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   }
 
   // ── Score body copy ──────────────────────────────────────────────────────
-  function scoreBodyCopy(score: number | null): string {
-    if (score === null) {
-      // DS-03: source-neutral copy — zone discipline comes from HR data, not a specific provider
-      return runs?.length
-        ? "Need at least two sessions with HR data this week to score."
-        : "Log a run with heart rate to start tracking your zone discipline."
-    }
-    if (score >= 80) return "Easy was easy. Hard was hard. That's the work."
-    if (score >= 60) return "Getting there. A few easy sessions went a bit hard."
-    return "Easy days ran too hot. The fix is slower, not harder."
-  }
 
   // ── Load ratio context ──────────────────────────────────────────────────
   function loadRatioContext(ratio: number | null): { label: string; color: string } {
@@ -9363,15 +9349,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   }
 
   // ── Weeks to race context ───────────────────────────────────────────────
-  function weeksContext(weeks: number): { label: string; color: string } {
-    if (weeks === 0) return { label: 'race week', color: 'var(--warn)' }
-    if (weeks === 1) return { label: '1 week left', color: 'var(--warn)' }
-    return { label: `${weeks} weeks left`, color: 'var(--mute)' }
-  }
 
   const lrc  = loadRatioContext(loadRatio)
   const sc   = sessionsContext(sessionsCompleted, sessionsPlanned, liveSessionsDueToDate ?? null)
-  const wtrc = weeksContext(weeksToRace)
 
   const [loadSheetOpen, setLoadSheetOpen] = useState(false)
   const [zoneDisciplineSheetOpen, setZoneDisciplineSheetOpen] = useState(false)
@@ -9809,18 +9789,81 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           </div>
         </div>
 
-        {/* ── STATS 2×2 GRID — supporting evidence tier ────────────────
-            Numbers that explain what Kit said above. Stats follow the read,
-            not precede it. The read is the hero; these are the evidence. */}
+        {/* ── THE WEEK, PICTURED — UX-COACH-01 (boards 2026-09-12).
+            The rings sit DIRECTLY under the read on purpose: Kit's sentence
+            and this mark are the same fact in two registers, word and image.
+            "Nine per cent of your week sat in Zone 3" above rings showing Z3
+            at nine per cent. Both now come from ONE owner
+            (`weeklyZoneAggregate`), so the sentence and the arc cannot
+            disagree. Previously the rings sat BELOW the 2×2 grid, which put a
+            tile between the claim and its evidence. ── */}
+        {/* ── ZONE RINGS (Pattern 22) ─────────────────────────────────────
+            Per-zone weekly breakdown — concentric brand mark, one ring per
+            zone, arc-filled to % time in that zone for the week. Companion
+            to the discipline % tile in the 2×2 grid above: the tile gives
+            the verdict, the rings give the breakdown. Coach is paid-gated
+            at the screen level, so only live / skeleton / empty states
+            render here (no locked state needed). */}
+        {(() => {
+          // Live — at least one analysed run this week carries a zone histogram.
+          if (zoneTimePctByZone) {
+            return (
+              // Tappable HERE only. The 2×2 grid's "Zone discipline" tile used
+              // to own this sheet; the rings say the same thing better and sit
+              // directly under the sentence that claims it, so the sheet moves
+              // to what it explains. ZoneRings itself is untouched — the
+              // marketing homepage renders it bare and must stay inert.
+              <button
+                type="button"
+                onClick={() => setZoneDisciplineSheetOpen(true)}
+                aria-label="What counts as in-zone. Opens an explanation."
+                style={{
+                  display: 'block', width: '100%', padding: 0, textAlign: 'inherit',
+                  background: 'none', border: 'none', cursor: 'pointer', font: 'inherit',
+                }}
+              >
+                <ZoneRings
+                  pctByZone={zoneTimePctByZone}
+                  meta={`across ${zoneHistogramHits} ${zoneHistogramHits === 1 ? 'run' : 'runs'}`}
+                />
+              </button>
+            )
+          }
+          // Genuine loading — the analysis fetch hasn't returned on first paint.
+          if (!runAnalysisReady) {
+            return <ZoneRingsSkeleton />
+          }
+          // Ready, but no zone histogram for this week's runs. Honest resting
+          // state — NOT a perpetual shimmer (the old bug). Prompt to connect a
+          // source if there isn't one; otherwise explain zones need a heart-rate
+          // run (covers manual logs, HR-less runs, and links that never analysed).
+          return (
+            <ZoneRings
+              state="empty"
+              // DS-03: reason is now based on whether we have any runs (source-agnostic),
+              // not whether Strava is specifically connected. HealthKit runs populate
+              // the same `runs` array, so 'not-linked' correctly means "no data at all".
+              reason={runs?.length ? 'no-data' : 'not-linked'}
+              onConnect={onConnect}
+            />
+          )
+        })()}
+
+        {/* ── SUPPORTING FACTS — UX-COACH-01 (boards 2026-09-12) ───────
+            Was a 2×2 grid of four tiles. Now two, and both earn their place:
+
+            · "Zone discipline" REMOVED — the ZoneRings directly above say the
+              same thing better, and its explanation sheet moved onto them. A
+              tile and a picture of the same number, stacked, is what made this
+              screen read as a dashboard rather than a coach.
+            · "Phase / Weeks left" REMOVED — `ScreenHeader` already renders
+              `W{weekNum} of {totalWeeks}` at the top of THIS screen. It was
+              duplicated two blocks apart.
+
+            Numbers still follow the read: the read is the hero, these are the
+            evidence, and there are two pieces of it now instead of four. */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           {([
-            {
-              label: 'Zone discipline',
-              value: currentScore !== null ? `${currentScore}%` : '—',
-              sub: isRaceWeek ? 'Race effort — not an easy-zone day' : scoreBodyCopy(currentScore).split('.')[0],
-              subColor: isRaceWeek ? 'var(--ink-2)' : currentScore !== null && currentScore >= 80 ? 'var(--moss)' : currentScore !== null && currentScore >= 60 ? 'var(--ink-2)' : currentScore !== null ? 'var(--warn)' : 'var(--mute)',
-              onTap: () => setZoneDisciplineSheetOpen(true),
-            },
             {
               label: 'Load ratio',
               value: loadRatio !== null ? `${loadRatio.toFixed(2)}x` : '—',
@@ -9835,21 +9878,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               subColor: sc.color,
               onTap: undefined,
             },
-            isMaintenancePlan
-              ? {
-                  label: 'Phase',
-                  value: 'Maintenance',
-                  sub: PHASE_LABELS[(currentWeek as any)?.phase] ?? 'Base',
-                  subColor: 'var(--mute)',
-                  onTap: undefined,
-                }
-              : {
-                  label: 'Weeks left',
-                  value: weeksToRace > 0 ? String(weeksToRace) : 'Race',
-                  sub: wtrc.label,
-                  subColor: wtrc.color,
-                  onTap: undefined,
-                },
           ] as const).map((m) => {
             const inner = (
               <>
@@ -9875,43 +9903,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             )
           })}
         </div>
-
-        {/* ── ZONE RINGS (Pattern 22) ─────────────────────────────────────
-            Per-zone weekly breakdown — concentric brand mark, one ring per
-            zone, arc-filled to % time in that zone for the week. Companion
-            to the discipline % tile in the 2×2 grid above: the tile gives
-            the verdict, the rings give the breakdown. Coach is paid-gated
-            at the screen level, so only live / skeleton / empty states
-            render here (no locked state needed). */}
-        {(() => {
-          // Live — at least one analysed run this week carries a zone histogram.
-          if (zoneTimePctByZone) {
-            return (
-              <ZoneRings
-                pctByZone={zoneTimePctByZone}
-                meta={`across ${zoneHistogramHits} ${zoneHistogramHits === 1 ? 'run' : 'runs'}`}
-              />
-            )
-          }
-          // Genuine loading — the analysis fetch hasn't returned on first paint.
-          if (!runAnalysisReady) {
-            return <ZoneRingsSkeleton />
-          }
-          // Ready, but no zone histogram for this week's runs. Honest resting
-          // state — NOT a perpetual shimmer (the old bug). Prompt to connect a
-          // source if there isn't one; otherwise explain zones need a heart-rate
-          // run (covers manual logs, HR-less runs, and links that never analysed).
-          return (
-            <ZoneRings
-              state="empty"
-              // DS-03: reason is now based on whether we have any runs (source-agnostic),
-              // not whether Strava is specifically connected. HealthKit runs populate
-              // the same `runs` array, so 'not-linked' correctly means "no data at all".
-              reason={runs?.length ? 'no-data' : 'not-linked'}
-              onConnect={onConnect}
-            />
-          )
-        })()}
 
         {/* ── LOAD RATIO SHEET ────────────────────────────────────────── */}
         {loadSheetOpen && (
