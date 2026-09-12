@@ -29,7 +29,23 @@
 import type { ZoneSlice } from '@/lib/coaching/weeklyZoneAggregate'
 export type { ZoneSlice }
 
-type LiveProps = {
+/** Shared by every state. */
+type ChromeProps = {
+  /**
+   * Drop the card shell (background, border, radius, padding) and render only
+   * the rings + strip, so a PARENT card can own the chrome.
+   *
+   * UX-COACH-01: Kit's read and this mark are the same fact in two registers,
+   * word and image. Until 2026-09-12 the design said one block and the DOM
+   * said two — the rings were MOVED under the read but kept their own border,
+   * so the founder read them as separate cards, correctly. Defaults to false:
+   * the marketing homepage and every other caller are untouched, which
+   * `zoneRingsChrome.test.tsx` holds in place.
+   */
+  chromeless?: boolean
+}
+
+type LiveProps = ChromeProps & {
   state?: 'live'
   /** Section label — default "This week in zones" */
   label?: string
@@ -39,18 +55,18 @@ type LiveProps = {
   meta?: string
 }
 
-type PendingProps = {
+type PendingProps = ChromeProps & {
   state: 'pending'
   label?: string
 }
 
-type LockedProps = {
+type LockedProps = ChromeProps & {
   state: 'locked'
   label?: string
   onUpgrade?: () => void
 }
 
-type EmptyProps = {
+type EmptyProps = ChromeProps & {
   state: 'empty'
   label?: string
   /** 'not-linked' — no Strava/Health source, so zones can never be computed
@@ -258,20 +274,40 @@ function NumericStrip({ pct }: { pct: ZoneSlice }) {
   )
 }
 
-// ── Skeleton ──────────────────────────────────────────────────────────────
-
-export function ZoneRingsSkeleton({ label = 'This week in zones' }: { label?: string }) {
+// ── Card shell ────────────────────────────────────────────────────────────
+// One owner for the chrome, so `chromeless` cannot be honoured by three of the
+// four states and silently missed by the fourth.
+function Shell({
+  chromeless, tone = 'card', busy, children,
+}: {
+  chromeless?: boolean
+  tone?: 'card' | 'soft'
+  busy?: boolean
+  children: React.ReactNode
+}) {
+  if (chromeless) return <div aria-busy={busy || undefined}>{children}</div>
   return (
     <div
-      aria-busy="true"
+      aria-busy={busy || undefined}
       style={{
-        background: 'var(--card)',
+        background: tone === 'soft' ? 'var(--bg-soft)' : 'var(--card)',
         border: '1px solid var(--line)',
         borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
         padding: '20px',
       }}
     >
+      {children}
+    </div>
+  )
+}
+
+// ── Skeleton ──────────────────────────────────────────────────────────────
+
+export function ZoneRingsSkeleton({
+  label = 'This week in zones', chromeless,
+}: { label?: string; chromeless?: boolean }) {
+  return (
+    <Shell chromeless={chromeless} busy>
       <Eyebrow label={label} />
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
@@ -291,7 +327,7 @@ export function ZoneRingsSkeleton({ label = 'This week in zones' }: { label?: st
           opacity: 0.5,
         }}
       />
-    </div>
+    </Shell>
   )
 }
 
@@ -303,14 +339,7 @@ export default function ZoneRings(props: Props) {
   // ── LOCKED — free user ────────────────────────────────────────────────
   if (props.state === 'locked') {
     return (
-      <div
-        style={{
-          background: 'var(--bg-soft)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '20px',
-        }}
-      >
+      <Shell chromeless={props.chromeless} tone="soft">
         <Eyebrow label={label} />
         <div style={{ display: 'flex', justifyContent: 'center', opacity: 0.45 }}>
           <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
@@ -353,7 +382,7 @@ export default function ZoneRings(props: Props) {
             </button>
           </div>
         )}
-      </div>
+      </Shell>
     )
   }
 
@@ -365,15 +394,7 @@ export default function ZoneRings(props: Props) {
   if (props.state === 'empty') {
     const linkable = props.reason === 'not-linked'
     return (
-      <div
-        style={{
-          background: 'var(--card)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
-          padding: '20px',
-        }}
-      >
+      <Shell chromeless={props.chromeless}>
         <Eyebrow label={label} />
         <div style={{ display: 'flex', justifyContent: 'center', opacity: 0.4 }}>
           <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
@@ -418,21 +439,14 @@ export default function ZoneRings(props: Props) {
             </button>
           </div>
         )}
-      </div>
+      </Shell>
     )
   }
 
   // ── PENDING — paid/trial pre-data ─────────────────────────────────────
   if (props.state === 'pending') {
     return (
-      <div
-        style={{
-          background: 'var(--card)',
-          border: '1px solid var(--line)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '20px',
-        }}
-      >
+      <Shell chromeless={props.chromeless}>
         <Eyebrow label={label} />
         <div style={{ display: 'flex', justifyContent: 'center', opacity: 0.6 }}>
           <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden="true">
@@ -456,21 +470,14 @@ export default function ZoneRings(props: Props) {
         >
           Your zone map fills in as runs land. Kit&rsquo;s reading.
         </div>
-      </div>
+      </Shell>
     )
   }
 
   // ── LIVE — paid/trial with ≥1 analysed run ────────────────────────────
   const { pctByZone, meta } = props
   return (
-    <div
-      style={{
-        background: 'var(--card)',
-        border: '1px solid var(--line)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '20px',
-      }}
-    >
+    <Shell chromeless={props.chromeless}>
       <Eyebrow label={label} meta={meta} />
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <svg
@@ -488,6 +495,6 @@ export default function ZoneRings(props: Props) {
         </svg>
       </div>
       <NumericStrip pct={pctByZone} />
-    </div>
+    </Shell>
   )
 }

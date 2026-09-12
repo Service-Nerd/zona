@@ -16,8 +16,11 @@
 // TIER: server route gates by tier; on free this won't be rendered (the Coach
 // screen swaps in CoachTeaser, and the benchmark flow is paid-only).
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { authedFetch } from '@/lib/supabase/authedFetch'
+import { formatClockTime } from '@/lib/format'
+import { buildRaceProgressArc } from '@/lib/coaching/raceProgressArc'
+import { RaceProgressArcRow } from './RaceProgressArcRow'
 import { RACE_PROJECTIONS_COPY, type RaceProjectionsVariant } from './raceProjectionsCopy'
 
 type TargetRace = {
@@ -26,6 +29,7 @@ type TargetRace = {
   ultraDistance:   boolean
   currentSeconds:  number | null
   baselineSeconds: number | null
+  goalSeconds:     number | null
   deltaSeconds:    number | null
   deltaFormatted:  string | null
   improved:        boolean | null
@@ -42,14 +46,6 @@ type RaceTimeData = {
   recalibrationSuggested: boolean
   upgradeCtaType: 'benchmark' | 'strava' | 'both' | null
   stravaQualifyingRunCount?: number
-}
-
-function formatTime(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600)
-  const m = Math.floor((totalSeconds % 3600) / 60)
-  const s = Math.round(totalSeconds % 60)
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 export function RaceTimesCard({
@@ -92,6 +88,20 @@ export function RaceTimesCard({
     const daysSince   = (Date.now() - dismissedMs) / 86_400_000
     return daysSince > 21
   })()
+
+  // ── The arc (UX-COACH-01) ───────────────────────────────────────────────
+  // Shape is decided by the pure owner so it is testable; this component only
+  // draws it. `arcCopy` is undefined on the anchor/result variants by design,
+  // which is what suppresses the arc there rather than a variant check here.
+  const arcCopy = copy.arc
+  const arc = useMemo(() => {
+    if (!arcCopy || !data?.target || data.target.ultraDistance) return null
+    return buildRaceProgressArc({
+      baselineSeconds: data.target.baselineSeconds,
+      currentSeconds:  data.target.currentSeconds,
+      goalSeconds:     data.target.goalSeconds,
+    })
+  }, [arcCopy, data])
 
   function confidenceChipStyle(c: 'high' | 'moderate' | 'low') {
     const isHigh = c === 'high'
@@ -141,7 +151,17 @@ export function RaceTimesCard({
             )}
           </div>
 
-          {/* ── R31: target race row — shown when plan has a specific race ── */}
+          {/* ── THE ARC — where I was · where I am · what I'm aiming at ──
+              UX-COACH-01 (2026-09-12). This replaces a single number plus a
+              delta chip. `baselineSeconds` was already being sent by the route
+              and typed by this component, and NOTHING DREW IT: the runner's
+              starting point existed in the payload and never reached the
+              screen. `goalSeconds` is new — the route had never read
+              `meta.target_time` at all, so the third point did not exist.
+
+              §109 bounds it: remember and compare, never predict. Every point
+              is a fact the runner already owns. Shape decisions live in
+              `lib/coaching/raceProgressArc.ts` and are unit-tested there. ── */}
           {data.target && (
             <div style={{
               background: 'var(--bg-soft)',
@@ -153,30 +173,23 @@ export function RaceTimesCard({
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
                 Your race
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', marginBottom: '8px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', marginBottom: arc ? '14px' : '8px' }}>
                 {data.target.raceName}
               </div>
 
               {data.target.ultraDistance ? (
                 /* Ultra distances can't be projected from VDOT — honest note instead of a wrong number */
                 <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
-                  Ultra finish times depend on terrain, conditions, and pacing — not pace-based formulas.
+                  Ultra finish times depend on terrain, conditions, and pacing, not pace-based formulas.
                   The projections below are still accurate for your training.
                 </p>
+              ) : arc && arcCopy ? (
+                <RaceProgressArcRow arc={arc} copy={arcCopy} />
               ) : (
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '8px' }}>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1 }}>
-                    {data.target.currentSeconds !== null ? formatTime(data.target.currentSeconds) : '—'}
-                  </span>
-                  {/* Delta chip — only shown when improvement/regression is significant */}
-                  {data.target.deltaFormatted && data.target.improved !== null && (
-                    <span style={{
-                      fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
-                      color: data.target.improved ? 'var(--moss)' : 'var(--warn)',
-                    }}>
-                      {data.target.improved ? '↑' : '↓'} {data.target.deltaFormatted} since plan start
-                    </span>
-                  )}
+                /* No measured present — the arc needs a "now" to be an arc.
+                   Falls back to the plain current estimate rather than nothing. */
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1 }}>
+                  {formatClockTime(data.target.currentSeconds) ?? '—'}
                 </div>
               )}
             </div>

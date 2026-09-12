@@ -9,7 +9,7 @@
 // CoachingPrinciples §58 — past-self comparison via cohort similarity.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { COHORT_SIMILARITY, TREND_SERIES } from './constants'
+import { COHORT_SIMILARITY, RUN_HR_PLAUSIBLE, TREND_SERIES } from './constants'
 
 export type ActivitySource = 'apple_health' | 'strava'
 
@@ -89,6 +89,38 @@ function mapStravaRowToRunRecord(row: RawActivityRow): RunRecord {
 
 export type HrBand = 'low' | 'mid' | 'high'
 
+/**
+ * Is this value a heart rate a human produced while RUNNING?
+ *
+ * The single gate on every HR average this app computes. Added 2026-09-12
+ * after the Coach screen told the founder his easy runs averaged 77 bpm in
+ * April and 146 now, and Kit narrated the 69-bpm "rise" as a real loss of
+ * aerobic fitness. Both numbers came from `strava_activities.avg_hr` with no
+ * check anywhere between the row and the sentence.
+ *
+ * Excluding a bad row is the right remedy rather than suppressing the whole
+ * card: one corrupt activity in a month should cost that activity, not the
+ * month. If a bucket ends up with no plausible HR at all, `meanHr` returns
+ * null and the trend declines to claim anything — which is the honest result.
+ */
+export function isPlausibleRunHr(hr: number | null | undefined): hr is number {
+  return typeof hr === 'number' && Number.isFinite(hr)
+    && hr >= RUN_HR_PLAUSIBLE.MIN_BPM && hr <= RUN_HR_PLAUSIBLE.MAX_BPM
+}
+
+/**
+ * Mean HR across runs, or null when none of them carry a usable one.
+ *
+ * NULL, NEVER ZERO. Same rule as `sessionKm` (SESSION-KM-01): a 0 here would
+ * assert "these runs averaged no heart rate", which the trend would then read
+ * as a real value and compare against.
+ */
+export function meanHr(runs: { avgHr: number | null }[]): number | null {
+  const hrs = runs.map(r => r.avgHr).filter(isPlausibleRunHr)
+  if (!hrs.length) return null
+  return Math.round(hrs.reduce((s, v) => s + v, 0) / hrs.length)
+}
+
 export function classifyHrBand(avgHr: number | null): HrBand | null {
   if (avgHr === null) return null
   if (avgHr < COHORT_SIMILARITY.HR_BAND_BREAKPOINTS.low) return 'low'
@@ -122,7 +154,8 @@ export function findSimilarRuns(
 export function summariseCohort(cohort: RunRecord[]): CohortSummary | null {
   if (!cohort.length) return null
 
-  const hrs     = cohort.map(r => r.avgHr).filter((v): v is number => v !== null)
+  // meanHr is the owner; this local is kept only for the count below it.
+  const hrs     = cohort.map(r => r.avgHr).filter(isPlausibleRunHr)
   const paces   = cohort
     .filter(r => r.movingTimeSec > 0 && r.distanceKm > 0)
     .map(r => r.movingTimeSec / r.distanceKm)
@@ -131,7 +164,7 @@ export function summariseCohort(cohort: RunRecord[]): CohortSummary | null {
 
   return {
     cohortSize:       cohort.length,
-    avgHr:            hrs.length     ? Math.round(hrs.reduce((s, v) => s + v, 0) / hrs.length)         : null,
+    avgHr:            meanHr(cohort),
     avgPaceSecPerKm:  paces.length   ? Math.round(paces.reduce((s, v) => s + v, 0) / paces.length)     : null,
     avgInZonePct:     inZones.length ? Math.round(inZones.reduce((s, v) => s + v, 0) / inZones.length) : null,
     medianDistanceKm: dists[Math.floor(dists.length / 2)],
@@ -232,7 +265,6 @@ export function buildHrTrendSeries(
   for (const key of sortedKeys) {
     const runs = bucketMap.get(key)!
     if (runs.length < TREND_SERIES.MIN_RUNS_PER_BUCKET) continue
-    const hrs = runs.map(r => r.avgHr).filter((v): v is number => v !== null)
     const paces = runs
       .filter(r => r.movingTimeSec > 0 && r.distanceKm > 0)
       .map(r => r.movingTimeSec / r.distanceKm)
@@ -243,7 +275,7 @@ export function buildHrTrendSeries(
       monthKey: key,
       shortLabel: SHORT_MONTHS[monthIdx] ?? key,
       cohortSize: runs.length,
-      avgHr: hrs.length ? Math.round(hrs.reduce((s, v) => s + v, 0) / hrs.length) : null,
+      avgHr: meanHr(runs),
       avgPaceSecPerKm: paces.length ? Math.round(paces.reduce((s, v) => s + v, 0) / paces.length) : null,
     })
   }

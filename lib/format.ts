@@ -193,3 +193,44 @@ export function formatSessionMetric(
   if (primary != null) return primary
   return metric === 'duration' ? dist() : dur()
 }
+
+// ─── Clock times and elapsed deltas (ADR-015) ────────────────────────────────
+//
+// A race time is a display string, so it belongs here and not in whichever
+// component happened to need it first. Before UX-COACH-01 this exact function
+// existed TWICE, byte-identical, in `app/api/race-times/route.ts` and
+// `components/shared/RaceTimesCard.tsx` — the route formatted the projections
+// and the card re-formatted the arc, and nothing would have caught them
+// drifting apart. Same pattern as the `formatPace` duplicate retired earlier.
+
+/**
+ * Seconds → clock string. Drops the hour segment below an hour, so a 5K reads
+ * `23:42` and a marathon reads `3:53:36`. Never a bare `14162s`.
+ */
+export function formatClockTime(totalSeconds: number | null | undefined): string | null {
+  if (totalSeconds == null || !Number.isFinite(totalSeconds) || totalSeconds < 0) return null
+  const whole = Math.round(totalSeconds)
+  const h = Math.floor(whole / 3600)
+  const m = Math.floor((whole % 3600) / 60)
+  const s = whole % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+/**
+ * A gap between two clock times, as a human phrase: `5m 24s`, `5m`, `24s`.
+ *
+ * UNSIGNED by design — the caller owns the direction and says it in words or
+ * an arrow. Returning "-5m 24s" invites a call site to render a minus sign
+ * next to an arrow that already means the same thing, and `Math.abs()` inside
+ * a caller is how direction gets lost entirely.
+ */
+export function formatElapsedDelta(seconds: number | null | undefined): string | null {
+  if (seconds == null || !Number.isFinite(seconds)) return null
+  const abs = Math.round(Math.abs(seconds))
+  const m = Math.floor(abs / 60)
+  const s = abs % 60
+  if (m > 0 && s > 0) return `${m}m ${s}s`
+  if (m > 0)          return `${m}m`
+  return `${s}s`
+}

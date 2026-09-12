@@ -39,9 +39,17 @@ interface TrendCardLive {
   glossless?: boolean
   onUpgrade?: never
 }
-interface TrendCardPending  { state: 'pending';  onUpgrade?: never }
-interface TrendCardLocked   { state: 'locked';   onUpgrade?: () => void }
-interface TrendCardSkeleton { state: 'skeleton'; onUpgrade?: never }
+/** Every non-live state also needs to know WHICH trend it is. Before
+ *  2026-09-12 they did not carry it and hardcoded 'Aerobic trend' / 'long
+ *  runs' instead, so once the long-run card was retired a runner looking at
+ *  the EASY RUN TREND card saw the wrong session type in three places. */
+interface TrendCardLabels   { label?: string; sessionLabel?: string }
+interface TrendCardPending  extends TrendCardLabels { state: 'pending';  onUpgrade?: never }
+interface TrendCardLocked   extends TrendCardLabels { state: 'locked';   onUpgrade?: () => void }
+interface TrendCardSkeleton extends TrendCardLabels { state: 'skeleton'; onUpgrade?: never }
+
+/** Fallbacks, in one place rather than repeated at each use site. */
+export const TREND_CARD_DEFAULTS = { label: 'Aerobic trend', sessionLabel: 'long run' } as const
 
 export type TrendCardProps =
   | TrendCardLive
@@ -123,7 +131,7 @@ function MetricPair({
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
-function TrendCardSkeleton() {
+function TrendCardSkeleton({ label = TREND_CARD_DEFAULTS.label }: { label?: string }) {
   return (
     <div style={{
       background: 'var(--card)', border: '1px solid var(--line)',
@@ -145,7 +153,7 @@ function TrendCardSkeleton() {
       <div style={{ borderTop: '1px solid var(--line)', paddingTop: '14px', position: 'relative', paddingLeft: '14px' }}>
         <div style={{ position: 'absolute', left: '8px', top: '14px', bottom: '0', width: '3px', background: 'var(--moss)', borderRadius: '2px', opacity: 0.3 }} />
         <div style={{ marginBottom: '10px' }}>
-          <CoachByline working role="Aerobic trend" />
+          <CoachByline working role={label} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ height: '13px', width: '85%', background: 'var(--bg-soft)', borderRadius: '4px' }} />
@@ -162,10 +170,18 @@ function ExplanationSheet({
   onClose,
   state,
   windowMonths,
+  eyebrow = TREND_CARD_DEFAULTS.label,
+  runNoun = TREND_CARD_DEFAULTS.sessionLabel,
 }: {
   onClose: () => void
   state: TrendCardState
   windowMonths?: number
+  /** Must match the CARD's eyebrow. Hardcoded until 2026-09-12, so after the
+   *  long-run card was retired every runner opening this sheet from the EASY
+   *  RUN TREND card was told it was about long runs. */
+  eyebrow?: string
+  /** Plural noun for the session type this trend is built from. */
+  runNoun?: string
 }) {
   return (
     <div
@@ -193,7 +209,7 @@ function ExplanationSheet({
 
         <div style={{ padding: '0 20px 4px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
-            Aerobic trend
+            {eyebrow}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '24px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.15 }}>
             What this number means
@@ -204,7 +220,7 @@ function ExplanationSheet({
           {state === 'pending' ? (
             <>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                Zonna compares your average heart rate on long runs at the same effort over time. When you have enough similar runs across multiple months, the trend becomes visible.
+                Zonna compares your average heart rate on {`${runNoun}s`} at the same effort over time. When you have enough similar runs across multiple months, the trend becomes visible.
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
                 Keep logging runs. The signal lands when there are at least two months of comparable data.
@@ -213,7 +229,7 @@ function ExplanationSheet({
           ) : (
             <>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                Your average heart rate on long runs at the same pace, compared across{windowMonths ? ` the last ${windowMonths} months` : ' time'}. When HR drops at the same pace, your aerobic base is growing — your easy is genuinely easier.
+                Your average heart rate on {`${runNoun}s`} at the same pace, compared across{windowMonths ? ` the last ${windowMonths} months` : ' time'}. When HR drops at the same pace, your aerobic base is growing — your easy is genuinely easier.
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
                 This is what zone discipline produces. Not faster runs. Lower heart rate at the same effort.
@@ -271,7 +287,7 @@ export default function TrendCard(props: TrendCardProps) {
   const now     = useCountUp(live?.nowHr ?? 0)
 
   // ── Skeleton ─────────────────────────────────────────────────────────────
-  if (props.state === 'skeleton') return <TrendCardSkeleton />
+  if (props.state === 'skeleton') return <TrendCardSkeleton label={props.label} />
 
   // ── Locked (free tier) ────────────────────────────────────────────────────
   if (props.state === 'locked') {
@@ -282,7 +298,7 @@ export default function TrendCard(props: TrendCardProps) {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-            Aerobic trend
+            {props.label ?? TREND_CARD_DEFAULTS.label}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
@@ -326,7 +342,7 @@ export default function TrendCard(props: TrendCardProps) {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Aerobic trend
+              {props.label ?? TREND_CARD_DEFAULTS.label}
             </span>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>ⓘ</span>
           </div>
@@ -345,7 +361,14 @@ export default function TrendCard(props: TrendCardProps) {
             The trend lands after a few months of same-effort runs. Compounds quietly.
           </div>
         </div>
-        {sheetOpen && <ExplanationSheet onClose={() => setSheetOpen(false)} state="pending" />}
+        {sheetOpen && (
+          <ExplanationSheet
+            onClose={() => setSheetOpen(false)}
+            state="pending"
+            eyebrow={props.label}
+            runNoun={props.sessionLabel}
+          />
+        )}
       </>
     )
   }
@@ -353,8 +376,8 @@ export default function TrendCard(props: TrendCardProps) {
   // ── Live ──────────────────────────────────────────────────────────────────
   // Props confirmed as TrendCardLive here.
   const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel, glossless } = props
-  const eyebrow    = label       ?? 'Aerobic trend'
-  const runNoun    = sessionLabel ?? 'long run'
+  const eyebrow    = label        ?? TREND_CARD_DEFAULTS.label
+  const runNoun    = sessionLabel ?? TREND_CARD_DEFAULTS.sessionLabel
 
   // Count-up values come from the hoisted calls above (HOOKS-ORDER-01).
   // Gloss fades in after both count-ups complete.
@@ -376,7 +399,7 @@ export default function TrendCard(props: TrendCardProps) {
             {eyebrow}
           </span>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 400, color: 'var(--mute)', opacity: 0.8 }}>
-            across {cohortSize} {runNoun}{cohortSize !== 1 ? 's' : ''} · {windowMonths}w
+            across {cohortSize} {runNoun}{cohortSize !== 1 ? 's' : ''} · {windowMonths}mo
           </span>
         </div>
 
@@ -437,6 +460,8 @@ export default function TrendCard(props: TrendCardProps) {
           onClose={() => setSheetOpen(false)}
           state="live"
           windowMonths={windowMonths}
+          eyebrow={eyebrow}
+          runNoun={runNoun}
         />
       )}
     </>

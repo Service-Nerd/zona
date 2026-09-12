@@ -9317,6 +9317,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // the long-run card above already handles the 'not enough data' state"), and
   // that card has been retired, so those states move here rather than
   // disappearing. Week 1 has to say something; that was Traynor's condition.
+  // One owner for what this card is CALLED, because it has to be identical
+  // across four render paths (skeleton, live, pending, and the sheet each of
+  // them opens) and they drifted the moment it was written out four times.
+  const EASY_TREND_LABELS = { label: 'Easy run trend', sessionLabel: 'easy run' } as const
+
   const [easyTrendData, setEasyTrendData] = useState<{
     state: 'live'
     earlierMonth: string; earlierHr: number; nowHr: number
@@ -9354,11 +9359,18 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
         const first = trend.buckets[0]
         const last  = trend.buckets[trend.buckets.length - 1]
         const cohortSize = trend.buckets.reduce((s: number, b: any) => s + b.cohortSize, 0)
+        // `?? 0` here was the `distance_km ?? 0` family: a bucket with no
+        // usable HR would have rendered as "0 (Apr avg) → 146 (now)" and Kit
+        // would have narrated a 146-bpm collapse in aerobic fitness. A missing
+        // endpoint means there is no trend to draw, not a trend from zero.
+        if (first.avgHr == null || last.avgHr == null) {
+          setEasyTrendData({ state: 'pending' }); return
+        }
         setEasyTrendData({
           state:        'live',
           earlierMonth: first.shortLabel,
-          earlierHr:    first.avgHr ?? 0,
-          nowHr:        last.avgHr  ?? 0,
+          earlierHr:    first.avgHr,
+          nowHr:        last.avgHr,
           cohortSize,
           windowMonths: trend.windowMonths,
           gloss:        data.gloss,
@@ -9722,16 +9734,25 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               <ShareWeekButton weekN={weeklyReport.week_n} />
             )}
           </div>
-        </div>
 
-        {/* ── THE WEEK, PICTURED — UX-COACH-01 (boards 2026-09-12).
-            The rings sit DIRECTLY under the read on purpose: Kit's sentence
-            and this mark are the same fact in two registers, word and image.
-            "Nine per cent of your week sat in Zone 3" above rings showing Z3
-            at nine per cent. Both now come from ONE owner
-            (`weeklyZoneAggregate`), so the sentence and the arc cannot
-            disagree. Previously the rings sat BELOW the 2×2 grid, which put a
-            tile between the claim and its evidence. ── */}
+          {/* ── THE WEEK, PICTURED — one card with the read, not a second one.
+              UX-COACH-01 (boards 2026-09-12), corrected 2026-09-12 after the
+              founder looked at the shipped screen: "the zone and lots narrative
+              appear to be separate". They were. The rings had been MOVED under
+              the read and the pairing written into a comment, but ZoneRings still
+              drew its own card, so the DOM said two boxes while the design note
+              said one. `chromeless` drops the rings' shell and this card owns it.
+
+              Why it has to be one card: Kit's sentence and this mark are the same
+              fact in two registers, word and image. "Nine per cent of your week sat
+              in Zone 3" directly above rings showing Z3 at nine per cent. Both come
+              from ONE owner (`weeklyZoneAggregate`), so they cannot disagree about
+              the number; they should not disagree about being one thought either.
+
+              A hairline rule, not a gap: inside a card a rule separates without
+              severing, which is the whole point. ── */}
+          <div style={{ height: '1px', background: 'var(--line)', margin: '18px 0 16px' }} />
+
         {/* ── ZONE RINGS (Pattern 22) ─────────────────────────────────────
             Per-zone weekly breakdown — concentric brand mark, one ring per
             zone, arc-filled to % time in that zone for the week. Companion
@@ -9758,6 +9779,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 }}
               >
                 <ZoneRings
+                  chromeless
                   pctByZone={zoneTimePctByZone}
                   meta={`across ${zoneHistogramHits} ${zoneHistogramHits === 1 ? 'run' : 'runs'}`}
                 />
@@ -9766,7 +9788,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           }
           // Genuine loading — the analysis fetch hasn't returned on first paint.
           if (!runAnalysisReady) {
-            return <ZoneRingsSkeleton />
+            return <ZoneRingsSkeleton chromeless />
           }
           // Ready, but no zone histogram for this week's runs. Honest resting
           // state — NOT a perpetual shimmer (the old bug). Prompt to connect a
@@ -9774,6 +9796,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           // run (covers manual logs, HR-less runs, and links that never analysed).
           return (
             <ZoneRings
+              chromeless
               state="empty"
               // DS-03: reason is now based on whether we have any runs (source-agnostic),
               // not whether Strava is specifically connected. HealthKit runs populate
@@ -9783,6 +9806,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             />
           )
         })()}
+        </div>
 
         {/* ── THE ARC — where I was · where I am · the goal I chose ─────
             UX-COACH-01, both boards 2026-09-12. §109: this surface may REMEMBER
@@ -9791,6 +9815,17 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             and the goal is the runner's OWN `target_time`. No projected
             race-day finish, no rising line toward a date — §44.1's
             fabricated-precision doctrine.
+
+            ⚠️ THIS COMMENT WAS A LIE FOR SIX HOURS. The first cut of
+            UX-COACH-01 moved the card to this screen and wrote this block, and
+            changed NOTHING inside the component: it went on rendering one
+            number and a delta chip, `baselineSeconds` arrived in the payload
+            and was drawn by nothing, and `meta.target_time` was never read by
+            the route at all. The founder found it by looking at his phone.
+            Built for real 2026-09-12 — `lib/coaching/raceProgressArc.ts`
+            (pure, unit-tested), `components/shared/RaceProgressArcRow.tsx`
+            (renderable without auth at `/coach-preview`, which is the whole
+            reason the gap survived review: nobody could SEE it).
 
             ⚠️ THIS IS THE COMPONENT'S OWN DOCUMENTED HOME. Its header has read
             "Coach screen (variant='status') — canonical home" since it was
@@ -9979,13 +10014,17 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             Glossless: the AI gloss and its byline are stripped so the card
             reads as raw evidence. The interpretation lives in the one Kit read
             at the top (CO-ONE, trend fold). ── */}
+        {/* The label pair is passed to EVERY state, not just `live`. Until
+            2026-09-12 the skeleton and pending states carried no label, so a
+            runner watching this card load saw "Aerobic trend" flip to "Easy run
+            trend", and the explanation sheet said "long runs" regardless. */}
         {easyTrendLoading
-          ? <TrendCard state="skeleton" />
+          ? <TrendCard state="skeleton" label={EASY_TREND_LABELS.label} />
           : easyTrendData?.state === 'live'
           ? <TrendCard
               state="live"
-              label="Easy run trend"
-              sessionLabel="easy run"
+              label={EASY_TREND_LABELS.label}
+              sessionLabel={EASY_TREND_LABELS.sessionLabel}
               earlierMonth={easyTrendData.earlierMonth}
               earlierHr={easyTrendData.earlierHr}
               nowHr={easyTrendData.nowHr}
@@ -9994,7 +10033,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               gloss={easyTrendData.gloss}
               glossless
             />
-          : <TrendCard state="pending" />
+          : <TrendCard state="pending" {...EASY_TREND_LABELS} />
         }
 
       </div>

@@ -217,3 +217,24 @@ export const COHORT_SIMILARITY = {
   /** HR band breakpoints — three-bucket effort classification (low / mid / high). */
   HR_BAND_BREAKPOINTS: { low: 145, mid: 165 },
 } as const
+
+/**
+ * Physiological bounds on a RUN's average heart rate.
+ *
+ * Not a coaching choice and not a tuning knob: outside this range the value is
+ * a sensor artefact, a mis-ingested row, or a workout that was not a run. It
+ * exists because the Coach screen shipped "77 (Apr avg) → 146 (now)" to the
+ * founder, and Kit then repeated it as established fact: "Easy is costing you
+ * more than it did." Nothing in the chain objected. The trend maths was
+ * correct the whole way; it was faithfully averaging a corrupt row.
+ *
+ * FLOOR 90 — an adult's resting HR tops out around 100 and a walk sits near
+ * there, so a *running* average below 90 is not a training heart rate at any
+ * fitness level. Deliberately well under the ~110 an easy run actually reaches,
+ * so this only ever removes rows that are wrong, never rows that are merely
+ * low. CEILING 220 — above the theoretical maximum for any human.
+ *
+ * Applied by `isPlausibleRunHr` in runHistory.ts, which is the single gate for
+ * every HR average this app computes.
+ */
+export const RUN_HR_PLAUSIBLE = { MIN_BPM: 90, MAX_BPM: 220 } as const

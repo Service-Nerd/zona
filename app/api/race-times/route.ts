@@ -17,6 +17,8 @@ import { velocityAtFraction, applyVdotDiscount, parseBenchmarkTime, calcVDOT } f
 import { vdotFromAerobicSpeedMs } from '@/lib/plan/aerobicEstimate'
 import type { Plan, BenchmarkInput } from '@/types/plan'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
+import { RACE_ARC } from '@/lib/coaching/raceProgressArc'
+import { formatClockTime, formatElapsedDelta } from '@/lib/format'
 
 // Jack Daniels race VDOT utilisation fractions
 const RACE_FRACTIONS: { label: string; distanceKm: number; fraction: number }[] = [
@@ -35,22 +37,12 @@ const STRAVA_WINDOW_WEEKS = 6
 // High-confidence run count threshold
 const HIGH_CONFIDENCE_MIN_RUNS = 4
 
-function formatTime(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600)
-  const m = Math.floor((totalSeconds % 3600) / 60)
-  const s = Math.round(totalSeconds % 60)
-  if (h > 0) {
-    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-  }
-  return `${m}:${String(s).padStart(2, '0')}`
-}
-
 function projectRaceTimes(vdot: number) {
   return RACE_FRACTIONS.map(({ label, distanceKm, fraction }) => {
     const velocityMperMin = velocityAtFraction(vdot, fraction)
     const timeMinutes     = (distanceKm * 1000) / velocityMperMin
     const timeSeconds     = Math.round(timeMinutes * 60)
-    return { distanceKm, label, timeSeconds, formattedTime: formatTime(timeSeconds) }
+    return { distanceKm, label, timeSeconds, formattedTime: formatClockTime(timeSeconds) ?? '\u2014' }
   })
 }
 
@@ -71,15 +63,6 @@ function projectForDistance(vdot: number, distanceKm: number): number | null {
   return timeSeconds
 }
 
-function formatDelta(deltaSeconds: number): string {
-  const abs = Math.abs(deltaSeconds)
-  const m   = Math.floor(abs / 60)
-  const s   = Math.round(abs % 60)
-  if (m > 0 && s > 0) return `${m}m ${s}s`
-  if (m > 0)          return `${m}m`
-  return `${s}s`
-}
-
 // Build the R31 target object: projected time for the athlete's specific race
 // distance, compared against the plan-creation VDOT baseline.
 // Returns ultraDistance:true for distances beyond marathon — VDOT doesn't apply there.
@@ -88,12 +71,14 @@ function buildTarget(
   planRaceDistKm: number,
   planRaceName:   string,
   baselineVdot:   number | null,
+  goalSeconds:    number | null,
 ): {
   distanceKm:      number
   raceName:        string
   ultraDistance:   boolean
   currentSeconds:  number | null
   baselineSeconds: number | null
+  goalSeconds:     number | null
   deltaSeconds:    number | null
   deltaFormatted:  string | null
   improved:        boolean | null
@@ -109,6 +94,7 @@ function buildTarget(
       ultraDistance:   true,
       currentSeconds:  null,
       baselineSeconds: null,
+      goalSeconds:     null,
       deltaSeconds:    null,
       deltaFormatted:  null,
       improved:        null,
@@ -117,7 +103,7 @@ function buildTarget(
 
   const baselineSeconds = baselineVdot ? projectForDistance(baselineVdot, planRaceDistKm) : null
   const deltaSeconds    = baselineSeconds !== null ? baselineSeconds - currentSeconds : null
-  const significant     = deltaSeconds !== null && Math.abs(deltaSeconds) >= 30
+  const significant     = deltaSeconds !== null && Math.abs(deltaSeconds) >= RACE_ARC.SIGNIFICANT_DELTA_SEC
 
   return {
     distanceKm:      planRaceDistKm,
@@ -125,8 +111,9 @@ function buildTarget(
     ultraDistance:   false,
     currentSeconds,
     baselineSeconds,
+    goalSeconds,
     deltaSeconds:    significant ? deltaSeconds : null,
-    deltaFormatted:  significant ? formatDelta(deltaSeconds!) : null,
+    deltaFormatted:  significant ? formatElapsedDelta(deltaSeconds!) : null,
     improved:        significant ? deltaSeconds! > 0 : null,
   }
 }
@@ -229,6 +216,19 @@ export async function GET(req: NextRequest) {
   const raceDistKm  = meta.race_distance_km ?? 0
   const raceName    = meta.race_name ?? 'Your race'
 
+  // UX-COACH-01 — the third point of the arc. The runner's OWN chosen time,
+  // which they typed into the wizard: §109 lets this surface remember and
+  // compare, never predict. A goal is a decision, not a prediction.
+  // Only a `time_target` plan has one; a finish-goal plan legitimately has no
+  // third point and the arc renders two. `parseBenchmarkTime` is the existing
+  // owner of "plan time string -> minutes" (it already parses `target_time` for
+  // `calcGoalPace`), so this is not a second parser.
+  const goalMins = meta.goal === 'time_target' && meta.target_time
+    ? parseBenchmarkTime(meta.target_time)
+    : NaN
+  const goalSeconds: number | null =
+    Number.isFinite(goalMins) && goalMins > 0 ? Math.round(goalMins * 60) : null
+
   // ── State 1: benchmark in plan meta ─────────────────────────────────────
   if (meta.vdot && meta.benchmark) {
     const { vdot: discountedVdot, discountPct } = applyVdotDiscount(meta.vdot, meta.benchmark as BenchmarkInput, today)
@@ -245,7 +245,7 @@ export async function GET(req: NextRequest) {
 
     // R31: target race delta (baseline VDOT = plan.meta.vdot pre-discount for fair comparison)
     const target = raceDistKm > 0
-      ? buildTarget(discountedVdot, raceDistKm, raceName, baselineVdot)
+      ? buildTarget(discountedVdot, raceDistKm, raceName, baselineVdot, goalSeconds)
       : null
 
     // R32: recalibration signal — benchmark is already high-quality, suggest recal if
@@ -315,7 +315,7 @@ export async function GET(req: NextRequest) {
 
       // R31: target race delta
       const target = raceDistKm > 0
-        ? buildTarget(derivedVdot, raceDistKm, raceName, baselineVdot)
+        ? buildTarget(derivedVdot, raceDistKm, raceName, baselineVdot, goalSeconds)
         : null
 
       // R32: suggest recalibration if Strava-derived VDOT beats plan baseline by ≥3 points
