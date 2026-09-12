@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { GENERATION_CONFIG } from './generationConfig'
+import { SCORE_WEIGHTS, VERDICT_BANDS } from '@/lib/coaching/constants'
 
 /**
  * CLAUDE.md's Configuration Singularity states a backstop that nothing enforced:
@@ -43,8 +44,41 @@ const KNOWN_MISSING = new Set([
   'DAYS_AVAILABILITY_RETURNING_RUNNER_SHIFT', 'V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT',
 ])
 
-const keys = Object.keys(GENERATION_CONFIG)
-const missing = keys.filter(k => !PRINCIPLES.includes(k))
+/**
+ * §108 / UX-POSTRUN-01 (2026-09-12) — THE SINGULARITY WAS BYPASSED BY A FILE
+ * PATH, FOR THE SECOND TIME.
+ *
+ * This check read `GENERATION_CONFIG` and nothing else, so any coaching numeric
+ * that lived in a different file was invisible to it. `SCORE_WEIGHTS`
+ * (hr_discipline 0.50 / distance 0.25 / pace 0.15 / ef 0.10) and `VERDICT_BANDS`
+ * (80 / 60 / 40) sat in `lib/coaching/constants.ts` with no principle and no
+ * check — and they decide whether a runner is told their run was "nailed" or
+ * "concerning".
+ *
+ * That is `peakKmByLevel` verbatim, which CLAUDE.md already records: "every
+ * governance layer this project has, bypassed by a table being in the wrong
+ * place." Widening the check is the only fix that does not depend on someone
+ * remembering.
+ */
+const COACHING_CONSTANTS = { SCORE_WEIGHTS, VERDICT_BANDS } as const
+
+const keys = [
+  ...Object.keys(GENERATION_CONFIG),
+  // Nested one level: the principle must name the WEIGHT, not just the group —
+  // "SCORE_WEIGHTS" appearing once would otherwise document four numbers with
+  // one word, which is how a table ends up explained by its own title.
+  ...Object.entries(COACHING_CONSTANTS).flatMap(([group, v]) =>
+    typeof v === 'object' && v !== null ? Object.keys(v).map(k => `${group}.${k}`) : [group]),
+]
+
+/** `SCORE_WEIGHTS.hr_discipline` is documented by a section naming both parts. */
+const documented = (k: string): boolean => {
+  if (!k.includes('.')) return PRINCIPLES.includes(k)
+  const [group, leaf] = k.split('.')
+  return PRINCIPLES.includes(group!) && PRINCIPLES.includes(leaf!)
+}
+
+const missing = keys.filter(k => !documented(k))
 
 describe('Configuration Singularity — every numeric points back to a principle', () => {
   it('no NEW config key ships without a principle section', () => {
@@ -82,5 +116,26 @@ describe('Configuration Singularity — every numeric points back to a principle
     expect(PRINCIPLES.length).toBeGreaterThan(50_000)
     expect(PRINCIPLES).toContain('EFFORT_GOVERNED_RECOVERY_SECS')   // added today, documented
     expect(PRINCIPLES).not.toContain('A_KEY_THAT_DOES_NOT_EXIST')
+  })
+
+  it('§108 — the score weights sum to 1.0', () => {
+    // A weighting that does not sum to 1 silently rescales every run's score and
+    // moves every verdict band with it, without changing a single band value.
+    const total = Object.values(SCORE_WEIGHTS).reduce((a, b) => a + b, 0)
+    expect(total).toBeCloseTo(1.0, 6)
+  })
+
+  it('§108 — the verdict bands descend and stay inside the 0-100 scale', () => {
+    const { nailed, close, off_target } = VERDICT_BANDS
+    expect(nailed).toBeGreaterThan(close)
+    expect(close).toBeGreaterThan(off_target)
+    expect(off_target).toBeGreaterThan(0)
+    expect(nailed).toBeLessThanOrEqual(100)
+  })
+
+  it('the widened check can fail — coaching constants are really being read', () => {
+    // Without this, pointing the check at an empty object would pass silently.
+    expect(keys).toContain('SCORE_WEIGHTS.hr_discipline')
+    expect(keys).toContain('VERDICT_BANDS.nailed')
   })
 })

@@ -21,6 +21,23 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** no — too small to carry a post on its own, but the "wrong but plausible" line is reusable.
 
 
+## 2026-09-12 — §108 / UX-POSTRUN-01 · The feature they asked for already shipped, ungoverned
+
+**Shipped:** the numbers that decide whether a runner is told "nailed" or "concerning" finally have a principle and a check.
+
+**Dev learning:** The ticket asked whether four numbers after a run should become one. Two facts killed the question and replaced it with a better one. The four numbers do not exist — the card renders one headline and a tag. And the collapsing being proposed *already happens*: the engine has always weighted HR discipline 0.50, distance 0.25, pace 0.15 and efficiency 0.10 into a single 0–100 score. Someone asked us to build the thing we shipped, because it was never surfaced and never written down.
+
+**Product/creator learning:** The recorded objection had drifted off its target. Hutchinson vetoed collapsing *zone %, RPE and fatigue* — subjective and objective mixed. What actually ships collapses four objective, device-derived axes, and leaves RPE and fatigue out entirely. So the veto was real, correct, and about something else. A ruling written down once gets re-applied later by people reading the summary, and summaries lose the distinction that made the ruling right.
+
+**AI-building learning:** The check I widened caught me while I was writing it. I documented the weights in prose — "HR discipline, 0.50" — and it failed, because it demands the principle name `hr_discipline`, the literal key. That is the correct strictness: a table titled `SCORE_WEIGHTS` mentioned once would otherwise "document" four separate coaching decisions with a single word. I did not have to design a falsification for it; it falsified me.
+
+**The honest bit:** This is the Configuration Singularity bypassed by a file path for the second time, and CLAUDE.md already records the first — "every governance layer this project has, bypassed by a table being in the wrong place." We wrote that lesson down in September after `peakKmByLevel`, and the identical hole was sitting in `lib/coaching/constants.ts` the entire time, because the fix we shipped then was a principle for one table rather than a check that reads every file where coaching numbers live.
+
+**Hook material:** A customer asked for a feature. It had shipped years earlier, was never surfaced, and no document anywhere said why its most important number was 0.5.
+
+**Postable?:** yes
+
+
 ## 2026-09-12 — GTM-SITE-03 · The same sentence, rendered as two different characters
 
 **Shipped:** the founder story has one owner, and the thesis line is a brand constant instead of two hardcoded copies.

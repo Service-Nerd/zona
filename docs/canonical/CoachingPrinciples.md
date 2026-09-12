@@ -4321,6 +4321,74 @@ text if that gate is ever removed.
 
 ---
 
+## 108. What a run SCORES, and what stays outside the score
+
+*(Coaching Board UX-POSTRUN-01, 2026-09-12. Split ruling: INSUFFICIENT EVIDENCE
+on the filed question, CORRECT on governing the numerics the scan found.
+**Ratifies the values that already ship — no runner-visible change.**)*
+
+**Principle.** A completed run is scored on **four objective axes**, weighted:
+
+| Axis | Weight | Why |
+|---|---|---|
+| HR discipline | **0.50** | The only axis that speaks to intensity distribution, which is the product's entire thesis. A run at the right distance and pace with the heart rate in the wrong zone is the failure Zonna exists to name, so it carries half the score alone. |
+| Distance | 0.25 | Did the prescribed work actually happen. Objective, and the runner controls it. |
+| Pace | 0.15 | Deliberately BELOW distance: pace is the axis most distorted by heat, hills and traffic, and §1's grey zone is entered by runners chasing it. |
+| Efficiency factor | 0.10 | The longest-horizon signal and the noisiest run-to-run, so it informs the score without being able to dominate it. |
+
+Banded into a verdict: **nailed ≥ 80 · close ≥ 60 · off_target ≥ 40 · concerning
+< 40.** "Concerning" is deliberately the unbounded tail rather than a band — a
+session can be arbitrarily far from its prescription, and the word should be
+reachable when it is.
+
+**Subjective inputs stay OUTSIDE the score.** RPE and fatigue are collected,
+stored and shown, and are **not** weighted into `total_score`. Folding them in
+would assert an exchange rate between how hard a session *felt* and how
+disciplined the heart rate *was*, and no such rate is known (Hutchinson). Sims
+adds the reason it matters beyond modelling: subjective load carries signal the
+device does not — particularly across the menstrual cycle and in under-fuelled
+runners — and averaging it into a composite is how that signal stops being
+actionable. **They belong beside the score, never inside it.**
+
+**Why this section exists at all — and it is the same failure twice.** These
+numerics ship today and have since scoring launched. They had **no principle and
+no mechanical check**, because they live in `lib/coaching/constants.ts` and
+`configPrincipleSync.test.ts` read only `GENERATION_CONFIG`. That is
+`peakKmByLevel` verbatim: the Configuration Singularity bypassed by a file path,
+the exact lesson CLAUDE.md records from §106 — *"when you add a coaching numeric,
+the file it lives in is part of the decision."* Nobody could say why HR
+discipline is 0.50 rather than 0.4, or what `< 40` is for, and both decide what a
+runner is told about their run.
+
+**Config.** `lib/coaching/constants.ts`:
+- `SCORE_WEIGHTS.hr_discipline` = 0.50 · `SCORE_WEIGHTS.distance` = 0.25 ·
+  `SCORE_WEIGHTS.pace` = 0.15 · `SCORE_WEIGHTS.ef` = 0.10 (sum 1.0)
+- `VERDICT_BANDS.nailed` = 80 · `VERDICT_BANDS.close` = 60 ·
+  `VERDICT_BANDS.off_target` = 40 (below it, "concerning")
+
+**Values unchanged by this ruling** — it ratifies and explains them. The literal
+keys are named here on purpose: the sync check requires the principle to name the
+WEIGHT, not merely the group, because "SCORE_WEIGHTS" appearing once would
+otherwise document four separate coaching decisions with a single word.
+
+**Enforcement.** `configPrincipleSync.test.ts` now reads `lib/coaching/constants.ts`
+**as well as** `GENERATION_CONFIG`, so a coaching numeric can no longer escape the
+singularity by living in a different file. The weights are additionally asserted
+to sum to 1.0 — a weighting that does not is a silent rescaling of every score.
+
+> ⚠️ **NOT ratified, and recorded so it is not assumed later:** any exchange rate
+> between RPE/fatigue and the objective axes. A future proposal to fold them in
+> is a NEW board question, not an extension of this section.
+>
+> 🔲 **The filed question is still open (INSUFFICIENT EVIDENCE).** UX-POSTRUN-01
+> asks whether "four numbers after a run" should become one. **Those four numbers
+> could not be found in the product**: `SessionCompleteCard` renders one 44px
+> headline — zone % once the analysis lands, RPE while it polls — plus a fatigue
+> chip. Before anything is built the founder must point at the screen that felt
+> confusing. What would settle it: a screenshot, or the wizard/screen name.
+
+---
+
 
 ## 56. The constitution
 
