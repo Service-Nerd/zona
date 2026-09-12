@@ -21,6 +21,23 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** no — too small to carry a post on its own, but the "wrong but plausible" line is reusable.
 
 
+## 2026-09-12 — §109 / UX-COACH-01 · Two thirds of the feature already existed, on the wrong screen
+
+**Shipped:** a rule that a progress surface may remember and compare but may not predict, and the design both boards signed off.
+
+**Dev learning:** The founder asked for "where I was, where I am, and what the potential is." I went looking for what it would cost and found that two of the three already ship — the baseline is captured at plan creation, the current estimate has four confidence states — and the card holding them renders on the *Plan* screen while its own header comment says "Coach screen — canonical home". A comment describing an intent nobody implemented. So the expensive-sounding feature was mostly a move, and only the third element invented anything at all.
+
+**Product/creator learning:** That third element is the one the constitution already had an answer for. §44 ruled years of arguments ago that the engine cannot defend a probability — "a 72% chance is fabricated precision" — and a projected race-day finish is the same claim wearing a different number. The honest version turned out to be better product anyway: compare where they were, where they are, and **the goal they chose themselves**. Nobody has to defend a slope, and the runner's own target is more motivating than our guess at it.
+
+**AI-building learning:** I nearly wrote the design from memory. The founder said "do some research on other apps", and the research changed the structure rather than decorating it — WHOOP runs three tiers *across navigation*, and our Coach screen was trying to be all three at once. That is precisely what "seven blocks, no subject" means, and I would have described the symptom without the diagnosis. It also gave us a deliberate divergence worth having: WHOOP compresses into one number, we are forbidden a new composite, so our compression is *linguistic*. Anyone can draw a ring.
+
+**The honest bit:** I told the founder the projection card was on the Plan screen, then had to correct myself when the component's header claimed Coach, then correct that when the render site proved Plan after all. Three statements about one card in ten minutes. The file was wrong, my summary of the file was wrong, and only the render site settled it — which is the same lesson as every other thing I found today, wearing yet another hat.
+
+**Hook material:** A user asked for a feature. Two thirds of it already existed, on the wrong screen, under a comment saying it was on the right one.
+
+**Postable?:** yes
+
+
 ## 2026-09-12 — §108 / UX-POSTRUN-01 · The feature they asked for already shipped, ungoverned
 
 **Shipped:** the numbers that decide whether a runner is told "nailed" or "concerning" finally have a principle and a check.

@@ -4389,6 +4389,67 @@ to sum to 1.0 — a weighting that does not is a silent rescaling of every score
 
 ---
 
+## 109. A progress surface may remember and compare. It may not predict.
+
+*(Coaching Board, 2026-09-12, CORRECT WITH AMENDMENT. Extends §44's
+fabricated-precision doctrine from plan feasibility to progress display.)*
+
+**Principle.** A surface showing a runner's progress may state:
+- **where they were** — a stored baseline, recorded at plan creation;
+- **where they are** — an estimate from *measured* fitness, carrying its
+  confidence **in the copy, not in a tooltip**;
+- **the goal they chose** — the runner's own `target_time`, framed by
+  `meta.goal_beyond_measured_fitness` as within reach or demanding on current
+  evidence.
+
+It may **NOT** state a time the runner did not supply for a date that has not
+happened. No projected race-day finish, no rising line toward a race date, no
+percentage or probability of achieving a goal.
+
+**Why.** §44 already settled this for plan feasibility, and the reasoning
+transfers without modification: *"with one benchmark run and one max HR the
+engine cannot defend a probability — a '72% chance' is fabricated precision, and
+false precision is an overclaim."* A projected race-day time is that same claim
+wearing a different number. Fitness does not extrapolate linearly, and the last
+eight weeks of improvement are the **worst** available predictor of the next
+eight, because the early gains are the cheap ones (Hutchinson). A VDOT-derived
+time is a statement about a *test* — "an athlete with this measured economy
+typically runs X" — and is defensible when labelled as that. The moment it is
+drawn as a line toward a date, a trajectory has been asserted that nobody can
+defend (Seiler).
+
+Two further reasons the board recorded:
+- **Willy:** show a beginner a potential time faster than their goal and some of
+  them will train for the potential instead of the plan. The projection becomes
+  an unsupervised target, which is how a sensible plan gets run 15 sec/km too fast.
+- **Sims:** the four confidence states exist because data quality genuinely
+  varies. A woman in the luteal phase, under-fuelled, sees an estimate that
+  reflects the day rather than her fitness. "Potential" without "on current
+  evidence" reads as a verdict on her.
+
+**The regression case is designed FIRST, not last (McMillan).** A progress
+surface that can only speak when the arrow points up is marketing. It must be
+able to say *"you have gone backwards, and here is why that is normal in week 3
+of a build"*. If it cannot, it does not ship.
+
+**Config.** No new numeric. `meta.goal_beyond_measured_fitness` (§44 Amdt,
+CD-16/SC-06) and the four confidence states already exist and are already
+computed.
+
+**Enforcement.** `raceProjectionHonesty.test.ts` — the race-times contract
+carries no field naming a future-dated projection, and no user-facing projection
+copy makes a forward-looking claim. Mechanically checkable because the copy is
+centralised in `raceProjectionsCopy.ts` and nothing user-facing is hardcoded in
+the component.
+
+> **Ratified by this section and not to be re-derived:** `baselineSeconds`,
+> `currentSeconds` and `deltaSeconds` (R31) are **memory and comparison**, not
+> prediction, and were never in question. Only the third element of "where I
+> was, where I am, what the potential is" invents anything — and the ruling is
+> that it must not.
+
+---
+
 
 ## 56. The constitution
 
