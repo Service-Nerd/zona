@@ -9821,7 +9821,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             changed NOTHING inside the component: it went on rendering one
             number and a delta chip, `baselineSeconds` arrived in the payload
             and was drawn by nothing, and `meta.target_time` was never read by
-            the route at all. The founder found it by looking at his phone.
+            the route at all. The founder found it by looking at the live screen.
             Built for real 2026-09-12 — `lib/coaching/raceProgressArc.ts`
             (pure, unit-tested), `components/shared/RaceProgressArcRow.tsx`
             (renderable without auth at `/coach-preview`, which is the whole

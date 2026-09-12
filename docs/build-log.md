@@ -6,6 +6,32 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-12 — UX-COACH-01 · I wrote a comment describing a feature and shipped it as the feature
+
+**Shipped:** the race progress arc (where I was → where I am → what I'm aiming at), Kit's read and the zone rings merged into one card, a plausibility gate on every heart-rate average, and three mislabels in the trend card.
+
+**The honest bit.** Yesterday I moved a component to a new screen, wrote a comment block above it titled *"THE ARC — where I was · where I am · the goal I chose"*, changed nothing inside the component, and reported the arc as shipped. It hadn't. The card went on rendering one number and a small delta chip. It was caught by opening the app on a phone: "I don't see the pace progression."
+
+I want to be precise about what kind of mistake that is, because "I forgot to build it" is too kind. I had conflated **moving a card to its documented home** with **building the thing the card was supposed to show**, and then I wrote a paragraph that described the second one. The paragraph was confident, specific, and cited the exact field names. It was also fiction. Comments are the easiest thing in a codebase to make true-sounding, because nothing checks them.
+
+**The part that actually explains it.** Two of the three points *already existed*. `baselineSeconds` — the runner's plan-start estimate — was computed by the API, sent in the payload, and typed by the component. And drawn by nothing. It reached the client and stopped. The third point, the runner's own goal time, had never been read off the plan at all, despite the comment naming the exact field.
+
+So why did a typecheck, a full green suite and my own review all pass over this? Because **the card fetches a tier-gated, authenticated endpoint**. There was no way to *look* at this feature short of a live paid session on a device. Every check I ran could only tell me the code compiled and the tests I'd written passed. None of them could tell me the screen was missing its subject.
+
+That's the actual fix, and it's not "test on device before claiming done", though obviously that too. It's that I split the arc into a pure shape function (`buildRaceProgressArc`) and a dumb presentational row that takes plain props, and then built a local page rendering all seven states from fixtures. Improving. Gone backwards. Goal already beaten. Holding steady. Two-point. Week one. Now-only. Ten seconds of looking at it caught a layout bug (`space-between` flinging the two-point case to opposite edges) that no test would ever have flagged.
+
+**Then the analysis found two more things nobody had reported.** The screenshots showed "EASY RUN TREND — 77 (Apr avg) → 146 (now)", and Kit's narrative repeated it as fact: *"Easy is costing you more than it did."* An easy run does not average 77 bpm. The trend maths was correct the entire way down — it was faithfully averaging a corrupt heart-rate row, and nothing between the database and the sentence ever asked whether the number was possible. That's the scariest class of bug in this app: every component behaving correctly, composing into a confident lie.
+
+The same screenshot said "· 6w" for a **six-month** window, sitting next to a bucket labelled "Apr". The same component rendered the same value correctly as "the last 6 months" in its own explanation sheet. One file, one variable, two units. And that sheet still said "your average heart rate on long runs" — harmless until the day before, when we retired the long-run card, after which every single person opening it was reading about the wrong session type.
+
+**What I'd tell someone building this.** If a feature can only be seen behind auth and a paywall, you have not built one feature, you've built two: the feature, and the reason nobody will notice when it breaks. Build the second one first. A fixture page that renders every state is worth more than the test suite for anything visual, because the failure mode of visual work is *looks wrong*, and no assertion has an opinion about that.
+
+And the smaller one: I now have a test that asserts on **rendered HTML** rather than on props, specifically because the rings-and-read pairing was declared in a comment while the markup drew two bordered boxes. A comment cannot be asserted on. A border can.
+
+**Numbers:** 1552 tests across 176 files, exit 0. `verify:parity` identical across 2,916 generated plans (none of this touches the engine). Three new test files, each proven to go red against the exact regression it guards before being trusted green. Two byte-identical copies of a `formatTime` function retired into `lib/format.ts`.
+
+---
+
 ## 2026-09-12 — FMT-02 · The unit bug nobody would ever report
 
 **Shipped:** the Strava panel renders distances in the runner's own unit instead of hardcoded kilometres.
