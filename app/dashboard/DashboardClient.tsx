@@ -53,6 +53,7 @@ import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { NotificationBell } from '@/components/shared/NotificationBell'
 import { NotificationRow, type NotificationItem } from '@/components/shared/NotificationRow'
 import TrendCard from '@/components/shared/TrendCard'
+import type { SparkBucket } from '@/lib/coaching/trendSparkline'
 import RaceResultSheet, { type ReshapeProposal } from '@/components/training/RaceResultSheet'
 import PostRaceReshapeCard from '@/components/training/PostRaceReshapeCard'
 import NextGoalCard from '@/components/training/NextGoalCard'
@@ -9326,6 +9327,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
     state: 'live'
     earlierMonth: string; earlierHr: number; nowHr: number
     cohortSize: number; windowMonths: number; gloss?: string
+    // The whole series, not just its endpoints. This fetch used to read
+    // buckets[0] and buckets[last] and throw the middle away, so the card
+    // could state the change and never show its shape.
+    series: SparkBucket[]
   } | { state: 'pending' } | null>(null)
   const [easyTrendLoading, setEasyTrendLoading] = useState(true)
   useEffect(() => {
@@ -9374,6 +9379,11 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           cohortSize,
           windowMonths: trend.windowMonths,
           gloss:        data.gloss,
+          series:       trend.buckets.map((bk: any) => ({
+            monthKey:   bk.monthKey,
+            shortLabel: bk.shortLabel,
+            avgHr:      bk.avgHr ?? null,
+          })),
         })
       } catch {
         // A failed fetch is "not enough data to claim a trend", not a spinner.
@@ -10031,6 +10041,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               cohortSize={easyTrendData.cohortSize}
               windowMonths={easyTrendData.windowMonths}
               gloss={easyTrendData.gloss}
+              series={easyTrendData.series}
               glossless
             />
           : <TrendCard state="pending" {...EASY_TREND_LABELS} />

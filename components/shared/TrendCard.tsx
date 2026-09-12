@@ -13,6 +13,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import CoachByline from './CoachByline'
+import { TrendSparkline } from './TrendSparkline'
+import { buildTrendSparkline, type SparkBucket } from '@/lib/coaching/trendSparkline'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,6 +31,10 @@ interface TrendCardLive {
   windowMonths: number
   /** Model-written gloss. Present when hrIsTrending and AI succeeded. */
   gloss?: string
+  /** Full month-bucket series. Draws the line BETWEEN the two numbers — the
+   *  part a runner reads a trend for. Absent, or fewer than three usable
+   *  months, and the card is exactly what it was. */
+  series?: SparkBucket[]
   /** Eyebrow label and CoachByline role. Default: 'Aerobic trend'. */
   label?: string
   /** Noun for metadata count, e.g. 'easy run'. Default: 'long run'. */
@@ -172,10 +178,13 @@ function ExplanationSheet({
   windowMonths,
   eyebrow = TREND_CARD_DEFAULTS.label,
   runNoun = TREND_CARD_DEFAULTS.sessionLabel,
+  hasLine = false,
 }: {
   onClose: () => void
   state: TrendCardState
   windowMonths?: number
+  /** Only explain the line when one is actually drawn. */
+  hasLine?: boolean
   /** Must match the CARD's eyebrow. Hardcoded until 2026-09-12, so after the
    *  long-run card was retired every runner opening this sheet from the EASY
    *  RUN TREND card was told it was about long runs. */
@@ -237,6 +246,11 @@ function ExplanationSheet({
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
                 Zonna requires at least a 4 bpm shift across 2 or more months before surfacing a trend — so when you see a number here, there&apos;s enough data to mean something.
               </div>
+              {hasLine && (
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                  The line is one point per month, spaced by time rather than evenly, so a month you didn&apos;t run shows as a longer gap. Months without enough comparable runs are left out rather than guessed at.
+                </div>
+              )}
             </>
           )}
         </div>
@@ -375,9 +389,10 @@ export default function TrendCard(props: TrendCardProps) {
 
   // ── Live ──────────────────────────────────────────────────────────────────
   // Props confirmed as TrendCardLive here.
-  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel, glossless } = props
+  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel, glossless, series } = props
   const eyebrow    = label        ?? TREND_CARD_DEFAULTS.label
   const runNoun    = sessionLabel ?? TREND_CARD_DEFAULTS.sessionLabel
+  const spark      = buildTrendSparkline(series)
 
   // Count-up values come from the hoisted calls above (HOOKS-ORDER-01).
   // Gloss fades in after both count-ups complete.
@@ -414,6 +429,23 @@ export default function TrendCard(props: TrendCardProps) {
           </div>
           <MetricPair value={String(now.value)} label="now" />
         </div>
+
+        {/* ── The line between the two numbers ──────────────────────────
+            The series was always in the trend payload and the Coach fetch
+            read buckets[0] and buckets[last] and dropped the middle, so the
+            card could say "151 to 144" but not whether that was a steady
+            drift or a spike and a recovery. Renders only when three or more
+            months are usable (`SPARKLINE_MIN_POINTS`) — two points are a
+            straight segment between numbers already shown in 44pt. ── */}
+        {spark && (
+          <div style={{ marginBottom: '20px' }}>
+            <TrendSparkline
+              spark={spark}
+              improving={spark.delta < 0}
+              runNoun={runNoun}
+            />
+          </div>
+        )}
 
         {/* AI section — CoachByline + gloss, separated by a border + left rail.
             CO-ONE: glossless mode hides this block entirely on Coach so the
@@ -462,6 +494,7 @@ export default function TrendCard(props: TrendCardProps) {
           windowMonths={windowMonths}
           eyebrow={eyebrow}
           runNoun={runNoun}
+          hasLine={!!spark}
         />
       )}
     </>

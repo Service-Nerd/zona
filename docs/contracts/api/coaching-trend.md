@@ -61,3 +61,19 @@ Multi-month trend backend (AI-DEPTH-03). Returns a series of same-effort runs ov
 - Threshold constants live in `lib/coaching/constants.ts → TREND_SERIES`.
 - Build function: `lib/coaching/runHistory.ts → buildHrTrendSeries()` — pure, easily testable from already-fetched history.
 - The POST-RUN-REFRAME-01 route calls `buildHrTrendSeries()` inline (same query path as the cohort) rather than hitting this endpoint, to avoid a second round-trip.
+
+## Consumer rules — the sparkline (TREND-SPARKLINE-01, 2026-09-12)
+
+`buckets` is the **whole series**, and consumers should treat it as such. The
+Coach screen previously read `buckets[0]` and `buckets[buckets.length - 1]` and
+discarded the middle, which is why its trend card could state a change and not
+show its shape.
+
+- `lib/coaching/trendSparkline.ts → buildTrendSparkline()` is the single owner of
+  the geometry. Do not plot `buckets` directly.
+- **Buckets are sparse by construction.** `buildHrTrendSeries` skips any month
+  below `TREND_SERIES.MIN_RUNS_PER_BUCKET`, so consecutive array entries are
+  frequently NOT consecutive months. Position the x axis from `monthKey`, never
+  from array index.
+- **`avgHr` can be null** for a bucket whose runs carried no plausible heart
+  rate (`RUN_HR_PLAUSIBLE`, 90–220 bpm). Drop those points; never interpolate.

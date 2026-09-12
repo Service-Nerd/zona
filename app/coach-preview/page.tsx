@@ -59,6 +59,54 @@ const CASES: { title: string; note: string; input: Parameters<typeof buildRacePr
   },
 ]
 
+/** Monthly buckets as `/api/coaching/trend` returns them. */
+const months = (pairs: [string, number | null][]) =>
+  pairs.map(([monthKey, avgHr]) => ({
+    monthKey,
+    shortLabel: ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(monthKey.slice(5))],
+    avgHr,
+  }))
+
+const BASE = {
+  state: 'live' as const,
+  label: 'Easy run trend',
+  sessionLabel: 'easy run',
+  glossless: true,
+}
+
+const TREND_CASES = [
+  {
+    title: 'Improving, six months',
+    note: 'Moss line, falling. The hollow dot is where it started, the solid one is now. Meta must read "6mo", not "6w"; tap it and the sheet must say "easy runs", not "long runs".',
+    props: { ...BASE, earlierMonth: 'Apr', earlierHr: 152, nowHr: 144, cohortSize: 20, windowMonths: 6,
+      series: months([['2026-04', 152], ['2026-05', 150], ['2026-06', 151], ['2026-07', 147], ['2026-08', 146], ['2026-09', 144]]) },
+  },
+  {
+    title: 'Gone backwards',
+    note: 'Line rises and goes MUTED. A rising easy HR is usually load, not decline, and --danger is errors only.',
+    props: { ...BASE, earlierMonth: 'Apr', earlierHr: 145, nowHr: 153, cohortSize: 17, windowMonths: 6,
+      series: months([['2026-04', 145], ['2026-05', 147], ['2026-06', 146], ['2026-07', 150], ['2026-08', 152], ['2026-09', 153]]) },
+  },
+  {
+    title: 'A missing month',
+    note: 'May has no usable data. It is dropped, never interpolated, and the Apr-to-Jun span is visibly wider because x is elapsed TIME, not array position.',
+    props: { ...BASE, earlierMonth: 'Apr', earlierHr: 152, nowHr: 144, cohortSize: 14, windowMonths: 6,
+      series: months([['2026-04', 152], ['2026-05', null], ['2026-06', 149], ['2026-09', 144]]) },
+  },
+  {
+    title: 'Only two months',
+    note: 'NO LINE. Two points are a straight segment between numbers already shown in 44pt type. The card is exactly what it was before.',
+    props: { ...BASE, earlierMonth: 'Aug', earlierHr: 150, nowHr: 145, cohortSize: 8, windowMonths: 6,
+      series: months([['2026-08', 150], ['2026-09', 145]]) },
+  },
+  {
+    title: 'Flat',
+    note: 'Centre line, not pinned to an edge. A series that did nothing must not draw an all-time high.',
+    props: { ...BASE, earlierMonth: 'Apr', earlierHr: 148, nowHr: 148, cohortSize: 19, windowMonths: 6,
+      series: months([['2026-04', 148], ['2026-06', 148], ['2026-09', 148]]) },
+  },
+]
+
 export default function CoachPreviewPage() {
   // Committed so the next person can use it, unreachable on www.zonna.run:
   // it renders invented race times, and an unlinked route is still a public
@@ -98,22 +146,17 @@ export default function CoachPreviewPage() {
         </p>
       </div>
 
-      {/* ── Trend card labels ───────────────────────────────────────────── */}
-      <div style={{ maxWidth: '420px', marginBottom: '28px' }}>
-        <TrendCard
-          state="live"
-          label="Easy run trend"
-          sessionLabel="easy run"
-          earlierMonth="Apr"
-          earlierHr={151}
-          nowHr={144}
-          cohortSize={20}
-          windowMonths={6}
-          glossless
-        />
-        <p style={{ fontSize: '12px', color: 'var(--mute)', margin: '10px 0 0' }}>
-          Meta must read &ldquo;6mo&rdquo;, not &ldquo;6w&rdquo;. Tap it: the sheet must say &ldquo;easy runs&rdquo;, not &ldquo;long runs&rdquo;.
-        </p>
+      {/* ── Trend card: labels, and the line between the numbers ────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '420px', marginBottom: '28px' }}>
+        {TREND_CASES.map(({ title, note, props }) => (
+          <div key={title}>
+            <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+              {title}
+            </div>
+            <TrendCard {...props} />
+            <p style={{ fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, margin: '10px 0 0' }}>{note}</p>
+          </div>
+        ))}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '420px' }}>
