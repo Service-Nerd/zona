@@ -102,6 +102,38 @@ stats grid.
 3. **Aerobic trend** — one hero figure (−5 bpm at the same easy pace) plus sparkline.
 4. **Two tiles**, then **one link out** replacing both tap-to-explain sheets.
 
+## ZoneRings is RETAINED — and my first proposal was wrong to drop it
+
+**The founder caught this:** *"What about the zone rings image? That's our trademark."*
+He is right, and more strongly than "it feels like ours":
+
+- `ZoneRings` is **one of the three** components the marketing homepage renders in its
+  ProductStill trio (`SessionCard`, `CoachNoteBlock`, `ZoneRings`), under the heading
+  *"YOUR ZONES, ON COACH"*. It is literally one third of the product's public face.
+- Its own header calls it **"brand-mark-as-data-display"**: the four concentric rings of
+  the Zonna mark ARE the four HR zone buckets, and arc-fill was chosen over thickness
+  specifically so the silhouette survives any data shape. It is the logo, drawn by the
+  runner's own week.
+
+**Dropping it would have recreated the exact defect class fixed on 2026-09-12** — the
+marketing site promising something the app no longer contains (cf. PLAN-LONGRUN-COLOUR-01,
+where the homepage showed a purple long run the product could not render).
+
+**How it is retained without the screen going messy again.** Not as another metric card —
+**paired with Kit's read as its evidence.** The sentence and the rings are the same fact in
+two registers, word and image: *"Nine per cent of your week sat in Zone 3"* above rings
+showing Z3 at 9%. The mark becomes the hero's companion rather than a competing block.
+
+⚠️ **And it subsumes a tile I had invented.** My draft had "71% — easy running that stayed
+easy". The demo ring data is `{z1: 8, z2: 71, z3: 9, z45: 12}` — **the Z2 arc IS that 71%.**
+The tile was the rings drawn worse and off-brand. Removed.
+
+**Revised hierarchy — four blocks, down from seven, each answering a different question:**
+1. **Kit's read + ZoneRings** — the week, interpreted and pictured. One block.
+2. **The arc** — where I was · where I am · the goal I chose (§109).
+3. **Aerobic trend** — one figure: am I getting fitter.
+4. **One link out** — replacing both tap-to-explain sheets.
+
 **Known rough edges, recorded rather than hidden:** the empty-state placeholders render as
 heavy bars that read like redactions; and the trend sparkline falls when things go well
 (HR down at the same pace), which needs a label or it reads as decline.
