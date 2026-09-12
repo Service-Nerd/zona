@@ -6,6 +6,32 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-12 — RACE-ARC-REACH-01 · Third time asked, first time I checked the database
+
+**Shipped:** the progress arc now reaches runners who never took a benchmark, and ultra runners. And a claim that was guaranteed to be wrong for everyone who did take one.
+
+Three times today the founder said the race projection was not showing. The first time I'd genuinely not built it. The second time I built it, tested it, rendered every state on a preview page, and shipped it. The third time he said the same sentence again.
+
+So I stopped reading code and queried the production database. His plan: race distance **100 km**, `meta.vdot` **null**, goal **finish**. The arc needs a projectable race distance (VDOT doesn't extrapolate past the marathon), a baseline VDOT (stamped only when a benchmark was entered at plan creation), and a target time. He had none of the three. Zero of three points, on the account of the person who asked for the feature.
+
+Then I ran it across every live plan: **10 of 17 have no `meta.vdot` at all. Only 7 could ever show "was → now". Only 2 could show all three points.** I'd built, verified and shipped something that worked on two plans in seventeen, and called it done twice.
+
+**The verification I'd been skipping is a two-minute query.** Everything else I did was real — typecheck, 1600 tests, a fixture page rendering seven states, screenshots at phone width. None of it could tell me whether a single actual runner had the data to see it. "It renders correctly for the inputs I invented" and "it renders for the person who asked" are different claims, and I'd been treating the first as evidence for the second all day.
+
+**The fix was sitting in the same database.** There are 69 runs across six months, easy pace going from 8:29/km to 6:32/km at the same heart-rate band. "Where I was" doesn't need a benchmark — it needs his earliest runs, which is a measurement he already made. So: derive the baseline from the earliest six-week window of qualifying aerobic runs, require a real gap from the present so it isn't comparing him to himself a fortnight ago, and label the point with its **month** rather than "plan start" — because the plan started in January and the run data starts in April, and dating the measurement to January would be a small lie in service of a tidier label.
+
+For the ultra: the card was already printing the marathon projection three rows further down. Refusing to project 100 km is correct. Refusing to show the fitness trajectory *because* the race is 100 km was not the same refusal, and I'd conflated them. The arc now drops to the nearest distance VDOT can actually do, and says which one.
+
+**And then the thing I nearly made much worse.** Before shipping I checked what the arc would show for the seven runners who *did* enter a benchmark. It compares the stored VDOT against the current estimate — and the current estimate is that same VDOT with a staleness discount applied. The discount has a 5% floor and grows every four weeks. So the "now" number is arithmetically guaranteed to be lower than the "then" number, always, for everyone, forever.
+
+Every benchmark runner who hadn't re-tested was being told they'd got slower. The longer they left it, the more they'd "declined". That's been live as a small delta chip for months and nobody noticed, including me — and I was one commit away from promoting it into a hero element with 26pt type. One measurement is one point. It now shows one point.
+
+**What I'd tell someone building this:** when a user reports the same thing twice, the bug is not where you're looking. I re-read that component three times. The answer was never in it — it was in a column called `race_distance_km` with the value 100.
+
+**Numbers:** 1606 tests across 181 files, exit 0. Generation identical across 2,916 plans. The fix replayed against the 17 real qualifying rows before deploy: April 4:26:56 → now 3:53:36, 33 minutes 20 seconds faster, with the "now" figure matching the founder's own screenshot to the second.
+
+---
+
 ## 2026-09-12 — TREND-SPARKLINE-01 / TREND-PACE-CLAIM-01 · A chart request turned into a false claim we were already shipping
 
 **Shipped:** the line on the easy-run trend card, and then the discovery that the card was telling some runners something untrue.
