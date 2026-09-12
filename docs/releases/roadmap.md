@@ -65,11 +65,17 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > `api-deployments-free-per-day`. Deployments stop **silently** — no failed
 > builds, everything reads `● Ready`, pushes produce nothing. **A push is not a
 > deploy; verify with `npx vercel ls zona` before saying a fix is live.**
-> **Batch commits into one push from now on.** `d1f40b1` (the Coach crash fix)
-> is committed and waiting on the rolling reset. Founder's call: wait, or Pro.
+> **Batch commits into one push from now on.**
 >
-> **STATUS 2026-09-11, end of day: every item on this path is shipped, and the
-> one founder-owned setting is wired.**
+> ✅ **Resolved 2026-09-12:** the rolling window reset and `d1f40b1` (the Coach
+> crash fix) went to production via `npx vercel --prod` — verified as the
+> deployment aliased to `www.zonna.run`, built from a clean tree at `3ed202a`.
+> **Coach crashed for 20 hours after it was fixed.** The cap itself has not
+> changed and the Hobby-vs-Pro call is still the founder's.
+>
+> **STATUS 2026-09-12: items 0-6 are shipped and the one founder-owned setting is
+> wired. Item 7 was added on 2026-09-12** — the Coach crash exposed a crash class
+> no gate here can see, and the same defect is latent in `TodayScreen`.
 > The Supabase *Reset Password* template (UX-AUTH-03, item 5) was set by the
 > founder on 2026-09-11. **The last thing outstanding is a device test of it**,
 > which he holds: sign out on the iPhone, Forgot password?, open the email in
@@ -88,6 +94,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 | ~~4~~ | ~~**BUG-KIT-DECIMALS-01**~~ | me | S | ✅ **DONE 2026-09-11.** Measured at **50.4% of prescribed session distances** disagreeing between prompt and card. `promptDistanceFormatters()` now owns the split; the raw-precision path survives only where both sides of a planned-vs-actual comparison need matching precision. |
 | ~~5~~ | ~~**UX-AUTH-01**~~ + **UX-AUTH-03** | me + **founder** | S + XS | ✅ **UX-AUTH-01 DONE 2026-09-11** — the four `/privacy` and `/terms` links now go through `ExternalLink`, which opens native in SFSafariViewController; the other two candidate causes were read in the code and are not live. 🟡 **UX-AUTH-03 code half done; template WIRED by the founder 2026-09-11, device test still owed.** Until it was set, password reset could **never** succeed on iOS (the request is made in the Capacitor webview, the email opens in Safari, PKCE needs the same browser). The failure now names the real cause instead of claiming the link is invalid, so a bad template shows as *"This link cannot finish here"* rather than silence. |
 | ~~6~~ | ~~**UX-AUTH-02**~~ | me | S | ✅ **DONE 2026-09-11.** The email form is now disclosed rather than displayed: Apple, Google, "Use email instead". Also fixed on the way through — a first-time runner typing their real email on the Sign in tab got GoTrue's "Invalid login credentials" verbatim, which never mentions that the account does not exist yet. |
+| 7 | **HOOKS-LINT-01** + **HOOKS-ORDER-02** | me | S + S | 🔲 **Added 2026-09-12, after the Coach crash.** `TrendCard` took the whole Coach screen down with React error 310 for every runner with enough history for the aerobic trend to return (HOOKS-ORDER-01, fixed and deployed). It is on this path for two reasons. **(a)** `rules-of-hooks` found it in three seconds after an hour of manual search, and it had **never run here** — `eslint-plugin-react-hooks` ships with Next but the repo has no eslint config, so an entire crash class is invisible to 1,404 tests, 93 invariants, a 16,038-plan sweep and four commit hooks. **(b)** The same defect is **latent in `TodayScreen`** — an early return above fourteen hooks at `DashboardClient.tsx:6620`, firing whenever `currentWeek` flips between renders. Today is the first screen a Make-A-Wish runner sees with a code, and that is the worst possible place for this to wake up. Lint gate first (config enabling **only** `react-hooks/rules-of-hooks`, with TodayScreen baselined), then the fix, so the fix has something that proves it. |
 
 > **Update, end of 2026-09-11: the path finished early, so three of the items
 > below were pulled forward on the founder's call** — UX-PLAN-MOVE-01,

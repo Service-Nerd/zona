@@ -23,6 +23,41 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** yes
 
 
+## 2026-09-11 — COACH-NULLWEEK-01 / ERRORBOUNDARY-MESSAGE-01 · The app knew what broke and would not say
+
+**Shipped:** Coach stops dereferencing a week that is not there, and the error boundary finally renders the message it had always been capturing.
+
+**Dev learning:** `getCurrentWeek` ends `return past ?? weeks[0]`, which for an empty array is `undefined ?? undefined`. The Coach block optional-chained `currentWeek` on one line and then dereferenced it raw on the next two — the guard was written, once, and the two lines under it were not. Optional chaining on the first access reads like a decision about the whole block; it is a decision about one expression. Guarded now by `currentWeekGuard.test.ts`, and Coach is the only screen that derives a week and then dereferences it.
+
+**Product/creator learning:** The boundary had captured `error.message` into state since the day it was written and never rendered it. A runner saw "Something went wrong." while the app held the exact sentence naming the fault. It now shows the message, offers **Copy details** (message plus component stack), and names chunk errors specifically — "The app updated while you had it open" — because that is the one case where reloading genuinely is the instruction rather than a shrug.
+
+**AI-building learning:** Both of these were found while hunting a different bug, and only one of them was that bug. The temptation is to ship whatever you found under the crash's banner and call the crash fixed; it was not fixed by either of these. Shipping them on their own merits, and saying so in the commit, is what stopped a false all-clear.
+
+**The honest bit:** An entire evening went on a crash the screen could have named in one line. The first thing I should have fixed was the thing that tells me what is wrong, and it was already three-quarters built.
+
+**Postable?:** yes
+
+
+## 2026-09-11 — INVARIANT-LIVENESS-01 / SHIP-RECORD-CHECK-01 · Two checks whose whole job is checking the checks
+
+*(Recorded together because they are the same idea pointed at two different
+things: a gate you cannot see fail is not a gate.)*
+
+**Shipped:** `npm run invariant:liveness` — breaks valid plans 42 ways and records which of the 93 constitutional invariants wake up. And a commit hook that verifies a ship actually reached the feature registry and this file.
+
+**Dev learning:** I built the obvious version of the liveness prober first, and it was the wrong measurement. Generate 621 valid plans, count which invariants fire, flag the silent ones — except 86 of 93 never fire, and that is precisely what a healthy engine looks like. An invariant is *meant* to be silent. Silence cannot distinguish a working rule from a dead one, so the only honest question is the inverse: can I make this rule fail on purpose? Strip a field, invert the volume curve, make every week a peak, make the long run 90% of the week. 33 of 93 wake. The other 60 are **unproven, not proven dead** — which is a different claim, and writing it down that way is what keeps the number from being quietly read as a pass.
+
+**Product/creator learning:** 48 of those 60 are `unclassified` — nobody has looked yet. That is the column that should shrink, and it only shrinks if it is visible. A debt register with a reason column per row is the difference between tracked debt and hidden debt; the same pattern as the sweep baseline.
+
+**AI-building learning:** The hook is the more embarrassing of the two. I ran the same manual doc audit three times in one day and found a gap every time, told the founder it was clean twice, and then a fourth pass — by ten lines of Python reading git history — found three more ships I had never recorded. The audits were not careless. They were scoped to the items I remembered working on, and I was checking my recollection against docs that came from the same recollection. Two things I got wrong building it: the first cut grepped for the ID anywhere in the file, and passed a feature whose ID happened to appear inside another feature's row — so it now checks the ID is in a row's **first cell** and in a `##` heading, the `/ship` format itself. The second cut read the whole commit message and fired on a commit that *filed* a new open item, demanding a registry row for something deliberately left open. A hook that cries wolf gets turned off, which is the same as having no hook. Tuned against all 48 of that day's ship commits: zero false positives.
+
+**The honest bit:** I shipped the invariant-liveness prober at 18:51 and, ninety minutes later, spent an hour failing to find a crash that a linter shipping with the framework named in three seconds — because that linter had never been configured here. I had just built a tool for finding checks that cannot fire and missed that an entire category of check was not installed.
+
+**Hook material:** 86 of 93 invariants never fire, and that's what healthy looks like. The useful question isn't "did it fire", it's "can I make it fail".
+
+**Postable?:** yes
+
+
 ## 2026-09-11 — GTM-CHARITY-01 / GTM-CHARITY-03 / GTM-SEO-PLANS-01 · Three ships that never got recorded
 
 *(Backfilled the same day, by a hook written to catch exactly this. Recorded as
@@ -450,7 +485,7 @@ would be writing to fill a template.)*
 **Postable?:** yes — the "I fixed it twice before asking if the rule was right" arc is the strongest AI-building post I've had. The calendar-gameable ceiling is a good second.
 
 
-## 2026-09-09 — CAT-DEPTH-01 + PLAN-NOTE-SURFACE-01 · the feature was already built; nobody could see it
+## 2026-09-09 — CAT-DEPTH-01 + PLAN-NOTE-SURFACE-01 + HSR-INERT-01 · the feature was already built; nobody could see it
 
 **Shipped:** Stopped trying to make the training plan *more* personalised, and instead made the personalisation it *already does* visible to the runner — after discovering the "add more personalisation" lever had been rejected by our own coaching board three times before.
 
