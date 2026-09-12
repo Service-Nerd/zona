@@ -25,7 +25,9 @@
 //
 // See docs/canonical/ui-patterns.md § ZoneRings (Pattern 22).
 
-type ZoneSlice = { z1: number; z2: number; z3: number; z45: number }
+// Shape owned by the aggregate that produces it, not by this renderer.
+import type { ZoneSlice } from '@/lib/coaching/weeklyZoneAggregate'
+export type { ZoneSlice }
 
 type LiveProps = {
   state?: 'live'

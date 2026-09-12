@@ -62,6 +62,7 @@ import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
 import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
+import { zoneDiscipline, zoneTimeSplit, weightOf } from '@/lib/coaching/weeklyZoneAggregate'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
@@ -2247,26 +2248,20 @@ export default function DashboardClient() {
               const liveSessionsDueToDate = wSessions.filter(
                 (s: any) => dueSet.has(s.key),
               ).length
-              // Zone discipline — time-weighted hr_in_zone_pct, same formula
-              // as the TodayScreen RestraintCard so the two surfaces never
-              // disagree about the same week.
-              const analysisRows = wSessions
-                .filter((s: any) => comps[s.key]?.status === 'complete')
-                .map((s: any) => {
-                  const a = runAnalysisMap?.[wn]?.[s.key]
-                  if (!a || a.hr_in_zone_pct == null) return null
-                  return {
-                    inZone: a.hr_in_zone_pct as number,
-                    weight: (a.actual_load_km as number | null) ?? 1,
-                  }
-                })
-                .filter((v: any): v is { inZone: number; weight: number } => v !== null)
-              const zoneDisciplinePercent = analysisRows.length >= 1
-                ? Math.round(
-                    analysisRows.reduce((s: number, r: any) => s + r.inZone * r.weight, 0)
-                    / analysisRows.reduce((s: number, r: any) => s + r.weight, 0)
-                  )
-                : null
+              // Zone discipline — through the single owner. This was the same
+              // formula as TodayScreen's RestraintCard, kept in agreement by a
+              // comment saying so; `weeklyZoneAggregate` is the mechanism that
+              // comment was standing in for.
+              const zoneDisciplinePercent = zoneDiscipline(
+                wSessions
+                  .filter((s: any) => comps[s.key]?.status === 'complete')
+                  .map((s: any) => {
+                    const a = runAnalysisMap?.[wn]?.[s.key]
+                    if (!a || a.hr_in_zone_pct == null) return null
+                    return { inZone: a.hr_in_zone_pct as number, weight: weightOf(a.actual_load_km as number | null) }
+                  })
+                  .filter((v: any): v is { inZone: number; weight: number } => v !== null),
+              ).pct
 
               // Per-zone weekly aggregates for the Coach ZoneRings (Pattern 22).
               // Same load-km weighting as zoneDisciplinePercent — the two
@@ -2287,17 +2282,9 @@ export default function DashboardClient() {
                   }
                 })
                 .filter((v: any): v is { z1: number; z2: number; z3: number; z45: number; weight: number } => v !== null)
-              const zoneTimePctByZone = zoneHistogramRows.length >= 1
-                ? (() => {
-                    const totalW = zoneHistogramRows.reduce((s: number, r: any) => s + r.weight, 0)
-                    return {
-                      z1:  zoneHistogramRows.reduce((s: number, r: any) => s + r.z1  * r.weight, 0) / totalW,
-                      z2:  zoneHistogramRows.reduce((s: number, r: any) => s + r.z2  * r.weight, 0) / totalW,
-                      z3:  zoneHistogramRows.reduce((s: number, r: any) => s + r.z3  * r.weight, 0) / totalW,
-                      z45: zoneHistogramRows.reduce((s: number, r: any) => s + r.z45 * r.weight, 0) / totalW,
-                    }
-                  })()
-                : null
+              // Per-zone split — same owner, same weighting, so the number in
+              // Kit's sentence and the arc the rings draw can never disagree.
+              const zoneTimePctByZone = zoneTimeSplit(zoneHistogramRows).split
               const zoneHistogramHits = zoneHistogramRows.length
 
               // R30 — zone drift pattern detection.
@@ -7021,23 +7008,24 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const completedThisWeek = sessions.filter(s =>
     s.type !== 'rest' && completions[s.key]?.status === 'complete'
   )
+  // Through the single owner (`weeklyZoneAggregate`). This and the Coach
+  // screen's figure were the same formula written twice, and the Coach one
+  // carried a comment promising they would agree. They now agree by
+  // construction rather than by promise.
+  //
+  // ⚠️ The `completedThisWeek` filter above excludes `type === 'rest'`, which
+  // the Coach site does not. Preserved rather than unified: a rest day has no
+  // run_analysis row, so it is dropped by the `!a` guard either way, and
+  // quietly changing a filter while extracting a function is how a refactor
+  // stops being behaviour-neutral.
   const analysisRows = completedThisWeek
     .map(s => {
       const a = runAnalysisMap?.[weekNum]?.[s.key]
       if (!a || a.hr_in_zone_pct == null) return null
-      return {
-        inZone: a.hr_in_zone_pct as number,
-        weight: (a.actual_load_km as number | null) ?? 1,
-      }
+      return { inZone: a.hr_in_zone_pct as number, weight: weightOf(a.actual_load_km as number | null) }
     })
     .filter((v): v is { inZone: number; weight: number } => v !== null)
-  const zoneDisciplinePercent = analysisRows.length >= 1
-    ? Math.round(
-        analysisRows.reduce((s, r) => s + r.inZone * r.weight, 0)
-        / analysisRows.reduce((s, r) => s + r.weight, 0)
-      )
-    : null
-  const zoneDisciplineHits = analysisRows.length
+  const { pct: zoneDisciplinePercent, hits: zoneDisciplineHits } = zoneDiscipline(analysisRows)
 
   return (
     <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ paddingBottom: '32px' }}>
