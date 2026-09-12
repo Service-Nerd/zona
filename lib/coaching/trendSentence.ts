@@ -30,6 +30,20 @@ export interface TrendReadInput {
   nowHr: number
   /** Short month label for the earlier bucket, e.g. "Jun". */
   earlierMonth: string
+  /**
+   * WHICH session type this trend describes. Required, because the sentence
+   * names it — and it was naming the wrong one.
+   *
+   * 🔴 The read said "EASY is easier than it was" while being fed
+   * `trendCardData`, which fetches `session_type: 'long'`. Meanwhile a separate
+   * card labelled "Easy run trend" renders directly below it from
+   * `easyTrendData` (`session_type: 'easy'`) — a DIFFERENT cohort with
+   * different numbers. So Kit made a claim about "easy" running using long-run
+   * data, next to a card of the same name showing something else.
+   *
+   * Naming the subject is now the caller's job and the type enforces it.
+   */
+  sessionLabel: 'easy running' | 'your long runs'
 }
 
 /**
@@ -39,10 +53,22 @@ export interface TrendReadInput {
  * is the honest description and it is the better news of the two, so a flat
  * trend should not be framed as a cost.
  */
-export function trendSentence({ earlierHr, nowHr, earlierMonth }: TrendReadInput): string {
+/**
+ * Subject, verb and pronoun travel together — singular "Easy is… it was" vs
+ * plural "Your long runs are… they were". Kept as one table rather than
+ * assembled from conditionals, because deriving agreement at the point of use
+ * is how you end up patching "they was" with a string replace.
+ */
+const VOICE = {
+  'easy running': { subject: 'Easy',           easier: 'is easier than it was',        costing: 'is costing you more than it did' },
+  'your long runs': { subject: 'Your long runs', easier: 'are easier than they were',   costing: 'are costing you more than they did' },
+} as const
+
+export function trendSentence({ earlierHr, nowHr, earlierMonth, sessionLabel }: TrendReadInput): string {
+  const v = VOICE[sessionLabel]
   if (nowHr <= earlierHr) {
-    return `Easy is easier than it was — ${earlierHr} down to ${nowHr} since ${earlierMonth}.`
+    return `${v.subject} ${v.easier} — ${earlierHr} down to ${nowHr} since ${earlierMonth}.`
   }
-  return `Easy is costing you more than it was — ${earlierHr} up to ${nowHr} since ${earlierMonth}. `
+  return `${v.subject} ${v.costing} — ${earlierHr} up to ${nowHr} since ${earlierMonth}. `
        + `That is common mid-build, and worth watching if it holds.`
 }

@@ -13,8 +13,8 @@
 import { describe, it, expect } from 'vitest'
 import { trendSentence } from './trendSentence'
 
-const say = (earlierHr: number, nowHr: number) =>
-  trendSentence({ earlierHr, nowHr, earlierMonth: 'Jun' })
+const say = (earlierHr: number, nowHr: number, sessionLabel: 'easy running' | 'your long runs' = 'easy running') =>
+  trendSentence({ earlierHr, nowHr, earlierMonth: 'Jun', sessionLabel })
 
 describe('trendSentence — improvement', () => {
   it('reads as easier when the heart rate fell', () => {
@@ -63,5 +63,26 @@ describe('trendSentence — REGRESSION (the case that was wrong)', () => {
     const MIN_HR_DELTA_BPM = 4
     expect(Math.abs(147 - 152)).toBeGreaterThanOrEqual(MIN_HR_DELTA_BPM)
     expect(Math.abs(152 - 147)).toBeGreaterThanOrEqual(MIN_HR_DELTA_BPM)
+  })
+
+  it('NAMES THE SESSION TYPE — it was claiming "easy" from long-run data', () => {
+    // The read said "Easy is easier than it was" while fed `trendCardData`
+    // (`session_type: 'long'`), with a card labelled "Easy run trend" directly
+    // below it fed from a different cohort. Two numbers, one name.
+    expect(say(152, 147, 'easy running')).toContain('Easy is easier')
+    expect(say(152, 147, 'your long runs')).toContain('Your long runs are easier')
+    expect(say(152, 147, 'your long runs')).not.toContain('Easy is')
+  })
+
+  it('keeps subject, verb and pronoun in agreement in BOTH directions', () => {
+    // Singular vs plural travel together in one table rather than being
+    // derived at the point of use — deriving it is how "they was" happens.
+    expect(say(152, 147, 'your long runs')).toContain('they were')
+    expect(say(147, 152, 'your long runs')).toContain('they did')
+    expect(say(152, 147, 'easy running')).toContain('it was')
+    expect(say(147, 152, 'easy running')).toContain('it did')
+    for (const s of [say(152,147,'your long runs'), say(147,152,'your long runs')]) {
+      expect(s).not.toMatch(/they was|it were|runs is |Easy are /)
+    }
   })
 })

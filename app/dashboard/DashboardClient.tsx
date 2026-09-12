@@ -9570,11 +9570,29 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
       // The board made the regression case binding for this screen (McMillan:
       // a surface that can only speak when the arrow is up is marketing). This
       // is that case, and it was a live false statement rather than silence.
-      if (trendCardData?.state === 'live' && trendCardData.gloss) {
+      //
+      // 🔴 AND IT WAS NAMING THE WRONG SESSION TYPE. This read "Easy is easier
+      // than it was" while being fed `trendCardData`, which fetches
+      // `session_type: 'long'` — while a card labelled "Easy run trend" renders
+      // directly below from `easyTrendData` (`session_type: 'easy'`), a
+      // different cohort with different numbers. Kit made a claim about easy
+      // running from long-run data, beside a card of the same name showing
+      // something else.
+      //
+      // Prefer the easy-run trend: it is what the hero line is about ("your
+      // easy days are creeping up") and it agrees with the card that shares its
+      // name. Fall back to the long-run trend, which then SAYS long run.
+      const trendFold = easyTrendData?.state === 'live'
+        ? { d: easyTrendData, label: 'easy running' as const }
+        : trendCardData?.state === 'live' && trendCardData.gloss
+        ? { d: trendCardData, label: 'your long runs' as const }
+        : null
+      if (trendFold) {
         body.push(trendSentence({
-          earlierHr:    trendCardData.earlierHr,
-          nowHr:        trendCardData.nowHr,
-          earlierMonth: trendCardData.earlierMonth,
+          earlierHr:    trendFold.d.earlierHr,
+          nowHr:        trendFold.d.nowHr,
+          earlierMonth: trendFold.d.earlierMonth,
+          sessionLabel: trendFold.label,
         }))
       }
       return {
