@@ -63,6 +63,7 @@ import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetri
 import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
 import { zoneDiscipline, zoneTimeSplit, weightOf } from '@/lib/coaching/weeklyZoneAggregate'
+import { trendSentence } from '@/lib/coaching/trendSentence'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
@@ -9555,8 +9556,26 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
       // Trend fold — when the trend engine returned a live state with a gloss
       // (i.e. hrIsTrending), surface as a templated sentence in Kit's voice.
       // The TrendCard below shows the numbers; this is the interpretation.
+      //
+      // 🔴 DIRECTION-AWARE SINCE 2026-09-12 (UX-COACH-01 regression case).
+      // This sentence was hardcoded to improvement — "Easy is easier than it
+      // was — X DOWN TO Y" — but its only guard is `gloss`, and the gloss is
+      // produced whenever `hrIsTrending`, which is
+      // `Math.abs(hrDeltaBpm) >= MIN_HR_DELTA_BPM`. ABSOLUTE VALUE: it fires in
+      // BOTH directions. So a runner whose easy HR had risen 4+ bpm was told
+      // "Easy is easier than it was — 147 down to 152" — a claim contradicted
+      // by the two numbers inside the same sentence. Same family as the
+      // "stepped volume up from 32 to 32 km" defect.
+      //
+      // The board made the regression case binding for this screen (McMillan:
+      // a surface that can only speak when the arrow is up is marketing). This
+      // is that case, and it was a live false statement rather than silence.
       if (trendCardData?.state === 'live' && trendCardData.gloss) {
-        body.push(`Easy is easier than it was — ${trendCardData.earlierHr} down to ${trendCardData.nowHr} since ${trendCardData.earlierMonth}.`)
+        body.push(trendSentence({
+          earlierHr:    trendCardData.earlierHr,
+          nowHr:        trendCardData.nowHr,
+          earlierMonth: trendCardData.earlierMonth,
+        }))
       }
       return {
         headline: weeklyReport.headline,
