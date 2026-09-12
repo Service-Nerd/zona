@@ -8220,7 +8220,6 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   })()
 
   // Race Projections sheet — tapping the Plan Arc opens this (screen-architecture.md)
-  const [showRaceProjections, setShowRaceProjections] = useState(false)
 
   // Tracked km for the current week (for the This Week card footer)
   const currentWeek = plan.weeks[currentWeekIndex] as any
@@ -8294,26 +8293,26 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         </div>
       )}
 
-      {/* ── PLAN ARC — tap to open Race Projections (screen-architecture.md) ── */}
-      <button
-        onClick={() => setShowRaceProjections(true)}
-        style={{ display: 'block', width: '100%', padding: '0 16px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-        aria-label="View race projections"
-      >
-        <PlanArc
-          totalWeeks={totalWeeks}
-          currentWeek={weekOrdinal}
-          doneWeeks={doneWeeksCount}
-          deloadWeeks={deloadWeekNumbers}
-          raceWeek={raceWeekNumber}
-          phaseLabel={phaseLabel || undefined}
-        />
-        {raceDate && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '6px', letterSpacing: '0.02em' }}>
-            {raceName ? `${raceName} · ` : ''}{daysToRace === 0 ? 'Race day' : daysToRace === 1 ? '1 day to go' : `${daysToRace} days to go`} · Tap for projections
-          </div>
-        )}
-      </button>
+      {/* ── PLAN ARC ────────────────────────────────────────────────────
+          No longer tappable. Race Projections moved to Coach on 2026-09-12
+          (UX-COACH-01, SLT): the card's own header has always called Coach its
+          canonical home, and "how am I tracking toward my race goal?" is
+          Coach's subject, not a shortcut hidden behind a progress bar on the
+          diary screen. screen-architecture.md updated in the same commit so the
+          doc and the code agree. ── */}
+      <PlanArc
+        totalWeeks={totalWeeks}
+        currentWeek={weekOrdinal}
+        doneWeeks={doneWeeksCount}
+        deloadWeeks={deloadWeekNumbers}
+        raceWeek={raceWeekNumber}
+        phaseLabel={phaseLabel || undefined}
+      />
+      {raceDate && (
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '6px', textAlign: 'center', padding: '0 16px' }}>
+          {raceName ? `${raceName} · ` : ''}{daysToRace === 0 ? 'Race day' : daysToRace === 1 ? '1 day to go' : `${daysToRace} days to go`}
+        </div>
+      )}
 
       {/* ── PLAN INTRO — CA-01 free first-plan "why this plan" (Kit's voice) ──
           Plan-level intro generated once on a free user's first plan. The one
@@ -8489,54 +8488,6 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         />
       </div>
 
-      {/* ── RACE PROJECTIONS SHEET — accessed via Plan Arc tap ──────────
-          screen-architecture.md: Race Projections belong on Plan, one tap
-          from the Plan Arc (the existing race-goal object). VDOT formula
-          + R31 target row + R32 recal nudge live here. */}
-      {showRaceProjections && (
-        <div
-          onClick={() => setShowRaceProjections(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zonna-fade-in 0.18s ease-out' }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '85vh', overflowY: 'auto', animation: 'zonna-slide-up 0.22s ease-out' }}
-          >
-            <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
-            <div style={{ padding: '0 20px 4px' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-                Race projections
-              </div>
-              {raceName && (
-                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2, marginBottom: '4px' }}>
-                  {raceName}
-                </div>
-              )}
-              {raceDateStr && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
-                  {raceDateStr}{daysToRace !== null && daysToRace > 0 ? ` · ${daysToRace} days to go` : daysToRace === 0 ? ' · Race day' : ''}
-                </div>
-              )}
-            </div>
-            <div style={{ padding: '12px 20px 8px' }}>
-              <RaceTimesCard
-                stravaConnected={false}
-                benchmarkRecalDismissedAt={undefined}
-                onOpenBenchmark={undefined}
-                onDismissRecal={undefined}
-              />
-            </div>
-            <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
-              <button
-                onClick={() => setShowRaceProjections(false)}
-                style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -9360,11 +9311,18 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // ── R25 Cut #3: Easy-run trend card ────────────────────────────────────
   // Same pattern as the long-run aerobic trend (AI-DEPTH-03) below.
   // Only renders when live — no pending/skeleton clutter (long run card covers that).
+  // UX-COACH-01 (2026-09-12) — the easy-run trend is now the SINGLE trend card
+  // on Coach, so it carries the full state machine the long-run card used to
+  // own. It was live-only by design ("no pending/skeleton to avoid clutter —
+  // the long-run card above already handles the 'not enough data' state"), and
+  // that card has been retired, so those states move here rather than
+  // disappearing. Week 1 has to say something; that was Traynor's condition.
   const [easyTrendData, setEasyTrendData] = useState<{
     state: 'live'
     earlierMonth: string; earlierHr: number; nowHr: number
     cohortSize: number; windowMonths: number; gloss?: string
-  } | null>(null)
+  } | { state: 'pending' } | null>(null)
+  const [easyTrendLoading, setEasyTrendLoading] = useState(true)
   useEffect(() => {
     async function fetchEasyTrend() {
       const easyDistances: number[] = []
@@ -9376,7 +9334,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           }
         }
       }
-      if (!easyDistances.length) return
+      // Each exit below RESOLVES the state. A bare `return` here is what makes
+      // a skeleton shimmer forever — the bug the long-run card's comment named.
+      if (!easyDistances.length) { setEasyTrendData({ state: 'pending' }); setEasyTrendLoading(false); return }
       easyDistances.sort((a, b) => a - b)
       const anchorKm = easyDistances[Math.floor(easyDistances.length / 2)]
       try {
@@ -9387,10 +9347,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           include_gloss: 'true',
         })
         const res = await authedFetch(`/api/coaching/trend?${params}`)
-        if (!res.ok) return
+        if (!res.ok) { setEasyTrendData({ state: 'pending' }); return }
         const data = await res.json()
         const trend = data.trend
-        if (!trend?.hrIsTrending) return
+        if (!trend?.hrIsTrending) { setEasyTrendData({ state: 'pending' }); return }
         const first = trend.buckets[0]
         const last  = trend.buckets[trend.buckets.length - 1]
         const cohortSize = trend.buckets.reduce((s: number, b: any) => s + b.cohortSize, 0)
@@ -9404,81 +9364,23 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           gloss:        data.gloss,
         })
       } catch {
-        // silent — easy-run trend is bonus signal
+        // A failed fetch is "not enough data to claim a trend", not a spinner.
+        setEasyTrendData({ state: 'pending' })
+      } finally {
+        setEasyTrendLoading(false)
       }
     }
     void fetchEasyTrend()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // fire once on CoachScreen mount
 
-  // ── AI-DEPTH-03: Aerobic Trend card ────────────────────────────────────
-  // Fetched lazily on CoachScreen mount (same pattern as race-readiness / phase-summary).
-  // Lazy because it involves an AI call (~500ms); pre-fetching in the DashboardClient
-  // Promise.all would slow every app load for a feature that only shows on Coach.
-  const [trendCardData, setTrendCardData] = useState<{
-    state: 'live'
-    earlierMonth: string; earlierHr: number; nowHr: number
-    cohortSize: number; windowMonths: number; gloss?: string
-  } | { state: 'pending' } | null>(null)
-  const [trendCardLoading, setTrendCardLoading] = useState(true)
-
-  useEffect(() => {
-    async function fetchTrend() {
-      // Derive the anchor distance from the plan's long-run sessions.
-      // Median of all planned long-run distances; returns null when no long runs exist.
-      const longRunDistances: number[] = []
-      for (const week of plan.weeks) {
-        const sessions = (week as any).sessions ?? {}
-        for (const s of Object.values(sessions)) {
-          if (isLongRun(s as any) && (s as any)?.distance_km) {
-            longRunDistances.push((s as any).distance_km as number)
-          }
-        }
-      }
-      if (!longRunDistances.length) {
-        setTrendCardData({ state: 'pending' })
-        setTrendCardLoading(false)
-        return
-      }
-      longRunDistances.sort((a, b) => a - b)
-      const anchorKm = longRunDistances[Math.floor(longRunDistances.length / 2)]
-
-      try {
-        const params = new URLSearchParams({
-          session_type: 'long',
-          distance_km:  String(anchorKm),
-          window_months: '6',
-          include_gloss: 'true',
-        })
-        const res = await authedFetch(`/api/coaching/trend?${params}`)
-        if (!res.ok) { setTrendCardData({ state: 'pending' }); return }
-        const data = await res.json()
-        const trend = data.trend
-        if (!trend || !trend.hrIsTrending) {
-          setTrendCardData({ state: 'pending' })
-          return
-        }
-        const first = trend.buckets[0]
-        const last  = trend.buckets[trend.buckets.length - 1]
-        const cohortSize = trend.buckets.reduce((s: number, b: any) => s + b.cohortSize, 0)
-        setTrendCardData({
-          state:        'live',
-          earlierMonth: first.shortLabel,
-          earlierHr:    first.avgHr ?? 0,
-          nowHr:        last.avgHr  ?? 0,
-          cohortSize,
-          windowMonths: trend.windowMonths,
-          gloss:        data.gloss,
-        })
-      } catch {
-        setTrendCardData({ state: 'pending' })
-      } finally {
-        setTrendCardLoading(false)
-      }
-    }
-    void fetchTrend()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // fire once on CoachScreen mount — data is stable for the session
+  // ── AI-DEPTH-03 long-run trend: RETIRED 2026-09-12 (UX-COACH-01) ─────
+  // Coach rendered two near-identical TrendCards; the founder cut to one and
+  // the easy-run trend survived (it is what the hero line and Kit's sentence
+  // are about). This fetch went with the card rather than lingering to feed a
+  // fallback sentence — it carried an AI gloss call (~500ms, Haiku, per load)
+  // and the easy-run trend already covers that sentence. Dead fetches that
+  // cost money are worse than dead code.
 
   // CO-ONE: The single Kit read assembles signals in priority order:
   //   1. Race window  → race-readiness content leads
@@ -9582,17 +9484,13 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
       // Prefer the easy-run trend: it is what the hero line is about ("your
       // easy days are creeping up") and it agrees with the card that shares its
       // name. Fall back to the long-run trend, which then SAYS long run.
-      const trendFold = easyTrendData?.state === 'live'
-        ? { d: easyTrendData, label: 'easy running' as const }
-        : trendCardData?.state === 'live' && trendCardData.gloss
-        ? { d: trendCardData, label: 'your long runs' as const }
-        : null
-      if (trendFold) {
+      // Only the easy-run trend now — the long-run fetch was retired with its
+      // card. One source, and it is the one the hero line is about.
+      if (easyTrendData?.state === 'live') {
         body.push(trendSentence({
-          earlierHr:    trendFold.d.earlierHr,
-          nowHr:        trendFold.d.nowHr,
-          earlierMonth: trendFold.d.earlierMonth,
-          sessionLabel: trendFold.label,
+          earlierHr:    easyTrendData.earlierHr,
+          nowHr:        easyTrendData.nowHr,
+          earlierMonth: easyTrendData.earlierMonth,
         }))
       }
       return {
@@ -10066,50 +9964,38 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             After the stats evidence tier. RestraintCard anatomy (Pattern 11). */}
         <LedgerCard ledger={disciplineLedger} />
 
-        {/* ── AI-DEPTH-03: AEROBIC TREND CARD ──────────────────────────
-            HR drift over time — the receipt for zone discipline.
-            Skeleton while loading; live/pending based on trend engine output.
-            No locked state here — CoachScreen is already paid-gated upstream. */}
-        {/* CO-ONE: glossless mode strips the AI gloss + its CoachByline so
-            the trend reads as raw evidence. Trend interpretation folds into
-            the one Kit read at the top of Coach instead — see
-            `consolidatedRead` above (priority-4 trend fold). */}
-        {trendCardLoading
+        {/* ── AEROBIC TREND — the physiological answer to "am I getting
+            fitter?". ONE card, founder's call 2026-09-12.
+
+            Coach used to render TWO TrendCards: the long-run trend
+            (AI-DEPTH-03) and this easy-run one (R25 cut 3). Both PAID, both
+            near-identical, stacked at the bottom — part of what made the screen
+            read as a dashboard. The easy-run trend is the one that survives,
+            because it is what the hero line is about ("your easy days are
+            creeping up") and what Kit's sentence names. The long-run card and
+            its fetch are retired; the skeleton/pending states it owned have
+            moved onto this one, so week 1 still says something.
+
+            Glossless: the AI gloss and its byline are stripped so the card
+            reads as raw evidence. The interpretation lives in the one Kit read
+            at the top (CO-ONE, trend fold). ── */}
+        {easyTrendLoading
           ? <TrendCard state="skeleton" />
-          : trendCardData?.state === 'live'
+          : easyTrendData?.state === 'live'
           ? <TrendCard
               state="live"
-              earlierMonth={trendCardData.earlierMonth}
-              earlierHr={trendCardData.earlierHr}
-              nowHr={trendCardData.nowHr}
-              cohortSize={trendCardData.cohortSize}
-              windowMonths={trendCardData.windowMonths}
-              gloss={trendCardData.gloss}
+              label="Easy run trend"
+              sessionLabel="easy run"
+              earlierMonth={easyTrendData.earlierMonth}
+              earlierHr={easyTrendData.earlierHr}
+              nowHr={easyTrendData.nowHr}
+              cohortSize={easyTrendData.cohortSize}
+              windowMonths={easyTrendData.windowMonths}
+              gloss={easyTrendData.gloss}
               glossless
             />
           : <TrendCard state="pending" />
         }
-
-        {/* R25 Cut #3 — easy-run trend. Only renders when live and the signal
-            is meaningful (hrIsTrending). No pending/skeleton to avoid clutter
-            — the long-run card above already handles the "not enough data" state. */}
-        {easyTrendData?.state === 'live' && (
-          <TrendCard
-            state="live"
-            label="Easy run trend"
-            sessionLabel="easy run"
-            earlierMonth={easyTrendData.earlierMonth}
-            earlierHr={easyTrendData.earlierHr}
-            nowHr={easyTrendData.nowHr}
-            cohortSize={easyTrendData.cohortSize}
-            windowMonths={easyTrendData.windowMonths}
-            gloss={easyTrendData.gloss}
-            glossless
-          />
-        )}
-
-
-
 
       </div>
     </div>

@@ -44,13 +44,28 @@ The user opens Plan to understand their schedule — what's prescribed across th
 |---|---|
 | Plan Arc (all weeks, race countdown) | Session-by-session HR/zone analysis |
 | Week-by-week session grid (Now / Next / Later) | Weekly coaching synthesis (that's Coach) |
-| This week's framing — phase, theme, km target | Race projections (accessed via Plan Arc tap) |
+| This week's framing — phase, theme, km target | Race projections (moved to Coach 2026-09-12) |
 | Move / swap session controls | Load ratio or zone discipline scores |
 | Session type and distance per day | Trend data (HR drift, aerobic trend) |
 | Race name and goal | Multi-week coaching insights |
-| Race Projections (one tap from Plan Arc — not inline) | |
+| ~~Race Projections (one tap from Plan Arc)~~ — **moved to Coach 2026-09-12** | |
 
-**Race Projections** are accessed by tapping the Plan Arc or race name header — they are not an inline card. They answer "how am I tracking toward my race goal?" which is a periodic, deliberate check, not part of reading the schedule.
+**Race Projections MOVED TO COACH — 2026-09-12 (UX-COACH-01, SLT).** They used to
+be one tap from the Plan Arc, on the reasoning that *"how am I tracking toward my
+race goal?"* is a periodic, deliberate question rather than a glanceable one. That
+reasoning was right about the question and wrong about the screen: it is precisely
+**Coach's** subject. The component's own header had called Coach its canonical home
+since it was written, while it rendered in a sheet here.
+
+On Coach it is the **arc** — where I was, where I am, and the goal I chose (§109:
+it may remember and compare, it may not predict). The Plan Arc is no longer
+tappable, and the sheet is gone rather than duplicated: Sutherland's point was that
+the one emotionally charged object in the product was filed next to a list of
+appointments.
+
+⚠️ **It also woke R32.** The recalibration nudge renders only on
+`variant="status"`, and Plan passed its handlers as `undefined`, so it had been
+dormant since it shipped. The working handlers were already plumbed to Coach.
 
 **Week Notes** (phase, theme, bullet coaching lines, km target) live here, merged into the "This Week" coaching card — not on Coach.
 

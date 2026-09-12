@@ -30,20 +30,6 @@ export interface TrendReadInput {
   nowHr: number
   /** Short month label for the earlier bucket, e.g. "Jun". */
   earlierMonth: string
-  /**
-   * WHICH session type this trend describes. Required, because the sentence
-   * names it — and it was naming the wrong one.
-   *
-   * 🔴 The read said "EASY is easier than it was" while being fed
-   * `trendCardData`, which fetches `session_type: 'long'`. Meanwhile a separate
-   * card labelled "Easy run trend" renders directly below it from
-   * `easyTrendData` (`session_type: 'easy'`) — a DIFFERENT cohort with
-   * different numbers. So Kit made a claim about "easy" running using long-run
-   * data, next to a card of the same name showing something else.
-   *
-   * Naming the subject is now the caller's job and the type enforces it.
-   */
-  sessionLabel: 'easy running' | 'your long runs'
 }
 
 /**
@@ -59,13 +45,27 @@ export interface TrendReadInput {
  * assembled from conditionals, because deriving agreement at the point of use
  * is how you end up patching "they was" with a string replace.
  */
+/**
+ * ⚠️ ONE SUBJECT, and that is the second half of the fix.
+ *
+ * This read said "EASY is easier than it was" while being fed the trend for
+ * `session_type: 'long'`, with a card labelled "Easy run trend" rendering below
+ * it from a different cohort — two numbers, one name. The long-run trend and
+ * its card were retired on 2026-09-12 (UX-COACH-01, founder's call: one trend
+ * card), so there is now exactly one source and it is easy running.
+ *
+ * If a second subject ever returns, add it HERE with its own agreement —
+ * subject, verb and pronoun together. Deriving agreement at the point of use is
+ * how the first version ended up patching "they was" with a string replace.
+ */
 const VOICE = {
-  'easy running': { subject: 'Easy',           easier: 'is easier than it was',        costing: 'is costing you more than it did' },
-  'your long runs': { subject: 'Your long runs', easier: 'are easier than they were',   costing: 'are costing you more than they did' },
+  subject: 'Easy',
+  easier:  'is easier than it was',
+  costing: 'is costing you more than it did',
 } as const
 
-export function trendSentence({ earlierHr, nowHr, earlierMonth, sessionLabel }: TrendReadInput): string {
-  const v = VOICE[sessionLabel]
+export function trendSentence({ earlierHr, nowHr, earlierMonth }: TrendReadInput): string {
+  const v = VOICE
   if (nowHr <= earlierHr) {
     return `${v.subject} ${v.easier} — ${earlierHr} down to ${nowHr} since ${earlierMonth}.`
   }
