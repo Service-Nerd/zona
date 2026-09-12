@@ -13,7 +13,9 @@
 //   skeleton — loading shimmer while fetch is in flight
 // Pending (not enough runs): parent renders nothing — no empty-state clutter.
 //
-// See ui-patterns.md §30 (PreRunBandCard).
+// ⚠️ ui-patterns.md has NO section for this component. It cited §30, which is
+// PullToRefresh — a dangling reference, corrected to say so rather than point
+// somewhere plausible (2026-09-12).
 
 interface CohortSummary {
   cohortSize: number

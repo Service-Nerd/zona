@@ -2,7 +2,8 @@
 // TIER-DIVERGENT — FREE:  locked state with upgrade CTA, hand-authored body
 //                  PAID:  live/skeleton states, AI summary (Sonnet), CoachByline
 //
-// ui-patterns.md Pattern 30: PostRaceReshapeCard
+// ui-patterns.md Pattern 33: PostRaceReshapeCard
+// (was cited as Pattern 30, which PullToRefresh already owned — 2026-09-12)
 //   - CoachByline (moss) on AI summary — provenance honesty
 //   - 3px moss left-rail — AI-card rail per Pattern 16b
 //   - Two CTAs: Accept (full-width moss) + "Keep my plan as-is" (text link below)

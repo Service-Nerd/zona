@@ -645,7 +645,8 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         </button>
       )}
 
-      {/* RESHAPE-FIX-WAVE2C confirmation row. Pattern 30 (inline banner) —
+      {/* RESHAPE-FIX-WAVE2C confirmation row. Pattern 10b (Move-confirmation
+          row) — corrected 2026-09-12; it cited Pattern 30, which is PullToRefresh.
           no popup, no full-screen takeover. Honest about what's about to
           land: source label, destination day, swap call-out where relevant.
           The 2026-06-26 incident root cause was a runner unaware that the

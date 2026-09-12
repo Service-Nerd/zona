@@ -21,6 +21,23 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** no — too small to carry a post on its own, but the "wrong but plausible" line is reusable.
 
 
+## 2026-09-12 — FMT-03 / SESSION-COLOUR-TT-01 · I filed three things I could have fixed
+
+**Shipped:** the Strava panel speaks the runner's units, a 5K time trial stops rendering as intervals, and a third item was examined and declined rather than left open.
+
+**Dev learning:** Both fixes were bigger than the tickets I wrote for them. FMT-03 looked like one hardcoded "/km" in a tile. It was the *fourth* surviving copy of the pace-formatting rule — and `lib/format.ts`'s own comment named `strava.ts` as one of the four that FMT-01 was supposed to delete. FMT-01 removed three and left the one in the file it had named. Then `paceAtHR` turned out to be a fifth, hiding as a data function: it formatted "5:30" internally and left the caller to append the unit, which is how a measurement quietly becomes a display.
+
+**Product/creator learning:** The colour one is a small thing that says something true. Every `type: 'hard'` session in the product is a 5K time trial — 672 of 672 — and they rendered in a colour whose key is literally `intervals`. A time trial is one continuous maximal effort. The colour was making a claim about the shape of the session, and it was wrong, on a screen where colour is the only thing a runner reads without reading.
+
+**AI-building learning:** The real lesson isn't either fix. The founder pulled me up because I had added five items to a list he'd asked me to clear — I kept finding adjacent problems and *filing* them, which felt like diligence and was actually deferral. Three of the five I could have finished in the time it took to write the backlog entries. His standing instruction already said so: file only what needs a board, new data, or a founder decision. I had been treating "I found something" as sufficient reason to file.
+
+**The honest bit:** The two that genuinely were his to decide, I should have asked in the same breath rather than routing them to a board that meets when I convene it. When I finally asked, both were answered in one message, and both were closed the same day.
+
+**Hook material:** I found five problems while fixing seven. Three of them I could have fixed on the spot and filed instead — which looks like thoroughness and is just a slower way of not doing the work.
+
+**Postable?:** yes
+
+
 ## 2026-09-12 — TREND-DIRECTION-01 · The sentence was wrong in both directions, and about the wrong run
 
 **Shipped:** Kit stops telling runners their easy running got easier when it got harder, and stops describing long runs as easy ones.

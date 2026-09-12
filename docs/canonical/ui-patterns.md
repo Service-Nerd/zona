@@ -1157,7 +1157,7 @@ The CTA button replaces the "Generate report" button when present — no generat
 
 ---
 
-### 18. SpecialCoachCard
+### 34. SpecialCoachCard
 
 > **SUPERSEDED by CO-ONE (2026-06-19).** Phase Summary and Race Readiness content is no longer rendered as standalone cards on Coach. Both fold into the **one consolidated Kit read** at the top of CoachScreen — race-readiness content leads the read when in race window, phase-summary content leads when a phase just changed. The generation flow, idempotent storage, and API routes are unchanged; only the rendering surface is consolidated. The variant table below documents the legacy two-card layout for historical reference.
 
@@ -2088,7 +2088,7 @@ Canonical examples: `GeneratingCeremony.tsx`, `GeneratePlanScreen.tsx`
 
 ---
 
-### 30. PostRaceReshapeCard + RaceResultSheet
+### 33. PostRaceReshapeCard + RaceResultSheet
 
 **AI-DEPTH-08 — post-race reshape flow.**
 
@@ -2221,3 +2221,56 @@ SLC:
   Complete — hidden when <2 sessions completed, 100% edge case handled
 Trigger frontend-design skill.
 ```
+
+
+### 32. Interpretation-led screen (Coach)
+
+The shape the Coach screen was rebuilt to on 2026-09-12 (UX-COACH-01, Coaching
+Board + SLT). Reusable wherever a screen has to answer "what does this mean?"
+rather than "what are my numbers?".
+
+**The rule: one subject, stated as a sentence, with its evidence beneath it.**
+
+```
+Kit's read          ← the HERO. An interpretation, not a metric.
+  + ZoneRings         the same fact PICTURED, directly under the sentence
+The arc             ← where I was · where I am · the goal I chose
+Supporting facts    ← two, not four
+Ledger
+One trend card      ← the physiological evidence
+One link out        ← replaces tap-to-explain sheets on individual stats
+```
+
+**Why interpretation leads.** Wood's condition, and it is binding: *a view of
+progress is the illusion-of-progress class unless it changes what the runner does
+on Tuesday.* "Your easy days are creeping up again" changes Tuesday. "Aerobic
+fitness +3%" does not. The screen's top line must be a reading, not a number.
+
+**Why the word and the picture are one block.** Kit's sentence says "nine per
+cent of your week sat in Zone 3" and `ZoneRings` draws that same nine per cent
+immediately beneath. They are the same fact in two registers, so they belong in
+one eyeful — and they must come from **one owner** (`weeklyZoneAggregate`), or
+the sentence and the image can contradict each other on the same screen.
+
+**Counting blocks is not the fix.** Coach had seven and the problem was never
+seven; it was seven things answering different questions at the same volume.
+Each block must answer a *different* question, in descending order of how much
+it changes the runner's next decision.
+
+**What this pattern forbids:**
+- A composite "score" invented to make the screen feel decisive (§108 ruled on it).
+- A predicted future value — this pattern may remember and compare, never predict (§109).
+- A tile that restates a chart sitting next to it. Measured before removing:
+  Coach's "Zone discipline" tile was the ZoneRings' Z2 arc, drawn worse.
+- A second non-verbal encoding of something the colour and the label already
+  carry (UX-SESSION-GLYPH-01, measured and declined).
+
+**The empty state is designed FIRST, not last.** McMillan's condition: a surface
+that can only speak when the arrow is up is marketing. In week 1 the hero holds a
+read that points at what it will be watching, and every evidence block resolves
+to a stated "not yet" rather than a skeleton that shimmers forever.
+
+Reference: `CoachScreen` in `app/dashboard/DashboardClient.tsx`;
+`docs/decisions/ux-coach-01-boards-2026-09-12.md`.
+
+---
