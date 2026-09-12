@@ -3876,8 +3876,18 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       for (const [day, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
         if (!s) continue
         if (s.type === 'strength' || s.type === 'rest') continue
-        if (s.distance_km == null) continue
-        const fraction = s.distance_km / w.weekly_km
+        // SESSION-KM-02 (2026-09-12) — this read `s.distance_km` directly and
+        // skipped anything without one, so §52's own checker was blind to every
+        // DURATION-anchored session: 95.8% of a beginner's. The producer's
+        // floor (`ruleEngine.ts`, `lrKm ?? 0`) is inert for the same cohort for
+        // the same reason, so the rule and the check that guards it were blind
+        // together — which is why this has never surfaced a violation. Measured
+        // at the time of the fix: 0 breaches across 2,337 duration-anchored
+        // sessions in scope, so this opens no new violations today. It stops
+        // the check being unable to see them tomorrow.
+        const km = sessionKmForCheck(s)
+        if (km == null) continue  // no pace to convert with — never read as 0
+        const fraction = km / w.weekly_km
         if (fraction > cap + 0.005) {
           violations.push({
             code: 'INV-PLAN-LR-MAX-WEEKLY-PCT',
@@ -3885,7 +3895,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             severity: 'error',
             week: w.n,
             day,
-            message: `${s.label ?? 'session'} ${s.distance_km}km is ${Math.round(fraction * 100)}% of weekly volume ${w.weekly_km}km — exceeds ${GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY}% cap. Lopsided week; reduce the long run, raise weekly volume, or downgrade to maintenance.`,
+            message: `${s.label ?? 'session'} ${km.toFixed(1)}km is ${Math.round(fraction * 100)}% of weekly volume ${w.weekly_km}km — exceeds ${GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY}% cap. Lopsided week; reduce the long run, raise weekly volume, or downgrade to maintenance.`,
             actual: `${Math.round(fraction * 100)}%`,
             expected: `≤ ${GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY}%`,
           })

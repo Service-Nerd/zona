@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-12 — SESSION-KM-02 · The fix I was asked for was a no-op, and proving that found the real bug
+
+**Shipped:** §52's own checker can now see a duration-anchored week. The two prescription sites stay open, with a better question for the board than the one that was filed.
+
+**Dev learning:** The item said: swap two `?? 0` sites for the owner already imported in that file. I applied both on a scratch basis and measured before believing it, and the answer was **zero difference** — 2,916 parity cases byte-identical, 648 cohort plans identical. There is a third gate nobody had filed, sitting *inside* the mutation: `if (!lr || lr.session.distance_km == null) continue`. Reaching the logic is not the same as the logic doing anything. Had I shipped the filed fix on its own reasoning, I would have banked a change that reads like a fix, passes every test, and does nothing — the worst possible outcome, because it closes the ticket.
+
+**Product/creator learning:** The real question turned out not to be mechanical at all. The step-back mutation *writes* kilometres, so fixing it means deciding whether a beginner's step-back week says "14 km" in a plan where every other week says "90 minutes", or whether the step-back moves minutes instead. That is a coaching and a voice decision, and no amount of staring at `?? 0` would have surfaced it. The filed item was a description of a symptom wearing the costume of a fix.
+
+**AI-building learning:** My first test for the checker fix was green and worthless. §52's whole block is wrapped in `volume_profile !== 'maintenance'`, and 51% of this cohort classifies maintenance — so the beginner half-marathon plan I reached for was exempt for a reason having nothing to do with the defect. It passed because the code never ran. I only caught it because I had decided in advance that the test had to fail against the old code, and when I reverted the fix it still passed. **Falsification is not a formality you perform on a test you trust; it is the only thing that tells you which test you actually wrote.** Exactly 58 of 621 plans were eligible fixtures.
+
+**The honest bit:** The detector I built to answer this has a self-check printed at the top of every run, because the last one written for this exact item printed a clean table and was wrong. Mine agrees with the sweep on 12,618 sessions it can cross-check. I did not add that because I am careful; I added it because the previous attempt at this measurement was careful too.
+
+**Hook material:** The ticket said change two lines. Changing them altered nothing across 3,564 generated plans. The bug was a third line, in a place nobody had looked, and the real question wasn't code at all.
+
+**Postable?:** yes
+
+
 ## 2026-09-12 — HOOKS-LINT-01 / HOOKS-ORDER-02 · Installing the check that had already proved itself
 
 **Shipped:** `rules-of-hooks` now runs in `npm run verify`, and `TodayScreen`'s empty-plan guard moved below its fourteen hooks.
