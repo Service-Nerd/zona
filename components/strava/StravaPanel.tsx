@@ -3,9 +3,15 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import { formatDuration, formatPace, hrColour, paceAtHR, getRuns } from '@/lib/strava'
-import { formatDistance } from '@/lib/format'
+import { formatDuration, hrColour, paceAtHR, getRuns } from '@/lib/strava'
+// FMT-03 — pace comes from the canonical owner and converts for the reader.
+// `lib/strava.ts` had a fourth km-only copy of the rule; it is gone.
+import { formatDistance, formatPace } from '@/lib/format'
 import type { StravaActivity } from '@/types/plan'
+
+/** Seconds per km for a run — the rate `formatPace` converts for the reader. */
+const secPerKm = (r: { moving_time: number; distance: number }): number | null =>
+  r.distance > 0 ? r.moving_time / (r.distance / 1000) : null
 
 export default function StravaPanel({ preloadedRuns, preloadedConnected, preloadedLoading, raceName, raceDate, raceDistanceKm, zone2Ceiling, restingHR, maxHR, preferredUnits = 'km' }: {
   preloadedRuns?: any[] | null
@@ -67,7 +73,7 @@ Activity:
 - Duration: ${formatDuration(run.moving_time)}
 - Avg HR: ${run.average_heartrate ?? 'not recorded'} bpm
 - Max HR: ${run.max_heartrate ?? 'not recorded'} bpm
-- Pace: ${formatPace(run.moving_time, run.distance)}
+- Pace: ${formatPace(secPerKm(run), preferredUnits) ?? '—'}
 - Elevation: +${Math.round(run.total_elevation_gain ?? 0)}m
 
 Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note one thing done well and one to focus on next. No fluff.`
@@ -148,7 +154,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
       {/* Key metrics */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '16px' }}>
         {[
-          { label: 'Pace @ HR 145', value: pace145 ? pace145 + '/km' : '—', sub: 'Aerobic efficiency' },
+          { label: 'Pace @ HR 145', value: formatPace(pace145, preferredUnits) ?? '—', sub: 'Aerobic efficiency' },
           { label: 'Avg HR (last 10)', value: avgHR ? avgHR + ' bpm' : '—', sub: avgHR && avgHR <= 145 ? 'Zone 2 ✓' : avgHR ? 'Above target' : '' },
           { label: 'This week',     value: formatDistance(thisWeekKm ?? 0, preferredUnits, { exact: true }) ?? '—', sub: 'Running volume' },
           { label: 'Longest run',   value: (longestKm ? formatDistance(longestKm, preferredUnits, { exact: true }) : null) ?? '—', sub: 'Since Jan 2026' },
@@ -169,7 +175,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {runs?.slice(0, 12).map(run => {
           const dur  = formatDuration(run.moving_time)
-          const pace = formatPace(run.moving_time, run.distance)
+          const pace = formatPace(secPerKm(run), preferredUnits)
           const hr   = run.average_heartrate ? Math.round(run.average_heartrate) : null
           const date = new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
           return (
@@ -215,7 +221,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
                 { label: 'Distance', value: formatDistance(popup.distance / 1000, preferredUnits, { exact: true }) ?? '—', color: 'var(--teal)' },
                 { label: 'Duration', value: formatDuration(popup.moving_time), color: 'var(--teal)' },
                 { label: 'Avg HR',   value: popup.average_heartrate ? `${Math.round(popup.average_heartrate)}` : '—', color: hrColour(popup.average_heartrate) },
-                { label: 'Pace',     value: formatPace(popup.moving_time, popup.distance), color: 'var(--text-secondary)' },
+                { label: 'Pace',     value: formatPace(secPerKm(popup), preferredUnits) ?? '—', color: 'var(--text-secondary)' },
                 { label: 'Max HR',   value: popup.max_heartrate ? `${Math.round(popup.max_heartrate)}` : '—', color: 'var(--text-secondary)' },
                 { label: 'Elevation',value: `+${Math.round(popup.total_elevation_gain ?? 0)}m`, color: 'var(--text-secondary)' },
               ].map(({ label, value, color }) => (

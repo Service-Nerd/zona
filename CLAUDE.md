@@ -183,7 +183,7 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 | long | `--s-long` | `#5E4FB0` | ← resolved by `isLongRun(session)`, **not** by `session.type` |
 | quality/tempo | `--s-quality` | `#B8853A` |
 | intervals | `--s-inter` | `#B84545` |
-| race | `--s-race` | `#C86A2A` |
+| race | `--s-race` | `#C86A2A` | ← also the **5K time trial** (`type: 'hard'`): a maximal *continuous* effort, not reps (SESSION-COLOUR-TT-01) |
 | recovery | `--s-recov` | `#4E8068` |
 | strength | `--s-strength` | `#5A6578` |
 | cross-train | `--s-cross` | `#3D8A88` |

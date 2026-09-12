@@ -17,7 +17,17 @@ export const SESSION_COLORS: Record<string, string> = {
   quality:       'var(--session-quality)',
   tempo:         'var(--session-quality)',
   intervals:     'var(--session-intervals)',
-  hard:          'var(--session-intervals)',
+  // SESSION-COLOUR-TT-01 (2026-09-12) — `hard` is the 5K TIME TRIAL and nothing
+  // else. Measured across the 621-plan cohort: 672 of 672 `type: 'hard'`
+  // sessions are labelled "5K time trial" (§78's recalibration measurement),
+  // and every one is a single continuous effort — 0 carry reps.
+  //
+  // It used to render in `--session-intervals`, which told the runner "this is
+  // a reps session" on a key whose own name is `intervals`. A time trial is a
+  // maximal CONTINUOUS effort, so its honest neighbour is the race colour: same
+  // family (measured, maximal, one effort), and the two do not co-occur — a
+  // time trial lands in a recalibration week, the race in race week.
+  hard:          'var(--session-race)',
   race:          'var(--session-race)',
   recovery:      'var(--session-recovery)',
   strength:      'var(--session-strength)',

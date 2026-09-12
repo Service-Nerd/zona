@@ -216,13 +216,13 @@ export function formatDuration(seconds: number) {
   return h > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${m}min`
 }
 
-export function formatPace(movingTime: number, distanceM: number) {
-  if (!distanceM) return '—'
-  const secPerKm = movingTime / (distanceM / 1000)
-  const min = Math.floor(secPerKm / 60)
-  const sec = Math.round(secPerKm % 60)
-  return `${min}:${String(sec).padStart(2, '0')}/km`
-}
+// FMT-03 (2026-09-12) — `formatPace` DELETED from here.
+//
+// `lib/format.ts` has been the sole owner of every pace string since ADR-015,
+// and FMT-01 removed three of the four km-only copies — naming this file as one
+// of them in its own comment. This fourth copy survived, so the admin Strava
+// panel printed "/km" to a miles runner while every other surface converted.
+// Callers now use `formatPace(secPerKm, units)` from `@/lib/format`.
 
 export function hrColour(hr: number | undefined) {
   if (!hr) return 'var(--text-dim)'
@@ -231,14 +231,18 @@ export function hrColour(hr: number | undefined) {
   return 'var(--coral)'
 }
 
-// Pace at a given HR band — aerobic efficiency metric
-export function paceAtHR(runs: StravaActivity[], lowHR = 135, highHR = 155) {
+/**
+ * Pace at a given HR band — aerobic efficiency metric.
+ *
+ * FMT-03: returns **seconds per km**, not a formatted string. It used to render
+ * `"5:30"` itself and leave the caller to append "/km", which baked the unit
+ * into a data function and made it a third copy of the pace-formatting rule.
+ * Formatting belongs to `lib/format.ts` (ADR-015); measuring belongs here.
+ */
+export function paceAtHR(runs: StravaActivity[], lowHR = 135, highHR = 155): number | null {
   const sample = runs
     .filter(r => r.average_heartrate && r.average_heartrate >= lowHR && r.average_heartrate <= highHR && r.moving_time > 0 && r.distance > 2000)
     .slice(0, 6)
   if (!sample.length) return null
-  const avgSecPerKm = sample.reduce((s, r) => s + r.moving_time / (r.distance / 1000), 0) / sample.length
-  const min = Math.floor(avgSecPerKm / 60)
-  const sec = Math.round(avgSecPerKm % 60)
-  return `${min}:${String(sec).padStart(2, '0')}`
+  return sample.reduce((s, r) => s + r.moving_time / (r.distance / 1000), 0) / sample.length
 }
