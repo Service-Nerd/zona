@@ -106,6 +106,34 @@ export function zonesFromZoneString(zoneStr: string | undefined | null): number[
  * This is what lets the header's live-recomputed bpm honour the *prescribed*
  * zone rather than the coarse session type (§84).
  */
+/**
+ * The ZoneKey to EXPLAIN for a session, derived from its prescribed
+ * `session.zone` string — never from the coarse `session.type` slot.
+ *
+ * §84 settled that every zone surface reads `session.zone`, because the type
+ * slot collapses every quality session to a flat Z3. The header and ZoneBar were
+ * moved onto it; the zone EDUCATION SHEET was not, and kept calling
+ * `zoneForSessionType`. Measured 2026-09-12 across the 621-plan cohort: the two
+ * disagreed on **837 sessions (2.3%)** — 549 where the header read "Zone 4–5"
+ * and the sheet taught Zone 3 (and showed the LOWER Zone 3 HR band, on VO2max
+ * work), plus 288 segmented long runs reading Zone 2–3 against a Zone 2 sheet.
+ * That is §84's own named failure: disguising genuinely hard work as moderate.
+ *
+ * Where a session spans zones, the sheet explains the PEAK — the hardest part is
+ * the part that needs explaining, and it matches the `peakName` the header
+ * already shows. Returns null when the string names no zone, so the caller can
+ * fall back rather than assert something.
+ */
+export function zoneKeyForZoneString(zoneStr: string | undefined | null): ZoneKey | null {
+  const zones = zonesFromZoneString(zoneStr)
+  if (zones.length === 0) return null
+  const hi = Math.max(...zones)
+  if (hi >= 4) return 'Z4-5'
+  if (hi === 3) return 'Z3'
+  if (hi === 2) return 'Z2'
+  return 'Z1'
+}
+
 export function hrBandForZoneString(
   zoneStr: string | undefined | null,
   restingHR: number | null | undefined,

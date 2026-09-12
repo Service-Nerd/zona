@@ -61,7 +61,7 @@ import { nextGoalOptions, achievementLine, parseTimeToSeconds, type FinishedRace
 import { composeSession } from '@/lib/plan/sessionComposer'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
 import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
-import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString } from '@/lib/coaching/zoneRules'
+import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
 import { getSessionVoiceLine } from '@/lib/coaching/voiceLines'
 import { renderGuidance, guidanceContextFromSession } from '@/lib/plan/renderGuidance'
 import { catalogueRowFor } from '@/lib/plan/catalogueLink'
@@ -5156,12 +5156,29 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
         </div>
       )}
 
-      {/* Zone education sheet */}
+      {/* Zone education sheet (ZONE-SHEET-01) */}
       {zoneSheetOpen && (() => {
-        const zone = zoneForSessionType(session.type)
-        if (!zone) return null
-        const band = sessionHRBand(session.type, restingHR ?? null, maxHR ?? null)
-        return <ZoneInfoSheet zoneKey={zone.zone} hrBand={band ? { lo: band.lo, hi: band.hi } : null} onClose={() => setZoneSheetOpen(false)} />
+        // §84: the sheet reads `session.zone`, NOT the coarse `session.type`.
+        //
+        // ZONE-SHEET-01 (2026-09-12). This called `zoneForSessionType(session.type)`
+        // and `sessionHRBand(session.type, …)` — the pre-§84 path the header was
+        // moved off and the sheet was not. Measured across the 621-plan cohort,
+        // the sheet disagreed with the header directly above it on 837 sessions
+        // (2.3%): 549 where the header read "Zone 4–5" and tapping it taught
+        // ZONE 3, showing the LOWER Zone 3 HR band on VO2max work, plus 288
+        // segmented long runs (Zone 2–3 header, Zone 2 sheet). Teaching a runner
+        // that hard work is moderate is the exact harm §84 names.
+        //
+        // Falls back to the type-derived zone ONLY for legacy plans carrying no
+        // `session.zone` — §84's own graceful-degradation rule.
+        const keyFromZone = zoneKeyForZoneString(session.zone)
+        const fallback = keyFromZone ? null : zoneForSessionType(session.type)
+        const zoneKey = keyFromZone ?? fallback?.zone ?? null
+        if (!zoneKey) return null
+        const band = keyFromZone
+          ? hrBandForZoneString(session.zone, restingHR ?? null, maxHR ?? null)
+          : sessionHRBand(session.type, restingHR ?? null, maxHR ?? null)
+        return <ZoneInfoSheet zoneKey={zoneKey} hrBand={band ? { lo: band.lo, hi: band.hi } : null} onClose={() => setZoneSheetOpen(false)} />
       })()}
     </>
   )

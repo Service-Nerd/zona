@@ -21,6 +21,23 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** no — too small to carry a post on its own, but the "wrong but plausible" line is reusable.
 
 
+## 2026-09-12 — ZONE-SHEET-01 / UX-SESSION-GLYPH-01 · Two UX tickets, one built, one measured out of existence
+
+**Shipped:** the zone you get taught is now the zone you were shown. And the session-shape glyph was declined, with numbers.
+
+**Dev learning:** Neither ticket survived contact with its own data, in opposite directions. The glyph was specced twice — first off `derived_set`, then "corrected" to `main_set_structure.type`, described as "present on every row". Both false: 21 of 22 catalogue rows are v2 `blocks`, only 8 carry `.type`, and `.type` resolves for 0.7% of real sessions. The zone item asked for a 5-zone *pace* reference, "presentation only" — but zones here are defined purely by heart rate, and there is no zone→pace mapping anywhere in the constitution. Stating one is a coaching claim wearing a UI ticket's clothes.
+
+**Product/creator learning:** The glyph died on one table. Every shape distinction lives inside a single colour: easy, long, race and intervals rows are 100% steady; only quality amber splits. So the glyph's whole job was subdividing amber — and inside amber, the label already says it (100% of progressions, 73% of repeats: "Progressive tempo", "Pyramid", "Cruise intervals"). It would have duplicated the label on 81% of the rows it appeared on. That is the type chip we removed from the same row six days ago, wearing a different shape.
+
+**AI-building learning:** I found the real bug while checking whether the glyph would duplicate anything. Reading the row's code led to the zone sheet, which was still on the pre-§84 `session.type` path the header had been moved off months ago. 837 sessions where the sheet contradicted the header — 549 of them telling a runner their VO2max session was threshold, with the *lower* HR band to match. **The valuable defect was three files away from the ticket I was sent to work on**, and I would not have seen it if I had started by writing the glyph.
+
+**The honest bit:** I nearly built the glyph. It is specced, small, and someone clearly wanted it — and the fastest way to look productive was to ship it. The measurement took twenty minutes and killed it. The second-order cost of building it would have been permanent: another element on every plan row, defended by the fact that it exists.
+
+**Hook material:** Two UI tickets. Built neither as written. One died to a single table showing the colour already said it; the bug worth fixing was three files away and nobody had filed it.
+
+**Postable?:** yes
+
+
 ## 2026-09-12 — §107 / ZONE-BAND-02 · The board asked which number was wrong. Both were, and neither was the point
 
 **Shipped:** beginners stop being prescribed a long-run segment nobody could pace, §107, a new invariant, and a liveness harness that samples plan shapes instead of the top of a list.
