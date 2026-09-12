@@ -338,6 +338,19 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
   | 90 min | 1.7% | 18.0% |
   **This measurement was always about the TIME model, never day selection, so the board's ruling stands on its own evidence despite the correction above.**
 
+  ### ✅ RE-VALIDATED 2026-09-12 before starting the build — the case is STRONGER than filed
+  The hold on this item was **purely timing** ("not in the same fortnight as a launch"). That is discharged. Every number above was re-measured first, because three specs were found wrong on 2026-09-12 alone.
+  | claim | as filed | measured 2026-09-12 |
+  |---|---|---|
+  | mean peak volume lost @ 30 min cap | 23.5% | **22.1%** |
+  | @ 45 / 60 / 90 min | 15.2 / 8.6 / 1.7% | **14.5 / 8.3 / 1.5%** |
+  | worst loss @ 30 min | 41.6% | **41.6%** (unchanged) |
+  | plans with a weekday session OVER the stated cap | 54% | 🔴 **77.3%** (480 / 621) |
+  | worst weekday session vs a 30-minute cap | 54 min | 🔴 **83 min** — "HM-pace reps" |
+  - The mean-loss figures drifted down slightly (§106, §100 and §107 have all landed since); **the placement problem got materially worse.** A runner who told us they have 30 minutes on weekdays can be handed an **83-minute** session.
+  - ✅ **Checked, NOT a defect:** 147 of the over-cap sessions are "5K time trial" (`type: 'hard'`, no `derived_set`) in deload weeks. `isStructuredSession()` returns true for `type === 'hard'`, so **the engine exemption and the validator exemption agree** — §81's requirement holds. The exemption is simply very wide; that is what scope item 3 exists to narrow.
+  - **Build order, revised on the strength of this:** item 1 (capture `day_budgets`) FIRST and ALONE, deriving `max_weekday_mins = min(day_budgets)` so generation is **provably byte-identical** by `verify:parity`. Data first, behaviour second — so the risky half lands against a known-good baseline rather than alongside a new input.
+
   ### Where `max_weekday_mins` is consumed today — every site B has to reach
   - `ruleEngine.ts:3261` → `applyWeekdayMinsCap()` (**:3295**) — a POST-placement TRIM, not a sizing input. Sessions are built, then shortened.
   - **§81 exemptions inside that trim (`:3300–3320`)**: the long run and any `isStructuredSession()` are skipped entirely — capping a structured session scales the label but not `derived_set`. **§82** floor-protects easy runs at `MIN_SESSION_DISTANCE_KM.easy`.
