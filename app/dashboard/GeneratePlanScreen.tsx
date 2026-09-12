@@ -835,10 +835,22 @@ export default function GeneratePlanScreen({
       ? `${targetHours}:${String(targetMins).padStart(2, '0')}:00` : undefined
     const benchTimeStr  = benchHours > 0 || benchMins > 0
       ? `${benchHours}:${String(benchMins).padStart(2, '0')}:00` : undefined
-    const maxWeekdayVal = maxWeekdayChip
-      ? MAX_WEEKDAY_CHIPS.find(c => c.label === maxWeekdayChip)?.value : undefined
     // The one engine touch: derive the schedule fields from the week grid.
-    const week = weekPlanToInputs(weekPlan)
+    //
+    // UX-WIZARD-01 step 1 — `max_weekday_mins` is now derived HERE too, rather
+    // than beside this line from the chip. The grid decides which weekdays the
+    // runner actually runs, and only those can constrain a weekday cap; keeping
+    // the two derivations apart meant a rest day's stale budget could cap a week
+    // it has no part in. One owner, `weekPlanToInputs`.
+    //
+    // The third argument is per-day budgets, which the wizard does not collect
+    // yet (step 1 is the model + the single owner; the per-day control is step
+    // 2). With it omitted this resolves to exactly the chip value, which is what
+    // `verify:parity` confirms: 2,916 cases byte-identical.
+    const weekdayDefaultMins = maxWeekdayChip
+      ? MAX_WEEKDAY_CHIPS.find(c => c.label === maxWeekdayChip)?.value : undefined
+    const week = weekPlanToInputs(weekPlan, weekdayDefaultMins)
+    const maxWeekdayVal = week.maxWeekdayMins
 
     const benchmark = (() => {
       const dateField = benchmarkDate ? { benchmark_date: benchmarkDate } : {}

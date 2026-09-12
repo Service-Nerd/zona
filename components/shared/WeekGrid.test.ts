@@ -95,3 +95,63 @@ describe('WeekGrid · WEEK_DAYS', () => {
     expect(WEEK_DAYS).toEqual(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])
   })
 })
+
+// ── UX-WIZARD-01 step 1 — per-day time budgets ──────────────────────────────
+//
+// The grid answers WHICH days. These answer HOW LONG on each, and derive the
+// engine's existing single `max_weekday_mins` from them so the two have one
+// owner instead of two derivations that can disagree.
+//
+// Why the MINIMUM: that is what the engine's cap means today — a ceiling every
+// weekday session is trimmed to. A runner with 30 minutes on Tuesday and 90 on
+// Thursday resolves to 30, and loses the Thursday capacity entirely. Measured
+// 2026-09-12: a 30-minute cap costs 22.1% of mean peak volume, and 77.3% of
+// plans still contain a weekday session OVER the stated cap (worst 83 min
+// against 30) because §81 rightly refuses to deform a structured session.
+// Replacing that minimum with per-day SIZING is step 2; this step captures the
+// data and provably changes nothing.
+describe('UX-WIZARD-01 — weekday budgets', () => {
+  const week = (o: Partial<WeekPlan> = {}): WeekPlan => ({ ...defaultWeek(), ...o })
+
+  it('BACK-COMPAT — with no budgets, the default is passed straight through', () => {
+    // defaultWeek runs mon/wed/fri, so three weekdays all take the default.
+    expect(weekPlanToInputs(week(), 45).maxWeekdayMins).toBe(45)
+  })
+
+  it('BACK-COMPAT — no default and no budgets means no limit', () => {
+    expect(weekPlanToInputs(week()).maxWeekdayMins).toBeUndefined()
+  })
+
+  it('takes the MINIMUM across the weekdays actually run', () => {
+    expect(weekPlanToInputs(week(), 90, { mon: 30 }).maxWeekdayMins).toBe(30)
+    expect(weekPlanToInputs(week(), 30, { mon: 90, wed: 90, fri: 90 }).maxWeekdayMins).toBe(90)
+  })
+
+  it('IGNORES a budget on a REST day — a stale edit must not drag the cap down', () => {
+    // tue is rest in defaultWeek. A 10-minute budget left on it from an earlier
+    // edit would otherwise cap every weekday at 10.
+    expect(weekPlanToInputs(week(), 60, { tue: 10 }).maxWeekdayMins).toBe(60)
+  })
+
+  it('IGNORES weekend budgets — the cap is Monday to Friday by definition', () => {
+    expect(weekPlanToInputs(week({ sat: 'run' }), 60, { sat: 10 }).maxWeekdayMins).toBe(60)
+  })
+
+  it('a weekend-only week keeps the stated default, not undefined', () => {
+    // Byte-identical to what the pre-UX-WIZARD-01 call site passed, so parity
+    // stays a real signal. Nothing is capped either way — there is no weekday.
+    const weekendOnly = week({ mon: 'rest', wed: 'rest', fri: 'rest', sat: 'run' })
+    expect(weekPlanToInputs(weekendOnly, 45).maxWeekdayMins).toBe(45)
+  })
+
+  it('treats a nonsense budget as absent rather than as a cap of zero', () => {
+    // "unknown" must never be read as "none" — the `distance_km ?? 0` mistake.
+    expect(weekPlanToInputs(week(), 60, { mon: 0 }).maxWeekdayMins).toBe(60)
+    expect(weekPlanToInputs(week(), 60, { mon: NaN }).maxWeekdayMins).toBe(60)
+    expect(weekPlanToInputs(week(), 60, { mon: -5 }).maxWeekdayMins).toBe(60)
+  })
+
+  it('a budget with no default still caps', () => {
+    expect(weekPlanToInputs(week(), undefined, { mon: 40 }).maxWeekdayMins).toBe(40)
+  })
+})

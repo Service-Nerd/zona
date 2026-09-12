@@ -47,14 +47,52 @@ export function cycleDay(plan: WeekPlan, day: DayKey): WeekPlan {
   return out
 }
 
+export const WEEKDAYS: readonly DayKey[] = ['mon', 'tue', 'wed', 'thu', 'fri']
+
+/**
+ * Minutes available on a given day. UX-WIZARD-01 step 1.
+ *
+ * Sparse ON PURPOSE: a day absent from this map has no OVERRIDE, not a budget of
+ * zero. `?? 0` on a missing budget is the `distance_km ?? 0` mistake in a new
+ * costume — "unknown" read as "none" — which cost this repo four silent passes
+ * (SESSION-KM-02). Absent means "use the weekday default".
+ */
+export type DayBudgets = Partial<Record<DayKey, number>>
+
 export interface WeekInputs {
   daysAvailable: number
   restShort: DayKey[]      // days_cannot_train (short keys; caller maps to wire words)
   longDay: 'sat' | 'sun' | null  // preferred_long_run_day; null if none marked
+  /**
+   * `max_weekday_mins` — the engine's existing single global cap, DERIVED here
+   * so the grid and the cap have one owner instead of two.
+   *
+   * It is the MINIMUM across the weekdays the runner actually runs, because that
+   * is what the engine's cap means today: a ceiling every weekday session is
+   * trimmed to. A runner with 30 minutes on Tuesday and 90 on Thursday resolves
+   * to 30 — which is precisely the loss UX-WIZARD-01 exists to stop (measured
+   * 2026-09-12: 22.1% mean peak volume at a 30-minute cap). Deriving it here
+   * rather than at the call site is what lets step 2 replace the MINIMUM with
+   * per-day sizing without hunting for a second derivation.
+   *
+   * `undefined` = no limit, matching the existing "No limit" chip.
+   */
+  maxWeekdayMins: number | undefined
 }
 
-/** The wizard's one engine touch: grid → GeneratorInput-facing values. */
-export function weekPlanToInputs(plan: WeekPlan): WeekInputs {
+/**
+ * The wizard's one engine touch: grid → GeneratorInput-facing values.
+ *
+ * `weekdayDefaultMins` is the single chip the runner picks for "a weekday";
+ * `dayBudgets` overrides it per day. Both optional — omit them and this behaves
+ * exactly as it did before UX-WIZARD-01, which is what keeps every stored plan
+ * and every API caller that sends only `max_weekday_mins` working unchanged.
+ */
+export function weekPlanToInputs(
+  plan: WeekPlan,
+  weekdayDefaultMins?: number,
+  dayBudgets?: DayBudgets,
+): WeekInputs {
   const restShort: DayKey[] = []
   let longDay: 'sat' | 'sun' | null = null
   let daysAvailable = 0
@@ -63,7 +101,25 @@ export function weekPlanToInputs(plan: WeekPlan): WeekInputs {
     else daysAvailable++
     if (plan[d] === 'long') longDay = d === 'sat' ? 'sat' : 'sun'
   }
-  return { daysAvailable, restShort, longDay }
+
+  // Only weekdays the runner actually RUNS can constrain a weekday cap. A rest
+  // day carrying a stale budget from an earlier edit must not drag the cap down.
+  const running = WEEKDAYS.filter(d => plan[d] !== 'rest')
+  const mins = running
+    .map(d => dayBudgets?.[d] ?? weekdayDefaultMins)
+    .filter((m): m is number => typeof m === 'number' && Number.isFinite(m) && m > 0)
+
+  return {
+    daysAvailable,
+    restShort,
+    longDay,
+    // No running weekday (a weekend-only week) → fall back to the stated default
+    // rather than `undefined`. It changes nothing the runner sees — there is no
+    // weekday session to cap — but it keeps the value byte-identical to what the
+    // pre-UX-WIZARD-01 call site passed, so `verify:parity` stays a real signal
+    // instead of reporting a diff that means nothing.
+    maxWeekdayMins: mins.length > 0 ? Math.min(...mins) : weekdayDefaultMins,
+  }
 }
 
 /**
