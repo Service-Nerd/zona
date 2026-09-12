@@ -6,6 +6,36 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-12 — TREND-SPARKLINE-01 / TREND-PACE-CLAIM-01 · A chart request turned into a false claim we were already shipping
+
+**Shipped:** the line on the easy-run trend card, and then the discovery that the card was telling some runners something untrue.
+
+The founder remembered a sparkline from a mockup and asked for it back. Easy job: the whole monthly series was already coming down from the trend endpoint, and the screen was reading the first bucket and the last one and dropping everything between. An hour, maybe.
+
+Then came a follow-up I nearly answered from memory: what would a **pace** line mean? I went to check how the cohort was built before answering, and found that it matches runs on **distance** and nothing else. No pace control, no effort control. Which would be fine, except the card's own explanation sheet said the comparison was *"at the same pace"* — twice — with the conclusion *"your aerobic base is growing"* hanging off it.
+
+So a runner who had simply eased off was being told they were getting fitter.
+
+**The bit that made it worse than a normal bug.** This isn't random. Zonna's whole argument is *slow down*. A runner who takes that seriously **is** running their easy days slower. So the people most likely to be told something false were the people the product was working for. The failure rate is inversely correlated with adherence. I would not have found that by testing; I found it because a board member's job is to ask who the failure lands on.
+
+**Taking it to the SLT was the right call and the answer was not what I brought.** I went in with three design options for a pace feature. Fried's response: *"you've brought us a feature request and a bug wearing the same coat. Take the coat off."* There was no feature. There was a defect, and a question about pace that only looked like a feature because the defect made it seem interesting.
+
+They also killed the obvious version outright. A pace number, on a trend card, coloured for improvement, is a reward attached to easy-run speed. In an app whose entire thesis is that you're already trying too hard, that's not a neutral metric — it's an incentive pointing the wrong way. Same digits, different position, different object entirely.
+
+**And I got a fact wrong in my own briefing.** I said the efficiency option would need "a unit no runner has ever seen." Checking the registry during the review: we've been computing speed ÷ heart rate since April, storing it per run, and showing it to runners in Session Detail as a percentage against their baseline. I'd argued against building something on the grounds it was unfamiliar, while it sat two screens away. Check the registry *before* forming the opinion, not while defending it.
+
+**The measurement is the part I'd repeat.** The obvious implementation was to reuse a constant we already had: 5 seconds per km, the threshold for "is there a pace trend worth mentioning". Hutchinson objected that it felt too tight for easy running across six months. So I measured it against the production database instead of arguing. Easy runs in a matched distance band: **within-month standard deviation of 40 s/km**. The constant I was about to reuse was an eighth of the noise floor. It would have withheld the claim essentially always, and I'd have shipped a card that never spoke again and called it caution.
+
+I set the new threshold at 20 s/km and wrote "provisional" into the constant in capitals, because the sample was three users and four comparable month pairs. The *scale* argument is solid at any sample size — a threshold below the within-month standard deviation cannot separate signal from noise. The specific number is a guess with a floor under it, and pretending otherwise is how a measured value becomes folklore.
+
+**One thing I nearly shipped broken.** The sentence withholds the fitness claim when pace explains the heart rate. The sparkline right underneath it was still drawing in brand green, because it was deciding "improving" from the heart rate alone. One card, two verdicts, disagreeing. Caught it on the preview page, not in a test — the test suite was entirely green while that was true.
+
+**Same day, same free lunch, twice:** the bad-heart-rate rows behind yesterday's impossible "77 bpm" turned out to be four runs from a single Apple Health sync on one day in April, the exact bucket shown on screen. I only saw it because I was already in the database measuring something else.
+
+**Numbers:** 1590 tests across 179 files, exit 0. Generation provably identical across 2,916 plans. Filed one item for the Coaching Board — band the cohort on pace so the claim is true by construction rather than by disclaimer — because that changes what counts as a comparable run, and that's a coaching decision, not mine.
+
+---
+
 ## 2026-09-12 — UX-COACH-01 · I wrote a comment describing a feature and shipped it as the feature
 
 **Shipped:** the race progress arc (where I was → where I am → what I'm aiming at), Kit's read and the zone rings merged into one card, a plausibility gate on every heart-rate average, and three mislabels in the trend card.

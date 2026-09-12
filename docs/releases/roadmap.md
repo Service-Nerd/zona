@@ -102,15 +102,17 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > MAINT-LABEL-01's value half (→ Coaching Board → §106), and SESSION-KM-02. Two
 > of the three rows in this table turned out to be held back by a premise that
 > was wrong; both corrections are in the rows themselves. **The rest of the table
-> still stands** — UX-COACH-01 and UX-POSTRUN-01 for the reasons the SLT gave,
+> still stands** — UX-POSTRUN-01 for the reasons the SLT gave,
 > UX-WIZARD-01 because it moves peak volume by construction and that is not a
-> fortnight-before-launch change.
+> fortnight-before-launch change. **UX-COACH-01 came out of this table on
+> 2026-09-12** — the founder overruled the cohort premise it rested on, and it
+> shipped.
 
 ### 🚫 Explicitly NOT before the demo — do not pick these up opportunistically
 
 | Item | Why not |
 |---|---|
-| **UX-COACH-01** (Coach screen redesign) | Fried: *"a half-redesigned Coach screen is worse than a busy one."* Wood exercised the kill mandate: the progress dashboard is the founder describing himself, and he is not this cohort. **Recorded as a real disagreement with the founder, not synthesised away.** |
+| ~~**UX-COACH-01**~~ (Coach screen redesign) | ✅ **DONE 2026-09-12 — the founder overruled the premise of this row.** It read: Fried *"a half-redesigned Coach screen is worse than a busy one"*, Wood's kill mandate on *"the progress dashboard is the founder describing himself, and he is not this cohort"*. The founder answered the cohort objection directly: **it is for ALL runners**, and the ask is a simple, understood, feel-good moment for a non-elite runner, not a dashboard. Both boards then sat and agreed a shape (§109). ⚠️ **Fried's warning was the accurate half and it very nearly landed anyway:** the first cut moved a card to Coach, wrote a comment describing the arc, and shipped an unchanged component. The founder caught it on the live screen. Built properly the same day, along with the four defects that review produced. 📌 **The lesson for this table: a row saying "do not build" ages badly and nobody re-reads it.** This one survived the decision that reversed it by a full day. |
 | **UX-POSTRUN-01** (four numbers → one) | Hutchinson: *"collapsing zone %, RPE and fatigue into one score is a claim that those three trade off in a known ratio. They do not."* Needs a Coaching Board sitting that will not happen in a fortnight. |
 | **UX-WIZARD-01** (per-day time budgets) | Board-ruled BUILD, but it **moves peak volume by construction**. Not in the same fortnight as a launch. |
 | ~~**UX-PLAN-MOVE-01**~~ | ✅ **DONE 2026-09-11.** **The premise of this row was wrong and I wrote it:** the handle did NOT cause the incident. RESHAPE-FIX-WAVE2C shipped three things and the safety is the other two (a staged move plus a confirmation row), so an accidental tap has cost nothing since June. Shipped quiet, and fixed a label-clipping defect found on the same row. |
