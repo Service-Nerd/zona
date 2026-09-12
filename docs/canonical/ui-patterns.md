@@ -241,7 +241,7 @@ Four states: `future` (default), `current`, `done`, `skipped`.
 ```
 
 **Structure:**
-- **Left accent**: 3px solid vertical bar, `getSessionColor(type)` from `lib/session-types.ts` — sole owner
+- **Left accent**: 3px solid vertical bar, `getSessionColor(session)` from `lib/session-types.ts` — sole owner. **Pass the SESSION, not a bare type** (PLAN-LONGRUN-COLOUR-01, 2026-09-12): the engine models a long run as `type: 'easy'`, so a type alone cannot pick the accent and `--s-long` was unreachable for every engine-generated plan. The owner resolves it through `isLongRun`, which reads the stamped `role` — never the display label, which the AI enricher rewrites (D-17). A bare string is still accepted for call sites that genuinely hold only a type; those cannot detect a long run, by construction. This doc named `getSessionColor` the sole owner while `PlanCalendar` indexed `SESSION_COLORS` directly — a documented claim with no mechanism behind it, now true.
 - **Name**: 15px 600 `--ink` (future/current), `--mute` (done)
 - **Detail**: 12px 400 `--mute`, hidden when skipped
 - **Right distance**: 17px 700 tabular-nums `--ink` (future), 14px 600 `--mute` (done)

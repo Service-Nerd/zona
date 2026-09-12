@@ -5,6 +5,7 @@
 // See docs/canonical/ui-patterns.md § SessionCard and docs/alignment/phase-2-decisions.md D-003, D-010.
 
 import { getSessionColor } from '@/lib/session-types'
+import type { Session } from '@/types/plan'
 import { formatDistance, formatDuration, type DistanceUnits, type SessionMetric } from '@/lib/format'
 import HrPendingStatusRow, { type HrPendingState } from './HrPendingStatusRow'
 
@@ -19,6 +20,11 @@ type CompletionData = {
 
 type Props = {
   type: string
+  /** PLAN-LONGRUN-COLOUR-01 — the engine models a long run as `type: 'easy'`,
+   *  so the type alone cannot pick the accent. `role` is the stamped signal
+   *  `isLongRun` reads; absent it, the owner falls back to the label, which is
+   *  correct for legacy plans and for the marketing demo data. */
+  role?: Session['role']
   name: string
   /** Supporting detail — e.g. "Zone 2 · ≤145bpm" */
   detail?: string
@@ -48,6 +54,7 @@ type Props = {
 
 export default function SessionCard({
   type,
+  role,
   name,
   detail,
   distanceKm,
@@ -62,7 +69,7 @@ export default function SessionCard({
   onHrRetry,
   isHrRetrying = false,
 }: Props) {
-  const accentColor = getSessionColor(type)
+  const accentColor = getSessionColor({ type, role, label: name })
   const isDone = state === 'done'
   const isSkipped = state === 'skipped'
   const isCurrent = state === 'current'

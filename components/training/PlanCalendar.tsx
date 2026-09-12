@@ -5,7 +5,7 @@ import type { Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
-import { SESSION_COLORS } from '@/lib/session-types'
+import { getSessionColor } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
 
@@ -718,7 +718,10 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   const hasSession = !!session && session.type !== 'rest'
   const isRestType = !session || session.type === 'rest'
   const isTarget = isMoveTarget || isSwapTarget
-  const accent = session ? (SESSION_COLORS[session.type] ?? 'var(--mute)') : 'transparent'
+  // PLAN-LONGRUN-COLOUR-01 — through the owner, so a long run reads as one
+  // here too. This indexed SESSION_COLORS directly while ui-patterns.md already
+  // called getSessionColor the sole owner: a documented claim with no mechanism.
+  const accent = session ? getSessionColor(session) : 'transparent'
 
   return (
     <div

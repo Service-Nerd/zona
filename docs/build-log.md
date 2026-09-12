@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-12 — PLAN-LONGRUN-COLOUR-01 · The marketing page promised a colour the app could not produce
+
+**Shipped:** long runs render in `--s-long` instead of easy blue, on every surface.
+
+**Dev learning:** The token was declared in `globals.css`, documented in CLAUDE.md's colour map and specified in `ui-patterns.md` — three places asserting a colour that no generated plan could produce, because the engine models a long run as `type: 'easy'` and every surface coloured by type. That is the fourth time this repo has shipped a declared-and-unreachable thing (`--section-gap`, the decorative config family, D9's `flexShrink`, §97's inert gates). The common factor is never carelessness; it is that **writing a thing down in three places feels like more verification than writing it down in one, and it is exactly the same amount.**
+
+**Product/creator learning:** The homepage's demo data uses `type: 'long'`, so the product still on the marketing site has been showing a purple long run for months while the real app showed blue. We shipped a picture of a feature we did not have. Nobody lied; the demo data and the engine data simply had different shapes, and the one surface anybody screenshots was the one that looked right.
+
+**AI-building learning:** The first test I wrote for this asserted `getSessionColor({type:'easy', role:'long_run'})` returns purple. It passed instantly and proved nothing — it was a test of a lookup table I had just written, in the same five minutes, with the same assumption in my head. The test that is worth having generates a real marathon plan and asserts that some session in it resolves to the colour. **The tautology and the claim look almost identical when you write them; only one of them could have failed.**
+
+**The honest bit:** `ui-patterns.md` called `getSessionColor` the "sole owner" of this mapping. `PlanCalendar` had been indexing `SESSION_COLORS` directly the whole time. A documented ownership claim with no mechanism is just a sentence, and this codebase now has a measurable habit of believing its own sentences.
+
+**Hook material:** Our marketing site showed a feature colour the app couldn't render. For months. The demo data was more correct than the product.
+
+**Postable?:** yes
+
+
 ## 2026-09-12 — SESSION-KM-02 · The fix I was asked for was a no-op, and proving that found the real bug
 
 **Shipped:** §52's own checker can now see a duration-anchored week. The two prescription sites stay open, with a better question for the board than the one that was filed.

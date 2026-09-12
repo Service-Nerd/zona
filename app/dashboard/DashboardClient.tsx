@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Plan, Week } from '@/types/plan'
+import type { Plan, Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
@@ -2652,7 +2652,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
     if (firstSession) break
   }
 
-  const accent = firstSession ? getSessionColor(firstSession.type) : 'var(--accent)'
+  const accent = firstSession ? getSessionColor(firstSession) : 'var(--accent)'
   const greeting = firstName ? `${firstName}, your` : 'Your'
 
   return (
@@ -4091,7 +4091,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
     && (session.type === 'easy' || session.type === 'run')
     && !!stravaLoading
 
-  const color = getSessionColor(session.type)
+  const color = getSessionColor(session)
   const config = { color, label: getSessionLabel(session.type) }
 
   // Per-session metric values — session may come from TodayScreen (formatted) or raw plan object (unformatted)
@@ -5213,6 +5213,10 @@ interface SessionEntry {
   // resolve real main-set instructions — without them the fallback is a generic
   // "Quality main set." placeholder (D-08 bug, fixed 2026-09-03).
   label?: string
+  /** PLAN-LONGRUN-COLOUR-01 — the long-run signal `isLongRun` reads. Carried so
+   *  the accent colour never has to guess from the display label, which the AI
+   *  enricher rewrites (D-17). */
+  role?: Session['role']
   catalogue_id?: string
   derived_set?: DerivedSet
   distance_km?: number
@@ -5244,7 +5248,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
     const comp = completions[s.key] // use originalDay for completion lookup
     if (comp?.status === 'complete') return 'var(--teal)'
     if (comp?.status === 'skipped') return 'var(--text-muted)'
-    return getSessionColor(s.type)
+    return getSessionColor(s)
   }
 
   function handleTouchStart(e: React.TouchEvent) {
@@ -6054,7 +6058,7 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{nextSession.detail}</div>
             )}
           </div>
-          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: getSessionColor(nextSession.type), flexShrink: 0, marginLeft: '12px' }} />
+          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: getSessionColor(nextSession), flexShrink: 0, marginLeft: '12px' }} />
         </div>
       )}
     </div>
@@ -6774,6 +6778,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
       duration: s?.duration_mins != null ? fmtDurationMins(s.duration_mins) : parsed.duration,
       // Canonical fields preserved for SessionPopupInner / composer
       label: s?.label ?? undefined,
+      role: s?.role ?? undefined,
       catalogue_id: s?.catalogue_id ?? undefined,
       derived_set: s?.derived_set ?? undefined,
       distance_km: s?.distance_km ?? undefined,
@@ -7857,6 +7862,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
               return (
             <SessionCard
               type={selectedSession.type}
+              role={selectedSession.role}
               name={selectedSession.title}
               detail={[
                 selectedSession.zone,
@@ -12729,7 +12735,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
   /** AUTO-MATCH-02: best Strava match (high or medium) for this session. */
   autoMatch?: { activity: any; confidence: 'high' | 'medium' } | null
 }) {
-  const color = getSessionColor(session.type ?? 'easy')
+  const color = getSessionColor({ ...session, type: session.type ?? 'easy' })
   const typeLabel = getSessionLabel(session.type ?? 'easy')
   // Date display: "Tuesday · Week 14"
   const weekEyebrow = session.weekN ? `Week ${session.weekN}` : ''
@@ -12972,7 +12978,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
           }}>
             <div style={{
               width: '7px', height: '7px', borderRadius: '50%',
-              background: getSessionColor(nextSession.type), flexShrink: 0,
+              background: getSessionColor(nextSession), flexShrink: 0,
             }} />
             <div>
               <div style={{

@@ -175,10 +175,12 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 
 ### Session Type Colour Map (Warm Slate values)
 
+> **Resolve every session accent through `getSessionColor(session)`** and pass the whole session. A long run carries `type: 'easy'` (so §52/§9 ratio rules treat it as aerobic volume), so `SESSION_COLORS[session.type]` cannot produce `--s-long` — it was declared here, in `globals.css` and in `ui-patterns.md` and was **unreachable for every engine-generated plan** until 2026-09-12 (PLAN-LONGRUN-COLOUR-01). Guarded by `lib/sessionColourReach.test.ts`.
+
 | Type | Token | Hex |
 |---|---|---|
 | easy | `--s-easy` | `#3D6FB0` |
-| long | `--s-long` | `#5E4FB0` |
+| long | `--s-long` | `#5E4FB0` | ← resolved by `isLongRun(session)`, **not** by `session.type` |
 | quality/tempo | `--s-quality` | `#B8853A` |
 | intervals | `--s-inter` | `#B84545` |
 | race | `--s-race` | `#C86A2A` |
