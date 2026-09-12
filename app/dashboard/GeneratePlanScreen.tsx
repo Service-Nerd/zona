@@ -1837,6 +1837,16 @@ export default function GeneratePlanScreen({
                 ))}
               </div>
             </div>
+
+            {/* UX-WIZARD-01 — the per-weekday control (`DayBudgetRows`) is BUILT
+                AND TESTED but deliberately NOT RENDERED YET.
+                `weekPlanToInputs` still derives `max_weekday_mins` as the
+                MINIMUM across the days, so a runner who sets Tue 30 / Thu 90
+                gets a cap of 30 — byte-identical to entering 30 here today. The
+                control would change NOTHING a runner receives, and a visible
+                control that does nothing is the same defect as a declared token
+                nothing consumes. It renders when step 3 lands and the engine
+                sizes each day to its own budget. */}
             {!hasPaidAccess && onUpgrade && <TeaserCard onUpgrade={onUpgrade} />}
           </div>
         )

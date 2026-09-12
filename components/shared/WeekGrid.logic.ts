@@ -140,6 +140,53 @@ export function weekPlanFromLegacy(
   return plan
 }
 
+/**
+ * Tap-to-cycle a single day's budget, mirroring `cycleDay` above so the two
+ * controls share one idiom: the runner already learned "tap it again" on the
+ * grid directly above this row.
+ *
+ * The cycle ends by returning to ABSENT (rendered "Same"), never to a number —
+ * so clearing an override is always reachable by tapping, and the sparse model
+ * stays expressible in the UI. A day is removed from the map rather than set to
+ * a sentinel, because a sentinel is how "unknown" starts meaning "zero".
+ */
+export function cycleDayBudget(
+  budgets: DayBudgets,
+  day: DayKey,
+  options: readonly number[],
+): DayBudgets {
+  const out: DayBudgets = { ...budgets }
+  const cur = out[day]
+  if (cur == null) {
+    const first = options[0]
+    if (first != null) out[day] = first
+    return out
+  }
+  const i = options.indexOf(cur)
+  const next = i >= 0 ? options[i + 1] : options[0]
+  if (next == null) delete out[day]
+  else out[day] = next
+  return out
+}
+
+/**
+ * Drop overrides for days that are no longer run, or are not weekdays.
+ *
+ * Without this, editing the grid AFTER setting budgets leaves orphans: mark
+ * Tuesday rest and its 30-minute budget lingers invisibly. `weekPlanToInputs`
+ * already ignores those when deriving the cap, so this is not a correctness
+ * fix — it is so what the runner is shown and what is stored agree, and so a
+ * re-marked day does not silently inherit a budget they set a week ago.
+ */
+export function pruneDayBudgets(budgets: DayBudgets, plan: WeekPlan): DayBudgets {
+  const out: DayBudgets = {}
+  for (const d of WEEKDAYS) {
+    const v = budgets[d]
+    if (v != null && plan[d] !== 'rest') out[d] = v
+  }
+  return out
+}
+
 export type DayThreshold = { block: number; ok: number }
 export interface CountVerdict { state: 'blocked' | 'warn' | 'ok'; hint: string | null }
 

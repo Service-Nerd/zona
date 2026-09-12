@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
   emptyWeek, defaultWeek, cycleDay, weekPlanToInputs, weekPlanFromLegacy,
-  dayCountVerdict, WEEK_DAYS, type WeekPlan, type DayKey,
+  dayCountVerdict, WEEK_DAYS, cycleDayBudget, pruneDayBudgets,
+  type WeekPlan, type DayKey, type DayBudgets,
 } from './WeekGrid.logic'
 
 describe('WeekGrid · cycleDay', () => {
@@ -153,5 +154,60 @@ describe('UX-WIZARD-01 — weekday budgets', () => {
 
   it('a budget with no default still caps', () => {
     expect(weekPlanToInputs(week(), undefined, { mon: 40 }).maxWeekdayMins).toBe(40)
+  })
+})
+
+describe('UX-WIZARD-01 — cycleDayBudget', () => {
+  const OPTS = [30, 45, 60, 90] as const
+
+  it('absent → the first option', () => {
+    expect(cycleDayBudget({}, 'mon', OPTS).mon).toBe(30)
+  })
+
+  it('steps through the options in order', () => {
+    let b: DayBudgets = { mon: 30 }
+    b = cycleDayBudget(b, 'mon', OPTS); expect(b.mon).toBe(45)
+    b = cycleDayBudget(b, 'mon', OPTS); expect(b.mon).toBe(60)
+    b = cycleDayBudget(b, 'mon', OPTS); expect(b.mon).toBe(90)
+  })
+
+  it('RETURNS TO ABSENT after the last option — clearing is always reachable', () => {
+    const b = cycleDayBudget({ mon: 90 }, 'mon', OPTS)
+    expect('mon' in b).toBe(false)
+    expect(b.mon).toBeUndefined()
+  })
+
+  it('removes the key rather than storing a sentinel', () => {
+    // A sentinel is how "unknown" starts meaning "zero".
+    expect(Object.keys(cycleDayBudget({ mon: 90 }, 'mon', OPTS))).toEqual([])
+  })
+
+  it('an unrecognised stored value restarts the cycle rather than sticking', () => {
+    expect(cycleDayBudget({ mon: 37 }, 'mon', OPTS).mon).toBe(30)
+  })
+
+  it('never touches another day', () => {
+    const b = cycleDayBudget({ mon: 30, wed: 60 }, 'mon', OPTS)
+    expect(b.wed).toBe(60)
+  })
+})
+
+describe('UX-WIZARD-01 — pruneDayBudgets', () => {
+  it('drops a budget on a day the runner stopped running', () => {
+    const plan: WeekPlan = { ...defaultWeek(), wed: 'rest' }
+    expect(pruneDayBudgets({ mon: 30, wed: 45 }, plan)).toEqual({ mon: 30 })
+  })
+
+  it('drops weekend budgets — the cap is Monday to Friday', () => {
+    const plan: WeekPlan = { ...defaultWeek(), sat: 'run' }
+    expect(pruneDayBudgets({ sat: 30, mon: 45 } as DayBudgets, plan)).toEqual({ mon: 45 })
+  })
+
+  it('keeps budgets on days still run', () => {
+    expect(pruneDayBudgets({ mon: 30, fri: 60 }, defaultWeek())).toEqual({ mon: 30, fri: 60 })
+  })
+
+  it('is a no-op on an empty map', () => {
+    expect(pruneDayBudgets({}, defaultWeek())).toEqual({})
   })
 })
