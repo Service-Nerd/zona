@@ -1239,6 +1239,30 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 
 **Keyframes:** `zonna-fade-in` (backdrop) and `zonna-slide-up` (panel) are defined once in `globals.css` — never inline in JSX.
 
+> 🔴 **DO NOT COPY THE CURRENT SHEET IMPLEMENTATIONS — SHEET-PRESENT-01 IS OPEN.**
+>
+> This section specifies a sheet's **anatomy** and has never specified its
+> **stacking**, which is exactly why the seven live implementations disagree.
+> Measured 2026-09-12: the bottom nav is `zIndex: 3000`, and five of seven
+> sheets sit **below** it — `ZoneInfoSheet` (100), the Coach zone-discipline
+> and load-ratio sheets (100), `TrendCard`'s explanation sheet (200) and
+> `DashboardClient:3471` (200) — while two guessed above it (4000). Every one
+> is `position: fixed; inset: 0` with `alignItems: 'flex-end'`, so the panel is
+> bottom-anchored and its content bottom (plus `ZoneInfoSheet`'s own
+> `position: sticky` close bar) lands precisely where the nav paints. The sheet
+> opens; the runner cannot see the part that matters, including how to dismiss
+> it. Founder-reported on device.
+>
+> **There are no portals in the app** (`createPortal` → 0 hits), so each sheet
+> renders inline wherever it was declared and had to invent its own z-index.
+>
+> **Until SHEET-PRESENT-01 lands, adding a sheet by copying an existing one
+> will reproduce the defect.** The fix is a single `<Sheet>` primitive at the
+> app root owning backdrop, panel, both keyframes, the drag pill, the sticky
+> close bar and **one z-index constant above the nav** — with the panel resting
+> on the nav's top edge rather than under or over it. Spec in
+> `docs/releases/backlog.md` → SHEET-PRESENT-01.
+
 **Rule:** Only Zone discipline and Load ratio are interactive. Sessions and Weeks left are static — same card style, no button, no ⓘ.
 
 ---
