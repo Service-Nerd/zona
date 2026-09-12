@@ -53,6 +53,21 @@ export const BRAND = {
    */
   brandStatement: "You can't outrun your easy days.",
 
+  /**
+   * The CORE TRUTH — the thesis the whole product rests on, and the line the
+   * founder story turns on. CLAUDE.md § Positioning has named it since launch;
+   * it was never parameterised, so it sat hardcoded in BOTH founder surfaces
+   * with DIFFERENT apostrophe entities (`&rsquo;` on /about, `&apos;` in the
+   * app) — the same sentence rendering as two different characters, which is
+   * precisely what "all brand strings are parameterised" exists to prevent
+   * (GTM-SITE-03, 2026-09-12).
+   *
+   * Not a fourth tagline. It is the thesis, used as a pull-line where the story
+   * is being told — never on login, never alongside `tagline` or
+   * `brandStatement` on the same surface.
+   */
+  coreTruth: 'You\u2019re trying hard. That\u2019s the problem.',
+
   /** Sub-text shown below the sign-in card heading. */
   signinSub: 'Pick it up where you left off.',
 

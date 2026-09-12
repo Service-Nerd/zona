@@ -21,6 +21,23 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** no — too small to carry a post on its own, but the "wrong but plausible" line is reusable.
 
 
+## 2026-09-12 — GTM-SITE-03 · The same sentence, rendered as two different characters
+
+**Shipped:** the founder story has one owner, and the thesis line is a brand constant instead of two hardcoded copies.
+
+**Dev learning:** Two surfaces told the same story in slightly different words — "a plateau that would not move" on the web, "wouldn't move" in the app; comma-joined clauses on one, short declaratives and an em dash on the other. Neither was wrong, and that is the problem: with no owner there was no way to say which was canonical, so any edit made the pair worse in one direction or the other. The fix is not better discipline, it is a constant and a test that fails when someone re-inlines.
+
+**Product/creator learning:** The worst of it was the thesis, "You're trying hard. That's the problem." — the line CLAUDE.md calls the core truth of the whole product. It was hardcoded in both files with *different apostrophe entities*, `&rsquo;` on the web and `&apos;` in the app. The same sentence was rendering as two different characters depending on where you read it. Nobody would report that; you would just feel, faintly, that the app and the site were not quite the same product.
+
+**AI-building learning:** The ticket said "standardise the narrative and the locked strings, not the treatment", and the treatment divergence was the interesting part to leave alone: the web page has a photograph because a charity vetting a stranger needs a face, the in-app note deliberately has none because there the voice is the asset. It would have been easy to "tidy" that into consistency and quietly destroy a decision someone had reasoned about. The entry said, in bold, *that divergence was a decision, not drift* — and the only reason I did not flatten it is that a previous me had written that sentence down.
+
+**The honest bit:** Choosing the canonical wording was a real call and I made it on the record rather than by keeping whichever file I opened first: the app's short declaratives, because the brand voice is "one sentence is better than two", and the web's full stop instead of the app's em dash, because of the founder's no-em-dash call. The app sits outside the em-dash test only because engine labels have a live coupling. A hand-authored founder note has none, so the rule applies.
+
+**Hook material:** Our thesis line existed twice with two different apostrophes. One sentence, two characters, depending which surface you read it on.
+
+**Postable?:** yes
+
+
 ## 2026-09-12 — ZONE-SHEET-01 / UX-SESSION-GLYPH-01 · Two UX tickets, one built, one measured out of existence
 
 **Shipped:** the zone you get taught is now the zone you were shown. And the session-shape glyph was declined, with numbers.

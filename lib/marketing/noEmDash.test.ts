@@ -39,6 +39,10 @@ const SURFACES = [
   'app/support/page.tsx',
   'app/privacy/page.tsx',
   'app/terms/page.tsx',
+  // GTM-SITE-03 — the founder narrative moved OUT of app/about/page.tsx into a
+  // single owner shared with the in-app note. Listed here so the rule keeps
+  // being enforced on the strings rather than on the page that used to hold them.
+  'lib/marketing/founderStory.ts',
   'components/marketing/AppStoreBadge.tsx',
   'components/marketing/ComparisonPage.tsx',
   'components/marketing/PhoneFrame.tsx',

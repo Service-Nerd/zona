@@ -25,6 +25,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { FOUNDER_STORY } from '@/lib/marketing/founderStory'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 
@@ -107,7 +108,7 @@ export default function AboutPage() {
           fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1,
           margin: '0 0 24px', color: 'var(--ink)',
         }}>
-          The runner had a problem.
+          {FOUNDER_STORY.opener}
         </h1>
 
         {FOUNDER_PHOTO && (
@@ -122,18 +123,10 @@ export default function AboutPage() {
           />
         )}
 
-        <P>
-          Heart rate spiking before the warm-up was done. Every easy run creeping into
-          Zone 3. A plateau that would not move, no matter how many sessions went in.
-        </P>
-        <P>
-          The diagnosis took embarrassingly long: easy days were not easy, hard days were
-          not hard, and everything ended up in the same grey middle. Medium-hard on
-          Monday, medium-hard on Saturday, medium-hard on race day.
-        </P>
-        <P>
-          So the runner built a tool. Ran a 52K with it. Started training for a 100K.
-        </P>
+        {/* GTM-SITE-03 — narrative from the single owner. The TREATMENT here
+            (the photograph above) stays divergent from the in-app note on
+            purpose: a charity vetting a stranger needs a face. */}
+        {FOUNDER_STORY.paragraphs.map((para, i) => <P key={i}>{para}</P>)}
 
         {/* Thesis. 3px moss rail, the same vocabulary the in-app note uses. */}
         <div style={{ position: 'relative', padding: '6px 0 6px 20px', margin: '28px 0' }}>
@@ -145,7 +138,7 @@ export default function AboutPage() {
             fontFamily: 'var(--font-brand)', fontSize: '21px', fontWeight: 700,
             lineHeight: 1.35, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
           }}>
-            You&rsquo;re trying hard. That&rsquo;s the problem.
+            {BRAND.coreTruth}
           </p>
         </div>
 

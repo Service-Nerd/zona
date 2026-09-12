@@ -16,6 +16,7 @@
 // rewrite the line-by-line before final.
 
 import { BRAND } from '@/lib/brand'
+import { FOUNDER_STORY } from '@/lib/marketing/founderStory'
 
 export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
   return (
@@ -59,7 +60,7 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
           maxWidth: '360px',
           margin: '0 0 24px',
         }}>
-          The runner had a problem.
+          {FOUNDER_STORY.opener}
         </p>
 
         {/* Body — editorial paragraphs. Inter 400, 15px, line-height 1.65,
@@ -69,23 +70,15 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
           color: 'var(--ink-2)', lineHeight: 1.65,
           maxWidth: '360px',
         }}>
-          <p style={{ margin: '0 0 14px' }}>
-            Heart rate spiking before the warm-up was done. Every easy run
-            creeping into Zone 3. A plateau that wouldn't move, no matter
-            how many sessions went in.
-          </p>
-
-          <p style={{ margin: '0 0 14px' }}>
-            The diagnosis took embarrassingly long: easy days weren't easy.
-            Hard days weren't hard. Everything ended up in the same grey
-            middle — medium-hard on Monday, medium-hard on Saturday,
-            medium-hard on race day.
-          </p>
-
-          <p style={{ margin: '0 0 24px' }}>
-            So the runner built a tool. Ran a 52K with it. Started training
-            for a 100K.
-          </p>
+          {/* GTM-SITE-03 — narrative from the single owner. The TREATMENT
+              here (no photograph) stays divergent from /about on purpose:
+              in the app the voice is the asset, on the web a charity vetting
+              a stranger needs a face. */}
+          {FOUNDER_STORY.paragraphs.map((para, i) => (
+            <p key={i} style={{ margin: i === FOUNDER_STORY.paragraphs.length - 1 ? '0 0 24px' : '0 0 14px' }}>
+              {para}
+            </p>
+          ))}
         </div>
 
         {/* Pull-line — thesis. 3px moss rail anatomy borrowed from
@@ -107,7 +100,7 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
             color: 'var(--moss)', letterSpacing: '-0.2px', lineHeight: 1.35,
             margin: 0,
           }}>
-            You&apos;re trying hard. That&apos;s the problem.
+            {BRAND.coreTruth}
           </p>
         </div>
 
