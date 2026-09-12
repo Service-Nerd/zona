@@ -21,6 +21,39 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** no — too small to carry a post on its own, but the "wrong but plausible" line is reusable.
 
 
+## 2026-09-12 — TREND-DIRECTION-01 · The sentence was wrong in both directions, and about the wrong run
+
+**Shipped:** Kit stops telling runners their easy running got easier when it got harder, and stops describing long runs as easy ones.
+
+**Dev learning:** The Coaching Board made the regression case binding — "a surface that can only speak when the arrow is up is marketing" — so I designed it first, expecting to find silence. I found a live false statement. One hardcoded line said *"Easy is easier than it was — {earlier} down to {now}"*, guarded only by the presence of a model gloss. The gloss is produced whenever `hrIsTrending`, and that is `Math.abs(hrDeltaBpm) >= 4`. **Absolute value.** A runner whose easy heart rate had risen four beats was told "Easy is easier than it was — 147 down to 152", contradicted by its own two numbers.
+
+**Product/creator learning:** Then it turned out the subject was wrong too. The sentence said "Easy" while being fed the trend for `session_type: 'long'` — and a card labelled "Easy run trend" renders directly beneath it from a different cohort with different numbers. Two numbers, one name, on the same screen. Neither fault was visible from the sentence; both needed following the data back to where it came from.
+
+**AI-building learning:** My own first fix was bad and I threw it away. It patched grammar with `.replace('they was', 'they were')` — string surgery on my own output, which is a tell that the structure is wrong. Subject, verb and pronoun now travel together in one table. The deeper lesson is that this line was an inline template literal inside a React component, which is precisely why it was untestable and stayed wrong for months; it is a pure function with nine tests now.
+
+**The honest bit:** A binding condition I was initially inclined to treat as ceremony is what found this. I had written "design the regression case first" into the board record myself, and if I had skipped it — built the happy path and moved on — the false sentence would have shipped into a redesigned flagship screen with more prominence than it had before.
+
+**Hook material:** We built a coach that told runners they were getting fitter when they were getting slower. The bug was one `Math.abs`.
+
+**Postable?:** yes
+
+## 2026-09-12 — UX-WIZARD-01 · Building a control and then refusing to show it
+
+**Shipped:** the weekday cap has one owner and a per-day model behind it. The control that uses it is written, tested, and deliberately not rendered.
+
+**Dev learning:** The item was held purely on timing, so the first job was re-measuring every number in it rather than trusting a fortnight-old entry. The case had got worse while it sat: plans containing a weekday session longer than the runner's stated cap went from a filed 54% to a measured 77.3%, and the worst case from 54 minutes to 83 against a 30-minute cap. Someone who told us they have half an hour on weekdays can be handed an eighty-three-minute session.
+
+**Product/creator learning:** I built the per-day control, clicked through it, and then took it back out. With the cap still derived as the minimum of the days, a runner setting Tuesday 30 and Thursday 90 gets 30 — byte-identical to what they get today. The control would have looked like a feature and changed nothing. That is the same defect as a design token nothing consumes, which this repo has now deleted four times; it is not better because it is visible.
+
+**AI-building learning:** The accessibility fault came from clicking, not reading. Cycling a day to the same value as the weekday cap left two rows differing by colour alone, with an identical `aria-label` — a screen reader user could not tell an override from a default at all. Nothing in the code looked wrong. I only saw it because I tapped the row twice and the value appeared not to change.
+
+**The honest bit:** the fix was to stop rendering a duration in the default state and render the word "Same", which can never collide with a number. Obvious afterwards. Invisible while writing it.
+
+**Hook material:** Built the control, tested it, clicked through it, then deleted the line that renders it. It would have changed nothing a user receives, and a control that does nothing is worse than no control.
+
+**Postable?:** yes
+
+
 ## 2026-09-12 — §109 / UX-COACH-01 · Two thirds of the feature already existed, on the wrong screen
 
 **Shipped:** a rule that a progress surface may remember and compare but may not predict, and the design both boards signed off.
