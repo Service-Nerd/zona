@@ -199,6 +199,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 
 | Priority | Item | Status | Effort | Notes |
 |---|------|--------|--------|-------|
+| **NEW** | **SHEET-PRESENT-01** — one presentation contract for every secondary surface | 🔲 | M | Founder-reported on device 2026-09-12. **Five of seven sheets render UNDER the bottom nav** (nav is `zIndex: 3000`; sheets are 100/100/100/200/200 against two at 4000), and every one is bottom-anchored, so the part the runner needs is exactly where the nav paints. No portals anywhere in the app, so each sheet invented its own stacking. Fix is one `<Sheet>` primitive at the app root, not seven patches. Detail + the measured table in backlog. |
+| **NEW** | **NAV-SPACE-01** — reclaim vertical space from the bottom nav | 🔲 | S | Founder-reported 2026-09-12. The safe-area inset is the biggest component and is **not** free space (home-indicator zone); the win is the padding above the icons. **Sequence after SHEET-PRESENT-01** — the sheet primitive needs the nav's final height to rest on it. |
 | ~~0~~ | **GEN-FIX + PV2 (Wave 1b + 1c)** — plan generator remediation | ✅ | XS–M | Shipped 2026-08-06 → registry. All 13 CDs live. Open follow-ups: PV2-G (Monday-race, needs ADR) · PV2-E braces (HealthKit device verify) · PV2-H end-to-end verify. |
 | ✅ | **UPGRADE-ENTRY-01** | ✅ | S | Shipped 2026-06-04. |
 | ✅ | **CA-04** — adjustment narrative | ✅ | S | Shipped (AI-DEPTH-10). |
