@@ -48,10 +48,16 @@ export interface RaceProjectionsCopy {
    * runner against a baseline they are in the middle of replacing.
    */
   arc?: {
-    /** Column labels, in arc order. */
+    /** Fallback label for the baseline column. The route overrides it with a
+     *  MONTH when the baseline was derived from runs rather than a benchmark —
+     *  the earliest run data can begin long after the plan did. */
     was:  string
     now:  string
     goal: string
+    /** Shown when the arc is projected at a distance other than the race
+     *  itself (an ultra: VDOT does not extrapolate past the marathon).
+     *  `{distance}` is interpolated. */
+    atDistance: string
     /** Caption under the `now` column, by direction. `{delta}` is interpolated. */
     direction: {
       faster: string
@@ -89,6 +95,7 @@ export const RACE_PROJECTIONS_COPY: Record<RaceProjectionsVariant, RaceProjectio
       was:  'Plan start',
       now:  'Now',
       goal: 'Your goal',
+      atDistance: 'Shown at {distance} distance: your race is too long to project from pace.',
       direction: {
         // Zonna voice: state the fact, do not celebrate it. No "amazing", no
         // exclamation marks. The number is the good news; the copy stays dry.

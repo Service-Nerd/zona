@@ -18,6 +18,9 @@ import { vdotFromAerobicSpeedMs } from '@/lib/plan/aerobicEstimate'
 import type { Plan, BenchmarkInput } from '@/types/plan'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import { RACE_ARC } from '@/lib/coaching/raceProgressArc'
+import {
+  deriveFitnessBaseline, weightedAerobicSpeed, type AerobicRun,
+} from '@/lib/coaching/fitnessBaseline'
 import { formatClockTime, formatElapsedDelta } from '@/lib/format'
 
 // Jack Daniels race VDOT utilisation fractions
@@ -66,12 +69,28 @@ function projectForDistance(vdot: number, distanceKm: number): number | null {
 // Build the R31 target object: projected time for the athlete's specific race
 // distance, compared against the plan-creation VDOT baseline.
 // Returns ultraDistance:true for distances beyond marathon — VDOT doesn't apply there.
+/** The arc's own distance, label and points — see `buildTarget`. */
+interface TargetArc {
+  /** Distance the arc is projected at. Differs from the race for an ultra. */
+  distanceKm:      number
+  /** Set only when the arc is NOT at the race distance, e.g. 'Marathon'. */
+  atLabel:         string | null
+  baselineSeconds: number | null
+  /** What the baseline point is called: 'Plan start', or a month for a
+   *  derived one. Never "plan start" for a derived baseline — the earliest
+   *  run data can begin long after the plan did. */
+  baselineLabel:   string
+  currentSeconds:  number
+  goalSeconds:     number | null
+}
+
 function buildTarget(
   currentVdot:    number,
   planRaceDistKm: number,
   planRaceName:   string,
   baselineVdot:   number | null,
   goalSeconds:    number | null,
+  baselineLabel:  string = 'Plan start',
 ): {
   distanceKm:      number
   raceName:        string
@@ -82,6 +101,7 @@ function buildTarget(
   deltaSeconds:    number | null
   deltaFormatted:  string | null
   improved:        boolean | null
+  arc:             TargetArc | null
 } {
   const currentSeconds = projectForDistance(currentVdot, planRaceDistKm)
 
@@ -98,6 +118,13 @@ function buildTarget(
       deltaSeconds:    null,
       deltaFormatted:  null,
       improved:        null,
+      // ⚠️ NOT null. VDOT cannot project 100 km and must not pretend to, but
+      // the runner's aerobic fitness is perfectly measurable and the card
+      // ALREADY prints their marathon row. Refusing the race-distance time and
+      // refusing the trajectory are two different refusals, and only the first
+      // is honest. The arc falls back to the nearest projectable standard
+      // distance and says so.
+      arc: buildArc(currentVdot, planRaceDistKm, baselineVdot, null, baselineLabel),
     }
   }
 
@@ -115,6 +142,44 @@ function buildTarget(
     deltaSeconds:    significant ? deltaSeconds : null,
     deltaFormatted:  significant ? formatElapsedDelta(deltaSeconds!) : null,
     improved:        significant ? deltaSeconds! > 0 : null,
+    arc:             buildArc(currentVdot, planRaceDistKm, baselineVdot, goalSeconds, baselineLabel),
+  }
+}
+
+/**
+ * The arc's three points, at a distance VDOT can actually project.
+ *
+ * For a marathon or shorter that is the race distance itself. Beyond it, VDOT
+ * extrapolation breaks down (§44.1 — the engine cannot defend the number), so
+ * the arc drops to the nearest standard distance and LABELS it. A 100 km runner
+ * still gets to see that their aerobic fitness moved; they just do not get a
+ * fabricated 100 km finish time.
+ *
+ * `goalSeconds` is passed through only when the arc is at the race distance —
+ * a runner's marathon goal is not their target for a 100 km race, and showing
+ * it against a different distance would compare two unrelated numbers.
+ */
+function buildArc(
+  currentVdot:   number,
+  raceDistKm:    number,
+  baselineVdot:  number | null,
+  goalSeconds:   number | null,
+  baselineLabel: string,
+): TargetArc | null {
+  const isUltra = raceDistKm > VDOT_MAX_DISTANCE_KM
+  const standard = closestStandardRace(raceDistKm)
+  const distanceKm = isUltra ? standard.distanceKm : raceDistKm
+
+  const currentSeconds = projectForDistance(currentVdot, distanceKm)
+  if (currentSeconds === null) return null   // no present, no arc
+
+  return {
+    distanceKm,
+    atLabel:         isUltra ? standard.label : null,
+    baselineSeconds: baselineVdot ? projectForDistance(baselineVdot, distanceKm) : null,
+    baselineLabel,
+    currentSeconds,
+    goalSeconds:     isUltra ? null : goalSeconds,
   }
 }
 
@@ -243,9 +308,24 @@ export async function GET(req: NextRequest) {
     // on the response; UI surface lands when R18 confidence score ships.
     const vo2MaxCrossCheck = await computeVO2CrossCheck(serviceSupabase, user.id, discountedVdot)
 
-    // R31: target race delta (baseline VDOT = plan.meta.vdot pre-discount for fair comparison)
+    // 🔴 NO BASELINE POINT HERE, AND THAT IS THE FIX (2026-09-12).
+    //
+    // This used to pass `baselineVdot` (= raw `meta.vdot`) against
+    // `discountedVdot` as the present, described in the old comment as
+    // "pre-discount for fair comparison". It is the opposite of fair:
+    // `applyVdotDiscount` ALWAYS discounts — 5% minimum, growing every 4 weeks
+    // the benchmark ages — so the present was arithmetically guaranteed to be
+    // slower than the past. State 1 is "the benchmark stored in plan meta", so
+    // both ends are the SAME MEASUREMENT, one of them aged. Every benchmark
+    // runner who had not re-tested was being told they had got slower, by a
+    // margin that grew the longer they left it.
+    //
+    // Survivable as a small delta chip; not survivable as the hero arc. One
+    // measurement is one point. A second point needs a second measurement —
+    // which is exactly what the runs-derived baseline below provides in states
+    // 2/3, and what re-benchmarking provides here.
     const target = raceDistKm > 0
-      ? buildTarget(discountedVdot, raceDistKm, raceName, baselineVdot, goalSeconds)
+      ? buildTarget(discountedVdot, raceDistKm, raceName, null, goalSeconds)
       : null
 
     // R32: recalibration signal — benchmark is already high-quality, suggest recal if
@@ -271,16 +351,29 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // ── States 2/3: qualifying aerobic Strava runs ───────────────────────────
+  // ── States 2/3: qualifying aerobic runs ──────────────────────────────────
+  //
+  // ⚠️ The window is now a YEAR, not six weeks, and the six-week cut happens in
+  // memory below. The route needs BOTH ends of the arc: the current estimate
+  // (last six weeks) and, when the plan carries no benchmark, a derived
+  // baseline from the runner's earliest runs. Measured 2026-09-12: 10 of 17
+  // live plans have no `meta.vdot`, so "where I was" could never render for
+  // them — the arc shipped able to fully draw on 2 of 17.
+  //
+  // Source-agnostic by column, per ADR-011: `strava_activities` is the run log
+  // and `activity_type` is 'Run' for both HealthKit and Strava rows (verified
+  // in production). No `source` filter here, deliberately.
   const windowStart = new Date(today)
   windowStart.setDate(windowStart.getDate() - STRAVA_WINDOW_WEEKS * 7)
+  const historyStart = new Date(today)
+  historyStart.setFullYear(historyStart.getFullYear() - 1)
 
   const { data: stravaRuns } = await serviceSupabase
     .from('strava_activities')
     .select('avg_speed, avg_hr, distance_m, start_date, hr_above_ceiling_pct')
     .eq('user_id', user.id)
     .eq('activity_type', 'Run')
-    .gte('start_date', windowStart.toISOString())
+    .gte('start_date', historyStart.toISOString())
     .not('avg_speed', 'is', null)
     .not('avg_hr',    'is', null)
     .or('hr_above_ceiling_pct.is.null,hr_above_ceiling_pct.lt.25')  // Z2-ish: ceiling exceeded <25% of time
@@ -289,19 +382,46 @@ export async function GET(req: NextRequest) {
   const z2Ceiling = meta.zone2_ceiling ?? (meta.resting_hr + 0.70 * (meta.max_hr - meta.resting_hr))
   const z2Floor   = meta.resting_hr + 0.60 * (meta.max_hr - meta.resting_hr)
 
-  const qualifyingRuns = (stravaRuns ?? []).filter(
+  const aerobicRuns = (stravaRuns ?? []).filter(
     (r) =>
       r.avg_hr >= z2Floor &&
       r.avg_hr <= z2Ceiling &&
       r.distance_m >= 3000  // at least 3km for a meaningful aerobic sample
   )
 
+  // The current estimate keeps its original six-week window byte for byte —
+  // this change must not move anyone's projected times, only add a past point.
+  const qualifyingRuns = aerobicRuns.filter(r => new Date(r.start_date) >= windowStart)
+
+  // "Where I was", when no benchmark was ever taken. §109 permits it: working
+  // out what fitness WAS, from runs actually done then, is remembering.
+  const historyForBaseline: AerobicRun[] = aerobicRuns.map(r => ({
+    startDate:  new Date(r.start_date),
+    avgSpeedMs: r.avg_speed,
+    distanceM:  r.distance_m,
+  }))
+  const derived = baselineVdot === null
+    ? deriveFitnessBaseline(historyForBaseline, windowStart)
+    : null
+  const derivedVdotBaseline = derived
+    ? vdotFromAerobicSpeedMs(derived.weightedSpeedMs)
+    : null
+  const usableDerivedBaseline =
+    derivedVdotBaseline !== null && Number.isFinite(derivedVdotBaseline)
+    && derivedVdotBaseline >= 20 && derivedVdotBaseline <= 85
+      ? derivedVdotBaseline
+      : null
+
   if (qualifyingRuns.length >= 1) {
-    // Average aerobic speed across qualifying runs (weighted by distance for robustness)
-    const totalDistM  = qualifyingRuns.reduce((s, r) => s + r.distance_m, 0)
-    // Weighted mean speed: Σ(speed_i * distance_i) / Σ(distance_i)
-    const weightedSpeed = qualifyingRuns.reduce((s, r) => s + r.avg_speed * r.distance_m, 0) / totalDistM
-    const derivedVdot   = vdotFromAerobicSpeedMs(weightedSpeed)
+    // `weightedAerobicSpeed` is the single owner of this formula — the baseline
+    // derivation needs the identical arithmetic, and two copies of a weighting
+    // formula agree only until one of them is edited.
+    const weightedSpeed = weightedAerobicSpeed(qualifyingRuns.map(r => ({
+      startDate:  new Date(r.start_date),
+      avgSpeedMs: r.avg_speed,
+      distanceM:  r.distance_m,
+    })))
+    const derivedVdot   = weightedSpeed === null ? NaN : vdotFromAerobicSpeedMs(weightedSpeed)
 
     if (!Number.isFinite(derivedVdot) || derivedVdot < 20 || derivedVdot > 85) {
       // VDOT out of plausible range — fall through to State 4
@@ -315,7 +435,12 @@ export async function GET(req: NextRequest) {
 
       // R31: target race delta
       const target = raceDistKm > 0
-        ? buildTarget(derivedVdot, raceDistKm, raceName, baselineVdot, goalSeconds)
+        ? buildTarget(
+            derivedVdot, raceDistKm, raceName,
+            baselineVdot ?? usableDerivedBaseline,
+            goalSeconds,
+            baselineVdot !== null ? 'Plan start' : (derived?.label ?? 'Plan start'),
+          )
         : null
 
       // R32: suggest recalibration if Strava-derived VDOT beats plan baseline by ≥3 points

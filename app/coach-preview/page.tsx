@@ -21,7 +21,7 @@ import TrendCard from '@/components/shared/TrendCard'
 
 const ARC_COPY = RACE_PROJECTIONS_COPY.status.arc!
 
-const CASES: { title: string; note: string; input: Parameters<typeof buildRaceProgressArc>[0] }[] = [
+const CASES: { title: string; note: string; input: Parameters<typeof buildRaceProgressArc>[0]; wasLabel?: string }[] = [
   {
     title: 'Improving, with a time goal',
     note: 'The full three points. The case the founder asked for.',
@@ -51,6 +51,14 @@ const CASES: { title: string; note: string; input: Parameters<typeof buildRacePr
     title: 'Week one — no plan-start estimate',
     note: 'Now and the goal. No fabricated baseline.',
     input: { baselineSeconds: null, currentSeconds: 26 * 60 + 40, goalSeconds: 25 * 60 },
+  },
+  {
+    title: 'ULTRA — the founder\u2019s actual plan, with real numbers',
+    note: 'Race is 100 km. VDOT cannot project that and must not pretend to, so the arc drops to the marathon and says so. Baseline DERIVED from the earliest aerobic runs (Apr) because no benchmark was ever taken. Replayed from production rows.',
+    input: { baselineSeconds: 4 * 3600 + 26 * 60 + 56, currentSeconds: 3 * 3600 + 53 * 60 + 36, goalSeconds: null },
+    // The route sends the WINDOW'S MONTH as the label for a derived baseline.
+    // "Plan start" would date the measurement to January; the runs start in April.
+    wasLabel: 'Apr',
   },
   {
     title: 'Now only',
@@ -178,8 +186,9 @@ export default function CoachPreviewPage() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '420px' }}>
-        {CASES.map(({ title, note, input }) => {
+        {CASES.map(({ title, note, input, wasLabel }) => {
           const arc = buildRaceProgressArc(input)
+          const copy = wasLabel ? { ...ARC_COPY, was: wasLabel } : ARC_COPY
           return (
             <div key={title} style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
               <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
@@ -191,7 +200,7 @@ export default function CoachPreviewPage() {
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--ink-2)', marginBottom: '14px' }}>London Marathon</div>
                 {arc
-                  ? <RaceProgressArcRow arc={arc} copy={ARC_COPY} />
+                  ? <RaceProgressArcRow arc={arc} copy={copy} />
                   : <div style={{ fontSize: '13px', color: 'var(--mute)' }}>No arc (no measured present).</div>}
               </div>
               <p style={{ fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, margin: '10px 0 0' }}>{note}</p>

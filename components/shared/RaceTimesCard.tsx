@@ -30,6 +30,16 @@ type TargetRace = {
   currentSeconds:  number | null
   baselineSeconds: number | null
   goalSeconds:     number | null
+  /** The arc's own points. May sit at a DIFFERENT distance from the race when
+   *  the race distance cannot be projected (ultra). */
+  arc: {
+    distanceKm:      number
+    atLabel:         string | null
+    baselineSeconds: number | null
+    baselineLabel:   string
+    currentSeconds:  number
+    goalSeconds:     number | null
+  } | null
   deltaSeconds:    number | null
   deltaFormatted:  string | null
   improved:        boolean | null
@@ -94,13 +104,24 @@ export function RaceTimesCard({
   // draws it. `arcCopy` is undefined on the anchor/result variants by design,
   // which is what suppresses the arc there rather than a variant check here.
   const arcCopy = copy.arc
+  // ⚠️ NO LONGER SUPPRESSED FOR ULTRAS. Refusing a 100 km finish time and
+  // refusing the runner's whole fitness trajectory are two different refusals,
+  // and only the first is honest — the card already prints their marathon row.
+  // The route drops the arc to the nearest projectable distance and labels it.
   const arc = useMemo(() => {
-    if (!arcCopy || !data?.target || data.target.ultraDistance) return null
+    if (!arcCopy || !data?.target?.arc) return null
     return buildRaceProgressArc({
-      baselineSeconds: data.target.baselineSeconds,
-      currentSeconds:  data.target.currentSeconds,
-      goalSeconds:     data.target.goalSeconds,
+      baselineSeconds: data.target.arc.baselineSeconds,
+      currentSeconds:  data.target.arc.currentSeconds,
+      goalSeconds:     data.target.arc.goalSeconds,
     })
+  }, [arcCopy, data])
+
+  /** Column labels, with the baseline's overridden by the route when it was
+   *  derived from runs (a month) rather than stamped at plan creation. */
+  const arcLabels = useMemo(() => {
+    if (!arcCopy) return null
+    return { ...arcCopy, was: data?.target?.arc?.baselineLabel || arcCopy.was }
   }, [arcCopy, data])
 
   function confidenceChipStyle(c: 'high' | 'moderate' | 'low') {
@@ -177,14 +198,24 @@ export function RaceTimesCard({
                 {data.target.raceName}
               </div>
 
-              {data.target.ultraDistance ? (
-                /* Ultra distances can't be projected from VDOT — honest note instead of a wrong number */
+              {arc && arcLabels ? (
+                <>
+                  <RaceProgressArcRow arc={arc} copy={arcLabels} />
+                  {/* Says which distance, when it is not the race. Below the
+                      arc, not above: the numbers are the point and the caveat
+                      qualifies them. */}
+                  {data.target.arc?.atLabel && (
+                    <p style={{ fontFamily: 'var(--font-ui)', fontSize: '11.5px', color: 'var(--mute)', lineHeight: 1.45, margin: '12px 0 0' }}>
+                      {arcLabels.atDistance.replace('{distance}', data.target.arc.atLabel)}
+                    </p>
+                  )}
+                </>
+              ) : data.target.ultraDistance ? (
+                /* No arc to show either — the honest note stands alone. */
                 <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55, margin: 0 }}>
                   Ultra finish times depend on terrain, conditions, and pacing, not pace-based formulas.
                   The projections below are still accurate for your training.
                 </p>
-              ) : arc && arcCopy ? (
-                <RaceProgressArcRow arc={arc} copy={arcCopy} />
               ) : (
                 /* No measured present — the arc needs a "now" to be an arc.
                    Falls back to the plain current estimate rather than nothing. */

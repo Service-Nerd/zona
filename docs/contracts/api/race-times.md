@@ -42,7 +42,15 @@ surfaces: Coach (`variant="status"` — the canonical home), Benchmark entry
     "goalSeconds": 13500,
     "deltaSeconds": 324,
     "deltaFormatted": "5m 24s",
-    "improved": true
+    "improved": true,
+    "arc": {
+      "distanceKm": 42.195,
+      "atLabel": null,
+      "baselineSeconds": 14016,
+      "baselineLabel": "Apr",
+      "currentSeconds": 13692,
+      "goalSeconds": 13500
+    }
   },
   "recalibrationSuggested": false,
   "upgradeCtaType": "benchmark"
@@ -69,6 +77,45 @@ for future-dated field names and the copy tree for forward-looking claims.
 **Ultra distances** (> 42.195 km) return `ultraDistance: true` with every time
 field null. Daniels VDOT does not extrapolate past the marathon, so the card
 renders an honest note instead of a wrong number.
+
+## `target.arc` — what the card actually draws
+
+Consumers read **`target.arc`**, not the flat `baselineSeconds` / `currentSeconds`
+fields, because the arc can sit at a different distance from the race.
+
+| Field | Meaning |
+|---|---|
+| `distanceKm` | Distance the arc is projected at |
+| `atLabel` | `null` when that IS the race distance. Otherwise the standard race it fell back to, e.g. `"Marathon"` |
+| `baselineLabel` | What the first column is called: `"Plan start"`, or a **month** when the baseline was derived from runs |
+| `baselineSeconds` | `null` when there is no independent past measurement |
+| `goalSeconds` | `null` unless the arc is at the race distance — a marathon goal is not a target for a 100 km race |
+
+**Ultras get an arc.** VDOT does not extrapolate past the marathon, so
+`currentSeconds` at the race distance stays `null` and `ultraDistance` stays
+`true` — but the runner's aerobic fitness is perfectly measurable and the card
+already prints their marathon row. The arc drops to the nearest projectable
+standard distance and `atLabel` says so. Refusing the race-distance time and
+refusing the whole trajectory are two different refusals; only the first is
+honest.
+
+**The baseline must be an INDEPENDENT measurement.** Two sources:
+
+1. `meta.vdot` — stamped at generation, **only when a benchmark was entered**.
+   Measured 2026-09-12: **10 of 17 live plans have none.**
+2. Derived from the runner's earliest qualifying aerobic runs
+   (`lib/coaching/fitnessBaseline.ts`), when (1) is absent. §109 permits it:
+   working out what fitness WAS, from runs actually done then, is remembering,
+   not predicting. Labelled with its **month**, never "Plan start" — run data
+   can begin long after the plan did.
+
+🔴 **State 1 passes NO baseline, deliberately.** It used to compare raw
+`meta.vdot` against its own discounted self. `applyVdotDiscount` always
+discounts (5% minimum, growing every 4 weeks of staleness), so the present was
+arithmetically guaranteed to be slower than the past: every benchmark runner who
+had not re-tested was told they had regressed, by a margin that grew the longer
+they left it. **One measurement is one point.** Guarded by
+`raceBaselineHonesty.test.ts`.
 
 ## Consumer rules
 
