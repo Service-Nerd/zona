@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-12 — FMT-02 · The unit bug nobody would ever report
+
+**Shipped:** the Strava panel renders distances in the runner's own unit instead of hardcoded kilometres.
+
+**Dev learning:** Four render sites built distance strings by hand — `thisWeekKm.toFixed(1) + 'km'` and friends — while `lib/format.ts` has owned that job since ADR-015. The item named three of them. The fourth, the activity rows, turned up only because I opened the file rather than working from the ticket. A ticket written from a bug report describes what someone *noticed*, which is a subset of what is wrong, and the subset is not random: it is the part that was visible.
+
+**Product/creator learning:** A runner on miles was shown kilometres labelled as their own unit. Nobody would ever report this, because the number looks plausible — an 8 km week reads as a believable 8 mile week. Wrong-but-plausible is the kind of wrong that survives, and it is the reason a single formatting owner is worth having at all.
+
+**AI-building learning:** I nearly widened the fix to the pace tile, which hardcodes `/km` in the same component and is wrong for the same runner. I filed it as FMT-03 instead, because `formatPace` is per-km by construction and converting pace is not a string swap. Two defects that look identical on screen can sit on opposite sides of a scope line, and the tell is whose code you have to change.
+
+**The honest bit:** This is an admin-only surface — the nav entry was removed at Phase 1 — which is why it sat at P3 for months. Worth being precise that this is why it *waited*, not why it was *acceptable*.
+
+**Postable?:** no — too small to carry a post on its own, but the "wrong but plausible" line is reusable.
+
+
 ## 2026-09-12 — §107 / ZONE-BAND-02 · The board asked which number was wrong. Both were, and neither was the point
 
 **Shipped:** beginners stop being prescribed a long-run segment nobody could pace, §107, a new invariant, and a liveness harness that samples plan shapes instead of the top of a list.
