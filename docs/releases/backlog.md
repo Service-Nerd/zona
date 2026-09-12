@@ -760,7 +760,9 @@ The Vetra → Zonna rename (commits `fda3ff6` + `ba469df`) is complete in code, 
 
 *Source: the 2026-08-10 "78m push" investigation. ADR-015 (formatting + preference singularity) and ADR-016 (date-aware plan resolution) shipped, with the core + all high-traffic surfaces migrated (see feature-registry). These are the deliberately-held follow-ons.*
 
-- 🔲 **[W6]** **FMT-02 — StravaPanel hardcoded `km`** *(P3, ~30 min)* — `components/strava/StravaPanel.tsx` stat tiles hardcode `km` (`this week`, `longest`, popup distance). **Admin-only** surface (nav entry removed), so lowest value. Fix: thread `preferredUnits` from the parent and render via `formatDistance` (INV-PREF-001).
+- ✅ **FMT-02 — SHIPPED 2026-09-12.** All four distance renders (this week, longest run, popup distance, activity rows — the item named three; the rows were a fourth) now go through `formatDistance(km, preferredUnits, { exact: true })`, threaded DashboardClient → StravaScreen → StravaPanel. Popup precision drops 2dp → 1dp, matching the rest of the app. `'Running km'` → the unit-neutral `'Running volume'`.
+
+- 🔲 **FMT-03 — the Strava panel's PACE tile still hardcodes `/km`** *(P3, found while shipping FMT-02)* — the "Pace @ HR 145" tile appends `/km`, and `formatPace` in `lib/strava.ts` is per-km by construction, so a miles runner is shown a per-km pace labelled as theirs. Same class as FMT-02 but a **different owner and a larger change**: pace conversion is not a string swap. Admin-only surface, same as FMT-02. **Tier: FREE (infra).**
   - **Verify still open:** `grep -c "km'" components/strava/StravaPanel.tsx` → **non-zero = still open** (3 as of 2026-08-15); `grep -c preferredUnits` → 0 confirms it's unthreaded.
 
 ### Security audit follow-ups (from docs/security-audit-2026-08.md)

@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { formatDuration, formatPace, hrColour, paceAtHR, getRuns } from '@/lib/strava'
+import { formatDistance } from '@/lib/format'
 import type { StravaActivity } from '@/types/plan'
 
-export default function StravaPanel({ preloadedRuns, preloadedConnected, preloadedLoading, raceName, raceDate, raceDistanceKm, zone2Ceiling, restingHR, maxHR }: {
+export default function StravaPanel({ preloadedRuns, preloadedConnected, preloadedLoading, raceName, raceDate, raceDistanceKm, zone2Ceiling, restingHR, maxHR, preferredUnits = 'km' }: {
   preloadedRuns?: any[] | null
   preloadedConnected?: boolean
   preloadedLoading?: boolean
@@ -16,6 +17,11 @@ export default function StravaPanel({ preloadedRuns, preloadedConnected, preload
   zone2Ceiling?: number
   restingHR?: number
   maxHR?: number
+  /** FMT-02 (2026-09-12) — every distance below renders through `formatDistance`
+   *  (ADR-015 / INV-PREF-001). These tiles hardcoded `km`, so a runner on miles
+   *  was shown kilometres labelled as their own unit. Admin-only surface, which
+   *  is why it sat open, not why it was acceptable. */
+  preferredUnits?: 'km' | 'mi'
 }) {
   const runs      = preloadedRuns ?? null
   const connected = preloadedConnected ?? false
@@ -144,8 +150,8 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
         {[
           { label: 'Pace @ HR 145', value: pace145 ? pace145 + '/km' : '—', sub: 'Aerobic efficiency' },
           { label: 'Avg HR (last 10)', value: avgHR ? avgHR + ' bpm' : '—', sub: avgHR && avgHR <= 145 ? 'Zone 2 ✓' : avgHR ? 'Above target' : '' },
-          { label: 'This week',     value: thisWeekKm ? thisWeekKm.toFixed(1) + 'km' : '0km', sub: 'Running km' },
-          { label: 'Longest run',   value: longestKm ? longestKm.toFixed(1) + 'km' : '—', sub: 'Since Jan 2026' },
+          { label: 'This week',     value: formatDistance(thisWeekKm ?? 0, preferredUnits, { exact: true }) ?? '—', sub: 'Running volume' },
+          { label: 'Longest run',   value: (longestKm ? formatDistance(longestKm, preferredUnits, { exact: true }) : null) ?? '—', sub: 'Since Jan 2026' },
         ].map(({ label, value, sub }) => (
           <div key={label} style={{
             background: 'var(--card-bg)', border: '0.5px solid var(--border-col)',
@@ -162,7 +168,6 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
       <div style={{ fontFamily: "var(--font-ui)", fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px' }}>Recent activities</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {runs?.slice(0, 12).map(run => {
-          const km   = (run.distance / 1000).toFixed(1)
           const dur  = formatDuration(run.moving_time)
           const pace = formatPace(run.moving_time, run.distance)
           const hr   = run.average_heartrate ? Math.round(run.average_heartrate) : null
@@ -177,7 +182,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
                 <div style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)', flexShrink: 0 }}>{date}</div>
               </div>
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                <span style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--teal)' }}>{km}km</span>
+                <span style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--teal)' }}>{formatDistance(run.distance / 1000, preferredUnits, { exact: true }) ?? '—'}</span>
                 <span style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)' }}>{dur}</span>
                 <span style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: hr ? hrColour(hr) : 'var(--text-muted)' }}>{hr ? `${hr} bpm` : '—'}</span>
                 <span style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)' }}>{pace}</span>
@@ -207,7 +212,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
             </div>
             <div style={{ padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', borderBottom: '0.5px solid var(--border-col)' }}>
               {[
-                { label: 'Distance', value: `${(popup.distance/1000).toFixed(2)}km`, color: 'var(--teal)' },
+                { label: 'Distance', value: formatDistance(popup.distance / 1000, preferredUnits, { exact: true }) ?? '—', color: 'var(--teal)' },
                 { label: 'Duration', value: formatDuration(popup.moving_time), color: 'var(--teal)' },
                 { label: 'Avg HR',   value: popup.average_heartrate ? `${Math.round(popup.average_heartrate)}` : '—', color: hrColour(popup.average_heartrate) },
                 { label: 'Pace',     value: formatPace(popup.moving_time, popup.distance), color: 'var(--text-secondary)' },
