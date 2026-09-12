@@ -9327,6 +9327,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
     state: 'live'
     earlierMonth: string; earlierHr: number; nowHr: number
     cohortSize: number; windowMonths: number; gloss?: string
+    // TREND-PACE-CLAIM-01 — the cohort matches on DISTANCE only, so pace is
+    // free to move inside it. Without these two the card (and Kit) claimed
+    // "at the same pace" and could not possibly know.
+    earlierPace: number | null; nowPace: number | null
     // The whole series, not just its endpoints. This fetch used to read
     // buckets[0] and buckets[last] and throw the middle away, so the card
     // could state the change and never show its shape.
@@ -9379,6 +9383,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           cohortSize,
           windowMonths: trend.windowMonths,
           gloss:        data.gloss,
+          earlierPace:  first.avgPaceSecPerKm ?? null,
+          nowPace:      last.avgPaceSecPerKm  ?? null,
           series:       trend.buckets.map((bk: any) => ({
             monthKey:   bk.monthKey,
             shortLabel: bk.shortLabel,
@@ -9513,6 +9519,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           earlierHr:    easyTrendData.earlierHr,
           nowHr:        easyTrendData.nowHr,
           earlierMonth: easyTrendData.earlierMonth,
+          // Without these the sentence claims fitness from a heart rate that
+          // may simply reflect an easier week. TREND-PACE-CLAIM-01.
+          earlierPace:  easyTrendData.earlierPace,
+          nowPace:      easyTrendData.nowPace,
         }))
       }
       return {
@@ -10042,6 +10052,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               windowMonths={easyTrendData.windowMonths}
               gloss={easyTrendData.gloss}
               series={easyTrendData.series}
+              earlierPace={easyTrendData.earlierPace}
+              nowPace={easyTrendData.nowPace}
+              preferredUnits={preferredUnits}
               glossless
             />
           : <TrendCard state="pending" {...EASY_TREND_LABELS} />

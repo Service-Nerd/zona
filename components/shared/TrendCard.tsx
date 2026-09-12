@@ -15,6 +15,8 @@ import { useState, useEffect, useRef } from 'react'
 import CoachByline from './CoachByline'
 import { TrendSparkline } from './TrendSparkline'
 import { buildTrendSparkline, type SparkBucket } from '@/lib/coaching/trendSparkline'
+import { paceContext } from '@/lib/coaching/trendSentence'
+import { formatPace } from '@/lib/format'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,6 +33,14 @@ interface TrendCardLive {
   windowMonths: number
   /** Model-written gloss. Present when hrIsTrending and AI succeeded. */
   gloss?: string
+  /** Mean pace (sec/km) of the earlier / latest bucket. Renders the qualifier
+   *  that says whether the HR comparison is fair. The cohort matches on
+   *  DISTANCE, so without these the card cannot know (TREND-PACE-CLAIM-01). */
+  earlierPace?: number | null
+  nowPace?: number | null
+  /** Reader's distance unit. Props, not a hook — settings are fetched once at
+   *  DashboardClient level and passed down (CLAUDE.md, global state pattern). */
+  preferredUnits?: 'km' | 'mi'
   /** Full month-bucket series. Draws the line BETWEEN the two numbers — the
    *  part a runner reads a trend for. Absent, or fewer than three usable
    *  months, and the card is exactly what it was. */
@@ -229,7 +239,7 @@ function ExplanationSheet({
           {state === 'pending' ? (
             <>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                Zonna compares your average heart rate on {`${runNoun}s`} at the same effort over time. When you have enough similar runs across multiple months, the trend becomes visible.
+                Zonna compares your average heart rate on {`${runNoun}s`} of a similar distance, month by month. When you have enough comparable runs across multiple months, the trend becomes visible.
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
                 Keep logging runs. The signal lands when there are at least two months of comparable data.
@@ -238,13 +248,18 @@ function ExplanationSheet({
           ) : (
             <>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                Your average heart rate on {`${runNoun}s`} at the same pace, compared across{windowMonths ? ` the last ${windowMonths} months` : ' time'}. When HR drops at the same pace, your aerobic base is growing — your easy is genuinely easier.
+                Your average heart rate on {`${runNoun}s`} of a similar distance, compared across{windowMonths ? ` the last ${windowMonths} months` : ' time'}. When HR drops and your pace holds, your aerobic base is growing: the same running costs you less.
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                This is what zone discipline produces. Not faster runs. Lower heart rate at the same effort.
+                This is what zone discipline produces. Not faster runs. Lower heart rate for the same running.
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
                 Zonna requires at least a 4 bpm shift across 2 or more months before surfacing a trend — so when you see a number here, there&apos;s enough data to mean something.
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                Pace is not held fixed, so it is shown alongside. If you were running
+                noticeably slower, a lower heart rate is easier running rather than
+                fitter running, and this card will say so instead of claiming the win.
               </div>
               {hasLine && (
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
@@ -389,10 +404,24 @@ export default function TrendCard(props: TrendCardProps) {
 
   // ── Live ──────────────────────────────────────────────────────────────────
   // Props confirmed as TrendCardLive here.
-  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel, glossless, series } = props
+  const { earlierMonth, earlierHr, nowHr, cohortSize, windowMonths, gloss, label, sessionLabel, glossless, series, earlierPace, nowPace, preferredUnits } = props
   const eyebrow    = label        ?? TREND_CARD_DEFAULTS.label
   const runNoun    = sessionLabel ?? TREND_CARD_DEFAULTS.sessionLabel
   const spark      = buildTrendSparkline(series)
+
+  // ADR-015: every pace string comes from `lib/format.ts` and converts to the
+  // reader's unit. A hardcoded "/km" here is the FMT-02 defect, again.
+  const paceCtx = paceContext({ earlierHr, nowHr, earlierMonth, earlierPace, nowPace })
+  const paceNote = (() => {
+    const units = preferredUnits ?? 'km'
+    const from = formatPace(earlierPace, units)
+    const to   = formatPace(nowPace, units)
+    if (!from || !to) return null
+    if (paceCtx === 'confounds') {
+      return `You were running ${from}, now ${to} — so this is not a like-for-like comparison.`
+    }
+    return `At a similar pace: ${from} then, ${to} now.`
+  })()
 
   // Count-up values come from the hoisted calls above (HOOKS-ORDER-01).
   // Gloss fades in after both count-ups complete.
@@ -430,6 +459,22 @@ export default function TrendCard(props: TrendCardProps) {
           <MetricPair value={String(now.value)} label="now" />
         </div>
 
+        {/* ── Is the comparison fair? ──────────────────────────────────
+            SLT 2026-09-12 rejected pace as a METRIC here: a pace number in
+            moss on a trend card is a reward attached to easy-run speed, which
+            points away from the one behaviour this product exists to enforce
+            (Wood's kill mandate, unopposed). It survives only as EVIDENCE —
+            uncoloured, unranked, subordinate to the HR claim it qualifies.
+            Sutherland: same digits, different position, different object. ── */}
+        {paceNote && (
+          <div style={{
+            fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+            lineHeight: 1.45, marginTop: '-12px', marginBottom: '18px',
+          }}>
+            {paceNote}
+          </div>
+        )}
+
         {/* ── The line between the two numbers ──────────────────────────
             The series was always in the trend payload and the Coach fetch
             read buckets[0] and buckets[last] and dropped the middle, so the
@@ -441,7 +486,11 @@ export default function TrendCard(props: TrendCardProps) {
           <div style={{ marginBottom: '20px' }}>
             <TrendSparkline
               spark={spark}
-              improving={spark.delta < 0}
+              // Moss only when the fall is an achievement. If pace explains the
+              // heart rate, the sentence above refuses the claim — the line
+              // must not go on celebrating it in brand colour. One verdict per
+              // card, from one owner (`paceContext`).
+              improving={spark.delta < 0 && paceCtx !== 'confounds'}
               runNoun={runNoun}
             />
           </div>

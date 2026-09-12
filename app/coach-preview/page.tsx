@@ -72,13 +72,31 @@ const BASE = {
   label: 'Easy run trend',
   sessionLabel: 'easy run',
   glossless: true,
+  preferredUnits: 'km' as const,
 }
+
+/** 6:30/km and friends, as seconds per km. */
+const pace = (m: number, s: number) => m * 60 + s
 
 const TREND_CASES = [
   {
     title: 'Improving, six months',
     note: 'Moss line, falling. The hollow dot is where it started, the solid one is now. Meta must read "6mo", not "6w"; tap it and the sheet must say "easy runs", not "long runs".',
     props: { ...BASE, earlierMonth: 'Apr', earlierHr: 152, nowHr: 144, cohortSize: 20, windowMonths: 6,
+      series: months([['2026-04', 152], ['2026-05', 150], ['2026-06', 151], ['2026-07', 147], ['2026-08', 146], ['2026-09', 144]]) },
+  },
+  {
+    title: 'THE FIX — heart rate fell because the runner slowed down',
+    note: 'Was: "Easy is easier than it was." The cohort matches on DISTANCE, so pace was free to move and nobody checked. Now the card refuses the claim and names the reason. This is the case that shipped wrong.',
+    props: { ...BASE, earlierMonth: 'Apr', earlierHr: 152, nowHr: 144, cohortSize: 16, windowMonths: 6,
+      earlierPace: pace(6, 30), nowPace: pace(7, 15),
+      series: months([['2026-04', 152], ['2026-06', 149], ['2026-07', 147], ['2026-09', 144]]) },
+  },
+  {
+    title: 'Pace held — the claim stands',
+    note: 'One second per km apart. The qualifier is evidence, not a metric: uncoloured, unranked, subordinate to the claim above it.',
+    props: { ...BASE, earlierMonth: 'Apr', earlierHr: 152, nowHr: 144, cohortSize: 20, windowMonths: 6,
+      earlierPace: pace(6, 30), nowPace: pace(6, 31),
       series: months([['2026-04', 152], ['2026-05', 150], ['2026-06', 151], ['2026-07', 147], ['2026-08', 146], ['2026-09', 144]]) },
   },
   {

@@ -1,3 +1,5 @@
+import { TREND_PACE_CONFOUND_SEC_PER_KM } from './constants'
+
 // Kit's one-line read on the aerobic trend — the interpretation that sits in the
 // CO-ONE body while `TrendCard` shows the numbers.
 //
@@ -30,6 +32,44 @@ export interface TrendReadInput {
   nowHr: number
   /** Short month label for the earlier bucket, e.g. "Jun". */
   earlierMonth: string
+  /** Mean pace (sec/km) of the earlier bucket. Null/absent when unknown. */
+  earlierPace?: number | null
+  /** Mean pace (sec/km) of the most recent bucket. */
+  nowPace?: number | null
+}
+
+/**
+ * Did pace move enough to undermine what the heart rate appears to say?
+ *
+ * 🔴 THE COHORT DOES NOT CONTROL FOR PACE. `buildHrTrendSeries` matches on
+ * DISTANCE (±15%) and a date window, and nothing else. Distance and pace are
+ * independent on an easy run — that is what makes it an easy run — so the
+ * cohort controls the variable that does not matter and leaves the one that
+ * does completely free. Until 2026-09-12 the card's own explanation sheet said
+ * the comparison was "at the same pace", twice, with the conclusion hanging
+ * off it.
+ *
+ * SIGNED, never absolute. The two directions are not symmetrical in meaning:
+ *   · HR fell AND pace slowed materially  → "easier running", not "fitter"
+ *   · HR rose AND pace quickened materially → the cost bought something
+ * `Math.abs` here would collapse those into one verdict, which is the exact
+ * defect TREND-DIRECTION-01 was about.
+ */
+export type PaceContext = 'confirms' | 'confounds' | 'unknown'
+
+export function paceContext({ earlierHr, nowHr, earlierPace, nowPace }: TrendReadInput): PaceContext {
+  if (earlierPace == null || nowPace == null
+      || !Number.isFinite(earlierPace) || !Number.isFinite(nowPace)
+      || earlierPace <= 0 || nowPace <= 0) return 'unknown'
+
+  // Positive = slower now (more seconds per km).
+  const paceDelta = nowPace - earlierPace
+  if (Math.abs(paceDelta) < TREND_PACE_CONFOUND_SEC_PER_KM) return 'confirms'
+
+  const hrFell = nowHr <= earlierHr
+  // A lower HR at a materially SLOWER pace explains itself; a higher HR at a
+  // materially FASTER pace does too. Either way the HR number is not the story.
+  return (hrFell && paceDelta > 0) || (!hrFell && paceDelta < 0) ? 'confounds' : 'confirms'
 }
 
 /**
@@ -64,9 +104,25 @@ const VOICE = {
   costing: 'is costing you more than it did',
 } as const
 
-export function trendSentence({ earlierHr, nowHr, earlierMonth }: TrendReadInput): string {
+export function trendSentence(input: TrendReadInput): string {
+  const { earlierHr, nowHr, earlierMonth } = input
   const v = VOICE
-  if (nowHr <= earlierHr) {
+  const hrFell = nowHr <= earlierHr
+
+  // ── The claim is WITHHELD when pace explains the heart rate ──────────────
+  // Not silence: the runner still gets both facts and the reason the obvious
+  // reading does not hold. Silence would be the "surface that only speaks when
+  // the arrow is up" McMillan ruled against. Declining to flatter is the
+  // point — this is the sentence a product that sells restraint should own.
+  if (paceContext(input) === 'confounds') {
+    return hrFell
+      ? `Easy HR is down since ${earlierMonth} — ${earlierHr} to ${nowHr} — but you were running slower too. `
+        + `That is easier running rather than fitter running, which is fine if it was the plan.`
+      : `Easy HR is up since ${earlierMonth} — ${earlierHr} to ${nowHr} — but you were running faster too. `
+        + `The cost bought something.`
+  }
+
+  if (hrFell) {
     return `${v.subject} ${v.easier} — ${earlierHr} down to ${nowHr} since ${earlierMonth}.`
   }
   return `${v.subject} ${v.costing} — ${earlierHr} up to ${nowHr} since ${earlierMonth}. `

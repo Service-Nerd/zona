@@ -238,3 +238,36 @@ export const COHORT_SIMILARITY = {
  * every HR average this app computes.
  */
 export const RUN_HR_PLAUSIBLE = { MIN_BPM: 90, MAX_BPM: 220 } as const
+
+/**
+ * How much slower (or faster) easy pace must move before it UNDERMINES the
+ * aerobic-trend claim, in seconds per km.
+ *
+ * WHY THIS EXISTS. `buildHrTrendSeries` matches its cohort on DISTANCE only
+ * (±`DISTANCE_TOLERANCE_PCT`), so pace is free to move inside it, while the
+ * card's copy claimed the comparison was "at the same pace" and concluded
+ * "your aerobic base is growing". A runner who simply eased off was told they
+ * were fitter. Worse, the failure is not random: a runner complying with Zonna
+ * IS slowing down, so the people most likely to be told something false are the
+ * ones the product is working for (TREND-PACE-CLAIM-01).
+ *
+ * ⚠️ WHY NOT `TREND_SERIES.MIN_PACE_DELTA_SEC` (5). That constant answers a
+ * different question — "is there a pace trend worth narrating?" for the
+ * per-run reframe prompt — and it sits far BELOW the noise floor for this one.
+ * Measured against production on 2026-09-12, aerobic runs inside a ±15%
+ * distance band: **within-month SD of easy pace 40.2 s/km**, mean
+ * month-to-month shift of the bucket mean **21.9 s/km**. A 5 s/km gate is an
+ * eighth of the within-month standard deviation: it would fire on ordinary
+ * variation and silence the card more or less permanently. 20 s/km sits at the
+ * edge of ordinary month-to-month movement rather than inside it.
+ *
+ * 🔴 THE EVIDENCE IS THIN AND THE NUMBER IS PROVISIONAL. That measurement had
+ * 3 users, 19 runs in band and 4 comparable month pairs. The SCALE argument is
+ * robust (a threshold below the within-month SD cannot separate signal from
+ * noise, at any sample size); the specific value of 20 is not. Re-measure once
+ * there is a real cohort, and move it with a number in the commit message.
+ *
+ * Direction matters as much as magnitude, and the consumer
+ * (`trendSentence.ts`) reads it signed — never through `Math.abs`.
+ */
+export const TREND_PACE_CONFOUND_SEC_PER_KM = 20
