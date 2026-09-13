@@ -1519,9 +1519,22 @@ export default function DashboardClient() {
         ? { message: String(onboardWrite.reason) }
         : onboardWrite.value.error
       // Non-fatal: the plan is already saved. Surface the failure rather than
-      // swallowing it (the original silent-failure class). No client-side
-      // recordOpsEvent — that helper is server-only (service-role key).
-      if (onboardErr) console.error('Failed to persist onboarding state:', onboardErr.message)
+      // swallowing it (the original silent-failure class). recordOpsEvent is
+      // server-only (service-role key), so report it via the bearer-authed
+      // ONBOARD-OBS-01 route — fire-and-forget, and never let telemetry break
+      // the finalise (the daily onboarding-integrity probe backstops any miss).
+      if (onboardErr) {
+        console.error('Failed to persist onboarding state:', onboardErr.message)
+        void authedFetch('/api/ops/onboarding-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: onboardErr.message,
+            had_rhr: typeof metaRhr === 'number',
+            had_mhr: typeof metaMhr === 'number',
+          }),
+        }).catch(() => { /* telemetry is best-effort */ })
+      }
       setPlan(savedPlan)
       setScreen('today')
       // Only show orientation on first-ever plan generation (B-002)

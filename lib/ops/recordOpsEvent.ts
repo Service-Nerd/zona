@@ -41,6 +41,17 @@ export type OpsEventKind =
   // mean a paying or comped runner being refused a plan. Recorded so the
   // difference is visible rather than inferred from a support email.
   | 'plan_distance_gate_blocked'
+  // ONBOARD-OBS-01 (2026-09-13) — the onboarding finalise (has_onboarded flip +
+  // HR persist in handlePlanSaved) is a live browser write, so it cannot call
+  // this helper (service-role, server-only) and could previously only
+  // console.error on failure. Problem A — 9 of 14 users left with a saved plan
+  // but has_onboarded=false — stayed invisible for weeks for exactly that reason.
+  // `_failed` is reported by the client via /api/ops/onboarding-event when the
+  // settings upsert fails; `_incomplete` is the daily probe OBSERVING the broken
+  // state (a plans row exists but has_onboarded is still false), independent of
+  // where the write failed — the same belt-and-braces as reshape-integrity.
+  | 'onboarding_finalise_failed'
+  | 'onboarding_incomplete'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

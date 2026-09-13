@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — ONBOARD-OBS-01 · Telemetry for the write that can't call the telemetry helper
+
+**Shipped:** the onboarding finalise now reports its own failures, and a daily probe catches any it misses.
+
+`recordOpsEvent` is server-only (service-role key), and the onboarding finalise — the `has_onboarded` flip and HR persist — runs in the browser. So the one write whose silent failure stranded 9 of 14 early users (Problem A) was structurally unable to record that it failed; all it could do was `console.error` into a console no one was reading. The fix is the standard shape for "a client needs to record an ops event": a thin bearer-authed route the client posts to, which records server-side. The user id comes from the verified token, not the request body — a client can't pin its failure on someone else.
+
+The part worth keeping is the belt-and-braces, copied from reshape-integrity: reporting at the failure site is necessary but not sufficient, because the failure might be the very thing that stops the report. So there's also a daily probe that *observes the broken state* — a saved plan with `has_onboarded` still false — regardless of where or whether the write failed. That's the check that would have surfaced Problem A on day one instead of after weeks, and it's the one I trust more.
+
+Everything here is reuse: `recordOpsEvent`, `getUserFromRequest`, `authedFetch`, the reshape-integrity route, the ops-cron workflow. The only genuinely new code is one pure function — "which users have a plan but aren't onboarded" — pulled out so it's unit-tested rather than proven by watching a cron. No migration; `ops_events` already exists and its kind is a TypeScript enum.
+
+**What I'd tell someone building this:** when a write can fail silently, don't just log at the site — add something that watches for the *state* the failure produces. The site-level report and the state-level probe fail in different ways, and you want the one that doesn't depend on the broken path being able to speak.
+
+---
+
 ## 2026-09-13 — PLAN-ARC-INSET · "The progress at the top runs off the page"
 
 **Shipped:** the Plan-screen progress strip is inset to the content margin, and its label row can't overflow. Small fix; the process is the note.

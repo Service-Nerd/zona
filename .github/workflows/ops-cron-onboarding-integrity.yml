@@ -1,0 +1,47 @@
+# ONBOARD-OBS-01 — daily onboarding-integrity probe.
+#
+# Detects Problem A: a runner with a saved plan (`plans` row) but
+# `user_settings.has_onboarded` still false — the finalise write that should
+# have followed the plan save never landed. 9 of 14 users sat in this state,
+# invisible for weeks, because the finalise had no telemetry. Findings go to
+# ops_events (kind: onboarding_incomplete).
+#
+# Why GitHub Actions instead of vercel.json: Vercel Hobby caps at 2 crons, both
+# already used. Same rationale as ops-cron-integrity.yml / ops-cron-plan-audit.yml.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   CRON_SECRET — same value as the Vercel env var.
+#   VERCEL_URL  — production URL, no trailing slash (e.g. https://www.zonna.run).
+
+name: ops-cron-onboarding-integrity
+
+on:
+  schedule:
+    # 08:05 UTC daily — clear of reshape-integrity (07:30), plan-audit (07:45),
+    # the email cron (08:00) and the push crons (:15/:30).
+    - cron: '5 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  fire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/ops/onboarding-integrity
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_URL:  ${{ secrets.VERCEL_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ] || [ -z "$VERCEL_URL" ]; then
+            echo "::error::CRON_SECRET and VERCEL_URL secrets must be set."
+            exit 1
+          fi
+          RESPONSE=$(curl -fsS --max-time 60 -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$VERCEL_URL/api/ops/onboarding-integrity")
+          echo "$RESPONSE"
+          MISMATCHES=$(echo "$RESPONSE" | grep -o '"mismatches":[0-9]*' | cut -d: -f2 || echo 0)
+          if [ "${MISMATCHES:-0}" -gt 0 ]; then
+            echo "::warning::onboarding-integrity: $MISMATCHES user(s) have a saved plan but has_onboarded=false — see ops_events (kind=onboarding_incomplete)."
+          fi
