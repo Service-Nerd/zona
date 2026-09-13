@@ -709,9 +709,11 @@ Horizontal 32px strip showing plan weeks as bars. Compact plan progression visua
 ```
 
 **Structure:**
-- Label row: `10px 700 --mute uppercase 0.08em` left (total + phase label), `10px 700 --mute 0.04em` right ("Wk N of N")
+- Label row: `10px 700 --mute uppercase 0.08em` left (total + phase label), `10px 700 --mute 0.04em` right ("Wk N of N"). The **left label truncates** (`flex:1; min-width:0; ellipsis`) and the **right counter is pinned** (`flex-shrink:0`) — a long phase chain (a foundation or maintenance plan; `PHASE_LABELS` has no maintenance keys so it falls back to raw keys like `maintenance_base → maintenance_restoration`) must never push the row off the edge.
 - Bar strip: `32px` height, flex with `2px` gap, bars `align-items: flex-end`
 - Each bar: `flex: 1`, `100%` height, `2px` radius
+
+> **Presentation — PlanArc is a full-width component; the SCREEN owns the margin (2026-09-13).** It carries no horizontal padding of its own, so the caller must inset it to the screen's content margin (`padding: '0 16px'` on PlanScreen). Rendered flush it runs edge-to-edge — the bars and label sit past every other (16px-inset) block and read as "the progress runs off the page." Do not render PlanArc without the 16px wrap.
 
 **Bar colour / opacity rules:**
 

@@ -29,12 +29,17 @@ export default function PlanArc({
 
   return (
     <div>
-      {/* Label row */}
+      {/* Label row. The left label can be long (a foundation or maintenance
+          phase chain — PHASE_LABELS has no maintenance keys, so it falls back to
+          raw keys like "maintenance_base → maintenance_restoration"), so it
+          truncates with an ellipsis and the "Wk X of Y" counter is pinned and
+          never shrinks — the row can't push content off the edge. */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: '8px',
           marginBottom: '6px',
         }}
       >
@@ -46,6 +51,11 @@ export default function PlanArc({
             color: 'var(--mute)',
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
+            flex: 1,
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
           {totalWeeks} weeks{phaseLabel ? ` · ${phaseLabel}` : ''}
@@ -57,6 +67,7 @@ export default function PlanArc({
             fontWeight: 700,
             color: 'var(--mute)',
             letterSpacing: '0.04em',
+            flexShrink: 0,
           }}
         >
           Wk {currentWeek} of {totalWeeks}

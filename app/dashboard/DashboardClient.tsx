@@ -8243,14 +8243,20 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           Coach's subject, not a shortcut hidden behind a progress bar on the
           diary screen. screen-architecture.md updated in the same commit so the
           doc and the code agree. ── */}
-      <PlanArc
-        totalWeeks={totalWeeks}
-        currentWeek={weekOrdinal}
-        doneWeeks={doneWeeksCount}
-        deloadWeeks={deloadWeekNumbers}
-        raceWeek={raceWeekNumber}
-        phaseLabel={phaseLabel || undefined}
-      />
+      {/* Inset to the screen's 16px content margin — PlanArc is a full-width
+          component, and every other block on this screen is inset 16px. Rendered
+          flush to the edges it read as "the progress runs off the page" and sat
+          misaligned under the (inset) race title. */}
+      <div style={{ padding: '0 16px' }}>
+        <PlanArc
+          totalWeeks={totalWeeks}
+          currentWeek={weekOrdinal}
+          doneWeeks={doneWeeksCount}
+          deloadWeeks={deloadWeekNumbers}
+          raceWeek={raceWeekNumber}
+          phaseLabel={phaseLabel || undefined}
+        />
+      </div>
       {raceDate && (
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '6px', textAlign: 'center', padding: '0 16px' }}>
           {raceName ? `${raceName} · ` : ''}{daysToRace === 0 ? 'Race day' : daysToRace === 1 ? '1 day to go' : `${daysToRace} days to go`}

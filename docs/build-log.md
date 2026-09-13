@@ -6,6 +6,18 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — PLAN-ARC-INSET · "The progress at the top runs off the page"
+
+**Shipped:** the Plan-screen progress strip is inset to the content margin, and its label row can't overflow. Small fix; the process is the note.
+
+The report was "the progress tiles along the top of the Plan screen go off the page and look bad." Obvious culprit: `PlanArc`, the week-bar strip. Obvious hypothesis: with a long plan the bars or the label row overflow horizontally. So I built a static repro of the exact markup at 375px and 320px — and it **didn't overflow**, for a 25-week ultra, a foundation chain, even the long `maintenance_base → maintenance_restoration` fallback label. The bars are `flex:1` (they always fit); the 10px label fits too. Hypothesis dead.
+
+Reproducing it is what found the real thing. `PlanArc` carries no horizontal padding, and it's the **only** block at the top of the screen without the `0 16px` inset every sibling has — so the bars and label run **flush to both screen edges**, sitting past the (inset) race title above them. That's not a scroll overflow; it's a full-bleed misalignment, and in plain language it's exactly "runs off the page and looks bad." A before/after screenshot made it obvious. Fixed by wrapping the call site in `0 16px` (the screen owns the margin; the component stays full-width) and, defensively, making the label row truncate with the counter pinned so a long phase chain can never push it off.
+
+**What I'd tell someone building this:** the fastest way to fix the wrong thing is to trust the obvious hypothesis. I was sure it was an overflow; the repro said no in thirty seconds and pointed at a margin. Reproduce the *layout*, not just the theory — and when you can't reach the real screen (this one's behind auth), rebuild the exact CSS at the real width, because a pure-layout bug reproduces perfectly there. Honest residual: I confirmed the misalignment in a faithful repro, not on the founder's device — worth a glance to confirm it's what they meant.
+
+---
+
 ## 2026-09-13 — STRAVA-WEBHOOK-NO-APP-LINK · A run that only linked when I opened the app
 
 **Shipped:** fixed the base-URL regression that broke background run-analysis, built the missing tool to inspect the Strava webhook subscription, and named a new silent-failure class.
