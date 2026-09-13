@@ -53,6 +53,28 @@ describe('WeekGrid · weekPlanToInputs (the engine mapping)', () => {
   it('an all-rest week is zero available (blocks proceed)', () => {
     expect(weekPlanToInputs(emptyWeek()).daysAvailable).toBe(0)
   })
+
+  // UX-WIZARD-01 Stage A — day_budgets capture (byte-identical until consumed).
+  it('returns no dayBudgets when none are provided (byte-identical case)', () => {
+    const w = weekPlanToInputs(defaultWeek(), 45)
+    expect(w.dayBudgets).toBeUndefined()
+    expect(w.maxWeekdayMins).toBe(45)
+  })
+
+  it('per-day budgets: maxWeekdayMins is the MIN across run weekdays; dayBudgets pruned to them', () => {
+    // mon/wed/fri run, sun long (default week). Tue/thu are rest.
+    const w = weekPlanToInputs(defaultWeek(), 60, { mon: 30, wed: 90, tue: 30 })
+    // tue is a rest day — its budget must not pull the cap down, nor appear.
+    expect(w.maxWeekdayMins).toBe(30)          // min(mon 30, wed 90, fri 60-default)
+    expect(w.dayBudgets).toEqual({ mon: 30, wed: 90 })
+  })
+
+  it('a rest-day budget alone leaves the cap at the default and dayBudgets undefined', () => {
+    const p: WeekPlan = { ...emptyWeek(), mon: 'run', wed: 'run', sun: 'long' }
+    const w = weekPlanToInputs(p, 45, { tue: 20 }) // tue is rest
+    expect(w.maxWeekdayMins).toBe(45)
+    expect(w.dayBudgets).toBeUndefined()
+  })
 })
 
 describe('WeekGrid · weekPlanFromLegacy (draft back-compat)', () => {

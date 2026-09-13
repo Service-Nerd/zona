@@ -17,7 +17,7 @@
 //      'regularly' (neither exists) and every plan generated cleanly.
 
 import { describe, it, expect } from 'vitest'
-import { validateInputFields, InputEnumError } from './inputs'
+import { validateInputFields, InputEnumError, InputFieldError } from './inputs'
 import type { GeneratorInput } from '@/types/plan'
 
 const base = {
@@ -84,5 +84,28 @@ describe('enum inputs are validated', () => {
   // rejecting undefined would break every plan that relies on it.
   it.each([undefined, null, ''])('treats %s as absent, not invalid', value => {
     expect(() => validateInputFields(withField('fitness_level', value))).not.toThrow()
+  })
+})
+
+// UX-WIZARD-01 Stage A — day_budgets validation at the input boundary.
+describe('day_budgets validation', () => {
+  it('accepts absent day_budgets (byte-identical default)', () => {
+    expect(() => validateInputFields(base)).not.toThrow()
+    expect(() => validateInputFields(withField('day_budgets', undefined))).not.toThrow()
+  })
+
+  it('accepts a plausible per-weekday map', () => {
+    expect(() => validateInputFields(withField('day_budgets', { mon: 30, thu: 90 }))).not.toThrow()
+  })
+
+  it('rejects a non-weekday key (weekends carry the long run, not a cap)', () => {
+    expect(() => validateInputFields(withField('day_budgets', { sat: 120 }))).toThrow(InputEnumError)
+    expect(() => validateInputFields(withField('day_budgets', { sun: 120 }))).toThrow(InputEnumError)
+  })
+
+  it('rejects a nonsense minute value', () => {
+    expect(() => validateInputFields(withField('day_budgets', { mon: 5 }))).toThrow(InputFieldError)     // below floor
+    expect(() => validateInputFields(withField('day_budgets', { mon: 9999 }))).toThrow(InputFieldError)  // absurd
+    expect(() => validateInputFields(withField('day_budgets', { mon: NaN }))).toThrow(InputFieldError)
   })
 })

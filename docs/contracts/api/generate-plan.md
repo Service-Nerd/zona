@@ -81,6 +81,12 @@ Body: GeneratorInput
   // Schedule
   days_cannot_train?: string[]    // full day names e.g. ['monday', 'friday']
   max_weekday_mins?: number
+  day_budgets?: Partial<Record<'mon'|'tue'|'wed'|'thu'|'fri', number>>
+                                  // UX-WIZARD-01 — per-weekday minute budgets, weekday-scoped.
+                                  // CAPTURED from 2026-09-13 (Stage A); the engine still acts on
+                                  // max_weekday_mins (the wizard derives it as MIN(day_budgets)),
+                                  // so sending day_budgets is byte-identical until Stage B. Optional;
+                                  // omit it and behaviour is unchanged. Weekend keys are rejected.
   preferred_long_run_day?: 'sat' | 'sun'  // R23 rebuild — soft constraint; default 'sun'
   treadmill_primarily?: boolean   // R23 rebuild — affects strides and hill-work plausibility
 

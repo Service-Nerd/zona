@@ -496,4 +496,25 @@ export function validateInputFields(input: GeneratorInput): void {
       throw new InputFieldError('max_hr', input.max_hr, ranges.max_hr)
     }
   }
+
+  // UX-WIZARD-01 — per-weekday budgets (optional). Keys must be weekdays; each
+  // value a plausible session minute count. Same range as max_weekday_mins
+  // (they are the same quantity, one per day), so a nonsense entry is rejected
+  // at the boundary rather than silently distorting placement downstream.
+  if (input.day_budgets !== undefined && input.day_budgets !== null) {
+    const WEEKDAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri']
+    const r = ranges.max_weekday_mins ?? { min: 10, max: 240 }
+    for (const [day, mins] of Object.entries(input.day_budgets)) {
+      // A non-weekday key is an out-of-date/hand-built request, not a runner
+      // mistake — same class as an unknown enum value (weekends carry the long
+      // run, not a weekday cap).
+      if (!WEEKDAY_KEYS.includes(day)) {
+        throw new InputEnumError('day_budgets', day, WEEKDAY_KEYS)
+      }
+      if (mins == null) continue
+      if (!Number.isFinite(mins) || (mins as number) < r.min || (mins as number) > r.max) {
+        throw new InputFieldError('day_budgets', mins as number, r)
+      }
+    }
+  }
 }

@@ -184,6 +184,7 @@ const SPECS: Record<string, Spec> = {
   target_time:             { values: ['0:40:00', '0:45:00', '0:55:00'] },
   days_cannot_train:       { values: [[], ['mon', 'tue'], ['wed']] },
   max_weekday_mins:        { values: [undefined, 30, 90] },
+  day_budgets:             { values: [undefined, { mon: 30 }, { mon: 90 }] },
   training_style:          { values: ['predictable', 'variety', 'minimalist', 'structured'] },
   hard_session_relationship: { values: ['avoid', 'neutral', 'love', 'overdo'],
                              note: '§47 needs 5yr+ and no injury history; §96 made `overdo` a brake' },
@@ -231,6 +232,13 @@ const INERT_BY_DESIGN: Record<string, string> = {
  * believe it works". Either resolution closes the entry; leaving it does not.
  */
 const INERT_DEBT: Record<string, string> = {
+  day_budgets:
+    'UX-WIZARD-01 Stage A (2026-09-13) — per-weekday budgets are CAPTURED into ' +
+    'GeneratorInput but the engine does not yet read them; max_weekday_mins (derived ' +
+    'as their MIN by weekPlanToInputs) is still the authority, so varying day_budgets ' +
+    'is byte-identical (verify:parity IDENTICAL, 2916 cases). Intentionally inert until ' +
+    'Stage B wires sizing/placement to consume it. Data-first by design (the entry: ' +
+    '"the risky half lands against a known-good baseline"); removing this entry = Stage B shipped.',
   // terrain — RESOLVED 2026-09-09 (INERT-INPUTS-01 / Coaching Board CB-TERRAIN-01).
   // trail/mixed now stamp meta.terrain_effort_note (§40b Amendment 2), so varying
   // terrain changes the delivered plan — it is no longer inert. The board vetoed a

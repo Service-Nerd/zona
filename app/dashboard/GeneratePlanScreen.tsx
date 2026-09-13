@@ -930,6 +930,9 @@ export default function GeneratePlanScreen({
       benchmark,
       days_cannot_train:     week.restShort.length ? week.restShort.map(k => FULL_BY_SHORT[k]) : undefined,
       max_weekday_mins:      maxWeekdayVal,
+      // UX-WIZARD-01 — captured now (byte-identical: undefined until the per-day
+      // control is rendered; the engine still acts on max_weekday_mins).
+      day_budgets:           week.dayBudgets,
       hard_session_relationship: hasPaidAccess ? (hardSessions ?? undefined) : undefined,
       injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
       terrain:                   hasPaidAccess ? (terrain ?? undefined) : undefined,

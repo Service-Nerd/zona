@@ -78,6 +78,15 @@ export interface WeekInputs {
    * `undefined` = no limit, matching the existing "No limit" chip.
    */
   maxWeekdayMins: number | undefined
+  /**
+   * UX-WIZARD-01 — the effective per-weekday budgets, pruned to the weekdays the
+   * runner actually runs (a rest day's stale budget is dropped, same reasoning
+   * as `maxWeekdayMins`). Undefined when no per-day budget is set — the common
+   * case today, since the per-day control is not yet rendered. Threaded to
+   * `GeneratorInput.day_budgets`; the engine derives `maxWeekdayMins` from it
+   * today and consumes it directly in a later stage.
+   */
+  dayBudgets?: DayBudgets
 }
 
 /**
@@ -109,10 +118,20 @@ export function weekPlanToInputs(
     .map(d => dayBudgets?.[d] ?? weekdayDefaultMins)
     .filter((m): m is number => typeof m === 'number' && Number.isFinite(m) && m > 0)
 
+  // Effective per-day budgets: only running weekdays that carry an explicit
+  // budget. Empty (→ undefined) when the per-day control hasn't set any, which
+  // keeps day_budgets absent and generation byte-identical (verify:parity).
+  const effectiveBudgets: DayBudgets = {}
+  for (const d of running) {
+    const b = dayBudgets?.[d]
+    if (typeof b === 'number' && Number.isFinite(b) && b > 0) effectiveBudgets[d] = b
+  }
+
   return {
     daysAvailable,
     restShort,
     longDay,
+    dayBudgets: Object.keys(effectiveBudgets).length > 0 ? effectiveBudgets : undefined,
     // No running weekday (a weekend-only week) → fall back to the stated default
     // rather than `undefined`. It changes nothing the runner sees — there is no
     // weekday session to cap — but it keeps the value byte-identical to what the

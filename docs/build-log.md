@@ -6,6 +6,18 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — UX-WIZARD-01 Stage A · Capture the input before you change the behaviour
+
+**Shipped:** per-weekday time budgets now flow from the wizard into `GeneratorInput`, end to end, and change nothing yet — on purpose.
+
+The item that justifies this (a runner with 30 minutes on Tuesday and 90 on Thursday is forced to enter 30, and loses ~22% of peak volume to it) needs the engine to size and place sessions per day. That's a prescription-moving change, and the backlog entry is emphatic about the order: capture the data first, byte-identical, so the risky half lands against a known-good baseline. So Stage A is deliberately boring — add `day_budgets` to the input, thread it through the wizard and the API, validate it, and have the engine ignore it while `max_weekday_mins` (derived as the minimum) stays the authority.
+
+"Byte-identical" isn't a claim you make, it's one you prove: `verify:parity` came back IDENTICAL across 2,916 cases, and the cohort-shape gate didn't move. The satisfying part was that the repo's own guards caught me mid-change. The moment I declared `day_budgets` on `GeneratorInput`, the INPUT-EFFECT-01 test failed — "this field is declared but varying it produces the same plan every time," which is exactly the inert-input class the codebase has been burned by (`max_weekend_mins`, `zone2_ceiling`, both declared and read by nothing). It was right. The honest resolution wasn't to suppress it but to register `day_budgets` as *debt* — a field that should change the plan and doesn't yet — with a note that removing the entry is what Stage B means. An inert input is only acceptable when it's temporary and tracked, and the guard is what keeps "temporary" honest.
+
+**What I'd tell someone building this:** when a change moves what real users receive, split it so the plumbing lands separately from the behaviour, and prove the plumbing changed nothing before you touch the behaviour. And if your test suite yells that your new field does nothing — it's not being pedantic, it's naming the exact failure mode this app keeps hitting. Register it as debt, don't silence it.
+
+---
+
 ## 2026-09-13 — ONBOARD-OBS-01 · Telemetry for the write that can't call the telemetry helper
 
 **Shipped:** the onboarding finalise now reports its own failures, and a daily probe catches any it misses.

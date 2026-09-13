@@ -123,6 +123,18 @@ export interface GeneratorInput {
   // untouched — it is engine-computed and legitimately consumed. Found by INPUT-EFFECT-01.
   days_cannot_train?: string[]
   max_weekday_mins?: number
+  /**
+   * UX-WIZARD-01 — per-weekday time budgets (minutes), one optional entry per
+   * weekday the runner actually runs. Weekday-scoped by design: weekends carry
+   * the long run and have no cap concept (§81). `max_weekday_mins` remains the
+   * single authority the engine acts on today (derived by the wizard as the
+   * MINIMUM across these via `weekPlanToInputs`); this richer map is CAPTURED
+   * first and consumed by the engine in a later stage (sizing/placement). Every
+   * stored plan and every API caller that sends only `max_weekday_mins` keeps
+   * working unchanged — this field is optional and, until the engine reads it,
+   * byte-identical to its absence (`verify:parity`).
+   */
+  day_budgets?: Partial<Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri', number>>
   // MAX-WEEKEND-MINS-01 (2026-09-04) — `max_weekend_mins` REMOVED. It sat here
   // with zero readers in lib/ or app/, no sender (the wizard captures only the
   // weekday cap), no entry in docs/contracts/api/generate-plan.md, and no real
