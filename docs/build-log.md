@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — UX-WIZARD-01 Stage B · The engine hears "Tuesday's my long evening"
+
+**Shipped:** the plan engine now uses per-weekday time budgets — sizing, placing and redistributing around the runner's actual week — and it changes nobody's plan who doesn't use the feature.
+
+This is the prescription-moving half, and the founder set the rule for it before I started: know the up/downstream impact, run the coach review before and after, and don't break doctrine. So the shape of the work was as much about the safety net as the code. First I added day-budget cases to the coach review (the existing cases set no budgets, so a before/after would have proved nothing) and captured a baseline: the quality session landing on a *tight* day while the runner's open day sat empty, six weekday sessions running over their own budget.
+
+Then four coupled changes, all gated behind "does this runner have per-day budgets": the cap became per-day; a day's budget bounds its own session; placement moved the structured session onto the day with room; and a water-fill spread the week's fixed easy volume across days weighted by how much room each has, so a roomy day absorbs what a tight day can't hold. The invariant that enforces the cap became per-day in the same commit — because §81 is explicit that an engine exemption the validator doesn't share is a plan that fails its own constitution, and the moment the engine placed a legitimate 49-minute session on a 90-minute Thursday, the old single-cap validator screamed. It was right to; I made it per-day too.
+
+The guardrail that mattered most was `verify:parity`: every change is behind the `day_budgets` flag, so I could prove — 2,916 cases, byte for byte — that a runner who doesn't use the feature gets the exact same plan as before. That's the downstream-impact answer stated as a fact, not a hope. Then the sweep, run with per-day budgets injected across 20% of 16,000 plans, came back with no new violations; the matrix held; and the coach review, re-run after, still had every case clean. The before/after: six-plus over-budget sessions each on the two exercisers went to zero, and the structured session moved onto the roomy day.
+
+One honest note on the sweep: my first injection flooded the grid with 30-minute budgets and tripped a noise gate on the "don't detrain" warning — not because the engine was wrong (per-day budgets *reduce* detraining versus a flat cap) but because I'd over-sampled the most-constrained runner. The fix was to sample realistically, not to move the gate. Moving a gate to make your change pass is how a gate stops meaning anything.
+
+**What I'd tell someone building this:** when a change alters what real people receive, put it behind a flag and prove the flag-off path is identical before you argue about the flag-on path. And build the test that can *see* your feature before you build the feature — a before/after over inputs that don't exercise the change is a green light that's wired to nothing. Still dark until the control ships (Stage C); the engine is ready and the net is around it.
+
+---
+
 ## 2026-09-13 — UX-WIZARD-01 Stage A · Capture the input before you change the behaviour
 
 **Shipped:** per-weekday time budgets now flow from the wizard into `GeneratorInput`, end to end, and change nothing yet — on purpose.

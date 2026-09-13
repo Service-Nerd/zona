@@ -184,7 +184,11 @@ const SPECS: Record<string, Spec> = {
   target_time:             { values: ['0:40:00', '0:45:00', '0:55:00'] },
   days_cannot_train:       { values: [[], ['mon', 'tue'], ['wed']] },
   max_weekday_mins:        { values: [undefined, 30, 90] },
-  day_budgets:             { values: [undefined, { mon: 30 }, { mon: 90 }] },
+  day_budgets:             { values: [
+                             undefined,
+                             { mon: 30, tue: 30, wed: 30, thu: 30, fri: 30 }, // flat-tight: trims weekdays
+                             { mon: 30, tue: 30, wed: 90, thu: 30, fri: 30 }, // Wed roomy: quality lands + sizes on Wed
+                           ] },
   training_style:          { values: ['predictable', 'variety', 'minimalist', 'structured'] },
   hard_session_relationship: { values: ['avoid', 'neutral', 'love', 'overdo'],
                              note: '§47 needs 5yr+ and no injury history; §96 made `overdo` a brake' },
@@ -232,13 +236,11 @@ const INERT_BY_DESIGN: Record<string, string> = {
  * believe it works". Either resolution closes the entry; leaving it does not.
  */
 const INERT_DEBT: Record<string, string> = {
-  day_budgets:
-    'UX-WIZARD-01 Stage A (2026-09-13) — per-weekday budgets are CAPTURED into ' +
-    'GeneratorInput but the engine does not yet read them; max_weekday_mins (derived ' +
-    'as their MIN by weekPlanToInputs) is still the authority, so varying day_budgets ' +
-    'is byte-identical (verify:parity IDENTICAL, 2916 cases). Intentionally inert until ' +
-    'Stage B wires sizing/placement to consume it. Data-first by design (the entry: ' +
-    '"the risky half lands against a known-good baseline"); removing this entry = Stage B shipped.',
+  // day_budgets — RESOLVED 2026-09-13 (UX-WIZARD-01 Stage B). The engine now
+  // CONSUMES per-day budgets: per-day cap (applyWeekdayMinsCap), day-identity-
+  // aware placement (buildWeekSessions), and budget-weighted redistribution
+  // (waterFillEasyKm). Varying day_budgets changes the delivered plan, so it is
+  // no longer inert. No-budget plans stay byte-identical (verify:parity).
   // terrain — RESOLVED 2026-09-09 (INERT-INPUTS-01 / Coaching Board CB-TERRAIN-01).
   // trail/mixed now stamp meta.terrain_effort_note (§40b Amendment 2), so varying
   // terrain changes the delivered plan — it is no longer inert. The board vetoed a

@@ -366,6 +366,27 @@ function randomInput(): any {
     injury_history: pick(injurySets),
     ...(() => { const r = pick(recentQualitySets); return r ? { recent_quality_training: r } : {} })(),
     max_weekday_mins: pick(maxWeekdays),
+    // UX-WIZARD-01 Stage B — sweep per-day budgets across the grid so the new
+    // sizing/placement/redistribution is exercised broadly, not only by the
+    // dedicated day-budget cases. ~40% of picks carry a budget map over the
+    // runnable weekdays; max_weekday_mins is set to their MIN, exactly as the
+    // wizard derives it (weekPlanToInputs). Undefined otherwise → the no-budget
+    // path (proven byte-identical by verify:parity) keeps the majority coverage.
+    ...(() => {
+      // ~20% carry an UNEVEN per-day budget (the real use case: one roomy day
+      // among tighter ones). The `min` is 45, not 30 — the extreme 30-min cap is
+      // already sampled by `maxWeekdays`, so re-flooding it here would only
+      // over-represent time-constrained runners and inflate the honest
+      // PEAK-NOT-BELOW-START residual, not test the per-day distribution logic.
+      const shape = pick(['none', 'none', 'none', 'none', 'uneven'] as const)
+      if (shape === 'none') return {}
+      const blockedWd = new Set(days.days_cannot_train ?? [])
+      const wd = (['mon', 'tue', 'wed', 'thu', 'fri'] as const).filter(d => !blockedWd.has(d))
+      if (wd.length === 0) return {}
+      const db: Record<string, number> = {}
+      wd.forEach((d, i) => { db[d] = i % 2 === 0 ? 45 : 90 })
+      return { day_budgets: db, max_weekday_mins: Math.min(...Object.values(db)) }
+    })(),
     ...(() => { const w = pick(weeksAtVolume); return w === undefined ? {} : { weeks_at_current_volume: w } })(),
     ...(() => { const d = pick(foundationDecisions); return d ? { foundation_decision: d } : {} })(),
     __foundationGapDays: pick(foundationGapDays),

@@ -1620,11 +1620,21 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       }
     }
 
-    // INV-PLAN-MAX-WEEKDAY-MINS — weekday session duration ≤ user's stated cap
-    // (CoachingPrinciples — life-first, plan-second)
-    if (input.max_weekday_mins) {
+    // INV-PLAN-MAX-WEEKDAY-MINS — weekday session duration ≤ the runner's stated
+    // cap FOR THAT DAY (CoachingPrinciples — life-first, plan-second).
+    //
+    // UX-WIZARD-01 Stage B — the cap is per-day: each weekday session is checked
+    // against `day_budgets[day]`, falling back to the single `max_weekday_mins`.
+    // This MUST track applyWeekdayMinsCap's per-day trim exactly — §81: "an
+    // engine exemption the validator does not share is a plan that fails its own
+    // constitution." When `day_budgets` is absent every day resolves to
+    // max_weekday_mins, i.e. the old single-cap check, unchanged.
+    const dayBudgets = input.day_budgets
+    if (input.max_weekday_mins != null || dayBudgets != null) {
       const weekdays: Day[] = ['mon','tue','wed','thu','fri']
       for (const d of weekdays) {
+        const cap = dayBudgets?.[d as 'mon'|'tue'|'wed'|'thu'|'fri'] ?? input.max_weekday_mins
+        if (cap == null) continue
         const s = w.sessions[d]
         if (!s?.duration_mins) continue
         // §81 (Coaching Board, MWM-02, 2026-09-03) — the long run is EXEMPT from
@@ -1639,15 +1649,15 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // engine exemption the validator does not share is a plan that fails
         // its own constitution.
         if (isLongRun(s) || isStructuredSession(s)) continue
-        if (s.duration_mins > input.max_weekday_mins) {
+        if (s.duration_mins > cap) {
           violations.push({
             code: 'INV-PLAN-MAX-WEEKDAY-MINS',
             principle_ref: 'CoachingPrinciples — life-first',
             severity: 'error',
             week: w.n, day: d,
-            message: 'Weekday session duration exceeds user-specified cap',
+            message: 'Weekday session duration exceeds the cap for that day',
             actual: s.duration_mins,
-            expected: `≤ ${input.max_weekday_mins}`,
+            expected: `≤ ${cap}`,
           })
         }
       }

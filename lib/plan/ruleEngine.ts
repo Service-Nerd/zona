@@ -2999,8 +2999,27 @@ function buildWeekSessions(
       }
     }
 
-    const qualDay = firstAvailableDay(['wed', 'thu', 'tue'], blocked, used.filter(d => dayGap(d, 'wed') < 2))
+    let qualDay = firstAvailableDay(['wed', 'thu', 'tue'], blocked, used.filter(d => dayGap(d, 'wed') < 2))
       ?? firstAvailableDay(['wed', 'thu', 'tue', 'mon', 'fri'], blocked, used)
+
+    // UX-WIZARD-01 Stage B — DAY-IDENTITY-AWARE PLACEMENT. With per-day budgets,
+    // the structured session belongs on the weekday with the most room, so it
+    // lands where its budget holds it instead of overrunning a tight day (the
+    // §81 exemption then rarely needs to fire). Gated on `day_budgets`, so a
+    // plan without them keeps the selection above exactly (verify:parity
+    // IDENTICAL). Only swaps to a day that is itself eligible — unblocked,
+    // unused, and correctly spaced from the long run (§6/§8/§18) — so it can
+    // never place quality adjacent to the long run or drop it.
+    if (input.day_budgets && qualDay) {
+      const wd = (d: Day) => d as 'mon' | 'tue' | 'wed' | 'thu' | 'fri'
+      const budgetOf = (d: Day) => input.day_budgets?.[wd(d)] ?? input.max_weekday_mins ?? Infinity
+      const PREF: Day[] = ['wed', 'thu', 'tue', 'mon', 'fri']
+      const eligible = PREF.filter(d =>
+        !blocked.has(d) && !used.includes(d) && dayGap(d, longDay) >= minDaysBetweenQualLong)
+      // Most room first; ties keep the deterministic preference order.
+      eligible.sort((a, b) => (budgetOf(b) - budgetOf(a)) || (PREF.indexOf(a) - PREF.indexOf(b)))
+      if (eligible.length > 0 && budgetOf(eligible[0]) > budgetOf(qualDay)) qualDay = eligible[0]
+    }
 
     // CoachingPrinciples §21 — knee/ITB/Achilles/shin/calf/plantar history
     // excludes hill sessions. §21's peak reintroduction is gated on "a successful
@@ -3182,6 +3201,10 @@ function buildWeekSessions(
   // all remaining slots; for an INJURY-CAPPED week it is trimmed to what the
   // ceiling supports (below), dropping the excess to rest days.
   let easyToPlace = remainingSlots
+  // Hoisted so the Stage B budget-weighted redistribution below can read them
+  // (they were block-locals when the easy split was uniform).
+  let remainingVolume = 0
+  let easyCap = Infinity
   if (remainingSlots > 0) {
     // Mirror sumWeeklyKm: distance metric reads distance_km; duration metric
     // converts duration_mins back to km via easy pace. Strength has no volume.
@@ -3189,7 +3212,7 @@ function buildWeekSessions(
       if (!s || s.type === 'strength' || s.type === 'rest') return sum
       return sum + sessionKmOrZero(s, pace.minPerKmEasy)
     }, 0)
-    const remainingVolume = Math.max(0, weeklyKm - placedKm)
+    remainingVolume = Math.max(0, weeklyKm - placedKm)
     // DELOAD-INVERSION-01 part 2b (§12, Coaching Board 2026-09-06) — on an
     // injury-capped week the injury cap is a DELIVERED ceiling. The long run
     // (§52-protected) and count-capped quality are already placed; flooring EVERY
@@ -3207,7 +3230,7 @@ function buildWeekSessions(
     // Cap rounded DOWN so post-round easyKm cannot exceed longKm/minRatio.
     // (roundDist uses round-nearest and could otherwise lift easy across the cap,
     // breaking the long-vs-easy invariant by 0.5 km on the boundary.)
-    const easyCap = Math.floor((longKm / minRatio) / precision) * precision
+    easyCap = Math.floor((longKm / minRatio) / precision) * precision
     const naturalRounded = roundDist(remainingVolume / Math.max(1, easyToPlace))
     easyKm = Math.max(Math.min(naturalRounded, easyCap), minDist.easy)
   }
@@ -3220,22 +3243,52 @@ function buildWeekSessions(
   // Place `easyToPlace` easy runs (all remaining slots, unless an injury-capped
   // week trimmed the count above). Unused days stay rest — a reduced-but-whole
   // week on a capped week (§12/§52, DELOAD-INVERSION-01).
-  let easyPlaced = 0
-  while (easyPlaced < easyToPlace && used.length < daysAvailable) {
-    const candidates = DAY_ORDER.filter(d => !blocked.has(d) && !used.includes(d))
+  // Collect the easy days first (same max-spacing selection), THEN size them —
+  // so Stage B can water-fill the fixed easy volume across them by budget. The
+  // selection is identical to the old in-loop placement: spacing is scored
+  // against the days already taken (used ∪ easy-days-so-far).
+  const easyDays: Day[] = []
+  while (easyDays.length < easyToPlace && (used.length + easyDays.length) < daysAvailable) {
+    const taken: Day[] = [...used, ...easyDays]
+    const candidates = DAY_ORDER.filter(d => !blocked.has(d) && !taken.includes(d))
     if (candidates.length === 0) break
     let best: Day = candidates[0]
     let bestScore = -1
     for (const c of candidates) {
-      const score = used.length === 0 ? 7 : Math.min(...used.map(u => dayGap(c, u)))
+      const score = taken.length === 0 ? 7 : Math.min(...taken.map(u => dayGap(c, u)))
       if (score > bestScore) {
         bestScore = score
         best = c
       }
     }
-    sessions[best] = easySession(weekN, best, easyKm, metric, zones, pace)
-    used.push(best)
-    easyPlaced++
+    easyDays.push(best)
+  }
+
+  // UX-WIZARD-01 Stage B item 4 — REDISTRIBUTION. Without per-day budgets every
+  // easy day gets the uniform `easyKm` exactly as before (byte-identical,
+  // verify:parity). With them, water-fill the same fixed easy volume across the
+  // days weighted by each day's room, so a roomy day absorbs what a tight day
+  // cannot hold instead of that volume being trimmed away. The per-day ceiling
+  // is min(§9 long-vs-easy cap, this day's budget in km); weekends carry no
+  // weekday cap and are bounded by §9 alone. The weekly total is unchanged.
+  let easyKmForDay: (d: Day) => number = () => easyKm
+  if (input.day_budgets && easyDays.length > 0) {
+    const weekdayKeys = new Set<Day>(['mon', 'tue', 'wed', 'thu', 'fri'])
+    const ceilOf = (d: Day): number => {
+      const budgetMin = weekdayKeys.has(d)
+        ? (input.day_budgets?.[d as 'mon' | 'tue' | 'wed' | 'thu' | 'fri'] ?? input.max_weekday_mins)
+        : undefined
+      const budgetKm = budgetMin != null && pace.minPerKmEasy > 0 ? budgetMin / pace.minPerKmEasy : Infinity
+      return Math.min(easyCap, budgetKm)
+    }
+    const km = waterFillEasyKm(easyDays.map(ceilOf), remainingVolume, minDist.easy, precision)
+    const byDay = new Map<Day, number>(easyDays.map((d, i) => [d, km[i]]))
+    easyKmForDay = (d) => byDay.get(d) ?? easyKm
+  }
+
+  for (const d of easyDays) {
+    sessions[d] = easySession(weekN, d, easyKmForDay(d), metric, zones, pace)
+    used.push(d)
   }
 
   // ── 4a. Recalibration time trial (CoachingPrinciples §78) ─────────────────
@@ -3319,10 +3372,19 @@ function applyWeekdayMinsCap(
   input: GeneratorInput,
   isRaceWeek = false,
 ): void {
-  if (!input.max_weekday_mins) return
+  // UX-WIZARD-01 Stage B — the cap is now PER-DAY. Each weekday is trimmed to
+  // its OWN budget (`day_budgets[day]`), falling back to the single
+  // `max_weekday_mins` where a day has no explicit budget. When `day_budgets` is
+  // absent every day resolves to `max_weekday_mins`, i.e. exactly the old
+  // single-cap behaviour — byte-identical (verify:parity). Placement (below, at
+  // the quality-day selection) puts the un-trimmable structured session on the
+  // day whose budget can hold it, so this per-day trim mostly touches easy runs.
+  const budgets = input.day_budgets
+  if (input.max_weekday_mins == null && budgets == null) return
   const weekdays: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri']
-  const cap = input.max_weekday_mins
   for (const day of weekdays) {
+    const cap = budgets?.[day as 'mon' | 'tue' | 'wed' | 'thu' | 'fri'] ?? input.max_weekday_mins
+    if (cap == null) continue
     const s = sessions[day]
     if (!s || !s.duration_mins || s.duration_mins <= cap) continue
     if (s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
@@ -3388,6 +3450,47 @@ function applyWeekdayMinsCap(
 // Full history is at the call site in generateRulePlan: it was a measured no-op
 // while only the long run was exempt, and became load-bearing the moment §81
 // was extended to structured sessions.
+
+/**
+ * UX-WIZARD-01 Stage B — REDISTRIBUTION. Distribute a fixed easy-volume pool
+ * across the week's easy days weighted by each day's ceiling, so roomy days
+ * absorb what tight days cannot hold instead of that volume being trimmed away.
+ *
+ * Water-filling, not proportional: the pool fills the lowest days first, so a
+ * tight day sits at its ceiling and the surplus flows to days with room — which
+ * is the whole point (Tuesday 30 caps out; Thursday 90 takes the rest). The
+ * WEEKLY TOTAL is preserved (§2 curve unchanged); any residual that no day can
+ * hold is un-fittable and the week honestly runs under, exactly as today. Each
+ * ceiling already folds in §9's long-vs-easy cap, so no easy run can reach the
+ * long run. Returns one km per input day, precision-rounded and clamped under
+ * its ceiling so rounding can never lift a day over its budget or the §9 cap.
+ */
+function waterFillEasyKm(ceils: number[], total: number, floorKm: number, precision: number): number[] {
+  const n = ceils.length
+  if (n === 0) return []
+  // Base everyone at the floor (a placed easy run is never below MIN_SESSION;
+  // the §82 floor-protection in applyWeekdayMinsCap owns the sub-budget case).
+  const assign = ceils.map(() => floorKm)
+  let remaining = total - floorKm * n
+  for (let guard = 0; guard < n + 2 && remaining > 1e-6; guard++) {
+    const active = assign.map((a, i) => (a < ceils[i] - 1e-9 ? i : -1)).filter(i => i >= 0)
+    if (active.length === 0) break
+    const share = remaining / active.length
+    let moved = 0
+    for (const i of active) {
+      const add = Math.min(share, ceils[i] - assign[i])
+      assign[i] += add
+      moved += add
+    }
+    remaining -= moved
+    if (moved <= 1e-9) break
+  }
+  return assign.map((a, i) => {
+    const rounded = Math.round(a / precision) * precision
+    const ceilRounded = Math.floor(ceils[i] / precision) * precision
+    return Math.max(floorKm, Math.min(rounded, ceilRounded))
+  })
+}
 
 // ─── Week metadata ────────────────────────────────────────────────────────────
 
