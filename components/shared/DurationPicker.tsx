@@ -32,6 +32,8 @@ export function DurationPicker({
   onSecsChange,
   maxHours = 23,
   showSeconds = false,
+  showHours = true,
+  maxMins = 90,
 }: {
   hours: number
   mins: number
@@ -45,9 +47,16 @@ export function DurationPicker({
    *  (a 5K is minutes:seconds, where seconds decide a PB). Off by default so
    *  the wizard/benchmark target-time callers stay HH:MM. */
   showSeconds?: boolean
+  /** Drop the hours column for a minutes:seconds picker (a 5K/10K time trial
+   *  is mm:ss, never hours). When false, `hours` is ignored and the minutes
+   *  wheel runs 0..maxMins so a slow 10K past 59 min is still reachable. */
+  showHours?: boolean
+  /** Top of the minutes wheel when `showHours` is false. Ignored otherwise
+   *  (hours mode keeps minutes at 0-59 and carries into the hours column). */
+  maxMins?: number
 }) {
   const hourValues = useMemo(() => buildRange(0, maxHours), [maxHours])
-  const minuteValues = useMemo(() => buildRange(0, 59), [])
+  const minuteValues = useMemo(() => buildRange(0, showHours ? 59 : maxMins), [showHours, maxMins])
   const secondValues = useMemo(() => buildRange(0, 59), [])
 
   const unitStyle: React.CSSProperties = {
@@ -61,12 +70,16 @@ export function DurationPicker({
 
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: '6px', padding: '8px 0' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <WheelPicker values={hourValues} value={hours} onChange={onHoursChange} ariaLabel="hours" />
-        <div style={unitStyle}>hrs</div>
-      </div>
+      {showHours && (
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <WheelPicker values={hourValues} value={hours} onChange={onHoursChange} ariaLabel="hours" />
+            <div style={unitStyle}>hrs</div>
+          </div>
 
-      <span style={sepStyle}>:</span>
+          <span style={sepStyle}>:</span>
+        </>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <WheelPicker values={minuteValues} value={mins} onChange={onMinsChange} format={pad2} ariaLabel="minutes" />

@@ -3,6 +3,10 @@
 // DashboardClient owns the trigger (nextRecalibrationDue), routing, and the POST
 // to /api/recalibrate-zones. Design 2026-08-06.
 import React, { CSSProperties, useMemo, useState } from 'react'
+import { DurationPicker } from '@/components/shared/DurationPicker'
+import {
+  recalSecondsFromParts, isRecalTimeInRange, formatRecalTime, defaultRecalMins,
+} from '@/lib/coaching/recalTime'
 
 interface RecalibrationReadyTileProps {
   weekN: number
@@ -63,27 +67,19 @@ interface RecalibrationEntryScreenProps {
   onConfirm: (timeSeconds: number) => void
 }
 
-const MIN_SECONDS = 12 * 60
-const MAX_SECONDS = 60 * 60
-
-function parseTime(raw: string): number | null {
-  const m = raw.trim().match(/^(\d{1,2}):([0-5]\d)$/)
-  if (!m) return null
-  const seconds = parseInt(m[1], 10) * 60 + parseInt(m[2], 10)
-  if (seconds < MIN_SECONDS || seconds > MAX_SECONDS) return null
-  return seconds
-}
-
 export function RecalibrationEntryScreen({
   distanceKm, status, onBack, onConfirm,
 }: RecalibrationEntryScreenProps) {
-  const [value, setValue] = useState('')
-  const [touched, setTouched] = useState(false)
+  // Wheel input (FORMS-PRIM-01): minutes:seconds via the shared DurationPicker —
+  // no keyboard, no format-guessing, no iOS zoom trap. Pre-filled to a plausible
+  // time so the runner nudges rather than scrolling from zero.
+  const [mins, setMins] = useState(() => defaultRecalMins(distanceKm))
+  const [secs, setSecs] = useState(0)
 
-  const seconds = useMemo(() => parseTime(value), [value])
-  const invalid = touched && value.trim().length > 0 && seconds === null
+  const seconds = useMemo(() => recalSecondsFromParts(mins, secs), [mins, secs])
+  const inRange = isRecalTimeInRange(seconds)
   const busy = status === 'confirming'
-  const canConfirm = seconds !== null && !busy
+  const canConfirm = inRange && !busy
 
   const screen: CSSProperties = {
     boxSizing: 'border-box', width: '100%', minHeight: '100%', background: 'var(--bg)',
@@ -122,7 +118,7 @@ export function RecalibrationEntryScreen({
       {status === 'applied' ? (
         <>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={eyebrow}>{`${distanceKm}K · ${value}`}</div>
+            <div style={eyebrow}>{`${distanceKm}K · ${formatRecalTime(mins, secs)}`}</div>
             <h1 style={{ margin: 0, font: '600 26px/1.25 var(--font-ui)', color: 'var(--ink)' }}>Paces updated.</h1>
             <p style={{ margin: 0, font: '400 15px/1.5 var(--font-ui)', color: 'var(--ink-2)' }}>
               The rest of your plan just moved with you.
@@ -145,18 +141,18 @@ export function RecalibrationEntryScreen({
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <label htmlFor="tt-time" style={{ font: '500 14px/1 var(--font-ui)', color: busy ? 'var(--mute)' : 'var(--ink-2)' }}>
+            <label style={{ font: '500 14px/1 var(--font-ui)', color: busy ? 'var(--mute)' : 'var(--ink-2)' }}>
               Your time
             </label>
-            <input id="tt-time" inputMode="numeric" autoComplete="off" placeholder="mm:ss"
-              value={value} disabled={busy} aria-invalid={invalid} aria-describedby="tt-help"
-              onChange={(e) => setValue(e.target.value)} onBlur={() => setTouched(true)}
-              style={{ boxSizing: 'border-box', width: '100%', minHeight: '60px', padding: '16px',
-                background: 'var(--bg-soft)', border: `1px solid ${invalid ? 'var(--danger)' : 'var(--line)'}`,
-                borderRadius: 'var(--radius-lg)', font: '600 28px/1 var(--font-ui)',
-                color: busy ? 'var(--mute)' : 'var(--ink)', outline: 'none' }} />
-            <div id="tt-help" style={{ font: '400 13px/1.4 var(--font-ui)', color: invalid ? 'var(--danger)' : 'var(--mute)' }}>
-              {invalid ? `That's not a ${distanceKm}K time. Enter it as mm:ss.` : 'Minutes and seconds, like 22:41.'}
+            <div style={{ opacity: busy ? 0.5 : 1, pointerEvents: busy ? 'none' : 'auto' }}>
+              <DurationPicker
+                showHours={false} showSeconds maxMins={90}
+                hours={0} mins={mins} secs={secs}
+                onHoursChange={() => {}} onMinsChange={setMins} onSecsChange={setSecs}
+              />
+            </div>
+            <div id="tt-help" style={{ font: '400 13px/1.4 var(--font-ui)', color: inRange ? 'var(--mute)' : 'var(--danger)' }}>
+              {inRange ? 'Minutes and seconds, like 22:41.' : `That's outside a plausible ${distanceKm}K time.`}
             </div>
           </div>
 
@@ -177,7 +173,7 @@ export function RecalibrationEntryScreen({
 
           <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <button type="button" disabled={!canConfirm} style={primary(canConfirm)}
-              onClick={() => { if (seconds !== null) onConfirm(seconds) }}>
+              onClick={() => { if (inRange) onConfirm(seconds) }}>
               {busy ? 'Updating' : status === 'error' ? 'Try again' : 'Update my paces'}
             </button>
             {!busy && (<button type="button" style={quiet} onClick={onBack}>Not now</button>)}

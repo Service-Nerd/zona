@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — FORMS-PRIM-01 · Closed an "in-progress" item that was mostly already done
+
+**Shipped:** the last two bespoke time controls fold into the shared wheel picker, and FORMS-PRIM-01 closes. Also closed V2-POLISH-01 (founder call — the substantive pass shipped 09-11; the rest was a design eyeball, not a task).
+
+The interesting part wasn't the code, it was the backlog. FORMS-PRIM-01's "Remaining" listed four things: foundation day-key normalisation, manual-log stepper, recalibration mm:ss, and "login/profile/benchmark migration." I went to do them and found **two were already done** — foundation day-key normalisation shipped with `normaliseDays` and a passing test, and login/reset/benchmark were already on the shared `TextField`/`DurationPicker` from earlier increments. The one raw `<input>` left on login is an age-confirm *checkbox*. The item had been carrying stale scope, which is exactly how an "in-progress" thing sits open forever: the list of what's left stops matching the code, and nobody re-checks because the header still says 🔄.
+
+So the real work was two conversions. Manual-log duration was three hand-rolled hrs/min/sec steppers → the shared `DurationPicker`, and deleting the local `Stepper` component on the way out (one fewer copy of a control that already exists once). Recalibration's time-trial result was a free-text `mm:ss` box parsed with a regex → the same wheel — which meant giving the primitive a **minutes:seconds mode** (`showHours={false}`), because a 5K is never hours and a wheel stuck at `0` hrs is worse than no wheel. I added the mode to the one primitive rather than forking it; that's the whole point of having a primitive.
+
+**Where I drew the line:** the manual-log *distance* still uses its own ± buttons. There's no shared distance-wheel — the wizard's distance control is the `Ruler`, a genuinely different interaction — and the item only ever scoped the *time* steppers. Converting distance would be inventing a new primitive under cover of "finishing" an old item, so I left it and said so in the backlog. Finishing an item shouldn't mean quietly expanding it.
+
+**The pattern worth keeping:** the time logic (valid window, parts→seconds, the display string, a distance-based default so the wheel starts somewhere plausible) came out into `lib/coaching/recalTime.ts` with its own test, so the component is presentational and the rules are checked. Same shape as every other `.logic.ts` in here. A wheel you can't unit-test is a wheel whose bounds you find out about on a user's phone.
+
+---
+
 ## 2026-09-13 — SHEET-PRESENT-01 + NAV-SPACE-01 · The bug was a number seven files each guessed
 
 **Shipped:** one `<Sheet>` primitive, every bottom sheet migrated onto it, and the bottom nav tightened to reclaim space — the two founder-device items from yesterday, done together because they had to be.

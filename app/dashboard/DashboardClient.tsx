@@ -46,6 +46,7 @@ import ZoneBar, { zoneNumberForType, zoneShortName, type Zone } from '@/componen
 import SessionSteps from '@/components/shared/SessionSteps'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import Sheet, { NavHeightProvider } from '@/components/shared/Sheet'
+import { DurationPicker } from '@/components/shared/DurationPicker'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
 import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
@@ -5547,24 +5548,6 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
     letterSpacing: '0.08em', marginBottom: '8px',
   }
 
-  function Stepper({ label, value, min, max, step = 1, onChange, pad = false }: {
-    label: string; value: number; min: number; max: number
-    step?: number; onChange: (v: number) => void; pad?: boolean
-  }) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-        <div style={labelStyle}>{label}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100%', justifyContent: 'center' }}>
-          <button onClick={() => onChange(Math.max(min, value - step))} style={{ width: '44px', height: '44px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-          <div style={{ minWidth: '34px', textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: 500, color: 'var(--text-primary)', flexShrink: 0 }}>
-            {pad ? String(value).padStart(2, '0') : value}
-          </div>
-          <button onClick={() => onChange(Math.min(max, value + step))} style={{ width: '44px', height: '44px', borderRadius: '8px', flexShrink: 0, background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <Sheet onClose={requestUnmount} maxHeightVh={90} ariaLabel="Log a run">
       {(close) => (
@@ -5743,16 +5726,15 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
             </div>
 
-            {/* Duration */}
+            {/* Duration — shared wheel primitive (FORMS-PRIM-01), no keyboard,
+                no iOS zoom trap, one owner of the HH:MM:SS control. */}
             <div style={{ marginBottom: '20px' }}>
               <div style={labelStyle}>Duration</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 16px 1fr 16px 1fr', alignItems: 'start', width: '100%' }}>
-                <Stepper label="hrs" value={hours}   min={0} max={12} onChange={setHours} />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted)', fontSize: '18px' }}>:</div>
-                <Stepper label="min" value={minutes} min={0} max={59} onChange={setMinutes} pad />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '24px', color: 'var(--text-muted)', fontSize: '18px' }}>:</div>
-                <Stepper label="sec" value={seconds} min={0} max={59} step={5} onChange={setSeconds} pad />
-              </div>
+              <DurationPicker
+                hours={hours} mins={minutes} secs={seconds}
+                maxHours={12} showSeconds
+                onHoursChange={setHours} onMinsChange={setMinutes} onSecsChange={setSeconds}
+              />
             </div>
 
             {/* Average HR — DS-06, optional. Stored on the run; unlocks a coarse
