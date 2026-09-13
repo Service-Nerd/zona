@@ -2412,7 +2412,15 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       const nonLongPrev = prev.weekly_km - longKmOf(prev)
       if (nonLongPrev <= 0 || nonLongNow <= nonLongPrev) continue
       const risePct = ((nonLongNow - nonLongPrev) / nonLongPrev) * 100
-      if (risePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT) {
+      // §90 amendment (CHARITY-CAP-ABSFLOOR-01, Coaching Board 2026-09-13): a
+      // breach requires BOTH the % cap AND an absolute-km floor. On a low base a
+      // percentage magnifies a clinically trivial rise (+3km non-long = +38% for
+      // a knee-history 10K runner); Willy's floor separates a tissue-meaningful
+      // step from arithmetic noise. Gates the warn, never the trim — the producer
+      // still caps to §12.
+      const absRiseKm = nonLongNow - nonLongPrev
+      if (risePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT
+          && absRiseKm > GENERATION_CONFIG.DELIVERED_ABSOLUTE_FLOOR_KM) {
         violations.push({
           code: 'INV-PLAN-INJURY-CAP-DELIVERED',
           principle_ref: 'CoachingPrinciples §90',
@@ -2579,9 +2587,16 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // means every case this reports is a genuine rise in the work the
         // engine was free to place, inside a week that genuinely got bigger.
         const totalRisePct = ((deliveredKm(w) - deliveredKm(prev)) / deliveredKm(prev)) * 100
+        // §94 amendment (CHARITY-CAP-ABSFLOOR-01, Coaching Board 2026-09-13): as
+        // for §90, the delivered ramp must clear an absolute-km floor as well as
+        // the %, so a low-base plan does not warn on a rise that is a large
+        // percentage of a small number. Measured on the whole-week rise (§2's
+        // own claim). Gates the warn, not the producer.
+        const totalAbsRiseKm = deliveredKm(w) - deliveredKm(prev)
         const bothBreach =
           risePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT &&
-          totalRisePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT
+          totalRisePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT &&
+          totalAbsRiseKm > GENERATION_CONFIG.DELIVERED_ABSOLUTE_FLOOR_KM
         if (bothBreach) {
           violations.push({
             code: 'INV-PLAN-DELIVERED-RAMP',

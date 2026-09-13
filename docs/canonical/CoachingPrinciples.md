@@ -3105,6 +3105,29 @@ residual (§34) and becomes `error` when long-run placement is curve-reconciled.
 quality→easy→never the long run; injury-only scope; healthy stays §52; ultra+beginner+
 injury → maintenance). Amends §3, §8, §12, §52 by reference; does not loosen any of them.
 
+**Amendment CHARITY-CAP-ABSFLOOR-01, 2026-09-13 — the delivered cap has an absolute-km
+floor beneath the percentage.** A percentage on a LOW base magnifies a clinically
+trivial rise: measured on the charity cohort, a knee-history masters 10K runner
+(T3, 20 km/wk) adding **+3 km** of non-long-run volume trips the 5% delivered
+injury cap at **+38%** — while the change is one short easy run. Surfaced by the
+2026-09-13 charity-cohort board sitting, which ruled the plan itself fit to ship
+and filed this as the follow-up. **The delivered-cap warn now fires only when the
+week-on-week rise exceeds BOTH the % cap AND `DELIVERED_ABSOLUTE_FLOOR_KM` (3 km).**
+Set on measurement: across a 2,790-plan injury/low-volume grid the flagged
+non-long-run rises spanned **1–7 km (median 4)**; a 3 km floor silences the ≤3 km
+arithmetic noise (**49%** of flags) while keeping **every rise ≥3 km** — so no real
+low-base spike is masked. Sims' condition of approval: the floor stays at 3 km, not
+5 km, because a 5 km floor would mask the genuine 4–7 km steps that appear on low
+bases. Willy: this **sharpens** the signal — a warn that fires on trivial rises is
+noise, and noise gets ignored, which is how a real breach is missed later (§1's own
+standard). **It gates the CHECKER's warn, never the engine's trim** — the producer
+still caps to §12; the change does not loosen §12, §2, §52 or §90's lever order, it
+narrows what the delivered warn reports to what a coach would act on. Applies
+symmetrically to §94's healthy delivered ramp (measured on the whole-week rise
+there). **Board:** CORRECT WITH AMENDMENT, Hutchinson chairing, Willy leading,
+Sims' 3 km condition binding. Enforced by `INV-PLAN-INJURY-CAP-DELIVERED` (§90) and
+`INV-PLAN-DELIVERED-RAMP` (§94).
+
 ---
 
 ## 91. The on-ramp is counted in weeks the runner runs, not weeks in an array
@@ -3421,6 +3444,14 @@ foundation weeks (§57's own +10%).
 **Config.** `GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT` (10, unchanged —
 this ruling adds no numeric, it gives an existing one a second enforcement site).
 Enforced by `INV-PLAN-DELIVERED-RAMP` (`warn`, §34 declared AND exercised).
+
+**Amendment CHARITY-CAP-ABSFLOOR-01, 2026-09-13.** As for §90, the delivered ramp
+now requires the week-on-week rise to clear an absolute-km floor
+(`DELIVERED_ABSOLUTE_FLOOR_KM`, 3 km) as well as the percentage, so a low-base plan
+does not warn on a rise that is a large percentage of a small number. Measured on
+the whole-week rise here (§2's own claim is about weekly volume). See §90's
+amendment for the measurement and the board's reasoning; it gates the warn, not the
+producer.
 
 **Board:** CB-RAMP-02, 2026-09-07 — Coaching Board CORRECT WITH AMENDMENT,
 Hutchinson chairing (Willy leading; the chronic-load and both-portions scopes are

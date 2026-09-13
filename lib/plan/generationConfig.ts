@@ -1047,6 +1047,22 @@ export const GENERATION_CONFIG = {
   // tightens from MAX_WEEKLY_VOLUME_INCREASE_PCT (10%) to this stricter limit.
   INJURY_WEEKLY_INCREASE_CAP_PCT: 5,  // % above previous week's volume
 
+  // ── Delivered-cap absolute floor (CoachingPrinciples §90/§94, CHARITY-CAP-ABSFLOOR-01) ──
+  // A percentage cap on a LOW base magnifies a clinically trivial rise: a
+  // knee-history 10K runner adding +3 km of easy volume trips the 5% delivered
+  // injury cap at +38%, while the change is one short easy run. The delivered
+  // caps (INV-PLAN-INJURY-CAP-DELIVERED §90, INV-PLAN-DELIVERED-RAMP §94) now
+  // fire only when the week-on-week rise exceeds BOTH the % cap AND this absolute
+  // km floor. Set at 3 km on measurement (Coaching Board 2026-09-13): across a
+  // 2,790-plan injury/low-volume grid the flagged non-long-run rises spanned
+  // 1–7 km (median 4); a 3 km floor silences the ≤3 km arithmetic noise (49% of
+  // flags) while keeping EVERY rise ≥3 km, so no real low-base spike is masked
+  // (Sims' condition — a 5 km floor was rejected for masking the 4–7 km band).
+  // A COACHING numeric (a clinical-triviality threshold), not the inline
+  // DELIVERED_ROUNDING_TOLERANCE_PCT (which absorbs single-km rounding). It gates
+  // the CHECKER's warn, never the engine's trim — the producer still caps to §12.
+  DELIVERED_ABSOLUTE_FLOOR_KM: 3,  // km; a rise below this is not a delivered-cap breach
+
   // ── Injury-aware session selection (CoachingPrinciples §21) ────────────────
   // Injury keywords that trigger exclusion of hill sessions during base/build
   // phases. Substrings; matched case-insensitively against injury_history.
