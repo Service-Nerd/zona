@@ -44,6 +44,14 @@ unresolved:
 Both are defensible; they change either an invariant's exemption or engine prescription,
 so this needs a Coaching Board ruling, not a call here. **Filed as `PEAK-SPEC-MAINT-01`.**
 
+**UPDATE — RULED + FIXED same day (CB-SPEC-02).** Investigation showed *both* readings
+were wrong: Mike's peak **does** carry a Marathon-pace long run (`mp_long_run`,
+`race_specific`) — the invariant only counted `type:'quality'` sessions and so missed the
+marathon's canonical specific vehicle, reporting a false 0%. Board ruled **CORRECT WITH
+AMENDMENT**: for HM/MARATHON a race-specific long run now counts toward peak specificity
+(type unchanged; §1/§52 untouched). No prescription change. Record:
+`docs/decisions/coaching-board-2026-09-13-peak-spec-maint.md`.
+
 ## What running the loop proved
 It caught a stale canonical case on the way in (Case 04's days-minimum ack) and surfaced a
 real, untracked coaching question (`PEAK-SPEC-MAINT-01`) that the green test suite and the

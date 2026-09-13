@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — PEAK-SPEC-MAINT-01 · The board's job is to check the finding, not rubber-stamp it
+
+**Shipped:** the specificity check now counts a marathon's race-pace long run, ending a false "you get no goal-pace rehearsal" warning. Board ruled CB-SPEC-02, both the readings I'd filed turned out wrong.
+
+The auto coaching-review round (its very first run) flagged that a 4:00 marathon plan's peak had 0% race-specific work — a runner chasing a time getting no rehearsal of it. I'd filed it with two options: exempt maintenance plans, or force a goal-pace session. Both felt reasonable. Both were wrong, and the reason is a good argument for investigating before you convene.
+
+I pulled the actual plan. The peak *did* carry a Marathon-pace long run — the runner rehearses goal pace in week 10. The "0%" was false. The invariant only counts `type:'quality'` sessions, and a marathon's specificity lives in the long run (`mp_long_run` — category race_specific, but role long_run, type easy), which the check couldn't see. Then the clincher: a well-resourced 3:30 build was *also* classified maintenance and passed fine — because it happened to get its specific work as a standalone quality session. So maintenance was never the variable. Resourcing was. My "exempt maintenance" option would have papered over a measurement bug with a coaching exemption.
+
+The board ruled CORRECT WITH AMENDMENT: for half and full marathon, count the race-pace long run toward peak specificity. Seiler's objection is the interesting one and I kept it — in Zonna's model the long run is aerobic *volume*, deliberately typed easy so the 80/20 split and the long-run cap treat it right. Reclassifying it a quality session would break that. The resolution was to count it toward *this one ratio* without touching its type: §1 and §52 still see volume, §93 now sees the rehearsal. No plan changed — `verify:parity` territory, plans byte-identical; the sweep confirmed no new violations and the invariant still fires on 2.4% of plans, so it's corrected, not defanged.
+
+**What I'd tell someone building this:** a red check is a claim, and the claim can be wrong. "0% specific" sounded like a coaching gap and was actually a blind spot in the measurement — the plan was fine. If I'd gone straight to "fix the plan" I'd have added intensity to a returning, injured runner to satisfy a check that was miscounting. Read what the plan actually contains before you decide what's broken. And §93 had *told* us the marathon's specificity was the MP long run — in a flag no code read. A documented intention that nothing exercises is a bug with a paper trail.
+
+---
+
 ## 2026-09-13 — COACHING-REVIEW-AUTO-01 · The review folder we built and then forgot to run
 
 **Shipped:** the `coaching-review/` loop now triggers itself when doctrine ships, generates both scenario sets, and prompts the board — instead of waiting for someone to remember.

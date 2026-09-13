@@ -1777,13 +1777,31 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     let peakSpecific = 0
     for (const w of peakWeeks) {
       for (const session of Object.values(w.sessions)) {
-        if (!session || session.type !== 'quality') continue
-        peakQuality++
+        if (!session) continue
+        // CB-SPEC-02 (2026-09-13, §93) — for HM/MARATHON the canonical
+        // race-specific vehicle is the race-pace LONG RUN (the marathon-pace /
+        // HM-pace long-run catalogue rows — category race_specific, role
+        // long_run, type easy), which §93 names as the marathon's intended
+        // mechanism. Counting only `type:'quality'` slots reported a FALSE 0% on
+        // a constrained plan (returning/low-volume marathon) that carries its
+        // specificity in the long run rather than a standalone marathon-pace
+        // quality session — the plan DID rehearse goal pace; the check could not
+        // see it. So a race-specific long run counts here for SPECIFICITY. Its
+        // TYPE is unchanged (still easy → §1 distribution and §52 own it as
+        // volume); it is only counted in this ratio. A plain Zone-2 long run
+        // (not race_specific) is NOT counted — it is volume, not rehearsal.
+        // (Read via the catalogue CATEGORY, not any planSignatures flag.)
+        const isQuality = session.type === 'quality'
+        const isLR = isLongRun(session)
+        if (!isQuality && !isLR) continue
         // Structural, not label-based (INV-CLASS-001 / ADR-018): the catalogue
         // row's own category is the answer. VO2max is GENERAL work for these
         // distances after SC-05 reclassified race pace as the specific work.
         const row = catalogueRowFor(session, V1_SESSION_CATALOGUE)
-        if (row?.category === 'race_specific' || row?.category === 'ultra_specific') peakSpecific++
+        const isSpecific = row?.category === 'race_specific' || row?.category === 'ultra_specific'
+        if (isLR && !isSpecific) continue  // a plain aerobic long run is not specificity
+        peakQuality++
+        if (isSpecific) peakSpecific++
       }
     }
     if (peakQuality > 0) {
@@ -1795,7 +1813,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           principle_ref: 'CoachingPrinciples §93 (§5)',
           severity: 'warn',
           week: 0,
-          message: `Peak phase carries NO race-specific work on a time-targeted plan (0 of ${peakQuality} peak quality sessions); §5 asks for ${target}%. A runner chasing a goal pace gets no rehearsal of it in the weeks closest to the race.`,
+          message: `Peak phase carries NO race-specific work on a time-targeted plan (0 of ${peakQuality} peak key sessions, quality + race-pace long run); §5 asks for ${target}%. A runner chasing a goal pace gets no rehearsal of it in the weeks closest to the race.`,
           actual: `${actual}% specific`,
           expected: `>= ${target}% (§5 SPECIFICITY_BY_PHASE.peak)`,
         })
