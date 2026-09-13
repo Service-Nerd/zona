@@ -80,15 +80,16 @@ The user opens Coach to hear from Kit. This is the AI intelligence layer: a synt
 |---|---|
 | Kit's weekly read (AI) — headline, body, action line | The week-by-week session schedule (that's Plan) |
 | Zone discipline score + what it means | Week Notes / plan framing copy (that's Plan) |
-| Load ratio + underloaded / overloaded signal | Race projections (that's Plan, accessed via Arc) |
+| Load ratio + underloaded / overloaded signal | The week-by-week session schedule (that's Plan) |
 | Sessions completed / planned count | Session-level detail (that's Session Detail) |
 | Weeks left to race | Profile or settings |
 | Zone rings — this week's zone distribution | |
-| Aerobic trend + easy run trend | |
+| Aerobic / easy-run trend (ONE card, UX-COACH-01) | |
 | Race readiness (conditional, race window only) | |
 | Phase summary (conditional, phase transition only) | |
 | Zone drift alert (conditional, rule-engine) | |
 | Discipline ledger — weeks within the lines | |
+| Race projections — the arc (was · now · goal), §109 (moved here 2026-09-12, UX-COACH-01) | |
 
 **Kit appears once, as a coherent voice.** Multiple disconnected Kit cards are a layout failure — consolidate.
 
