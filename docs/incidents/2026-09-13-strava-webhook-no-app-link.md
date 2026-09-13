@@ -37,10 +37,22 @@ There are **three** paths to a no-app / on-open link, and they must be separated
    **Now inspectable:** `npx tsx scripts/strava-webhook-subscription.ts` (view/register/
    delete; callback is pinned to the www canonical).
 
-3. **HealthObserver background wake** (native). The committed `packageClassList`
-   correctly lists `HealthObserverPlugin`, so the config is not the cause in-repo; any
-   failure here is device-level (Garmin→Apple Health not enabled, or a local build that
-   ran raw `cap sync`). Not diagnosable from here.
+3. **HealthObserver background wake** (native) — the **SOR path**, and the one to state
+   correctly. HealthKit is the SOR (ADR-011), but its no-app wake
+   (`HealthObserverPlugin` → `syncOnAppOpen`) **only fires foreground/warm-background**.
+   A **fully-killed app cannot background-ingest** — the `HKObserverQuery` callback fires
+   but there is no JS runtime to receive it, so the run is picked up on next cold-start
+   open (documented `HealthObserverPlugin.swift:24-26`). That is the founder's exact case
+   (run ends, phone pocketed, app killed). The committed `packageClassList` is correct, so
+   this is not a repo defect — it is an **architectural limit of the SOR on iOS**.
+
+   **The doctrine consequence (now added to CLAUDE.md):** because the SOR cannot link a
+   killed-app run in the background, the **only** device-independent auto-link for that
+   (common) case is the **Strava webhook** — path 2. Strava remains the *supplement*, not
+   a second SOR: the webhook consolidates onto the HealthKit row (`tryEnrichHealthKitRow`)
+   and only stores a Strava-canonical row when no HK row exists. So the founder's "it used
+   to auto-link with the app closed" was almost certainly the **Strava webhook** doing it,
+   which is why its (external) breakage produced the regression — not a failure of the SOR.
 
 **Pull-to-refresh already works:** `handleRefresh` calls `syncOnAppOpen()` on native
 (`DashboardClient.tsx:2136`), the same path app-open uses — so a drag-down on Today does
