@@ -243,6 +243,16 @@ export async function claimAutoLink(
 }
 
 export function getInternalBaseUrl(): string {
+  // GTM-SITE-01 removed NEXT_PUBLIC_APP_URL and made the COMMITTED default
+  // `https://www.zonna.run` the single source of truth for the site's own URL
+  // across every metadata surface. This helper — the server→server base for the
+  // Strava-webhook and HealthKit-ingest calls to /api/analyse-run — was missed,
+  // and fell back to the per-deployment VERCEL_URL (which carries Vercel
+  // Deployment Protection and is not the canonical host) or localhost. That
+  // silently degraded the no-app run-analysis on both ingest paths after
+  // 2026-09-10. Aligned here with the same committed default: www in any Vercel
+  // environment, localhost only for local dev (where an absolute www URL would
+  // wrongly hit production).
   return process.env.NEXT_PUBLIC_APP_URL
-    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+    ?? (process.env.VERCEL ? 'https://www.zonna.run' : 'http://localhost:3000')
 }

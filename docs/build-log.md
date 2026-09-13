@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — STRAVA-WEBHOOK-NO-APP-LINK · A run that only linked when I opened the app
+
+**Shipped:** fixed the base-URL regression that broke background run-analysis, built the missing tool to inspect the Strava webhook subscription, and named a new silent-failure class.
+
+The report: a Garmin run went to Strava, but Kit only saw it when the app was opened — and this used to auto-link with the app closed. The instinct is "the webhook broke," and it might have, but the debug pipeline's rule is to separate the paths before blaming one.
+
+There turned out to be three. The **link** to a planned session is a direct database write — it doesn't depend on any URL. The **analysis** ("Kit reading the run") is a separate server→server call to `/api/analyse-run`, and its base URL came from a helper that still read `NEXT_PUBLIC_APP_URL` — the env var GTM-SITE-01 *removed* three days earlier. Every other URL in the app had been migrated to the committed `?? 'https://www.zonna.run'` default; this one server-only helper was missed, and fell through to the per-deployment Vercel URL (which carries deployment protection) or localhost. So since the domain migration, background analysis on *both* ingest paths — Strava webhook and HealthKit — was calling a host that couldn't answer. Silent, because the call is fire-and-forget in a catch that only warns, and the link still worked whenever you opened the app.
+
+But the link *not happening at all* points past the analysis helper to **delivery** — and that's the part I couldn't see, because it lives at Strava. The webhook subscription's callback URL is registered with Strava's API, not in our repo, and there was no script to view it, no event when it fired, no alert when it stopped. That's the actual lesson, and I added it to the debug catalogue as a class: **untooled external subscription.** The likely mechanism is grimly neat — the same www-canonical migration made the apex URL 307-redirect, Strava doesn't follow redirects, and it deletes a subscription after enough failed deliveries. If the callback was the apex, the feature deleted itself and nothing in our code could know.
+
+So: I fixed the helper (with a test that pins the www default on Vercel), built the subscription inspect/register/delete script so the external state is finally visible, and filed the follow-up to emit an ops-event per webhook hit plus a daily "no delivery in N hours" probe — the same visibility we already give stored plans. One nice side-finding: pull-to-refresh on Today already runs the same sync as app-open, so the founder's "it should also trigger on drag-down" was already true.
+
+**What I'd tell someone building this:** when a background feature fails, separate "did the trigger fire" from "did the work succeed" before you fix anything — they have different owners and mine were in completely different places (Strava's servers vs a stale env fallback). And any feature that depends on state held by a third party needs a way to *look at that state*. We had none, so it broke in silence for who knows how long.
+
+---
+
 ## 2026-09-13 — PEAK-SPEC-MAINT-01 · The board's job is to check the finding, not rubber-stamp it
 
 **Shipped:** the specificity check now counts a marathon's race-pace long run, ending a false "you get no goal-pace rehearsal" warning. Board ruled CB-SPEC-02, both the readings I'd filed turned out wrong.
