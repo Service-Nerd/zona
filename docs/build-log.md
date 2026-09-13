@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — UX-WIZARD-01 Stage C · Turning the lights on
+
+**Shipped:** the per-day time-budget control is now rendered in the wizard, so the feature the engine has been ready for since this morning is finally reachable by a runner. UX-WIZARD-01 is done, end to end.
+
+Stage B built the engine half behind a flag and left it dark: the control existed, was tested, and was deliberately not wired, because a visible control that changes nothing a runner receives is the same defect as a declared config token nothing reads. Stage C is the wiring — small, and mostly about not breaking the byte-identical guarantee the earlier stages earned.
+
+`DayBudgetRows` sits on the weekday-ceiling step, directly under the existing cap chips. The chips still answer the simple case in one tap; the per-day rows are progressive disclosure for the runner who actually has an uneven week. New wizard state (`dayBudgets`), restored and persisted in the draft exactly like every field beside it, threaded into `weekPlanToInputs`'s third argument — the one the earlier stages left `undefined` — and pruned on every grid change so a day flipped back to Rest can't keep a stale budget. The cycle options are derived from the cap chips minus "No limit", because two lists of the same time buckets is one list waiting to disagree.
+
+The founder's rule for this item was achievability: you cannot tell someone to run 10k on a day they gave 30 minutes. That's enforced by construction — a day's budget times the runner's estimated easy pace bounds the distance, and the invariant that checks it is per-day. I still wrote it down as a test that asserts it directly over a real generated plan, because "enforced by construction" is a claim, and a claim about what runners receive should be a test, not a sentence. The tight days come out a fraction of the roomy day; nothing overruns its own budget except the long run and structured sessions, which carry the SPEAK obligation instead.
+
+The verification that mattered: a UI wiring change moves no engine code, so `cohort:shape` came back byte-identical to its committed baseline — the population isn't being reshaped, the runner is now simply *allowed to shape their own*. An untouched control sends an empty map, which is `undefined`, which is the plan they'd have got yesterday.
+
+**What I'd tell someone building this:** the honest way to ship a feature in two halves is to make the first half prove the second half changes nothing until someone opts in — then the "turn it on" commit is ten lines and a screenshot, not a leap of faith. Residual I won't pretend away: the wizard's behind auth, so the live in-wizard eyeball is the one step I couldn't do from here.
+
+---
+
 ## 2026-09-13 — UX-WIZARD-01 Stage B · The engine hears "Tuesday's my long evening"
 
 **Shipped:** the plan engine now uses per-weekday time budgets — sizing, placing and redistributing around the runner's actual week — and it changes nobody's plan who doesn't use the feature.

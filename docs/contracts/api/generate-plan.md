@@ -83,10 +83,14 @@ Body: GeneratorInput
   max_weekday_mins?: number
   day_budgets?: Partial<Record<'mon'|'tue'|'wed'|'thu'|'fri', number>>
                                   // UX-WIZARD-01 — per-weekday minute budgets, weekday-scoped.
-                                  // CAPTURED from 2026-09-13 (Stage A); the engine still acts on
-                                  // max_weekday_mins (the wizard derives it as MIN(day_budgets)),
-                                  // so sending day_budgets is byte-identical until Stage B. Optional;
-                                  // omit it and behaviour is unchanged. Weekend keys are rejected.
+                                  // LIVE end-to-end from 2026-09-13 (Stages A–C): the engine
+                                  // sizes, places and redistributes each weekday's session to its
+                                  // own budget; max_weekday_mins remains the fallback for any day
+                                  // without an entry (the wizard derives it as MIN over run-days).
+                                  // Optional; OMIT it and the plan is byte-identical (verify:parity,
+                                  // 2,916 cases). Weekend keys are rejected; out-of-range minutes
+                                  // are rejected. No session exceeds its own day's budget except the
+                                  // long run / structured sessions (§81, which then SPEAK the overrun).
   preferred_long_run_day?: 'sat' | 'sun'  // R23 rebuild — soft constraint; default 'sun'
   treadmill_primarily?: boolean   // R23 rebuild — affects strides and hill-work plausibility
 

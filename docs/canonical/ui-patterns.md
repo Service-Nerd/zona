@@ -1987,6 +1987,15 @@ The keystone "your week" control — a row of seven day cells, each tapped to cy
 - The long cell carries the `--s-long` accent (ties to the long-run session colour).
 - First ship constrains Long to Sat/Sun (matches the current engine); weekday-long-run is a fast-follow behind the `preferred_long_run_day` widening.
 
+### DayBudgetRows (`components/shared/DayBudgetRows.tsx`)
+
+Same family as WeekGrid, one step later. The grid answers *which* days; this answers *how long* on each weekday the runner actually runs (UX-WIZARD-01 Stage C). Rendered on the `weekday-ceiling` substep, directly under the `MAX_WEEKDAY_CHIPS` cap — **progressive disclosure**: the chips set the weekday default in one tap; these rows refine it per day only for the runner with an uneven week.
+
+- **Tap-to-cycle rows, not chips-per-day.** Seven chips × five weekday rows would be thirty-five controls on one calm screen. Each row cycles through the cap options (`{value,label}[]`, reusing `MAX_WEEKDAY_CHIPS` minus "No limit"), mirroring the grid's own idiom the runner learned ten seconds earlier. One line per row, `min-height: 48px` (HIG tap target).
+- **Sparse model.** `DayBudgets` = `Partial<Record<DayKey, number>>`; an absent day means "same as the weekday cap", **never a budget of zero**. Cycling past the last option returns to no-override, so clearing is always one more tap.
+- ⚠️ **State must live in the label, never colour alone.** An override that equals the cap once differed from "same" by moss-vs-mute only (WCAG 1.4.1) with an identical `aria-label`. `defaultLabel` is therefore a **word** ("Same"), never a duration — a duration collides with a real override of that value. The `aria-label` states which state the row is in.
+- Renders nothing when no weekday is a Run day (weekend-only weeks). Caller prunes with `pruneDayBudgets(budgets, plan)` on every grid change so a day switched back to Rest drops its budget.
+
 ### RPEScale (`components/shared/RPEScale.tsx`)
 
 See Pattern 13. The **only** effort control — the post-race sheet and the post-run reflect sheet both use it. Never reimplement a 1–10 grid inline.

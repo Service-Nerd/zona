@@ -24,8 +24,10 @@ import { Ruler } from '@/components/shared/Ruler'
 import { CardSelect } from '@/components/shared/CardSelect'
 import { recommendFitnessLevel, FITNESS_RANK, type FitnessLevel } from '@/lib/plan/fitnessAssessment'
 import { WeekGrid } from '@/components/shared/WeekGrid'
+import { DayBudgetRows } from '@/components/shared/DayBudgetRows'
 import {
-  defaultWeek, weekPlanToInputs, weekPlanFromLegacy, dayCountVerdict, type WeekPlan,
+  defaultWeek, weekPlanToInputs, weekPlanFromLegacy, dayCountVerdict, pruneDayBudgets,
+  type WeekPlan, type DayBudgets,
 } from '@/components/shared/WeekGrid.logic'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -119,6 +121,13 @@ const MAX_WEEKDAY_CHIPS: { label: string; value: number | undefined }[] = [
   { label: '3 hrs',    value: 180       },
   { label: 'No limit', value: undefined },
 ]
+
+// UX-WIZARD-01 Stage C — the per-day override cycle reuses the SAME time buckets
+// as the weekday cap (one source of truth), minus "No limit": an absent day
+// already means "same as the cap", so a per-day override is always a concrete
+// number. `DayBudgetRows` renders the label; the value is what the engine sizes to.
+const DAY_BUDGET_OPTIONS = MAX_WEEKDAY_CHIPS
+  .filter((c): c is { label: string; value: number } => c.value != null)
 
 const TRAINING_AGE_CHIPS: { label: string; value: TrainingAge }[] = [
   { label: '< 6 months',   value: '<6mo'   },
@@ -575,6 +584,11 @@ export default function GeneratePlanScreen({
   //    stored separately. Replaces the old days-per-week + days-off steps.
   const [weekPlan,       setWeekPlan]       = useState<WeekPlan>(defaultWeek())
   const [maxWeekdayChip, setMaxWeekdayChip] = useState<string | null>(null)
+  // UX-WIZARD-01 Stage C — per-day overrides of the weekday cap. Sparse by
+  // design: an absent day means "same as the weekday cap", never a budget of
+  // zero (SESSION-KM-02). Pruned whenever the grid changes so a day switched
+  // back to Rest cannot keep a stale budget.
+  const [dayBudgets,     setDayBudgets]     = useState<DayBudgets>({})
 
   // ── Step 9 — Hard sessions (paid) ────────────────────────────────────────
   const [hardSessions, setHardSessions] = useState<'avoid' | 'neutral' | 'love' | 'overdo' | null>(null)
@@ -625,6 +639,7 @@ export default function GeneratePlanScreen({
         setWeekPlan(weekPlanFromLegacy(restShort, longDay))
       }
       if (s.maxWeekdayChip)  setMaxWeekdayChip(s.maxWeekdayChip)
+      if (s.dayBudgets && typeof s.dayBudgets === 'object') setDayBudgets(s.dayBudgets as DayBudgets)
       if (s.hardSessions)    setHardSessions(s.hardSessions)
       if (s.terrain)         setTerrain(s.terrain)
       if (Array.isArray(s.injuries)) setInjuries(s.injuries)
@@ -643,7 +658,7 @@ export default function GeneratePlanScreen({
         targetHours, targetMins,
         birthYear, weeklyKm, longestRun, restingHR, trainingAge, recentQuality, fitnessLevel,
         benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
-        weekPlan, maxWeekdayChip,
+        weekPlan, maxWeekdayChip, dayBudgets,
         hardSessions, terrain, injuries,
       }))
     } catch {}
@@ -651,7 +666,7 @@ export default function GeneratePlanScreen({
       targetHours, targetMins,
       birthYear, weeklyKm, longestRun, restingHR, trainingAge, recentQuality,
       benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
-      weekPlan, maxWeekdayChip,
+      weekPlan, maxWeekdayChip, dayBudgets,
       hardSessions, terrain, injuries])
 
   // (The old "clear out-of-range days-per-week when distance gets stricter"
@@ -844,13 +859,15 @@ export default function GeneratePlanScreen({
     // the two derivations apart meant a rest day's stale budget could cap a week
     // it has no part in. One owner, `weekPlanToInputs`.
     //
-    // The third argument is per-day budgets, which the wizard does not collect
-    // yet (step 1 is the model + the single owner; the per-day control is step
-    // 2). With it omitted this resolves to exactly the chip value, which is what
-    // `verify:parity` confirms: 2,916 cases byte-identical.
+    // The third argument is the per-day overrides collected by `DayBudgetRows`
+    // on the weekday-ceiling step (Stage C). When the runner sets none, the map
+    // is empty and this resolves to exactly the chip value — the byte-identical
+    // no-budget path `verify:parity` guards (2,916 cases). `weekPlanToInputs`
+    // prunes to the weekdays actually run and derives `max_weekday_mins` as the
+    // MIN across them, so a stale budget can never cap a week it has no part in.
     const weekdayDefaultMins = maxWeekdayChip
       ? MAX_WEEKDAY_CHIPS.find(c => c.label === maxWeekdayChip)?.value : undefined
-    const week = weekPlanToInputs(weekPlan, weekdayDefaultMins)
+    const week = weekPlanToInputs(weekPlan, weekdayDefaultMins, dayBudgets)
     const maxWeekdayVal = week.maxWeekdayMins
 
     const benchmark = (() => {
@@ -930,8 +947,9 @@ export default function GeneratePlanScreen({
       benchmark,
       days_cannot_train:     week.restShort.length ? week.restShort.map(k => FULL_BY_SHORT[k]) : undefined,
       max_weekday_mins:      maxWeekdayVal,
-      // UX-WIZARD-01 — captured now (byte-identical: undefined until the per-day
-      // control is rendered; the engine still acts on max_weekday_mins).
+      // UX-WIZARD-01 (Stage C) — per-day overrides set on the weekday-ceiling
+      // step. Empty map → undefined → the plan is byte-identical to the global
+      // chip; the engine sizes each day to its own budget when they are present.
       day_budgets:           week.dayBudgets,
       hard_session_relationship: hasPaidAccess ? (hardSessions ?? undefined) : undefined,
       injury_history:            hasPaidAccess && injuries.length ? injuries.map(i => i.toLowerCase()) : undefined,
@@ -1805,7 +1823,11 @@ export default function GeneratePlanScreen({
         const verdict = dayCountVerdict(wi.daysAvailable, thr ?? null, distKey, goal === 'time_target')
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <WeekGrid value={weekPlan} onChange={setWeekPlan} ariaLabel="Your training week" />
+            <WeekGrid
+              value={weekPlan}
+              onChange={p => { setWeekPlan(p); setDayBudgets(b => pruneDayBudgets(b, p)) }}
+              ariaLabel="Your training week"
+            />
             {verdict.hint && (
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: 1.5,
@@ -1836,15 +1858,22 @@ export default function GeneratePlanScreen({
               </div>
             </div>
 
-            {/* UX-WIZARD-01 — the per-weekday control (`DayBudgetRows`) is BUILT
-                AND TESTED but deliberately NOT RENDERED YET.
-                `weekPlanToInputs` still derives `max_weekday_mins` as the
-                MINIMUM across the days, so a runner who sets Tue 30 / Thu 90
-                gets a cap of 30 — byte-identical to entering 30 here today. The
-                control would change NOTHING a runner receives, and a visible
-                control that does nothing is the same defect as a declared token
-                nothing consumes. It renders when step 3 lands and the engine
-                sizes each day to its own budget. */}
+            {/* UX-WIZARD-01 Stage C — per-day overrides of the cap above.
+                Progressive disclosure: the chips answer the simple case in one
+                tap; this refines it only for the runner who wants to. Renders
+                nothing when no weekday is a Run day (weekend-only weeks), and a
+                row per weekday the grid marks Run otherwise. The engine sizes
+                each day to its own budget (Stage B); an untouched control is
+                byte-identical to the global chip. Tier: FREE — availability is
+                plan correctness, not richness. */}
+            <DayBudgetRows
+              plan={weekPlan}
+              budgets={dayBudgets}
+              options={DAY_BUDGET_OPTIONS}
+              defaultLabel="Same"
+              onChange={setDayBudgets}
+            />
+
             {!hasPaidAccess && onUpgrade && <TeaserCard onUpgrade={onUpgrade} />}
           </div>
         )
