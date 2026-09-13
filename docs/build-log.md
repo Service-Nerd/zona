@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — CHARITY-COHORT-01 · Do we have enough test scenarios for the charity runners?
+
+**Shipped:** a named charity-persona set (10K/HM/marathon), a generate+validate report, a regression test, and a Coaching Board ruling that the engine is fit to ship to the charity audience as-is.
+
+The question was "do we have enough input scenarios for the charity referral, and are the plans fit for purpose?" First finding: we have a *lot* of coverage already — a 20k-plan property sweep, a 648-cell exhaustive cohort grid, a 17-case archetype matrix, 7 golden personas. Validity is not the gap. The gap was **named, human-legible cases for the exact population charity sends** — and specifically marathon, which had three archetype cases, two golden personas, and *zero* in the real-input corpus. The real users skew hard to 5K (7 of 17 live plans); the distances the charity cares about are the thinnest in reality.
+
+So I built 11 charity personas weighted to the hard end — first-timer marathon off 15km/week, compressed 12-week marathon, returning runner with a knee, masters marathon at 58, couch-to-10K, HM with shin splints — generated a real plan for each, and ran the constitution (`validatePlan`) over it. **Every one passes with zero error violations, or refuses by design.** The honesty layer is the star: the low-base marathons classify themselves `maintenance` and say, in plain words, "this gets you round, not to a time; the race sets the long run, your 15km a week sets everything else." That's exactly right.
+
+The interesting part was the `warn` residuals — and they **cluster on the charity profile**: injury-cap and delivered-ramp flags land on the masters, injured, low-base personas, not the healthy intermediates. That looked alarming enough to put to the Coaching Board. The board's answer was sharper than mine: the scariest exhibit — a masters knee runner "+38% over the 5% injury cap" — is **+3km in absolute terms** (8km → 11km of easy running). A percentage cap below ~15km of volume is measuring rounding, not physiology. Willy's point stuck: the *real* load event in the whole set wasn't the +38%, it was the quiet **+10km week** on the 58-year-old marathoner, which the % cap under-weights at 25%. The instrument is wrong at the extremes of volume, not the plan. Ruling: **ship as-is**, with a watch-item to add an absolute-km floor beneath the percentage caps (its own board sitting, later).
+
+**What I'd tell someone building this:** "0 violations across 16,000 plans" is a real safety property, but it can't answer "is this good for *these* people." A dozen named personas you can read — first-timer marathon, this is the plan it got, here's the long-run shortfall note it wrote — tell you something the aggregate can't. And a percentage safety cap is a liability at low volume: it cries wolf at +3km and stays quiet at +10km. Absolute and relative both matter; pick one and you get fooled at one end.
+
+---
+
 ## 2026-09-13 — FORMS-PRIM-01 · Closed an "in-progress" item that was mostly already done
 
 **Shipped:** the last two bespoke time controls fold into the shared wheel picker, and FORMS-PRIM-01 closes. Also closed V2-POLISH-01 (founder call — the substantive pass shipped 09-11; the rest was a design eyeball, not a task).
