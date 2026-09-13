@@ -9237,11 +9237,15 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // ── Score body copy ──────────────────────────────────────────────────────
 
   // ── Load ratio context ──────────────────────────────────────────────────
+  // UX-COACH-01 polish (2026-09-13) — plain language, not telemetry. The number
+  // is the same; the verdict reads as Kit, not a readout ("overloading" →
+  // "above your recent normal"). Colour still carries the severity. Single
+  // owner: both the tile sub-line and the load-ratio sheet use this label.
   function loadRatioContext(ratio: number | null): { label: string; color: string } {
     if (ratio === null) return { label: '—', color: 'var(--mute)' }
-    if (ratio >= 1.3)   return { label: 'overloading', color: 'var(--danger)' }
-    if (ratio < 0.8)    return { label: 'underloaded', color: 'var(--warn)' }
-    return { label: 'balanced', color: 'var(--moss)' }
+    if (ratio >= 1.3)   return { label: 'above your recent normal', color: 'var(--danger)' }
+    if (ratio < 0.8)    return { label: 'under your recent normal', color: 'var(--warn)' }
+    return { label: 'right on your normal', color: 'var(--moss)' }
   }
 
   // ── Sessions context ────────────────────────────────────────────────────

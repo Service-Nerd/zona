@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — UX-COACH-01 polish · Making the race card feel like it gets you
+
+**Shipped:** a design pass on Coach's race projections, plus two smaller reads, all against one bar the founder set: "logical, premium, make me feel like it understands me."
+
+The founder asked me to review everything on Coach and check it earns its place. Most of it did — yesterday's consolidation (five Kit cards to one, four tiles to two, two trend cards to one) held up. Three things sat in the gap between *correct* and *premium*.
+
+The biggest was the race projections card. It has a lovely part and a dull part stacked together: the arc (where you were, where you are, the goal you chose) is the thing that feels personal; the 5K/10K/HM/Marathon table underneath is a calculator. On the founder's own plan — a 100 km ultra — the dull part was actively wrong-feeling: VDOT can't project 100 km, so the arc honestly drops to a marathon-equivalent, but the box still headlined that marathon time under "Your race". A big bold clock for a distance you're not racing, under your race's name, is the opposite of "it understands me." Fix: the arc stays the hero and always visible; the distance table collapses behind a tap (the founder's instinct — "can we make it drop down?"), which also quietly kills the duplication where the race-distance row just repeated the arc's "now". And for an ultra the box now says "Aerobic fitness / Marathon-equivalent" and moves the race name into the honest caveat, instead of pretending the marathon time is the race.
+
+The UX call I want to record: I did **not** take this to the SLT. It's tempting to route anything touching a paid surface through a board, but SLT rules on *what to build, for whom, at what tier* — and none of that moved. Same feature, same tier, same data; only the arrangement changed. Routing presentation through a build-decision board is how a board stops meaning anything, the same logic that keeps the coaching hook off ordinary bug fixes. Control-shape is the design lead's call, and I made it.
+
+Third, small: "Load ratio 1.04x — overloading" is telemetry, not coaching. The number and its severity colour stayed; the words became "above your recent normal". One owner feeds both the tile and its explainer sheet, so they can't drift.
+
+**What I'd tell someone building this:** progressive disclosure is not about hiding things, it's about deciding what the surface is *for*. The card is for "how am I tracking toward my race", so the trajectory leads and the lookup table waits behind a tap. And the honest answer for an ultra — "I can't project this, here's your aerobic fitness instead" — reads as *more* premium than a confident wrong number, not less. One residual I won't dress up: Coach is auth-gated, so the in-card look is the founder's device check; the arc row alone renders at /coach-preview.
+
+---
+
 ## 2026-09-13 — UX-WIZARD-01 Stage C · Turning the lights on
 
 **Shipped:** the per-day time-budget control is now rendered in the wizard, so the feature the engine has been ready for since this morning is finally reachable by a runner. UX-WIZARD-01 is done, end to end.

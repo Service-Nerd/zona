@@ -2000,6 +2000,15 @@ Same family as WeekGrid, one step later. The grid answers *which* days; this ans
 
 See Pattern 13. The **only** effort control — the post-race sheet and the post-run reflect sheet both use it. Never reimplement a 1–10 grid inline.
 
+### Race projections card (`components/shared/RaceTimesCard.tsx`)
+
+Coach's race surface (variant `status`; also `anchor`/`result` in the benchmark flow). Two parts, and the hierarchy between them is the point:
+
+- **The arc is the hero** — `was · now · goal` (`RaceProgressArcRow`), the runner's own trajectory toward *their* race (§109: remember and compare, never predict).
+- **The per-distance table is reference, not headline.** When the arc is present it is **collapsed behind a tap** ("Estimated times at other distances", ▾/▴), default closed. This keeps the card reading as a coach rather than a calculator, and removes the duplication where the race-distance row echoes the arc's "now". Without an arc (benchmark/result variants, or no target race) the table is the content and stays open.
+- **Ultra framing (UX-COACH-01 polish, 2026-09-13).** VDOT cannot project beyond the marathon, so an ultra's arc drops to the nearest standard distance. The box then must NOT headline a marathon time under "Your race": the eyebrow reads **"Aerobic fitness"**, the sub-line **"Marathon-equivalent"**, and the runner's race name moves into the honest caveat below the arc. Non-ultra is unchanged — the arc genuinely is at the race distance, so the eyebrow stays "Your race".
+- **All copy lives in `raceProjectionsCopy.ts`** — nothing user-facing is hardcoded in the component, which is what lets `raceProjectionHonesty.test.ts` guarantee no forward-looking claim reaches a runner.
+
 ### Legacy token migration
 
 The form-control migration (2026-05-30) moved Login, Benchmark, and the Me-screen controls off System-B aliases (`--accent`, `--border-col`, `--input-bg`, `--text-*`, `--card-bg`, `--teal`) onto Warm Slate. `DashboardClient`'s non-control surfaces still carry bridged aliases by design (CLAUDE.md) — migrate them opportunistically when touched, never in a blind sweep of that file.

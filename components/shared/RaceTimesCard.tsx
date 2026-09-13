@@ -75,6 +75,11 @@ export function RaceTimesCard({
   const [data, setData]       = useState<RaceTimeData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
+  // Progressive disclosure (UX-COACH-01 polish): when the arc is the hero, the
+  // per-distance reference table collapses behind a tap so the runner's own
+  // race trajectory leads and the race-distance row isn't echoed. Default
+  // closed — the founder's ask: "clickable / drops down when we click it".
+  const [distancesOpen, setDistancesOpen] = useState(false)
   const copy = RACE_PROJECTIONS_COPY[variant]
 
   useEffect(() => {
@@ -183,7 +188,21 @@ export function RaceTimesCard({
               §109 bounds it: remember and compare, never predict. Every point
               is a fact the runner already owns. Shape decisions live in
               `lib/coaching/raceProgressArc.ts` and are unit-tested there. ── */}
-          {data.target && (
+          {data.target && (() => {
+            // UX-COACH-01 polish (2026-09-13): an ultra's arc has dropped to the
+            // nearest projectable distance (marathon), so the hero is NOT the
+            // runner's race time — VDOT cannot stand behind a 100 km clock. Frame
+            // it honestly as aerobic fitness; the race NAME moves into the caveat
+            // rather than headlining a marathon time. Non-ultra is unchanged: the
+            // arc genuinely is at the race distance, so "Your race" still holds.
+            const isUltraArc = !!(arc && arcLabels && data.target.ultraDistance)
+            const eyebrow = arcLabels
+              ? (isUltraArc ? arcLabels.ultraEyebrow : arcLabels.raceEyebrow)
+              : 'Your race'
+            const subline = isUltraArc && arcLabels && data.target.arc?.atLabel
+              ? arcLabels.ultraSubline.replace('{distance}', data.target.arc.atLabel)
+              : data.target.raceName
+            return (
             <div style={{
               background: 'var(--bg-soft)',
               borderRadius: '10px',
@@ -192,21 +211,24 @@ export function RaceTimesCard({
               marginBottom: '14px',
             }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
-                Your race
+                {eyebrow}
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', marginBottom: arc ? '14px' : '8px' }}>
-                {data.target.raceName}
+                {subline}
               </div>
 
               {arc && arcLabels ? (
                 <>
                   <RaceProgressArcRow arc={arc} copy={arcLabels} />
-                  {/* Says which distance, when it is not the race. Below the
-                      arc, not above: the numbers are the point and the caveat
-                      qualifies them. */}
-                  {data.target.arc?.atLabel && (
+                  {/* The honest caveat for an ultra: the race is too long to
+                      project, so the numbers are aerobic fitness, not a finish
+                      time. Below the arc, not above: the numbers are the point
+                      and the caveat qualifies them. Names the race here so the
+                      runner's own event still appears, just not as a headline
+                      over a distance they are not racing. */}
+                  {isUltraArc && (
                     <p style={{ fontFamily: 'var(--font-ui)', fontSize: '11.5px', color: 'var(--mute)', lineHeight: 1.45, margin: '12px 0 0' }}>
-                      {arcLabels.atDistance.replace('{distance}', data.target.arc.atLabel)}
+                      {arcLabels.atDistance.replace('{race}', data.target.raceName)}
                     </p>
                   )}
                 </>
@@ -224,28 +246,67 @@ export function RaceTimesCard({
                 </div>
               )}
             </div>
-          )}
+            )
+          })()}
 
-          {/* ── Standard distances ───────────────────────────────────── */}
-          <div>
-            {data.distances?.map((d, i) => (
-              <div
-                key={d.label}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '9px 0',
-                  borderBottom: i < (data.distances?.length ?? 0) - 1 ? '1px solid var(--line)' : undefined,
-                }}
-              >
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
-                  {d.label}
-                </span>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.2px' }}>
-                  {d.formattedTime}
-                </span>
+          {/* ── Estimated times per distance ──────────────────────────────
+              UX-COACH-01 polish (2026-09-13). Progressive disclosure: when the
+              arc is the hero (the runner's OWN race trajectory), this reference
+              table collapses behind a tap — it stops the screen reading as a
+              calculator and removes the duplication where the race-distance row
+              echoes the arc's "now". When there is no arc (benchmark/result
+              variants, or no target race), the table IS the content and stays
+              open. Chevron convention matches the readiness disclosure
+              (▾ collapsed / ▴ expanded). ── */}
+          {data.distances && data.distances.length > 0 && (() => {
+            const arcShown = !!(arc && arcLabels)
+            const rows = (
+              <div style={{ marginTop: arcShown ? '4px' : 0 }}>
+                {data.distances!.map((d, i) => (
+                  <div
+                    key={d.label}
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '9px 0',
+                      borderBottom: i < (data.distances?.length ?? 0) - 1 ? '1px solid var(--line)' : undefined,
+                    }}
+                  >
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
+                      {d.label}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.2px' }}>
+                      {d.formattedTime}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )
+
+            if (!arcShown) return rows   // the table is the primary content
+
+            return (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setDistancesOpen(o => !o)}
+                  aria-expanded={distancesOpen}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    width: '100%', minHeight: '44px', padding: '4px 0',
+                    background: 'none', border: 'none', cursor: 'pointer', font: 'inherit',
+                  }}
+                >
+                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)' }}>
+                    {arcLabels!.distancesToggle}
+                  </span>
+                  <span aria-hidden style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginLeft: '12px' }}>
+                    {distancesOpen ? '▴' : '▾'}
+                  </span>
+                </button>
+                {distancesOpen && rows}
+              </div>
+            )
+          })()}
 
           {/* Low-confidence prompt */}
           {(data.state === 3 || data.state === 4) && (() => {

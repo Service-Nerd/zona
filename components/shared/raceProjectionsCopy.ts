@@ -54,9 +54,20 @@ export interface RaceProjectionsCopy {
     was:  string
     now:  string
     goal: string
-    /** Shown when the arc is projected at a distance other than the race
-     *  itself (an ultra: VDOT does not extrapolate past the marathon).
-     *  `{distance}` is interpolated. */
+    /** Eyebrow over the arc when it IS the runner's race distance. */
+    raceEyebrow: string
+    /** Eyebrow when the race is too long to project (ultra) and the arc has
+     *  dropped to the nearest standard distance. The hero is then honestly
+     *  "aerobic fitness", not a race time the engine cannot stand behind. */
+    ultraEyebrow: string
+    /** Sub-line under the ultra eyebrow, naming the projectable distance.
+     *  `{distance}` is interpolated (e.g. 'Marathon-equivalent'). */
+    ultraSubline: string
+    /** Tap-to-expand label for the per-distance reference table, which is
+     *  collapsed by default when the arc is present (progressive disclosure:
+     *  the arc is the hero, the table is reference the runner can open). */
+    distancesToggle: string
+    /** The honest caveat under an ultra arc. `{race}` is interpolated. */
     atDistance: string
     /** Caption under the `now` column, by direction. `{delta}` is interpolated. */
     direction: {
@@ -95,7 +106,11 @@ export const RACE_PROJECTIONS_COPY: Record<RaceProjectionsVariant, RaceProjectio
       was:  'Plan start',
       now:  'Now',
       goal: 'Your goal',
-      atDistance: 'Shown at {distance} distance: your race is too long to project from pace.',
+      raceEyebrow:     'Your race',
+      ultraEyebrow:    'Aerobic fitness',
+      ultraSubline:    '{distance}-equivalent',
+      distancesToggle: 'Estimated times at other distances',
+      atDistance:      '{race} is too long to project from pace, so this tracks your aerobic fitness instead.',
       direction: {
         // Zonna voice: state the fact, do not celebrate it. No "amazing", no
         // exclamation marks. The number is the good news; the copy stays dry.
