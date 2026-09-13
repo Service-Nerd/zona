@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — Coaching Board batch · Seven questions, and the answer to five of them was not "build it"
+
+**Shipped:** one board ruling (an absolute-km floor under the delivered volume caps); rulings on six more, four of which were "don't build this, and here's why."
+
+The founder asked me to take every backlog item that needed a Coaching Board sitting and get the answers. Seven of them. The interesting thing about running them as a batch is how few ended in code. That's the point of the board — it's the layer that decides whether a decision is *right*, and "right" is often "leave it alone."
+
+The one I shipped: our injury and ramp volume caps are percentages, and a percentage on a small number lies. A knee-history runner on 20 km/week who adds one short easy run — three kilometres — trips the "you're ramping too fast for injured tissue" warning at +38%. It's not a ramp; it's a Tuesday. So the cap now needs the rise to clear both the percentage *and* an absolute floor of 3 km. I set the 3 km by measuring, not guessing: across 2,790 injury plans the flagged rises ran 1 to 7 km, and 3 km cleanly separated the arithmetic noise (half the flags) from every real step. Sims held the line at 3 and vetoed 5 — a 5 km floor would have started hiding genuine spikes on low bases, which on masters and low-energy-availability runners is exactly the population you cannot afford to blind. The warning still fires; it just stopped crying wolf, which is the only way anyone keeps listening to it.
+
+The five that didn't ship taught more. **Pace-band the fitness-trend cohort** so "at the same pace" is true rather than disclaimed? Measured: to make it true you have to narrow the cohort so far the card goes dark for ~60% of the people who see it today. A disclaimed comparison beats no comparison. Declined. **Deliver the three fancy VO2 session shapes** we ruled valid months ago? Two of them are only 2–6 minutes of actual VO2 work — our dose band rejects them *correctly*, and weakening it to let them in would mislabel the session. They're not VO2 sessions wearing the wrong hat; they belong in a category we haven't built. Declined. **The marathon "maintenance" label** that fires on 100% of time-goal marathons — re-measured with the new peak-floor live, still 100%, still uninformative — turned out not to be fixable by the two levers the chair originally named. The real cause is a specificity floor colliding with the long-run time cap, which means a runner plainly building gets called "maintenance." That's a real bug, but fixing it relabels the entire cohort, so it earns its own careful change, not a rushed one.
+
+**What I'd tell someone building this:** a governance board only earns its keep if "no" and "not like that" are common outputs. If every sitting ends in a commit, it's a rubber stamp. Five of seven ending in "keep the disclaimer / don't weaken the band / that's the wrong lever" is the board doing its job. And every "don't build it" is still an answer — it closes the item and stops it being re-litigated in three weeks.
+
+---
+
 ## 2026-09-13 — UX-COACH-01 polish · Making the race card feel like it gets you
 
 **Shipped:** a design pass on Coach's race projections, plus two smaller reads, all against one bar the founder set: "logical, premium, make me feel like it understands me."
