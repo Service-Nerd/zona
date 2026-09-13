@@ -17,6 +17,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import RPEScale from '@/components/shared/RPEScale'
 import { CardSelect } from '@/components/shared/CardSelect'
+import Sheet from '@/components/shared/Sheet'
 
 // Parse a finish/target time string into h/m/s. 3 parts → H:MM:SS;
 // 2 parts → MM:SS (short-race convention, e.g. "21:48" = 21m 48s).
@@ -176,33 +177,9 @@ export default function RaceResultSheet({
   const canSubmit = !!outcome && !submitting
 
   return (
-    <div
-      onClick={onClose}
-      style={{
-        // zIndex must sit ABOVE the bottom nav bar (zIndex 3000 in
-        // DashboardClient) — otherwise the fixed nav floats over the sheet and
-        // its scrim, reading as the nav "pulling off the bottom" on scroll.
-        position: 'fixed', inset: 0, zIndex: 4000,
-        background: 'rgba(26,26,26,0.40)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        animation: 'zonna-fade-in 0.18s ease-out',
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%', maxWidth: '480px',
-          background: 'var(--card)',
-          borderRadius: '20px 20px 0 0',
-          boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
-          paddingTop: '8px',
-          maxHeight: '90vh', overflowY: 'auto',
-          animation: 'zonna-slide-up 0.22s ease-out',
-        }}
-      >
-        {/* Drag indicator */}
-        <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 0' }} />
-
+    <Sheet onClose={onClose} maxHeightVh={90} ariaLabel="How did it go?">
+      {() => (
+      <>
         {/* Header */}
         <div style={{ padding: '16px 20px 4px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
@@ -377,8 +354,9 @@ export default function RaceResultSheet({
             Log result only, keep my plan →
           </button>
         </div>
-      </div>
-    </div>
+      </>
+      )}
+    </Sheet>
   )
 }
 

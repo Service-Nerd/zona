@@ -13,6 +13,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import CoachByline from './CoachByline'
+import Sheet from './Sheet'
 import { TrendSparkline } from './TrendSparkline'
 import { buildTrendSparkline, type SparkBucket } from '@/lib/coaching/trendSparkline'
 import { paceContext } from '@/lib/coaching/trendSentence'
@@ -203,29 +204,9 @@ function ExplanationSheet({
   runNoun?: string
 }) {
   return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(26,26,26,0.4)',
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        animation: 'zonna-fade-in 0.18s ease-out',
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%', maxWidth: '480px',
-          background: 'var(--card)',
-          borderRadius: '20px 20px 0 0',
-          boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
-          paddingTop: '8px',
-          maxHeight: '80vh', overflowY: 'auto',
-          animation: 'zonna-slide-up 0.22s ease-out',
-        }}
-      >
-        <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
-
+    <Sheet onClose={onClose} ariaLabel="What this number means">
+      {(close) => (
+      <>
         <div style={{ padding: '0 20px 4px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
             {eyebrow}
@@ -272,7 +253,7 @@ function ExplanationSheet({
 
         <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
           <button
-            onClick={onClose}
+            onClick={close}
             style={{
               width: '100%', height: '48px',
               background: 'var(--bg-soft)', border: 'none',
@@ -283,8 +264,9 @@ function ExplanationSheet({
             Close
           </button>
         </div>
-      </div>
-    </div>
+      </>
+      )}
+    </Sheet>
   )
 }
 

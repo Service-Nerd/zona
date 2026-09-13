@@ -45,6 +45,8 @@ import { clearWidgetState } from '@/lib/native/sharedStore'
 import ZoneBar, { zoneNumberForType, zoneShortName, type Zone } from '@/components/shared/ZoneBar'
 import SessionSteps from '@/components/shared/SessionSteps'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
+import Sheet, { NavHeightProvider } from '@/components/shared/Sheet'
+import { Z_LAYERS } from '@/lib/ui/zLayers'
 import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
@@ -2182,6 +2184,7 @@ export default function DashboardClient() {
 
   return (
     <div style={s}>
+     <NavHeightProvider value={bottomNavH}>
 
       <PullToRefresh
         scrollRef={scrollContainerRef}
@@ -2575,8 +2578,8 @@ export default function DashboardClient() {
             width: '100%', maxWidth: '480px',
             display: 'flex', alignItems: 'center',
             background: 'var(--nav-bg)', borderTop: '0.5px solid var(--border-col)',
-            padding: '10px 0 max(16px, env(safe-area-inset-bottom))',
-            zIndex: 3000,
+            padding: '6px 0 max(12px, env(safe-area-inset-bottom))',
+            zIndex: Z_LAYERS.nav,
           }}>
             {navItems.map(({ id, label, icon }) => {
               const active = screen === id
@@ -2588,8 +2591,8 @@ export default function DashboardClient() {
                   const seen = getSeenGuides()
                   if (!seen.has(id)) setGuideScreen(id)
                 }} style={{
-                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                  background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0',
+                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
+                  background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0',
                 }}>
                   {icon(active)}
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: active ? 'var(--accent)' : 'var(--text-muted)' }}>
@@ -2601,6 +2604,7 @@ export default function DashboardClient() {
           </div>
         )
       })()}
+     </NavHeightProvider>
     </div>
   )
 }
@@ -3460,32 +3464,12 @@ function MissedSessionSheet({
   onDidIt: () => void
   onDismiss: () => void
 }) {
-  const [visible, setVisible] = useState(false)
-  useEffect(() => { const t = setTimeout(() => setVisible(true), 10); return () => clearTimeout(t) }, [])
   const dayLabel = DAY_LABELS[day] ?? day
 
   return (
-    <div
-      onClick={onDismiss}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        background: visible ? 'rgba(26,26,26,0.45)' : 'transparent',
-        transition: 'background 0.2s',
-        display: 'flex', alignItems: 'flex-end',
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '100%', maxWidth: 480, margin: '0 auto',
-          background: 'var(--card)', borderRadius: '20px 20px 0 0',
-          padding: '24px 20px 36px',
-          transform: visible ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
-        }}
-      >
-        {/* Drag handle */}
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--line)', margin: '0 auto 20px' }} />
+    <Sheet onClose={onDismiss} ariaLabel="Missed session">
+      {(close) => (
+      <div style={{ padding: '6px 20px 24px' }}>
 
         <p style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--mute)', marginBottom: 6 }}>
           Missed session
@@ -3529,7 +3513,7 @@ function MissedSessionSheet({
         </button>
 
         <button
-          onClick={onDismiss}
+          onClick={close}
           style={{
             width: '100%', padding: '10px 0', background: 'transparent', border: 'none',
             fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer',
@@ -3538,7 +3522,8 @@ function MissedSessionSheet({
           Dismiss
         </button>
       </div>
-    </div>
+      )}
+    </Sheet>
   )
 }
 
@@ -3570,7 +3555,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
       <div
         onClick={dismiss}
         style={{
-          position: 'fixed', inset: 0, zIndex: 4000,
+          position: 'fixed', inset: 0, zIndex: Z_LAYERS.guide,
           background: 'rgba(0,0,0,0.45)',
           opacity: visible ? 1 : 0,
           transition: 'opacity 0.28s ease',
@@ -3585,7 +3570,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
         width: '100%', maxWidth: '480px',
         background: 'var(--card-bg)',
         borderRadius: '20px 20px 0 0',
-        zIndex: 4001,
+        zIndex: Z_LAYERS.guide + 1,
         paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
       }}>
         {/* Drag handle */}
@@ -5434,21 +5419,18 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
   const [rpe, setRpe]       = useState<number | null>(null)
   const [fatigueTag, setFatigueTag] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [visible, setVisible] = useState(false)
   const [savedStep, setSavedStep] = useState(false)
   const [reflectResponse, setReflectResponse] = useState<string | null>(null)
   const supabase = createClient()
 
   const sessionColour = sessionType ? getSessionColor(sessionType) : 'var(--teal)'
 
-  useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
-
-  function handleClose() {
-    setVisible(false)
-    setTimeout(() => {
-      if (savedStep) onSaved()
-      onClose()
-    }, 300)
+  // Sheet owns the enter/exit animation; this is just the semantic teardown it
+  // calls once the exit has played. onSaved() fires only if the runner reached
+  // the reflect step (a completion was written).
+  function requestUnmount() {
+    if (savedStep) onSaved()
+    onClose()
   }
 
   const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
@@ -5584,32 +5566,9 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0,
-        background: visible ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0)',
-        zIndex: 2000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        transition: 'background 0.3s',
-      }}
-      onClick={handleClose}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: 'var(--card-bg)', width: '100%', maxWidth: '480px',
-          borderRadius: '20px 20px 0 0', padding: '8px 20px 24px',
-          border: '0.5px solid var(--border-col)',
-          marginBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))',
-          maxHeight: 'calc(90vh - 64px)', overflowY: 'auto',
-          transform: visible ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
-        }}
-      >
-        {/* Drag handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 16px' }}>
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'var(--border-col)' }} />
-        </div>
-
+    <Sheet onClose={requestUnmount} maxHeightVh={90} ariaLabel="Log a run">
+      {(close) => (
+      <div style={{ padding: '0 20px 24px' }}>
         {/* ── REFLECT STEP — shown after save ── */}
         {savedStep ? (
           <div style={{ padding: '8px 0 16px' }}>
@@ -5712,7 +5671,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               )}
             </div>
 
-            <button onClick={handleClose} style={{
+            <button onClick={close} style={{
               width: '100%', padding: '14px',
               background: reflectResponse ? 'var(--teal)' : 'var(--bg)',
               color: reflectResponse ? 'var(--card)' : 'var(--text-muted)',
@@ -5738,7 +5697,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                     : isEdit ? 'Correct what you logged' : 'Manual entry · no Strava needed'}
                 </div>
               </div>
-              <button onClick={handleClose} style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-muted)', fontSize: '14px', cursor: 'pointer', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              <button onClick={close} style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-muted)', fontSize: '14px', cursor: 'pointer', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
             </div>
 
             {/* Session context strip — shown when opened from a planned session */}
@@ -5864,7 +5823,8 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
           </>
         )}
       </div>
-    </div>
+      )}
+    </Sheet>
   )
 }
 
@@ -9925,16 +9885,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
         {/* ── LOAD RATIO SHEET ────────────────────────────────────────── */}
         {loadSheetOpen && (
-          <div
-            onClick={() => setLoadSheetOpen(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zonna-fade-in 0.18s ease-out' }}
-          >
-            <div
-              onClick={e => e.stopPropagation()}
-              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'zonna-slide-up 0.22s ease-out' }}
-            >
-              <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
-
+          <Sheet onClose={() => setLoadSheetOpen(false)} ariaLabel="Your training load balance">
+            {(close) => (
+            <>
               <div style={{ padding: '0 20px 4px' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
                   Load ratio
@@ -9960,27 +9913,20 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               </div>
 
               <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
-                <button onClick={() => setLoadSheetOpen(false)} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                <button onClick={close} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
                   Close
                 </button>
               </div>
-            </div>
-
-          </div>
+            </>
+            )}
+          </Sheet>
         )}
 
         {/* ── ZONE DISCIPLINE SHEET ───────────────────────────────────── */}
         {zoneDisciplineSheetOpen && (
-          <div
-            onClick={() => setZoneDisciplineSheetOpen(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(26,26,26,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'zonna-fade-in 0.18s ease-out' }}
-          >
-            <div
-              onClick={e => e.stopPropagation()}
-              style={{ width: '100%', maxWidth: '480px', background: 'var(--card)', borderRadius: '20px 20px 0 0', boxShadow: '0 -8px 24px rgba(0,0,0,0.12)', paddingTop: '8px', maxHeight: '80vh', overflowY: 'auto', animation: 'zonna-slide-up 0.22s ease-out' }}
-            >
-              <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
-
+          <Sheet onClose={() => setZoneDisciplineSheetOpen(false)} ariaLabel="Hitting the prescribed zone">
+            {(close) => (
+            <>
               <div style={{ padding: '0 20px 4px' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
                   Zone discipline
@@ -10006,13 +9952,13 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               </div>
 
               <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
-                <button onClick={() => setZoneDisciplineSheetOpen(false)} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                <button onClick={close} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
                   Close
                 </button>
               </div>
-            </div>
-
-          </div>
+            </>
+            )}
+          </Sheet>
         )}
 
         {/* ── LEDGER — "Weeks within the lines" ─────────────────────────

@@ -13,6 +13,7 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
+import Sheet from '@/components/shared/Sheet'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
 import { WheelPicker } from '@/components/shared/WheelPicker'
@@ -1267,16 +1268,9 @@ export default function GeneratePlanScreen({
 
         {/* Foundation Block choice modal — shown when gap > 28 days */}
         {foundationModalOpen && (
-          <div style={{
-            position: 'fixed', inset: 0, zIndex: 100,
-            background: 'rgba(26,26,26,0.55)',
-            display: 'flex', alignItems: 'flex-end',
-          }}>
-            <div style={{
-              width: '100%', background: 'var(--card)',
-              borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
-              padding: '24px 20px calc(24px + env(safe-area-inset-bottom))',
-            }}>
+          <Sheet onClose={handleFoundationSkip} ariaLabel="Foundation Block">
+            {(close) => (
+            <div style={{ padding: '6px 20px 24px' }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 800, color: 'var(--ink)', marginBottom: '6px' }}>
                 You've got some time.
               </div>
@@ -1314,7 +1308,7 @@ export default function GeneratePlanScreen({
                 Start plan as-is
               </button>
               <button
-                onClick={handleFoundationSkip}
+                onClick={close}
                 style={{
                   width: '100%', padding: '12px',
                   background: 'none', border: 'none', cursor: 'pointer',
@@ -1324,7 +1318,8 @@ export default function GeneratePlanScreen({
                 Decide later
               </button>
             </div>
-          </div>
+            )}
+          </Sheet>
         )}
       </div>
     )

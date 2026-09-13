@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — SHEET-PRESENT-01 + NAV-SPACE-01 · The bug was a number seven files each guessed
+
+**Shipped:** one `<Sheet>` primitive, every bottom sheet migrated onto it, and the bottom nav tightened to reclaim space — the two founder-device items from yesterday, done together because they had to be.
+
+The founder's report was three symptoms: tapping zones on Me, tapping zones on Coach, and "log manually" — the pop-up loads but you can't see it until you scroll. Three symptoms, one cause. The bottom nav is `zIndex: 3000`; the sheets were written at 100, 200 and 2000. They opened *underneath* the nav, and the part the nav covered was the bottom — which is exactly where each sheet put its own close bar. The sheet worked. You just couldn't see the half that mattered.
+
+**The filed spec said "five of seven". It was eight.** I didn't trust the count, so instead of patching the named ones I wrote a test that greps the whole tree for the anti-pattern — a fixed, bottom-anchored overlay with a scrim and a z-index below the nav — and let it find them. It turned up `ManualRunModal` and a Foundation-gap modal in the wizard that nobody had listed. That's the argument for a mechanical guard over a careful audit in one line: the audit is scoped to what you remember touching; the grep is scoped to the defect.
+
+**Three things I made properties of the primitive instead of leaving them to callers.** One, it portals to `document.body`. The app locks `<body>` and scrolls an inner div, and WKWebView is unreliable about `position:fixed` elements inside a scrolling container — that was the "device caveat" flagged in the backlog, and portalling to the body dissolves it rather than testing around it. Two, one z-index owner (`lib/ui/zLayers.ts`) so "a sheet is above the nav" is a property a test asserts, not a number each file picks. Three, it rests on the *measured* nav height, published through context from the one place that already measures the nav for the scroll padding. That third one is why the two items shipped together: because the sheet reads the live nav height, tightening the nav (NAV-SPACE-01) needed zero sheet edits. The sheets just followed.
+
+**Where I resisted the pattern.** `ScreenGuide` — the first-load coach-mark — is also a bottom sheet, and it would have been tidy to fold it in. But it teaches nav position by drawing a *mirrored* nav of its own; it's a different thing wearing the same shape. Forcing it into the primitive would have been DRY applied to two things that aren't the same thing. It keeps its own structure and just borrows the shared z-layer. The guard test knows it's an allowed exception because it sits above the nav, which is the only property that actually matters.
+
+**What I'd tell someone building this:** when seven copies of a thing disagree, the fix is not an eighth correct copy — it's deleting the decision. None of these files should ever have been allowed to choose a z-index. The moment that choice has one owner, the whole class of bug is unreachable, and the test that proves it is three lines.
+
+---
+
 ## 2026-09-12 — RACE-ARC-REACH-01 · Third time asked, first time I checked the database
 
 **Shipped:** the progress arc now reaches runners who never took a benchmark, and ultra runners. And a claim that was guaranteed to be wrong for everyone who did take one.

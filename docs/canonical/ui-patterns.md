@@ -1237,31 +1237,36 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 - Body: 3 paragraphs explaining the metric, `15px 400 --ink-2`, `1.55` line-height
 - Sticky footer: full-width close button, `--bg-soft` background, `--ink` text
 
-**Keyframes:** `zonna-fade-in` (backdrop) and `zonna-slide-up` (panel) are defined once in `globals.css` — never inline in JSX.
+**Keyframes:** `zonna-fade-in` (backdrop) and `zonna-slide-up` (panel) remain defined once in `globals.css` for any ad-hoc reveal (e.g. RaceResultSheet's advanced-fields section). The sheet primitive itself now animates with CSS transitions so it can play an EXIT as well as an enter (see below).
 
-> 🔴 **DO NOT COPY THE CURRENT SHEET IMPLEMENTATIONS — SHEET-PRESENT-01 IS OPEN.**
+> ### Slide-up Sheet — the presentation contract (SHEET-PRESENT-01, shipped 2026-09-13)
 >
-> This section specifies a sheet's **anatomy** and has never specified its
-> **stacking**, which is exactly why the seven live implementations disagree.
-> Measured 2026-09-12: the bottom nav is `zIndex: 3000`, and five of seven
-> sheets sit **below** it — `ZoneInfoSheet` (100), the Coach zone-discipline
-> and load-ratio sheets (100), `TrendCard`'s explanation sheet (200) and
-> `DashboardClient:3471` (200) — while two guessed above it (4000). Every one
-> is `position: fixed; inset: 0` with `alignItems: 'flex-end'`, so the panel is
-> bottom-anchored and its content bottom (plus `ZoneInfoSheet`'s own
-> `position: sticky` close bar) lands precisely where the nav paints. The sheet
-> opens; the runner cannot see the part that matters, including how to dismiss
-> it. Founder-reported on device.
+> **Every secondary surface arrives through one primitive: `components/shared/Sheet.tsx`. Never hand-roll a bottom sheet again.** Before this, seven copies each invented their own `zIndex`; five sat **below** the bottom nav (`zIndex: 3000`) — `ZoneInfoSheet`, both Coach stat sheets, `TrendCard`'s explainer, `MissedSessionSheet`, `ManualRunModal` (and, uncounted at filing, `GeneratePlanScreen`'s Foundation modal). Each was `position: fixed; inset: 0; alignItems: flex-end`, so the panel bottom and its own sticky close bar landed exactly where the nav paints. The sheet opened; the runner could not see the part that mattered. Founder-reported on device.
 >
-> **There are no portals in the app** (`createPortal` → 0 hits), so each sheet
-> renders inline wherever it was declared and had to invent its own z-index.
+> **What the primitive owns, so no caller re-invents it:**
+> - **Portal to `document.body`** — the sheet escapes the app's scrolling content container entirely. The shell locks `<body>` and scrolls an inner div, and WKWebView mispositions `position: fixed` descendants of a scrolling container; rendered at the body, the sheet is truly viewport-anchored.
+> - **One z-index, above the nav by construction** — `Z_LAYERS.sheet` from `lib/ui/zLayers.ts` (the single owner of stacking: `guide > sheet > nav > content`, asserted by `zLayers.test.ts`). No component hardcodes a sheet z-index.
+> - **Rests on the nav's top edge** — the overlay reserves the *measured* nav height (published via `NavHeightProvider` from `DashboardClient`, consumed with `useNavHeight()`) as `paddingBottom`, so the panel's bottom and its sticky close bar sit on the nav, never under or over it. It tracks the nav automatically, so NAV-SPACE-01 and any future nav change need no sheet edit.
+> - **Enter + exit animation, backdrop + Escape dismissal, body-scroll lock, focus capture/trap/restore, and the drag pill.**
 >
-> **Until SHEET-PRESENT-01 lands, adding a sheet by copying an existing one
-> will reproduce the defect.** The fix is a single `<Sheet>` primitive at the
-> app root owning backdrop, panel, both keyframes, the drag pill, the sticky
-> close bar and **one z-index constant above the nav** — with the panel resting
-> on the nav's top edge rather than under or over it. Spec in
-> `docs/releases/backlog.md` → SHEET-PRESENT-01.
+> **How to use it:**
+> ```tsx
+> {open && (
+>   <Sheet onClose={() => setOpen(false)} ariaLabel="…">
+>     {(close) => (
+>       <>
+>         {/* header + body — own your horizontal padding (e.g. '0 20px') */}
+>         <div style={{ position: 'sticky', bottom: 0, /* … */ }}>
+>           <button onClick={close}>Close</button>   {/* animates out, then onClose */}
+>         </div>
+>       </>
+>     )}
+>   </Sheet>
+> )}
+> ```
+> `onClose` = "fully closed, unmount me" (the primitive calls it *after* the exit animation). The `close` passed to children triggers that animated dismissal from any affordance (bottom Close, a ✕, "Decide later"). The primitive draws the drag pill; do not add your own. Reintroducing a below-nav sheet overlay fails `components/shared/sheetPresentation.test.ts`.
+>
+> **Exception:** `ScreenGuide` (first-load coach-mark) is deliberately NOT a `Sheet` — it teaches nav position by drawing a mirrored nav of its own — but it takes its layer from `Z_LAYERS.guide`, so it too stacks correctly.
 
 **Rule:** Only Zone discipline and Load ratio are interactive. Sessions and Weeks left are static — same card style, no button, no ⓘ.
 
