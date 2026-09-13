@@ -4246,7 +4246,17 @@ varies carries no information, and Willy's own standard is that a check firing o
 71% of a distance is noise. The chair declined to recalibrate §23's ratio or
 §46's floor in the same sitting: this defect inflates the population those
 thresholds measure, and you do not tune a threshold against a broken input.
-**Re-measure after §106 has been live.**
+~~Re-measure after §106 has been live.~~ **RE-MEASURED 2026-09-13 (batch board
+sitting):** still 100% (54/54 cohort, 99.8% expanded), §106 changed nothing here —
+the subset was already saturated. The board found the lever is **NOT** §23/§46: the
+high-volume tail is pinned by **§24's peak-LR specificity floor (31.7 km) being
+structurally unreachable under `LONG_RUN_CAP_MINUTES.MARATHON = 210` (≈30.5 km)**,
+so a runner plainly building is labelled maintenance. Ruled CORRECT WITH AMENDMENT
+(a plan must not be maintenance solely because §24's LR floor is unreachable under
+the time cap) and re-filed as **MARATHON-MAINT-LABEL-01** — its own build, because
+it relabels ~100% of time-target marathons. **Do not re-open the §23/§46
+recalibration; that was measured and is the wrong lever.** Record:
+`docs/decisions/coaching-board-2026-09-13-batch.md` §2.
 
 **Config.**
 - `GENERATION_CONFIG.PEAK_FLOOR_VS_START_RATIO = 1.0` — the floor, as a multiple
