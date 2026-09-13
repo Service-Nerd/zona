@@ -18,7 +18,7 @@ import { generateRulePlan, type Tier } from '../lib/plan/ruleEngine'
 import type { GeneratorInput, Plan } from '../types/plan'
 import { BRAND } from '../lib/brand'
 
-interface Case {
+export interface Case {
   id: string
   title: string
   persona: string
@@ -29,7 +29,7 @@ interface Case {
 
 const PLAN_START = '2026-04-27'
 
-const cases: Case[] = [
+export const CANONICAL_CASES: Case[] = [
   {
     id: '01-5k-beginner',
     title: '5K beginner — finish goal',
@@ -182,6 +182,12 @@ const cases: Case[] = [
       terrain: 'road',
       primary_metric: 'distance',
       acknowledged_prep_warning: true,
+      // A 4-day TIME-targeted marathon also trips the §44 days-minimum (5 days
+      // for a time-goal marathon), added after this case was written. The case's
+      // purpose is the maintenance-downgrade path, not the days refusal, so it
+      // acknowledges both warnings — matching a runner who has seen them and
+      // chosen to proceed. Without this the engine (correctly) refuses.
+      acknowledged_days_warning: true,
       plan_start: PLAN_START,
     } as any,
     questions: [
@@ -195,7 +201,7 @@ const cases: Case[] = [
   },
 ]
 
-function fmtSession(day: string, s: any): string {
+export function fmtSession(day: string, s: any): string {
   const parts: string[] = [day]
   parts.push(s.label?.replace(/—/g, '-') ?? s.type)
   const dist = s.distance_km != null ? `${s.distance_km}km` : null
@@ -209,7 +215,7 @@ function fmtSession(day: string, s: any): string {
   return `- **${parts[0]}** — ${parts.slice(1).join(' · ')}`
 }
 
-function renderCase(c: Case, plan: Plan): string {
+export function renderCase(c: Case, plan: Plan): string {
   const lines: string[] = []
   lines.push(`# Case ${c.id.split('-')[0]}: ${c.title}`)
   lines.push('')
@@ -387,16 +393,21 @@ When you're done with all three cases, the team will:
 `
 }
 
-const outDir = path.resolve(__dirname, '..', 'coaching-review')
-fs.mkdirSync(outDir, { recursive: true })
+// Only write files when run directly — importing this module (e.g. from
+// scripts/coaching-review-round.ts, which reuses CANONICAL_CASES + renderCase)
+// must have no side effects.
+if (require.main === module) {
+  const outDir = path.resolve(__dirname, '..', 'coaching-review')
+  fs.mkdirSync(outDir, { recursive: true })
 
-for (const c of cases) {
-  const plan = generateRulePlan(c.input as any, c.tier)
-  const md = renderCase(c, plan)
-  fs.writeFileSync(path.join(outDir, `${c.id}.md`), md)
-  console.log(`✓ ${c.id}.md (${plan.weeks.length} weeks)`)
+  for (const c of CANONICAL_CASES) {
+    const plan = generateRulePlan(c.input as any, c.tier)
+    const md = renderCase(c, plan)
+    fs.writeFileSync(path.join(outDir, `${c.id}.md`), md)
+    console.log(`✓ ${c.id}.md (${plan.weeks.length} weeks)`)
+  }
+
+  fs.writeFileSync(path.join(outDir, 'INDEX.md'), renderIndex(CANONICAL_CASES))
+  console.log(`✓ INDEX.md`)
+  console.log(`\nWrote ${CANONICAL_CASES.length + 1} files to ${outDir}/`)
 }
-
-fs.writeFileSync(path.join(outDir, 'INDEX.md'), renderIndex(cases))
-console.log(`✓ INDEX.md`)
-console.log(`\nWrote ${cases.length + 1} files to ${outDir}/`)

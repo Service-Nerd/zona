@@ -1,0 +1,76 @@
+# COACHING-REVIEW-AUTO-01 — a coaching-review round is DUE when doctrine ships.
+#
+# The proactive coaching review (generate real plans → have a coach judge whether
+# they coach well, not just whether they validate) used to be a manual ritual
+# (coaching-review/README.md: "roughly monthly") and it went dormant. This fires
+# it on the real trigger: a coaching-doctrine file landing on main.
+#
+# It runs the GENERATE step (scripts/coaching-review-round.ts — both the 4
+# canonical cases and the 11 charity personas, each generated + validated) and:
+#   - FAILS if any plan breaks its own constitution or an honesty guard weakened
+#     (a doctrine change that broke a case is loud, immediately).
+#   - uploads the generated packet as an artifact and posts a step-summary telling
+#     you to run the REVIEW step: `/coaching-board` over the packet.
+#
+# The board sitting itself needs a model, which a plain workflow cannot run — so
+# this AUTOMATES THE TRIGGER + GENERATE + FLAG, and the board review stays a
+# `/coaching-board` invocation, now prompted rather than remembered. Its ruling
+# lands in coaching-review/<date>/review.md + backlog.md, as it always has.
+#
+# Why GitHub Actions, path-filtered: same rationale as ops-cron-plan-audit.yml.
+
+name: coaching-review-trigger
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/canonical/CoachingPrinciples.md'
+      - 'docs/canonical/session-catalogue.md'
+      - 'docs/canonical/zone-rules.md'
+      - 'docs/canonical/coaching-rules.md'
+      - 'lib/plan/generationConfig.ts'
+      - 'lib/plan/planSignatures.ts'
+      - 'lib/plan/sessionFormat.ts'
+  workflow_dispatch:
+
+jobs:
+  round:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Generate coaching-review round (both sets, validated)
+        id: gen
+        env:
+          NODE_ENV: production
+        run: npx tsx scripts/coaching-review-round.ts | tee round.out
+      - name: Flag that a board review is due
+        if: always()
+        run: |
+          DATE=$(date -u +%F)
+          {
+            echo "## 🏛️ Coaching-review round due — doctrine shipped in \`${GITHUB_SHA:0:7}\`"
+            echo ""
+            echo "A doctrine file changed on main. The GENERATE step has run; the REVIEW step is yours:"
+            echo ""
+            echo "1. Download the **coaching-review-${DATE}** artifact (or regenerate locally: \`NODE_ENV=production npx tsx scripts/coaching-review-round.ts\`)."
+            echo "2. Run \`/coaching-board\` over \`generated-plans.md\`."
+            echo "3. Commit the ruling to \`coaching-review/${DATE}/review.md\` + \`backlog.md\`."
+            echo ""
+            echo '```'
+            tail -n 25 round.out || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload generated packet
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coaching-review-${{ github.run_id }}
+          path: coaching-review/*/generated-plans.md
+          if-no-files-found: warn

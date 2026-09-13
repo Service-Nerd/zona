@@ -27,3 +27,6 @@ docs/incidents/**/*-export.json
 
 # Ad-hoc operational SQL (contains production user ids) — keep out of the repo
 scripts/sql/
+
+# Coaching-review round packets are generated build artifacts (CI uploads them).
+coaching-review/*/generated-plans.md

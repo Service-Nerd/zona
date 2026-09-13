@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — COACHING-REVIEW-AUTO-01 · The review folder we built and then forgot to run
+
+**Shipped:** the `coaching-review/` loop now triggers itself when doctrine ships, generates both scenario sets, and prompts the board — instead of waiting for someone to remember.
+
+We built a proper coaching-review loop back in April: generate a few canonical plans, have a senior coach judge whether they'd *coach the runner well* (a different question from "do they validate"), turn that into a backlog, fix, repeat. It ran four times and then went quiet — last round was mid-August. The reason is the oldest one there is: step 1 was "someone runs the script," and no one owned "someone."
+
+Two things had also quietly happened around it. The **Coaching Board skill** arrived in August and is, precisely, the automated version of that loop's "senior coach reviews it" step — but nobody wired the loop to it. And this week's **charity personas** are a better version of the loop's generator: the old one dumped plans for a human to read; the new one runs `validatePlan` itself. So the loop's intent was alive and being served, but in three different places, none of them the folder.
+
+The fix wired the trigger to the real signal: **a coaching-doctrine file landing on main.** That's the proactive partner to the `coaching-guard` hook — the hook reviews the *change* as you make it; this reviews the *resulting plans* once it's live. A GitHub Action runs one consolidated generator over both sets (4 canonical + 11 charity), validates every plan, fails loudly if a doctrine change broke a case, and posts "board round due — run /coaching-board" with the packet attached. The board sitting still needs a model, so that stays a `/coaching-board` invocation — but it's now *prompted*, which was the whole problem.
+
+**The loop earned its keep before it even shipped.** Consolidating the generator meant actually running the four canonical cases again, and Case 04 — a 4-day time-targeted marathon that's *supposed* to demonstrate the maintenance-downgrade path — now hit a flat refusal instead. A days-minimum gate (5 days for a time-goal marathon) had been added months after the case was written, and the case only ever acknowledged the *prep-time* warning, not the *days* one. Live for who knows how long, invisible because nobody had regenerated that case. That's exactly the failure the loop exists to catch, caught by turning the loop back on.
+
+**What I'd tell someone building this:** a review ritual with no trigger is a review ritual that stops. If you can name the event that should start it — here, "doctrine changed" — wire the start to the event, not to a human's memory or a calendar. And when you have three tools doing one job in three places, the job is probably drifting; pick the folder that was meant to own it and point the others at it.
+
+---
+
 ## 2026-09-13 — CHARITY-COHORT-01 · Do we have enough test scenarios for the charity runners?
 
 **Shipped:** a named charity-persona set (10K/HM/marathon), a generate+validate report, a regression test, and a Coaching Board ruling that the engine is fit to ship to the charity audience as-is.

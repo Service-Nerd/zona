@@ -29,6 +29,17 @@ Each round is fully self-contained. Backlog item IDs are scoped to the round (e.
 
 Steps 1–3 are human-driven (with AI assistance). Steps 4–5 are Claude Code in the repo.
 
+## Automation — how a round is triggered (COACHING-REVIEW-AUTO-01, 2026-09-13)
+
+The loop above went dormant because step 1 relied on someone *remembering*. It is now
+triggered on the real signal and the reviewer is a repo skill:
+
+- **Trigger — a coaching-doctrine file shipping to `main`.** `.github/workflows/coaching-review-trigger.yml` fires on a push to `main` that touches any doctrine file (`CoachingPrinciples.md`, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, `sessionFormat.ts` — the same set the `coaching-guard` hook watches). *This is the proactive partner to that hook:* the hook reviews the **change** as it's made; this reviews the **resulting plans** once the change is live.
+- **GENERATE — one self-validating script, both sets.** `scripts/coaching-review-round.ts` runs the **4 canonical cases** (`CANONICAL_CASES`, reused from `generate-coaching-review.ts`) **and the 11 charity personas** (`lib/plan/charityCohort.ts`), generates a real plan for each, runs `validatePlan`, writes `coaching-review/<date>/generated-plans.md`, and **exits non-zero if any plan breaks its own constitution or an honesty guard weakened** — so a doctrine change that broke a case is loud in CI immediately.
+- **REVIEW — the Coaching Board skill.** `/coaching-board` supersedes the manual "senior coach" reviewer this folder was built around (`INDEX.md`). A plain workflow can't run a model, so CI automates trigger + generate + flag; the board sitting is a `/coaching-board` invocation, now *prompted* (Actions step-summary + uploaded artifact) rather than remembered. Its ruling lands in `<date>/review.md` + `backlog.md`, exactly as before.
+
+`generated-plans.md` is a build artifact (git-ignored, CI-uploaded). The committed round outputs remain `review.md`, `backlog.md`, `post-fix-diff.md`. To open a round by hand at any time: `NODE_ENV=production npx tsx scripts/coaching-review-round.ts`.
+
 ## Running a new review round
 
 1. **Create the folder.** `mkdir docs/coaching-reviews/YYYY-MM-DD` using today's date.
