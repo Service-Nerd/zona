@@ -199,6 +199,80 @@ export const CANONICAL_CASES: Case[] = [
       'Is the HR fallback note (max-only, percent_of_max) clear enough that the runner knows their resting HR would improve accuracy?',
     ],
   },
+  {
+    // UX-WIZARD-01 — day-budget exerciser (2026-09-13). Added so the coach-review
+    // round can compare BEFORE and AFTER Stage B: today the engine acts on
+    // max_weekday_mins = min(day_budgets) = 30, so this runner's open Thursday is
+    // wasted and any quality session over 30 min overruns the cap. Stage B should
+    // size/place the structured session on Thursday (90) instead. Until then this
+    // is byte-identical to a flat 30-minute cap.
+    id: '05-10k-uneven-weekday',
+    title: '10K sub-50 — uneven weekday time (Mon 30 / Wed 30 / Thu 90)',
+    persona:
+      'Priya, 36. Sub-50 10K in 12 weeks. Runs Mon/Wed/Thu + a Sunday long run. Lunch-break windows are tight Mon and Wed (30 min) but Thursday is a clear evening (90 min). Today the wizard makes her enter her worst day (30) as the weekday cap, so her one good day is invisible to the plan.',
+    tier: 'paid',
+    input: {
+      race_date: '2026-07-20',
+      race_distance_km: 10,
+      race_name: 'Local 10K',
+      goal: 'time_target',
+      target_time: '0:50:00',
+      age: 36,
+      current_weekly_km: 35,
+      longest_recent_run_km: 14,
+      days_available: 4,
+      days_cannot_train: ['tuesday', 'friday', 'saturday'],
+      preferred_long_run_day: 'sun',
+      max_weekday_mins: 30,                          // = min(day_budgets), what the wizard sends today
+      day_budgets: { mon: 30, wed: 30, thu: 90 },    // the richer truth Stage B will use
+      max_hr: 186,
+      resting_hr: 54,
+      training_age: '2-5yr',
+      recent_quality_training: 'regular',
+      primary_metric: 'distance',
+      plan_start: PLAN_START,
+    } as any,
+    questions: [
+      'BEFORE Stage B: is the quality session over the 30-min cap (§81 exemption), or shrunk?',
+      'AFTER Stage B: does the structured session land on Thursday and use ~90 min?',
+      'Does moving the quality day preserve hard/easy alternation and 2-day spacing (§6/§8/§18)?',
+      'Is peak weekly volume higher than the flat-30 plan, without exceeding any day’s own budget?',
+    ],
+  },
+  {
+    // UX-WIZARD-01 — day-budget exerciser, finish goal + more days. The Tuesday
+    // is the open evening here; the tight days are Mon/Wed/Fri.
+    id: '06-hm-uneven-weekday',
+    title: 'Half marathon finish — uneven weekday time (Tue 90, others 35)',
+    persona:
+      'Sam, 41. First half marathon, finish goal, 14 weeks. Runs Mon/Tue/Wed/Fri + a Saturday long run. Tuesday is a clear 90-minute evening; the other weekdays are ~35 minutes squeezed around work.',
+    tier: 'paid',
+    input: {
+      race_date: '2026-08-03',
+      race_distance_km: 21.1,
+      race_name: 'Target HM',
+      goal: 'finish',
+      age: 41,
+      current_weekly_km: 30,
+      longest_recent_run_km: 12,
+      days_available: 5,
+      days_cannot_train: ['thursday', 'sunday'],
+      preferred_long_run_day: 'sat',
+      max_weekday_mins: 35,                                        // = min(day_budgets)
+      day_budgets: { mon: 35, tue: 90, wed: 35, fri: 35 },        // Tuesday is the room
+      max_hr: 181,
+      resting_hr: 56,
+      training_age: '6-18mo',
+      recent_quality_training: 'none',
+      primary_metric: 'distance',
+      plan_start: PLAN_START,
+    } as any,
+    questions: [
+      'BEFORE Stage B: which weekday sessions exceed their own budget at a flat 35-min cap?',
+      'AFTER Stage B: is the longest weekday session on Tuesday (the 90-min day)?',
+      'Does redistribution move volume to Tuesday rather than dropping it, and stay honest where it cannot?',
+    ],
+  },
 ]
 
 export function fmtSession(day: string, s: any): string {
