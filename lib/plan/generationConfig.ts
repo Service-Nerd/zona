@@ -1027,6 +1027,36 @@ export const GENERATION_CONFIG = {
   // never relocated to after the race.
   RACE_WEEK_SHAKEOUT_DAYS_BEFORE_RACE: [5, 3],
 
+  // CoachingPrinciples §39 Amendment 1 / §26 — the day(s) before the race carry no
+  // scheduled running session. Expressed as days BEFORE the race, the same
+  // vocabulary §77 uses, so it generalises to any race weekday.
+  //
+  // §30's shakeout offsets [5, 3] already place nothing here. What DID land on
+  // race eve was §39's "mid-week" easy run: its day came from the preference
+  // order ['sat', 'fri', ...] and for a Sunday race — which is nearly every real
+  // race — 'sat' is the day before the gun and it was first in the list.
+  // Measured 2026-09-14 on an 81-plan Sunday-race grid: a session landed on race
+  // eve in **81 of 81 plans (100%)**, mean 54 minutes, and the worst case was a
+  // BEGINNER finish-goal marathoner on 25 km/week given 9 km / 72 minutes the day
+  // before their first marathon.
+  //
+  // 1, not 2: a single day of no running before a race is standard taper practice
+  // and the board declined to invent a longer protected window without evidence.
+  RACE_EVE_PROTECTED_DAYS: 1,
+
+  // §80 Amendment 1 — the race-day opening instruction, as a FRACTION of race
+  // distance rather than a fixed 5 km.
+  //
+  // `raceSession()` hardcoded "First 5 km at Zone 2." for EVERY distance. On a
+  // marathon that is sensible and standard. On a 10K it gives away half the race,
+  // and on a 5K it instructs the runner not to race their goal race at all.
+  //
+  // 0.12 is not a new number: 5 km IS 11.85% of a marathon, so the constant was
+  // always the marathon's opening fraction written out in kilometres and then
+  // applied to distances it was never derived for. Deriving it back leaves the
+  // marathon unchanged (5.06 km) and makes every other distance correct.
+  RACE_OPENING_FRACTION: 0.12,
+
   // ── Fresh-from-layoff detection (CoachingPrinciples §29) ───────────────────
   // If weeks_at_current_volume is set and below this threshold, the runner is
   // returning from a layoff and not actually consolidated at their stated

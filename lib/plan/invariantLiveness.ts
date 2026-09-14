@@ -82,6 +82,46 @@ export const MUTATIONS: Mutation[] = [
   // every session. 'strip zone' and the distance mutations each remove one; this
   // is the shape that makes a long run comparable on neither axis, which is the
   // silent state the invariant exists to catch.
+  // §39 Amendment 1 / INV-PLAN-NO-RACE-EVE-SESSION — lengthens whatever sits on
+  // race eve past §30's shakeout cap. This is the live shape the check was
+  // written for: §39's easy run landing the day before a Sunday race at 54 min
+  // mean, 72 min worst. Targets the day before the race specifically, because a
+  // blanket duration mutation would wake half the registry and prove nothing
+  // about THIS rule.
+  // §39 Amendment 1 / INV-PLAN-NO-RACE-EVE-SESSION — moves the race to Sunday,
+  // then puts a 75-minute run on the Saturday.
+  //
+  // ⚠️ BOTH halves are required, and the reason is a finding in itself: every
+  // harness in this repo generates MONDAY races. `COHORT_PLAN_START` is a Monday
+  // and the grid derives race dates as planStart + N weeks, so race day is always
+  // Monday and there is NO in-week day before it (`eveIdx === -1`). The cohort
+  // grid, the liveness corpus and (until 2026-09-14) the coaching-review cases
+  // all shared it. That is precisely why §39's race-eve easy run survived: no
+  // harness could build the shape in which it appears.
+  //
+  // So this mutation constructs the shape the corpus does not have — which is
+  // what a mutation is for — rather than being recorded as `corpus` debt.
+  { name: 'long session on race eve', apply: p => {
+      const order = ['mon','tue','wed','thu','fri','sat','sun']
+      for (const w of (p.weeks ?? []) as { sessions?: Record<string, unknown> }[]) {
+        const sessions = w.sessions
+        if (!sessions) continue
+        const entries = Object.entries(sessions)
+        const race = entries.find(([, sn]) => (sn as { type?: string } | null)?.type === 'race')
+        if (!race) continue
+        const donor = entries.find(([, sn]) => {
+          const t = (sn as { type?: string } | null)?.type
+          return t && t !== 'race' && t !== 'rest'
+        })?.[1]
+        // Relocate the race to Sunday so a race eve exists at all.
+        delete sessions[race[0]]
+        sessions['sun'] = race[1]
+        sessions['sat'] = {
+          ...(donor ? (donor as object) : {}),
+          type: 'easy', label: 'Race-week easy', duration_mins: 75,
+        }
+      }
+    } },
   { name: 'strip both anchors',        apply: p => sessionsOf(p).forEach(s => {
       delete (s as unknown as Poke).distance_km
       delete (s as unknown as Poke).duration_mins

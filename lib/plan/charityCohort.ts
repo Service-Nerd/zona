@@ -32,9 +32,27 @@ export interface CharityPersona {
   input: Omit<GeneratorInput, 'race_date'>
 }
 
+/**
+ * Race day for a persona, `weeks` weeks after plan start — landing on the SUNDAY
+ * that ends that week.
+ *
+ * ⚠️ This used to be `planStart + weeks × 7`, and `CHARITY_PLAN_START` is a
+ * Monday, so **every charity persona had a Monday race** — as did all six
+ * canonical cases. A Monday race has no in-week day before it, so §30's shakeout
+ * never runs and the PRECEDING week's long run lands the day before the goal
+ * race (PV2-G). Every review round was therefore exercising that one unusual
+ * shape, and a normal weekend race had never been reviewed.
+ *
+ * `- 1` day puts the race on the Sunday of week `weeks`, which is both the
+ * common real-world case and a cleaner plan: the final week is a full week
+ * ending with the race, rather than a one-day week containing only Monday.
+ *
+ * The early-week case is not lost — canonical case `07-hm-monday-race` keeps it
+ * visible in every round until PV2-G is built.
+ */
 export function charityRaceDate(weeks: number, planStart = CHARITY_PLAN_START): string {
   const d = new Date(planStart + 'T00:00:00Z')
-  return new Date(d.getTime() + weeks * 7 * DAY_MS).toISOString().slice(0, 10)
+  return new Date(d.getTime() + (weeks * 7 - 1) * DAY_MS).toISOString().slice(0, 10)
 }
 
 export function charityInput(p: CharityPersona, planStart = CHARITY_PLAN_START): GeneratorInput {
@@ -101,7 +119,11 @@ export const CHARITY_PERSONAS: CharityPersona[] = [
   {
     id: 'H3 sub-2:00 HM, intermediate',
     note: 'quality onset (§89); pace bands; time_target build',
-    weeks: 12,
+    weeks: 13,  // was 12: a SUNDAY race is 6 days short of a whole
+    // week, so this persona — designed to sit exactly ON the prep-time minimum
+    // — fell under it when the cohort moved off Monday races. Bumped to keep the
+    // scenario it was written to test (a runner who just clears the minimum),
+    // rather than silently converting it into a refusal case.
     input: { race_distance_km: 21.1, goal: 'time_target', target_time: '1:59:00', current_weekly_km: 35,
       longest_recent_run_km: 16, days_available: 4, age: 33, training_age: '2-5yr',
       recent_quality_training: 'regular' },
@@ -117,7 +139,11 @@ export const CHARITY_PERSONAS: CharityPersona[] = [
   {
     id: 'T2 sub-50 10K improver',
     note: 'time_target; intensity distribution at moderate volume',
-    weeks: 10,
+    weeks: 11,  // was 10: a SUNDAY race is 6 days short of a whole
+    // week, so this persona — designed to sit exactly ON the prep-time minimum
+    // — fell under it when the cohort moved off Monday races. Bumped to keep the
+    // scenario it was written to test (a runner who just clears the minimum),
+    // rather than silently converting it into a refusal case.
     input: { race_distance_km: 10, goal: 'time_target', target_time: '49:00', current_weekly_km: 30,
       longest_recent_run_km: 12, days_available: 4, age: 31, training_age: '2-5yr',
       recent_quality_training: 'regular' },

@@ -89,6 +89,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
   'INV-PLAN-LR-RACE-SEGMENT-PCT',
   'INV-PLAN-LONG-RUN-HAS-AN-AXIS',
+  'INV-PLAN-NO-RACE-EVE-SESSION',
+  'INV-PLAN-RACE-NOTE-SCALES',
   'INV-PLAN-PEAK-OVER-BASE',
   'INV-PLAN-PEAK-NOT-BELOW-START',
   'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
@@ -1696,6 +1698,85 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         actual: 0,
         expected: '≥ 1 race-specific long run',
       })
+    }
+  }
+
+  // INV-PLAN-NO-RACE-EVE-SESSION — §39 Amendment 1 / §26.
+  //
+  // The day(s) immediately before the race carry no scheduled running session.
+  // §30's shakeout offsets [5, 3] already place nothing there, so this is not a
+  // second opinion about shakeouts — it is the check that nothing ELSE drifts
+  // onto race eve, which is exactly what §39's "mid-week" easy run did: its
+  // preference order started with 'sat', and for a Sunday race that is the day
+  // before the gun. **Measured on an 81-plan grid: 81 of 81 (100%)**, mean 54
+  // minutes, worst case 9 km / 72 min before a beginner's first marathon.
+  // (CoachingPrinciples §39 Amendment 1)
+  {
+    const protectedDays = GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS
+    // Reuses §30's cap rather than declaring a second one — one number, one owner.
+    const capMinsForRaceEve = GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS
+    for (const w of plan.weeks) {
+      const entries = Object.entries(w.sessions ?? {}) as [string, Session | undefined][]
+      const race = entries.find(([, sn]) => sn?.type === 'race')
+      if (!race) continue
+      const raceIdx = DAYS.indexOf(race[0] as typeof DAYS[number])
+      if (raceIdx < 0) continue
+      for (const [day, sn] of entries) {
+        if (!sn || sn.type === 'rest' || sn.type === 'race') continue
+        const idx = DAYS.indexOf(day as typeof DAYS[number])
+        if (idx < 0 || idx >= raceIdx) continue
+        const before = raceIdx - idx
+        if (before > protectedDays) continue
+        // A §30 SHAKEOUT on race eve is correct coaching and must stay — "a
+        // wake-up for the legs, not training", capped and low-RPE by design.
+        // What must not be here is anything LONGER. The first cut of this
+        // invariant forbade every session and the golden plans caught it: it
+        // would have deleted the 30-minute shakeout that CD-7 deliberately
+        // places on race eve when §30's [5,3] offsets fall outside race week.
+        const mins = sn.duration_mins ?? 0
+        if (mins <= capMinsForRaceEve) continue
+        violations.push({
+          code: 'INV-PLAN-NO-RACE-EVE-SESSION',
+          principle_ref: 'CoachingPrinciples §39 Amendment 1',
+          severity: 'error',
+          week: w.n,
+          message: `${sn.label ?? 'session'} (${mins} min) is scheduled ${before} day(s) before race day and exceeds §30's ${capMinsForRaceEve}-minute shakeout cap — §26 forbids a fatigue-adding session in race week`,
+          actual: `${mins} min, ${before} day(s) before`,
+          expected: `≤ ${capMinsForRaceEve} min within ${protectedDays} day(s) of the race`,
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-RACE-NOTE-SCALES — §80 Amendment 1.
+  //
+  // The race-day opening instruction is a FRACTION of race distance. It was a
+  // hardcoded "First 5 km at Zone 2." on every distance, which is 12% of a
+  // marathon (sensible), 50% of a 10K (gives away half the race) and 100% of a
+  // 5K (instructs the runner not to race). Reads the note the runner is actually
+  // shown rather than recomputing the producer's input.
+  // (CoachingPrinciples §80 Amendment 1)
+  for (const w of plan.weeks) {
+    for (const sn of Object.values(w.sessions ?? {}) as (Session | undefined)[]) {
+      if (!sn || sn.type !== 'race') continue
+      const note = (sn.coach_notes ?? []).find(n => typeof n === 'string' && /First [\d.]+ km/.test(n))
+      if (!note) continue
+      const stated = Number(/First ([\d.]+) km/.exec(note)?.[1])
+      const raceKm = sn.distance_km ?? plan.meta.race_distance_km
+      if (!Number.isFinite(stated) || !raceKm) continue
+      const expected = raceKm * GENERATION_CONFIG.RACE_OPENING_FRACTION
+      // Half a km of slack absorbs the rounding the copy applies.
+      if (Math.abs(stated - expected) > 0.5) {
+        violations.push({
+          code: 'INV-PLAN-RACE-NOTE-SCALES',
+          principle_ref: 'CoachingPrinciples §80 Amendment 1',
+          severity: 'error',
+          week: w.n,
+          message: `Race note opens "${stated} km" on a ${raceKm} km race — that is ${((stated / raceKm) * 100).toFixed(0)}% of the race, not §80's ${(GENERATION_CONFIG.RACE_OPENING_FRACTION * 100).toFixed(0)}%`,
+          actual: `${stated} km`,
+          expected: `~${expected.toFixed(1)} km`,
+        })
+      }
     }
   }
 

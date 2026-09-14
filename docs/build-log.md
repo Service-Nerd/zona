@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-14 — RACE-WEEK-FITNESS-01 · the plans passed every check and told a first-timer to run 72 minutes the day before their marathon
+
+**Shipped:** §39 Amendment 1 and §80 Amendment 1. Nothing long sits on race eve any more, and the race-day instruction scales with the race instead of assuming everyone is running a marathon.
+
+**Dev learning:** The founder's instruction was the whole thing: a coaching review must not stop at "0 errors", because a plan can obey the constitution perfectly and still be a bad plan. Seventeen generated plans, zero error violations. I read one line by line and found that §39's "mid-week" easy run was landing the day before the race — **81 of 81 plans on the measured grid, 100%**, mean 54 minutes, worst case **9 km / 72 minutes the day before a beginner's first marathon**. The day came from a preference list starting `'sat'`, and for a Sunday race Saturday is the day before the gun.
+
+**Product/creator learning:** The second one is worse in a quieter way. Every race card said *"Start slower than feels right. First 5 km at Zone 2."* That is sensible for a marathon — 12% of the race. It is 50% of a 10K and **100% of a 5K**, where it tells the runner not to race their goal race at all. Nobody wrote that rule for a 5K; it was written for a marathon and then applied to everything, and 5 km turns out to be exactly 11.85% of a marathon. The number was never wrong, it was just never converted into the thing it was actually expressing.
+
+**AI-building learning:** Every harness in this repo generates **Monday** races. The plan-start constants are Mondays and every grid derives race dates as plan start plus N weeks, so race day is always Monday — and a Monday race has no in-week day before it, which is precisely the shape in which this defect cannot appear. The cohort grid, the liveness corpus and all seventeen review cases shared it. **Every check was green on a configuration almost no real runner has.** That is the most transferable thing here: a test fixture can be internally consistent, pass forever, and be testing the one case that hides the bug.
+
+**The honest bit:** the suite caught two of my own errors inside an hour. My first invariant banned *every* session on race eve, and the golden plans failed instantly — a short shakeout the day before a race is good coaching, and I would have deleted it along with the 72-minute run. Then my day filter read `> N - 1`, which is a no-op on top of a check that was already there, so Saturday stayed reachable whenever every earlier day was blocked. **My measurement grid showed 0 out of 81 and looked clean; the property sweep found it.** A reordering that hides a bug measures as a fix.
+
+**Hook material:** Seventeen training plans passed every automated check, and one of them told a first-time marathoner to run 72 minutes the day before their marathon.
+
+**Postable?:** yes
+
+
 ## 2026-09-14 — LR-SHORTFALL-DURATION-01 · the bug report was wrong, and the real answer was in the next principle along
 
 **Shipped:** §66 Amendment 1. A long run that comes up short is now measured on the axis the session was actually prescribed in — distance if it had one, **time** if it didn't.

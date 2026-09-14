@@ -27,6 +27,28 @@ export interface Case {
   questions: string[]
 }
 
+// ⚠️ RACE DATES ARE SUNDAYS, DELIBERATELY — and one case is deliberately not.
+//
+// Every canonical case used to carry a MONDAY race date, and `charityRaceDate`
+// derives its dates as `planStart + weeks × 7`, which from a Monday plan start
+// is always a Monday too. So all 17 cases in a review round exercised the same
+// unusual configuration, and the configuration the overwhelming majority of real
+// races use — a weekend race — had **never been reviewed**.
+//
+// That mattered. A Monday race has no in-week day before it, so race week
+// contains only the race, §30's shakeout never runs, and the PRECEDING week's
+// long run lands the day before the goal race: measured 2026-09-14, an
+// 81-minute Zone 2 long run the day before a half marathon. The engine handles
+// Sat / Sun / Tue / Wed / Thu races correctly (a 35-minute shakeout, or a 2–3
+// day gap) — so the round was reporting a real defect on every case while
+// never once showing what a normal plan looks like.
+//
+// Fixed in both directions: the six cases below now end on the Sunday of their
+// final week (same intended plan length, race on the last day), and case 07 is
+// an EXPLICIT early-week race so PV2-G stays visible in every round until it is
+// built. Moving them all to Sunday without case 07 would have turned a known
+// open defect green, which is re-baselining to pass.
+
 const PLAN_START = '2026-04-27'
 
 export const CANONICAL_CASES: Case[] = [
@@ -37,7 +59,7 @@ export const CANONICAL_CASES: Case[] = [
       'Sarah, 30. Returning to running after a 6-month gap due to work travel. Currently 3×/week, mostly easy 5km loops with one 8km weekend run. Wants to finish a local 5K in 12 weeks without getting injured. Desk job; can do 60 min on weekdays, longer on weekends.',
     tier: 'free',
     input: {
-      race_date: '2026-07-20',
+      race_date: '2026-07-26',
       race_distance_km: 5,
       race_name: 'Local 5K',
       goal: 'finish',
@@ -69,7 +91,7 @@ export const CANONICAL_CASES: Case[] = [
       `Mark, 38. Software engineer, two kids. Runs 4×/week, consistent for 2 years but always pushes too hard on easy days — ${BRAND.name}'s exact target user. Wants to break 50:00 in a local 10K, 12 weeks away. Has 60 min on weekdays, longer on weekends. Comfortable with structured quality but injury history of mild knee niggles.`,
     tier: 'paid',
     input: {
-      race_date: '2026-07-20',
+      race_date: '2026-07-26',
       race_distance_km: 10,
       race_name: 'Local 10K',
       goal: 'time_target',
@@ -106,7 +128,7 @@ export const CANONICAL_CASES: Case[] = [
       'Anna, 42. Runs 4×/week, building toward a target HM in 14 weeks. Goal time 1:55:00 (~5:27/km). Currently 40 km/week with an 18 km long run. Trail-running background, comfortable with quality. Wants race-specific work to nail the pace.',
     tier: 'paid',
     input: {
-      race_date: '2026-08-03',
+      race_date: '2026-08-09',
       race_distance_km: 21.1,
       race_name: 'Target HM',
       goal: 'time_target',
@@ -153,7 +175,7 @@ export const CANONICAL_CASES: Case[] = [
       'Mike, 47. Returning runner (4 weeks at current volume) with hip injury history. 4:00 marathon goal, 13 weeks out. Currently 38 km/week, longest recent run 18 km. 4 sessions/week. The case that prompted the 2026-04-28 review: a time-targeted marathon plan should not be possible from this starting point. Engine refuses generation unless acknowledged_prep_warning is set; with acknowledgment, plan generates as maintenance with warnings. (The original review used 11 weeks, which after §44 returning-runner shift now triggers BLOCK; 13 weeks puts the case back in the warn zone the review was concerned about.)',
     tier: 'paid',
     input: {
-      race_date: '2026-07-27',
+      race_date: '2026-08-02',
       race_distance_km: 42.2,
       race_name: 'Target Marathon',
       goal: 'time_target',
@@ -212,7 +234,7 @@ export const CANONICAL_CASES: Case[] = [
       'Priya, 36. Sub-50 10K in 12 weeks. Runs Mon/Wed/Thu + a Sunday long run. Lunch-break windows are tight Mon and Wed (30 min) but Thursday is a clear evening (90 min). Today the wizard makes her enter her worst day (30) as the weekday cap, so her one good day is invisible to the plan.',
     tier: 'paid',
     input: {
-      race_date: '2026-07-20',
+      race_date: '2026-07-26',
       race_distance_km: 10,
       race_name: 'Local 10K',
       goal: 'time_target',
@@ -248,7 +270,7 @@ export const CANONICAL_CASES: Case[] = [
       'Sam, 41. First half marathon, finish goal, 14 weeks. Runs Mon/Tue/Wed/Fri + a Saturday long run. Tuesday is a clear 90-minute evening; the other weekdays are ~35 minutes squeezed around work.',
     tier: 'paid',
     input: {
-      race_date: '2026-08-03',
+      race_date: '2026-08-09',
       race_distance_km: 21.1,
       race_name: 'Target HM',
       goal: 'finish',
@@ -271,6 +293,53 @@ export const CANONICAL_CASES: Case[] = [
       'BEFORE Stage B: which weekday sessions exceed their own budget at a flat 35-min cap?',
       'AFTER Stage B: is the longest weekday session on Tuesday (the 90-min day)?',
       'Does redistribution move volume to Tuesday rather than dropping it, and stay honest where it cannot?',
+    ],
+  },
+  {
+    // PV2-G / §30 — THE EARLY-WEEK RACE, kept deliberately.
+    //
+    // A Monday race has no in-week day before it, so race week holds only the
+    // race and §30's shakeout has nowhere to go. §30 says the preceding taper
+    // week "should carry the priming" and records that as still open (PV2-G).
+    // What it does NOT say, and what a round must keep showing, is that the gap
+    // is not empty: the previous week's LONG RUN lands the day before the goal
+    // race. Measured 2026-09-14 on this exact shape — 81 minutes, Zone 2, the
+    // day before a half marathon.
+    //
+    // Bank-holiday races are real (Boston is a Monday), and this case exists so
+    // the defect is visible in every round until the cross-week race-arc
+    // restructure is built. Do NOT "fix" this case by moving it to a Sunday.
+    id: '07-hm-monday-race',
+    title: 'Half marathon — EARLY-WEEK (Monday) race — PV2-G exerciser',
+    persona:
+      'Priya, 36. Bank-holiday Monday half marathon, 14 weeks out. Runs four days a week with a Sunday long run — the most common weekly shape there is. Everything about her week is ordinary; the only unusual thing is that her race is on a Monday.',
+    tier: 'paid',
+    input: {
+      race_date: '2026-08-03',                 // Monday, deliberately
+      race_distance_km: 21.1,
+      race_name: 'Bank Holiday HM',
+      goal: 'time_target',
+      target_time: '1:58:00',
+      age: 36,
+      current_weekly_km: 32,
+      longest_recent_run_km: 14,
+      days_available: 4,
+      days_cannot_train: ['mon', 'wed', 'fri'],
+      preferred_long_run_day: 'sun',
+      max_weekday_mins: 60,
+      max_hr: 184,
+      resting_hr: 58,
+      training_age: '2-5yr',
+      recent_quality_training: 'occasional',
+      primary_metric: 'distance',
+      plan_start: PLAN_START,
+    } as any,
+    questions: [
+      'What is the LAST session before race day, and how many days before is it? (Expect: the long run, 1 day.)',
+      'Is that an acceptable session to run the day before a goal race?',
+      'Does race week contain any priming at all, or only the race?',
+      '§30 says the preceding taper week should carry the priming — does it?',
+      'Would a runner following this plan arrive at the start line fresh?',
     ],
   },
 ]

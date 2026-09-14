@@ -1137,6 +1137,20 @@ When neither suggestion applies, the diagnosis is surfaced alone (no false guida
 
 **Config.** `GENERATION_CONFIG.RACE_WEEK_EASY_KM = { HM: 7, MARATHON: 9 }`. Implemented in the race-week branch of `buildWeekSessions()`. Skipped when `days_available < 4` (the runner is already constraint-limited; adding a fourth session would force a back-to-back).
 
+**Amendment 1 — "mid-week" binds, and race eve is protected (Coaching Board 2026-09-14).**
+
+This section is titled *"Race-week **mid-week** easy run"* and §77 refers to it in its own text as *"the §39 mid-week easy"*. The engine placed it from the preference order `['sat', 'fri', 'wed', 'mon', 'tue', 'thu']`, and for a **Sunday race — which is nearly every real race — `sat` is the day before the gun and it was first in the list.**
+
+**Measured on an 81-plan Sunday-race grid: a session landed on race eve in 81 of 81 plans — 100.0%.** Mean 54 minutes. HM longest 56; marathon longest 72. **Worst case: a BEGINNER, finish-goal marathoner on 25 km/week, given 9 km / 72 minutes the day before their first marathon.** Unlike §30's two shakeouts, which pass through `enforceCap` and are bounded at 35 minutes with RPE ≤ 3, this run was built directly and nothing bounded it — `applyWeekdayMinsCap` does not reach it either, because Saturday is not a weekday.
+
+**This was a defect against documented intent, not a new coaching decision.** The constitution already said mid-week in two places, and §26 already said *"the engine must never schedule a fatigue-adding session in race week"* — a 72-minute run the day before a marathon is fatigue-adding by any reading. The board ruled rather than exempting because the FIX changes what a runner is told to do in the most consequential week of their plan, and because the code comment at the site had explicitly parked the question (*"whether an easy run the day before a race is good coaching is a separate question — deliberately not relitigated here"*), which makes it an open question by the repo's own record rather than a typo.
+
+**The rule.** §39's run takes the **earliest** available non-shakeout day in race week, not the latest, and **no session within `RACE_EVE_PROTECTED_DAYS` (1) of race day may exceed §30's shakeout cap** (`RACE_WEEK_SHAKEOUT_MAX_MINS`, 35 min). A §30 shakeout on race eve is *correct* and stays — it is "a wake-up for the legs, not training", and CD-7 deliberately places one there when §30's `[5, 3]` offsets fall outside race week. The first draft of this amendment forbade **every** session on race eve; the golden plans caught it, because that would have deleted a good session along with the bad one. The rule is a **ceiling, not a prohibition**. §30's `[5, 3]` offsets already place no shakeout there, so nothing legitimately belonged on race eve; this makes that explicit and checkable. Earliest rather than latest because §39's job is aerobic preservation, which any day serves equally — the only axis that varies is proximity to the race, and on that axis earlier is strictly better.
+
+**Why 1 day and not 2.** A single day without running before a race is standard taper practice across Daniels, Pfitzinger and Hudson. The board declined to invent a longer protected window without evidence: two days of complete rest before a goal race is a real coaching position but a contested one, and §30's strides exist precisely because six days of taper running can leave a runner flat-footed. One day is the floor everyone agrees on.
+
+**Config.** `GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS = 1`, expressed as days-before-race in §77's vocabulary so it generalises to any race weekday. Enforced by `INV-PLAN-NO-RACE-EVE-SESSION`.
+
 ---
 
 ## 40. 5K finish-goal long-run cap
@@ -2625,6 +2639,23 @@ The asymmetry in the resolution is deliberate: **volume is where injuries come f
 **The honest failure case.** Where the time cap binds, the plan cannot deliver race-specific endurance and must say that plainly, with the concrete consequence (the late race will be unfamiliar) and the actionable response (start slower, take walk breaks early rather than late). A silent shortfall is the failure mode this whole principle exists to prevent.
 
 **Config.** `GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION = 0.70`. Shortfall surfaced as `meta.long_run_shortfall_note`.
+
+**Amendment 1 — the race-day opening instruction scales with the race (Coaching Board 2026-09-14).**
+
+`raceSession()` carried one hardcoded note for **every** distance: *"Start slower than feels right. First 5 km at Zone 2."* It never read the race distance.
+
+| Race | "first 5 km" is | Verdict |
+|---|---|---|
+| Marathon 42.2 km | 12% of the race | Sensible, standard |
+| HM 21.1 km | 24% | Defensible |
+| 10K | **50%** | Gives away half the race |
+| 5K | **100%** | **Instructs the runner not to race at all** |
+
+**5 km IS 11.85% of a marathon.** The constant was the marathon's opening fraction, written out in kilometres and then applied to distances it was never derived for — the same shape as §16's race-pace overlay (RACE-PACE-OVERLAY-REACH-01, the same day). Deriving it back to a fraction leaves the marathon unchanged at 5.06 km and makes every other distance correct: 0.6 km for a 5K, 1.2 km for a 10K, 2.5 km for a HM.
+
+**The effort follows the GOAL, not a fixed zone.** "Zone 2" is right for a finish-goal runner, whose race plan is to complete the distance. It is wrong for a time-targeted one: a runner chasing sub-50 for 10K who opens in Zone 2 has given the race away in the first kilometre and cannot get it back. A time-targeted race opens **at goal pace**, which is the pace the entire plan has been rehearsing (§5, §25). The instruction in both cases is the same coaching idea — *do not bank time you have not earned* — expressed against the target the runner actually has.
+
+**Config.** `GENERATION_CONFIG.RACE_OPENING_FRACTION = 0.12`. Enforced by `INV-PLAN-RACE-NOTE-SCALES`.
 
 ### Duration-anchored display — amended 2026-08-31 (Coaching Board, CORRECT WITH AMENDMENT — HR-MAX-01 part 3)
 

@@ -2014,14 +2014,39 @@ function strengthSession(weekN: number, day: Day): Session {
   }
 }
 
-function raceSession(weekN: number, day: Day, distKm: number, raceName: string | null): Session {
+function raceSession(
+  weekN: number, day: Day, distKm: number, raceName: string | null,
+  goal?: string | null, goalPace?: string | null,
+): Session {
+  // §80 Amendment 1 (Coaching Board 2026-09-14) — the opening instruction scales
+  // with the race, and its effort follows the runner's GOAL.
+  //
+  // This note used to read "First 5 km at Zone 2." for EVERY distance. On a
+  // marathon that is sensible. On a 10K it gives away half the race; on a 5K it
+  // instructs the runner not to race their goal race at all. 5 km IS 11.85% of a
+  // marathon — the constant was the marathon's opening fraction written out in
+  // kilometres and then applied to distances it was never derived for.
+  const openingKm = distKm * GENERATION_CONFIG.RACE_OPENING_FRACTION
+  // One decimal under 10 km (0.6 km reads as a real instruction; "1 km" does
+  // not), whole kilometres above — ADR-015's precision rule for a prescribed
+  // distance a runner has to act on mid-race.
+  const openingStr = openingKm < 10
+    ? `${Math.round(openingKm * 10) / 10} km`
+    : `${Math.round(openingKm)} km`
+  // A time-targeted runner opens AT GOAL PACE — the pace the whole plan has
+  // rehearsed. Opening a sub-50 10K in Zone 2 loses the race in the first
+  // kilometre and it cannot be got back. A finish-goal runner opens in Zone 2,
+  // because completing the distance is the goal.
+  const opening = goal === 'time_target' && goalPace
+    ? `Start slower than feels right. First ${openingStr} at goal pace: ${goalPace}.`
+    : `Start slower than feels right. First ${openingStr} at Zone 2.`
   return {
     id: `w${weekN}-${day}`,
     // F6 — "Race — Target Race" is a placeholder leaking into the plan. When no
     // name was given, say the true thing instead of inventing one.
     type: 'race', label: raceName ? `Race — ${raceName}` : `Race day — ${distKm} km`, detail: null,
     distance_km: distKm, primary_metric: 'distance',
-    coach_notes: ['Start slower than feels right. First 5 km at Zone 2.', 'No new shoes, no new food.'],
+    coach_notes: [opening, 'No new shoes, no new food.'],
   }
 }
 
@@ -2532,7 +2557,11 @@ function buildWeekSessions(
     const raceDayIdx = DAY_INDEX[raceDay]
     // §77 — nothing in race week may fall after the race.
     const beforeRace = (d: Day): boolean => DAY_INDEX[d] < raceDayIdx
-    sessions[raceDay] = raceSession(weekN, raceDay, input.race_distance_km, raceName)
+    // §39 Amendment 1 — how many days before the race does this day sit?
+    // Same vocabulary §77 uses for shakeout spacing, so the protected window
+    // generalises to any race weekday rather than naming Saturday.
+    const daysBeforeRace = (d: Day): number => raceDayIdx - DAY_INDEX[d]
+    sessions[raceDay] = raceSession(weekN, raceDay, input.race_distance_km, raceName, input.goal, goalPace)
 
     // CoachingPrinciples §30 — race-week shakeouts capped at
     // RACE_WEEK_SHAKEOUT_MAX_MINS. The first shakeout carries a stride note
@@ -2599,12 +2628,32 @@ function buildWeekSessions(
       const used: Day[] = [raceDay]
       if (shakeout1) used.push(shakeout1)
       if (sessions[shakeout2 as Day]) used.push(shakeout2 as Day)
-      // Preference order inherited unchanged from the Sunday-race case; §77 adds
-      // the `beforeRace` filter so it stays correct for a midweek race. (Whether
-      // an easy run the day before a race is good coaching is a separate
-      // question — deliberately not relitigated here.)
+      // §39 Amendment 1 (Coaching Board 2026-09-14) — THAT SEPARATE QUESTION IS
+      // NOW ANSWERED, and the answer was no.
+      //
+      // This preference order began with 'sat'. For a Sunday race — nearly every
+      // real race — Saturday is the day before the gun, so §39's run landed on
+      // race eve in **81 of 81 plans on the measured grid (100%)**, mean 54 min,
+      // worst case 9 km / 72 min the day before a BEGINNER's first marathon.
+      //
+      // §39 is titled "Race-week MID-WEEK easy run" and §77 calls it "the §39
+      // mid-week easy" — the constitution said mid-week in two places while the
+      // engine said Saturday. §26 independently forbids scheduling a
+      // fatigue-adding session in race week.
+      //
+      // Earliest, not latest: §39's job is aerobic preservation, which any day
+      // serves equally. The only axis that varies is proximity to the race, and
+      // on that axis earlier is strictly better.
       const easyDay = firstAvailableDay(
-        (['sat', 'fri', 'wed', 'mon', 'tue', 'thu'] as Day[]).filter(beforeRace),
+        (['mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as Day[])
+          .filter(beforeRace)
+          // `> N`, not `>= N`: RACE_EVE_PROTECTED_DAYS = 1 means the day 1 before
+          // the race is protected, so the run must sit at least 2 days out. The
+          // first cut wrote `> N - 1`, which is a no-op on top of `beforeRace`
+          // and left 'sat' reachable whenever every earlier day was blocked or
+          // already used. The property sweep caught it — the reorder alone had
+          // hidden it on the measurement grid.
+          .filter(d => daysBeforeRace(d) > GENERATION_CONFIG.RACE_EVE_PROTECTED_DAYS),
         blocked, used,
       )
       if (easyDay) {

@@ -1114,7 +1114,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "wed": {
           "coach_notes": [
-            "Start slower than feels right. First 5 km at Zone 2.",
+            "Start slower than feels right. First 2.5 km at Zone 2.",
             "No new shoes, no new food.",
           ],
           "detail": null,
@@ -1826,7 +1826,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
         },
         "wed": {
           "coach_notes": [
-            "Start slower than feels right. First 5 km at Zone 2.",
+            "Start slower than feels right. First 0.6 km at Zone 2.",
             "No new shoes, no new food.",
           ],
           "detail": null,
@@ -3093,7 +3093,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
         },
         "wed": {
           "coach_notes": [
-            "Start slower than feels right. First 5 km at Zone 2.",
+            "Start slower than feels right. First 1.2 km at goal pace: 4:30 /km.",
             "No new shoes, no new food.",
           ],
           "detail": null,
@@ -4482,7 +4482,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
         },
         "wed": {
           "coach_notes": [
-            "Start slower than feels right. First 5 km at Zone 2.",
+            "Start slower than feels right. First 2.5 km at goal pace: 4:59 /km.",
             "No new shoes, no new food.",
           ],
           "detail": null,
@@ -6293,7 +6293,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         },
         "wed": {
           "coach_notes": [
-            "Start slower than feels right. First 5 km at Zone 2.",
+            "Start slower than feels right. First 5.1 km at goal pace: 4:37 /km.",
             "No new shoes, no new food.",
           ],
           "detail": null,
@@ -7419,7 +7419,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "wed": {
           "coach_notes": [
-            "Start slower than feels right. First 5 km at Zone 2.",
+            "Start slower than feels right. First 2.5 km at Zone 2.",
             "No new shoes, no new food.",
           ],
           "detail": null,
@@ -9227,7 +9227,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         },
         "wed": {
           "coach_notes": [
-            "Start slower than feels right. First 5 km at Zone 2.",
+            "Start slower than feels right. First 5.1 km at Zone 2.",
             "No new shoes, no new food.",
           ],
           "detail": null,

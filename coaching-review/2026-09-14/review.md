@@ -19,6 +19,19 @@ The shortfall trigger is measured on **the axis the session is anchored on**. §
 
 **The obvious fix was rejected.** Deriving kilometres via `sessionKmSelfPaced` recovers 100% of the dropped sessions — and would report a walk-breaking first-timer short against a number they were never given, reducing the long run of the runner §80 exists to protect.
 
+## Ruling 2 — §39 Amendment 1 + §80 Amendment 1 (RACE-WEEK-FITNESS-01)
+
+**CORRECT / CORRECT WITH AMENDMENT.** Full sitting: `docs/decisions/coaching-board-2026-09-14-race-week.md`.
+
+**These came from READING the plans, not validating them.** Every case below was 0-error.
+
+1. **§39's "mid-week" easy run landed on race eve in 81 of 81 measured plans (100%)**, mean 54 min, worst case 9 km / 72 min the day before a beginner's first marathon. Now: earliest available non-shakeout day, and a **ceiling** (not a ban) of §30's 35 min within 1 day of the race. **100% → 0%.**
+2. **The race note said "First 5 km at Zone 2" on every distance** — 100% of a 5K, 50% of a 10K. Now a fraction of race distance, with effort following the goal.
+
+## Harness finding — this round changed the cases themselves
+
+**All 17 cases used MONDAY races**, because the plan-start constants are Mondays and race dates derive as `planStart + N × 7`. A Monday race has no in-week day before it, so **every round had been reviewing the one configuration in which the race-eve defect cannot appear.** The canonical cases now end on the Sunday of their final week, and new case `07-hm-monday-race` keeps the early-week edge visible until PV2-G is built.
+
 ## Charity-persona note
 
 The 11 charity personas (M1–M5, H1–H3, T1–T3) are first-timers and low-base runners — the cohort §66 was dead for, and the cohort the Make-A-Wish referral channel will deliver. That is why this ruled as fix-before-acquisition despite near-zero live impact (137 analyses, 2 users).
