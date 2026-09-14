@@ -2323,3 +2323,62 @@ Reference: `CoachScreen` in `app/dashboard/DashboardClient.tsx`;
 `docs/decisions/ux-coach-01-boards-2026-09-12.md`.
 
 ---
+
+### 34. Post-run card (Pattern 32 applied to the post-run moment)
+
+Shipped 2026-09-13 (UX-POSTRUN-01, SLT + Coaching Board). **Not a new shape — it
+is Pattern 32's rule applied to the second screen that had the same problem.**
+Coach was rebuilt to lead with interpretation on 2026-09-12; the post-run card was
+still leading with a grade.
+
+```
+Kit's read          ← the HERO. Two sentences. An interpretation, not a metric.
+Verdict card        ← beneath, and quieter
+  headline            Zonna voice, one line
+  ONE zone signal     "92% in your prescribed zone" + a single bar
+  score toggle        small, top-right, opens the per-axis breakdown
+Up next
+```
+
+**What it replaced, and why.** A four-column panel (HR / DISTANCE / PACE /
+EFFICIENCY), each with a number out of 100, a progress bar and a band label,
+above Kit. Two rules said no: **"No dashboards or noise"**, and Zonna
+**"deliberately omits gamification"** — four sub-scores with bands is a
+scoreboard. Sutherland: handing a runner who overtrains a number to optimise is
+the grey-zone pressure the product exists to remove, rebuilt as a leaderboard.
+
+**Why exactly ONE signal survives rather than none.** Wood's carve-out, and it is
+the same line she draws on Coach: zone adherence is the single behaviour this
+product exists to change, so confirming it reduces cognitive load. Distance, pace
+and efficiency are *outcomes* of the run, not the behaviour — they stay behind the
+score toggle (progressive disclosure) rather than leading.
+
+**The palette follows the verdict.** Moss (`--moss-soft`) when the zone was held,
+amber (`--warn-bg`) when it drifted. Every post-run card previously rendered
+amber, so a runner who held the zone perfectly met *"There it is. Don't ruin it."*
+on the warning palette. **Restraint cannot feel like progress if success and drift
+are the same colour.** `--coach-ink` moves with the background, per its own
+"on `--warn-bg` only" declaration in `globals.css`.
+
+**An absent measurement is stated, never defaulted** (§108 Amendment 1). No heart
+rate means no score and no verdict — "No heart rate on this run, so it isn't
+scored." The previous copy noted the gap *beside a confident number* that had
+substituted a passing grade for the missing axis.
+
+> ⚠️ **KNOWN GAP — the same number is banded twice.** This card bands
+> `hrInZonePct` through `scoreBandLabel` (**80 / 60 / 40** → On target · Close ·
+> Slightly off · Off target). The Coach screen bands the *same* measurement
+> through `ZONE_DISCIPLINE_BANDS` (**85 / 70 / 50** → disciplined · decent · loose
+> · freelancing). So a run at 82% reads **"On target"** post-run and contributes
+> to **"decent"** on Coach; 65% reads **"Close"** but **"loose"**. Two
+> vocabularies and two threshold sets for one fact. Unifying them is a coaching
+> decision (bands are ratified numerics), so it is filed as
+> **ZONE-BAND-VOCAB-01** rather than fixed in a display change.
+
+**Harness:** `/post-run-preview` renders the real `RunFeedbackCard` across five
+states (no HR, zone held, zone drifted, manual, scored-without-Kit). 404s in
+production. The card is tier-gated and authed, so this is the only way to look at
+it — and this repo has shipped a comment describing a change to a component
+nobody could see.
+
+Reference: `RunFeedbackCard` in `app/dashboard/DashboardClient.tsx`.
