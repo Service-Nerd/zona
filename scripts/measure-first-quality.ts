@@ -14,7 +14,12 @@ import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { cohortGrid, COHORT_PLAN_START } from '../lib/plan/cohortGrid'
 import type { Plan, Session } from '../types/plan'
 
-const QUALITY = new Set(['quality', 'tempo', 'intervals', 'hard'])
+// ⚠️ 'hard' is DELIBERATELY EXCLUDED. It is the §78 recalibration 5K time trial,
+// which sits on a base/build DELOAD week, is Zone 4–5 by nature (a maximal
+// CONTINUOUS effort, not reps — CLAUDE.md's session-colour table says so), and is
+// a BENCHMARK rather than a training stimulus. Including it produced a false
+// finding: "100% of beginners meet Zone 4–5 first" was counting their time trial.
+const QUALITY = new Set(['quality', 'tempo', 'intervals'])
 const DAYS = ['mon','tue','wed','thu','fri','sat','sun'] as const
 
 /** Rough stimulus rank from the session's own prescribed zone. */
