@@ -17,7 +17,7 @@
 import { notFound } from 'next/navigation'
 import { RunFeedbackCard } from '../dashboard/DashboardClient'
 
-type Case = { title: string; note: string; analysis: Record<string, unknown>; paceTarget?: string | null }
+type Case = { title: string; note: string; analysis: Record<string, unknown>; paceTarget?: string | null; driftContext?: { show: boolean; drifted: number; total: number } | null }
 
 const CASES: Case[] = [
   {
@@ -52,6 +52,30 @@ const CASES: Case[] = [
       hr_discipline_score: 24, distance_score: 90, pace_score: 60, ef_score: 55,
       hr_in_zone_pct: 24,
       feedback_text: "24% in zone means this was not an easy run, whatever the plan called it. Tomorrow needs to be genuinely slow to pay for it.",
+    },
+  },
+  {
+    title: 'POST-RUN-CONTEXT-01 — the block-level line',
+    note: 'The differentiator: none of the six competitors joins the run to the block. It COUNTS, it never concludes — no "which is why Saturday felt heavy". Silent by default and never twice running (Wood).',
+    paceTarget: '7:00–7:45 /km',
+    driftContext: { show: true, drifted: 3, total: 5 },
+    analysis: {
+      source: 'strava', verdict: 'off_target', total_score: 44,
+      hr_discipline_score: 28, distance_score: 90, pace_score: 62, ef_score: 58,
+      hr_in_zone_pct: 28,
+      feedback_text: "28% in zone means this was not an easy run, whatever the plan called it. Tomorrow needs to be genuinely slow to pay for it.",
+    },
+  },
+  {
+    title: 'Same run, but the line is SILENT (never twice in a row)',
+    note: "Wood's binding condition. A counter the runner sees every run stops being information and becomes wallpaper.",
+    paceTarget: '7:00–7:45 /km',
+    driftContext: { show: false, drifted: 4, total: 5 },
+    analysis: {
+      source: 'strava', verdict: 'off_target', total_score: 44,
+      hr_discipline_score: 28, distance_score: 90, pace_score: 62, ef_score: 58,
+      hr_in_zone_pct: 28,
+      feedback_text: "Still hot. Nothing new to add that yesterday did not already say.",
     },
   },
   {
@@ -100,7 +124,7 @@ export default function PostRunPreviewPage() {
           <p style={{ fontSize: '12px', color: 'var(--mute)', margin: '0 0 10px', lineHeight: 1.5 }}>
             {c.note}
           </p>
-          <RunFeedbackCard analysis={c.analysis} paceTarget={c.paceTarget ?? null} />
+          <RunFeedbackCard analysis={c.analysis} paceTarget={c.paceTarget ?? null} driftContext={c.driftContext ?? null} />
         </section>
       ))}
     </main>

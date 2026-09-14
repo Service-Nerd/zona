@@ -122,6 +122,60 @@ export function zoneDriftScore(
   return Math.round(weightedSum / totalWeight)
 }
 
+/**
+ * POST-RUN-CONTEXT-01 — does THIS run's post-run card say "that's the Nth easy
+ * run this week above its ceiling", or stay quiet?
+ *
+ * Coaching Board 2026-09-13, CORRECT WITH AMENDMENT. The bindings, all encoded
+ * here so no surface can quietly reinterpret them:
+ *
+ *  1. COUNT, NEVER CONCLUDE. This returns a COUNT. It must never be used to
+ *     assert a mechanism — "which is why Saturday felt heavy" is a causal claim
+ *     we cannot demonstrate from one runner and three data points, and Hutchinson
+ *     vetoed the hedged version too ("probably why" is still a mechanism).
+ *  2. EASY RUNS ONLY, against their OWN ceiling. Not a §1 read: §1 counts
+ *     sessions PLAN-WIDE and a 4-day week with one quality session is 25%
+ *     against marathon's 18% ceiling, so a week-level §1 statement would flag
+ *     every normal build week. Different denominator, different question.
+ *  3. DIRECTIONAL (Sims, and §12 Amendment 1). Above the cap only.
+ *  4. SILENCE IS THE DEFAULT. A single drifted run is not a pattern.
+ *  5. NEVER TWICE IN A ROW (Wood, binding). "A counter the runner sees every run
+ *     stops being information and becomes wallpaper."
+ *
+ * Rule 5 needs no stored state, which is the nice part. Whether the line showed
+ * on the previous run is itself derivable by the same rule, so this walks the
+ * sequence: `show[i] = drifted[i] && patternExists && !show[i-1]`. Deterministic
+ * from the rows alone, and it cannot drift out of sync with what was displayed.
+ *
+ * `runs` is oldest → newest and should already be filtered to easy/recovery
+ * sessions. The verdict returned is for the LAST entry.
+ */
+export const DRIFT_PATTERN_MIN_RUNS = 2
+
+export interface DriftRun { aboveCeilingPct: number | null }
+
+export function driftContextFor(
+  runs: readonly DriftRun[],
+  thresholdPct: number,
+): { show: boolean; drifted: number; total: number } {
+  const usable = runs.filter(r => r.aboveCeilingPct !== null)
+  const total = usable.length
+  if (total === 0) return { show: false, drifted: 0, total: 0 }
+
+  const drifts = usable.map(r => r.aboveCeilingPct! > thresholdPct)
+  const drifted = drifts.filter(Boolean).length
+
+  // Rule 5, resolved forwards so `show` for run i depends only on runs ≤ i.
+  let prevShown = false
+  let show = false
+  for (let i = 0; i < drifts.length; i++) {
+    const patternSoFar = drifts.slice(0, i + 1).filter(Boolean).length >= DRIFT_PATTERN_MIN_RUNS
+    show = drifts[i] && patternSoFar && !prevShown
+    prevShown = show
+  }
+  return { show, drifted, total }
+}
+
 export type ZoneDisciplineLabel = 'disciplined' | 'decent' | 'loose' | 'freelancing'
 
 export function classifyZoneDiscipline(score: number): ZoneDisciplineLabel {

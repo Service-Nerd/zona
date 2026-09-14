@@ -25,6 +25,7 @@ import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { ZONE_DRIFT_ABOVE_CEILING_PCT } from '@/lib/coaching/constants'
+import { driftContextFor } from '@/lib/coaching/loadCalc'
 import { BRAND, PRICING } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
@@ -2463,7 +2464,7 @@ export default function DashboardClient() {
   } catch {}
 }} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onOpenRedeem={() => { setRedeemReturnTo('me'); setScreen('redeem') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen('today')} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen('today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -12487,18 +12488,60 @@ function scoreBandLabel(value: number): string {
 // tier-gated and authed, so "it compiles" is not the same claim as "it renders
 // correctly in every state" — and this repo has already shipped a comment
 // describing a change to an unchanged component because nobody could look at it.
+/**
+ * POST-RUN-CONTEXT-01 — gather the recent EASY/recovery analyses, oldest first,
+ * up to and including this session, and hand them to the decision owner.
+ *
+ * Selection lives here; the DECISION lives in `driftContextFor`. Keeping them
+ * apart is the point — every board binding (silence by default, never twice in a
+ * row, directional, count-never-conclude) is in the owner and unit-tested, so a
+ * change to this gathering cannot quietly reinterpret a ruling.
+ *
+ * Easy/recovery only, read off the PLAN's session type rather than any label
+ * (D-17: the enricher rewrites labels, it does not rewrite `plan_json` types).
+ */
+const DRIFT_CONTEXT_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+const DRIFT_CONTEXT_WINDOW = 8
+
+function buildDriftContext(
+  plan: any,
+  runAnalysisMap: Record<number, Record<string, any>>,
+  weekN: number | null | undefined,
+  sessionKey: string | null | undefined,
+): { show: boolean; drifted: number; total: number } | null {
+  if (!plan?.weeks || weekN == null || !sessionKey) return null
+  const ordered: { aboveCeilingPct: number | null }[] = []
+  for (const w of plan.weeks) {
+    if (w.n > weekN) break
+    for (const d of DRIFT_CONTEXT_DAYS) {
+      if (w.n === weekN && DRIFT_CONTEXT_DAYS.indexOf(d) > DRIFT_CONTEXT_DAYS.indexOf(sessionKey as any)) break
+      const sType = (w.sessions as any)?.[d]?.type
+      if (sType !== 'easy' && sType !== 'recovery') continue
+      const a = runAnalysisMap[w.n]?.[d]
+      if (!a || a.source === 'manual') continue
+      ordered.push({ aboveCeilingPct: a.hr_above_ceiling_pct ?? null })
+    }
+  }
+  if (ordered.length === 0) return null
+  return driftContextFor(ordered.slice(-DRIFT_CONTEXT_WINDOW), ZONE_DRIFT_ABOVE_CEILING_PCT)
+}
+
 export function RunFeedbackCard({
   analysis,
   paceTarget = null,
   actualAvgSpeedMs = null,
   onOpenCoach,
   preferredUnits = 'km',
+  driftContext = null,
 }: {
   analysis: any
   paceTarget?: string | null
   actualAvgSpeedMs?: number | null
   onOpenCoach?: () => void
   preferredUnits?: 'km' | 'mi'
+  // POST-RUN-CONTEXT-01 — the block-level count, decided by `driftContextFor`.
+  // The card renders it; it does not decide it. Null when there is nothing to say.
+  driftContext?: { show: boolean; drifted: number; total: number } | null
 }) {
   const verdict    = analysis.verdict as string
   const score      = analysis.total_score as number | null
@@ -12692,6 +12735,27 @@ export function RunFeedbackCard({
           </p>
         )}
 
+        {/* POST-RUN-CONTEXT-01 (Coaching Board + SLT 2026-09-13) — the block-level
+         *  line. The differentiator: none of Runna, Trenara, Garmin, Coopah,
+         *  Planzy or Runzy joins the individual run to the block. Garmin's
+         *  Training Effect is UNSIGNED and cannot say an easy run was too hard;
+         *  the directional columns here can.
+         *
+         *  It COUNTS. It does not conclude. "which is why Saturday felt heavy"
+         *  asserts a mechanism we cannot demonstrate from one runner and three
+         *  data points, and the chair vetoed the hedged form too. Silence is the
+         *  default and it never speaks twice running (Wood) — both decided by
+         *  `driftContextFor`, not here. */}
+        {driftContext?.show && (
+          <p style={{
+            fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
+            color: pal.ink, opacity: 0.85, margin: '10px 0 0', lineHeight: 1.45,
+          }}>
+            That&rsquo;s {driftContext.drifted} of your last {driftContext.total} easy
+            runs above the ceiling.
+          </p>
+        )}
+
         {/* Expanded breakdown — one line per sub-score, derived from analysis row */}
         {!isManual && expanded && (
           <div style={{
@@ -12728,7 +12792,7 @@ export function RunFeedbackCard({
   )
 }
 
-function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatch }: {
+function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, runAnalysis, hasPaidAccess, onUpgrade, onOpenCoach, goalPace, guidance, nextSession, onLinkedComplete, autoMatch, driftContext = null }: {
   session: any; preloadedRuns: any[]; onBack: () => void; onSaved?: () => void
   preferredUnits?: 'km' | 'mi'; zone2Ceiling?: number; preferredMetric?: 'distance' | 'duration'
   /** Lifts per-session metric toggle into DashboardClient so collapsed cards
@@ -12743,6 +12807,8 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
   onOpenCoach?: () => void
   goalPace?: string | null
   guidance?: any | null
+  /** POST-RUN-CONTEXT-01 — block-level drift count, decided by `driftContextFor`. */
+  driftContext?: { show: boolean; drifted: number; total: number } | null
   /** Next scheduled session in the plan — shown as an "Up next" row below the feedback card. */
   nextSession?: { type: string; day: string; distanceKm?: number | null; label?: string | null } | null
   /** POST-RUN-01: route a Strava-linked completion to the new PostRunScreen. */
@@ -12927,6 +12993,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
                 actualAvgSpeedMs={linkedAct?.average_speed ?? null}
                 onOpenCoach={onOpenCoach}
                 preferredUnits={preferredUnits}
+                driftContext={driftContext}
               />
               {/* Unlink — only shown when an activity is actually linked (not manual rows) */}
               {analysis.source !== 'manual' && <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
