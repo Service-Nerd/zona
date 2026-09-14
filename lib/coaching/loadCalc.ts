@@ -176,6 +176,24 @@ export function driftContextFor(
   return { show, drifted, total }
 }
 
+/**
+ * ⚠️ DECLARED AND RENDERED BY NOTHING — measured 2026-09-13 (ZONE-BAND-VOCAB-01).
+ *
+ * `classifyZoneDiscipline` has **no call sites**. The Coach screen renders
+ * `zoneDisciplinePercent` as a NUMBER; this vocabulary never reaches a runner.
+ * Left in place rather than deleted because `ZONE_DISCIPLINE_BANDS` is a ratified
+ * coaching numeric and removing it is the board's call, not a cleanup — but the
+ * deadness is recorded HERE so the next person does not assume it ships.
+ *
+ * This is the third instance today of the §93 class — config declared, ratified,
+ * and read by nothing (`intensity_zones` and `fuel_every_mins` were the others).
+ * `configPrincipleSync` proves a PRINCIPLE exists for a numeric; it has never
+ * proved a CONSUMER does.
+ *
+ * It also voided ZONE-BAND-VOCAB-01, which was filed on the belief that a runner
+ * met two vocabularies for one number. They do not: one of the two is not
+ * rendered.
+ */
 export type ZoneDisciplineLabel = 'disciplined' | 'decent' | 'loose' | 'freelancing'
 
 export function classifyZoneDiscipline(score: number): ZoneDisciplineLabel {
