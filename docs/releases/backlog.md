@@ -443,6 +443,20 @@ never firing in production for months). If the answer to *"what makes this run?"
 
 ### Ops
 
+- 🔴 **TRIGGER-AUDIT-01 — eleven adaptation triggers change the plan, and only ONE has ever been audited** *(P2, NOT gated on POSTRUN-PLAN-FEEDBACK-01 — this is live behaviour, not positioning)* — Hutchinson's blocking condition from the 2026-09-13 SLT, filed separately because it stands on its own.
+  - **The eleven** (`plan_adjustments.trigger_type`): `acute_chronic_high` · `zone_drift` · `shadow_load` · `ef_decline` · `fatigue_accumulation` · `skip_with_reason` · `session_reorder` · `readiness_signal` · `manual` · `fitness_signal` · `long_run_shortfall`. Under ADR-012 a low-magnitude adjustment **auto-applies silently**, so a wrong trigger changes a runner's week with no confirmation and no trace they would notice.
+  - 🔴 **Why this is urgent rather than theoretical: `zone_drift` was one of the eleven, and on 2026-09-13 it was measured firing on 27% false positives** (6 of 22 flagged runs were runners going too EASY). It had been live since May. **Nothing distinguishes the other ten from that one except that nobody has looked.**
+  - **Hutchinson's framing:** an insight that does not touch the plan can be wrong at no cost; one that reshapes Thursday cannot. **Every trigger is a claim that the signal is real.**
+  - **Needs:** a per-trigger false-positive measurement against production, the shape of the R30 audit (what does the trigger key on, is that quantity the right one, does the threshold separate cleanly). Any trigger that fails goes to the Coaching Board.
+  - **Verify still open:** `grep -c "TRIGGER-AUDIT-01" docs/canonical/feature-registry.md` → 0 = still open.
+
+- 🔲 **ADAPT-VISIBLE-01 — the plan adapts to what you did, and the runner cannot tell** *(P3, SLT 2026-09-13 — Fried + Wood; gated behind TRIGGER-AUDIT-01)* — ADR-012 auto-applies low-magnitude adjustments **silently by design** (to avoid nagging, correctly). The consequence nobody weighed: **the single best thing about the product is invisible by construction.**
+  - 📦 **Fried:** nothing to build — eleven triggers, an authority model and a confirmation threshold all exist. The gap is that the runner cannot TELL. A communication gap is far cheaper to close than a feature gap.
+  - 🔬 **Wood:** silent auto-apply delivers the behaviour change **without the learning**. The runner never connects Tuesday's drift to Thursday's easier session, so they never become self-correcting — the app stays a thermostat rather than teaching a model. **Surface the causal link, keep the change silent:** *"Thursday is easier because Tuesday ran hot."* That is not a contradiction with ADR-012, which chose silence for the ADJUSTMENT, not for the REASON.
+  - 🚨 **Never:** the line must not become a nudge to train MORE. It is a restraint mechanism.
+  - **Gated** because surfacing a causal link for a trigger that fires wrongly is worse than staying silent — it teaches the runner a false model. TRIGGER-AUDIT-01 first.
+
+
 - 🔴 **HR-LATE-RESCORE-01 — HR that arrives more than 24h late patches the data but the run stays unscored forever** *(P2, board-gated, surfaced 2026-09-13 by the founder's own sync setup)* — the real-world path is Garmin → Apple Health, and Garmin → Strava → Apple Health. **HR can be days behind the workout shell.**
   - **What happens today.** HR-SYNC-01's late-arrival gate (Hutchinson, 2026-06-24) splits on 24h: **≤24h** re-fires `/api/analyse-run` via `triggerHrRefreshAnalysis`, so the run is re-scored. **>24h** patches the columns and stamps `hr_arrived_late_at` but deliberately does **NOT** re-analyse, to avoid a two-day-stale post-run reframe. The gate is right about the narrative; the consequence for the NUMBERS was never separated from it.
   - 📐 **MEASURED (production, aggregate):** 54 non-manual analyses · 12 with no HR on the analysis row · **1 of those 12 now HAS HR on the activity row** and is stranded, with `hr_arrived_late_at` stamped on exactly that one. Small today, but it is the founder's own everyday sync path, so it is structural rather than rare.
