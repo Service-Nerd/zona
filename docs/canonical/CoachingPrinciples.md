@@ -4346,13 +4346,48 @@ segmented zone (`Zone 2–3`) must store `lr_segment_pace`. Keyed on
 `fiveKTenKPeakLongRunSession` now **throws** rather than substituting placeholder
 text if that gate is ever removed.
 
-> ⚠️ **Scope, declared: §25's two producers are NOT yet covered.** The HM
-> (`hm_pace_long_run`, 108 sessions) and marathon (`mp_long_run`, 72) race-specific
-> long runs still record no segment, and `session.zone` is still authored beside
-> `hr_target` rather than derived from the segments. That is the remainder of the
-> board's ruling — steps 1 (for §25) and 2 — and it is open work, not a silent
-> gap. The invariant is deliberately scoped to §24b so it ships clean rather than
-> with a 180-session baseline.
+> ✅ **Scope CLOSED 2026-09-13 (LR-SEGMENT-RECORDED-§25).** The note below is
+> retained as the record of what was open and how it was shut.
+>
+> ⚠️ **Scope, declared — §25's two producers were NOT covered at first ship.** The
+> HM (`hm_pace_long_run`, 108 sessions) and marathon (`mp_long_run`, 72)
+> race-specific long runs recorded no segment, and `session.zone` was authored
+> beside `hr_target` rather than derived from the segments. That was the remainder
+> of the board's ruling — steps 1 (for §25) and 2 — open work, not a silent gap.
+> The invariant shipped scoped to §24b so it landed clean rather than with a
+> 180-session baseline.
+>
+> **How it closed** (Coaching Board batch sitting 2026-09-13, ruled **EXEMPT**:
+> recording what the engine already prescribes is defect-closing, restores
+> documented intent, ADR-017-exempt).
+> · **Step 1** — `raceSpecificLongRunSession()` writes `lr_segment_pace` at goal
+>   pace. Goal pace IS the segment pace for these two rows (the final portion runs
+>   at MP or HM pace), so no §24b ceiling applies and `INV-PLAN-5K10K-LR-PACE-CAP`
+>   stays correctly 5K/10K-only. Measured on a 30-session HM/MARATHON grid:
+>   **0% → 100% recorded**, same session count.
+> · **Step 2** — the zone is now DERIVED from the catalogue row's
+>   `intensity_zones` via `zoneStringFromZoneKeys()` (the inverse of
+>   `zonesFromZoneString`, in the same module, round-trip tested). The row already
+>   declared `['Z2','Z3']` and **nothing read it** — decorative config, §93's
+>   class — while the producer hand-wrote the same fact beside it. 30/30 sessions
+>   already agreed, so this is a **no-op in output** that converts a coincidence
+>   into a guarantee. A mutation test proves the derivation is live rather than
+>   decorative; without it the equality would prove nothing.
+> · **Step 3** — `INV-PLAN-LR-SEGMENT-RECORDED` broadened to HM/MARATHON in the
+>   same commit, as the ruling required. **Zero new violations** across the
+>   15,973-plan sweep (every warn rate byte-identical to the prior run).
+>
+> ⚠️ **A third defect, found by the broadening** — §47's peak long-run alternation
+> promises to "drop race-pace catalogue specificity" and dropped the label, zone,
+> notes and segment pace, but left **`catalogue_id`** pointing at
+> `mp_long_run` / `hm_pace_long_run` on a session it had just rewritten into a
+> plain Zone 2 step-back. ADR-018 makes that id the session→row join, so the plan
+> carried a row identity its prescription no longer matched. Latent rather than
+> live — `composeSession` derives its MP sub-shape from the LABEL, which §47 does
+> rewrite — which is precisely how it would have bitten later, since ADR-018's
+> direction of travel is re-keying label heuristics onto `catalogue_id`. Fixed in
+> the same commit; total output delta across both golden personas is **four
+> lines** (2 × `lr_segment_pace` added, 2 × stale `catalogue_id` removed).
 >
 > ⚠️ **A second scoping trap found while falsification-testing this invariant.**
 > The first version sat inside the `plan.meta.vdot` block alongside

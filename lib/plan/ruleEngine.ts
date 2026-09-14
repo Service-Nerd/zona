@@ -20,6 +20,7 @@ import { validatePlan, enforceViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
 import { sessionKmOrZero } from '@/lib/plan/sessionDistance'
+import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
@@ -1941,6 +1942,22 @@ function raceSpecificLongRunSession(
     `${finalSegmentLabel}: ${goalPace}.`,
   ]
   const rounded = roundDistance(distKm)
+  // §107 step 2 (LR-SEGMENT-RECORDED-§25) — the zone is DERIVED from what the
+  // catalogue row declares, not authored beside it. `intensity_zones` existed on
+  // every row and was read by nothing; the string was hand-written here, so one
+  // coaching fact lived in two places that could silently disagree. Measured
+  // before the change: 30/30 §25 sessions already agreed — deriving makes that a
+  // guarantee rather than a coincidence. Throws rather than substituting a
+  // default: a row that declares no zone is a catalogue defect, and §24b's
+  // sibling producer sets the precedent that a missing prescription fails loudly
+  // instead of shipping a plausible-looking placeholder to a runner.
+  const zone = zoneStringFromZoneKeys(catalogueRow.intensity_zones)
+  if (!zone) {
+    throw new Error(
+      `§25 race-specific long run: catalogue row ${catalogueRow.id} declares no ` +
+      'intensity_zones, so session.zone cannot be derived (§107 step 2)',
+    )
+  }
   return {
     id: `w${weekN}-${day}`,
     type: 'easy',  // long run slot — display contract; SessionType drives card colour
@@ -1954,11 +1971,19 @@ function raceSpecificLongRunSession(
     ...(metric === 'distance' ? { distance_km: rounded } : {}),
     duration_mins: dur(rounded, pace.minPerKmEasy),
     primary_metric: metric,
-    zone: 'Zone 2–3',
+    zone,
     hr_target: zones.easyHR,
     pace_target: pace.easyPaceStr,
     rpe_target: 6,
     coach_notes,
+    // §107 step 1 for §25 — RECORD the segment this session prescribes. The
+    // note already states it; nothing machine-readable held it, so no invariant
+    // could check it and no surface could render it (288 of 396 such sessions
+    // recorded nothing). Goal pace IS the segment pace here — the final portion
+    // is run at MP (marathon) or HM pace (HM), which is what `goalPace` holds —
+    // so no §24b HM ceiling applies and INV-PLAN-5K10K-LR-PACE-CAP stays
+    // 5K/10K-only, exactly as the board scoped it.
+    lr_segment_pace: goalPace,
   }
 }
 
@@ -3753,6 +3778,20 @@ function applyPeakLongRunAlternation(
     lr.session.rpe_target = 4
     lr.session.coach_notes = ['Step-back week. Easy aerobic — let the legs absorb last week\'s peak before the next push.']
     delete (lr.session as any).lr_segment_pace
+    // §47's own contract, one field late: "drop race-pace catalogue
+    // specificity". It dropped the label, the zone, the notes and the segment
+    // pace — and left `catalogue_id` pointing at `mp_long_run` /
+    // `hm_pace_long_run` on a session it had just rewritten into a plain Zone 2
+    // long run. ADR-018 makes that id the session→row join, so the plan was
+    // carrying a row identity its prescription no longer matched.
+    //
+    // Latent rather than live TODAY, and the reason is worth recording: the one
+    // surface that would render the MP segment (`composeSession`) derives
+    // `isMpLong` from the LABEL, which §47 does rewrite. So the join is wrong and
+    // nothing currently reads it wrongly — which is exactly how this bites later,
+    // because ADR-018's whole direction of travel is re-keying label heuristics
+    // onto `catalogue_id`. Found while broadening INV-PLAN-LR-SEGMENT-RECORDED.
+    delete (lr.session as any).catalogue_id
 
     // CoachingPrinciples §9 — long must remain ≥ minRatio × any easy. After
     // reducing the LR, clamp easy runs in this week so the ratio survives.

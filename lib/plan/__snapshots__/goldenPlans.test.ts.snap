@@ -4065,7 +4065,6 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "zone": "Zone 2",
         },
         "sun": {
-          "catalogue_id": "hm_pace_long_run",
           "coach_notes": [
             "Step-back week. Easy aerobic — let the legs absorb last week's peak before the next push.",
           ],
@@ -4182,6 +4181,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "hr_target": "< 142 bpm",
           "id": "w11-sun",
           "label": "Long run with HM-pace finish",
+          "lr_segment_pace": "4:59 /km",
           "pace_target": "5:42–6:49 /km",
           "primary_metric": "distance",
           "role": "long_run",
@@ -5704,7 +5704,6 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "zone": "Zone 2",
         },
         "sun": {
-          "catalogue_id": "mp_long_run",
           "coach_notes": [
             "Step-back week. Easy aerobic — let the legs absorb last week's peak before the next push.",
           ],
@@ -5834,6 +5833,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "hr_target": "< 147 bpm",
           "id": "w12-sun",
           "label": "Marathon-pace long run",
+          "lr_segment_pace": "4:37 /km",
           "pace_target": "5:02–6:02 /km",
           "primary_metric": "distance",
           "role": "long_run",

@@ -98,6 +98,31 @@ export function zonesFromZoneString(zoneStr: string | undefined | null): number[
 }
 
 /**
+ * The INVERSE of `zonesFromZoneString` — zone keys to the display string.
+ *
+ * `['Z2','Z3']` → "Zone 2–3"; `['Z2']` → "Zone 2". Writes the en-dash the
+ * engine writes, so the two round-trip (guarded by a round-trip test).
+ *
+ * WHY THIS EXISTS (§107 / LR-SEGMENT-RECORDED-§25). Every catalogue row already
+ * declares `intensity_zones`, and it was read by NOTHING — decorative config,
+ * the same class that produced §93. Meanwhile the producers authored the zone
+ * string by hand *beside* the row that declared it, so one coaching fact was
+ * written in two places that could disagree. This function is what lets the
+ * producer DERIVE the label from the row instead, which is §107's step 2 and
+ * §19's direction of travel: the label follows the prescription.
+ *
+ * Returns null when no zone can be read, so the caller decides — this module
+ * does not invent a zone.
+ */
+export function zoneStringFromZoneKeys(keys: readonly string[] | null | undefined): string | null {
+  if (!keys || keys.length === 0) return null
+  const nums = keys.flatMap(k => (k.match(/[1-5]/g) ?? []).map(Number))
+  if (nums.length === 0) return null
+  const lo = Math.min(...nums), hi = Math.max(...nums)
+  return lo === hi ? `Zone ${lo}` : `Zone ${lo}–${hi}`
+}
+
+/**
  * HR band spanning a `session.zone` string, from the canonical ZONE_TABLE and
  * the user's resting/max HR. "Zone 4–5" → Z4 low bound → Z5 high bound.
  * Karvonen when RHR is known, %MaxHR otherwise. Null when HR data or the zone

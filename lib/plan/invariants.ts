@@ -4551,7 +4551,18 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   //
   // Keyed on `session.zone`, which the engine authors and the AI enricher does
   // not rewrite — never on the label or the notes (D-17).
-  if (isTimeTarget && (distKey === '5K' || distKey === '10K')) {
+  //
+  // Scope, 2026-09-13 (LR-SEGMENT-RECORDED-§25): broadened from §24b's 5K/10K to
+  // cover §25's two race-specific producers — `hm_pace_long_run` (HM) and
+  // `mp_long_run` (MARATHON). §107 declared this gap in its own scope note ("open
+  // work, not a silent gap") and shipped narrow so it landed clean rather than
+  // with a 180-session baseline. Those producers now record the segment, so the
+  // broadening costs zero violations — measured on a 30-session grid, not assumed.
+  //
+  // Time-target-gated for every distance for the same reason: §25's producer runs
+  // only when `goalPace` is set, which requires `goal === 'time_target'`. A
+  // finish-goal long run gets `longSession` ("Zone 2"), which this cannot key on.
+  if (isTimeTarget && (distKey === '5K' || distKey === '10K' || distKey === 'HM' || distKey === 'MARATHON')) {
     for (const w of plan.weeks) {
       if (w.phase !== 'peak' || w.type === 'deload') continue
       for (const [day, s] of Object.entries(w.sessions) as [string, Session | undefined][]) {
@@ -4559,10 +4570,10 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         if (s.zone !== 'Zone 2–3' || s.lr_segment_pace) continue
         violations.push({
           code: 'INV-PLAN-LR-SEGMENT-RECORDED',
-          principle_ref: 'CoachingPrinciples §24b',
+          principle_ref: 'CoachingPrinciples §107',
           severity: 'error',
           week: w.n, day,
-          message: `${s.label ?? 'long run'} carries §24b's segmented zone (Zone 2–3) but stores no lr_segment_pace — the session prescribes pace segments it does not record, so nothing downstream can check or render them`,
+          message: `${s.label ?? 'long run'} carries the segmented zone (Zone 2–3) but stores no lr_segment_pace — the session prescribes pace segments it does not record, so nothing downstream can check or render them`,
           actual: 'lr_segment_pace absent',
           expected: 'a real pace band',
         })
