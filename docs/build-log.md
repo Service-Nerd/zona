@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-14 — CONFIG-CONSUMER-01 + RACE-PACE-OVERLAY-REACH-01 · half a coaching principle was unreachable, and the card looked calm
+
+**Shipped:** The check that proves a config numeric has a *reader* now covers every config surface instead of two of them. It immediately found that half-marathon runners had never received the race-pace long run the constitution has promised them since it was written.
+
+**Dev learning:** The gate was `label.includes('marathon-pace')`. The marathon row is called "Marathon-pace long run" and the half row is called "Long run with HM-pace finish". So the overlay rendered on **12 of 12** marathon sessions and **0 of 18** HM ones. Nothing errored, nothing looked wrong, and the session most likely to be noticed — the key peak long run — just showed a calm easy run. A label heuristic does not fail loudly; it fails by matching slightly fewer things than you assumed, forever.
+
+**Product/creator learning:** Three separate facts about that one session were declared and read by nothing: which distances get it, what fraction of the run it is, and which race pace it is run at. The card hardcoded "MP target", so the moment HM started receiving the overlay it would have handed half-marathon runners a marathon pace number on the one session where the number is the entire point. The board caught it; the type system could not, because every one of those values is a string.
+
+**AI-building learning:** I wrote the fix to the checker, and the fix had the same bug class as the thing it was fixing. Excluding the declaring *file* wholesale reported a live constant dead, so I narrowed it to strip just the declaration literal — and that silently made the whole catalogue scan **vacuous**, because the helper returns the text unchanged when its regex misses and the row *interface* declares every field forty lines above the array. Every assertion went green by way of everything looking consumed. The guard I added afterwards is the one that matters: assert the strip actually removed bytes. **A checker that can no-op is worse than no checker, because it reports success.**
+
+**The honest bit:** The register that exists to stop exactly this had the wrong citation in it. A field was moved out of the debt list in September on the grounds that "§24d delivers it" — and §24d governs a completely different session on a completely different distance. Nobody checks a citation in a comment. It read as rigour and it was the opposite: the field was marked satisfied at precisely the moment it was delivering nothing to anyone.
+
+**Hook material:** Half a ratified coaching principle had been unreachable for months because a session's *name* didn't contain the substring the code was grepping for.
+
+**Postable?:** yes
+
+
 ## 2026-09-13 — UX-POSTRUN-01 · seven runners were told they nailed a run nothing measured
 
 **Shipped:** The post-run screen now leads with the coach instead of a mark out of 100, and a run with no heart rate gets no score at all.
