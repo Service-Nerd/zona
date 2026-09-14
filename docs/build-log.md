@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — §24 Amendment 1 · the board was right to be suspicious and wrong about why
+
+**Shipped:** A runner is no longer told their marathon long run missed the specificity floor when it missed it by 150 metres.
+
+**Dev learning:** Two enforcement sites for one principle, and they were coupled in a way I did not see until the grid told me. Adding the rounding tolerance to the classifier flipped near-miss plans from `maintenance` to `build` — and `INV-PLAN-PEAK-LR-RACE-RATIO` is **exempt while a plan is maintenance**. So the fix un-exempted exactly the plans it had just forgiven, and they immediately errored on the same 0.4 km shortfall. Three hard failures. A tolerance applied to the producer and not the checker is not half a fix, it is a new bug.
+
+**Product/creator learning:** The board asked me to re-open its own ruling and I expected to be arguing about coaching. I was not — I was arguing about arithmetic. The batch sitting said time-target marathons are pinned at maintenance because a 210-minute cap makes a 31.65 km long run unreachable. At the pace the engine actually derives, 210 minutes buys 33.5 km. The cap was never the blocker. Building the amendment exactly as ruled changed **zero plans**, and the honest move was to revert it and go back rather than ship something that reads like a fix.
+
+**AI-building learning:** My first version of the new invariant recomputed the peak long run with `sessionKmForCheck`, while the classifier it was checking uses `sessionKmOrZero`. Two ways of computing one number. They disagreed on three plans and threw them as hard failures — the checker was *racing* the producer, not checking it. The fix was to stop deriving anything and just read the two numbers the engine had already printed in the note. A checker that recomputes its subject's input has quietly become a second implementation.
+
+**The honest bit:** The coaching-guard hook fired on me while I was writing this up — its first real trigger, an hour after I taught it to see Bash edits. It caught a `python3` heredoc editing CoachingPrinciples.md, which is exactly the shape that had been sailing through unguarded all day. Satisfying to have the thing you just built immediately catch you.
+
+**Hook material:** Building a board's ruling exactly as written and having it change zero plans out of 2,916 — because the mechanism the ruling named allows 33.5 km against a floor of 31.65.
+
+**Postable?:** yes
+
+
 ## 2026-09-13 — PEAK-LR-STEPBACK-MINUTES-01 · fixing the bug broke the test that proved the bug existed
 
 **Shipped:** Beginners now get the peak long-run step-back week they were silently denied, expressed in minutes rather than kilometres.
