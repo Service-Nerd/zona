@@ -12,6 +12,11 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 **Everything below is committed, pushed and recorded.** `verify` exit 0 (1789 tests / 198 files), prod 200, tree clean.
 
+> 🔁 **Second session 2026-09-14 — NO engine change shipped, deliberately.** Picked up the three "ready to build" items above; two were mis-scoped in a way that would have degraded plans, so both attempts were reverted and the entries corrected. **Net: docs + diagnosis only, zero runner-facing change.**
+> - **QUALITY-ONSET-ORDER-01**: the filed "sizing" fix is a **measured no-op**. Real blocker filed as **COHERENCE-SELECT-01** (§53 selection has no volume/structure-coherence guard). Ordering fix proven but blocked on that prerequisite.
+> - **DELOAD-POS2-01**: board ruled **CORRECT WITH AMENDMENT**; build **reverted** — defective on short plans (adjacent deloads / peak crush; 453 plans → maintenance). The prior "measured clean" was against a simplified `walk()`, not the live function.
+> - **Lesson (saved to memory):** an engine item's "ready / measured clean" note can be measured against the wrong rule or a simplified model. Reproduce against `generateRulePlan` + the governing invariant + `cohortShape` before trusting it. See build-log 2026-09-14 (second entry).
+
 > ⚠️ **THE FOCUS IS THE CHARITY SHOWCASE.** The charity partnership is the first acquisition channel and its runners are **predominantly BEGINNERS taking on 10K / half / marathon**. `CHARITY_PERSONAS` (M1–M5, H1–H3, T1–T3) IS that cohort. Judge every engine change against `scripts/measure-charity-first-quality.ts` and the coaching-review round, not only against the synthetic grid — a percentage across 7,452 machine-generated plans can look fine while the persona that matters is the one broken.
 >
 > ✅ **Reassuring, measured 2026-09-14:** all three TRUE first-timers (M1 marathon, H1 half, T1 couch-to-10K) receive **no hard sessions at all** — §8's ceiling is doing its job for exactly the runners the charity will send.
@@ -21,8 +26,8 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 | Item | State | The single next action |
 |---|---|---|
 | **QUALITY-ONSET-ORDER-01** | Board ruled CORRECT; ordering fix **proven** (T3 Z4–5 → Z3; charity 1/10 → 0/10; grid 33%→67%). ⛔ **BLOCKED on a prerequisite** — the "sizing" blocker below was DISPROVED 2026-09-14. | **Do NOT chase the sizing fix — it is a measured no-op** (duration is structure-driven, not distance-driven). Real blocker: withholding VO2max forces §53 to select `progressive_tempo` in weeks it can't carry, and §53's path-dependent rotation makes partial fixes ripple (47→594). Fix the **progressive_tempo/§53 selection-coherence prerequisite** (new item **COHERENCE-SELECT-01**) FIRST; the onset-anchor fix is then ~10 clean lines. |
-| **DELOAD-POS2-01** | Board ruled **INSUFFICIENT EVIDENCE** — my submitted mechanism was disproved by the conflict scan. Placement fix works (37% → 0%). | Produce **one table**: per-plan before/after `hard` and `running` counts for the 22 §1-breaching plans, plus phase boundaries. Then the board can rule. |
-| **GRID-COVERAGE-02** | Filed with each field's unlock and the runtime constraint. | Decide the design (second targeted grid vs pairwise) — **`recent_quality_training` first**, because ADR-021's early onset is still unverifiable (`earlyQualityOnsetPct` 0). |
+| **DELOAD-POS2-01** | Board ruled **CORRECT WITH AMENDMENT** (2026-09-14, table produced). Build attempted and ⛔ **REVERTED** — defective on short plans. | The §1-yield (§107) works, but the underlying position-2 placement is **buggy on short plans**: `dueIn2` + the backward-normalisation pass in the real `computeDeloadWeeks` create ADJACENT deloads + inflate the count (`[3,6]→[3,4,7]`), crushing peaks — 453 plans flipped to maintenance, mean −6.5 km. ⚠️ The backlog's "measured clean" used `measure-deload-pos2.ts`'s standalone `walk()`, which has NO backward-norm pass — it measured the wrong algorithm. Re-implement so placement never creates adjacent deloads / inflates count on short plans; **measure against the LIVE `computeDeloadWeeks` + `cohortShape`**, never `walk()`. |
+| **GRID-COVERAGE-02** | Filed with each field's unlock and the runtime constraint. **Not started.** | Decide the design (second targeted grid vs pairwise) — **`recent_quality_training` first**, because ADR-021's early onset is still unverifiable (`earlyQualityOnsetPct` 0). |
 
 ### Off the table — do NOT re-open without reading the item first
 

@@ -6,7 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-09-14 — GRID-COVERAGE-01 + REVIEW-HARNESS-MONDAY-01 · every test we had was green on a configuration almost no real runner has
+## 2026-09-14 (second session) — QUALITY-ONSET-ORDER-01 + DELOAD-POS2-01 · a whole day, nothing shipped, and that was the right call
+
+**Shipped:** Nothing to the engine. No plan, no session, no runner-facing behaviour changed. Every code change made today was reverted. What shipped is documentation: two backlog entries corrected, one new prerequisite filed, a board ruling recorded, and a note-to-self so this doesn't recur.
+
+**Dev learning:** I picked up two items the backlog marked "ready to build — one well-defined task each." Both were mis-described in the same way: their "it's proven / here's the one-line fix" note had been measured against something that wasn't the real code.
+- **QUALITY-ONSET** ("a beginner's first hard session is the hardest one"): the filed fix was "make the session's size follow the category we swapped it to." I built it and measured it — a **no-op**. A structured session's duration comes from its *structure*, not its distance, so resizing the distance changes nothing. The real blocker is a layer deeper (the session-selector will pick a session a low-volume week physically can't fit), now filed on its own.
+- **DELOAD-POS2** ("a recovery week lands in the wrong spot"): the backlog said the fix was measured clean. It was — against a **simplified copy** of the scheduling function that omits its final tidy-up pass. Run against the *real* function, the fix created back-to-back recovery weeks on short plans and crushed how hard **453 plans** build, quietly turning ~1 in 8 short-race plans into a do-nothing plan. Reverted.
+
+**Product/creator learning:** "Ready to build" is a hypothesis, not a spec. The most dangerous artifact in this repo isn't a bug — it's a *green measurement of the wrong thing*, because it looks exactly like proof. Both of today's dead ends would have shipped worse plans while every check stayed green, precisely because the check that mattered was pointed at a stand-in.
+
+**AI-building learning:** The guard that saved us was `cohortShape` — the test that asks "did this change *who gets what kind of plan*?" It failed loudly on the deload fix (453 plans changing category), which is the whole reason I looked closer instead of re-baselining and moving on. A test that measures the *population*, not just correctness, is what catches a fix that's individually valid but collectively wrong.
+
+**The honest bit:** it is genuinely uncomfortable to end a full day of work with zero shipped and have to say so plainly to the founder. The instinct is to ship *something*. But the founder's own rule — don't degrade plans, measure before you believe — is exactly what produced "nothing shipped." Restraint was the deliverable. The backlog is now honest instead of confidently wrong, which is worth more than a fix that makes 453 plans worse.
+
+**Hook material:** I spent a day fixing two bugs. I shipped neither. Both "fixes" had been proven — against a fake version of the code. The real version made 453 plans worse.
+
+**Postable?:** yes
+
 
 **Shipped:** The grid the whole verification stack measures against now varies 13 of 31 inputs instead of 10, and the coaching-review cases race on Saturdays and Sundays like real races do.
 
