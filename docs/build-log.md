@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — LR-SEGMENT-RECORDED-§25 · the config that was declared, ratified, and read by nothing
+
+**Shipped:** §25's HM and marathon race-specific long runs now record the pace segment they prescribe, and derive their zone label from the catalogue row instead of hand-writing it beside the row that already declared it.
+
+**Dev learning:** The interesting half wasn't the missing field — it was `intensity_zones`. Every one of the catalogue rows declares it. It is in the DB schema as `TEXT[] NOT NULL`. It is in ADR-010. And `grep -rn "intensity_zones"` returns the definition, a doc, and one test fixture. **Nothing reads it.** Meanwhile the producer hardcoded `zone: 'Zone 2–3'` ten lines from the row that says `['Z2','Z3']`. Two copies of one coaching fact, one of them decorative. Deriving one from the other was a zero-line-of-output change — 30/30 sessions already agreed — which is exactly why it was worth doing and exactly why it needed a mutation test: equality between a hardcode and a coincidence proves nothing. I only trust the derivation because I mutated the row to `['Z2','Z4']` and watched `session.zone` follow.
+
+**Product/creator learning:** "Record what you already prescribe" keeps being the highest-yield class of work in this codebase. The coach note already said *"Final third at HM pace: 4:59 /km"*. The runner could read it. But no invariant could check it, no surface could render it, and nothing could ever be built on top of it. Prose is not a prescription.
+
+**AI-building learning:** The measurement script was the thing that earned its keep. First run: `TypeError: Cannot read properties of undefined` — I'd imported `SESSION_CATALOGUE` and the export is `V1_SESSION_CATALOGUE`. Second run: **every single one of the 36 grid cases refused**, and the script said so loudly instead of printing a tidy table of zeroes. That guard cost three lines and it is the only reason I didn't spend the next hour "fixing" a producer that was never being reached. The race date was 13 weeks out and §44 wants 12 minimum for a time-targeted HM.
+
+**The honest bit:** I very nearly cited `verify:parity` reporting **IDENTICAL — 2916 cases, byte-for-byte unchanged** as proof the change was safe. It is worthless as evidence here. The parity grid hardcodes `goal: 'finish'`, and everything I touched only runs for `time_target`. So the tool I reach for to prove "generation is provably unaffected" is structurally blind to §22, §24b, §25 and the whole goal-pace branch — and it says IDENTICAL with total confidence. The golden snapshots are what actually caught the change: four lines, and I could read every one.
+
+**Hook material:** A green "byte-for-byte unchanged across 2,916 cases" from a test grid where one hardcoded word — `goal: 'finish'` — means it never once looked at the code I changed.
+
+**Postable?:** yes
+
+
 ## 2026-09-13 — Coaching Board batch · Seven questions, and the answer to five of them was not "build it"
 
 **Shipped:** one board ruling (an absolute-km floor under the delivered volume caps); rulings on six more, four of which were "don't build this, and here's why."
