@@ -1,3 +1,21 @@
+// measure-mainset-ordering.ts — ⚠️ THE WRONG INSTRUMENT. Kept as the record of
+// an error, not as a check.
+//
+// This measures MAIN-SET minutes. The constitution governs WORK minutes:
+// `INV-PLAN-VO2MAX-MAIN-SET-CAP` checks `VO2MAX_WORK_TARGET_MINS` (12–18)
+// wherever work is derivable, and 3,996 of 3,996 VO2max interval sessions carry
+// a `derived_set`, so the 20-minute MAIN-SET ceiling governs NONE of them — it
+// is the legacy v1 fallback.
+//
+// A main set is work PLUS recoveries. VO2max runs ~1:1 work:recovery; threshold
+// runs short jogs. So 15 min of VO2max work is a ~30 min main set while 22 min
+// of threshold work is a ~26 min main set: a LONGER VO2max main set is the
+// CORRECT consequence of a SHORTER VO2max work dose. Reading these numbers as an
+// "inversion" resurrected a defect that SC-08/CD-14's work bands had fixed.
+//
+// If SC-10 is ever re-opened, ask the question against WORK minutes.
+//
+// Original header follows.
 // measure-mainset-ordering.ts — SC-10 / CD-14, the NEW measurement the item requires.
 //
 // SC-10's defect: a flat QUALITY_SESSION_PCT_OF_WEEKLY (18%) sizes every quality
@@ -26,7 +44,6 @@ import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { mainSetMinutes } from '../lib/plan/sessionFormat'
 import { classifyStimulus } from '../lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '../lib/plan/generationConfig'
-import { workMinutesForCheck } from '../lib/plan/invariants'
 import type { Plan, Session } from '../types/plan'
 
 const QUALITY = new Set(['quality', 'tempo', 'intervals'])
@@ -39,8 +56,6 @@ let plans = 0, refused = 0, sessions = 0
 let plansWithBoth = 0, inverted = 0
 let overCap = 0, vo2Intervals = 0, hillSessions = 0
 const overBy: number[] = []
-const work: number[] = []
-let underDosed = 0, workUnknown = 0
 const CAP = GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS
 
 for (const input of cohortGrid()) {
@@ -69,14 +84,6 @@ for (const input of cohortGrid()) {
         overBy.push(m - CAP)
       }
       if (cat === 'vo2max' && isHills) hillSessions++
-      // WILLY'S BINDING CONDITION (board 2026-09-14) — the ceiling fix must not
-      // push delivered WORK minutes below VO2MAX_WORK_MIN_MINS. "Fixing a ceiling
-      // by breaching a floor is not a fix." This is the BEFORE reading.
-      if (cat === 'vo2max' && !isHills) {
-        const w = workMinutesForCheck(s)
-        if (w != null) { work.push(w); if (w < GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS) underDosed++ }
-        else workUnknown++
-      }
       // `classifyStimulus` has NO 'threshold' category — it returns 'tempo' for
       // the threshold family. An earlier version of this line also tested
       // `cat === 'threshold'`, which tsc flagged as a comparison that can never
@@ -114,18 +121,6 @@ if (overBy.length) {
     console.log(`  mean overshoot when over        : +${mean.toFixed(1)} min  (worst +${Math.max(...over).toFixed(1)})`)
   }
 }
-console.log(`\nWORK MINUTES at Z4–5 (Willy's floor: VO2MAX_WORK_MIN_MINS = ${GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS}, band ${GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS}–${GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS}):`)
-if (work.length === 0) {
-  console.log(`  ⚠️ derivable on 0 sessions (${workUnknown} not derivable — v1 rows carry no derived_set).`)
-  console.log(`     So the floor CANNOT be checked from the plan alone. State that rather than reporting a pass.`)
-} else {
-  const srt = [...work].sort((a, b) => a - b)
-  const mean = work.reduce((a, b) => a + b, 0) / work.length
-  console.log(`  derivable: ${work.length}  (not derivable: ${workUnknown})`)
-  console.log(`  mean ${mean.toFixed(1)}  p50 ${srt[Math.floor(srt.length / 2)].toFixed(1)}  min ${srt[0].toFixed(1)}  max ${srt[srt.length - 1].toFixed(1)}`)
-  console.log(`  BELOW the ${GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS}-min floor: ${underDosed} / ${work.length}  (${pct(underDosed, work.length)})`)
-}
-
 if (plansWithBoth === 0) {
   console.error('FAIL: no plan carried BOTH a VO2max and a threshold session — the ordering is untested, not proven.')
   process.exit(1)
