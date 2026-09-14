@@ -3905,9 +3905,33 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // INV-PLAN-LR-MAX-WEEKLY-PCT — no single run exceeds LONG_RUN_MAX_PCT_OF_WEEKLY
   // of the week's total volume. Race week and deload weeks exempt — race
   // week's only run is the race itself; deloads scale everything down together.
-  // (CoachingPrinciples §52) Maintenance plans relax this — the constraint
-  // is already surfaced in volume_constraint_note.
-  if (plan.meta.volume_profile !== 'maintenance') {
+  // (CoachingPrinciples §52)
+  //
+  // §52 Amendment 1 (Coaching Board 2026-09-13, MAINT-EXEMPT-SCOPE-01) — THIS IS
+  // NO LONGER EXEMPTED, only DOWNGRADED.
+  //
+  // It used to open `if (plan.meta.volume_profile !== 'maintenance')`, on the
+  // stated grounds that "the constraint is already surfaced in
+  // volume_constraint_note". That justification does not survive reading: the
+  // note explains why TOTAL volume is low, and says nothing about lopsidedness.
+  // A safety check was switched off because something else was believed to report
+  // it, and that something else does not report it.
+  //
+  // 51% of the cohort classifies maintenance, so the cap went unchecked on half
+  // of all plans. Measured 2026-09-13 with the exemption removed: 268 of 6,588
+  // weeks breach, **every single one of them in a maintenance plan and none in a
+  // build plan** — 60 of 314 maintenance plans carry at least one. The worst is a
+  // BEGINNER marathon plan with a 26.0 km long run in a 34 km week: 76% of the
+  // week's running in one session. Willy: the tissue does not care that the plan
+  // is labelled maintenance, and one session carrying three-quarters of the load
+  // is more dangerous at low volume, not less.
+  //
+  // It stays a WARN for maintenance rather than becoming an error, because the
+  // runner's constraint is real and 60 plans would otherwise fail to generate —
+  // §34's honest-residual pattern, the same one INV-PLAN-DELIVERED-RAMP and
+  // INV-PLAN-DELOAD-IS-A-REDUCTION already use. Visible, counted and declared
+  // beats silent.
+  {
     const cap = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100
     for (const w of plan.weeks) {
       if (w.type === 'race' || w.type === 'deload') continue
@@ -3949,7 +3973,10 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           violations.push({
             code: 'INV-PLAN-LR-MAX-WEEKLY-PCT',
             principle_ref: 'CoachingPrinciples §52',
-            severity: 'error',
+            // §52 Amendment 1 — error for a build plan, warn for maintenance.
+            // Same shape as INV-PLAN-NO-PLACEHOLDER-COPY's context-dependent
+            // severity a few hundred lines below.
+            severity: plan.meta.volume_profile === 'maintenance' ? 'warn' : 'error',
             week: w.n,
             day,
             message: `${s.label ?? 'session'} ${km.toFixed(1)}km is ${Math.round(fraction * 100)}% of weekly volume ${w.weekly_km}km — exceeds ${GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY}% cap. Lopsided week; reduce the long run, raise weekly volume, or downgrade to maintenance.`,

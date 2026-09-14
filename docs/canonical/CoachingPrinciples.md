@@ -1686,6 +1686,54 @@ Enforced by `INV-PLAN-LR-MAX-WEEKLY-PCT`. When violated, the engine downgrades t
 
 **Wired 2026-09-02 (defect fix — this paragraph was already the documented intent; the engine was not doing it).** The engine built the lopsided week anyway and let the invariant fire, which reported the *runner's* plan as defective for a constraint the *engine* had chosen. It now detects a lopsided non-deload week at generation and takes remedy (c). **When it fires:** the long run is race-anchored (§45/§47 floors) while the week is runner-anchored (§2 ramp off current volume); at low volume the two diverge until the week is lopsided by construction — a 5 km/week runner building to a half marathon reaches a 14.5 km long run on a 24 km week (60.4%). Remedy (a) is unavailable there because reducing the long run collides with §45/§47's floors, so (c) is the remedy that needs no new ruling. Carries its own runner-facing note: the race sets the long run, your current volume sets everything else — the lever is weekly volume, not a longer long run. Measured cost: maintenance classification +1.9pp (6 of 315 plans). Sweep baseline for this invariant went 59 → **0**, clearing 35 violations that pre-dated the fix.
 
+### Amendment 1 — a safety cap is never exempted, only downgraded — added 2026-09-13 (Coaching Board, MAINT-EXEMPT-SCOPE-01)
+
+**Principle.** §52's cap is evaluated on **every** plan. A `maintenance`
+classification may lower its SEVERITY; it may not switch the check off.
+
+**Why.** The check opened `if (plan.meta.volume_profile !== 'maintenance')`, on
+the stated grounds that *"the constraint is already surfaced in
+volume_constraint_note"*. That justification does not survive reading: the note
+explains why **total** volume is low and says nothing about **lopsidedness**. A
+safety check was disabled because something else was believed to report it, and
+that something else does not report it.
+
+**51% of the cohort classifies maintenance**, so the cap went unchecked on half of
+all plans. Measured 2026-09-13 with the exemption removed: **268 of 6,588 weeks
+breach, every one of them in a maintenance plan and none in a build plan** — 60 of
+314 maintenance plans carry at least one. The worst is a **beginner marathon plan
+with a 26.0 km long run in a 34 km week: 76%** of the week's running in a single
+session.
+
+Willy (lead): the tissue does not care that the plan is labelled maintenance, and
+one session carrying three-quarters of the week's load is **more** dangerous at
+low volume, not less. McMillan: a beginner on a marathon plan is exactly who the
+cap exists for. Sims: the low-volume beginner skews to the under-fuelled end, and
+one enormous session in an otherwise small week is the worst shape for that.
+
+**Config.** No new numeric. `LONG_RUN_MAX_PCT_OF_WEEKLY` unchanged.
+
+**Severity, and why it is not an error.** `warn` for maintenance, `error` for
+build. Making it a hard error would stop 60 plans generating, and the runner's
+volume constraint is real — they cannot simply be told to run more. §34's
+honest-residual pattern, the same one `INV-PLAN-DELIVERED-RAMP` and
+`INV-PLAN-DELOAD-IS-A-REDUCTION` already use. **Visible, counted and declared
+beats silent.**
+
+**Declared rate.** `INV-PLAN-LR-MAX-WEEKLY-PCT` now reports **8.6% (1368/15973)**
+in the sweep, where it previously reported nothing at all because it never ran for
+those plans. Zero errors — no build plan breaches.
+
+> ⚠️ **The general lesson, recorded because it generalises past §52.** Four other
+> invariants are gated on `volume_profile !== 'maintenance'`:
+> `INV-PLAN-PEAK-LR-RACE-RATIO` (§24), `INV-PLAN-PEAK-OVER-BASE` (§23),
+> `INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES` (§46) and
+> `INV-PLAN-NO-PLACEHOLDER-COPY`. The first three are **legitimately** exempt: a
+> plan classified maintenance *because* it failed those floors would be
+> re-asserting the same failure as an error, and the classifier already records it
+> in the note. The test is whether the exemption is CIRCULAR (fine) or merely
+> CONVENIENT (not). §52's was convenient.
+
 ---
 
 ## 53. Quality session variety across the full plan
