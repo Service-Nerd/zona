@@ -2133,6 +2133,28 @@ A long run logged as "complete" at 70% of its planned distance, twice in a row, 
 
 **Voice rule:** matter-of-fact, never a telling-off. The runner already knows the runs came up short — naming it as failure is the opposite of useful. Lead with the number, frame the change as alignment not punishment, leave the door open. *"Long runs averaging 71% completion over two weeks. Prescription pulled back to match where you're actually finishing — build it back when it feels right."* Never "you keep failing to finish."
 
+**Amendment 1 — the shortfall is measured on the AXIS THE SESSION IS ANCHORED ON (Coaching Board 2026-09-14, LR-SHORTFALL-DURATION-01).**
+
+The third bullet above used to read *"duration-primary long runs are out of scope (no distance to fall short of)"*. That sentence was true and **incomplete**. §80 — written later — established that for a duration-anchored runner the prescription **is** their time on feet. There is something to fall short of; this section simply predated the axis.
+
+**What the exclusion cost, measured on the 621-plan cohort grid:** 2,547 of 7,965 long runs (**32.0%**) were dropped before the trigger saw them, and it was **completely dead on 153 of 621 plans (24.6%)**, with 54 more (8.7%) mixed — which is worse in kind, because a dropped middle long run lets the "consecutive weeks" window silently compare non-adjacent ones. A **second gate** in the same function (`if (isLongRun(s) && s.distance_km)`) meant even a firing trigger would have shown a confirmation tile promising a trim that changed nothing. After: **100% of long runs comparable, 0% of plans with a dead trigger.**
+
+> ⚠️ **The obvious fix was rejected, and the reason is the whole ruling.** `sessionKmSelfPaced` (SESSION-KM-01's ratified owner) recovers a kilometre figure for **100%** of the dropped sessions — every one carries its own pace band. It must not be used here. §80 expects walk breaks on precisely this cohort and holds that *"time on feet accumulates whether or not every step is running"*, so a first-timer who completes the full prescribed 90 minutes **with the walk breaks the plan told them to take** covers less ground than the band implies. A derived-km comparison would report them short against a number that never appeared in their plan, and reduce their long run for doing the session exactly right. §80's own words: *"a floor the runner believes they have failed is worse than no floor."* **A recovered number is not automatically the right number.**
+
+**Moving time, not elapsed (Willy, binding condition — resolved rather than deferred).** `actual_load_mins` comes from `strava_activities.moving_time_s`, and that is correct *because* walking registers as movement: a walk break does not under-count the session. Only a full stop does, and a runner standing still is not on their feet. Verified available on **100% of production activity rows** across both sources (69 Apple Health, 21 Strava).
+
+**Parity of the threshold is a DEFAULT, not a finding (McMillan, recorded).** `LONG_RUN_SHORTFALL_COMPLETION_PCT` (82%) governs both axes and **no second constant was added**. A distance shortfall can mean "ran out of road"; a time shortfall means "stopped" — arguably a stronger signal. There is no evidence for a different number, and a second constant is a second thing to tune. If evidence ever arrives, this is the sentence to revisit.
+
+**Distance still wins where the session carried one.** A row comparable on both axes is judged on distance, because distance is what that session prescribed. A fast runner covering 95% of the distance in 60% of the time is not short.
+
+**The trim follows the axis too.** A duration-anchored long run is trimmed in **minutes** and never gains a `distance_km` — the same rule PEAK-LR-STEPBACK-MINUTES-01 applies to §47's step-back. Writing a kilometre figure onto a duration-anchored session converts the runner's plan to an axis it has never spoken in. §66's voice rule is unchanged on both axes: *"build it back when it feels right"*, never "you keep failing to finish."
+
+**Sims, non-blocking, recorded:** this cohort is disproportionately first-timers on charity places, and a first-timer stopping at 55 of 90 minutes is often under-fuelled rather than at a tissue ceiling. The reduction treats the symptom. It is still the right response — the absence of any response is not neutral — but the note must not imply the runner's ceiling is fixed, which §66's existing voice rule already handles.
+
+**Scale, stated honestly.** Production at the time of ruling: 137 analyses, 2 users, 12 rows with `planned_load_km` null. Near-zero live impact. The cohort this was dead for is beginners and first-timers — exactly what the Make-A-Wish referral channel will deliver. **A fix-before-acquisition, not a live incident.** Existing rows are not backfilled (live-plan policy); every consumer tolerates null on both axes.
+
+**Config.** No new numeric. New columns `run_analysis.planned_load_mins` / `actual_load_mins` (migration `20260914_run_analysis_load_mins.sql`), written on every analysis by both analyse-run paths. Enforced by `INV-PLAN-LONG-RUN-HAS-AN-AXIS` (the plan-side precondition) plus `planAdjustment.test.ts` (the trigger itself is runtime, not a plan property — see below).
+
 Config: `LONG_RUN_SHORTFALL_COMPLETION_PCT`, `LONG_RUN_SHORTFALL_CONSECUTIVE`, `LONG_RUN_SHORTFALL_REDUCE_PCT` in `lib/coaching/constants.ts`.
 Engine: `buildLongRunShortfallAdjustment` in `lib/coaching/planAdjustment.ts`.
 

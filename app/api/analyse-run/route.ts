@@ -437,8 +437,22 @@ export async function POST(req: NextRequest) {
     ef_value:              efValue,
     ef_baseline:           efBaseline,
     ef_trend_pct:          efTrendPct,
+    // §66 Amendment 1 — BOTH axes are recorded, and the consumer picks the one
+    // the SESSION is anchored on. `planned_load_km` alone was null on every
+    // duration-anchored analysis (beginners: 95.8% of sessions), which made the
+    // post-run card read "No distance data." forever and left §66's shortfall
+    // trigger dead on 24.6% of generated plans.
+    //
+    // Deliberately NOT derived: a km figure computed from a pace band is a
+    // number the runner was never given, and §80 expects walk breaks, so it
+    // would report a shortfall on a session completed exactly as prescribed.
     planned_load_km:       session.distance_km ?? null,
     actual_load_km:        (activity.distance_m ?? 0) / 1000,
+    planned_load_mins:     session.duration_mins ?? null,
+    // Moving time, not elapsed: walking registers as movement, so §80's
+    // expected walk breaks do not read as a shortfall. Only a full stop does,
+    // and a runner standing still is not on their feet (Willy, binding).
+    actual_load_mins:      activity.moving_time_s != null ? activity.moving_time_s / 60 : null,
     rule_engine_version:   COACHING_RULE_ENGINE_VERSION,
   }
 

@@ -78,6 +78,14 @@ export const MUTATIONS: Mutation[] = [
           typeof n === 'string' && /^Final \d+% at /.test(n) ? n.replace(/^Final \d+%/, 'Final 70%') : n)
       }
     }) },
+  // §66 Amendment 1 / INV-PLAN-LONG-RUN-HAS-AN-AXIS — removes BOTH anchors from
+  // every session. 'strip zone' and the distance mutations each remove one; this
+  // is the shape that makes a long run comparable on neither axis, which is the
+  // silent state the invariant exists to catch.
+  { name: 'strip both anchors',        apply: p => sessionsOf(p).forEach(s => {
+      delete (s as unknown as Poke).distance_km
+      delete (s as unknown as Poke).duration_mins
+    }) },
   { name: 'strip stimulus',            apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).stimulus }) },
   { name: 'placeholder copy',          apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).coach_notes = ['TODO', 'TBD']; (s as unknown as Poke).label = 'TBD' }) },
   { name: 'all sessions quality',      apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).type = 'quality' }) },

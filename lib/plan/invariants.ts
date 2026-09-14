@@ -88,6 +88,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-LR-RACE-RATIO',
   'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
   'INV-PLAN-LR-RACE-SEGMENT-PCT',
+  'INV-PLAN-LONG-RUN-HAS-AN-AXIS',
   'INV-PLAN-PEAK-OVER-BASE',
   'INV-PLAN-PEAK-NOT-BELOW-START',
   'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
@@ -1695,6 +1696,39 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         actual: 0,
         expected: '≥ 1 race-specific long run',
       })
+    }
+  }
+
+  // INV-PLAN-LONG-RUN-HAS-AN-AXIS — §66 Amendment 1's PRECONDITION.
+  //
+  // §66's shortfall trigger runs on live analysis rows, so it is not itself a
+  // plan property and `validatePlan` cannot assert it (the trigger is covered by
+  // `planAdjustment.test.ts`, including source guards against the route). What
+  // IS a plan property, and what the whole amendment rests on, is that every
+  // long run is comparable on at least ONE axis.
+  //
+  // That is true today for every generated plan. It is asserted anyway because
+  // the failure is SILENT and has already happened once in this exact shape: a
+  // long run carrying neither a distance nor a duration is dropped by the
+  // trigger with no error, and the runner's plan simply stops adapting — which
+  // is how 24.6% of plans came to have a dead trigger without anyone noticing.
+  // (CoachingPrinciples §66 Amendment 1, §80)
+  for (const w of plan.weeks) {
+    for (const s of Object.values(w.sessions) as (Session | undefined)[]) {
+      if (!s || !isLongRun(s)) continue
+      const hasDistance = s.distance_km != null && Number.isFinite(s.distance_km) && s.distance_km > 0
+      const hasDuration = s.duration_mins != null && Number.isFinite(s.duration_mins) && s.duration_mins > 0
+      if (!hasDistance && !hasDuration) {
+        violations.push({
+          code: 'INV-PLAN-LONG-RUN-HAS-AN-AXIS',
+          principle_ref: 'CoachingPrinciples §66 Amendment 1',
+          severity: 'error',
+          week: w.n,
+          message: `${s.label ?? 'long run'} carries neither distance_km nor duration_mins — it is anchored on no axis, so §66's shortfall trigger can never see it and the runner's plan silently stops adapting`,
+          actual: 'no axis',
+          expected: 'distance_km or duration_mins',
+        })
+      }
     }
   }
 

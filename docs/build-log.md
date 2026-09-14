@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-14 — LR-SHORTFALL-DURATION-01 · the bug report was wrong, and the real answer was in the next principle along
+
+**Shipped:** §66 Amendment 1. A long run that comes up short is now measured on the axis the session was actually prescribed in — distance if it had one, **time** if it didn't.
+
+**Dev learning:** I filed this as a silent-pass bug: the shortfall trigger filters on planned distance, beginners get duration-anchored plans, so the trigger was dead for them. All true — **2,547 of 7,965 long runs dropped, completely dead on 24.6% of plans**. Then the board's conflict scan found §66 bullet three: *"duration-primary long runs are out of scope (no distance to fall short of)."* **It was ratified doctrine and the code was faithful to it.** Not a bug. A scope decision, made deliberately, that had stopped being right — because §80, written later, established that for these runners time on feet **is** the prescription.
+
+**Product/creator learning:** The obvious fix was available and I nearly took it. We have a ratified helper that derives kilometres from the session's own pace band, and it recovers **100%** of the dropped sessions. It is the wrong fix. §80 tells first-timers to take walk breaks, so a runner who completes the full prescribed 90 minutes **exactly as instructed** covers less ground than the band implies — and would have been told they came up short against a kilometre figure that never appeared in their plan, then had their long run reduced for it. **A recovered number is not automatically the right number.**
+
+**AI-building learning:** The upstream root cause was bigger than the item. The same expression writes `planned_load_km` at two other sites, and that column is null on every duration-anchored analysis — so the post-run card rendered **"No distance data."** after every single run for that cohort, forever, with the run's distance sitting right there on screen. One expression, three files, one dead trigger and one permanently blank line. I only found it because I traced the column rather than patching the filter I was pointed at.
+
+**The honest bit:** Willy's objection in the sitting was that moving time would under-count walk breaks and manufacture the exact false positive we were trying to avoid. I nearly logged it as a deferred risk. It resolves cleanly and the resolution is one sentence: **walking registers as movement.** Only a full stop reduces moving time, and a runner standing still is not on their feet. Worth the two minutes to check rather than carrying a "known risk" that was never a risk.
+
+**Hook material:** The bug report said the code was wrong. The code was faithfully implementing a rule we wrote and later outgrew, and the correction was one principle further down the same document.
+
+**Postable?:** yes
+
+
 ## 2026-09-14 — LR-RACE-SEGMENT-PCT-01 · I skipped the review step, and the review step was the one that mattered
 
 **Shipped:** §25 Amendment 1. The race-pace segment on a half-marathon or marathon long run now has one number, one owner, and a check — and the session card stops contradicting the coach note printed directly above it.

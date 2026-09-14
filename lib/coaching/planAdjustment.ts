@@ -119,6 +119,12 @@ export interface AdjustmentCheckInput {
   recentLongRunAnalyses?: Array<{
     actualKm:   number | null
     plannedKm:  number | null
+    // §66 Amendment 1 — the TIME axis. A Zonna session is anchored EITHER by
+    // distance OR by duration (SESSION-KM-01), and §80 holds that a
+    // duration-anchored session's prescription IS its time on feet. Both pairs
+    // are supplied; `shortfallAxis` below picks the one that is real.
+    actualMins?:  number | null
+    plannedMins?: number | null
     weekN:      number
   }>
   /**
@@ -748,9 +754,39 @@ function buildFitnessSignalAdjustment(input: AdjustmentCheckInput): ProposedAdju
 // Distinct from fatigue_accumulation (which watches fatigue tags).
 // Distinct from skip_with_reason (which fires on explicit user-initiated skips).
 // Catches the silent pattern: sessions logged as complete but consistently cut short.
+/**
+ * Which axis is this long run's shortfall measured on? §66 Amendment 1.
+ *
+ * Distance when the session carried a distance (unchanged, and still the
+ * majority). TIME when it did not — a duration-anchored long run has no
+ * prescribed distance to fall short of, but it has a prescribed time, and §80
+ * makes that time the prescription.
+ *
+ * ⚠️ Deliberately NOT a km figure derived from the session's pace band, even
+ * though `sessionKmSelfPaced` would recover 100% of them. §80 expects walk
+ * breaks on exactly this cohort and says time on feet accumulates whether or
+ * not every step is running — so a runner who completes the full prescribed
+ * time with walk breaks covers less ground than the band implies and would be
+ * told they came up short against a number that never appeared in their plan.
+ * §80: "a floor the runner believes they have failed is worse than no floor."
+ */
+function shortfallAxis(a: {
+  actualKm: number | null; plannedKm: number | null
+  actualMins?: number | null; plannedMins?: number | null
+}): { actual: number; planned: number } | null {
+  if (a.plannedKm != null && a.plannedKm > 0 && a.actualKm != null) {
+    return { actual: a.actualKm, planned: a.plannedKm }
+  }
+  if (a.plannedMins != null && a.plannedMins > 0 && a.actualMins != null && a.actualMins > 0) {
+    return { actual: a.actualMins, planned: a.plannedMins }
+  }
+  return null
+}
+
 function buildLongRunShortfallAdjustment(input: AdjustmentCheckInput): ProposedAdjustment | null {
   const analyses = (input.recentLongRunAnalyses ?? [])
-    .filter(a => a.actualKm !== null && a.plannedKm !== null && a.plannedKm > 0)
+    .map(a => ({ ...a, axis: shortfallAxis(a) }))
+    .filter((a): a is typeof a & { axis: { actual: number; planned: number } } => a.axis !== null)
     .sort((a, b) => b.weekN - a.weekN) // most recent first
 
   // Need CONSECUTIVE weeks — check the most recent N long runs are in adjacent weeks
@@ -762,15 +798,29 @@ function buildLongRunShortfallAdjustment(input: AdjustmentCheckInput): ProposedA
   if (weekGap > LONG_RUN_SHORTFALL_CONSECUTIVE + 1) return null // gap too large — not consecutive
 
   // All N must be below the shortfall threshold
+  // The same 82% on either axis. Parity by DEFAULT, not by measurement
+  // (McMillan, recorded in §66 Amendment 1): a distance shortfall can mean "ran
+  // out of road", a time shortfall means "stopped". No evidence supports a
+  // second constant, and a second constant is a second thing to tune.
   const allShort = recent.every(a =>
-    a.actualKm! < a.plannedKm! * LONG_RUN_SHORTFALL_COMPLETION_PCT
+    a.axis.actual < a.axis.planned * LONG_RUN_SHORTFALL_COMPLETION_PCT
   )
   if (!allShort) return null
 
   const sessions       = input.currentWeekSessions
   const sessionsBefore = sessions.map(s => ({ ...s }))
+  // §66 Amendment 1 — THE SECOND GATE, and it was the one that would have made
+  // the first fix cosmetic. This read `if (isLongRun(s) && s.distance_km)`, so
+  // even a firing trigger no-opped on a duration-anchored session: the runner
+  // got a confirmation tile promising a trim that changed nothing.
+  //
+  // The trim is applied on the axis the session is anchored on, with the SAME
+  // percentage — §80, and the same pattern PEAK-LR-STEPBACK-MINUTES-01 uses for
+  // §47's step-back. Writing a kilometre figure onto a duration-anchored session
+  // would silently convert the runner's plan to an axis it has never spoken in.
   const sessionsAfter  = sessions.map(s => {
-    if (isLongRun(s) && s.distance_km) {
+    if (!isLongRun(s)) return { ...s }
+    if (s.distance_km) {
       const reduced = Math.round(s.distance_km * LONG_RUN_SHORTFALL_REDUCE_PCT * 10) / 10
       return {
         ...s,
@@ -778,11 +828,22 @@ function buildLongRunShortfallAdjustment(input: AdjustmentCheckInput): ProposedA
         coach_notes: [`Trimmed to ${reduced}km — long runs have been finishing short. Build back to full distance when ready.`] as [string],
       }
     }
+    if (s.duration_mins) {
+      const reducedMins = Math.round(s.duration_mins * LONG_RUN_SHORTFALL_REDUCE_PCT)
+      return {
+        ...s,
+        duration_mins: reducedMins,
+        // §66's voice rule, unchanged: lead with the change, frame it as
+        // alignment not punishment, leave the door open. Never "you keep
+        // failing to finish."
+        coach_notes: [`Trimmed to ${reducedMins} min — long runs have been finishing short. Build back to full time when ready.`] as [string],
+      }
+    }
     return { ...s }
   })
 
   const avgCompletion = Math.round(
-    recent.reduce((sum, a) => sum + (a.actualKm! / a.plannedKm!) * 100, 0) / recent.length
+    recent.reduce((sum, a) => sum + (a.axis.actual / a.axis.planned) * 100, 0) / recent.length
   )
 
   return {

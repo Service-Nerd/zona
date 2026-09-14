@@ -1,0 +1,28 @@
+# Coaching review round — 2026-09-14
+
+**Generated:** `scripts/coaching-review-round.ts` — 6 canonical cases + 11 charity personas.
+**Reviewer:** `/coaching-board` (supersedes the manual senior-coach reviewer, per README § Automation).
+
+## Generation result
+
+**16 of 17 cases generated with 0 error violations; 1 refused by design** (M4 sub-4:00 marathon on a busy 3-day week with a 45-minute weekday cap — §44 prep-time refusal, correct). Warn counts ranged 0–5 and were weighed below.
+
+No case produced a finding against the plans themselves. **The round's substantive ruling came from the open backlog**, which is the honest record: the generator is clean, the gap was in what happens to a plan *after* the runner runs.
+
+## Ruling — §66 Amendment 1 (LR-SHORTFALL-DURATION-01)
+
+**CORRECT WITH AMENDMENT.** Full sitting: `docs/decisions/coaching-board-2026-09-14-lr-shortfall-axis.md`.
+
+The shortfall trigger is measured on **the axis the session is anchored on**. §66's original exclusion of duration-primary long runs ("no distance to fall short of") was true and incomplete — §80, written later, makes time on feet the prescription for that cohort.
+
+**Measured before:** 2,547 of 7,965 long runs (32.0%) dropped; the trigger **completely dead on 153 of 621 plans (24.6%)**. **After:** 100% comparable, 0% dead.
+
+**The obvious fix was rejected.** Deriving kilometres via `sessionKmSelfPaced` recovers 100% of the dropped sessions — and would report a walk-breaking first-timer short against a number they were never given, reducing the long run of the runner §80 exists to protect.
+
+## Charity-persona note
+
+The 11 charity personas (M1–M5, H1–H3, T1–T3) are first-timers and low-base runners — the cohort §66 was dead for, and the cohort the Make-A-Wish referral channel will deliver. That is why this ruled as fix-before-acquisition despite near-zero live impact (137 analyses, 2 users).
+
+## Open, carried to the next round
+
+The remaining engine/coaching backlog items reviewed in this session: DELOAD-POS2-01 (premise stale — the invariant now fires on 16.1% of plans, not 0%), SC-10/CD-14, CV-ELIGIBILITY-01, ZONE-BAND-01 (blocked on data), and the adaptation-causality residual.

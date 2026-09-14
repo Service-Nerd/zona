@@ -5,6 +5,8 @@ import {
   TAPER_PROTECTION_WEEKS,
 } from './constants'
 import type { Session } from '@/types/plan'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 // ENGINE-02 — long-run shortfall trigger.
 // We exercise it through the public checkAdjustmentTriggers() entry point so the
@@ -34,6 +36,22 @@ const longRunWeek = (longKm: number): Session[] => [
   restSession(), restSession(), restSession(),
   restSession(), restSession(), restSession(),
   longSession(longKm),
+]
+
+// §66 Amendment 1 — the duration-anchored sibling. A beginner's long run carries
+// `duration_mins` with `distance_km` ABSENT (SESSION-KM-01: 95.8% of their
+// sessions), which is the shape the trigger could not see at all until now.
+const longSessionMins = (mins: number): Session => ({
+  type: 'long',
+  label: 'Long run',
+  detail: null,
+  duration_mins: mins,
+} as unknown as Session)
+
+const longRunWeekMins = (mins: number): Session[] => [
+  restSession(), restSession(), restSession(),
+  restSession(), restSession(), restSession(),
+  longSessionMins(mins),
 ]
 
 // A baseline input with all higher-priority triggers neutralised and guards open.
@@ -273,5 +291,143 @@ describe('§12 Amendment 1 — zone_drift is directional', () => {
     const long = result!.sessionsAfter.find(s => s.type !== 'rest')!
     const notes = (long.coach_notes ?? []).filter(Boolean) as string[]
     expect(notes.filter(n => /HR ceiling enforced/.test(n)).length).toBe(1)
+  })
+})
+
+// §66 AMENDMENT 1 — the shortfall is measured on the axis the session is
+// anchored on (Coaching Board 2026-09-14, LR-SHORTFALL-DURATION-01).
+//
+// §66 as originally written said duration-primary long runs were "out of scope
+// (no distance to fall short of)". True, and incomplete: §80 — written later —
+// holds that a duration-anchored session's prescription IS its time on feet, so
+// there IS something to fall short of. Measured on the 621-plan cohort grid
+// before this change: 2,547 of 7,965 long runs (32.0%) were dropped, and the
+// trigger was completely dead on 153 of 621 plans (24.6%).
+describe('§66 Amendment 1 — duration-anchored long runs', () => {
+  it('fires when 2 consecutive long runs finish under 82% of prescribed TIME', () => {
+    const result = checkAdjustmentTriggers({
+      ...baseInput(),
+      currentWeekSessions: longRunWeekMins(90),
+      recentLongRunAnalyses: [
+        { actualKm: 9, plannedKm: null, actualMins: 62, plannedMins: 90, weekN: 5 }, // 69%
+        { actualKm: 8, plannedKm: null, actualMins: 58, plannedMins: 80, weekN: 4 }, // 73%
+      ],
+    })
+    expect(result, 'the trigger was dead for this cohort before §66 Amendment 1').not.toBeNull()
+    expect(result!.trigger.type).toBe('long_run_shortfall')
+    expect(result!.requiresConfirmation, '§66: a structural change is the runner\'s call').toBe(true)
+  })
+
+  it('trims in MINUTES and never writes a kilometre figure', () => {
+    // THE SECOND GATE. The trim read `if (isLongRun(s) && s.distance_km)`, so a
+    // firing trigger would have shown a confirmation tile promising a change
+    // that did nothing. Writing km onto a duration-anchored session would also
+    // convert the runner's plan to an axis it has never spoken in (§80).
+    const result = checkAdjustmentTriggers({
+      ...baseInput(),
+      currentWeekSessions: longRunWeekMins(90),
+      recentLongRunAnalyses: [
+        { actualKm: null, plannedKm: null, actualMins: 62, plannedMins: 90, weekN: 5 },
+        { actualKm: null, plannedKm: null, actualMins: 58, plannedMins: 80, weekN: 4 },
+      ],
+    })
+    const longAfter = result!.sessionsAfter.find(s => s.type === 'long')
+    expect(longAfter?.duration_mins).toBe(Math.round(90 * LONG_RUN_SHORTFALL_REDUCE_PCT))
+    expect(longAfter?.distance_km, 'must stay absent — the plan does not speak in km').toBeUndefined()
+    expect(String(longAfter?.coach_notes?.[0])).toContain('min')
+    expect(String(longAfter?.coach_notes?.[0])).not.toContain('km')
+  })
+
+  it('a runner who completes the FULL time but slowly is NOT short', () => {
+    // ⚠️ THE CASE THAT DECIDED THE AXIS. Deriving km from the pace band would
+    // recover 100% of these sessions — and would report this runner short,
+    // because §80 expects walk breaks and time on feet accumulates whether or
+    // not every step is running. They did the session exactly as prescribed.
+    const result = checkAdjustmentTriggers({
+      ...baseInput(),
+      currentWeekSessions: longRunWeekMins(90),
+      recentLongRunAnalyses: [
+        { actualKm: 9.5, plannedKm: null, actualMins: 90, plannedMins: 90, weekN: 5 },
+        { actualKm: 8.9, plannedKm: null, actualMins: 80, plannedMins: 80, weekN: 4 },
+      ],
+    })
+    expect(result, 'full time completed — reducing this runner would be punishing them for walking').toBeNull()
+  })
+
+  it('the same 82% governs both axes — parity, recorded as a default not a finding', () => {
+    const justInside = checkAdjustmentTriggers({
+      ...baseInput(),
+      currentWeekSessions: longRunWeekMins(100),
+      recentLongRunAnalyses: [
+        { actualKm: null, plannedKm: null, actualMins: 83, plannedMins: 100, weekN: 5 },
+        { actualKm: null, plannedKm: null, actualMins: 83, plannedMins: 100, weekN: 4 },
+      ],
+    })
+    expect(justInside, '83% is above the 82% floor').toBeNull()
+
+    const justOutside = checkAdjustmentTriggers({
+      ...baseInput(),
+      currentWeekSessions: longRunWeekMins(100),
+      recentLongRunAnalyses: [
+        { actualKm: null, plannedKm: null, actualMins: 81, plannedMins: 100, weekN: 5 },
+        { actualKm: null, plannedKm: null, actualMins: 81, plannedMins: 100, weekN: 4 },
+      ],
+    })
+    expect(justOutside).not.toBeNull()
+  })
+
+  it('DISTANCE still wins when the session carried one — no axis flip-flopping', () => {
+    // A row carrying both must be judged on distance, because that is what the
+    // session prescribed. Guards against the time axis quietly taking over.
+    const result = checkAdjustmentTriggers({
+      ...baseInput(),
+      recentLongRunAnalyses: [
+        // 95% of distance (fine) but only 60% of time — a fast run, not a short one.
+        { actualKm: 19, plannedKm: 20, actualMins: 72, plannedMins: 120, weekN: 5 },
+        { actualKm: 17, plannedKm: 18, actualMins: 68, plannedMins: 115, weekN: 4 },
+      ],
+    })
+    expect(result, 'distance-anchored sessions are judged on distance').toBeNull()
+  })
+
+  it('a row comparable on NEITHER axis is still dropped', () => {
+    const result = checkAdjustmentTriggers({
+      ...baseInput(),
+      currentWeekSessions: longRunWeekMins(90),
+      recentLongRunAnalyses: [
+        { actualKm: null, plannedKm: null, actualMins: null, plannedMins: null, weekN: 5 },
+        { actualKm: null, plannedKm: null, actualMins: null, plannedMins: null, weekN: 4 },
+      ],
+    })
+    expect(result).toBeNull()
+  })
+})
+
+describe('the guard is against the REAL route, not a mirror of it', () => {
+  // planAdjustment is pure and testable; the ROUTE is where the axes are
+  // assembled, and the original defect lived there (`plannedKm:
+  // session.distance_km ?? null`). A regression there is invisible to every
+  // test above, which is why this reads the shipped source.
+  const routeSrc = readFileSync(join(process.cwd(), 'app/api/adjust-plan/route.ts'), 'utf8')
+
+  it('the route selects both axes from run_analysis', () => {
+    expect(routeSrc).toContain('actual_load_mins, planned_load_mins')
+  })
+
+  it('the route no longer re-derives plannedKm from raw distance_km alone', () => {
+    expect(
+      /plannedKm:\s*\(s as any\)\?\.distance_km as number \| null \?\? null,/.test(routeSrc),
+      'the raw-field derivation has come back — duration-anchored plans go blind again',
+    ).toBe(false)
+    expect(routeSrc).toContain('plannedMins:')
+    expect(routeSrc).toContain('actualMins:')
+  })
+
+  it('analyse-run writes both axes', () => {
+    const analyseSrc = readFileSync(join(process.cwd(), 'app/api/analyse-run/route.ts'), 'utf8')
+    expect(analyseSrc).toContain('planned_load_mins:')
+    expect(analyseSrc).toContain('actual_load_mins:')
+    // Moving time, not elapsed — walking registers as movement (§80/Willy).
+    expect(analyseSrc).toContain('activity.moving_time_s')
   })
 })

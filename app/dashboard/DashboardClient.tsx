@@ -12426,18 +12426,45 @@ function buildScoreExplanations(
     }
   }
 
-  // Distance
+  // Planned vs actual, ON THE AXIS THE SESSION WAS ANCHORED ON (§66 Amendment 1).
+  //
+  // This block used to read `planned_load_km` only, and that column is null on
+  // every duration-anchored analysis — so a beginner, whose plan speaks in
+  // minutes on 95.8% of sessions, met "No distance data." after every single
+  // run, forever, while the run in front of them plainly had a distance.
+  //
+  // The comparison is not derived into kilometres. §80 expects walk breaks on
+  // this cohort and holds that time on feet accumulates whether or not every
+  // step is running — so a completed 60-minute long run with walk breaks covers
+  // less ground than the pace band implies, and reporting that as "short" would
+  // name a failure the runner did not have.
   const planned = analysis.planned_load_km as number | null | undefined
   const actual  = analysis.actual_load_km  as number | null | undefined
+  const plannedMins = analysis.planned_load_mins as number | null | undefined
+  const actualMins  = analysis.actual_load_mins  as number | null | undefined
   let distLine: string
-  if (planned == null || actual == null) {
-    distLine = 'No distance data.'
-  } else if (Math.abs(actual - planned) < 0.3) {
-    distLine = `Hit the planned distance — ${formatDistance(actual, units, { exact: true })}.`
-  } else if (actual > planned) {
-    distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })}.`
+  if (planned != null && actual != null) {
+    if (Math.abs(actual - planned) < 0.3) {
+      distLine = `Hit the planned distance — ${formatDistance(actual, units, { exact: true })}.`
+    } else if (actual > planned) {
+      distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })}.`
+    } else {
+      distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })} — short.`
+    }
+  } else if (plannedMins != null && actualMins != null) {
+    // 2 minutes is the time-axis sibling of the 0.3 km tolerance above: at the
+    // engine's easy pace (~6.3 min/km) 0.3 km IS about two minutes, so the two
+    // axes forgive the same amount of session rather than two different amounts.
+    const TIME_TOLERANCE_MINS = 2
+    if (Math.abs(actualMins - plannedMins) < TIME_TOLERANCE_MINS) {
+      distLine = `Hit the planned time — ${formatDuration(actualMins)}.`
+    } else if (actualMins > plannedMins) {
+      distLine = `Planned ${formatDuration(plannedMins)}, ran ${formatDuration(actualMins)}.`
+    } else {
+      distLine = `Planned ${formatDuration(plannedMins)}, ran ${formatDuration(actualMins)} — short.`
+    }
   } else {
-    distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })} — short.`
+    distLine = 'No distance data.'
   }
 
   // Pace

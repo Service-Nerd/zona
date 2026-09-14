@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
       .from('run_analysis')
       // ENGINE-01/02: week_n, pace_score, hr_above_ceiling_pct, distance_score added
       // for fitness-signal and long-run-shortfall triggers.
-      .select('week_n, session_day, hr_in_zone_pct, actual_load_km, planned_load_km, ef_trend_pct, pace_score, hr_above_ceiling_pct, distance_score')
+      .select('week_n, session_day, hr_in_zone_pct, actual_load_km, planned_load_km, actual_load_mins, planned_load_mins, ef_trend_pct, pace_score, hr_above_ceiling_pct, distance_score')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(30),
@@ -260,9 +260,16 @@ export async function POST(req: NextRequest) {
     }))
 
   // ENGINE-02 — Long run shortfall: long run sessions from recent weeks.
+  // §66 Amendment 1 — BOTH axes are passed and `shortfallAxis` picks the one the
+  // session is anchored on. The filter used to require `actual_load_km`, which a
+  // duration-anchored analysis can legitimately carry; what it could never carry
+  // was a PLANNED km, so the trigger dropped it downstream. Now a row qualifies
+  // if it can be compared on EITHER axis.
   const recentLongRunAnalyses = (analysisRes.data ?? [])
     .filter((a: any) => {
-      if (a.actual_load_km === null || a.actual_load_km === undefined) return false
+      const comparableOnDistance = a.actual_load_km != null && a.planned_load_km != null
+      const comparableOnTime     = a.actual_load_mins != null && a.planned_load_mins != null
+      if (!comparableOnDistance && !comparableOnTime) return false
       const w = plan.weeks.find((pw: any) => pw.n === a.week_n)
       const s = (w?.sessions as any)?.[a.session_day as string]
       return !!s && isLongRun(s as any)
@@ -272,9 +279,16 @@ export async function POST(req: NextRequest) {
       const w = plan.weeks.find((pw: any) => pw.n === a.week_n)
       const s = (w?.sessions as any)?.[a.session_day as string]
       return {
-        actualKm:  a.actual_load_km as number,
-        plannedKm: (s as any)?.distance_km as number | null ?? null,
-        weekN:     a.week_n as number,
+        actualKm:    a.actual_load_km as number | null ?? null,
+        // Read from the STORED analysis rather than re-derived from the plan.
+        // The plan can be reshaped after the run; the analysis records what the
+        // session prescribed on the day, which is what the runner was measured
+        // against. Falls back to the plan for rows written before the columns
+        // existed (not backfilled — live-plan policy).
+        plannedKm:   (a.planned_load_km as number | null) ?? ((s as any)?.distance_km as number | null ?? null),
+        actualMins:  a.actual_load_mins as number | null ?? null,
+        plannedMins: (a.planned_load_mins as number | null) ?? ((s as any)?.duration_mins as number | null ?? null),
+        weekN:       a.week_n as number,
       }
     })
 

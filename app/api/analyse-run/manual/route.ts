@@ -90,6 +90,11 @@ export async function POST(req: NextRequest) {
     total_score:         number | null
     planned_load_km:     number | null
     actual_load_km:      number | null
+    // §66 Amendment 1 — the time axis, recorded alongside the distance one so a
+    // duration-anchored session has something to be compared against. A manual
+    // entry supplies `duration_s` directly, so this path needs no new input.
+    planned_load_mins:   number | null
+    actual_load_mins:    number | null
   } = {
     hr_discipline_score: null,
     distance_score:      null,
@@ -98,6 +103,8 @@ export async function POST(req: NextRequest) {
     total_score:         null,
     planned_load_km:     null,
     actual_load_km:      null,
+    planned_load_mins:   null,
+    actual_load_mins:    null,
   }
 
   if (hasMetrics) {
@@ -145,6 +152,8 @@ export async function POST(req: NextRequest) {
           total_score:         result.totalScore,
           planned_load_km:     session.distance_km ?? null,
           actual_load_km:      distance_km!,
+          planned_load_mins:   session.duration_mins ?? null,
+          actual_load_mins:    duration_s! / 60,
         }
       }
     }
@@ -184,6 +193,8 @@ export async function POST(req: NextRequest) {
     ef_baseline:         null,
     ef_trend_pct:        null,
     planned_load_km:     scores.planned_load_km,
+    planned_load_mins:   scores.planned_load_mins,
+    actual_load_mins:    scores.actual_load_mins,
     actual_load_km:      scores.actual_load_km,
     rule_engine_version: COACHING_RULE_ENGINE_VERSION,
   }
