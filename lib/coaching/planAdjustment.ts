@@ -7,6 +7,7 @@ import {
   TAPER_PROTECTION_WEEKS,
   MAX_VOLUME_INCREASE_PCT,
   ZONE_DISCIPLINE_BANDS,
+  ZONE_DRIFT_ABOVE_CEILING_PCT,
   FATIGUE_HIGH_TAGS,
   FATIGUE_ACCUMULATION_THRESHOLD,
   FATIGUE_SOFTENING_LONG_RUN_PCT,
@@ -19,7 +20,7 @@ import {
   LONG_RUN_SHORTFALL_CONSECUTIVE,
   LONG_RUN_SHORTFALL_REDUCE_PCT,
 } from './constants'
-import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore } from './loadCalc'
+import { acuteChronicRatio, shadowLoadPct, zoneDisciplineScore, zoneDriftScore } from './loadCalc'
 import { weekHasRestDay, findQualityLongSpacingViolations } from '@/lib/plan/invariants'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
@@ -70,7 +71,9 @@ export interface AdjustmentCheckInput {
   actualKm:         number
   plannedKm:        number
   priorWeeksKm:     number[]
-  hrInZoneData:     { hrInZonePct: number | null; actualLoadKm: number | null }[]
+  // TRIGGER-AUDIT-01 — `aboveCeilingPct` added so the drift trigger can key on the
+  // DIRECTION of the miss. `hrInZonePct` stays for the descriptive ledger figure.
+  hrInZoneData:     { hrInZonePct: number | null; aboveCeilingPct: number | null; actualLoadKm: number | null }[]
   efTrendPct:       number | null
   adjustmentsThisWeek: number
   currentPhase?:    'base' | 'build' | 'peak' | 'taper'
@@ -203,6 +206,7 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
 
   const ratio   = acuteChronicRatio(input.actualKm, input.priorWeeksKm)
   const zdScore = zoneDisciplineScore(input.hrInZoneData)
+  const zdDrift = zoneDriftScore(input.hrInZoneData)
   const shadow  = shadowLoadPct(input.actualKm, input.plannedKm)
 
   if (ratio >= LOAD_RATIO.watch) {
@@ -220,8 +224,21 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
     return buildReadinessAdjustment(input, input.readinessSignal)
   }
 
-  if (zdScore !== null && zdScore < ZONE_DISCIPLINE_BANDS.loose) {
-    return buildZoneDriftAdjustment(input, zdScore)
+  // §12 Amendment 1 / TRIGGER-AUDIT-01 — drift is DIRECTIONAL.
+  //
+  // This gated on `zoneDisciplineScore < 50`, the km-weighted mean of
+  // `hr_in_zone_pct` — a BAND. §12 prescribes a CAP ("Easy runs are capped at the
+  // top of Z2"), so running BELOW Z2 breaks no principle. Measured 2026-09-13:
+  // 3 of 17 runs under that threshold were predominantly too EASY, and this
+  // trigger then silently rewrote every easy/long coach note to "Easy sessions
+  // trending hard" — telling the runner who had finally understood the product
+  // the exact opposite of what they did.
+  //
+  // Same defect class as R30, fixed the same day, but R30 showed a CARD and this
+  // one changes the PLAN. It keys on the same constant so the two surfaces can
+  // never disagree about what drift is.
+  if (zdDrift !== null && zdDrift > ZONE_DRIFT_ABOVE_CEILING_PCT) {
+    return buildZoneDriftAdjustment(input, zdDrift)
   }
 
   if (shadow > SHADOW_LOAD_THRESHOLD_PCT) {
@@ -296,20 +313,30 @@ function buildReduceVolumeAdjustment(input: AdjustmentCheckInput, ratio: number)
   }
 }
 
-function buildZoneDriftAdjustment(input: AdjustmentCheckInput, zdScore: number): ProposedAdjustment {
+const ZONE_DRIFT_NOTE = 'Zone 2 only. HR ceiling enforced: if HR climbs, slow down.'
+
+function buildZoneDriftAdjustment(input: AdjustmentCheckInput, driftPct: number): ProposedAdjustment {
   const sessions       = input.currentWeekSessions
   const sessionsBefore = sessions.map(s => ({ ...s }))
   const sessionsAfter  = sessions.map(s => {
     if (s.type === 'easy' || isLongRun(s)) {
-      return { ...s, coach_notes: ['Zone 2 only. HR ceiling enforced — if HR climbs, slow down.'] as [string] }
+      // TRIGGER-AUDIT-01 — APPEND, do not clobber. This assigned a fresh
+      // single-element array, destroying whatever the engine had already
+      // prescribed on that session: §24e's ultra fuelling cue, §96's overdo
+      // cue, §80's time-on-feet note. A silent auto-applied adjustment was
+      // deleting coaching the board had ruled on.
+      const existing = (s.coach_notes ?? []).filter(Boolean) as string[]
+      if (existing.includes(ZONE_DRIFT_NOTE)) return { ...s }
+      const merged = [...existing, ZONE_DRIFT_NOTE].slice(-3)
+      return { ...s, coach_notes: merged as [string, string?, string?] }
     }
     return { ...s }
   })
   return {
     weekN:          input.currentWeekN,
-    trigger:        { type: 'zone_drift', detail: { zdScore, threshold: ZONE_DISCIPLINE_BANDS.loose } },
+    trigger:        { type: 'zone_drift', detail: { driftPct, threshold: ZONE_DRIFT_ABOVE_CEILING_PCT } },
     adjustmentType: 'flag_for_review',
-    summary:        `Zone discipline ${zdScore}/100. Easy sessions trending hard. HR ceiling reinforced.`,
+    summary:        `${driftPct}% of your easy running sat above its zone ceiling. HR ceiling reinforced.`,
     sessionsBefore,
     sessionsAfter,
     requiresConfirmation: false,

@@ -210,6 +210,9 @@ export async function POST(req: NextRequest) {
 
   const hrInZoneData = thisWeekAnalyses.map((a: any) => ({
     hrInZonePct:  a.hr_in_zone_pct ?? null,
+    // TRIGGER-AUDIT-01 — the DIRECTIONAL column, already in the select above and
+    // previously unread. §12 prescribes a cap, so only time ABOVE it is drift.
+    aboveCeilingPct: a.hr_above_ceiling_pct ?? null,
     actualLoadKm: a.actual_load_km ?? null,
   }))
 

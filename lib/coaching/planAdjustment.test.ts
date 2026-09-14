@@ -188,3 +188,90 @@ describe('RESHAPE-FIX-WAVE1 — structural invariants', () => {
     expect(result!.trigger.detail.freeDay).toBe('thu')
   })
 })
+
+// ─── §12 Amendment 1 / TRIGGER-AUDIT-01 — the zone_drift trigger ──────────────
+//
+// ⚠️ This trigger had NO coverage. Every existing test passed `hrInZoneData: []`,
+// which makes the score null and skips the gate entirely, so the suite was green
+// while the trigger fired on the wrong quantity in production.
+//
+// The defect: it gated on `zoneDisciplineScore < 50` — the km-weighted mean of
+// `hr_in_zone_pct`, a BAND. §12 prescribes a CAP ("Easy runs are capped at the
+// top of Z2"), so running BELOW Z2 breaks no principle. Measured 2026-09-13:
+// 3 of 17 runs under that threshold were predominantly too EASY, and the trigger
+// then silently rewrote every easy/long coach note to "Easy sessions trending
+// hard". Same class as R30, but this one changes the PLAN, not a card.
+describe('§12 Amendment 1 — zone_drift is directional', () => {
+  const gentleWeek = [
+    // A runner doing genuinely easy running: well BELOW the cap, nothing above it.
+    { hrInZonePct: 17, aboveCeilingPct: 0,  actualLoadKm: 10 },
+    { hrInZonePct: 47, aboveCeilingPct: 2,  actualLoadKm: 8 },
+    { hrInZonePct: 52, aboveCeilingPct: 1,  actualLoadKm: 12 },
+  ]
+  const hotWeek = [
+    // A runner turning easy runs into medium ones: over the cap for much of it.
+    { hrInZonePct: 40, aboveCeilingPct: 47, actualLoadKm: 10 },
+    { hrInZonePct: 30, aboveCeilingPct: 65, actualLoadKm: 8 },
+    { hrInZonePct: 55, aboveCeilingPct: 23, actualLoadKm: 12 },
+  ]
+
+  it('does NOT fire on a runner who ran too EASY (the defect)', () => {
+    // Every one of these sits under the old `< 50 in zone` gate, so the previous
+    // implementation flagged them and told them they were "trending hard".
+    const result = checkAdjustmentTriggers({ ...baseInput(), hrInZoneData: gentleWeek })
+    expect(result?.trigger.type).not.toBe('zone_drift')
+  })
+
+  it('a week with ZERO time above the cap can never be drift', () => {
+    const result = checkAdjustmentTriggers({
+      ...baseInput(),
+      hrInZoneData: [{ hrInZonePct: 17, aboveCeilingPct: 0, actualLoadKm: 10 }],
+    })
+    expect(result?.trigger.type).not.toBe('zone_drift')
+  })
+
+  it('DOES fire when the easy running actually sat above its ceiling', () => {
+    const result = checkAdjustmentTriggers({ ...baseInput(), hrInZoneData: hotWeek })
+    expect(result?.trigger.type).toBe('zone_drift')
+  })
+
+  it('the summary states what was measured, and it is now true', () => {
+    const result = checkAdjustmentTriggers({ ...baseInput(), hrInZoneData: hotWeek })
+    expect(result?.summary).toMatch(/above its zone ceiling/)
+    // The old copy asserted "Easy sessions trending hard" even for the gentle
+    // week. Whatever it says now must be derived from the measured direction.
+    expect(result?.summary).toMatch(/\d+%/)
+  })
+
+  it('APPENDS its note instead of destroying the prescription', () => {
+    // It assigned a fresh single-element array, deleting whatever the engine had
+    // already put there — §24e's ultra fuelling cue, §96's overdo cue, §80's
+    // time-on-feet note. A silent auto-applied adjustment was erasing coaching
+    // the board had ruled on.
+    const withNote = longRunWeek(20).map(s =>
+      s.type === 'rest' ? s : { ...s, coach_notes: ['Fuel every 25–30 minutes.'] as [string] })
+    const result = checkAdjustmentTriggers({
+      ...baseInput(),
+      currentWeekSessions: withNote,
+      hrInZoneData: hotWeek,
+    })
+    expect(result?.trigger.type).toBe('zone_drift')
+    const long = result!.sessionsAfter.find(s => s.type !== 'rest')!
+    const notes = (long.coach_notes ?? []).filter(Boolean) as string[]
+    expect(notes, 'the original prescription survives').toContain('Fuel every 25–30 minutes.')
+    expect(notes.some(n => /HR ceiling enforced/.test(n)), 'and the cue is added').toBe(true)
+  })
+
+  it('does not stack its own note on repeat firings', () => {
+    const alreadyFlagged = longRunWeek(20).map(s =>
+      s.type === 'rest' ? s : { ...s, coach_notes: ['Zone 2 only. HR ceiling enforced: if HR climbs, slow down.'] as [string] })
+    const result = checkAdjustmentTriggers({
+      ...baseInput(),
+      currentWeekSessions: alreadyFlagged,
+      hrInZoneData: hotWeek,
+    })
+    const long = result!.sessionsAfter.find(s => s.type !== 'rest')!
+    const notes = (long.coach_notes ?? []).filter(Boolean) as string[]
+    expect(notes.filter(n => /HR ceiling enforced/.test(n)).length).toBe(1)
+  })
+})

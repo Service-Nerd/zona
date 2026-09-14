@@ -532,6 +532,26 @@ runs drop out, and 6 genuinely-too-hard runs the old rule missed come in — run
 > be re-measured once the cohort grows. The `≥4 of the last 8` cadence was NOT
 > re-derived — the board questioned the threshold, not the window.
 
+**Scope — the CARD and the TRIGGER are two surfaces, and both were wrong (TRIGGER-AUDIT-01, same day).**
+R30 (the Coach card) was fixed first. An audit of all eleven `plan_adjustments`
+trigger types then found the **`zone_drift` adjustment trigger** keying on the same
+non-directional quantity via `zoneDisciplineScore`. That one is worse: it changes
+the PLAN, under ADR-012 it **auto-applies silently** (`requiresConfirmation: false`),
+and it rewrote every easy/long `coach_notes` to *"Easy sessions trending hard"* —
+telling a runner who had finally understood the product the opposite of what they
+did. It now keys on `zoneDriftScore`, deliberately a **second function** rather than
+a change to `zoneDisciplineScore`: the latter answers *"how much of your running was
+in zone?"* (a descriptive ledger figure, correctly symmetric), the former answers
+*"how much was ABOVE the cap?"* (the drift claim). Collapsing the two is what
+produced the defect. Both surfaces read `ZONE_DRIFT_ABOVE_CEILING_PCT`, so they can
+never disagree about what drift is.
+
+**And it was destroying prescriptions.** The trigger assigned a fresh single-element
+`coach_notes` array, deleting whatever the engine had already put there — §24e's
+ultra fuelling cue, §96's overdo cue, §80's time-on-feet note. A silent
+auto-applied adjustment was erasing coaching this board had ruled on. It now
+appends, de-duplicates, and respects the three-note cap.
+
 **Enforcement.** `zoneDrift.test.ts` — fixtures are the REAL production
 above-ceiling values, so a regression is a regression against observed data. It
 asserts both directions: the old rule flagged every too-easy run (falsifying the

@@ -83,6 +83,45 @@ export function zoneDisciplineScore(
   return Math.round(weightedSum / totalWeight)
 }
 
+/**
+ * §12 Amendment 1 / TRIGGER-AUDIT-01 — how much of the week's easy running sat
+ * ABOVE the Z2 cap, km-weighted.
+ *
+ * Deliberately a SECOND function rather than a change to `zoneDisciplineScore`.
+ * They answer different questions and both are legitimate:
+ *   · `zoneDisciplineScore` — "how much of your running was in the prescribed
+ *     zone?" A descriptive ledger figure. Symmetric, and correctly so.
+ *   · `zoneDriftScore`      — "how much of it was ABOVE the cap?" The DRIFT
+ *     claim. §12 prescribes a ceiling, so only this direction is a breach.
+ *
+ * Collapsing them is what produced the defect: the `zone_drift` adjustment
+ * trigger keyed on the descriptive figure and therefore fired on runners who
+ * were running too EASY — measured 2026-09-13, 3 of 17 runs under its threshold.
+ * That trigger silently rewrites every easy/long coach note to "Easy sessions
+ * trending hard", so the runner who had finally understood the product was told
+ * the opposite of what they did. Same class as R30, but this one changes the
+ * plan rather than a card.
+ *
+ * Returns null when nothing can be measured — never 0, which would read as
+ * "no drift" and silence the trigger for a cohort rather than skipping it.
+ */
+export function zoneDriftScore(
+  sessions: { aboveCeilingPct: number | null; actualLoadKm: number | null }[]
+): number | null {
+  const scored = sessions.filter(s => s.aboveCeilingPct !== null)
+  if (!scored.length) return null
+
+  let totalWeight = 0
+  let weightedSum = 0
+  for (const s of scored) {
+    const weight = s.actualLoadKm ?? 1
+    weightedSum += s.aboveCeilingPct! * weight
+    totalWeight += weight
+  }
+  if (totalWeight === 0) return null
+  return Math.round(weightedSum / totalWeight)
+}
+
 export type ZoneDisciplineLabel = 'disciplined' | 'decent' | 'loose' | 'freelancing'
 
 export function classifyZoneDiscipline(score: number): ZoneDisciplineLabel {
