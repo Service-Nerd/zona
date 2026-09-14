@@ -40,6 +40,74 @@ it specific, no polish. The content system adds the voice.
 **Postable?:** yes
 
 
+## 2026-09-13 — MAINT-EXEMPT-SCOPE-01 · a safety check was switched off because something else was believed to report it
+
+**Shipped:** §52 Amendment 1. The rule that no single run carries more than 60% of a week's volume is now evaluated on **every** plan, instead of being skipped on half of them.
+
+**Dev learning:** The check opened with `if (volume_profile !== 'maintenance')`, and the comment justifying it said the constraint was "already surfaced in `volume_constraint_note`". That note explains why **total** volume is low. It says nothing about **lopsidedness**. The two are different claims and the comment quietly treated them as one. **51% of the cohort classifies maintenance**, so a safety cap was unchecked on half of all plans, behind a sentence that sounded like it had been thought about.
+
+**Product/creator learning:** Measured with the exemption removed: **268 of 6,588 weeks breach, every single one in a maintenance plan and none in a build plan.** The worst is a beginner marathon plan with a **26.0 km long run in a 34 km week** — 76% of the week's running in one session. Willy's line settled it: the tissue does not care that the plan is labelled maintenance, and one session carrying three-quarters of the load is *more* dangerous at low volume, not less.
+
+**AI-building learning:** The fix is a `warn`, not an `error`, because erroring would stop 60 plans generating and the runner's volume constraint is real — they cannot simply be told to run more. The declared firing rate is **8.6%**, where the check previously reported nothing at all. A rule that fires 8.6% of the time and is visible beats a rule that fires 0% because it never ran.
+
+**The honest bit:** I only found this while closing a *different* item, and the thing I set out to check turned out to be void. The generalisable test I took away: **an exemption is fine when it is CIRCULAR and not fine when it is merely CONVENIENT.** Three sibling exemptions (§24, §23, §46) are circular — the plan is maintenance *because* it failed those floors, so re-asserting them would be a loop. §52's was just convenient. I checked all four rather than fixing the one I tripped over.
+
+**Hook material:** Half of all training plans skipped a safety check, because a comment claimed a different warning already covered it. It didn't.
+
+**Postable?:** yes
+
+
+## 2026-09-13 — POST-RUN-CONTEXT-01 · the one empty square in the category
+
+**Shipped:** One line under the post-run zone signal: *"That's 3 of your last 5 easy runs above the ceiling."*
+
+**Dev learning:** I researched six competitors before building rather than after: Runna, Trenara, Garmin, Coopah, Planzy, Runzy. **Not one joins the individual run to the training block.** Garmin aggregates load without intent, Coopah aggregates weekly in a separate report, and Garmin's Training Effect is **unsigned** — it physically cannot say an easy run was too hard. We hold directional columns that can. That is a real gap in the category, and it is one line of copy.
+
+**Product/creator learning:** The board's amendment was harder than the build. **Count, never conclude** — "3 of your last 5" ships; "which is why Saturday felt heavy" was vetoed, and so was the hedged version of it, because a hedge on an unprovable mechanism is still a claim. And **no week-level §1 read**: §1 counts sessions plan-wide, so a 4-day week with one quality session is 25% against marathon's 18% ceiling. A week-level intensity line would have flagged every normal build week as a problem. Different denominator, different question.
+
+**AI-building learning:** Every board binding became a unit test, not a note in a decision doc — 14 of them. A ruling that lives only in prose gets reinterpreted by the next person to touch the file, and the next person is usually me, three weeks later, with none of the context. The hardest to encode was Wood's "never twice in a row", which I implemented without storing any state by walking the run history and tracking what the *previous* run would have shown.
+
+**The honest bit:** the instinct was to make this line clever — to have it explain, predict, connect. Every one of those instincts was the thing the board struck out. What survived is a sentence that counts. It is duller than what I wanted to build and it is the only version that is true.
+
+**Hook material:** Six running apps, and not one tells you that this run is the third easy run this week you ran too hard.
+
+**Postable?:** yes
+
+
+## 2026-09-13 — HR-LATE-RESCORE-01 · the gate promised something it was writing to the wrong table
+
+**Shipped:** Heart rate that arrives days after a run now re-scores it. The coaching narrative is not regenerated.
+
+**Dev learning:** The founder's own sync topology is the repro: Garmin feeds Apple Health, *and* Garmin feeds Strava, *and* Strava feeds Apple Health. HR can be days behind the workout shell. The late-arrival gate's comment promised that outside the fresh window it still patched HR "for archival use — zone ledger, weekly report, fitness signals". It patched `strava_activities`. **Every one of those consumers reads `run_analysis`**, which kept null HR forever. Measured: 1 of 12 no-HR analyses stranded, with the heart rate sitting in the activity row right beside it.
+
+**Product/creator learning:** The split that made it shippable is a coaching distinction, not a technical one. Hutchinson's rule is that two-day-stale *coaching* is dishonest — you cannot tell someone on Thursday how Tuesday felt. But a **score** is deterministic arithmetic over stored columns and does not go stale. So `scores_only` recomputes the numbers and skips the AI call entirely.
+
+**AI-building learning:** The property I tested first was the one that could do real damage: the upsert must **omit** `feedback_text`, not send `null`. On an upsert, present-and-null **deletes** the runner's existing coach note — the exact opposite of what the gate exists to protect. My first version of that test built a local copy of the row-builder and asserted against it, which proves the copy. Rewriting it to read the shipped source immediately found a **second** flat assignment in the response body that I had missed.
+
+**The honest bit:** this only became visible because of a change made hours earlier. §108 Amendment 1 stopped fabricating a score when HR is absent — and that turned a run with a plausible-looking number into a run with a visible blank, permanently, despite the data existing. Fixing one honesty problem exposed the next one down. I would not have found this by looking.
+
+**Hook material:** The code comment said it patched heart rate for the weekly report. It wrote to a table the weekly report has never read.
+
+**Postable?:** yes
+
+
+## 2026-09-13 — R30-DIRECTIONAL-01 + TRIGGER-AUDIT-01 (§12 Amendment 1) · we were flagging the runners who had finally got it
+
+**Shipped:** Zone drift is measured **above the cap**, not as distance from a band — on the coach card and, separately, in the trigger that silently reshapes the plan.
+
+**Dev learning:** R30 has been live since May and fired on `hr_in_zone_pct < 60`, treating Z2 as a **band**. §12 prescribes a **cap**: "Easy runs are capped at the top of Z2." Running *below* Z2 breaks no principle, so it must never count as drift. Measured in production: **6 of 22 flagged runs (27%) were predominantly too EASY.** Worst case: 17% in zone, 83% below the floor, **0% above the ceiling** — a runner jogging gently, told they were drifting into the grey zone.
+
+**Product/creator learning:** McMillan named the cost better than I could: those six runs belong to the runner who has *finally understood the product*, and we were flagging them. For an app whose entire pitch is "slow down", telling the people who slowed down that they are doing it wrong is the worst possible false positive. Seiler's framing is why the metric was wrong in the first place — the grey zone **has a direction**. It is what athletes do instead of easy, not a band they fail to hit. A symmetric metric for an asymmetric phenomenon mislabels about a quarter of cases, which is exactly what was measured.
+
+**AI-building learning:** Fixing the card was not fixing the bug. Hutchinson set a blocking condition: **eleven** `trigger_type` values change a runner's plan, ADR-012 auto-applies a low-magnitude one **silently**, and exactly one had ever been audited. I audited all eleven. Nine pass, one needs data, and one was a structural defect — the `zone_drift` **trigger**, same flaw as the card but worse, because it rewrote every easy and long-run coach note to *"Easy sessions trending hard"* without asking. The card is an opinion; the trigger is the plan.
+
+**The honest bit:** I fixed `zoneDriftScore` as a **second** function rather than changing `zoneDisciplineScore`, and the temptation to "clean up" by merging them was strong. They answer different questions and both are legitimate: "how much of your running was in zone" is a descriptive ledger figure and is correctly symmetric; "how much was above the cap" is the drift claim, and only one direction is a breach. **Collapsing them is what produced the defect in the first place.** Both surfaces read the same constant so they cannot disagree about what drift is.
+
+**Hook material:** For four months the app flagged a quarter of "you're drifting into the grey zone" warnings at runners who were running too easy.
+
+**Postable?:** yes
+
+
 ## 2026-09-13 — UX-POSTRUN-01 · seven runners were told they nailed a run nothing measured
 
 **Shipped:** The post-run screen now leads with the coach instead of a mark out of 100, and a run with no heart rate gets no score at all.
