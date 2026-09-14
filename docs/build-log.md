@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-14 — LR-RACE-SEGMENT-PCT-01 · I skipped the review step, and the review step was the one that mattered
+
+**Shipped:** §25 Amendment 1. The race-pace segment on a half-marathon or marathon long run now has one number, one owner, and a check — and the session card stops contradicting the coach note printed directly above it.
+
+**Dev learning:** The founder asked one question: *"have we run coaching review?"* I had run the board's format from memory, inline, without invoking it. Running it properly took minutes and the **mandatory conflict scan** — read the change against every existing section — immediately surfaced §25, which ratifies "the final 25–40% of the long run" for the exact session I had been reasoning about. I had ruled hours earlier that a competing 35/40 in the catalogue "was never a principle" and **deleted it**. It was §25's encoding, one section away from the one I read.
+
+**Product/creator learning:** Three answers were live for one segment: the row said 40%, a hand-typed coach note said "Final 30–50% at MP" (above §25's own ceiling), and the card said 20%. **Two of them rendered on the same card.** A runner ninety minutes into a Sunday long run reads "Final 30–50% at MP" and "Race pace — 20%" and has to pick one. At that point the plan has stopped being the authority, which is the entire product. The number being wrong mattered less than the two of them disagreeing.
+
+**AI-building learning:** The worst part is that the HM contradiction was **new, and I shipped it that morning.** Before my fix the HM card had no race-pace row at all, so there was nothing to disagree with. Making a hidden thing visible surfaced an inconsistency that had been latent for months — correct outcome, but I shipped the visible half without checking what it would now sit next to. **A fix that makes something appear needs to be read against everything already on that screen.**
+
+**The honest bit:** my own note in this repo says *"measure the premise, not just the ruling"*, and I wrote a ruling whose central premise — "these numbers have no principle behind them" — I never checked, while writing three paragraphs of measured evidence about everything else. The measurement was real and the reasoning on top of it was confident and wrong. The lesson I actually take: **"read by nothing" is evidence a consumer is missing, not evidence the value is junk.** Deleting on that basis destroys ratified doctrine and looks like tidying up while you do it.
+
+**Hook material:** An AI agent deleted a ratified coaching rule because nothing read it. The reasoning was one section away in the document it had open.
+
+**Postable?:** yes
+
+
 ## 2026-09-14 — CONFIG-CONSUMER-01 + RACE-PACE-OVERLAY-REACH-01 · half a coaching principle was unreachable, and the card looked calm
 
 **Shipped:** The check that proves a config numeric has a *reader* now covers every config surface instead of two of them. It immediately found that half-marathon runners had never received the race-pace long run the constitution has promised them since it was written.
