@@ -1,0 +1,55 @@
+# STRAVA-WEBHOOK-OBS-01 — daily Strava webhook health probe.
+#
+# The no-app auto-link depends on a Strava push subscription whose callback_url
+# lives at STRAVA, not in this repo. Nothing here can fail, no deploy can break
+# it, and no test can see it — a new silent-failure class ("Untooled external
+# subscription"). The founder's symptom, "runs only link when I open the app",
+# is exactly what a dead subscription looks like from outside.
+#
+# Two findings, both to ops_events:
+#   strava_subscription_missing — no subscription, or one on a redirecting URL
+#                                 (Strava does not follow redirects, so an apex
+#                                 callback exists and never delivers)
+#   strava_webhook_silent       — subscription healthy but not delivering, given
+#                                 connected athletes who could have produced one
+#
+# Why GitHub Actions instead of vercel.json: Vercel Hobby caps at 2 crons, both
+# already used. Same rationale as ops-cron-onboarding-integrity.yml.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   CRON_SECRET — same value as the Vercel env var.
+#   VERCEL_URL  — production URL, no trailing slash (e.g. https://www.zonna.run).
+# Required Vercel env: STRAVA_CLIENT_SECRET (the probe refuses rather than
+#   reporting health it cannot observe).
+
+name: ops-cron-strava-webhook-health
+
+on:
+  schedule:
+    # 08:10 UTC daily — clear of reshape-integrity (07:30), plan-audit (07:45),
+    # the email cron (08:00) and onboarding-integrity (08:05).
+    - cron: '10 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  fire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: POST /api/ops/strava-webhook-health
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_URL:  ${{ secrets.VERCEL_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CRON_SECRET" ] || [ -z "$VERCEL_URL" ]; then
+            echo "::error::CRON_SECRET and VERCEL_URL secrets must be set."
+            exit 1
+          fi
+          RESPONSE=$(curl -fsS --max-time 60 -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$VERCEL_URL/api/ops/strava-webhook-health")
+          echo "$RESPONSE"
+          if echo "$RESPONSE" | grep -q '"healthy":false'; then
+            echo "::warning::strava-webhook-health: the no-app auto-link path is degraded — see ops_events (kind=strava_subscription_missing or strava_webhook_silent). Remedy: npx tsx scripts/strava-webhook-subscription.ts view"
+          fi

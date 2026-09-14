@@ -5,6 +5,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { getStravaToken, fetchHRStreamSummary } from '@/lib/strava'
 import { autoMatchAndAnalyse, getInternalBaseUrl } from '@/lib/coaching/autoAnalyse'
 import { tryEnrichHealthKitRow } from '@/lib/coaching/healthkitConsolidate'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 
 // Strava webhook docs: https://developers.strava.com/docs/webhooks/
 //
@@ -52,6 +53,24 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Bad JSON' }, { status: 400 })
   }
+
+  // STRAVA-WEBHOOK-OBS-01 — the heartbeat, recorded BEFORE any filtering.
+  //
+  // Deliberately above the `object_type` guard: the question this answers is "is
+  // the subscription still DELIVERING", and an athlete event proves that just as
+  // well as an activity event. Filtering first would make the probe go quiet for
+  // a perfectly healthy subscription.
+  //
+  // `recordOpsEvent` never throws and is awaited inside waitUntil rather than
+  // here, because Strava's webhook timeout is 2 seconds and a telemetry write
+  // must never be the thing that blows it.
+  waitUntil(
+    recordOpsEvent('strava_webhook_received', {
+      object_type: payload.object_type,
+      aspect_type: payload.aspect_type,
+      object_id: payload.object_id,
+    }).catch(() => { /* telemetry must not break the path it monitors */ })
+  )
 
   // Only process Run activity creates/updates — ignore deletes and other types
   if (payload.object_type !== 'activity') {

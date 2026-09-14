@@ -86,3 +86,46 @@ native plugin list is correct. **Not verifiable from here:** whether the Strava
 subscription currently exists and where its callback points (2) — run the new script
 against production to confirm, and re-`register` if the callback is stale/apex. Whether
 the founder's run also went to Apple Health (would have exercised path 3) is unknown.
+
+---
+
+## ⚠️ ROOT CAUSE FOUND, 2026-09-13 (later the same day) — the Strava APPLICATION is Inactive
+
+Running the subscription check for the first time with **production** credentials
+(`vercel env pull` into a scratch file, read-only `view`), Strava answered:
+
+```
+403 Forbidden
+errors: [ { resource: 'Application', field: 'Status', code: 'Inactive' } ]
+```
+
+Not "no subscription" — **the application itself is inactive at Strava's end.** In
+that state no push subscription can exist or deliver at all, so the no-app
+auto-link path is completely dead. This is a precise match for the reported
+symptom, *"runs only link when I open the app"*: HealthKit's observer cannot fire
+into a killed app, and the webhook that would otherwise cover that case was never
+going to arrive.
+
+**Note the first local attempt returned 401, not 403.** The `STRAVA_CLIENT_SECRET`
+in `.env.local` is corrupted (43 characters, non-ASCII final byte), so the local
+check reported a credentials error and would have sent someone looking in the
+wrong place. The production secret is intact. **Do not diagnose this from
+`.env.local`.**
+
+### What this changes
+
+- **Founder action, and it cannot be done from this repo:** reactivate the
+  application in the Strava developer settings. Most likely tied to the pending
+  API approval (the backlog already records the open condition as *external*).
+  Until then, `register` will keep failing and no amount of repo work restores the
+  killed-app auto-link.
+- **The probe was rebuilt around this.** Its first version returned HTTP 502 on
+  any non-OK Strava response — it would have failed the cron loudly and recorded
+  **nothing about why**. `judgeApiFailure()` now classifies 401/403 as
+  `app_inactive` and writes it to `ops_events` with the remedy attached, because
+  an authorization failure is the one state a deploy can neither cause nor fix.
+- **A live 403 is why the heartbeat matters.** With the application inactive there
+  will be zero `strava_webhook_received` events, so the silence check would also
+  fire — deliberately suppressed while the subscription check is already failing,
+  so the same finding is not written twice.
+

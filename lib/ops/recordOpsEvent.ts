@@ -52,6 +52,21 @@ export type OpsEventKind =
   // where the write failed — the same belt-and-braces as reshape-integrity.
   | 'onboarding_finalise_failed'
   | 'onboarding_incomplete'
+  // STRAVA-WEBHOOK-OBS-01 (2026-09-13) — a fully-killed app cannot
+  // background-ingest from HealthKit, so the Strava webhook is the ONLY
+  // device-independent auto-link for the common case (run ends, phone pocketed,
+  // app killed). It depends on a push subscription whose callback_url lives at
+  // STRAVA: nothing in this repo can fail, no deploy can break it, no test can
+  // see it. The founder's "runs only link when I open the app" is exactly what a
+  // dead subscription looks like from outside.
+  //
+  // `_received` is the HEARTBEAT and is recorded on every hit deliberately — the
+  // silence check has nothing to be silent against otherwise, and the same
+  // reasoning as plan_enrich_server_saved applies: a backstop nobody can see
+  // firing is one nobody trusts.
+  | 'strava_webhook_received'
+  | 'strava_subscription_missing'   // no subscription, or one pointing at a stale/redirecting URL
+  | 'strava_webhook_silent'         // subscription exists but has stopped delivering
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a
