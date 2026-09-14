@@ -5856,7 +5856,34 @@ function buildRulePlanOnce(
 
           const ratioFails  = ratio < GENERATION_CONFIG.PEAK_OVER_BASE_RATIO
           const volumeFails = volumeFloor > 0 && peakKmActual + 0.01 < volumeFloor
-          const lrFails     = longRunFloorKm > 0 && actualPeakLrKm + 0.01 < longRunFloorKm
+          // §24 Amendment 1 (Coaching Board 2026-09-13, MARATHON-MAINT-LABEL-01
+          // re-opened) — the floor comparison must not be decided by the engine's
+          // OWN rounding.
+          //
+          // The peak long run is floor-rounded to DISTANCE_ROUNDING_PRECISION_KM
+          // before it reaches here (`floorDist` in the long-run placement), and
+          // was then compared against an UNROUNDED threshold. So a runner whose
+          // computed long run is 31.9 km is stored as 31.5 and fails a 31.65 km
+          // floor by 150 metres — labelled `maintenance` by a rounding artefact.
+          // Measured: 9 of 162 marathon plans below the floor (5.6%) and 6 of 78
+          // HM plans (7.7%) sit inside that dead band. Willy: 0.5 km on a 31.65 km
+          // long run carries no tissue implication; this is a comparison bug, not
+          // a load change. McMillan: six kilometres short is a coaching fact the
+          // runner should be told, 150 metres is not, and both read the same
+          // sentence today.
+          //
+          // Reuses DISTANCE_ROUNDING_PRECISION_KM — the tolerance IS the rounding
+          // that caused it, so no new coaching numeric enters.
+          //
+          // ⚠️ This is the ONLY part of the batch sitting's item 2 that survived
+          // measurement. The proposed §24-vs-LONG_RUN_CAP_MINUTES exclusion is
+          // DEAD: the cap allows 33.5 km against a 31.65 km floor at the engine's
+          // actual easy pace, so it never binds, and implementing it flipped zero
+          // plans. Substituting §45 as the blocker was ruled INCORRECT because
+          // §45 already legislates this case in its own words ("this principle
+          // wins and the plan downgrades to maintenance"). Do not re-file either.
+          const lrFloorTolerated = longRunFloorKm - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+          const lrFails     = longRunFloorKm > 0 && actualPeakLrKm + 0.01 < lrFloorTolerated
 
           if (!ratioFails && !volumeFails && !lrFails) {
             return { volume_profile: 'build' as const }

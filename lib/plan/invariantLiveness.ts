@@ -113,6 +113,15 @@ export const MUTATIONS: Mutation[] = [
   // PEAK_LR_ALTERNATION_THRESHOLD_PCT of the plan's max — and a step-back drops
   // both. So no single-field mutation above can reach it, and it cannot be
   // composed from them either. This does both in one poke.
+  // §24 Amendment 1 / INV-PLAN-LR-FLOOR-NOT-ROUNDING — that rule reads the two
+  // numbers the engine PRINTED in `volume_constraint_note`, so no structural
+  // mutation can reach it. This writes the artefact sentence the amendment
+  // exists to forbid: a stated shortfall smaller than the rounding step.
+  { name: 'near-miss LR floor note', apply: p => {
+      (p.meta as unknown as Poke).volume_constraint_note =
+        'Peak long run 31.5 km is below the 31.7 km floor (75% of race distance) '
+        + '— week-on-week long-run cap (§45) prevented reaching the ratio.'
+    } },
   { name: 'every long run peak race-pace', apply: p => {
       const lrs = sessionsOf(p).filter(s => isLongRun(s))
       const max = Math.max(...lrs.map(s => (s as unknown as { distance_km?: number }).distance_km ?? 0), 0)

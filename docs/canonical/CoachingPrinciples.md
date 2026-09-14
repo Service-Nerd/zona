@@ -698,6 +698,65 @@ Implemented in `generateRulePlan()` (`lib/plan/ruleEngine.ts`) which sets `plan.
 
 **Why.** A runner targeting a 1:55 HM who never runs a long run longer than 15 km will spend 6+ km of their race in genuinely unfamiliar territory. The fatigue profile of running for ~2 hours is fundamentally different from running for 100 minutes — pacing, fuelling, mental discipline. Without exposure to it in training, race day is a new experience. Daniels and Pfitzinger both prescribe long runs at 90–100% of race distance for HM specifically because of this. Capping at 15 km is a compressed-plan symptom; the principle exposes it as such.
 
+### Amendment 1 — the floor comparison is not decided by the engine's own rounding — added 2026-09-13 (Coaching Board, MARATHON-MAINT-LABEL-01 re-opened)
+
+**Principle.** Where §24's peak long-run floor is compared against a runner's
+actual peak long run, the comparison MUST allow one `DISTANCE_ROUNDING_PRECISION_KM`
+step. The producer floor-rounds the long run to that precision before the
+comparison happens; measuring a rounded value against an unrounded threshold makes
+the engine's own rounding the deciding factor. This applies at **every** site that
+compares against the floor — the `volume_profile` classifier and
+`INV-PLAN-PEAK-LR-RACE-RATIO` alike.
+
+**Why.** A computed 31.9 km long run is stored as 31.5 and fails a 31.65 km floor
+by **150 metres**, downgrading the plan to `maintenance`. Measured 2026-09-13:
+**9 of 162** time-target marathon plans below the floor sit inside that dead band,
+and **6 of 78** HM plans. Willy: 0.5 km on a 31.65 km long run carries no tissue
+implication — this is a comparison bug, not a load change. McMillan: six
+kilometres short of the floor is a coaching fact the runner should be told, 150
+metres is not, and today both produce the identical sentence.
+
+**Two sites, deliberately.** The classifier's tolerance flips near-miss plans from
+`maintenance` to `build`, and `INV-PLAN-PEAK-LR-RACE-RATIO` is **exempt while a
+plan is maintenance**. So amending only the classifier un-exempts exactly the plans
+it just forgave and errors on them — measured as 3 hard failures in the cohort grid
+before the invariant was brought into line. Principle, numeric and mechanical check
+must agree on what the floor IS.
+
+**Config.** No new numeric. Reuses `GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM`
+(0.5), because the tolerance IS the rounding that caused the artefact. Stated
+explicitly so the absence is not read as an oversight.
+
+**Enforcement.** `INV-PLAN-LR-FLOOR-NOT-ROUNDING` — no plan is TOLD its peak long
+run missed the floor by less than that step. It reads the two numbers the note
+itself printed rather than recomputing the peak long run: the first version
+recomputed with `sessionKmForCheck` while the classifier uses `sessionKmOrZero`,
+the two disagreed on 3 plans, and a checker that derives the producer's input a
+second way is racing it rather than checking it.
+
+**Declared cohort move.** `cohort:shape` re-baselined: maintenance 51.0% → **50.6%**
+overall; **HM 40.7% → 38.9% (−1.8pp)**; **marathon 71.1% → 71.1% (unchanged)**, because
+66.7% of marathon plans below the floor are short by more than 6 km and are
+correctly labelled. 5K and 10K untouched.
+
+> ⚠️ **What this amendment is NOT, so it is not re-filed.** The 2026-09-13 batch
+> sitting ruled that a time-target marathon must not be maintenance *solely*
+> because §24's floor is unreachable under `LONG_RUN_CAP_MINUTES`, and predicted a
+> ~100% relabel. **That mechanism does not exist.** At the engine's actual easy
+> pace (6.26 min/km) the 210-minute cap buys 33.5 km — above the 31.65 km floor —
+> at every volume from 50 to 110 km/wk; the board's own worked example sits at 191
+> minutes against the cap, 19 minutes of headroom. Implemented exactly as ruled it
+> flipped **zero** plans. Substituting §45 as the blocker was ruled **INCORRECT**:
+> §45 already legislates this case in its own words (*"this principle wins and the
+> plan downgrades to maintenance"*), so the amendment would have required
+> overturning a ratified principle rather than clarifying one. And for the 20% of
+> plans where §24 is the SOLE trigger, the label is correct — they are runners
+> whose longest recent run is 7–17.5 km, who genuinely cannot build to 31.7 km in
+> the weeks available. The complaint about the flat 100% rate is about **utility,
+> not correctness**: a label that is right but undiscriminating needs a better
+> label, which is a different item. Full measurement:
+> `docs/investigations/marathon-maint-label-01-measurement-2026-09-13.md`.
+
 **Config.** `GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE` — keyed by race distance:
 ```
 HM       → 0.85  (≥17.9 km for a 21.1 km race)

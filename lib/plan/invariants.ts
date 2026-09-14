@@ -113,6 +113,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-LR-SEGMENT-RECORDED',
   'INV-PLAN-BUILD-LR-SEGMENT-CAP',
   'INV-PLAN-FINISH-GOAL-LR-CAP',
+  'INV-PLAN-LR-FLOOR-NOT-ROUNDING',
   'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
   'INV-PLAN-WEEK-HAS-REST-DAY',
   'INV-PLAN-COVERS-RACE-DATE',
@@ -1741,7 +1742,19 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         ? (peakLongRunHrs * 60) / peakLrKm
         : 7
       const capKm = longCapMins / Math.max(easyMinPerKm, 1)
-      const effectiveRequired = Math.min(requiredKm, capKm)
+      // §24 Amendment 1 (Coaching Board 2026-09-13) — the same rounding tolerance
+      // the CLASSIFIER now applies. The peak long run is floor-rounded to
+      // DISTANCE_ROUNDING_PRECISION_KM by the producer, so comparing it against
+      // an unrounded floor here decides the check on the engine's own rounding.
+      //
+      // This is not cosmetic symmetry: the classifier's tolerance flips
+      // near-miss plans from `maintenance` to `build`, and this invariant is
+      // EXEMPT while a plan is maintenance. So without the same tolerance the
+      // amendment would un-exempt exactly the plans it just forgave and error on
+      // them — measured, 3 hard failures in the cohort grid. Principle, numeric
+      // and mechanical check have to agree on what the floor IS.
+      const effectiveRequired =
+        Math.min(requiredKm, capKm) - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
       if (peakLrKm + 0.01 < effectiveRequired) {
         violations.push({
           code: 'INV-PLAN-PEAK-LR-RACE-RATIO',
@@ -4658,6 +4671,51 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             expected: 'undefined (no pace target for finish-goal LR)',
           })
         }
+      }
+    }
+  }
+
+  // INV-PLAN-LR-FLOOR-NOT-ROUNDING — a plan is never TOLD its peak long run is
+  // below §24's floor when the shortfall it states is smaller than the engine's
+  // own rounding step. (CoachingPrinciples §24 Amendment 1)
+  //
+  // The peak long run is floor-rounded to DISTANCE_ROUNDING_PRECISION_KM by the
+  // producer and was compared against an unrounded threshold, so a computed
+  // 31.9 km stored as 31.5 failed a 31.65 km floor by 150 metres and downgraded
+  // the plan to `maintenance`. 9 of 162 marathon plans below the floor sat in
+  // that dead band, and 6 of 78 HM plans.
+  //
+  // ⚠️ READS THE NOTE'S OWN TWO NUMBERS rather than recomputing the peak long
+  // run. The first version recomputed it with `sessionKmForCheck`, while the
+  // classifier uses `sessionKmOrZero` against the plan-level easy pace — two
+  // computations of one quantity, which disagreed on 3 plans and threw them as
+  // hard failures in the cohort grid. A checker that derives the producer's input
+  // a second way is not checking the producer, it is racing it. This asserts the
+  // engine's stated claim against itself: whatever numbers it printed, the gap
+  // between them must exceed the rounding step, or the sentence is an artefact.
+  //
+  // Note-keyed is safe HERE specifically: `volume_constraint_note` is engine
+  // meta, not a session label, and the enricher may not touch a numeric.
+  if (isTimeTarget && (distKey === 'HM' || distKey === 'MARATHON')) {
+    const step = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+    const note = plan.meta.volume_constraint_note ?? ''
+    const m = /Peak long run ([\d.]+) km is below the ([\d.]+) km floor/.exec(note)
+    if (m) {
+      const statedPeak = Number(m[1])
+      const statedFloor = Number(m[2])
+      const shortfall = statedFloor - statedPeak
+      // Both figures are printed to 1dp, so allow that much slack before calling
+      // a shortfall an artefact — the 150 m case reads 0.2 km and still fires.
+      if (Number.isFinite(shortfall) && shortfall > 0 && shortfall < step - 0.05) {
+        violations.push({
+          code: 'INV-PLAN-LR-FLOOR-NOT-ROUNDING',
+          principle_ref: 'CoachingPrinciples §24 Amendment 1',
+          severity: 'error',
+          week: 0,
+          message: `The plan states its peak long run (${statedPeak} km) is below §24's floor (${statedFloor} km), a shortfall of ${shortfall.toFixed(2)} km — inside the engine's own ${step} km rounding step. A cohort is being decided by a rounding artefact.`,
+          actual: `stated shortfall ${shortfall.toFixed(2)} km`,
+          expected: `no §24 shortfall claim below ${step} km`,
+        })
       }
     }
   }
