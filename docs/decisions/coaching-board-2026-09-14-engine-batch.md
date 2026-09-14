@@ -1,5 +1,38 @@
 # Coaching Board — engine batch (DELOAD-POS2-01 · SC-10 · QUALITY-ONSET-ORDER-01)
 
+> ## 🛑 ITEM 2 (SC-10) IS WITHDRAWN — the premise I brought to this board was FALSE.
+>
+> **Discovered while starting the build, hours after the ruling.**
+>
+> I reported *"VO2MAX_MAIN_SET_MAX_MINS (20) is exceeded by 91.9% of VO2max
+> interval sessions"*. The 20-minute **main-set** ceiling does not govern those
+> sessions. `INV-PLAN-VO2MAX-MAIN-SET-CAP` **branches**: where work minutes are
+> derivable it checks the ratified **12–18 minute WORK band**, and the 20-minute
+> main-set figure is only the fallback for **legacy v1 rows**.
+>
+> **Measured: 3,996 of 3,996 VO2max interval sessions (100%) carry a `derived_set`
+> and a `pace_target`** — every one of them is work-band governed, and the
+> property sweep is clean, so every one is INSIDE 12–18. There is no breach.
+>
+> **The ordering comparison was also the wrong quantity.** A main set is
+> work **plus recoveries**. VO2max runs ~1:1 work:recovery; threshold runs short
+> jogs. So 15 min of VO2max work is a ~30 min main set while 22 min of threshold
+> work is a ~26 min main set — **a longer VO2max main set is the CORRECT
+> consequence of a shorter VO2max work dose.** My measured 25.5 vs 23.7 is that,
+> not an inversion.
+>
+> **SC-10's original defect appears to have been fixed by SC-08/CD-14's work
+> bands.** My measurement resurrected a dead finding by comparing main-set
+> minutes where the constitution governs work minutes.
+>
+> **Willy's binding condition is what exposed it** — "prove work minutes do not
+> fall below the floor" sent me to the work reader, and the work reader showed the
+> cap I was measuring against was not the operative rule. A condition attached to
+> a ruling caught the ruling's own premise.
+>
+> The ruling below is void. Items 1 and 3 are unaffected — neither depends on it.
+
+
 **Date:** 2026-09-14 · **Batch sitting, explicitly requested.**
 **Round:** `coaching-review/2026-09-14/`
 **Trigger:** `deloadCadence.ts`, `ruleEngine.ts` — soft, all qualify (each changes what the engine prescribes).

@@ -26,6 +26,7 @@ import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { mainSetMinutes } from '../lib/plan/sessionFormat'
 import { classifyStimulus } from '../lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '../lib/plan/generationConfig'
+import { workMinutesForCheck } from '../lib/plan/invariants'
 import type { Plan, Session } from '../types/plan'
 
 const QUALITY = new Set(['quality', 'tempo', 'intervals'])
@@ -38,6 +39,8 @@ let plans = 0, refused = 0, sessions = 0
 let plansWithBoth = 0, inverted = 0
 let overCap = 0, vo2Intervals = 0, hillSessions = 0
 const overBy: number[] = []
+const work: number[] = []
+let underDosed = 0, workUnknown = 0
 const CAP = GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS
 
 for (const input of cohortGrid()) {
@@ -66,6 +69,14 @@ for (const input of cohortGrid()) {
         overBy.push(m - CAP)
       }
       if (cat === 'vo2max' && isHills) hillSessions++
+      // WILLY'S BINDING CONDITION (board 2026-09-14) — the ceiling fix must not
+      // push delivered WORK minutes below VO2MAX_WORK_MIN_MINS. "Fixing a ceiling
+      // by breaching a floor is not a fix." This is the BEFORE reading.
+      if (cat === 'vo2max' && !isHills) {
+        const w = workMinutesForCheck(s)
+        if (w != null) { work.push(w); if (w < GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS) underDosed++ }
+        else workUnknown++
+      }
       // `classifyStimulus` has NO 'threshold' category — it returns 'tempo' for
       // the threshold family. An earlier version of this line also tested
       // `cat === 'threshold'`, which tsc flagged as a comparison that can never
@@ -103,6 +114,18 @@ if (overBy.length) {
     console.log(`  mean overshoot when over        : +${mean.toFixed(1)} min  (worst +${Math.max(...over).toFixed(1)})`)
   }
 }
+console.log(`\nWORK MINUTES at Z4–5 (Willy's floor: VO2MAX_WORK_MIN_MINS = ${GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS}, band ${GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS}–${GENERATION_CONFIG.VO2MAX_WORK_MAX_MINS}):`)
+if (work.length === 0) {
+  console.log(`  ⚠️ derivable on 0 sessions (${workUnknown} not derivable — v1 rows carry no derived_set).`)
+  console.log(`     So the floor CANNOT be checked from the plan alone. State that rather than reporting a pass.`)
+} else {
+  const srt = [...work].sort((a, b) => a - b)
+  const mean = work.reduce((a, b) => a + b, 0) / work.length
+  console.log(`  derivable: ${work.length}  (not derivable: ${workUnknown})`)
+  console.log(`  mean ${mean.toFixed(1)}  p50 ${srt[Math.floor(srt.length / 2)].toFixed(1)}  min ${srt[0].toFixed(1)}  max ${srt[srt.length - 1].toFixed(1)}`)
+  console.log(`  BELOW the ${GENERATION_CONFIG.VO2MAX_WORK_MIN_MINS}-min floor: ${underDosed} / ${work.length}  (${pct(underDosed, work.length)})`)
+}
+
 if (plansWithBoth === 0) {
   console.error('FAIL: no plan carried BOTH a VO2max and a threshold session — the ordering is untested, not proven.')
   process.exit(1)
