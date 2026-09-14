@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — UX-POSTRUN-01 · seven runners were told they nailed a run nothing measured
+
+**Shipped:** The post-run screen now leads with the coach instead of a mark out of 100, and a run with no heart rate gets no score at all.
+
+**Dev learning:** The founder sent a screenshot asking whether the screen was too much. It showed **69/100**. I went to check the arithmetic and found the HR axis — which §108 gives **half** the weight, explicitly "because it is the only axis that speaks to intensity distribution, which is the product's entire thesis" — was being defaulted to 75 when absent. So 37.5 of those 69 points were invented. In production: 12 of 126 scored runs had no heart rate, and **seven of them were told "nailed"**. The fix was making the return type nullable, and the compiler immediately found two consumers AND a few-shot example in the AI prompt that was teaching Kit to state a verdict on a no-HR run. The type was a better auditor than I was.
+
+**Product/creator learning:** The worst part wasn't the fabrication, it was the direction. The same run scored **41 ("off target")** with a monitor showing poor discipline and **69 ("close")** with no monitor at all. Not wearing the strap was worth 28 points — while the coach note in the very same card told the runner to put it on. We had built a scoreboard that paid people to stop measuring themselves.
+
+**AI-building learning:** `sessionScore.ts` had **no test file**. None. The function that decides whether a runner is told "nailed" or "concerning" had zero coverage, and a Coaching Board sitting had already ratified its weights without anyone noticing there was nothing underneath them. A green suite across 1,700 tests says nothing about the file you didn't write tests for.
+
+**The honest bit:** I nearly shipped the redesign without looking at it. The card is behind auth and a paid tier, so "it compiles" was the only claim available — which is exactly how this repo once shipped a comment describing an arc that was never built. I exported the component and built a fixture page instead, and the first render immediately showed something no ruling had mentioned: every post-run card is amber, so a runner who held the zone perfectly meets **"There it is. Don't ruin it."** on the warning palette. You cannot make restraint feel like progress if success and failure are the same colour.
+
+**Hook material:** Seven runners told they "nailed" a run where the thing being graded was never measured — and leaving your heart-rate monitor at home was worth 28 points.
+
+**Postable?:** yes
+
+
 ## 2026-09-13 — VERIF-PARITY-GOAL-01 + coaching-guard Bash coverage · two safety nets with holes in the same shape
 
 **Shipped:** `verify:parity` now runs both goal branches instead of one, and the coaching-board hook now sees doctrine edits made through Bash. Neither is a feature; both are checks that were quietly covering less than they claimed.
