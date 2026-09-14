@@ -493,6 +493,52 @@ Implemented in `buildPaceFromVDOT(discountedVdot, rawVdot)` in `lib/plan/ruleEng
 
 **Why.** Z2 is the band where aerobic adaptation happens without accumulating fatigue. Running easy at Z3 looks productive — it is the grey zone the brand is built to prevent.
 
+### Amendment 1 — drift is DIRECTIONAL; below the cap is not a breach — added 2026-09-13 (Coaching Board, R30-DIRECTIONAL-01)
+
+**Principle.** §12 is a **ceiling**, not a band. Any detector that reports a runner
+as drifting MUST measure time spent **above** the Z2 cap (`hr_above_ceiling_pct`).
+Time spent **below** Z2 breaks no principle and must never be counted as drift.
+
+**Why.** The shipped R30 zone-drift detector (PAID, 2026-05-04) fired on
+`hr_in_zone_pct < 60` — a band. Measured in production 2026-09-13: **6 of 22
+flagged runs (27%) were predominantly too EASY**, the worst at **17% in zone with
+83% below the floor and 0% above the ceiling**. There is no reading of §1 or §12
+under which that run is drift. The board ruled the shipped detector **INCORRECT**,
+unanimously.
+
+Seiler: the grey zone **has a direction** — it is what athletes do *instead of*
+easy, not a band they fail to hit; a symmetric metric for an asymmetric phenomenon
+will always mislabel roughly a quarter of cases, which is what was measured.
+McMillan: those six runs belong to the runner who has finally understood the
+product, and the app was flagging them — the worst possible false positive,
+because it punishes the exact behaviour the whole plan exists to produce. Sims:
+telling a runner who is already running gently that they are failing is the
+pressure that produces over-reaching in the cohort least able to afford it.
+
+**Config.** `ZONE_DRIFT_ABOVE_CEILING_PCT = 20` (`lib/coaching/constants.ts`).
+**Re-derived, not carried across** — `< 60% in zone` and `> N% above ceiling` are
+different scales and the old number means nothing on the new one. The production
+distribution separates with **no overlap**: too-easy runs at `0, 0, 1, 2, 3, 19`%
+above ceiling, too-hard at `23, 40, 47 … 94`%. The threshold sits **inside that
+gap**, so it is robust at either edge rather than a coin-flip on the next sample.
+
+**The fix removes false positives AND false negatives.** At 20% the detector flags
+the same COUNT as before (22 of 42) with entirely different membership: 6 too-easy
+runs drop out, and 6 genuinely-too-hard runs the old rule missed come in — runs at
+≥60% in zone with more than a fifth above the cap.
+
+> ⚠️ **n = 42 rows with HR data. Thin.** The direction is unambiguous (a run with
+> 0% above the ceiling cannot be drift under any reading) but the exact cut should
+> be re-measured once the cohort grows. The `≥4 of the last 8` cadence was NOT
+> re-derived — the board questioned the threshold, not the window.
+
+**Enforcement.** `zoneDrift.test.ts` — fixtures are the REAL production
+above-ceiling values, so a regression is a regression against observed data. It
+asserts both directions: the old rule flagged every too-easy run (falsifying the
+fix) and the new rule flags none, while still catching genuine drift and the
+missed `65% in zone / 26% above cap` case.
+
+
 **Config.** `GENERATION_CONFIG.EASY_RUN_ZONE_CAP = 'Z2_TOP'` — resolves at runtime to the top of `GENERATION_CONFIG.ZONES.Z2` for the user's active zone method.
 
 

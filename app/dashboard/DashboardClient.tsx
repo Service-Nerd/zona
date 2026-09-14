@@ -24,6 +24,7 @@ import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from
 import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
+import { ZONE_DRIFT_ABOVE_CEILING_PCT } from '@/lib/coaching/constants'
 import { BRAND, PRICING } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
@@ -2320,13 +2321,27 @@ export default function DashboardClient() {
                     const weekData = plan.weeks.find((w: any) => w.n === weekN)
                     const sType    = (weekData?.sessions as any)?.[dayShort]?.type ?? null
                     if (sType !== 'easy' && sType !== 'recovery') return null
-                    return { weekN, hr_in_zone_pct: analysis.hr_in_zone_pct as number }
+                    return {
+                      weekN,
+                      hr_in_zone_pct: analysis.hr_in_zone_pct as number,
+                      hr_above_ceiling_pct: (analysis.hr_above_ceiling_pct ?? 0) as number,
+                    }
                   })
                 )
-                .filter((r): r is { weekN: number; hr_in_zone_pct: number } => r !== null)
+                .filter((r): r is { weekN: number; hr_in_zone_pct: number; hr_above_ceiling_pct: number } => r !== null)
                 .sort((a, b) => b.weekN - a.weekN)
                 .slice(0, 8)
-              const zoneDriftCount   = allEasyRecoveryRows.filter(r => r.hr_in_zone_pct < 60).length
+              // §12 Amendment 1 / R30-DIRECTIONAL-01 (Coaching Board 2026-09-13, which
+              // ruled the SHIPPED detector INCORRECT) — drift is DIRECTIONAL.
+              //
+              // This counted `hr_in_zone_pct < 60`, a BAND. §12 prescribes a CAP:
+              // "Easy runs are capped at the top of Z2." Running BELOW Z2 breaks no
+              // principle, so counting it as drift told the runner who had finally
+              // understood the product that they were failing — McMillan's "worst
+              // possible false positive". Measured: 6 of 22 flagged runs (27%) were
+              // predominantly too EASY, one at 17% in zone with 0% above the ceiling.
+              const zoneDriftCount   = allEasyRecoveryRows
+                .filter(r => r.hr_above_ceiling_pct > ZONE_DRIFT_ABOVE_CEILING_PCT).length
               const zoneDriftPattern = allEasyRecoveryRows.length >= 4 && zoneDriftCount >= 4
                 ? { count: zoneDriftCount, total: allEasyRecoveryRows.length }
                 : null

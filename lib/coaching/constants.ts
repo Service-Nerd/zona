@@ -17,6 +17,36 @@ export const VERDICT_BANDS = {
 } as const
 
 // Zone discipline (weekly aggregate)
+/**
+ * §12 Amendment 1 / R30-DIRECTIONAL-01 — how much of an easy run may sit ABOVE
+ * its Z2 ceiling before it counts as drift.
+ *
+ * R30 previously keyed on `hr_in_zone_pct < 60`, which is a BAND. §12 prescribes
+ * a CAP — "Easy runs are capped at the top of Z2" — so running BELOW Z2 breaks no
+ * principle and must not be counted. Measured in production 2026-09-13: **6 of 22
+ * flagged runs (27%) were predominantly too EASY**, one at 17% in zone with 83%
+ * below the floor and 0% above the ceiling.
+ *
+ * THE THRESHOLD IS RE-DERIVED, NOT CARRIED ACROSS. `< 60% in zone` and
+ * `> N% above ceiling` are different scales and the old number means nothing on
+ * the new one. The production distribution separates cleanly with no overlap:
+ *   too-easy runs   0, 0, 1, 2, 3, 19  % above ceiling
+ *   too-hard runs  23, 40, 47 … 94     % above ceiling
+ * 20 sits in that gap. It catches zero too-easy runs and flags the same COUNT as
+ * the old rule (22), but swaps 6 false positives for 6 genuine drift runs the old
+ * rule missed — runs at ≥60% in zone with more than a fifth above the ceiling.
+ *
+ * ⚠️ n = 42 rows with HR data. Thin. The gap is unambiguous (a run with 0% above
+ * the ceiling cannot be drift under any reading) but the exact cut should be
+ * re-measured once the cohort grows.
+ *
+ * Seiler's framing for why a directional metric is required at all: the grey zone
+ * HAS a direction — it is what athletes do INSTEAD of easy, not a band they fail
+ * to hit. A symmetric metric for an asymmetric phenomenon mislabels about a
+ * quarter of cases, which is what was measured.
+ */
+export const ZONE_DRIFT_ABOVE_CEILING_PCT = 20
+
 export const ZONE_DISCIPLINE_BANDS = {
   disciplined: 85,
   decent:      70,

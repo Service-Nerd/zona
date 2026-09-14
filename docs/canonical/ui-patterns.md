@@ -2324,7 +2324,7 @@ Reference: `CoachScreen` in `app/dashboard/DashboardClient.tsx`;
 
 ---
 
-### 34. Post-run card (Pattern 32 applied to the post-run moment)
+### 35. Post-run card (Pattern 32 applied to the post-run moment)
 
 Shipped 2026-09-13 (UX-POSTRUN-01, SLT + Coaching Board). **Not a new shape — it
 is Pattern 32's rule applied to the second screen that had the same problem.**
