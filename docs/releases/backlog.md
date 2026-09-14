@@ -8,6 +8,39 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
+## 📍 PICK UP HERE — state at end of 2026-09-14
+
+**Everything below is committed, pushed and recorded.** `verify` exit 0 (1789 tests / 198 files), prod 200, tree clean.
+
+> ⚠️ **THE FOCUS IS THE CHARITY SHOWCASE.** The charity partnership is the first acquisition channel and its runners are **predominantly BEGINNERS taking on 10K / half / marathon**. `CHARITY_PERSONAS` (M1–M5, H1–H3, T1–T3) IS that cohort. Judge every engine change against `scripts/measure-charity-first-quality.ts` and the coaching-review round, not only against the synthetic grid — a percentage across 7,452 machine-generated plans can look fine while the persona that matters is the one broken.
+>
+> ✅ **Reassuring, measured 2026-09-14:** all three TRUE first-timers (M1 marathon, H1 half, T1 couch-to-10K) receive **no hard sessions at all** — §8's ceiling is doing its job for exactly the runners the charity will send.
+
+### Ready to build — one well-defined task each
+
+| Item | State | The single next action |
+|---|---|---|
+| **QUALITY-ONSET-ORDER-01** | Board ruled CORRECT. Fix found and **proven on the showcase** (T3 Z4–5 → Z3; charity 1/10 → 0/10). Blocked on ONE defect. | Make a quality slot's **sizing follow the category the rotation chose**. The session is sized as VO2max then relabelled tempo — 43 min against the ~48 the structure needs. Sweep 0 → 47 errors until fixed. |
+| **DELOAD-POS2-01** | Board ruled **INSUFFICIENT EVIDENCE** — my submitted mechanism was disproved by the conflict scan. Placement fix works (37% → 0%). | Produce **one table**: per-plan before/after `hard` and `running` counts for the 22 §1-breaching plans, plus phase boundaries. Then the board can rule. |
+| **GRID-COVERAGE-02** | Filed with each field's unlock and the runtime constraint. | Decide the design (second targeted grid vs pairwise) — **`recent_quality_training` first**, because ADR-021's early onset is still unverifiable (`earlyQualityOnsetPct` 0). |
+
+### Off the table — do NOT re-open without reading the item first
+
+| Item | Why |
+|---|---|
+| **SC-10 / CD-14** | ✅ **Appears FIXED.** My "91.9% breach" measured against a rule that governs none of those sessions — `INV-PLAN-VO2MAX-MAIN-SET-CAP` branches to the 12–18 min WORK band, and 3,996/3,996 sessions are work-governed. **The ruling on it is void.** Re-open only against WORK minutes. |
+| **CV-ELIGIBILITY-01** | ✅ Re-verified; the 2026-09-06 "leave it" decision stands. A 1-point boundary case, not a defect. |
+| **ZONE-BAND-01** | ⏸️ Correctly blocked on DATA (2 users). Has a numeric re-open trigger now: ≥20 users × ≥10 HR-bearing quality analyses. |
+| **PV2-G** (Monday race) | Known, visible in every round via canonical case `07-hm-monday-race`. Needs an ADR + cross-week race-arc restructure. |
+| §16's "20% of session" vs code's 20% of MAIN | Deliberately not changed — the card renders a bare `20%` with no referent, so it is invisible to the runner. Recorded in §39/§80 so it is not re-found. |
+
+### ⚠️ Read this before producing any measurement
+**[[feedback-the-denominator-is-where-claims-fail]]** — four wrong measurements on 2026-09-14, all with correct arithmetic over the wrong set, **one of which reached a Coaching Board ruling**. Before a number becomes a finding: read the **invariant's CODE**, not the principle's prose; name the denominator; check the quantity is comparable (a *main set* is work **plus recoveries**); and remember a category label is not a session type (`'hard'` is a benchmark; `classifyStimulus → 'vo2max'` includes hills).
+
+---
+
+---
+
 > **Keeping this file honest (added 2026-08-15 after an audit found three stale entries).**
 > Every open item carries a **`Verify still open:`** line — a grep, a file check, or an explicit
 > gate. It exists so an audit is a script rather than a careful read: run the check, and if it

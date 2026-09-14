@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-14 — GRID-COVERAGE-01 + REVIEW-HARNESS-MONDAY-01 · every test we had was green on a configuration almost no real runner has
+
+**Shipped:** The grid the whole verification stack measures against now varies 13 of 31 inputs instead of 10, and the coaching-review cases race on Saturdays and Sundays like real races do.
+
+**Dev learning:** I went looking for why a defect had survived every check, and the answer was the fixture. `cohortGrid` — the surface behind `cohort:shape` and the invariant-liveness corpus — set **ten of thirty-one** declared input fields. Thirteen were never set at all. The one that mattered was `training_age`, because the rule I was chasing keys on it, so the mechanism **never fired anywhere in any check**. The property sweep varies 24 and gates on it; this grid never had such a gate, which is exactly how it drifted.
+
+**Product/creator learning:** The most expensive one was `benchmark`. With no benchmark anywhere in the grid, no plan had a VDOT — and the whole point of §79 is what happens when the VDOT signal and the volume signal **disagree**. That disagreement could not occur in a single test case. We had a principle written about a conflict our tests could not produce.
+
+**AI-building learning:** The proof came free. Adding those axes woke **two previously-unproven invariants on the first run** — checks that had been sitting in the debt register as "nobody has been able to make this fail", because nothing in the corpus could reach them. Not dead rules. Unreachable ones. The liveness harness was right to refuse to call them proven.
+
+**The honest bit:** the same day, all seventeen coaching-review cases turned out to race on a **Monday**, because the plan-start constants are Mondays and race dates derive as start-plus-N-weeks. A Monday race has no in-week day before it — which is precisely the shape in which the race-eve defect I was hunting cannot appear. **Every round we had ever run reviewed the one configuration that hides the bug.** I split them across Saturday and Sunday, and kept one Monday case deliberately so the known open defect stays visible rather than quietly turning green.
+
+**Hook material:** Our test fixtures had every race on a Monday. Real races are on weekends — and the bug we were hunting can only appear on a weekend.
+
+**Postable?:** yes
+
+
 ## 2026-09-14 — RACE-WEEK-FITNESS-01 · the plans passed every check and told a first-timer to run 72 minutes the day before their marathon
 
 **Shipped:** §39 Amendment 1 and §80 Amendment 1. Nothing long sits on race eve any more, and the race-day instruction scales with the race instead of assuming everyone is running a marathon.
