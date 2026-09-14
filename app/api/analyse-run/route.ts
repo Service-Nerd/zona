@@ -51,11 +51,14 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { strava_activity_id, apple_health_uuid, week_n, session_day } = body as {
+  const { strava_activity_id, apple_health_uuid, week_n, session_day, scores_only } = body as {
     strava_activity_id?: number
     apple_health_uuid?:  string
     week_n: number
     session_day: string
+    // HR-LATE-RESCORE-01 — recompute the NUMBERS without regenerating the
+    // narrative. Set by the >24h late-HR path (see lateArrivalGate.ts).
+    scores_only?: boolean
   }
 
   // Source ref: exactly one of strava_activity_id / apple_health_uuid must be set
@@ -281,8 +284,15 @@ export async function POST(req: NextRequest) {
 
   // AI feedback — generated before upsert so feedback_text lands in the same row.
   // Failure is silent; scoring row is written regardless.
+  //
+  // HR-LATE-RESCORE-01 — `scores_only` skips this entirely. HR that lands more
+  // than PENDING_HR_WINDOW_HOURS after the workout must update the NUMBERS (the
+  // gate's own comment promises the zone ledger, weekly report and fitness
+  // signals get the data) but must NOT produce a fresh reframe — Hutchinson's
+  // rule that two-day-stale coaching is dishonest. The score is deterministic
+  // arithmetic over stored columns; the narrative is the thing that goes stale.
   let feedbackText: string | null = null
-  try {
+  if (!scores_only) try {
     const prescribedZone = zoneForSessionType((session as any).type)
     // Live Karvonen band from user_settings — single source of truth shared
     // with the UI. Falls back to plan.meta.zone2_ceiling inside the prompt
@@ -411,7 +421,10 @@ export async function POST(req: NextRequest) {
     ef_score:              scoreResult.efScore,
     total_score:           scoreResult.totalScore,
     verdict:               scoreResult.verdict,
-    feedback_text:         feedbackText,
+    // ⚠️ OMITTED, not null, under `scores_only`. This is an UPSERT: writing
+    // `feedback_text: null` would DELETE the existing coach note, which is the
+    // opposite of what the late-arrival gate protects.
+    ...(scores_only ? {} : { feedback_text: feedbackText }),
     hr_in_zone_pct:        prescribedHrFigures.hrInZonePct,
     hr_above_ceiling_pct:  prescribedHrFigures.hrAboveCeilingPct,
     hr_below_floor_pct:    prescribedHrFigures.hrBelowFloorPct,
@@ -446,7 +459,11 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     analysis: {
       ...analysisRow,
-      feedback_text: feedbackText,
+      // HR-LATE-RESCORE-01 — same omission as the upsert. Under `scores_only`
+      // `feedbackText` is null because the AI block never ran, NOT because the
+      // run has no note; reporting null here would tell the caller the coach
+      // note was cleared when it is sitting untouched in the row.
+      ...(scores_only ? {} : { feedback_text: feedbackText }),
     },
     score:   scoreResult,
   })

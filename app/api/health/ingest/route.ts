@@ -79,7 +79,10 @@ export async function POST(req: NextRequest) {
   // (Hutchinson, ADR-011 §5).
   const dedup = await consolidateIncomingHealthKitRow(supabase, userId, row)
   if (dedup.skipped) {
-    if (dedup.hrLifted && dedup.withinFreshWindow && dedup.canonicalAppleHealthUuid) {
+    // HR-LATE-RESCORE-01 — no longer gated on `withinFreshWindow`. A stale
+    // arrival re-scores without a narrative (see the longer note on the
+    // same-uuid path below); only the reframe is withheld.
+    if (dedup.hrLifted && dedup.canonicalAppleHealthUuid) {
       const { data: canonicalAnalysis } = await supabase
         .from('run_analysis')
         .select('week_n, session_day')
@@ -88,7 +91,8 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
       if (canonicalAnalysis) {
         waitUntil(triggerHrRefreshAnalysis(userId, dedup.canonicalAppleHealthUuid,
-          canonicalAnalysis.week_n, canonicalAnalysis.session_day))
+          canonicalAnalysis.week_n, canonicalAnalysis.session_day,
+          dedup.withinFreshWindow === false))
       }
     }
     return NextResponse.json({ status: 'deduped', canonical_id: dedup.canonicalId })
@@ -149,7 +153,27 @@ export async function POST(req: NextRequest) {
   // card + reframe reflect real HR. Stale arrivals (> 24h) are intentionally
   // skipped: the column is patched, the daily coach note can reference it
   // tomorrow via hr_arrived_late_at, but no fresh reframe.
-  if (wasHrAbsent && lateArrival?.withinFreshWindow) {
+  //
+  // HR-LATE-RESCORE-01 (2026-09-13) — STALE ARRIVALS ARE NO LONGER SKIPPED
+  // ENTIRELY, they are re-scored WITHOUT a fresh narrative.
+  //
+  // The gate's own contract above promises that a late patch still serves "the
+  // zone ledger, weekly report, fitness signals". It did not: the patch writes
+  // `strava_activities`, and every one of those consumers reads `run_analysis`.
+  // So a >24h arrival left the analysis row permanently HR-null — measured
+  // 2026-09-13, 1 of 12 no-HR analyses was stranded with the data sitting in the
+  // activity row beside it. And since §108 Amendment 1 withholds the score when
+  // HR is unmeasured, that run now shows no score forever despite having HR.
+  //
+  // The split the board's rule actually draws is NARRATIVE vs NUMBERS. "Two-day
+  // stale coaching is dishonest" is about the reframe. A score is deterministic
+  // arithmetic over stored columns and does not go stale. `scores_only` skips
+  // the AI call and OMITS `feedback_text` from the upsert, so the original note
+  // survives untouched.
+  //
+  // Defect fix restoring documented intent (the comment above is the intent),
+  // so ADR-017-exempt from the Coaching Board.
+  if (wasHrAbsent && lateArrival) {
     const { data: existingAnalysis } = await supabase
       .from('run_analysis')
       .select('week_n, session_day')
@@ -158,7 +182,8 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
     if (existingAnalysis) {
       waitUntil(triggerHrRefreshAnalysis(userId, payload.uuid,
-        existingAnalysis.week_n, existingAnalysis.session_day))
+        existingAnalysis.week_n, existingAnalysis.session_day,
+        !lateArrival.withinFreshWindow))
     }
   }
 
@@ -231,6 +256,9 @@ function triggerHrRefreshAnalysis(
   appleHealthUuid:  string,
   weekN:            number,
   sessionDay:       string,
+  // HR-LATE-RESCORE-01 — true for HR that landed outside the fresh window:
+  // recompute the numbers, leave the narrative alone.
+  scoresOnly = false,
 ): Promise<void> {
   return fetch(`${getInternalBaseUrl()}/api/analyse-run`, {
     method:  'POST',
@@ -243,6 +271,7 @@ function triggerHrRefreshAnalysis(
       apple_health_uuid: appleHealthUuid,
       week_n:            weekN,
       session_day:       sessionDay,
+      scores_only:       scoresOnly,
     }),
   })
     .then(() => undefined)
