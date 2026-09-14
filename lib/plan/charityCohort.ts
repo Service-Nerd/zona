@@ -26,6 +26,15 @@ export interface CharityPersona {
   note: string
   /** Weeks from plan start to race day. */
   weeks: number
+  /**
+   * Which weekend day the race falls on. ~95% of real races are Sat or Sun, and
+   * the two are NOT interchangeable: the race weekday interacts with
+   * `preferred_long_run_day`, so a Saturday race with a Sunday long-run day
+   * pushes that long run AFTER the race (§77 must drop it) while a Sunday race
+   * puts the race ON the long-run day. Declared per persona rather than derived,
+   * so the split is visible and deliberate. Defaults to 'sun'.
+   */
+  raceDay?: 'sat' | 'sun'
   /** True when a by-design refusal (prep-time / days-minimum) is the correct
    *  outcome — the plan is honest that it cannot promise the ask. */
   expectRefusal?: boolean
@@ -50,13 +59,18 @@ export interface CharityPersona {
  * The early-week case is not lost — canonical case `07-hm-monday-race` keeps it
  * visible in every round until PV2-G is built.
  */
-export function charityRaceDate(weeks: number, planStart = CHARITY_PLAN_START): string {
+export function charityRaceDate(
+  weeks: number, planStart = CHARITY_PLAN_START, raceDay: 'sat' | 'sun' = 'sun',
+): string {
   const d = new Date(planStart + 'T00:00:00Z')
-  return new Date(d.getTime() + (weeks * 7 - 1) * DAY_MS).toISOString().slice(0, 10)
+  // planStart is a Monday, so weeks*7 - 1 is the SUNDAY that ends week `weeks`;
+  // one day earlier is that week's Saturday.
+  const offset = weeks * 7 - (raceDay === 'sun' ? 1 : 2)
+  return new Date(d.getTime() + offset * DAY_MS).toISOString().slice(0, 10)
 }
 
 export function charityInput(p: CharityPersona, planStart = CHARITY_PLAN_START): GeneratorInput {
-  return { ...p.input, race_date: charityRaceDate(p.weeks, planStart) } as GeneratorInput
+  return { ...p.input, race_date: charityRaceDate(p.weeks, planStart, p.raceDay ?? 'sun') } as GeneratorInput
 }
 
 export const CHARITY_PERSONAS: CharityPersona[] = [
@@ -71,6 +85,7 @@ export const CHARITY_PERSONAS: CharityPersona[] = [
   {
     id: 'M2 charity marathon, low base, COMPRESSED 12wk',
     note: '§44 prep-time honesty; time_compressed + volume_constrained classification',
+    raceDay: 'sat',
     weeks: 12,
     input: { race_distance_km: 42.2, goal: 'finish', current_weekly_km: 20, longest_recent_run_km: 10,
       days_available: 3, age: 41, training_age: '6-18mo', recent_quality_training: 'none',
@@ -87,6 +102,7 @@ export const CHARITY_PERSONAS: CharityPersona[] = [
   {
     id: 'M4 sub-4:00 marathon, busy 3-day, weekday cap 45',
     note: 'time_target under a weekday cap on 3 days — by-design refusal (§44 days-minimum)',
+    raceDay: 'sat',
     weeks: 16,
     expectRefusal: true,
     input: { race_distance_km: 42.2, goal: 'time_target', target_time: '4:00:00', current_weekly_km: 40,
@@ -111,6 +127,7 @@ export const CHARITY_PERSONAS: CharityPersona[] = [
   {
     id: 'H2 charity HM + shin splints',
     note: 'injury caps; tissue tolerance vs fitness ramp',
+    raceDay: 'sat',
     weeks: 14,
     input: { race_distance_km: 21.1, goal: 'finish', current_weekly_km: 25, longest_recent_run_km: 12,
       days_available: 4, age: 40, training_age: '6-18mo', injury_history: ['shin_splints'],
@@ -132,6 +149,7 @@ export const CHARITY_PERSONAS: CharityPersona[] = [
   {
     id: 'T1 couch-to-10K charity beginner',
     note: 'low-vol short race; beginner structure; no phantom quality',
+    raceDay: 'sat',
     weeks: 10,
     input: { race_distance_km: 10, goal: 'finish', current_weekly_km: 8, longest_recent_run_km: 4,
       days_available: 3, age: 37, training_age: '<6mo', recent_quality_training: 'none' },
@@ -151,6 +169,7 @@ export const CHARITY_PERSONAS: CharityPersona[] = [
   {
     id: 'T3 masters 10K + knee (age 55)',
     note: 'masters + injury combined; conservative ramp (delivered injury-cap + peak-not-below-start residuals cluster here)',
+    raceDay: 'sat',
     weeks: 12,
     input: { race_distance_km: 10, goal: 'finish', current_weekly_km: 20, longest_recent_run_km: 9,
       days_available: 4, age: 55, training_age: '2-5yr', injury_history: ['knee'],

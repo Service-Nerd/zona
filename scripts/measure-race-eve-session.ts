@@ -22,7 +22,7 @@ import type { GeneratorInput, Plan, Session } from '../types/plan'
 
 const DAYS = ['mon','tue','wed','thu','fri','sat','sun'] as const
 const PLAN_START = '2026-04-27'          // Monday
-const RACE_DATE  = '2026-08-02'          // Sunday, 14 weeks out
+const RACE_DATE  = process.env.RACE_DATE ?? '2026-08-02'   // Sunday by default; override to test other weekdays
 
 const DISTS = [
   { key: 'HM', km: 21.1, target: '1:55:00' },
@@ -57,8 +57,12 @@ for (const da of DAYS_AVAIL) for (const vol of VOLUMES) {
 
   // Race week = the week containing race day. Race is Sunday, so race eve = sat.
   const last = plan.weeks[plan.weeks.length - 1]
-  const sat = (last.sessions as Record<string, Session | undefined>)['sat']
-  const sun = (last.sessions as Record<string, Session | undefined>)['sun']
+  const DAYS_L = ['mon','tue','wed','thu','fri','sat','sun'] as const
+  const raceDow = new Date(RACE_DATE + 'T00:00:00Z').getUTCDay()
+  const raceDay = DAYS_L[(raceDow + 6) % 7]
+  const eveDay = DAYS_L[DAYS_L.indexOf(raceDay) - 1]
+  const sat = eveDay ? (last.sessions as Record<string, Session | undefined>)[eveDay] : undefined
+  const sun = (last.sessions as Record<string, Session | undefined>)[raceDay]
   if (sun?.type !== 'race') continue
   raceWeeksReached++
   if (sat && sat.type !== 'rest') {
@@ -75,7 +79,7 @@ const pct = (n: number, dd: number) => dd === 0 ? 'n/a' : `${((n / dd) * 100).to
 console.log(`plans generated: ${plans}  refused: ${refused}`)
 if (plans === 0) { console.error('FAIL: grid generated nothing.'); process.exit(1) }
 console.log(`\n§30 caps a race-week SHAKEOUT at ${GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS ?? '35'} min. §39's easy run is not capped.`)
-console.log(`\nSessions on RACE EVE (the Saturday before a Sunday race): ${raceEve} / ${plans}  (${pct(raceEve, plans)})`)
+console.log(`\nSessions on RACE EVE (the day before the race): ${raceEve} / ${plans}  (${pct(raceEve, plans)})`)
 if (raceEve > 0) console.log(`  mean duration: ${(raceEveMins / raceEve).toFixed(0)} min`)
 for (const [k, v] of Object.entries(byDist)) {
   console.log(`  ${k}: ${v.eve}/${v.n} (${pct(v.eve, v.n)}), longest ${v.maxMins} min`)

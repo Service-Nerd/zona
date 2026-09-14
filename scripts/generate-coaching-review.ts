@@ -27,7 +27,7 @@ export interface Case {
   questions: string[]
 }
 
-// ⚠️ RACE DATES ARE SUNDAYS, DELIBERATELY — and one case is deliberately not.
+// ⚠️ RACE WEEKDAYS ARE DELIBERATE: a SAT/SUN split, plus one Monday edge case.
 //
 // Every canonical case used to carry a MONDAY race date, and `charityRaceDate`
 // derives its dates as `planStart + weeks × 7`, which from a Monday plan start
@@ -43,11 +43,22 @@ export interface Case {
 // day gap) — so the round was reporting a real defect on every case while
 // never once showing what a normal plan looks like.
 //
-// Fixed in both directions: the six cases below now end on the Sunday of their
-// final week (same intended plan length, race on the last day), and case 07 is
-// an EXPLICIT early-week race so PV2-G stays visible in every round until it is
-// built. Moving them all to Sunday without case 07 would have turned a known
-// open defect green, which is re-baselining to pass.
+// ~95% of real races fall on a Saturday or a Sunday, so the set is split across
+// both — and they are NOT interchangeable. The race weekday interacts with
+// `preferred_long_run_day` and restructures the whole final week:
+//
+//   cases 02, 04, 05 — SATURDAY race, long run 'sun'  → the long-run day falls
+//                      AFTER the race, so §77 must drop it rather than prescribe
+//                      a warm-up for a race already run. Case 04 is the marathon:
+//                      the heaviest distance this can go wrong on.
+//   cases 01, 03     — SUNDAY race, long run 'sun'    → the long-run day IS race
+//                      day, the commonest shape there is.
+//   case 06          — SUNDAY race, long run 'sat'    → the long-run day is race
+//                      EVE — the shape §39 Amendment 1 had to fix.
+//   case 07          — MONDAY race — the edge case, kept on purpose (below).
+//
+// Collapsing these onto one weekday, or moving everything to Sunday without
+// case 07, would turn a known open defect green. That is re-baselining to pass.
 
 const PLAN_START = '2026-04-27'
 
@@ -91,7 +102,7 @@ export const CANONICAL_CASES: Case[] = [
       `Mark, 38. Software engineer, two kids. Runs 4×/week, consistent for 2 years but always pushes too hard on easy days — ${BRAND.name}'s exact target user. Wants to break 50:00 in a local 10K, 12 weeks away. Has 60 min on weekdays, longer on weekends. Comfortable with structured quality but injury history of mild knee niggles.`,
     tier: 'paid',
     input: {
-      race_date: '2026-07-26',
+      race_date: '2026-07-25',   // SATURDAY (see the race-weekday note above)
       race_distance_km: 10,
       race_name: 'Local 10K',
       goal: 'time_target',
@@ -175,7 +186,7 @@ export const CANONICAL_CASES: Case[] = [
       'Mike, 47. Returning runner (4 weeks at current volume) with hip injury history. 4:00 marathon goal, 13 weeks out. Currently 38 km/week, longest recent run 18 km. 4 sessions/week. The case that prompted the 2026-04-28 review: a time-targeted marathon plan should not be possible from this starting point. Engine refuses generation unless acknowledged_prep_warning is set; with acknowledgment, plan generates as maintenance with warnings. (The original review used 11 weeks, which after §44 returning-runner shift now triggers BLOCK; 13 weeks puts the case back in the warn zone the review was concerned about.)',
     tier: 'paid',
     input: {
-      race_date: '2026-08-02',
+      race_date: '2026-08-01',   // SATURDAY (see the race-weekday note above)
       race_distance_km: 42.2,
       race_name: 'Target Marathon',
       goal: 'time_target',
@@ -234,7 +245,7 @@ export const CANONICAL_CASES: Case[] = [
       'Priya, 36. Sub-50 10K in 12 weeks. Runs Mon/Wed/Thu + a Sunday long run. Lunch-break windows are tight Mon and Wed (30 min) but Thursday is a clear evening (90 min). Today the wizard makes her enter her worst day (30) as the weekday cap, so her one good day is invisible to the plan.',
     tier: 'paid',
     input: {
-      race_date: '2026-07-26',
+      race_date: '2026-07-25',   // SATURDAY (see the race-weekday note above)
       race_distance_km: 10,
       race_name: 'Local 10K',
       goal: 'time_target',
