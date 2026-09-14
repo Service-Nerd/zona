@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — VERIF-PARITY-GOAL-01 + coaching-guard Bash coverage · two safety nets with holes in the same shape
+
+**Shipped:** `verify:parity` now runs both goal branches instead of one, and the coaching-board hook now sees doctrine edits made through Bash. Neither is a feature; both are checks that were quietly covering less than they claimed.
+
+**Dev learning:** The parity grid had `goal: 'finish'` hardcoded in a single expression, so **every one of its 2,916 cases ran one branch of the engine**. Everything behind `goal === 'time_target'` — §22's renames, the segmented long runs, §25, the maintenance logic — was invisible. It told me "IDENTICAL, byte-for-byte unchanged" about a commit that had changed a time-target producer, and I nearly quoted that as proof the change was safe. The script's own header documents two traps it was built to avoid; this was a third, and its existing guard could not have caught it, because that guard checks row COUNT and 2,916 rows of one branch is still one branch. **Count is not coverage.**
+
+**Product/creator learning:** The coaching-guard had the identical shape of hole. It matched the dedicated file tools and not Bash — and a session told to prefer Bash for file edits uses that path for everything. So the doctrine hook fired on approximately none of my edits, while CLAUDE.md said convening was automatic. Both of these were true for a year and both read as complete.
+
+**AI-building relevance:** The hard part of the hook was not detecting the path, it was NOT firing on reading one. `sed -n '1,40p' CoachingPrinciples.md` runs dozens of times a session; a guard that fires on that gets switched off within an hour, which this repo has already written down as equivalent to having no guard. So a doctrine path is necessary but not sufficient — a write signal is required, and for redirects the file has to be the **target**, not just an argument. `grep DOC > /tmp/out` reads doctrine and writes elsewhere, and must stay silent.
+
+**The honest bit:** I got the regex escaping wrong writing Python that writes Python — `\b` collapsed into a literal backspace byte (`\x08`) and three write cases silently failed to match while every read case passed. So the first version was a guard that was permissive in exactly the direction that matters, and it looked fine because the tests I cared most about were green. Printed the compiled pattern to find it.
+
+**Hook material:** A regression test suite that reported "IDENTICAL across 2,916 cases" for a change it structurally could not see, because of one hardcoded word.
+
+**Postable?:** yes
+
+
 ## 2026-09-13 — STRAVA-WEBHOOK-OBS-01 · built the smoke detector, found the house already on fire
 
 **Shipped:** The Strava webhook now has a heartbeat and a daily health probe. Running it for the first time revealed the auto-link path has been completely dead.
