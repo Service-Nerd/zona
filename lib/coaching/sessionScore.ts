@@ -18,8 +18,12 @@ export interface SessionScoreResult {
   distanceScore:     number
   paceScore:         number
   efScore:           number
-  totalScore:        number
-  verdict:           Verdict
+  // §108 Amendment 1 (Coaching Board 2026-09-13) — NULL when HR is unmeasured.
+  // Nullable deliberately: the type IS the mechanical check, so every consumer is
+  // forced by the compiler to handle "we did not measure this" rather than
+  // silently rendering a fabricated number.
+  totalScore:        number | null
+  verdict:           Verdict | null
 }
 
 /** All inputs are pre-validated. Returns deterministic 0–100 scores. */
@@ -29,15 +33,33 @@ export function scoreSession(input: SessionScoreInput): SessionScoreResult {
   const paceScore         = computePaceScore(input)
   const efScore           = computeEFScore(input)
 
-  // When HR is absent, use 75 neutral only for the total so scoring stays
-  // meaningful — but we expose null on hr_discipline_score so the UI can
-  // distinguish "no data" from "genuinely scored 75".
-  const totalScore = Math.round(
-    (hrDisciplineScore ?? 75) * SCORE_WEIGHTS.hr_discipline +
-    distanceScore             * SCORE_WEIGHTS.distance +
-    paceScore                 * SCORE_WEIGHTS.pace +
-    efScore                   * SCORE_WEIGHTS.ef
-  )
+  // §108 Amendment 1 — NO composite when the HR axis is unmeasured.
+  //
+  // This previously substituted 75 ("CLOSE") for the axis carrying HALF the
+  // weight, so 37.5 of every no-HR score was invented. Measured in production
+  // 2026-09-13: 12 of 126 scored runs (9.5%) had no HR at all, and SEVEN of
+  // those were told **"nailed"** — a verdict about intensity discipline on a run
+  // where intensity was never observed. §108 gives that axis 0.50 precisely
+  // "because it is the only axis that speaks to intensity distribution, which is
+  // the product's entire thesis"; defaulting it to a pass asserts the thesis was
+  // satisfied when nothing measured it.
+  //
+  // It also inverted the incentive: the SAME run scored 41 ("off target") with a
+  // monitor showing poor discipline and 69 ("close") with no monitor at all.
+  // Not wearing the strap was worth 28 points, while the coach note told the
+  // runner to wear it.
+  //
+  // Renormalising over the remaining axes was REJECTED by the board: it would
+  // make a no-HR score MORE confident, not less. The honest output is no number.
+  // Same principle as §107 — a session may not prescribe work it does not record.
+  const totalScore = hrDisciplineScore === null
+    ? null
+    : Math.round(
+        hrDisciplineScore * SCORE_WEIGHTS.hr_discipline +
+        distanceScore     * SCORE_WEIGHTS.distance +
+        paceScore         * SCORE_WEIGHTS.pace +
+        efScore           * SCORE_WEIGHTS.ef
+      )
 
   return {
     hrDisciplineScore,
@@ -45,7 +67,7 @@ export function scoreSession(input: SessionScoreInput): SessionScoreResult {
     paceScore,
     efScore,
     totalScore,
-    verdict: deriveVerdict(totalScore),
+    verdict: totalScore === null ? null : deriveVerdict(totalScore),
   }
 }
 

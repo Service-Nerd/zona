@@ -12468,7 +12468,11 @@ function scoreBandLabel(value: number): string {
   return 'Off target'
 }
 
-function RunFeedbackCard({
+// Exported for the local design harness at /post-run-preview. This card is
+// tier-gated and authed, so "it compiles" is not the same claim as "it renders
+// correctly in every state" — and this repo has already shipped a comment
+// describing a change to an unchanged component because nobody could look at it.
+export function RunFeedbackCard({
   analysis,
   paceTarget = null,
   actualAvgSpeedMs = null,
@@ -12489,168 +12493,49 @@ function RunFeedbackCard({
   const [expanded, setExpanded] = useState(false)
   const explanations = buildScoreExplanations(analysis, paceTarget, actualAvgSpeedMs, preferredUnits)
 
-  const metrics: { label: string; value: number | null | undefined }[] = [
-    { label: 'HR',         value: analysis.hr_discipline_score as number | null },
-    { label: 'Distance',   value: analysis.distance_score },
-    { label: 'Pace',       value: analysis.pace_score },
-    { label: 'Efficiency', value: analysis.ef_score },
-  ]
-  const hrNotAvailable = !isManual && analysis.hr_discipline_score == null
+  // UX-POSTRUN-01 — the one behavioural signal that survives the dashboard cut.
+  // `hr_discipline_score` IS the in-zone percentage (scoreSession returns
+  // `min(100, hrInZonePct)`), so this reads the score row rather than
+  // recomputing from `hr_in_zone_pct` and risking two answers to one question.
+  const zoneSignal = analysis.hr_discipline_score as number | null
+  const hrNotAvailable = !isManual && zoneSignal == null
+
+  // UX-POSTRUN-01 — the card's palette follows the verdict.
+  //
+  // Every post-run card rendered on `--warn-bg` regardless of outcome, so a run
+  // where the runner HELD the zone met "There it is. Don't ruin it." on the
+  // warning palette. CLAUDE.md reserves warn/amber for coaching; moss is the
+  // accent for completion. Getting it right is most of what "does this make them
+  // feel the right thing" means at this moment — restraint is supposed to feel
+  // like progress, and it cannot if success and drift look identical.
+  //
+  // `--coach-ink` is declared in globals.css as "coach copy on --warn-bg only",
+  // so the ink moves with the background rather than being left behind on a
+  // surface it was never specified against.
+  // Threshold reuses the ≥80 already used for the bar and `scoreBandLabel` — no
+  // new coaching numeric enters through a colour decision.
+  const zoneHeld = zoneSignal != null && zoneSignal >= 80
+  const pal = zoneHeld
+    ? { bg: 'var(--moss-soft)', ink: 'var(--ink)', label: 'var(--moss)', track: 'rgba(26,26,26,0.10)', rule: 'rgba(26,26,26,0.10)' }
+    : { bg: 'var(--warn-bg)',   ink: 'var(--coach-ink)', label: 'var(--warn)', track: 'rgba(61,38,0,0.12)', rule: 'rgba(61,38,0,0.10)' }
 
   return (
     <>
-      {/* Verdict card — rule-derived headline + (metrics if !isManual). No AI mark.
-       *  AI-VIS-01: the LLM paragraph used to live here too — provenance was muddy.
-       *  Now split into a separate AI card below. */}
-      <div style={{
-        marginTop: '12px',
-        background: 'var(--warn-bg)',
-        borderRadius: '14px',
-        padding: '16px 18px',
-      }}>
-        {/* Top row — score toggle (right-aligned), only when !isManual && score !== null */}
-        {!isManual && score !== null && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
-            <button
-              type="button"
-              onClick={() => setExpanded(e => !e)}
-              aria-expanded={expanded}
-              aria-label={expanded ? 'Hide score breakdown' : 'Show score breakdown'}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                padding: '2px 4px',
-                margin: '-2px -4px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
-                color: 'var(--coach-ink)', opacity: 0.5,
-                fontVariantNumeric: 'tabular-nums',
-                cursor: 'pointer',
-              }}
-            >
-              {score}/100
-              <span style={{
-                fontSize: '9px',
-                display: 'inline-block',
-                transform: expanded ? 'rotate(180deg)' : 'none',
-                transition: 'transform 0.18s',
-              }}>▾</span>
-            </button>
-          </div>
-        )}
-
-        {/* Zonna-voice headline */}
-        <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
-          color: 'var(--coach-ink)', letterSpacing: '-0.1px', lineHeight: 1.4,
-          marginBottom: !isManual ? '14px' : 0,
-        }}>
-          {voice.headline}
-        </div>
-
-        {/* Metric quartet — hidden for manual rows (no activity data to score).
-         *  HR shows "—" when null (watch sync race — HR not yet available).
-         *  Other metrics are hidden when absent. INV-DATA-005: one-liner explains. */}
-        {!isManual && <div style={{ display: 'flex', gap: '10px' }}>
-          {metrics.map(({ label, value }) => (value != null || label === 'HR') && (
-            <div key={label} style={{ flex: 1 }}>
-              <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-                color: 'var(--warn)', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.08em',
-                marginBottom: '4px',
-              }}>
-                {label}
-              </div>
-              {value != null ? (
-                <>
-                  <div style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
-                    color: 'var(--coach-ink)', fontVariantNumeric: 'tabular-nums',
-                    letterSpacing: '-0.5px', marginBottom: '6px',
-                  }}>
-                    {value}
-                  </div>
-                  <div style={{
-                    height: '3px', background: 'rgba(61,38,0,0.12)', borderRadius: '2px',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${value}%`,
-                      background: value >= 80 ? 'var(--moss)' : 'var(--warn)',
-                      opacity: value >= 80 ? 0.8 : value >= 60 ? 0.55 : 1,
-                      borderRadius: '2px',
-                      transition: 'width 0.4s ease',
-                    }} />
-                  </div>
-                  <div style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-                    color: 'var(--warn)', opacity: 0.7,
-                    textTransform: 'uppercase', letterSpacing: '0.08em',
-                    whiteSpace: 'nowrap',
-                    marginTop: '5px',
-                  }}>
-                    {scoreBandLabel(value)}
-                  </div>
-                </>
-              ) : (
-                <div style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 700,
-                  color: 'var(--mute)', letterSpacing: '-0.5px',
-                }}>—</div>
-              )}
-            </div>
-          ))}
-        </div>}
-        {hrNotAvailable && (
-          <p style={{
-            fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)',
-            margin: '8px 0 0', lineHeight: 1.4,
-          }}>
-            HR data wasn&rsquo;t available when this run was analysed.
-          </p>
-        )}
-
-        {/* Expanded breakdown — one line per sub-score, derived from analysis row */}
-        {!isManual && expanded && (
-          <div style={{
-            marginTop: '14px',
-            paddingTop: '14px',
-            borderTop: '1px solid rgba(61,38,0,0.10)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '10px',
-          }}>
-            {explanations.map(({ label, value, line }) => value !== undefined && (
-              <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                <div style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-                  color: 'var(--warn)', opacity: 0.7,
-                  textTransform: 'uppercase', letterSpacing: '0.08em',
-                  width: '78px', flexShrink: 0,
-                }}>
-                  {label}
-                </div>
-                <div style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400,
-                  color: 'var(--coach-ink)', lineHeight: 1.45,
-                }}>
-                  {line}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
+      {/* UX-POSTRUN-01 (SLT 2026-09-13) — KIT LEADS.
+       *
+       * The rule-derived verdict card used to come first, so the runner met a
+       * grade before they met a coach. Traynor: this is PAID surface leading
+       * with the commodity — any free tracker computes a score; the read is what
+       * they are paying for, and it was below the fold behind a grading panel.
+       * The post-run moment is where a trial user decides whether they bought a
+       * coach or a tracker, and a mark out of 100 answers "tracker".
+       */}
       {/* AI card — LLM-generated read of your run. Only renders when feedback exists.
        *  White card + moss rail + CoachByline = the canonical "this is from Kit" treatment. */}
       {feedback && (
         <div style={{
           position: 'relative',
-          marginTop: '8px',
+          marginTop: '12px',
           background: 'var(--card)',
           borderRadius: '14px',
           border: '1px solid var(--line)',
@@ -12671,6 +12556,159 @@ function RunFeedbackCard({
           </div>
         </div>
       )}
+      {/* Verdict card — rule-derived headline + (metrics if !isManual). No AI mark.
+       *  AI-VIS-01: the LLM paragraph used to live here too — provenance was muddy.
+       *  Now split into a separate AI card below. */}
+      <div style={{
+        marginTop: '8px',
+        background: pal.bg,
+        borderRadius: '14px',
+        padding: '16px 18px',
+      }}>
+        {/* Top row — score toggle (right-aligned), only when !isManual && score !== null */}
+        {!isManual && score !== null && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+            <button
+              type="button"
+              onClick={() => setExpanded(e => !e)}
+              aria-expanded={expanded}
+              aria-label={expanded ? 'Hide score breakdown' : 'Show score breakdown'}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: '2px 4px',
+                margin: '-2px -4px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
+                color: pal.ink, opacity: 0.5,
+                fontVariantNumeric: 'tabular-nums',
+                cursor: 'pointer',
+              }}
+            >
+              {score}/100
+              <span style={{
+                fontSize: '9px',
+                display: 'inline-block',
+                transform: expanded ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.18s',
+              }}>▾</span>
+            </button>
+          </div>
+        )}
+
+        {/* Zonna-voice headline */}
+        <div style={{
+          fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 700,
+          color: pal.ink, letterSpacing: '-0.1px', lineHeight: 1.4,
+          marginBottom: !isManual ? '14px' : 0,
+        }}>
+          {voice.headline}
+        </div>
+
+        {/* UX-POSTRUN-01 (SLT 2026-09-13) — ONE zone signal, not a four-column dashboard.
+         *
+         * This was HR / DISTANCE / PACE / EFFICIENCY, each with a number, a
+         * progress bar and a band label. Two rules said no:
+         *   · "No dashboards or noise" (CLAUDE.md UI principles)
+         *   · Zonna "deliberately omits gamification" — four sub-scores out of
+         *     100 with bars is a scoreboard, and handing a runner who overtrains
+         *     a number to optimise is the grey-zone pressure the product exists
+         *     to remove, rebuilt as a leaderboard (Sutherland).
+         *
+         * Wood's carve-out is why ONE signal survives rather than none: zone
+         * adherence is the single behaviour this product exists to change, and
+         * confirming it reduces cognitive load rather than rewarding a score.
+         * Distance, pace and efficiency are outcomes of the run, not the
+         * behaviour — they stay available behind the score toggle for anyone who
+         * wants them (progressive disclosure), rather than leading.
+         *
+         * Reuses `scoreBandLabel` and the existing ≥80 moss threshold, so no new
+         * coaching numeric enters through a display change.
+         */}
+        {!isManual && zoneSignal != null && (
+          <div>
+            <div style={{
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+              gap: '10px', marginBottom: '6px',
+            }}>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+                color: pal.ink, letterSpacing: '-0.1px',
+              }}>
+                <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 800 }}>
+                  {Math.round(zoneSignal)}%
+                </span>
+                {' '}in your prescribed zone
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+                color: pal.label, opacity: 0.7,
+                textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap',
+              }}>
+                {scoreBandLabel(zoneSignal)}
+              </div>
+            </div>
+            <div style={{
+              height: '3px', background: pal.track, borderRadius: '2px',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${Math.min(100, Math.max(0, zoneSignal))}%`,
+                background: zoneHeld ? 'var(--moss)' : 'var(--warn)',
+                opacity: zoneHeld ? 0.8 : zoneSignal >= 60 ? 0.55 : 1,
+                borderRadius: '2px',
+                transition: 'width 0.4s ease',
+              }} />
+            </div>
+          </div>
+        )}
+        {hrNotAvailable && (
+          <p style={{
+            fontFamily: 'var(--font-ui)', fontSize: '12px', color: pal.ink,
+            opacity: 0.75, margin: 0, lineHeight: 1.45,
+          }}>
+            {/* §108 Amendment 1 — the score is WITHHELD now, not softened, so the
+              * copy says the honest thing rather than noting a gap beside a
+              * confident number. No em dash (founder call 2026-09-11). */}
+            No heart rate on this run, so it isn&rsquo;t scored.
+          </p>
+        )}
+
+        {/* Expanded breakdown — one line per sub-score, derived from analysis row */}
+        {!isManual && expanded && (
+          <div style={{
+            marginTop: '14px',
+            paddingTop: '14px',
+            borderTop: `1px solid ${pal.rule}`,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+          }}>
+            {explanations.map(({ label, value, line }) => value !== undefined && (
+              <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
+                  color: pal.label, opacity: 0.7,
+                  textTransform: 'uppercase', letterSpacing: '0.08em',
+                  width: '78px', flexShrink: 0,
+                }}>
+                  {label}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400,
+                  color: pal.ink, lineHeight: 1.45,
+                }}>
+                  {line}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
     </>
   )
 }

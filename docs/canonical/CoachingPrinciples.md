@@ -4625,6 +4625,51 @@ to sum to 1.0 — a weighting that does not is a silent rescaling of every score
 > chip. Before anything is built the founder must point at the screen that felt
 > confusing. What would settle it: a screenshot, or the wizard/screen name.
 
+### Amendment 1 — no composite score when the HR axis is unmeasured — added 2026-09-13 (Coaching Board)
+
+**Principle.** When `hr_discipline` cannot be computed, **no total score and no
+verdict are produced.** The axes that WERE measured are still shown. A neutral
+value is never substituted for an unmeasured axis.
+
+**Why.** The function substituted **75** — a "close" score — for the axis carrying
+**half** the weight, so 37.5 points of every no-HR score were invented. §108 gives
+that axis 0.50 precisely *"because it is the only axis that speaks to intensity
+distribution, which is the product's entire thesis"*; defaulting it to a pass
+asserts the thesis was satisfied when nothing observed it.
+
+**Measured in production 2026-09-13:** 126 scored runs, **12 (9.5%) with no heart
+rate at all**, scoring `61, 69, 69, 69, 76, 81, 81, 81, 81, 81, 81, 81`. **Seven
+were told "nailed"** — a verdict about intensity discipline on a run where
+intensity was never measured.
+
+**It also inverted the incentive.** The same run scored **41 ("off target")** with a
+monitor showing poor discipline and **69 ("close")** with no monitor at all. Not
+wearing the strap was worth 28 points, while the coach note told the runner to
+wear it. McMillan: *"You cannot coach someone whose scoreboard rewards not being
+measured."*
+
+**Renormalising over the remaining axes was REJECTED.** It would make a no-HR score
+*more* confident, not less. Seiler: the point of measuring distribution is
+measuring it, and for recreational runners the honest prior for an unmeasured easy
+run is worse than neutral, not better. Same principle as §107 — a session may not
+prescribe work it does not record.
+
+**A single average HR still counts as measured.** The coarse fallback (avg HR
+against the ceiling parsed from `hr_target`) is an observation, not an assumption.
+Withholding there too would punish chest-strap and older-device runners for the
+engine's preference for streams — and Sims noted the iPhone-only cohort skews
+older and more female, which is where under-recovery matters most.
+
+**Config.** No new numeric. The rule keys on the existing
+`SCORE_WEIGHTS.hr_discipline` (0.50).
+
+**Enforcement.** The TYPE is the check: `SessionScoreResult.totalScore` and
+`.verdict` are now `number | null` / `Verdict | null`, so the compiler forces every
+consumer to handle absence rather than rendering a fabricated number. Two call
+sites were caught by it on the first compile. Tests: `sessionScore.test.ts` — which
+**did not exist before this amendment**, on the function that decides whether a
+runner is told "nailed" or "concerning".
+
 ---
 
 ## 109. A progress surface may remember and compare. It may not predict.

@@ -126,7 +126,11 @@ export async function POST(req: NextRequest) {
         })
         const hrCeiling = session.hr_target ? parseHRCeiling(session.hr_target) : null
         const { units } = await getUserDisplayPrefs(serviceSupabase, user.id)
-        verdict      = result.verdict
+        // §108 Amendment 1 — a metric verdict only replaces the RPE-derived one
+        // when there IS one. With no HR the composite is withheld, and the FREE
+        // baseline (`deriveManualVerdict` from RPE/fatigue) is the honest answer
+        // rather than nothing: it is derived from what the runner actually told us.
+        if (result.verdict !== null) verdict = result.verdict
         feedbackText = manualMetricsFeedbackText(session.type, {
           distanceKm: distance_km!,
           plannedKm:  session.distance_km ?? null,

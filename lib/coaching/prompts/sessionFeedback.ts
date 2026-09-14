@@ -15,7 +15,8 @@ export interface SessionFeedbackPromptInput {
   session: Session
   weekN: number
   plan: Plan
-  verdict: Verdict
+  // §108 Amendment 1 — null when HR was unmeasured, so there IS no verdict.
+  verdict: Verdict | null
   /** Reader's preferred units (FMT-01). Distances and paces in the prompt render
    *  in this unit, and the model is instructed to answer in it. Defaults to 'km',
    *  which keeps every km user's prompt byte-identical to pre-FMT-01. */
@@ -113,9 +114,9 @@ Example 7 — long run, drifted hot:
 Input: Long run (Zone 2, ≤148), 18km planned / 16km actual, avg HR 156, 41% in zone, RPE 5, verdict: close
 Output: "Cut it 2km short and HR drifted above Zone 2 in the back half — probably connected. Long runs fall apart when you start too fast. Next one: start slower than you think you need to, especially the first 5km."
 
-Example 8 — easy run, no HR recorded:
-Input: Easy run (Zone 2), 9km, HR: not recorded, RPE 5, verdict: close
-Output: "No HR data — RPE 5 on an easy run is a hair high. Easy effort should feel almost embarrassingly slow. Get the HR monitor on next time: without it, you're guessing at a zone you can't see."
+Example 8 — easy run, no HR recorded (NOT SCORED):
+Input: Easy run (Zone 2), 9km, HR: not recorded, RPE 5, verdict: NOT SCORED
+Output: "No heart rate, so this one goes unscored. RPE 5 on an easy run is a hair high: easy should feel almost embarrassingly slow. Wear the monitor next time and you get the zone read back."
 
 Example 9 — recovery run, nailed:
 Input: Recovery (Zone 1, ≤130), 5km, avg HR 128, 87% in zone, RPE 2, verdict: nailed
@@ -307,7 +308,10 @@ If today's numbers diverge meaningfully from this cohort (HR ±5 bpm, pace ±${f
 
   const voiceHeader = buildVoiceHeader({
     role: 'giving session feedback',
-    outputConstraint: 'One paragraph only — 2–4 sentences max.',
+    // UX-POSTRUN-01 (SLT 2026-09-13) — tightened from 2–4. The screenshot that
+    // opened the review ran to 90 words and five sentences at the moment a runner
+    // has just stopped running. Voice rule: one sentence is better than two.
+    outputConstraint: 'One paragraph only. TWO sentences, three at the absolute most. Never more.',
   })
 
   const paceLine = actualPaceSecPerKm
@@ -377,9 +381,9 @@ Planned distance: ${session.distance_km ? fmtDist(session.distance_km, 1) : 'not
 Actual distance: ${fmtDist(actualDistKm, 1)}
 ${paceLine ? paceLine + '\n' : ''}${hrLine}
 ${efLine ? efLine + '\n' : ''}RPE: ${rpe !== null ? rpe : 'not logged'}
-Fatigue: ${fatigueTag ?? 'not logged'}${isRace ? '' : `\nVerdict: ${verdict}`}
+Fatigue: ${fatigueTag ?? 'not logged'}${isRace ? '' : `\nVerdict: ${verdict ?? 'NOT SCORED — heart rate was not recorded, so do not state or imply a verdict'}`}
 ${isRace ? raceDebriefBlock : `${maintenanceBlock}${previousSimilarBlock}${isUltraEffort ? ultraEffortBlock : `${streamBlock}${paceFadeBlock}`}${cohortBlock}${tempBlock}${limiterBlock}`}
-Write 2–4 sentences of honest, specific feedback. No headers. No bullet points. Plain text only.`
+Write TWO sentences of honest, specific feedback, three at the absolute most. No headers. No bullet points. Plain text only. Do NOT use em dashes: use a colon, comma, semicolon or full stop.`
 }
 
 // formatPaceSec removed (FMT-01) — this was one of four copies of the pace rule,
