@@ -875,7 +875,13 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['peak'],
     distance_eligibility: ['HM'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
-    main_set_structure: { type: 'long_run_with_segment', easy_pct: 65, race_pace_pct: 35, race_pace_zone: 'HM' },
+    // RACE-PACE-OVERLAY-REACH-01 (Coaching Board 2026-09-14): the split is
+    // §16's (20% of the run at race pace), not this row's. `easy_pct`/
+    // `race_pace_pct` were a SECOND, contradicting declaration read by nothing
+    // — 65/35 here against §16's 20, with no reasoning attached to either
+    // number in this file. §17's rule: authority, superseded, committed, or gone.
+    // `race_pace_zone` stays and is now AUTHORITY — the session card quotes it.
+    main_set_structure: { type: 'long_run_with_segment', race_pace_zone: 'HM' },
     intensity_zones: ['Z2', 'Z3'],
     typical_duration_min: 75, typical_duration_max: 130, is_free_tier: true,
     coach_voice_notes: 'Easy first. Final third at HM goal pace.',
@@ -886,7 +892,11 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     phase_eligibility: ['peak'],
     distance_eligibility: ['MARATHON'],
     fitness_level_min: 'intermediate', difficulty_tier: 4,
-    main_set_structure: { type: 'long_run_with_segment', easy_pct: 60, race_pace_pct: 40, race_pace_zone: 'MP' },
+    // Same ruling as hm_pace_long_run above. Willy rejected this row's 40%
+    // outright: on the measured mean peak long run it is 50–63 min at marathon
+    // pace (longest 76), a marathon-pace tempo bolted onto a three-hour run in
+    // the plan's heaviest week. §16's 20% ships.
+    main_set_structure: { type: 'long_run_with_segment', race_pace_zone: 'MP' },
     intensity_zones: ['Z2', 'Z3'],
     typical_duration_min: 90, typical_duration_max: 180, is_free_tier: true,
     coach_voice_notes: 'Easy first. Hit goal pace on tired legs.',

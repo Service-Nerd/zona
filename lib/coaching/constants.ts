@@ -69,8 +69,19 @@ export const EF_DECLINE_THRESHOLD_PCT = -8  // >8% drop vs 4-week rolling avg
 // Max activities to include in EF baseline
 export const EF_BASELINE_WINDOW = 6
 
-// HR stream zone margin (bpm tolerance around zone boundaries)
-export const HR_ZONE_TOLERANCE_BPM = 3
+// HR stream zone margin (bpm tolerance around zone boundaries).
+//
+// CONFIG-CONSUMER-01 (2026-09-14): this was declared 3 and read by NOTHING,
+// while `zoneRules.hitSessionZone` hardcoded its own `const tolerance = 2` for
+// the same job — the Configuration Singularity breached in both directions at
+// once, with the named number being the dead one. Two owners, one question,
+// differing by a bpm, and the config would have looked authoritative to anyone
+// who found it. Corrected to 2 because 2 is what has always shipped: the
+// defect is the hardcode plus the orphan, NOT the value, and changing the
+// tolerance would move `hr_in_zone_pct` — which feeds session scoring, the
+// zone-drift trigger and the post-run card — on boundary HRs. That would be a
+// coaching change and would need the board; naming the shipped number does not.
+export const HR_ZONE_TOLERANCE_BPM = 2
 
 // Max adjustments per week
 export const MAX_ADJUSTMENTS_PER_WEEK = 2

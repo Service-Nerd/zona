@@ -8,6 +8,7 @@
 // "right zone for the session" frames the app, not "always Z2".
 
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
+import { HR_ZONE_TOLERANCE_BPM } from './constants'
 
 export type ZoneKey = 'Z1' | 'Z2' | 'Z3' | 'Z4-5'
 
@@ -205,9 +206,9 @@ export function didSessionHitZone(
     return avgHr <= band.hi
   }
   // Quality / intervals / race — must be inside the band (with a small
-  // tolerance to avoid penalising rounding on the edges).
-  const tolerance = 2
-  return avgHr >= band.lo - tolerance && avgHr <= band.hi + tolerance
+  // tolerance to avoid penalising rounding on the edges). The number is named
+  // in `lib/coaching/constants.ts`, not here (CONFIG-CONSUMER-01).
+  return avgHr >= band.lo - HR_ZONE_TOLERANCE_BPM && avgHr <= band.hi + HR_ZONE_TOLERANCE_BPM
 }
 
 // Re-export the canonical zone table so other modules don't reach into

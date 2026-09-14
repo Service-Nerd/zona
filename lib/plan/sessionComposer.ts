@@ -104,9 +104,19 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
 
   const isQuality = session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals' || session.type === 'hard'
   const isLong    = isLongRun(session)
-  // marathon-pace is a display sub-shape of the long run, not a correctness
-  // classification — kept label-derived.
-  const isMpLong  = isLong && (session.label?.toLowerCase().includes('marathon-pace') ?? false)
+  // RACE-PACE-OVERLAY-REACH-01 (Coaching Board 2026-09-14). This gate used to be
+  // `label.includes('marathon-pace')` — a LABEL substring, the D-17 class ADR-018
+  // exists to remove. §16 declares the overlay for "HM and MARATHON"; the label
+  // only ever matched the marathon row's name ("Marathon-pace long run"), so the
+  // HM row ("Long run with HM-pace finish") rendered a plain easy run. Measured
+  // on the real display path: MARATHON 12/12, **HM 0 of 18**. Half a ratified
+  // principle, unreachable, and invisible because the card simply looked calm.
+  //
+  // The join is now the row's own declared shape, the same discriminator
+  // `invariants.ts` already uses. It cannot catch §24b's 5K/10K three-part
+  // segmented long run, which is built inline and has no catalogue row — that
+  // session is NOT this shape and must not be flattened into it.
+  const isMpLong  = isLong && raceSegmentRow(catalogueRow)
   const isShake   = isShakeout(session)
 
   // Shakeout: short Z1 with brief warm-up only.
@@ -126,16 +136,26 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
     const cooldownMins = Math.max(SESSION_FORMAT.COOLDOWN.min_duration_mins, Math.round(total * SESSION_FORMAT.UNIVERSAL.cooldown_pct / 100))
     const mainMins     = Math.max(0, total - warmupMins - cooldownMins)
 
-    if (isMpLong && goalPace) {
-      // Long run with MP segment (CoachingPrinciples §5).
+    // The pace comes from the SESSION first. §107 records the prescribed segment
+    // pace as `lr_segment_pace` and five invariants govern it, one of which says
+    // the point of recording it is that "nothing downstream can check or render
+    // them" otherwise. Nothing rendered it. `goalPace` stays as the fallback for
+    // plans generated before §107.
+    const segPace = session.lr_segment_pace ?? goalPace
+    if (isMpLong && segPace) {
+      // Long run with a race-pace segment (CoachingPrinciples §16, §5).
       const mpPct = SESSION_FORMAT.LONG_RUN_PEAK.race_pace_segment_pct
+      // The row declares WHICH race pace this is ('MP' / 'HM'). The copy used to
+      // hardcode "MP target", which is simply the wrong number to hand a
+      // half-marathon runner on their key session.
+      const zoneWord = raceSegmentZoneWord(catalogueRow)
       return withDistances({
         warmup:   part(SESSION_FORMAT.LONG_RUN_PEAK.warmup_mins, 'Z1→Z2', 'Easy through warm-up. Build to Z2 over the first third.'),
         main:     part(Math.round(mainMins * (1 - mpPct / 100)), 'Z2', 'Easy aerobic. Stay calm.'),
         race_pace_segment: {
           duration_pct: mpPct,
-          pace_target:  goalPace,
-          description:  `Final ${mpPct}% at MP target ${goalPace}. Pace, not effort.`,
+          pace_target:  segPace,
+          description:  `Final ${mpPct}% at ${zoneWord} target ${segPace}. Pace, not effort.`,
         },
         cooldown: part(cooldownMins, 'Z1', 'Easy walk-jog finish.'),
         total_duration_mins: total,
@@ -216,6 +236,28 @@ function zeroStructure(shape: SessionStructure['shape'], total = 0): SessionStru
     total_duration_mins: total,
     shape,
   }
+}
+
+/**
+ * Does this catalogue row declare the peak race-pace long-run shape?
+ *
+ * `long_run_with_segment` is the row's OWN declaration of what it is, and it is
+ * already the discriminator `INV-PLAN-*` uses (invariants.ts) — so the display
+ * and the checker classify the session the same way, from the same field.
+ */
+function raceSegmentRow(row: SessionCatalogueRow | null | undefined): boolean {
+  return (row?.main_set_structure as { type?: string } | null)?.type === 'long_run_with_segment'
+}
+
+/**
+ * The race pace this row's segment is run at, as the runner's own word for it.
+ * `race_pace_zone` is declared per row ('MP' on mp_long_run, 'HM' on
+ * hm_pace_long_run) and was read by nothing until now. Falls back to the
+ * distance-neutral phrase rather than guessing a distance.
+ */
+function raceSegmentZoneWord(row: SessionCatalogueRow | null | undefined): string {
+  const z = (row?.main_set_structure as { race_pace_zone?: string } | null)?.race_pace_zone
+  return typeof z === 'string' && z.length > 0 ? z : 'race pace'
 }
 
 function catalogueShapeFor(row: SessionCatalogueRow | null | undefined): SessionStructure['shape'] {
