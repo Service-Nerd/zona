@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — ULTRA-FUEL-NOTE-01 · the board was right about the ruling and wrong about the facts
+
+**Shipped:** 50K and 100K peak long runs now tell the runner to fuel every 25–30 minutes, sourced from what the catalogue already declares.
+
+**Dev learning:** The board's ruling said "no numeric change — the cadence already exists". So I went to read it, and found `fuel_every_mins: 25` on `ultra_race_sim` and `30` on `time_on_feet`, and then measured which of those rows actually lands on an ultra long run. **Neither. Ever.** 100% of 50K/100K peak long runs carry no `catalogue_id` at all — those rows only ever get drawn into the *quality* slot. The number existed; it just wasn't anywhere near the session it was supposed to describe. Second decorative-config find in two commits, same shape as `intensity_zones`.
+
+**Product/creator learning:** Picking 25 or 30 would have been the easy move and it would have been a coaching decision smuggled in as an implementation detail. On a four-hour effort that interval is a real prescription, and it is not a neutral choice — the shorter one is the more protective one, which is the entire reason Sims pushed the item. So: read the range the catalogue declares, ship "every 25–30 minutes", and write into §24e that a single tighter number needs its own sitting. Implement the ruling, record where its premise was wrong, don't quietly patch over it.
+
+**AI-building learning:** My containment probe printed `hsr=balanced ... peakLR=0` and I nearly skimmed past it. `balanced` is not a valid `hard_session_relationship` — the values are avoid/neutral/love/overdo — so every one of those plans threw and my try/catch ate it. The row said zero and that is the only reason I noticed. I have now written the same guard three times this session and it has caught something every time.
+
+**The honest bit:** `verify:parity` told me 864 of 5,832 cases changed and then printed 25 of them. I could not answer "did my ultra-only change touch a 10K plan?" from that, and I was about to argue it from the code instead of checking. Added a per-axis histogram to the script; it immediately printed `50=432/972  100=432/972  5=0/972  10=0/972  21.1=0/972  42.2=0/972`, which is the actual answer and took three lines to get.
+
+**Hook material:** A config value sitting in the catalogue for months, ratified by a board, with a principle explaining it — and it was never once read by the session it described.
+
+**Postable?:** yes
+
+
 ## 2026-09-13 — LR-SEGMENT-RECORDED-§25 · the config that was declared, ratified, and read by nothing
 
 **Shipped:** §25's HM and marathon race-specific long runs now record the pace segment they prescribe, and derive their zone label from the catalogue row instead of hand-writing it beside the row that already declared it.
