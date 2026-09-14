@@ -54,7 +54,10 @@ CASES = [
 
     # Non-edit tools never fire.
     ("Read is exempt",           "Read",  "docs/canonical/CoachingPrinciples.md",        PASS),
-    ("Bash is exempt",           "Bash",  "docs/canonical/CoachingPrinciples.md",        PASS),
+    # Bash is NO LONGER exempt (2026-09-13) — but it is routed by `command`, not
+    # `file_path`, so a Bash payload carrying only a path still does nothing.
+    # The real Bash coverage is BASH_CASES below.
+    ("Bash ignores file_path",   "Bash",  "docs/canonical/CoachingPrinciples.md",        PASS),
 ]
 
 
@@ -62,6 +65,60 @@ def fires(tool: str, file_path: str) -> bool:
     if tool not in cguard.TOOLS:
         return False
     return cguard.matched_doctrine_file(file_path) is not None
+
+
+
+# ── Bash cases (added 2026-09-13) ───────────────────────────────────────────
+# The hole: for a year this hook matched only the file tools, so any doctrine
+# edit made through Bash passed unguarded. The WRITE cases below are the actual
+# command shapes used to edit CoachingPrinciples.md on 2026-09-13; the READ
+# cases are the shapes used dozens of times the same day to inspect it, and they
+# matter more — a guard that fires on `sed -n` gets switched off within an hour,
+# which this repo has already recorded as equivalent to having no guard.
+DOC = "docs/canonical/CoachingPrinciples.md"
+CFG = "lib/plan/generationConfig.ts"
+
+BASH_CASES = [
+    # (description, command, expected)
+    ("python heredoc write",
+     "python3 - <<'PY'\np='" + DOC + "'\ns=open(p,encoding='utf-8').read()\nopen(p,'w',encoding='utf-8').write(s)\nPY", FLAG),
+    ("python -c write",
+     "python3 -c \"open('" + CFG + "','w').write(x)\"", FLAG),
+    ("sed -i",              "sed -i '' 's/foo/bar/' " + DOC,                    FLAG),
+    ("sed -E -i",           "sed -E -i 's/a/b/' " + CFG,                        FLAG),
+    ("redirect overwrite",  "cat template > " + DOC,                            FLAG),
+    ("redirect append",     "echo '## 108' >> " + DOC,                          FLAG),
+    ("heredoc to file",     "cat > " + DOC + " <<'EOF'\nx\nEOF",              FLAG),
+    ("tee",                 "echo x | tee " + DOC,                              FLAG),
+    ("cp onto doctrine",    "cp /tmp/new.md " + DOC,                            FLAG),
+    ("mv onto doctrine",    "mv /tmp/new.ts " + CFG,                            FLAG),
+    ("node writeFileSync",  "node -e \"require('fs').writeFileSync('" + CFG + "', s)\"", FLAG),
+
+    # READS — every one of these must stay silent.
+    ("sed -n range read",   "sed -n '1,40p' " + DOC,                            PASS),
+    ("grep read",           'grep -n "§84" ' + DOC,                             PASS),
+    ("grep -c read",        "grep -c foo " + CFG,                               PASS),
+    ("cat read",            "cat " + DOC,                                       PASS),
+    ("head/tail read",      "head -20 " + DOC + " | tail -5",                   PASS),
+    ("wc read",             "wc -l " + DOC,                                     PASS),
+    ("git show read",       "git show HEAD:" + DOC,                             PASS),
+    ("git log read",        "git log --oneline -- " + DOC,                      PASS),
+    # The dangerous near-miss: reads doctrine, writes somewhere else entirely.
+    ("read doctrine, write elsewhere",
+     "grep -n foo " + DOC + " > /tmp/out.txt",                                  PASS),
+    ("python READ of doctrine",
+     "python3 -c \"print(open('" + DOC + "').read()[:200])\"",                PASS),
+    ("cp FROM doctrine",    "cp " + DOC + " /tmp/backup.md",                     PASS),
+    # Unrelated files must never fire, written or read.
+    ("write a non-doctrine file",  "sed -i '' 's/a/b/' lib/plan/ruleEngine.ts",  PASS),
+    ("redirect to non-doctrine",   "echo x > lib/plan/invariants.ts",            PASS),
+    ("no path at all",             "npm run verify",                             PASS),
+    ("empty command",              "",                                           PASS),
+]
+
+
+def bash_fires(command: str) -> bool:
+    return cguard._bash_writes_doctrine(command) is not None
 
 
 def main() -> int:
@@ -81,7 +138,15 @@ def main() -> int:
         print(f"{'✓' if ok else '✗'} {desc:<24} {'—':<10} → pass")
 
     print()
-    print(f"{len(CASES) + 2} cases, {failures} failure(s)")
+    for desc, command, expected in BASH_CASES:
+        actual = FLAG if bash_fires(command) else PASS
+        ok = actual == expected
+        if not ok:
+            failures += 1
+        print(f"{'✓' if ok else '✗'} {desc:<30} Bash       → {actual} (expected {expected})")
+
+    print()
+    print(f"{len(CASES) + len(BASH_CASES) + 2} cases, {failures} failure(s)")
     return 1 if failures else 0
 
 

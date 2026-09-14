@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PreToolUse coaching-doctrine guard for Edit / Write / MultiEdit.
+"""PreToolUse coaching-doctrine guard for Edit / Write / MultiEdit / Bash.
 
 Zonna's Configuration Singularity concentrates every coaching decision into a
 small set of named files. That makes "is this a coaching decision?" a file-path
@@ -22,9 +22,25 @@ Contract: reads the PreToolUse payload as JSON on stdin.
     treats as "deny + show stderr to the model".
 
 Flip HARD_BLOCK if advisory injection turns out to be too easy to sail past.
+
+BASH COVERAGE (added 2026-09-13). For its first year this hook matched only the
+dedicated file tools, so every doctrine edit made through Bash — `sed -i`, a
+`python3 - <<'PY'` heredoc, `cat > file` — passed with no guard, no prompt and no
+trace. CLAUDE.md's claim that "convening is automatic" was therefore false for
+that entire path, and it is the path a session told to prefer Bash for file edits
+uses for everything. Three doctrine commits on 2026-09-13 went through it.
+
+The hard part is not spotting the path, it is NOT firing on the overwhelmingly
+common case of READING one. `sed -n '1,40p' CoachingPrinciples.md` and
+`grep -n "§84" CoachingPrinciples.md` must stay silent, or the hook becomes noise
+and gets switched off — which this repo has already recorded as the same outcome
+as having no hook. So a doctrine path in the command is necessary but NOT
+sufficient: the command must also carry a write signal, and for redirection the
+path must be the redirect TARGET rather than merely an argument.
 """
 import json
 import os
+import re
 import sys
 
 # Set True to deny the edit outright instead of injecting an advisory reminder.
@@ -50,6 +66,91 @@ DOCTRINE_FILES = [
 ]
 
 TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
+
+# ── Bash write detection ────────────────────────────────────────────────────
+# In-place / stream editors and copiers, where naming the file IS writing it.
+_INPLACE_RE = re.compile(
+    r"""(?:^|[|;&]|\s)(?:
+          sed\s+(?:-[a-zA-Z]*\s+)*-[a-zA-Z]*i        # sed -i / sed -E -i / sed -i.bak
+        | perl\s+(?:-[a-zA-Z]*\s+)*-[a-zA-Z]*i       # perl -pi -e
+        | tee\b                                      # tee / tee -a
+        | dd\b
+        | truncate\b
+        | patch\b
+      )""",
+    re.VERBOSE,
+)
+
+# Interpreted-language one-liners and heredocs. A path alone proves nothing here
+# (reading a file in python is entirely normal), so a write MODE token is also
+# required — this is what keeps `python3 -c "print(open(DOC).read())"` silent.
+_INTERPRETER_RE = re.compile(r"(?:^|[|;&]|\s)(?:python3?|node|deno|ruby|perl|php)\b")
+_WRITE_MODE_RE = re.compile(
+    r"""(?:
+          open\s*\([^)]*['"][wax]     # open(p, 'w') / open(p, "a")
+        | ['"][wax]\+?['"]\s*[,)]     # a bare 'w' / "a+" argument
+        | write_text\b
+        | writeFileSync\b
+        | writeFile\b
+        | \.write\s*\(
+      )""",
+    re.VERBOSE,
+)
+
+# Redirection: capture the TARGET only. `grep x DOCTRINE > /tmp/out` reads
+# doctrine and writes elsewhere — that must not fire.
+_REDIRECT_TARGET_RE = re.compile(r">>?\s*['\"]?([^\s'\";|&)]+)")
+
+# `cp`/`mv` onto a doctrine file: the destination is the last bare argument.
+_COPY_RE = re.compile(r"(?:^|[|;&]|\s)(?:cp|mv|install|rsync)\s+(.+)")
+
+
+def _bash_writes_doctrine(command: str):
+    """Return the doctrine file this command WRITES, or None.
+
+    Deliberately asymmetric: a missed write leaves the original hole open, but a
+    false positive on a read gets the hook disabled. Reads win ties.
+    """
+    if not command:
+        return None
+    cmd = normalise(command)
+
+    # 1. Redirection — only when a doctrine file is the redirect target.
+    for target in _REDIRECT_TARGET_RE.findall(cmd):
+        hit = matched_doctrine_file(target)
+        if hit:
+            return hit
+
+    # 2. In-place editors / tee / patch: naming the file is writing it.
+    if _INPLACE_RE.search(cmd):
+        hit = _first_doctrine_mention(cmd)
+        if hit:
+            return hit
+
+    # 3. cp / mv / rsync onto a doctrine path (destination = last argument).
+    for args in _COPY_RE.findall(cmd):
+        parts = [a for a in args.split() if not a.startswith("-")]
+        if parts:
+            hit = matched_doctrine_file(parts[-1].strip("'\""))
+            if hit:
+                return hit
+
+    # 4. An interpreter that both mentions a doctrine path AND opens something
+    #    for writing. This is the `python3 - <<'PY' ... open(p, 'w') ... PY`
+    #    shape that produced the three unguarded commits.
+    if _INTERPRETER_RE.search(cmd) and _WRITE_MODE_RE.search(cmd):
+        hit = _first_doctrine_mention(cmd)
+        if hit:
+            return hit
+
+    return None
+
+
+def _first_doctrine_mention(cmd: str):
+    for doc in DOCTRINE_FILES:
+        if doc in cmd:
+            return doc
+    return None
 
 REMINDER = """⚖️  COACHING DOCTRINE FILE — Coaching Board review required.
 
@@ -93,11 +194,16 @@ def main() -> int:
     except Exception:
         return 0  # never block on a parse failure
 
-    if payload.get("tool_name") not in TOOLS:
+    tool_name = payload.get("tool_name")
+    tool_input = payload.get("tool_input") or {}
+
+    if tool_name == "Bash":
+        hit = _bash_writes_doctrine(tool_input.get("command", "") or "")
+    elif tool_name in TOOLS:
+        hit = matched_doctrine_file(tool_input.get("file_path", "") or "")
+    else:
         return 0
 
-    tool_input = payload.get("tool_input") or {}
-    hit = matched_doctrine_file(tool_input.get("file_path", "") or "")
     if not hit:
         return 0
 
