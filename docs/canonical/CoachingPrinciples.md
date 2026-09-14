@@ -1352,6 +1352,69 @@ Permitted patterns:
 
 Exception: runners with `hard_session_relationship: 'love'`, no `injury_history`, and `training_age: '5yr+'` may have one occurrence of consecutive peak long runs per plan.
 
+### Amendment 1 — a duration-anchored plan steps back in MINUTES (PEAK-LR-STEPBACK-MINUTES-01, Coaching Board 2026-09-13)
+
+**Principle.** The step-back is applied on the axis the plan is anchored on.
+`PEAK_LR_STEPBACK_MAX_PCT` is the same numeric on both: 80% of the peak long
+run's **distance** for a distance-anchored plan, 80% of its **duration** for a
+duration-anchored one. A duration-anchored step-back keeps `distance_km` absent.
+
+**Why.** §47 was gated on `distance_km` in **four** places on one path, and a
+beginner's plan is duration-anchored (95.8% of their sessions carry
+`duration_mins` with `distance_km` null, against 0% for intermediate and
+experienced). Every gate read zero, so the entry guard `peakMaxLrKm <= 0` was
+unconditionally true and the function returned before doing anything: **a
+beginner never received a peak long-run step-back week at all.** Willy: the
+pre-taper recovery value is real, and denying it purely because a runner's plan
+speaks in minutes is the SESSION-KM silent-pass class, not a coaching choice.
+
+**Minutes, not a conversion** (McMillan, Hutchinson). Converting to km would put
+one week reading "14 km" into a plan that otherwise says "90 minutes", which
+breaks the runner's model of their own plan. §80 already settled that a
+duration-anchored session's prescription IS its time on feet. The minutes floor
+is the existing `MIN_SESSION_DISTANCE_KM.long` converted through the runner's own
+easy pace, so no new numeric enters.
+
+**The previously filed fix was a measured no-op, and that is why this got its own
+build.** Swapping the two `?? 0` sites for the owner produced ZERO differences
+across two independent grids, because two further gates nobody had filed sat
+*inside* the mutation and in §9's easy clamp. Reaching the alternation is not the
+same as the alternation doing anything.
+
+**Measured.** Duration-anchored peak long runs stepping back: **0% → 50%**, the
+same rate distance-anchored plans already had. `verify:parity`: 180 of 5,832
+cases changed, **beginner 180/1944, intermediate 0/1944, experienced 0/1944**;
+`finish` 0, `time_target` 180; HM 108 and MARATHON 72, every other distance 0.
+`cohort:shape` **byte-identical** — no runner is reclassified.
+
+**Declared residual (§34).** `INV-PLAN-DELIVERED-RAMP` rises for beginners by
+exactly one case on the 135-plan attribution grid (5 → 6; **warn**, never error;
+every other code and cohort identical). A week that steps back to 80% and returns
+is a larger week-on-week rise by construction — that is what a step-back IS, and
+distance-anchored runners have always carried it. `INV-PLAN-BOUNCEBACK-BOUNDED`,
+the injury-relevant guard, did not move.
+
+**§52 stays inert, deliberately.** Board item (3): 0 breaches across 2,337
+duration-anchored sessions in scope, so no producer change — §9's easy ceiling and
+the long-run cap hold the ratio. The CHECKER is sighted
+(`INV-PLAN-LR-MAX-WEEKLY-PCT` moved onto `sessionKmForCheck`), and a breach
+appearing there is the signal to revisit. The site carries this note in-line so
+it is not re-filed.
+
+> ✅ **A sixth gate, found and CLOSED in the same commit.** The invariant's own
+> `isPeakLevel()` read raw `lr.distance_km` and returned false for any
+> duration-anchored session, so `INV-PLAN-PEAK-LR-ALTERNATION` could not see the
+> cohort the producer now serves — the producer fixed, the checker still blind,
+> the same split §52 had and the reason §52's floor had never surfaced a beginner
+> violation. It now reads `sessionKmForCheck` like the threshold beside it
+> already did.
+>
+> It was measured before being shipped rather than baselined: with the checker
+> sighted over the previously-invisible sessions, **0 violations across 15,973
+> plans**, and it stays wakeable in the liveness harness. Zero is the producer
+> fix confirming itself from the other side — beginners now genuinely alternate.
+> Had it been non-zero this would have shipped narrow and been filed, as §107 was.
+
 **Why.** Case 04 (2026-04-28 review): W6 and W7 were both 30km MP-finish long runs back-to-back. For a 47-year-old returning runner with hip history, two consecutive 30km efforts at marathon-pace specificity is the highest-risk session pattern in the entire plan. Alternation gives connective tissue a window to consolidate the stimulus.
 
 This principle composes with §25 (peak phase requires ≥1 long run with race-pace segments). When peak is 2 weeks, one of the two carries the peak long run and satisfies §25; the other is a step-back. That is acceptable.

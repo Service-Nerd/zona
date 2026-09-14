@@ -4402,8 +4402,10 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         const lr = Object.values(week.sessions).find(s =>
           !!s && isLongRun(s)
         )
-        if (!lr || lr.distance_km == null) return false
-        if (lr.distance_km + 0.01 < threshold) return false
+        if (!lr) return false
+        const lrKmCheck = sessionKmForCheck(lr)
+        if (lrKmCheck == null) return false
+        if (lrKmCheck + 0.01 < threshold) return false
         const label = (lr.label ?? '').toLowerCase()
         const hasRacePace = label.includes('pace') || label.includes(' mp') || label.startsWith('mp') || label.includes('hm-pace')
         return hasRacePace

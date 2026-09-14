@@ -3754,9 +3754,29 @@ function applyPeakLongRunAlternation(
     }
     return null
   }
-  const peakKms = peakWeekIdxs.map(i => longRunOf(weeks[i])?.session.distance_km ?? 0)
-  const peakMaxLrKm = Math.max(...peakKms, 0)
-  if (peakMaxLrKm <= 0) return
+  // §47 + §80 (PEAK-LR-STEPBACK-MINUTES-01, Coaching Board 2026-09-13) — the peak
+  // anchor is computed on BOTH axes, because a plan is anchored on one of them
+  // and a beginner's is minutes.
+  //
+  // `peakMaxLrKm` alone used to decide this, via `distance_km ?? 0`. On a
+  // duration-anchored plan every peak long run reads 0, so `peakMaxLrKm <= 0`
+  // was unconditionally true and the function returned before doing anything:
+  // **a beginner never received a peak long-run step-back week at all.** Willy:
+  // denying the pre-taper recovery value purely because a runner's plan speaks
+  // in minutes is the SESSION-KM silent-pass class, not a coaching choice.
+  //
+  // `duration_mins` is set by every long-run builder, so the minutes axis is
+  // always complete; `distance_km` is present only when the plan is
+  // distance-anchored. Both are computed and each step-back uses the axis its
+  // own session is anchored on — never a conversion, which is what would put
+  // one week reading "14 km" into a plan that otherwise speaks in minutes
+  // (McMillan/Hutchinson: that breaks the runner's model of their own plan).
+  const peakLrs = peakWeekIdxs
+    .map(i => longRunOf(weeks[i]))
+    .filter((l): l is { day: Day; session: Session } => l != null)
+  const peakMaxLrKm   = Math.max(...peakLrs.map(l => l.session.distance_km  ?? 0), 0)
+  const peakMaxLrMins = Math.max(...peakLrs.map(l => l.session.duration_mins ?? 0), 0)
+  if (peakMaxLrKm <= 0 && peakMaxLrMins <= 0) return
 
   // §47 only applies to weeks where the long run carries race-pace specificity
   // (MP-finish / HM-pace). Plans whose peak long runs are flat Zone 2 (5K, 10K,
@@ -3794,19 +3814,42 @@ function applyPeakLongRunAlternation(
     }
 
     const lr = longRunOf(w)
-    if (!lr || lr.session.distance_km == null) continue
+    if (!lr) continue
 
-    const newKm = Math.min(lr.session.distance_km, stepBackMaxKm)
+    // Which axis is THIS session anchored on? §80 — a duration-anchored session's
+    // prescription IS its time on feet, so the step-back is expressed in minutes
+    // and `distance_km` stays absent. Anything else writes a kilometre figure
+    // into a plan that never speaks in kilometres.
+    const durationAnchored = lr.session.distance_km == null
     const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
     const minLong = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
-    const flooredKm = Math.max(Math.floor(newKm / precision) * precision, minLong)
+
+    let flooredKm: number | null = null
+    let flooredMins: number | null = null
+    if (durationAnchored) {
+      if (lr.session.duration_mins == null || peakMaxLrMins <= 0) continue
+      // The same PEAK_LR_STEPBACK_MAX_PCT, applied to the axis the plan uses.
+      // No new numeric: the minutes floor is the km floor converted through the
+      // runner's own easy pace, so the two axes carry one policy.
+      const stepBackMaxMins = peakMaxLrMins * (GENERATION_CONFIG.PEAK_LR_STEPBACK_MAX_PCT / 100)
+      const minLongMins = dur(minLong, pace.minPerKmEasy)
+      flooredMins = Math.max(Math.round(Math.min(lr.session.duration_mins, stepBackMaxMins)), minLongMins)
+    } else {
+      if (peakMaxLrKm <= 0) continue
+      const newKm = Math.min(lr.session.distance_km!, stepBackMaxKm)
+      flooredKm = Math.max(Math.floor(newKm / precision) * precision, minLong)
+    }
 
     // Rewrite the session: strip race-specific label, coach notes, and pace
     // segment fields; restore the standard "Long run — Zone 2" prescription.
     lr.session.label = 'Long run — Zone 2'
     lr.session.zone = 'Zone 2'
-    lr.session.distance_km = flooredKm
-    lr.session.duration_mins = dur(flooredKm, pace.minPerKmEasy)
+    if (durationAnchored) {
+      lr.session.duration_mins = flooredMins!
+    } else {
+      lr.session.distance_km = flooredKm!
+      lr.session.duration_mins = dur(flooredKm!, pace.minPerKmEasy)
+    }
     lr.session.rpe_target = 4
     lr.session.coach_notes = ['Step-back week. Easy aerobic — let the legs absorb last week\'s peak before the next push.']
     delete (lr.session as any).lr_segment_pace
@@ -3829,17 +3872,33 @@ function applyPeakLongRunAlternation(
     // reducing the LR, clamp easy runs in this week so the ratio survives.
     const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
     const minEasy = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
-    const easyCeiling = flooredKm / minRatio
-    const easyCeilingFloored = Math.floor(easyCeiling / precision) * precision
+    // The fourth `distance_km` gate on this path, and the one that would have
+    // made the fix above cosmetic: it `continue`d past every duration-anchored
+    // easy run, so §9's ratio would have been restored for distance-anchored
+    // plans only — exactly the cohort that never needed it. Clamped on the same
+    // axis the session is anchored on, from the same ratio.
+    const easyCeilingFloored = flooredKm != null
+      ? Math.floor((flooredKm / minRatio) / precision) * precision
+      : null
+    const easyCeilingMins = flooredMins != null
+      ? Math.round(flooredMins / minRatio)
+      : null
+    const minEasyMins = dur(minEasy, pace.minPerKmEasy)
     for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
       if (!s) continue
       if (d === lr.day) continue
       if (s.type !== 'easy') continue
-      if (s.distance_km == null) continue
-      if (s.distance_km > easyCeilingFloored) {
-        const newEasy = Math.max(easyCeilingFloored, minEasy)
-        s.distance_km = newEasy
-        s.duration_mins = dur(newEasy, pace.minPerKmEasy)
+      if (s.distance_km != null) {
+        if (easyCeilingFloored == null) continue
+        if (s.distance_km > easyCeilingFloored) {
+          const newEasy = Math.max(easyCeilingFloored, minEasy)
+          s.distance_km = newEasy
+          s.duration_mins = dur(newEasy, pace.minPerKmEasy)
+        }
+      } else if (s.duration_mins != null && easyCeilingMins != null) {
+        if (s.duration_mins > easyCeilingMins) {
+          s.duration_mins = Math.max(easyCeilingMins, minEasyMins)
+        }
       }
     }
   }
@@ -4153,6 +4212,19 @@ function trimWeekEasyToTarget(
   // prev_weekly is already below this floor, V1 partial-applies (lands at
   // the floor, not at prev) — better to leave easy slightly elevated than
   // to break §52.
+  // §52's floor. `?? 0` reads a duration-anchored long run as zero km, so
+  // `weeklyFloorFromLR` is 0 and this floor is INERT for beginners.
+  //
+  // ⚠️ LEFT INERT DELIBERATELY — Coaching Board 2026-09-13, SESSION-KM-02 item (3).
+  // Do not "fix" this to `sessionKmOrZero`. Measured 2026-09-12: **0 breaches
+  // across 2,337 duration-anchored sessions in scope** — §9's easy ceiling and
+  // the long-run cap are holding the ratio on their own, so a producer change
+  // here would alter prescriptions to prevent something that does not happen.
+  // The ruling was explicit: "do not add a producer change for a zero-breach
+  // case." What DOES need to see these sessions is the CHECKER, and it already
+  // does — `INV-PLAN-LR-MAX-WEEKLY-PCT` was moved onto `sessionKmForCheck`
+  // (2026-09-12) after it was found skipping every duration-anchored session.
+  // If a breach ever surfaces there, THAT is the signal to revisit this line.
   const lrKm = lr?.session.distance_km ?? 0
   const lrMaxPctOfWeekly = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100
   // Round the floor UP to the next km — sumWeeklyKm rounds the final total to

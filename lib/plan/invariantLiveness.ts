@@ -1,6 +1,7 @@
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan, INVARIANT_CODES } from '@/lib/plan/invariants'
 import { cohortGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
+import { isLongRun } from '@/lib/plan/sessionRole'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
 
 /**
@@ -97,6 +98,30 @@ export const MUTATIONS: Mutation[] = [
   { name: 'truncate to 2 weeks',       apply: p => { p.weeks = p.weeks.slice(0, 2) } },
   { name: 'duplicate week 1 x20',      apply: p => { p.weeks = Array.from({ length: 20 }, () => JSON.parse(JSON.stringify(p.weeks[0]))) } },
   { name: 'drop the race week',        apply: p => { p.weeks = p.weeks.filter(w => w.type !== 'race') } },
+  // §47 / INV-PLAN-PEAK-LR-ALTERNATION — added 2026-09-13 with
+  // PEAK-LR-STEPBACK-MINUTES-01, and the reason is worth recording because it is
+  // the harness working exactly as intended.
+  //
+  // This invariant used to be woken by 'every session 60km' — but only via a
+  // DEFECT. §47 never ran on duration-anchored (beginner) plans, so two
+  // consecutive peak weeks both kept their race-pace long run, and inflating
+  // every distance pushed both over the threshold. Fixing §47 removed that, and
+  // the invariant went from proven to unwakeable: the engine stopped producing
+  // the shape the mutation was exploiting.
+  //
+  // `isPeakLevel` needs BOTH halves — a race-pace label and a distance within
+  // PEAK_LR_ALTERNATION_THRESHOLD_PCT of the plan's max — and a step-back drops
+  // both. So no single-field mutation above can reach it, and it cannot be
+  // composed from them either. This does both in one poke.
+  { name: 'every long run peak race-pace', apply: p => {
+      const lrs = sessionsOf(p).filter(s => isLongRun(s))
+      const max = Math.max(...lrs.map(s => (s as unknown as { distance_km?: number }).distance_km ?? 0), 0)
+      const km = max > 0 ? max : 30
+      lrs.forEach(s => {
+        (s as unknown as Poke).label = 'Marathon-pace long run'
+        ;(s as unknown as Poke).distance_km = km
+      })
+    } },
 ]
 
 export interface LivenessReport {
