@@ -30,7 +30,7 @@ import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
 import { plannedFoundationWeeks } from './foundationBlock'
 import type { GeneratorPhase } from '@/types/plan'
 import {
-  V1_SESSION_CATALOGUE, selectCatalogueSession, requiredPaceAnchors,
+  V1_SESSION_CATALOGUE, selectCatalogueSession, requiredPaceAnchors, ultraFuellingCadenceMins,
   type SessionCatalogueRow, type CatalogueCategory,
 } from './sessionCatalogueData'
 
@@ -2962,6 +2962,38 @@ function buildWeekSessions(
     lr.primary_metric = 'duration'
     if (lr.duration_mins == null) lr.duration_mins = dur(roundDistance(longKm), pace.minPerKmEasy)
     if (lr.distance_km == null) lr.distance_km = roundDistance(longKm)  // secondary value
+  }
+
+  // §24e / CAT-ULTRA-FUELLING-01 — the peak-phase fuelling cue on the ultra long
+  // run (Coaching Board 2026-09-13, re-spec of the struck
+  // `fuelling_practice_from_week: 8`).
+  //
+  // Sims led the concept ruling: under-fuelling a 4–6 h effort is the RED-S /
+  // low-energy-availability vector, and it lands hardest on the women and masters
+  // runners this distance serves. The original numeric was the wrong SHAPE (an
+  // absolute week index means different things in a 16- vs 22-week plan — §44's
+  // fragility) and the wrong OBJECT (fuelling is not a scheduled session). This
+  // is the re-spec: phase-anchored, on the session where the duration makes
+  // fuelling both possible and necessary.
+  //
+  // A NOTE, not a field: §24e forbids any pace overlay on an ultra long run, and
+  // INV-PLAN-ULTRA-NO-PACE-SEGMENTS enforces it. Fuelling is not pace, so the
+  // cue is additive to a session that stays pure aerobic time-on-feet.
+  //
+  // Peak only, deliberately. Every long run in the plan would be wallpaper
+  // (§24c/§96's own reasoning: one cue on the session where it matters, not a
+  // note on everything). Peak is where the durations reach the 3–4 h at which
+  // fuelling stops being optional.
+  const isUltra = distKey === '50K' || distKey === '100K'
+  if (isUltra && phase === 'peak' && !isDeload && sessions[longDay]) {
+    const fuel = ultraFuellingCadenceMins(catalogue)
+    if (fuel) {
+      appendCoachNote(
+        sessions[longDay]!,
+        `Fuel every ${fuel.min}–${fuel.max} minutes, starting in the first hour. ` +
+        'Race day is not the day to find out what your stomach tolerates.',
+      )
+    }
   }
 
   used.push(longDay)

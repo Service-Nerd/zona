@@ -752,7 +752,45 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 **Back-to-back long runs are a governed commitment, not incidental (SIG-ULTRA-UNBUILT-01, Coaching Board 2026-09-10).** The `back_to_back_long` catalogue row is the defining ultra adaptation — the second long run on already-fatigued legs is where fatigue resistance is built. The board ruled the `PLAN_SIGNATURES` cadence a REAL commitment (50K every 3 weeks / 100K every 2 weeks, from the build phase), currently unhonoured — ultras get back-to-backs only if the ordinary rotation happens to pick the row. When wired, **Willy's three guards bind**: a back-to-back weekend counts as that week's peak long-run stimulus for §47 (never stacked on top of one), it never lands adjacent to a deload, and **both days stay Z2** (§1 — the second day is never "quality to save time"). The build is SLT-gated on ultra acquisition; the commitment is tracked in `configConsumer.test.ts` `SIG_UNBUILT` and enforced by `INV-PLAN-ULTRA-BACK-TO-BACK-CADENCE` once built. 100K's `time_on_feet_sessions_in_peak: 2` is a commitment of the same class.
 
-**Fuelling practice — real commitment, re-spec owed.** The struck `fuelling_practice_from_week: 8` numeric was the wrong *shape* (an absolute week index means different things in a 16- vs 22-week plan — the §44 fragility) and the wrong *object* (fuelling is not a scheduled session — the `time_on_feet` row already carries `fuel_every_mins: 30`). The board (Sims leading — under-fuelling on 4–6h efforts is the RED-S / low-energy-availability vector, worse for the women and masters runners this serves) ruled the commitment real: re-specify as a **phase-anchored fuelling cue on the ultra long run** during the specific phase, not a calendar week. Tracked as `CAT-ULTRA-FUELLING-01`.
+**Fuelling practice — re-spec DELIVERED 2026-09-13 (ULTRA-FUEL-NOTE-01); history retained below.** The struck `fuelling_practice_from_week: 8` numeric was the wrong *shape* (an absolute week index means different things in a 16- vs 22-week plan — the §44 fragility) and the wrong *object* (fuelling is not a scheduled session — the `time_on_feet` row already carries `fuel_every_mins: 30`). The board (Sims leading — under-fuelling on 4–6h efforts is the RED-S / low-energy-availability vector, worse for the women and masters runners this serves) ruled the commitment real: re-specify as a **phase-anchored fuelling cue on the ultra long run** during the specific phase, not a calendar week. Tracked as `CAT-ULTRA-FUELLING-01`.
+
+**The cue, as built (Coaching Board batch sitting 2026-09-13, item 7 — CORRECT).**
+A `coach_notes` line on the long run, when `distKey ∈ {50K, 100K}` ∧ phase is
+`peak` ∧ the week is not a deload. Peak only, deliberately: the same reasoning
+§24c and §96 use — one cue on the session where it matters, not a note on every
+long run, which becomes wallpaper and gets ignored (McMillan). Peak is also where
+the durations actually reach the 3–4 h at which fuelling stops being optional
+(measured: 179–210 min at 50K, 200–247 min at 100K).
+
+**Config — no new numeric, and the reason is not the obvious one.** The ruling
+held that the cadence already exists, and it does: `fuel_every_mins` sits on
+`ultra_race_sim` (25) and `time_on_feet` (30). What it does **not** sit on is the
+session the cue attaches to — measured 2026-09-13, **100% of 50K/100K peak long
+runs carry no `catalogue_id` at all**; those two rows only ever land in the
+*quality* slot. So the cadence is read as a RANGE across every ultra row that
+declares one (`ultraFuellingCadenceMins()`, currently 25–30), not as a pick
+between them. Picking 25 or 30 would have been a new coaching numeric on a 4-hour
+effort, which is precisely what the ruling excluded — and the choice is not
+neutral, since the shorter interval is the more protective one on Sims's own
+RED-S grounds. **If the board wants a single tighter cadence, that is a numeric
+decision and needs its own sitting.** Until then the range is what doctrine
+already says out loud.
+
+> ⚠️ **Adjacent finding, NOT fixed here (SIG-ULTRA-UNBUILT-01's class).**
+> `ultra_race_sim`, `time_on_feet` and `back_to_back_long` are placed only as
+> *quality* sessions and never as the long run, so the ultra long run is a plain
+> `longSession()` throughout. That is why it carries no row to read a cadence
+> from. Whether the ultra long run SHOULD be drawn from those rows is a
+> prescription question, not a defect fix, and belongs with SIG-ULTRA-UNBUILT-01.
+
+**Enforcement.** `ultraFuelNote.test.ts` — reach (every ultra peak long run),
+containment (no other session, no other distance, 0 leakage measured across
+5K/10K/HM/MARATHON), survival across the note-stacking cohorts (`overdo` adds
+§96's Z2 cue to every long run, and `appendCoachNote` silently drops a 4th note),
+§24e compatibility (`INV-PLAN-ULTRA-NO-PACE-SEGMENTS` stays clean — fuelling is
+not pace), and a mutation test proving the cadence is READ rather than written
+into the copy. `verify:parity`: 864 of 5,832 cases changed, **432/972 at 50K and
+432/972 at 100K, and 0/972 at every non-ultra distance.**
 
 ---
 

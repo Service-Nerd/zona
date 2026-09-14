@@ -1353,6 +1353,37 @@ function isLongRunSession(row: SessionCatalogueRow): boolean {
  * Only WORK steps count. A recovery step anchored 'E' always resolves, and a
  * row is not ineligible because its jog has an anchor.
  */
+/**
+ * §24e / CAT-ULTRA-FUELLING-01 — the fuelling cadence the catalogue already
+ * declares for ultra long efforts, as a range.
+ *
+ * The board re-spec'd the struck `fuelling_practice_from_week: 8` as a
+ * phase-anchored cue and ruled it carries **no new numeric** — "the cadence
+ * already exists". It does: `fuel_every_mins` sits on `ultra_race_sim` (25) and
+ * `time_on_feet` (30). What it did NOT sit on is the session the cue attaches
+ * to: measured 2026-09-13, **100% of 50K/100K peak long runs carry no catalogue
+ * row at all**, so there is no row to read the cadence off. Hence a range drawn
+ * from every ultra row that declares one, rather than an arbitrary pick between
+ * 25 and 30 — picking one would BE a new coaching numeric, which is the thing
+ * the ruling excluded.
+ *
+ * Like `intensity_zones` before LR-SEGMENT-RECORDED-§25, `fuel_every_mins` was
+ * declared and read by nothing. This is what makes it live.
+ *
+ * Returns null if no row declares a cadence — the caller then says nothing
+ * rather than inventing an interval.
+ */
+export function ultraFuellingCadenceMins(
+  catalogue: SessionCatalogueRow[] = V1_SESSION_CATALOGUE,
+): { min: number; max: number } | null {
+  const mins = catalogue
+    .filter(r => r.distance_eligibility.some(d => d === '50K' || d === '100K'))
+    .map(r => (r.main_set_structure as { fuel_every_mins?: unknown }).fuel_every_mins)
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0)
+  if (mins.length === 0) return null
+  return { min: Math.min(...mins), max: Math.max(...mins) }
+}
+
 export function requiredPaceAnchors(row: SessionCatalogueRow): string[] {
   const m = row.main_set_structure as {
     version?: number

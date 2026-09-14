@@ -219,6 +219,32 @@ async function main(): Promise<void> {
 
     console.log(`✗ ${changed.length} of ${EXPECTED_ROWS} cases CHANGED.\n`)
     console.log('  key = distance|race|level|days|injuries|volume|tier|goal\n')
+
+    // WHERE the change landed, not just how much. Only 25 keys are printed
+    // below, so without this a 900-case diff cannot be checked for containment
+    // — "did my ultra-only change touch a 10K plan?" is exactly the question a
+    // parity run should answer, and counting a truncated list cannot answer it.
+    const AXES = ['distance', 'race', 'level', 'days', 'injuries', 'volume', 'tier', 'goal']
+    console.log('  changed cases by axis:')
+    for (let i = 0; i < AXES.length; i++) {
+      const axis = AXES[i]
+      const tally = new Map<string, number>()
+      for (const k of changed) {
+        const v = k.split('|')[i]
+        tally.set(v, (tally.get(v) ?? 0) + 1)
+      }
+      const all = new Map<string, number>()
+      for (const k of Array.from(head.keys())) {
+        const v = k.split('|')[i]
+        all.set(v, (all.get(v) ?? 0) + 1)
+      }
+      const parts = Array.from(all.keys()).map(v => {
+        const c = tally.get(v) ?? 0
+        return `${v}=${c}/${all.get(v)}`
+      })
+      console.log(`    ${axis.padEnd(9)} ${parts.join('  ')}`)
+    }
+    console.log('')
     for (const k of changed.slice(0, 25)) {
       console.log(`  ${k}`)
       console.log(`     ${baseSha}: ${base.get(k)}`)
