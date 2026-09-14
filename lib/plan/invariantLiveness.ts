@@ -66,6 +66,18 @@ export const MUTATIONS: Mutation[] = [
   // be segmented and the check correctly stays silent. This is the case that
   // matters — a session still saying "Zone 2–3" with nothing behind it.
   { name: 'strip lr_segment_pace',     apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).lr_segment_pace }) },
+  // §25 Amendment 1 / INV-PLAN-LR-RACE-SEGMENT-PCT — rewrites the DOSE the note
+  // states while leaving the session otherwise valid. This is the live shape the
+  // check was written for: a hand-typed "Final 30–50% at MP" note sat above
+  // §25's ratified 40% ceiling for months, because a number inside prose is a
+  // number nothing reads.
+  { name: 'inflate race segment pct',  apply: p => sessionsOf(p).forEach(s => {
+      const notes = (s as unknown as Poke).coach_notes
+      if (Array.isArray(notes)) {
+        (s as unknown as Poke).coach_notes = notes.map((n: unknown) =>
+          typeof n === 'string' && /^Final \d+% at /.test(n) ? n.replace(/^Final \d+%/, 'Final 70%') : n)
+      }
+    }) },
   { name: 'strip stimulus',            apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).stimulus }) },
   { name: 'placeholder copy',          apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).coach_notes = ['TODO', 'TBD']; (s as unknown as Poke).label = 'TBD' }) },
   { name: 'all sessions quality',      apply: p => sessionsOf(p).forEach(s => { (s as unknown as Poke).type = 'quality' }) },

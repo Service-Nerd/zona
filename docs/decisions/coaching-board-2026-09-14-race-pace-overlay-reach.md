@@ -1,5 +1,35 @@
 # Coaching Board — RACE-PACE-OVERLAY-REACH-01
 
+> ## ⚠️ SUPERSEDED IN PART, SAME DAY — read this first.
+>
+> **The gate ruling below (HM must receive the overlay) STANDS and shipped.**
+>
+> **The PERCENTAGE ruling below is WRONG and was overturned hours later by a
+> verification sitting** — `coaching-board-2026-09-14-race-pace-segment-pct.md`.
+>
+> This sitting ruled that §16's flat 20% governed and that the catalogue rows'
+> `race_pace_pct` (HM 35, MARATHON 40) were "row metadata with no reasoning
+> attached", and **deleted both fields**. They had reasoning attached: **§25
+> ratifies "the final 25–40% of the long run"** for this exact session, one
+> section away, with Daniels/Pfitzinger rationale. 35 and 40 sit inside it. §16's
+> 20% is the universal-format default that §25 overrides.
+>
+> **Why the error happened, because it is the transferable part:** this sitting
+> was conducted INLINE, without invoking the board skill, so the **mandatory
+> conflict scan never ran**. That scan reads a proposed change against every
+> existing section and names the ones it touches. Run properly, it surfaced §25
+> within minutes. The skill's own note — *"the conflict scan is the single
+> highest-value mechanical step, and it is the thing a human reviewer can no
+> longer do reliably by hand"* — is not decoration.
+>
+> **What shipped in the interim, and what it cost:** for one commit, the HM card
+> rendered *"Race pace — 20%"* directly beneath a coach note reading *"Final
+> third at HM pace"*. That contradiction was NEW, introduced by this fix, because
+> before it the HM card showed no race-pace row at all. Willy's objection recorded
+> below ("I reject the rows' 40% outright") was argued against a dose the product
+> was **already prescribing in the coach note**, which this sitting never read.
+
+
 **Date:** 2026-09-14
 **Trigger:** `lib/plan/sessionFormat.ts` (hard), `lib/plan/sessionCatalogueData.ts` + `docs/canonical/session-catalogue.md` (hard), `lib/plan/sessionComposer.ts` (soft — qualifies: it changes what the runner is told to run)
 **Found by:** CONFIG-CONSUMER-01, extending the consumer scan to `SESSION_FORMAT`.

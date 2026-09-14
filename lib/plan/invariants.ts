@@ -87,6 +87,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-MAX-WEEKDAY-MINS',
   'INV-PLAN-PEAK-LR-RACE-RATIO',
   'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
+  'INV-PLAN-LR-RACE-SEGMENT-PCT',
   'INV-PLAN-PEAK-OVER-BASE',
   'INV-PLAN-PEAK-NOT-BELOW-START',
   'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
@@ -1694,6 +1695,44 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         actual: 0,
         expected: '≥ 1 race-specific long run',
       })
+    }
+  }
+
+  // INV-PLAN-LR-RACE-SEGMENT-PCT — §25's ratified band is a NUMBER now, so it
+  // can be checked. The session states its own dose in its coach note ("Final
+  // 40% at MP: 5:20 /km."), which is the string the runner actually reads, so
+  // the check reads THAT rather than recomputing from the catalogue row — a
+  // checker that re-derives the producer's input races it instead of checking
+  // it (the lesson from INV-PLAN-LR-FLOOR-NOT-ROUNDING, 2026-09-13).
+  //
+  // What it would have caught: the hand-typed "Final 30–50% at MP" note, whose
+  // top end sat 10 points above §25's own ceiling and shipped for months
+  // because the number lived inside prose.
+  // (CoachingPrinciples §25 Amendment 1)
+  {
+    const lo = GENERATION_CONFIG.LR_RACE_SEGMENT_PCT_MIN
+    const hi = GENERATION_CONFIG.LR_RACE_SEGMENT_PCT_MAX
+    for (const w of plan.weeks) {
+      for (const s of Object.values(w.sessions) as (Session | undefined)[]) {
+        if (!s || !isLongRun(s) || !s.lr_segment_pace) continue
+        // Only §25's race-specific long run declares a percentage in its note;
+        // §24b's 5K/10K session states two segments and is governed elsewhere.
+        const note = (s.coach_notes ?? []).find(n => typeof n === 'string' && /^Final \d+% at /.test(n))
+        if (!note) continue
+        const pct = Number(/^Final (\d+)%/.exec(note)?.[1])
+        if (!Number.isFinite(pct)) continue
+        if (pct < lo || pct > hi) {
+          violations.push({
+            code: 'INV-PLAN-LR-RACE-SEGMENT-PCT',
+            principle_ref: 'CoachingPrinciples §25',
+            severity: 'error',
+            week: w.n,
+            message: `${s.label ?? 'race-specific long run'} prescribes ${pct}% of the run at race pace — §25 ratifies the final ${lo}–${hi}%`,
+            actual: `${pct}%`,
+            expected: `${lo}–${hi}%`,
+          })
+        }
+      }
     }
   }
 

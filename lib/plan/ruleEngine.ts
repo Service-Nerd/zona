@@ -1934,12 +1934,30 @@ function raceSpecificLongRunSession(
   zones: ZoneTargets, pace: PaceGuide,
   catalogueRow: SessionCatalogueRow,
   goalPace: string,
-  finalSegmentLabel: string,  // e.g. "Final 30–50% at MP" or "Final third at HM pace"
 ): Session {
   const voice = catalogueRow.coach_voice_notes ?? 'Easy first. Hit goal pace on tired legs.'
+  // §25 AMENDMENT 1 — the segment size comes from the ROW, not from a string
+  // typed at the call site. It used to be a literal argument: 'Final 30–50% at
+  // MP' for marathon and 'Final third at HM pace' for HM. Three consequences,
+  // all measured 2026-09-14. (1) Marathon's "30–50%" BREACHED §25's ratified
+  // 25–40% ceiling at its top end, and no check could see it because the number
+  // lived inside prose. (2) The session card's structure block, which derives
+  // its own percentage, said 20% on the same card — one segment, two answers.
+  // (3) "Final third" is a THIRD spelling of a number the row already declares.
+  const ms = catalogueRow.main_set_structure as { race_pace_pct?: number; race_pace_zone?: string } | null
+  const segPct = ms?.race_pace_pct
+  if (typeof segPct !== 'number' || segPct <= 0) {
+    throw new Error(
+      `§25 race-specific long run: catalogue row ${catalogueRow.id} declares no ` +
+      'main_set_structure.race_pace_pct, so the segment size cannot be derived',
+    )
+  }
+  const segZone = ms?.race_pace_zone ?? 'race'
   const coach_notes: [string, string?, string?] = [
     voice,
-    `${finalSegmentLabel}: ${goalPace}.`,
+    // 'MP'/'HM' are the runner's own shorthand and already contain the word
+    // pace, so it is not appended. The session label spells the distance out.
+    `Final ${segPct}% at ${segZone}: ${goalPace}.`,
   ]
   const rounded = roundDistance(distKm)
   // §107 step 2 (LR-SEGMENT-RECORDED-§25) — the zone is DERIVED from what the
@@ -2870,7 +2888,7 @@ function buildWeekSessions(
     const mpRow = catalogue.find(r => r.id === 'mp_long_run')
     if (mpRow && (tier !== 'free' || mpRow.is_free_tier)) {
       sessions[longDay] = raceSpecificLongRunSession(
-        weekN, longDay, longKm, metric, zones, pace, mpRow, goalPace, 'Final 30–50% at MP'
+        weekN, longDay, longKm, metric, zones, pace, mpRow, goalPace
       )
     } else {
       sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)
@@ -2879,7 +2897,7 @@ function buildWeekSessions(
     const hmRow = catalogue.find(r => r.id === 'hm_pace_long_run')
     if (hmRow && (tier !== 'free' || hmRow.is_free_tier)) {
       sessions[longDay] = raceSpecificLongRunSession(
-        weekN, longDay, longKm, metric, zones, pace, hmRow, goalPace, 'Final third at HM pace'
+        weekN, longDay, longKm, metric, zones, pace, hmRow, goalPace
       )
     } else {
       sessions[longDay] = longSession(weekN, longDay, longKm, metric, zones, pace)

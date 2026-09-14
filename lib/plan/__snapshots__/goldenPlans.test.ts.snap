@@ -4173,7 +4173,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           "catalogue_id": "hm_pace_long_run",
           "coach_notes": [
             "Easy first. Final third at HM goal pace.",
-            "Final third at HM pace: 4:59 /km.",
+            "Final 35% at HM: 4:59 /km.",
           ],
           "detail": null,
           "distance_km": 19,
@@ -5825,7 +5825,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "catalogue_id": "mp_long_run",
           "coach_notes": [
             "Easy first. Hit goal pace on tired legs.",
-            "Final 30–50% at MP: 4:37 /km.",
+            "Final 40% at MP: 4:37 /km.",
           ],
           "detail": null,
           "distance_km": 29.5,

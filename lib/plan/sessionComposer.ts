@@ -143,15 +143,20 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
     // plans generated before §107.
     const segPace = session.lr_segment_pace ?? goalPace
     if (isMpLong && segPace) {
-      // Long run with a race-pace segment (CoachingPrinciples §16, §5).
-      const mpPct = SESSION_FORMAT.LONG_RUN_PEAK.race_pace_segment_pct
+      // Long run with a race-pace segment (CoachingPrinciples §25, §5).
+      const mpPct = raceSegmentPct(catalogueRow)
       // The row declares WHICH race pace this is ('MP' / 'HM'). The copy used to
       // hardcode "MP target", which is simply the wrong number to hand a
       // half-marathon runner on their key session.
       const zoneWord = raceSegmentZoneWord(catalogueRow)
+      // §25's percentage is OF THE SESSION, so the segment's minutes come off the
+      // total and the easy body is the residual. The parts now sum to the run.
+      const segMins  = Math.round(total * mpPct / 100)
+      const wuMins   = SESSION_FORMAT.LONG_RUN_PEAK.warmup_mins
+      const easyMins = Math.max(0, total - wuMins - cooldownMins - segMins)
       return withDistances({
-        warmup:   part(SESSION_FORMAT.LONG_RUN_PEAK.warmup_mins, 'Z1→Z2', 'Easy through warm-up. Build to Z2 over the first third.'),
-        main:     part(Math.round(mainMins * (1 - mpPct / 100)), 'Z2', 'Easy aerobic. Stay calm.'),
+        warmup:   part(wuMins, 'Z1→Z2', 'Easy through warm-up. Build to Z2 over the first third.'),
+        main:     part(easyMins, 'Z2', 'Easy aerobic. Stay calm.'),
         race_pace_segment: {
           duration_pct: mpPct,
           pace_target:  segPace,
@@ -247,6 +252,24 @@ function zeroStructure(shape: SessionStructure['shape'], total = 0): SessionStru
  */
 function raceSegmentRow(row: SessionCatalogueRow | null | undefined): boolean {
   return (row?.main_set_structure as { type?: string } | null)?.type === 'long_run_with_segment'
+}
+
+/**
+ * The fraction of the LONG RUN spent at race pace, from the row that declares it.
+ *
+ * §25 ratifies "the final 25–40% of the long run" for this session and the rows
+ * carry the per-distance number inside that range (HM 35, MP 40). §16's flat 20%
+ * is the GENERAL default for a long run with a race-pace segment; §25 is the
+ * specific principle for this one and overrides it.
+ *
+ * ⚠️ It is a percentage of the SESSION, not of the main set — §25 says "of the
+ * long run". Reading it against the main set delivered ~16% where the coach note
+ * on the same card said "Final third" / "Final 30–50%", so one card carried two
+ * different answers for one segment.
+ */
+function raceSegmentPct(row: SessionCatalogueRow | null | undefined): number {
+  const p = (row?.main_set_structure as { race_pace_pct?: number } | null)?.race_pace_pct
+  return typeof p === 'number' && p > 0 ? p : SESSION_FORMAT.LONG_RUN_PEAK.race_pace_segment_pct
 }
 
 /**

@@ -24,6 +24,7 @@ import { describe, it, expect } from 'vitest'
 import { composeSession } from './sessionComposer'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { SESSION_FORMAT } from './sessionFormat'
+import { GENERATION_CONFIG } from './generationConfig'
 import type { Session } from '@/types/plan'
 
 const row = (id: string) => {
@@ -127,23 +128,63 @@ describe('the pace quoted is the one the engine RECORDED', () => {
   })
 })
 
-describe('§16 owns the percentage, not the catalogue row', () => {
-  it('the segment is SESSION_FORMAT\'s 20%, for both distances', () => {
-    // The rows declare their own split (hm 65/35, mp 60/40) and §16 declares 20%.
-    // Coaching Board 2026-09-14: §16 governs — it is the section with the
-    // reasoning attached, and Willy rejected the row's 40% as a marathon-pace
-    // tempo bolted onto a three-hour long run. The row percentages are
-    // SUPERSEDED and registered as such; this pins which number ships.
-    const pct = SESSION_FORMAT.LONG_RUN_PEAK.race_pace_segment_pct
-    for (const [label, id, pace] of [
-      ['Long run with HM-pace finish', 'hm_pace_long_run', '4:58 /km'],
-      ['Marathon-pace long run', 'mp_long_run', '5:20 /km'],
+describe('§25 owns the percentage, and the card agrees with the coach note', () => {
+  const LO = GENERATION_CONFIG.LR_RACE_SEGMENT_PCT_MIN
+  const HI = GENERATION_CONFIG.LR_RACE_SEGMENT_PCT_MAX
+
+  it('the segment is the ROW\'s declared share, per distance', () => {
+    // ⚠️ This test asserted the OPPOSITE this morning: that §16's flat 20%
+    // governed and the rows' 35/40 were a stray second declaration. §25 — one
+    // section away, titled "Race-specific long run (HM and marathon,
+    // time-targeted)" — ratifies "the final 25–40% of the long run", so the row
+    // values were the faithful encoding and 20% was the general default §25
+    // overrides. Found by the board's mandatory conflict scan.
+    for (const [label, id, pace, want] of [
+      ['Long run with HM-pace finish', 'hm_pace_long_run', '4:58 /km', 35],
+      ['Marathon-pace long run', 'mp_long_run', '5:20 /km', 40],
     ] as const) {
       const st = compose(longRun({ label, lr_segment_pace: pace }), id)
-      expect(st?.race_pace_segment?.duration_pct, label).toBe(pct)
+      expect(st?.race_pace_segment?.duration_pct, label).toBe(want)
     }
-    const rowPct = (row('mp_long_run').main_set_structure as { race_pace_pct?: number }).race_pace_pct
-    expect(rowPct === undefined || rowPct === pct,
-      'the row must not declare a SECOND, different percentage').toBe(true)
+  })
+
+  it('every declared row percentage sits inside §25\'s band', () => {
+    const rows = V1_SESSION_CATALOGUE.filter(r =>
+      (r.main_set_structure as { type?: string } | null)?.type === 'long_run_with_segment')
+    expect(rows.length, 'no long_run_with_segment rows — this asserts nothing').toBeGreaterThan(0)
+    for (const r of rows) {
+      const pct = (r.main_set_structure as { race_pace_pct?: number }).race_pace_pct
+      expect(typeof pct, `${r.id} declares no race_pace_pct`).toBe('number')
+      expect(pct, r.id).toBeGreaterThanOrEqual(LO)
+      expect(pct, r.id).toBeLessThanOrEqual(HI)
+    }
+  })
+
+  it('the percentage is of the SESSION, and the parts sum to the run', () => {
+    // §25 says "of the long run". Reading it against the MAIN SET delivered
+    // ~16% of the session while the coach note on the same card said "Final
+    // 30–50%" — one segment, two answers, both visible at once.
+    const total = 165
+    const st = compose(longRun({
+      label: 'Marathon-pace long run', lr_segment_pace: '5:20 /km',
+      duration_mins: total, distance_km: 30,
+    }), 'mp_long_run')
+    const seg = Math.round(total * 40 / 100)
+    expect(st?.race_pace_segment?.duration_pct).toBe(40)
+    const parts = (st?.warmup.duration_mins ?? 0) + (st?.main.duration_mins ?? 0)
+      + seg + (st?.cooldown.duration_mins ?? 0)
+    expect(parts, 'warm-up + easy body + segment + cool-down must equal the run').toBe(total)
+  })
+
+  it('falls back to §16\'s general 20% only when a row declares nothing', () => {
+    // §16 remains the universal-format default for any future segmented long
+    // run that has not declared its own dose. It must not be the value that
+    // ships for §25's two rows.
+    const st = composeSession({
+      session: longRun({ label: 'Marathon-pace long run', lr_segment_pace: '5:20 /km' }),
+      catalogueRow: { main_set_structure: { type: 'long_run_with_segment', race_pace_zone: 'MP' } } as never,
+      goalPace: '5:20 /km',
+    })
+    expect(st?.race_pace_segment?.duration_pct).toBe(SESSION_FORMAT.LONG_RUN_PEAK.race_pace_segment_pct)
   })
 })

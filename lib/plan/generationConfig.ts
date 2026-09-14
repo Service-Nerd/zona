@@ -1298,6 +1298,21 @@ export const GENERATION_CONFIG = {
   LR_5K10K_PEAK_FINAL_PACE:            'hmPaceStr'       as const,
   LR_FINISH_GOAL_LATE_PEAK_SEGMENT_PCT: 0.10,             // last 10% at Z2 ceiling (finish-goal final peak)
 
+  // §25 Amendment 1 (Coaching Board 2026-09-14). The ratified band for the
+  // HM/marathon race-specific long run's race-pace finish, as a percentage OF
+  // THE LONG RUN. The per-distance number lives on the catalogue row
+  // (`main_set_structure.race_pace_pct`: HM 35, MARATHON 40) because it is a
+  // property of that session; this is the envelope every such row must sit in,
+  // and it is what makes §25's "final 25–40%" checkable instead of prose.
+  //
+  // It had no numeric and no check for months, and three different answers
+  // shipped side by side: the row's 35/40, a hand-typed note saying "Final
+  // 30–50% at MP" (which BREACHED this ceiling), and a display layer applying
+  // §16's general 20% to the main set (~16% of the session). One segment, three
+  // numbers, two of them on the same card.
+  LR_RACE_SEGMENT_PCT_MIN:              25,
+  LR_RACE_SEGMENT_PCT_MAX:              40,
+
   // ── Foundation Block (CoachingPrinciples §57) ─────────────────────────────
   // Pre-plan preparation phase inserted before W1 when the gap between today
   // and plan_start exceeds GAP_MIN_AUTO_DAYS. Uses negative week indices.
