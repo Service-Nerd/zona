@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — STRAVA-WEBHOOK-OBS-01 · built the smoke detector, found the house already on fire
+
+**Shipped:** The Strava webhook now has a heartbeat and a daily health probe. Running it for the first time revealed the auto-link path has been completely dead.
+
+**Dev learning:** I wrote the probe, then ran the read-only check against production to see what it would report. Strava answered `403 { resource: 'Application', field: 'Status', code: 'Inactive' }`. **The application itself is inactive** — not a missing subscription, a state in which no subscription can exist or deliver at all. That is an exact match for the symptom reported days ago: *runs only link when I open the app*. A fully-killed iPhone app cannot background-ingest from HealthKit, so the webhook was the only thing covering that case, and it was never going to arrive.
+
+**Product/creator learning:** Nothing in the repo could ever have shown this. No test, no deploy, no invariant — the failing component is a row in Strava's database. That is a genuinely different class of bug from everything else this codebase guards against, and the only defence is a probe that goes and asks. Everything else here is introspection; this is the first check that has to leave the building.
+
+**AI-building learning:** The first version of my own probe would have hidden it. I had it return HTTP 502 on any non-OK response from Strava — which fails the cron loudly and records **nothing about why**. I only found that out by running it and watching the 403 land in a branch that threw the detail away. An error path I wrote ten minutes earlier was already the weakest part of the thing, and only a live call showed it.
+
+**The honest bit:** I burned a first attempt on `.env.local`, got a 401, and nearly concluded the credentials were the problem. The local `STRAVA_CLIENT_SECRET` is corrupted — 43 characters with a non-ASCII final byte. Two different failures returning two different error codes for two different reasons, and the local one points at exactly the wrong culprit. I pulled the production env to a scratch file instead, and got the real answer.
+
+**Hook material:** Shipped a health check, ran it once, and discovered the feature it monitors has been dead the whole time — 403, Application: Inactive.
+
+**Postable?:** yes
+
+
 ## 2026-09-13 — §24 Amendment 1 · the board was right to be suspicious and wrong about why
 
 **Shipped:** A runner is no longer told their marathon long run missed the specificity floor when it missed it by 150 metres.
