@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-13 — PEAK-LR-STEPBACK-MINUTES-01 · fixing the bug broke the test that proved the bug existed
+
+**Shipped:** Beginners now get the peak long-run step-back week they were silently denied, expressed in minutes rather than kilometres.
+
+**Dev learning:** §47 was gated on `distance_km` in **four** places on one code path. The backlog had two of them filed. A previous attempt swapped both for the anchor-aware owner and measured **zero difference across two independent grids** — because the other two gates sat inside the mutation and in §9's easy clamp, and reaching a function is not the same as the function doing anything. Then, after fixing all four, I found a fifth and sixth: the CHECKER for this same rule read raw `distance_km` too. The producer and the thing guarding the producer were blind to the identical cohort for the identical reason. That is the third time this pattern has shown up here, and the tell is always the same — a rule that has never once fired for a cohort is not evidence of balance.
+
+**Product/creator learning:** The cohort with the least training history had the least enforcement. Beginners are duration-anchored, every `distance_km` gate reads zero for them, and the failure mode is a **silent pass** — not a wrong number on screen, just a protection that quietly never runs. The people least equipped to notice a missing recovery week were the only ones not getting it.
+
+**AI-building learning:** The best moment of the session was `invariantLiveness` failing right after my fix passed everything else. It said `INV-PLAN-PEAK-LR-ALTERNATION` could no longer be woken by any mutation. My first instinct was that I had broken something. I had not — the only reason that invariant was ever wakeable was the bug: §47 never ran on beginner plans, so two consecutive race-pace peak long runs existed to be caught. **Fixing the engine deleted the evidence that the check worked.** I would never have thought to look for that, and a harness that deliberately breaks valid plans found it in one run.
+
+**The honest bit:** I very nearly filed the sixth gate as "its own build, needs a measured baseline", which would have been a defensible-sounding way of leaving a half-fixed rule in the codebase. I measured instead: sighting the checker produced **0 violations across 15,973 plans**, so it closed in the same commit. The instinct to file the awkward remainder is strong and it is usually just the instinct to stop.
+
+**Hook material:** Fixed a bug, and a test immediately failed to say "that invariant can no longer be proven to work" — because the only thing that had ever made it fire was the bug I just fixed.
+
+**Postable?:** yes
+
+
 ## 2026-09-13 — ULTRA-FUEL-NOTE-01 · the board was right about the ruling and wrong about the facts
 
 **Shipped:** 50K and 100K peak long runs now tell the runner to fuel every 25–30 minutes, sourced from what the catalogue already declares.
