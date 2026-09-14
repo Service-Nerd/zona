@@ -35,6 +35,30 @@ const DISTANCES = [
 ] as const
 
 const VOLUMES = [20, 35, 50] as const
+
+// ── GRID-COVERAGE-01 (2026-09-14) — three axes the grid was BLIND to ──────────
+//
+// Measured: of 31 declared `GeneratorInput` fields this grid varied only TEN.
+// Thirteen were never set at all and eight were constant. The property sweep
+// varies 24 and gates on it; `cohortGrid` never has — so the sweep proved plans
+// were VALID across 24 dimensions while `cohort:shape` proved the POPULATION was
+// unchanged across only 10. A change can reshape who gets what along a dimension
+// this grid cannot see, and one did.
+//
+// What that cost, concretely (QUALITY-ONSET-ORDER-01): §79's intensity re-entry
+// keys on `training_age`, which was NEVER SET — so §79's lift never fired
+// anywhere in `verify`, `cohort:shape` or the liveness corpus, and
+// `INV-PLAN-RETURNING-INTENSITY-REENTRY` sat in the baseline as never-woken for
+// months. The defect surfaced on the page of a coaching review, not in a check.
+//
+// Added in value order. `benchmark` matters most: with no VDOT anywhere,
+// `assessFitness` sets `structural = intensity = byVolume`, so §79's two-signal
+// DISAGREEMENT — the entire reason §79 exists — could never occur.
+const TRAINING_AGES = [undefined, '2-5yr', '5yr+'] as const
+/** A benchmark supplies VDOT. Without one the two §79 signals cannot disagree. */
+const BENCHMARKS = [undefined, { type: 'race', distance_km: 5, time: '0:27:30', benchmark_date: '2026-04-01' }] as const
+/** §3's masters recovery cadence keys on age >= MASTERS_AGE_THRESHOLD (45). */
+const AGES = [35, 52] as const
 const LEVELS = ['beginner', 'intermediate', 'experienced'] as const
 const DAY_SETS = [
   { days_available: 3, days_cannot_train: ['tue', 'thu'] },
@@ -45,7 +69,7 @@ const DAY_SETS = [
 const CAPS = [30, 60, undefined] as const
 const GOALS = ['finish', 'time_target'] as const
 
-/** 4 x 3 x 3 x 3 x 3 x 2 = 648 inputs. Exhaustive and ordered. */
+/** 4x3x3x3x3x2 x 3x2x2 = 7,776 inputs. Exhaustive and ordered. */
 export function cohortGrid(): GeneratorInput[] {
   const out: GeneratorInput[] = []
   for (const d of DISTANCES)
@@ -53,10 +77,13 @@ export function cohortGrid(): GeneratorInput[] {
       for (const level of LEVELS)
         for (const days of DAY_SETS)
           for (const cap of CAPS)
-            for (const goal of GOALS) {
+            for (const goal of GOALS)
+              for (const trainingAge of TRAINING_AGES)
+                for (const benchmark of BENCHMARKS)
+                  for (const age of AGES) {
               out.push({
                 athlete_name: 'Athlete',
-                age: 35,
+                age,
                 race_name: 'Test',
                 primary_metric: 'distance',
                 plan_start: COHORT_PLAN_START,
@@ -73,6 +100,8 @@ export function cohortGrid(): GeneratorInput[] {
                 hard_session_relationship: 'neutral',
                 injury_history: [],
                 ...(cap !== undefined ? { max_weekday_mins: cap } : {}),
+                ...(trainingAge !== undefined ? { training_age: trainingAge } : {}),
+                ...(benchmark !== undefined ? { benchmark } : {}),
                 ...days,
               } as unknown as GeneratorInput)
             }

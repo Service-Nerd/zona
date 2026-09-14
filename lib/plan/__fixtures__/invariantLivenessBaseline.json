@@ -6,7 +6,7 @@
     "unclassified": "nobody has looked yet. THIS is the column that should shrink."
   },
   "generated": "2026-09-14",
-  "wokenCount": 63,
+  "wokenCount": 65,
   "totalInvariants": 99,
   "unproven": {
     "INV-PLAN-BOUNCEBACK-BOUNDED": "unclassified",
@@ -23,13 +23,11 @@
     "INV-PLAN-RETURNING-INTENSITY-REENTRY": "unclassified",
     "INV-PLAN-RACE-WEEK-SHARPENING": "unclassified",
     "INV-INPUT-LONGEST-LE-WEEKLY": "mutation",
-    "INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR": "unclassified",
     "INV-PLAN-DIFFICULTY-ANNOTATED": "unclassified",
     "INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE": "unclassified",
     "INV-PLAN-INTENSITY-ORDERING": "unclassified",
     "INV-PLAN-PHASE-FOCUS-REACHABLE": "unclassified",
     "INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES": "unclassified",
-    "INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT": "unclassified",
     "INV-PLAN-HR-ASSUMPTIONS-SURFACED": "unclassified",
     "INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR": "unclassified",
     "INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE": "unclassified",
