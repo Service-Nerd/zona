@@ -28,6 +28,20 @@
  *      non-zero if not. (This repo has shipped a "successful" regression
  *      comparison that ran on two empty files. Once is enough.)
  *
+ *   3. COMPARING HALF THE ENGINE — found 2026-09-13, and it had been true since
+ *      this script was written. The grid hardcoded `goal: 'finish'`, so all 2,916
+ *      cases ran ONE branch. Everything gated on `goal === 'time_target'` was
+ *      invisible: §22's goal-pace renames, §24b/§24c's segmented long runs, §25's
+ *      race-specific long runs, goal-paced quality, and the maintenance-label
+ *      logic. LR-SEGMENT-RECORDED-§25 changed §25's producer, the golden snapshots
+ *      caught it in four lines, and this script reported "IDENTICAL — 2916 cases,
+ *      byte-for-byte unchanged" with total confidence.
+ *
+ *      Note that trap 2's guard did not help and could not have: row COUNT says
+ *      nothing about input COVERAGE. 2,916 rows of the same branch is still one
+ *      branch. `goal` is now an axis (×2 → 5,832), with a realistic per-distance
+ *      `target_time` so the time-target plans are the ones a runner would get.
+ *
  * NOT part of `npm run verify`: it needs a baseline commit and creates a
  * worktree, so it is an on-demand check, not a gate.
  */
@@ -53,9 +67,18 @@ const INJURIES: string[][] = [[], ['knee'], ['shin']]
 const VOLUMES = [15, 30, 55]
 const TIERS = ['free', 'paid'] as const
 
+// Both goal branches. `finish` and `time_target` diverge early and widely — see
+// trap 3 above. The target times are realistic mid-pack goals for each distance,
+// because an absurd one gets refused by §44 and would silently test nothing.
+const TARGET_TIMES: Record<number, string> = {
+  5: '0:25:00', 10: '0:52:00', 21.1: '1:55:00',
+  42.2: '4:00:00', 50: '6:00:00', 100: '14:00:00',
+}
+const GOALS = ['finish', 'time_target'] as const
+
 const EXPECTED_ROWS =
   DISTANCES.length * RACE_DATES.length * LEVELS.length *
-  DAYS.length * INJURIES.length * VOLUMES.length * TIERS.length
+  DAYS.length * INJURIES.length * VOLUMES.length * TIERS.length * GOALS.length
 
 /** Wall-clock / run-scoped fields. Present on both sides, different every run. */
 const STRIP_META = ['generated_at', 'created_at', 'updated_at']
@@ -71,16 +94,18 @@ async function probe(): Promise<void> {
         for (const days_available of DAYS)
           for (const injury_history of INJURIES)
             for (const current_weekly_km of VOLUMES)
-              for (const tier of TIERS) {
+              for (const tier of TIERS)
+              for (const goal of GOALS) {
                 const input = {
-                  goal: 'finish', age: 40, resting_hr: 55, max_hr: 180,
+                  goal, age: 40, resting_hr: 55, max_hr: 180,
                   preferred_long_run_day: 'sun',
+                  ...(goal === 'time_target' ? { target_time: TARGET_TIMES[race_distance_km] } : {}),
                   race_date, race_distance_km, current_weekly_km,
                   longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
                   days_available, fitness_level, injury_history,
                 }
                 const key = [race_distance_km, race_date, fitness_level, days_available,
-                  injury_history.join('+') || 'none', current_weekly_km, tier].join('|')
+                  injury_history.join('+') || 'none', current_weekly_km, tier, goal].join('|')
                 try {
                   const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
                   const stable = JSON.parse(JSON.stringify(plan))
@@ -116,6 +141,17 @@ function parse(out: string, side: string): Map<string, string> {
     console.error(`\n✗ ${side} produced ${m.size} rows, expected ${EXPECTED_ROWS}.`)
     console.error('  Refusing to compare — an incomplete run cannot prove parity.')
     process.exit(2)
+  }
+  // Trap 3: row COUNT is not input COVERAGE. The grid ran 2,916 rows of a single
+  // `goal` branch for months and reported IDENTICAL across a change it could not
+  // see. A count guard cannot catch that — only asserting the axis is actually
+  // varied can. Cheap, and it fails the moment someone narrows the grid again.
+  for (const g of GOALS) {
+    if (!Array.from(m.keys()).some(k => k.endsWith(`|${g}`))) {
+      console.error(`\n✗ ${side} produced no \`${g}\` rows.`)
+      console.error('  Refusing to compare — a grid that runs one branch cannot prove parity for the other.')
+      process.exit(2)
+    }
   }
   return m
 }
@@ -182,7 +218,7 @@ async function main(): Promise<void> {
     }
 
     console.log(`✗ ${changed.length} of ${EXPECTED_ROWS} cases CHANGED.\n`)
-    console.log('  key = distance|race|level|days|injuries|volume|tier\n')
+    console.log('  key = distance|race|level|days|injuries|volume|tier|goal\n')
     for (const k of changed.slice(0, 25)) {
       console.log(`  ${k}`)
       console.log(`     ${baseSha}: ${base.get(k)}`)
