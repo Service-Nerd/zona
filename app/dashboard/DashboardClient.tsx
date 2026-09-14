@@ -12995,50 +12995,6 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
                 preferredUnits={preferredUnits}
                 driftContext={driftContext}
               />
-              {/* Unlink — only shown when an activity is actually linked (not manual rows) */}
-              {analysis.source !== 'manual' && <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {!unlinkConfirm && (
-                  <button
-                    onClick={() => setUnlinkConfirm(true)}
-                    style={{
-                      fontFamily: 'var(--font-ui)', fontSize: '11px',
-                      color: 'var(--mute)', background: 'none', border: 'none',
-                      padding: 0, cursor: 'pointer', textDecoration: 'underline',
-                      textDecorationColor: 'var(--line)',
-                    }}
-                  >
-                    Unlink this run
-                  </button>
-                )}
-                {unlinkConfirm && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
-                      Unlink this run?
-                    </span>
-                    <button
-                      onClick={handleUnlink}
-                      disabled={unlinking}
-                      style={{
-                        fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
-                        color: 'var(--danger)', background: 'none', border: 'none',
-                        padding: 0, cursor: unlinking ? 'default' : 'pointer',
-                      }}
-                    >
-                      {unlinking ? 'Unlinking…' : 'Yes, unlink'}
-                    </button>
-                    <button
-                      onClick={() => setUnlinkConfirm(false)}
-                      style={{
-                        fontFamily: 'var(--font-ui)', fontSize: '11px',
-                        color: 'var(--mute)', background: 'none', border: 'none',
-                        padding: 0, cursor: 'pointer',
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>}
             </>
           )
         })()}
@@ -13050,7 +13006,7 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
           <LockedCoachingPreview onUpgrade={onUpgrade} onOpenCoach={onOpenCoach} />
         )}
 
-        {/* Up next — next scheduled session in the week, shown below the feedback card */}
+        {/* Up next — next scheduled session in the week, promoted above the unlink escape hatch (UX-POSTRUN-01) */}
         {nextSession && (hasPaidAccess || isComplete) && (
           <div style={{
             marginTop: '8px', marginBottom: '4px',
@@ -13076,6 +13032,60 @@ function SessionScreen({ session, preloadedRuns, onBack, onSaved, preferredUnits
             </div>
           </div>
         )}
+
+        {/* UX-POSTRUN-01 residual (SLT 2026-09-13) — Unlink moved BELOW "Up next".
+         *  It was a bare underlined link sitting directly under the coaching, at
+         *  the emotional peak of the screen. "Up next" is the most behaviourally
+         *  useful element here (Wood: it changes the decision on Tuesday), so it
+         *  goes first and the escape hatch goes last.
+         *
+         *  Guard widened from `analysis.source` to `analysis && analysis.source`
+         *  because this now sits OUTSIDE the `analysis &&` IIFE that used to
+         *  wrap it. `analysis` and `unlinkConfirm` are both SessionScreen-scope,
+         *  which is what makes the move safe rather than a restructure. */}
+        {analysis && analysis.source !== 'manual' && <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {!unlinkConfirm && (
+            <button
+              onClick={() => setUnlinkConfirm(true)}
+              style={{
+                fontFamily: 'var(--font-ui)', fontSize: '11px',
+                color: 'var(--mute)', background: 'none', border: 'none',
+                padding: 0, cursor: 'pointer', textDecoration: 'underline',
+                textDecorationColor: 'var(--line)',
+              }}
+            >
+              Unlink this run
+            </button>
+          )}
+          {unlinkConfirm && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
+                Unlink this run?
+              </span>
+              <button
+                onClick={handleUnlink}
+                disabled={unlinking}
+                style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
+                  color: 'var(--danger)', background: 'none', border: 'none',
+                  padding: 0, cursor: unlinking ? 'default' : 'pointer',
+                }}
+              >
+                {unlinking ? 'Unlinking…' : 'Yes, unlink'}
+              </button>
+              <button
+                onClick={() => setUnlinkConfirm(false)}
+                style={{
+                  fontFamily: 'var(--font-ui)', fontSize: '11px',
+                  color: 'var(--mute)', background: 'none', border: 'none',
+                  padding: 0, cursor: 'pointer',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>}
 
         <div style={{
           background: 'var(--card)', boxShadow: 'var(--shadow-card)',
