@@ -109,7 +109,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > **Ruling: the tier is a SIZING floor, not a delivery promise.** §45, §47 and §9 govern what is delivered, and **§45 had already ruled the precedence in its own text** ("this principle wins" where the §24 floor and the cap collide). §35's tier sits above that floor, so it cannot outrank what the floor yields to. Options to re-apply the tier after the post-passes were **vetoed by Willy** — overriding a progression cap for 1.5 km on one session, against the most reliable injury vector in this population.
 > **`INV-PLAN-PEAK-LR-EARNED-TIER` retired.** It asserted a promise §35 does not make and fired on 8 plans that were correct. §24's `INV-PLAN-PEAK-LR-RACE-RATIO` still guarantees the floor.
 > 🔴 **THE FINDING THAT CHANGED THE ARTIFACTS — `PEAK_LR_RATIO_STRETCH` IS INERT.** Measured across 36 comparable plans (2 distances × 4 volumes × 3 day-counts × 2 runways): the stretch tier changed the delivered peak long run in **0 of 36**, while the target lift moved **33 of 36**. The tiering mechanism works; its top rung never survives to delivery. **Not deleted** — §25 Amendment 1 governs: "read by nothing" is evidence a CONSUMER is missing, not that the VALUE is junk, and here the value IS read and its effect erased downstream. Pinned by a named test so it cannot silently become live or be removed.
-> 🔲 **Two follow-ups the board recorded and did NOT action:** (a) §35's stretch gate and §47's consecutive-peak exception test the same question with different predicates — §35 wants `love` + no hill-restricting injury; §47 wants `love` + **no injury at all** + **`5yr+`**. **Sims: reconcile toward §47's, because §35's turns a self-report about appetite for hard work into more load.** (b) McMillan: the shape a runner actually notices is the peak-phase long run being shorter than a build week's — already reported by `INV-PLAN-PEAK-IN-PEAK-PHASE` on 21.2% of plans.
+> ↗️ **Two board-recorded follow-ups were filed as their own items:** LR-TIER-GATE-RECONCILE-01 and PEAK-LR-NOT-IN-PEAK-01.
 
 > ✅ **GATED-SURPLUS-COMPOSE-01 — CLOSED 2026-09-15. NOT A DEFECT. §97 verified working on the production path; the 5 cases were a sweep-harness artefact.**
 > **I filed this twice with the wrong diagnosis** (first "the extension never runs", then "generation cannot see the gap"). Both were wrong, and reading `calcPlanLength` rather than reasoning from output is what settled it.
@@ -118,6 +118,25 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > **Why the sweep saw otherwise:** it passes `plan_start` AND a `today` 24-40 days earlier, decoupling two values the live path derives from one another. `weeksAvailable` is then measured from a start that is not anchored to today, and the surplus sits *before* the earliest start where no extension can reach. **The route cannot produce that shape.**
 > **Shipped:** `INV-PLAN-GATED-SURPLUS-IN-PLAN` now recognises the CALENDAR bound as well as the signature bound, so it stops reporting the artefact. Sweep firings 5 → 0. Parity byte-identical (no engine change). The liveness mutation was widened, because the new exemption made the rule unwakeable and the harness said so.
 > ⚠️ **Worth keeping: a measurement script can generate shapes production cannot.** The sweep's independent `plan_start` and `__foundationGapDays` produced a two-day-long wrong diagnosis. Before treating a sweep-only finding as a defect, check the live path can construct it.
+
+> 🔲 **LR-TIER-GATE-RECONCILE-01 — §35 and §47 ask the same question with different tests, and §35's answer is a self-report.** *(P3, filed 2026-09-15 — BOARD question, recorded by Sims at the LR-EARNED-TIER-01 sitting)*
+> Both gates decide "can this runner take more long-run load?" and they disagree:
+> | | §35 stretch tier | §47 consecutive-peak exception |
+> |---|---|---|
+> | hard-session relationship | `love` | `love` |
+> | injury | no HILL-RESTRICTING injury | **no injury at all** |
+> | training age | **not tested** | **`5yr+`** |
+> So a runner earns §35's stretch tier and fails §47's exception — which is the traced LR-EARNED-TIER-01 case exactly (injury `['back']`, training age `2-5yr`).
+> **Sims's objection, on the record:** §35's gate turns `hard_session_relationship: 'love'` — **a self-report about appetite for hard work** — into more load, with no training-age floor and only a partial injury test. §47's requires both. **If they are reconciled, reconcile toward §47's.**
+> ⚠️ **Related and probably the same fix:** `PEAK_LR_RATIO_STRETCH` is currently INERT (0 of 36 comparable plans). Tightening §35's gate and making the top rung reachable are two halves of one decision — do not take them separately.
+> *Verify still open:* `grep -n "hard_session_relationship === 'love'" lib/plan/ruleEngine.ts` against §47's exception text.
+
+> 🔲 **PEAK-LR-NOT-IN-PEAK-01 — the plan's longest run is often NOT in the peak phase.** *(P2, filed 2026-09-15 — recorded by McMillan at the LR-EARNED-TIER-01 sitting)*
+> **MEASURED: `INV-PLAN-PEAK-IN-PEAK-PHASE` fires as a warn on 21.2% of swept plans (3,389 of 15,973)** — the second-highest warn rate in the suite. In the traced LR-EARNED-TIER-01 case the longest run was **20 km in W7 (build)** against **19 km in W11 (peak)**.
+> **McMillan at the board:** *"A runner does not notice 19 versus 20.5. They notice that their biggest long run happened in week 7 and the last month got smaller."* **That is the shape an athlete emails you about**, and it is a periodisation claim — §23 says peak weeks carry the peak — rather than a ratio question.
+> **Hutchinson did not block on it** and held it is a separate item from §35's tier; both agreed it is real. **Settles by:** measuring whether the 21.2% is concentrated in the same cohort as the tier shortfalls, or is a general property of §47 alternation interacting with §9 step-backs.
+> ⚠️ **Do not assume it is §47's fault.** LR-EARNED-TIER-01 burned two wrong diagnoses by reverse-engineering a mechanism from an output number; trace the producer before blaming a pass.
+> *Verify still open:* `NODE_ENV=production npx tsx scripts/property-validate-plans.ts` → `INV-PLAN-PEAK-IN-PEAK-PHASE` firing rate.
 
 > 🔲 **FOUNDATION-LONG-RUNWAY-01 — a runner who signs up early has weeks the plan does not cover, and `FOUNDATION_MAX_WEEKS` caps the fill at 3.** *(P2, filed 2026-09-15 — BOARD question, not a defect)*
 > **MEASURED, production-shaped** (today 2026-09-15, plan start next Monday, race 2027-03-07 = 25 weeks out, charity persona M1 first-timer marathon):
