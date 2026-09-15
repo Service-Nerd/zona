@@ -10,155 +10,46 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at end of 2026-09-15
 
-**Everything below is committed and recorded.** `npm run verify` exit 0 (**1,809 tests / 199 files**), matrix 17/17, sweep 15,973 plans / 0 violations, `cohortShape` unchanged, tree clean.
+**Everything shipped today is committed, pushed and in `feature-registry.md`.** Working tree clean at `bb1298c`.
+`npm run verify` exit 0 (**1,973 tests / 214 files**) · property sweep **15,973 plans, 0 violations** ·
+`invariant:liveness` exit 0 · `test:liveness` nightly · coaching deviation scan HIGH 0 · `verify:parity` measured on
+every engine change.
 
-> ⚖️ **2026-09-15 — the four coupled engine items are ALL CLOSED. The Coaching Board sat THREE times.** Record: `docs/decisions/coaching-board-2026-09-15-deload-pos2-and-v2-swap.md`. Seven registry rows.
->
-> **What shipped:**
-> - ✅ **DELOAD-POS2-01** (§95 Amendment 1) — sweep firing **16.1% → 0.2%**; standard runners 21.7% → 0.0%. Masters residual is the **provably unsatisfiable** set (1,944/3,726 by brute force), so §95 yields there.
-> - ✅ **QUALITY-ONSET-ORDER-01** (§79 Amendment 1) — the window counted CALENDAR weeks, where it was inert (first quality fell inside it in **0 of 48** plans). Now counts quality weeks: first-quality-is-VO2max **25.4% → 16.8%**.
-> - ✅ **REENTRY-DEPTH-01** (§79 Amendment 2) — omitting VO2max is legitimate (§5/Seiler) but must be **declared**; note on 3,384 plans, enforced from the placed sessions.
-> - ✅ **V2-SWAP-S22-01** (§22 Amendment) + ✅ **V2-SWAP-RESIZE-01** — both now load-bearing on 576 plans.
-> - ✅ **GRID-COVERAGE-02 Phase 1** — `early_quality_onset` **0 → 984 plans**; it is what made the §22 defect visible at all.
-> - ✅ **INTENSITY-REENTRY-OWNER-01** — zero delta; the §79 predicate had been hand-written twice.
->
-> 🔬 **Four filed diagnoses were WRONG and are withdrawn.** COHERENCE-SELECT-01's cause was wrong **twice** (it is the V2 swap, not §53 selection); the "§107" deload reference was wrong (**§95 already existed**); QUALITY-ONSET-ORDER-01's "single precomputed Set" would have added a **third** producer; and REENTRY-DEPTH-01's own filing ("recalibrate the numeric") was disproved by its own measurement — depths 1-3 are no-ops.
->
-> ⚠️ **The single most useful measurement of the day:** the quality-week reading "fixed" the ordering on 576 plans, and **576 of those lost VO2max ENTIRELY while 0 were re-ordered.** Withholding is not deferral. Shipping on the first measurement would have deleted the stimulus from 576 returning runners' plans with every check green.
+**The coaching constitution is fully accounted for: 106 principles — 78 invariant · 22 named test · 6 exempt · 0 unverified.**
+The build fails if that stops being true.
 
-> ✅ **ALL FOUR ITEMS THE DAY STARTED WITH ARE NOW CLOSED.** The items left below are pre-existing sub-tasks of QUALITY-ONSET-ORDER-01, not new discoveries — see the provenance note under the table. Seven rows in `feature-registry.md` dated 2026-09-15. Three Coaching Board sittings, all recorded in `docs/decisions/coaching-board-2026-09-15-deload-pos2-and-v2-swap.md`.
+⚠️ **Charity showcase is Friday.** Every item below is measured and **none affects the 14 charity personas**, which are
+clean on every check.
 
-> ✅ **ALL SEVEN ACTIONABLE COACHING/ENGINE ITEMS CLOSED 2026-09-15.** Eleven registry rows. Four Coaching Board sittings. `npm run verify` exit 0 throughout; coaching review 0 errors across 7 canonical + 11 charity cases after every phase.
+### 🔧 COACHING & ENGINE — the complete open list
 
-| Item | State | Next action |
-|---|---|---|
-| **CV-ELIGIBILITY-01 open half + beginner first-exposure** | ✅ **CLOSED — §79 Amendment 3.** A charity first-timer declaring `intermediate` was getting **Hill reps at Zone 4–5 / RPE 8 in week 5** (T1: 8 km/week, longest run 4 km, `<6mo`). Now withheld; tempo/threshold still arrive. | None. |
-| **§5 vs §79 precedence** | ✅ **CLOSED — §79 Amendment 4.** Ruled before 2026-09-14, never implemented. TWO mechanisms had to be fixed (`vo2MustOpenBuild` AND the V2 swap). The 29-test breakage was caused by not scoping the override to `reentryActive`. | None. |
-| **REENTRY-INV-DECORATIVE-01** | ✅ **CLOSED — §79 Amendment 4.** `INV-PLAN-RETURNING-INTENSITY-REENTRY` re-anchored to QUALITY weeks and **PROVEN wakeable for the first time since it was written**. | None. |
-| **REENTRY-VO2MAX-BASELINE-01** | ✅ **CLOSED — NOT A DEFECT. The filed 49.7% / 74.8% had the WRONG DENOMINATOR.** It conflated distances where VO2max is absent **by design**: HM and MARATHON signatures do not declare `vo2max` in `quality_categories_focus` (§17), so 100% correctly have none. Scoped to **5K + 10K**, where the signature does declare it: **no VO2max 11.1%**, **no hill reps 19.4%**. The residual 33.3% on re-entry plans is the window working, and §79 Amendment 2 declares it to the runner. | None. §17 decided this per distance; nothing was undecided. |
-| **REVIEW-HARNESS-MONDAY-01 (grid half)** | ✅ **CLOSED.** Cohort grid now races Sat/Sun; 31,104 inputs, **0 hard failures**. | None. |
-| **GRID-COVERAGE-02 Phase 2** | ✅ **CLOSED.** `targetedGrid()` — 1,536 inputs covering the five unreachable fields. Fixed a liveness-harness defect en route (corpora were concatenated, starving each other). | None. |
-| **CAT-VO2-TIERA** | ⏸️ Board **declined delivery** 2026-09-13; needs §8 to gain a mixed-session dose model. Not a defect — a blocked capability. | Only if §8 is reopened. Do not re-propose the rows. |
+> 🔴 **§6 TAPER DEPTH — the first taper week can be as big as peak, and it is the ROOT CAUSE of two other findings.** *(P2, found 2026-09-15 by the coaching deviation scan)*
+> **MEASURED: on plans that genuinely progress (peak ≥ 120% of week 1), 6.9% carry a first taper week above 90% of peak** — 5K 12.6%, HM 6.8%, marathon 6.1%, worst case 100%. §6 says *"volume drops sharply in the taper."*
+> The cut IS configured (`TAPER_BY_DISTANCE`, 35-60% by distance) and applied to the CURVE at `ruleEngine.ts` pass 3, so this is the delivered-vs-curve divergence class ADR-022 documents, **not a missing cut**.
+> 🔗 **NEWLY LINKED 2026-09-15:** this is why `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` cannot reach zero. §6 Amendment 1 caps the taper long run at the peak's, but the remainder is pinned by §9's long-is-longest ratio **because the taper WEEK never reduced** — one traced case delivers **42 km against a peak of 42**. Fixing taper depth clears that residual; capping the long run alone cannot.
+> **Board question, wider blast radius than today's work** — it changes taper volume for a measurable share of plans. Zero charity personas affected; under-tapering costs freshness, not safety.
+> *Verify still open:* `scripts/coaching-deviation-scan.ts` → any `§6 taper barely reduces` line, and `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` firing rate (3.7% of sweep).
 
-**NOT closable today — hard external blockers, stated as fact rather than deferral:**
-
-| Item | Blocker |
-|---|---|
-| **ZONE-BAND-01** | Needs ≥20 users × ≥10 HR-bearing quality analyses. Production has **2 users**. No amount of engineering changes this. |
-| **ENGINE-03 / CA-05** | `@capgo/capacitor-health` exposes no menstrual data type (ADR-011). **Unbuildable**, not unbuilt. |
-| **PV2-G** (Monday race) | Needs an ADR + cross-week `buildRaceArc` restructure. **Charity races are on weekends**, so this is not the demo path — highest-risk engine change available for near-zero charity value. Recommended against for this week. |
-| **SIG-ULTRA-UNBUILT-01** | Ultra distances; charity is 10K/HM/marathon. SLT-gated on timing, correctness already settled. |
-
-### 🔧 COACHING & ENGINE — the complete open list *(current as of 2026-09-15 end of day)*
-
-> **Why this section exists.** A backlog review that reads only the "Ready to build" table misses work: items nested as sub-bullets inside another entry, and questions "folded into" a parent that then ships. Both happened on 2026-09-15. **This is the full engine/coaching list. Keep it current or delete it — a stale completeness claim is worse than none.**
->
-> ✅ **Closed 2026-09-15 (8):** CV-ELIGIBILITY-01 open half · beginner first-exposure · §5-vs-§79 precedence · REENTRY-INV-DECORATIVE-01 · REENTRY-VO2MAX-BASELINE-01 (not a defect) · cohort-grid Monday races · GRID-COVERAGE-02 Phase 2 · (plus the four items the day opened with). All in `feature-registry.md`.
-
-**STILL OPEN — 4 items, none of them buildable today, each with a hard reason.**
-
-> 🔲 **PRINCIPLE-XREF-12-01 — the injury cap is cross-referenced as "§12" in at least three places, and §12 is the easy-run Z2 ceiling.** *(P3, found 2026-09-15 by the coverage gate)*
-> `CoachingPrinciples.md:3656` reads *"the injury cap reuses `INJURY_WEEKLY_INCREASE_CAP_PCT` (§12)"*; `generationConfig.ts` repeats it in a comment; and `lib/plan/injuryCapCompounds.test.ts` is titled `describe('§12 — the injury cap compounds')`. **§12 is "Easy-run zone cap — Z2 ceiling".** The 10% rule and its injury tightening belong to **§2**.
-> **Why it matters beyond tidiness:** the coverage gate nearly classified §12 as *covered* on the strength of that test's own declaration. A test that names the wrong principle is worse than one that names none — it manufactures coverage. Caught only because the describe text was read against what §12 actually says.
-> **Do not bulk-rename without checking each site** — confirm §2 is the intended owner at each, then correct doc, config comment and test title together. Typo-class, board-exempt.
-> *Verify still open:* `grep -rn "§12" lib/plan/generationConfig.ts lib/plan/injuryCapCompounds.test.ts docs/canonical/CoachingPrinciples.md | grep -i injury`
-
-> 📋 **WAVE 3 — the checks exist; now prove they BITE, and decide what a breach does.** *(scoped 2026-09-15, after the coverage wave closed 106/106)*
-> Waves 0-2 answered "does every coaching rule have a check?" — it does: **79 invariant · 21 named test · 6 exempt · 0 unverified**, with the build failing if that stops being true. Wave 3 is the next question, in the order below. **Nothing here is demo-critical:** all 14 charity personas are clean.
-> | # | Item | Type | Why it is ordered here |
-> |---|---|---|---|
-> | 1 | ~~S1-INJURY-DENOMINATOR-01~~ | ✅ **SHIPPED 2026-09-15** | Board ruled CORRECT WITH AMENDMENT; §90 Amendment 1. 6 plans fixed, 0 healthy plans touched |
-> | 2 | ~~ERROR-SEVERITY-IS-ADVISORY-01~~ | ✅ **CLOSED 2026-09-15** | The premise was wrong: both backstops already existed. The real gap was legibility, now fixed |
-> | 3 | ~~PRINCIPLE-CLAIM-SYNC-01~~ | ✅ **SHIPPED 2026-09-15** | 9 missing back-references fixed; falsified both ways |
-> | 4 | ~~TEST-LIVENESS-01~~ | ✅ **COMPLETE 2026-09-15** | 56 killed / 5 equivalent / 3 unproven. 16 weak tests fixed |
-> | 5 | ~~LR-EARNED-TIER-01~~ | ✅ **CLOSED 2026-09-15** | Board ruled: tier is a sizing floor. Invariant retired. Stretch tier found INERT (0 of 36) |
-> | 6 | ~~GATED-SURPLUS-COMPOSE-01~~ | ✅ **CLOSED 2026-09-15** | NOT a defect. §97 verified working in production; sweep artefact. Invariant corrected |
-
-> ✅ **ERROR-SEVERITY-IS-ADVISORY-01 — CLOSED 2026-09-15, and the item as filed was WRONG.**
-> **What I filed:** *"there is nothing between throw and silence."* **False.** Two layers already existed and both were wired: `app/api/generate-plan/route.ts:236` records `plan_rule_invalid` at generation (built 2026-09-03, ENRICH-ATTRIB-01, and its comment explains why it lives in the route: `lib/plan/*` must stay free of the service-role client because `DashboardClient` imports it), and `ops-cron-plan-audit.yml` re-validates every STORED plan daily at 07:45 UTC. I filed a blocker without reading the code that already solved it. [[feedback-written-assumptions-are-the-dangerous-ones]], one hour after writing it.
-> **What was ACTUALLY wrong, measured in production:** **43 `plan_rule_invalid` events over 11 days, 26 distinct invariant codes, 16 users currently holding a plan that breaches its own constitution — and nobody had read a single one.** All 43 carry `source: plan-audit`; **zero came from the live generate path.**
-> **Why nobody read it, and it is not laziness:** the [[project-live-plan-policy]] deliberately never backfills doctrine fixes to existing plans. So a plan built in April is validated against a constitution that has gained dozens of invariants since, and it breaches BY DESIGN. The correlation is almost perfect — **April plan 14 codes · June plans 5-10 · September plans 1-3.** A reader cannot separate that expected backlog from a real regression, so they stop reading, and a genuinely new breach then lands in the same stream invisibly. **NOISE-GATE-01, applied to an ops probe instead of an invariant.**
-> **Shipped:** the audit now reports the **age of the newest breaching plan** plus an age distribution, and records one `source: plan-audit-summary` event per run (including clean runs) so a digest has one row to read instead of N. Not a fixed "current" threshold: that would have to mean "since the last deploy", which the route cannot know, and a hardcoded window rots the first time deploy cadence changes.
-> **The reassuring half, stated because it is the question that matters 3 days before the charity demo:** every breaching plan is OLD. The sweep generates 15,973 plans with 0 violations, all 14 charity personas are clean, and the 5 plans created in September produced no live `plan_rule_invalid` at all. **The fleet is carrying history, not a live defect.**
-> 🔲 **Residual, and it is a FOUNDER decision, not a build:** whether the daily ops digest (a cloud routine via RemoteTrigger, not repo code) reads the new `plan-audit-summary` row. The repo side is done; wiring someone else's digest is not mine to change unilaterally.
-
-> ✅ **PRINCIPLE-CLAIM-SYNC-01 — SHIPPED 2026-09-15. The §92 class is closed, and the obvious check would NOT have closed it.**
-> **The trap:** I scoped this as "extract `INV-` tokens and fail on any not registered". Measured: that finds **1** discrepancy, and it is legitimate (§24 names an ultra invariant "enforced … **once built**"). **It would not have caught §92**, because `INV-PLAN-FOUNDATION-BLOCK` existed and was registered — what was missing was the LINK BACK. That invariant's `principle_ref` said §57 and never §92, so nothing connected the claim to the code.
-> **What shipped:** a principle that CLAIMS enforcement must be acknowledged in that invariant's `principle_ref`. Scoped to ownership phrasing (`Enforced by` / `Mechanically checked by` / `Checked by` / `Guarded by`) — a blanket "every cited code cites back" fires on **61 of 146** citations, nearly all ordinary cross-references, and a check that cries wolf 61 times gets deleted.
-> **Measured: 68 ownership claims, 9 unsatisfied, 1 unregistered.** All 9 were genuine missing back-references (including two written in this session's own §90 Amendment 1 commit) and all 9 are fixed; the 1 unregistered is exempted with its reason.
-> **Falsification-verified both ways:** re-introducing §92's exact failure turns it red with the right message, and a fabricated `INV-PLAN-TOTALLY-MADE-UP` claim turns it red.
-> ⚠️ **One probe lesson worth keeping:** refs accumulate across every push site for a code. The first attempt to re-break §92 edited one of two sites, the other still cited §92, and the check looked dead for a minute. **Falsify a set-valued check by removing every contributor, not the first one.**
-
-> ✅ **TEST-LIVENESS-01 — COMPLETE 2026-09-15. 21 survivors worked through: 16 were weak tests and are fixed; 5 are proved equivalent.**
-> `npm run test:liveness` breaks the SOURCE each named test claims to cover and re-runs that test. Nightly (03:20 UTC), **not in `verify`** — it rewrites source and runs vitest ~60 times.
-> **Final: 56 killed · 5 survived (all equivalent, each with a written proof) · 3 unproven (harness limit, each with a reason).** Was 40/21/3.
-> **The dominant finding was BOUNDARY VALUES — tests asserting either side of a threshold but never the threshold itself.** Every one of these was a real hole:
-> | rule | what the mutation showed |
-> |---|---|
-> | §68 taper | a runner EXACTLY at the 85% threshold had their taper rewritten; a zero pre-taper week was divided by instead of refused |
-> | §55 inputs | flipping one `\|\|` made every missing, NaN and negative volume ACCEPTED, which is the NaN-to-500 crash the function exists to replace |
-> | §61/§71 limiter | 50.0 km exactly still got a "you faded" reading §72 forbids; a run at exactly the heat threshold lost its heat explanation |
-> | §62 post-race | the recovery budget was split across REST days, sizing every recovery run a third short with the weekly total still reading correct |
-> | §69 reshape | the "replaces are high" case swapped a 24 km long run for rest, so the VOLUME check answered and the structural rule was never tested |
-> | §72 feedback | a zone LABEL could render with a null band, telling the model an HR target that does not exist — for the HR-less runner (ADR-011 §5) |
-> | §58 cohort | the median fixture had 3 runs, where `floor(3/2)` and `floor(3/3)` are the same element |
-> ⚠️ **Four of my own new tests were vacuous on the first attempt, and only the harness said so:** asserting a rest day stayed 'rest' when `scaleSession` early-returns on it anyway; a zone assertion with `actualAvgHr: null` so the line never rendered; setting `session.zone` when `prescribedZoneLabel` is a separate INPUT field; a race countdown with no `race_name`, so the timing never rendered. **A test can be written, pass, and assert nothing — which is the whole thesis of this item, demonstrated on its own author.**
-> 🔲 **Residual, small:** 3 subjects the battery cannot reach (`dayBoundary`, `readinessBaseline`, `recalibrationPrompt`) — all date arithmetic or config lookups with no in-scope operator to flip. Widening the battery to mutate method calls would reach them. Reasons recorded in the baseline.
-
-> ✅ **LR-EARNED-TIER-01 — CLOSED 2026-09-15 by Coaching Board ruling. §35 Amendment 1; the invariant is RETIRED.**
-> **Ruling: the tier is a SIZING floor, not a delivery promise.** §45, §47 and §9 govern what is delivered, and **§45 had already ruled the precedence in its own text** ("this principle wins" where the §24 floor and the cap collide). §35's tier sits above that floor, so it cannot outrank what the floor yields to. Options to re-apply the tier after the post-passes were **vetoed by Willy** — overriding a progression cap for 1.5 km on one session, against the most reliable injury vector in this population.
-> **`INV-PLAN-PEAK-LR-EARNED-TIER` retired.** It asserted a promise §35 does not make and fired on 8 plans that were correct. §24's `INV-PLAN-PEAK-LR-RACE-RATIO` still guarantees the floor.
-> 🔴 **THE FINDING THAT CHANGED THE ARTIFACTS — `PEAK_LR_RATIO_STRETCH` IS INERT.** Measured across 36 comparable plans (2 distances × 4 volumes × 3 day-counts × 2 runways): the stretch tier changed the delivered peak long run in **0 of 36**, while the target lift moved **33 of 36**. The tiering mechanism works; its top rung never survives to delivery. **Not deleted** — §25 Amendment 1 governs: "read by nothing" is evidence a CONSUMER is missing, not that the VALUE is junk, and here the value IS read and its effect erased downstream. Pinned by a named test so it cannot silently become live or be removed.
-> ↗️ **Two board-recorded follow-ups were filed as their own items:** LR-TIER-GATE-RECONCILE-01 and PEAK-LR-NOT-IN-PEAK-01.
-
-> ✅ **GATED-SURPLUS-COMPOSE-01 — CLOSED 2026-09-15. NOT A DEFECT. §97 verified working on the production path; the 5 cases were a sweep-harness artefact.**
-> **I filed this twice with the wrong diagnosis** (first "the extension never runs", then "generation cannot see the gap"). Both were wrong, and reading `calcPlanLength` rather than reasoning from output is what settled it.
-> **What actually happens:** `calcPlanLength` caps at `min(weeksAvailable, weekCap)` where `weekCap` for a gated runner is `min(max(ideal, max_weeks), ideal + MAX_ONSET_PLAN_EXTENSION_WEEKS)`. For HM that is 16 — the signature maximum. **The extension runs and reaches its bound.**
-> **VERIFIED ON THE PRODUCTION PATH:** the route derives `planStart = nextMonday()` from today, so a gated HM runner gets a plan of **16 of max 16** on a 20-week runway and **16 of 16** on a 30-week runway, with the residual surplus becoming a foundation block. That is §97 working exactly as ruled — it "honours a limit §17 already set, it does not exceed one."
-> **Why the sweep saw otherwise:** it passes `plan_start` AND a `today` 24-40 days earlier, decoupling two values the live path derives from one another. `weeksAvailable` is then measured from a start that is not anchored to today, and the surplus sits *before* the earliest start where no extension can reach. **The route cannot produce that shape.**
-> **Shipped:** `INV-PLAN-GATED-SURPLUS-IN-PLAN` now recognises the CALENDAR bound as well as the signature bound, so it stops reporting the artefact. Sweep firings 5 → 0. Parity byte-identical (no engine change). The liveness mutation was widened, because the new exemption made the rule unwakeable and the harness said so.
-> ⚠️ **Worth keeping: a measurement script can generate shapes production cannot.** The sweep's independent `plan_start` and `__foundationGapDays` produced a two-day-long wrong diagnosis. Before treating a sweep-only finding as a defect, check the live path can construct it.
-
-> ✅ **LR-TIER-GATE-RECONCILE-01 — CLOSED 2026-09-15 by Coaching Board ruling. §35 Amendment 2: the tier is TWO rungs.**
-> `PEAK_LR_RATIO_STRETCH` is **deleted**. Two reasons pointed the same way: its gate was the WEAKER of two answering one question (§47's exception requires `love` **and no injury at all and `5yr+`**; §35's stretch required `love`, no *hill-restricting* injury, and no training-age test at all — **the weaker gate was the one adding distance**, Sims), and it was **inert** (0 of 36 comparable plans). Hutchinson: the evidence that 95% of race distance beats 90% on a peak long run does not exist. McMillan: three rungs is a rule the runner must understand rather than experience, and the third never changed their plan.
-> **Parity confirms zero delivered effect** — the 20 changed cases in that run are all the §6 taper cap; none are this.
-> ⚠️ **Recorded as precedent-limiting:** this is a **board deletion of a measured-inert value**, not a tidy-up. §25 Amendment 1 exists because `race_pace_pct` was deleted as "read by nothing" while §25 ratified it one section away. Here the value IS read, its effect was MEASURED as zero, and the board ruled explicitly. **Not precedent for deleting an unread constant.**
-
-> ✅ **PEAK-LR-NOT-IN-PEAK-01 — CLOSED 2026-09-15 by Coaching Board ruling. §6 Amendment 1 + `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK`.**
-> ⚠️ **MY FILING WAS WRONG AND I CORRECTED IT BEFORE ACTING.** I filed this as *"INV-PLAN-PEAK-IN-PEAK-PHASE fires on 21.2%"*. **That invariant measures weekly VOLUME, not the long run.** McMillan's observation was about the long run. Measured properly on 1,440 plans: longest RUN outside peak **17.4%**, weekly VOLUME peak outside **48.1%** — two different claims I had conflated.
-> **Ruled CORRECT, and no change needed:** the longest run sitting outside the peak phase at **5K (28%) and 10K (39%)** is correct periodisation. §5/§93 make peak race-specific, and specificity for a 5K is faster work, not a longer run. The invariant is deliberately NOT extended to cover it.
-> **Ruled a defect, and fixed:** inspecting the HM cases surfaced the **taper long run exceeding the peak long run** — worst an HM taper of **20.5 km after a peak of 18.5**, two weeks from a 21.1 km race. McMillan: *"a dress rehearsal, not a taper."* Willy: it does the opposite of what the taper is for, in the window with no time to absorb it. Sims: a large glycogen and bone-loading event placed exactly where intake drops because training "feels" reduced.
-> **Shipped:** `applyTaperLongRunCap` post-pass (runs last, after §47/§9/§45 decide what the peak actually is) + `TAPER_LR_VS_PEAK_TOLERANCE_KM = 0.5` (one rounding step — the 5K cases invert by exactly that, and a bare `>` would report rounding as a defect) + a `warn` invariant. **Parity: 20 of 5,832 changed, all HM / experienced / 3-day / 30 km — one tight explicable cohort.**
-> 🔗 **THE RESIDUAL IS THE ALREADY-FILED §6 TAPER-DEPTH ITEM — same root cause, now linked.** The cap takes inversions 1.9% → 0.9% on the diagnostic grid (3.7% on the wider sweep); what remains is pinned by §9's long-is-longest ratio because **the taper WEEK never reduced**. One traced case delivers **42 km against a peak of 42**. Fixing taper depth clears this residual; capping the long run alone cannot.
-
-> 🔲 **FOUNDATION-LONG-RUNWAY-01 — a runner who signs up early has weeks the plan does not cover, and `FOUNDATION_MAX_WEEKS` caps the fill at 3.** *(P2, filed 2026-09-15 — BOARD question, not a defect)*
-> **MEASURED, production-shaped** (today 2026-09-15, plan start next Monday, race 2027-03-07 = 25 weeks out, charity persona M1 first-timer marathon):
-> | foundation decision | plan starts | foundation weeks | main weeks | weeks to race COVERED | uncovered |
-> |---|---|---|---|---|---|
-> | not answered | 2026-11-02 | 0 | 18 | 18 / 25 | **7** |
-> | `add` | 2026-11-02 | 3 | 18 | 21 / 25 | **4** |
-> | `skip` | 2026-11-02 | 0 | 18 | 18 / 25 | **7** |
-> **NOT A DEFECT — every part is behaving as ratified.** §76 anchors the plan to race day (an 18-week marathon plan must not stretch to 25), `classifyGap(48d)` lands in the **'choice'** band so the runner IS asked rather than silently ignored, and `FOUNDATION_MAX_WEEKS: 3` then caps the fill. I initially called this a Phase 0 defect; that was wrong and is withdrawn.
-> **The real question is a coaching one:** a charity runner typically gets their place months out, so a 20–25 week runway is the NORMAL case for this cohort, not an edge case. Today they answer "add", get 3 weeks, and still have 4 weeks with no plan. Is 3 the right cap when the gap is 6+ weeks, or should a long runway earn a longer (still all-easy) block? **Board** — raising the cap changes what the engine prescribes, and Willy/Sims would want a view on how long an all-easy block stays useful before it is just untracked training.
+> 🔲 **FOUNDATION-LONG-RUNWAY-01 — a charity runner who signs up months out has weeks the plan does not cover.** *(P2, filed 2026-09-15 — BOARD question, NOT a defect)*
+> **MEASURED, production-shaped** (M1 first-timer marathon, 25 weeks to race): `add` gives 3 foundation weeks and still leaves **4 weeks uncovered**.
+> **Every part behaves as ratified** — §76 anchors to race day, `classifyGap` puts it in the 'choice' band so the runner IS asked, and `FOUNDATION_MAX_WEEKS: 3` caps the fill. I initially called this a Phase 0 defect; that was wrong and is withdrawn.
+> **The real question is coaching:** a charity runner typically gets their place months out, so a 20-25 week runway is the NORMAL case for this cohort. Is 3 the right cap when the gap is 6+ weeks, or should a long runway earn a longer all-easy block? Willy/Sims would want a view on how long an all-easy block stays useful.
 > *Verify still open:* generate M1 with a 25-week runway and `foundation_decision: 'add'` → `weeks.filter(w => w.n < 1).length` is 3 while the gap is 6+ weeks.
 
-> ⚠️ **OPEN, found by the coaching deviation scan on 2026-09-15 — filed, NOT fixed:** on plans that genuinely progress (peak ≥ 120% of week 1), **6.9% have a first taper week above 90% of peak** — 5K 12.6%, HM 6.8%, marathon 6.1%, worst 100%. §6 says *"volume drops sharply in the taper"*. The cut IS configured (`TAPER_BY_DISTANCE`, 35–60% by distance, scaled to 70% for sub-40km runners) and applied to the curve at `ruleEngine.ts` pass 3, so this is the DELIVERED-vs-CURVE divergence class ADR-022 documents, not a missing cut. **Zero of the 11 charity personas are affected**, and under-tapering costs freshness rather than safety — so it is filed rather than attempted four days before the first customer demo. Fixing delivered-volume divergence was a whole wave (ADR-022) and is not a pre-demo change. *Verify still open:* `scripts/coaching-deviation-scan.ts` → any `§6 taper barely reduces` line.
+> 🔲 **TEST-LIVENESS-BATTERY-01 — 3 subjects the mutation battery cannot reach.** *(P3, filed 2026-09-15)*
+> `dayBoundary`, `readinessBaseline` and `recalibrationPrompt` are date arithmetic or config lookups with no in-scope operator to flip, so `npm run test:liveness` reports them UNPROVEN rather than passing. Reasons are recorded per-subject in `scripts/__fixtures__/testLivenessBaseline.json`.
+> **Fix:** widen the battery to mutate method calls (`getTime`/`setHours`) and config reads. Until then this is the harness's limit, not the tests'.
+> *Verify still open:* `npm run test:liveness` → the UNPROVEN line.
 
-> ✅ **Verified 2026-09-15 before ship.** `npm run verify` exit 0 (201 files / 1,827 tests · matrix 17/17 · sweep 15,973 plans, 0 violations) · coaching review exit 0 (7 canonical + 11 charity, **0 error violations**) · **`scripts/plan-rules-report.ts` exit 0** — §2 ramp, §3 deload cadence, §8 quality ceiling and §53 variety all hold on every charity persona and all 8 wizard variants, with the wizard inputs proven to reach the plan.
+> 🔲 **PRINCIPLE-XREF-12-01 — the injury cap is cross-referenced as "§12" in at least three places, and §12 is the easy-run Z2 ceiling.** *(P3, found 2026-09-15 by the coverage gate)*
+> `CoachingPrinciples.md:3656`, a `generationConfig.ts` comment, and `lib/plan/injuryCapCompounds.test.ts`'s own `describe('§12 — the injury cap compounds')`. **The 10% rule and its injury tightening belong to §2.**
+> **Why it matters beyond tidiness:** the coverage gate nearly classified §12 as covered on the strength of that test's own declaration. **A test that names the wrong principle manufactures coverage.**
+> Typo-class, board-exempt. Do not bulk-rename without confirming §2 is the intended owner at each site.
+> *Verify still open:* `grep -rn "§12" lib/plan/generationConfig.ts lib/plan/injuryCapCompounds.test.ts docs/canonical/CoachingPrinciples.md | grep -i injury`
 
-| Item | Why it is still open | What would unblock it |
-|---|---|---|
-| **ZONE-BAND-01** | **No data.** Narrowing a prescribed HR band for everyone needs evidence; production holds 126 scored analyses across **2 users**. This is not an engineering problem. | ≥20 distinct users with ≥10 HR-bearing quality analyses each. Numeric trigger already recorded. |
-| **ENGINE-03 / CA-05** (cycle-aware coaching) | **Unbuildable, not unbuilt.** `@capgo/capacitor-health` exposes no menstrual/cycle data type (ADR-011), so the signal cannot be collected at all. | A custom Swift bridge or a plugin fork. Neither is a week's work. |
-| **PV2-G / CD-7** (Monday race) | **Deliberately not done, and I recommend against it this week.** It needs an ADR plus a cross-week `buildRaceArc` restructure — the highest-risk engine change available. **Charity races are on weekends**, so it is not on the demo path. Visible every review round via canonical case `07-hm-monday-race`. | An ADR, and a week that is not four days before a first customer demo. |
-| **SIG-ULTRA-UNBUILT-01** | **Wrong cohort, and not a correctness question.** Board-ratified ultra commitments (§24e back-to-back, 100K time-on-feet peak dose). Charity runners do 10K/HM/marathon. | An SLT call on build timing for a PAID distance with currently zero users. |
+> 🔲 **OPS-DIGEST-PLAN-AUDIT-01 — a FOUNDER decision, not a build.** *(filed 2026-09-15)*
+> The plan-audit probe now emits a `source: plan-audit-summary` ops event every run, carrying the age of the newest breaching plan. **Whether the daily ops digest reads it is yours** — the digest is a cloud routine editable via RemoteTrigger, not repo code, and wiring someone else's digest is not mine to change unilaterally. The repo side is done.
 
-**Also parked, not a defect:**
-
-| Item | State |
-|---|---|
-| **CAT-VO2-TIERA** | Board **declined delivery** 2026-09-13. The rows need §8 to gain a mixed-session dose model first. Do not re-propose the rows themselves. |
-| **PV2-E / CD-6 braces** | HealthKit-verify half of the declared-volume temper. Gated on HealthKit client verification (same hardware gate as PV2-H). |
 
 ### Off the table — do NOT re-open without reading the item first
 
