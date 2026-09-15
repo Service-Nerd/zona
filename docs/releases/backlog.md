@@ -10,50 +10,31 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at end of 2026-09-15
 
-**Everything below is committed and recorded.** `npm run verify` exit 0 (**1,807 tests / 199 files**), matrix 17/17, sweep 15,973 plans / 0 violations, tree clean.
+**Everything below is committed and recorded.** `npm run verify` exit 0 (**1,809 tests / 199 files**), matrix 17/17, sweep 15,973 plans / 0 violations, `cohortShape` unchanged, tree clean.
 
-> ⚖️ **2026-09-15 — the four coupled engine items were analysed together and the Coaching Board sat TWICE.** Record: `docs/decisions/coaching-board-2026-09-15-deload-pos2-and-v2-swap.md`.
+> ⚖️ **2026-09-15 — the four coupled engine items are ALL CLOSED. The Coaching Board sat THREE times.** Record: `docs/decisions/coaching-board-2026-09-15-deload-pos2-and-v2-swap.md`. Seven registry rows.
 >
-> **CLOSED (in feature-registry):**
-> - ✅ **DELOAD-POS2-01** (§95 Amendment 1) — sweep firing **16.1% → 0.2%**; standard runners 21.7% → 0.0%.
-> - ✅ **GRID-COVERAGE-02 Phase 1** — `early_quality_onset` **0 → 984 plans (6.6%)**; coverage gate added.
+> **What shipped:**
+> - ✅ **DELOAD-POS2-01** (§95 Amendment 1) — sweep firing **16.1% → 0.2%**; standard runners 21.7% → 0.0%. Masters residual is the **provably unsatisfiable** set (1,944/3,726 by brute force), so §95 yields there.
+> - ✅ **QUALITY-ONSET-ORDER-01** (§79 Amendment 1) — the window counted CALENDAR weeks, where it was inert (first quality fell inside it in **0 of 48** plans). Now counts quality weeks: first-quality-is-VO2max **25.4% → 16.8%**.
+> - ✅ **REENTRY-DEPTH-01** (§79 Amendment 2) — omitting VO2max is legitimate (§5/Seiler) but must be **declared**; note on 3,384 plans, enforced from the placed sessions.
+> - ✅ **V2-SWAP-S22-01** (§22 Amendment) + ✅ **V2-SWAP-RESIZE-01** — both now load-bearing on 576 plans.
+> - ✅ **GRID-COVERAGE-02 Phase 1** — `early_quality_onset` **0 → 984 plans**; it is what made the §22 defect visible at all.
 > - ✅ **INTENSITY-REENTRY-OWNER-01** — zero delta; the §79 predicate had been hand-written twice.
 >
-> **STILL OPEN, and the reason is one unresolved numeric:**
-> - ⛔ **QUALITY-ONSET-ORDER-01.** The fix is built and measured (first-quality-is-VO2max **25.4% → 12.7%**) but shipping it **re-units a ratified numeric** — `RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS = 4` was calibrated as CALENDAR weeks where it did nothing; as QUALITY weeks it withholds the first four quality sessions and strips hill work from short plans. **REENTRY-DEPTH-01 is a board question (D-22).**
-> - ✅ **V2-SWAP-S22-01 ruled and implemented**, but latent until the above lands.
-> - ⚠️ **V2-SWAP-RESIZE-01 code landed, deliberately unregistered** — fails the `/ship` silent-failure gate because it is unreachable and therefore untestable.
+> 🔬 **Four filed diagnoses were WRONG and are withdrawn.** COHERENCE-SELECT-01's cause was wrong **twice** (it is the V2 swap, not §53 selection); the "§107" deload reference was wrong (**§95 already existed**); QUALITY-ONSET-ORDER-01's "single precomputed Set" would have added a **third** producer; and REENTRY-DEPTH-01's own filing ("recalibrate the numeric") was disproved by its own measurement — depths 1-3 are no-ops.
 >
-> 🔬 **Three filed diagnoses were WRONG and are withdrawn.** COHERENCE-SELECT-01's cause was wrong for the **second** time (it is the V2 swap, not §53 selection); the "§107" deload reference was wrong (**§95 already existed**); and QUALITY-ONSET-ORDER-01's "single precomputed Set" design would have added a **third** producer.
->
-> ⚠️ **The measurement that explains all of it: `applyV2Vo2MaxOnsetTiming`'s swap fires on 0 of 2,304 inputs and 0 of the 7,452-plan grid.** A whole documented mechanism is dead code, and every mis-diagnosis above was downstream of not knowing that (**V2-SWAP-INERT-01**).
+> ⚠️ **The single most useful measurement of the day:** the quality-week reading "fixed" the ordering on 576 plans, and **576 of those lost VO2max ENTIRELY while 0 were re-ordered.** Withholding is not deferral. Shipping on the first measurement would have deleted the stimulus from 576 returning runners' plans with every check green.
 
-> ⚠️ **THE FOCUS IS THE CHARITY SHOWCASE.** The charity partnership is the first acquisition channel and its runners are **predominantly BEGINNERS taking on 10K / half / marathon**. `CHARITY_PERSONAS` (M1–M5, H1–H3, T1–T3) IS that cohort. Judge every engine change against `scripts/measure-charity-first-quality.ts` and the coaching-review round, not only against the synthetic grid.
->
-> ✅ **Re-confirmed 2026-09-15:** cohort-grid beginners receive **0** true quality sessions (828 carry only the `type: 'hard'` 5K time trial — counting it is the documented trap that produced a wrong board submission).
-
-### Ready to build — one well-defined task each
-
-> ⚖️ **COACHING BOARD SAT 2026-09-15 — both open coaching questions are now ANSWERED.**
-> Full record: `docs/decisions/coaching-board-2026-09-15-deload-pos2-and-v2-swap.md`.
-> Premises were MEASURED before submission, and the scan corrected two filed errors:
-> - ❌ **The backlog's "§107" reference for the deload §1-yield was WRONG.** §107 is
->   *"A session may not prescribe work it does not record"* (ZONE-BAND-02, 2026-09-12).
->   The position-2 rule ruled on 2026-09-14 **was never written as a principle at all**.
->   It becomes **§108**.
-> - ❌ **COHERENCE-SELECT-01's diagnosis was WRONG (second time on this item).** It is
->   not a §53 selection-guard problem. Root cause traced and reproduced: the **V2
->   adaptation-window swap relocates phase-sized sessions without re-sizing them**.
+> ✅ **ALL FOUR ITEMS THE DAY STARTED WITH ARE NOW CLOSED** (plus five more found en route). Seven rows in `feature-registry.md` dated 2026-09-15. Three Coaching Board sittings, all recorded in `docs/decisions/coaching-board-2026-09-15-deload-pos2-and-v2-swap.md`.
 
 | Item | State | The single next action |
 |---|---|---|
-| **QUALITY-ONSET-ORDER-01** | ⛔ **BLOCKED on REENTRY-DEPTH-01 — a board question, and the third blocker found on this item.** The mechanism is BUILT and MEASURED (`withheldAtQualityIndex`): returning runners whose FIRST quality session is VO2max **25.4% → 12.7%** (1,152 → 576 plans). But switching the call sites **re-units a ratified numeric** — see below. Code ships the calendar reading; the two-line flip is recorded in `ruleEngine.ts`. | Get REENTRY-DEPTH-01 ruled. Then flip both call sites (IIFE passes `idx`, driver loop passes `buildRotationIndex`) and re-measure. |
-| **REENTRY-DEPTH-01** *(new, 2026-09-15)* | 🔴 **BOARD QUESTION. `RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS = 4` was calibrated as CALENDAR weeks, where it was measurably INERT.** Read as QUALITY weeks it withholds the runner's first **four quality sessions** — on a short 10K plan that is most of them, and it removed hill work from a plan entirely (caught by `effortGovernedSessions.test.ts`, not by the sweep). **D-22: this changes what the numeric MEANS, not just how it is honoured.** | Board must re-calibrate the depth for the new unit, or bound it (e.g. never withhold more than a fraction of a plan's quality weeks). Do NOT flip the unit without re-calibrating — the sweep stays green while the plan silently loses its hardest sessions. |
-| **§5 vs §79 precedence at construction** *(new, 2026-09-15)* | 🔴 **BOARD QUESTION.** `vo2MustOpenBuild` forces VO2max to open build on plans too short to adapt it otherwise, overriding §79's withhold on **576 plans** (5K/10K, both goal types, all `recent_quality_training: 'regular'`) — exactly the 12.7% residual above. Arguably already implied by CD-22's "binding where reachable", but never ruled. | Rule the precedence. It also decides whether `INV-PLAN-RETURNING-INTENSITY-REENTRY` can ever be honestly woken (see REENTRY-INV-DECORATIVE-01). |
-| **REENTRY-INV-DECORATIVE-01** *(new, 2026-09-15)* | ⚠️ **`INV-PLAN-RETURNING-INTENSITY-REENTRY` encodes the SAME calendar premise as the defect, so it is trivially true and sits in the liveness baseline as never-woken.** Re-anchoring it to quality weeks was built and measured: it wakes immediately and fails **576 plans**, every one a legitimate §5 override. **Deliberately not shipped — waking a check by failing 576 correct plans is worse than leaving it honest-but-inert.** | Ships with the §5-vs-§79 precedence ruling, which decides what the check should actually assert. |
-| **V2-SWAP-S22-01** | ✅ **BOARD RULED + IMPLEMENTED 2026-09-15 (option B).** A session displaced by §5's relocation is exempt from §22's per-week check — a fourth exemption on the footing of the three §22 already grants. Structural stamp (`displaced_by_adaptation_window`), never a label (D-17). **Binding condition measured: across 576 plans with a displaced session, `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` violations 0, per-week §22 violations 0.** | Nothing. ⚠️ **Latent** until QUALITY-ONSET-ORDER-01 lands — the swap fires on 0 plans today. Not registered for that reason. |
-| **V2-SWAP-RESIZE-01** (was COHERENCE-SELECT-01) | ⚠️ **CODE LANDED, DELIBERATELY NOT REGISTERED — fails the `/ship` silent-failure gate (box 1).** Board-ruled and correct (probe 64 → 0), but the callback silently returns when `catalogueRowFor()` is null and there is **no success-path test**, because the swap is unreachable (0 of 2,304 — V2-SWAP-INERT-01). | Registers with QUALITY-ONSET-ORDER-01, which is what makes it reachable and therefore testable. |
-| **GRID-COVERAGE-02 Phase 2** | ✅ Phase 1 shipped → feature-registry. Phase 2 open: `injury_history`, `user_declared_level`, `weeks_at_current_volume`, `day_budgets`, `foundation_decision` still unset. | Decide second-targeted-grid vs pairwise. Runtime is the binding constraint (7,776 → 15,552 already cost ~10s → ~16s). |
+| **REENTRY-VO2MAX-BASELINE-01** *(new, 2026-09-15 — NOT ratified by any ruling)* | 🔲 **Even with §79's window inert, 49.7% of re-entry-active quality-bearing plans contained NO VO2max-category session at all, and 74.8% contained no hill reps.** Surfaced while measuring REENTRY-DEPTH-01; the board explicitly declined to ratify it. **Nobody decided this.** McMillan at the sitting: *"three-quarters of these runners already get no hill reps and nobody decided that."* | Measure WHY — is it §53 rotation thinness, catalogue eligibility, or the §8 quality ceiling? Then take the cause to the board. Sims flagged that "no VO2max this cycle" should be a CYCLE decision, not a permanent property of being a returning runner — if a runner is still getting none three blocks later, that is a different defect. |
+| **§5 vs §79 precedence at construction** *(new, 2026-09-15)* | 🔲 **BOARD QUESTION.** `vo2MustOpenBuild` forces VO2max to open build on plans too short to adapt it otherwise, overriding §79's withhold on **576 plans** (5K/10K, both goal types, all `recent_quality_training: 'regular'`) — exactly the 16.8% residual. Arguably already implied by CD-22's "binding where reachable", but never ruled. | Rule the precedence. It also decides what `INV-PLAN-RETURNING-INTENSITY-REENTRY` should assert (see below). |
+| **REENTRY-INV-DECORATIVE-01** *(new, 2026-09-15)* | ⚠️ **`INV-PLAN-RETURNING-INTENSITY-REENTRY` still encodes the CALENDAR premise, so it is trivially true and sits in the liveness baseline as never-woken** — the check and the defect §79 Amendment 1 fixed shared a premise. Re-anchoring it to quality weeks was built and measured: it wakes immediately and fails **576 plans**, every one a legitimate §5 override. **Deliberately not shipped — waking a check by failing 576 correct plans is worse than leaving it honest-but-inert.** | Ships with the §5-vs-§79 precedence ruling above, which decides what it should assert. |
+| **V2-SWAP-INERT-01** | ✅ **RESOLVED as a side-effect.** The swap fired on 0 of 2,304 inputs; repairing §79 makes it fire on **576**. It is no longer dead code, and both fixes hanging off it (the re-size and the §22 exemption) are now load-bearing. | Nothing. The longer-term question — retire the swap for construct-compliant placement (`vo2MustOpenBuild`) — stays open as the board's noted direction, not a defect. |
+| **GRID-COVERAGE-02 Phase 2** | ✅ Phase 1 shipped → feature-registry, and it **earned its keep the same morning**: varying `recent_quality_training` is what made the 288 §22 violations visible at all. Phase 2 open: `injury_history`, `user_declared_level`, `weeks_at_current_volume`, `day_budgets`, `foundation_decision` still unset. | Decide second-targeted-grid vs pairwise. Runtime is the binding constraint (7,776 → 15,552 already cost ~10s → ~16s). |
 
 ### Off the table — do NOT re-open without reading the item first
 

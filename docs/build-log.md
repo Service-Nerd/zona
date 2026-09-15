@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-15 (third entry) — REENTRY-DEPTH-01 · the fix worked, and it worked by deleting the thing it was supposed to reorder
+
+**Shipped:** All four items the day started with, plus the three blockers found underneath them. A returning runner's first hard session is a tempo now, not a set of intervals — and where the plan ends up with no intervals at all, it says so instead of quietly dropping them.
+
+**Dev learning:** I took a question to the board — "this number is calibrated wrong" — and the measurement I ran to support it disproved my own question. Depths 1, 2 and 3 produce byte-identical plans; only 4 does anything. So "recalibrate it down" was a no-op dressed as a tuning decision. Then the real one: of 576 plans where the fix improved the ordering, **576 lost the session type entirely and zero were actually reordered**. The window only knows how to withhold. It has no obligation to put the thing back afterwards, and with a rotation filling a fixed number of slots, withheld means gone. **Withholding is not deferral, and the first metric I looked at could not tell the difference.**
+
+**Product/creator learning:** The answer was already written down. §5 carries a quote from a previous sitting — "either commit to it properly in the build, or do not do it, the middle position is the only indefensible one" — which settles both halves at once: omission is fine, and forcing a late token session to satisfy an ordering rule is the one thing you must not do. I nearly proposed exactly that forced-late-session as the fix. **The constitution had already rejected my solution two months before I thought of it.**
+
+**AI-building learning:** Three board sittings in one day, and each one's implementation surfaced the next one's question. That is not the board being wrong — it is that third-order interactions are invisible until the first-order fix is live. What made it converge rather than spiral was refusing to ship on a single metric. "First quality is VO2max: 25.4% → 12.7%" is a genuinely good number and it was hiding a regression.
+
+**The honest bit:** I reverted correct, working, measured code three times today. Twice it was right to revert and once — this one — the revert turned out to be unnecessary, because the board legitimised the behaviour I'd backed out of. I do not think I could have known that in advance, and I would rather have reverted and asked. The alternative reading is that I burned an hour being cautious about something that was fine. Both are true.
+
+**Hook material:** My fix improved the metric by deleting the thing it was measuring. 576 plans "fixed", 576 of them by removing the session entirely, zero actually reordered.
+
+**Postable?:** yes
+
+
 ## 2026-09-15 (second entry) — V2-SWAP-S22-01 · I got the ruling, built it, and the test caught me re-defining a number without saying so
 
 **Shipped:** A §22 exemption the board ruled on, plus a lot of precisely-filed "not yet". The onset fix that halves how often a returning runner's first hard session is a VO2max interval is built, measured, and **still not shipped** — because turning it on quietly changes what a ratified number means.
