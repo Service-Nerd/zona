@@ -25,13 +25,46 @@ on:
   push:
     branches: [main]
     paths:
+      # ── DOCTRINE (the rules, stated) ──────────────────────────────────────
       - 'docs/canonical/CoachingPrinciples.md'
       - 'docs/canonical/session-catalogue.md'
       - 'docs/canonical/zone-rules.md'
       - 'docs/canonical/coaching-rules.md'
+      # ── CONFIG (the rules, as numbers) ────────────────────────────────────
       - 'lib/plan/generationConfig.ts'
       - 'lib/plan/planSignatures.ts'
       - 'lib/plan/sessionFormat.ts'
+      # ── THE REST OF THE PLAN'S ANATOMY (added 2026-09-15) ─────────────────
+      #
+      # The list above watched the rules and MISSED THE ENGINE. Every file
+      # below decides what a runner is prescribed just as directly as a
+      # numeric does, and none of them fired this workflow:
+      #
+      #   ruleEngine.ts          assembles every plan
+      #   invariants.ts          the checks themselves — weaken one and no
+      #                          review ran to notice
+      #   sessionCatalogueData.ts  the actual sessions (the list above watched
+      #                          the markdown DOC, not the code it describes)
+      #   types/plan.ts          GeneratorInput — the wizard's questions; a
+      #                          new or changed input changes every plan
+      #   charityCohort.ts       the personas this review is FOR
+      #   resolveMainSet.ts /    session shape and the day-placement rules
+      #   sessionRole.ts /       that decide what lands on which day
+      #   deloadCadence.ts
+      #   intensityReentry.ts
+      #
+      # Measured on 2026-09-15: a full day of engine changes — a new §79 arm,
+      # the §5-vs-§79 precedence, the V2 swap re-size, the §22 exemption —
+      # would have shipped without triggering a single coaching review.
+      - 'lib/plan/ruleEngine.ts'
+      - 'lib/plan/invariants.ts'
+      - 'lib/plan/sessionCatalogueData.ts'
+      - 'lib/plan/charityCohort.ts'
+      - 'lib/plan/resolveMainSet.ts'
+      - 'lib/plan/sessionRole.ts'
+      - 'lib/plan/deloadCadence.ts'
+      - 'lib/plan/intensityReentry.ts'
+      - 'types/plan.ts'
   workflow_dispatch:
 
 jobs:
