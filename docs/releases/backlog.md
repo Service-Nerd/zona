@@ -57,6 +57,8 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 **STILL OPEN — 4 items, none of them buildable today, each with a hard reason.**
 
+> ⚠️ **OPEN, found by the coaching deviation scan on 2026-09-15 — filed, NOT fixed:** on plans that genuinely progress (peak ≥ 120% of week 1), **6.9% have a first taper week above 90% of peak** — 5K 12.6%, HM 6.8%, marathon 6.1%, worst 100%. §6 says *"volume drops sharply in the taper"*. The cut IS configured (`TAPER_BY_DISTANCE`, 35–60% by distance, scaled to 70% for sub-40km runners) and applied to the curve at `ruleEngine.ts` pass 3, so this is the DELIVERED-vs-CURVE divergence class ADR-022 documents, not a missing cut. **Zero of the 11 charity personas are affected**, and under-tapering costs freshness rather than safety — so it is filed rather than attempted four days before the first customer demo. Fixing delivered-volume divergence was a whole wave (ADR-022) and is not a pre-demo change. *Verify still open:* `scripts/coaching-deviation-scan.ts` → any `§6 taper barely reduces` line.
+
 > ✅ **Verified 2026-09-15 before ship.** `npm run verify` exit 0 (201 files / 1,827 tests · matrix 17/17 · sweep 15,973 plans, 0 violations) · coaching review exit 0 (7 canonical + 11 charity, **0 error violations**) · **`scripts/plan-rules-report.ts` exit 0** — §2 ramp, §3 deload cadence, §8 quality ceiling and §53 variety all hold on every charity persona and all 8 wizard variants, with the wizard inputs proven to reach the plan.
 
 | Item | Why it is still open | What would unblock it |

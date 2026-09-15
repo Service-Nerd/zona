@@ -6507,22 +6507,35 @@ function buildRulePlanOnce(
   // Only reachable when the long run has been forced onto a weekday (both
   // weekend days blocked); it is exempt from the cap, so without this the
   // overrun would ship silently. Same shape as lopsidedWeek above.
-  const longRunOverrun: { n: number; mins: number; cap: number } | null = (() => {
+  // §81 — ONE weekday-overrun detector, three consumers (2026-09-15).
+  //
+  // This existed as three near-identical IIFEs differing only in which session
+  // they matched, and the third — a plain EASY run — was simply never written.
+  // A capped-weekday runner therefore got a 74-minute Thursday easy run against
+  // a 30-minute cap in weeks 1-3 and was told nothing, because the only note
+  // that fires talks about "hard sessions" and their first hard session is week
+  // 5. The family had two of its three members. Found by the coaching deviation
+  // scan, not by any invariant.
+  type Overrun = { n: number; mins: number; cap: number } | null
+  const weekdayOverrun = (matches: (sn: Session) => boolean): Overrun => {
     const cap = input.max_weekday_mins
     if (!cap) return null
     const limit = cap * (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100)
-    let worst: { n: number; mins: number; cap: number } | null = null
+    let worst: Overrun = null
     for (const w of weeks) {
       if (w.type === 'race') continue
       for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as Day[]) {
         const sn = w.sessions?.[d]
-        if (!sn || !isLongRun(sn)) continue
+        if (!sn || !matches(sn)) continue
         const mins = sn.duration_mins ?? 0
         if (mins > limit && (!worst || mins > worst.mins)) worst = { n: w.n, mins, cap }
       }
     }
     return worst
-  })()
+  }
+
+  const longRunOverrun: Overrun = weekdayOverrun(sn => isLongRun(sn))
+
   // §81 DEFECT FIX (2026-09-11) — the obligation applies to STRUCTURED sessions
   // too, and the engine only ever applied it to the long run.
   //
@@ -6539,22 +6552,16 @@ function buildRulePlanOnce(
   //
   // Restores documented intent, so it is board-EXEMPT per ADR-017 (the principle
   // was already correct; the engine was not honouring half of it).
-  const structuredOverrun: { n: number; mins: number; cap: number } | null = (() => {
-    const cap = input.max_weekday_mins
-    if (!cap) return null
-    const limit = cap * (1 + GENERATION_CONFIG.LONG_RUN_WEEKDAY_OVERRUN_MAINTENANCE_PCT / 100)
-    let worst: { n: number; mins: number; cap: number } | null = null
-    for (const w of weeks) {
-      if (w.type === 'race') continue
-      for (const d of ['mon', 'tue', 'wed', 'thu', 'fri'] as Day[]) {
-        const sn = w.sessions?.[d]
-        if (!sn || isLongRun(sn) || !isStructuredSession(sn)) continue
-        const mins = sn.duration_mins ?? 0
-        if (mins > limit && (!worst || mins > worst.mins)) worst = { n: w.n, mins, cap }
-      }
-    }
-    return worst
-  })()
+  const structuredOverrun: Overrun =
+    weekdayOverrun(sn => !isLongRun(sn) && isStructuredSession(sn))
+
+  // THE MISSING THIRD. Neither a long run nor a structured session — a plain
+  // easy run over the runner's own stated weekday budget. It has no §81
+  // exemption to invoke and no intervals to protect; it is simply longer than
+  // the time they said they had, and until now nothing said so.
+  const easyOverrun: Overrun =
+    weekdayOverrun(sn => !isLongRun(sn) && !isStructuredSession(sn)
+      && sn.type !== 'rest' && sn.type !== 'race' && sn.type !== 'strength')
 
   // ⚠️ DELIBERATE PARTIAL — the NOTE ships, the maintenance downgrade does NOT.
   //
@@ -6581,6 +6588,20 @@ function buildRulePlanOnce(
   // it. Tracked as CAT/MWM-STRUCTURED-MAINTENANCE-01 in the backlog.
   const structuredOverrunNote: string | null = structuredOverrun
     ? `Your hard sessions do not fit the time you have. You've capped weekdays at ${structuredOverrun.cap} minutes, but by week ${structuredOverrun.n} the quality session this race needs runs about ${Math.round(structuredOverrun.mins)} minutes. It stays in the plan at full length, because shortening the label without shortening the intervals would just hand you the same work in less time. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
+    : null
+
+  // THE MISSING THIRD NOTE. `structuredOverrunNote` talks about "hard sessions"
+  // and `longRunOverrunNote` about the long run — so a runner whose EASY runs
+  // are the thing over budget got either silence or, worse, an explanation
+  // about sessions their plan does not contain yet. Measured: a 30-minute-cap
+  // runner had 60/67/74-minute Thursday easy runs in weeks 1-3 while the only
+  // note that fired described hard sessions starting in week 5.
+  //
+  // No §81 exemption is invoked here and there are no intervals to protect —
+  // this run is simply longer than the time the runner said they had, and the
+  // honest thing is to say which day and what the lever is.
+  const easyOverrunNote: string | null = easyOverrun
+    ? `Your easy runs do not fit the time you have. You've capped weekdays at ${easyOverrun.cap} minutes, but by week ${easyOverrun.n} an easy run lands at about ${Math.round(easyOverrun.mins)} minutes. It stays at that length because cutting it would leave the week too short to build on, and the long run would end up carrying too much of it. The lever is one longer weekday, or moving a run to the weekend.`
     : null
 
   const longRunOverrunNote: string | null = longRunOverrun
@@ -6617,7 +6638,12 @@ function buildRulePlanOnce(
       // run overrun is the more severe shape (the plan's pivotal session
       // doesn't fit at all, vs. easy runs running a few minutes long).
       // Appending keeps existing precedence untouched.
-      ?? longRunOverrunNote ?? structuredOverrunNote ?? easyFloorProtectionNote ?? undefined
+      // easyOverrunNote sits LAST of the three §81 notes: the long run not
+      // fitting is the most severe shape, then a structured session, then an
+      // easy run that is simply long. It is still ahead of §82's floor note,
+      // which describes a different constraint (runs too SHORT).
+      ?? longRunOverrunNote ?? structuredOverrunNote ?? easyOverrunNote
+      ?? easyFloorProtectionNote ?? undefined
 
   // CoachingPrinciples §31 — persona-aware compression classification. Computed
   // here (not inline in meta) so the difficulty band below reads the SAME value,
