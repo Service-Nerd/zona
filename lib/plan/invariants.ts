@@ -2591,7 +2591,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // swept plans a deload week still overshoots its reduced target because
         // session floors (MIN_SESSION_DISTANCE) + the race-anchored long run
         // (§45/§47) size independently of the ceiling. The Coaching Board scoped
-        // the DELIVERED reconciliation to INJURY runners only (the §12 5% cap —
+        // the DELIVERED reconciliation to INJURY runners only (§2's 5% injury cap —
         // INV-PLAN-INJURY-CAP-DELIVERED); it deliberately LEFT the healthy
         // delivered divergence to §52 ("the race sets the long run, don't deform
         // it") rather than mandate deload-week placement surgery for everyone.
@@ -2610,7 +2610,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // INV-PLAN-BOUNCEBACK-BOUNDED (CoachingPrinciples §2 — RAMP-BOUNCEBACK-01)
   //
   // For a knee/shin-history runner the post-deload bounceback is no longer §2-
-  // exempt: the injury cap (§12) bounds it, so the return to pre-deload volume
+  // exempt: §2's injury cap bounds it, so the return to pre-deload volume
   // happens GRADUALLY and the bounceback week stays BELOW pre-deload. RAMP-
   // BOUNCEBACK-01 removed the `Math.max`-override that let the bounceback jump
   // straight back — a +43% rise, +26% on the knee archetype, shipped to injured
@@ -2661,7 +2661,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
 
   // INV-PLAN-INJURY-CAP-DELIVERED (CoachingPrinciples §90 — DELOAD-INVERSION-01)
   //
-  // For a knee/shin-history runner the §12 injury cap (5%/wk) is a DELIVERED
+  // For a knee/shin-history runner §2's injury cap (5%/wk) is a DELIVERED
   // promise — what the runner actually runs — not just a property of the volume
   // CURVE. Before DELOAD-INVERSION-01 the cap was enforced only on the curve, so
   // a green curve could still ship a +39% delivered week to injured tissue: a
@@ -2722,9 +2722,9 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           principle_ref: 'CoachingPrinciples §90',
           severity: 'warn',
           week: w.n,
-          message: `Week ${w.n}: an injury-history runner's TRIMABLE (non-long-run) delivered volume rose ${risePct.toFixed(0)}% from week ${prev.n} (${nonLongPrev.toFixed(0)}→${nonLongNow.toFixed(0)}km), above the §12 injury cap of ${capPct}%. The long run is §52-exempt; the easy/quality volume is not — DELOAD-INVERSION-01 lever (b) should have trimmed it.`,
+          message: `Week ${w.n}: an injury-history runner's TRIMABLE (non-long-run) delivered volume rose ${risePct.toFixed(0)}% from week ${prev.n} (${nonLongPrev.toFixed(0)}→${nonLongNow.toFixed(0)}km), above §2's injury cap of ${capPct}%. The long run is §52-exempt; the easy/quality volume is not — DELOAD-INVERSION-01 lever (b) should have trimmed it.`,
           actual: `+${risePct.toFixed(0)}% non-long-run`,
-          expected: `<= ${capPct}% (§12 injury cap on the trimable portion)`,
+          expected: `<= ${capPct}% (§2's injury cap on the trimable portion)`,
         })
       }
     }

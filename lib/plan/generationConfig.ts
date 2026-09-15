@@ -107,7 +107,7 @@ export const GENERATION_CONFIG = {
 
   // §90 Amendment 1 (Coaching Board S1-INJURY-DENOMINATOR-01, 2026-09-15).
   //
-  // When §12's injury cap trims a week far enough that §52b day-fitting removes
+  // When §2's injury cap trims a week far enough that §52b day-fitting removes
   // an EASY run, §1's session-count denominator falls while the quality count
   // holds — and the plan breaches its intensity ceiling with no intensity added.
   // Measured: the same runner at 15 km/week, 12 weeks to a marathon, goes 17.4%
@@ -126,7 +126,7 @@ export const GENERATION_CONFIG = {
   // RAMP-BOUNCEBACK-01 (Coaching Board 2026-09-06, Willy-led) — the post-deload
   // bounceback is BOUNDED for injury-history runners and left UNBOUNDED for
   // healthy runners. No new numeric: injury bouncebacks are bounded by the
-  // existing INJURY_WEEKLY_INCREASE_CAP_PCT (§12); healthy bouncebacks keep §2's
+  // existing INJURY_WEEKLY_INCREASE_CAP_PCT (§2); healthy bouncebacks keep §2's
   // exemption (return to pre-deload). The board provisionally proposed a
   // dedicated healthy bounceback cap (~20%), but measurement across a 144-plan
   // grid found it flipped +50pp of plans to "constrained by inputs" and raised
@@ -240,11 +240,11 @@ export const GENERATION_CONFIG = {
   // BUILT, MEASURED AND REVERTED before shipping. It is not a bad idea; it is
   // blocked behind RAMP-BOUNCEBACK-01.
   //
-  // What the measurement found, on the §12 knee-injury archetype:
+  // What the measurement found, on the §2 knee-injury archetype:
   //   base 35:  45 45 48 38* 48 49 53 46* 50 56 59   worst jump W5 +26%
   //   base 30:  45 45 48 38* 39 51 50 46* 53 56 60   worst jump W6 +31%
   //
-  // The +26% at 35% is already far above §12's 17% injury cap. It passes only
+  // The +26% at 35% is already far above §2's 17% injury cap. It passes only
   // because it is the week AFTER a deload, and §2 exempts a post-deload
   // bounceback from the cap (correctly — returning to a volume held two weeks
   // ago is not a spike). Shortening base moves the phase boundary, which
@@ -1116,7 +1116,7 @@ export const GENERATION_CONFIG = {
   HEURISTIC_FRESH_RETURN_LONG_RUN_KM: 10,
 
   // ── Injury weekly volume cap (knee, shin splints) ──────────────────────────
-  // CoachingPrinciples §12 — for these two injury types, weekly volume cap
+  // CoachingPrinciples §2 — for these two injury types, weekly volume cap
   // tightens from MAX_WEEKLY_VOLUME_INCREASE_PCT (10%) to this stricter limit.
   INJURY_WEEKLY_INCREASE_CAP_PCT: 5,  // % above previous week's volume
 
@@ -1133,7 +1133,7 @@ export const GENERATION_CONFIG = {
   // (Sims' condition — a 5 km floor was rejected for masking the 4–7 km band).
   // A COACHING numeric (a clinical-triviality threshold), not the inline
   // DELIVERED_ROUNDING_TOLERANCE_PCT (which absorbs single-km rounding). It gates
-  // the CHECKER's warn, never the engine's trim — the producer still caps to §12.
+  // the CHECKER's warn, never the engine's trim — the producer still caps to §2's injury cap.
   DELIVERED_ABSOLUTE_FLOOR_KM: 3,  // km; a rise below this is not a delivered-cap breach
 
   // ── Injury-aware session selection (CoachingPrinciples §21) ────────────────

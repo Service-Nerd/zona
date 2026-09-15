@@ -63,7 +63,7 @@
 
 | Input | Type | Notes |
 |---|---|---|
-| Injury history | Multi-select | Achilles / Knee / Back / Shin splints / Hip flexor / Plantar fasciitis. All six have rules — see §12. |
+| Injury history | Multi-select | Achilles / Knee / Back / Shin splints / Hip flexor / Plantar fasciitis. All six have rules — see §2 (volume cap) and §21 (hills). |
 | Current niggles | Text | Adjusts training load |
 | Strength experience | Select | None / Some / Regular |
 

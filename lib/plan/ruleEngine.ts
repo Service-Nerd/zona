@@ -570,7 +570,7 @@ function buildVolumeSequence(
   distanceKm: number,
   recoveryFreq: number,
   returningRunner: boolean,
-  // §12 — the injury weekly-increase cap, applied INSIDE the curve.
+  // §2 — the injury weekly-increase cap, applied INSIDE the curve.
   //
   // It used to be applied per-week in the session loop, downstream of the
   // curve, against `volumes[i - 1]` — the raw curve value, not the previous
@@ -660,7 +660,7 @@ function buildVolumeSequence(
     }
     if (volumes[i] <= volumes[i - 1]) continue
 
-    // §12 tightens §2's allowance for knee / shin-splint history. Same pass, so
+    // §2's injury cap tightens its own standard allowance for knee / shin-splint history. Same pass, so
     // it compounds week on week exactly as the standard cap does.
     const allowancePct = injuryCapPct != null
       ? Math.min(allowanceForWeek(weekN), injuryCapPct)
@@ -689,7 +689,7 @@ function buildVolumeSequence(
       // INJURY history — BOUNDED by the injury cap, no exemption. Injured tissue's
       // binding constraint is the ACUTE weekly load; a "return" does not lessen it
       // (cardiovascular readiness ≠ tissue readiness). This branch used to
-      // `Math.max`-override §12 entirely, shipping +26% weeks to knee-history
+      // `Math.max`-override §2's injury cap entirely, shipping +26% weeks to knee-history
       // runners — the live safety hole that blocked CB-PHASE-01. The bounceback now
       // returns TOWARD pre-deload only as fast as the injury cap allows; the
       // remainder completes next week (§2: "growth resumes from there").
@@ -2567,7 +2567,7 @@ function buildWeekSessions(
 ): Partial<Record<Day, Session>> {
   const blocked = blockedDays(input)
   const distKey = raceDistanceKey(input.race_distance_km)
-  // DELOAD-INVERSION-01 (§12, Coaching Board 2026-09-06) — the same knee/shin
+  // DELOAD-INVERSION-01 (§2 injury cap, Coaching Board 2026-09-06) — the same knee/shin
   // predicate that sets the injury VOLUME cap in buildVolumeSequence. When set,
   // the injury cap is a DELIVERED ceiling, not just a curve one: the peak quality
   // count drops to one (part 2a) and the easy-run COUNT is trimmed to fit the
@@ -2763,7 +2763,7 @@ function buildWeekSessions(
     // which no arrangement can spread inside §53's variety cap — 109 violations
     // across the property grid.
     // DELOAD-INVERSION-01 part 2a (Coaching Board 2026-09-06) — §8's second peak
-    // quality YIELDS to §12's injury cap. A knee/shin-history runner's peak week
+    // quality YIELDS to §2's injury cap. A knee/shin-history runner's peak week
     // must fit the injury-capped curve at DELIVERY, and the least-harm lever is the
     // quality COUNT (Willy: it sheds the sharpest — intensity — load; the race-
     // anchored long run is protected by §52). One peak quality, never two, for an
@@ -6171,7 +6171,7 @@ function buildRulePlanOnce(
           const distKey = raceDistanceKey(input.race_distance_km)
           const distKm = input.race_distance_km
 
-          // DELOAD-INVERSION-01 (§52/§12, Coaching Board 2026-09-06) — an INJURED
+          // DELOAD-INVERSION-01 (§52 / §2 injury cap, Coaching Board 2026-09-06) — an INJURED
           // runner (knee/shin) with BEGINNER structural volume building an ULTRA is
           // maintenance-grade, not a build. You cannot safely build injured,
           // low-volume tissue to a 50K/100K (Willy: injury = maintenance-grade).
@@ -6704,7 +6704,7 @@ function buildRulePlanOnce(
   //
   // Coaching Board S1-INJURY-DENOMINATOR-01, 2026-09-15. CORRECT WITH AMENDMENT.
   //
-  // §90's levers trim easy volume to hold the §12 delivered cap on injured
+  // §90's levers trim easy volume to hold §2's delivered injury cap on injured
   // tissue, and §90 says so in its own words: "easy runs trim/DROP to the
   // ceiling; the long run never does." Trim far enough and §52b day-fitting
   // removes a whole day — and the day it removes is always an EASY one, because
@@ -6721,7 +6721,7 @@ function buildRulePlanOnce(
   // provokes. Seiler: under load the engine converts a polarised plan into a
   // threshold plan, which is the failure this product exists to prevent.
   //
-  // THIS IS NOT A NEW PRINCIPLE. §90 already ruled "§8 yields to §12 when the
+  // THIS IS NOT A NEW PRINCIPLE. §90 already ruled "§8 yields to §2's injury cap when the
   // tissue is the binding constraint" — scoped to peak weeks and the second
   // quality session only because that was the case in front of the board. The
   // reasoning was never peak-specific; this releases it.
@@ -6820,7 +6820,7 @@ function buildRulePlanOnce(
         //
         // The week loses the difference, and that is the right direction: §1
         // counts SESSIONS, so a smaller easy run costs the ratio nothing, and
-        // less volume on an injury-capped week is what §12 wanted anyway.
+        // less volume on an injury-capped week is what §2's injury cap wanted anyway.
         const longKmOfWeek = Math.max(0, ...(Object.values(c.w.sessions).filter(Boolean) as Session[])
           .filter(sn => isLongRun(sn))
           // `sessionKmOrZero` is the same resolver `sumWeeklyKm` uses two lines
@@ -6934,7 +6934,7 @@ function buildRulePlanOnce(
         }
         ruleAdjustments.push({
           rule: '§90 Amendment 1 — injury trim yields quality to §1',
-          violation: `The §12 injury cap removed enough easy running that the plan's quality `
+          violation: `§2's injury cap removed enough easy running that the plan's quality `
             + `share passed §1's ${ceilingPct}% ${yieldDistKey} ceiling without any intensity being added.`,
           resolution: `${yielded} quality session(s) converted to easy at the same distance, `
             + `latest first, bringing the plan to ${share().toFixed(1)}%.`,

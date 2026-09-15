@@ -52,7 +52,7 @@ describe('§90 Am.1 — the premise still holds (guards the guard)', () => {
   })
 
   it('the injury trim really does remove RUNS, not just kilometres', () => {
-    // The whole mechanism in one assertion. If §12's trim ever stops costing the
+    // The whole mechanism in one assertion. If §2's injury-cap trim ever stops costing the
     // runner a day, this amendment has no trigger and should be revisited.
     const healthy = gen([]).weeks.filter(w => w.n >= 1).flatMap(runsOf).length
     const injured = gen(['knee']).weeks.filter(w => w.n >= 1).flatMap(runsOf).length

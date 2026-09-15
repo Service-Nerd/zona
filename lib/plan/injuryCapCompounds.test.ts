@@ -4,7 +4,7 @@ import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
 /**
- * §12 — the injury weekly-volume cap must compound.
+ * §2's injury cap — the injury weekly-volume cap must compound.
  *
  * THE DEFECT (fixed 2026-08-20): the cap was handed `volumes[i - 1]`, the raw
  * volume CURVE, rather than the previous week's post-adjustment result. So it
@@ -36,7 +36,7 @@ const weeklySeries = (p: Plan) =>
 beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(FROZEN_NOW) })
 afterAll(() => { vi.useRealTimers() })
 
-describe('§12 — the injury cap compounds', () => {
+describe('§2 — the injury cap compounds', () => {
   it('no week rises more than the injury cap above the one before it', () => {
     // The assertion the old code could not satisfy. Deload weeks drop, and the
     // post-deload bounceback is EXCLUDED here — not because it is §2-exempt for
@@ -83,7 +83,7 @@ describe('§12 — the injury cap compounds', () => {
       .toBeGreaterThan(GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT)
   })
 
-  it('the injured runner gets LESS volume than the healthy one, as §12 intends', () => {
+  it('the injured runner gets LESS volume than the healthy one, as §2 injury cap intends', () => {
     const injured = generateRulePlan(HM_KNEE, 'paid', PLAN_START)
     const healthy = generateRulePlan({ ...HM_KNEE, injury_history: [] }, 'paid', PLAN_START)
     const peak = (p: Plan) => Math.max(...p.weeks.filter(w => w.type !== 'deload' && w.type !== 'race').map(w => w.weekly_km))

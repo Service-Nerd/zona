@@ -41,12 +41,6 @@ clean on every check.
 > **Fix:** widen the battery to mutate method calls (`getTime`/`setHours`) and config reads. Until then this is the harness's limit, not the tests'.
 > *Verify still open:* `npm run test:liveness` → the UNPROVEN line.
 
-> 🔲 **PRINCIPLE-XREF-12-01 — the injury cap is cross-referenced as "§12" in at least three places, and §12 is the easy-run Z2 ceiling.** *(P3, found 2026-09-15 by the coverage gate)*
-> `CoachingPrinciples.md:3656`, a `generationConfig.ts` comment, and `lib/plan/injuryCapCompounds.test.ts`'s own `describe('§12 — the injury cap compounds')`. **The 10% rule and its injury tightening belong to §2.**
-> **Why it matters beyond tidiness:** the coverage gate nearly classified §12 as covered on the strength of that test's own declaration. **A test that names the wrong principle manufactures coverage.**
-> Typo-class, board-exempt. Do not bulk-rename without confirming §2 is the intended owner at each site.
-> *Verify still open:* `grep -rn "§12" lib/plan/generationConfig.ts lib/plan/injuryCapCompounds.test.ts docs/canonical/CoachingPrinciples.md | grep -i injury`
-
 > 🔲 **OPS-DIGEST-PLAN-AUDIT-01 — a FOUNDER decision, not a build.** *(filed 2026-09-15)*
 > The plan-audit probe now emits a `source: plan-audit-summary` ops event every run, carrying the age of the newest breaching plan. **Whether the daily ops digest reads it is yours** — the digest is a cloud routine editable via RemoteTrigger, not repo code, and wiring someone else's digest is not mine to change unilaterally. The repo side is done.
 

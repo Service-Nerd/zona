@@ -9,10 +9,10 @@ import type { GeneratorInput, Plan, Week } from '@/types/plan'
  * Two coaching promises about what the runner ACTUALLY runs were enforced only
  * on the internal volume curve, not on the delivered week:
  *   1. §3  — a deload week carries less than the week before it.
- *   2. §12 — an injury runner's rise stays within the 5% cap at delivery.
+ *   2. §2's injury cap — an injury runner's rise stays within the 5% cap at delivery.
  *
  * The Coaching Board (Willy-led) ruled the fix ships as three levers: the deload
- * curve re-anchor, §8 yielding its 2nd peak quality to §12 on injury weeks, and
+ * curve re-anchor, §8 yielding its 2nd peak quality to §2's injury cap on injury weeks, and
  * easy runs trimming to the ceiling while the §52 long run is never trimmed —
  * with one new maintenance trigger for injury+beginner+ultra.
  *
@@ -45,7 +45,7 @@ const longKm = (w: Week) => {
 }
 
 describe('DELOAD-INVERSION-01 §90 — the delivered week is the promise', () => {
-  it('lever: an injury-capped peak week carries at most ONE quality session (§8 yields to §12)', () => {
+  it('lever: an injury-capped peak week carries at most ONE quality session (§8 yields to §2 injury cap)', () => {
     const plan = generateRulePlan(HM_KNEE, 'paid', PLAN_START)
     const buildWeeks = plan.weeks.filter(w => w.type !== 'deload' && w.type !== 'race')
     for (const w of buildWeeks) {
