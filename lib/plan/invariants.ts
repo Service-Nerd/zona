@@ -5683,7 +5683,32 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // exhausted, and surplus calendar time beyond it has nowhere else to go but
     // §57. Measured: 10 sweep cases, every one a plan already at max_weeks with
     // gap left over. Firing there would demand the plan break §17 to satisfy §97.
-    const extensionExhausted = signatureMax != null && mainWeekCount >= signatureMax
+    //
+    // ⚠️ THE CALENDAR BINDS BEFORE THE SIGNATURE DOES, and missing that is why
+    // this was filed as a defect twice. `calcPlanLength` takes `weeksAvailable`
+    // from the plan's own earliest start to race week and caps at
+    // min(weeksAvailable, weekCap). When the calendar offers fewer weeks than
+    // `max_weeks`, the plan is as long as it can be and §97 has nothing left to
+    // extend into — the surplus sits BEFORE the earliest start, where no amount
+    // of extension reaches.
+    //
+    // VERIFIED ON THE PRODUCTION PATH (2026-09-15): the route derives
+    // `planStart = nextMonday()` from today, so a gated HM runner with a 20-week
+    // runway gets a plan of 16 of max 16 and a foundation block covering only the
+    // residual, and with a 30-week runway the same. §97 is working. The sweep
+    // cases that prompted this item pass `plan_start` AND a `today` 24-40 days
+    // earlier — decoupling two values the live path derives from one another —
+    // so `weeksAvailable` is measured from a start that is not anchored to today.
+    // Production cannot produce that shape.
+    const weeksFromStartToRace = (() => {
+      const start = plan.meta.plan_start, race = input.race_date
+      if (!start || !race) return null
+      const ms = parseDateLocal(race).getTime() - parseDateLocal(start).getTime()
+      return Math.floor(ms / (7 * 86_400_000)) + 1
+    })()
+    const calendarBound = weeksFromStartToRace != null && mainWeekCount >= weeksFromStartToRace
+    const extensionExhausted =
+      (signatureMax != null && mainWeekCount >= signatureMax) || calendarBound
     if (foundationWeeks.length > 0 && input.foundation_decision !== 'add' && !extensionExhausted) {
       violations.push({
         code: 'INV-PLAN-GATED-SURPLUS-IN-PLAN',

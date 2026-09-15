@@ -164,6 +164,18 @@ export const MUTATIONS: Mutation[] = [
   { name: 'claim a gated runner with a foundation block', apply: p => {
     const meta = p.meta as unknown as Record<string, unknown>
     meta.early_quality_onset = true
+    // SHORTEN THE PLAN TOO. The invariant exempts a plan that is already at its
+    // signature maximum OR calendar-bound (as long as the weeks between its own
+    // start and race day allow), because §97 has nothing left to extend into in
+    // either case. Corpus plans are calendar-bound, so adding a foundation week
+    // on its own leaves the check correctly silent and the rule reads as dead.
+    // Dropping two middle weeks puts the plan below both bounds, which is the
+    // only state §97 actually objects to.
+    const main = p.weeks.filter(w => w.n >= 1)
+    if (main.length > 4) {
+      const drop = new Set([main[2], main[3]])
+      p.weeks = p.weeks.filter(w => !drop.has(w))
+    }
     const first = p.weeks[0]
     if (first && first.n >= 1) {
       p.weeks.unshift({ ...first, n: 0, phase: 'foundation', sessions: { ...first.sessions } } as typeof first)
