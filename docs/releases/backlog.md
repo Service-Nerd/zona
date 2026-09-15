@@ -63,6 +63,36 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > **Do not bulk-rename without checking each site** — confirm §2 is the intended owner at each, then correct doc, config comment and test title together. Typo-class, board-exempt.
 > *Verify still open:* `grep -rn "§12" lib/plan/generationConfig.ts lib/plan/injuryCapCompounds.test.ts docs/canonical/CoachingPrinciples.md | grep -i injury`
 
+> 📋 **WAVE 3 — the checks exist; now prove they BITE, and decide what a breach does.** *(scoped 2026-09-15, after the coverage wave closed 106/106)*
+> Waves 0-2 answered "does every coaching rule have a check?" — it does: **79 invariant · 21 named test · 6 exempt · 0 unverified**, with the build failing if that stops being true. Wave 3 is the next question, in the order below. **Nothing here is demo-critical:** all 14 charity personas are clean.
+> | # | Item | Type | Why it is ordered here |
+> |---|---|---|---|
+> | 1 | **S1-INJURY-DENOMINATOR-01** | Coaching Board | The only item whose current behaviour reaches a runner — a live §1 breach that ships |
+> | 2 | **ERROR-SEVERITY-IS-ADVISORY-01** | Architecture | An `error` invariant only `console.error`s in production; #1's answer may change this |
+> | 3 | **PRINCIPLE-CLAIM-SYNC-01** | Guard | Cheap, and closes the §92 class outright |
+> | 4 | **TEST-LIVENESS-01** | Harness | The big one: `invariantLiveness` proves the 79 invariants fire; nothing proves the 21 tests do |
+> | 5 | LR-EARNED-TIER-01 | Engine | Already tracked as `warn` at 0.06% |
+> | 6 | GATED-SURPLUS-COMPOSE-01 | ADR-020 boundary | Already tracked as `warn` at 0.03% |
+
+> 🔲 **ERROR-SEVERITY-IS-ADVISORY-01 — an `error` invariant does not stop a plan reaching a runner.** *(P2, filed 2026-09-15)*
+> `generateRulePlan` throws on error-severity violations in `NODE_ENV=development|test` and **only `console.error`s in production** (CLAUDE.md states this as intended: "no user-facing failure"). So the severity that means "this plan breaches the constitution" is, in production, a log line nobody reads. S1-INJURY-DENOMINATOR-01 is the proof: a §1 breach generates, saves and ships with no signal at any layer.
+> **The design was deliberate and may still be right** — refusing to hand a runner any plan is worse than handing them a slightly-off one. What is missing is the middle: an ops event, a counter, a probe on the resulting STATE (the N-015 pattern), or a `plan.meta` stamp the Coach surface can read. Today there is nothing between "throw" and "silence".
+> **Decide after the board rules on S1-INJURY-DENOMINATOR-01** — if §1 or §90 yields, the breach class may shrink enough to change what the right backstop is.
+> *Verify still open:* `grep -n "NODE_ENV" lib/plan/ruleEngine.ts` around the `validatePlan` call site.
+
+> 🔲 **PRINCIPLE-CLAIM-SYNC-01 — a principle can name an invariant that does not exist, and did for 8 days.** *(P3, filed 2026-09-15)*
+> §92's Config paragraph read *"Enforced by the amended `INV-PLAN-FOUNDATION-BLOCK`, which permits strides only when `meta.early_quality_onset` is set"* from 2026-09-07. The amendment was never made: `invariants.ts` contained the word "strides" three times, all in the maintenance-injury block. The producer gated correctly; **the checker was documented and absent.** Closed in `46ba550` — the CLASS is not.
+> **Why it survived:** the three-artifact hook reads the DIFF, and the diff contained a principle *saying* an invariant existed. Nothing parses a principle's claim and checks it against `INVARIANT_CODES`.
+> **Scope:** extend `principleCoverage.test.ts` to extract `INV-[A-Z-]+` tokens from `CoachingPrinciples.md` and fail on any that is not registered. Cheap; the manifest already imports `INVARIANT_CODES`. Watch for false positives on deliberately-historical references (§42 cites deleted config by name on purpose).
+> *Verify still open:* `grep -oE "INV-[A-Z0-9-]+" docs/canonical/CoachingPrinciples.md | sort -u` against `INVARIANT_CODES`.
+
+> 🔲 **TEST-LIVENESS-01 — nothing proves the 21 named tests fail when their rule breaks.** *(P2, filed 2026-09-15)*
+> `invariant:liveness` deliberately breaks valid plans 46 ways and records which of the 79 invariants wake. **There is no equivalent for the 21 principles covered by a named test** — and this repo has already shipped a green tick with nothing behind it more than once (`--section-gap`, the decorative-config family, D9's unreachable `flexShrink`, §97's two inert gates).
+> Stated honestly in the coverage gate's own header today, which is why it is a filed item rather than a hidden assumption.
+> **Options, in ascending cost:** (a) a per-test assertion-count floor — weak, gameable; (b) mutation testing over `lib/plan` + `lib/coaching` with Stryker, scoped to the 21 files, run nightly rather than in `verify` (it is minutes, not seconds); (c) hand-written falsification cases per test, the pattern `peakLrEarnedTier.test.ts` already uses — strongest, and the most work.
+> **Recommendation: (c) for the rules that reach a runner, (b) nightly for the rest.** Do not put mutation testing in `verify` — a gate that adds minutes to every commit gets disabled, which this repo records as equivalent to having no gate.
+> *Verify still open:* `lib/plan/principleCoverage.ts` → count entries with `by: 'test'`.
+
 > 🔴 **S1-INJURY-DENOMINATOR-01 — §90's injury trim pushes the plan through §1's intensity ceiling, and the plan ships anyway.** *(P2, found 2026-09-15 by running `verify:parity` after the coverage wave)*
 > **MEASURED, 6 of 4,320 plans in the parity grid (0.14%). Every one carries `injury_history: ['knee']`; zero without it.**
 > | shape | weeks | delivered |
