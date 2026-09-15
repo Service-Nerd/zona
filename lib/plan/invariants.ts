@@ -1187,22 +1187,37 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // opening `intensity_reentry_weeks`. Detected structurally via catalogue_id →
     // category (ADR-018), not the label (which the enricher rewrites).
     // (CoachingPrinciples §79)
-    // ⚠️ STILL THE CALENDAR READING, AND THAT IS A KNOWN OPEN DEFECT —
-    // REENTRY-INV-DECORATIVE-01. `plannedQuality` is 0 for every base week and
-    // every deload week, so weeks 1..N are all-easy by construction and this
-    // condition is trivially satisfied on every plan. The check and the defect
-    // §79 Amendment fixed shared a premise, which is why this sits in the
-    // liveness baseline as never-woken.
+    // §79 Amendment 1 — COUNTED IN QUALITY WEEKS, NOT CALENDAR WEEKS
+    // (REENTRY-INV-DECORATIVE-01, closed 2026-09-15).
     //
-    // Re-anchoring it to QUALITY-carrying weeks was built and measured on
-    // 2026-09-15: it wakes immediately and fails 576 plans (5K/10K, both goal
-    // types, all `recent_quality_training: 'regular'`). Every one is §5's
-    // `vo2MustOpenBuild` legitimately forcing VO2max to open build on a plan too
-    // short to adapt it otherwise — i.e. a genuine §5-vs-§79 PRECEDENCE
-    // question that no ruling covers, not an engine defect. Deliberately NOT
-    // re-anchored here: waking a check by failing 576 correct plans is worse
-    // than leaving it honest-but-inert, and the precedence is a board call.
-    if (plan.meta.intensity_reentry_active && w.n <= (plan.meta.intensity_reentry_weeks ?? 0)) {
+    // This read `w.n <= intensity_reentry_weeks`, which is the SAME calendar
+    // premise the defect had: base weeks and deload weeks carry no quality
+    // (`plannedQuality` is 0 for both), so weeks 1..N are all-easy by
+    // construction and the condition was trivially satisfied on every plan. It
+    // sat in the liveness baseline as never-woken and COULD NOT have woken —
+    // the check and the defect shared a premise.
+    //
+    // Re-anchoring it was blocked until today: it woke immediately and failed
+    // 576 plans, every one of them §5's `vo2MustOpenBuild` legitimately
+    // overriding §79. That precedence is now resolved the way the board ruled
+    // it (§79 wins the conflict), so the check can assert what §79 says.
+    //
+    // Derived INDEPENDENTLY from the finished plan rather than by importing the
+    // producer's predicate: a checker that shares the producer's reading cannot
+    // catch the producer being wrong, which is the whole lesson of this item.
+    const reentryQualityWeeks = (() => {
+      if (!plan.meta.intensity_reentry_active) return new Set<number>()
+      const budget = plan.meta.intensity_reentry_weeks ?? 0
+      const out = new Set<number>()
+      for (const wk of plan.weeks) {
+        if (wk.n < 1 || out.size >= budget) continue
+        const carriesQuality = Object.values(wk.sessions ?? {})
+          .some(sn => sn && (sn as Session).type === 'quality')
+        if (carriesQuality) out.add(wk.n)
+      }
+      return out
+    })()
+    if (reentryQualityWeeks.has(w.n)) {
       for (const { day, session } of placedRunning) {
         const row = session.catalogue_id
           ? V1_SESSION_CATALOGUE.find(r => r.id === session.catalogue_id)
@@ -1215,7 +1230,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             week: w.n, day,
             message: `VO2max/hill session "${session.label}" prescribed in week ${w.n}, inside the ${plan.meta.intensity_reentry_weeks}-week returning-runner intensity re-entry — tempo/threshold only until tissue rebuilds`,
             actual: `${row.id} (vo2max) in re-entry week ${w.n}`,
-            expected: `no vo2max/hill sessions in weeks 1–${plan.meta.intensity_reentry_weeks}`,
+            expected: `no vo2max/hill sessions in the first ${plan.meta.intensity_reentry_weeks} QUALITY-carrying week(s)`,
           })
         }
       }
@@ -3686,7 +3701,41 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         const minWeeks = GENERATION_CONFIG.VO2MAX_ONSET_MIN_ADAPTATION_WEEKS
         const taperWeeks = (plan.weeks.length - taperStartWeek) + 1
         const deadlineWeekN = plan.weeks.length - taperWeeks - minWeeks
-        const reachable = deadlineWeekN >= firstBuildWeek
+        // §79 vs §5 — A SECOND REASON THE WINDOW CAN BE UNREACHABLE
+        // (2026-09-15). CD-22's own disposition is "binding where reachable,
+        // recorded where not", and it was written for the GEOMETRIC case (a
+        // plan too short to contain the window). The intensity re-entry window
+        // makes it unreachable a second way: §79 withholds vo2max-category work
+        // over the opening quality weeks, so the earliest VO2max can legally
+        // land is the first UNPROTECTED quality week. If that is already past
+        // the deadline, no compliant placement exists.
+        //
+        // The board ruled §79 wins this conflict, so enforcing §5 here would
+        // make the ruling unimplementable (D-21) — a rule that cannot be
+        // satisfied is a defect in the rule, not in the plan that honoured the
+        // other one. Derived from the PLACED sessions, matching
+        // INV-PLAN-RETURNING-INTENSITY-REENTRY's derivation exactly so the two
+        // checks cannot disagree about which weeks are protected.
+        const firstUnprotectedQualityWeek = (() => {
+          if (!plan.meta.intensity_reentry_active) return null
+          const budget = plan.meta.intensity_reentry_weeks ?? 0
+          let seen = 0
+          for (const w of plan.weeks) {
+            if (w.n < 1) continue
+            const carriesQuality = Object.values(w.sessions).some(sn =>
+              sn && sn.type === 'quality')
+            if (!carriesQuality) continue
+            if (seen >= budget) return w.n
+            seen++
+          }
+          return null   // the window covers every quality week the plan has
+        })()
+        const reentryBlocksTheDeadline =
+          plan.meta.intensity_reentry_active
+          && (firstUnprotectedQualityWeek === null
+              || firstUnprotectedQualityWeek > deadlineWeekN)
+
+        const reachable = deadlineWeekN >= firstBuildWeek && !reentryBlocksTheDeadline
         const gap = taperStartWeek - vo2Weeks[0]
 
         if (reachable && gap < minWeeks) {

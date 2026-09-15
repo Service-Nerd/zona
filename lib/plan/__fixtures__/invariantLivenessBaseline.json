@@ -5,9 +5,9 @@
     "mutation": "the battery does not yet perturb the field this rule reads. Add a mutation, not a fixture.",
     "unclassified": "nobody has looked yet. THIS is the column that should shrink."
   },
-  "generated": "2026-09-14",
-  "wokenCount": 65,
-  "totalInvariants": 99,
+  "generated": "2026-09-15",
+  "wokenCount": 67,
+  "totalInvariants": 100,
   "unproven": {
     "INV-PLAN-BOUNCEBACK-BOUNDED": "unclassified",
     "INV-PLAN-INJURY-CAP-DELIVERED": "unclassified",
@@ -20,7 +20,6 @@
     "INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED": "unclassified",
     "INV-PLAN-VO2MAX-ONSET": "unclassified",
     "INV-PLAN-INJURY-NO-HILLS": "unclassified",
-    "INV-PLAN-RETURNING-INTENSITY-REENTRY": "unclassified",
     "INV-PLAN-RACE-WEEK-SHARPENING": "unclassified",
     "INV-INPUT-LONGEST-LE-WEEKLY": "mutation",
     "INV-PLAN-DIFFICULTY-ANNOTATED": "unclassified",

@@ -72,6 +72,25 @@ export const MUTATIONS: Mutation[] = [
     meta.returning_runner_allowance_active = true
     delete meta.returning_runner_note
   } },
+  // §79 — VO2max inside the protected window. The re-entry check was
+  // DECORATIVE until 2026-09-15 (it read calendar weeks, which are all-easy by
+  // construction, so it could not fail). Re-anchored to QUALITY weeks it can
+  // fail, and this is the state that must make it: a plan claiming an active
+  // window whose FIRST quality week carries vo2max-category work.
+  { name: 'vo2max inside the re-entry window', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    meta.intensity_reentry_active = true
+    meta.intensity_reentry_weeks = 1
+    for (const w of p.weeks) {
+      if (w.n < 1) continue
+      const q = Object.values(w.sessions).find(sn => sn && (sn as { type?: string }).type === 'quality')
+      if (!q) continue
+      const sn = q as unknown as Poke
+      sn.catalogue_id = 'intervals_classic'
+      sn.label = 'Classic VO2max'
+      return                                  // first quality week only
+    }
+  } },
   { name: 'claim re-entry with no VO2max, delete its note', apply: p => {
     const meta = p.meta as unknown as Record<string, unknown>
     meta.intensity_reentry_active = true

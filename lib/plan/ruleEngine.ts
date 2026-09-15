@@ -2368,6 +2368,11 @@ function preferredQualityCategory(
   // by the caller, which owns both the deload cadence and the re-entry window;
   // deriving it here would duplicate two rules that already have owners.
   vo2BuildSlotIndex?: number,
+  // §79 vs §5 PRECEDENCE (Coaching Board, ruled before 2026-09-14: "§79 wins
+  // that conflict"). True when an intensity re-entry window is OPEN on this
+  // plan. Only then does the window outrank §5's adaptation deadline — with no
+  // window there is no conflict, and §5 behaves exactly as it always has.
+  reentryActive = false,
 ): CatalogueCategory {
   if (phase === 'base')  return 'aerobic'
   if (phase === 'build') {
@@ -2411,8 +2416,25 @@ function preferredQualityCategory(
     // rotates through the non-VO2max categories. `vo2BuildSlotIndex` is
     // undefined for runners with no re-entry window, so their slot stays at the
     // rotation's own index and nothing moves.
-    const vo2Slot = vo2MustOpenBuild ? 0
-      : vo2BuildSlotIndex ?? ordered.indexOf('vo2max')
+    //
+    // §79 vs §5 — WHICH ONE DECIDES. `vo2MustOpenBuild` used to win
+    // unconditionally, so §5's deadline overrode §79's withhold on every plan
+    // where both applied and the re-entry window was silently ignored for the
+    // exact runner it protects. The board ruled §79 wins THAT CONFLICT.
+    //
+    // The conflict only exists when a window is open, and the scoping is the
+    // whole fix: a previous attempt made `vo2BuildSlotIndex` win outright and
+    // broke 29 tests including `cohortShape`, because with no window the slot
+    // index IS the rotation's natural index and overriding §5 there changes
+    // plans that had no §79 claim on them at all.
+    //
+    // `undefined` under an OPEN window means the walk found no eligible week —
+    // the window withheld VO2max for the whole build. -1 matches no rotation
+    // index, so build carries none, and §79 Amendment 2's omission note then
+    // declares it to the runner rather than dropping it silently.
+    const vo2Slot = reentryActive
+      ? (vo2BuildSlotIndex ?? -1)
+      : (vo2MustOpenBuild ? 0 : vo2BuildSlotIndex ?? ordered.indexOf('vo2max'))
     if (ordered.includes('vo2max') && buildRotationIndex === vo2Slot) return 'vo2max'
     const nonVo2 = ordered.filter(c => c !== 'vo2max')
     if (nonVo2.length > 0) return nonVo2[buildRotationIndex % nonVo2.length]
@@ -2507,6 +2529,10 @@ function buildWeekSessions(
   // SC-07 / CD-16 — the adaptation deadline lands on the first build quality
   // week, so the rotation must open on vo2max. Computed once by the caller.
   vo2MustOpenBuild: boolean,
+  // §79 vs §5 precedence — is an intensity re-entry window OPEN on this plan?
+  // Plan-level, not per-week: `excludeHighTissueStress` says "this week is
+  // inside the window", which is false on most weeks of a plan that HAS one.
+  intensityReentryActive: boolean,
   // D2 — the level that governs INTENSITY. Equals `fitness` unless the VDOT and
   // volume signals disagreed, in which case `fitness` is the lower (structure:
   // volume, caps) and this is the higher (intensity allowance). See
@@ -2819,7 +2845,7 @@ function buildWeekSessions(
 
   const primaryCat = preferredQualityCategory(
     phase, distKey, input.goal === 'time_target', buildRotationIndex, vo2MustOpenBuild,
-    peakRotationIndex, peakWeeksTotal, vo2BuildSlotIndex)
+    peakRotationIndex, peakWeeksTotal, vo2BuildSlotIndex, intensityReentryActive)
   const vo2maxCapKm = durationForMainSet(GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS) / pace.minPerKmInterval
   const qualKmPrimary = primaryCat === 'vo2max'
     ? Math.min(qualKmPerSession, vo2maxCapKm)
@@ -3093,7 +3119,7 @@ function buildWeekSessions(
 
     let preferredCategory = preferredQualityCategory(
       phase, distKey, isTimeTarget, buildRotationIndex, vo2MustOpenBuild, peakRotationIndex,
-      peakWeeksTotal, vo2BuildSlotIndex)
+      peakWeeksTotal, vo2BuildSlotIndex, intensityReentryActive)
     let taperForceSharpener = false
     // CD-2 / §36 — goal-pace sharpening in the taper is a time-target tool; a
     // finish-goal taper stays on threshold (§80). Without the goal-gate, a
@@ -4501,6 +4527,10 @@ function applyV2Vo2MaxOnsetTiming(
    *  that sized it originally. Optional so existing tests keep compiling; when
    *  absent the swap behaves as it did before (dose not corrected). */
   resizeForPhase?: (session: Session, week: Week, day: Day) => void,
+  /** §79 vs §5 — is this plan week inside the intensity re-entry window's
+   *  protected QUALITY weeks? Supplied by the caller because the window is
+   *  plan-level state this function has no other route to. */
+  isReentryProtectedWeek?: (weekN: number) => boolean,
 ): void {
   if (raceDistanceKm > 21) return  // V2 limited to short races per spec
 
@@ -4590,6 +4620,18 @@ function applyV2Vo2MaxOnsetTiming(
     if (swapTarget) break
   }
   if (!swapTarget) return  // no suitable swap candidate — leave plan unchanged
+
+  // §79 vs §5, SECOND MECHANISM (2026-09-15). `vo2MustOpenBuild` is not the only
+  // way §5 outranks the re-entry window — this swap relocates VO2max EARLIER to
+  // meet the adaptation deadline, and it was landing it inside the very weeks
+  // §79 withholds it from. The rotation had already placed the slot correctly
+  // (index 1, clear of a 1-week window) and the swap pulled it back to index 0.
+  //
+  // The board ruled §79 wins that conflict. A swap that would put VO2max inside
+  // the protected window is declined, exactly as an absent candidate is — §5's
+  // window is then recorded unreachable by the CD-22 path below rather than
+  // being met by overriding a tissue-tolerance rule.
+  if (isReentryProtectedWeek?.(weeks[swapTarget.weekIdx].n)) return
 
   const toWeek = weeks[swapTarget.weekIdx]
   const vo2Session     = fromWeek.sessions[firstVo2Pos.day]!
@@ -5716,6 +5758,7 @@ function buildRulePlanOnce(
       peakRotationIndex,
       vo2BuildSlotIndex,
       vo2MustOpenBuild,
+      intensityReentryActive,
       intensityFitness,
       cueCtx,
       rowUsage,
@@ -5859,6 +5902,23 @@ function buildRulePlanOnce(
       session.duration_mins = resized.duration_mins
       session.distance_km   = resized.distance_km
       if (resized.derived_set) session.derived_set = resized.derived_set
+    },
+    // §79 vs §5 — the protected quality weeks, derived from the FINISHED weeks
+    // the same way `INV-PLAN-RETURNING-INTENSITY-REENTRY` derives them, so the
+    // producer and the checker cannot disagree about which weeks are protected.
+    (weekN: number) => {
+      if (!reentry.active) return false
+      let seen = 0
+      for (const w of weeks) {
+        if (w.n < 1) continue
+        const carriesQuality = Object.values(w.sessions ?? {})
+          .some(sn => sn && (sn as Session).type === 'quality')
+        if (!carriesQuality) continue
+        if (seen >= reentry.weeks) return false
+        if (w.n === weekN) return true
+        seen++
+      }
+      return false
     })
   applyV5StimulusProgression(weeks, input.race_distance_km, pace, zones, ruleAdjustments)
   applyV1VolumeQualityStimulusSplit(weeks, pace, ruleAdjustments)

@@ -2715,6 +2715,40 @@ already declares it — with copy that does **not** tell a first-timer they are
 this; its scope widens with the arm. No new numeric — reuses
 `RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS`.
 
+### Amendment 4 — §79 beats §5's adaptation deadline, in BOTH mechanisms (implemented 2026-09-15)
+
+**Principle.** Where §79's intensity re-entry window and §5's VO2max adaptation
+deadline cannot both be satisfied, **§79 wins**. The board ruled this before
+2026-09-14; it had never been implemented, and §5 overrode §79 on every plan
+where both applied.
+
+**Two mechanisms, not one — this is why the earlier attempt failed.**
+1. `vo2MustOpenBuild` forced VO2max into the first build quality week. Now
+   consulted only when NO re-entry window is open: with no window there is no
+   conflict, and §5 behaves exactly as it always has. A previous attempt made
+   the window win outright and **broke 29 tests including `cohortShape`**,
+   because with no window the slot index IS the rotation's natural index, so it
+   changed plans that had no §79 claim on them at all. **The scoping is the fix.**
+2. `applyV2Vo2MaxOnsetTiming` relocates VO2max EARLIER to meet the deadline, and
+   was landing it inside the very weeks §79 withholds it from — the rotation
+   placed the slot correctly and the swap pulled it back. A swap that would put
+   VO2max inside the protected window is now declined.
+
+**§5 yields where no compliant placement exists (D-21).** With §79 winning, a
+plan can have no legal VO2max week at all, and `INV-PLAN-VO2MAX-ONSET` would
+then fire on a plan that correctly honoured the other rule — making the ruling
+unimplementable. CD-22's own disposition already covers this shape: *binding
+where reachable, recorded where not*. It was written for the GEOMETRIC case (a
+plan too short to contain the window); the re-entry window makes it unreachable
+a second way. `reachable` now accounts for both, derived from the PLACED
+sessions so it matches `INV-PLAN-RETURNING-INTENSITY-REENTRY` exactly.
+
+**The check stops being decorative.** `INV-PLAN-RETURNING-INTENSITY-REENTRY`
+read CALENDAR weeks — all-easy by construction — so it was trivially true and
+sat in the liveness baseline as never-woken: *the check and the defect shared a
+premise*. Re-anchored to QUALITY weeks it is now **PROVEN wakeable** for the
+first time since it was written.
+
 **Config.** `GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS = 4`; `GENERATION_CONFIG.USER_DECLARED_LEVEL_BINDS_STRUCTURE_DOWNWARD_ONLY = true`.
 
 **Invariants.** `INV-PLAN-RETURNING-INTENSITY-REENTRY` — no VO2max-category session in weeks 1–`intensity_reentry_weeks` of a re-entry-active plan. `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE` — where `meta.fitness_level_declared` outranks `meta.fitness_level`, peak weekly volume must stay within the structural band's ceiling.
