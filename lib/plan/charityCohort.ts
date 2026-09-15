@@ -175,4 +175,42 @@ export const CHARITY_PERSONAS: CharityPersona[] = [
       days_available: 4, age: 55, training_age: '2-5yr', injury_history: ['knee'],
       recent_quality_training: 'occasional' },
   },
+  // ── DECLARED-LEVEL VARIANTS (added 2026-09-15) ────────────────────────────
+  //
+  // WHY THESE EXIST. Every persona above lets the engine ASSESS the runner. The
+  // wizard, however, sends `user_declared_level` on EVERY generation
+  // (`GeneratePlanScreen.tsx`), and a charity first-timer who ticks
+  // "intermediate" because they ran a 10K once is the most likely real-world
+  // deviation from this whole set. It had no coverage in any review round.
+  //
+  // Measured before §79 Amendment 3: T1 declaring `intermediate` received
+  // **Hill reps — 90s at Zone 4-5, RPE 8 in week 5** and Long VO2max in week 7,
+  // with zero invariant errors. These three are the same runners as M1/H1/T1,
+  // differing ONLY by that one wizard answer, so a regression shows up as a
+  // diff against their twin rather than needing its own expected output.
+  {
+    id: 'T1d couch-to-10K who DECLARES intermediate',
+    note: 'declared level above structural — §79 Am.3 must withhold vo2max/hills',
+    raceDay: 'sat',
+    weeks: 10,
+    input: { race_distance_km: 10, goal: 'finish', current_weekly_km: 8, longest_recent_run_km: 4,
+      days_available: 3, age: 37, training_age: '<6mo', recent_quality_training: 'none',
+      user_declared_level: 'intermediate' },
+  },
+  {
+    id: 'H1d first-timer HM who DECLARES intermediate',
+    note: 'declared level above structural on a very low base; tempo yes, intervals no',
+    weeks: 14,
+    input: { race_distance_km: 21.1, goal: 'finish', current_weekly_km: 10, longest_recent_run_km: 5,
+      days_available: 3, age: 34, training_age: '<6mo', recent_quality_training: 'none',
+      user_declared_level: 'intermediate' },
+  },
+  {
+    id: 'M1d first-timer marathon who DECLARES experienced',
+    note: 'the strongest over-claim available in the wizard, on the least prepared marathoner',
+    weeks: 18,
+    input: { race_distance_km: 42.2, goal: 'finish', current_weekly_km: 15, longest_recent_run_km: 8,
+      days_available: 4, age: 38, training_age: '<6mo', recent_quality_training: 'none',
+      user_declared_level: 'experienced' },
+  }
 ]
