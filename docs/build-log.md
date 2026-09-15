@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-15 — DELOAD-POS2-01 + GRID-COVERAGE-02 + the swap nobody knew was dead · four coupled items, two wrong diagnoses, one guard that degenerates
+
+**Shipped:** Recovery weeks stop landing on the second week of build for standard runners (the rule fired on 16% of plans and now fires on 0.2%). The verification grid finally varies the input that unlocks a whole family of coaching rules. And the §79 re-entry window got a single owner instead of two hand-written copies.
+
+**Dev learning:** The reverted fix from yesterday failed for a reason I'd call beautiful if it hadn't cost a day. Its guard read `since === recoveryFreq - 3`. For masters runners `recoveryFreq` is **3** — so the condition becomes `since === 0`, which is true on the very week *after* it places a deload. It placed recovery weeks back to back, `[3,6] → [3,4,7]`, and crushed the peak. One `since >= 1` fixes it. The condition was not wrong in general; it **degenerated** at one specific config value, and nothing in the code or the test suite made that value visible. **When a guard does arithmetic on a config constant, substitute every value that constant can take before you trust the expression.**
+
+**Product/creator learning:** Then I brute-forced whether the rule was even satisfiable. On **1,944 of 3,726 masters plans (52.2%)** there is *no* legal arrangement of recovery weeks that avoids position 1, avoids position 2, avoids adjacency, keeps the count and doesn't lengthen a loading block. Zero of 3,726 standard plans have that problem. So for half of older runners the rule we'd written was not hard — it was **impossible**, and the honest answer was to make it a preference that yields rather than keep failing to implement it.
+
+**AI-building learning:** I diagnosed the second item wrong twice before the code told me the truth. The backlog said "the session selector has no coherence guard." I measured it and found it correlated with low weekly volume, which *fit*. Then I inspected the actual session: three eight-minute blocks, stated 43 minutes — internally perfect. So I instrumented the sizer, and it **never ran for that week at all**. The session had been physically moved there by a separate step that swaps two sessions between weeks to hit an adaptation deadline, and updates nothing but the ID. A build-sized session sitting in a peak week. **Two plausible mechanisms, both consistent with the numbers, both wrong** — the only thing that settled it was a print statement proving a function wasn't called.
+
+**The honest bit:** then I measured how often that swap actually fires. **Zero. Zero out of 2,304 inputs, zero out of the 7,452-plan grid.** An entire documented mechanism, with its own adjustment records and a comment warning that it breaks another rule, has been dead code — and the two items above were both blocked behind understanding it. I also had to stop short: repairing the §79 window turns that dead swap live, and it immediately produces 84 violations of a *different* rule. That one goes back to the board rather than me deciding it, which means one of the four items I set out to finish is still open, precisely specified, and not shipped.
+
+**Hook material:** Half our recovery-week rule was mathematically impossible to satisfy for runners over 45, and nobody had checked. The other bug was in code that runs zero times out of 7,452.
+
+**Postable?:** yes
+
+
+
 ## 2026-09-14 (second session) — QUALITY-ONSET-ORDER-01 + DELOAD-POS2-01 · a whole day, nothing shipped, and that was the right call
 
 **Shipped:** Nothing to the engine. No plan, no session, no runner-facing behaviour changed. Every code change made today was reverted. What shipped is documentation: two backlog entries corrected, one new prerequisite filed, a board ruling recorded, and a note-to-self so this doesn't recur.
