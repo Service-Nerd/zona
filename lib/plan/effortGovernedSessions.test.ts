@@ -197,8 +197,17 @@ describe('§16/§40b — an effort-governed session is sized against its own str
     // week it sat in — a runner on 60 km/week got a "longer" hill session than one
     // on 25 km/week while doing the IDENTICAL eight reps. The reps are the session;
     // the week it lands in is not.
-    const lo = generateRulePlan({ ...TENK, current_weekly_km: 25, longest_recent_run_km: 12 }, 'paid', PLAN_START)
-    const hi = generateRulePlan({ ...TENK, current_weekly_km: 60, longest_recent_run_km: 26 }, 'paid', PLAN_START)
+    // `training_age: '6-18mo'` is LOAD-BEARING here, not incidental (added
+    // 2026-09-15). `isReturningRunner` fires on an experienced training age at
+    // low volume, so with TENK's own '2-5yr' the 25 km/week arm was a RETURNING
+    // runner and the 60 km/week arm was not — §79's re-entry window then
+    // withholds vo2max-category work (hill reps are category vo2max) from one
+    // arm only. The test would have been comparing a returning runner's plan
+    // against a non-returning one while claiming to isolate weekly volume,
+    // which is the exact confound it exists to rule out.
+    const NOT_RETURNING = { ...TENK, training_age: '6-18mo' as const }
+    const lo = generateRulePlan({ ...NOT_RETURNING, current_weekly_km: 25, longest_recent_run_km: 12 }, 'paid', PLAN_START)
+    const hi = generateRulePlan({ ...NOT_RETURNING, current_weekly_km: 60, longest_recent_run_km: 26 }, 'paid', PLAN_START)
     const durOf = (p: Plan) => effortSessions(p).map(s => s.duration_mins)
     expect(durOf(lo).length, 'no hill session at 25 km/week').toBeGreaterThan(0)
     expect(durOf(hi).length, 'no hill session at 60 km/week').toBeGreaterThan(0)

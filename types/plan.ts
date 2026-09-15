@@ -682,6 +682,11 @@ export interface PlanMeta {
    * from a single plan, without regenerating a hypothetical ungated one.
    */
   onset_yield?: { rungs: number; bound: number; effective: number }
+  /** §79 Amendment 2 — the intensity re-entry window is active and this plan
+   *  carries no VO2max/hill work at all. Omission is a legitimate prescription
+   *  (§5, Seiler: "either commit to it properly in the build, or do not do it")
+   *  but it must be DECLARED, never a silent by-product of §53's rotation. */
+  intensity_reentry_omission_note?: string
   /** §95 Amendment 1 — the position-2 deload preference gave way to §1's
    *  ceiling, so placement reverted to §87's. Honesty flag: the plan may carry
    *  a position-2 deload and that was a decision, not an accident. */

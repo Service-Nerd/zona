@@ -3,6 +3,8 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { computeIntensityReentry } from './intensityReentry'
 import { GENERATION_CONFIG } from './generationConfig'
+import { planRationaleNotes } from './planRationale'
+import type { Plan } from '@/types/plan'
 
 const NO_ARMS = {
   intensityLiftedForReturn: false,
@@ -120,5 +122,23 @@ describe('INTENSITY-REENTRY-OWNER-01 — single ownership is mechanical', () => 
     // Either reading counts as use — the onset-anchored flip is board-blocked
     // (REENTRY-DEPTH-01), so the calendar reading is what ships today.
     expect(engine).toMatch(/reentry\.withheld(In|AtQualityIndex)\(/)
+  })
+})
+
+describe('§79 Amendment 2 — omission is legitimate, silence is not', () => {
+  // The board ruled that a re-entry plan may contain NO VO2max/hill work at all
+  // (§5, Seiler: "either commit to it properly in the build, or do not do it"),
+  // but that the runner must be TOLD. These pin the declaration, not the dose.
+  it('the omission note is rendered by the ONE note renderer, not a second path', () => {
+    const notes = planRationaleNotes({
+      intensity_reentry_active: true,
+      intensity_reentry_omission_note: 'No interval or hill sessions this block.',
+    } as unknown as Plan['meta'])
+    expect(notes.some(n => n.text.includes('No interval or hill sessions'))).toBe(true)
+  })
+
+  it('a plan with no note produces no phantom line', () => {
+    const notes = planRationaleNotes({ intensity_reentry_active: true } as unknown as Plan['meta'])
+    expect(notes.some(n => n.label === 'Coming back')).toBe(false)
   })
 })

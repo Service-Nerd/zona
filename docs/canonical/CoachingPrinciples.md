@@ -2707,6 +2707,51 @@ two channels different predicates measured **47 -> 594** sweep failures.
 swap fire for the first time, which required the §22 Amendment of the same date
 (V2-SWAP-S22-01).
 
+### Amendment 2 — the window may OMIT VO2max entirely, and omission must be DECLARED (Coaching Board, 2026-09-15, REENTRY-DEPTH-01)
+
+**Principle.** The re-entry window WITHHOLDS; it carries no obligation to place
+VO2max afterwards. A returning runner's plan may therefore contain **no VO2max or
+hill work at all**, and that is a legitimate prescription. **But the plan must say
+so** — `meta.intensity_reentry_omission_note`, rendered through the one note
+renderer (`planRationaleNotes`). Silent omission is the defect; omission is not.
+
+**Why omission is legitimate, on this constitution's own authority.** §5's
+CD-16/CD-22 amendment records Seiler verbatim: *"Either commit to it properly in
+the build, or do not do it. The middle position is the only indefensible one."*
+§5 requires that VO2max, **where placed**, lands early enough to adapt. It has
+never required presence.
+
+**Why requiring DEFERRAL was REJECTED.** Forcing VO2max to appear after the
+window produces precisely the position §5 names indefensible: one or two isolated
+exposures jammed against the taper, carrying the full injury and fatigue cost of
+the hardest work in the plan and none of the adaptation. Do not re-propose it.
+
+**What the measurement showed, and why the filed question was the wrong one.**
+This was filed as "the depth numeric needs recalibrating". It does not.
+- Depths **1, 2 and 3 are identical to each other and change nothing**; only 4
+  bites. Recalibrating down is turning the rule off while appearing to tune it.
+- Of the plans where the quality-week reading changes the opening stimulus,
+  **576 lost VO2max from the plan ENTIRELY and 0 were merely re-ordered.** The
+  fix delivered 100% of its benefit by deleting the stimulus, not deferring it.
+- Mechanism: with §53's rotation and a bounded number of quality slots, blocking
+  VO2max in the opening quality weeks means the freed slots are filled by other
+  categories and VO2max is never selected at all. **Withholding is not deferral.**
+
+**The test this had to pass** is §87/§95's, stated twice already in this
+document: *a defensible outcome reached at random is a coincidence, not a
+decision.* Omission reached by rotation exhaustion is the coincidence. Omission
+declared to the runner is the decision.
+
+**NOT ratified by this amendment, and filed separately:** even with the window
+inert, **49.7%** of re-entry-active quality-bearing plans already contain no
+VO2max-category session and **74.8%** contain no hill reps. Nobody decided that.
+It is a pre-existing finding this measurement surfaced, not a consequence of this
+ruling (REENTRY-VO2MAX-BASELINE-01).
+
+**Invariant.** `INV-PLAN-REENTRY-OMISSION-DECLARED` (error), derived from the
+PLACED SESSIONS so the producer cannot satisfy it by asserting it behaved.
+
+
 ## 80. Finish-goal long run — time on feet, not distance
 
 **Principle.** For finish-goal HM and marathon plans, the peak long run must reach `FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION` (70%) of **projected race duration**, subject to `LONG_RUN_CAP_MINUTES`, which still wins. Projected duration is computed at easy pace — a finish-goal runner will not race at threshold, and run-walk is expected. Every finish-goal peak long run carries explicit permission to walk. When the cap prevents reaching the floor, the plan says so.

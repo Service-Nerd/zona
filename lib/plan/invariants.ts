@@ -107,6 +107,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-LR-ALTERNATION',
   'INV-PLAN-TAPER-DURATION-CAP',
   'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT',
+  'INV-PLAN-REENTRY-OMISSION-DECLARED',
   'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
   'INV-PLAN-LR-MAX-WEEKLY-PCT',
   'INV-PLAN-HR-ASSUMPTIONS-SURFACED',
@@ -4577,6 +4578,40 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         message: `Plan rests on max HR ${derived} bpm, below the age estimate ${estimated} bpm, without user confirmation (source: ${source ?? 'unattributed'}) — a device/unattributed max below the estimate is a floor and must fall back to Tanaka`,
         actual: `derived_max ${derived} < estimated_max ${estimated}, source ${source ?? 'unattributed'}`,
         expected: 'derived_max ≥ estimated_max, or hr_max_source = user_confirmed',
+      })
+    }
+  }
+
+  // INV-PLAN-REENTRY-OMISSION-DECLARED (§79 Amendment 2, Coaching Board
+  // 2026-09-15) — a plan whose intensity re-entry window is active and which
+  // contains NO VO2max-category session must SAY SO.
+  //
+  // The board ruled omission legitimate on §5's own authority (Seiler, recorded
+  // in §5's CD-16/CD-22 amendment: "either commit to it properly in the build,
+  // or do not do it. The middle position is the only indefensible one") — so
+  // this does NOT force VO2max to appear. Requiring deferral was REJECTED,
+  // because manufacturing a late VO2max block is exactly that middle position.
+  //
+  // What it forbids is the SILENT version. Measured: the quality-week reading of
+  // the window removed VO2max entirely from 576 plans and re-ordered 0, and
+  // nothing told the runner. §87/§95's test applies — a defensible outcome
+  // reached at random is a coincidence, not a decision.
+  //
+  // Derived from the PLACED SESSIONS, not from a meta flag, so it cannot be
+  // satisfied by the producer simply asserting it did the right thing.
+  if (plan.meta.intensity_reentry_active) {
+    const hasVo2 = plan.weeks.some(w =>
+      w.n >= 1 && Object.values(w.sessions).some(
+        sn => sn && sn.type === 'quality' && isVo2maxSession(sn, V1_SESSION_CATALOGUE)))
+    if (!hasVo2 && !plan.meta.intensity_reentry_omission_note) {
+      violations.push({
+        code: 'INV-PLAN-REENTRY-OMISSION-DECLARED',
+        principle_ref: 'CoachingPrinciples §79',
+        severity: 'error',
+        week: 0,
+        message: 'The intensity re-entry window is active and the plan contains no VO2max or hill session at all, but nothing tells the runner. Omission is a legitimate prescription (§5); omitting silently is not.',
+        actual: 'no vo2max-category session, no omission note',
+        expected: 'meta.intensity_reentry_omission_note explaining that quality leads with tempo/threshold this cycle',
       })
     }
   }

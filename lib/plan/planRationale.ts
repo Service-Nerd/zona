@@ -90,6 +90,13 @@ export function planRationaleNotes(meta: Plan['meta'] | undefined | null): PlanR
   const yielded = onsetYieldNote(meta)
   if (yielded)                      notes.push({ label: 'Quality timing', text: yielded })
   if (meta.terrain_effort_note)     notes.push({ label: 'Off-road',      text: meta.terrain_effort_note })
+  // §79 Amendment 2 — "no intervals this block" is a DECISION, so it is stated.
+  // Ranked with the honest-constraint group, not the brag group: the runner is
+  // being told what the plan does NOT contain and why (PLAN-NOTE-SURFACE-01 —
+  // one renderer for the whole note family, never a second path).
+  if (meta.intensity_reentry_omission_note) {
+    notes.push({ label: 'Coming back', text: meta.intensity_reentry_omission_note })
+  }
 
   // The "shaped for you" line ranks LAST (Wood: never a brag; constraints matter more).
   const fit = levelFitNote(meta)

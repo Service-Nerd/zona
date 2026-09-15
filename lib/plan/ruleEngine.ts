@@ -21,7 +21,7 @@ import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTi
 import { normaliseDays } from './days'
 import { sessionKmOrZero } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
-import { isLongRun, isShakeout, classifyStimulus, isStructuredSession } from './sessionRole'
+import { isLongRun, isShakeout, classifyStimulus, isStructuredSession, isVo2maxSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet } from './sessionFormat'
@@ -5597,7 +5597,7 @@ function buildRulePlanOnce(
     let idx = 0
     for (let wn = buildPhase.start_week; wn <= buildPhase.end_week; wn++) {
       if (deloadWeeks.has(wn)) continue          // deload weeks carry no quality
-      const withheld = reentry.withheldIn(wn)
+      const withheld = reentry.withheldAtQualityIndex(idx)
       if (idx >= naturalSlot && !withheld) return idx
       idx++
     }
@@ -5709,7 +5709,7 @@ function buildRulePlanOnce(
       // FOUR quality sessions, which on a short 10K plan is most of them and
       // removes hill work entirely. That is a change to what the numeric MEANS
       // (D-22), so it needs the board, not an edit. See REENTRY-DEPTH-01.
-      reentry.withheldIn(weekN),
+      reentry.withheldAtQualityIndex(buildRotationIndex),
       qualityPool,
       recentThresholdEligible,
     )
@@ -6739,6 +6739,30 @@ function buildRulePlanOnce(
     // act on). Asserted present by INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED.
     ...((GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS as readonly string[]).includes(input.terrain ?? '')
       ? { terrain_effort_note: 'Off-road, let effort and HR lead — the pace targets are a road reference, not a number to chase.' }
+      : {}),
+    // §79 Amendment 2 (Coaching Board 2026-09-15, REENTRY-DEPTH-01) — WHERE THE
+    // RE-ENTRY WINDOW MEANS NO VO2max THIS CYCLE, SAY SO.
+    //
+    // Measured: of the plans where the window changes the opening stimulus, 576
+    // lost VO2max from the plan ENTIRELY and 0 were merely re-ordered. The
+    // window only WITHHOLDS — it carries no obligation to place VO2max
+    // afterwards, and with §53's rotation the freed slots get filled by other
+    // categories, so withholding becomes omission.
+    //
+    // The board ruled omission LEGITIMATE on §5's own authority: its CD-16/CD-22
+    // amendment records Seiler verbatim — "either commit to it properly in the
+    // build, or do not do it. The middle position is the only indefensible one."
+    // Forcing a late VO2max block to satisfy an ordering rule is precisely that
+    // indefensible middle, so requiring deferral was REJECTED.
+    //
+    // What is NOT legitimate is arriving there silently. §87/§95's test applies:
+    // a defensible outcome reached at random is a coincidence, not a decision.
+    // So the plan declares it. Rendered through the ONE note renderer
+    // (`planRationaleNotes`, PLAN-NOTE-SURFACE-01), never a second path.
+    ...(intensityReentryActive
+      && !weeks.some(w => (w.n ?? 0) >= 1 && Object.values(w.sessions).some(
+        sn => sn && sn.type === 'quality' && isVo2maxSession(sn, V1_SESSION_CATALOGUE)))
+      ? { intensity_reentry_omission_note: 'No interval or hill sessions this block. You are coming back, so the quality work leads with tempo and threshold while your legs re-adapt — sharper work earns its place in the next cycle, not this one.' }
       : {}),
     // §96 / HSR-INERT-01 (brand-routed honesty, CB-HSR-01) — a `love` runner below the
     // 5yr+ tier does not get love's full structural effect (peak-LR stretch + §47
