@@ -124,6 +124,40 @@ export const MUTATIONS: Mutation[] = [
       if (sn.type === 'quality') { delete sn.catalogue_id; sn.label = 'Easy run'; sn.type = 'easy' }
     })
   } },
+  // Meta-flag mutations. These three invariants guard META consistency, not
+  // session shape, so the session battery above cannot reach them — the same
+  // gap that left the compression fields unproven when they were first written.
+  { name: 'drop the fresh-return flag', apply: p => {
+    delete (p.meta as unknown as Record<string, unknown>).fresh_return_active
+  } },
+  { name: 'claim a fresh return', apply: p => {
+    (p.meta as unknown as Record<string, unknown>).fresh_return_active = true
+  } },
+  { name: 'call a short plan optimal', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    meta.time_compressed = true
+    meta.compression_classification = 'optimal'
+    meta.compressed = true
+  } },
+  { name: 'front a constrained plan as comfortable', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    meta.volume_constrained = true
+    meta.compression_classification = 'constrained_by_inputs'
+    meta.difficulty_band = 'comfortable'
+    meta.compressed = true
+  } },
+  { name: 'drop the split compression fields', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    delete meta.time_compressed
+    delete meta.volume_constrained
+  } },
+  { name: 'desync the deprecated compressed flag', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    meta.time_compressed = false
+    meta.volume_constrained = false
+    meta.compressed = true
+    meta.compression_classification = 'optimal'
+  } },
   { name: 'strip coach_notes',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).coach_notes }) },
   { name: 'strip derived_set',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).derived_set }) },
   { name: 'strip catalogue_id',        apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).catalogue_id }) },

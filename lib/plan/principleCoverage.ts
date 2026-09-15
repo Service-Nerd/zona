@@ -56,7 +56,7 @@ export interface PrincipleCoverage {
  * Lower it in the same commit that classifies one — that is how the debt is
  * locked in rather than drifting back.
  */
-export const UNVERIFIED_BASELINE = 20
+export const UNVERIFIED_BASELINE = 0
 
 export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 1, by: 'invariant', ref: 'INV-PLAN-QUALITY-EXPECTED' },  // Polarised training — protection from grey zone
@@ -71,9 +71,9 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 10, by: 'exempt', why: 'Algorithm formula (Daniels VDOT discount). INV-CFG-003 exempts formula constants; there is no plan property to assert.' },  // VDOT conservatism — protect users from themselves (selective
   { n: 11, by: 'exempt', why: 'Display convention (ranges not points), owned by lib/format.ts under ADR-015 — a formatting rule, not a prescription.' },  // Pace ranges, not points
   { n: 12, by: 'invariant', ref: 'INV-PLAN-EASY-RUN-ZONE-CAP' },  // Easy-run zone cap — Z2 ceiling
-  { n: 13, by: 'unverified' },  // Fitness classification — VDOT first, volume fallback
+  { n: 13, by: 'test', ref: 'lib/plan/fitnessThresholds.test.ts', why: 'The three levels and where each boundary falls. §13\'s DERIVATION rule was superseded by §79 (dual-signal); what it still owns is the definition, and nothing asserted it.' },  // Fitness classification — VDOT first, volume fallback
   { n: 14, by: 'exempt', why: 'Zone FORMULAS (Karvonen / %MaxHR / Tanaka). Exempt for the same reason as §10 — arithmetic, not a coaching choice.' },  // HR zones — five zones, two formulas, one config
-  { n: 15, by: 'unverified' },  // Tier semantics — Option A: granted-at-trial, retained-in-fre
+  { n: 15, by: 'test', ref: 'lib/plan/featureGates.test.ts', why: 'Option A tier semantics through `canUseFeature`, the place it is actually enforced. Not an invariant: validatePlan never sees a tier.' },  // Tier semantics — Option A: granted-at-trial, retained-in-fre
   { n: 16, by: 'invariant', ref: 'INV-PLAN-EFFORT-GOVERNED-DURATION-LOWER-BOUND' },  // Universal run format — every run has a shape
   { n: 17, by: 'invariant', ref: 'INV-PLAN-PHASE-FOCUS-REACHABLE' },  // Plan signatures — distance shapes the plan
   { n: 18, by: 'invariant', ref: 'INV-INPUT-LONGEST-LE-WEEKLY' },  // Blocked-day enforcement — life-first scheduling
@@ -87,20 +87,20 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 26, by: 'invariant', ref: 'INV-PLAN-RACE-WEEK-SHARPENING' },  // Race-week sharpening (not tempo)
   { n: 27, by: 'invariant', ref: 'INV-PLAN-COPY-MATCHES-SESSIONS' },  // Theme matches prescription
   { n: 28, by: 'test', ref: 'lib/plan/foundationOnRamp.test.ts', why: 'strides inside the foundation block' },  // Strides on midweek easy
-  { n: 29, by: 'unverified' },  // Fresh-from-layoff detection
+  { n: 29, by: 'invariant', ref: 'INV-PLAN-FRESH-RETURN-GATE', why: 'The gate fires exactly when the input says it should. The 70% start fraction is pinned by freshReturnGate.test.ts — three later rules squeeze week 1, so an invariant on the fraction would fail correct plans.' },  // Fresh-from-layoff detection
   { n: 30, by: 'test', ref: 'lib/plan/shakeoutExemption.test.ts', why: 'race-week shakeout cap' },  // Race-week shakeout cap and strides
-  { n: 31, by: 'unverified' },  // Compression classification — three modes
+  { n: 31, by: 'invariant', ref: 'INV-PLAN-COMPRESSION-CLASSIFICATION', why: 'The three modes, plus the §44 link §31 held with a comment: constrained_by_inputs may never front as comfortable.' },  // Compression classification — three modes
   { n: 32, by: 'invariant', ref: 'INV-PLAN-TUNE-UP-CALLOUT' },  // Tune-up race callout
   { n: 33, by: 'invariant', ref: 'INV-PLAN-COACH-NOTES-MATCH-INTENT' },  // Coach notes by session intent
   { n: 34, by: 'exempt', why: 'Meta-principle ABOUT the invariant registry itself. Asserting it would be the registry checking it exists.' },  // Invariant registry — declared and exercised
   { n: 35, by: 'test', ref: 'lib/plan/overdoBrake.test.ts', why: 'persona floors via the overdo brake' },  // Persona-aware prescriptions — floors are minimums, not targe
   { n: 36, by: 'invariant', ref: 'INV-PLAN-TAPER-VARIETY' },  // Taper quality variety
-  { n: 37, by: 'unverified' },  // Fresh-return heuristic — infer from input shape
-  { n: 38, by: 'unverified' },  // Volume constraint notes are prescriptive
+  { n: 37, by: 'invariant', ref: 'INV-PLAN-FRESH-RETURN-GATE', why: 'Same gate as §29, OR-ed. The heuristic AND-gate is pinned arm by arm in freshReturnGate.test.ts.' },  // Fresh-return heuristic — infer from input shape
+  { n: 38, by: 'test', ref: 'lib/plan/maintenanceNotePrescriptive.test.ts', why: 'Diagnosis AND prescription, and the test that matters: change the named input and the profile flips to build. Not an invariant because the injury+beginner producer correctly offers no remedy.' },  // Volume constraint notes are prescriptive
   { n: 39, by: 'invariant', ref: 'INV-PLAN-NO-RACE-EVE-SESSION' },  // Race-week mid-week easy run for HM/marathon
   { n: 40, by: 'invariant', ref: 'INV-PLAN-STRUCTURED-OVERRUN-DECLARED' },  // 5K finish-goal long-run cap
   { n: 41, by: 'invariant', ref: 'INV-PLAN-EFFORT-OR-PACE' },  // Effort copy matches the work prescribed
-  { n: 42, by: 'unverified' },  // VDOT staleness compounds
+  { n: 42, by: 'test', ref: 'lib/plan/vdotStaleness.test.ts', why: '§42\'s own worked examples, plus monotonicity and the cap. Pace derivation is pre-plan, so validatePlan cannot reach it.' },  // VDOT staleness compounds
   { n: 44, by: 'invariant', ref: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED' },  // Prep-time validation — refusal mechanism
   { n: 45, by: 'invariant', ref: 'INV-PLAN-LR-PROGRESSION-CAP' },  // Long-run progression cap (universal, no phase exemption)
   { n: 46, by: 'invariant', ref: 'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES' },  // Peak weekly volume floor for marathon and ultra
@@ -110,26 +110,26 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 51, by: 'invariant', ref: 'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT' },  // Returning-runner allowance must be communicated
   { n: 52, by: 'invariant', ref: 'INV-PLAN-LR-MAX-WEEKLY-PCT' },  // Long run not more than 60% of weekly volume
   { n: 53, by: 'invariant', ref: 'INV-PLAN-LABEL-MATCHES-STRUCTURE' },  // Quality session variety across the full plan
-  { n: 55, by: 'unverified' },  // Critical input validation — reject nonsense values
+  { n: 55, by: 'test', ref: 'lib/plan/inputRanges.test.ts', why: 'Runs BEFORE generation and its point is that no plan exists — validatePlan only ever sees inputs that already passed, so an invariant could not fail.' },  // Critical input validation — reject nonsense values
   { n: 56, by: 'exempt', why: 'Meta-principle describing the constitution document. Nothing in a generated plan can satisfy or breach it.' },  // The constitution
   { n: 57, by: 'invariant', ref: 'INV-PLAN-FOUNDATION-BLOCK' },  // Foundation Block
-  { n: 58, by: 'unverified' },  // Past-self comparison — cohort similarity matching
-  { n: 59, by: 'unverified' },  // Pre-session readiness — composite RHR / HRV / sleep signal
+  { n: 58, by: 'test', ref: 'lib/coaching/cohortSimilarity.test.ts', why: 'The two-axis match (distance band + HR band), the self-exclusion, and the refusal to summarise an empty cohort. Reads run HISTORY, which no generated plan contains.' },  // Past-self comparison — cohort similarity matching
+  { n: 59, by: 'test', ref: 'lib/coaching/readinessBaseline.test.ts', why: 'Readiness is computed from RHR/HRV/sleep AFTER the fact — it is not a property of a plan, so validatePlan has nothing to read. `isPoorSleepQuality` and the baseline thresholds are pinned here; the composite is exercised through athleteContext.test.ts.' },  // Pre-session readiness — composite RHR / HRV / sleep signal
   { n: 60, by: 'test', ref: 'lib/coaching/reframeCohort.test.ts', why: 'post-run reframe voice + cohort' },  // Post-run reframe — the hug AND the truth
-  { n: 61, by: 'unverified' },  // Limiter hypothesis — naming the physiological cause
-  { n: 62, by: 'unverified' },  // Post-race recovery — structured return to training (AI-DEPTH
+  { n: 61, by: 'test', ref: 'lib/coaching/limiter.test.ts', why: '`inferLimiter` — names the physiological cause, with the §71 silence guards pinned. Post-run analysis, not a plan property.' },  // Limiter hypothesis — naming the physiological cause
+  { n: 62, by: 'test', ref: 'lib/coaching/postRaceRecoveryCurve.test.ts', why: 'The per-distance volume curve and the quality blackout, applied to a real plan. Reshapes an existing plan against a logged result, so validatePlan cannot reach it.' },  // Post-race recovery — structured return to training (AI-DEPTH
   { n: 63, by: 'exempt', why: 'Session intent lives in the `session_guidance` Supabase table (one row per session type), not in a generated plan. validatePlan takes a Plan and has nothing to read; the copy is governed by brand.md\'s voice rules.' },  // Session intent — every type explains its place in the week
   { n: 64, by: 'invariant', ref: 'INV-PLAN-WEEK-HAS-REST-DAY' },  // Day-level rest — every training week needs at least one rest
   { n: 65, by: 'test', ref: 'lib/coaching/dayBoundary.test.ts', why: 'today is in flight until midnight' },  // Day boundary — today is in flight until midnight
   { n: 66, by: 'invariant', ref: 'INV-PLAN-LONG-RUN-HAS-AN-AXIS' },  // Long-run shortfall — match the prescription to where the run
   { n: 67, by: 'invariant', ref: 'INV-MAINT-REENGAGEMENT-WINDOW' },  // Post-race goal ladder — the next line is the engine\s call, 
-  { n: 68, by: 'unverified' },  // Taper recalibration — re-anchor to the body that actually tr
-  { n: 69, by: 'unverified' },  // Magnitude calibration — the structural change that earns con
-  { n: 70, by: 'unverified' },  // Plan\s over, and a race is debriefed — not scored
+  { n: 68, by: 'test', ref: 'lib/plan/taperRecalibration.test.ts', why: 'Four silent gates (entry week, idempotency, data floor, downward-only) plus the top-N functional peak. Reads completed training, not a generated plan.' },  // Taper recalibration — re-anchor to the body that actually tr
+  { n: 69, by: 'test', ref: 'lib/coaching/reshapeMagnitude.test.ts', why: '`computeReshapeMagnitude` — always-high triggers, the structural diff, and the sub-threshold trims that stay silent (ADR-012).' },  // Magnitude calibration — the structural change that earns con
+  { n: 70, by: 'test', ref: 'lib/planDateWindow.test.ts', why: '`isPlanComplete` / `isDateWithinWeek` / `isDatePastWeek` — §70.1, the plan can end. §70.2\'s race-debrief framing is prompt copy, covered by sessionFeedback.test.ts.' },  // Plan\s over, and a race is debriefed — not scored
   { n: 71, by: 'test', ref: 'lib/coaching/limiter.test.ts', why: 'limiter naming in the debrief' },  // A goal race is debriefed *with* the athlete — every surface,
-  { n: 72, by: 'unverified' },  // An ultra effort is read as time-on-feet — never scored on fa
+  { n: 72, by: 'test', ref: 'lib/coaching/prompts/sessionFeedback.test.ts', why: 'All three surfaces §72 names: the feedback and reframe prompts drop the fade citation (sessionFeedback.test.ts, sessionReframe.test.ts) and the limiter returns null at the ultra threshold (limiter.test.ts).' },  // An ultra effort is read as time-on-feet — never scored on fa
   { n: 73, by: 'test', ref: 'lib/planDateWindow.test.ts', why: 'date-window, never an index compare' },  // "Are we past plan-week N?" is a date-window question — never
-  { n: 74, by: 'unverified' },  // A logged race result persists on submit — the reshape never 
+  { n: 74, by: 'test', ref: 'lib/plan/raceResultWriteBoundary.test.ts', why: 'A source-order test, and the file says why: the claim is about ORDER inside one route handler with no pure function to assert against. Catches the regression that happened: the write moving behind the optional reshape.' },  // A logged race result persists on submit — the reshape never 
   { n: 75, by: 'invariant', ref: 'INV-MAINT-REST-DAY' },  // Post-race maintenance block — protecting the recovery window
   { n: 76, by: 'invariant', ref: 'INV-PLAN-COVERS-RACE-DATE' },  // The plan is anchored to race day, not to the start date
   { n: 77, by: 'invariant', ref: 'INV-PLAN-RACE-ON-RACE-DAY' },  // The race sits on race day, and race week builds towards it
@@ -156,9 +156,9 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 98, by: 'invariant', ref: 'INV-PLAN-ONSET-YIELD-BOUNDED' },  // §89\s onset is granted only as far as §1 permits
   { n: 99, by: 'test', ref: 'lib/plan/anchorEligibility.test.ts', why: 'a session states its own length' },  // A session states the length its own structure needs
   { n: 100, by: 'invariant', ref: 'INV-PLAN-DELIVERED-RAMP' },  // A safety trim must not hand its deficit to the next week
-  { n: 101, by: 'unverified' },  // `compressed` means two different things, so it is two fields
-  { n: 102, by: 'unverified' },  // An intentional downgrade is not a missing session
-  { n: 103, by: 'unverified' },  // Fitness signal — benchmark recalibration prompt (ENGINE-01)
+  { n: 101, by: 'invariant', ref: 'INV-PLAN-COMPRESSION-SPLIT', why: 'Both fields stamped, and the deprecated `compressed` stays the OR rather than drifting back into being the authority.' },  // `compressed` means two different things, so it is two fields
+  { n: 102, by: 'test', ref: 'lib/coaching/qualityDowngrade.test.ts', why: '`recordQualityDowngrade` — the exemption keys on a recorded reason, and an unrelated trigger still violates.' },  // An intentional downgrade is not a missing session
+  { n: 103, by: 'test', ref: 'lib/coaching/recalibrationPrompt.test.ts', why: '`nextRecalibrationDue` (ADR-014) — the prompt fires only on a completed recalibration-week time trial, never on a non-TT day. Prompt timing, not a plan property.' },  // Fitness signal — benchmark recalibration prompt (ENGINE-01)
   { n: 104, by: 'invariant', ref: 'INV-PLAN-RACE-SPECIFIC-VARIETY' },  // A peak rehearses the race more than one way
   { n: 105, by: 'invariant', ref: 'INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN' },  // Marathon pace must exist away from the long run
   { n: 106, by: 'invariant', ref: 'INV-PLAN-PEAK-NOT-BELOW-START' },  // A plan never peaks below where the runner already is

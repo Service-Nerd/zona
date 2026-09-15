@@ -104,6 +104,9 @@ export const INVARIANT_CODES = [
   'INV-PLAN-EASY-RUN-ZONE-CAP',
   'INV-PLAN-TUNE-UP-CALLOUT',
   'INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN',
+  'INV-PLAN-FRESH-RETURN-GATE',
+  'INV-PLAN-COMPRESSION-CLASSIFICATION',
+  'INV-PLAN-COMPRESSION-SPLIT',
   'INV-PLAN-SECOND-QUALITY-MIN-DAYS',
   'INV-PLAN-INTENSITY-DISTRIBUTION',
   'INV-PLAN-LR-PROGRESSION-CAP',
@@ -5158,6 +5161,121 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           expected: 'Zone 2 (or below)',
         })
       }
+    }
+  }
+
+  // INV-PLAN-FRESH-RETURN-GATE (§29 + §37) — the layoff gate fires exactly when
+  // the constitution says it does.
+  //
+  // §29 opens the gate explicitly (`weeks_at_current_volume` under the
+  // threshold); §37 opens it heuristically (deep training age, but both current
+  // volume AND longest recent run below the floors). The two are OR-ed, and
+  // `plan.meta.fresh_return_active` is the flag every downstream consumer reads.
+  //
+  // This checks the GATE, not the start fraction. The start volume is squeezed
+  // by three other rules before it reaches week 1 — the <6mo beginner cap, §106's
+  // peak floor, the foundation block — so asserting `week1 ≈ 0.7 × stated` would
+  // false-fire on runners the engine handled correctly. The fraction is pinned by
+  // a named test (`freshReturnGate.test.ts`); what an invariant can prove on EVERY
+  // plan is that the flag and the inputs agree. A flag that silently stops firing
+  // is the failure that matters: it is the difference between a 6-month-layoff
+  // runner starting at 70% and starting at 100%.
+  {
+    const explicit = input.weeks_at_current_volume !== undefined
+      && input.weeks_at_current_volume < GENERATION_CONFIG.FRESH_RETURN_WEEKS_THRESHOLD
+    const deepTrainingAge = input.training_age === '2-5yr' || input.training_age === '5yr+'
+    const heuristic = deepTrainingAge
+      && input.current_weekly_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_WEEKLY_KM
+      && input.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM
+    const expected = explicit || heuristic
+    const actual = plan.meta.fresh_return_active === true
+    if (expected !== actual) {
+      violations.push({
+        code: 'INV-PLAN-FRESH-RETURN-GATE',
+        principle_ref: 'CoachingPrinciples §29, §37',
+        severity: 'error',
+        week: 0,
+        message: expected
+          ? `Inputs meet §${explicit ? '29' : '37'}'s fresh-return condition but the plan does not declare it — the runner starts at their full stated volume after a layoff.`
+          : `Plan declares a fresh return that neither §29's explicit input nor §37's heuristic supports — the start volume is cut by ${Math.round((1 - GENERATION_CONFIG.FRESH_RETURN_START_FRACTION) * 100)}% for no stated reason.`,
+        actual: `fresh_return_active=${actual}`,
+        expected: `fresh_return_active=${expected}`,
+      })
+    }
+  }
+
+  // INV-PLAN-COMPRESSION-CLASSIFICATION (§31) — the three modes, and the §44 link.
+  //
+  // §31 says the classification and the difficulty band "are computed from the
+  // same const so they can never disagree". That is a claim about the CURRENT
+  // shape of one expression in `generateRulePlan`, held by a comment. This makes
+  // it mechanical: the relationship survives someone editing one branch.
+  {
+    const c = plan.meta.compression_classification
+    const shortOfTarget = plan.meta.time_compressed === true || plan.meta.volume_constrained === true
+    if (c === undefined) {
+      violations.push({
+        code: 'INV-PLAN-COMPRESSION-CLASSIFICATION',
+        principle_ref: 'CoachingPrinciples §31',
+        severity: 'error',
+        week: 0,
+        message: 'Plan carries no compression classification — §31 requires a classification, not a bare warning.',
+        actual: 'undefined',
+        expected: "'optimal' | 'appropriate_for_persona' | 'constrained_by_inputs'",
+      })
+    } else if ((c === 'optimal') !== !shortOfTarget) {
+      violations.push({
+        code: 'INV-PLAN-COMPRESSION-CLASSIFICATION',
+        principle_ref: 'CoachingPrinciples §31',
+        severity: 'error',
+        week: 0,
+        message: `Classification '${c}' disagrees with the compression flags (time_compressed=${plan.meta.time_compressed}, volume_constrained=${plan.meta.volume_constrained}). §31's 'optimal' means the plan reached its target.`,
+        actual: c,
+        expected: shortOfTarget ? 'a non-optimal classification' : 'optimal',
+      })
+    } else if (c === 'constrained_by_inputs' && plan.meta.difficulty_band === 'comfortable') {
+      violations.push({
+        code: 'INV-PLAN-COMPRESSION-CLASSIFICATION',
+        principle_ref: 'CoachingPrinciples §31, §44',
+        severity: 'error',
+        week: 0,
+        message: 'Plan is constrained by its inputs but fronts as comfortable. §31 makes this classification load-bearing on the §44 band precisely so the runner knows a lever exists.',
+        actual: 'difficulty_band=comfortable',
+        expected: "difficulty_band 'demanding' or 'very_demanding'",
+      })
+    }
+  }
+
+  // INV-PLAN-COMPRESSION-SPLIT (§101) — short of TIME and short of VOLUME are
+  // two facts with two remedies, so they are two fields.
+  //
+  // The single `compressed` boolean was true for five of six personas, fed the
+  // PAID confidence score, and sent runners to the wrong lever. It survives as a
+  // deprecated OR; this pins that it stays an OR rather than drifting back into
+  // the authority, and that both real fields are actually stamped.
+  {
+    const t = plan.meta.time_compressed
+    const v = plan.meta.volume_constrained
+    if (typeof t !== 'boolean' || typeof v !== 'boolean') {
+      violations.push({
+        code: 'INV-PLAN-COMPRESSION-SPLIT',
+        principle_ref: 'CoachingPrinciples §101',
+        severity: 'error',
+        week: 0,
+        message: 'Plan does not stamp both compression fields. §101 separates them because the remedies differ — race later vs train more days.',
+        actual: `time_compressed=${t}, volume_constrained=${v}`,
+        expected: 'both booleans present',
+      })
+    } else if (plan.meta.compressed !== undefined && plan.meta.compressed !== (t || v)) {
+      violations.push({
+        code: 'INV-PLAN-COMPRESSION-SPLIT',
+        principle_ref: 'CoachingPrinciples §101',
+        severity: 'error',
+        week: 0,
+        message: `The deprecated 'compressed' flag (${plan.meta.compressed}) is no longer the OR of the two real fields (${t} || ${v}). A saved plan or an existing reader would now read a third, unowned answer.`,
+        actual: String(plan.meta.compressed),
+        expected: String(t || v),
+      })
     }
   }
 

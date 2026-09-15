@@ -77,6 +77,25 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
     ).toEqual([])
   })
 
+  it('every `test` entry sits where vitest actually collects it', () => {
+    // FOUND THE HARD WAY, 2026-09-15: §74's test was first written at
+    // `app/api/post-race-reshape/writeBoundary.test.ts`. The file EXISTED, so
+    // the assertion above passed and the principle read as covered — and
+    // vitest's `include` is `lib/**` + `components/**`, so the test never ran
+    // once. A named test nothing executes is worse than an admitted gap,
+    // because it reads as a check.
+    const roots = ['lib/', 'components/']
+    const uncollected = PRINCIPLE_COVERAGE
+      .filter(e => e.by === 'test')
+      .filter(e => !roots.some(r => (e.ref ?? '').startsWith(r)))
+      .map(e => `§${e.n} → ${e.ref}`)
+    expect(
+      uncollected,
+      `These name a test file outside vitest's include globs (${roots.join(', ')}), ` +
+      `so it exists and never runs.`,
+    ).toEqual([])
+  })
+
   it('every `exempt` entry carries a written reason', () => {
     // An exemption without a reason is indistinguishable from an oversight, and
     // the reason is what a reviewer argues with. Length floor is deliberate:

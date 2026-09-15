@@ -1,0 +1,154 @@
+import { describe, it, expect } from 'vitest'
+import { computeTaperRecalibration } from './taperRecalibration'
+import { GENERATION_CONFIG as G } from './generationConfig'
+import type { Plan, Week, Session } from '@/types/plan'
+
+/**
+ * §68 — the taper is a reduction from what the BODY did, not from the spreadsheet.
+ *
+ * A runner who completed 60% of their planned peak carries none of the fatigue
+ * the original taper was designed to dissipate. Tapering from a fiction does not
+ * over-rest them; it mistargets them, and they arrive at the start line
+ * under-recovered relative to what they actually ran.
+ *
+ * Nothing tested this. It is a one-shot, once-per-plan, entry-week-only
+ * computation — four gates, each of which fails SILENTLY by returning
+ * `applied: false` with a reason nobody reads. A gate that inverted would be
+ * invisible until a runner's taper was wrong, and by then the race has happened.
+ *
+ * Not an invariant: it reads `weeklyActuals` — completed training — which no
+ * generated plan contains. `validatePlan` runs before a single session is run.
+ */
+const session = (type: Session['type'], km: number): Session =>
+  ({ type, label: type, distance_km: km } as unknown as Session)
+
+/** 10 weeks: build 1-7, taper 8-9, race week 10. Pre-taper (wk 7) = 60 km. */
+const planOf = (over: Partial<Plan['meta']> = {}): Plan => {
+  const weeks: Week[] = Array.from({ length: 10 }, (_, i) => {
+    const n = i + 1
+    const phase = n >= 8 ? 'taper' : 'build'
+    return {
+      n, date: '2026-04-27', phase, type: n === 10 ? 'race' : phase,
+      weekly_km: n === 7 ? 60 : n >= 8 ? 45 : 50,
+      sessions: { tue: session('quality', 10), thu: session('easy', 10), sun: session('easy', 25) },
+    } as unknown as Week
+  })
+  return {
+    meta: { race_distance_km: 42.2, ...over },
+    phases: [
+      { name: 'build', start_week: 1, end_week: 7 },
+      { name: 'taper', start_week: 8, end_week: 10 },
+    ],
+    weeks,
+  } as unknown as Plan
+}
+
+const actuals = (...km: number[]) => new Map(km.map((v, i) => [i + 1, v]))
+const run = (weeklyActuals: Map<number, number>, currentWeekN = 8, plan = planOf()) =>
+  computeTaperRecalibration({ weeklyActuals, plan, currentWeekN })
+
+// 60 km planned pre-taper; 85% of that is 51 km.
+const UNDER = actuals(30, 32, 31, 34, 33)        // functional peak 33 → 55% of planned
+const ON_TRACK = actuals(56, 58, 57, 59, 55)     // functional peak 58.5 → 98%
+
+describe('§68 — the gate fires only at taper entry, once', () => {
+  it('fires on the first taper week', () => {
+    expect(run(UNDER, 8).applied).toBe(true)
+  })
+
+  it('does not fire mid-taper — the reduction is set at entry or not at all', () => {
+    expect(run(UNDER, 9).applied).toBe(false)
+    expect(run(UNDER, 9).skipReason).toMatch(/not taper entry/)
+  })
+
+  it('does not fire during the build', () => {
+    expect(run(UNDER, 5).applied).toBe(false)
+  })
+
+  it('is idempotent — a re-run never compounds the reduction', () => {
+    const once = run(UNDER, 8)
+    expect(once.applied).toBe(true)
+    const twice = computeTaperRecalibration({ weeklyActuals: UNDER, plan: once.plan!, currentWeekN: 8 })
+    expect(twice.applied, 'a second pass would taper from the already-tapered figure').toBe(false)
+    expect(twice.skipReason).toMatch(/already recalibrated/)
+  })
+
+  it('refuses on thin data rather than guessing from one week', () => {
+    const thin = actuals(...Array(G.TAPER_RECAL_MIN_WEEKS_DATA - 1).fill(30))
+    expect(run(thin, 8).applied).toBe(false)
+    expect(run(thin, 8).skipReason).toMatch(/insufficient actual data/)
+  })
+})
+
+describe('§68 — functional peak is the top-N average, not the single best week', () => {
+  it('averages the top N so one outlier week is not read as adaptation', () => {
+    // "Big weeks followed by collapses — a single peak week is an outlier, not
+    // an adaptation signal." One 60 km week among 30s must not cancel the recal.
+    const spiky = actuals(60, 28, 30, 29, 31)
+    const r = run(spiky, 8)
+    expect(G.TAPER_RECAL_FUNCTIONAL_PEAK_WEEKS).toBe(2)
+    expect(r.functionalPeakKm).toBeCloseTo((60 + 31) / 2, 1)
+    expect(r.applied, 'one big week cancelled the recalibration').toBe(true)
+  })
+
+  it('anchors the ratio to the planned week before the taper', () => {
+    const r = run(UNDER, 8)
+    expect(r.plannedPreTaperKm).toBe(60)
+    expect(r.ratio).toBeCloseTo(r.functionalPeakKm! / 60, 3)
+  })
+})
+
+describe('§68 — downward only, and only when the gap is material', () => {
+  it('leaves an on-track runner\'s taper alone', () => {
+    const r = run(ON_TRACK, 8)
+    expect(r.applied).toBe(false)
+    expect(r.skipReason).toMatch(/within tolerance/)
+  })
+
+  it('does NOT raise the taper for an overperformer', () => {
+    // Deliberately excluded: a well-trained runner tapering below target arrives
+    // fresh at no cost, and raising taper volume carries injury risk. §103's
+    // benchmark recalibration is the right lever for overperformance, not this.
+    const over = actuals(80, 82, 81, 79, 83)
+    const r = run(over, 8)
+    expect(r.applied).toBe(false)
+    expect(r.ratio!).toBeGreaterThan(1)
+  })
+
+  it('the threshold is where it switches', () => {
+    expect(G.TAPER_RECAL_VOLUME_THRESHOLD_PCT).toBe(85)
+    const justUnder = actuals(50, 50, 50, 50)   // 50/60 = 83%
+    const justOver  = actuals(52, 52, 52, 52)   // 52/60 = 87%
+    expect(run(justUnder, 8).applied).toBe(true)
+    expect(run(justOver, 8).applied).toBe(false)
+  })
+})
+
+describe('§68 — what the recalibrated taper actually looks like', () => {
+  it('reduces every taper week below its original, and stamps the provenance', () => {
+    const r = run(UNDER, 8)
+    const before = planOf().weeks
+    for (const n of r.weeksModified!) {
+      expect(r.plan!.weeks[n - 1].weekly_km!, `week ${n}`)
+        .toBeLessThan(before[n - 1].weekly_km!)
+    }
+    expect(r.plan!.meta.taper_recalibrated_at).toBeTruthy()
+    expect(r.plan!.meta.functional_peak_km).toBeCloseTo(r.functionalPeakKm!, 0)
+    expect(r.plan!.meta.planned_peak_km_at_recal).toBe(60)
+  })
+
+  it('leaves the RACE week exactly as written (§26)', () => {
+    // Shakeouts are volume-irrelevant and race-week structure is sacred.
+    const r = run(UNDER, 8)
+    expect(r.weeksModified).not.toContain(10)
+    expect(r.plan!.weeks[9]).toEqual(planOf().weeks[9])
+  })
+
+  it('still descends across the taper — recalibrating is not flattening', () => {
+    const r = run(UNDER, 8)
+    const tapers = r.weeksModified!.map(n => r.plan!.weeks[n - 1].weekly_km!)
+    for (let i = 1; i < tapers.length; i++) {
+      expect(tapers[i], 'taper week volumes stopped descending').toBeLessThan(tapers[i - 1])
+    }
+  })
+})
