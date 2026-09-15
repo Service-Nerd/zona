@@ -86,21 +86,21 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 25, by: 'invariant', ref: 'INV-PLAN-RACE-SPECIFIC-LONG-RUN' },  // Race-specific long run (HM and marathon, time-targeted)
   { n: 26, by: 'invariant', ref: 'INV-PLAN-RACE-WEEK-SHARPENING' },  // Race-week sharpening (not tempo)
   { n: 27, by: 'invariant', ref: 'INV-PLAN-COPY-MATCHES-SESSIONS' },  // Theme matches prescription
-  { n: 28, by: 'test', ref: 'lib/plan/foundationOnRamp.test.ts', why: 'strides inside the foundation block' },  // Strides on midweek easy
+  { n: 28, by: 'invariant', ref: 'INV-PLAN-STRIDES-PRESENT', why: 'Exactly one stride note per qualifying week, on an easy run, never beside the long run or after quality. §28\'s "Wed preferred" is a PREFERENCE (146,732 divergences on a 3-day week) and is deliberately not asserted. foundationOnRamp.test.ts keeps the foundation half.' },  // Strides on midweek easy
   { n: 29, by: 'invariant', ref: 'INV-PLAN-FRESH-RETURN-GATE', why: 'The gate fires exactly when the input says it should. The 70% start fraction is pinned by freshReturnGate.test.ts — three later rules squeeze week 1, so an invariant on the fraction would fail correct plans.' },  // Fresh-from-layoff detection
-  { n: 30, by: 'test', ref: 'lib/plan/shakeoutExemption.test.ts', why: 'race-week shakeout cap' },  // Race-week shakeout cap and strides
+  { n: 30, by: 'invariant', ref: 'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP', why: '35-minute cap and RPE <= 3. §26\'s invariant bans the wrong session TYPES in race week; nothing capped the shakeout\'s own size.' },  // Race-week shakeout cap and strides
   { n: 31, by: 'invariant', ref: 'INV-PLAN-COMPRESSION-CLASSIFICATION', why: 'The three modes, plus the §44 link §31 held with a comment: constrained_by_inputs may never front as comfortable.' },  // Compression classification — three modes
   { n: 32, by: 'invariant', ref: 'INV-PLAN-TUNE-UP-CALLOUT' },  // Tune-up race callout
   { n: 33, by: 'invariant', ref: 'INV-PLAN-COACH-NOTES-MATCH-INTENT' },  // Coach notes by session intent
   { n: 34, by: 'exempt', why: 'Meta-principle ABOUT the invariant registry itself. Asserting it would be the registry checking it exists.' },  // Invariant registry — declared and exercised
-  { n: 35, by: 'test', ref: 'lib/plan/overdoBrake.test.ts', why: 'persona floors via the overdo brake' },  // Persona-aware prescriptions — floors are minimums, not targe
+  { n: 35, by: 'invariant', ref: 'INV-PLAN-PEAK-LR-EARNED-TIER', why: 'Floor-stopping: the tier the runner\'s inputs earn, above §24\'s floor. warn at 0.06% with the residual declared (§34); proved live by peakLrEarnedTier.test.ts, which the mutation battery cannot reach.' },  // Persona-aware prescriptions — floors are minimums, not targe
   { n: 36, by: 'invariant', ref: 'INV-PLAN-TAPER-VARIETY' },  // Taper quality variety
   { n: 37, by: 'invariant', ref: 'INV-PLAN-FRESH-RETURN-GATE', why: 'Same gate as §29, OR-ed. The heuristic AND-gate is pinned arm by arm in freshReturnGate.test.ts.' },  // Fresh-return heuristic — infer from input shape
   { n: 38, by: 'test', ref: 'lib/plan/maintenanceNotePrescriptive.test.ts', why: 'Diagnosis AND prescription, and the test that matters: change the named input and the profile flips to build. Not an invariant because the injury+beginner producer correctly offers no remedy.' },  // Volume constraint notes are prescriptive
   { n: 39, by: 'invariant', ref: 'INV-PLAN-NO-RACE-EVE-SESSION' },  // Race-week mid-week easy run for HM/marathon
   { n: 40, by: 'invariant', ref: 'INV-PLAN-STRUCTURED-OVERRUN-DECLARED' },  // 5K finish-goal long-run cap
   { n: 41, by: 'invariant', ref: 'INV-PLAN-EFFORT-OR-PACE' },  // Effort copy matches the work prescribed
-  { n: 42, by: 'test', ref: 'lib/plan/vdotStaleness.test.ts', why: '§42\'s own worked examples, plus monotonicity and the cap. Pace derivation is pre-plan, so validatePlan cannot reach it.' },  // VDOT staleness compounds
+  { n: 42, by: 'invariant', ref: 'INV-PLAN-VDOT-STALENESS-LADDER', why: 'The stamped discount is a legal rung of §42\'s ladder, and an undated benchmark gets the base. Asserts the rung, not the date arithmetic — validatePlan has no clock. vdotStaleness.test.ts still pins the ladder itself.' },  // VDOT staleness compounds
   { n: 44, by: 'invariant', ref: 'INV-PLAN-PREP-TIME-STATUS-ANNOTATED' },  // Prep-time validation — refusal mechanism
   { n: 45, by: 'invariant', ref: 'INV-PLAN-LR-PROGRESSION-CAP' },  // Long-run progression cap (universal, no phase exemption)
   { n: 46, by: 'invariant', ref: 'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES' },  // Peak weekly volume floor for marathon and ultra
@@ -143,18 +143,18 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 85, by: 'invariant', ref: 'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD' },  // Intensity has an inventory, or the runner\s answer means not
   { n: 86, by: 'invariant', ref: 'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT' },  // A fixed-shape session still owes the runner a dose and an ho
   { n: 87, by: 'invariant', ref: 'INV-PLAN-DELOAD-PLACEMENT' },  // A recovery week must not open a phase
-  { n: 88, by: 'test', ref: 'lib/plan/vo2maxOnsetPlacement.test.ts', why: 'VO2max dose + placement' },  // The VO2max pool owes dose granularity and a continuous shape
+  { n: 88, by: 'invariant', ref: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING', why: 'Seiler\'s condition: the float is a ceiling, and intervals_rolling\'s is run rather than jogged. The DOSE half of §88 is the existing VO2MAX_WORK band, now cross-referenced from it.' },  // The VO2max pool owes dose granularity and a continuous shape
   { n: 89, by: 'invariant', ref: 'INV-PLAN-EARLY-ONSET-GATED' },  // Experience-gated quality onset — a demonstrated base earns a
   { n: 90, by: 'invariant', ref: 'INV-PLAN-INJURY-CAP-DELIVERED' },  // A recovery week reduces, and the injury cap holds at deliver
   { n: 91, by: 'invariant', ref: 'INV-PLAN-ONRAMP-FLOOR' },  // The on-ramp is counted in weeks the runner runs, not weeks i
-  { n: 92, by: 'test', ref: 'lib/plan/foundationOnRamp.test.ts', why: 'foundation block may carry strides' },  // A demonstrated runner\s foundation block may carry strides
+  { n: 92, by: 'invariant', ref: 'INV-PLAN-FOUNDATION-BLOCK', why: 'Foundation strides require the §89 gate and are vetoed outright by any injury history. §92\'s own text claimed this invariant already enforced it; grepped 2026-09-15, it did not — the producer gated correctly and the checker was never written.' },  // A demonstrated runner\s foundation block may carry strides
   { n: 93, by: 'invariant', ref: 'INV-PLAN-PEAK-SPECIFICITY' },  // Peak rehearses the race — the specificity ladder is enforced
   { n: 94, by: 'invariant', ref: 'INV-PLAN-DELIVERED-RAMP' },  // §2 is measured at delivery for every runner, not only the in
   { n: 95, by: 'invariant', ref: 'INV-PLAN-DELOAD-PHASE-POSITION' },  // A recovery week must not fall on a phase\s second week eithe
   { n: 96, by: 'invariant', ref: 'INV-PLAN-OVERDO-BRAKE' },  // `overdo` is a brake, not a preference
-  { n: 97, by: 'test', ref: 'lib/plan/earlyQualityOnset.test.ts', why: 'Amendment 1 — surplus weeks must not blow §1 on a low-day plan; deterministic, the random sweep never crossed days_available 3 with the full §89 gate' },  // A demonstrated runner\s surplus weeks belong inside the plan
+  { n: 97, by: 'invariant', ref: 'INV-PLAN-GATED-SURPLUS-IN-PLAN', why: 'No foundation block for a gated runner, and never past max_weeks. warn at 0.03%: the compose-time gap is a value generation never had. earlyQualityOnset.test.ts still covers Amendment 1.' },  // A demonstrated runner\s surplus weeks belong inside the plan
   { n: 98, by: 'invariant', ref: 'INV-PLAN-ONSET-YIELD-BOUNDED' },  // §89\s onset is granted only as far as §1 permits
-  { n: 99, by: 'test', ref: 'lib/plan/anchorEligibility.test.ts', why: 'a session states its own length' },  // A session states the length its own structure needs
+  { n: 99, by: 'invariant', ref: 'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT', why: '§99 IS this check — the principle written when hm_pace_intervals stated 45 minutes for a session needing over 70. Cross-referenced rather than given a second invariant: two checks asserting one property is D-16.' },  // A session states the length its own structure needs
   { n: 100, by: 'invariant', ref: 'INV-PLAN-DELIVERED-RAMP' },  // A safety trim must not hand its deficit to the next week
   { n: 101, by: 'invariant', ref: 'INV-PLAN-COMPRESSION-SPLIT', why: 'Both fields stamped, and the deprecated `compressed` stays the OR rather than drifting back into being the authority.' },  // `compressed` means two different things, so it is two fields
   { n: 102, by: 'test', ref: 'lib/coaching/qualityDowngrade.test.ts', why: '`recordQualityDowngrade` — the exemption keys on a recorded reason, and an unrelated trigger still violates.' },  // An intentional downgrade is not a missing session

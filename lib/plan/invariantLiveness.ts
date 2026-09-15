@@ -158,6 +158,51 @@ export const MUTATIONS: Mutation[] = [
     meta.compressed = true
     meta.compression_classification = 'optimal'
   } },
+  { name: 'discount off the staleness ladder', apply: p => {
+    (p.meta as unknown as Record<string, unknown>).vdot_discount_applied_pct = 4.5
+  } },
+  { name: 'claim a gated runner with a foundation block', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    meta.early_quality_onset = true
+    const first = p.weeks[0]
+    if (first && first.n >= 1) {
+      p.weeks.unshift({ ...first, n: 0, phase: 'foundation', sessions: { ...first.sessions } } as typeof first)
+    }
+  } },
+  { name: 'let the fast-float drift off its ceiling', apply: p => {
+    // Synthesised on purpose: the corpus need not already contain an
+    // intervals_rolling session for the RULE to be testable, and a rule only
+    // provable when the catalogue happens to pick a row is a rule that goes
+    // quiet the day it stops being picked.
+    const s = sessionsOf(p).find(x => (x as unknown as { derived_set?: unknown }).derived_set)
+      ?? sessionsOf(p)[0]
+    if (!s) return
+    const sn = s as unknown as Poke & { catalogue_id?: string; derived_set?: unknown }
+    sn.catalogue_id = 'intervals_rolling'
+    sn.derived_set = { version: 2, blocks: [{ repeat: 10, label: 'reps', steps: [
+      { role: 'work', modality: 'run', length: '300 m', pace: '3:50–4:20 /km', pace_mode: 'target', advance: 'auto' },
+      { role: 'recovery', modality: 'jog', length: '300 m', pace: '5:45–6:45 /km', pace_mode: 'target', advance: 'auto' },
+    ] }] }
+  } },
+  { name: 'stop the peak long run at the floor', apply: p => {
+    // The §35 block is gated on `volume_profile !== 'maintenance'`, and most
+    // corpus plans that earn a tier above the floor are maintenance — so the
+    // shrink alone changed nothing and the rule read as unwakeable. A mutation
+    // must set every gate it needs, not only the field it is aimed at.
+    ;(p.meta as unknown as Record<string, unknown>).volume_profile = 'build'
+    // §35's floor-stopping, made literal: shrink every peak long run to just
+    // over §24's floor and keep it well under the minute cap, so the tier check
+    // is the only thing that can object.
+    for (const w of p.weeks) {
+      if (w.phase !== 'peak' || w.type === 'deload') continue
+      for (const s of Object.values(w.sessions)) {
+        const sn = s as unknown as (Poke & { distance_km?: number; duration_mins?: number }) | undefined
+        if (!sn || !isLongRun(s as never)) continue
+        if (sn.distance_km != null) sn.distance_km = Math.round(sn.distance_km * 0.5 * 2) / 2
+        if (sn.duration_mins != null) sn.duration_mins = Math.min(sn.duration_mins, 45)
+      }
+    }
+  } },
   { name: 'strip coach_notes',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).coach_notes }) },
   { name: 'strip derived_set',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).derived_set }) },
   { name: 'strip catalogue_id',        apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).catalogue_id }) },
@@ -323,8 +368,20 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
   // distinct (distance x level x goal) instead newly PROVED 16 invariants that
   // had been sitting in the baseline as debt. The debt was mostly the sample.
   const seen = new Set<string>()
+  //
+  // Extended 2026-09-15 with ONE BIT — does the runner's longest recent run
+  // already clear §24's floor? §35's tier lift is gated on exactly that, and the
+  // key above does not contain it, so whichever HM/time_target row happened to
+  // be first represented the whole family and it was a low-mileage one.
+  // INV-PLAN-PEAK-LR-EARNED-TIER then read as unwakeable while a mutation woke
+  // it on the first qualifying plan tried by hand. Same failure as §107's in
+  // 2026-09-12, one field over: THE SHAPE KEY MUST CONTAIN THE FIELD THE RULE IS
+  // GATED ON, or the sample cannot reach the rule and the debt register records
+  // the sampling as if it were the engine.
   const byShape = cohortGrid().filter(i => {
+    const r = i as unknown as { race_distance_km?: number; longest_recent_run_km?: number }
     const k = `${(i as {race_distance_km?: number}).race_distance_km}|${(i as {fitness_level?: string}).fitness_level}|${(i as {goal?: string}).goal}`
+      + `|${(r.longest_recent_run_km ?? 0) >= (r.race_distance_km ?? 0) * 0.85 ? 'deep' : 'shallow'}`
     if (seen.has(k)) return false
     seen.add(k)
     return true

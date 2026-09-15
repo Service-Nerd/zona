@@ -63,6 +63,18 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > **Do not bulk-rename without checking each site** — confirm §2 is the intended owner at each, then correct doc, config comment and test title together. Typo-class, board-exempt.
 > *Verify still open:* `grep -rn "§12" lib/plan/generationConfig.ts lib/plan/injuryCapCompounds.test.ts docs/canonical/CoachingPrinciples.md | grep -i injury`
 
+> 🔲 **LR-EARNED-TIER-01 — 9 plans clear §24's long-run floor and stop below the tier their inputs earn.** *(P3, found 2026-09-15 by the new §35 invariant)*
+> **MEASURED, 15,973-plan sweep: 9 plans (0.06%).** All time-targeted HM/marathon, all with `longest_recent_run_km` already clearing §24's floor, none minute-capped. Examples: peak long run 19 km against a 19.5 km stretch tier (longest recent 30 km, `hard_session_relationship: 'love'`); 17.5 km against an 18.5 km target tier on a 3-day week with a 45-min weekday cap.
+> §35 calls this "floor-stopping — a defect of conservatism, not a virtue", but its own wording is SHOULD, "where doing so doesn't violate other principles". Whether another principle binds in these nine is **not established**, which is why `INV-PLAN-PEAK-LR-EARNED-TIER` ships as `warn` rather than `error`.
+> ⚠️ **Do not re-derive the cap in km.** The first measurement converted `LONG_RUN_CAP_MINUTES` using a pace back-derived from the capped session's own distance and duration — circular, so it always returned the delivered distance, and reported 276 violations that were the cap doing its job. Read the cap in minutes, which is the unit it is written in.
+> *Verify still open:* `NODE_ENV=production npx tsx scripts/property-validate-plans.ts` → `INV-PLAN-PEAK-LR-EARNED-TIER` firing rate above 0.
+
+> 🔲 **GATED-SURPLUS-COMPOSE-01 — a §89-gated runner can still be handed a §57 foundation block, because the gap is measured after generation.** *(P3, found 2026-09-15 by the new §97 invariant)*
+> **MEASURED: 5 of 15,973 (0.03%).** Every one has a signup-to-start gap of 10-40 days, no `foundation_decision: 'add'`, and sits BELOW its signature's `max_weeks` — so §97's extension had room and did not happen.
+> **Hypothesis, stated as one:** §97's extension is decided at GENERATION from race-date arithmetic. The foundation gap is measured at COMPOSE time, from `today` against the plan's own start — a quantity `generateRulePlan` never had. So a gated runner whose surplus only becomes visible later still gets the block §97 says is the wrong object for them.
+> **Closing it means giving generation a value it currently cannot see** — an ADR-020 construction-boundary change, not a threshold tweak. Ships as `warn` meanwhile.
+> *Verify still open:* `INV-PLAN-GATED-SURPLUS-IN-PLAN` firing rate above 0 in the sweep.
+
 > 🔲 **FOUNDATION-LONG-RUNWAY-01 — a runner who signs up early has weeks the plan does not cover, and `FOUNDATION_MAX_WEEKS` caps the fill at 3.** *(P2, filed 2026-09-15 — BOARD question, not a defect)*
 > **MEASURED, production-shaped** (today 2026-09-15, plan start next Monday, race 2027-03-07 = 25 weeks out, charity persona M1 first-timer marathon):
 > | foundation decision | plan starts | foundation weeks | main weeks | weeks to race COVERED | uncovered |

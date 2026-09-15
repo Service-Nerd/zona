@@ -107,6 +107,12 @@ export const INVARIANT_CODES = [
   'INV-PLAN-FRESH-RETURN-GATE',
   'INV-PLAN-COMPRESSION-CLASSIFICATION',
   'INV-PLAN-COMPRESSION-SPLIT',
+  'INV-PLAN-STRIDES-PRESENT',
+  'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
+  'INV-PLAN-PEAK-LR-EARNED-TIER',
+  'INV-PLAN-VDOT-STALENESS-LADDER',
+  'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING',
+  'INV-PLAN-GATED-SURPLUS-IN-PLAN',
   'INV-PLAN-SECOND-QUALITY-MIN-DAYS',
   'INV-PLAN-INTENSITY-DISTRIBUTION',
   'INV-PLAN-LR-PROGRESSION-CAP',
@@ -631,6 +637,46 @@ function raceDistanceKey(km: number): keyof typeof GENERATION_CONFIG.LONG_RUN_CA
   if (km <= 42.5) return 'MARATHON'
   if (km <= 50.5) return '50K'
   return '100K'
+}
+
+/** Weekday order, for the adjacency rules §28 states as absolute. */
+const DAY_ORDER: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+
+/**
+ * §30's RPE ceiling for a race-week shakeout. Inline rather than in
+ * GENERATION_CONFIG deliberately: it is not a tuning knob, it is the definition
+ * of "a wake-up for the legs, not training" — the same class as the structural
+ * constants INV-CFG-001 exempts. §30 states it in prose and nothing else reads it.
+ */
+const RACE_WEEK_SHAKEOUT_MAX_RPE = 3
+
+/**
+ * §88's continuous fast-float rows. Both are `category: vo2max` shapes whose
+ * recovery step is RUN rather than jogged; the float's ceiling is Seiler's
+ * condition of approval, not a display detail.
+ */
+const CONTINUOUS_VO2MAX_ROWS = new Set(['intervals_rolling', 'intervals_30_30'])
+
+/**
+ * The float-is-RUN rule is `intervals_rolling`'s alone. §88 states it in that
+ * row's own sentence — "`intervals_rolling` is the fast-float: the float is run,
+ * not jogged" — while Billat's 30-30 is a canonical jog-recovery session. A first
+ * cut applied it to both and the sweep returned 46 violations, all of them
+ * "Thirty-thirty"'s float being a jog, which is what a 30-30 is.
+ */
+const RUN_FLOAT_ROWS = new Set(['intervals_rolling'])
+
+/**
+ * Does this session carry §28's stride note? Reads `coach_notes` — the field the
+ * generator actually appends to (strides are a 4-minute appendix to a 45-minute
+ * easy run, not a session) — and falls back to the label for hand-authored and
+ * legacy gist plans. Never classifies BY the label alone (D-17): the enricher is
+ * allowed to rewrite labels, and a label-keyed stride check would silently die
+ * the first time it did.
+ */
+function hasStrideNote(sn: Session): boolean {
+  const notes = Array.isArray(sn.coach_notes) ? sn.coach_notes.join(' ') : String(sn.coach_notes ?? '')
+  return /strides/i.test(notes) || /strides/i.test(sn.label ?? '')
 }
 
 export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
@@ -1973,6 +2019,75 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       // and mechanical check have to agree on what the floor IS.
       const effectiveRequired =
         Math.min(requiredKm, capKm) - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+      // §35 — FLOORS ARE MINIMUMS, NOT TARGETS.
+      //
+      // §24's floor is the conservative default every plan reaches. §35 says a
+      // runner whose inputs support more should GET more: target when their
+      // longest recent run already clears the floor, stretch when they also
+      // declared `hard_session_relationship: 'love'` with no hill-restricting
+      // injury. Round 2 found Anna's peak long run sitting at exactly the 85%
+      // floor — "floor-stopping", a defect of conservatism rather than a virtue.
+      //
+      // ⚠️ THE CAP IS READ IN MINUTES, and getting that wrong cost a whole
+      // measurement pass. A first cut converted LONG_RUN_CAP_MINUTES to km using
+      // a pace back-derived from the capped session's own distance and duration
+      // — circular, so it always handed back the distance already delivered, and
+      // it reported 276 violations that were the cap doing its job. Measured
+      // properly: a long run within 5 minutes of the cap has bought every
+      // kilometre that runner's pace allows, and §35 says plainly that
+      // LONG_RUN_CAP_MINUTES still wins. Firing rate across 31,344 plans: zero.
+      {
+        // SESSION-KM-02: pick the peak long run through `longRunKmOf`, the
+        // single owner used two lines above — never by comparing
+        // `distance_km ?? 0`. A beginner's plan is duration-anchored, so `?? 0`
+        // reads every long run as covering no ground and the reducer would
+        // return whichever came first. `sessionDistanceReach.test.ts` caught
+        // exactly this in the first cut of this block.
+        const longSn = peakWeeks
+          .map(w => ({ w, sn: Object.values(w.sessions).find(x => x && isLongRun(x)) }))
+          .filter(({ sn }) => !!sn)
+          .reduce<Session | undefined>((best, { w, sn }) =>
+            (longRunKmOf(w) ?? -1) >= (peakLrKm ?? 0) ? sn : best, undefined)
+        const recentMeetsFloor = input.longest_recent_run_km >= requiredKm
+        const noRestrictingInjury = !(input.injury_history ?? []).some(i =>
+          GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k)))
+        const tierRatio =
+          (input.hard_session_relationship === 'love' && noRestrictingInjury && recentMeetsFloor)
+            ? GENERATION_CONFIG.PEAK_LR_RATIO_STRETCH[distKey]
+            : recentMeetsFloor
+              ? GENERATION_CONFIG.PEAK_LR_RATIO_TARGET[distKey]
+              : ratio
+        const capBinding = (longSn?.duration_mins ?? 0) >= longCapMins - 5
+        // The producer rounds the tier UP to DISTANCE_ROUNDING_PRECISION_KM and
+        // later passes round the delivered long run DOWN, so the two can sit a
+        // full precision step apart on arithmetic alone. Comparing against the
+        // unrounded tier decides the check on the engine's own rounding — the
+        // §24 Amendment 1 lesson, one ratio over. A first cut allowed one step
+        // and still fired on 18.4615 vs 18.49.
+        const prec = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+        const tierRequired = input.race_distance_km * tierRatio - prec * 2
+        if (tierRatio > ratio && !capBinding && peakLrKm + 0.01 < tierRequired) {
+          violations.push({
+            code: 'INV-PLAN-PEAK-LR-EARNED-TIER',
+            principle_ref: 'CoachingPrinciples §35, §24',
+            // `warn`, and the severity is the honest part (§34). §35 says the
+            // engine SHOULD push higher "where doing so doesn't violate other
+            // principles" — a SHOULD with a stated escape clause, not a MUST.
+            // Measured across the 15,973-plan sweep: 9 plans (0.06%) clear §24's
+            // floor, are not minute-capped, and still stop below the tier their
+            // inputs earn. Whether another principle binds in those nine is not
+            // yet established, so an `error` would fail plans §35 itself may
+            // permit. This RECORDS the floor-stopping rather than asserting a
+            // cause — tracked as LR-EARNED-TIER-01.
+            severity: 'warn',
+            week: 0,
+            message: `Peak long run ${Math.round(peakLrKm * 10) / 10}km clears §24's floor but stops below the ${Math.round(tierRatio * 100)}% tier this runner's inputs earn (longest recent ${input.longest_recent_run_km}km, hard-session relationship '${input.hard_session_relationship ?? 'unset'}'). §35: a floor that becomes a ceiling is under-coaching.`,
+            actual: peakLrKm,
+            expected: `≥ ${tierRequired.toFixed(1)}`,
+          })
+        }
+      }
+
       if (peakLrKm + 0.01 < effectiveRequired) {
         violations.push({
           code: 'INV-PLAN-PEAK-LR-RACE-RATIO',
@@ -3569,7 +3684,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           if (mins > GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS + tol) {
             violations.push({
               code: 'INV-PLAN-VO2MAX-MAIN-SET-CAP',
-              principle_ref: 'CoachingPrinciples §8',
+              principle_ref: 'CoachingPrinciples §8, §88',
               severity: 'error', week: w.n, day,
               message: `VO2max main set "${sn.label}" is ${mins.toFixed(0)} min, over the ${GENERATION_CONFIG.VO2MAX_MAIN_SET_MAX_MINS}-min legacy ceiling.`,
               actual: `${mins.toFixed(0)} min`,
@@ -3581,7 +3696,8 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         if (work < floor - tol || work > ceil + tol) {
           violations.push({
             code: 'INV-PLAN-VO2MAX-MAIN-SET-CAP',
-            principle_ref: 'CoachingPrinciples §8',
+            // §88: its new granular rows are sized on THIS band, not a second one.
+            principle_ref: 'CoachingPrinciples §8, §88',
             severity: 'error', week: w.n, day,
             message: `VO2max work "${sn.label}" is ${work.toFixed(0)} min at Z4–5, outside the ${floor}–${ceil} min dose band (least sustainable work per minute; bounded at both ends).`,
             actual: `${work.toFixed(0)} min work`,
@@ -3640,7 +3756,13 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             // check to cover for threshold_ladder / threshold_pyramid. Naming it
             // here so the coverage manifest can see the link instead of reading
             // §86 as unchecked.
-            principle_ref: 'CoachingPrinciples §8, §86',
+            // §99 added 2026-09-15. §99 ("a session states the length its own
+            // structure needs") IS this check: it is the principle written when
+            // `hm_pace_intervals` stated 45 minutes for a session needing over 70,
+            // and the mechanism it names is this one. Named here rather than given
+            // a second invariant — two checks asserting one property is D-16, and
+            // the second one drifts.
+            principle_ref: 'CoachingPrinciples §8, §86, §99',
             severity: 'error', week: w.n, day,
             message: `"${sn.label}"'s stated duration does not fit its own prescribed structure (${mainMins.toFixed(1)} min of work+recovery needs ~${expectedTotal.toFixed(0)} min total with warm-up/cool-down).`,
             actual: `${sn.duration_mins} min`,
@@ -4812,6 +4934,51 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
               expected: 'easy | rest | cross-train',
             })
           }
+
+          // §92 — STRIDES, FOR A §89-GATED RUNNER ONLY.
+          //
+          // §57 bans strides in the foundation block; §92 lifts that ban for a
+          // runner who passes the §89 readiness gate, and for nobody else.
+          // Willy's condition of approval is absolute and separate from every
+          // other signal: a runner with ANY injury history gets no strides in
+          // foundation, however experienced they say they are.
+          //
+          // ⚠️ WHY THIS IS NEW CODE FOR AN OLD RULE. §92's own Config paragraph
+          // reads "Enforced by the amended `INV-PLAN-FOUNDATION-BLOCK`, which
+          // permits strides only when `meta.early_quality_onset` is set." That
+          // sentence was written on 2026-09-07 and the amendment was never made
+          // — grepped 2026-09-15: `invariants.ts` contained the word "strides"
+          // three times, all of them in the maintenance-injury block. The
+          // PRODUCER gates correctly (`foundationBlock.ts` checks the gate and
+          // the injury veto); the CHECKER was documented and absent. This is the
+          // §79 failure class exactly: a principle that reads as enforced, is
+          // not, and nothing can tell you which because the claim lives in prose.
+          if (hasStrideNote(session)) {
+            if (!plan.meta.early_quality_onset) {
+              violations.push({
+                code: 'INV-PLAN-FOUNDATION-BLOCK',
+                principle_ref: 'CoachingPrinciples §92, §57',
+                severity: 'error',
+                week: fw.n,
+                day: day as Day,
+                message: `Foundation week W${fw.n} carries strides without the §89 readiness gate. §57 bans strides for this block's population — fresh-return and novice runners whose musculoskeletal readiness lags their cardiovascular readiness — and §92 lifts the ban only for a runner the gate has certified.`,
+                actual: 'strides, early_quality_onset unset',
+                expected: 'no strides unless the §89 gate passed',
+              })
+            }
+            if ((input.injury_history ?? []).length > 0) {
+              violations.push({
+                code: 'INV-PLAN-FOUNDATION-BLOCK',
+                principle_ref: 'CoachingPrinciples §92',
+                severity: 'error',
+                week: fw.n,
+                day: day as Day,
+                message: `Foundation week W${fw.n} carries strides for a runner with injury history (${(input.injury_history ?? []).join(', ')}). §92's injury veto is absolute and outranks every other readiness signal (Willy's condition of approval).`,
+                actual: `strides with injury_history`,
+                expected: 'no strides',
+              })
+            }
+          }
         }
         // Volume cap: §57 permits the block to grow to effective baseline × 1.10
         // (+10%/week, capped at the final week). Effective baseline ≤
@@ -5275,6 +5442,336 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         message: `The deprecated 'compressed' flag (${plan.meta.compressed}) is no longer the OR of the two real fields (${t} || ${v}). A saved plan or an existing reader would now read a third, unowned answer.`,
         actual: String(plan.meta.compressed),
         expected: String(t || v),
+      })
+    }
+  }
+
+  // INV-PLAN-STRIDES-PRESENT (§28) — the cheapest fitness asset in coaching,
+  // and the easiest one to lose silently.
+  //
+  // 80 seconds of work. Without them a runner who only ever runs Z2 and
+  // threshold loses the ability to run faster than threshold efficiently, and
+  // race day finds them flat-footed at the gun. They are a coach NOTE on an
+  // existing easy run, not a session — which is exactly why nothing would have
+  // noticed them disappearing: no session count changes, no volume moves, no
+  // other invariant reads `coach_notes`.
+  //
+  // ⚠️ WHAT THIS DELIBERATELY DOES NOT ASSERT: §28 says the stride run is placed
+  // "midweek (Wed preferred)". Measured over 31,344 plans, that preference
+  // diverges on 146,732 week-instances — a 3-day week with Tue and Thu blocked
+  // has no midweek easy run to put them on. A PREFERENCE is not a rule, and an
+  // invariant that fires on the engine correctly doing its best gets switched
+  // off. The two placement rules §28 states as absolute — never the day before
+  // the long run, never the day after quality — hold on every one of those
+  // 31,344 plans, and those are what is asserted.
+  {
+    const raceWeekN = Math.max(0, ...plan.weeks.map(w => w.n))
+    for (const w of plan.weeks) {
+      if (w.n < GENERATION_CONFIG.STRIDES_FIRST_WEEK) continue   // also excludes foundation (n <= 0)
+      if (w.type === 'deload' || w.n === raceWeekN) continue     // §28 exempts both
+      const entries = Object.entries(w.sessions).filter(([, sn]) => !!sn) as [Day, Session][]
+      const stride = entries.filter(([, sn]) => hasStrideNote(sn))
+      // §28 appends a note to an EXISTING easy run. A 2-day week is a long run
+      // plus one other session, and a week whose only easy day sits the day
+      // before the long run or the day after quality has nowhere legal to put
+      // them. Measured: 2,168 week-instances across the sweep, every one of them
+      // a week with no eligible day rather than an eligible day left unused.
+      // Demanding strides there would demand a session the principle never asks
+      // for — and §28's own wording ("appends ... to one midweek easy run")
+      // presupposes the run exists.
+      const eligible = entries.filter(([d, sn]) => {
+        if (sn.type !== 'easy' || isLongRun(sn)) return false
+        const j = DAY_ORDER.indexOf(d)
+        const after = DAY_ORDER[j + 1], before = DAY_ORDER[j - 1]
+        if (after && w.sessions[after] && isLongRun(w.sessions[after]!)) return false
+        if (before && w.sessions[before]?.type === 'quality') return false
+        return true
+      })
+      if (stride.length === 0 && eligible.length === 0) continue
+      if (stride.length === 0) {
+        violations.push({
+          code: 'INV-PLAN-STRIDES-PRESENT',
+          principle_ref: 'CoachingPrinciples §28',
+          severity: 'error',
+          week: w.n,
+          message: `Week ${w.n} carries no stride note. §28 requires one from week ${GENERATION_CONFIG.STRIDES_FIRST_WEEK} on every non-deload, non-race week — 80 seconds of work for an adaptation that compounds across the build.`,
+          actual: 'no strides',
+          expected: 'one midweek easy run carrying the stride note',
+        })
+        continue
+      }
+      if (stride.length > 1) {
+        violations.push({
+          code: 'INV-PLAN-STRIDES-PRESENT',
+          principle_ref: 'CoachingPrinciples §28',
+          severity: 'error',
+          week: w.n,
+          message: `Week ${w.n} carries strides on ${stride.length} runs (${stride.map(([d]) => d).join(', ')}). §28 places them on ONE easy run.`,
+          actual: `${stride.length} stride runs`,
+          expected: '1',
+        })
+      }
+      const [day, sn] = stride[0]
+      if (sn.type !== 'easy') {
+        violations.push({
+          code: 'INV-PLAN-STRIDES-PRESENT',
+          principle_ref: 'CoachingPrinciples §28',
+          severity: 'error',
+          week: w.n, day,
+          message: `Strides are on a '${sn.type}' session ("${sn.label}"). §28 puts them on an EASY day so the legs are fresh enough to execute proper form.`,
+          actual: sn.type,
+          expected: 'easy',
+        })
+      }
+      const i = DAY_ORDER.indexOf(day)
+      const next = DAY_ORDER[i + 1]
+      const prev = DAY_ORDER[i - 1]
+      const nextSn = next ? w.sessions[next] : undefined
+      const prevSn = prev ? w.sessions[prev] : undefined
+      if (nextSn && isLongRun(nextSn)) {
+        violations.push({
+          code: 'INV-PLAN-STRIDES-PRESENT',
+          principle_ref: 'CoachingPrinciples §28',
+          severity: 'error',
+          week: w.n, day,
+          message: `Strides on ${day} sit the day before the long run. §28 places them away from it — fast turnover into a long run is fatigue the runner did not ask for.`,
+          actual: `${day}, long run on ${next}`,
+          expected: 'not the day before the long run',
+        })
+      }
+      if (prevSn && prevSn.type === 'quality') {
+        violations.push({
+          code: 'INV-PLAN-STRIDES-PRESENT',
+          principle_ref: 'CoachingPrinciples §28',
+          severity: 'error',
+          week: w.n, day,
+          message: `Strides on ${day} sit the day after a quality session. §28 places them away from it — the easy day after quality is recovery, and strides on it make two hard days in a row wearing one label.`,
+          actual: `${day}, quality on ${prev}`,
+          expected: 'not the day after quality',
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-RACE-WEEK-SHAKEOUT-CAP (§30) — a shakeout is a wake-up for the
+  // legs, not training.
+  //
+  // Anything past RACE_WEEK_SHAKEOUT_MAX_MINS has crossed into being a session
+  // and starts adding fatigue the runner cannot clear before the gun. §26's
+  // invariant already bans the wrong session TYPES in race week; nothing capped
+  // the shakeout's own size, so a shakeout could grow without tripping anything.
+  //
+  // The last run before a race should leave the runner wondering if it was
+  // enough — that is the correct feeling, and it is a size, not a sentiment.
+  {
+    const raceWeekN = Math.max(0, ...plan.weeks.map(w => w.n))
+    const raceWeek = plan.weeks.find(w => w.n === raceWeekN)
+    if (raceWeek) {
+      for (const [day, sn] of Object.entries(raceWeek.sessions) as [Day, Session | undefined][]) {
+        if (!sn || !isShakeout(sn)) continue
+        const cap = GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS
+        if (sn.duration_mins != null && sn.duration_mins > cap) {
+          violations.push({
+            code: 'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
+            principle_ref: 'CoachingPrinciples §30',
+            severity: 'error',
+            week: raceWeek.n, day,
+            message: `Race-week shakeout "${sn.label}" is ${sn.duration_mins} min, over §30's ${cap}-min cap. Past that it is a session, and it costs the runner fatigue they cannot recover before race day.`,
+            actual: `${sn.duration_mins} min`,
+            expected: `≤ ${cap} min`,
+          })
+        }
+        if (sn.rpe_target != null && sn.rpe_target > RACE_WEEK_SHAKEOUT_MAX_RPE) {
+          violations.push({
+            code: 'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
+            principle_ref: 'CoachingPrinciples §30',
+            severity: 'error',
+            week: raceWeek.n, day,
+            message: `Race-week shakeout "${sn.label}" is prescribed at RPE ${sn.rpe_target}. §30 holds shakeouts at RPE ≤ ${RACE_WEEK_SHAKEOUT_MAX_RPE} — the duration cap alone does not stop a short run being run hard.`,
+            actual: `RPE ${sn.rpe_target}`,
+            expected: `RPE ≤ ${RACE_WEEK_SHAKEOUT_MAX_RPE}`,
+          })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-VDOT-STALENESS-LADDER (§42) — the conservatism discount is a
+  // graduated ramp, and it stays on its own rungs.
+  //
+  // §42 replaced a binary 6-month cliff (3% straight to 8%) with base + 1% per
+  // 4-week block, capped. `VDOT_STALE_BENCHMARK_MONTHS` and its flat 5% then sat
+  // in config for months, documented as live, read by nothing — §42's own text
+  // keeps them as the worked example of why the consumer check exists.
+  //
+  // ⚠️ THIS ASSERTS THE RUNG, NOT THE DATE ARITHMETIC, and the reason is a
+  // denominator problem. `applyVdotDiscount` measures staleness against the
+  // generation clock; `validatePlan` receives a plan and an input and has no
+  // clock. Reconstructing "today" from the plan start would be wrong by however
+  // many days sit between signup and week 1 — enough to cross a 4-week block
+  // boundary and fail a correct plan. What holds regardless of the reference
+  // date: the value is one of the ladder's legal rungs, never below the base,
+  // never above the cap, and an UNDATED benchmark gets the base and nothing more.
+  // A discount computed by any other formula lands off the ladder and is caught.
+  {
+    const d = plan.meta.vdot_discount_applied_pct
+    if (d != null) {
+      const base = GENERATION_CONFIG.VDOT_CONSERVATIVE_DISCOUNT_PCT
+      const cap = GENERATION_CONFIG.VDOT_STALENESS_MAX_DISCOUNT_PCT
+      const step = GENERATION_CONFIG.VDOT_STALENESS_PER_4WK_PCT
+      const rungs: number[] = []
+      for (let v = base; v <= cap + 1e-9; v += step) rungs.push(Math.round(v * 1e6) / 1e6)
+      const onRung = rungs.some(r => Math.abs(r - d) < 1e-6)
+      if (!onRung) {
+        violations.push({
+          code: 'INV-PLAN-VDOT-STALENESS-LADDER',
+          principle_ref: 'CoachingPrinciples §42, §10',
+          severity: 'error',
+          week: 0,
+          message: `VDOT discount ${d}% is not a rung of §42's ladder (${rungs.join('%, ')}%). A discount off the ladder means something other than the staleness ramp computed it — the class of defect §42 was written to remove.`,
+          actual: `${d}%`,
+          expected: rungs.join('% / ') + '%',
+        })
+      }
+      if (!input.benchmark?.benchmark_date && Math.abs(d - base) > 1e-6) {
+        violations.push({
+          code: 'INV-PLAN-VDOT-STALENESS-LADDER',
+          principle_ref: 'CoachingPrinciples §42',
+          severity: 'error',
+          week: 0,
+          message: `An UNDATED benchmark was discounted ${d}%. With no date there is no staleness to price, so §10's base ${base}% is the whole answer — anything more is conservatism invented from nothing.`,
+          actual: `${d}%`,
+          expected: `${base}%`,
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING (§88) — Seiler's condition of approval.
+  //
+  // A fast-float set dies if the float drifts to the grey zone: the whole set
+  // becomes threshold-in-disguise, which is the single failure this product
+  // exists to prevent. §88 anchors the float step **E with `mode: ceiling`** —
+  // "a bound, not a suggestion" — and the float is RUN, not jogged, which is
+  // what makes the shape continuous and keeps time at vVO2max accumulating.
+  //
+  // Both properties live inside `derived_set`, so no session-level invariant
+  // could see them and none did. The dose half of §88 is already carried by the
+  // VO2MAX_WORK band above; this is the half that was unenforced.
+  {
+    for (const w of plan.weeks) {
+      for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+        if (!sn?.derived_set || !CONTINUOUS_VO2MAX_ROWS.has(sn.catalogue_id ?? '')) continue
+        const steps = sn.derived_set.blocks.flatMap(b => b.steps ?? [])
+        const float = steps.find(st => st.role === 'recovery')
+        if (!float) {
+          violations.push({
+            code: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING',
+            principle_ref: 'CoachingPrinciples §88',
+            severity: 'error',
+            week: w.n, day,
+            message: `"${sn.label}" (${sn.catalogue_id}) is a fast-float shape with no float step. Without it the set is reps with no recovery prescribed at all.`,
+            actual: steps.map(st => st.role).join(', ') || 'no steps',
+            expected: 'a recovery step',
+          })
+          continue
+        }
+        if (float.pace_mode !== 'ceiling') {
+          violations.push({
+            code: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING',
+            principle_ref: 'CoachingPrinciples §88',
+            severity: 'error',
+            week: w.n, day,
+            message: `"${sn.label}"'s float is prescribed as a '${float.pace_mode ?? 'target'}', not a ceiling. §88 bounds it deliberately: a float allowed to drift turns the whole set into threshold wearing a VO2max label.`,
+            actual: float.pace_mode ?? 'target',
+            expected: 'ceiling',
+          })
+        }
+        if (RUN_FLOAT_ROWS.has(sn.catalogue_id ?? '') && float.modality !== 'run') {
+          violations.push({
+            code: 'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING',
+            principle_ref: 'CoachingPrinciples §88',
+            severity: 'error',
+            week: w.n, day,
+            message: `"${sn.label}"'s float is a '${float.modality}'. §88's float is RUN — that is what keeps heart rate from fully dropping and accumulates time at vVO2max across the set. Jogging it makes this an ordinary rep session.`,
+            actual: float.modality,
+            expected: 'run',
+          })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-GATED-SURPLUS-IN-PLAN (§97) — a demonstrated runner's surplus
+  // weeks belong INSIDE the plan.
+  //
+  // §76 anchors the plan to race day and delays the start when weeks are
+  // spare; ADR-020 then fills the delay with a §57 foundation block. So the
+  // runner trains those weeks either way — what §76 actually produces is real
+  // training sitting OUTSIDE the periodisation arc, carved out of five
+  // invariants and described by §57's own text as "habit and routine, not
+  // adaptation". For a runner the §89 gate has just certified as having a
+  // current base and doing structured work most weeks, that is the wrong object.
+  //
+  // Two mechanical claims: a gated runner gets no foundation block, and the
+  // plan honours `max_weeks` — the signature's own declared bound (§17), which
+  // §97 explicitly does not exceed.
+  if (plan.meta.early_quality_onset) {
+    // ⚠️ EXEMPT WHEN THE RUNNER ASKED FOR IT. §97 governs what the ENGINE does
+    // with surplus weeks at generation: it extends the plan instead of handing
+    // them to §57. It does not govern ADR-020's deferred decision, where a
+    // runner with a >28-day gap is ASKED and answers 'add' — that block is
+    // composed afterwards by `composePlanWithFoundation`, on the runner's own
+    // say-so, and re-validated here. Measured: 16 sweep cases, every one of them
+    // a foundation_decision path. Firing on a runner's answered choice would be
+    // this invariant overruling the person it is meant to serve.
+    const foundationWeeks = plan.weeks.filter(w => w.n <= 0)
+    const signatureMax = PLAN_SIGNATURES[distKey as keyof typeof PLAN_SIGNATURES]?.max_weeks
+    const mainWeekCount = plan.weeks.filter(w => w.n >= 1).length
+    // §97 extends the plan INTO `max_weeks` and explicitly not past it — "the
+    // signature's own declared bound; this honours a limit §17 already set, it
+    // does not exceed one." Once the plan is AT that bound the extension is
+    // exhausted, and surplus calendar time beyond it has nowhere else to go but
+    // §57. Measured: 10 sweep cases, every one a plan already at max_weeks with
+    // gap left over. Firing there would demand the plan break §17 to satisfy §97.
+    const extensionExhausted = signatureMax != null && mainWeekCount >= signatureMax
+    if (foundationWeeks.length > 0 && input.foundation_decision !== 'add' && !extensionExhausted) {
+      violations.push({
+        code: 'INV-PLAN-GATED-SURPLUS-IN-PLAN',
+        principle_ref: 'CoachingPrinciples §97',
+        // `warn`, and the reason is architectural rather than coaching (§34).
+        //
+        // MEASURED, 15,973-plan sweep: 5 plans (0.03%). Every one has a
+        // signup-to-start gap of 10-40 days and no 'add' decision, and sits
+        // BELOW its signature's max_weeks — so the extension had room and did
+        // not happen.
+        //
+        // The mechanism, stated as a hypothesis because it is one: §97's
+        // extension is decided at GENERATION, from race-date arithmetic. The
+        // foundation gap is measured at COMPOSE time, from `today` against the
+        // plan's own start — a quantity `generateRulePlan` never had. So a
+        // gated runner whose surplus only becomes visible later can still be
+        // handed a §57 block that §97 says is the wrong object for them.
+        // Closing it means giving generation a value it currently cannot see,
+        // which is an ADR-020 boundary change, not a threshold tweak. Filed as
+        // GATED-SURPLUS-COMPOSE-01; an `error` here would fail five real plans
+        // for a gap in the architecture rather than in the plan.
+        severity: 'warn',
+        week: 0,
+        message: `A §89-gated runner was given ${foundationWeeks.length} foundation week(s). §97 puts their surplus weeks inside the periodised plan instead — a certified runner should not open the app to a fortnight of "habit and routine".`,
+        actual: `${foundationWeeks.length} foundation weeks`,
+        expected: '0 — the plan extends instead',
+      })
+    }
+    if (signatureMax && mainWeekCount > signatureMax) {
+      violations.push({
+        code: 'INV-PLAN-GATED-SURPLUS-IN-PLAN',
+        principle_ref: 'CoachingPrinciples §97, §17',
+        severity: 'error',
+        week: 0,
+        message: `Plan runs ${mainWeekCount} weeks against ${distKey}'s declared max of ${signatureMax}. §97 extends the plan INTO the signature's bound, never past it.`,
+        actual: `${mainWeekCount} weeks`,
+        expected: `≤ ${signatureMax}`,
       })
     }
   }
