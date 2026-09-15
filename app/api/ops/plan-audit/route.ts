@@ -102,6 +102,9 @@ export async function POST(req: NextRequest) {
 
   let checked = 0, invalid = 0, skipped = 0, unchanged = 0, changed = 0
   const flagged: Array<{ user_id: string; codes: string[]; state: 'new' | 'changed' | 'resolved' }> = []
+  // AGE OF EVERY BREACHING PLAN, newest first. See the summary block at the end
+  // for why this is the number that makes the audit readable.
+  const invalidPlanAgesDays: number[] = []
 
   for (const row of rows ?? []) {
     const plan = row.plan_json as Plan | null
@@ -139,6 +142,14 @@ export async function POST(req: NextRequest) {
     }
 
     invalid++
+    // Age is recorded for EVERY breaching plan, including the ones the dedupe
+    // below skips. The dedupe is right for per-user events (do not re-report an
+    // unchanged finding) and wrong for the summary: a plan that breaches
+    // identically every day still counts toward "how much of the fleet is
+    // breaching", and excluding it would make the fleet look like it was
+    // healing every time a finding went quiet.
+    invalidPlanAgesDays.push(
+      Math.floor((Date.now() - new Date(row.updated_at as string).getTime()) / 86_400_000))
     if (prev === now) { unchanged++; continue }
     changed++
     flagged.push({ user_id: row.user_id, codes, state: prev ? 'changed' : 'new' })
@@ -163,5 +174,54 @@ export async function POST(req: NextRequest) {
     console.error(`[plan-audit] hit MAX_PLANS (${MAX_PLANS}) — audit is truncated and needs pagination`)
   }
 
-  return NextResponse.json({ checked, invalid, unchanged, changed, skipped, flagged })
+  // ── THE CUT THAT MAKES THIS READABLE (2026-09-15) ──────────────────────────
+  //
+  // Measured that day: 43 events over 11 days, 26 distinct invariant codes, 16
+  // users holding a plan that breaches its own constitution, and NOBODY had read
+  // any of it. The probe was not broken — it was unreadable, which has the same
+  // effect and is harder to notice.
+  //
+  // The reason it was unreadable is the LIVE-PLAN POLICY: doctrine and engine
+  // fixes are deliberately never backfilled to existing plans. So a plan built
+  // in April is validated against a constitution that has gained dozens of
+  // invariants since, and it breaches BY DESIGN. Measured, the correlation is
+  // almost perfect: April plan 14 codes, June plans 5-10, September plans 1-3.
+  // A reader cannot tell that expected backlog from a real regression, so they
+  // stop reading, and then a genuinely new breach lands in the same stream and
+  // is invisible. NOISE-GATE-01, applied to an ops probe rather than an invariant.
+  //
+  // ONE NUMBER FIXES IT: the age of the NEWEST breaching plan. The only question
+  // this audit can answer about the engine as it stands today is "did it recently
+  // produce a bad plan?", and nothing older than the last engine change can speak
+  // to that. If the newest breaching plan is weeks old, the fleet is carrying
+  // history and nothing is wrong now. If it is hours old, something is.
+  //
+  // Deliberately NOT a fixed threshold: "current" would have to mean "since the
+  // last deploy", which this route cannot know, and a hardcoded window would rot
+  // silently the first time the deploy cadence changed. An age distribution needs
+  // no maintenance and says more.
+  invalidPlanAgesDays.sort((a, b) => a - b)
+  const ageBuckets = {
+    '0-1d':  invalidPlanAgesDays.filter(d => d <= 1).length,
+    '2-7d':  invalidPlanAgesDays.filter(d => d > 1 && d <= 7).length,
+    '8-30d': invalidPlanAgesDays.filter(d => d > 7 && d <= 30).length,
+    '31d+':  invalidPlanAgesDays.filter(d => d > 30).length,
+  }
+  const summary = {
+    checked, invalid, skipped,
+    newest_invalid_plan_age_days: invalidPlanAgesDays[0] ?? null,
+    invalid_by_plan_age: ageBuckets,
+  }
+
+  // A SUMMARY EVENT, so a digest has one row to read instead of N per-user rows.
+  // Recorded under the existing kind with a distinct `source`: the audit's own
+  // history lookup filters on `source === 'plan-audit'`, so this cannot pollute
+  // the per-user dedupe, and it needs no new OpsEventKind or migration.
+  //
+  // Recorded on EVERY run, including clean ones. A backstop nobody can see
+  // firing is one nobody trusts — the same argument that made
+  // `plan_enrich_server_saved` record its success case.
+  await recordOpsEvent('plan_rule_invalid', { source: 'plan-audit-summary', ...summary }, null)
+
+  return NextResponse.json({ ...summary, unchanged, changed, flagged })
 }
