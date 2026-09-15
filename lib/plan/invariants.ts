@@ -5793,9 +5793,18 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // for a gap in the architecture rather than in the plan.
         severity: 'warn',
         week: 0,
-        message: `A §89-gated runner was given ${foundationWeeks.length} foundation week(s). §97 puts their surplus weeks inside the periodised plan instead — a certified runner should not open the app to a fortnight of "habit and routine".`,
-        actual: `${foundationWeeks.length} foundation weeks`,
-        expected: '0 — the plan extends instead',
+        message: `A §89-gated runner was given ${foundationWeeks.length} foundation week(s) `
+          + `while their plan sits at ${mainWeekCount} of ${distKey}'s ${signatureMax} maximum weeks. `
+          + `§97 spends that headroom on periodised weeks first — a certified runner should not open `
+          + `the app to a fortnight of "habit and routine" while their own plan had room to grow.`,
+        actual: `${foundationWeeks.length} foundation weeks, plan ${mainWeekCount}/${signatureMax}`,
+        // NOT "expected 0". MEASURED 2026-09-15: the two worst cases have 2 weeks
+        // of headroom against gaps of 3.4 and 5.7 weeks, so §97 could absorb some
+        // of the surplus and never all of it. Demanding zero overstates what the
+        // principle can deliver, and an invariant that asks for the impossible is
+        // one people learn to ignore (D-21). What §97 DOES promise is that the
+        // headroom is spent before §57 is reached for.
+        expected: `the plan extended to ${signatureMax} weeks before any foundation block`,
       })
     }
     if (signatureMax && mainWeekCount > signatureMax) {
