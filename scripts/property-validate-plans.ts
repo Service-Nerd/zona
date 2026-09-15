@@ -579,9 +579,28 @@ for (const input of inputs) {
   }
 
   const errors = composed.violations.filter(v => v.severity === 'error')
+
+  // EXPLAIN SEES WARNS TOO (2026-09-15). It used to sit inside the
+  // `errors.length > 0` branch, so `SWEEP_EXPLAIN=<a warn code>` printed nothing
+  // and reported nothing — which is backwards. A warn is the violation you MOST
+  // need to triage: an error blocks the build and gets fixed immediately, while
+  // a warn is deliberately tracked and lives for weeks. Triaging
+  // INV-PLAN-PEAK-LR-EARNED-TIER (10 plans in 15,973) meant hand-building three
+  // separate grids, none of which reproduced it, because the only tool that
+  // could name the shape refused to look at it.
+  if (EXPLAIN && explained.length < 5) {
+    for (const v of composed.violations.filter(e => e.code === EXPLAIN)) {
+      explained.push(
+        `  [${v.severity}] ${v.message}\n     week ${v.week}${v.day ? ' ' + v.day : ''} — got ${v.actual}, expected ${v.expected}` +
+        `\n     plan_start: ${PLAN_START}   tier: ${planTier}   volume_profile: ${plan.meta?.volume_profile ?? '-'}` +
+        `\n     input: ${JSON.stringify(input)}`)
+      break
+    }
+  }
+
   if (errors.length > 0) {
     violatingPlans++
-    if (EXPLAIN && explained.length < 5) {
+    if (false) {
       for (const v of errors.filter(e => e.code === EXPLAIN)) {
         // Dump the COMPLETE input, not a hand-picked subset.
         //

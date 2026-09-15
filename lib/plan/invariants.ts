@@ -2058,6 +2058,37 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
               ? GENERATION_CONFIG.PEAK_LR_RATIO_TARGET[distKey]
               : ratio
         const capBinding = (longSn?.duration_mins ?? 0) >= longCapMins - 5
+
+        // ⚠️ §35's TIER IS A SIZING FLOOR, NOT A DELIVERY PROMISE, and asserting
+        // it on the delivered long run asks the plan for something §35 never said.
+        //
+        // TRACED, not inferred (LR-EARNED-TIER-01, 2026-09-15). Instrumenting the
+        // producer on the worst case showed the lift working perfectly: an HM
+        // runner earning the 95% stretch tier left `buildWeekSessions` with peak
+        // long runs of 23.4 km and 22.7 km, both ABOVE the 20.5 km tier — the
+        // floor never even bound. The post-passes then reduced them to 15 and 19:
+        // §47 alternates the peak weeks, §9 applies build step-backs, §45 caps
+        // week-on-week growth. Every one is ratified, and §35 defers to them in
+        // its own words: "where doing so doesn't violate other principles."
+        //
+        // This is the CURVE-vs-DELIVERED distinction ADR-022/§94 already names,
+        // one ratio over. The observable signature is that the plan's LONGEST run
+        // ends up OUTSIDE the peak phase — exactly when the alternation and
+        // step-back machinery has reshaped the peak, and exactly when the tier
+        // cannot be judged on what survived. `INV-PLAN-PEAK-IN-PEAK-PHASE` already
+        // reports that shape separately, on 21.2% of plans.
+        //
+        // ⚠️ A FIRST ATTEMPT EXEMPTED ON §45's CAP ARITHMETIC AND WAS WRONG: it
+        // assumed the allowance was `prev + max(prev x 20%, 4)`, which gives the
+        // observed 19 and looked like a clean explanation.
+        // `LONG_RUN_PROGRESSION_CAP_ABS_KM` is 5, so §45 actually allowed 20 and
+        // the 19 had another cause entirely. A string assertion caught it before
+        // it shipped. Trace the producer; do not reverse-engineer a mechanism
+        // from the number it happened to emit.
+        const planLongestKm = Math.max(0, ...plan.weeks
+          .filter(w => w.n >= 1 && w.type !== 'race')
+          .map(w => longRunKmOf(w) ?? 0))
+        const peakHoldsThePeak = peakLrKm >= planLongestKm - 0.01
         // The producer rounds the tier UP to DISTANCE_ROUNDING_PRECISION_KM and
         // later passes round the delivered long run DOWN, so the two can sit a
         // full precision step apart on arithmetic alone. Comparing against the
@@ -2066,7 +2097,8 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // and still fired on 18.4615 vs 18.49.
         const prec = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
         const tierRequired = input.race_distance_km * tierRatio - prec * 2
-        if (tierRatio > ratio && !capBinding && peakLrKm + 0.01 < tierRequired) {
+        if (tierRatio > ratio && !capBinding && peakHoldsThePeak
+            && peakLrKm + 0.01 < tierRequired) {
           violations.push({
             code: 'INV-PLAN-PEAK-LR-EARNED-TIER',
             principle_ref: 'CoachingPrinciples §35, §24',
@@ -2083,7 +2115,10 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
             week: 0,
             message: `Peak long run ${Math.round(peakLrKm * 10) / 10}km clears §24's floor but stops below the ${Math.round(tierRatio * 100)}% tier this runner's inputs earn (longest recent ${input.longest_recent_run_km}km, hard-session relationship '${input.hard_session_relationship ?? 'unset'}'). §35: a floor that becomes a ceiling is under-coaching.`,
             actual: peakLrKm,
-            expected: `≥ ${tierRequired.toFixed(1)}`,
+            // Two decimals: at one, a 45-metre shortfall printed as
+            // "got 19, expected ≥ 19.0", which reads as a broken invariant
+            // rather than a real gap and sent triage the wrong way for a round.
+            expected: `≥ ${tierRequired.toFixed(2)}`,
           })
         }
       }
