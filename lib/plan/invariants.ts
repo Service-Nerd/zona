@@ -109,6 +109,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-COMPRESSION-SPLIT',
   'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK',
   'INV-PLAN-TAPER-DELIVERED-DEPTH',
+  'INV-PLAN-UNCOVERED-RUNWAY-DECLARED',
   'INV-PLAN-STRIDES-PRESENT',
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
   'INV-PLAN-VDOT-STALENESS-LADDER',
@@ -5898,7 +5899,26 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           // The pass could not have reached the ceiling — §34 residual, not a
           // violation. Compared against the room LEFT, so a week that was
           // trimmed to the floor and still overshoots stays silent.
-          if (trimmableKm(w) < overshoot) continue
+          //
+          // §52'S CAP IS PART OF "COULD HAVE", and leaving it out made this fire
+          // on 181 of 15,973 once the sweep's runway axis widened the sample.
+          // §6 Am.2 may not cut a week below `long run ÷ LONG_RUN_MAX_PCT_OF_WEEKLY`
+          // — trimming easy runs raises the long run's SHARE, and breaching that
+          // cap is an `error` on INV-PLAN-LR-MAX-WEEKLY-PCT. On a 2-day week the
+          // long run is most of the week, so that floor binds long before the
+          // easy-run floor does: measured, a 5K taper week with 5.5 km of easy
+          // headroom had only 0.2 km of LEGAL room. Reporting headroom the
+          // producer is forbidden to use is a check crying wolf (NOISE-GATE-01).
+          let longKm = 0
+          for (const sn of Object.values(w.sessions)) {
+            if (!sn || !isLongRun(sn)) continue
+            longKm = Math.max(longKm, sessionKmSelfPaced(sn) ?? 0)
+          }
+          const lrFloorKm = longKm > 0
+            ? longKm / (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100)
+            : 0
+          const legalRoom = Math.min(trimmableKm(w), Math.max(0, delivered - lrFloorKm))
+          if (legalRoom < overshoot) continue
           violations.push({
             code: 'INV-PLAN-TAPER-DELIVERED-DEPTH',
             principle_ref: 'CoachingPrinciples §6',
@@ -5910,6 +5930,43 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           })
         }
       }
+    }
+  }
+
+  // INV-PLAN-UNCOVERED-RUNWAY-DECLARED (§57 Am. / §76 Am.) — weeks the plan does
+  // not cover must be DECLARED.
+  //
+  // §76 says a runner left with an uncoached void "will fill it by guessing" and
+  // asserts "the gap before it is already owned by the foundation block". For any
+  // gap above FOUNDATION_MAX_WEEKS it is not: measured, a first-time marathoner
+  // with a 25-week runway gets 3 foundation + 18 main and FOUR uncovered weeks;
+  // at 52 weeks, thirty-one. Nothing told them, while the same plan carried a
+  // `volume_constraint_note` and a `long_run_shortfall_note`.
+  //
+  // READS A STAMP, and that is deliberate rather than lazy. The count needs
+  // `today` and the built foundation block together; `today` is generation-time
+  // state this validator never receives, exactly as the volume curve is for
+  // `volume_shortfall_pct` (VOL-SHORTFALL-01, which records the same reasoning).
+  // Without the stamp this could only check the note against nothing.
+  //
+  // SILENT when the stamp is absent — a plan generated without
+  // composePlanWithFoundation (scripts, generateRulePlan's own validation tail)
+  // has no runway to judge, and firing there would report the harness rather than
+  // the plan (NOISE-GATE-01).
+  {
+    const uncovered = plan.meta.uncovered_runway_weeks
+    if (typeof uncovered === 'number'
+        && uncovered >= GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD
+        && !plan.meta.uncovered_runway_note) {
+      violations.push({
+        code: 'INV-PLAN-UNCOVERED-RUNWAY-DECLARED',
+        principle_ref: 'CoachingPrinciples §57, §76',
+        severity: 'error',
+        week: 0,
+        message: `Plan leaves ${uncovered} week(s) between today and its first week with no note. §76: a runner handed an uncoached void fills it by guessing. Every other structural limit in this engine declares itself (§23, §34, §40c, §52); this one must too.`,
+        actual: `${uncovered} uncovered weeks, no note`,
+        expected: 'meta.uncovered_runway_note present',
+      })
     }
   }
 

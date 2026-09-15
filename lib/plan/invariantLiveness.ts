@@ -2,6 +2,7 @@ import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan, INVARIANT_CODES } from '@/lib/plan/invariants'
 import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
 import { isLongRun } from '@/lib/plan/sessionRole'
+import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
 
 /**
@@ -71,6 +72,18 @@ export const MUTATIONS: Mutation[] = [
     const meta = p.meta as unknown as Record<string, unknown>
     meta.returning_runner_allowance_active = true
     delete meta.returning_runner_note
+  } },
+  // §57 Am. / §76 Am. — the uncovered pre-plan runway. Same family, and it needs
+  // the same shape: the probe corpus is generated with `plan_start` pinned to
+  // `today`, so NO probe plan has a runway at all and the stamp is never set.
+  // Waking it means asserting the decision (weeks the plan does not cover) with
+  // the telling removed — which is the exact silent state this invariant exists
+  // to catch, and the state a 25-week charity runner was in before it shipped.
+  { name: 'claim an uncovered runway, delete its note', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    meta.uncovered_runway_weeks =
+      GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD + 2
+    delete meta.uncovered_runway_note
   } },
   // §79 — VO2max inside the protected window. The re-entry check was
   // DECORATIVE until 2026-09-15 (it read calendar weeks, which are all-easy by

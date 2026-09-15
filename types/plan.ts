@@ -604,6 +604,22 @@ export interface PlanMeta {
 
   long_run_shortfall_note?: string
 
+  /**
+   * CoachingPrinciples §57 Amendment (FOUNDATION-LONG-RUNWAY-01, Coaching Board
+   * 2026-09-15) — whole weeks between today and the first week the plan covers,
+   * AFTER the foundation block has taken what it can.
+   *
+   * STAMPED, not recomputable. `today` is generation-time state `validatePlan`
+   * never receives, exactly as the volume curve is for `volume_shortfall_pct`.
+   * Without the stamp the invariant could only check the note's presence against
+   * nothing. Absent when the plan was generated without composition (scripts,
+   * the generator's own validation tail) — the invariant is silent then.
+   */
+  uncovered_runway_weeks?: number
+  /** The honest note for those weeks. Present iff `uncovered_runway_weeks` is at
+   *  or above `FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD`. */
+  uncovered_runway_note?: string
+
   fitness_intensity_level?: 'beginner' | 'intermediate' | 'experienced'
   /**
    * CoachingPrinciples §79 — the level the runner selected in the wizard, as

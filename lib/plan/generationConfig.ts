@@ -1429,6 +1429,29 @@ export const GENERATION_CONFIG = {
   FOUNDATION_GAP_AUTO_DAYS:    28,   // 7–28: auto-generate silently
   // > 28: offer three-option choice (see foundationBlock.ts)
   FOUNDATION_MAX_WEEKS:         3,   // max foundation block length (weeks)
+
+  // CoachingPrinciples §57 Amendment (FOUNDATION-LONG-RUNWAY-01, Coaching Board
+  // 2026-09-15) — whole uncovered weeks at or above which the plan MUST carry an
+  // honest note about them.
+  //
+  // MEASURED. A charity runner typically gets their place months out, so a long
+  // runway is the NORMAL case for this cohort, and the block does not reach it:
+  // at a 25-week runway M1 gets 3 foundation + 18 main = 21 covered and 4 weeks
+  // UNCOVERED; at 30w it is 9, at 40w 19, at 52w 31. The runner opens the app on
+  // 21 September and the first dated thing on their plan is 18 October.
+  //
+  // The filed remedy — raise FOUNDATION_MAX_WEEKS — was VETOED on measurement:
+  // §57's own "final foundation week must not exceed effective baseline x 1.10
+  // REGARDLESS of block length" binds from week 2, so a forced 12-week block
+  // delivers 15.0 then 16.4 eleven times. Nine identical weeks is not
+  // preparation, and CB-1 already ruled the block is "habit and routine, not
+  // adaptation" (Sims).
+  //
+  // TWO, not one. One week before a plan starts is a rest-and-admin week and a
+  // note about it is noise (NOISE-GATE-01); the <7-day case already has §57's
+  // inline nudge. Two or more is a void the runner fills by guessing — §76's own
+  // words for the same failure at the other end of the plan.
+  FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD: 2,
   FOUNDATION_WEEKLY_INCREASE_PCT: 10, // max +% per week within the block
   FOUNDATION_LONG_RUN_MAX_PCT:   35, // long run cap as % of that week's weekly_km — aligned with §9's binge threshold (Coaching Board, Coaching-1). Was 50, which let the long run dominate a reduced fresh-return week.
   FRESH_RETURN_EFFECTIVE_BASELINE_FRACTION: 0.70, // mirrors FRESH_RETURN_START_FRACTION

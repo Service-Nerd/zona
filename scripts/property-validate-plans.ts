@@ -163,7 +163,15 @@ const maxWeekdays = [undefined, 30, 45, 60, 90]
 // INV-PLAN-FOUNDATION-BLOCK were unreachable by the gate that runs on every
 // commit. Values straddle each §57 gap boundary: no block, auto-generated
 // (7-28 days), and the user-chosen case (> 28).
-const foundationGapDays = [0, 10, 24, 40]
+// 2026-09-15 (FOUNDATION-LONG-RUNWAY-01) — 91 and 175 ADDED. The axis topped out
+// at 40 days, which is 5 whole weeks: FOUNDATION_MAX_WEEKS takes 3 and leaves 2
+// uncovered, so the sweep only ever brushed the threshold of §57's uncovered-
+// runway obligation and never the cohort it exists for. A CHARITY RUNNER TYPICALLY
+// GETS THEIR PLACE MONTHS OUT — measured, a 25-week marathon runway leaves 4
+// uncovered weeks and a 40-week runway leaves 19. Those are the NORMAL case for
+// this cohort and the grid could not see them. 91 days (13 weeks -> ~10 uncovered)
+// and 175 days (25 weeks -> ~22 uncovered) put the real shape in the sweep.
+const foundationGapDays = [0, 10, 24, 40, 91, 175]
 
 // COVERAGE GATE (2026-09-04) — both of these were flagged by the gate on its
 // first run as declared-but-never-set, and both are REAL engine paths.

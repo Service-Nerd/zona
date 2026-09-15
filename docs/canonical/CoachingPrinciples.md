@@ -515,8 +515,23 @@ M1d's first taper week was **3% below its pre-taper week**. That is a runner tol
 they are tapering and handed the same week again, and it was on the showcase
 list.
 
-**Residual, stated:** `INV-PLAN-TAPER-DELIVERED-DEPTH` fires on **3 of 15,973**
-sweep plans (0.02%). `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` moves **584 → 588** — a
+**Residual, stated:** `INV-PLAN-TAPER-DELIVERED-DEPTH` fires on **4 of 15,973**
+sweep plans (0.03%).
+
+> ⚠️ **This figure was 3, then 181, then 4 within the same day, and the middle
+> number is the one worth keeping.** Widening the sweep's `foundationGapDays` axis
+> for FOUNDATION-LONG-RUNWAY-01 re-rolled the whole seeded sample and took this
+> check to **181 of 15,973** — every one a **2-day week**, and every one a FALSE
+> alarm. The check measured easy-run headroom but not **§52's cap**, which is what
+> actually binds: trimming easy runs raises the long run's SHARE, so a 5K taper
+> week showing 5.5 km of easy headroom had **0.2 km of LEGAL room**. The check was
+> reporting room the engine is forbidden to use. Fixed by giving the invariant the
+> same §52 floor the pass already had.
+>
+> Two lessons. **A firing rate is a property of the SAMPLE, not just the rule** —
+> adding one axis value moved every warn rate in that table, so rates measured
+> before and after are not comparable. And **a checker that knows only half the
+> producer's constraints reports the other half as defects.** `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` moves **584 → 588** — a
 trimmed taper week makes the long run more clearly the longest, so §6 Am.1 now
 measures the real one on four more plans. Neither is hidden.
 
@@ -2211,7 +2226,25 @@ The Foundation Block is a pre-plan preparation phase generated when the gap betw
 |-----|--------|
 | < 7 days | Inline nudge only — "You've got N days before your plan starts. Get moving." No block generated. |
 | 7–28 days | Auto-generate Foundation Block silently. Surface in plan calendar with subdued styling. |
-| > 28 days | Offer the runner a choice: Start Now (plan_start = today, no block) / Add Foundation Block (auto-generated, plan_start unchanged) / Skip (dismiss, re-surface if user revisits wizard). |
+| > 28 days | Offer the runner a choice: **Start Now** (no block — see the correction below) / **Add Foundation Block** (auto-generated, plan_start unchanged) / **Skip** (dismiss, re-surface if user revisits wizard). |
+
+> ⚠️ **"Start Now" DOES NOT mean `plan_start = today`, and it never could — corrected 2026-09-15 under D-21 (FOUNDATION-LONG-RUNWAY-01, Coaching Board).**
+> This row read *"Start Now (plan_start = today, no block)"* for months. §76 anchors
+> the plan backwards from race day and `calcPlanLength` sets
+> `planStart = addDays(raceWeekStart, -(totalWeeks - 1) * 7)`, so whenever the
+> calendar holds more weeks than §17's bound for the distance, **§76 forbids the
+> behaviour §57 promised.** Measured on a 25-week marathon runway, `start_now` and
+> `skip` produce byte-identical plans: `plan_start` 2026-11-09, 49 idle days. The
+> value is read in exactly one place — `plannedFoundationWeeks`, where it falls
+> through as "not add".
+>
+> D-21 says a principle that cannot be satisfied is a defect in the **principle**.
+> The option is therefore *"start without a foundation block"*, which is what it
+> has always done and is a real choice (a runner who would rather keep their own
+> routine than be handed three prescribed easy weeks). It is **not** an offer to
+> move the plan forward, and must never be presented as one.
+
+
 
 ### Volume rules
 
@@ -2317,6 +2350,89 @@ never saw them and `INV-PLAN-FOUNDATION-BLOCK` — ratified by this board in
 Coaching-1 — had never once run in production. See ADR-020.
 
 ---
+
+---
+
+### Amendment — the weeks the plan does NOT cover must be declared (FOUNDATION-LONG-RUNWAY-01, Coaching Board 2026-09-15)
+
+**Principle.** When more than `FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD` whole
+weeks sit between today and the first week the plan covers — after the foundation
+block has taken what it can — the plan MUST carry
+`meta.uncovered_runway_note` saying so.
+
+**Why.** §76 says a runner left with an uncoached void *"will fill it by guessing"*,
+and asserts that *"the gap before it is already owned by the foundation block,
+which exists for exactly this situation."* **It is not.** `FOUNDATION_MAX_WEEKS` is
+3, so measured on M1 (first-time marathon, 15 km/wk, `training_age: '<6mo'`):
+
+| runway | gap | foundation | main | covered | **uncovered** |
+|---|---|---|---|---|---|
+| 20w | 14d | 2 | 18 | 20 | 0 |
+| 22w | 28d | 3 | 18 | 21 | 1 |
+| **25w** | **49d** | **3** | **18** | **21** | **4** |
+| 30w | 84d | 3 | 18 | 21 | 9 |
+| 40w | 154d | 3 | 18 | 21 | 19 |
+| 52w | 238d | 3 | 18 | 21 | 31 |
+
+A charity runner typically gets their place months out, so **a long runway is the
+NORMAL case for this cohort**, not an edge case. At 25 weeks they open the app on
+21 September and the first dated thing on their plan is 18 October.
+
+**The filed remedy was VETOED on measurement.** Raising `FOUNDATION_MAX_WEEKS`
+fails because §57's own ceiling — *"the final foundation week must not exceed
+effective baseline × 1.10 regardless of block length"* — binds from week 2. A
+forced 12-week block delivers **15.0 then 16.4 eleven times**. Nine identical weeks
+is not preparation, and CB-1 already ruled the block is *"habit and routine, not
+adaptation"* (Sims). Raising the ×1.10 ceiling instead would convert the block into
+a base phase, which CB-1 ruled it is not.
+
+**So the void is real and, for now, structural — which makes the obligation
+honesty, not coverage.** Every other structural limit in this engine already pairs
+with one: §23's maintenance note, §34's residual, §40c's shortfall note, §52's note,
+ADR-022. The pre-plan gap had none, on a plan that was simultaneously carrying a
+`volume_constraint_note` and a `long_run_shortfall_note`.
+
+**Sims's binding point, recorded because it is the reason this is `error` and not
+`warn`:** a runner in that gap **is not resting, they are training unsupervised**,
+and for the women in this cohort unsupervised ramping into a first marathon is
+exactly where energy availability and bone loading go wrong. We will never see it.
+Silence is not neutral.
+
+**The note may not oversell the gap.** It says how many weeks, why they sit before
+the plan rather than inside it, and to keep running easy without ramping. It does
+**not** call them preparation — copy that oversold unsupervised weeks would be
+worse than the silence it replaces.
+
+> **Willy, dissenting on the remedy while agreeing on the finding:** a `<6mo`
+> training age is the widest cardiovascular-to-musculoskeletal gap we ever see, and
+> those weeks are the cheapest tissue-adaptation weeks available. Spending them
+> idle and then compressing the same preparation into 18 weeks is the **worse**
+> injury path. He will not sign a longer foundation block — flat 16.4 km loads
+> nothing — but he holds that the weeks should be **trained**, not merely declared.
+
+> **RECORDED AND DEFERRED — the runway should earn a longer PLAN (McMillan/Willy).**
+> §97 (CB-ONSET-03) already ruled this exact trade-off, in these words: *"'delay the
+> start' does not create rest; it creates training that sits outside the
+> periodisation arc and is carved out of five invariants"* — and raised the cap to
+> §17's `max_weeks`, **but only for a §89-gated runner.** M1 is the precise opposite
+> of gated, and needs it more. The engine delivered **18 weeks of an available 20**,
+> so headroom §17 already declares is sitting unused. **Hutchinson held it back
+> today**: plan length is the widest blast radius this engine has, and stacking a
+> second one on §6 Amendment 2 two days before a showcase is how a good change gets
+> blamed for a bad one. It needs its own sitting with parity and `cohort:shape`
+> measured first — filed, not dropped.
+
+**Config.** `GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD = 2` —
+one week before a plan starts is a rest-and-admin week and a note about it is noise
+(NOISE-GATE-01); the <7-day case already has §57's inline nudge.
+
+**Stamped, not recomputed.** `meta.uncovered_runway_weeks` carries the count
+because it needs `today` and the built block together, and `today` is
+generation-time state `validatePlan` never receives — the same reasoning
+VOL-SHORTFALL-01 records for `volume_shortfall_pct`. Produced in
+`composePlanWithFoundation`, ADR-020's single owner of both facts.
+
+Enforced by `INV-PLAN-UNCOVERED-RUNWAY-DECLARED` (`error`).
 
 ## 58. Past-self comparison — cohort similarity matching
 
@@ -2848,7 +2964,21 @@ Two rules keep it conservative in both paths: **recovery jogs don't count** as a
 
 **Why.** A training plan is a countdown to a fixed event. Every other rule in this document — taper depth, peak placement, race-specific exposure, recalibration cadence — is expressed relative to the race, so a plan whose final week is not the race week has silently mis-scheduled all of them at once. A runner who finishes the plan eleven days early does not get a longer taper; they get an unplanned, uncoached void at precisely the point where the plan's guidance matters most, and they will fill it by guessing.
 
-The failure is specifically an *end*-truncation: `min(available, ideal)` weeks counted forward from the start discards the tail. Counting backwards from race week discards nothing — it moves the start, and the gap before it is already owned by the foundation block (§ Foundation block), which exists for exactly this situation.
+The failure is specifically an *end*-truncation: `min(available, ideal)` weeks counted forward from the start discards the tail. Counting backwards from race week discards nothing — it moves the start, and the gap before it is handed to the foundation block (§ Foundation block), which exists for exactly this situation.
+
+> ⚠️ **CORRECTED 2026-09-15 (FOUNDATION-LONG-RUNWAY-01, Coaching Board).** That
+> sentence used to read *"already **owned** by the foundation block"*, and for any
+> gap longer than `FOUNDATION_MAX_WEEKS` (3) **it is not.** Measured: a first-time
+> marathoner with a 25-week runway gets 3 foundation weeks and **4 uncovered**; at
+> a 52-week runway, **31**. The block takes what it can and the remainder was owned
+> by nothing and declared by nothing — while this very section says a runner left
+> with an uncoached void *"will fill it by guessing"*. §76 was describing the
+> failure it was itself producing, at the other end of the plan.
+>
+> The gap is still structural (see §57's amendment for why a longer block is
+> measurably useless), so the obligation is **honesty, not coverage**: the plan must
+> now carry `meta.uncovered_runway_note`, enforced by
+> `INV-PLAN-UNCOVERED-RUNWAY-DECLARED`.
 
 **Consequences that follow from the anchor:**
 - Surplus weeks are absorbed before the plan, never after it.
