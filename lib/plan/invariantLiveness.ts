@@ -1,6 +1,6 @@
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan, INVARIANT_CODES } from '@/lib/plan/invariants'
-import { cohortGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
+import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
 
@@ -228,7 +228,13 @@ export interface LivenessReport {
 }
 
 /** Break `sampleSize` valid plans every way we know, and see what wakes up. */
-export function probeLiveness(sampleSize = 32): LivenessReport {
+export function probeLiveness(sampleSize = 64): LivenessReport {
+  // 32 -> 64 (GRID-COVERAGE-02 Phase 2). The sample is a FIXED BUDGET shared by
+  // three corpora — population shapes, targeted shapes, then bulk — so adding
+  // the targeted grid at 32 silently evicted population shapes and DE-PROVED
+  // three invariants (DELOAD-PHASE-POSITION, VDOT-RAW-EXCEEDS-ANCHOR,
+  // LARGEST-SESSIONS-SPACED). Buying coverage by losing coverage is not a gain;
+  // the budget grows to fit both.
   const sample: { input: GeneratorInput; plan: Plan }[] = []
   // COVER SHAPES, never take the grid's head. `cohortGrid()` is ordered, so the
   // first N entries share a distance, a level and a goal — a sample that cannot
@@ -248,7 +254,39 @@ export function probeLiveness(sampleSize = 32): LivenessReport {
     seen.add(k)
     return true
   })
-  const ordered = byShape.concat(cohortGrid())
+  // GRID-COVERAGE-02 Phase 2 — the TARGETED grid goes in FRONT of the bulk.
+  //
+  // `cohortGrid` never varies injury_history, user_declared_level,
+  // weeks_at_current_volume, foundation_decision or day_budgets, so every
+  // mechanism gated on them reads as `corpus` debt ("the harness never builds
+  // this shape") when the truth is the harness cannot. One representative input
+  // per targeted SHAPE, same by-shape dedup as above so a few hundred near-
+  // identical rows cannot crowd out the population sample.
+  const targetedSeen = new Set<string>()
+  const byTargetedShape = targetedGrid().filter(i => {
+    const r = i as unknown as Record<string, unknown>
+    const k = `${r.race_distance_km}|${JSON.stringify(r.injury_history)}|${r.user_declared_level}`
+      + `|${r.weeks_at_current_volume}|${r.foundation_decision}|${r.day_budgets ? 'budgets' : 'none'}`
+    if (targetedSeen.has(k)) return false
+    targetedSeen.add(k)
+    return true
+  })
+  // ROUND-ROBIN, not concat. The sample is a fixed budget shared by three
+  // corpora, and concatenating lets whichever sits in the middle consume the
+  // remainder: appending the targeted grid de-proved three invariants
+  // (DELOAD-PHASE-POSITION, VDOT-RAW-EXCEEDS-ANCHOR, LARGEST-SESSIONS-SPACED)
+  // that only the BULK reaches, because the budget ran out before the bulk
+  // started. Interleaving makes each corpus's share proportional to the budget
+  // rather than to its position in the list.
+  const corpora = [byShape, byTargetedShape, cohortGrid() as GeneratorInput[]]
+  const ordered: GeneratorInput[] = []
+  for (let i = 0; ordered.length < sampleSize * 4; i++) {
+    let anyLeft = false
+    for (const c of corpora) {
+      if (i < c.length) { ordered.push(c[i] as GeneratorInput); anyLeft = true }
+    }
+    if (!anyLeft) break
+  }
   for (const input of ordered) {
     if (sample.length >= sampleSize) break
     try {

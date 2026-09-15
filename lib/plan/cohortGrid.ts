@@ -148,3 +148,70 @@ export function cohortGrid(): GeneratorInput[] {
  *  Anything else that throws is a real failure and must not be counted as one. */
 export const COHORT_REFUSAL =
   /is not enough preparation|days\/week is (not enough|below)|is below the recommended \d+-week minimum/
+
+// ── GRID-COVERAGE-02 Phase 2 (2026-09-15) — the SECOND, TARGETED grid ────────
+//
+// WHY A SECOND GRID RATHER THAN MORE AXES. `cohortGrid` is exhaustive and
+// un-sampled, and that property is doctrine — it is what lets `cohort:shape`
+// claim a rate rather than an estimate. It is also already 31,104 rows (~29s)
+// inside `npm run verify`, so every further axis DOUBLES a check that runs on
+// every build. Crossing the five remaining fields into it would be ~500k rows.
+//
+// These five fields do not need crossing with everything. They gate MECHANISMS
+// (a branch fires or it does not), not cohort CLASSIFICATION — so what they need
+// is reach, not a full cross. That is the `corpus` pattern the invariant-liveness
+// baseline already names: a targeted grid for shapes the main grid cannot build.
+//
+// SCOPED TO THE CHARITY DISTANCES (10K / HM / marathon) deliberately: that is the
+// cohort this exists to protect, and 5K/ultra add rows without adding mechanism.
+const TARGETED_INJURIES: readonly (readonly string[])[] = [[], ['knee'], ['shin_splints'], ['achilles']]
+const TARGETED_DECLARED = [undefined, 'beginner', 'intermediate', 'experienced'] as const
+const TARGETED_WEEKS_AT_VOLUME = [undefined, 1, 4, 12] as const
+const TARGETED_FOUNDATION = [undefined, 'add', 'skip', 'start_now'] as const
+const TARGETED_DAY_BUDGETS = [undefined, { mon: 30, tue: 45, wed: 30, thu: 60, fri: 30 }] as const
+const TARGETED_DISTANCES = [
+  { km: 10,   weeks: 12 },
+  { km: 21.1, weeks: 16 },
+  { km: 42.2, weeks: 18 },
+] as const
+
+/**
+ * The five `GeneratorInput` fields `cohortGrid` still never varies.
+ *
+ * 3 x 4 x 4 x 4 x 4 x 2 = 1,536 inputs (~3s). Held at ONE representative base
+ * otherwise, because the point is to make each mechanism REACHABLE, not to
+ * re-measure the population — `cohortGrid` owns that.
+ *
+ * `user_declared_level` is the load-bearing one for the charity cohort: the
+ * wizard sends it (`GeneratePlanScreen.tsx`), none of the 11 charity personas
+ * set it, and a first-timer who declares 'intermediate' goes from 0 quality
+ * sessions to 6-10. That path had no coverage anywhere before this grid.
+ */
+export function targetedGrid(): GeneratorInput[] {
+  const out: GeneratorInput[] = []
+  for (const d of TARGETED_DISTANCES)
+    for (const injury_history of TARGETED_INJURIES)
+      for (const declared of TARGETED_DECLARED)
+        for (const weeksAtVolume of TARGETED_WEEKS_AT_VOLUME)
+          for (const foundation of TARGETED_FOUNDATION)
+            for (const dayBudgets of TARGETED_DAY_BUDGETS) {
+              out.push({
+                athlete_name: 'Athlete', age: 40, race_name: 'Test',
+                primary_metric: 'distance', plan_start: COHORT_PLAN_START,
+                race_distance_km: d.km, race_date: raceDateIn(d.weeks, 'sun'),
+                goal: 'finish', resting_hr: 55, max_hr: 184,
+                current_weekly_km: 30, longest_recent_run_km: 12,
+                fitness_level: 'beginner',
+                recent_quality_training: 'occasional',
+                hard_session_relationship: 'neutral',
+                training_age: '6-18mo',
+                days_available: 4, days_cannot_train: [],
+                injury_history: [...injury_history],
+                ...(declared !== undefined ? { user_declared_level: declared } : {}),
+                ...(weeksAtVolume !== undefined ? { weeks_at_current_volume: weeksAtVolume } : {}),
+                ...(foundation !== undefined ? { foundation_decision: foundation } : {}),
+                ...(dayBudgets !== undefined ? { day_budgets: { ...dayBudgets } } : {}),
+              } as unknown as GeneratorInput)
+            }
+  return out
+}
