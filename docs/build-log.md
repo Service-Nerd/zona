@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-15 (fourth entry) — the charity cohort day · a wizard tick was worth hill reps at RPE 8
+
+**Shipped:** Every actionable coaching/engine item on the backlog. The one that matters: a charity first-timer who over-rates themselves in the wizard no longer gets the sharpest session in the catalogue.
+
+**Dev learning:** The defect was invisible because the *test fixtures were more honest than real users*. All eleven charity personas leave `user_declared_level` unset — but the wizard sends it on every single generation. So the most likely real-world deviation from our persona set had zero coverage anywhere. T1 is "couch-to-10K charity beginner": 8 km/week, longest run 4 km, under six months of running, never done a quality session. Tick "intermediate" and you get **Hill reps — 90s at Zone 4–5, RPE 8, in week 5**. Zero invariant errors. Every check green.
+
+**Product/creator learning:** The fix was already written down. §79 says the sharpest work is withheld when intensity is "lifted **or user-raised**" — and then scopes it to *returning* runners. A returner has years of tissue adaptation behind them. A novice has none. **The protection was scoped backwards relative to the risk it exists for**, and it had been that way since it was written. We didn't need a new rule, we needed the existing one pointed at the right cohort.
+
+**AI-building learning:** My first cut fired on *any* upward declaration, and a test I hadn't thought about — §96's `overdo` brake — caught it in one run: it would have withheld VO2max from a 55 km/week runner with five years and regular quality behind them. The scoping *is* the rule, and the existing suite found the over-reach faster than I'd have reasoned my way to it. Three separate times today a test blocked me from shipping something plausible.
+
+**The honest bit:** the founder asked what was on the backlog this morning and I read them the curated summary table. Three real items were sitting as sub-bullets inside another entry, and two more got orphaned the moment I shipped their parent. When challenged, I filed one of them claiming "never ruled" — the board *had* ruled, and a failed implementation was on record. I'd have sent the next person to re-litigate a settled decision. The backlog now has a complete engine list precisely because a summary of a summary is how work disappears.
+
+**Hook material:** One checkbox in a signup wizard was worth hill reps at RPE 8 to someone running 8 km a week. Every automated check passed.
+
+**Postable?:** yes
+
+
 ## 2026-09-15 (third entry) — REENTRY-DEPTH-01 · the fix worked, and it worked by deleting the thing it was supposed to reorder
 
 **Shipped:** All four items the day started with, plus the three blockers found underneath them. A returning runner's first hard session is a tempo now, not a set of intervals — and where the plan ends up with no intervals at all, it says so instead of quietly dropping them.
