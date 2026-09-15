@@ -18,8 +18,14 @@ every engine change.
 **The coaching constitution is fully accounted for: 106 principles — 78 invariant · 22 named test · 6 exempt · 0 unverified.**
 The build fails if that stops being true.
 
-⚠️ **Charity showcase is Friday.** Every item below is measured and **none affects the 14 charity personas**, which are
-clean on every check.
+⚠️ **Charity showcase is Friday.** All 14 charity personas are **clean on every check** (deviation scan: 0 HIGH).
+
+> **CORRECTED 2026-09-15 — this line used to read "none affects the 14 charity personas", and that is no longer true.**
+> §6 Amendment 2 (TAPER-DEPTH-02) changed **four** of them, and every change is an improvement:
+> M5 masters marathon taper **48 → 41**, M1d first-timer marathon **33 → 28**, T2 10K **31 → 28**, M2 compressed marathon **33 → 31**.
+> M1d's first taper week was previously **3% below its pre-taper week** — a runner told they are tapering and handed the
+> same week again, on the showcase list. A blanket "nothing affects the personas" claim is the kind of written assumption
+> that gets believed; the personas are re-measured per change, not assumed.
 
 ### 🔧 COACHING & ENGINE — the complete open list
 
@@ -47,7 +53,17 @@ clean on every check.
 > **SHIPPED:** `meta.uncovered_runway_note` on any plan leaving ≥ `FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD` (2) uncovered weeks, produced in `composePlanWithFoundation` (ADR-020's single owner of `today` + the built block). **`error`-severity** `INV-PLAN-UNCOVERED-RUNWAY-DECLARED`, on Sims's point: *a runner in that gap is not resting, they are training UNSUPERVISED*, and for the women in this cohort that is where energy availability and bone loading go wrong. The note is deliberately not a sales pitch — it says the weeks are not training and tells them not to ramp.
 > **GATES:** verify exit 0 (**1,988 tests / 215 files**) · sweep 15,973 plans 0 violations · liveness proves the new invariant wakeable (84/115) · **parity IDENTICAL** — and that is not evidence: the parity grid pins `plan_start`, so it has **no runway cases at all** and is structurally blind to this change. `lib/plan/uncoveredRunway.test.ts` (11 cases) is the coverage that reaches it.
 > **ALSO FIXED — the sweep could not see this cohort.** `foundationGapDays` topped out at **40 days**, which is 5 weeks: the block takes 3 and leaves 2, exactly the threshold and never past it. A charity runner typically gets their place **months** out. Added 91 and 175 days. ⚠️ **Widening a sweep axis re-rolls the entire seeded sample** — every warn rate in that table moved, and rates measured before and after are not comparable. It immediately exposed a real checker defect: `INV-PLAN-TAPER-DELIVERED-DEPTH` (shipped an hour earlier) went **3 → 181**, every one a 2-day week, every one FALSE — it measured easy-run headroom but not **§52's cap**, so a 5K taper week showing 5.5 km of headroom had **0.2 km of legal room**. Now 4. **A checker that knows only half the producer's constraints reports the other half as defects.**
-> 🟡 **DEFERRED WITH A REASON, not dropped — the runway should earn a longer PLAN (McMillan/Willy dissent, recorded in §57).** §97 (CB-ONSET-03) already ruled this exact trade-off: *"'delay the start' does not create rest; it creates training that sits outside the periodisation arc"* — and raised the cap to §17's `max_weeks`, **but only for a §89-gated runner**. M1 is the precise opposite of gated and needs it more; Willy: a `<6mo` training age is the widest cardiovascular-to-musculoskeletal gap we see, and idling those weeks then compressing into 18 is the **worse** injury path. The engine delivers **18 of an available 20**, so §17 headroom is already sitting unused. **Held today because plan length is the widest blast radius this engine has** and §6 Am.2 already moved 18.5% of parity two days before the showcase. **Next session: own sitting, parity + `cohort:shape` measured first.**
+> ➡️ **The open half is now its own item below — LONG-RUNWAY-EARNS-PLAN-01.** (Recorded as a McMillan/Willy dissent in §57.)
+
+
+> 🔴 **LONG-RUNWAY-EARNS-PLAN-01 — a long runway should earn a longer PLAN, not just a note.** *(P2, filed 2026-09-15 — BOARD sitting required, split out of FOUNDATION-LONG-RUNWAY-01)*
+> **This is the OPEN half of an item closed today, promoted out of it so it cannot be orphaned as a sub-bullet.**
+> **§97 (CB-ONSET-03) already ruled this exact trade-off**, in these words: *"'delay the start' does not create rest; it creates training that sits outside the periodisation arc and is carved out of five invariants"* — and raised the plan cap to §17's `max_weeks`. **But only for a §89-gated runner.**
+> **M1 is the precise opposite of gated and needs it more.** Willy: a `<6mo` training age is the widest cardiovascular-to-musculoskeletal gap we ever see, and idling those weeks then compressing the same preparation into 18 is the **worse** injury path. McMillan: *"no coach alive looks at that runner and says come back in November."*
+> **MEASURED: the engine delivers 18 weeks of an available 20** (marathon `idealWeeks` 18 vs `PLAN_SIGNATURES.max_weeks` 20), so §17 headroom the signature already declares is sitting unused. At a 25-week runway that closes 2 of the 4 uncovered weeks; it does **not** solve 30w+ (9 uncovered) and nothing can — which is why the honesty note shipped first.
+> **Why it was HELD on 2026-09-15 rather than built:** plan length is the widest blast radius this engine has, and §6 Am.2 had already moved **18.5% of parity** that day, two days before the charity showcase. Hutchinson: stacking two changes of that size is how a good change gets blamed for a bad one.
+> **Needs its own sitting with `verify:parity` and `cohort:shape` measured FIRST**, scoped to runners who would otherwise idle. If it reaches runners who would not, it does not ship.
+> *Verify still open:* `calcPlanLength` marathon at a 25-week runway returns `totalWeeks: 18` while `PLAN_SIGNATURES.MARATHON.max_weeks` is 20.
 
 > 🔲 **OPS-DIGEST-PLAN-AUDIT-01 — a FOUNDER decision, not a build.** *(filed 2026-09-15)*
 > The plan-audit probe now emits a `source: plan-audit-summary` ops event every run, carrying the age of the newest breaching plan. **Whether the daily ops digest reads it is yours** — the digest is a cloud routine editable via RemoteTrigger, not repo code, and wiring someone else's digest is not mine to change unilaterally. The repo side is done.

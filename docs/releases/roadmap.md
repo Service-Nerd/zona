@@ -62,6 +62,22 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > code.** So the path is everything between the email and a plan on screen.
 > Nothing else is on it.
 
+> ✅ **ENGINE STATE, 2026-09-15 (showcase is Friday).** The coaching constitution is
+> fully accounted for — **106 principles: 78 invariant · 22 named test · 6 exempt ·
+> 0 unverified**, and the build fails if that stops being true. `npm run verify`
+> exit 0 (**1,988 tests / 215 files**), property sweep **15,973 plans / 0
+> violations**, archetype matrix 65/0, `cohort:shape` unchanged, coaching deviation
+> scan **0 HIGH** across all 14 charity personas + 7 canonical cases.
+> **Two open items only** — `LONG-RUNWAY-EARNS-PLAN-01` (needs a board sitting) and
+> `OPS-DIGEST-PLAN-AUDIT-01` (a founder decision, repo side done). Detail in
+> `backlog.md`.
+>
+> ⚠️ **Four charity personas CHANGED today** (§6 Am.2, TAPER-DEPTH-02) and all four
+> improved: M5 masters marathon taper 48→41, M1d first-timer marathon 33→28, T2 10K
+> 31→28, M2 compressed marathon 33→31. M1d's first taper week had been **3% below
+> its pre-taper week**. Worth knowing before the demo, because those are the plans
+> on screen.
+
 > 🔴 **DEPLOYMENT IS RATE-LIMITED, 2026-09-11 evening.** Vercel Hobby caps at
 > **100 deployments per rolling 24h** and 80 commits in one day exhausted it:
 > `api-deployments-free-per-day`. Deployments stop **silently** — no failed
