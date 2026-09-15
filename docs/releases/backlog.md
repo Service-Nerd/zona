@@ -37,6 +37,43 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 | **REENTRY-VO2MAX-BASELINE-01** *(the QUESTION known since 2026-09-14; the NUMBERS are new)* | 🔲 The pre-today backlog already asked whether *"a finish-goal beginner needs **no VO2max at all** — aerobic base plus threshold — which is what most coaches would prescribe."* **TODAY's addition is the measurement nobody had taken: even with §79's window inert, 49.7% of re-entry-active quality-bearing plans contained NO VO2max-category session and 74.8% no hill reps.** The board declined to ratify that baseline. | Measure WHY — §53 rotation thinness, catalogue eligibility, or the §8 ceiling — then take the cause to the board. Sims: "no VO2max this cycle" should be a CYCLE decision, not a permanent property of being a returning runner. |
 | **GRID-COVERAGE-02 Phase 2** *(known; Phase 1 shipped today)* | ✅ Phase 1 → feature-registry, and it earned its keep the same morning: varying `recent_quality_training` is what made the 288 §22 violations visible. Phase 2 open: `injury_history`, `user_declared_level`, `weeks_at_current_volume`, `day_budgets`, `foundation_decision` still unset. | Decide second-targeted-grid vs pairwise. Runtime is the binding constraint (7,776 → 15,552 already cost ~10s → ~16s). |
 
+### 🔧 COACHING & ENGINE — the complete open list (added 2026-09-15)
+
+> **Why this section exists.** On 2026-09-15 the founder asked what was on the backlog and was given the "Ready to build" table — which is a CURATED view. Three real items were **buried as sub-bullets inside another item's entry** and never surfaced, and two more were orphaned when their parent shipped. A summary that reads only the top table is not a backlog review. **This section is the full engine/coaching list; keep it current or delete it, but do not let it go stale.**
+
+**A. ORPHANED by today's ship — these were parked inside QUALITY-ONSET-ORDER-01, which has now shipped. They have no parent any more.**
+
+| Item | State | Next action |
+|---|---|---|
+| **CV-ELIGIBILITY-01 open half** | 🔴 **LIVE BOARD QUESTION, now orphaned.** *"Should threshold-family rows require **structural** intermediate, not just intensity-intermediate?"* Was explicitly *"folded into a live board question"* inside QUALITY-ONSET-ORDER-01 — which shipped today, so nothing holds it. | Re-file as its own item and take it to the board. Do NOT let it die with its parent. |
+| **Beginner first-exposure question** | 🔴 **Same axis, also orphaned.** *"When structure says beginner and intensity says intermediate, should the first exposure be VO2max or tempo?"* §79 holds that upward declaration *"buys intensity only, never tonnage"* — but **allowance and ORDER are different axes**, and that was never ruled. | Same sitting as the row above — they are one question. |
+
+**B. KNOWN since 2026-09-14, MEASURED today** *(see the provenance note earlier — these are not new)*
+
+| Item | State | Next action |
+|---|---|---|
+| **§5 vs §79 precedence** | Board **already ruled §79 wins**. The obvious implementation breaks **29 tests incl. `cohortShape`** and has zero effect on the residual. Overrides §79 on **576 plans**. | An implementation that does not reclassify cohorts. Separate the `undefined` sentinel first. |
+| **REENTRY-INV-DECORATIVE-01** | `INV-PLAN-RETURNING-INTENSITY-REENTRY` still encodes the calendar premise; re-anchoring it fails **576 legitimate plans**. | Ships with the row above. |
+| **REENTRY-VO2MAX-BASELINE-01** | **49.7%** of re-entry-active quality-bearing plans carry NO VO2max-category session, **74.8%** no hill reps — board declined to ratify. | Measure the cause (§53 thinness / eligibility / §8 ceiling), then board. |
+
+**C. DECLARED RESIDUALS sitting inside items marked ✅ — real work, invisible to a top-table read**
+
+| Item | State | Next action |
+|---|---|---|
+| **Cohort grid still races on MONDAY** | ⚠️ `REVIEW-HARNESS-MONDAY-01` fixed the **review cases only** and says so: *"The cohort grid is NOT changed here."* Every `cohort:shape` / `verify:parity` plan still has a Monday race — the shape in which RACE-WEEK-FITNESS-01's defect **cannot appear**. | Re-baseline the grid onto weekend races. Its own declared commit (parity + cohort move). |
+| **CAT-VO2-TIERA** | Board **declined delivery** 2026-09-13, but named the door: the rows need *"§8 to gain a mixed-session dose model"*. Not a defect; a blocked capability. | Only if §8 is reopened. Do not re-propose the rows themselves. |
+
+**D. TOP-LEVEL open engine items** *(these were visible; listed for completeness)*
+
+| Item | State |
+|---|---|
+| **GRID-COVERAGE-02 Phase 2** | `injury_history`, `user_declared_level`, `weeks_at_current_volume`, `day_budgets`, `foundation_decision` still unset. Runtime is the constraint. |
+| **SIG-ULTRA-UNBUILT-01** | Board-ratified ultra commitments (§24e back-to-back, 100K time-on-feet peak dose) — **SLT-gated on build timing**, not correctness. |
+| **ZONE-BAND-01** | ⏸️ Correctly blocked on DATA (2 users). Numeric re-open trigger: ≥20 users × ≥10 HR-bearing quality analyses. |
+| **PV2-G / CD-7** | Monday-race cross-week `buildRaceArc` restructure. Needs an **ADR**. Visible every round via `07-hm-monday-race`. |
+| **PV2-E / CD-6 braces** | HealthKit-verify half of the declared-volume temper. Gated on HealthKit client verification. |
+| **ENGINE-03 / CA-05** | ⛔ Cycle-aware coaching — **unbuildable**, not unbuilt: `@capgo/capacitor-health` exposes no menstrual data type (ADR-011). |
+
 ### Off the table — do NOT re-open without reading the item first
 
 | Item | Why |
@@ -479,7 +516,9 @@ never firing in production for months). If the answer to *"what makes this run?"
   - ⚠️ **Runtime is the real constraint, so this cannot just be "add every axis".** 648 → 7,776 cost 1.4s → 8.6s. Each further ×2 doubles it, and `cohort:shape` runs inside `npm run verify`. Adding the top four naively would be ~140s. **Needs a deliberate design** — either a second targeted grid for mechanisms the main grid cannot reach (the liveness baseline's `corpus` reason already names this pattern), or pairwise coverage rather than the full cross-product. The exhaustive-and-un-sampled property of the main grid is doctrine and should not be given up casually.
   - **Add the coverage GATE too:** `property-validate-plans.ts` fails when a `GeneratorInput` field is never varied. `cohortGrid` has no such gate, which is why this went unnoticed. Whatever the final axis set is, the gate should assert it — with the deliberately-excluded fields listed and reasoned, the SWEEP-BASELINE-01 debt-register pattern.
 
-- ⚖️ **QUALITY-ONSET-ORDER-01 — a runner's FIRST quality session is the HARDEST one. Measured, root-caused, NOT yet fixed — it needs a board ruling on a real trade-off, not a patch.** *(P2, found by eyeballing the 2026-09-14 review round)*
+- ✅ **QUALITY-ONSET-ORDER-01 — SHIPPED 2026-09-15 → feature-registry (§79 Amendment 1 + Amendment 2).** First-quality-is-VO2max **25.4% → 16.8%**. ⚠️ **TWO board questions that were PARKED INSIDE this entry are now ORPHANED** — CV-ELIGIBILITY-01's open half and the beginner first-exposure question. Both are re-filed in the *Coaching & engine — complete open list* section above; do not let them die with this entry. The measured history below is retained as the record of three wrong diagnoses.
+  - 📌 *Original entry follows, preserved.*
+- ⚖️ ~~**QUALITY-ONSET-ORDER-01 — a runner's FIRST quality session is the HARDEST one.**~~ *(shipped — see above)*
   - ⚠️ **CORRECTED 2026-09-14, same day. The first numbers I filed here were WRONG and the correction halves the claim.**
     - I originally reported *"Zone 4–5 first in 80.6% of plans and 100% of beginner plans (66/66)"*. My `QUALITY` set included session type **`'hard'`**, which is the **§78 recalibration 5K time trial** — a BENCHMARK on a base/build deload week, Zone 4–5 by nature because it is a maximal *continuous* effort (CLAUDE.md's own session-colour table says exactly this). **The entire beginner figure was that time trial.**
     - **Re-measured with the benchmark excluded: 216 of 414 (52.2%), identical for intermediate and experienced. Cohort-grid beginners: 0 of 0 — they receive NO quality sessions at all.** §8's ceiling is working.
@@ -545,14 +584,14 @@ never firing in production for months). If the answer to *"what makes this run?"
   - **The question the build must also answer:** when structure says beginner and intensity says intermediate, should the first exposure be VO2max or tempo? §79 holds that upward declaration *"buys intensity only, never tonnage"* — but ALLOWANCE and ORDER are different axes. Delaying VO2max costs §5 adaptation weeks on a short plan; not delaying it hands the least-prepared cohort the hardest stimulus first. A third option is that a finish-goal beginner needs **no VO2max at all** — aerobic base plus threshold — which is what most coaches would prescribe.
   - **Folds in CV-ELIGIBILITY-01's open half:** *"should threshold-family rows require STRUCTURAL intermediate, not just intensity-intermediate?"* Same question, same axis.
 
-- 🔴 **V2-SWAP-S22-01 — the V2 adaptation-window swap breaks §22, and it blocks QUALITY-ONSET-ORDER-01.** *(P2, found 2026-09-15 while building the onset fix)*
+- ✅ **V2-SWAP-S22-01 — SHIPPED 2026-09-15 → feature-registry (§22 Amendment).** Board ruled option B: a session displaced by §5's relocation is exempt from §22's per-week check, structural stamp, binding ratio condition measured clean (0/576). Detail retained below as the record.
   - **The defect.** `applyV2Vo2MaxOnsetTiming` displaces a quality session out of the week that held the first VO2max. `INV-PLAN-RACE-SPECIFIC-EXPOSURE` (§22, **ERROR**) governs second-half build/peak quality on a time-targeted plan and **exempts VO2max** (`isVo2maxSession`) — so before the swap the week was legal by exemption, and after it holds a threshold row that is neither race-pace nor exempt. **MEASURED: 84 failures in a 4,608-input probe**, every one `INV-PLAN-RACE-SPECIFIC-EXPOSURE`.
   - ⚠️ **`ruleEngine.ts:5500` ALREADY SAYS THIS** — *"the plan is CONSTRUCTED compliant instead of being built late and swapped afterwards (which breaks §22)"*. The comment was right and nothing enforced it.
   - **Why it blocks the onset fix:** the swap is inert today (see V2-SWAP-INERT-01) and only fires once §79 withholds VO2max. So repairing §79 turns a documented-but-dormant defect into 84 live ERROR violations.
   - ⚖️ **NEEDS A BOARD RULING — do NOT decide this unilaterally.** The obvious fix (decline swap candidates that would break §22) sits directly beside the option the board **rejected** on 2026-09-15 for the sizing question (declining phase-sized candidates makes §5's window unenforceable). The board's own note is that the correct long-term answer is **option C — retire the swap for construct-compliant placement** (`vo2MustOpenBuild` already does this), which it scoped OUT of the 2026-09-15 sitting. That is the question to put.
   - *Verify still open:* flip both call sites in `ruleEngine.ts` from `reentry.withheldIn(...)` to `reentry.withheldAtQualityIndex(...)` (the build-slot IIFE passes `idx`, the driver loop passes `buildRotationIndex`) and run the sweep → non-zero `INV-PLAN-RACE-SPECIFIC-EXPOSURE` = still open.
 
-- 🔲 **V2-SWAP-INERT-01 — §5's adaptation-window swap fires on NOTHING, so the deadline it exists to enforce is not being enforced by it.** *(P3, measured 2026-09-15)*
+- ✅ **V2-SWAP-INERT-01 — RESOLVED 2026-09-15 as a side-effect of QUALITY-ONSET-ORDER-01.** The swap fired on 0 of 2,304 inputs; repairing §79 makes it fire on **576**, so it is no longer dead code and both fixes hanging off it are load-bearing. The longer-term question — retire the swap for construct-compliant placement — stays as the board's noted direction, not a defect.
   - **MEASURED: `V2-vo2max-onset-timing` fires on 0 of 2,304 varied inputs and 0 of the 7,452-plan cohort grid.** 346 of 2,304 record `V2-vo2max-onset-unreachable` (CD-22's honest "plan too short" path); the rest are already compliant by construction, because `vo2MustOpenBuild` builds them that way.
   - **Why this matters even though nothing is broken today:** a whole documented mechanism is dead, and the repo has been here before (§97's two inert gates, §79's inert window, `ZONE_DISCIPLINE_BANDS`). Dead-but-plausible code is what made both other items on this page mis-diagnosed twice each. Either the swap is retired in favour of the construct-compliant path (V2-SWAP-S22-01's option C) or it is kept and given a reachability test — not left looking load-bearing.
   - *Verify still open:* count plans whose `rule_adjustments` contain `V2-vo2max-onset-timing` across the cohort grid; zero = still open.
