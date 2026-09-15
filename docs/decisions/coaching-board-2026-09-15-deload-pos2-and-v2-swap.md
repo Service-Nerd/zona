@@ -187,3 +187,34 @@ Both are filed and neither was decided here:
   on **576 plans** (5K/10K, both goal types, all `recent_quality_training:
   'regular'`). Arguably already implied by CD-22's "binding where reachable", but
   never ruled. **Board.**
+
+---
+
+# Correction — provenance of the "remaining" items (2026-09-15, after founder challenge)
+
+The three items left open after this session's rulings were presented as new
+findings. **They were not.** All three were already recorded in the backlog's
+QUALITY-ONSET-ORDER-01 entry before the session began.
+
+- **REENTRY-INV-DECORATIVE-01** — pre-existing. The backlog already said
+  `INV-PLAN-RETURNING-INTENSITY-REENTRY` is *"a DECORATIVE invariant… trivially
+  true on every plan and cannot fail… the check and the defect share a premise"*,
+  with the explicit instruction *"Also fix the invariant, not just the engine."*
+- **§5 vs §79 precedence** — pre-existing **and already ruled**. The backlog
+  records: *"The board ruled §79 wins that conflict."* It also records that the
+  obvious implementation **breaks 29 tests including `cohortShape`** and had
+  **zero effect on the residual**. The first filing of this item in this session
+  claimed it was "never ruled" — **that was factually wrong and is withdrawn.**
+- **REENTRY-VO2MAX-BASELINE-01** — the QUESTION was pre-existing (*"a third
+  option is that a finish-goal beginner needs no VO2max at all"*). Only the
+  measurement (49.7% / 74.8%) is new.
+
+**Why this matters beyond tidiness.** Re-filing known sub-tasks as fresh
+discoveries inflates what a session appears to have found and, worse, discards
+the prior work attached to them — in the §5/§79 case a ruling and a measured
+failed implementation. The lesson is the repo's own
+[[feedback-written-assumptions-are-the-dangerous-ones]]: I wrote "never ruled"
+into a backlog entry without checking the backlog's own record of that ruling.
+
+**Check before filing:** `git show <last-commit-before-session>:docs/releases/backlog.md`
+and grep the item's own parent entry before creating a new row.
