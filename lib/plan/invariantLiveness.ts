@@ -77,6 +77,28 @@ export const MUTATIONS: Mutation[] = [
   // construction, so it could not fail). Re-anchored to QUALITY weeks it can
   // fail, and this is the state that must make it: a plan claiming an active
   // window whose FIRST quality week carries vo2max-category work.
+  // §4 — phase structure. No single-field poke reaches it: the check reads the
+  // SEQUENCE of week phases, so waking it needs the order itself broken. Sends
+  // the plan back to `build` after `peak`, which is both out of order and
+  // non-contiguous — the two things §4 forbids.
+  // §105 — all marathon race-pace work inside the long run. It fires on 3.7% of
+  // the swept population, but the 64-plan probe does not happen to contain that
+  // shape, so it needs constructing. This is the real regression it guards: the
+  // catalogue losing `mp_blocks` and marathon falling back to every scrap of
+  // goal-pace exposure being a segment of the long run (the state
+  // CAT-MARATHON-RACE-SPECIFIC-01 measured at 100% before it shipped).
+  { name: 'all race-pace work back inside the long run', apply: p => {
+    sessionsOf(p).forEach(s => {
+      const sn = s as unknown as Poke & { type?: string; stimulus?: string }
+      if (sn.stimulus === 'race_pace' && !isLongRun(s)) { sn.stimulus = 'tempo' }
+    })
+  } },
+  { name: 'phases run out of order', apply: p => {
+    const ws = p.weeks.filter(w => w.n >= 1)
+    if (ws.length < 4) return
+    const last = ws[ws.length - 1] as unknown as Poke
+    last.phase = 'build'
+  } },
   { name: 'vo2max inside the re-entry window', apply: p => {
     const meta = p.meta as unknown as Record<string, unknown>
     meta.intensity_reentry_active = true

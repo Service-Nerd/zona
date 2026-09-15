@@ -56,13 +56,13 @@ export interface PrincipleCoverage {
  * Lower it in the same commit that classifies one — that is how the debt is
  * locked in rather than drifting back.
  */
-export const UNVERIFIED_BASELINE = 27
+export const UNVERIFIED_BASELINE = 20
 
 export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 1, by: 'invariant', ref: 'INV-PLAN-QUALITY-EXPECTED' },  // Polarised training — protection from grey zone
   { n: 2, by: 'invariant', ref: 'INV-PLAN-BOUNCEBACK-BOUNDED' },  // The 10% rule — injury prevention through gradual load
   { n: 3, by: 'invariant', ref: 'INV-PLAN-DELOAD-IS-A-REDUCTION' },  // Recovery weeks — adaptation happens in rest
-  { n: 4, by: 'unverified' },  // Phase structure — base, build, peak, taper
+  { n: 4, by: 'invariant', ref: 'INV-PLAN-PHASE-STRUCTURE' },  // Phase structure — base, build, peak, taper
   { n: 5, by: 'invariant', ref: 'INV-PLAN-PEAK-SPECIFICITY' },  // Specificity — sessions resemble race demands as race approac
   { n: 6, by: 'invariant', ref: 'INV-PLAN-QUALITY-EXPECTED' },  // Taper — maintain intensity, cut volume, never detrain
   { n: 7, by: 'invariant', ref: 'INV-PLAN-QUALITY-LONG-SPACING' },  // Hard / easy — never two hard days in a row
@@ -70,7 +70,7 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 9, by: 'invariant', ref: 'INV-PLAN-MIN-SESSION-SIZE' },  // Long-run rules — fraction of weekly, capped by distance
   { n: 10, by: 'exempt', why: 'Algorithm formula (Daniels VDOT discount). INV-CFG-003 exempts formula constants; there is no plan property to assert.' },  // VDOT conservatism — protect users from themselves (selective
   { n: 11, by: 'exempt', why: 'Display convention (ranges not points), owned by lib/format.ts under ADR-015 — a formatting rule, not a prescription.' },  // Pace ranges, not points
-  { n: 12, by: 'unverified' },  // Easy-run zone cap — Z2 ceiling
+  { n: 12, by: 'invariant', ref: 'INV-PLAN-EASY-RUN-ZONE-CAP' },  // Easy-run zone cap — Z2 ceiling
   { n: 13, by: 'unverified' },  // Fitness classification — VDOT first, volume fallback
   { n: 14, by: 'exempt', why: 'Zone FORMULAS (Karvonen / %MaxHR / Tanaka). Exempt for the same reason as §10 — arithmetic, not a coaching choice.' },  // HR zones — five zones, two formulas, one config
   { n: 15, by: 'unverified' },  // Tier semantics — Option A: granted-at-trial, retained-in-fre
@@ -90,7 +90,7 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 29, by: 'unverified' },  // Fresh-from-layoff detection
   { n: 30, by: 'test', ref: 'lib/plan/shakeoutExemption.test.ts', why: 'race-week shakeout cap' },  // Race-week shakeout cap and strides
   { n: 31, by: 'unverified' },  // Compression classification — three modes
-  { n: 32, by: 'unverified' },  // Tune-up race callout
+  { n: 32, by: 'invariant', ref: 'INV-PLAN-TUNE-UP-CALLOUT' },  // Tune-up race callout
   { n: 33, by: 'invariant', ref: 'INV-PLAN-COACH-NOTES-MATCH-INTENT' },  // Coach notes by session intent
   { n: 34, by: 'exempt', why: 'Meta-principle ABOUT the invariant registry itself. Asserting it would be the registry checking it exists.' },  // Invariant registry — declared and exercised
   { n: 35, by: 'test', ref: 'lib/plan/overdoBrake.test.ts', why: 'persona floors via the overdo brake' },  // Persona-aware prescriptions — floors are minimums, not targe
@@ -118,7 +118,7 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 60, by: 'test', ref: 'lib/coaching/reframeCohort.test.ts', why: 'post-run reframe voice + cohort' },  // Post-run reframe — the hug AND the truth
   { n: 61, by: 'unverified' },  // Limiter hypothesis — naming the physiological cause
   { n: 62, by: 'unverified' },  // Post-race recovery — structured return to training (AI-DEPTH
-  { n: 63, by: 'unverified' },  // Session intent — every type explains its place in the week
+  { n: 63, by: 'exempt', why: 'Session intent lives in the `session_guidance` Supabase table (one row per session type), not in a generated plan. validatePlan takes a Plan and has nothing to read; the copy is governed by brand.md\'s voice rules.' },  // Session intent — every type explains its place in the week
   { n: 64, by: 'invariant', ref: 'INV-PLAN-WEEK-HAS-REST-DAY' },  // Day-level rest — every training week needs at least one rest
   { n: 65, by: 'test', ref: 'lib/coaching/dayBoundary.test.ts', why: 'today is in flight until midnight' },  // Day boundary — today is in flight until midnight
   { n: 66, by: 'invariant', ref: 'INV-PLAN-LONG-RUN-HAS-AN-AXIS' },  // Long-run shortfall — match the prescription to where the run
@@ -141,7 +141,7 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 83, by: 'invariant', ref: 'INV-PLAN-INTENSITY-ORDERING' },  // Sessions must be coherent with each other, not only with the
   { n: 84, by: 'invariant', ref: 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK' },  // Displayed zone and HR derive from prescribed work — one sour
   { n: 85, by: 'invariant', ref: 'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD' },  // Intensity has an inventory, or the runner\s answer means not
-  { n: 86, by: 'unverified' },  // A fixed-shape session still owes the runner a dose and an ho
+  { n: 86, by: 'invariant', ref: 'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT' },  // A fixed-shape session still owes the runner a dose and an ho
   { n: 87, by: 'invariant', ref: 'INV-PLAN-DELOAD-PLACEMENT' },  // A recovery week must not open a phase
   { n: 88, by: 'test', ref: 'lib/plan/vo2maxOnsetPlacement.test.ts', why: 'VO2max dose + placement' },  // The VO2max pool owes dose granularity and a continuous shape
   { n: 89, by: 'invariant', ref: 'INV-PLAN-EARLY-ONSET-GATED' },  // Experience-gated quality onset — a demonstrated base earns a
@@ -155,12 +155,12 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 97, by: 'test', ref: 'lib/plan/earlyQualityOnset.test.ts', why: 'Amendment 1 — surplus weeks must not blow §1 on a low-day plan; deterministic, the random sweep never crossed days_available 3 with the full §89 gate' },  // A demonstrated runner\s surplus weeks belong inside the plan
   { n: 98, by: 'invariant', ref: 'INV-PLAN-ONSET-YIELD-BOUNDED' },  // §89\s onset is granted only as far as §1 permits
   { n: 99, by: 'test', ref: 'lib/plan/anchorEligibility.test.ts', why: 'a session states its own length' },  // A session states the length its own structure needs
-  { n: 100, by: 'unverified' },  // A safety trim must not hand its deficit to the next week
+  { n: 100, by: 'invariant', ref: 'INV-PLAN-DELIVERED-RAMP' },  // A safety trim must not hand its deficit to the next week
   { n: 101, by: 'unverified' },  // `compressed` means two different things, so it is two fields
   { n: 102, by: 'unverified' },  // An intentional downgrade is not a missing session
   { n: 103, by: 'unverified' },  // Fitness signal — benchmark recalibration prompt (ENGINE-01)
   { n: 104, by: 'invariant', ref: 'INV-PLAN-RACE-SPECIFIC-VARIETY' },  // A peak rehearses the race more than one way
-  { n: 105, by: 'unverified' },  // Marathon pace must exist away from the long run
+  { n: 105, by: 'invariant', ref: 'INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN' },  // Marathon pace must exist away from the long run
   { n: 106, by: 'invariant', ref: 'INV-PLAN-PEAK-NOT-BELOW-START' },  // A plan never peaks below where the runner already is
   { n: 107, by: 'invariant', ref: 'INV-PLAN-LR-SEGMENT-RECORDED' },  // A session may not prescribe work it does not record
   { n: 108, by: 'test', ref: 'lib/coaching/sessionScore.test.ts', why: 'Amendment 1 — no composite score when HR is unmeasured; pinned on the founder\'s own HR-less run' },  // What a run SCORES, and what stays outside the score

@@ -6,8 +6,8 @@
     "unclassified": "nobody has looked yet. THIS is the column that should shrink."
   },
   "generated": "2026-09-15",
-  "wokenCount": 67,
-  "totalInvariants": 100,
+  "wokenCount": 70,
+  "totalInvariants": 104,
   "unproven": {
     "INV-PLAN-BOUNCEBACK-BOUNDED": "unclassified",
     "INV-PLAN-INJURY-CAP-DELIVERED": "unclassified",
@@ -26,6 +26,7 @@
     "INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE": "unclassified",
     "INV-PLAN-INTENSITY-ORDERING": "unclassified",
     "INV-PLAN-PHASE-FOCUS-REACHABLE": "unclassified",
+    "INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN": "corpus",
     "INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES": "unclassified",
     "INV-PLAN-HR-ASSUMPTIONS-SURFACED": "unclassified",
     "INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR": "unclassified",

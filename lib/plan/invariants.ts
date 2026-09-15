@@ -100,6 +100,10 @@ export const INVARIANT_CODES = [
   'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
   'INV-PLAN-INTENSITY-ORDERING',
   'INV-PLAN-PHASE-FOCUS-REACHABLE',
+  'INV-PLAN-PHASE-STRUCTURE',
+  'INV-PLAN-EASY-RUN-ZONE-CAP',
+  'INV-PLAN-TUNE-UP-CALLOUT',
+  'INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN',
   'INV-PLAN-SECOND-QUALITY-MIN-DAYS',
   'INV-PLAN-INTENSITY-DISTRIBUTION',
   'INV-PLAN-LR-PROGRESSION-CAP',
@@ -2841,7 +2845,11 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         if (bothBreach) {
           violations.push({
             code: 'INV-PLAN-DELIVERED-RAMP',
-            principle_ref: 'CoachingPrinciples §94 (§2)',
+            // §100 added 2026-09-15: "a safety trim must not hand its deficit to
+            // the next week" IS this assertion — the ramp is measured from the
+            // volume the runner actually received, not the curve's value for the
+            // week that was trimmed.
+            principle_ref: 'CoachingPrinciples §94 (§2), §100',
             severity: 'warn',
             week: w.n,
             message: `Week ${w.n}: DELIVERED volume rose ${totalRisePct.toFixed(0)}% from week ${prev.n} (${deliveredKm(prev).toFixed(0)}→${deliveredKm(w).toFixed(0)}km; trimable ${prevTrimable.toFixed(0)}→${nowTrimable.toFixed(0)}km, +${risePct.toFixed(0)}%), above §2's ${capPct}% cap. The curve may be compliant while the placed sessions are not — typically because a volume/quality-split trim held the previous week flat and handed its deficit forward.`,
@@ -3624,7 +3632,12 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         if (Math.abs(sn.duration_mins - expectedTotal) > tol) {
           violations.push({
             code: 'INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT',
-            principle_ref: 'CoachingPrinciples §8',
+            // §86 added 2026-09-15: its requirement (a) — "a fixed shape must state a
+            // duration its own structure fits" — is what CB-CAT-02 extended this
+            // check to cover for threshold_ladder / threshold_pyramid. Naming it
+            // here so the coverage manifest can see the link instead of reading
+            // §86 as unchecked.
+            principle_ref: 'CoachingPrinciples §8, §86',
             severity: 'error', week: w.n, day,
             message: `"${sn.label}"'s stated duration does not fit its own prescribed structure (${mainMins.toFixed(1)} min of work+recovery needs ~${expectedTotal.toFixed(0)} min total with warm-up/cool-down).`,
             actual: `${sn.duration_mins} min`,
@@ -5062,6 +5075,154 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           })
         }
       }
+    }
+  }
+
+  // ── §4 · §12 · §32 · §105 — added 2026-09-15 (coverage gate, category A) ───
+  //
+  // Four rules that were STATED and never enforced. Found by
+  // `principleCoverage.test.ts`, which asks the question no per-commit hook can:
+  // not "did this change break a rule" but "is every rule checked at all".
+  // Each is written against what the principle actually says, not against what
+  // the engine currently happens to do — the point is to be able to FAIL.
+
+  // INV-PLAN-PHASE-STRUCTURE (§4) — a plan progresses base → build → peak →
+  // taper, in that order, each phase contiguous.
+  //
+  // Nothing asserted this. `computePhases` is runner-aware (ADR-021 shortens
+  // base; §98's ladder walks it back; §57 prepends foundation weeks) and every
+  // one of those levers moves a boundary. A plan that lost a phase, or whose
+  // weeks left a phase and came back to it, would have generated silently.
+  {
+    const order = ['base', 'build', 'peak', 'taper']
+    const seen: string[] = []
+    for (const w of plan.weeks) {
+      if (w.n < 1) continue                       // §57 foundation weeks sit outside the arc
+      const ph = w.phase ?? 'base'
+      if (seen[seen.length - 1] !== ph) seen.push(ph)
+    }
+    // Contiguity: a phase may not appear, stop, and reappear.
+    const repeated = seen.filter((ph, i) => seen.indexOf(ph) !== i)
+    if (repeated.length > 0) {
+      violations.push({
+        code: 'INV-PLAN-PHASE-STRUCTURE',
+        principle_ref: 'CoachingPrinciples §4',
+        severity: 'error',
+        week: 0,
+        message: `Phases are not contiguous — the plan leaves a phase and returns to it (${seen.join(' → ')}). Each phase has one purpose and one block.`,
+        actual: seen.join(' → '),
+        expected: 'each phase appears exactly once, in order',
+      })
+    }
+    // Order: whatever phases are present must appear in the canonical sequence.
+    const ranks = seen.map(ph => order.indexOf(ph)).filter(r => r >= 0)
+    const ascending = ranks.every((r, i) => i === 0 || r > ranks[i - 1])
+    if (!ascending) {
+      violations.push({
+        code: 'INV-PLAN-PHASE-STRUCTURE',
+        principle_ref: 'CoachingPrinciples §4',
+        severity: 'error',
+        week: 0,
+        message: `Phases run out of order (${seen.join(' → ')}). §4: plans progress base → build → peak → taper.`,
+        actual: seen.join(' → '),
+        expected: 'base → build → peak → taper',
+      })
+    }
+  }
+
+  // INV-PLAN-EASY-RUN-ZONE-CAP (§12) — "easy runs are capped at the top of Z2".
+  //
+  // The single most load-bearing sentence in the product ("you can't outrun your
+  // easy days") and nothing checked it. An easy run carrying a Z3 marker is the
+  // grey zone the brand exists to prevent, printed on the card.
+  //
+  // Reads the PRESCRIBED zone string, which is what the runner acts on. §12
+  // Amendment 1 is about measured DRIFT above the cap and is a different
+  // question — this is the prescription, not the execution.
+  for (const w of plan.weeks) {
+    for (const [day, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+      if (!sn || sn.type !== 'easy' || !sn.zone) continue
+      const z = String(sn.zone)
+      // A segmented long run legitimately carries a band spanning Z2-Z3 (§24b,
+      // §25) — its race-pace portion is prescribed, not drift. Exempt by the
+      // structural signal, never by reading the label (D-17).
+      if (isLongRun(sn)) continue
+      if (/\b[3-5]\b/.test(z) && !/^Z?2\b/.test(z)) {
+        violations.push({
+          code: 'INV-PLAN-EASY-RUN-ZONE-CAP',
+          principle_ref: 'CoachingPrinciples §12',
+          severity: 'error',
+          week: w.n, day,
+          message: `Easy session "${sn.label}" is prescribed at ${z}. §12 caps easy runs at the top of Z2 — Z3 is the grey zone the plan exists to keep them out of.`,
+          actual: z,
+          expected: 'Zone 2 (or below)',
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-TUNE-UP-CALLOUT (§32) — a plan of TUNE_UP_MIN_PLAN_WEEKS or longer
+  // surfaces the optional tune-up race callout.
+  //
+  // `warn`, deliberately: the callout is OPTIONAL for the runner, and a plan
+  // whose qualifying week is displaced (a deload, a race-week collision) is not
+  // a broken plan. But a long plan that never offers one at all is a silently
+  // dropped feature, which is what this catches.
+  {
+    const mainWeeks = plan.weeks.filter(w => w.n >= 1)
+    if (mainWeeks.length >= GENERATION_CONFIG.TUNE_UP_MIN_PLAN_WEEKS) {
+      // Reads the WEEK field the generator actually stamps
+      // (`ruleEngine.ts` → `tune_up_callout`), not a coach note and not meta.
+      // Checking the wrong field is how a rule reads as enforced and is not.
+      const hasCallout = mainWeeks.some(w => !!w.tune_up_callout)
+      if (!hasCallout) {
+        violations.push({
+          code: 'INV-PLAN-TUNE-UP-CALLOUT',
+          principle_ref: 'CoachingPrinciples §32',
+          severity: 'warn',
+          week: 0,
+          message: `Plan is ${mainWeeks.length} weeks (§32 threshold ${GENERATION_CONFIG.TUNE_UP_MIN_PLAN_WEEKS}) but offers no tune-up race callout anywhere.`,
+          actual: 'no callout',
+          expected: 'a tune-up callout on the latest non-deload build week',
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN (§105) — a distance's
+  // race-specific work must not live ENTIRELY inside one session shape.
+  //
+  // `warn`, and the severity is the honest part. CAT-MARATHON-RACE-SPECIFIC-01
+  // shipped `mp_blocks` to give marathon a second shape and measured plans
+  // seeing BOTH rows at 0% → 8%. An error here would fail the other 92% — plans
+  // the board has seen and accepted. So this RECORDS the shape §105 names
+  // (every scrap of goal-pace exposure inside the long run) rather than
+  // pretending the catalogue already prevents it.
+  //
+  // NOT covered by INV-PLAN-RACE-SPECIFIC-VARIETY: §104's check was amended on
+  // 2026-09-11 to EXCLUDE the long run precisely because counting it fired on
+  // 92% of marathon plans — which is the very case §105 is about.
+  if (input.race_distance_km > 30 && input.goal === 'time_target') {
+    const racePace = plan.weeks
+      .filter(w => w.n >= 1)
+      .flatMap(w => Object.values(w.sessions))
+      // NOT filtered on `type === 'quality'`. INV-CLASS-004: the generator models
+      // a marathon race-pace long run as `type: 'easy'` with a race-pace segment,
+      // so filtering on quality made this invariant UNABLE TO FIRE — the exact
+      // dead-check class the liveness harness exists to catch, and it caught this
+      // one on its first run.
+      .filter((sn): sn is Session => !!sn && sn.type !== 'rest' && sn.type !== 'race'
+        && classifyStimulus(sn) === 'race_pace')
+    if (racePace.length > 0 && racePace.every(sn => isLongRun(sn))) {
+      violations.push({
+        code: 'INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN',
+        principle_ref: 'CoachingPrinciples §105',
+        severity: 'warn',
+        week: 0,
+        message: `All ${racePace.length} race-pace sessions are segments of the long run. §105: marathon pace must exist away from the long run.`,
+        actual: `${racePace.length}/${racePace.length} inside the long run`,
+        expected: 'at least one race-pace session in another shape (e.g. mp_blocks)',
+      })
     }
   }
 
