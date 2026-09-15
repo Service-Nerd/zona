@@ -6784,7 +6784,22 @@ function buildRulePlanOnce(
         // amended in `types/plan.ts` in this commit rather than quietly violated.
         c.w.quality_downgraded = {
           trigger: 'injury_intensity_ceiling',
-          at: new Date().toISOString(),
+          // THE WEEK'S OWN DATE, NEVER `new Date()`.
+          //
+          // Caught by `verify:parity` the day after this shipped: a wall-clock
+          // stamp inside a WEEK makes the generated plan non-deterministic, so
+          // the same inputs hash differently on every run. `meta.generated_at`
+          // is wall-clock too, which is exactly why the parity harness strips
+          // it — but `quality_downgraded.at` is nested in a week and no stripper
+          // reaches it. Six plans reported as "changed" against a commit that
+          // contained no engine change at all.
+          //
+          // The field is written in two places and READ IN NONE (the §102
+          // exemption only tests `!!w.quality_downgraded`), so nothing is lost
+          // by making it deterministic. The reshaper's own writer takes `nowIso`
+          // as a PARAMETER for the same reason; this path had no caller to take
+          // it from and reached for the clock instead.
+          at: c.w.date,
         }
 
         // §28 — THE WEEK MAY HAVE JUST GAINED ITS ONLY STRIDE-ELIGIBLE DAY.

@@ -3,8 +3,7 @@
  "reasons": {
   "corpus": "the harness never builds this plan SHAPE (maintenance has its own generator; foundation / recalibration / ultra are not in the cohort grid). Not a defect in the check.",
   "mutation": "the battery does not yet perturb the field this rule reads. Add a mutation, not a fixture.",
-  "unclassified": "nobody has looked yet. THIS is the column that should shrink.",
-  "mutation:INV-PLAN-PEAK-LR-EARNED-TIER": "Gated on an INPUT (longest_recent_run_km clearing \u00a724's floor) AND volume_profile != maintenance AND the long run sitting under LONG_RUN_CAP_MINUTES. A mutation receives only the PLAN, so it cannot set the input arm, and the sample reaches inputs that qualify but not the conjunction. PROVEN LIVE ELSEWHERE: lib/plan/peakLrEarnedTier.test.ts fires it, and asserts it stays silent when the minute cap binds and when the runner has not earned a tier. A rule that cannot be woken here is proved somewhere else, never excused."
+  "unclassified": "nobody has looked yet. THIS is the column that should shrink."
  },
  "generated": "2026-09-15",
  "wokenCount": 70,
@@ -22,7 +21,6 @@
   "INV-PLAN-INJURY-NO-HILLS": "unclassified",
   "INV-PLAN-RACE-WEEK-SHARPENING": "unclassified",
   "INV-INPUT-LONGEST-LE-WEEKLY": "mutation",
-  "INV-PLAN-PEAK-LR-EARNED-TIER": "mutation",
   "INV-PLAN-DIFFICULTY-ANNOTATED": "unclassified",
   "INV-PLAN-INTENSITY-ORDERING": "unclassified",
   "INV-PLAN-PHASE-FOCUS-REACHABLE": "unclassified",

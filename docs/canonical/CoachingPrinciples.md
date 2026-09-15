@@ -1149,6 +1149,72 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. Tier selection 
 
 ---
 
+### Amendment 1 — the tier is a SIZING floor, not a delivery promise (LR-EARNED-TIER-01, Coaching Board 2026-09-15)
+
+**Principle.** §35's tier is applied when the peak long run is **sized**. What the
+runner is **delivered** is then governed by §45 (progression cap), §47 (peak
+alternation) and §9 (build step-backs), and those win. §35 already said so —
+"where doing so doesn't violate other principles" — and this makes the ordering
+explicit rather than leaving it to be rediscovered.
+
+**Why — §45 had already ruled the precedence.** §45's own text reads: *"When the
+§24 floor cannot be reached without violating this cap, **this principle wins**
+and the plan downgrades to maintenance."* §35's tier sits ABOVE §24's floor, so it
+cannot outrank what the floor itself yields to. Reading §35 as a delivery promise
+asks the plan to break a cap that exists because spike-then-recover is the most
+reliable injury vector in this population (Willy).
+
+**Traced, not inferred.** An HM runner earning the 95% stretch tier (20.5 km) left
+`buildWeekSessions` with peak long runs of **23.4 km and 22.7 km** — above the
+tier, so the lift never even bound. §47 then made one peak week a step-back and
+the delivered peak became 19 km, at 119 min against a 135-min cap that was not
+binding. **Nothing was under-prescribed; the safety rules were applied.**
+
+> ⚠️ **`PEAK_LR_RATIO_STRETCH` IS CURRENTLY INERT, and that is recorded here rather
+> than quietly corrected.** Measured across 36 comparable plans varying distance,
+> volume, days and runway: the stretch tier changed the delivered peak long run in
+> **0 of 36**. The TARGET lift is observable in 33 of 36 (floor-only runners get a
+> materially shorter peak long run), so the tiering mechanism works — it is the top
+> rung specifically that never survives to delivery.
+>
+> **Per §25 Amendment 1, "read by nothing" is evidence a CONSUMER is missing, not
+> that the VALUE is junk** — and this is the same class one step on: the value IS
+> read, and its effect is always erased downstream. It is NOT deleted. Either the
+> ordering changes so the top rung can land, or §35 should carry two rungs instead
+> of three. **That is a further board question, deliberately not answered here.**
+
+**Recorded collision (Sims).** §35's stretch gate and §47's consecutive-peak
+exception test the same question — "can this runner take more?" — with different
+predicates:
+
+| | §35 stretch | §47 exception |
+|---|---|---|
+| hard-session relationship | `love` | `love` |
+| injury | no HILL-RESTRICTING injury | **no injury at all** |
+| training age | not tested | **`5yr+`** |
+
+A runner can earn §35's stretch tier and fail §47's exception, which is exactly the
+traced case. **Sims's objection stands on the record: §35's gate turns on a
+self-report about appetite for hard work and uses it to increase load, while §47's
+requires a training-age floor and a clean injury history. If the two are ever
+reconciled, reconcile toward §47's.** Not actioned here.
+
+**Config.** No numeric changes. `PEAK_LR_RATIO_VS_RACE`, `_TARGET` and `_STRETCH`
+are unchanged; only their STATUS is clarified. Inventing a constant to satisfy the
+three-artifact habit would be the §25 duplicate-declaration failure.
+
+**Mechanical check.** `INV-PLAN-PEAK-LR-EARNED-TIER` is **RETIRED** — it asserted a
+delivery promise that this amendment says does not exist, and fired on 8 plans that
+were correct. §24's `INV-PLAN-PEAK-LR-RACE-RATIO` continues to guarantee the runner
+is not under-prescribed below the floor. The tier's observable half is pinned by
+`lib/plan/peakLrEarnedTier.test.ts`.
+
+**Board:** CORRECT WITH AMENDMENT. Hutchinson chairing; Willy vetoing the
+re-application options; Seiler no objection; McMillan recording that the shape a
+runner actually notices is the peak-phase long run being shorter than a build
+week's (`INV-PLAN-PEAK-IN-PEAK-PHASE`, 21.2% of plans), which is a separate item.
+
+
 ## 36. Taper quality variety
 
 **Principle.** Within taper phase, no two consecutive quality sessions may share the same label and pace target. The first taper week uses threshold/tempo work; subsequent taper weeks (until race week) prefer race-specific sharpening at goal pace. Race week itself stays shakeout-only (§26).

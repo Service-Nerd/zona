@@ -109,7 +109,6 @@ export const INVARIANT_CODES = [
   'INV-PLAN-COMPRESSION-SPLIT',
   'INV-PLAN-STRIDES-PRESENT',
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
-  'INV-PLAN-PEAK-LR-EARNED-TIER',
   'INV-PLAN-VDOT-STALENESS-LADDER',
   'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING',
   'INV-PLAN-GATED-SURPLUS-IN-PLAN',
@@ -2019,109 +2018,24 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       // and mechanical check have to agree on what the floor IS.
       const effectiveRequired =
         Math.min(requiredKm, capKm) - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-      // §35 — FLOORS ARE MINIMUMS, NOT TARGETS.
+      // INV-PLAN-PEAK-LR-EARNED-TIER — RETIRED 2026-09-15 (Coaching Board,
+      // LR-EARNED-TIER-01, §35 Amendment 1).
       //
-      // §24's floor is the conservative default every plan reaches. §35 says a
-      // runner whose inputs support more should GET more: target when their
-      // longest recent run already clears the floor, stretch when they also
-      // declared `hard_session_relationship: 'love'` with no hill-restricting
-      // injury. Round 2 found Anna's peak long run sitting at exactly the 85%
-      // floor — "floor-stopping", a defect of conservatism rather than a virtue.
+      // It asserted §35's earned tier on the DELIVERED peak long run. §35
+      // Amendment 1 rules that the tier is a SIZING floor: §45, §47 and §9 govern
+      // delivery, and §45 wins by its own clause ("this principle wins" where the
+      // §24 floor and the cap collide). The invariant was therefore asking plans
+      // to break a ratified cap, and fired on 8 plans that were correct.
       //
-      // ⚠️ THE CAP IS READ IN MINUTES, and getting that wrong cost a whole
-      // measurement pass. A first cut converted LONG_RUN_CAP_MINUTES to km using
-      // a pace back-derived from the capped session's own distance and duration
-      // — circular, so it always handed back the distance already delivered, and
-      // it reported 276 violations that were the cap doing its job. Measured
-      // properly: a long run within 5 minutes of the cap has bought every
-      // kilometre that runner's pace allows, and §35 says plainly that
-      // LONG_RUN_CAP_MINUTES still wins. Firing rate across 31,344 plans: zero.
-      {
-        // SESSION-KM-02: pick the peak long run through `longRunKmOf`, the
-        // single owner used two lines above — never by comparing
-        // `distance_km ?? 0`. A beginner's plan is duration-anchored, so `?? 0`
-        // reads every long run as covering no ground and the reducer would
-        // return whichever came first. `sessionDistanceReach.test.ts` caught
-        // exactly this in the first cut of this block.
-        const longSn = peakWeeks
-          .map(w => ({ w, sn: Object.values(w.sessions).find(x => x && isLongRun(x)) }))
-          .filter(({ sn }) => !!sn)
-          .reduce<Session | undefined>((best, { w, sn }) =>
-            (longRunKmOf(w) ?? -1) >= (peakLrKm ?? 0) ? sn : best, undefined)
-        const recentMeetsFloor = input.longest_recent_run_km >= requiredKm
-        const noRestrictingInjury = !(input.injury_history ?? []).some(i =>
-          GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k)))
-        const tierRatio =
-          (input.hard_session_relationship === 'love' && noRestrictingInjury && recentMeetsFloor)
-            ? GENERATION_CONFIG.PEAK_LR_RATIO_STRETCH[distKey]
-            : recentMeetsFloor
-              ? GENERATION_CONFIG.PEAK_LR_RATIO_TARGET[distKey]
-              : ratio
-        const capBinding = (longSn?.duration_mins ?? 0) >= longCapMins - 5
-
-        // ⚠️ §35's TIER IS A SIZING FLOOR, NOT A DELIVERY PROMISE, and asserting
-        // it on the delivered long run asks the plan for something §35 never said.
-        //
-        // TRACED, not inferred (LR-EARNED-TIER-01, 2026-09-15). Instrumenting the
-        // producer on the worst case showed the lift working perfectly: an HM
-        // runner earning the 95% stretch tier left `buildWeekSessions` with peak
-        // long runs of 23.4 km and 22.7 km, both ABOVE the 20.5 km tier — the
-        // floor never even bound. The post-passes then reduced them to 15 and 19:
-        // §47 alternates the peak weeks, §9 applies build step-backs, §45 caps
-        // week-on-week growth. Every one is ratified, and §35 defers to them in
-        // its own words: "where doing so doesn't violate other principles."
-        //
-        // This is the CURVE-vs-DELIVERED distinction ADR-022/§94 already names,
-        // one ratio over. The observable signature is that the plan's LONGEST run
-        // ends up OUTSIDE the peak phase — exactly when the alternation and
-        // step-back machinery has reshaped the peak, and exactly when the tier
-        // cannot be judged on what survived. `INV-PLAN-PEAK-IN-PEAK-PHASE` already
-        // reports that shape separately, on 21.2% of plans.
-        //
-        // ⚠️ A FIRST ATTEMPT EXEMPTED ON §45's CAP ARITHMETIC AND WAS WRONG: it
-        // assumed the allowance was `prev + max(prev x 20%, 4)`, which gives the
-        // observed 19 and looked like a clean explanation.
-        // `LONG_RUN_PROGRESSION_CAP_ABS_KM` is 5, so §45 actually allowed 20 and
-        // the 19 had another cause entirely. A string assertion caught it before
-        // it shipped. Trace the producer; do not reverse-engineer a mechanism
-        // from the number it happened to emit.
-        const planLongestKm = Math.max(0, ...plan.weeks
-          .filter(w => w.n >= 1 && w.type !== 'race')
-          .map(w => longRunKmOf(w) ?? 0))
-        const peakHoldsThePeak = peakLrKm >= planLongestKm - 0.01
-        // The producer rounds the tier UP to DISTANCE_ROUNDING_PRECISION_KM and
-        // later passes round the delivered long run DOWN, so the two can sit a
-        // full precision step apart on arithmetic alone. Comparing against the
-        // unrounded tier decides the check on the engine's own rounding — the
-        // §24 Amendment 1 lesson, one ratio over. A first cut allowed one step
-        // and still fired on 18.4615 vs 18.49.
-        const prec = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-        const tierRequired = input.race_distance_km * tierRatio - prec * 2
-        if (tierRatio > ratio && !capBinding && peakHoldsThePeak
-            && peakLrKm + 0.01 < tierRequired) {
-          violations.push({
-            code: 'INV-PLAN-PEAK-LR-EARNED-TIER',
-            principle_ref: 'CoachingPrinciples §35, §24',
-            // `warn`, and the severity is the honest part (§34). §35 says the
-            // engine SHOULD push higher "where doing so doesn't violate other
-            // principles" — a SHOULD with a stated escape clause, not a MUST.
-            // Measured across the 15,973-plan sweep: 9 plans (0.06%) clear §24's
-            // floor, are not minute-capped, and still stop below the tier their
-            // inputs earn. Whether another principle binds in those nine is not
-            // yet established, so an `error` would fail plans §35 itself may
-            // permit. This RECORDS the floor-stopping rather than asserting a
-            // cause — tracked as LR-EARNED-TIER-01.
-            severity: 'warn',
-            week: 0,
-            message: `Peak long run ${Math.round(peakLrKm * 10) / 10}km clears §24's floor but stops below the ${Math.round(tierRatio * 100)}% tier this runner's inputs earn (longest recent ${input.longest_recent_run_km}km, hard-session relationship '${input.hard_session_relationship ?? 'unset'}'). §35: a floor that becomes a ceiling is under-coaching.`,
-            actual: peakLrKm,
-            // Two decimals: at one, a 45-metre shortfall printed as
-            // "got 19, expected ≥ 19.0", which reads as a broken invariant
-            // rather than a real gap and sent triage the wrong way for a round.
-            expected: `≥ ${tierRequired.toFixed(2)}`,
-          })
-        }
-      }
+      // Traced before retiring, not assumed: an HM runner earning the 95% tier
+      // (20.5 km) left `buildWeekSessions` at 23.4 and 22.7 km — the lift never
+      // bound — and §47's alternation brought the delivered peak to 19 km at
+      // 119 min against a 135-min cap that was not binding.
+      //
+      // ⚠️ DO NOT RE-ADD IT. §24's INV-PLAN-PEAK-LR-RACE-RATIO already guarantees
+      // the runner is not under-prescribed below the FLOOR, which is the half that
+      // protects them. The tier's observable behaviour is pinned by
+      // `lib/plan/peakLrEarnedTier.test.ts`.
 
       if (peakLrKm + 0.01 < effectiveRequired) {
         violations.push({

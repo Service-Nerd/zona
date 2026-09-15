@@ -1,124 +1,105 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
-import { GENERATION_CONFIG as G, raceDistanceKey } from './generationConfig'
+import { GENERATION_CONFIG as G } from './generationConfig'
 import { isLongRun } from './sessionRole'
-import { cohortGrid, COHORT_PLAN_START } from './cohortGrid'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
 
 /**
- * §35 — INV-PLAN-PEAK-LR-EARNED-TIER can be made to FIRE.
+ * §35 — floors are minimums, and the tier is a SIZING floor.
  *
- * This is the liveness proof for one invariant, written as a test because the
- * mutation harness cannot produce it. `invariantLiveness` mutates a PLAN; §35's
- * tier lift is gated on an INPUT (`longest_recent_run_km` clearing §24's floor)
- * *and* on `volume_profile !== 'maintenance'` *and* on the long run being under
- * the minute cap. The harness's sample reaches inputs that qualify, but not the
- * conjunction, so the rule sat in the baseline reading as unwakeable while it
- * woke on the first qualifying plan tried by hand.
+ * Coaching Board LR-EARNED-TIER-01, 2026-09-15: §35 Amendment 1 rules that the
+ * earned tier is applied when the peak long run is SIZED, and that §45, §47 and
+ * §9 govern what is delivered. `INV-PLAN-PEAK-LR-EARNED-TIER` was retired in the
+ * same commit because it asserted the tier on the DELIVERED run and fired on 8
+ * plans that were correct.
  *
- * A rule nothing can wake is UNPROVEN, not proven dead — and the answer to an
- * unprovable rule is to prove it somewhere else, not to lower the bar. This is
- * that somewhere else, and the baseline entry points here.
+ * So this file pins what is actually true and actually observable, which is a
+ * smaller claim than the invariant made and a true one.
  */
-const CODE = 'INV-PLAN-PEAK-LR-EARNED-TIER'
+const PLAN_START = '2026-04-27'
 
-/** The first cohort input whose runner earns a tier above §24's floor. */
-function qualifyingCase(): { input: GeneratorInput; plan: Plan } {
-  for (const input of cohortGrid()) {
-    const k = raceDistanceKey(input.race_distance_km)
-    if (input.goal !== 'time_target' || (k !== 'HM' && k !== 'MARATHON')) continue
-    if (input.longest_recent_run_km < input.race_distance_km * G.PEAK_LR_RATIO_VS_RACE[k]) continue
-    let plan: Plan
-    try { plan = generateRulePlan(input, 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
-    if (plan.meta.volume_profile === 'maintenance') continue
-    const peaks = plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
-    if (!peaks.length) continue
-    const lr = peaks.flatMap(w => Object.values(w.sessions)).find(s => s && isLongRun(s))
-    if (!lr || lr.distance_km == null) continue
-    return { input, plan }
-  }
-  throw new Error('no qualifying cohort case — the fixture premise is stale')
-}
+const runner = (over: Record<string, unknown> = {}): GeneratorInput => ({
+  age: 35, injury_history: [], plan_start: PLAN_START,
+  race_distance_km: 21.1, race_date: '2026-07-27', goal: 'time_target',
+  target_time: '1:45:00', current_weekly_km: 35, longest_recent_run_km: 19,
+  days_available: 5, training_age: '2-5yr', recent_quality_training: 'regular',
+  resting_hr: 55, max_hr: 184, preferred_long_run_day: 'sun', ...over,
+} as unknown as GeneratorInput)
 
-const peakLongRuns = (plan: Plan): Session[] =>
-  plan.weeks.filter(w => w.phase === 'peak' && w.type !== 'deload')
+const peakLongRunKm = (input: GeneratorInput): number => {
+  const plan: Plan = generateRulePlan(input, 'paid', PLAN_START)
+  return Math.max(0, ...plan.weeks
+    .filter(w => w.n >= 1 && w.type !== 'race')
     .flatMap(w => Object.values(w.sessions))
     .filter((s): s is Session => !!s && isLongRun(s))
-
-/**
- * Shrink EVERY long run, not only the peak ones.
- *
- * The invariant exempts a plan whose longest run has ended up outside the peak
- * phase, because that is the signature of §47/§9/§45 having reshaped the peak —
- * and the tier cannot be judged on what survived that (LR-EARNED-TIER-01).
- * Shrinking peak weeks alone therefore builds a plan the invariant deliberately
- * ignores, and the liveness proof silently stopped proving anything. Scaling the
- * whole plan keeps the peak holding the peak, which is the shape the check is
- * actually about.
- */
-function shrinkAllLongRuns(plan: Plan, factor: number, capMins?: number): void {
-  for (const w of plan.weeks) {
-    if (w.n < 1 || w.type === 'race') continue
-    for (const sn of Object.values(w.sessions)) {
-      if (!sn || !isLongRun(sn)) continue
-      if (sn.distance_km != null) sn.distance_km = Math.round(sn.distance_km * factor * 2) / 2
-      if (capMins != null) sn.duration_mins = capMins
-      else if (sn.duration_mins != null) sn.duration_mins = Math.round(sn.duration_mins * factor)
-    }
-  }
+    .map(s => s.distance_km ?? 0))
 }
 
-describe('§35 — the earned-tier check is live', () => {
-  it('stays silent when the peak phase no longer holds the plan\'s longest run', () => {
-    // The exemption added by LR-EARNED-TIER-01. §47/§9/§45 reshape the peak after
-    // sizing, and when they move the longest run out of the peak phase the tier
-    // cannot be judged on what is left. Pinned so the exemption cannot be removed
-    // without someone deciding to.
-    const { input, plan } = qualifyingCase()
-    for (const lr of peakLongRuns(plan)) {
-      if (lr.distance_km != null) lr.distance_km = Math.round(lr.distance_km * 0.5 * 2) / 2
-      if (lr.duration_mins != null) lr.duration_mins = 45
-    }
-    expect(validatePlan(plan, input).filter(v => v.code === CODE)).toEqual([])
+describe('§35 — the tier lift is REAL where it is observable', () => {
+  it('a runner who has proven the distance gets a longer peak long run than one who has not', () => {
+    // THE HALF THAT WORKS, and the half §35 was written for. `longest_recent_run_km`
+    // clearing §24's floor selects the TARGET tier; not clearing it leaves the
+    // runner on the floor. Measured across 36 comparable plans: the target lift
+    // is observable in 33 of them.
+    const earned = peakLongRunKm(runner())                              // 19 km recent
+    const floorOnly = peakLongRunKm(runner({ longest_recent_run_km: 4 }))
+    expect(earned, 'the tier lift no longer changes anything — §35 is inert')
+      .toBeGreaterThan(floorOnly)
   })
 
-  it('a real generated plan for this runner is CLEAN (guards the guard)', () => {
-    const { input, plan } = qualifyingCase()
-    expect(validatePlan(plan, input).filter(v => v.code === CODE)).toEqual([])
+  it('never drops below §24\'s floor, which is the half that protects the runner', () => {
+    const floor = 21.1 * G.PEAK_LR_RATIO_VS_RACE.HM - G.DISTANCE_ROUNDING_PRECISION_KM
+    expect(peakLongRunKm(runner())).toBeGreaterThanOrEqual(floor)
+  })
+})
+
+describe('§35 Amendment 1 — the tier YIELDS to §45/§47/§9 at delivery', () => {
+  it('a plan whose earned tier is eroded by the periodisation passes is VALID', () => {
+    // The regression this file exists to prevent. The retired invariant failed
+    // this plan; §35 Amendment 1 says it is correct, because §45 wins by its own
+    // clause and §47's alternation is doing its job. If someone re-adds a
+    // delivered-tier check, this goes red.
+    const input = runner({
+      current_weekly_km: 60, longest_recent_run_km: 30,
+      hard_session_relationship: 'love', injury_history: ['back'],
+      days_available: 4, max_weekday_mins: 60,
+    })
+    const plan = generateRulePlan(input, 'paid', PLAN_START)
+    expect(validatePlan(plan, input).filter(v => v.severity === 'error')).toEqual([])
   })
 
-  it('FIRES when the peak long run stops at the floor', () => {
-    // §35's "floor-stopping" made literal: the runner's inputs earn the target
-    // tier, the long run is nowhere near the minute cap, and it stops short.
-    const { input, plan } = qualifyingCase()
-    shrinkAllLongRuns(plan, 0.5, 45)
-    const fired = validatePlan(plan, input).filter(v => v.code === CODE)
-    expect(fired.length, 'the tier check did not wake — it is enforcing nothing').toBeGreaterThan(0)
-    expect(fired[0].severity).toBe('warn')
-    expect(fired[0].principle_ref).toContain('§35')
+  it('INV-PLAN-PEAK-LR-EARNED-TIER stays retired', () => {
+    const input = runner({ hard_session_relationship: 'love', longest_recent_run_km: 30 })
+    const codes = validatePlan(generateRulePlan(input, 'paid', PLAN_START), input).map(v => v.code)
+    expect(codes).not.toContain('INV-PLAN-PEAK-LR-EARNED-TIER')
+  })
+})
+
+describe('§35 — PEAK_LR_RATIO_STRETCH is INERT, and that is recorded rather than hidden', () => {
+  // MEASURED 2026-09-15 across 36 comparable plans (2 distances x 4 volumes x
+  // 3 day-counts x 2 runways): the stretch tier changed the delivered peak long
+  // run in ZERO of them, while the target lift moved 33.
+  //
+  // §25 Amendment 1 is the governing caution: "read by nothing" is evidence a
+  // CONSUMER is missing, not that the VALUE is junk. Here the value IS read —
+  // the producer computes it — and its effect is always erased downstream. So it
+  // is NOT deleted, and this test exists so the inertness cannot quietly become
+  // load-bearing (or quietly be removed) without someone deciding to.
+  const stretchVsTarget = () => ({
+    stretch: peakLongRunKm(runner({ hard_session_relationship: 'love',  longest_recent_run_km: 30 })),
+    target:  peakLongRunKm(runner({ hard_session_relationship: 'neutral', longest_recent_run_km: 30 })),
   })
 
-  it('does NOT fire when the MINUTE CAP is what binds', () => {
-    // The exemption §35 states in its own text ("LONG_RUN_CAP_MINUTES still
-    // binds"), and the one a circular km-conversion got wrong: a long run at the
-    // cap has bought every kilometre that runner's pace allows.
-    const { input, plan } = qualifyingCase()
-    const distKey = raceDistanceKey(input.race_distance_km)
-    shrinkAllLongRuns(plan, 0.5, G.LONG_RUN_CAP_MINUTES[distKey])
-    expect(
-      validatePlan(plan, input).filter(v => v.code === CODE),
-      'fired on a long run already at the minute cap — the cap wins, §35 says so',
-    ).toEqual([])
+  it('delivers the same peak long run as the target tier', () => {
+    const { stretch, target } = stretchVsTarget()
+    expect(stretch, 'the stretch tier started landing — §35 Am.1 needs revisiting').toBe(target)
   })
 
-  it('does NOT fire for a runner who has not earned a tier above the floor', () => {
-    // `longest_recent_run_km` below §24's floor means tierRatio === ratio, and
-    // §24's own invariant owns that case. Two invariants asserting one shortfall
-    // is D-16; this proves the tier check stays out of the floor's territory.
-    const { input, plan } = qualifyingCase()
-    shrinkAllLongRuns(plan, 0.5, 45)
-    const shallow = { ...input, longest_recent_run_km: 1 } as GeneratorInput
-    expect(validatePlan(plan, shallow).filter(v => v.code === CODE)).toEqual([])
+  it('the three ratios are still ordered, so the config itself is coherent', () => {
+    // The tiering is not wrong, only its top rung is unreachable. If someone
+    // "fixes" the inertness by flattening the ratios, this catches it.
+    expect(G.PEAK_LR_RATIO_VS_RACE.HM).toBeLessThan(G.PEAK_LR_RATIO_TARGET.HM)
+    expect(G.PEAK_LR_RATIO_TARGET.HM).toBeLessThan(G.PEAK_LR_RATIO_STRETCH.HM)
   })
 })
