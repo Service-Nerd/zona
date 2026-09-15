@@ -56,7 +56,7 @@ export interface PrincipleCoverage {
  * Lower it in the same commit that classifies one — that is how the debt is
  * locked in rather than drifting back.
  */
-export const UNVERIFIED_BASELINE = 29
+export const UNVERIFIED_BASELINE = 27
 
 export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 1, by: 'invariant', ref: 'INV-PLAN-QUALITY-EXPECTED' },  // Polarised training — protection from grey zone
@@ -152,7 +152,7 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 94, by: 'invariant', ref: 'INV-PLAN-DELIVERED-RAMP' },  // §2 is measured at delivery for every runner, not only the in
   { n: 95, by: 'invariant', ref: 'INV-PLAN-DELOAD-PHASE-POSITION' },  // A recovery week must not fall on a phase\s second week eithe
   { n: 96, by: 'invariant', ref: 'INV-PLAN-OVERDO-BRAKE' },  // `overdo` is a brake, not a preference
-  { n: 97, by: 'unverified' },  // A demonstrated runner\s surplus weeks belong inside the plan
+  { n: 97, by: 'test', ref: 'lib/plan/earlyQualityOnset.test.ts', why: 'Amendment 1 — surplus weeks must not blow §1 on a low-day plan; deterministic, the random sweep never crossed days_available 3 with the full §89 gate' },  // A demonstrated runner\s surplus weeks belong inside the plan
   { n: 98, by: 'invariant', ref: 'INV-PLAN-ONSET-YIELD-BOUNDED' },  // §89\s onset is granted only as far as §1 permits
   { n: 99, by: 'test', ref: 'lib/plan/anchorEligibility.test.ts', why: 'a session states its own length' },  // A session states the length its own structure needs
   { n: 100, by: 'unverified' },  // A safety trim must not hand its deficit to the next week
@@ -163,6 +163,6 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 105, by: 'unverified' },  // Marathon pace must exist away from the long run
   { n: 106, by: 'invariant', ref: 'INV-PLAN-PEAK-NOT-BELOW-START' },  // A plan never peaks below where the runner already is
   { n: 107, by: 'invariant', ref: 'INV-PLAN-LR-SEGMENT-RECORDED' },  // A session may not prescribe work it does not record
-  { n: 108, by: 'unverified' },  // What a run SCORES, and what stays outside the score
+  { n: 108, by: 'test', ref: 'lib/coaching/sessionScore.test.ts', why: 'Amendment 1 — no composite score when HR is unmeasured; pinned on the founder\'s own HR-less run' },  // What a run SCORES, and what stays outside the score
   { n: 109, by: 'test', ref: 'lib/coaching/raceProjectionHonesty.test.ts', why: 'may compare, may not predict' },  // A progress surface may remember and compare. It may not predict.
 ] as const

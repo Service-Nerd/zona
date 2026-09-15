@@ -57,6 +57,12 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 **STILL OPEN — 4 items, none of them buildable today, each with a hard reason.**
 
+> 🔲 **PRINCIPLE-XREF-12-01 — the injury cap is cross-referenced as "§12" in at least three places, and §12 is the easy-run Z2 ceiling.** *(P3, found 2026-09-15 by the coverage gate)*
+> `CoachingPrinciples.md:3656` reads *"the injury cap reuses `INJURY_WEEKLY_INCREASE_CAP_PCT` (§12)"*; `generationConfig.ts` repeats it in a comment; and `lib/plan/injuryCapCompounds.test.ts` is titled `describe('§12 — the injury cap compounds')`. **§12 is "Easy-run zone cap — Z2 ceiling".** The 10% rule and its injury tightening belong to **§2**.
+> **Why it matters beyond tidiness:** the coverage gate nearly classified §12 as *covered* on the strength of that test's own declaration. A test that names the wrong principle is worse than one that names none — it manufactures coverage. Caught only because the describe text was read against what §12 actually says.
+> **Do not bulk-rename without checking each site** — confirm §2 is the intended owner at each, then correct doc, config comment and test title together. Typo-class, board-exempt.
+> *Verify still open:* `grep -rn "§12" lib/plan/generationConfig.ts lib/plan/injuryCapCompounds.test.ts docs/canonical/CoachingPrinciples.md | grep -i injury`
+
 > ✅ **COACHING-REVIEW-COVERAGE-01 — PHASE 1 SHIPPED 2026-09-15. The gate exists and the real number is smaller than filed.**
 > **`lib/plan/principleCoverage.ts` + `principleCoverage.test.ts`** map all **106** principles to `invariant` · `test` · `exempt (with a written reason)` · `unverified`, and the build fails if a principle is in none. Runs on every push and PR inside `npm run verify`.
 > **Measured: 61 invariant · 11 named test · 5 exempt · 29 unverified — 77 of 106 accounted for.** The earlier "45 uncovered" counted invariants ONLY; 16 of those turned out to have a named test.
