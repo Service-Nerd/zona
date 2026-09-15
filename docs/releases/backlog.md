@@ -46,7 +46,6 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 |---|---|
 | **ZONE-BAND-01** | Needs ≥20 users × ≥10 HR-bearing quality analyses. Production has **2 users**. No amount of engineering changes this. |
 | **ENGINE-03 / CA-05** | `@capgo/capacitor-health` exposes no menstrual data type (ADR-011). **Unbuildable**, not unbuilt. |
-| **PV2-H** | Needs a tethered device + auth to reach the trigger state. Not doable headlessly. |
 | **PV2-G** (Monday race) | Needs an ADR + cross-week `buildRaceArc` restructure. **Charity races are on weekends**, so this is not the demo path — highest-risk engine change available for near-zero charity value. Recommended against for this week. |
 | **SIG-ULTRA-UNBUILT-01** | Ultra distances; charity is 10K/HM/marathon. SLT-gated on timing, correctness already settled. |
 
@@ -56,13 +55,14 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 >
 > ✅ **Closed 2026-09-15 (8):** CV-ELIGIBILITY-01 open half · beginner first-exposure · §5-vs-§79 precedence · REENTRY-INV-DECORATIVE-01 · REENTRY-VO2MAX-BASELINE-01 (not a defect) · cohort-grid Monday races · GRID-COVERAGE-02 Phase 2 · (plus the four items the day opened with). All in `feature-registry.md`.
 
-**STILL OPEN — 5 items, none of them buildable today, each with a hard reason.**
+**STILL OPEN — 4 items, none of them buildable today, each with a hard reason.**
+
+> ✅ **Verified 2026-09-15 before ship.** `npm run verify` exit 0 (201 files / 1,827 tests · matrix 17/17 · sweep 15,973 plans, 0 violations) · coaching review exit 0 (7 canonical + 11 charity, **0 error violations**) · **`scripts/plan-rules-report.ts` exit 0** — §2 ramp, §3 deload cadence, §8 quality ceiling and §53 variety all hold on every charity persona and all 8 wizard variants, with the wizard inputs proven to reach the plan.
 
 | Item | Why it is still open | What would unblock it |
 |---|---|---|
 | **ZONE-BAND-01** | **No data.** Narrowing a prescribed HR band for everyone needs evidence; production holds 126 scored analyses across **2 users**. This is not an engineering problem. | ≥20 distinct users with ≥10 HR-bearing quality analyses each. Numeric trigger already recorded. |
 | **ENGINE-03 / CA-05** (cycle-aware coaching) | **Unbuildable, not unbuilt.** `@capgo/capacitor-health` exposes no menstrual/cycle data type (ADR-011), so the signal cannot be collected at all. | A custom Swift bridge or a plugin fork. Neither is a week's work. |
-| **PV2-H** (living-plan recalibration, end-to-end) | **Needs hardware.** The tile is wired, tsc-verified and unit-tested; the trigger state (completed time trial in a recovery week, paid user) cannot be reached headlessly. | 20 minutes on a tethered iPhone with a real account. |
 | **PV2-G / CD-7** (Monday race) | **Deliberately not done, and I recommend against it this week.** It needs an ADR plus a cross-week `buildRaceArc` restructure — the highest-risk engine change available. **Charity races are on weekends**, so it is not on the demo path. Visible every review round via canonical case `07-hm-monday-race`. | An ADR, and a week that is not four days before a first customer demo. |
 | **SIG-ULTRA-UNBUILT-01** | **Wrong cohort, and not a correctness question.** Board-ratified ultra commitments (§24e back-to-back, 100K time-on-feet peak dose). Charity runners do 10K/HM/marathon. | An SLT call on build timing for a PAID distance with currently zero users. |
 
@@ -208,7 +208,7 @@ Everything in this section blocks v1 launch. Group A (legal/policy) and Group D 
 |---|---|---|---|---|
 | **PV2-G / CD-7 full** | The *Monday-race* case (no in-week day before the race) — needs the cross-week `buildRaceArc` restructure. In-week (Tue/Wed) case already shipped (`53a1372`). | An **ADR** for the race-arc builder. | M | FREE |
 | **PV2-E / CD-6 braces** | HealthKit-verify half — wizard tempers declared volume toward the synced 4-wk average (ADR-011 path). Absolute `<6mo` 30km week-1 cap already shipped (`2c0931b`). | HealthKit client verification on device. | S | FREE (+device) |
-| **PV2-H end-to-end verify** | The living-plan tile is wired + tsc-verified + unit-tested (shipped — see registry), but the trigger state (completed TT in a recovery week, paid user) hasn't been eyeballed in a running app. | A staged paid test-user run-through (script the trigger state). | XS | PAID |
+| ~~**PV2-H end-to-end verify**~~ | ✅ **REMOVED from the backlog 2026-09-15 (founder).** Not engineering work — the living-plan recalibration tile is shipped, tsc-verified and unit-tested; what remained was one manual on-device confirmation (paid account, completed time trial in a recovery week, check the tile appears and the paces move). The founder will confirm it in passing. | — | — | PAID |
 
 ### Session catalogue remediation — SC (Wave 1d)
 
