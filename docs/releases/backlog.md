@@ -50,42 +50,28 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 | **PV2-G** (Monday race) | Needs an ADR + cross-week `buildRaceArc` restructure. **Charity races are on weekends**, so this is not the demo path — highest-risk engine change available for near-zero charity value. Recommended against for this week. |
 | **SIG-ULTRA-UNBUILT-01** | Ultra distances; charity is 10K/HM/marathon. SLT-gated on timing, correctness already settled. |
 
-### 🔧 COACHING & ENGINE — the complete open list (added 2026-09-15)
+### 🔧 COACHING & ENGINE — the complete open list *(current as of 2026-09-15 end of day)*
 
-> **Why this section exists.** On 2026-09-15 the founder asked what was on the backlog and was given the "Ready to build" table — which is a CURATED view. Three real items were **buried as sub-bullets inside another item's entry** and never surfaced, and two more were orphaned when their parent shipped. A summary that reads only the top table is not a backlog review. **This section is the full engine/coaching list; keep it current or delete it, but do not let it go stale.**
+> **Why this section exists.** A backlog review that reads only the "Ready to build" table misses work: items nested as sub-bullets inside another entry, and questions "folded into" a parent that then ships. Both happened on 2026-09-15. **This is the full engine/coaching list. Keep it current or delete it — a stale completeness claim is worse than none.**
+>
+> ✅ **Closed 2026-09-15 (8):** CV-ELIGIBILITY-01 open half · beginner first-exposure · §5-vs-§79 precedence · REENTRY-INV-DECORATIVE-01 · REENTRY-VO2MAX-BASELINE-01 (not a defect) · cohort-grid Monday races · GRID-COVERAGE-02 Phase 2 · (plus the four items the day opened with). All in `feature-registry.md`.
 
-**A. ORPHANED by today's ship — these were parked inside QUALITY-ONSET-ORDER-01, which has now shipped. They have no parent any more.**
+**STILL OPEN — 5 items, none of them buildable today, each with a hard reason.**
 
-| Item | State | Next action |
+| Item | Why it is still open | What would unblock it |
 |---|---|---|
-| **CV-ELIGIBILITY-01 open half** | 🔴 **LIVE BOARD QUESTION, now orphaned.** *"Should threshold-family rows require **structural** intermediate, not just intensity-intermediate?"* Was explicitly *"folded into a live board question"* inside QUALITY-ONSET-ORDER-01 — which shipped today, so nothing holds it. | Re-file as its own item and take it to the board. Do NOT let it die with its parent. |
-| **Beginner first-exposure question** | 🔴 **Same axis, also orphaned.** *"When structure says beginner and intensity says intermediate, should the first exposure be VO2max or tempo?"* §79 holds that upward declaration *"buys intensity only, never tonnage"* — but **allowance and ORDER are different axes**, and that was never ruled. | Same sitting as the row above — they are one question. |
+| **ZONE-BAND-01** | **No data.** Narrowing a prescribed HR band for everyone needs evidence; production holds 126 scored analyses across **2 users**. This is not an engineering problem. | ≥20 distinct users with ≥10 HR-bearing quality analyses each. Numeric trigger already recorded. |
+| **ENGINE-03 / CA-05** (cycle-aware coaching) | **Unbuildable, not unbuilt.** `@capgo/capacitor-health` exposes no menstrual/cycle data type (ADR-011), so the signal cannot be collected at all. | A custom Swift bridge or a plugin fork. Neither is a week's work. |
+| **PV2-H** (living-plan recalibration, end-to-end) | **Needs hardware.** The tile is wired, tsc-verified and unit-tested; the trigger state (completed time trial in a recovery week, paid user) cannot be reached headlessly. | 20 minutes on a tethered iPhone with a real account. |
+| **PV2-G / CD-7** (Monday race) | **Deliberately not done, and I recommend against it this week.** It needs an ADR plus a cross-week `buildRaceArc` restructure — the highest-risk engine change available. **Charity races are on weekends**, so it is not on the demo path. Visible every review round via canonical case `07-hm-monday-race`. | An ADR, and a week that is not four days before a first customer demo. |
+| **SIG-ULTRA-UNBUILT-01** | **Wrong cohort, and not a correctness question.** Board-ratified ultra commitments (§24e back-to-back, 100K time-on-feet peak dose). Charity runners do 10K/HM/marathon. | An SLT call on build timing for a PAID distance with currently zero users. |
 
-**B. KNOWN since 2026-09-14, MEASURED today** *(see the provenance note earlier — these are not new)*
-
-| Item | State | Next action |
-|---|---|---|
-| **§5 vs §79 precedence** | Board **already ruled §79 wins**. The obvious implementation breaks **29 tests incl. `cohortShape`** and has zero effect on the residual. Overrides §79 on **576 plans**. | An implementation that does not reclassify cohorts. Separate the `undefined` sentinel first. |
-| **REENTRY-INV-DECORATIVE-01** | `INV-PLAN-RETURNING-INTENSITY-REENTRY` still encodes the calendar premise; re-anchoring it fails **576 legitimate plans**. | Ships with the row above. |
-| **REENTRY-VO2MAX-BASELINE-01** | **49.7%** of re-entry-active quality-bearing plans carry NO VO2max-category session, **74.8%** no hill reps — board declined to ratify. | Measure the cause (§53 thinness / eligibility / §8 ceiling), then board. |
-
-**C. DECLARED RESIDUALS sitting inside items marked ✅ — real work, invisible to a top-table read**
-
-| Item | State | Next action |
-|---|---|---|
-| **Cohort grid still races on MONDAY** | ⚠️ `REVIEW-HARNESS-MONDAY-01` fixed the **review cases only** and says so: *"The cohort grid is NOT changed here."* Every `cohort:shape` / `verify:parity` plan still has a Monday race — the shape in which RACE-WEEK-FITNESS-01's defect **cannot appear**. | Re-baseline the grid onto weekend races. Its own declared commit (parity + cohort move). |
-| **CAT-VO2-TIERA** | Board **declined delivery** 2026-09-13, but named the door: the rows need *"§8 to gain a mixed-session dose model"*. Not a defect; a blocked capability. | Only if §8 is reopened. Do not re-propose the rows themselves. |
-
-**D. TOP-LEVEL open engine items** *(these were visible; listed for completeness)*
+**Also parked, not a defect:**
 
 | Item | State |
 |---|---|
-| **GRID-COVERAGE-02 Phase 2** | `injury_history`, `user_declared_level`, `weeks_at_current_volume`, `day_budgets`, `foundation_decision` still unset. Runtime is the constraint. |
-| **SIG-ULTRA-UNBUILT-01** | Board-ratified ultra commitments (§24e back-to-back, 100K time-on-feet peak dose) — **SLT-gated on build timing**, not correctness. |
-| **ZONE-BAND-01** | ⏸️ Correctly blocked on DATA (2 users). Numeric re-open trigger: ≥20 users × ≥10 HR-bearing quality analyses. |
-| **PV2-G / CD-7** | Monday-race cross-week `buildRaceArc` restructure. Needs an **ADR**. Visible every round via `07-hm-monday-race`. |
-| **PV2-E / CD-6 braces** | HealthKit-verify half of the declared-volume temper. Gated on HealthKit client verification. |
-| **ENGINE-03 / CA-05** | ⛔ Cycle-aware coaching — **unbuildable**, not unbuilt: `@capgo/capacitor-health` exposes no menstrual data type (ADR-011). |
+| **CAT-VO2-TIERA** | Board **declined delivery** 2026-09-13. The rows need §8 to gain a mixed-session dose model first. Do not re-propose the rows themselves. |
+| **PV2-E / CD-6 braces** | HealthKit-verify half of the declared-volume temper. Gated on HealthKit client verification (same hardware gate as PV2-H). |
 
 ### Off the table — do NOT re-open without reading the item first
 
