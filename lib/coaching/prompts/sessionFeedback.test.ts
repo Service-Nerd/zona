@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { buildSessionFeedbackPrompt, type SessionFeedbackPromptInput } from './sessionFeedback'
 import type { PaceFadeSummary } from '../paceAnalysis'
+import { LIMITER } from '../constants'
 
 const plan = {
   meta: { race_name: 'Ultra 100', race_distance_km: 100, race_date: '2026-07-11' },
@@ -155,5 +156,126 @@ describe('buildSessionFeedbackPrompt — past race on a normal plan', () => {
     })
     expect(prompt).toMatch(/run 3 weeks ago/)
     expect(prompt).not.toMatch(/0 weeks away/)
+  })
+})
+
+// ── Boundary and formatting coverage added 2026-09-15 by `npm run test:liveness`.
+//
+// Six mutations to this prompt builder left the whole file green. Every one is a
+// user-facing string: this prompt IS what the model is told, so a broken branch
+// here is a coaching instruction the runner receives, not an internal detail.
+describe('buildSessionFeedbackPrompt — the environmental block\'s two edges', () => {
+  const at = (tempC: number | null) =>
+    buildSessionFeedbackPrompt({ ...base, session: { type: 'easy', label: 'Easy', distance_km: 10 } as never,
+      actualDistKm: 10, raceResult: null, tempC })
+
+  it('fires AT the warm edge and AT the cold edge, not just beyond them', () => {
+    // The fixture sat at 29°C — inside the warm band and nowhere near either
+    // boundary — so flipping `tempC <= 4` to `< 4` changed nothing observable.
+    expect(at(22)).toMatch(/Environmental context/)
+    expect(at(4)).toMatch(/Environmental context/)
+  })
+
+  it('stays silent in the temperate band between them', () => {
+    // Flipping the `||` to `&&` makes the block need to be simultaneously warm
+    // AND cold, so it never fires. Without a temperate case AND a firing case in
+    // the same file, that is invisible.
+    expect(at(15)).not.toMatch(/Environmental context/)
+    expect(at(5)).not.toMatch(/Environmental context/)
+    expect(at(21)).not.toMatch(/Environmental context/)
+    expect(at(null)).not.toMatch(/Environmental context/)
+  })
+
+  it('labels each band with the word the coach would use', () => {
+    expect(at(30)).toMatch(/\(hot\)/)
+    expect(at(24)).toMatch(/\(warm\)/)
+    expect(at(-2)).toMatch(/\(freezing\)/)
+    expect(at(3)).toMatch(/\(cold\)/)
+  })
+})
+
+describe('buildSessionFeedbackPrompt — §72\'s ultra threshold, exactly', () => {
+  it('reads a run AT the threshold as time-on-feet', () => {
+    // `isUltraEffort` uses `>=`; the fixtures were 100 km and ordinary distances,
+    // never the boundary. §72 says "at/above", and a 50 km long run is the
+    // commonest case there is.
+    const atThreshold = buildSessionFeedbackPrompt({
+      ...base, session: { type: 'easy', label: 'Long run', distance_km: 50 } as never,
+      actualDistKm: LIMITER.SUPPRESS_ULTRA_DISTANCE_KM, raceResult: null,
+    })
+    expect(atThreshold).toMatch(/ULTRA-DISTANCE EFFORT/)
+    const justUnder = buildSessionFeedbackPrompt({
+      ...base, session: { type: 'easy', label: 'Long run', distance_km: 49 } as never,
+      actualDistKm: LIMITER.SUPPRESS_ULTRA_DISTANCE_KM - 0.1, raceResult: null,
+    })
+    expect(justUnder).not.toMatch(/ULTRA-DISTANCE EFFORT/)
+  })
+})
+
+describe('buildSessionFeedbackPrompt — the week line and the zone line', () => {
+  it('numbers the FIRST maintenance week as 1, not as a race-plan week', () => {
+    // `maintIdx >= 0` — flipping to `> 0` mislabels the first week of a
+    // maintenance block, which is the week a runner is most likely to be reading.
+    // The existing maintenance case sits at index 2 ("week 3 of 4"), so it never
+    // exercised index 0 and the mutation was invisible.
+    const maintPlan = {
+      meta: { plan_kind: 'maintenance', race_date: '2026-07-11', source_race_date: '2026-07-11' },
+      weeks: [{ n: 19 }, { n: 20 }, { n: 21 }, { n: 22 }],
+    } as never
+    const first = buildSessionFeedbackPrompt({
+      ...base,
+      session: { type: 'easy', label: 'Easy run', distance_km: 8 } as never,
+      actualDistKm: 8, verdict: 'nailed' as never, raceResult: null,
+      plan: maintPlan, weekN: 19,
+    })
+    expect(first).toMatch(/Maintenance week: 1 of 4/)
+    expect(first, 'the first maintenance week fell back to the race-plan week line')
+      .not.toMatch(/Week: 19 of 4/)
+  })
+
+  it('never emits a zone LABEL with no band behind it', () => {
+    // `prescribedZoneLabel && zoneTarget` — with `||` a session that has a zone
+    // label but NO resolvable HR band renders "Zone 2, null" straight into the
+    // prompt, and the model is then told a heart-rate target that does not exist.
+    // Reaching it needs a plan with no `zone2_ceiling` AND no prescribed band,
+    // which is the HR-less runner (ADR-011 §5: iPhone-only, no watch) — the
+    // cohort least able to notice a fabricated number.
+    const noHrPlan = { meta: { race_date: '2026-12-06' }, weeks: [{ n: 1 }] } as never
+    const p = buildSessionFeedbackPrompt({
+      ...base,
+      session: { type: 'easy', label: 'Easy', distance_km: 10, zone: 'Zone 2' } as never,
+      // `actualAvgHr` MUST be present: the HR line is the only place `zoneStr`
+      // is rendered, and with no HR it prints "HR: not recorded" and the zone
+      // string never appears. A null here made the assertion vacuous.
+      actualDistKm: 10, actualAvgHr: 142, hrInZonePct: null, hrAboveCeilingPct: null,
+      // `prescribedZoneLabel` is its own INPUT field, not read off the session —
+      // setting `session.zone` did nothing and the assertion was vacuous a second
+      // time. This is the combination that actually reaches the branch: a label
+      // present, and NO band to put behind it.
+      prescribedZoneLabel: 'Zone 2', prescribedHrBand: null,
+      raceResult: null, plan: noHrPlan, weekN: 1,
+    })
+    expect(p, 'a zone label was emitted with a null band').not.toMatch(/Zone 2, (null|undefined)/)
+    expect(p).not.toMatch(/undefined/)
+  })
+
+  it('counts weeks to race in WEEKS, on the real calendar', () => {
+    // `MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000` — perturbing the 7 survived because
+    // nothing asserted the race countdown on a normal plan; the only
+    // week-arithmetic case was the maintenance block, which uses a different
+    // path. This is the line every non-maintenance runner reads.
+    vi.setSystemTime(new Date('2026-11-01T12:00:00Z'))   // 5 weeks before 2026-12-06
+    const p = buildSessionFeedbackPrompt({
+      ...base,
+      session: { type: 'easy', label: 'Easy', distance_km: 10 } as never,
+      actualDistKm: 10, raceResult: null,
+      // `race_name` is REQUIRED for the countdown to render at all — without it
+      // `raceContext` falls back to the literal 'target race' and drops the
+      // timing entirely. Worth stating: the first fixture omitted it and the
+      // assertion failed for a reason that had nothing to do with the arithmetic.
+      plan: { meta: { race_date: '2026-12-06', race_name: 'Test Marathon' }, weeks: [{ n: 1 }] } as never,
+      weekN: 1,
+    })
+    expect(p).toMatch(/5 weeks away/)
   })
 })

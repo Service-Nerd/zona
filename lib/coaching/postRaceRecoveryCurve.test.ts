@@ -24,14 +24,29 @@ const session = (type: Session['type'], km: number): Session => ({
   type, label: type, distance_km: km, duration_mins: null,
 } as unknown as Session)
 
-/** A plan with `total` weeks, each 40 km over 4 sessions, race in `raceWeekN`. */
+/**
+ * A plan with `total` weeks, each 120 km over 4 running days + 2 rest, race in
+ * `raceWeekN`.
+ *
+ * ⚠️ THE WEEK IS BIG ON PURPOSE. At 40 km/week a marathon's first recovery week
+ * targets 8 km, and split 4 ways that is 2 km — under `toRecoveryRun`'s 3 km
+ * floor. Every session then clamps to 3 whatever the split, so the budget
+ * arithmetic is unobservable and a broken `activeDays` filter changes nothing.
+ * `npm run test:liveness` proved it: adding rest days alone did not kill the
+ * mutant, because the floor was doing the answering.
+ */
 const planOf = (total: number, raceWeekN: number, raceKm: number): Plan => {
   const weeks: Week[] = Array.from({ length: total }, (_, i) => ({
     n: i + 1, date: '2026-04-27', phase: 'build', type: i + 1 === raceWeekN ? 'race' : 'build',
-    weekly_km: 40,
+    weekly_km: 120,
     sessions: {
-      tue: session('quality', 8), thu: session('easy', 8),
-      sat: session('easy', 8),    sun: session('easy', 16),
+      // REST DAYS ARE PART OF THE FIXTURE, not decoration. `activeDays` counts
+      // non-rest sessions to divide the week's recovery budget between them, and
+      // a fixture with no rest day makes that filter untestable: every session
+      // counts either way, so breaking the filter changes nothing.
+      mon: session('rest', 0),    wed: session('rest', 0),
+      tue: session('quality', 24), thu: session('easy', 24),
+      sat: session('easy', 24),   sun: session('easy', 48),
     },
   } as unknown as Week))
   return { meta: { race_distance_km: raceKm }, weeks } as unknown as Plan
@@ -45,6 +60,8 @@ const reshape = (raceKm: number, weeksAfter: number) => {
 
 const kmOf = (w: Week) => w.weekly_km ?? 0
 const typesIn = (w: Week) => Object.values(w.sessions).filter(Boolean).map(s => (s as Session).type)
+const runsOf = (w: Week) => (Object.values(w.sessions).filter(Boolean) as Session[])
+  .filter(s => s.type !== 'rest')
 
 describe('§62 — the distance bucket picks the curve', () => {
   it('maps each race distance to its bucket, including the gaps between them', () => {
@@ -120,7 +137,7 @@ describe('§62 — the volume curve is applied week by week', () => {
     const out = reshape(10, 4)!   // 10K curve is 2 weeks long
     const curveLen = G.POST_RACE_RECOVERY_BY_DISTANCE['10K'].volume_curve_pct.length
     expect(out.weeksAffected).toHaveLength(curveLen)
-    expect(kmOf(out.reshapedPlan.weeks[2 + curveLen]), 'a week beyond the curve was reshaped').toBe(40)
+    expect(kmOf(out.reshapedPlan.weeks[2 + curveLen]), 'a week beyond the curve was reshaped').toBe(120)
   })
 })
 
@@ -142,6 +159,32 @@ describe('§62 — the quality blackout is the half that prevents the injury', (
     expect(cfg.quality_blackout_weeks).toBeLessThan(cfg.volume_curve_pct.length)
     const out = reshape(42.2, 4)!
     expect(typesIn(out.reshapedPlan.weeks[2 + cfg.quality_blackout_weeks])).toContain('quality')
+  })
+
+  it('splits the week\'s budget between the RUNNING days only', () => {
+    // `npm run test:liveness` flipped `s && s.type !== 'rest'` to `s || ...` and
+    // this file stayed green, because the fixture had no rest day: `activeDays`
+    // was 4 either way. With a rest day present the mutation counts 6 instead of
+    // 4, and every converted recovery run is sized a third too short — the
+    // runner is handed a week of token jogs and the weekly total still reads
+    // correct, which is exactly the kind of wrong nobody spots.
+    const out = reshape(42.2, 4)!
+    const wk = out.reshapedPlan.weeks[2]                   // first recovery week
+    const curvePct = G.POST_RACE_RECOVERY_BY_DISTANCE.MARATHON.volume_curve_pct[0]
+    const targetKm = out.peakWeeklyKm * curvePct / 100
+    expect(runsOf(wk).length, 'rest days leaked into the running count').toBe(4)
+    // Only the CONVERTED session is sized from the budget; the untouched easy
+    // runs are scaled by the curve percentage instead. Asserting both against the
+    // budget was wrong and the run said so.
+    const converted = (wk.sessions as Record<string, Session | undefined>).tue!
+    expect(converted.type, 'tue was the quality session and should now be recovery').toBe('recovery')
+    const budget = targetKm / 4
+    expect(converted.distance_km!, 'the converted run was not sized against a 4-way split')
+      .toBeCloseTo(Math.max(3, Math.round(budget * 2) / 2), 1)
+    // The number that proves the filter matters: counting the two rest days would
+    // give a 6-way split and a visibly shorter run.
+    expect(converted.distance_km!, 'sized as though rest days were training days')
+      .not.toBeCloseTo(Math.max(3, Math.round((targetKm / 6) * 2) / 2), 1)
   })
 
   it('marks the first week after the race as a deload, so the runner sees it', () => {

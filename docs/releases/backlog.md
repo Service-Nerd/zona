@@ -70,7 +70,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > | 1 | ~~S1-INJURY-DENOMINATOR-01~~ | ✅ **SHIPPED 2026-09-15** | Board ruled CORRECT WITH AMENDMENT; §90 Amendment 1. 6 plans fixed, 0 healthy plans touched |
 > | 2 | ~~ERROR-SEVERITY-IS-ADVISORY-01~~ | ✅ **CLOSED 2026-09-15** | The premise was wrong: both backstops already existed. The real gap was legibility, now fixed |
 > | 3 | ~~PRINCIPLE-CLAIM-SYNC-01~~ | ✅ **SHIPPED 2026-09-15** | 9 missing back-references fixed; falsified both ways |
-> | 4 | 🟡 TEST-LIVENESS-01 | **HARNESS SHIPPED 2026-09-15** | 40 killed / 21 survived / 3 unproven, all registered. Verdicts on the 21 remain |
+> | 4 | ~~TEST-LIVENESS-01~~ | ✅ **COMPLETE 2026-09-15** | 56 killed / 5 equivalent / 3 unproven. 16 weak tests fixed |
 > | 5 | LR-EARNED-TIER-01 | Engine | Already tracked as `warn` at 0.06% |
 > | 6 | GATED-SURPLUS-COMPOSE-01 | ADR-020 boundary | Already tracked as `warn` at 0.03% |
 
@@ -89,13 +89,21 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > **Falsification-verified both ways:** re-introducing §92's exact failure turns it red with the right message, and a fabricated `INV-PLAN-TOTALLY-MADE-UP` claim turns it red.
 > ⚠️ **One probe lesson worth keeping:** refs accumulate across every push site for a code. The first attempt to re-break §92 edited one of two sites, the other still cited §92, and the check looked dead for a minute. **Falsify a set-valued check by removing every contributor, not the first one.**
 
-> 🟡 **TEST-LIVENESS-01 — HARNESS SHIPPED 2026-09-15; 21 survivors now tracked with their exact mutation site.**
-> `npm run test:liveness` breaks the SOURCE each named test claims to cover, one change at a time, and re-runs only that test. Killed = the test is live for that behaviour. **Survived = the test passes while the behaviour it names is broken.** Nightly (`nightly-test-liveness.yml`, 03:20 UTC), **deliberately not in `verify`** — it rewrites source and re-runs vitest ~60 times, and a gate that adds minutes to every commit gets disabled.
-> **Result: 15 tests checked · 40 mutants killed · 21 SURVIVED · 3 UNPROVEN.** Every survivor is registered in `scripts/__fixtures__/testLivenessBaseline.json` **with the exact line it mutated**, so review is cheap. The register may only shrink; a NEW survivor exits 1.
-> ⚠️ **Two harness faults found by using it, both the same class this project keeps hitting.** (1) The first run reported 53 survivors; the worst offenders were tests written that day with dense assertions. `inputs.ts` is 521 lines and its first code-level `>=` is in `alternativesFor`, which that test never calls — **mutations were landing outside the code under test**. Scoping them to the declarations the test imports took survivors 53 → 25 and turned `planDateWindow` from 7/7 surviving to all killed. (2) A mutation flipped `§65` → `§66` **inside a comment** and was reported as a survivor; comments and string literals are now masked. **A mutation that cannot change behaviour is not evidence of a blind test.**
-> ⚠️ **`UNPROVEN` is not `passing`.** The first version printed "every mutation killed" for `dayBoundary.test.ts`, whose subject has zero comparison operators and zero code-level literals — the battery reached it **0 times**. Reporting clean when nothing was checked is the exact failure the harness exists to find, one layer up.
-> **It paid for itself immediately:** the dominant survivor class is BOUNDARY VALUES — tests asserting either side of a threshold but never the threshold. Two were fixed on the spot (`isPlausibleRunHr`'s 90/220 bounds; `getDistanceBucket`'s five bucket edges, where `km <= 6` → `km < 6` left the file green and would have handed a 6 km race the 10K recovery curve). Those two tests went 5→1 and 6→3 survivors.
-> 🔲 **Remaining:** 21 survivors carry `UNREVIEWED — mutates L<n>: <code>`. Each needs a verdict: fix the test, or record why the mutant is equivalent (e.g. `FITNESS_RANK.experienced: 2 → 3` survives legitimately — only the ORDERING is asserted and only the ordering is real). The harness warns on every run while any entry is unreviewed. **3 UNPROVEN subjects need a wider mutation battery or a written reason.**
+> ✅ **TEST-LIVENESS-01 — COMPLETE 2026-09-15. 21 survivors worked through: 16 were weak tests and are fixed; 5 are proved equivalent.**
+> `npm run test:liveness` breaks the SOURCE each named test claims to cover and re-runs that test. Nightly (03:20 UTC), **not in `verify`** — it rewrites source and runs vitest ~60 times.
+> **Final: 56 killed · 5 survived (all equivalent, each with a written proof) · 3 unproven (harness limit, each with a reason).** Was 40/21/3.
+> **The dominant finding was BOUNDARY VALUES — tests asserting either side of a threshold but never the threshold itself.** Every one of these was a real hole:
+> | rule | what the mutation showed |
+> |---|---|
+> | §68 taper | a runner EXACTLY at the 85% threshold had their taper rewritten; a zero pre-taper week was divided by instead of refused |
+> | §55 inputs | flipping one `\|\|` made every missing, NaN and negative volume ACCEPTED, which is the NaN-to-500 crash the function exists to replace |
+> | §61/§71 limiter | 50.0 km exactly still got a "you faded" reading §72 forbids; a run at exactly the heat threshold lost its heat explanation |
+> | §62 post-race | the recovery budget was split across REST days, sizing every recovery run a third short with the weekly total still reading correct |
+> | §69 reshape | the "replaces are high" case swapped a 24 km long run for rest, so the VOLUME check answered and the structural rule was never tested |
+> | §72 feedback | a zone LABEL could render with a null band, telling the model an HR target that does not exist — for the HR-less runner (ADR-011 §5) |
+> | §58 cohort | the median fixture had 3 runs, where `floor(3/2)` and `floor(3/3)` are the same element |
+> ⚠️ **Four of my own new tests were vacuous on the first attempt, and only the harness said so:** asserting a rest day stayed 'rest' when `scaleSession` early-returns on it anyway; a zone assertion with `actualAvgHr: null` so the line never rendered; setting `session.zone` when `prescribedZoneLabel` is a separate INPUT field; a race countdown with no `race_name`, so the timing never rendered. **A test can be written, pass, and assert nothing — which is the whole thesis of this item, demonstrated on its own author.**
+> 🔲 **Residual, small:** 3 subjects the battery cannot reach (`dayBoundary`, `readinessBaseline`, `recalibrationPrompt`) — all date arithmetic or config lookups with no in-scope operator to flip. Widening the battery to mutate method calls would reach them. Reasons recorded in the baseline.
 
 > 🔲 **LR-EARNED-TIER-01 — 9 plans clear §24's long-run floor and stop below the tier their inputs earn.** *(P3, found 2026-09-15 by the new §35 invariant)*
 > **MEASURED, 15,973-plan sweep: 9 plans (0.06%).** All time-targeted HM/marathon, all with `longest_recent_run_km` already clearing §24's floor, none minute-capped. Examples: peak long run 19 km against a 19.5 km stretch tier (longest recent 30 km, `hard_session_relationship: 'love'`); 17.5 km against an 18.5 km target tier on a 3-day week with a 45-min weekday cap.

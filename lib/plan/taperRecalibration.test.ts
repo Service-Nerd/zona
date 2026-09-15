@@ -122,6 +122,35 @@ describe('§68 — downward only, and only when the gap is material', () => {
     expect(run(justUnder, 8).applied).toBe(true)
     expect(run(justOver, 8).applied).toBe(false)
   })
+
+  it('EXACTLY at the threshold does NOT recalibrate', () => {
+    // `npm run test:liveness` flipped `ratio >= threshold` to `>` and this file
+    // stayed green: the fixtures sat at 83% and 87%, either side of the line,
+    // never ON it. The comparison is inclusive on purpose — "within tolerance"
+    // includes the tolerance — and at exactly 85% an off-by-one would start
+    // rewriting the taper of a runner who hit their target.
+    // 60 km planned x 0.85 = 51. Top-2 average of 51 and 51 is exactly 51.
+    const exactly85 = actuals(51, 51, 40, 40)
+    const r = run(exactly85, 8)
+    expect(r.ratio).toBeCloseTo(0.85, 6)
+    expect(r.applied, 'a runner exactly at the threshold had their taper rewritten').toBe(false)
+    expect(r.skipReason).toMatch(/within tolerance/)
+  })
+
+  it('refuses when the planned pre-taper week is ZERO, rather than dividing by it', () => {
+    // Flipping `plannedPreTaperKm <= 0` to `< 0` survived. Zero is the case that
+    // actually occurs (a malformed or truncated plan); a negative never does. On
+    // zero the guard is the only thing standing between this and ratio = Infinity,
+    // which would silently read as "within tolerance" and skip with the WRONG
+    // reason — the runner's taper left alone for a reason nobody could act on.
+    const plan = planOf()
+    ;(plan.weeks[6] as unknown as { weekly_km: number }).weekly_km = 0   // week 7, pre-taper
+    const r = computeTaperRecalibration({ weeklyActuals: UNDER, plan, currentWeekN: 8 })
+    expect(r.applied).toBe(false)
+    expect(r.skipReason, 'a zero pre-taper week was divided by instead of refused')
+      .toMatch(/pre-taper volume missing/)
+    expect(r.ratio).toBeUndefined()
+  })
 })
 
 describe('§68 — what the recalibrated taper actually looks like', () => {
@@ -135,6 +164,35 @@ describe('§68 — what the recalibrated taper actually looks like', () => {
     expect(r.plan!.meta.taper_recalibrated_at).toBeTruthy()
     expect(r.plan!.meta.functional_peak_km).toBeCloseTo(r.functionalPeakKm!, 0)
     expect(r.plan!.meta.planned_peak_km_at_recal).toBe(60)
+  })
+
+  it('never scales a REST day into a run', () => {
+    // Flipping `!session || session.type === 'rest'` to `&&` survived: with `&&`
+    // the skip needs a session that is BOTH null and typed 'rest', which is
+    // impossible, so every rest day falls through to `scaleSession`. It happens
+    // to be harmless today because `scaleSession` returns early on a session with
+    // no `distance_km` — but that is a property of a DIFFERENT function, and the
+    // taper's promise is that a rest day stays a rest day.
+    const plan = planOf()
+    for (const w of plan.weeks) {
+      if (w.phase !== 'taper') continue
+      const sess = w.sessions as Record<string, unknown>
+      sess.wed = { type: 'rest', label: 'Rest' }
+      // An EXPLICIT undefined day, which `Object.entries` still yields. This is
+      // the half of the guard that is genuinely load-bearing: with `&&` the
+      // expression becomes `!session && session.type === 'rest'`, which reads
+      // `.type` off undefined and throws. Without an undefined day in the
+      // fixture the mutation is equivalent, because `scaleSession` early-returns
+      // on any session with no `distance_km` and a rest day has none — so the
+      // rest-type assertion alone could never have caught it.
+      sess.fri = undefined
+    }
+    const r = computeTaperRecalibration({ weeklyActuals: UNDER, plan, currentWeekN: 8 })
+    expect(r.applied).toBe(true)
+    for (const n of r.weeksModified!) {
+      const rest = (r.plan!.weeks[n - 1].sessions as Record<string, { type?: string } | undefined>).wed
+      expect(rest?.type, `week ${n}'s rest day was rewritten`).toBe('rest')
+    }
   })
 
   it('leaves the RACE week exactly as written (§26)', () => {

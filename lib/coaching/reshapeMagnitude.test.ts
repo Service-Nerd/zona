@@ -6,6 +6,7 @@ import type { Session } from '@/types/plan'
 const easy = (km: number): Session => ({ type: 'easy', label: 'Easy', detail: null, distance_km: km })
 const long = (km: number): Session => ({ type: 'long', label: 'Long', detail: null, distance_km: km })
 const rest = (): Session => ({ type: 'rest', label: 'Rest', detail: null })
+const quality = (km: number): Session => ({ type: 'quality', label: 'Tempo', detail: null, distance_km: km })
 
 // Helper to build a minimum-shape ProposedAdjustment for tests
 const make = (overrides: Partial<ProposedAdjustment> & {
@@ -71,6 +72,48 @@ describe('computeReshapeMagnitude — structural diff inspection', () => {
     const after  = [easy(10), rest(), easy(5), rest(), rest(), easy(8), rest()]  // sun replaced
     expect(computeReshapeMagnitude(make({
       triggerType: 'fatigue_accumulation',
+      before, after,
+    }))).toBe('high')
+  })
+
+  it('a TYPE SWAP at the same distance is high, with the volume held constant', () => {
+    // Added 2026-09-15 by `npm run test:liveness`. The existing "replaces are
+    // high" case swaps a 24 km long run for a rest day, so the CUMULATIVE
+    // week-volume check returns 'high' on its own — and the harness proved it:
+    // breaking the `replaced` branch outright left this file green, because a
+    // different code path produced the same answer.
+    //
+    // ADR-012's rule is that a session-type change at any slot is structural
+    // REGARDLESS of volume: "you moved my long day" is the kind of change a
+    // runner would tell a real coach about. Holding the distance identical is
+    // the only way to make the structural branch the sole thing that can answer.
+    const before = [easy(10), rest(), quality(8), rest(), rest(), easy(8), long(24)]
+    const after  = [easy(10), rest(), easy(8),    rest(), rest(), easy(8), long(24)]  // same km
+    const beforeKm = before.reduce((a, s) => a + (s.distance_km ?? 0), 0)
+    const afterKm  = after.reduce((a, s) => a + (s.distance_km ?? 0), 0)
+    expect(afterKm, 'the fixture must hold volume constant or it proves nothing').toBe(beforeKm)
+    expect(computeReshapeMagnitude(make({
+      triggerType: 'ef_decline',
+      before, after,
+    }))).toBe('high')
+  })
+
+  it('a REMOVED session is high even when the volume barely moves', () => {
+    // The `removed` arm of the same branch, isolated the same way: drop a 1 km
+    // session out of a 55 km week so no volume threshold can be what answers.
+    const before = [easy(10), easy(1), easy(5), rest(), rest(), easy(8), long(24)]
+    const after  = [easy(10), rest(),  easy(5), rest(), rest(), easy(8), long(24)]
+    expect(computeReshapeMagnitude(make({
+      triggerType: 'ef_decline',
+      before, after,
+    }))).toBe('high')
+  })
+
+  it('an ADDED session is high even when the volume barely moves', () => {
+    const before = [easy(10), rest(),  easy(5), rest(), rest(), easy(8), long(24)]
+    const after  = [easy(10), easy(1), easy(5), rest(), rest(), easy(8), long(24)]
+    expect(computeReshapeMagnitude(make({
+      triggerType: 'ef_decline',
       before, after,
     }))).toBe('high')
   })

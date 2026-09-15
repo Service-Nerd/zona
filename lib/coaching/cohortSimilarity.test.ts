@@ -95,6 +95,20 @@ describe('§58 — the summary, and what it refuses to summarise', () => {
     expect(s.avgPaceSecPerKm).toBe(300)
   })
 
+  it('takes the MIDDLE of the sorted distances, not some other index', () => {
+    // `npm run test:liveness` perturbed the `2` in `dists[Math.floor(length / 2)]`
+    // and this file stayed green: the only median fixture had THREE runs, and
+    // floor(3/2) and floor(3/3) are both 1, so the middle and the mutated index
+    // are the same element. A fixture of five separates them — floor(5/2) is 2,
+    // floor(5/3) is 1 — and the values are deliberately far apart so an
+    // off-by-one cannot hide inside rounding.
+    const s = summariseCohort([9, 10, 20, 30, 31].map(d => run({ distanceKm: d })))!
+    expect(s.medianDistanceKm).toBe(20)
+    // Sorted first, so input order cannot decide the answer.
+    const shuffled = summariseCohort([31, 9, 30, 20, 10].map(d => run({ distanceKm: d })))!
+    expect(shuffled.medianDistanceKm).toBe(20)
+  })
+
   it('accepts BOTH plausibility bounds, and rejects one beat outside either', () => {
     // Added 2026-09-15 by `npm run test:liveness`, which flipped `>=` to `>` and
     // `<=` to `<` inside `isPlausibleRunHr` and this file did not notice. The

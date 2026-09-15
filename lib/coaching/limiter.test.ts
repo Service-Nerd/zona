@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { inferLimiter, type LimiterInputs } from './limiter'
+import { LIMITER } from './constants'
 import type { HrStreamSummary } from './streamAnalysis'
 import type { PaceFadeSummary } from './paceAnalysis'
 
@@ -60,6 +61,32 @@ describe('inferLimiter', () => {
       expect(inferLimiter(wouldFireMuscular())?.category).toBe('muscular')
     })
 
+    it('states the two half-paces as real mm:ss, which the runner reads', () => {
+      // `npm run test:liveness` perturbed the `60` in this limiter's own
+      // seconds-to-mm:ss arithmetic and every assertion still passed: the tests
+      // checked the CATEGORY and never the sentence. The reasoning string is the
+      // only part of a limiter the runner actually sees, so a broken conversion
+      // there is a user-facing defect that reads as a working classifier.
+      // Fixture halves are 300 and 330 s/km, which are 5:00 and 5:30.
+      const r = inferLimiter(wouldFireMuscular())
+      expect(r?.reasoning).toContain('5:00/km')
+      expect(r?.reasoning).toContain('5:30/km')
+      expect(r?.reasoning, 'the fade figure itself must survive too').toContain('40s/km')
+    })
+
+    it('zero-pads the seconds rather than emitting 5:0/km', () => {
+      // The padStart is a second, separate thing that can break silently.
+      const r = inferLimiter({
+        ...baseInputs(),
+        paceFadeSummary: paceFade({
+          paceFadeSecPerKm: 40, firstHalfAvgPaceSecPerKm: 305, backHalfAvgPaceSecPerKm: 360,
+        }),
+        streamSummary: stream({ hrDriftBpm: 2 }),
+      })
+      expect(r?.reasoning).toContain('5:05/km')
+      expect(r?.reasoning).toContain('6:00/km')
+    })
+
     it('returns null for a race regardless of signal', () => {
       expect(inferLimiter({ ...wouldFireMuscular(), sessionType: 'race' })).toBeNull()
     })
@@ -75,6 +102,19 @@ describe('inferLimiter', () => {
     it('still fires just under the ultra threshold', () => {
       expect(inferLimiter({ ...wouldFireMuscular(), actualDistKm: 42 })?.category).toBe('muscular')
     })
+
+    it('goes silent AT the ultra threshold exactly, not just past it', () => {
+      // `npm run test:liveness` flipped `actualDistKm >= SUPPRESS_ULTRA_DISTANCE_KM`
+      // to `>` and this file stayed green: the fixtures were 42 and 100, either
+      // side of the line and never on it. §72 is explicit that the suppression
+      // applies "at/above the ultra threshold", so 50.0 km itself must be silent —
+      // and a runner finishing a 50K exactly is the commonest case of all.
+      expect(inferLimiter({ ...wouldFireMuscular(), actualDistKm: LIMITER.SUPPRESS_ULTRA_DISTANCE_KM }))
+        .toBeNull()
+      expect(inferLimiter({
+        ...wouldFireMuscular(), actualDistKm: LIMITER.SUPPRESS_ULTRA_DISTANCE_KM - 0.1,
+      })?.category, 'one tenth of a km under the threshold must still read normally').toBe('muscular')
+    })
   })
 
   describe('heat', () => {
@@ -89,6 +129,27 @@ describe('inferLimiter', () => {
       expect(r?.confidence).toBe('high')
       expect(r?.reasoning).toMatch(/26°C/)
       expect(r?.reasoning).toMatch(/14bpm above/)
+    })
+
+    it('fires AT the heat threshold exactly, not just above it', () => {
+      // Same class as the ultra boundary above: fixtures at 26°C and 18°C never
+      // sat on HEAT_C_THRESHOLD itself, so flipping `>=` to `>` was invisible. A
+      // threshold that excludes its own value silently withholds the heat
+      // explanation from every runner on a day at exactly that temperature.
+      const at = inferLimiter({
+        ...baseInputs(),
+        tempC:               LIMITER.HEAT_C_THRESHOLD,
+        actualAvgHr:         162,
+        prescribedHrCeiling: 148,
+      })
+      expect(at?.category, 'a run at exactly the heat threshold lost its heat reading').toBe('heat')
+      const justUnder = inferLimiter({
+        ...baseInputs(),
+        tempC:               LIMITER.HEAT_C_THRESHOLD - 1,
+        actualAvgHr:         162,
+        prescribedHrCeiling: 148,
+      })
+      expect(justUnder?.category).not.toBe('heat')
     })
 
     it('does not fire when temp is below the heat threshold', () => {

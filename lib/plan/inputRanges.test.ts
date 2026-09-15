@@ -78,6 +78,38 @@ describe('§55 — resting_hr and max_hr are optional, but not nonsense', () => 
   })
 })
 
+describe('§55 — the volume fields, which share this function\'s guard', () => {
+  // Added 2026-09-15 by `npm run test:liveness`, which flipped the first `||` in
+  // `MISSING_OR_NEGATIVE` to `&&` and this file stayed green. With `&&` the guard
+  // needs a value that is simultaneously not-a-number AND not-finite AND
+  // negative, which nothing is — so every missing, NaN and negative volume is
+  // ACCEPTED. The code's own comment says what happens next: NaN weekly volumes
+  // propagate until validatePlan compares against NaN and the route returns a 500
+  // naming no field, which is the opaque crash this function exists to replace.
+  //
+  // §55's table is age/RHR/maxHR, and the volume floor is UX-BEGINNER-01's. They
+  // share ONE function, so the test that covers the function has to pin the whole
+  // guard or a mutation walks straight through the half it ignores.
+  it('rejects a MISSING volume field rather than producing NaN', () => {
+    throwsOn({ current_weekly_km: undefined } as Partial<GeneratorInput>, 'current_weekly_km')
+    throwsOn({ longest_recent_run_km: undefined } as Partial<GeneratorInput>, 'longest_recent_run_km')
+  })
+
+  it('rejects NaN and negative, which are broken input rather than an answer', () => {
+    throwsOn({ current_weekly_km: Number.NaN }, 'current_weekly_km')
+    throwsOn({ current_weekly_km: -1 }, 'current_weekly_km')
+    throwsOn({ longest_recent_run_km: -0.5 }, 'longest_recent_run_km')
+  })
+
+  it('ACCEPTS zero on both, because zero is a real answer (UX-BEGINNER-01)', () => {
+    // The distinction the guard exists to hold: 0 is the honest answer from
+    // someone starting from scratch, and refusing it turned the product's newest
+    // users away in schema language.
+    expect(() => validateInputFields({ ...OK, current_weekly_km: 0, longest_recent_run_km: 0 }))
+      .not.toThrow()
+  })
+})
+
 describe('§55 — the error carries what the API route needs for its 422', () => {
   it('names the field, the offending value and the range', () => {
     // The route returns all three to the runner. An error that only said
