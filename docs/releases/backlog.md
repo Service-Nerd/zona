@@ -69,7 +69,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > |---|---|---|---|
 > | 1 | ~~S1-INJURY-DENOMINATOR-01~~ | ✅ **SHIPPED 2026-09-15** | Board ruled CORRECT WITH AMENDMENT; §90 Amendment 1. 6 plans fixed, 0 healthy plans touched |
 > | 2 | ~~ERROR-SEVERITY-IS-ADVISORY-01~~ | ✅ **CLOSED 2026-09-15** | The premise was wrong: both backstops already existed. The real gap was legibility, now fixed |
-> | 3 | **PRINCIPLE-CLAIM-SYNC-01** | Guard | Cheap, and closes the §92 class outright |
+> | 3 | ~~PRINCIPLE-CLAIM-SYNC-01~~ | ✅ **SHIPPED 2026-09-15** | 9 missing back-references fixed; falsified both ways |
 > | 4 | **TEST-LIVENESS-01** | Harness | The big one: `invariantLiveness` proves the 79 invariants fire; nothing proves the 21 tests do |
 > | 5 | LR-EARNED-TIER-01 | Engine | Already tracked as `warn` at 0.06% |
 > | 6 | GATED-SURPLUS-COMPOSE-01 | ADR-020 boundary | Already tracked as `warn` at 0.03% |
@@ -82,11 +82,12 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > **The reassuring half, stated because it is the question that matters 3 days before the charity demo:** every breaching plan is OLD. The sweep generates 15,973 plans with 0 violations, all 14 charity personas are clean, and the 5 plans created in September produced no live `plan_rule_invalid` at all. **The fleet is carrying history, not a live defect.**
 > 🔲 **Residual, and it is a FOUNDER decision, not a build:** whether the daily ops digest (a cloud routine via RemoteTrigger, not repo code) reads the new `plan-audit-summary` row. The repo side is done; wiring someone else's digest is not mine to change unilaterally.
 
-> 🔲 **PRINCIPLE-CLAIM-SYNC-01 — a principle can name an invariant that does not exist, and did for 8 days.** *(P3, filed 2026-09-15)*
-> §92's Config paragraph read *"Enforced by the amended `INV-PLAN-FOUNDATION-BLOCK`, which permits strides only when `meta.early_quality_onset` is set"* from 2026-09-07. The amendment was never made: `invariants.ts` contained the word "strides" three times, all in the maintenance-injury block. The producer gated correctly; **the checker was documented and absent.** Closed in `46ba550` — the CLASS is not.
-> **Why it survived:** the three-artifact hook reads the DIFF, and the diff contained a principle *saying* an invariant existed. Nothing parses a principle's claim and checks it against `INVARIANT_CODES`.
-> **Scope:** extend `principleCoverage.test.ts` to extract `INV-[A-Z-]+` tokens from `CoachingPrinciples.md` and fail on any that is not registered. Cheap; the manifest already imports `INVARIANT_CODES`. Watch for false positives on deliberately-historical references (§42 cites deleted config by name on purpose).
-> *Verify still open:* `grep -oE "INV-[A-Z0-9-]+" docs/canonical/CoachingPrinciples.md | sort -u` against `INVARIANT_CODES`.
+> ✅ **PRINCIPLE-CLAIM-SYNC-01 — SHIPPED 2026-09-15. The §92 class is closed, and the obvious check would NOT have closed it.**
+> **The trap:** I scoped this as "extract `INV-` tokens and fail on any not registered". Measured: that finds **1** discrepancy, and it is legitimate (§24 names an ultra invariant "enforced … **once built**"). **It would not have caught §92**, because `INV-PLAN-FOUNDATION-BLOCK` existed and was registered — what was missing was the LINK BACK. That invariant's `principle_ref` said §57 and never §92, so nothing connected the claim to the code.
+> **What shipped:** a principle that CLAIMS enforcement must be acknowledged in that invariant's `principle_ref`. Scoped to ownership phrasing (`Enforced by` / `Mechanically checked by` / `Checked by` / `Guarded by`) — a blanket "every cited code cites back" fires on **61 of 146** citations, nearly all ordinary cross-references, and a check that cries wolf 61 times gets deleted.
+> **Measured: 68 ownership claims, 9 unsatisfied, 1 unregistered.** All 9 were genuine missing back-references (including two written in this session's own §90 Amendment 1 commit) and all 9 are fixed; the 1 unregistered is exempted with its reason.
+> **Falsification-verified both ways:** re-introducing §92's exact failure turns it red with the right message, and a fabricated `INV-PLAN-TOTALLY-MADE-UP` claim turns it red.
+> ⚠️ **One probe lesson worth keeping:** refs accumulate across every push site for a code. The first attempt to re-break §92 edited one of two sites, the other still cited §92, and the check looked dead for a minute. **Falsify a set-valued check by removing every contributor, not the first one.**
 
 > 🔲 **TEST-LIVENESS-01 — nothing proves the 21 named tests fail when their rule breaks.** *(P2, filed 2026-09-15)*
 > `invariant:liveness` deliberately breaks valid plans 46 ways and records which of the 79 invariants wake. **There is no equivalent for the 21 principles covered by a named test** — and this repo has already shipped a green tick with nothing behind it more than once (`--section-gap`, the decorative-config family, D9's unreachable `flexShrink`, §97's two inert gates).

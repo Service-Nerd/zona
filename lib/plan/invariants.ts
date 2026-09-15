@@ -742,7 +742,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     if (statedWeekly > 0 && statedLongest > statedWeekly) {
       violations.push({
         code: 'INV-INPUT-LONGEST-LE-WEEKLY',
-        principle_ref: 'CoachingPrinciples §18',
+        principle_ref: 'CoachingPrinciples §18, §10',
         severity: 'error',
         week: 0,  // input-level, plan-wide — no specific week (convention)
         message: `Self-reported longest run ${statedLongest}km exceeds stated weekly volume ${statedWeekly}km — a single run cannot exceed the week's total`,
@@ -981,7 +981,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         if (test.test(copy) && !ok) {
           violations.push({
             code: 'INV-PLAN-COPY-MATCHES-SESSIONS',
-            principle_ref: 'CoachingPrinciples §27',
+            principle_ref: 'CoachingPrinciples §27, §41',
             severity: 'error',
             week: w.n,
             message: `Week copy promises what the week does not contain — "${w.label}" / "${w.theme}" requires ${needs}`,
@@ -1002,7 +1002,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           && !isOverloadWeek(w, plan.weeks)) {
         violations.push({
           code: 'INV-PLAN-COPY-MATCHES-SESSIONS',
-          principle_ref: 'CoachingPrinciples §27',
+          principle_ref: 'CoachingPrinciples §27, §41',
           severity: 'error',
           week: w.n,
           message: `Copy implies overload but weekly_km ${w.weekly_km}km <= prior non-deload ${prevNonDeload.weekly_km}km`,
@@ -2632,7 +2632,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     if (w.weekly_km > prev.weekly_km) {
       violations.push({
         code: 'INV-PLAN-DELOAD-IS-A-REDUCTION',
-        principle_ref: 'CoachingPrinciples §3',
+        principle_ref: 'CoachingPrinciples §3, §90',
         // Stays `warn` (2026-09-06, DELOAD-INVERSION-01). The CURVE cause named
         // above IS fixed — a deload is now `min(existing, 70% × POST-CAP prior)`,
         // not 70% of the uncapped curve, and curve-level inversions measured
@@ -3075,7 +3075,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     if (onRamp < floor) {
       violations.push({
         code: 'INV-PLAN-ONRAMP-FLOOR',
-        principle_ref: 'CoachingPrinciples §91',
+        principle_ref: 'CoachingPrinciples §91, §97',
         severity: 'error',
         week: 0,  // plan-level
         message: `All-easy on-ramp is ${onRamp} week(s) (${baseWeeks} base + ${foundationCredit} foundation) — below the ${floor}-week floor. A short polarised on-ramp must always remain (Seiler), even for a demonstrably-ready runner.`,
@@ -3334,7 +3334,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       if (!hasPace && !hasEffort) {
         violations.push({
           code: 'INV-PLAN-EFFORT-OR-PACE',
-          principle_ref: 'CoachingPrinciples §19, §41',
+          principle_ref: 'CoachingPrinciples §19, §41, §40',
           severity: 'error',
           week: w.n, day,
           message: `Quality session "${sn.label}" prescribes neither a pace target nor an effort target. A session with no pace is legitimate (hill reps are governed by gradient), but it must then say how hard by RPE — otherwise a LOST pace is indistinguishable from a deliberate absence.`,
@@ -4006,7 +4006,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           // violation gets missed later.
           violations.push({
             code: 'INV-PLAN-INTENSITY-DISTRIBUTION',
-            principle_ref: 'CoachingPrinciples §1',
+            principle_ref: 'CoachingPrinciples §1, §90, §97',
             severity: 'error',
             week: 0,
             message: `Plan-wide quality share is ${pct.toFixed(1)}% of running sessions (${hard}/${running}), above the ${distKey} ceiling of ${dist.max_quality_session_pct}%`,
@@ -4624,7 +4624,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         const peakPhaseMax = Math.max(...peakPhase.map(w => w.weekly_km))
         violations.push({
           code: 'INV-PLAN-PEAK-IN-PEAK-PHASE',
-          principle_ref: 'CoachingPrinciples §23',
+          principle_ref: 'CoachingPrinciples §23, §2, §40',
           severity: plan.meta.volume_profile === 'maintenance' ? 'warn' : 'error',
           week: highest.n,
           message: `Peak phase tops out at ${peakPhaseMax}km but the plan reaches ${maxKm}km in week ${highest.n} (${highest.phase})`,

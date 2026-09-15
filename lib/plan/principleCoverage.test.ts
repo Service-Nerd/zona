@@ -111,6 +111,91 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
     ).toEqual([])
   })
 
+  it('a principle that CLAIMS an invariant enforces it is telling the truth', () => {
+    // PRINCIPLE-CLAIM-SYNC-01 — the §92 class, closed.
+    //
+    // §92's Config paragraph read "Enforced by the amended
+    // `INV-PLAN-FOUNDATION-BLOCK`, which permits strides only when
+    // `meta.early_quality_onset` is set" for eight days. The amendment was never
+    // made: `invariants.ts` contained the word "strides" three times, all in the
+    // maintenance-injury block. The producer gated correctly; the checker was
+    // documented and absent.
+    //
+    // ⚠️ AN EXISTENCE CHECK WOULD NOT HAVE CAUGHT IT, which is the whole lesson.
+    // `INV-PLAN-FOUNDATION-BLOCK` existed and was registered. What was missing
+    // was the LINK BACK: that invariant's `principle_ref` said §57 and never §92,
+    // so nothing connected the claim to the code. The back-reference is the only
+    // machine-readable half of the sentence, so that is what this asserts.
+    //
+    // ⚠️ SCOPED TO OWNERSHIP CLAIMS, deliberately. A blanket "every cited code
+    // must cite back" fires on 61 of 146 citations, nearly all of them ordinary
+    // cross-references (§2 mentioning §3's deload invariant is prose, not a
+    // claim). A check that cries wolf 61 times gets deleted, which this repo
+    // records as equivalent to having no check. Measured down to the phrasing
+    // §92 actually used: 68 ownership claims, of which 9 were unsatisfied and
+    // every one turned out to be a genuine missing back-reference, not a false
+    // positive.
+    const CLAIM =
+      /(?:[Ee]nforced by|[Mm]echanically checked by|[Cc]hecked by|[Gg]uarded by)[^.]{0,120}?(INV-(?:PLAN|MAINT|INPUT)-[A-Z0-9-]+)/g
+
+    // A principle may name an invariant that does not exist YET, when it says so.
+    // §24's ultra cadence is SLT-gated on acquisition and its own sentence reads
+    // "…once built" — an honest future claim, not a false present-tense one. The
+    // reason is the exemption; a bare list would re-admit the §92 class.
+    const FORWARD_REFERENCES: Record<string, string> = {
+      'INV-PLAN-ULTRA-BACK-TO-BACK-CADENCE':
+        '§24 names it explicitly as "enforced … ONCE BUILT" — SLT-gated on ultra acquisition, '
+        + 'tracked in configConsumer.test.ts SIG_UNBUILT. A declared future commitment, not a claim '
+        + 'that it exists today.',
+    }
+
+    // ⚠️ REFS ACCUMULATE ACROSS EVERY PUSH SITE for a code, and that is correct —
+    // one invariant can push from several branches, each naming the section that
+    // branch serves. Worth stating because it cost a falsification probe: the
+    // first attempt to re-break §92 edited ONE of INV-PLAN-FOUNDATION-BLOCK's two
+    // push sites, the other still cited §92, the test stayed green, and for a
+    // minute the check looked dead. It was the probe that was wrong. Falsify a
+    // set-valued check by removing EVERY contributor, not the first one.
+    const invSrc = readFileSync(join(process.cwd(), 'lib', 'plan', 'invariants.ts'), 'utf8')
+    const backRefs = new Map<string, Set<string>>()
+    // `Array.from` around every matchAll: this file's tsc target does not allow
+    // iterating a RegExpStringIterator directly, and `npx tsc --noEmit` at the
+    // repo root uses a different target than `npm run verify` does — so it type-
+    // checked clean locally and failed the gate. Match the idiom already used by
+    // `principlesInDoc()` at the top of this file.
+    for (const m of Array.from(invSrc.matchAll(
+      /code: '(INV-[A-Z0-9-]+)',\s*(?:\n\s*\/\/[^\n]*)*\s*principle_ref: '([^']*)'/g))) {
+      const set = backRefs.get(m[1]) ?? new Set<string>()
+      for (const sec of Array.from(m[2].matchAll(/§(\d+)/g))) set.add(sec[1])
+      backRefs.set(m[1], set)
+    }
+
+    const md = readFileSync(PRINCIPLES_MD, 'utf8')
+    const sections = md.split(/^## (\d+)\. /m)
+    const broken: string[] = []
+    for (let i = 1; i < sections.length; i += 2) {
+      const n = sections[i]
+      for (const m of Array.from(sections[i + 1].matchAll(CLAIM))) {
+        const code = m[1]
+        if (FORWARD_REFERENCES[code]) continue
+        const back = backRefs.get(code)
+        if (!back) {
+          broken.push(`§${n} claims enforcement by ${code}, which is not registered at all`)
+        } else if (!back.has(n)) {
+          broken.push(
+            `§${n} claims enforcement by ${code}, but that invariant's principle_ref cites only `
+            + `§${Array.from(back).join(', §')} — nothing links the claim to the code`)
+        }
+      }
+    }
+    expect(
+      broken,
+      'A principle claiming enforcement that the invariant does not acknowledge is how §92 read ' +
+      'as enforced for eight days while checking nothing. Either add the § to that invariant\'s ' +
+      'principle_ref, or stop claiming it.',
+    ).toEqual([])
+  })
+
   it('the unverified debt does not grow', () => {
     // SWEEP-BASELINE-01's pattern. The count may FALL — lower the baseline in
     // the same commit that classifies one, which locks the progress in. It may
