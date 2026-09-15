@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { findSimilarRuns, summariseCohort, pickWindowDays, classifyHrBand, isPlausibleRunHr, type RunRecord } from './runHistory'
-import { COHORT_SIMILARITY as C } from './constants'
+import { COHORT_SIMILARITY as C, RUN_HR_PLAUSIBLE } from './constants'
 
 /**
  * §58 — past-self comparison, the two-axis cohort match.
@@ -93,6 +93,18 @@ describe('§58 — the summary, and what it refuses to summarise', () => {
     expect(s.avgInZonePct).toBe(80)
     expect(s.medianDistanceKm).toBe(10)
     expect(s.avgPaceSecPerKm).toBe(300)
+  })
+
+  it('accepts BOTH plausibility bounds, and rejects one beat outside either', () => {
+    // Added 2026-09-15 by `npm run test:liveness`, which flipped `>=` to `>` and
+    // `<=` to `<` inside `isPlausibleRunHr` and this file did not notice. The
+    // test asserted 0 was rejected and 150 accepted — either side of the band,
+    // never the edges, so an off-by-one at either bound was invisible. That is
+    // the whole class the mutation harness exists to find.
+    expect(isPlausibleRunHr(RUN_HR_PLAUSIBLE.MIN_BPM)).toBe(true)
+    expect(isPlausibleRunHr(RUN_HR_PLAUSIBLE.MAX_BPM)).toBe(true)
+    expect(isPlausibleRunHr(RUN_HR_PLAUSIBLE.MIN_BPM - 1)).toBe(false)
+    expect(isPlausibleRunHr(RUN_HR_PLAUSIBLE.MAX_BPM + 1)).toBe(false)
   })
 
   it('ignores implausible HR rather than letting it drag the mean', () => {

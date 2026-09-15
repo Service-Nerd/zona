@@ -1,0 +1,36 @@
+# TEST-LIVENESS-01 — prove the NAMED TESTS bite, nightly.
+#
+# `npm run verify` proves the invariants hold and the tests pass. It cannot tell
+# you whether a passing test would notice its rule breaking, and this repo has
+# shipped a green tick with nothing behind it more than once.
+#
+# So this breaks the source each test claims to cover and re-runs that test.
+#
+# ⚠️ NIGHTLY, NOT IN `verify`, and that is a decision rather than an omission:
+# it rewrites source files and re-runs vitest ~60 times, which is minutes. A gate
+# that adds minutes to every commit gets disabled, which this repo records as
+# equivalent to having no gate.
+name: nightly-test-liveness
+
+on:
+  schedule:
+    - cron: '20 3 * * *'      # 03:20 UTC — well clear of the ops crons (07:30-08:10)
+  workflow_dispatch:
+
+jobs:
+  liveness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Test liveness (fails on a NEW survivor)
+        run: npm run test:liveness
+      - name: Assert the harness left no source mutated
+        # It restores in a finally and verifies the write, but a harness that CAN
+        # rewrite source must prove it did not, on every run, not just be trusted.
+        run: git diff --exit-code -- lib/

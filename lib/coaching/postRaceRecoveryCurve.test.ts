@@ -59,6 +59,23 @@ describe('§62 — the distance bucket picks the curve', () => {
     expect(getDistanceBucket(32)).toBe('MARATHON')
   })
 
+  it('puts every bucket EDGE on the right side of the line', () => {
+    // Added 2026-09-15 by `npm run test:liveness`: flipping `km <= 6` to `km < 6`
+    // left this file green. The bucket boundaries were asserted from the middle
+    // of each band (5, 10, 21.1, 42.2) and never at the edge, so an off-by-one
+    // would have silently handed a 6 km race the 10K recovery curve.
+    expect(getDistanceBucket(6)).toBe('5K')
+    expect(getDistanceBucket(6.1)).toBe('10K')
+    expect(getDistanceBucket(12)).toBe('10K')
+    expect(getDistanceBucket(12.1)).toBe('HM')
+    expect(getDistanceBucket(23)).toBe('HM')
+    expect(getDistanceBucket(23.1)).toBe('MARATHON')
+    expect(getDistanceBucket(45)).toBe('MARATHON')
+    expect(getDistanceBucket(45.1)).toBe('50K')
+    expect(getDistanceBucket(75)).toBe('50K')
+    expect(getDistanceBucket(75.1)).toBe('100K')
+  })
+
   it('every bucket in §62\'s table is reachable from a real race distance', () => {
     const reached = new Set([5, 10, 21.1, 42.2, 50, 100].map(getDistanceBucket))
     expect(Array.from(reached).sort())

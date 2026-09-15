@@ -1,0 +1,32 @@
+{
+ "_": "Mutations the covering test does NOT catch. May only SHRINK. Each needs a reason.",
+ "generated": "2026-09-15",
+ "unproven": [
+  "coaching/dayBoundary.test.ts",
+  "coaching/readinessBaseline.test.ts",
+  "coaching/recalibrationPrompt.test.ts"
+ ],
+ "survivors": {
+  "coaching/cohortSimilarity.test.ts :: perturb first numeric literal": "UNREVIEWED — mutates L170: medianDistanceKm: dists[Math.floor(dists.length / 2)],",
+  "coaching/limiter.test.ts :: flip first >= to >": "UNREVIEWED — mutates L107: || (inputs.actualDistKm != null && inputs.actualDistKm >= LIMITER.SUPPRESS_ULTRA_DISTANCE_",
+  "coaching/limiter.test.ts :: flip second >= to >": "UNREVIEWED — mutates L115: && inputs.tempC >= LIMITER.HEAT_C_THRESHOLD",
+  "coaching/limiter.test.ts :: perturb first numeric literal": "UNREVIEWED — mutates L169: const m1 = Math.floor(first / 60), s1 = Math.round(first % 60)",
+  "coaching/postRaceRecoveryCurve.test.ts :: flip first >= to >": "UNREVIEWED — mutates L109: if (raceWeekN >= plan.weeks.length) return null",
+  "coaching/postRaceRecoveryCurve.test.ts :: flip second && to ||": "UNREVIEWED — mutates L160: s => s && s.type !== 'rest'",
+  "coaching/postRaceRecoveryCurve.test.ts :: flip second >= to >": "UNREVIEWED — mutates L124: return idx >= 0 ? idx + 1 : null",
+  "coaching/prompts/sessionFeedback.test.ts :: flip first <= to <": "UNREVIEWED — mutates L276: const tempBlock = (tempC != null && (tempC >= 22 || tempC <= 4))",
+  "coaching/prompts/sessionFeedback.test.ts :: flip first >= to >": "UNREVIEWED — mutates L155: const isUltraEffort = !isRace && actualDistKm >= LIMITER.SUPPRESS_ULTRA_DISTANCE_KM",
+  "coaching/prompts/sessionFeedback.test.ts :: flip first || to &&": "UNREVIEWED — mutates L276: const tempBlock = (tempC != null && (tempC >= 22 || tempC <= 4))",
+  "coaching/prompts/sessionFeedback.test.ts :: flip second && to ||": "UNREVIEWED — mutates L220: const zoneStr = prescribedZoneLabel && zoneTarget ? `${prescribedZoneLabel}, ${zoneTarget}",
+  "coaching/prompts/sessionFeedback.test.ts :: flip second >= to >": "UNREVIEWED — mutates L181: const weekLine = maintIdx >= 0",
+  "coaching/prompts/sessionFeedback.test.ts :: perturb first numeric literal": "UNREVIEWED — mutates L157: const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000",
+  "coaching/reshapeMagnitude.test.ts :: flip first && to ||": "UNREVIEWED — mutates L82: if (entry.kind === 'modified' && entry.before && entry.after) {",
+  "coaching/reshapeMagnitude.test.ts :: flip first || to &&": "UNREVIEWED — mutates L79: if (entry.kind === 'replaced' || entry.kind === 'added' || entry.kind === 'removed') {",
+  "coaching/reshapeMagnitude.test.ts :: flip second && to ||": "UNREVIEWED — mutates L82: if (entry.kind === 'modified' && entry.before && entry.after) {",
+  "plan/fitnessThresholds.test.ts :: perturb first numeric literal": "UNREVIEWED — mutates L11: export const FITNESS_RANK: Record<FitnessLevel, number> = { beginner: 0, intermediate: 1, ",
+  "plan/inputRanges.test.ts :: flip first || to &&": "UNREVIEWED — mutates L415: typeof v !== 'number' || !Number.isFinite(v) || v < 0",
+  "plan/taperRecalibration.test.ts :: flip first <= to <": "UNREVIEWED — mutates L114: if (plannedPreTaperKm <= 0) {",
+  "plan/taperRecalibration.test.ts :: flip first >= to >": "UNREVIEWED — mutates L122: if (ratio >= threshold) {",
+  "plan/taperRecalibration.test.ts :: flip first || to &&": "UNREVIEWED — mutates L160: if (!session || session.type === 'rest') { newSessions[d] = session; continue }"
+ }
+}
