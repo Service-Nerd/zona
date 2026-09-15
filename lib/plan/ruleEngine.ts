@@ -5462,9 +5462,32 @@ function buildRulePlanOnce(
     isFreshReturn,
     oneWeekOnRamp,
     tissueConditioned,
+    // §79 Amendment 3 — a declaration ABOVE the structural assessment opens the
+    // same window a returning runner gets. Not a new mechanism and not a
+    // category ban: tempo/threshold still arrive immediately, the vo2max family
+    // (intervals AND hill reps) waits out the opening quality weeks.
+    //
+    // SCOPED TO A SHALLOW TRAINING AGE, and the scoping is the whole rule. A
+    // runner with `2-5yr`/`5yr+` who declares up has demonstrated tissue
+    // tolerance and is ALREADY covered by `intensityLiftedForReturn` — firing
+    // here too would withhold VO2max from a 55 km/week runner with five years
+    // and regular quality behind them, which is not what the board ruled and is
+    // what §96's brake test caught on the first run. The gap the board named is
+    // the runner whose claim NOTHING has demonstrated: shallow history, low
+    // volume, declaring up. The two arms are complementary, never overlapping.
+    userRaisedAboveStructural:
+      declaredLevel !== undefined
+      && FITNESS_RANK[declaredLevel] > FITNESS_RANK[assessedStructural]
+      && input.training_age !== '2-5yr' && input.training_age !== '5yr+',
   })
   const intensityReentryActive = reentry.active
   const intensityReentryWeeks = reentry.weeks
+  /** §79 Amendment 3 — the window opened ONLY because the runner declared up.
+   *  Decides which honesty note the plan carries: a first-timer who over-rated
+   *  themselves is not "coming back" from anything. */
+  const reentryIsUserRaisedOnly =
+    reentry.active
+    && !assessed.intensityLiftedForReturn && !returningRunner && !isFreshReturn && !oneWeekOnRamp
 
   // §89 Lever B — earlier quality onset via a SHORTER (still all-easy) base. Only
   // for a demonstrably-ready runner with a real CURRENT base: experienced
@@ -6762,7 +6785,14 @@ function buildRulePlanOnce(
     ...(intensityReentryActive
       && !weeks.some(w => (w.n ?? 0) >= 1 && Object.values(w.sessions).some(
         sn => sn && sn.type === 'quality' && isVo2maxSession(sn, V1_SESSION_CATALOGUE)))
-      ? { intensity_reentry_omission_note: 'No interval or hill sessions this block. You are coming back, so the quality work leads with tempo and threshold while your legs re-adapt — sharper work earns its place in the next cycle, not this one.' }
+      ? { intensity_reentry_omission_note: reentryIsUserRaisedOnly
+            // §79 Amendment 3 — this runner is NOT coming back from anything;
+            // they told the wizard they are further along than the data says.
+            // Saying "you are coming back" to a couch-to-10K first-timer is the
+            // copy equivalent of a wrong prescription, and it was live for the
+            // length of one measurement before this branch existed.
+            ? 'No interval or hill sessions this block. You told us you are further on than your recent running shows, so the plan takes you at your word on effort and starts with tempo and threshold. The sharp stuff earns its place once there is a base under it.'
+            : 'No interval or hill sessions this block. You are coming back, so the quality work leads with tempo and threshold while your legs re-adapt — sharper work earns its place in the next cycle, not this one.' }
       : {}),
     // §96 / HSR-INERT-01 (brand-routed honesty, CB-HSR-01) — a `love` runner below the
     // 5yr+ tier does not get love's full structural effect (peak-LR stretch + §47

@@ -12,6 +12,7 @@ const NO_ARMS = {
   isFreshReturn: false,
   oneWeekOnRamp: false,
   tissueConditioned: false,
+  userRaisedAboveStructural: false,
 } as const
 
 describe('computeIntensityReentry — the window', () => {
@@ -28,6 +29,7 @@ describe('computeIntensityReentry — the window', () => {
     ['returningRunner'],
     ['isFreshReturn'],
     ['oneWeekOnRamp'],
+    ['userRaisedAboveStructural'],
   ] as const)('opens on the %s arm alone', arm => {
     const w = computeIntensityReentry({ ...NO_ARMS, [arm]: true })
     expect(w.active).toBe(true)

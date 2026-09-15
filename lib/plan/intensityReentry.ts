@@ -39,6 +39,23 @@ export interface IntensityReentryArms {
   /** §97 — an ADR-021/§89-gated runner on the one-week quality on-ramp. */
   readonly oneWeekOnRamp: boolean
   /**
+   * §79 Amendment 3 (Coaching Board 2026-09-15) — the runner declared a level
+   * ABOVE the engine's structural assessment.
+   *
+   * §79's amendment already mandated this protection for intensity that is
+   * "lifted (OR USER-RAISED)", but scoped it to returning/fresh-return runners.
+   * That scoping is backwards relative to risk: a returner has historical
+   * tissue adaptation, a novice has none. Measured on the charity cohort — T1
+   * "couch-to-10K", 8 km/week, longest run 4 km, <6mo running, no quality
+   * history — declaring 'intermediate' produced Hill reps at RPE 8 (Zone 4-5,
+   * HR 158-182) in week 5 and Long VO2max in week 7, with no window at all,
+   * because `training_age: '<6mo'` fails every returning-runner arm.
+   *
+   * §79's own words: "a runner declaring MORE is claiming a tissue tolerance
+   * that nothing has demonstrated."
+   */
+  readonly userRaisedAboveStructural: boolean
+  /**
    * §89 Lever A — tissue demonstrably conditioned, so the window is SHORTENED
    * rather than zeroed (Willy: one week tempo-first is cheap insurance).
    */
@@ -98,7 +115,8 @@ export interface IntensityReentryWindow {
  */
 export function computeIntensityReentry(arms: IntensityReentryArms): IntensityReentryWindow {
   const active =
-    arms.intensityLiftedForReturn || arms.returningRunner || arms.isFreshReturn || arms.oneWeekOnRamp
+    arms.intensityLiftedForReturn || arms.returningRunner || arms.isFreshReturn
+    || arms.oneWeekOnRamp || arms.userRaisedAboveStructural
 
   const weeks = !active ? 0
     : arms.oneWeekOnRamp ? Math.max(

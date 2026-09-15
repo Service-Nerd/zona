@@ -2666,6 +2666,55 @@ The asymmetry in the resolution is deliberate: **volume is where injuries come f
 
 **Distribution still governs.** A user-elevated intensity on low volume cannot blow the §1 quality-share ceiling — `INV-PLAN-INTENSITY-DISTRIBUTION` remains binding at the elevated level.
 
+### Amendment 3 — a user-raised NOVICE gets the same re-entry window a returner does (Coaching Board, 2026-09-15)
+
+**Principle.** When `user_declared_level` is **above** the engine's structural
+assessment AND the runner's `training_age` is shallow (`<6mo` / `6-18mo`), the
+§79 intensity re-entry window opens: the highest tissue-stress quality — VO2max
+intervals **and hill reps**, both catalogue category `vo2max` — is withheld for
+the opening quality weeks. **Tempo and threshold still arrive immediately.** The
+declaration is honoured; it is honoured in the right order.
+
+**Why — the protection already existed and was scoped backwards relative to
+risk.** The amendment above already mandates this for intensity that is *"lifted
+(OR USER-RAISED)"*, but scopes it to **returning/fresh-return** runners. A
+returner has historical tissue adaptation; a novice has none. §79's own sentence
+is the argument: *"a runner declaring MORE is claiming a tissue tolerance that
+nothing has demonstrated."* Nothing had demonstrated it, and nothing withheld
+anything.
+
+**Measured on the charity cohort — the reason this was found.** `T1`
+"couch-to-10K charity beginner": **8 km/week, longest run 4 km, `<6mo` running,
+no quality history**, 3 days/week. Declaring `intermediate` in the wizard
+produced:
+
+| week | session | zone | RPE |
+|---|---|---|---|
+| 4 | Continuous tempo | Zone 3 | 7 |
+| **5** | **Hill reps — 90s** | **Zone 4–5** | **8** |
+| 7 | Long VO2max | Zone 4–5 | 7 |
+
+Zero invariant errors. `training_age: '<6mo'` fails every returning-runner arm,
+so no window opened. After: all six sessions Zone 3 / RPE 7, peak km unchanged
+at 19, structural still `beginner`.
+
+**Scoped to a SHALLOW training age, and the scoping is the rule.** A runner with
+`2-5yr`/`5yr+` who declares up is already covered by `intensityLiftedForReturn`.
+Firing here too would withhold VO2max from a 55 km/week runner with five years
+and regular quality behind them — caught on the first run by §96's brake test.
+The two arms are complementary and must never overlap.
+
+**Unchanged:** the structural axis does not move (§79/D2 — an upward declaration
+buys intensity only, never tonnage; `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE`
+still binds). Downward declarations keep §79's asymmetry. §1 still governs.
+Where the rotation then places no VO2max at all, §79 Amendment 2's omission note
+already declares it — with copy that does **not** tell a first-timer they are
+"coming back", which was a real defect introduced and fixed inside this change.
+
+**Invariant.** `INV-PLAN-RETURNING-INTENSITY-REENTRY` already checks exactly
+this; its scope widens with the arm. No new numeric — reuses
+`RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS`.
+
 **Config.** `GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS = 4`; `GENERATION_CONFIG.USER_DECLARED_LEVEL_BINDS_STRUCTURE_DOWNWARD_ONLY = true`.
 
 **Invariants.** `INV-PLAN-RETURNING-INTENSITY-REENTRY` — no VO2max-category session in weeks 1–`intensity_reentry_weeks` of a re-entry-active plan. `INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE` — where `meta.fitness_level_declared` outranks `meta.fitness_level`, peak weekly volume must stay within the structural band's ceiling.
