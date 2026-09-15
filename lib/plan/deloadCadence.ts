@@ -112,6 +112,12 @@ export function computeDeloadWeeks(
   totalWeeks: number,
   recoveryFreq: number,
   phaseForWeek: (weekN: number) => GeneratorPhase,
+  /**
+   * §95 — also keep a deload off phase position 2. Default true; the caller
+   * passes false when §95 has YIELDED to §1 (Amendment 1, Coaching Board
+   * 2026-09-15), which reverts placement to §87's behaviour exactly.
+   */
+  avoidPosition2 = true,
 ): Set<number> {
   if (!Number.isFinite(recoveryFreq) || recoveryFreq <= 0 || totalWeeks < 1) return new Set()
 
@@ -151,7 +157,32 @@ export function computeDeloadWeeks(
       n + 1 <= totalWeeks &&
       inScope(n + 1) &&
       isFirstWeekOfPhase(n + 1)
-    if (dueNow || dueNext) { chosen.add(n); since = 0 }
+    // §108 (Coaching Board 2026-09-15) — A RECOVERY WEEK SHOULD NOT SIT AT
+    // PHASE POSITION 2 EITHER. §87 stopped a deload opening a phase; the same
+    // defect one week over is "build week 1 loads, build week 2 deloads" —
+    // one week of a new stimulus, then recovery from it. Measured at 16.1% of
+    // the swept population and 37.0% of the cohort grid.
+    //
+    // Firing the SAME one-week lookahead one count earlier places the deload at
+    // S-1 (the last week of the outgoing phase, §87's own stated ideal) and
+    // re-anchors from there, so the next one lands at S+freq-1 — position 3 or
+    // later. Standard runners measure [4,8,12] -> [2,6,10].
+    //
+    // ⚠️ `since >= 1` IS THE WHOLE FIX, and its absence is why the first build
+    // was reverted. With RECOVERY_WEEK_FREQUENCY_MASTERS = 3 the count test
+    // `since === recoveryFreq - 3` DEGENERATES TO `since === 0`, which is true
+    // on the very week AFTER a placement — so it placed a deload adjacent to
+    // the one just placed ([3,6] -> [3,4,7], count inflated, peak crushed, 453
+    // plans flipped to maintenance). Adjacency is a HARD constraint: Willy —
+    // back-to-back deloads do not add recovery, they remove a loading stimulus.
+    const dueIn2 =
+      avoidPosition2 &&
+      since === recoveryFreq - 3 &&
+      since >= 1 &&
+      n + 1 <= totalWeeks &&
+      inScope(n + 1) &&
+      isFirstWeekOfPhase(n + 1)
+    if (dueNow || dueNext || dueIn2) { chosen.add(n); since = 0 }
     else since++
   }
 

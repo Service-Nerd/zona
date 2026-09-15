@@ -672,6 +672,10 @@ export interface PlanMeta {
    * from a single plan, without regenerating a hypothetical ungated one.
    */
   onset_yield?: { rungs: number; bound: number; effective: number }
+  /** §95 Amendment 1 — the position-2 deload preference gave way to §1's
+   *  ceiling, so placement reverted to §87's. Honesty flag: the plan may carry
+   *  a position-2 deload and that was a decision, not an accident. */
+  deload_position2_yielded?: boolean
 
   hr_zone_method?: 'karvonen' | 'karvonen_estimated_max' | 'percent_of_max' | 'percent_of_estimated_max'
                  | 'observed_max' | 'age_estimate_implausible_input' | 'age_estimate_max_floor'

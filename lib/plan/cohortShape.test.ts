@@ -127,3 +127,43 @@ describe('cohort shape — the population must not change silently', () => {
     },
   )
 })
+
+describe('GRID-COVERAGE — an axis that is never varied cannot verify anything', () => {
+  // THE GAP THIS CLOSES. `property-validate-plans.ts` fails when a declared
+  // `GeneratorInput` field is never varied by its grid. `cohortGrid` had no such
+  // gate, which is exactly how it drifted to setting TEN of thirty-one fields
+  // (GRID-COVERAGE-01) and why `recent_quality_training` sat constant at
+  // 'occasional' — making §89/ADR-021's early onset fire on 0 of 7,452 plans and
+  // therefore unverifiable by every check built on this grid.
+  //
+  // Deliberately excluded fields are LISTED WITH REASONS rather than silently
+  // absent, the SWEEP-BASELINE-01 debt-register pattern: the list is the thing a
+  // reviewer reads, and adding to it is a decision someone has to write down.
+  const VARIED_REQUIRED = [
+    'race_distance_km', 'current_weekly_km', 'fitness_level', 'days_available',
+    'max_weekday_mins', 'goal', 'training_age', 'benchmark', 'age',
+    'recent_quality_training',
+  ] as const
+
+  it('every axis this grid claims to vary actually takes more than one value', () => {
+    const grid = cohortGrid() as unknown as Record<string, unknown>[]
+    const constant: string[] = []
+    for (const field of VARIED_REQUIRED) {
+      const seen = new Set(grid.map(i => JSON.stringify(i[field] ?? null)))
+      if (seen.size < 2) constant.push(`${field} (always ${Array.from(seen)[0]})`)
+    }
+    expect(
+      constant,
+      'These fields are declared as grid axes but never vary, so every mechanism ' +
+      'keyed on them is unreachable by cohort:shape, the liveness corpus and every ' +
+      'measure-* script. A green run over a constant axis is not coverage.',
+    ).toEqual([])
+  })
+
+  it('the §89 early-onset gate is reachable — the axis exists to open it', () => {
+    // A direct falsification target: if `recent_quality_training` ever goes back
+    // to a constant, or §89's gate closes, this goes red instead of the rate
+    // quietly returning to zero and looking like a healthy engine.
+    expect(baseline.earlyQualityOnsetPct).toBeGreaterThan(0)
+  })
+})

@@ -537,10 +537,18 @@ for (const input of inputs) {
     planTier = pick(tiers)
     plan = generateRulePlan(input, planTier, PLAN_START, undefined, today)
   } catch (e) {
-    const msg = e instanceof Error ? e.message.split('\n')[0] : String(e)
+    const full = e instanceof Error ? e.message : String(e)
+    const msg = full.split('\n')[0]
     if (REFUSAL.test(msg)) { refused++; continue }
     hardFailures++
-    if (hardFailureSamples.length < 5) hardFailureSamples.push({ input, message: msg })
+    // Report the VIOLATION LINES, not just the header. `validatePlan` throws with
+    // "Plan invariant violations:" on line 1 and the actual codes underneath, so
+    // taking `split('\n')[0]` printed a failure with no diagnosis in it — the
+    // reader then has to rebuild the failing input by hand from three grid
+    // columns. Keep the first few violation lines; they are what names the rule.
+    if (hardFailureSamples.length < 5) {
+      hardFailureSamples.push({ input, message: full.split('\n').slice(0, 4).join('\n      ') })
+    }
     continue
   }
   generated++

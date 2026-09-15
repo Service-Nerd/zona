@@ -2623,6 +2623,23 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   //
   // `warn`: the placement is undesirable, not unsafe — it is more recovery, not
   // less (the same reasoning §87 applied to its own backward-normalisation pass).
+  //
+  // §95 AMENDMENT 1 (Coaching Board 2026-09-15) — THIS NOW HAS A PLACEMENT FIX,
+  // AND IT DELIBERATELY DOES NOT CLOSE THE CHECK. `computeDeloadWeeks` keeps a
+  // deload off position 2 where it legally can (standard runners 21.7% -> 0.0%),
+  // but §95 is a PREFERENCE and yields to any ratified ERROR the §87 placement
+  // does not also carry — re-locating a deload changes session composition and
+  // can push §1 over its ceiling (19.6% vs 18%). `meta.deload_position2_yielded`
+  // records that.
+  //
+  // It also cannot be satisfied at all on most MASTERS plans: the full
+  // constraint set (no position 1, no position 2, no adjacency, count never
+  // falls, loading run never lengthens) is UNSATISFIABLE on 1,944 of 3,726
+  // masters plans (52.2%) and on 0 of 3,726 standard plans, by brute force over
+  // every legal placement. So a surviving warn is now one of two DECISIONS —
+  // yielded to a ceiling, or provably unplaceable — rather than the accident of
+  // arithmetic it used to be. Do not promote it to `error`; that would fail
+  // plans the board has ruled correct.
   {
     const firstWeekOfPhase = new Map<string, number>()
     plan.weeks.forEach(w => {

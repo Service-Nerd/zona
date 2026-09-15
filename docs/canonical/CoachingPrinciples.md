@@ -3827,6 +3827,49 @@ hard block is defensible coaching, but a defensible outcome reached at random is
 coincidence, not a decision"* — and position 2 is reached by the same accident of
 arithmetic §87 removed from position 1.
 
+### Amendment 1 — the preference YIELDS, and on masters plans it usually must (Coaching Board, 2026-09-15)
+
+**§95 is a preference, not a ceiling.** Where honouring it would breach a ratified
+ERROR-severity rule, placement reverts to §87's and the `warn` stands. This is
+§98's pattern exactly: measure the actual outcome rather than predict it, so there
+is no constant to drift.
+
+**What forced the amendment.** Re-locating a deload does not just move a recovery
+week — it changes session COMPOSITION. Measured on a marathon archetype,
+`[4,8,12] → [2,6,10]` turns former-recovery week 12 into a quality-carrying
+loading week (**+1 hard**) while the earlier placements shed **3 running
+sessions**. Numerator up and denominator down, so §1's share crosses the ceiling:
+**19.6% against MARATHON's 18% (10 hard / 51 running)**. The same drift breaks
+§53's variety cap on the same plan (`progressive_tempo` 5 times against 4). The
+yield therefore triggers on **any** error the §87 placement does not also carry,
+not on §1 alone.
+
+**Two constraints are HARD and may never be traded for position 2:**
+1. **No adjacent deloads** (Willy). Back-to-back recovery weeks do not add
+   recovery; they remove a loading stimulus. The first implementation of this
+   rule produced exactly that — `[3,6] → [3,4,7]` — because its count test
+   `since === recoveryFreq - 3` degenerates to `since === 0` at the masters
+   cadence of 3, firing on the very week after a placement. **453 plans flipped
+   to a do-nothing maintenance plan** and the build was reverted.
+2. **Never lengthen the worst loading run** (Sims, §87 rule 3, unchanged).
+
+**On masters plans the rule usually cannot be satisfied, and that is recorded
+rather than worked around.** Brute force over every legal placement on real
+generated plans: the full constraint set is **unsatisfiable on 1,944 of 3,726
+masters plans (52.2%)** and on **0 of 3,726 standard plans**. D-21 applies — a
+rule that cannot be honoured is a defect in the rule, so §95 is explicitly a
+preference for the masters cadence. Sims: masters are the population with the
+slowest bone and connective recovery, and the alternatives (a longer loading
+block, or back-to-back deloads) both take real recovery away from exactly them.
+
+**Measured outcome.** Build position-2 rate **37.0% → 26.1%** overall;
+**standard runners 21.7% → 0.0%**; masters unchanged at 52.2% (the provably
+unsatisfiable set). Adjacent deloads **0**. `cohortShape` unchanged — no plan is
+reclassified, which is the difference from the reverted build.
+
+**Config.** `computeDeloadWeeks(..., avoidPosition2)`; the yield lives in
+`generateRulePlan`. **Honesty flag:** `meta.deload_position2_yielded`.
+
 **Attribution is clean.** It fired on both early-onset 10K cases and on **neither**
 the non-gated control nor the HM case. §89's shorter base was the cause: it slid
 the phase boundary underneath a deload cadence anchored to absolute week number.

@@ -68,8 +68,23 @@ const DAY_SETS = [
 /** `undefined` matters as much as a value — most runners never set a cap. */
 const CAPS = [30, 60, undefined] as const
 const GOALS = ['finish', 'time_target'] as const
+/**
+ * GRID-COVERAGE-02 — `recent_quality_training` was a CONSTANT (`'occasional'`),
+ * and it is the gate ADR-021/§89 keys on. Measured before this axis existed:
+ * `early_quality_onset` fired on **0 of 7,452** plans, so §89's whole
+ * experience-gated onset, §97's one-week on-ramp, and the `oneWeekOnRamp` arm of
+ * §79's intensity re-entry were UNREACHABLE by every check built on this grid —
+ * `cohort:shape`, the invariant-liveness corpus, and every `measure-*` script.
+ *
+ * Two values, not three. `'regular'` is what opens the gate and `'occasional'`
+ * is the common case; `'none'` behaves as `'occasional'` for every mechanism
+ * that reads this field, so a third value would double the runtime to prove a
+ * distinction the engine does not draw. The grid's exhaustive-and-un-sampled
+ * property is doctrine, so an axis is added only when it reaches a mechanism.
+ */
+const RECENT_QUALITY = ['occasional', 'regular'] as const
 
-/** 4x3x3x3x3x2 x 3x2x2 = 7,776 inputs. Exhaustive and ordered. */
+/** 4x3x3x3x3x2 x 3x2x2x2 = 15,552 inputs. Exhaustive and ordered. */
 export function cohortGrid(): GeneratorInput[] {
   const out: GeneratorInput[] = []
   for (const d of DISTANCES)
@@ -80,7 +95,8 @@ export function cohortGrid(): GeneratorInput[] {
             for (const goal of GOALS)
               for (const trainingAge of TRAINING_AGES)
                 for (const benchmark of BENCHMARKS)
-                  for (const age of AGES) {
+                  for (const age of AGES)
+                  for (const recentQuality of RECENT_QUALITY) {
               out.push({
                 athlete_name: 'Athlete',
                 age,
@@ -96,7 +112,7 @@ export function cohortGrid(): GeneratorInput[] {
                 current_weekly_km: cwk,
                 longest_recent_run_km: Math.max(3, Math.round(cwk * 0.4)),
                 fitness_level: level,
-                recent_quality_training: 'occasional',
+                recent_quality_training: recentQuality,
                 hard_session_relationship: 'neutral',
                 injury_history: [],
                 ...(cap !== undefined ? { max_weekday_mins: cap } : {}),

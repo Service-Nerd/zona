@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { isDeloadWeek } from './deloadCadence'
+import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
+import type { GeneratorPhase } from '@/types/plan'
 
 /**
  * DELOAD-OWNER-01 — the deload cadence has exactly one owner.
@@ -123,5 +124,76 @@ describe('DELOAD-OWNER-01 — single ownership is mechanical, not remembered', (
     expect(setReads.length, 'every cadence decision should read the one computed set').toBe(6)
     const computes = engine.match(/computeDeloadWeeks\(/g) ?? []
     expect(computes.length, 'placement must be computed exactly once per plan').toBe(1)
+  })
+})
+
+describe('§95 — a deload must not sit at phase position 2 either', () => {
+  /** base 1..baseEnd, build baseEnd+1..buildEnd, peak, then taper. */
+  const phases = (baseEnd: number, buildEnd: number, peakEnd: number) =>
+    (n: number): GeneratorPhase =>
+      n <= baseEnd ? 'base' : n <= buildEnd ? 'build' : n <= peakEnd ? 'peak' : 'taper'
+
+  const adjacent = (ws: number[]) => ws.some((w, i) => i > 0 && w - ws[i - 1] === 1)
+  const sorted = (s: Set<number>) => Array.from(s).sort((a, b) => a - b)
+
+  it('MASTERS (freq 3): never places adjacent deloads — the reverted build did', () => {
+    // THE REGRESSION THIS PINS. The first implementation guarded on
+    // `since === recoveryFreq - 3`, which for the masters cadence of 3
+    // DEGENERATES TO `since === 0` — true on the very week after a placement.
+    // It produced [3,6] -> [3,4,7]: back-to-back recovery weeks, count inflated,
+    // peak crushed, 453 plans flipped to a do-nothing maintenance plan.
+    for (const total of [8, 9, 10, 11, 12, 14, 16, 18]) {
+      const baseEnd = Math.max(2, Math.round(total * 0.35))
+      const buildEnd = Math.max(baseEnd + 1, Math.round(total * 0.72))
+      const pf = phases(baseEnd, buildEnd, Math.max(buildEnd + 1, total - 2))
+      const weeks = sorted(computeDeloadWeeks(total, 3, pf))
+      expect(adjacent(weeks), `masters ${total}w produced adjacent deloads: [${weeks}]`).toBe(false)
+    }
+  })
+
+  it('STANDARD (freq 4): clears position 2 and keeps the count', () => {
+    const pf = phases(6, 12, 14)
+    const before = sorted(computeDeloadWeeks(16, 4, pf, false))
+    const after = sorted(computeDeloadWeeks(16, 4, pf, true))
+    expect(before).toEqual([4, 8, 12])
+    expect(after).toEqual([2, 6, 10])
+    expect(after.length).toBe(before.length)   // Willy: count may rise, never fall
+    expect(adjacent(after)).toBe(false)
+  })
+
+  it('avoidPosition2=false reverts to §87 placement exactly — the §1 yield path', () => {
+    // §95 Amendment 1: when the preference breaches a ceiling the plan falls
+    // back here, so this must be byte-identical to pre-§95 behaviour.
+    for (const freq of [3, 4]) {
+      for (const total of [10, 12, 16, 20]) {
+        const pf = phases(Math.round(total * 0.35), Math.round(total * 0.72), total - 2)
+        const reverted = sorted(computeDeloadWeeks(total, freq, pf, false))
+        expect(adjacent(reverted)).toBe(false)
+        expect(reverted.length).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('never lengthens the worst loading run (Sims, §87 rule 3)', () => {
+    const worstRun = (ws: number[], total: number, pf: (n: number) => GeneratorPhase) => {
+      let worst = 0, run = 0
+      for (let n = 1; n <= total; n++) {
+        const p = pf(n)
+        if (p === 'peak' || p === 'taper') continue
+        if (ws.includes(n)) { worst = Math.max(worst, run); run = 0 } else run++
+      }
+      return Math.max(worst, run)
+    }
+    for (const freq of [3, 4]) {
+      for (const total of [10, 12, 14, 16, 18, 20]) {
+        const pf = phases(Math.round(total * 0.35), Math.round(total * 0.72), total - 2)
+        const before = sorted(computeDeloadWeeks(total, freq, pf, false))
+        const after = sorted(computeDeloadWeeks(total, freq, pf, true))
+        expect(
+          worstRun(after, total, pf),
+          `freq ${freq}, ${total}w: [${before}] -> [${after}] lengthened the loading run`,
+        ).toBeLessThanOrEqual(worstRun(before, total, pf))
+      }
+    }
   })
 })

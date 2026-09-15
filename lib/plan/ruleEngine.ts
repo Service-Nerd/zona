@@ -27,6 +27,8 @@ import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
 import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
+import { computeIntensityReentry } from './intensityReentry'
+import { catalogueRowFor } from './catalogueLink'
 import { plannedFoundationWeeks } from './foundationBlock'
 import type { GeneratorPhase } from '@/types/plan'
 import {
@@ -4494,6 +4496,11 @@ function applyV2Vo2MaxOnsetTiming(
   raceDistanceKm: number,
   phases: Phase[],
   adjustments: RuleAdjustment[],
+  /** V2-SWAP-RESIZE-01 — re-size a relocated session for its new week's phase.
+   *  Supplied by the caller so the resize runs through the SAME constructor
+   *  that sized it originally. Optional so existing tests keep compiling; when
+   *  absent the swap behaves as it did before (dose not corrected). */
+  resizeForPhase?: (session: Session, week: Week, day: Day) => void,
 ): void {
   if (raceDistanceKm > 21) return  // V2 limited to short races per spec
 
@@ -4594,6 +4601,46 @@ function applyV2Vo2MaxOnsetTiming(
   targetSession.id = `w${fromWeek.n}-${firstVo2Pos.day}`
   toWeek.sessions[swapTarget.day]   = vo2Session
   fromWeek.sessions[firstVo2Pos.day] = targetSession
+
+  // V2-SWAP-RESIZE-01 (Coaching Board 2026-09-15) — A RELOCATED SESSION MUST BE
+  // RE-SIZED FOR THE PHASE IT NOW SITS IN.
+  //
+  // Updating `id` and nothing else was the whole defect. Several row families
+  // are sized by fitness x PHASE — `progressive_tempo` from
+  // PROGRESSIVE_TEMPO_MAIN_MINS (intermediate: build 24 / peak 28 / taper 20),
+  // and every `pacedRepPlan` row from its WORK_TARGET band — so moving the
+  // object across a phase boundary left it carrying the OLD block's dose.
+  // Measured: 64 plans in a 2,916-input probe, all `progressive_tempo`, a build
+  // dose (24 min main, 43 min stated) sitting in a peak week that needs 28/~48.
+  // `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT` (§8) fired on every one.
+  //
+  // Latent on main until now only because §79's re-entry window was inert, so
+  // VO2max landed early and this swap rarely had to run.
+  //
+  // The board's amendment is that re-sizing goes through THE SAME SIZER the
+  // constructor uses, inheriting its floor protections rather than growing a
+  // second, bespoke resize path (Willy/Sims). `resizeForPhase` is therefore a
+  // callback onto `makeQualitySession` supplied by the caller — this function
+  // stays ignorant of pace/zone construction detail, and there is exactly one
+  // implementation of "how big is this session in this phase" (D-08).
+  //
+  // Only the phase-dependent DOSE is adopted. Identity, label, coach notes and
+  // the §1/Q2 threshold cue stay as they were: the session is the same session,
+  // prescribed at the dose its new block calls for.
+  //
+  // ⚠️ CURRENTLY LATENT, AND SAID PLAINLY RATHER THAN IMPLIED LIVE. Measured
+  // 2026-09-15: this swap branch fires on 0 of 2,304 varied inputs and 0 of the
+  // 7,452-plan cohort grid — the plan is either already compliant or the window
+  // is geometrically unreachable (346 of 2,304, recorded as
+  // V2-vo2max-onset-unreachable). The swap only comes alive once §79's re-entry
+  // window is repaired (QUALITY-ONSET-ORDER-01), because withholding VO2max is
+  // what pushes the first VO2max session past the §5 deadline. So this re-size
+  // changes no plan today; it is the prerequisite that stops the onset repair
+  // shipping a build dose into a peak week. Filed as V2-SWAP-INERT-01.
+  if (resizeForPhase) {
+    resizeForPhase(vo2Session, toWeek, swapTarget.day)
+    resizeForPhase(targetSession, fromWeek, firstVo2Pos.day)
+  }
 
   // Add the adaptation-window coach note onto the (now-earlier) vo2 session.
   appendCoachNote(
@@ -4999,8 +5046,8 @@ export function generateRulePlan(
   catalogue: SessionCatalogueRow[] = V1_SESSION_CATALOGUE,
   todayOverride?: string,
 ): Plan {
-  const build = (relax: number, ungated: boolean) =>
-    buildRulePlanOnce(input, tier, planStart, catalogue, todayOverride, relax, ungated, false)
+  const build = (relax: number, ungated: boolean, avoidPos2 = true) =>
+    buildRulePlanOnce(input, tier, planStart, catalogue, todayOverride, relax, ungated, false, avoidPos2)
 
   const breachesIntensity = (plan: Plan) =>
     validatePlan(plan, input).some(v => v.code === 'INV-PLAN-INTENSITY-DISTRIBUTION')
@@ -5019,7 +5066,41 @@ export function generateRulePlan(
     return plan
   }
 
-  const atFullBenefit = build(0, false)
+  // §95 Amendment 1 (Coaching Board 2026-09-15) — THE POSITION-2 PREFERENCE
+  // YIELDS TO §1, exactly as §89's onset does under §98.
+  //
+  // Re-locating a deload changes session COMPOSITION, not just placement: the
+  // board's measured table showed a marathon going [4,8,12] -> [2,6,10], which
+  // turns former-recovery week 12 into a quality-carrying loading week (+1
+  // hard) while the earlier placements shed 3 running sessions. Numerator up
+  // AND denominator down, so the §1 share crosses the ceiling — 19.6% against
+  // MARATHON's 18% (10 hard / 51 running), reproduced exactly by the sweep.
+  //
+  // Position-2 is a PREFERENCE (§95 is a `warn`) and §1 is a ceiling, so the
+  // preference gives way and the plan reverts to §87's placement. Same shape as
+  // §98: measure the actual share rather than predict it, so there is no
+  // constant to drift and no proxy to be wrong.
+  // The yield triggers on ANY error the §87 placement does not also have, not
+  // on §1 alone. The board ruled against §1 because that is the breach its table
+  // measured, but the MECHANISM is composition drift — re-locating a deload
+  // changes which weeks carry quality — and that drift also breaks §53's
+  // variety cap (`progressive_tempo` 5 times against a cap of 4, same plan).
+  // A preference that costs a ratified ceiling is not worth its benefit
+  // whichever ceiling it is, so the comparison is "did this make things worse
+  // than §87's placement", answered by measurement rather than by listing codes.
+  const errorCount = (plan: Plan) =>
+    validatePlan(plan, input).filter(v => v.severity === 'error').length
+
+  const withPos2 = build(0, false)
+  let atFullBenefit = withPos2
+  if (errorCount(withPos2) > 0) {
+    const basePlacement = build(0, false, false)
+    if (errorCount(basePlacement) < errorCount(withPos2)) {
+      atFullBenefit = basePlacement
+      atFullBenefit.meta.deload_position2_yielded = true
+    }
+  }
+
   // Not §89-gated, or already compliant: the overwhelming majority. No extra work.
   if (!atFullBenefit.meta.early_quality_onset || !breachesIntensity(atFullBenefit)) {
     return finalise(atFullBenefit)
@@ -5066,6 +5147,10 @@ function buildRulePlanOnce(
   // Intermediate rungs are candidates, not deliveries — only the CHOSEN plan is
   // put to the constitution, or a discarded attempt would throw in dev/test.
   validate = true,
+  // §95 Amendment 1 — set by the yield in generateRulePlan. When false the
+  // deload walk uses §87's placement only, dropping the position-2 preference.
+  // Never passed by production callers.
+  deloadAvoidPosition2 = true,
 ): Plan {
   const planStartIso = planStart ?? formatDate(nextMonday())
   const today = todayOverride ?? formatDate(new Date())
@@ -5334,21 +5419,23 @@ function buildRulePlanOnce(
   // intervals — the mitigation is the mechanism that already exists, not a
   // second one invented alongside it.
   const oneWeekOnRamp = earlyQualityOnset
-  const intensityReentryActive =
-    assessed.intensityLiftedForReturn || returningRunner || isFreshReturn || oneWeekOnRamp
   // §89 Lever A — a conditioned returning runner has the INTENSITY re-entry
   // SHORTENED (not zeroed — Willy: one week tempo-first is cheap insurance); the
   // VOLUME ramp caution (returning allowance) is untouched (tonnage is structure's).
-  const intensityReentryWeeks = !intensityReentryActive ? 0
-    // §97 — the one-week-on-ramp arm is checked FIRST and is the longer of the
-    // two "ready" windows. A gated runner is tissueConditioned by construction,
-    // so ordering these the other way round would silently apply the shorter
-    // REENTRY_WEEKS_TISSUE_READY and discard Willy's condition entirely.
-    : oneWeekOnRamp ? Math.max(
-        GENERATION_CONFIG.REENTRY_WEEKS_ONE_WEEK_ONRAMP,
-        GENERATION_CONFIG.REENTRY_WEEKS_TISSUE_READY)
-    : tissueConditioned ? GENERATION_CONFIG.REENTRY_WEEKS_TISSUE_READY
-    : GENERATION_CONFIG.RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
+  //
+  // INTENSITY-REENTRY-OWNER-01 — the window (active + depth + "is week N
+  // withheld") has ONE owner in `intensityReentry.ts`. It used to be derived
+  // here and then the withhold predicate hand-written at two separate call
+  // sites; see that module's header for why that is the DELOAD-OWNER-01 fault.
+  const reentry = computeIntensityReentry({
+    intensityLiftedForReturn: assessed.intensityLiftedForReturn,
+    returningRunner,
+    isFreshReturn,
+    oneWeekOnRamp,
+    tissueConditioned,
+  })
+  const intensityReentryActive = reentry.active
+  const intensityReentryWeeks = reentry.weeks
 
   // §89 Lever B — earlier quality onset via a SHORTER (still all-easy) base. Only
   // for a demonstrably-ready runner with a real CURRENT base: experienced
@@ -5387,7 +5474,8 @@ function buildRulePlanOnce(
   // plan and passed to every consumer. Computing it twice from the same inputs
   // is what DELOAD-OWNER-01 removed; re-deriving it inside buildVolumeSequence
   // AND at the week-badge site would have reintroduced that fault one layer up.
-  const deloadWeeks = computeDeloadWeeks(totalWeeks, recoveryFreq, wn => getPhaseForWeek(wn, phases))
+  const deloadWeeks = computeDeloadWeeks(
+    totalWeeks, recoveryFreq, wn => getPhaseForWeek(wn, phases), deloadAvoidPosition2)
 
   const { volumes, compressed: capCompressed } = buildVolumeSequence(
     totalWeeks, phases, startKm, peakKm, input.race_distance_km,
@@ -5480,7 +5568,7 @@ function buildRulePlanOnce(
     let idx = 0
     for (let wn = buildPhase.start_week; wn <= buildPhase.end_week; wn++) {
       if (deloadWeeks.has(wn)) continue          // deload weeks carry no quality
-      const withheld = intensityReentryActive && wn <= intensityReentryWeeks
+      const withheld = reentry.withheldIn(wn)
       if (idx >= naturalSlot && !withheld) return idx
       idx++
     }
@@ -5581,7 +5669,11 @@ function buildRulePlanOnce(
       rowUsage,
       rowLast,
       // §79 — withhold VO2max/hills during the returning runner's opening weeks.
-      intensityReentryActive && weekN <= intensityReentryWeeks,
+      // Same owner as the build-slot reservation above; see INTENSITY-REENTRY-OWNER-01.
+      // NOTE: still the CALENDAR reading, which QUALITY-ONSET-ORDER-01 has proven
+      // inert. The onset-anchored flip is a two-line change to
+      // `withheldAtQualityIndex` and is BLOCKED on V2-SWAP-S22-01 — see backlog.
+      reentry.withheldIn(weekN),
       qualityPool,
       recentThresholdEligible,
     )
@@ -5683,7 +5775,32 @@ function buildRulePlanOnce(
   // V6 (pre_plan block) is constructed below alongside meta — it doesn't
   // mutate weeks.
   const ruleAdjustments: RuleAdjustment[] = []
-  applyV2Vo2MaxOnsetTiming(weeks, input.race_distance_km, phases, ruleAdjustments)
+  // V2-SWAP-RESIZE-01 — the resize seam. `makeQualitySession` IS the sizer, so
+  // the relocated session is re-sized by the same code that sized it first,
+  // including every floor protection. Only the phase-dependent dose fields are
+  // adopted; identity, label and notes are deliberately preserved.
+  applyV2Vo2MaxOnsetTiming(weeks, input.race_distance_km, phases, ruleAdjustments,
+    (session, week, day) => {
+      const row = catalogueRowFor(session)
+      if (!row) return                       // v1/legacy session — nothing phase-sized to correct
+      const resized = makeQualitySession({
+        weekN: week.n, day,
+        distKm: session.distance_km ?? 0,
+        metric: session.primary_metric === 'duration' ? 'duration' : 'distance',
+        zones, pace,
+        catalogueRow: row,
+        phase: getPhaseForWeek(week.n, phases),
+        fitness: intensityFitness,
+        isDeload: week.type === 'deload',
+        goalPace,
+        distLabel: onsetDistKey,
+        // No cueCtx: the §1/Q2 threshold cue was already placed (or not) during
+        // construction. Re-running that decision here could duplicate it.
+      })
+      session.duration_mins = resized.duration_mins
+      session.distance_km   = resized.distance_km
+      if (resized.derived_set) session.derived_set = resized.derived_set
+    })
   applyV5StimulusProgression(weeks, input.race_distance_km, pace, zones, ruleAdjustments)
   applyV1VolumeQualityStimulusSplit(weeks, pace, ruleAdjustments)
   applyV4LongRunRepeatCeiling(weeks, input, pace, ruleAdjustments)

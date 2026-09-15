@@ -652,6 +652,18 @@ export const GENERATION_CONFIG = {
     // EITHER direction lengthens the block on the other side, so both are
     // rejected and nothing moves. Re-anchoring is what satisfies it.
     max_loading_weeks_over_cadence: 0,
+    // §95 — a deload should not sit at phase position 2 either (one week of a
+    // new stimulus, then recovery from it). A PREFERENCE, not a ceiling: §95
+    // Amendment 1 (Coaching Board 2026-09-15) makes it yield to any ratified
+    // ERROR the §87 placement does not also carry, because re-locating a deload
+    // changes session composition (marathon [4,8,12] -> [2,6,10]: +1 hard, -3
+    // running, §1 19.6% vs an 18% ceiling).
+    avoid_phase_second_week: true,
+    // HARD, and never traded for the preference above (Willy). The first
+    // implementation produced back-to-back recovery weeks — [3,6] -> [3,4,7] —
+    // because its count test degenerates at the masters cadence of 3, and 453
+    // plans flipped to a do-nothing maintenance plan before it was reverted.
+    allow_adjacent_deloads: false,
     // Willy's amendment, REVISED at ratification. Originally "count preserved
     // exactly" — written to stop recovery being traded away for earlier
     // intensity. Measured, re-anchoring never removes a deload and in ~10% of
