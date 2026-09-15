@@ -1,21 +1,13 @@
 {
  "_": "Mutations the covering test does NOT catch. May only SHRINK. Each needs a reason.",
  "generated": "2026-09-15",
- "unproven": [
-  "coaching/dayBoundary.test.ts",
-  "coaching/readinessBaseline.test.ts",
-  "coaching/recalibrationPrompt.test.ts"
- ],
+ "unproven": [],
  "survivors": {
   "coaching/postRaceRecoveryCurve.test.ts :: flip first >= to >": "EQUIVALENT, proved by reading: `raceWeekN >= plan.weeks.length` is an early return, and when it is skipped the very next guard `windowEnd < raceWeekN + 1` evaluates to the identical condition (with no following race, windowEnd IS plan.weeks.length). Both paths return null for the same inputs. The first guard is a cheap early exit, not a distinct rule; nothing a test can observe distinguishes them.",
   "coaching/postRaceRecoveryCurve.test.ts :: flip second >= to >": "EQUIVALENT, proved by the caller contract: idx comes from `findIndex((w, i) => i + 1 > raceWeekN && ...)`, so a hit at index 0 would need raceWeekN < 1. raceWeekN is 1-indexed and every caller passes >= 1, so idx is never 0 when found and `>= 0` and `> 0` cannot differ. Would stop being equivalent if a caller ever passed 0 \u2014 which would be its own defect.",
+  "coaching/prompts/sessionFeedback.test.ts :: perturb a numeric literal WITH separators": "EQUIVALENT: mutates the 86_400_000 in `days = Math.round((now - raceDate) / 86_400_000)`. One millisecond on a day-length divisor moves a 21-day result to 20.99999, which Math.round returns as 21. The output is integer days; the mutation cannot reach it.",
+  "coaching/readinessBaseline.test.ts :: flip first <= to <": "EQUIVALENT THROUGH THIS API. `today.hrvMs <= hrvBaseline - (HRV_DECLINE_SD * hrvSd)` uses the UNROUNDED sample SD, while `detail.hrvSd` is rounded to 2dp \u2014 so the edge a caller can reconstruct (54.81 on the test window) is not the edge the engine used (54.8113...). `<=` and `<` differ only on that exact float, which no runner's HRV lands on and no public value can address. The boundary BEHAVIOUR is pinned either side of the edge in readinessBaseline.test.ts.",
   "coaching/reshapeMagnitude.test.ts :: flip first && to ||": "EQUIVALENT: `kind === 'modified' || (before && after)` only widens entry to the branch for kinds that reach L82 at all, and replaced/added/removed all return 'high' at L79 first. The only other kind is 'unchanged', which computeSessionDiff builds with label, distance AND duration equal \u2014 so the distance comparison inside yields 0% and returns the same 'low'.",
-  "coaching/reshapeMagnitude.test.ts :: flip second && to ||": "EQUIVALENT, proved at the producer: computeSessionDiff (lib/coaching/diff/sessionDiff.ts:101) constructs kind 'modified' only as `{ before: bb, after: aa }` with both non-null. `before && after` is therefore always true for a 'modified' entry, and `before || after` is too.",
-  "plan/fitnessThresholds.test.ts :: perturb first numeric literal": "EQUIVALENT: mutates FITNESS_RANK.experienced from 2 to 3. The map's absolute values are arbitrary \u2014 every consumer uses it for ORDERING only (`FITNESS_RANK[byVdot] < FITNESS_RANK[byVolume]` in assessFitness), and the test asserts the ordering, which still holds. Fixing this would mean asserting a number nothing depends on."
- },
- "unproven_reasons": {
-  "coaching/dayBoundary.test.ts": "dayBoundary.ts is 48 lines with ZERO comparison operators and no code-level numeric literal \u2014 the battery has nothing to flip. Its logic is date arithmetic via Date methods. Widening the battery to mutate method calls (getTime/setHours) is the way to reach it; until then this is the harness's limit, not the test's.",
-  "coaching/readinessBaseline.test.ts": "Imported symbols resolve to threshold LOOKUPS against lib/coaching/constants.ts rather than comparisons inside readinessBaseline.ts itself, so the in-scope spans contain no mutable operator. Reaching it means mutating the CONSTANTS module, which would change behaviour for every test at once and produce unreadable attribution.",
-  "coaching/recalibrationPrompt.test.ts": "Same shape: the scheduling decision is date comparison plus a config lookup, with no operator inside the imported declarations. The test's own assertions (fires only on a completed recalibration-week time trial, never on a non-TT day) are its liveness evidence for now."
+  "coaching/reshapeMagnitude.test.ts :: flip second && to ||": "EQUIVALENT, proved at the producer: computeSessionDiff (lib/coaching/diff/sessionDiff.ts:101) constructs kind 'modified' only as `{ before: bb, after: aa }` with both non-null. `before && after` is therefore always true for a 'modified' entry, and `before || after` is too."
  }
 }

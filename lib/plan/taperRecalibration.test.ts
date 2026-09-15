@@ -202,6 +202,28 @@ describe('§68 — what the recalibrated taper actually looks like', () => {
     expect(r.plan!.weeks[9]).toEqual(planOf().weeks[9])
   })
 
+  it('steps DOWN gradually — the first taper week is not already at full depth', () => {
+    // `npm run test:liveness` swapped `Math.max(1, taperPhaseWeeks - 1)` for
+    // `Math.min` and this file stayed green. That halves `fullTaperWeeks`, which
+    // DOUBLES the per-week reduction step, so the runner drops to full taper
+    // depth in week one instead of over the taper. Every existing assertion
+    // (descends, below original, race week untouched) still held, because they
+    // check ORDER and not MAGNITUDE.
+    //
+    // §6's taper is graduated: volume drops sharply, but across the taper.
+    const r = run(UNDER, 8)
+    const weeks = r.weeksModified!.map(n => r.plan!.weeks[n - 1].weekly_km!)
+    expect(weeks.length, 'need at least two taper weeks to test a gradient')
+      .toBeGreaterThan(1)
+    const peak = r.functionalPeakKm!
+    const firstCut = (peak - weeks[0]) / peak * 100
+    const lastCut  = (peak - weeks[weeks.length - 1]) / peak * 100
+    const fullReduction = G.TAPER_BY_DISTANCE.MARATHON.volume_reduction_pct
+    expect(firstCut, 'the first taper week is already at full depth — no gradient')
+      .toBeLessThan(fullReduction - 1)
+    expect(lastCut).toBeGreaterThan(firstCut)
+  })
+
   it('still descends across the taper — recalibrating is not flattening', () => {
     const r = run(UNDER, 8)
     const tapers = r.weeksModified!.map(n => r.plan!.weeks[n - 1].weekly_km!)

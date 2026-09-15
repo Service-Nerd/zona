@@ -109,7 +109,34 @@ function spansFor(src: string, symbols: string[]): Array<[number, number]> {
     const re = new RegExp(`(?:export\\s+)?(?:async\\s+)?(?:function\\s+${sym}\\b|const\\s+${sym}\\s*[=:])`)
     const m = re.exec(mask)
     if (!m || m.index == null) continue
-    let i = mask.indexOf('{', m.index)
+
+    // FIND THE BODY BRACE, NOT THE FIRST BRACE.
+    //
+    // `mask.indexOf('{', m.index)` finds a PARAMETER or RETURN-TYPE brace on any
+    // signature that has one, and brace-matching from there yields a span that
+    // is a type annotation with no executable code in it. Two of the three
+    // subjects this harness could not reach were exactly that:
+    //
+    //   computeReadiness(samplesWindow, today: { rhrBpm: … })   param object
+    //   nextRecalibrationDue(…): { week_n: number; … } | null   return object
+    //
+    // Both reported "the battery reaches this subject 0 times" — which read as a
+    // limit of the mutation set and was a bug in the span finder. Walk the
+    // parameter list to its closing paren first, then take the LAST brace on
+    // that line, which is the body opener in both the plain and the
+    // object-return-type case.
+    const paren = mask.indexOf('(', m.index)
+    if (paren < 0) continue
+    let pd = 0, closeParen = -1
+    for (let j = paren; j < mask.length; j++) {
+      if (mask[j] === '(') pd++
+      else if (mask[j] === ')') { pd--; if (pd === 0) { closeParen = j; break } }
+    }
+    if (closeParen < 0) continue
+    const lineEnd = mask.indexOf('\n', closeParen)
+    const sigTail = mask.slice(closeParen, lineEnd < 0 ? mask.length : lineEnd)
+    const lastBraceOnLine = sigTail.lastIndexOf('{')
+    let i = lastBraceOnLine >= 0 ? closeParen + lastBraceOnLine : mask.indexOf('{', closeParen)
     if (i < 0) continue
     let depth = 0
     for (let j = i; j < mask.length; j++) {
@@ -189,6 +216,60 @@ const MUTATIONS: Mutation[] = [
   { name: 'flip first && to ||',  apply: (s, sp) => nth(s, ' && ', ' || ', 0, sp) },
   { name: 'flip second && to ||', apply: (s, sp) => nth(s, ' && ', ' || ', 1, sp) },
   { name: 'flip first || to &&',  apply: (s, sp) => nth(s, ' || ', ' && ', 0, sp) },
+  // ── Shape-independent mutations (TEST-LIVENESS-BATTERY-01, 2026-09-15) ──────
+  //
+  // The operator battery above reaches code written as comparisons. It reached
+  // ZERO of three subjects, and each failed differently — which is why the fix
+  // is three mutations rather than one:
+  //
+  //   dayBoundary.ts         no `if`, no comparison, and its single literal is
+  //                          `86_400_000` — invisible to a `[2-9]\d*` pattern
+  //                          because the underscore is a word character, so the
+  //                          lookahead rejects it. Its logic is Math.max, slice
+  //                          bounds and Date methods.
+  //   readinessBaseline.ts   has operators, but in helpers OUTSIDE the span of
+  //                          the one symbol its test imports.
+  //   recalibrationPrompt.ts same.
+  //
+  // `if`-inversion and Math.max/min are the most shape-independent mutations
+  // available: almost every function has one or the other, and both change
+  // behaviour unambiguously rather than nudging a threshold.
+  { name: 'invert the first if condition', apply: (s, sp) => {
+    const mask = maskNonCode(s)
+    for (const m of Array.from(mask.matchAll(/\bif \(/g))) {
+      if (m.index == null || !inSpans(m.index, sp)) continue
+      // Match the condition's parentheses so a nested call is not split.
+      let depth = 0, i = m.index + 3, end = -1
+      for (let j = i; j < mask.length; j++) {
+        if (mask[j] === '(') depth++
+        else if (mask[j] === ')') { depth--; if (depth === 0) { end = j; break } }
+      }
+      if (end < 0) continue
+      return s.slice(0, i + 1) + '!(' + s.slice(i + 1, end) + ')' + s.slice(end)
+    }
+    return null
+  } },
+  { name: 'swap Math.max for Math.min', apply: (s, sp) => {
+    const mask = maskNonCode(s)
+    for (const m of Array.from(mask.matchAll(/Math\.max\(/g))) {
+      if (m.index == null || !inSpans(m.index, sp)) continue
+      return s.slice(0, m.index) + 'Math.min(' + s.slice(m.index + 'Math.max('.length)
+    }
+    return null
+  } },
+  { name: 'perturb a numeric literal WITH separators', apply: (s, sp) => {
+    // `86_400_000` and friends. Separate from the plain-literal mutation above
+    // because that one's lookahead rejects the underscore, which is exactly how
+    // a whole file escaped the battery.
+    const mask = maskNonCode(s)
+    for (const m of Array.from(mask.matchAll(/(?<![\w.$])(\d[\d_]*\d)(?![\w.])/g))) {
+      if (m.index == null || !inSpans(m.index, sp)) continue
+      if (!m[1].includes('_')) continue
+      const bumped = String(Number(m[1].replace(/_/g, '')) + 1)
+      return s.slice(0, m.index) + bumped + s.slice(m.index + m[1].length)
+    }
+    return null
+  } },
   {
     name: 'perturb first numeric literal',
     // Skips 0 and 1: they are overwhelmingly indices and identity values, and

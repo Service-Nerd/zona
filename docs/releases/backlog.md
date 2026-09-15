@@ -36,11 +36,6 @@ clean on every check.
 > **The real question is coaching:** a charity runner typically gets their place months out, so a 20-25 week runway is the NORMAL case for this cohort. Is 3 the right cap when the gap is 6+ weeks, or should a long runway earn a longer all-easy block? Willy/Sims would want a view on how long an all-easy block stays useful.
 > *Verify still open:* generate M1 with a 25-week runway and `foundation_decision: 'add'` → `weeks.filter(w => w.n < 1).length` is 3 while the gap is 6+ weeks.
 
-> 🔲 **TEST-LIVENESS-BATTERY-01 — 3 subjects the mutation battery cannot reach.** *(P3, filed 2026-09-15)*
-> `dayBoundary`, `readinessBaseline` and `recalibrationPrompt` are date arithmetic or config lookups with no in-scope operator to flip, so `npm run test:liveness` reports them UNPROVEN rather than passing. Reasons are recorded per-subject in `scripts/__fixtures__/testLivenessBaseline.json`.
-> **Fix:** widen the battery to mutate method calls (`getTime`/`setHours`) and config reads. Until then this is the harness's limit, not the tests'.
-> *Verify still open:* `npm run test:liveness` → the UNPROVEN line.
-
 > 🔲 **OPS-DIGEST-PLAN-AUDIT-01 — a FOUNDER decision, not a build.** *(filed 2026-09-15)*
 > The plan-audit probe now emits a `source: plan-audit-summary` ops event every run, carrying the age of the newest breaching plan. **Whether the daily ops digest reads it is yours** — the digest is a cloud routine editable via RemoteTrigger, not repo code, and wiring someone else's digest is not mine to change unilaterally. The repo side is done.
 

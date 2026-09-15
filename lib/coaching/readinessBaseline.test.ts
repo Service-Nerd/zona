@@ -119,3 +119,61 @@ describe('ENGINE-03-pre — RHR noise-hardening (softeningWarranted)', () => {
     expect(shortSleep.softeningWarranted).toBe(true)
   })
 })
+
+// ── Added 2026-09-15 by `npm run test:liveness` (TEST-LIVENESS-BATTERY-01).
+//
+// These three mutations left this file green, and they were invisible until the
+// harness's span finder was fixed — it had been taking `computeReadiness`'s
+// PARAMETER-object brace as the function body, so the battery reached this
+// subject zero times and the file reported UNPROVEN rather than weak.
+describe('§59 — the baseline gate needs BOTH metrics, and the HRV edge counts', () => {
+  const fullWindow = (over: Partial<DailyHealthSample> = {}): DailyHealthSample[] =>
+    Array.from({ length: READINESS.BASELINE_WINDOW_DAYS }, (_, i) => ({
+      sampleDate: `2026-06-${String(i + 1).padStart(2, '0')}`,
+      rhrBpm: 50, hrvMs: 60, sleepHours: 7.5, ...over,
+    }))
+
+  it('needs BOTH RHR and HRV windows full — one alone is not a baseline', () => {
+    // `rhrSamples.length >= N && hrvSamples.length >= N` — flipping that `&&` to
+    // `||` lets a runner with a full RHR window and NO HRV data establish a
+    // baseline, and every HRV-derived comparison below then runs against a
+    // baseline built from nothing.
+    const rhrOnly = fullWindow().map(d => ({ ...d, hrvMs: null }))
+    expect(computeReadiness(rhrOnly, { rhrBpm: 50, hrvMs: null, sleepHours: 7.5 }).hasBaseline)
+      .toBe(false)
+    const hrvOnly = fullWindow().map(d => ({ ...d, rhrBpm: null }))
+    expect(computeReadiness(hrvOnly, { rhrBpm: null, hrvMs: 60, sleepHours: 7.5 }).hasBaseline)
+      .toBe(false)
+    expect(computeReadiness(fullWindow(), { rhrBpm: 50, hrvMs: 60, sleepHours: 7.5 }).hasBaseline)
+      .toBe(true)
+  })
+
+  it('low HRV is decided against the SAMPLE SD, and the edge sits where that puts it', () => {
+    // The window alternates 55/65 over 14 days: mean 60, SAMPLE SD (n-1) 5.19 —
+    // not the population 5, which is what I assumed first and the test said no.
+    // So the decline edge is 60 - 1 x 5.19 = 54.81, and the assertions bracket it.
+    //
+    // ⚠️ The `<=` in `today.hrvMs <= baseline - (DECLINE_SD * sd)` is NOT killable
+    // through this API and is recorded as equivalent in the liveness baseline:
+    // `detail` reports `hrvSd` ROUNDED to 2dp, so the edge a caller can
+    // reconstruct (54.81) is not the edge the engine used (54.8113...). The two
+    // differ only on a float no runner's HRV lands on.
+    const spread = fullWindow().map((d, i) => ({ ...d, hrvMs: i % 2 === 0 ? 55 : 65 }))
+    const at = (hrvMs: number) =>
+      computeReadiness(spread, { rhrBpm: 50, hrvMs, sleepHours: 7.5 }).isLowHRV
+    expect(at(54.8), 'just inside the decline edge').toBe(true)
+    expect(at(54.9), 'just outside it').toBe(false)
+    expect(at(48)).toBe(true)
+    expect(at(60)).toBe(false)
+  })
+
+  it('reports the baseline and SD the decision was made from', () => {
+    const spread = fullWindow().map((d, i) => ({ ...d, hrvMs: i % 2 === 0 ? 55 : 65 }))
+    const d = computeReadiness(spread, { rhrBpm: 50, hrvMs: 60, sleepHours: 7.5 }).detail!
+    expect(d.hrvBaseline).toBe(60)
+    // 5.19, not 5: the SAMPLE standard deviation. Pinned because the decline
+    // threshold is computed from it, and a caller assuming population SD would
+    // place the edge 0.19 ms too high on this window.
+    expect(d.hrvSd).toBe(5.19)
+  })
+})
