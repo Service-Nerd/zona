@@ -22,10 +22,29 @@ import type { GeneratorInput } from '@/types/plan'
 
 export const COHORT_PLAN_START = '2026-04-27'
 
-/** Race dates derived from the pinned start, never from `new Date()`. */
-const raceDateIn = (weeks: number) =>
-  new Date(new Date(`${COHORT_PLAN_START}T00:00:00Z`).getTime() + weeks * 7 * 86_400_000)
+/**
+ * Race dates derived from the pinned start, never from `new Date()`.
+ *
+ * ⚠️ `COHORT_PLAN_START` is a MONDAY and `+ weeks * 7` keeps it one, so every
+ * race in this grid used to fall on a Monday — and a Monday race has no in-week
+ * day before it, which is precisely the shape in which a race-eve defect CANNOT
+ * appear. That is how RACE-WEEK-FITNESS-01 survived every check while §39 put a
+ * 72-minute run the day before a beginner's first marathon on 81 of 81 plans.
+ * `REVIEW-HARNESS-MONDAY-01` fixed the review cases and deliberately left this
+ * grid; this closes it.
+ *
+ * Offsets match `charityCohort.ts`'s `charityRaceDate` exactly rather than
+ * inventing a second convention: Sunday is start + weeks*7 - 1, Saturday - 2.
+ */
+const raceDateIn = (weeks: number, raceDay: RaceDay = 'sun') =>
+  new Date(new Date(`${COHORT_PLAN_START}T00:00:00Z`).getTime()
+    + (weeks * 7 - (raceDay === 'sun' ? 1 : 2)) * 86_400_000)
     .toISOString().slice(0, 10)
+
+type RaceDay = 'sat' | 'sun'
+/** ~95% of real races are Sat or Sun, and the two are NOT interchangeable — the
+ *  race weekday decides which days race week can still carry a session. */
+const RACE_DAYS: readonly RaceDay[] = ['sat', 'sun']
 
 const DISTANCES = [
   { km: 5,    target: '0:25:00', weeks: 12 },
@@ -84,7 +103,7 @@ const GOALS = ['finish', 'time_target'] as const
  */
 const RECENT_QUALITY = ['occasional', 'regular'] as const
 
-/** 4x3x3x3x3x2 x 3x2x2x2 = 15,552 inputs. Exhaustive and ordered. */
+/** 4x3x3x3x3x2 x 3x2x2x2x2 = 31,104 inputs. Exhaustive and ordered. */
 export function cohortGrid(): GeneratorInput[] {
   const out: GeneratorInput[] = []
   for (const d of DISTANCES)
@@ -96,7 +115,8 @@ export function cohortGrid(): GeneratorInput[] {
               for (const trainingAge of TRAINING_AGES)
                 for (const benchmark of BENCHMARKS)
                   for (const age of AGES)
-                  for (const recentQuality of RECENT_QUALITY) {
+                  for (const recentQuality of RECENT_QUALITY)
+                    for (const raceDay of RACE_DAYS) {
               out.push({
                 athlete_name: 'Athlete',
                 age,
@@ -104,7 +124,7 @@ export function cohortGrid(): GeneratorInput[] {
                 primary_metric: 'distance',
                 plan_start: COHORT_PLAN_START,
                 race_distance_km: d.km,
-                race_date: raceDateIn(d.weeks),
+                race_date: raceDateIn(d.weeks, raceDay),
                 goal,
                 ...(goal === 'time_target' ? { target_time: d.target } : {}),
                 resting_hr: 55,

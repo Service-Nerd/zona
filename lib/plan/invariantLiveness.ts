@@ -55,6 +55,34 @@ export const MUTATIONS: Mutation[] = [
   { name: 'halve every duration',      apply: p => sessionsOf(p).forEach(s => { const d = (s as unknown as {duration_mins?:number}).duration_mins; if (d) (s as unknown as Poke).duration_mins = Math.round(d / 2) }) },
   { name: 'treble every duration',     apply: p => sessionsOf(p).forEach(s => { const d = (s as unknown as {duration_mins?:number}).duration_mins; if (d) (s as unknown as Poke).duration_mins = d * 3 }) },
   { name: 'strip pace_target',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).pace_target }) },
+  // The plan-level NOTE family (§51 returning-runner allowance, §79 Amendment 2
+  // re-entry omission). These invariants assert "a decision the engine made is
+  // TOLD to the runner", so the only way to wake them is to delete the telling
+  // while leaving the decision — which is exactly the silent-degradation shape
+  // they exist for. Stripping session `coach_notes` above does NOT reach them:
+  // these notes live on `plan.meta`, not on a session.
+  // The plan-level NOTE family (§51 returning-runner allowance, §79 Amendment 2
+  // re-entry omission). These invariants assert "a decision the engine made is
+  // TOLD to the runner", so waking them needs the DECISION present and the
+  // TELLING removed — stripping the note alone is not enough, because on most
+  // probe plans the decision was never made. Stripping session `coach_notes`
+  // does not reach them either: these notes live on `plan.meta`.
+  { name: 'claim returning allowance, delete its note', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    meta.returning_runner_allowance_active = true
+    delete meta.returning_runner_note
+  } },
+  { name: 'claim re-entry with no VO2max, delete its note', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    meta.intensity_reentry_active = true
+    delete meta.intensity_reentry_omission_note
+    // Remove the VO2max work so the plan genuinely contains none — the state
+    // §79 Amendment 2 permits, and requires the plan to declare.
+    sessionsOf(p).forEach(s => {
+      const sn = s as unknown as Poke & { type?: string }
+      if (sn.type === 'quality') { delete sn.catalogue_id; sn.label = 'Easy run'; sn.type = 'easy' }
+    })
+  } },
   { name: 'strip coach_notes',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).coach_notes }) },
   { name: 'strip derived_set',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).derived_set }) },
   { name: 'strip catalogue_id',        apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).catalogue_id }) },
