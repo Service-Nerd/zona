@@ -40,5 +40,38 @@ export default defineConfig({
     environment: 'node',
     include: ['lib/**/*.test.ts', 'components/**/*.test.ts'],
     // No globals — explicit imports from 'vitest' so test files document intent.
+
+    // ── CI-TIMEOUT-01 (2026-09-15) — vitest's 5,000 ms default is not a
+    // timeout for this suite, it is a RACE, and it has already burned a CI
+    // investigation across two sessions.
+    //
+    // MEASURED, both sides. `targetedGrid.test.ts`'s second case generates
+    // 1,536 plans: **1,806 ms on the dev machine, 6,316 ms on
+    // ubuntu-latest** — a **3.5x slower runner**. Against the 5,000 ms default
+    // that is 2.8x headroom locally and 1.26x OVER in CI, so the test does not
+    // fail reliably; it fails SOMETIMES, on whatever commit happens to land on
+    // a loaded runner. Run #349 was a DOCS-ONLY commit that touched nothing
+    // this test reads, and it went red here.
+    //
+    // That is the worst failure mode this repo has a name for. NOISE-GATE-01:
+    // a check that cries wolf gets disabled — and the disabling move for a
+    // flaky CI test is "just re-run it", which trains everyone to treat a red
+    // gate as noise. The correctness suite stops meaning anything.
+    //
+    // 30 s, not 10. At the measured 3.5x the default breaks for anything over
+    // ~1,430 ms of local work, and this suite generates thousands of plans per
+    // file — so a margin that merely clears TODAY's slowest test would be the
+    // same race again, one test from now. A genuinely hung test still trips
+    // this well inside the job's own 20-minute bound.
+    //
+    // NOT a licence to write slow tests: `slowTestThreshold` below reports
+    // every case over 1 s, so drift toward the wall is VISIBLE in the run
+    // output before it is red.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
+
+    // Anything above this is printed with its duration. Set at 1 s because that
+    // is where the local/CI ratio starts to matter: 1 s here is ~3.5 s there.
+    slowTestThreshold: 1_000,
   },
 })
