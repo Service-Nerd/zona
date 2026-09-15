@@ -68,6 +68,25 @@ jobs:
       - name: Property sweep
         run: npm run verify:sweep
 
+      # ── Added 2026-09-15 ──────────────────────────────────────────────────
+      # Phase 0 wired these three into the local `npm run verify` chain and this
+      # file was never updated, because it enumerates steps individually rather
+      # than calling the chain. So they ran on a developer's machine and not on
+      # push, which is the same as not being automated: the gate you rely on is
+      # the one that runs without anyone remembering.
+      #
+      # `verify:hooks` is the rules-of-hooks lint that cannot be silenced inline.
+      # It was added after a React error 310 crash on the Coach screen; running
+      # it only locally is exactly how that class comes back.
+      - name: React hooks lint
+        run: npm run verify:hooks
+
+      - name: Plan rules report
+        run: npm run verify:rules
+
+      - name: Coaching deviation scan
+        run: npm run verify:coaching
+
       # The build PRERENDERS /dashboard, /auth/login and /auth/reset, each of
       # which constructs a Supabase client at module scope. Without the two
       # NEXT_PUBLIC_ vars it throws "Your project's URL and Key are required to
