@@ -57,7 +57,15 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 **STILL OPEN — 4 items, none of them buildable today, each with a hard reason.**
 
-> 🔲 **COACHING-REVIEW-COVERAGE-01 — the review does not check every coaching rule, and nobody had counted.** *(P2, filed 2026-09-15)*
+> ✅ **COACHING-REVIEW-COVERAGE-01 — PHASE 1 SHIPPED 2026-09-15. The gate exists and the real number is smaller than filed.**
+> **`lib/plan/principleCoverage.ts` + `principleCoverage.test.ts`** map all **106** principles to `invariant` · `test` · `exempt (with a written reason)` · `unverified`, and the build fails if a principle is in none. Runs on every push and PR inside `npm run verify`.
+> **Measured: 61 invariant · 11 named test · 5 exempt · 29 unverified — 77 of 106 accounted for.** The earlier "45 uncovered" counted invariants ONLY; 16 of those turned out to have a named test.
+> ⚠️ **Deliberately a MANIFEST, not a grep.** Inferring coverage from `§N` appearing in a test file was tried and produces both false gaps and false confidence — §13/§31 are genuinely covered without naming the section, while §11/§97 "match" tests that only mention them in passing.
+> ⚠️ **What it proves:** every principle is ACCOUNTED FOR. **What it does not:** that a named check fails when the rule is broken. `invariantLiveness` closes that for invariants; there is no equivalent for plain tests short of mutation testing. Stated in the gate's own header so a green tick cannot be over-read.
+> Falsification-verified five ways: unknown invariant code, missing test file, reason-less exemption, debt growth, and a new §110 with no entry (the load-bearing one) all turn it red.
+> **Phase 2 — remaining work:** classify the 29 unverified. Lower `UNVERIFIED_BASELINE` in the same commit as each one.
+
+> 🔲 ~~**COACHING-REVIEW-COVERAGE-01 (original filing)**~~ *(superseded by the entry above)*
 > **MEASURED: 61 of 106 principles have at least one `validatePlan` invariant. 45 do not.** Of those 45, roughly **20 are plan-generation rules** and are genuine gaps in what the coaching review can catch; the rest are post-run analysis, readiness, tier, reshape or formula definitions that a PLAN review cannot assert (§10 VDOT conservatism, §14 HR zones, §59 readiness, §60 reframe, §70–72 race debrief, §108 scoring, §109 progress surface, …).
 > **The plan-generation gaps:** §4 phase structure · §12 easy-run Z2 ceiling · §28 strides on midweek easy · §29 fresh-from-layoff · §30 race-week shakeout cap · §31 compression classification · §32 tune-up callout · §35 persona floors are minimums · §37 fresh-return heuristic · §38 constraint notes are prescriptive · §63 session intent · §86 fixed-shape dose · §88 VO2max dose granularity · §92 foundation strides · §97 surplus weeks · §99 session states its own length · §100 safety-trim deficit · §101 `compressed` is two fields · §102 intentional downgrade · §105 marathon pace away from the long run.
 > **Plan variation is also thinner than it looks:** 18 cases covering 4 distances (5K/10K/HM/marathon), 2 tiers, 2 goals. **No ultra (50K/100K) case at all** despite both being PAID and having ratified doctrine (§24e, SIG-ULTRA-UNBUILT-01), and no case exercising `user_declared_level` (the wizard sends it on every generation — added to `targetedGrid` today but not to the review round).
