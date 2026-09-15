@@ -71,6 +71,16 @@ MARATHON     → max 18%
 100K         → max 12%
 ```
 
+> **A session-count ceiling is vulnerable to session REMOVAL, which CD-19 did not
+> anticipate (§90 Amendment 1, 2026-09-15).** Counting sessions is right, and the
+> correction below stands. But it means any rule that takes a *session* out of a
+> plan moves this ratio without touching intensity: §12's injury trim shrinks weeks
+> until §52b drops a day, the day dropped is always an easy one, and the share
+> climbs through the ceiling on a plan where nothing chose to train harder.
+> **§1 is not spent by that, and it does not yield to it** — §90 Amendment 1 converts
+> a quality session to easy instead. Recorded here because the next rule that removes
+> a session will have the same effect and should be checked against this line.
+
 **Why a ceiling and not a target.** A target invites the engine to close the gap — and the only place a periodised plan has room to add quality is base phase, which §4/§5 make all-easy on purpose. Worse, the population this product serves already drifts upward into Z3 without any encouragement: a ninety-minute window is where every session drifts when you want to feel like you worked. **Writing 25% as something to reach would spend it, and spend it in the grey zone — the exact failure mode Zonna exists to prevent, introduced by the product's own config.** A ceiling is also robust to the underlying 80/20 work having been derived largely from male cohorts.
 
 **What the correction actually revealed — worth reading before trusting any other declared number.** The traced 12-week 10K plan delivered **9.6% quality by minutes** against a declared 25%, and that was read for four months as a fifteen-point under-delivery. It was nothing of the kind. Measured on the correct basis the same plan delivers **exactly 25% in every phase where quality is prescribed**, and 17.0% plan-wide once the all-easy base phase is included. **The engine was right; the config was wrong.**
@@ -3689,6 +3699,76 @@ symmetrically to §94's healthy delivered ramp (measured on the whole-week rise
 there). **Board:** CORRECT WITH AMENDMENT, Hutchinson chairing, Willy leading,
 Sims' 3 km condition binding. Enforced by `INV-PLAN-INJURY-CAP-DELIVERED` (§90) and
 `INV-PLAN-DELIVERED-RAMP` (§94).
+
+### Amendment 1 — when the trim removes an easy RUN, quality yields (S1-INJURY-DENOMINATOR-01, 2026-09-15)
+
+**Principle.** When §12's injury trim has reduced a week far enough that the plan's
+quality share would exceed §1's ceiling, the engine **converts a quality session to
+easy** rather than letting the ratio stand. One session at a time, latest first,
+until the plan complies. The week records the reason (`Week.quality_downgraded`,
+trigger `injury_intensity_ceiling`), which is what earns it §102's exemption from
+`INV-PLAN-QUALITY-EXPECTED`.
+
+**Why.** The levers above trim easy volume and, as this section already says, easy
+runs *"trim/**drop**"*. Trim far enough and §52b day-fitting removes a whole day,
+and the day it removes is always an easy one, because §52 protects the long run and
+§8 protects the quality slot. §1 counts **sessions** (CD-19), so the denominator
+falls while the quality count holds and the plan breaches its intensity ceiling
+**with no intensity having been added**. Measured, same runner, one field changed:
+
+| `injury_history` | running sessions | quality | share | |
+|---|---|---|---|---|
+| `[]` | 46 | 8 | 17.4% | clean |
+| `['knee']` | 39 | 8 | **20.5%** | breach, MARATHON ceiling 18% |
+
+Willy, at the board: *"we are removing the thing that heals and keeping the thing
+that provokes."* For patellofemoral pain the provoking load is high-magnitude work;
+easy running is the tolerance-building stimulus. Seiler: under load the engine was
+converting a polarised plan into a threshold plan, which is the failure this product
+exists to prevent.
+
+**This is not a new principle.** §90 already ruled *"§8 yields to §12 on injury peak
+weeks"* — scoped to peak weeks and the second quality session only because that was
+the case in front of the board. The reasoning was never peak-specific.
+
+**Rejected alternatives, recorded.** Raising the MARATHON ceiling (the 50K remedy of
+CB-INTENSITY-50K-01) would spend §1's headroom for every healthy marathoner to
+accommodate six injured ones; that ruling turned on **distance**, this trigger is
+**injury**. Holding a fourth easy run to preserve the denominator was vetoed by
+Willy: kilometres on an injured knee to satisfy a ratio. Excluding injury-trimmed
+weeks from §1's denominator (as foundation weeks are excluded) was rejected by
+Hutchinson: foundation weeks are all-easy by construction and cannot hide intensity,
+whereas injury-trimmed weeks are where intensity concentrates.
+
+**Config.** `GENERATION_CONFIG.INJURY_QUALITY_YIELD_TO_INTENSITY_CEILING` — a flag,
+not a threshold. The threshold already exists as `INTENSITY_DISTRIBUTION[distance]`,
+and a second constant declaring the same ceiling is the §25 `race_pace_pct` failure.
+
+**Mechanically checked by `INV-PLAN-INTENSITY-DISTRIBUTION`, which already existed
+and already fired.** No new invariant: the yield is the engine obeying a check it
+was failing, not a new claim needing one. Its liveness is proved by a named
+falsification test instead (`lib/plan/injuryIntensityYield.test.ts`).
+
+> ⚠️ **CONVERT, NEVER DELETE, and the arithmetic is the reason.** Deleting the
+> session takes the denominator down with the numerator and does not even fix the
+> breach: 38 running / 7 quality = **18.4%, still over**. Converting holds the
+> session count: 39 / 7 = **17.9%**, compliant. Deletion is the obvious
+> implementation and it is wrong.
+
+> ⚠️ **Hold the DURATION, not the distance.** The board's amendment said "at the
+> same distance". Building it that way broke `max_weekday_mins`: an easy run is
+> slower than the quality it replaces, so the same distance is a *longer* session.
+> §1 counts sessions, so distance cannot move the ratio at all. Holding the runner's
+> evening keeps the denominator just as well and lowers the load, which is the
+> direction §12 wanted. **The board's intent was right; the quantity it named was
+> not the one carrying the intent.**
+
+> ⚠️ **Three rules had to be re-served after the conversion, all found by measuring
+> rather than reasoning:** §9's long-vs-easy *ratio* (a quality session floored at
+> `MIN_SESSION_DISTANCE_KM.quality` can exceed a taper week's long run), §28's stride
+> note (the stride pass runs at week build, so a week that gains its only eligible
+> easy day afterwards was never served — 274 sweep violations), and §27's week copy
+> (a label promising intensity the week no longer contains).
 
 ---
 

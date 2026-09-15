@@ -6626,6 +6626,235 @@ function buildRulePlanOnce(
     (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun || easyFloorProtectionOverrun)
       ? 'maintenance'
       : peakOverloadResult?.volume_profile  // 'build' or undefined
+  // ── §90 Amendment 1 — WHEN THE INJURY TRIM REMOVES EASY RUNS, QUALITY YIELDS ──
+  //
+  // Coaching Board S1-INJURY-DENOMINATOR-01, 2026-09-15. CORRECT WITH AMENDMENT.
+  //
+  // §90's levers trim easy volume to hold the §12 delivered cap on injured
+  // tissue, and §90 says so in its own words: "easy runs trim/DROP to the
+  // ceiling; the long run never does." Trim far enough and §52b day-fitting
+  // removes a whole day — and the day it removes is always an EASY one, because
+  // §52 protects the long run and §8 protects the quality slot.
+  //
+  // §1 counts SESSIONS (CD-19). So the injured runner's denominator falls while
+  // the quality count holds, and the ratio climbs through the ceiling on a plan
+  // where nothing chose to add intensity. MEASURED — same runner, one field:
+  //
+  //     injury_history []        46 running / 8 quality = 17.4%   clean
+  //     injury_history ['knee']  39 running / 8 quality = 20.5%   breach (18%)
+  //
+  // Willy: we are removing the thing that heals and keeping the thing that
+  // provokes. Seiler: under load the engine converts a polarised plan into a
+  // threshold plan, which is the failure this product exists to prevent.
+  //
+  // THIS IS NOT A NEW PRINCIPLE. §90 already ruled "§8 yields to §12 when the
+  // tissue is the binding constraint" — scoped to peak weeks and the second
+  // quality session only because that was the case in front of the board. The
+  // reasoning was never peak-specific; this releases it.
+  //
+  // ⚠️ CONVERT, NEVER REMOVE. Deleting the session does not even fix the
+  // arithmetic — it takes the denominator down with the numerator:
+  //     delete  → 38 running / 7 quality = 18.4%   STILL BREACHING
+  //     convert → 39 running / 7 quality = 17.9%   compliant
+  // The deletion is the obvious implementation and it is wrong. Board amendment 1.
+  //
+  // ⚠️ One at a time, LATEST FIRST — §98's walk, applied to a different lever.
+  // Latest-first because the early quality exposures are the ones §79's re-entry
+  // window already vetted for a returning/injured runner; the late ones are the
+  // sharpening a finish-goal runner needs least. Board amendment 2.
+  //
+  // ⚠️ RUNS AFTER `finalVolumeProfile`, deliberately. The invariant EXEMPTS a
+  // maintenance plan, so a yield that fired before the profile was known would
+  // be trimming intensity from plans nothing was checking. Moved here from
+  // before the §27 pass once parity showed the scale of it.
+  if (GENERATION_CONFIG.INJURY_QUALITY_YIELD_TO_INTENSITY_CEILING
+      && finalVolumeProfile !== 'maintenance'
+      && (hasInjury(input, 'knee') || hasInjury(input, 'shin_splints'))) {
+    const yieldDistKey = raceDistanceKey(input.race_distance_km)
+    const ceilingPct = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[yieldDistKey]?.max_quality_session_pct
+    if (ceilingPct != null) {
+      // Same denominator INV-PLAN-INTENSITY-DISTRIBUTION uses, or the fix would
+      // be measured against a different population than the check (the
+      // denominator lesson, one more time).
+      const countable = (w: Week) => w.n >= 1
+      const runningOf = (w: Week) => (Object.values(w.sessions).filter(Boolean) as Session[])
+        .filter(sn => sn.type !== 'rest' && sn.type !== 'race'
+          && sn.type !== 'strength' && sn.type !== 'cross-train')
+      const isQual = (sn: Session) => sn.type === 'quality' || sn.type === 'intervals'
+        || sn.type === 'tempo' || sn.type === 'hard'
+      const share = () => {
+        const runs = weeks.filter(countable).flatMap(runningOf)
+        return runs.length === 0 ? 0 : (runs.filter(isQual).length / runs.length) * 100
+      }
+      // Latest-first list of convertible quality sessions. The race week's own
+      // sharpening is excluded: §26 owns race week, and taking its sharpener is
+      // a different decision the board has not made.
+      const raceWeekN = Math.max(0, ...weeks.map(w => w.n))
+      const candidates: { w: Week; d: Day; sn: Session }[] = []
+      for (const w of weeks.filter(countable)) {
+        if (w.n === raceWeekN) continue
+        for (const [d, sn] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
+          if (sn && isQual(sn)) candidates.push({ w, d, sn })
+        }
+      }
+      candidates.sort((a, b) => b.w.n - a.w.n)
+
+      let yielded = 0
+      const yieldedWeeks: number[] = []
+      for (const c of candidates) {
+        if (share() <= ceilingPct) break
+        // CONVERT. Distance and day are preserved — the runner's week keeps its
+        // shape and its volume; only the stimulus changes. Keeping the distance
+        // also keeps the denominator, which is the whole point.
+        // `easySession` is the single owner of an easy run's shape — same
+        // builder the week loop uses, so the converted session carries the same
+        // zone, HR band, pace string and rounding as every other easy run
+        // (D-08). Distance and day are preserved: the runner's week keeps its
+        // shape and its volume, only the stimulus changes. Keeping the distance
+        // also keeps the denominator, which is the whole point.
+        // PRESERVE THE RUNNER'S EVENING, NOT THE KILOMETRES.
+        //
+        // The board's amendment said "converted at the same distance", to keep
+        // §1's denominator. Measured: that is the wrong quantity to hold, and it
+        // breaks a different rule. §1 counts SESSIONS, so distance cannot move
+        // the ratio at all — while an easy run is SLOWER than the quality it
+        // replaces, so the same distance is a LONGER session and the converted
+        // run overran `max_weekday_mins` (1 sweep case, INV-PLAN-MAX-WEEKDAY-MINS).
+        //
+        // Holding the DURATION keeps the denominator just as well, keeps the
+        // runner's Tuesday the length they budgeted for, and lowers the load,
+        // which is the direction §12 wanted. Board's intent honoured; the
+        // quantity it named was not the one carrying the intent.
+        const targetMins = c.sn.duration_mins
+          ?? (c.sn.distance_km != null && pace.minPerKmEasy > 0
+              ? c.sn.distance_km * pace.minPerKmEasy : null)
+        const rawKm = targetMins != null && pace.minPerKmEasy > 0
+          ? targetMins / pace.minPerKmEasy
+          : c.sn.distance_km ?? null
+        if (rawKm == null) continue   // nothing to size an easy run from; leave it alone
+
+        // §9 — THE LONG RUN STAYS THE LONGEST, BY A RATIO, NOT BY A NOSE.
+        //
+        // Measured twice, and the first fix was not enough. A quality session is
+        // floored at MIN_SESSION_DISTANCE_KM.quality, which on a 14 km taper week
+        // is LARGER than that week's long run; converting it at its own distance
+        // made an "easy run" the longest run of the week. Clamping it just under
+        // the long run then failed a SECOND rule in the same invariant: §9 wants
+        // the long run at LONG_RUN_MIN_RATIO_VS_EASY (1.25x) of the longest easy,
+        // and 5 km vs 4.5 km is 1.11x. Read the ratio from config, never a
+        // hand-picked gap.
+        //
+        // The week loses the difference, and that is the right direction: §1
+        // counts SESSIONS, so a smaller easy run costs the ratio nothing, and
+        // less volume on an injury-capped week is what §12 wanted anyway.
+        const longKmOfWeek = Math.max(0, ...(Object.values(c.w.sessions).filter(Boolean) as Session[])
+          .filter(sn => isLongRun(sn))
+          // `sessionKmOrZero` is the same resolver `sumWeeklyKm` uses two lines
+          // down, so the clamp and the week total can never disagree about how
+          // far a duration-anchored long run is (SESSION-KM-01).
+          .map(sn => sessionKmOrZero(sn, pace.minPerKmEasy)))
+        const prec = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+        const easyCeilingKm = longKmOfWeek > 0
+          ? Math.floor((longKmOfWeek / GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY) / prec) * prec
+          : Infinity
+        const km = Math.min(rawKm, easyCeilingKm)
+        if (km < GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy) continue   // no room to convert into
+
+        c.w.sessions[c.d] = easySession(
+          c.w.n, c.d, km, c.sn.primary_metric ?? 'distance', zones, pace,
+          'Easy run — Zone 2', 4,
+          ['Easy today. Your injury history caps how fast this week can climb, and that cap has '
+           + 'already taken volume out of it. A hard session on top of a shorter week concentrates '
+           + 'the stress on tissue that is still rebuilding, and the easy running is what builds '
+           + 'its tolerance.'],
+        )
+
+        // §102 — AN INTENTIONAL DOWNGRADE IS NOT A MISSING SESSION.
+        //
+        // `INV-PLAN-QUALITY-EXPECTED` requires a quality session in a build or
+        // peak week for an intermediate runner, and exempts a week that RECORDS
+        // why it no longer has one. §102: "the exemption must be earned; it keys
+        // on a recorded reason, not on the absence itself." This is a recorded
+        // reason, so it earns it — and reusing the field rather than inventing a
+        // second absence-marker is D-16.
+        //
+        // ⚠️ The field's contract said "Set by the reshaper; NEVER by
+        // generateRulePlan." That was a true scope statement when the generator
+        // had no deliberate-downgrade path; it now has one, and the contract is
+        // amended in `types/plan.ts` in this commit rather than quietly violated.
+        c.w.quality_downgraded = {
+          trigger: 'injury_intensity_ceiling',
+          at: new Date().toISOString(),
+        }
+
+        // §28 — THE WEEK MAY HAVE JUST GAINED ITS ONLY STRIDE-ELIGIBLE DAY.
+        //
+        // The stride pass runs inside `buildWeekSessions`, long before this one.
+        // On a 2-day week whose only non-long session was the quality, §28
+        // correctly placed no strides (nothing to append to) — and converting
+        // that session to easy makes the week eligible after the pass that would
+        // have served it has already run. 274 sweep violations, all of them this
+        // ordering. Append here rather than re-running the whole pass: the day is
+        // already chosen, and §28's placement rules cannot object to a day that
+        // no longer holds a quality session.
+        {
+          const weekHasStrides = (Object.values(c.w.sessions).filter(Boolean) as Session[])
+            .some(sn => (sn.coach_notes ?? []).some(n => !!n && /strides/i.test(n)))
+          const converted = c.w.sessions[c.d]!
+          if (!weekHasStrides && c.w.n >= GENERATION_CONFIG.STRIDES_FIRST_WEEK
+              && c.w.type !== 'deload' && c.w.n !== raceWeekN
+              && !isLongRun(converted) && !isShakeout(converted)) {
+            // `coach_notes` is a BOUNDED tuple ([string, string?, string?]), not
+            // an array — mirror §28's own append rather than spreading into it.
+            const note = '4×20s strides at 5K effort, full recovery between.'
+            const e0 = converted.coach_notes?.[0]
+            const e1 = converted.coach_notes?.[1]
+            converted.coach_notes = e0 && e1 ? [e0, e1, note] : e0 ? [e0, note] : [note]
+          }
+        }
+
+        // §27 — THE WEEK'S COPY MUST NOT PROMISE WHAT IT NO LONGER CONTAINS.
+        // The existing theme realigner below only walks PEAK weeks; the yield
+        // can land on a build or taper week, and `INV-PLAN-COPY-MATCHES-SESSIONS`
+        // reads label AND theme for intensity claims. Rewritten here rather than
+        // by widening that pass, which would change copy on healthy plans too.
+        const promisesIntensity = /quality|threshold|tempo|interval|vo2|sharpen|intensity stays/i
+        if (promisesIntensity.test(`${c.w.label ?? ''} ${c.w.theme ?? ''}`)) {
+          c.w.label = 'Easy week'
+          c.w.theme = 'All easy this week. Your injury cap has already taken volume out, '
+            + 'so the hard session comes out too rather than landing on a shorter week.'
+        }
+
+        // "Life-first, plan-second" — `applyWeekdayMinsCap` runs inside
+        // `buildWeekSessions`, before this pass, so the converted session was
+        // never offered to it. Calling the SAME helper rather than re-deriving
+        // the cap: `day_budgets` overrides `max_weekday_mins` per weekday, and a
+        // second reading of that precedence is exactly the parallel semantics
+        // D-16 forbids. One sweep case proved the need.
+        applyWeekdayMinsCap(c.w.sessions, input, c.w.n === raceWeekN)
+
+        yieldedWeeks.push(c.w.n)
+        yielded++
+      }
+      if (yielded > 0) {
+        // The clamp above can shrink a week; the week must state what it now
+        // contains (INV-PLAN-WEEKLY-KM consistency, and §90's own "the runner
+        // sees sumWeeklyKm, not the curve").
+        for (const w of weeks) {
+          if (yieldedWeeks.includes(w.n)) w.weekly_km = sumWeeklyKm(w.sessions, pace)
+        }
+        ruleAdjustments.push({
+          rule: '§90 Amendment 1 — injury trim yields quality to §1',
+          violation: `The §12 injury cap removed enough easy running that the plan's quality `
+            + `share passed §1's ${ceilingPct}% ${yieldDistKey} ceiling without any intensity being added.`,
+          resolution: `${yielded} quality session(s) converted to easy at the same distance, `
+            + `latest first, bringing the plan to ${share().toFixed(1)}%.`,
+          weeks_affected: yieldedWeeks.slice().sort((a, b) => a - b),
+        })
+      }
+    }
+  }
+
   // Order matters: the more specific diagnosis wins. A structural inversion
   // explains WHY the volume will not fit, where the day-count note only says
   // the day count is low — and a runner on 5 days with 80km hits the former

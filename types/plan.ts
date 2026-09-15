@@ -321,8 +321,17 @@ export interface Week {
   /** GEN-FIX-10 (§8, 2026-08-06) — a reshape deliberately removed this week's
    *  quality session in response to a fatigue or efficiency signal. Records WHY
    *  the week no longer looks like a build week, so INV-PLAN-QUALITY-EXPECTED
-   *  can tell an intentional downgrade from a generator defect. Set by the
-   *  reshaper; never by generateRulePlan. */
+   *  can tell an intentional downgrade from a generator defect.
+   *
+   *  AMENDED 2026-09-15 (Coaching Board S1-INJURY-DENOMINATOR-01, §90 Amendment
+   *  1). This used to read "Set by the reshaper; never by generateRulePlan."
+   *  That was a true statement of SCOPE when the generator had no deliberate
+   *  downgrade path. It now has one: when §12's injury trim removes enough easy
+   *  running to push a plan through §1's ceiling, the generator converts a
+   *  quality session to easy and stamps this field with
+   *  `trigger: 'injury_intensity_ceiling'`. §102's exemption keys on a RECORDED
+   *  REASON, not on who recorded it, and a second absence-marker for the same
+   *  meaning would be D-16. */
   quality_downgraded?: {
     trigger: string      // AdjustmentTrigger.type, e.g. 'ef_decline' | 'fatigue_accumulation'
     at:      string      // ISO timestamp

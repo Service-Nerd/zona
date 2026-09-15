@@ -67,7 +67,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > Waves 0-2 answered "does every coaching rule have a check?" — it does: **79 invariant · 21 named test · 6 exempt · 0 unverified**, with the build failing if that stops being true. Wave 3 is the next question, in the order below. **Nothing here is demo-critical:** all 14 charity personas are clean.
 > | # | Item | Type | Why it is ordered here |
 > |---|---|---|---|
-> | 1 | **S1-INJURY-DENOMINATOR-01** | Coaching Board | The only item whose current behaviour reaches a runner — a live §1 breach that ships |
+> | 1 | ~~S1-INJURY-DENOMINATOR-01~~ | ✅ **SHIPPED 2026-09-15** | Board ruled CORRECT WITH AMENDMENT; §90 Amendment 1. 6 plans fixed, 0 healthy plans touched |
 > | 2 | **ERROR-SEVERITY-IS-ADVISORY-01** | Architecture | An `error` invariant only `console.error`s in production; #1's answer may change this |
 > | 3 | **PRINCIPLE-CLAIM-SYNC-01** | Guard | Cheap, and closes the §92 class outright |
 > | 4 | **TEST-LIVENESS-01** | Harness | The big one: `invariantLiveness` proves the 79 invariants fire; nothing proves the 21 tests do |
@@ -92,20 +92,6 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > **Options, in ascending cost:** (a) a per-test assertion-count floor — weak, gameable; (b) mutation testing over `lib/plan` + `lib/coaching` with Stryker, scoped to the 21 files, run nightly rather than in `verify` (it is minutes, not seconds); (c) hand-written falsification cases per test, the pattern `peakLrEarnedTier.test.ts` already uses — strongest, and the most work.
 > **Recommendation: (c) for the rules that reach a runner, (b) nightly for the rest.** Do not put mutation testing in `verify` — a gate that adds minutes to every commit gets disabled, which this repo records as equivalent to having no gate.
 > *Verify still open:* `lib/plan/principleCoverage.ts` → count entries with `by: 'test'`.
-
-> 🔴 **S1-INJURY-DENOMINATOR-01 — §90's injury trim pushes the plan through §1's intensity ceiling, and the plan ships anyway.** *(P2, found 2026-09-15 by running `verify:parity` after the coverage wave)*
-> **MEASURED, 6 of 4,320 plans in the parity grid (0.14%). Every one carries `injury_history: ['knee']`; zero without it.**
-> | shape | weeks | delivered |
-> |---|---|---|
-> | 42.2km · 12wk · 15km/wk · finish · knee · intermediate · 4d | 12 | **20.0%** (8/40) vs §1's 18% |
-> | same, 5 days | 12 | 19.0% (8/42) |
-> | same, experienced, 4d | 12 | 18.2% (8/44) |
-> **Hypothesis, stated as one:** §1 counts SESSIONS, not minutes (CD-19). ADR-022/§90's injury levers trim easy runs to hold the delivered-volume ceiling; on a 15 km/week marathoner those weeks fall far enough that §52b day-fitting drops easy DAYS. The quality count is unchanged, the denominator shrinks, and the ratio climbs through §1's ceiling. Two principles that are individually correct interacting badly — verify before designing the fix.
-> ⚠️ **It is an `error` severity and it SHIPS.** `generateRulePlan` throws on error violations in dev/test and only `console.error`s in production, so these plans reach a runner with a §1 breach and no user-visible signal. §1 is the brand's core principle.
-> ⚠️ **The property sweep does NOT see this** — 15,973 plans, 0 violations. Its sampling never lands on this family; the parity grid's exhaustive 6×3×3×3×3×3×2×2 does. **A clean sweep is not a clean engine.** Same lesson as the cohort-grid-vs-sweep gap one layer up.
-> ✅ **Does NOT reach the charity cohort.** All 14 personas clean, including every `user_declared_level` route on M1. M3 (marathon + knee) is at 25 km/week, not 15. Not a demo blocker.
-> **Board question, not a defect fix:** whichever of §1 or §90 yields is a coaching decision (precedent: §98's yield ladder, where §89's onset yields to §1).
-> *Verify still open:* generate `42.2km / 2026-12-06 / intermediate / 4d / 15km per week / finish / knee`, plan start `2026-09-14`, and check `INV-PLAN-INTENSITY-DISTRIBUTION`.
 
 > 🔲 **LR-EARNED-TIER-01 — 9 plans clear §24's long-run floor and stop below the tier their inputs earn.** *(P3, found 2026-09-15 by the new §35 invariant)*
 > **MEASURED, 15,973-plan sweep: 9 plans (0.06%).** All time-targeted HM/marathon, all with `longest_recent_run_km` already clearing §24's floor, none minute-capped. Examples: peak long run 19 km against a 19.5 km stretch tier (longest recent 30 km, `hard_session_relationship: 'love'`); 17.5 km against an 18.5 km target tier on a 3-day week with a 45-min weekday cap.

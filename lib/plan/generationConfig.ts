@@ -105,6 +105,20 @@ export const GENERATION_CONFIG = {
   // — not decorative.
   INTENSITY_DISTRIBUTION_COUNTS_FOUNDATION_WEEKS: false,
 
+  // §90 Amendment 1 (Coaching Board S1-INJURY-DENOMINATOR-01, 2026-09-15).
+  //
+  // When §12's injury cap trims a week far enough that §52b day-fitting removes
+  // an EASY run, §1's session-count denominator falls while the quality count
+  // holds — and the plan breaches its intensity ceiling with no intensity added.
+  // Measured: the same runner at 15 km/week, 12 weeks to a marathon, goes 17.4%
+  // clean to 20.5% breaching on `injury_history: ['knee']` alone.
+  //
+  // A FLAG, NOT A THRESHOLD, and deliberately so: the threshold already exists
+  // one object up in INTENSITY_DISTRIBUTION. A second number declaring the same
+  // ceiling is the §25 `race_pace_pct` failure — a ratified value sitting beside
+  // a duplicate nobody reads.
+  INJURY_QUALITY_YIELD_TO_INTENSITY_CEILING: true,
+
   // ── 10% rule + recovery cadence (CoachingPrinciples §2, §3) ─────────────────
   MAX_WEEKLY_VOLUME_INCREASE_PCT: 10,
   RETURNING_RUNNER_ALLOWANCE_PCT: 15,
