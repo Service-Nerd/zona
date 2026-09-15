@@ -317,6 +317,58 @@ MARATHON     → 21 days, 55% reduction, [1, 1, 1, 0]
 
 ---
 
+### Amendment 1 — the taper long run may not exceed the peak long run (PEAK-LR-NOT-IN-PEAK-01, Coaching Board 2026-09-15)
+
+**Principle.** A taper week's long run MUST NOT exceed the longest long run of the
+**peak** phase, within `TAPER_LR_VS_PEAK_TOLERANCE_KM`.
+
+**Why.** §6 already says volume drops sharply in the taper. §9's phase shares
+say base 28% / build 30% / peak 32% / **taper 40%** — the taper takes the
+*largest* share of a smaller week. That is defensible in itself (you cut easy
+volume harder than the long run) right up to the point where a larger share of a
+smaller week beats the peak's smaller share of a bigger one.
+
+**Measured across 1,440 plans: it inverts on 28 (1.9%).** Worst case an HM taper
+long run of **20.5 km after a peak of 18.5 km** — 97% of race distance, two weeks
+out. McMillan: *"that is a dress rehearsal, not a taper. A runner told they are
+tapering will either do it and arrive flat, or skip it and stop trusting the
+plan."* Willy: the taper exists to dissipate accumulated fatigue, and a long run
+above anything in the peak phase does the opposite in the window with no time left
+to absorb it. Sims: at 97% of race distance in a shortened week it is also a large
+glycogen and bone-loading event placed exactly where intake usually drops because
+training "feels" reduced.
+
+**§9 still wins where the two collide.** The cap never reduces a long run below the
+point where it stops being the longest run of the week (`LONG_RUN_MIN_RATIO_VS_EASY`).
+Trading §6's inversion for §9's would be no gain.
+
+> **THE RESIDUAL IS THE TAPER-DEPTH DEFECT, and the two items are the same root
+> cause.** On the 1,440-plan diagnostic grid the cap takes inversions from **1.9%
+> to 0.9%**. On the **property sweep's much wider grid (15,973 plans, 24 varied
+> input fields)** the invariant fires on **3.7%** — the two figures are different
+> populations, not a contradiction, and both are stated because quoting only the
+> smaller one would understate what a real runner faces. The remainder cannot be
+> capped because §9's ratio pins them. Tracing one: an HM taper week delivering
+> **42 km against a peak of 42 km** — the taper week does not reduce at all, so its
+> easy runs stay large and the long run must stay above them. That is the already-
+> filed §6 taper-depth finding (6.9% of progressing plans carry a first taper week
+> above 90% of peak). **Fixing taper depth clears this residual; capping the long
+> run alone cannot.**
+
+**Config.** `GENERATION_CONFIG.TAPER_LR_VS_PEAK_TOLERANCE_KM = 0.5` — one
+`DISTANCE_ROUNDING_PRECISION_KM` step. Not cosmetic: the 5K cases invert by
+exactly one rounding step, and capping on a bare `>` would report rounding as a
+coaching defect (NOISE-GATE-01).
+
+**Also ruled at this sitting:** the plan's longest run sitting OUTSIDE the peak
+phase is **accepted as correct** at 5K (28% of plans) and 10K (39%). §5/§93 make
+peak race-specific, and specificity for a 5K is faster work, not a longer run —
+the long run legitimately gives way. No change, and the invariant is deliberately
+not extended to cover it.
+
+Enforced by `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK`.
+
+
 ## 7. Hard / easy — never two hard days in a row
 
 **Principle.** A quality session and a long run are both fatiguing. They cannot be back-to-back.
@@ -1213,6 +1265,38 @@ is not under-prescribed below the floor. The tier's observable half is pinned by
 re-application options; Seiler no objection; McMillan recording that the shape a
 runner actually notices is the peak-phase long run being shorter than a build
 week's (`INV-PLAN-PEAK-IN-PEAK-PHASE`, 21.2% of plans), which is a separate item.
+
+
+### Amendment 2 — two rungs, not three (LR-TIER-GATE-RECONCILE-01, Coaching Board 2026-09-15)
+
+**Principle.** The tier has **two** rungs: §24's floor, and the target ratio for a
+runner whose `longest_recent_run_km` already clears that floor. The stretch rung is
+removed and `PEAK_LR_RATIO_STRETCH` is deleted from `GENERATION_CONFIG`.
+
+**Why — two reasons pointing the same way.**
+
+1. **Its gate was the weaker of two answering one question.** §47's
+   consecutive-peak exception decides the same thing ("can this runner take more
+   long-run load?") and requires `love` **and no injury at all** **and
+   `training_age: 5yr+`**. §35's stretch required `love`, no *hill-restricting*
+   injury, and tested training age not at all. **The weaker gate was the one
+   adding distance** (Sims). A runner could earn §35's stretch and fail §47's
+   exception — the traced LR-EARNED-TIER-01 case exactly.
+2. **It was inert.** Measured across 36 comparable plans (2 distances × 4 volumes
+   × 3 day-counts × 2 runways), the stretch rung changed the delivered peak long
+   run in **0 of 36**, while the target lift moved **33 of 36**. Removing it has
+   provably no effect on any runner's plan.
+
+Hutchinson: the evidence that a peak long run at 95% of race distance beats 90%
+does not exist, so the rung was being defended on intuition. McMillan: three rungs
+is a rule the runner must understand rather than experience, and the third never
+changed their plan.
+
+> ⚠️ **THIS IS A BOARD DELETION OF A MEASURED-INERT VALUE, NOT A TIDY-UP.** §25
+> Amendment 1 exists because `race_pace_pct` was deleted as "read by nothing"
+> while §25 ratified it one section away. The distinction: here the value **is**
+> read, its delivered effect was **measured as zero**, and the board ruled on it
+> explicitly. **Do not cite this as precedent for deleting an unread constant.**
 
 
 ## 36. Taper quality variety

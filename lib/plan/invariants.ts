@@ -107,6 +107,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-FRESH-RETURN-GATE',
   'INV-PLAN-COMPRESSION-CLASSIFICATION',
   'INV-PLAN-COMPRESSION-SPLIT',
+  'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK',
   'INV-PLAN-STRIDES-PRESENT',
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
   'INV-PLAN-VDOT-STALENESS-LADDER',
@@ -5756,6 +5757,46 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         actual: `${mainWeekCount} weeks`,
         expected: `≤ ${signatureMax}`,
       })
+    }
+  }
+
+  // INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK (§6 Amendment 1) — the taper's long run may
+  // not exceed the peak phase's.
+  //
+  // §6 says volume drops sharply in the taper; §9's shares say the taper takes
+  // the LARGEST fraction of the week (40% against peak's 32%). On 1.9% of plans
+  // the larger share of a smaller week beat the peak's smaller share of a bigger
+  // one — worst measured, an HM taper long run of 20.5 km after a peak of 18.5,
+  // two weeks out from a 21.1 km race.
+  //
+  // `warn`, and the reason is that the residual is NOT this rule's to fix. The
+  // engine cap takes inversions 1.9% -> 0.9%; what remains is pinned by §9's
+  // long-is-longest ratio because the taper WEEK never reduced — one traced case
+  // delivers 42 km against a peak of 42. That is the separately-filed §6
+  // taper-depth finding (6.9% of progressing plans taper above 90% of peak), and
+  // an `error` here would fail plans for a defect that lives one principle over.
+  {
+    const nonDeload = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+    const longKmOfWeek = (w: Week): number => {
+      const sn = Object.values(w.sessions).find(x => x && isLongRun(x))
+      return sn ? sessionKmSelfPaced(sn) ?? 0 : 0
+    }
+    const peakLr = Math.max(0, ...nonDeload.filter(w => w.phase === 'peak').map(longKmOfWeek))
+    if (peakLr > 0) {
+      const tol = GENERATION_CONFIG.TAPER_LR_VS_PEAK_TOLERANCE_KM
+      for (const w of nonDeload.filter(x => x.phase === 'taper')) {
+        const taperLr = longKmOfWeek(w)
+        if (taperLr <= peakLr + tol) continue
+        violations.push({
+          code: 'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK',
+          principle_ref: 'CoachingPrinciples §6, §9',
+          severity: 'warn',
+          week: w.n,
+          message: `Taper week ${w.n} prescribes a ${taperLr.toFixed(1)}km long run against a peak-phase best of ${peakLr.toFixed(1)}km. §6 drops volume sharply in the taper; a long run above anything in the peak phase is a dress rehearsal, in the window with no time left to absorb it.`,
+          actual: `${taperLr.toFixed(1)}km`,
+          expected: `≤ ${(peakLr + tol).toFixed(1)}km`,
+        })
+      }
     }
   }
 

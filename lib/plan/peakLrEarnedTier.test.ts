@@ -76,30 +76,35 @@ describe('§35 Amendment 1 — the tier YIELDS to §45/§47/§9 at delivery', ()
   })
 })
 
-describe('§35 — PEAK_LR_RATIO_STRETCH is INERT, and that is recorded rather than hidden', () => {
-  // MEASURED 2026-09-15 across 36 comparable plans (2 distances x 4 volumes x
-  // 3 day-counts x 2 runways): the stretch tier changed the delivered peak long
-  // run in ZERO of them, while the target lift moved 33.
+describe('§35 Amendment 2 — the tier is TWO rungs, and the third is gone', () => {
+  // Coaching Board LR-TIER-GATE-RECONCILE-01, 2026-09-15. The stretch rung was
+  // removed for two reasons that pointed the same way:
   //
-  // §25 Amendment 1 is the governing caution: "read by nothing" is evidence a
-  // CONSUMER is missing, not that the VALUE is junk. Here the value IS read —
-  // the producer computes it — and its effect is always erased downstream. So it
-  // is NOT deleted, and this test exists so the inertness cannot quietly become
-  // load-bearing (or quietly be removed) without someone deciding to.
-  const stretchVsTarget = () => ({
-    stretch: peakLongRunKm(runner({ hard_session_relationship: 'love',  longest_recent_run_km: 30 })),
-    target:  peakLongRunKm(runner({ hard_session_relationship: 'neutral', longest_recent_run_km: 30 })),
+  //  1. ITS GATE WAS THE WEAKER OF TWO ANSWERING ONE QUESTION. §35's stretch
+  //     turned on `hard_session_relationship: 'love'` with no training-age floor
+  //     and only a partial injury test, while §47's consecutive-peak exception
+  //     decides the same thing requiring no injury at all AND `5yr+`. Sims: the
+  //     weaker gate was the one adding distance.
+  //  2. IT WAS INERT. Measured across 36 comparable plans, it changed the
+  //     delivered peak long run in 0 of 36 while the target lift moved 33.
+  //
+  // So removal had provably no effect on any runner, which is what made it a
+  // safe change to make three days before the charity showcase.
+  it('the config key is GONE, not merely unused', () => {
+    expect(G as Record<string, unknown>).not.toHaveProperty('PEAK_LR_RATIO_STRETCH')
   })
 
-  it('delivers the same peak long run as the target tier', () => {
-    const { stretch, target } = stretchVsTarget()
-    expect(stretch, 'the stretch tier started landing — §35 Am.1 needs revisiting').toBe(target)
-  })
-
-  it('the three ratios are still ordered, so the config itself is coherent', () => {
-    // The tiering is not wrong, only its top rung is unreachable. If someone
-    // "fixes" the inertness by flattening the ratios, this catches it.
+  it('two rungs remain, still ordered', () => {
     expect(G.PEAK_LR_RATIO_VS_RACE.HM).toBeLessThan(G.PEAK_LR_RATIO_TARGET.HM)
-    expect(G.PEAK_LR_RATIO_TARGET.HM).toBeLessThan(G.PEAK_LR_RATIO_STRETCH.HM)
+    expect(G.PEAK_LR_RATIO_TARGET.HM).toBeLessThan(1)
+  })
+
+  it('a `love` runner and a `neutral` runner now get the SAME peak long run', () => {
+    // Before Amendment 2 these differed in config and not in delivery. Now they
+    // do not differ at all, which is the honest state. If this ever goes red,
+    // someone has reintroduced a self-report path into long-run load.
+    const love    = peakLongRunKm(runner({ hard_session_relationship: 'love',    longest_recent_run_km: 30 }))
+    const neutral = peakLongRunKm(runner({ hard_session_relationship: 'neutral', longest_recent_run_km: 30 }))
+    expect(love).toBe(neutral)
   })
 })

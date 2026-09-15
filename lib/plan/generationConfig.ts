@@ -953,6 +953,23 @@ export const GENERATION_CONFIG = {
   // pre-deload distance is permitted within LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT.
   LONG_RUN_PROGRESSION_CAP_PCT:           20,
   LONG_RUN_PROGRESSION_CAP_ABS_KM:         5,
+  // §6 Amendment 1 (Coaching Board PEAK-LR-NOT-IN-PEAK-01, 2026-09-15) — the
+  // taper long run may not exceed the PEAK phase's long run.
+  //
+  // §6 says "volume drops sharply in the taper", but §9's phase shares run
+  // base 28 / build 30 / peak 32 / TAPER 40 — the taper takes the LARGEST share
+  // of a smaller week. That is defensible (you cut easy volume harder than the
+  // long run) right up to the point where the larger share of a smaller week
+  // beats the peak's smaller share of a bigger one. Measured across 1,440 plans
+  // it inverts on 28 (1.9%), worst case an HM taper long run of 20.5 km after a
+  // peak of 18.5 — a 97%-of-race-distance dress rehearsal two weeks out.
+  //
+  // THE TOLERANCE IS NOT COSMETIC. Session distances round to
+  // DISTANCE_ROUNDING_PRECISION_KM, and the 5K cases invert by exactly +0.5 km —
+  // one rounding step. Capping on a bare `>` would report rounding as a coaching
+  // defect, and a check that cries wolf gets disabled (NOISE-GATE-01).
+  TAPER_LR_VS_PEAK_TOLERANCE_KM: 0.5,
+
   LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT: 5,
 
   // ── Peak weekly volume floor for long races (CoachingPrinciples §46) ───────
@@ -1251,10 +1268,21 @@ export const GENERATION_CONFIG = {
     HM:       0.90,
     MARATHON: 0.80,
   },
-  PEAK_LR_RATIO_STRETCH: {
-    HM:       0.95,
-    MARATHON: 0.85,
-  },
+  // PEAK_LR_RATIO_STRETCH — REMOVED 2026-09-15 (Coaching Board,
+  // LR-TIER-GATE-RECONCILE-01, §35 Amendment 2).
+  //
+  // §35's third rung was gated on `hard_session_relationship: 'love'` with no
+  // training-age floor, while §47's exception answers the same question and
+  // requires no injury at all AND `5yr+`. The weaker gate was the one adding
+  // distance (Sims). It was also INERT — measured 0 of 36 comparable plans, so
+  // removal has provably no delivered effect.
+  //
+  // ⚠️ THIS IS A BOARD DELETION, NOT A TIDY-UP, and §25 Amendment 1 is why the
+  // distinction matters: "read by nothing" is evidence a CONSUMER is missing,
+  // not that the VALUE is junk — `race_pace_pct` was deleted on that reasoning
+  // while §25 ratified it one section away. Here the value IS read, its effect
+  // was MEASURED as zero, and the board ruled on it explicitly. Do not cite this
+  // as precedent for deleting an unread constant.
 
   // First two weeks of any plan: long run capped at longest_recent_run_km × this.
   WEEK_1_2_LONG_RUN_CAP_MULTIPLIER: 1.10,

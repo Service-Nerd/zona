@@ -2891,17 +2891,22 @@ function buildWeekSessions(
       && !isDeload
       && input.goal === 'time_target'
       && (distKey === 'HM' || distKey === 'MARATHON')) {
+    // §35 Amendment 2 (Coaching Board LR-TIER-GATE-RECONCILE-01, 2026-09-15) —
+    // TWO RUNGS, NOT THREE. The stretch rung is removed.
+    //
+    // It was gated on `hard_session_relationship: 'love'` — a self-report about
+    // appetite for hard work — with NO training-age floor and only a partial
+    // injury test, while §47's exception answers the same question ("can this
+    // runner take more long-run load?") requiring no injury at all AND `5yr+`.
+    // Two gates, one question, and the weaker one was the one adding distance.
+    //
+    // It was also INERT: measured across 36 comparable plans, the stretch rung
+    // changed the delivered peak long run in 0 of 36, while the target lift moved
+    // 33 of 36. Removing it has provably no effect on any runner's plan.
     const floorRatio   = GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey]
     const targetRatio  = GENERATION_CONFIG.PEAK_LR_RATIO_TARGET[distKey]
-    const stretchRatio = GENERATION_CONFIG.PEAK_LR_RATIO_STRETCH[distKey]
     const recentMeetsFloor = input.longest_recent_run_km >= input.race_distance_km * floorRatio
-    const noRestrictingInjury = !(input.injury_history ?? []).some(i =>
-      GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k))
-    )
-    const lovesHard = input.hard_session_relationship === 'love'
-    const tierRatio = (lovesHard && noRestrictingInjury && recentMeetsFloor) ? stretchRatio
-      : recentMeetsFloor ? targetRatio
-      : floorRatio
+    const tierRatio = recentMeetsFloor ? targetRatio : floorRatio
     const precisionKm = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
     lrFloorPrinciple = Math.ceil((input.race_distance_km * tierRatio) / precisionKm) * precisionKm
     if (longKm < lrFloorPrinciple) longKm = lrFloorPrinciple
@@ -3822,6 +3827,59 @@ function sumWeeklyKm(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): 
     total += sessionKmOrZero(s, pace.minPerKmEasy)
   }
   return Math.round(total)
+}
+
+/**
+ * §6 Amendment 1 — cap each taper week's long run at the peak phase's long run.
+ *
+ * Reduces DISTANCE and re-derives duration through the same easy pace the week
+ * was sized with, then restates `weekly_km` from the sessions (§90's "the runner
+ * sees sumWeeklyKm, not the curve").
+ *
+ * ⚠️ NEVER reduces below the point where the long run stops being the longest
+ * run of the week. §9's ratio (`LONG_RUN_MIN_RATIO_VS_EASY`) still binds, and a
+ * cap that satisfied §6 by breaking §9 would be trading one inversion for
+ * another. Where both cannot hold, §9 wins and the residual is left — the same
+ * honest-residual pattern §34 sets.
+ */
+function applyTaperLongRunCap(weeks: Week[], pace: PaceGuide): void {
+  const peakLr = Math.max(0, ...weeks
+    .filter(w => w.n > 0 && w.phase === 'peak' && w.type !== 'deload' && w.type !== 'race')
+    .map(w => {
+      const s = Object.values(w.sessions).find(sn => sn && isLongRun(sn))
+      return s ? sessionKmOrZero(s, pace.minPerKmEasy) : 0
+    }))
+  if (peakLr <= 0) return
+
+  const tol = GENERATION_CONFIG.TAPER_LR_VS_PEAK_TOLERANCE_KM
+  const ratio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+
+  for (const w of weeks) {
+    if (w.n <= 0 || w.phase !== 'taper' || w.type === 'race') continue
+    const entry = (Object.entries(w.sessions) as [Day, Session | undefined][])
+      .find(([, sn]) => sn && isLongRun(sn))
+    if (!entry) continue
+    const [day, long] = entry
+    if (!long || long.distance_km == null) continue
+    if (long.distance_km <= peakLr + tol) continue
+
+    // §9's floor: the long run must stay at least `ratio` times the longest
+    // other run in the week, or capping §6's inversion creates §9's.
+    const longestOther = Math.max(0, ...(Object.entries(w.sessions) as [Day, Session | undefined][])
+      .filter(([d, sn]) => d !== day && !!sn && sn.type !== 'rest' && sn.type !== 'strength')
+      .map(([, sn]) => sessionKmOrZero(sn!, pace.minPerKmEasy)))
+    const floorFromRatio = longestOther * ratio
+    const capped = Math.max(peakLr, floorFromRatio)
+    if (capped >= long.distance_km) continue
+
+    const rounded = roundDistance(capped)
+    w.sessions[day] = {
+      ...long,
+      distance_km: rounded,
+      duration_mins: dur(rounded, pace.minPerKmEasy),
+    }
+    w.weekly_km = sumWeeklyKm(w.sessions, pace)
+  }
 }
 
 // CoachingPrinciples §47 — peak long-run alternation. Applied as a post-pass so
@@ -5860,6 +5918,22 @@ function buildRulePlanOnce(
   // became a jump nothing re-checked. All 430 remaining sweep violations of this
   // code were that ordering — re-running the cap at the end cleared every one.
   applyLongRunProgressionCap(weeks, pace)
+
+  // §6 Amendment 1 — THE TAPER LONG RUN MAY NOT EXCEED THE PEAK LONG RUN.
+  // (Coaching Board PEAK-LR-NOT-IN-PEAK-01, 2026-09-15.)
+  //
+  // §6: "volume drops sharply in the taper." §9's shares say base 28 / build 30 /
+  // peak 32 / taper 40, so the taper takes the LARGEST share of a smaller week —
+  // and on 1.9% of plans that larger share of a smaller week beats the peak's
+  // smaller share of a bigger one. Worst measured: an HM taper long run of
+  // 20.5 km after a peak of 18.5, two weeks out from a 21.1 km race. McMillan:
+  // that is a dress rehearsal, not a taper, and a runner told they are tapering
+  // will either do it and arrive flat or skip it and stop trusting the plan.
+  //
+  // RUNS LAST, after §47 alternation, §9 step-backs and §45's cap, because those
+  // decide what the peak long run finally IS. Capping against a pre-pass value
+  // would be capping against a number no runner sees.
+  applyTaperLongRunCap(weeks, pace)
 
   // ── V1–V7 post-passes ───────────────────────────────────────────────────────
   // Order matters:
