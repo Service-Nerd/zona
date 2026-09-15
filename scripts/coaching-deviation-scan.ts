@@ -92,9 +92,20 @@ function scan(input: GeneratorInput, plan: Plan): Dev[] {
     }
   }
 
-  // 5. TAPER MUST REDUCE (§6). Not asserted as an error anywhere.
+  // 5. TAPER MUST REDUCE (§6).
+  //
+  // DENOMINATOR FIXED 2026-09-15 (TAPER-DEPTH-02). `peak` was the max over ALL
+  // weeks INCLUDING RACE WEEK — and for an ultra the race week is the biggest
+  // week in the plan by a distance (a 100K race week carries 100 km). So the
+  // comparison was 0.9 x something enormous and this check was structurally
+  // incapable of firing at 50K/100K, which is where the taper matters most.
+  // Race and deload weeks are now excluded, matching how every §6 invariant
+  // filters. The §6 Am.2 mechanical check is INV-PLAN-TAPER-DELIVERED-DEPTH;
+  // this stays as the coach's-eye version at a rounder threshold.
   const taper = weeks.filter(w => w.phase === 'taper' && w.type !== 'race')
-  const peak = Math.max(0, ...weeks.map(w => w.weekly_km ?? 0))
+  const peak = Math.max(0, ...weeks
+    .filter(w => w.type !== 'race' && w.type !== 'deload')
+    .map(w => w.weekly_km ?? 0))
   for (const w of taper) {
     if ((w.weekly_km ?? 0) > peak * 0.9) out.push({ severity: 'MED', what: '§6 taper barely reduces',
       detail: `wk${w.n} ${w.weekly_km} km vs peak ${peak} km` })

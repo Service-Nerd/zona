@@ -428,6 +428,31 @@ export const GENERATION_CONFIG = {
   LOW_VOLUME_TAPER_THRESHOLD_KM:         40,
   LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT: 70,   // % of the standard cut for low-volume runners
 
+  // CoachingPrinciples §6 Amendment 2 (Coaching Board TAPER-DEPTH-02,
+  // 2026-09-15) — §6's cut is a percentage of the week the runner ACTUALLY DID,
+  // not the week the volume curve intended.
+  //
+  // MEASURED, and the first diagnosis of this was wrong in a way worth recording.
+  // The taper was blamed for "barely reducing". It does not: the taper curve is
+  // correct (traced HM 65 -> 50 -> 36, marathon 50 -> 41 -> 32 -> 22, 100K
+  // 90 -> 72 -> 54 -> 36) and the taper DELIVERS it — delivered/curve 0.99-1.02.
+  // The PEAK phase delivers 0.70-0.90 of its curve (§23/CD-10: the long run pinned
+  // at LONG_RUN_CAP_MINUTES, easy pinned by §9's ratio — accepted, the caps do not
+  // move). So a taper week whose CURVE sits 23% below peak arrives 2% below the
+  // peak the runner actually ran. Worst measured: an HM plan peaking at 45.5 km
+  // with a first taper week of 44.5 km, against a configured 22.5% first step.
+  //
+  // On 504 plans, 86 (17.1%) carry a first taper week above 90% of the peak
+  // phase. 74 are already honest — `volume_profile: 'maintenance'` with a
+  // `volume_constraint_note`. **12 (2.4%) are classified `build` and say
+  // nothing.** Those are what this re-anchor is for.
+  //
+  // Expressed in PERCENTAGE POINTS OF THE ANCHOR WEEK, not as a ratio of the
+  // taper week, because the question is "how much of the promised cut
+  // evaporated". Below the gate the shortfall is rounding across 3-6 sessions
+  // and re-cutting it would be relabelling noise as coaching (NOISE-GATE-01).
+  TAPER_DELIVERED_REANCHOR_MATERIAL_PCT: 5,
+
   // Race week volume — applied to the LAST week of every plan. Shakeouts only;
   // independent of TAPER_BY_DISTANCE.volume_reduction_pct (which governs the
   // full taper weeks BEFORE race week).

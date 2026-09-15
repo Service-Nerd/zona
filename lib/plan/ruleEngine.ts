@@ -3882,6 +3882,131 @@ function applyTaperLongRunCap(weeks: Week[], pace: PaceGuide): void {
   }
 }
 
+/**
+ * §6 Amendment 2 — re-anchor the taper's DELIVERED volume on the DELIVERED
+ * pre-taper week (Coaching Board TAPER-DEPTH-02, 2026-09-15).
+ *
+ * WHY THIS EXISTS, stated precisely, because the first diagnosis was wrong.
+ * The taper was filed as "barely reduces". It does not. The taper curve is
+ * correct and the taper delivers it — delivered/curve runs 0.99-1.02 across
+ * every traced case, the best-delivered phase in the plan. What fails is the
+ * PEAK phase, which delivers 0.70-0.90 of its own curve because the long run is
+ * pinned at LONG_RUN_CAP_MINUTES and the easy runs are pinned by §9's ratio.
+ * §23/CD-10 ACCEPTS that — the caps do not move. This pass prices the
+ * consequence nobody had: anchoring the taper on the INTENDED peak lets an
+ * accepted structural limit silently delete the taper. Worst measured, an HM
+ * plan peaking at 45.5 km with a first taper week of 44.5.
+ *
+ * The lever order is ADR-022's, already ratified: **easy runs trim, the §52 long
+ * run never does, and a quality session is never touched** — §6 keeps intensity
+ * and cuts volume, so trimming the taper's quality session would invert the
+ * principle it is enforcing. §9's LONG_RUN_MIN_RATIO_VS_EASY cannot be broken
+ * here by construction: trimming easy runs only ever increases the long run's
+ * margin over them.
+ *
+ * Where MIN_SESSION_DISTANCE_KM.easy binds before the target is reached, the
+ * remainder is LEFT and declared — §34's honest residual, and Willy's condition
+ * at the sitting ("a 3 km easy run is not a session, it is an apology").
+ *
+ * Mirrors buildVolumeSequence's own taper arithmetic exactly (same anchor index,
+ * same LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT branch, same per-step division) so
+ * the curve and the delivered target cannot disagree about what §6 asks for —
+ * D-16.
+ */
+function applyTaperDeliveredDepth(
+  weeks: Week[], pace: PaceGuide, peakKm: number, raceDistanceKm: number,
+): void {
+  const taperWeeks = weeks.filter(w => w.n > 0 && w.phase === 'taper' && w.type !== 'race')
+  if (taperWeeks.length === 0) return
+
+  const firstTaperN = Math.min(...taperWeeks.map(w => w.n))
+  const anchorWeek = weeks.find(w => w.n === firstTaperN - 1)
+  if (!anchorWeek) return
+
+  // FULL PRECISION on both sides. `sumWeeklyKm` Math.round's to whole km, and
+  // measuring the gate against rounded totals silently shrinks it: one HM case
+  // computed a 0.94 km excess from 25 and 22 where the true figures are 24.5 and
+  // 22.0 and the excess is 1.36 — 3.8% of the anchor against 5.6%, so the trim
+  // was skipped and INV-PLAN-TAPER-DELIVERED-DEPTH, which measures unrounded,
+  // fired on a week the pass had decided to leave. A producer and its checker
+  // must agree on the unit before they can agree on anything else (D-16).
+  const exactWeekKm = (w: Week): number => {
+    let total = 0
+    for (const sn of Object.values(w.sessions)) {
+      if (!sn || sn.type === 'strength' || sn.type === 'rest') continue
+      total += sessionKmOrZero(sn, pace.minPerKmEasy)
+    }
+    return total
+  }
+
+  const anchorKm = exactWeekKm(anchorWeek)
+  if (anchorKm <= 0) return
+
+  const distKey = raceDistanceKey(raceDistanceKm)
+  const taperConfig = GENERATION_CONFIG.TAPER_BY_DISTANCE[distKey]
+  const fullTaperWeeks = Math.max(1, GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length - 1)
+  const reductionFull = peakKm < GENERATION_CONFIG.LOW_VOLUME_TAPER_THRESHOLD_KM
+    ? taperConfig.volume_reduction_pct * (GENERATION_CONFIG.LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT / 100)
+    : taperConfig.volume_reduction_pct
+  const stepPct = reductionFull / fullTaperWeeks
+  const easyFloorKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+  const gatePct = GENERATION_CONFIG.TAPER_DELIVERED_REANCHOR_MATERIAL_PCT
+
+  for (const w of taperWeeks) {
+    const curveTarget = anchorKm * (1 - (stepPct * (w.n - firstTaperN + 1)) / 100)
+
+    // §52 IS A HARD FLOOR ON THE TRIM, and it is an `error`-severity invariant
+    // (INV-PLAN-LR-MAX-WEEKLY-PCT), not advice. The long run is never trimmed
+    // here, so shrinking the easy runs raises its SHARE — and a first version of
+    // this pass drove 112 cohort plans past the 60% cap and made them throw.
+    // The week may not be cut below the point where the long run would breach
+    // it. Where that binds before §6's target, the remainder is LEFT and
+    // declared (§34) — the same treatment Willy's session-floor condition gets.
+    let longKm = 0
+    for (const sn of Object.values(w.sessions)) {
+      if (!sn || !isLongRun(sn)) continue
+      longKm = Math.max(longKm, sessionKmOrZero(sn, pace.minPerKmEasy))
+    }
+    const lrFloorKm = longKm > 0
+      ? longKm / (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100)
+      : 0
+    const target = Math.max(curveTarget, lrFloorKm)
+
+    const delivered = exactWeekKm(w)
+    if (delivered <= target) continue
+    // Materiality in PERCENTAGE POINTS OF THE ANCHOR — "how much of the promised
+    // cut evaporated", not "how big is this week".
+    if (((delivered - target) / anchorKm) * 100 < gatePct) continue
+
+    let excess = delivered - target
+    const easies = (Object.entries(w.sessions) as [Day, Session | undefined][])
+      .filter(([, s]) => !!s && s.type === 'easy' && !isLongRun(s))
+      .sort((a, b) =>
+        sessionKmOrZero(b[1]!, pace.minPerKmEasy) - sessionKmOrZero(a[1]!, pace.minPerKmEasy))
+
+    for (const [day, session] of easies) {
+      if (excess <= 0) break
+      const km = sessionKmOrZero(session!, pace.minPerKmEasy)
+      const room = km - easyFloorKm
+      if (room <= 0) continue
+      // ROUNDS UP, not to nearest. `roundDistance` can round a 4.7 km target
+      // down to 4.5 and take 0.2 km MORE than asked for; compounded across a
+      // week's easy runs that pushed 24 cohort plans past §52's 60% long-run cap
+      // even with the floor above computed correctly. Ceiling to the same
+      // DISTANCE_ROUNDING_PRECISION_KM grid means this pass can undershoot §6's
+      // target but can never breach a floor it was given.
+      const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+      const newKm = Math.ceil((km - Math.min(room, excess)) / precision) * precision
+      if (newKm >= km) continue
+      w.sessions[day] = session!.distance_km != null
+        ? { ...session!, distance_km: newKm, duration_mins: dur(newKm, pace.minPerKmEasy) }
+        : { ...session!, duration_mins: dur(newKm, pace.minPerKmEasy) }
+      excess -= km - newKm
+    }
+    w.weekly_km = sumWeeklyKm(w.sessions, pace)
+  }
+}
+
 // CoachingPrinciples §47 — peak long-run alternation. Applied as a post-pass so
 // the per-week loop stays simple. Walks peak-phase weeks from last to first and
 // marks every other one as a step-back: drop race-pace catalogue specificity,
@@ -5997,6 +6122,17 @@ function buildRulePlanOnce(
   applyV5StimulusProgression(weeks, input.race_distance_km, pace, zones, ruleAdjustments)
   applyV1VolumeQualityStimulusSplit(weeks, pace, ruleAdjustments)
   applyV4LongRunRepeatCeiling(weeks, input, pace, ruleAdjustments)
+
+  // §6 Amendment 2 (Coaching Board TAPER-DEPTH-02) — the cut is a percentage of
+  // the week the runner ACTUALLY DID, not of the week the volume curve intended.
+  //
+  // RUNS AFTER V1 AND V4, and that ordering is measured, not assumed. Placed
+  // first immediately after §6 Am.1's long-run cap, it left 6 sweep cases where
+  // the taper fell short with easy-run headroom still on the table — V1 scales
+  // non-quality sessions and V4 mutates long-run distances, so the week this
+  // pass sized was not the week the runner receives. Same lesson §6 Am.1's own
+  // comment records: anchor on the number no later pass will move.
+  applyTaperDeliveredDepth(weeks, pace, peakKm, input.race_distance_km)
 
   // V8 / CD-20 (SC-01) — record the withheld second quality session.
   //

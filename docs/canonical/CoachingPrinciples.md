@@ -365,12 +365,39 @@ Trading §6's inversion for §9's would be no gain.
 > input fields)** the invariant fires on **3.7%** — the two figures are different
 > populations, not a contradiction, and both are stated because quoting only the
 > smaller one would understate what a real runner faces. The remainder cannot be
-> capped because §9's ratio pins them. Tracing one: an HM taper week delivering
-> **42 km against a peak of 42 km** — the taper week does not reduce at all, so its
-> easy runs stay large and the long run must stay above them. That is the already-
-> filed §6 taper-depth finding (6.9% of progressing plans carry a first taper week
-> above 90% of peak). **Fixing taper depth clears this residual; capping the long
-> run alone cannot.**
+> capped because §9's ratio pins them.
+>
+> ⚠️ **CORRECTED 2026-09-15, same day, by the Coaching Board (TAPER-DEPTH-01).**
+> This paragraph originally read *"That is the already-filed §6 taper-depth
+> finding … Fixing taper depth clears this residual; capping the long run alone
+> cannot."* **There is no taper-depth defect, so nothing clears the residual that
+> way.** The taper cut is applied correctly to the curve and delivered
+> faithfully: traced on a 50K plan the curve runs 95 → 78 → 60 → 43 km, exactly
+> `volume_reduction_pct: 55` over three steps, and across a 504-plan grid the
+> **taper is the BEST-delivered phase in the plan** — delivered / curve mean
+> **0.981**, against build 0.870 and peak 0.906.
+>
+> What the original measurement actually found is a **peak-phase
+> under-delivery**: on 3-day plans the peak phase delivers as little as **0.67 of
+> its own curve** while every other phase clears 0.87, so the correctly-tapered
+> week lands above it. That is §23's `structuralPeakInversion`, already ruled and
+> already treated — its own source comment names this exact shape (*"the delivered
+> taper exceeding the delivered peak, since the taper's smaller targets are
+> achievable where the peak's are not"*). **Of the 8 plans in 504 whose first
+> taper week exceeds the peak phase, 8 of 8 are classified
+> `volume_profile: 'maintenance'` and carry a `volume_constraint_note`. Zero are
+> silent.** The runner is told.
+>
+> **The genuine residual of THIS amendment is 6 plans in 504 (1.2%), each
+> overshooting by 0.9–1.0 km** — 21.5 km against a peak of 20.5, 31.0 against
+> 30.1. A kilometre on a 31 km long run is §9's ratio doing its job, not a dress
+> rehearsal, which is why the invariant stays `warn` (NOISE-GATE-01, §34).
+>
+> **The lesson is worth more than the ruling.** `week.weekly_km` is
+> `sumWeeklyKm(sessions)` — the DELIVERED figure, not the curve. A first pass
+> compared it against itself, scored 0.99, and read that as proof the delivery
+> tracked the curve. A delivered-vs-curve claim must instrument
+> `buildVolumeSequence`; the plan object cannot answer the question.
 
 **Config.** `GENERATION_CONFIG.TAPER_LR_VS_PEAK_TOLERANCE_KM = 0.5` — one
 `DISTANCE_ROUNDING_PRECISION_KM` step. Not cosmetic: the 5K cases invert by
@@ -384,6 +411,123 @@ the long run legitimately gives way. No change, and the invariant is deliberatel
 not extended to cover it.
 
 Enforced by `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK`.
+
+---
+
+### Amendment 2 — the cut is a percentage of the week the runner ACTUALLY DID (TAPER-DEPTH-02, Coaching Board 2026-09-15)
+
+**Principle.** §6's `volume_reduction_pct` is applied to the **delivered**
+pre-taper week, not to the volume curve's intended one. Each taper week's
+delivered volume is brought down to `delivered pre-taper × (1 − step × n)`, by
+trimming **easy runs only**.
+
+**Why — and the first diagnosis of this was WRONG, which is the more useful half.**
+This was filed as "the taper barely reduces". It does not. The taper cut reaches
+the curve correctly — traced, an HM curve runs **65 → 50 → 36**, a marathon
+**50 → 41 → 32 → 22**, a 100K **90 → 72 → 54 → 36** — and the taper then
+**delivers** it: delivered / curve **0.99–1.02**, the best-delivered phase in the
+plan, against build 0.870 and peak 0.906.
+
+**What fails is the PEAK phase, which delivers 0.70–0.90 of its own curve.** §23
+(CD-10) already accepts why: the long run is pinned at `LONG_RUN_CAP_MINUTES` and
+the easy runs are pinned by §9's ratio, and the board ruled those caps do not
+move. This amendment prices the consequence nobody had costed — **anchoring the
+taper on the INTENDED peak lets an accepted structural limit silently delete the
+taper.** A taper week whose curve sat 23% below peak arrives 2% below the peak the
+runner actually ran.
+
+**Measured, 504 plans:** 86 (17.1%) carry a first taper week above 90% of the peak
+phase. 74 are already honest — `volume_profile: 'maintenance'` with a
+`volume_constraint_note`. **12 (2.4%) are classified `build` and say nothing.**
+Worst: an HM plan peaking at **45.5 km with a first taper week of 44.5 km**, a 2%
+cut against a configured 22.5% first step. After the amendment: **0**.
+
+**The lever order is ADR-022's, already ratified — easy runs trim, the §52 long run
+never does, and a quality session is never touched.** §6 keeps intensity and cuts
+volume, so trimming the taper's quality session would invert the principle being
+enforced (Seiler). §9's `LONG_RUN_MIN_RATIO_VS_EASY` cannot be broken here by
+construction: trimming easy runs only ever widens the long run's margin over them.
+
+**Willy's binding condition:** the trim stops at `MIN_SESSION_DISTANCE_KM.easy`.
+*"A 3 km easy run is not a session, it is an apology."* Where the floor binds
+before the target is reached, the remainder is **left and declared** — §34.
+
+**Sims's binding condition:** a materiality gate, so a 1–2 km paper deepening does
+not read to the runner as "your plan changed" (NOISE-GATE-01).
+
+**Config.** `GENERATION_CONFIG.TAPER_DELIVERED_REANCHOR_MATERIAL_PCT = 5` —
+percentage points **of the anchor week**, because the question is how much of the
+promised cut evaporated, not how big the taper week is.
+
+> **Two ordering lessons, both measured rather than reasoned, both worth keeping.**
+> (1) The pass must run **after V1 and V4**. Placed immediately after §6 Am.1's
+> long-run cap it left 6 sweep cases short with easy-run headroom untouched,
+> because V1 scales non-quality sessions and V4 mutates long-run distances — the
+> week it sized was not the week the runner receives. (2) The pass and the
+> invariant must **measure in the same unit**: `sumWeeklyKm` rounds to whole km,
+> and one HM case computed a 0.94 km excess from 25 and 22 where the true figures
+> are 24.5 and 22.0 and the excess is 1.36. The gate skipped the trim; the
+> invariant, measuring unrounded, then fired on a week the pass had deliberately
+> left. Both sides now sum at full precision.
+
+**§52 IS A HARD FLOOR ON THE TRIM, and it is an `error`, not advice.** The long
+run is never trimmed here, so shrinking the easy runs raises its SHARE of the
+week — and a first version drove **112 cohort plans past `LONG_RUN_MAX_PCT_OF_WEEKLY`
+(60%) and made them throw** on `INV-PLAN-LR-MAX-WEEKLY-PCT`. The week may not be
+cut below `long run ÷ 60%`. A second 24 survived that floor because
+`roundDistance` rounds to NEAREST and could take 0.2 km more than asked for, so
+the trim now ceilings to the same 0.5 km grid: this pass may undershoot §6's
+target, never breach a floor it was given.
+
+> **And the fix that was NOT made, because measurement said so.** `lopsidedWeek`
+> — the >60% scan behind the "lopsided week" note — also reads taper weeks, and
+> excluding them looked obviously right: a taper week is *meant* to be long-run
+> dominant. It is also **§52's classification owner**: §52 Am.1 makes
+> `INV-PLAN-LR-MAX-WEEKLY-PCT` an `error` for a build plan and a `warn` for
+> maintenance, and `lopsidedWeek` is what downgrades the plan. Excluding the
+> taper stripped 24 plans of that label and turned an absorbed `warn` into a
+> hard failure. The scan stays exactly as it was. **A "note" that gates an
+> invariant's severity is not a note.**
+
+**Over-tapering is structurally impossible**, and that is a property of the code
+rather than a measurement: the re-anchor treats the configured target as a
+CEILING and stops there, so it can never cut below what §6 already ratified. It is
+bounded below by §52's 60% cap and by `MIN_SESSION_DISTANCE_KM.easy`.
+
+**Blast radius, declared.** `verify:parity` vs `0395b8a`: **1,078 of 5,832 cases
+changed (18.5%)** — by distance 5K 39% · marathon 21% · HM 18% · 10K 17% · 50K 9% ·
+100K 7%, and by days 3-day 28% · 4-day 18% · 5-day 9%, which is the mechanism's own
+shape. Of 504 grid plans **137 first taper weeks moved, mean −17.7%, max −34.7%**
+(<10%: 27 · 10–20%: 63 · 20–30%: 37 · >30%: 10). `cohort:shape` is UNCHANGED — no
+cohort is reclassified.
+
+**Four of the fourteen charity personas change, and the showcase is two days
+away, so they are named.** Every one improves:
+
+| Persona | pre-taper | taper before | taper after |
+|---|---|---|---|
+| M5 masters charity marathon (58) | 50 | **48** 38 26 | **41** 32 24 |
+| M1d first-timer marathon, declares experienced | 34 | **33** 25 18 | **28** 23 18 |
+| T2 sub-50 10K improver | 39 | **31** 18 | **28** 18 |
+| M2 charity marathon, compressed 12wk | 37 | **33** 25 18 | **31** 25 18 |
+
+M1d's first taper week was **3% below its pre-taper week**. That is a runner told
+they are tapering and handed the same week again, and it was on the showcase
+list.
+
+**Residual, stated:** `INV-PLAN-TAPER-DELIVERED-DEPTH` fires on **3 of 15,973**
+sweep plans (0.02%). `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK` moves **584 → 588** — a
+trimmed taper week makes the long run more clearly the longest, so §6 Am.1 now
+measures the real one on four more plans. Neither is hidden.
+
+**Also fixed here (`scripts/coaching-deviation-scan.ts`).** Its §6 check took
+`peak` as the max over ALL weeks **including race week** — and an ultra's race week
+is the biggest week in the plan, so the check was structurally incapable of firing
+at 50K/100K, where the taper matters most. Race and deload weeks are now excluded,
+matching how every §6 invariant filters.
+
+Enforced by `INV-PLAN-TAPER-DELIVERED-DEPTH` (`warn`).
+
 
 ## 7. Hard / easy — never two hard days in a row
 

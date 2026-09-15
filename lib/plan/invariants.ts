@@ -108,6 +108,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-COMPRESSION-CLASSIFICATION',
   'INV-PLAN-COMPRESSION-SPLIT',
   'INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK',
+  'INV-PLAN-TAPER-DELIVERED-DEPTH',
   'INV-PLAN-STRIDES-PRESENT',
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
   'INV-PLAN-VDOT-STALENESS-LADDER',
@@ -5769,12 +5770,25 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // one — worst measured, an HM taper long run of 20.5 km after a peak of 18.5,
   // two weeks out from a 21.1 km race.
   //
-  // `warn`, and the reason is that the residual is NOT this rule's to fix. The
-  // engine cap takes inversions 1.9% -> 0.9%; what remains is pinned by §9's
-  // long-is-longest ratio because the taper WEEK never reduced — one traced case
-  // delivers 42 km against a peak of 42. That is the separately-filed §6
-  // taper-depth finding (6.9% of progressing plans taper above 90% of peak), and
-  // an `error` here would fail plans for a defect that lives one principle over.
+  // `warn`, and the reason is that the residual is NOT this rule's to fix.
+  //
+  // CORRECTED 2026-09-15 (Coaching Board TAPER-DEPTH-01). This comment used to
+  // blame "the separately-filed §6 taper-depth finding". There is no taper-depth
+  // defect: the taper cut reaches the curve correctly (traced 50K: 95 -> 78 -> 60
+  // -> 43, exactly volume_reduction_pct 55 over three steps) and the taper is the
+  // BEST-delivered phase in the plan (delivered/curve mean 0.981 against build
+  // 0.870, peak 0.906, over 504 plans).
+  //
+  // What lifts the taper above the peak is §23's structuralPeakInversion — on
+  // 3-day plans the PEAK phase delivers as little as 0.67 of its own curve, so a
+  // correctly-tapered week clears it. That is already ruled and already treated:
+  // of the 8 plans in 504 whose first taper week exceeds the peak phase, 8 of 8
+  // are volume_profile 'maintenance' with a volume_constraint_note. None silent.
+  //
+  // The genuine residual here is 6 plans in 504 (1.2%), each overshooting by
+  // 0.9-1.0 km (21.5 vs 20.5; 31.0 vs 30.1) because §9's long-is-longest ratio
+  // pins them. A kilometre on a 31 km long run is not a dress rehearsal, so
+  // `error` would fail plans over rounding-scale noise (NOISE-GATE-01, §34).
   {
     const nonDeload = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
     const longKmOfWeek = (w: Week): number => {
@@ -5796,6 +5810,105 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: `${taperLr.toFixed(1)}km`,
           expected: `≤ ${(peakLr + tol).toFixed(1)}km`,
         })
+      }
+    }
+  }
+
+  // INV-PLAN-TAPER-DELIVERED-DEPTH (§6 Amendment 2) — the taper the runner is
+  // HANDED must actually cut, measured against the week they actually did.
+  //
+  // §6's cut used to be a percentage of the volume CURVE. The curve delivers its
+  // taper faithfully (0.99-1.02) but the PEAK phase delivers 0.70-0.90 of its own
+  // (§23/CD-10, accepted), so a taper week whose curve sat 23% below peak arrived
+  // 2% below the peak the runner ran. Worst measured: HM peaking at 45.5 km with
+  // a first taper week of 44.5.
+  //
+  // THE FLOOR IS DELIBERATELY THE SHALLOWER OF THE TWO CONFIGURED CUTS.
+  // buildVolumeSequence applies LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT when
+  // peakKm is below LOW_VOLUME_TAPER_THRESHOLD_KM (CD-5 — a low-volume runner has
+  // little fatigue to shed). `peakKm` is generation-time state this validator
+  // cannot see, and RE-DERIVING it from the finished plan is exactly how a
+  // checker and its producer drift (D-16, DELOAD-OWNER-01). So the invariant
+  // asserts the weaker claim BOTH branches satisfy: at least the low-volume
+  // step. A plan that took the full cut passes comfortably; a plan that took
+  // neither fails. That is the property worth checking.
+  //
+  // `warn`, not `error`, AND SCOPED TO WEEKS THAT HAD ROOM TO CUT. First cut
+  // fired on 43.5% of the property sweep (6,949 of 15,973) and NOISE-GATE-01
+  // rejected it. Every sampled failure was the same two things:
+  //
+  //   1. ROUNDING. `week.weekly_km` is Math.round'd to whole km and sessions
+  //      round to DISTANCE_ROUNDING_PRECISION_KM, so a 9 km taper week cannot
+  //      land exactly on a 8.95 km ceiling. Both sides are now summed from the
+  //      SESSIONS at full precision instead of read off the rounded field.
+  //   2. THE FLOOR DOING ITS JOB. On small weeks every easy run is already at
+  //      MIN_SESSION_DISTANCE_KM.easy, so §6 Am.2's pass had nothing left to
+  //      trim. That is §34's declared residual, not a defect, and a check that
+  //      reports it is a check that gets switched off.
+  //
+  // So the predicate is the honest one: **the taper did not cut, AND it could
+  // have.** A week whose easy runs are all on the floor is silent by design.
+  {
+    const taperWeeks = plan.weeks.filter(w => w.n > 0 && w.phase === 'taper' && w.type !== 'race')
+    if (taperWeeks.length > 0) {
+      const weekKm = (w: Week): number => {
+        let total = 0
+        for (const sn of Object.values(w.sessions)) {
+          if (!sn || sn.type === 'strength' || sn.type === 'rest') continue
+          total += sessionKmSelfPaced(sn) ?? 0
+        }
+        return total
+      }
+      /** How much this week could still give without breaching §6 Am.2's own
+       *  lever order — easy runs only, never the §52 long run, never quality. */
+      const trimmableKm = (w: Week): number => {
+        let room = 0
+        for (const sn of Object.values(w.sessions)) {
+          if (!sn || sn.type !== 'easy' || isLongRun(sn)) continue
+          room += Math.max(0, (sessionKmSelfPaced(sn) ?? 0) - GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy)
+        }
+        return room
+      }
+
+      const firstTaperN = Math.min(...taperWeeks.map(w => w.n))
+      const anchorWeek = plan.weeks.find(w => w.n === firstTaperN - 1)
+      const anchorKm = anchorWeek ? weekKm(anchorWeek) : 0
+      const distKey = raceDistanceKey(input.race_distance_km)
+      const taperConfig = GENERATION_CONFIG.TAPER_BY_DISTANCE[distKey]
+      const fullTaperWeeks = Math.max(
+        1, GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length - 1)
+      if (anchorKm > 0 && taperConfig) {
+        const shallowStepPct =
+          (taperConfig.volume_reduction_pct
+            * (GENERATION_CONFIG.LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT / 100))
+          / fullTaperWeeks
+        for (const w of taperWeeks) {
+          const step = w.n - firstTaperN + 1
+          const ceiling = anchorKm * (1 - (shallowStepPct * step) / 100)
+          const delivered = weekKm(w)
+          const overshoot = delivered - ceiling
+          if (overshoot <= 0) continue
+          // Same materiality gate the engine pass uses — the SHARED CONSTANT,
+          // not a shared computation. Below it the shortfall is rounding across
+          // 3-7 sessions; §6 Am.1 sets the same precedent with
+          // TAPER_LR_VS_PEAK_TOLERANCE_KM, and without it this check reports the
+          // engine's own declared tolerance as a defect on 8.2% of the sweep.
+          if ((overshoot / anchorKm) * 100
+              < GENERATION_CONFIG.TAPER_DELIVERED_REANCHOR_MATERIAL_PCT) continue
+          // The pass could not have reached the ceiling — §34 residual, not a
+          // violation. Compared against the room LEFT, so a week that was
+          // trimmed to the floor and still overshoots stays silent.
+          if (trimmableKm(w) < overshoot) continue
+          violations.push({
+            code: 'INV-PLAN-TAPER-DELIVERED-DEPTH',
+            principle_ref: 'CoachingPrinciples §6',
+            severity: 'warn',
+            week: w.n,
+            message: `Taper week ${w.n} delivers ${delivered.toFixed(1)}km against a pre-taper week of ${anchorKm.toFixed(1)}km — a ${(((anchorKm - delivered) / anchorKm) * 100).toFixed(0)}% cut where ${distKey}'s shallowest configured taper asks for ${(shallowStepPct * step).toFixed(0)}% by this week, and ${trimmableKm(w).toFixed(1)}km of easy running is still above the session floor. §6 drops volume sharply in the taper, measured against the week the runner actually did.`,
+            actual: `${delivered.toFixed(1)}km`,
+            expected: `≤ ${ceiling.toFixed(1)}km`,
+          })
+        }
       }
     }
   }
