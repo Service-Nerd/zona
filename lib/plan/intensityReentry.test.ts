@@ -117,6 +117,8 @@ describe('INTENSITY-REENTRY-OWNER-01 — single ownership is mechanical', () => 
   it('the owner is actually used — this is not a dead module', () => {
     const engine = readFileSync(join(LIB, 'plan', 'ruleEngine.ts'), 'utf8')
     expect(engine).toMatch(/computeIntensityReentry\(/)
-    expect(engine).toMatch(/reentry\.withheldIn\(/)
+    // Either reading counts as use — the onset-anchored flip is board-blocked
+    // (REENTRY-DEPTH-01), so the calendar reading is what ships today.
+    expect(engine).toMatch(/reentry\.withheld(In|AtQualityIndex)\(/)
   })
 })

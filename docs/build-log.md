@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-15 (second entry) — V2-SWAP-S22-01 · I got the ruling, built it, and the test caught me re-defining a number without saying so
+
+**Shipped:** A §22 exemption the board ruled on, plus a lot of precisely-filed "not yet". The onset fix that halves how often a returning runner's first hard session is a VO2max interval is built, measured, and **still not shipped** — because turning it on quietly changes what a ratified number means.
+
+**Dev learning:** `RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS = 4` was written as four CALENDAR weeks, and in calendar weeks it does nothing at all — the first four weeks of a plan are all easy running by construction, so there is no hard session there to withhold. Reading the same `4` as four QUALITY weeks makes it withhold the runner's first four hard sessions, which on a short 10K plan is most of them. **Same constant, same code path, completely different prescription.** I hadn't changed the value, so it didn't feel like a doctrine change. It is one.
+
+**Product/creator learning:** The property sweep stayed green through all of it — 15,973 plans, zero violations — while a plan quietly lost its hill sessions. The thing that caught it was a unit test asserting a hill session exists at all. **Coverage of "is it legal" is not coverage of "is it still the plan we meant".**
+
+**AI-building learning:** I ran the board, got a clean ruling, implemented exactly what was ruled, and implementation surfaced two more conflicts the ruling hadn't covered — a construction-order clash on 576 plans and this units problem. Not because the ruling was wrong; because you cannot see the third-order interaction until the first-order fix is live. **A ruling is a decision about the thing you asked, not a guarantee about the thing you build.**
+
+**The honest bit:** I started today intending to close four items and closed two and a half. Twice I built something correct and then reverted it, both times because the disciplined answer was "this needs a ruling I don't have." The second revert was the harder one — the measurement was genuinely good (a returning runner's first hard session being VO2max drops from 25.4% to 12.7%) and it would have been easy to ship it and mention the units thing in passing. That is precisely how the calendar-weeks bug got written in the first place.
+
+**Hook material:** The number was 4. I didn't change it. I changed what it counted, and the same plan went from withholding nothing to withholding almost everything — with every automated check still green.
+
+**Postable?:** yes
+
+
 ## 2026-09-15 — DELOAD-POS2-01 + GRID-COVERAGE-02 + the swap nobody knew was dead · four coupled items, two wrong diagnoses, one guard that degenerates
 
 **Shipped:** Recovery weeks stop landing on the second week of build for standard runners (the rule fired on 16% of plans and now fires on 0.2%). The verification grid finally varies the input that unlocks a whole family of coaching rules. And the §79 re-entry window got a single owner instead of two hand-written copies.

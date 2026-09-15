@@ -117,3 +117,73 @@ and none should be invented as a blocker.
 ## SLT escalation
 
 None. Both questions are correctness.
+
+---
+
+# Second sitting, same day — V2-SWAP-S22-01
+
+**Trigger:** `invariants.ts` + `ruleEngine.ts` (soft — changes what reaches a runner).
+
+## Conflict scan
+
+Touches **§79** (intensity re-entry), **§5** (VO2max adaptation window, CD-22),
+**§22** (race-specific exposure) and its plan-level partner
+`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO`.
+
+**Decisive finding:** §22's per-week check ALREADY exempts three categories —
+`isVo2maxSession`, effort-governed rows (§40b) and mixed-anchor rows (§85) — each
+justified in the code with the same sentence: *"§22 is NOT weakened… the
+plan-level ratio still holds the plan to a race-pace share."* And the failing week
+was legal BEFORE the swap **only because a VO2max session sat in it**. §22 already
+tolerates a non-goal-pace session in that exact slot.
+
+## Measured premise
+
+Repairing §79 makes §5's relocation fire (it fires on ZERO plans today —
+V2-SWAP-INERT-01). The displaced threshold row lands in a §22-governed week:
+**288 ERROR violations**, completely homogeneous — 144x 5K + 144x 10K, all
+`goal: time_target`, all `intensity_reentry_active`, all
+`recent_quality_training: 'regular'`. Visible only because GRID-COVERAGE-02
+Phase 1 started varying that field the same morning.
+
+## Ruling — CORRECT WITH AMENDMENT (option B, narrowly)
+
+A session displaced into a §22-governed week **by §5's adaptation-window
+relocation** is exempt from §22's per-week naming check, as a fourth exemption on
+the same footing as the existing three.
+
+**Binding amendments:**
+1. **Structural, never by label or row id** (D-17) — the relocation stamps
+   `Session.displaced_by_adaptation_window`, unreachable from `EnrichedWeekSchema`.
+2. Exempts **only** the displaced session, only in the week it was displaced into.
+3. **`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` must still pass.** MEASURED at
+   ratification: across **576 plans** carrying a displaced session, ratio
+   violations **0** and per-week §22 violations **0**. If it ever fails, the
+   exemption is void.
+
+**Rejected, not deferred:**
+- **§79 yields** — reinstates the defect §79 exists for: a returning runner's
+  FIRST quality session at Zone 4-5 (Willy, Sims).
+- **§5 yields** — Willy: pushing VO2max later compresses the same dose into fewer
+  weeks before the taper, a DENSITY increase for the runner whose tissue is
+  already limiting.
+- **Swap with a race-pace partner** — MEASURED insufficient: only **144 of 288**
+  failing plans have a `race_pace` candidate in the first half (first-half
+  quality mix vo2max 288 / race_pace 144, no threshold at all).
+- **Retire the swap** — correct long-term direction, out of scope.
+
+## What this sitting did NOT settle, and must not be assumed settled
+
+Implementing the ruling surfaced **two further conflicts** that no ruling covers.
+Both are filed and neither was decided here:
+
+- **REENTRY-DEPTH-01.** Reading §79's window in QUALITY weeks instead of CALENDAR
+  weeks **re-units a ratified numeric**. `RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS
+  = 4` was calibrated where it did nothing; read as quality weeks it withholds the
+  first FOUR quality sessions, which on a short 10K plan is most of them and
+  removes hill work entirely. D-22: that changes what the numeric MEANS. **Board.**
+- **§5 vs §79 precedence at construction.** `vo2MustOpenBuild` forces VO2max to
+  open build on plans too short to adapt it otherwise, overriding §79's withhold
+  on **576 plans** (5K/10K, both goal types, all `recent_quality_training:
+  'regular'`). Arguably already implied by CD-22's "binding where reachable", but
+  never ruled. **Board.**

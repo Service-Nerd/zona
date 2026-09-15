@@ -834,6 +834,32 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // holds the PLAN to a race-pace share, and §53's rotation means an
         // over-under occupies at most a minority of second-half build slots.
         if (session.catalogue_id && rowHasMixedWorkAnchors(session.catalogue_id)) continue
+        // §22 Amendment (Coaching Board 2026-09-15, V2-SWAP-S22-01) — a session
+        // RELOCATED into this week by §5's VO2max adaptation-window swap is
+        // exempt, for the same reason the three exemptions above are.
+        //
+        // The week it landed in was legal BEFORE the swap only because a VO2max
+        // session sat there, and VO2max is exempt two checks up. §5's relocation
+        // is a ratified mechanism (CD-22) and this check must not punish a
+        // session for obeying it — the alternative rulings were to make §79
+        // yield (reinstating the Zone 4-5-first defect on returning runners) or
+        // §5 yield (compressing the VO2max dose into fewer weeks against the
+        // taper, Willy). Both were rejected.
+        //
+        // Measured before the exemption: 288 ERROR violations, entirely
+        // homogeneous — 144x 5K + 144x 10K, all time-targeted, all
+        // `intensity_reentry_active`, all `recent_quality_training: 'regular'`.
+        //
+        // STRUCTURAL (D-17). `displaced_by_adaptation_window` is stamped by the
+        // generator and is unreachable from `EnrichedWeekSchema`, so the AI
+        // voice pass cannot rewrite it the way it rewrites labels.
+        //
+        // §22 is NOT weakened, by the same argument the exemptions above make:
+        // `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` still holds the PLAN to a
+        // race-pace share, so exempting one displaced session cannot let a plan
+        // avoid race-specific work overall. That ratio is this exemption's
+        // BINDING CONDITION — if it fails, the exemption is void.
+        if (session.displaced_by_adaptation_window) continue
         // A1 / D-17 — detect goal-pace work STRUCTURALLY via the stamped
         // `stimulus` (classifyStimulus reads session.stimulus first), NOT the
         // label substring. The generator stamps `stimulus: 'race_pace'` at
@@ -1160,6 +1186,21 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // opening `intensity_reentry_weeks`. Detected structurally via catalogue_id →
     // category (ADR-018), not the label (which the enricher rewrites).
     // (CoachingPrinciples §79)
+    // ⚠️ STILL THE CALENDAR READING, AND THAT IS A KNOWN OPEN DEFECT —
+    // REENTRY-INV-DECORATIVE-01. `plannedQuality` is 0 for every base week and
+    // every deload week, so weeks 1..N are all-easy by construction and this
+    // condition is trivially satisfied on every plan. The check and the defect
+    // §79 Amendment fixed shared a premise, which is why this sits in the
+    // liveness baseline as never-woken.
+    //
+    // Re-anchoring it to QUALITY-carrying weeks was built and measured on
+    // 2026-09-15: it wakes immediately and fails 576 plans (5K/10K, both goal
+    // types, all `recent_quality_training: 'regular'`). Every one is §5's
+    // `vo2MustOpenBuild` legitimately forcing VO2max to open build on a plan too
+    // short to adapt it otherwise — i.e. a genuine §5-vs-§79 PRECEDENCE
+    // question that no ruling covers, not an engine defect. Deliberately NOT
+    // re-anchored here: waking a check by failing 576 correct plans is worse
+    // than leaving it honest-but-inert, and the precedence is a board call.
     if (plan.meta.intensity_reentry_active && w.n <= (plan.meta.intensity_reentry_weeks ?? 0)) {
       for (const { day, session } of placedRunning) {
         const row = session.catalogue_id

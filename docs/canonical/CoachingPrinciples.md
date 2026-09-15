@@ -750,6 +750,54 @@ The 155 violations had a different cause entirely: `halfWeek` in `validatePlan` 
 
 ---
 
+
+### Amendment — a session displaced by §5's adaptation window is exempt (Coaching Board, 2026-09-15)
+
+**Principle.** §22's PER-WEEK check does not apply to a quality session that was
+RELOCATED into that week by §5's VO2max adaptation-window swap
+(`applyV2Vo2MaxOnsetTiming`). This is a fourth exemption alongside VO2max
+(`isVo2maxSession`), effort-governed rows (§40b) and mixed-anchor rows (§85),
+and it rests on the same argument: **`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO`
+still holds the PLAN to a race-pace share**, so exempting one displaced session
+cannot let a plan avoid race-specific work overall.
+
+**Why it was needed.** The week the session lands in was legal BEFORE the swap
+only because a VO2max session sat there — and VO2max is already exempt. So §22
+already tolerates a non-goal-pace session in that exact slot; the swap merely
+changes which kind. Repairing §79's re-entry window (QUALITY-ONSET-ORDER-01)
+pushes the first VO2max later, which is what makes the swap fire at all —
+measured **288 ERROR violations**, a completely homogeneous cohort: 144x 5K +
+144x 10K, **all** time-targeted, **all** `intensity_reentry_active`, **all**
+`recent_quality_training: 'regular'`. `ruleEngine.ts` had documented that late
+swapping "breaks §22" and nothing enforced it.
+
+**What the board rejected, and why it matters.**
+- **§79 yields** (don't withhold VO2max on time-targeted short races) —
+  rejected. It reinstates exactly the defect §79 exists to prevent: a returning
+  runner's FIRST quality session at Zone 4-5, for the runner whose tissue
+  tolerance lags their aerobic engine (Willy, Sims).
+- **§5 yields** (accept VO2max past its adaptation deadline) — rejected. Willy:
+  pushing VO2max later compresses the same dose into fewer weeks before the
+  taper, a DENSITY increase for the runner whose tissue is already the limiting
+  factor. CD-22's own position is that the window is a physiological quantity.
+- **Swap with a race-pace partner instead** — measured and insufficient: only
+  **144 of the 288** failing plans have a `race_pace` candidate in the first
+  half (first-half quality mix is vo2max 288 / race_pace 144, no threshold at
+  all). A tactic, not a rule.
+- **Retiring the swap** for construct-compliant placement remains the correct
+  LONG-TERM direction (`ruleEngine.ts` already says so) and stays out of scope.
+
+**Binding condition, measured at ratification:** across 576 plans carrying a
+displaced session, `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` violations **0** and
+per-week §22 violations **0**. If that ratio ever fails on these plans the
+exemption is void.
+
+**Structural, never by label (D-17, INV-CLASS-002).** The relocation stamps
+`Session.displaced_by_adaptation_window`, which the generator sets and
+`EnrichedWeekSchema` cannot reach — a label test would be rewritten by the AI
+voice pass, the same fault that silently killed the shakeout invariant for
+months.
+
 ## 23. Peak overload requirement
 
 **Principle.** A plan presented as a "build" must produce overload. For plans of `PEAK_OVERLOAD_MIN_PLAN_WEEKS` weeks or longer, peak weekly volume MUST be at least `PEAK_OVER_BASE_RATIO` times week 1 volume. If the engine cannot achieve this overload given the runner's constraints (`days_available`, `max_weekday_mins`, `current_weekly_km` already near peak target, injury caps), it MUST surface `volume_profile = 'maintenance'` with a `volume_constraint_note` explaining why. The plan still runs; the runner is informed of what it is and isn't.
@@ -2625,6 +2673,39 @@ The asymmetry in the resolution is deliberate: **volume is where injuries come f
 **Meta.** `fitness_level` (structural — what volume was built from), `fitness_intensity_level` (the allowance quality was built at; stamped whenever it differs from structural), `fitness_level_declared` (what the runner picked). All three are needed: `validateReshapedPlan` reconstructs its input from meta, and the quality-per-week ceiling is an *intensity* rule — checking it against the structural level fails a legitimately-built returning-runner plan on every reshape.
 
 ---
+
+
+### Amendment — the window is counted in QUALITY weeks, not calendar weeks (QUALITY-ONSET-ORDER-01, 2026-09-15)
+
+**Principle.** §79's re-entry window withholds VO2max/hill work for the runner's
+opening **quality-carrying** weeks, not their opening **calendar** weeks.
+
+**Why.** §79's claim has always been an ORDERING one — *"so quality leads with
+tempo/threshold"* — but it was encoded as *"no VO2max-category session in weeks
+1..N"*. `plannedQuality` is **0 for every base week and 0 for every deload
+week**, so weeks 1..N are all-easy by construction and there was nothing in them
+to withhold. **The window closed the week before quality began.** Measured: of
+48 plans with re-entry ACTIVE, the first quality session fell inside the
+protective window in **0 of 48 (0.0%)**, and was Zone 4-5 anyway in 32 of 48.
+`INV-PLAN-RETURNING-INTENSITY-REENTRY` encoded the same calendar reading, so it
+was trivially true on every plan and sat in the liveness baseline as
+never-woken: **the check and the defect shared a premise.**
+
+**Measured after the repair:** returning runners whose FIRST quality session is
+VO2max **25.4% -> 12.7%** (1,152 -> 576 plans); first quality is
+tempo/threshold **50.3% -> 63.0%**.
+
+**Implementation note that is load-bearing.** The window has ONE owner
+(`lib/plan/intensityReentry.ts`) because the predicate was previously
+hand-written twice inside `generateRulePlan` with different loop variables.
+Both consumers now ask `withheldAtQualityIndex` with the same counter — the
+build-slot reservation passes its rotation index, the per-week selector gate
+passes `buildRotationIndex`, and they walk the identical sequence. Feeding the
+two channels different predicates measured **47 -> 594** sweep failures.
+
+**Consequence, ratified separately:** repairing this makes §5's adaptation-window
+swap fire for the first time, which required the §22 Amendment of the same date
+(V2-SWAP-S22-01).
 
 ## 80. Finish-goal long run — time on feet, not distance
 

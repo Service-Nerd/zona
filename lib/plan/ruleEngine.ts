@@ -4642,6 +4642,35 @@ function applyV2Vo2MaxOnsetTiming(
     resizeForPhase(targetSession, fromWeek, firstVo2Pos.day)
   }
 
+  // §22 Amendment (Coaching Board 2026-09-15) — V2-SWAP-S22-01.
+  //
+  // `fromWeek` held a VO2max session, which satisfies §22's per-week check BY
+  // EXEMPTION (`isVo2maxSession`). The swap replaces it with a threshold row
+  // that is not exempt, so a week that was legal becomes illegal — measured at
+  // 288 ERROR violations, a completely homogeneous cohort (144x 5K + 144x 10K,
+  // all time-targeted, all returning runners with recent_quality_training
+  // 'regular'). `ruleEngine.ts`'s own construct-compliant comment already said
+  // late swapping "breaks §22"; nothing enforced it.
+  //
+  // The board rejected making §79 yield (it reinstates the very defect §79
+  // exists for — a returning runner's first quality session at Zone 4-5) and
+  // rejected making §5 yield (Willy: pushing VO2max later compresses the same
+  // dose into fewer weeks, a density increase for the runner whose tissue is
+  // already the limiting factor). Swapping with a race_pace partner instead
+  // covers only 144 of the 288 — measured — so it is a tactic, not a rule.
+  //
+  // So the displaced session is EXEMPT from §22's per-week naming check, on
+  // exactly the footing of the three exemptions §22 already grants (VO2max,
+  // effort-governed §40b, mixed-anchor §85), and with their identical
+  // justification: the PLAN-level `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` still
+  // holds the plan to a race-pace share, so exempting one week cannot let a
+  // plan avoid race-specific work overall.
+  //
+  // Stamped STRUCTURALLY. A label or row-id test would be rewritten by the
+  // enricher (D-17) — the same fault that silently killed the shakeout
+  // invariant for months.
+  targetSession.displaced_by_adaptation_window = true
+
   // Add the adaptation-window coach note onto the (now-earlier) vo2 session.
   appendCoachNote(
     vo2Session,
@@ -5669,10 +5698,17 @@ function buildRulePlanOnce(
       rowUsage,
       rowLast,
       // §79 — withhold VO2max/hills during the returning runner's opening weeks.
-      // Same owner as the build-slot reservation above; see INTENSITY-REENTRY-OWNER-01.
-      // NOTE: still the CALENDAR reading, which QUALITY-ONSET-ORDER-01 has proven
-      // inert. The onset-anchored flip is a two-line change to
-      // `withheldAtQualityIndex` and is BLOCKED on V2-SWAP-S22-01 — see backlog.
+      // Same owner as the build-slot reservation above (INTENSITY-REENTRY-OWNER-01).
+      //
+      // ⚠️ STILL THE CALENDAR READING, WHICH IS PROVEN INERT — and the flip is
+      // BLOCKED, not forgotten. `withheldAtQualityIndex` is built and measured
+      // (returning runners whose FIRST quality session is VO2max 25.4% -> 12.7%),
+      // but switching to it RE-UNITS a ratified numeric:
+      // RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS = 4 was calibrated as CALENDAR
+      // weeks, where it did nothing. Read as QUALITY weeks it withholds the first
+      // FOUR quality sessions, which on a short 10K plan is most of them and
+      // removes hill work entirely. That is a change to what the numeric MEANS
+      // (D-22), so it needs the board, not an edit. See REENTRY-DEPTH-01.
       reentry.withheldIn(weekN),
       qualityPool,
       recentThresholdEligible,

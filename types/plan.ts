@@ -245,6 +245,16 @@ export interface Session {
    *  only label + coach_notes). Absent on legacy plans → consumers fall back to
    *  the label heuristic. */
   stimulus?: 'strides' | 'easy' | 'steady_aerobic' | 'hills' | 'tempo' | 'race_pace' | 'vo2max'
+  /**
+   * §22 Amendment (Coaching Board 2026-09-15) — this session was RELOCATED into
+   * this week by §5's VO2max adaptation-window swap, displacing the VO2max
+   * session that satisfied §22's per-week check by exemption.
+   *
+   * STRUCTURAL, stamped by the generator, never settable by the enricher
+   * (`EnrichedWeekSchema` exposes only `label`/`coach_notes`) — a label test
+   * would be rewritten the moment the AI voice pass ran (D-17, INV-CLASS-002).
+   */
+  displaced_by_adaptation_window?: true
   label: string
   /** Legacy free-text display field. Kept for backward compat with hand-authored gists.
    *  Generator writes structured fields below instead. App prefers structured when present. */
