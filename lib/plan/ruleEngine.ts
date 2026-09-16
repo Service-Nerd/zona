@@ -4331,6 +4331,82 @@ function applyPeakLongRunAlternation(
   }
 }
 
+// §47 Amendment 2 (Coaching Board 2026-09-16) — a peak step-back is a VOLUME
+// step-back, not only an intensity one.
+//
+// `applyPeakLongRunAlternation` eases the step-back week's long run (pace + a
+// distance cap) and stamps "absorb last week's peak", but the WEEK's total kept
+// climbing on the volume curve — measured, 6,720 plans (22.5% of the grid)
+// delivered a step-back week BIGGER than the week before it. §90's principle
+// ("a week the runner is told is easier must DELIVER less") applied in peak.
+//
+// MUST RUN AFTER the §45 cap / §9 step-backs / taper cap, because those pass
+// recompute `weekly_km` (a peak long run capped by §45 drops its whole week) —
+// reading the neighbour's volume any earlier reads a number no runner sees.
+// The step-back week is identified by the note `applyPeakLongRunAlternation`
+// stamps (that IS the semantic marker), not re-derived — no producer/producer
+// drift (DELOAD-OWNER-01). The long run is never touched (§52/§90 protect it);
+// only easy volume is trimmed, toward PEAK_STEPBACK_WEEK_MAX_PCT of the
+// preceding week, never below §52's long-run share or the min-easy floor.
+function applyPeakStepBackVolume(weeks: Week[], pace: PaceGuide, input: GeneratorInput): void {
+  // Scoped to non-injury runners. An injury-history runner's delivered volume is
+  // owned by §90/§2's injury reconciliation (the injury-yield pass), which runs
+  // AFTER this one and reshapes the peak weeks — layering a second volume trim on
+  // top would both race with it and double-govern the same weeks. Willy's concern
+  // at the sitting was the HEALTHY build's unbroken climb; the injury cohort's
+  // peak is already suppressed by the injury caps. (Measured: the only step-back
+  // weeks that exceeded their neighbour were injury plans whose peak the yield
+  // pass then lowered beneath this trim — the sweep, not cohortGrid, surfaced it.)
+  if ((input.injury_history ?? []).length > 0) return
+  const STEPBACK_NOTE = 'Step-back week. Easy aerobic'
+  const minEasy = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+  const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+  const minEasyMins = dur(minEasy, pace.minPerKmEasy)
+  const kmOf = (s: Session): number =>
+    s.distance_km ?? (s.duration_mins != null ? s.duration_mins / pace.minPerKmEasy : 0)
+  const longRunOf = (w: Week): Session | null => {
+    for (const s of Object.values(w.sessions)) if (s && isLongRun(s)) return s
+    return null
+  }
+
+  for (let idx = 0; idx < weeks.length; idx++) {
+    const w = weeks[idx]
+    if (w.phase !== 'peak' || w.type === 'deload') continue
+    const lr = longRunOf(w)
+    if (!lr || !(lr.coach_notes ?? []).some(n => n?.includes(STEPBACK_NOTE))) continue
+
+    const prevWeek = weeks[idx - 1]
+    if (!prevWeek || prevWeek.type === 'deload' || prevWeek.weekly_km <= 0) continue
+
+    const weekKm = sumWeeklyKm(w.sessions, pace)
+    const target = prevWeek.weekly_km * (GENERATION_CONFIG.PEAK_STEPBACK_WEEK_MAX_PCT / 100)
+    if (weekKm <= target) continue
+
+    const lrKm = kmOf(lr)
+    // §52: trimming easy raises the long-run share, so the week may not fall below
+    // lrKm / LONG_RUN_MAX_PCT_OF_WEEKLY.
+    const szFloor = lrKm / (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100)
+    const easies = (Object.values(w.sessions) as (Session | undefined)[])
+      .filter((s): s is Session => s != null && s.type === 'easy' && s.role !== 'long_run')
+    const easyKm = easies.reduce((a, s) => a + kmOf(s), 0)
+    const nonEasyKm = weekKm - easyKm
+    const targetEasyKm = Math.max(0, Math.max(target, szFloor) - nonEasyKm)
+    if (easyKm <= targetEasyKm || easyKm <= 0) continue
+
+    const f = targetEasyKm / easyKm
+    for (const s of easies) {
+      if (s.distance_km != null) {
+        s.distance_km = Math.max(minEasy, Math.floor((s.distance_km * f) / precision) * precision)
+        s.duration_mins = dur(s.distance_km, pace.minPerKmEasy)
+      } else if (s.duration_mins != null) {
+        s.duration_mins = Math.max(minEasyMins, Math.round(s.duration_mins * f))
+      }
+    }
+    w.weekly_km = sumWeeklyKm(w.sessions, pace)
+    w.long_run_hrs = computeLongRunHrs(w.sessions, pace)
+  }
+}
+
 // CoachingPrinciples §45 — long-run progression cap. Universal (all phases).
 // Walks the plan after the per-week build and clamps any LR that jumps more
 // than +20% / +5km from the prior week's LR. Step-back from a deload week is
@@ -6353,6 +6429,13 @@ function buildRulePlanOnce(
   applyV5StimulusProgression(weeks, input.race_distance_km, pace, zones, ruleAdjustments)
   applyV1VolumeQualityStimulusSplit(weeks, pace, ruleAdjustments)
   applyV4LongRunRepeatCeiling(weeks, input, pace, ruleAdjustments)
+
+  // §47 Amendment 2 (Coaching Board 2026-09-16) — the peak step-back is a VOLUME
+  // step-back, not only an intensity one. RUNS AFTER V1 AND V4 for the reason the
+  // taper-depth pass below records: V1 scales non-quality (easy) sessions and V4
+  // mutates long-run distances, so before them the step-back week is not the week
+  // the runner receives. Anchors on the number no later pass will move.
+  applyPeakStepBackVolume(weeks, pace, input)
 
   // §6 Amendment 2 (Coaching Board TAPER-DEPTH-02) — the cut is a percentage of
   // the week the runner ACTUALLY DID, not of the week the volume curve intended.

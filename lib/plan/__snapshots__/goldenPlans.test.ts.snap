@@ -4635,8 +4635,8 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
       "sessions": {
         "fri": {
           "detail": null,
-          "distance_km": 9.5,
-          "duration_mins": 59,
+          "distance_km": 8.5,
+          "duration_mins": 53,
           "hr_target": "< 142 bpm",
           "id": "w12-fri",
           "label": "Easy run — Zone 2",
@@ -4651,8 +4651,8 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
             "4×20s strides at 5K effort, full recovery between.",
           ],
           "detail": null,
-          "distance_km": 9.5,
-          "duration_mins": 59,
+          "distance_km": 8.5,
+          "duration_mins": 53,
           "hr_target": "< 142 bpm",
           "id": "w12-mon",
           "label": "Easy run — Zone 2",
@@ -4729,7 +4729,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
       },
       "theme": "Consistency. The work is the volume.",
       "type": "normal",
-      "weekly_km": 48,
+      "weekly_km": 46,
     },
     {
       "date": "2026-10-26",

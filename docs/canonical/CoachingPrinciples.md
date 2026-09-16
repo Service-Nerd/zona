@@ -2086,6 +2086,23 @@ This principle composes with §25 (peak phase requires ≥1 long run with race-p
 
 Enforced by `INV-PLAN-PEAK-LR-ALTERNATION`. Engine-side: in peak weeks, if the prior week was a peak long run, the engine substitutes a step-back long run (race-pace segments dropped, distance reduced to ≤80% of peak distance) unless the experienced-no-injury exception applies and has not yet been spent.
 
+### Amendment 2 — a step-back is a VOLUME step-back, not only an intensity one (Coaching Board 2026-09-16)
+
+*Filed from the test.test marathon review. Found by reading a generated plan, not by any check.*
+
+**Principle.** When §47 steps a peak long run back, the WEEK it lands in must also **deliver less total volume than the week before it** — not merely a gentler long run on a week whose total keeps climbing. The step-back week trims its **easy** volume to at most `PEAK_STEPBACK_WEEK_MAX_PCT` of the preceding week, never touching the long run (§52/§90 protect it) and never falling below §52's long-run share or the min-session floor.
+
+**Why.** §47 as written eased only the long run — dropped its race-pace segment and capped its distance — and stamped the note *"Step-back week. Easy aerobic — absorb last week's peak."* But `weekly_km` is set by the volume curve, which §47 never touched, so the delivered week kept climbing. Measured: **6,720 plans (22.5% of the cohort grid) delivered a step-back week BIGGER than the week before it** — the marathon test case ran 45 → 50 → 54 km, a "recovery" week 5 km heavier than the one it was recovering from, with a note that said the opposite. This is §90's exact principle (*"a week the runner is told is easier must DELIVER less — the curve is not the promise"*), which had simply never been applied to the §47 surface. It also makes the peak block's load ramp honest: the board's injury concern (Willy) was a five-week unbroken climb into the peak with only an intensity dip; a real volume down-week breaks the accumulation.
+
+**Scope — non-injury runners.** An injury-history runner's delivered peak volume is owned by §90/§2's injury reconciliation (the injury-yield pass), which runs *after* this trim and reshapes the peak weeks — so layering a second volume trim on top would both race with it (the yield lowers a peak-level neighbour beneath the step-back after this pass has read it) and double-govern the same weeks. The `cohortGrid` measurement initially read this cohort as empty; the **property sweep, not cohortGrid, corrected it** — injury + experienced + `hard_session_relationship: 'love'` plans do reach a §47 step-back, and their peak is already suppressed by the injury caps. Willy's concern at the sitting was the HEALTHY build's five-week unbroken climb, which this addresses; the injury cohort's peak weeks stay under §90. Producer and checker share the scope. For healthy runners the delivered week-on-week rise is already unbounded (§90 enforces §2 at delivery for injury only), so the return-to-peak the week after a step-back is a planned bounceback, not a spike.
+
+**The engine aims stricter than the invariant enforces.** It trims toward `PEAK_STEPBACK_WEEK_MAX_PCT` (90%) of the preceding week; the invariant enforces the honest floor (≤ the preceding week), so a week that can only be trimmed to the min-session floor — where the long run + one quality + floored easy runs still exceed the target — is an honest floor-limited residual, not a violation. Measured after the fix: **0 genuine violations across 29,808 plans**; 1,656 floor-limited step-backs (small plans where the irreducible sessions dominate) carry the honest residual.
+
+**Config.**
+- `GENERATION_CONFIG.PEAK_STEPBACK_WEEK_MAX_PCT = 90` — % of the preceding week the step-back week may deliver.
+
+Enforced by `INV-PLAN-PEAK-STEPBACK-VOLUME`. Engine-side: `applyPeakStepBackVolume` runs after V1/V4 (which scale easy volume and long-run distance), keyed on the step-back note `applyPeakLongRunAlternation` stamps, so producer and checker read the same marker.
+
 ---
 
 ## 49. Taper duration cap

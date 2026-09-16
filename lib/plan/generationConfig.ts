@@ -1087,6 +1087,15 @@ export const GENERATION_CONFIG = {
   // No two consecutive peak weeks may both carry a peak-level long run.
   PEAK_LR_ALTERNATION_THRESHOLD_PCT: 90,   // % of peak LR distance defining "peak-level"
   PEAK_LR_STEPBACK_MAX_PCT:          80,   // % of peak LR distance defining a "step-back" LR
+  // §47 Amendment 2 (Coaching Board 2026-09-16) — a peak step-back is a VOLUME
+  // step-back, not only an intensity one. §47 eased the long run's pace and wrote
+  // "absorb last week's peak" while the WEEK's total kept climbing on the curve
+  // (measured: 6,720 plans, 22.5% of the grid, delivered a step-back week BIGGER
+  // than the week before it). §90's principle — a week the runner is told is
+  // easier must DELIVER less — applied in peak: the step-back week trims its easy
+  // volume to at most this % of the preceding week, never below §52's long-run
+  // share or the min-easy floor.
+  PEAK_STEPBACK_WEEK_MAX_PCT:        90,   // % of preceding week the step-back week may deliver
   // CoachingPrinciples §9 (CD-9) — within the build phase, every Nth long run
   // steps back by this % so a runner isn't repeating the same long run for
   // weeks. Peak long runs (the culmination) and deloads are left alone.

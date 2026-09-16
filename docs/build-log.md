@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-16 — PEAK-STEPBACK-VOLUME-01 (§47 Am.2) · A "recovery week" that was 5km heavier than the week it recovered from
+**Shipped:** In the peak block, a step-back week now delivers less total volume than the week before it — not just an easier long run on a week that's still climbing. Came out of running a real generated marathon plan past the Coaching Board.
+
+**Dev learning:** §47 stepped the peak long run back (dropped its marathon-pace finish, capped its distance) and wrote the note "absorb last week's peak" — but `weekly_km` is set by the volume curve, which §47 never touched. So the delivered week kept going up. Measured: 6,720 plans (22.5% of the grid) delivered a step-back week BIGGER than the one before it. The test plan ran 45 → 50 → 54; the "recovery" week was the second-biggest of the block. This is §90's exact principle — "the curve is not the promise, a week you call easier must deliver less" — which had simply never been pointed at the §47 surface.
+
+**AI-building learning — pass ordering bit me three times in one fix.** First I put the trim inside §47 itself; it read the neighbour's `weekly_km` before §45's long-run cap had recomputed it (54, not the final 45). Moved it out to a late pass — still wrong, because V1 "scales non-quality sessions" after it, the exact lesson the taper-depth pass three lines up already records in a comment I hadn't read. Moved it after V1/V4 — green on cohortGrid, 0 violations. Then the **property sweep** (wider grid: injury + experienced + "loves hard sessions") found 3 more: the injury-yield reconciliation runs later *still* and lowers a peak-level week beneath the step-back after my pass has read it. The honest fix wasn't a fourth reorder — it was to scope out injury entirely, because injury peak volume is already owned by §90/§2's reconciliation and layering a second trim on top double-governs the same weeks. **cohortGrid said the injury cohort was empty here; the sweep said otherwise, and the sweep was right.** Three different "it's finalised now" assumptions, three different passes that finalised it later.
+
+**Coaching learning:** the board split the finding. Lever A (make the step-back a volume step-back) was CORRECT and shipped. Lever B (the +5km absolute long-run cap that lets a 12km long run jump 42% in a week) was ruled INSUFFICIENT EVIDENCE — the concern is real but the right number needs a cohort sweep scoped to low-volume runners, not a number picked by intuition. Filed as a measurement, deliberately not built. "Measure where it bites, not on average" (Willy).
+
+**The honest bit:** none of this was found by a check. Every mechanical gate was green on a plan whose "recovery" week was heavier than the week it followed. It was found by generating one runner's plan and reading the peak block — the same way LR-CAP-BLIND-01 and SESSION-RECONCILE-01 were found the same day.
+
+**Postable?:** yes — "your 'finalised' value gets finalised again by three different passes" is the engineering lesson; "we shipped a recovery week that was bigger than the week before it, and every test was green" is the product one.
+
+
 ## 2026-09-16 — SESSION-RECONCILE-01 · The numbers on the card didn't add up, and two tests swore they did
 **Shipped:** Every figure on a session card now sums to the session total — by distance or by duration. Before, a 22 km marathon-pace long run showed 2 + 9 + 2 = 13, with the missing ~9 km rendered as a bare "40%".
 

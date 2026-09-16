@@ -123,6 +123,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-LR-PROGRESSION-CAP',
   'INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES',
   'INV-PLAN-PEAK-LR-ALTERNATION',
+  'INV-PLAN-PEAK-STEPBACK-VOLUME',
   'INV-PLAN-TAPER-DURATION-CAP',
   'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT',
   'INV-PLAN-REENTRY-OMISSION-DECLARED',
@@ -5053,6 +5054,48 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         }
       }
     }
+    }
+  }
+
+  // INV-PLAN-PEAK-STEPBACK-VOLUME — a peak long-run step-back is a VOLUME
+  // step-back too (CoachingPrinciples §47 Amendment 2). §47 eases the step-back
+  // week's long run and stamps "absorb last week's peak"; that week must then
+  // DELIVER less than the week before it (§90's principle in peak) — not keep
+  // climbing on the volume curve. Keyed on the note §47 stamps (the semantic
+  // marker of a step-back week), so producer and checker read the same signal.
+  //
+  // Tolerated: a week whose easy runs are all at the min-session floor cannot be
+  // trimmed further without cutting the long run (§52/§90 forbid that) — an
+  // honest floor-limited residual, not a violation.
+  if ((input.injury_history ?? []).length === 0) {
+    // Non-injury only — matches the producer. Injury-runner peak volume is owned
+    // by §90/§2's injury reconciliation, which runs after the step-back trim.
+    const STEPBACK_NOTE = 'Step-back week. Easy aerobic'
+    const minEasy = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+    const tol = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+    for (let i = 1; i < plan.weeks.length; i++) {
+      const w = plan.weeks[i]
+      if (w.phase !== 'peak' || w.type === 'deload') continue
+      const lr = Object.values(w.sessions).find(s => !!s && isLongRun(s))
+      if (!lr || !(lr.coach_notes ?? []).some(n => n?.includes(STEPBACK_NOTE))) continue
+      const prev = plan.weeks[i - 1]
+      if (!prev || prev.type === 'deload') continue
+      if (w.weekly_km <= prev.weekly_km + tol) continue
+      // Floor-limited? Every easy (non-long-run) session at or below the floor.
+      const easies = Object.values(w.sessions).filter(
+        (s): s is NonNullable<typeof s> => !!s && s.type === 'easy' && s.role !== 'long_run')
+      const allAtFloor = easies.every(s =>
+        s.distance_km != null ? s.distance_km <= minEasy + 0.01 : true)
+      if (allAtFloor) continue
+      violations.push({
+        code: 'INV-PLAN-PEAK-STEPBACK-VOLUME',
+        principle_ref: 'CoachingPrinciples §47',
+        severity: 'error',
+        week: w.n,
+        message: `Peak step-back week W${w.n} (${w.weekly_km}km) delivers MORE than the preceding week W${prev.n} (${prev.weekly_km}km). A week whose long run is stepped back and whose note says "absorb last week's peak" must deliver less — trim easy volume (§47 Am.2 / §90).`,
+        actual: `W${w.n}=${w.weekly_km}km > W${prev.n}=${prev.weekly_km}km`,
+        expected: `<= ${prev.weekly_km}km`,
+      })
     }
   }
 
