@@ -795,9 +795,11 @@ for (const input of inputs) {
         else {
           psSilent++
           reasons.push('peak below 75% of target and SAYS NOTHING (§40c)')
-          if (psEg.length < 5) psEg.push(`dist=${(input as {race_distance_km?:number}).race_distance_km} days=${dv} cap=${cp ?? '-'} `
-            + `cwk=${stated} tgt=${tgt} peak=${pk3} inj=${JSON.stringify((input as {injury_history?:string[]}).injury_history ?? [])} `
-            + `prof=${String(m.volume_profile)} weeks=${mainW.length}`)
+          // FULL input, not a summary. A hand-rebuilt approximation of a
+          // summary line does not reproduce the plan -- tried it, got a plan
+          // that DID carry the note, and briefly "found" a defect that was my
+          // own harness. Dump what generated it.
+          if (psEg.length < 5) psEg.push(JSON.stringify(input))
         }
       }
       const runs3 = mainW.flatMap((w: { sessions?: Record<string, unknown> }) =>

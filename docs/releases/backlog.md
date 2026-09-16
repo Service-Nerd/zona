@@ -102,7 +102,21 @@ The build fails if that stops being true.
 > insurance gate that holds ENGINE-03. Hutchinson carries it.
 > *Verify still open:* `grep -c "sex\|gender" types/plan.ts` → **0 = still open**.
 
-> 🔲 **COMPLIANCE-PROGRAMME — the open half.** *(opened 2026-09-16, gauge at 45.7% of a 95% target)*
+> 🔲 **COMPLIANCE-PROGRAMME — the open half.** *(opened 2026-09-16; **gauge 97.7%, fit-for-purpose 97.7%, both past the 95% target** — what remains below is the residual, not the programme)*
+>
+> ✅ **CLOSED 2026-09-16 — CB-HSR-AVOID-01 (§110 + §110 Am.1 + the §21 defect).** `avoid` and an
+> Achilles history set `plannedQuality = 0` for every week of every plan: 2,953 non-beginner plans,
+> 18.5% of the sweep. Fit-for-purpose **25.6% → 97.7%**. ⚠️ **Two thirds of that movement was the
+> STANDARD being wrong, not the engine** — the 25.6% scored as failures two outcomes the
+> constitution ratifies (§40c's declared volume shortfall; a genuine beginner's zero quality), and
+> the mandatory conflict scan would have caught both. Read §110 before re-measuring anything here.
+>
+> 🔲 **Still open from that work, and small:** **3 plans (0.019%)** carry a peak shortfall with no
+> declaration (§40c). Not fixed and not reproducible standalone — the exact sweep inputs refuse
+> with `weeks_available: -11` when replayed, because the sweep anchors race dates to a pinned
+> `PLAN_START` while the prep-time gate reads today. **Suspect the harness before the engine here**,
+> and fix the date anchoring first (same family as SWEEP-VACUOUS-01).
+> *Verify still open:* `SWEEP_SCORE=1 npm run sweep | grep "SILENT"` → **non-zero = still open**.
 > The coaching-compliance gauge runs on the property sweep under `SWEEP_SCORE=1`. **A plan is
 > ACCEPTABLE when it carries no error, no HIGH coaching deviation, no structural failure, and
 > every residual it declares matches what it actually delivers.** Baseline 36.6% → **45.7%** after
@@ -143,10 +157,25 @@ The build fails if that stops being true.
 >   unnoticed because `noEmDash.test.ts` covers MARKETING surfaces only, not plan `meta` notes.
 >   Worth extending that guard to the engine's emitted copy rather than fixing the one line.
 >   *Verify still open:* `grep -c "—" <(grep "hold your fitness rather than grow" lib/plan/ruleEngine.ts)` → **non-zero = open**.
-> - 🔲 **Compliance themes still unruled:** zero-quality-by-accident (board asked for evidence on
->   what a 3-day novice marathoner should deliberately receive), `maintenance` meaning three
->   different things, and warn-severity triage (any warn >20% is promoted or explained).
->   Sims's fuelling / energy-availability guidance is also still outstanding.
+> - 🔲 **PARITY-HSR-01** — `verify-parity.ts` does **not** vary `hard_session_relationship`
+>   (grepped: 0 occurrences). §110 came back `IDENTICAL` across 5,832 cases, which is a real and
+>   useful result — every NON-`avoid` runner is untouched — but it is **not** evidence the `avoid`
+>   path is right, and quoting it as such would be the exact trap CLAUDE.md warns about
+>   ("IDENTICAL is not the same as VERIFIED"). Adding the axis 4×s an already slow check, so it
+>   needs a decision, not a reflex.
+> - 🔲 **Compliance themes still unruled:** `maintenance` meaning three different things, and
+>   warn-severity triage (any warn >20% is promoted or explained). Sims's fuelling /
+>   energy-availability guidance is also still outstanding.
+>   ✅ *zero-quality-by-accident is CLOSED by §110* — and the board's answer to "what should a
+>   3-day novice marathoner deliberately receive" turned out to be already written: a genuine
+>   beginner gets none, ratified 2026-08-30; everyone else gets at least one.
+> - 🔲 **The §22 latent defect behind the wizard gate** — `goal: 'time_target'` with no
+>   `target_time` produces **3 error-severity** `INV-PLAN-RACE-SPECIFIC-EXPOSURE` violations (no
+>   goal pace, so §22's rename never fires, but the invariant still demands it). **Not user
+>   reachable**: `GeneratePlanScreen.tsx:809` blocks the step without a time. Reachable via the API,
+>   where the schema marks both optional. **The sweep cannot see it** — `target_time` is set
+>   unconditionally at `property-validate-plans.ts:375`, independent of the `goal` axis, so that
+>   combination is never swept. Fixing it properly is a §22 board question.
 
 ### Off the table — do NOT re-open without reading the item first
 
