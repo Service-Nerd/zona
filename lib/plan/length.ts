@@ -38,6 +38,37 @@ export function getDistanceConfig(distanceKm: number): DistanceConfig {
   return DISTANCE_CONFIGS.find(c => distanceKm <= c.maxKm) ?? DISTANCE_CONFIGS[DISTANCE_CONFIGS.length - 1]
 }
 
+/**
+ * The longest plan this distance may run — §17's own declared bound.
+ *
+ * SINGLE OWNER (D-08). `calcPlanLength` sizes the plan with it and
+ * `INV-PLAN-SURPLUS-IN-PLAN` judges the result against it. Those two had the
+ * formula written out separately, and they agreed only because
+ * `max_weeks - idealWeeks` happens to be ≤ 2 at every distance — the checker was
+ * reading `PLAN_SIGNATURES.max_weeks` raw while the producer also applied
+ * `MAX_PLAN_EXTENSION_WEEKS`. Raise one `max_weeks` by three and they diverge
+ * silently, which is the DELOAD-OWNER-01 fault (five copies of a cadence that
+ * agreed by accident of control flow).
+ *
+ * The invariant deliberately shares this VALUE rather than re-deriving it: what
+ * it independently asserts is the plan's actual week count against the bound,
+ * which is the claim that can actually go wrong. A cap value that is itself wrong
+ * is governed one layer up, by §17 and `configPrincipleSync.test.ts`.
+ *
+ * ⚠️ `MAX_PLAN_EXTENSION_WEEKS` does NOT bind at any distance today (the
+ * headroom is +2 everywhere except 5K, where it is +0). It is a guard on a future
+ * `max_weeks` change, not an active constraint, and it is stated that way so
+ * nobody reads a green check as evidence it is doing work (§34).
+ */
+export function planWeekCap(distanceKm: number): number {
+  const ideal = getDistanceConfig(distanceKm).idealWeeks
+  const signatureMax = PLAN_SIGNATURES[raceDistanceKey(distanceKm)].max_weeks
+  return Math.min(
+    Math.max(ideal, signatureMax),
+    ideal + GENERATION_CONFIG.MAX_PLAN_EXTENSION_WEEKS,
+  )
+}
+
 export function parseDateLocal(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number)
   return new Date(y, m - 1, d)
@@ -119,23 +150,6 @@ export function calcPlanLength(
   distanceKm: number,
   raceDateIso: string,
   earliestStartIso: string,
-  /**
-   * §97 (CB-ONSET-03) — allow the plan to run to the distance's `max_weeks`
-   * rather than stopping at `idealWeeks`.
-   *
-   * Passed `true` only for a §89-gated runner. §76 delays the start when there
-   * are surplus weeks, and ADR-020 then fills the delay with a §57 foundation
-   * block — so those weeks are trained either way. The board's finding is that
-   * "delay the start" does not create rest; it creates training that sits
-   * outside the periodisation arc and is carved out of five invariants. For a
-   * runner the gate has certified as having a current base, converting that
-   * filler into validated, ramped base weeks is strictly better.
-   *
-   * `max_weeks` comes from PLAN_SIGNATURES and was DEAD CONFIG until now
-   * (PLANLEN-DUP-01) — this reads a bound the signature already declared, it
-   * does not invent a longer plan than §17 permits.
-   */
-  allowMaxWeeks = false,
 ): PlanLengthResult {
   const config = getDistanceConfig(distanceKm)
 
@@ -146,15 +160,36 @@ export function calcPlanLength(
   // gives exactly one available week (the race week itself).
   const weeksAvailable = weeksBetweenLocal(formatDate(earliestStart), formatDate(raceWeekStart)) + 1
 
-  // The cap is `idealWeeks` by default; §97 raises it to the signature's
-  // `max_weeks` for a gated runner. `weeksAvailable` still binds — this never
-  // invents weeks the calendar does not contain.
-  const weekCap = allowMaxWeeks
-    ? Math.min(
-        Math.max(config.idealWeeks, PLAN_SIGNATURES[raceDistanceKey(distanceKm)].max_weeks),
-        config.idealWeeks + GENERATION_CONFIG.MAX_ONSET_PLAN_EXTENSION_WEEKS,
-      )
-    : config.idealWeeks
+  // §97 Amendment (LONG-RUNWAY-EARNS-PLAN-01, Coaching Board 2026-09-16) — THE
+  // HEADROOM IS GRANTED ON SURPLUS, NOT ON §89's GATE.
+  //
+  // This used to take `allowMaxWeeks`, passed `earlyQualityOnset`, so §17's
+  // declared `max_weeks` reached only a §89-gated runner. M1 — the charity
+  // cohort's first-time marathoner — is the precise opposite of gated and was
+  // measured getting 18 weeks of an available 20, with 3 foundation weeks and
+  // FOUR uncovered weeks in front of them.
+  //
+  // THE PARAMETER IS GONE RATHER THAN DEFAULTED TRUE, because the scoping
+  // condition the board set is satisfied by the line below and needs no flag:
+  // `min(weeksAvailable, weekCap)` means raising the cap changes nothing unless
+  // `weeksAvailable > idealWeeks`, and that IS the surplus case. Measured on
+  // marathon: runway 14/16/18 -> delta 0; 19+ -> delta 1-2. A gate would have
+  // been a second answer to a question the arithmetic already answers.
+  //
+  // WHY IT IS SAFE WHERE §97's VERSION NEEDED ARGUING. §97 shortens base for a
+  // gated runner, so its gained weeks land in build and peak and it had to
+  // concede it delivers MORE quality (18.4% against §1's 18% marathon ceiling,
+  // which is why `MAX_PLAN_EXTENSION_WEEKS` exists). `base_pct` is untouched
+  // here — Willy's binding condition at the sitting — so the gain is
+  // proportional, and §1's denominator is main-plan weeks (CB-FOUNDATION-DENOM-01),
+  // which two more weeks ENLARGE. The quality share moves down, not up.
+  //
+  // Measured on the live engine: max ramp between non-deload weeks 35.7% at
+  // 14-15 weeks against 20.0% at 16-18. Longer plan, gentler tissue progression.
+  //
+  // `weeksAvailable` still binds — this never invents weeks the calendar does
+  // not contain, and never runs past §17's own bound.
+  const weekCap = planWeekCap(distanceKm)
   const totalWeeks = Math.max(1, Math.min(weeksAvailable, weekCap))
 
   // Count back from race week. When weeksAvailable <= ideal this lands on (or

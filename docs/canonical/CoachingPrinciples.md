@@ -2410,17 +2410,26 @@ worse than the silence it replaces.
 > injury path. He will not sign a longer foundation block — flat 16.4 km loads
 > nothing — but he holds that the weeks should be **trained**, not merely declared.
 
-> **RECORDED AND DEFERRED — the runway should earn a longer PLAN (McMillan/Willy).**
-> §97 (CB-ONSET-03) already ruled this exact trade-off, in these words: *"'delay the
-> start' does not create rest; it creates training that sits outside the
-> periodisation arc and is carved out of five invariants"* — and raised the cap to
-> §17's `max_weeks`, **but only for a §89-gated runner.** M1 is the precise opposite
-> of gated, and needs it more. The engine delivered **18 weeks of an available 20**,
-> so headroom §17 already declares is sitting unused. **Hutchinson held it back
-> today**: plan length is the widest blast radius this engine has, and stacking a
-> second one on §6 Amendment 2 two days before a showcase is how a good change gets
-> blamed for a bad one. It needs its own sitting with parity and `cohort:shape`
-> measured first — filed, not dropped.
+> ✅ **RESOLVED 2026-09-16 — the runway now DOES earn a longer plan (McMillan/Willy).**
+> This paragraph recorded a deferral: §97 (CB-ONSET-03) had already ruled this exact
+> trade-off — *"'delay the start' does not create rest; it creates training that sits
+> outside the periodisation arc and is carved out of five invariants"* — and raised the
+> cap to §17's `max_weeks`, **but only for a §89-gated runner**, while M1 is the precise
+> opposite of gated and needs it more. Hutchinson held it back on 2026-09-15 because
+> plan length is the widest blast radius this engine has and §6 Amendment 2 had already
+> moved 18.5% of parity that day, two days before a showcase.
+>
+> It was taken to its own sitting on 2026-09-16 with parity, `cohort:shape` and a
+> deload-cadence check measured first, and carried as **§97's Amendment** (see §97).
+> M1 at a 25-week runway now gets **20 main weeks of an available 20**, and the weeks
+> this section declares as uncovered fall **4 → 2**. Willy's condition that `base_pct`
+> stay untouched is binding and met; Sims's condition on deload cadence at the longer
+> lengths was discharged by measurement.
+>
+> **The honesty obligation below is unchanged and still binds.** The extension closes
+> at most two weeks; at a 30-week runway 7 remain uncovered and at 52 weeks, 29. The
+> note is not superseded by the longer plan — it is what covers the part no plan length
+> can reach.
 
 **Config.** `GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD = 2` —
 one week before a plan starts is a rest-and-admin week and a note about it is noise
@@ -4806,9 +4815,21 @@ The first build breached it: a 7-day marathon reached **18.4% (19/103)** against
 one more quality session lands. §1 is a ceiling the board has twice refused to spend,
 so §97 yielded. Two bounds resulted:
 
-- `MAX_ONSET_PLAN_EXTENSION_WEEKS` (2) — the signature's headroom is **not uniform**
-  (2 weeks for 5K/10K/HM, 4 for MARATHON/50K/100K), so an unbounded extension is a
-  much larger change at long distances than the one argued here.
+- `MAX_PLAN_EXTENSION_WEEKS` (2, renamed from `MAX_ONSET_PLAN_EXTENSION_WEEKS` by the
+  2026-09-16 amendment below) — a bound so that an extension can never be the thing
+  that spends §1's ceiling.
+  > ⚠️ **CORRECTED 2026-09-16.** This bullet used to justify itself with *"the
+  > signature's headroom is not uniform (2 weeks for 5K/10K/HM, 4 for
+  > MARATHON/50K/100K)"*. That is the gap against `PLAN_SIGNATURES.ideal_weeks`, and
+  > `calcPlanLength` **has never read that field** — it reads
+  > `DISTANCE_CONFIGS.idealWeeks` in `length.ts`, which `configConsumer.test.ts`
+  > already records as superseding it. Against the ideal the code actually uses the
+  > headroom is **+2 everywhere except 5K, where it is +0**, so this bound **does not
+  > bind at any distance today**. It is a guard on a future `max_weeks` change, and
+  > saying so is the point (§34) — a green check here is not evidence it is working.
+  > The 18.4% breach that motivated it was real and remains so; it was measured on the
+  > gated path, where `EARLY_ONSET_BASE_PCT` caps base at one week and every gained
+  > week therefore lands in build/peak.
 - `ONSET_SHORT_ONRAMP_DISTANCES` (5K/10K/HM) — the shortened on-ramp itself is
   distance-scoped. **This is not "the founder races 10K".** §1's ceiling *descends*
   with distance (25% → 20% → 18% → 15%) while a shorter base pushes the quality share
@@ -4821,7 +4842,7 @@ so §97 yielded. Two bounds resulted:
 
 **Config.** `GENERATION_CONFIG.MIN_ONRAMP_WEEKS_GATED` (1),
 `REENTRY_WEEKS_ONE_WEEK_ONRAMP` (2), `EARLY_ONSET_BASE_MAX_WEEKS` (1, was 2),
-`MAX_ONSET_PLAN_EXTENSION_WEEKS` (2), `ONSET_SHORT_ONRAMP_DISTANCES` (5K/10K/HM).
+`MAX_PLAN_EXTENSION_WEEKS` (2), `ONSET_SHORT_ONRAMP_DISTANCES` (5K/10K/HM).
 `PLAN_SIGNATURES[d].max_weeks` becomes **live config** — it was declared and read by
 nothing (PLANLEN-DUP-01), which is precisely why surplus weeks became a foundation
 block in the first place. Enforced by the amended `INV-PLAN-ONRAMP-FLOOR`, whose
@@ -4874,6 +4895,100 @@ was always the check; the gap was a producer that respected it on the days axis)
 that the random grid could not be trusted to sample.
 
 ---
+
+
+---
+
+### Amendment — the headroom is granted on SURPLUS, not on §89's gate (LONG-RUNWAY-EARNS-PLAN-01, Coaching Board 2026-09-16)
+
+**Principle.** A plan runs to `planWeekCap(distance)` whenever the calendar has
+surplus weeks, **for every runner**. It is no longer conditional on passing §89's
+readiness gate.
+
+**Why the original scope was wrong.** §97 above argues that *"'delay the start' does
+not create rest; it creates training that sits outside the periodisation arc and is
+carved out of five invariants"* — and that argument is about **the weeks**, not about
+the runner. It was nonetheless applied only to a §89-gated runner, because §97 was
+reasoning from the founder's own 10K input. Measured on M1, the charity cohort's
+first-time marathoner (42.2 km, 15 km/wk, `training_age: '<6mo'`, the precise
+opposite of gated):
+
+| runway | main weeks | of available | foundation | uncovered | plan starts |
+|---|---|---|---|---|---|
+| 25w, before | 18 | 20 | 3 | **4** | 9 November |
+| 25w, after | **20** | 20 | 3 | **2** | 26 October |
+
+**Willy's dissent from the 2026-09-15 sitting, now carried.** A `<6mo` training age is
+the widest cardiovascular-to-musculoskeletal gap we ever see, and those weeks are the
+cheapest tissue-adaptation weeks available. Measured on the live engine, max ramp
+between non-deload weeks: **35.7% at 14-15 weeks, 20.0% at 16-18.** A longer plan is a
+gentler tissue progression, and `INV-PLAN-DELIVERED-RAMP` was already firing as a
+`warn` on this exact persona.
+
+**`base_pct` is untouched — Willy's binding condition of approval.** §97's own
+extension shortens base for a gated runner, so its gained weeks land in build and peak
+and it had to concede *"§97 does deliver more quality, not merely earlier quality"*.
+This amendment changes no phase percentage, so the gain is proportional: measured,
+M1's phases go `b6 b6 p2 t4` → `b7 b7 p2 t4`. And §1's denominator is main-plan weeks
+(CB-FOUNDATION-DENOM-01), which two more weeks **enlarge** — the quality share moves
+down, not up. Cohort-wide `meanQualityPerBuildWeek` moved 0.50 → 0.51.
+
+**The scoping condition is structural, not a special case.** The board's 2026-09-15
+condition was *"scoped to runners who would otherwise idle; if it reaches runners who
+would not, it does not ship."* `calcPlanLength` takes `min(weeksAvailable, weekCap)`,
+so raising the cap changes nothing unless `weeksAvailable > idealWeeks` — which **is**
+the surplus case. Measured on marathon: runway 14/16/18 → delta 0; 19+ → delta 1-2.
+No gate was added, because the arithmetic already answers the question and a flag
+would have been a second answer to it.
+
+**Declared population movement (`cohort:shape`, 31,104 inputs).** A move is something
+to declare with a number, not to hide behind a re-baseline:
+
+| metric | before | after |
+|---|---|---|
+| `meanPlanWeeks` | 13.86 | **14.35** |
+| `maintenancePct` | 50.2 | **49.3** |
+| maintenance @ HM | 38.6 | **34.7** |
+| `meanDeliveredPeakKm` | 38.35 | **38.74** |
+| `plansWithNoQualityPct` | 33.3 | 33.3 |
+| `earlyQualityOnsetPct` | 6.6 | 6.6 |
+
+The HM maintenance drop is the largest single move and it is an improvement: a
+first-time HM runner on a 16-week runway now builds for 16 weeks instead of being
+capped at 14 and classified as unable to build.
+
+> ⚠️ **A claim made at the sitting was FALSIFIED by the measurement, and is corrected
+> here rather than quietly dropped.** Willy argued *"we are not adding load: the peak
+> is set by `peakKmByLevel`, not by week count."* **That is wrong.** The volume curve
+> ramps toward `peak_km_target` under §2's cap, so more weeks let it get **closer** to
+> a target it was previously undershooting: M1's delivered peak rises **40.0 → 47.0
+> km** against a `peak_km_target` of 52. Population-wide the effect is small
+> (`meanDeliveredPeakKm` +0.39 km, +1.0%) because few plans have that much surplus,
+> but for the extreme long-runway case it is +17.5%. The board re-examined it on the
+> number and holds: the ramp **rate** is unchanged (20.0% max step in both), so this
+> is a plan delivering more of its own prescribed peak over more weeks, which is the
+> safe way to reach it — not a steeper climb.
+
+**Sims's blocking condition, discharged by measurement.** She would withdraw support
+if §3's cadence produced adjacent or missing deloads at the longer lengths — the exact
+failure mode that got DELOAD-POS2-01 reverted on short plans. Measured across 72
+extended plans (4 distances × both age cadences × 3 day-counts × 3 volumes):
+**0 adjacent deloads, 0 plans ≥ 8 weeks without one, 0 error violations.**
+
+**Config.** `GENERATION_CONFIG.MAX_PLAN_EXTENSION_WEEKS` (2) — renamed from
+`MAX_ONSET_PLAN_EXTENSION_WEEKS`, value unchanged. A key whose name asserts a scope it
+no longer has is the decorative-config failure running backwards: the name reads as
+governance and governs nothing. `calcPlanLength`'s `allowMaxWeeks` parameter is
+**deleted** rather than defaulted to `true`, and `planWeekCap()` in `length.ts` is now
+the single owner of the bound (D-08) for both the producer and the invariant.
+
+Enforced by `INV-PLAN-SURPLUS-IN-PLAN`, widened from `INV-PLAN-GATED-SURPLUS-IN-PLAN`
+by dropping its `early_quality_onset` guard.
+
+**Board:** LONG-RUNWAY-EARNS-PLAN-01, 2026-09-16 — CORRECT WITH AMENDMENT, Hutchinson
+chairing. Amends §97 (scope) and discharges the dissent §57's amendment recorded on
+2026-09-15. Does not touch §89's gate, §98's yield ladder, `base_pct`, or §57's
+session-content rules.
 
 ## 98. §89's onset is granted only as far as §1 permits
 

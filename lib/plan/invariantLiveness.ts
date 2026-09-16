@@ -85,6 +85,60 @@ export const MUTATIONS: Mutation[] = [
       GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD + 2
     delete meta.uncovered_runway_note
   } },
+  // §97 Am. (LONG-RUNWAY-EARNS-PLAN-01) — INV-PLAN-SURPLUS-IN-PLAN.
+  //
+  // This invariant got HARDER to wake on 2026-09-16, and the reason is the point:
+  // the engine now SPENDS its length headroom on surplus weeks, so every probe
+  // plan is either at its cap or bound by the calendar. That is the invariant
+  // being silent because it is SATISFIED, which is precisely the state this
+  // harness exists to tell apart from a rule that cannot fail at all.
+  //
+  // The shape it forbids has to be built: a §57 foundation block sitting in front
+  // of a plan that still had room to grow. Prepending the block alone is not
+  // enough — `extensionExhausted` would still be true via the calendar arm — so
+  // `plan_start` is moved back far enough that the calendar is demonstrably NOT
+  // the binding constraint. That pair IS the defect: weeks handed to "habit and
+  // routine" while the runner's own plan had headroom left.
+  // §85 — INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD. This was WOKEN by the corpus
+  // until 2026-09-16 and stopped being woken by §97's amendment, which is worth
+  // stating plainly: longer plans rotate the quality selector onto different
+  // catalogue rows, and `tempo_over_under` simply stopped appearing in the 64
+  // probe plans. Nothing about the rule changed. (The same rotation shift took
+  // `hill_reps` out of a 13-week 10K; measured, it still reaches 39.1% of plans
+  // across a 207-plan grid, so neither row is unreachable — they are just no
+  // longer in this corpus.)
+  //
+  // Keyed on `catalogue_id`, exactly as the invariant is (INV-CLASS — §22 and the
+  // AI enricher both rewrite the label, neither can rewrite the row identity), so
+  // this asserts the identity onto a paced quality session and lets the pace
+  // arithmetic fall outside §85's 0-3% window.
+  { name: 'stamp over-under identity on an EASY-paced session', apply: p => {
+    // Stamped on an EASY session deliberately. A quality session's pace can
+    // legitimately sit inside §85's 0-3%-faster-than-T window, so stamping one
+    // woke nothing; an easy pace is always SLOWER than T, which drives the signed
+    // delta negative and trips the arm the principle cares about most ("an
+    // over-under whose mean is slower than threshold is not an over-under, it is
+    // a tempo run with a name").
+    for (const s of sessionsOf(p)) {
+      const sn = s as unknown as Record<string, unknown>
+      if (sn.type === 'easy' && typeof sn.pace_target === 'string') {
+        sn.catalogue_id = 'tempo_over_under'
+        return
+      }
+    }
+  } },
+  { name: 'foundation block in front of a plan below its cap', apply: p => {
+    const weeks = p.weeks as unknown as Array<Record<string, unknown>>
+    const first = weeks[0]
+    if (!first) return
+    weeks.unshift({ ...JSON.parse(JSON.stringify(first)), n: 0, phase: 'foundation' })
+    const meta = p.meta as unknown as Record<string, unknown>
+    if (typeof meta.plan_start === 'string') {
+      const d = new Date(`${meta.plan_start}T00:00:00Z`)
+      d.setUTCDate(d.getUTCDate() - 56)
+      meta.plan_start = d.toISOString().slice(0, 10)
+    }
+  } },
   // §79 — VO2max inside the protected window. The re-entry check was
   // DECORATIVE until 2026-09-15 (it read calendar weeks, which are all-easy by
   // construction, so it could not fail). Re-anchored to QUALITY weeks it can

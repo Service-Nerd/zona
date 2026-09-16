@@ -27,7 +27,15 @@ import type { GeneratorInput, Plan, Session } from '@/types/plan'
 const FROZEN_NOW = new Date('2026-08-20T09:00:00Z')
 
 const TENK: GeneratorInput = {
-  race_date: '2026-11-30', race_distance_km: 10, goal: 'time_target',
+  // RE-DATED 2026-09-16 (§97 Am., LONG-RUNWAY-EARNS-PLAN-01). This fixture is a
+  // 12-WEEK 10K and every assertion below was written against that shape. It used
+  // to say 2026-11-30, which gave 13 weeks AVAILABLE and was silently truncated to
+  // 12 by the old `idealWeeks` cap. Now that surplus weeks become plan weeks, that
+  // same date builds 13 and the quality rotation lands on different catalogue rows.
+  // Pinned to the Monday that makes the 12 weeks REAL rather than incidental — the
+  // race stays a Monday, so the PV2-G race-week shape these fixtures exercise is
+  // unchanged.
+  race_date: '2026-11-23', race_distance_km: 10, goal: 'time_target',
   target_time: '0:44:59', days_available: 4, age: 43,
   current_weekly_km: 40, longest_recent_run_km: 18,
   resting_hr: 48, max_hr: 188, preferred_long_run_day: 'sun',

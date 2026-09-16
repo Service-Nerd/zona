@@ -100,7 +100,18 @@ describe('§97 — quality in calendar week 2', () => {
       .toBeGreaterThanOrEqual(GENERATION_CONFIG.MIN_BASE_WEEKS_FLOOR)
   })
 
-  it('leaves every NON-gated runner completely untouched', () => {
+  it("leaves every NON-gated runner's ONSET untouched", () => {
+    // ⚠️ NARROWED 2026-09-16 (§97 Am., LONG-RUNWAY-EARNS-PLAN-01). This used to
+    // also assert `plan.weeks.length <= 12` — "no extension: a non-gated runner's
+    // plan stays at idealWeeks". The board OVERTURNED exactly that: the length
+    // headroom is now granted on SURPLUS rather than on §89's gate, because M1
+    // (first-time marathoner, the precise opposite of gated) was getting 18 weeks
+    // of an available 20 with four uncovered weeks in front of them.
+    //
+    // What §89 still gates is the ONSET — the shortened on-ramp, the §91 credit
+    // and §79's re-entry window — and that is what this test now asserts. Leaving
+    // the length assertion in would have made this file enforce a rule the
+    // constitution no longer contains.
     for (const patch of [
       { injury_history: ['Left knee, recurring'] },
       { recent_quality_training: 'none' as const },
@@ -108,8 +119,6 @@ describe('§97 — quality in calendar week 2', () => {
     ]) {
       const plan = generateRulePlan(ready(patch), 'paid')
       expect(plan.meta.early_quality_onset, JSON.stringify(patch)).toBeFalsy()
-      // No extension: a non-gated runner's plan stays at idealWeeks.
-      expect(plan.weeks.length).toBeLessThanOrEqual(12)
     }
   })
 

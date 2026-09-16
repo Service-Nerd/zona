@@ -4076,18 +4076,49 @@ function applyPeakLongRunAlternation(
     && (input.injury_history ?? []).length === 0
     && input.training_age === '5yr+'
   let exceptionUsed = false
+  // Whether the week AFTER this one was left peak-level. We walk backwards, so
+  // it has already been decided. ADJACENCY, not parity — see below.
+  let laterWeekIsPeakLevel = false
 
-  // Walk from end (last peak = peak-level) backwards. Even offset → peak-level,
-  // odd offset → step-back. Apply to each.
+  // Walk from the end (last peak = peak-level) backwards, stepping back any week
+  // that would otherwise sit next to a peak-level one.
+  //
+  // ⚠️ THIS USED TO BE `offset % 2` — EVEN peak-level, ODD step-back — and the
+  // parity was wrong the moment the exception fired (fixed 2026-09-16,
+  // LONG-RUNWAY-EARNS-PLAN-01).
+  //
+  // The exception lets an eligible runner carry ONE back-to-back peak set. On a
+  // two-week peak phase, consuming it at the single odd offset produced exactly
+  // one adjacent pair and matched the invariant. On a THREE-week peak phase it
+  // skipped the only step-back the parity scheduled, leaving all three weeks
+  // peak-level and therefore TWO adjacent pairs — one more than §47 permits. The
+  // checker counts pairs; the producer counted positions, and the two only agreed
+  // while the phase was two weeks long.
+  //
+  // Found by the sweep when §97's amendment made three-week peak phases reachable
+  // at HM (9 plans in 15,973, all `hard_session_relationship: 'love'` +
+  // `training_age: '5yr+'` + no injury — the exception's own preconditions). The
+  // defect is older than that change; the change is what made it reachable.
+  //
+  // Stated the way the invariant states it: a week is stepped back when the week
+  // after it is peak-level. That is the same question `isPeakLevel(prev) &&
+  // isPeakLevel(curr)` asks, so producer and checker can no longer disagree about
+  // parity — there is no parity left to disagree about (§97's own lesson: a
+  // scarce resource should be PLACED, not discovered by arithmetic).
   for (let offset = 0; offset < peakWeekIdxs.length; offset++) {
     const idx = peakWeekIdxs[peakWeekIdxs.length - 1 - offset]
     const w = weeks[idx]
-    if (offset % 2 === 0) continue  // peak-level — leave as the engine produced
 
-    // step-back week. If exception applies and not yet used, the runner can
-    // carry one back-to-back peak set.
+    // No peak-level week directly after this one — nothing to alternate against.
+    if (!laterWeekIsPeakLevel) {
+      laterWeekIsPeakLevel = true
+      continue
+    }
+
+    // Adjacent to a peak-level week. The eligible runner may carry ONE such pair.
     if (exceptionEligible && !exceptionUsed) {
       exceptionUsed = true
+      laterWeekIsPeakLevel = true   // still peak-level: a later week must yield
       continue
     }
 
@@ -4117,6 +4148,12 @@ function applyPeakLongRunAlternation(
       const newKm = Math.min(lr.session.distance_km!, stepBackMaxKm)
       flooredKm = Math.max(Math.floor(newKm / precision) * precision, minLong)
     }
+
+    // This week is now a step-back, so the week BEFORE it has nothing to
+    // alternate against and may stay peak-level. Set here rather than at the top
+    // of the branch deliberately: every `continue` above leaves the week
+    // peak-level, and the flag must still say so when the trim could not happen.
+    laterWeekIsPeakLevel = false
 
     // Rewrite the session: strip race-specific label, coach notes, and pace
     // segment fields; restore the standard "Long run — Zone 2" prescription.
@@ -5617,10 +5654,17 @@ function buildRulePlanOnce(
     // more work. Ignoring it entirely was the inconsistency.
     && !overdoBrake
 
-  // §97 — a gated runner's surplus weeks become BASE weeks inside the plan
-  // rather than a §57 foundation block in front of it.
+  // §97 Amendment (LONG-RUNWAY-EARNS-PLAN-01, Coaching Board 2026-09-16) —
+  // surplus weeks become plan weeks rather than a §57 block in front of the plan.
+  //
+  // `earlyQualityOnset` USED TO BE PASSED HERE as a fourth argument. It no longer
+  // is, and the parameter is gone rather than defaulted: the board granted the
+  // headroom on surplus, and `calcPlanLength` already scopes itself to surplus by
+  // taking `min(weeksAvailable, weekCap)`. The gate is still computed above — it
+  // still drives §91/§97/§98's on-ramp and re-entry — it just no longer decides
+  // how long the plan is.
   const planLength = calcPlanLength(
-    input.race_distance_km, input.race_date, planStartIso, earlyQualityOnset)
+    input.race_distance_km, input.race_date, planStartIso)
   const { totalWeeks, compressed } = planLength
   const anchoredStartIso  = planLength.planStartIso
   const anchoredStartDate = parseDateLocal(anchoredStartIso)

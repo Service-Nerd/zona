@@ -30,7 +30,15 @@ const FROZEN_NOW = new Date('2026-08-20T09:00:00Z')
 const PLAN_START = '2026-09-07'
 
 const TENK_12WK: GeneratorInput = {
-  race_date: '2026-11-30', race_distance_km: 10, goal: 'time_target',
+  // RE-DATED 2026-09-16 (§97 Am., LONG-RUNWAY-EARNS-PLAN-01). This fixture is a
+  // 12-WEEK 10K and every assertion below was written against that shape. It used
+  // to say 2026-11-30, which gave 13 weeks AVAILABLE and was silently truncated to
+  // 12 by the old `idealWeeks` cap. Now that surplus weeks become plan weeks, that
+  // same date builds 13 and the quality rotation lands on different catalogue rows.
+  // Pinned to the Monday that makes the 12 weeks REAL rather than incidental — the
+  // race stays a Monday, so the PV2-G race-week shape these fixtures exercise is
+  // unchanged.
+  race_date: '2026-11-23', race_distance_km: 10, goal: 'time_target',
   target_time: '0:44:59', days_available: 4, age: 43,
   current_weekly_km: 40, longest_recent_run_km: 18,
   resting_hr: 48, max_hr: 188, preferred_long_run_day: 'sun',
@@ -100,13 +108,26 @@ describe('SC-07 — VO2max reaches the build phase', () => {
   })
 
   it("Willy's gate: the VO2max-introducing week does not also step volume up", () => {
+    // ⚠️ ASSERTS THE RATIFIED RULE, NOT A STRICTER ONE. This used to assert
+    // `cur.weekly_km <= prior.weekly_km` — ZERO tolerance — while
+    // V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT is explicitly a 5% TOLERANCE ("if the
+    // volume step exceeds this fraction, the engine holds volume constant").
+    // `flattenIntroducingWeek` returns early on a smaller bump, by design: land
+    // one stimulus at a time, not freeze the curve.
+    //
+    // It passed anyway, because at this fixture's length the bump happened to
+    // exceed 5% and V1 trimmed the week flat. Change the plan length and the bump
+    // lands at 3.8%, V1 correctly does nothing, and a CORRECT plan failed the
+    // test. A test that only passes when the trim happens to fire is testing the
+    // arithmetic, not the gate (TEST-LIVENESS-01's weak-test class).
+    const tolerance = 1 + GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT / 100
     const plan = generateRulePlan(TENK_12WK, 'paid', PLAN_START)
     const introWeek = qualityOf(plan).filter(q => isVo2(q.s))[0].week
     const prior = plan.weeks.filter(w => w.n < introWeek && w.type !== 'deload').pop()
     const cur = plan.weeks.find(w => w.n === introWeek)!
     if (!prior) return
-    expect(cur.weekly_km, 'intensity and volume must not progress in the same week')
-      .toBeLessThanOrEqual(prior.weekly_km)
+    expect(cur.weekly_km, 'intensity and volume must not progress together beyond V1\'s tolerance')
+      .toBeLessThanOrEqual(prior.weekly_km * tolerance)
   })
 })
 

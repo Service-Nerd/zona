@@ -27,7 +27,19 @@ const FROZEN_NOW = new Date('2026-08-20T09:00:00Z')
 const PLAN_START = '2026-09-07'
 
 const TENK: GeneratorInput = {
-  race_date: '2026-11-30', race_distance_km: 10, goal: 'time_target',
+  // RE-DATED 2026-09-16 (§97 Am., LONG-RUNWAY-EARNS-PLAN-01). A 12-WEEK 10K.
+  // 2026-11-30 gave 13 weeks AVAILABLE, truncated to 12 by the old `idealWeeks`
+  // cap; now that surplus becomes plan weeks it builds 13, and hill_reps is one
+  // row in a vo2max ROTATION rather than a guaranteed selection — at 13 and 14
+  // weeks the 10K rotation lands on intervals_long / intervals_classic /
+  // intervals_30_30 instead, so this file's fixture found no hill session at all.
+  //
+  // MEASURED before re-dating, because "the test went red" is not a diagnosis:
+  // hill_reps still reaches 39.1% of plans across a 207-plan distance x days x
+  // length x volume grid, so the row is NOT unreachable. For 10K specifically it
+  // lands at exactly 12 weeks. These tests are about what a hill session CONTAINS,
+  // not how often it is chosen, so the fixture is pinned where the row appears.
+  race_date: '2026-11-23', race_distance_km: 10, goal: 'time_target',
   target_time: '0:44:59', days_available: 4, age: 43,
   current_weekly_km: 40, longest_recent_run_km: 18,
   resting_hr: 48, max_hr: 188, preferred_long_run_day: 'sun',

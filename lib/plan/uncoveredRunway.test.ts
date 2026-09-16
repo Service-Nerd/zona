@@ -41,17 +41,34 @@ const compose = (raceDate: string) => {
 }
 
 describe('§57 Am. / §76 Am. — the weeks the plan does not cover are declared', () => {
-  it('the filed case reproduces: a 25-week runway leaves FOUR weeks uncovered', () => {
+  /**
+   * ⚠️ RE-MEASURED 2026-09-16 (§97 Am., LONG-RUNWAY-EARNS-PLAN-01). Every count in
+   * this file moved by exactly the extension, and the numbers are restated rather
+   * than relaxed, because the whole point of the file is that the void is REAL:
+   *
+   *   runway | main weeks | foundation | uncovered before | uncovered after
+   *     22w  |     20     |     2      |        1         |       0
+   *     24w  |     20     |     3      |        3         |       1
+   *     25w  |     20     |     3      |        4         |       2
+   *     30w  |     20     |     3      |        9         |       7
+   *     40w  |     20     |     3      |       19         |      17
+   *
+   * The extension closes two weeks and no more. At 30w seven weeks remain
+   * uncovered and at 40w seventeen — which is why §57's amendment says the
+   * obligation is honesty, not coverage, and why the note is not superseded by
+   * the longer plan.
+   */
+  it('the filed case reproduces: a 25-week runway still leaves weeks uncovered', () => {
     const { plan } = compose(raceIn(25))
     expect(plan.weeks.filter(w => w.n < 1)).toHaveLength(3)   // FOUNDATION_MAX_WEEKS
-    expect(plan.meta.uncovered_runway_weeks).toBe(4)
+    expect(plan.meta.uncovered_runway_weeks).toBe(2)          // was 4, before §97 Am.
   })
 
   it('a long runway is DECLARED, not silent', () => {
     const { plan } = compose(raceIn(25))
     const note = plan.meta.uncovered_runway_note
     expect(note).toBeTruthy()
-    expect(note).toContain('4 weeks')
+    expect(note).toContain('2 weeks')
   })
 
   it('the note does NOT sell the gap as preparation (CB-1, Sims)', () => {
@@ -88,9 +105,10 @@ describe('§57 Am. / §76 Am. — the weeks the plan does not cover are declared
   })
 
   it('is SILENT when the foundation block covers the whole gap', () => {
-    // 20 weeks out: gap 14d, foundation takes both. Nothing to declare, and a
-    // note here would be noise (NOISE-GATE-01).
-    const { plan, violations } = compose(raceIn(20))
+    // 22 weeks out: plan takes 20, gap 14d, foundation takes both. Nothing to
+    // declare, and a note here would be noise (NOISE-GATE-01). Was raceIn(20),
+    // which after §97 Am. leaves NO gap at all and so tests nothing.
+    const { plan, violations } = compose(raceIn(22))
     expect(plan.meta.uncovered_runway_weeks ?? 0).toBe(0)
     expect(plan.meta.uncovered_runway_note).toBeUndefined()
     expect(violations.filter(v => v.code === 'INV-PLAN-UNCOVERED-RUNWAY-DECLARED')).toHaveLength(0)
@@ -99,19 +117,19 @@ describe('§57 Am. / §76 Am. — the weeks the plan does not cover are declared
   it('is SILENT one week below the threshold, and speaks at it', () => {
     // The boundary is the whole point of the constant: 1 uncovered week is a
     // rest-and-admin week, 2+ is a void.
-    const below = compose(raceIn(22)).plan            // gap 28d - 3 foundation = 1
+    const below = compose(raceIn(24)).plan            // gap 28d - 3 foundation = 1
     expect(below.meta.uncovered_runway_weeks).toBe(GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD - 1)
     expect(below.meta.uncovered_runway_note).toBeUndefined()
 
-    const at = compose(raceIn(23)).plan               // gap 35d - 3 foundation = 2
+    const at = compose(raceIn(25)).plan               // gap 35d - 3 foundation = 2
     expect(at.meta.uncovered_runway_weeks).toBe(GENERATION_CONFIG.FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD)
     expect(at.meta.uncovered_runway_note).toBeTruthy()
   })
 
   it('the void SCALES with the runway — this is not an edge case', () => {
     // A charity runner typically gets their place months out.
-    expect(compose(raceIn(30)).plan.meta.uncovered_runway_weeks).toBe(9)
-    expect(compose(raceIn(40)).plan.meta.uncovered_runway_weeks).toBe(19)
+    expect(compose(raceIn(30)).plan.meta.uncovered_runway_weeks).toBe(7)
+    expect(compose(raceIn(40)).plan.meta.uncovered_runway_weeks).toBe(17)
   })
 
   it('INV-PLAN-UNCOVERED-RUNWAY-DECLARED can go RED', () => {

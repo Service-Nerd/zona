@@ -21,7 +21,7 @@ import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
 import { weekIntensityFlags, isOverloadWeek } from './weekIntensityFlags'
 import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
-import { parseDateLocal, formatDate, getDistanceConfig } from './length'
+import { parseDateLocal, formatDate, getDistanceConfig, planWeekCap } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
 import { sessionKmSelfPaced } from './sessionDistance'
 
@@ -114,7 +114,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
   'INV-PLAN-VDOT-STALENESS-LADDER',
   'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING',
-  'INV-PLAN-GATED-SURPLUS-IN-PLAN',
+  'INV-PLAN-SURPLUS-IN-PLAN',
   'INV-PLAN-SECOND-QUALITY-MIN-DAYS',
   'INV-PLAN-INTENSITY-DISTRIBUTION',
   'INV-PLAN-LR-PROGRESSION-CAP',
@@ -5654,21 +5654,30 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
   }
 
-  // INV-PLAN-GATED-SURPLUS-IN-PLAN (§97) — a demonstrated runner's surplus
-  // weeks belong INSIDE the plan.
+  // INV-PLAN-SURPLUS-IN-PLAN (§97 + §97 Amendment) — surplus weeks belong
+  // INSIDE the plan.
   //
   // §76 anchors the plan to race day and delays the start when weeks are
   // spare; ADR-020 then fills the delay with a §57 foundation block. So the
   // runner trains those weeks either way — what §76 actually produces is real
   // training sitting OUTSIDE the periodisation arc, carved out of five
   // invariants and described by §57's own text as "habit and routine, not
-  // adaptation". For a runner the §89 gate has just certified as having a
-  // current base and doing structured work most weeks, that is the wrong object.
+  // adaptation".
   //
-  // Two mechanical claims: a gated runner gets no foundation block, and the
-  // plan honours `max_weeks` — the signature's own declared bound (§17), which
-  // §97 explicitly does not exceed.
-  if (plan.meta.early_quality_onset) {
+  // ⚠️ WIDENED 2026-09-16 (LONG-RUNWAY-EARNS-PLAN-01, Coaching Board). This was
+  // `INV-PLAN-GATED-SURPLUS-IN-PLAN` and ran only `if (plan.meta.early_quality_onset)`,
+  // because §97 granted the headroom only to a §89-gated runner. The board
+  // amended §97 to grant it on SURPLUS instead, on the finding that M1 — the
+  // charity cohort's first-time marathoner, the precise opposite of gated — was
+  // getting 18 weeks of an available 20 with FOUR uncovered weeks in front of
+  // them, and that for a `<6mo` training age those are the cheapest
+  // tissue-adaptation weeks available (Willy). The gate check is therefore gone;
+  // everything below it is unchanged and was already distance-general.
+  //
+  // Two mechanical claims: a runner with surplus gets no foundation block they
+  // did not ask for, and the plan honours `max_weeks` — the signature's own
+  // declared bound (§17), which the extension explicitly does not exceed.
+  {
     // ⚠️ EXEMPT WHEN THE RUNNER ASKED FOR IT. §97 governs what the ENGINE does
     // with surplus weeks at generation: it extends the plan instead of handing
     // them to §57. It does not govern ADR-020's deferred decision, where a
@@ -5678,7 +5687,15 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     // a foundation_decision path. Firing on a runner's answered choice would be
     // this invariant overruling the person it is meant to serve.
     const foundationWeeks = plan.weeks.filter(w => w.n <= 0)
-    const signatureMax = PLAN_SIGNATURES[distKey as keyof typeof PLAN_SIGNATURES]?.max_weeks
+    // SINGLE OWNER (D-08). `planWeekCap` is the same function `calcPlanLength`
+    // sizes the plan with, so producer and checker cannot drift about what the
+    // bound IS. This used to read `PLAN_SIGNATURES.max_weeks` raw, which agreed
+    // with the producer only because `max_weeks - idealWeeks` is ≤ 2 at every
+    // distance and `MAX_PLAN_EXTENSION_WEEKS` is therefore never binding — an
+    // accidental agreement of exactly the DELOAD-OWNER-01 kind. What this
+    // invariant asserts INDEPENDENTLY is the plan's delivered week count against
+    // that bound, which is the claim that can actually go wrong.
+    const signatureMax = planWeekCap(input.race_distance_km)
     const mainWeekCount = plan.weeks.filter(w => w.n >= 1).length
     // §97 extends the plan INTO `max_weeks` and explicitly not past it — "the
     // signature's own declared bound; this honours a limit §17 already set, it
@@ -5714,8 +5731,8 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
       (signatureMax != null && mainWeekCount >= signatureMax) || calendarBound
     if (foundationWeeks.length > 0 && input.foundation_decision !== 'add' && !extensionExhausted) {
       violations.push({
-        code: 'INV-PLAN-GATED-SURPLUS-IN-PLAN',
-        principle_ref: 'CoachingPrinciples §97',
+        code: 'INV-PLAN-SURPLUS-IN-PLAN',
+        principle_ref: 'CoachingPrinciples §97, §97 Am.',
         // `warn`, and the reason is architectural rather than coaching (§34).
         //
         // MEASURED, 15,973-plan sweep: 5 plans (0.03%). Every one has a
@@ -5735,10 +5752,10 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
         // for a gap in the architecture rather than in the plan.
         severity: 'warn',
         week: 0,
-        message: `A §89-gated runner was given ${foundationWeeks.length} foundation week(s) `
+        message: `Runner was given ${foundationWeeks.length} foundation week(s) `
           + `while their plan sits at ${mainWeekCount} of ${distKey}'s ${signatureMax} maximum weeks. `
-          + `§97 spends that headroom on periodised weeks first — a certified runner should not open `
-          + `the app to a fortnight of "habit and routine" while their own plan had room to grow.`,
+          + `§97 spends that headroom on periodised weeks first — nobody should open the app to `
+          + `weeks of "habit and routine" while their own plan had room to grow.`,
         actual: `${foundationWeeks.length} foundation weeks, plan ${mainWeekCount}/${signatureMax}`,
         // NOT "expected 0". MEASURED 2026-09-15: the two worst cases have 2 weeks
         // of headroom against gaps of 3.4 and 5.7 weeks, so §97 could absorb some
@@ -5751,7 +5768,7 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
     }
     if (signatureMax && mainWeekCount > signatureMax) {
       violations.push({
-        code: 'INV-PLAN-GATED-SURPLUS-IN-PLAN',
+        code: 'INV-PLAN-SURPLUS-IN-PLAN',
         principle_ref: 'CoachingPrinciples §97, §17',
         severity: 'error',
         week: 0,

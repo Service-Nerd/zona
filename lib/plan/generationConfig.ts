@@ -283,20 +283,35 @@ export const GENERATION_CONFIG = {
   // runner whose gate requires `recent_quality_training: 'regular'`; he refuses
   // zero, which is what this constant existing rather than being deleted means.
   MIN_ONRAMP_WEEKS_GATED: 1,
-  // §97 — how many weeks a gated runner's plan may gain over `idealWeeks`.
+  // §97 Amendment (LONG-RUNWAY-EARNS-PLAN-01, Coaching Board 2026-09-16) — how
+  // many weeks ANY plan may gain over `idealWeeks` when the calendar has surplus.
   //
-  // Unbounded, the extension is the signature's own headroom, and that headroom
-  // is NOT uniform: 2 weeks for 5K/10K/HM but 4 for MARATHON/50K/100K. A
-  // marathon extending by four weeks against a base capped at one pushes every
-  // gained week into build/peak, and the plan-wide quality share breached §1's
-  // 18% MARATHON ceiling (measured: 18.4%, 19/103, on the property sweep).
+  // RENAMED from MAX_ONSET_PLAN_EXTENSION_WEEKS. The headroom is no longer
+  // onset-scoped: the board granted it on surplus rather than on §89's gate, and
+  // a key whose name asserts a scope it no longer has is the decorative-config
+  // failure running backwards — the name reads as governance and governs nothing.
   //
-  // §1 is a CEILING the board has twice refused to spend, so the extension
-  // yields rather than the ceiling. Bounding it at the short-distance headroom
-  // keeps the change the size it was argued at — the founder's problem is a 10K
-  // problem — and leaves long-distance base phases, which carry the long-run
-  // progression, proportionate.
-  MAX_ONSET_PLAN_EXTENSION_WEEKS: 2,
+  // §1 is a CEILING the board has twice refused to spend, and this exists so an
+  // extension can never be the thing that spends it.
+  //
+  // ⚠️ CORRECTED 2026-09-16 — the arithmetic this comment used to carry was
+  // measured against the WRONG ideal. It read "the headroom is NOT uniform: 2
+  // weeks for 5K/10K/HM but 4 for MARATHON/50K/100K", which is the gap against
+  // `PLAN_SIGNATURES.ideal_weeks`. `calcPlanLength` has never read that field —
+  // it reads `DISTANCE_CONFIGS.idealWeeks` in length.ts, which
+  // `configConsumer.test.ts` already records as superseding it. Against the ideal
+  // the code actually uses, the headroom is +2 at 10K/HM/MARATHON/50K/100K and
+  // **+0 at 5K** (ideal 12, max 12).
+  //
+  // So this bound DOES NOT BIND AT ANY DISTANCE TODAY, and saying so is the point
+  // (§34): it is a guard against a future `max_weeks` being raised, not an active
+  // constraint, and nobody should read its green check as evidence it is doing
+  // work. The §1 breach that motivated it (18.4%, 19/103) was real and was
+  // measured on the GATED path, where `EARLY_ONSET_BASE_PCT` caps base at one
+  // week so every gained week lands in build/peak. That mechanism is untouched:
+  // the ungated extension leaves `base_pct` alone (Willy's binding condition), so
+  // its weeks grow base proportionally and §1's denominator grows with them.
+  MAX_PLAN_EXTENSION_WEEKS: 2,
   // §97 — the shortened on-ramp applies only at these distances.
   //
   // NOT arbitrary, and not "the founder races 10K". §1's ceiling DESCENDS with
