@@ -151,7 +151,17 @@ const hardSets = ['love', 'avoid', 'neutral']
 // is exercised across the grid (including the 'regular' value that unlocks it and
 // the injury combinations that must veto it).
 const recentQualitySets = [undefined, 'none', 'occasional', 'regular']
-const injurySets = [[], ['knee'], ['achilles'], ['shin_splints'], ['hip_flexor'], ['back']]
+// ⚠️ THE WIZARD'S OWN SPELLINGS, not the code's (2026-09-16). These read
+// ['knee'], ['shin_splints'], ['hip_flexor'] — snake_case values the product
+// CANNOT PRODUCE. `GeneratePlanScreen` offers 'Achilles', 'Knee', 'Back', 'Hip',
+// 'Shin splints', 'Plantar fasciitis', and `hasInjury` matched them by raw
+// substring, so 'Shin splints' never matched 'shin_splints' and THREE of six
+// injury types had their coaching rules silently disabled in production. The
+// sweep could not see it because it tested the code's spelling against the
+// code's spelling. Fixture values must be what the PRODUCT emits.
+// Count held at 6 so the seeded sample does not re-roll and rates stay
+// comparable; 'Plantar fasciitis' is therefore still unswept (SWEEP-INJURY-01).
+const injurySets = [[], ['Knee'], ['Achilles'], ['Shin splints'], ['Hip'], ['Back']]
 // ADR-020 (2026-09-03) — 30 ADDED. The grid tested 45/60/90 while BOTH real
 // users had chosen 30, and three separate INV-PLAN-MAX-WEEKDAY-MINS defects
 // shipped behind a green sweep because the tightest realistic cap was never

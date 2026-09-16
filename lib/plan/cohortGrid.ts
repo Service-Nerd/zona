@@ -164,7 +164,11 @@ export const COHORT_REFUSAL =
 //
 // SCOPED TO THE CHARITY DISTANCES (10K / HM / marathon) deliberately: that is the
 // cohort this exists to protect, and 5K/ultra add rows without adding mechanism.
-const TARGETED_INJURIES: readonly (readonly string[])[] = [[], ['knee'], ['shin_splints'], ['achilles']]
+// The WIZARD's spellings, not the code's (2026-09-16). Behaviour-neutral now that
+// `hasInjury` normalises separators, but a fixture written in a spelling the
+// product cannot emit is how 'Shin splints' never matched 'shin_splints' in
+// production for months while every test passed.
+const TARGETED_INJURIES: readonly (readonly string[])[] = [[], ['Knee'], ['Shin splints'], ['Achilles']]
 const TARGETED_DECLARED = [undefined, 'beginner', 'intermediate', 'experienced'] as const
 const TARGETED_WEEKS_AT_VOLUME = [undefined, 1, 4, 12] as const
 const TARGETED_FOUNDATION = [undefined, 'add', 'skip', 'start_now'] as const
