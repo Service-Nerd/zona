@@ -176,25 +176,47 @@ The build fails if that stops being true.
 >   unnoticed because `noEmDash.test.ts` covers MARKETING surfaces only, not plan `meta` notes.
 >   Worth extending that guard to the engine's emitted copy rather than fixing the one line.
 >   *Verify still open:* `grep -c "—" <(grep "hold your fitness rather than grow" lib/plan/ruleEngine.ts)` → **non-zero = open**.
-> - 🔲 **PARITY-HSR-01** — `verify-parity.ts` does **not** vary `hard_session_relationship`
->   (grepped: 0 occurrences). §110 came back `IDENTICAL` across 5,832 cases, which is a real and
->   useful result — every NON-`avoid` runner is untouched — but it is **not** evidence the `avoid`
->   path is right, and quoting it as such would be the exact trap CLAUDE.md warns about
->   ("IDENTICAL is not the same as VERIFIED"). Adding the axis 4×s an already slow check, so it
->   needs a decision, not a reflex.
+> - ✅ **PARITY-HSR-01 — CLOSED 2026-09-16.** `verify-parity` did not vary
+>   `hard_session_relationship` at all, so §110 reported "IDENTICAL, 5832 cases"
+>   on the very change that rewrote what an `avoid` runner is prescribed. Four
+>   principles key off that input (§35, §47, §96, §110) across 13 call sites.
+>   **Not fixed with a 9th cartesian axis** (4x on an already slow check, to
+>   re-test 5,832 combinations against a lever reading one field) — a focused
+>   block is appended instead: every distance x level x goal for the three
+>   non-default values. **108 rows on 5,832, +1.9%.**
+>   **Falsification-tested, not assumed:** run against the pre-§110 commit it
+>   reports `hsr avoid=18/36, love=0/36, overdo=0/36` — it catches the change it
+>   was blind to, and correctly clears the two values §110 did not touch.
+>   ⚠️ Adding it **silently broke the grid's own coverage guard**, which asserted
+>   each goal branch existed via `endsWith('|finish')` — true only while `goal`
+>   was the last key field. A coverage guard that fails open is worse than none
+>   (the file's own trap 3). Both readers of the key layout now share one
+>   `KEY_FIELDS` definition, and the same presence guard covers `hsr`.
 > - 🔲 **Compliance themes still unruled:** `maintenance` meaning three different things, and
 >   warn-severity triage (any warn >20% is promoted or explained). Sims's fuelling /
 >   energy-availability guidance is also still outstanding.
 >   ✅ *zero-quality-by-accident is CLOSED by §110* — and the board's answer to "what should a
 >   3-day novice marathoner deliberately receive" turned out to be already written: a genuine
 >   beginner gets none, ratified 2026-08-30; everyone else gets at least one.
-> - 🔲 **The §22 latent defect behind the wizard gate** — `goal: 'time_target'` with no
->   `target_time` produces **3 error-severity** `INV-PLAN-RACE-SPECIFIC-EXPOSURE` violations (no
->   goal pace, so §22's rename never fires, but the invariant still demands it). **Not user
->   reachable**: `GeneratePlanScreen.tsx:809` blocks the step without a time. Reachable via the API,
->   where the schema marks both optional. **The sweep cannot see it** — `target_time` is set
->   unconditionally at `property-validate-plans.ts:375`, independent of the `goal` axis, so that
->   combination is never swept. Fixing it properly is a §22 board question.
+> - ✅ **GOAL-COHERENCE-01 (the §22 latent defect) — CLOSED 2026-09-16.** A time
+>   goal with no `target_time` produced **3 error-severity**
+>   `INV-PLAN-RACE-SPECIFIC-EXPOSURE` violations, which THROW in dev and test.
+>   `goalPace` is null without a target time, yet **14 call sites** (11 in
+>   `ruleEngine.ts`, 3 in `invariants.ts`) read `goal === 'time_target'` as
+>   though a goal pace exists. Fixed at the boundary — `coherentGoal()` in
+>   `inputs.ts` — rather than by teaching 14 consumers the same caveat (D-21:
+>   the rule is fine, the INPUT was incoherent).
+>   ⚠️ **Fixing only the producer was not enough, and the sweep proved it.**
+>   Normalising inside `generateRulePlan` left every EXTERNAL caller of
+>   `validatePlan` passing the raw input, so the checker went on failing plans
+>   the producer had already corrected (2 violations survived). `coherentGoal`
+>   is now the single owner both sides call — the producer/consumer split this
+>   repo has paid for repeatedly (D-16, TIER-OWNER-01, §47).
+>   **The sweep could not see any of it**: `target_time` is set unconditionally
+>   in `randomInput()`, independent of the `goal` axis, so that combination was
+>   ungeneratable. Added as a **corner case, not a `goalSets` entry** — a third
+>   value on that axis re-rolls the whole seeded sample and moves every rate in
+>   the file (the SWEEP-AGE-01 trap). Sweep is now 15,974.
 
 ### Off the table — do NOT re-open without reading the item first
 

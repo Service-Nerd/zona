@@ -10,6 +10,42 @@ import type { GeneratorInput } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
 import { weeksBetweenLocal } from './length'
 
+/**
+ * §22 / GOAL-COHERENCE-01 (2026-09-16) — A TIME GOAL WITH NO TIME IS NOT A TIME
+ * GOAL. Single owner, called by BOTH the producer (`generateRulePlan`) and the
+ * checker (`validatePlan`).
+ *
+ * `goalPace` is null unless `target_time` is present, but **fourteen** call
+ * sites (11 in `ruleEngine.ts`, 3 in `invariants.ts`) read
+ * `goal === 'time_target'` as though a goal pace exists. With the goal set and
+ * the time absent they disagree, and §22's checker demands a goal-pace rename
+ * the engine has no goal pace to produce — measured, 3 error-severity
+ * `INV-PLAN-RACE-SPECIFIC-EXPOSURE` violations on one plan, which THROW in dev
+ * and test.
+ *
+ * ⚠️ IT LIVES HERE, NOT IN `ruleEngine`, AND THAT IS THE WHOLE POINT. Fixing it
+ * only inside `generateRulePlan` left the PRODUCER seeing `finish` while every
+ * external caller of `validatePlan` still passed the raw input saying
+ * `time_target` — so the checker went on failing plans the producer had already
+ * corrected. That is this repo's recorded producer/consumer split (D-16,
+ * TIER-OWNER-01, §47's positions-vs-pairs): a predicate two sides must agree on
+ * gets ONE owner, not a fix on one side.
+ *
+ * D-21 — a rule that cannot be satisfied is a defect in the rule. Here the rule
+ * is fine and the INPUT is incoherent, so it is corrected at the boundary
+ * rather than by teaching fourteen consumers to re-derive the same caveat.
+ *
+ * NOT REACHABLE FROM THE PRODUCT TODAY: `GeneratePlanScreen` blocks the target-
+ * time step until a time is entered, and it is the only caller that creates
+ * plans. This guards the next path that does, and any stored `generator_input`
+ * that acquired the shape another way.
+ */
+export function coherentGoal(input: GeneratorInput): GeneratorInput {
+  return input.goal === 'time_target' && !input.target_time
+    ? { ...input, goal: 'finish' }
+    : input
+}
+
 export type PrepTimeStatus = 'ok' | 'warn' | 'block'
 
 export interface PrepTimeResult {

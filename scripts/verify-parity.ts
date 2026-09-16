@@ -76,9 +76,47 @@ const TARGET_TIMES: Record<number, string> = {
 }
 const GOALS = ['finish', 'time_target'] as const
 
+// PARITY-HSR-01 (2026-09-16) — `hard_session_relationship` was not varied AT
+// ALL (grepped: 0 occurrences), so every run reported on a single value of it.
+//
+// ⚠️ THAT IS NOT A COSMETIC GAP. Four principles key off this input across 13
+// call sites in `ruleEngine.ts` — §35's earned long-run tier (`love`), §47's
+// consecutive-peak exception (`love`), §96's brake and Z2 cue (`overdo`) and
+// §110's cap, dose and onset brake (`avoid`). §110 came back "IDENTICAL, 5832
+// cases" on the very change that rewrote what an `avoid` runner is prescribed,
+// which is the trap this file's own header warns about: IDENTICAL is not the
+// same as VERIFIED, and a clean parity run is only evidence for the inputs the
+// grid actually varies.
+//
+// A NINTH CARTESIAN AXIS WOULD BE THE WRONG FIX — 4x on an already slow check,
+// to re-test 5,832 combinations against a lever that reads one field. Instead
+// the main grid is untouched and a focused block is APPENDED: every distance x
+// level x goal, at one race date / day count / volume, for the three non-default
+// values. 108 rows on 5,832 (+1.9%) and every hsr-sensitive principle is
+// exercised at every distance.
+//
+// Both sides of a parity run execute the SAME copy of this script (the
+// orchestrator copies itself into the baseline worktree), so widening the key
+// is safe — there is no stored baseline to invalidate.
+const HSR_EXTRA = ['love', 'overdo', 'avoid'] as const
+
+/**
+ * The key's field order, in one place. Both the axis-coverage guard and the
+ * changed-by-axis report read positions out of the key, and until now each
+ * carried its own copy of the layout — so appending `hsr` after `goal` silently
+ * broke the guard (it asserted coverage with `endsWith('|finish')`, which stops
+ * being true the moment anything follows `goal`). Two readers of one layout get
+ * one definition.
+ */
+const KEY_FIELDS = ['distance', 'race', 'level', 'days', 'injuries',
+  'volume', 'tier', 'goal', 'hsr'] as const
+const keyField = (k: string, name: typeof KEY_FIELDS[number]) =>
+  k.split('|')[KEY_FIELDS.indexOf(name)]
+
 const EXPECTED_ROWS =
   DISTANCES.length * RACE_DATES.length * LEVELS.length *
   DAYS.length * INJURIES.length * VOLUMES.length * TIERS.length * GOALS.length
+  + DISTANCES.length * LEVELS.length * GOALS.length * HSR_EXTRA.length
 
 /** Wall-clock / run-scoped fields. Present on both sides, different every run. */
 const STRIP_META = ['generated_at', 'created_at', 'updated_at']
@@ -105,7 +143,10 @@ async function probe(): Promise<void> {
                   days_available, fitness_level, injury_history,
                 }
                 const key = [race_distance_km, race_date, fitness_level, days_available,
-                  injury_history.join('+') || 'none', current_weekly_km, tier, goal].join('|')
+                  injury_history.join('+') || 'none', current_weekly_km, tier, goal,
+                  // The main grid sends no `hard_session_relationship` at all;
+                  // 'unset' is the honest label for that, not 'neutral'.
+                  'unset'].join('|')
                 try {
                   const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
                   const stable = JSON.parse(JSON.stringify(plan))
@@ -120,6 +161,41 @@ async function probe(): Promise<void> {
                   rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
                 }
               }
+
+  // ── PARITY-HSR-01 block — see HSR_EXTRA above for why this is appended
+  // rather than folded into the cartesian product.
+  for (const race_distance_km of DISTANCES)
+    for (const fitness_level of LEVELS)
+      for (const goal of GOALS)
+        for (const hard_session_relationship of HSR_EXTRA) {
+          const race_date = RACE_DATES[0]
+          const days_available = 5
+          const current_weekly_km = 30
+          const tier = 'paid'
+          const input = {
+            goal, age: 40, resting_hr: 55, max_hr: 180,
+            preferred_long_run_day: 'sun',
+            ...(goal === 'time_target' ? { target_time: TARGET_TIMES[race_distance_km] } : {}),
+            race_date, race_distance_km, current_weekly_km,
+            longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
+            days_available, fitness_level, injury_history: [],
+            hard_session_relationship,
+          }
+          const key = [race_distance_km, race_date, fitness_level, days_available,
+            'none', current_weekly_km, tier, goal, hard_session_relationship].join('|')
+          try {
+            const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
+            const stable = JSON.parse(JSON.stringify(plan))
+            for (const f of STRIP_META) {
+              if (stable?.meta) delete stable.meta[f]
+              delete stable[f]
+            }
+            rows.push(`${key}\tOK\t${createHash('sha256')
+              .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
+          } catch (e: any) {
+            rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
+          }
+        }
 
   rows.sort()
   process.stdout.write(rows.join('\n') + '\n')
@@ -146,10 +222,26 @@ function parse(out: string, side: string): Map<string, string> {
   // `goal` branch for months and reported IDENTICAL across a change it could not
   // see. A count guard cannot catch that — only asserting the axis is actually
   // varied can. Cheap, and it fails the moment someone narrows the grid again.
+  // Read by POSITION, not by suffix. The suffix form asserted coverage only
+  // while `goal` happened to be the last field, and quietly stopped asserting
+  // anything when `hsr` was appended after it — a coverage guard that fails
+  // open is worse than none, which is the exact lesson trap 3 records.
   for (const g of GOALS) {
-    if (!Array.from(m.keys()).some(k => k.endsWith(`|${g}`))) {
+    if (!Array.from(m.keys()).some(k => keyField(k, 'goal') === g)) {
       console.error(`\n✗ ${side} produced no \`${g}\` rows.`)
       console.error('  Refusing to compare — a grid that runs one branch cannot prove parity for the other.')
+      process.exit(2)
+    }
+  }
+
+  // PARITY-HSR-01 — the same assertion for the axis this file was blind to.
+  // Without it, someone narrowing the HSR block back out would restore the
+  // original gap and every run would still print IDENTICAL.
+  for (const h of HSR_EXTRA) {
+    if (!Array.from(m.keys()).some(k => keyField(k, 'hsr') === h)) {
+      console.error(`\n✗ ${side} produced no \`${h}\` rows.`)
+      console.error('  Refusing to compare — hard_session_relationship drives §35, §47, §96 and §110,')
+      console.error('  and a grid that pins it cannot prove parity for the runners those rules govern.')
       process.exit(2)
     }
   }
@@ -224,7 +316,7 @@ async function main(): Promise<void> {
     // below, so without this a 900-case diff cannot be checked for containment
     // — "did my ultra-only change touch a 10K plan?" is exactly the question a
     // parity run should answer, and counting a truncated list cannot answer it.
-    const AXES = ['distance', 'race', 'level', 'days', 'injuries', 'volume', 'tier', 'goal']
+    const AXES = ['distance', 'race', 'level', 'days', 'injuries', 'volume', 'tier', 'goal', 'hsr']
     console.log('  changed cases by axis:')
     for (let i = 0; i < AXES.length; i++) {
       const axis = AXES[i]

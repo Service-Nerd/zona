@@ -351,6 +351,33 @@ const CORNERS: any[] = [
     training_age: '2-5yr', user_declared_level: 'experienced',
     acknowledged_prep_warning: true,
   },
+  {
+    // GOAL-COHERENCE-01 (2026-09-16) — A TIME GOAL WITH NO TIME.
+    //
+    // ⚠️ THE SWEEP WAS STRUCTURALLY BLIND TO THIS, and the blindness was in the
+    // harness, not the engine. `randomInput()` sets `target_time` from
+    // TARGET_TIME_BY_DISTANCE **unconditionally**, independent of the `goal`
+    // axis, so `goal: 'time_target'` + no `target_time` is a combination the
+    // random grid CANNOT generate — 15,973 plans and not one of them.
+    //
+    // Measured before the fix: 3 error-severity INV-PLAN-RACE-SPECIFIC-EXPOSURE
+    // violations on one plan, which THROW in dev and test. §22 demanded a
+    // goal-pace rename the engine had no goal pace to produce.
+    //
+    // A CORNER, DELIBERATELY, NOT A NEW `goalSets` ENTRY. A third value on that
+    // axis changes what `pick()` returns for every later draw, re-rolling the
+    // whole seeded sample and moving every rate in this file — the trap
+    // SWEEP-AGE-01 records ("widening it revealed a second unrelated defect
+    // immediately, so it needs its own commit"). Corners always run and do not
+    // touch the sample, and coverage of one specific shape is exactly their job.
+    label: 'goal-coherence-time-target-without-target-time',
+    race_distance_km: 10, race_date: raceDate(13), goal: 'time_target',
+    // target_time deliberately ABSENT — this is the whole point of the case.
+    days_available: 5, age: 42,
+    current_weekly_km: 30, longest_recent_run_km: 12,
+    fitness_level: 'intermediate', training_age: '2-5yr',
+    recent_quality_training: 'occasional',
+  },
 ]
 
 // A distance added to the grid without a target time would silently sweep with

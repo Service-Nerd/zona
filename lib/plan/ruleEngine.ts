@@ -17,7 +17,7 @@ import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './gene
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
 import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
-import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
+import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
 import { sessionKmOrZero } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
@@ -5437,12 +5437,17 @@ export function applyRecalibration(
 // bare and assembled verdicts are now identical, so the ladder does not need the
 // ADR-020 compose path.
 export function generateRulePlan(
-  input: GeneratorInput,
+  rawInput: GeneratorInput,
   tier: Tier,
   planStart?: string,
   catalogue: SessionCatalogueRow[] = V1_SESSION_CATALOGUE,
   todayOverride?: string,
 ): Plan {
+  // §22 / GOAL-COHERENCE-01 — normalised by its single owner, which the
+  // validator calls too. See `coherentGoal` in inputs.ts for why one side
+  // fixing this was not enough.
+  const input = coherentGoal(rawInput)
+
   const build = (relax: number, ungated: boolean, avoidPos2 = true) =>
     buildRulePlanOnce(input, tier, planStart, catalogue, todayOverride, relax, ungated, false, avoidPos2)
 

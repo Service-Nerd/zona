@@ -24,6 +24,7 @@ import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 import { parseDateLocal, formatDate, getDistanceConfig, planWeekCap } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
 import { sessionKmSelfPaced } from './sessionDistance'
+import { coherentGoal } from './inputs'
 
 export type Severity = 'error' | 'warn'
 
@@ -711,7 +712,14 @@ export function copyClaimsIntensity(label?: string | null, theme?: string | null
     || COPY_CLAIMS_HARD.test(text)
 }
 
-export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
+export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] {
+  // §22 / GOAL-COHERENCE-01 — the checker MUST normalise the same way the
+  // producer does, or it fails plans the producer already corrected. Fixing
+  // only `generateRulePlan` left every external caller (the sweep, the matrix,
+  // the API route) still passing `goal: 'time_target'` with no time, and §22
+  // went on demanding a goal-pace rename for a plan that has no goal pace.
+  // One owner, both sides. See `coherentGoal`.
+  const input = coherentGoal(rawInput)
   const violations: Violation[] = []
   const minDist = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM
   const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY

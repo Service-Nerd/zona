@@ -184,3 +184,45 @@ describe('§40c — a target that was never reachable is STATED, not absorbed', 
     expect(note).not.toMatch(/minute weekday ceiling/i)
   })
 })
+
+describe('GOAL-COHERENCE-01 — a time goal with no time is not a time goal', () => {
+  // `goalPace` is null without `target_time`, yet 14 call sites read
+  // `goal === 'time_target'` as though a goal pace exists. §22's checker then
+  // demanded a goal-pace rename the engine had no goal pace to produce:
+  // 3 error-severity violations, which THROW in dev and test.
+  //
+  // Not reachable from the wizard (it blocks the step without a time). This
+  // pins the boundary normalisation for the next path that creates plans.
+  const incoherent = (): GeneratorInput => ({
+    race_distance_km: 10, race_date: '2027-03-14', goal: 'time_target',
+    current_weekly_km: 30, longest_recent_run_km: 12, days_available: 5,
+    age: 42, fitness_level: 'intermediate', training_age: '2-5yr',
+    recent_quality_training: 'occasional', hard_session_relationship: 'neutral',
+    injury_history: [], plan_start: '2026-11-23',
+  } as unknown as GeneratorInput)
+
+  it('generates without throwing, and reports the goal it actually built', () => {
+    const plan = generateRulePlan(incoherent(), 'paid') as unknown as { meta: Record<string, unknown> }
+    expect(plan.meta.goal).toBe('finish')
+    expect(plan.meta.goal_pace_per_km).toBeUndefined()
+  })
+
+  it('raises no error violations — the checker normalises the same way', () => {
+    // THE HALF THAT WAS MISSED FIRST. Normalising only inside generateRulePlan
+    // left every EXTERNAL caller of validatePlan (the sweep, the matrix, the API
+    // route) passing the raw input, so the checker went on failing plans the
+    // producer had already corrected. This asserts the CHECKER's behaviour by
+    // handing it the RAW input, which is what those callers do.
+    const input = incoherent()
+    const plan = generateRulePlan(input, 'paid')
+    const errors = validatePlan(plan, input).filter(v => v.severity === 'error')
+    expect(errors).toHaveLength(0)
+  })
+
+  it('leaves a real time goal completely alone', () => {
+    const input = { ...incoherent(), target_time: '0:45:00' } as GeneratorInput
+    const plan = generateRulePlan(input, 'paid') as unknown as { meta: Record<string, unknown> }
+    expect(plan.meta.goal).toBe('time_target')
+    expect(plan.meta.goal_pace_per_km).toBeTruthy()
+  })
+})
