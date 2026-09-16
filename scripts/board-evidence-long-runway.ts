@@ -6,15 +6,20 @@
 // runner. M1, the charity cohort's first-time marathoner, is the precise
 // opposite of gated. Should the same headroom reach them?
 //
-// WHAT THIS MEASURES, and what it does NOT.
-//  - Lengths, foundation weeks and uncovered weeks are MEASURED: `calcPlanLength`
-//    takes `allowMaxWeeks` as a public parameter, so both sides of the comparison
-//    come from the live function, not from arithmetic reproduced here.
-//  - The DELIVERED shape of a +2-week plan cannot be measured before the change
-//    exists: an ungated runner's cap is `idealWeeks` unconditionally, so the
-//    engine will not build it. What IS measured is the engine's sensitivity to
-//    plan length for this cohort (16 vs 18 weeks available), which is a real
-//    response from `generateRulePlan` and is labelled as the extrapolation it is.
+// ⚠️ SHIPPED 2026-09-16. This script was written to ARGUE the change and is kept
+// as the evidence behind the ruling; its header is corrected rather than left
+// describing a world that no longer exists.
+//
+// WHAT THIS MEASURES NOW.
+//  - The `ext` column is the LIVE engine. `calcPlanLength` no longer takes an
+//    `allowMaxWeeks` parameter at all — the board granted the headroom on surplus
+//    and the parameter was DELETED, not defaulted, so there is no second code
+//    path left to call.
+//  - The `now` column therefore RECONSTRUCTS the pre-2026-09-16 cap
+//    (`idealWeeks`, ungated) by arithmetic, because that path no longer exists.
+//    It is a historical reconstruction and is labelled as one wherever it prints.
+//  - Section 4's sensitivity table is still a real response from
+//    `generateRulePlan`, measured below the cap where the calendar binds.
 //
 //   npx tsx scripts/board-evidence-long-runway.ts
 //
