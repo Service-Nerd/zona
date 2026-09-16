@@ -8,26 +8,45 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-## 📍 PICK UP HERE — state at end of 2026-09-15
+## 📍 PICK UP HERE — state at end of 2026-09-16
 
-**Everything shipped today is committed, pushed and in `feature-registry.md`.** Working tree clean at `bb1298c`.
-`npm run verify` exit 0 (**1,973 tests / 214 files**) · property sweep **15,973 plans, 0 violations** ·
-`invariant:liveness` exit 0 · `test:liveness` nightly · coaching deviation scan HIGH 0 · `verify:parity` measured on
-every engine change.
+**Everything shipped today is committed and in `feature-registry.md`.**
+`npm run verify` exit 0 (**2,001 tests / 216 files**) · property sweep **15,973 plans, 0 violations, 0 new above baseline** ·
+archetype matrix **65/0** · `invariant:liveness` **84/115 woken** · `test:liveness` nightly ·
+coaching deviation scan **HIGH 0** · `cohort:shape` re-baselined with every move declared ·
+`verify:parity` measured on every engine change.
 
-**The coaching constitution is fully accounted for: 106 principles — 78 invariant · 22 named test · 6 exempt · 0 unverified.**
+**The coaching constitution is fully accounted for: 115 invariants registered, declared, and passing on the three canonical cases.**
 The build fails if that stops being true.
 
-⚠️ **Charity showcase is Friday.** All 14 charity personas are **clean on every check** (deviation scan: 0 HIGH).
+⚠️ **Charity showcase is Friday.** All 14 charity personas are **clean on every check** (0 error violations, deviation scan 0 HIGH).
 
-> **CORRECTED 2026-09-15 — this line used to read "none affects the 14 charity personas", and that is no longer true.**
-> §6 Amendment 2 (TAPER-DEPTH-02) changed **four** of them, and every change is an improvement:
-> M5 masters marathon taper **48 → 41**, M1d first-timer marathon **33 → 28**, T2 10K **31 → 28**, M2 compressed marathon **33 → 31**.
-> M1d's first taper week was previously **3% below its pre-taper week** — a runner told they are tapering and handed the
-> same week again, on the showcase list. A blanket "nothing affects the personas" claim is the kind of written assumption
-> that gets believed; the personas are re-measured per change, not assumed.
+> **THREE PERSONAS CHANGED TODAY** (§97 Amendment, LONG-RUNWAY-EARNS-PLAN-01), all improvements:
+> **M1** first-timer marathon **18 → 20 weeks** (uncovered runway 4 → 2, plan starts a fortnight earlier),
+> **M5** masters marathon **18 → 20**, **H1** first-timer HM **14 → 16**.
+> M1 and M5 now deliver close to their own prescribed peak (47 of 52, 64 of 65) instead of undershooting it.
+> Personas are re-measured per change, never assumed — that is why this line exists rather than "nothing affects them".
 
-### 🔧 COACHING & ENGINE — the complete open list
+> 🔴 **READ BEFORE DEPLOYING — this is a FOUNDER sequencing call, not a coaching one.**
+> §97 Am. moved **2,106 of 5,832 parity cases (36.1%)**, the largest single-change blast radius this engine has had —
+> bigger than §6 Am.2's 18.5% yesterday. The Coaching Board ruled it CORRECT and every gate is green, so the
+> *correctness* question is closed. What is open is **whether two changes of this size should both land in the
+> 48 hours before the showcase.** Hutchinson's own words when he held this item back on 2026-09-15:
+> *"stacking two changes of that size is how a good change gets blamed for a bad one."* That reasoning did not
+> expire because the board then approved the change. **The branch is committed, not pushed — the deploy is yours.**
+
+### ✅ COACHING & ENGINE — the open list is EMPTY
+
+> Both items filed on 2026-09-15 shipped on 2026-09-16:
+> **LONG-RUNWAY-EARNS-PLAN-01** (Coaching Board, §97 Amendment — the headroom is granted on SURPLUS, not on §89's gate)
+> and **OPS-DIGEST-PLAN-AUDIT-01** (the digest reads the plan-audit heartbeat; it turned out the repo half had already
+> broken the digest's interpretation, so this was a fix rather than the optional wiring it was filed as).
+>
+> A third defect was found and fixed en route, by the sweep rather than by anyone looking for it:
+> **§47's peak long-run alternation counted POSITIONS where its invariant counts PAIRS.** They agreed for exactly as
+> long as a peak phase was two weeks long, and §97 Am. made three-week peak phases reachable at HM. 9 plans in 15,973.
+>
+> Everything below this line is product, GTM, verification debt and cosmetics — nothing coaching-critical is open.
 
 > ✅ **§6 TAPER DEPTH — CLOSED 2026-09-15. Two board sittings: TAPER-DEPTH-01 vetoed the proposed remedy, TAPER-DEPTH-02 shipped §6 Amendment 2.** *(filed and closed the same day)*
 > **The filing's premise was wrong and the correction is the deliverable.** It claimed *"the curve is right and the delivery is not"*. Measured: the taper cut reaches the curve correctly — traced on a 50K plan the curve runs **95 → 78 → 60 → 43 km**, exactly `volume_reduction_pct: 55` over three steps — and across a 504-plan grid the **taper is the BEST-delivered phase in the plan**: delivered / curve mean **0.981**, against build 0.870 and peak 0.906.
@@ -54,10 +73,6 @@ The build fails if that stops being true.
 > **GATES:** verify exit 0 (**1,988 tests / 215 files**) · sweep 15,973 plans 0 violations · liveness proves the new invariant wakeable (84/115) · **parity IDENTICAL** — and that is not evidence: the parity grid pins `plan_start`, so it has **no runway cases at all** and is structurally blind to this change. `lib/plan/uncoveredRunway.test.ts` (11 cases) is the coverage that reaches it.
 > **ALSO FIXED — the sweep could not see this cohort.** `foundationGapDays` topped out at **40 days**, which is 5 weeks: the block takes 3 and leaves 2, exactly the threshold and never past it. A charity runner typically gets their place **months** out. Added 91 and 175 days. ⚠️ **Widening a sweep axis re-rolls the entire seeded sample** — every warn rate in that table moved, and rates measured before and after are not comparable. It immediately exposed a real checker defect: `INV-PLAN-TAPER-DELIVERED-DEPTH` (shipped an hour earlier) went **3 → 181**, every one a 2-day week, every one FALSE — it measured easy-run headroom but not **§52's cap**, so a 5K taper week showing 5.5 km of headroom had **0.2 km of legal room**. Now 4. **A checker that knows only half the producer's constraints reports the other half as defects.**
 > ➡️ **The open half shipped the next day as LONG-RUNWAY-EARNS-PLAN-01** (Coaching Board 2026-09-16 — §97 Amendment; see feature-registry). The dissent §57 recorded is discharged: M1 now gets 20 main weeks of an available 20, and the uncovered weeks it declares fall 4 → 2.
-
-
-> 🔲 **OPS-DIGEST-PLAN-AUDIT-01 — a FOUNDER decision, not a build.** *(filed 2026-09-15)*
-> The plan-audit probe now emits a `source: plan-audit-summary` ops event every run, carrying the age of the newest breaching plan. **Whether the daily ops digest reads it is yours** — the digest is a cloud routine editable via RemoteTrigger, not repo code, and wiring someone else's digest is not mine to change unilaterally. The repo side is done.
 
 
 ### Off the table — do NOT re-open without reading the item first

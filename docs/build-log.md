@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-16 — OPS-DIGEST-PLAN-AUDIT-01 · The "should we wire this up?" question that turned out to be "this is already broken"
+**Shipped:** The daily ops digest now reads the plan-audit summary event — a heartbeat proving the backstop ran, plus the age of the newest breaching plan.
+
+**Dev learning:** The backlog filed this as an optional founder decision: *whether* the digest should read a new ops event. It wasn't optional. Yesterday's repo change made the audit emit a summary event on **every** run, including clean ones. The digest's query selects every `ops_events` row from the last 24h, and its prompt tells the model "no rows is the normal, GOOD result". So from the next run, a perfectly clean audit was going to be reported as a constitutional finding — with every column blank, because the query selects `codes`/`reason`/`outcome` and the summary carries none of those.
+
+**The generalisable bit: a producer and a consumer that live in different systems have no compiler between them.** Every in-repo version of this mistake gets caught — `configConsumer.test.ts` exists precisely to catch a config key nobody reads. But the digest is a cloud routine, not repo code, so adding an always-on event to a stream something else interprets was a breaking change that nothing could fail on.
+
+**Product/creator learning:** The fix isn't "show the count of invalid plans". That number only ever goes up — plans generated under older engine rules stay on the fleet and keep being counted, so within a few months it's a big scary number that means nothing. The signal is the **age of the newest** breaching plan. Weeks old = the fleet is carrying history. Hours old = the engine you're running right now just produced a bad plan. Same data, and one version is actionable while the other trains you to ignore it.
+
+**AI-building learning:** The thing worth copying here is that the digest prompt already contained the rule it was about to break: *"a digest that reports an already-fixed problem in the present tense trains Russ to ignore it, which is worse than not sending it at all."* Written three paragraphs below the line that was about to cause exactly that. Prompts rot like code, and a prompt that states its own principles is easier to audit against itself — I found the conflict by reading the prompt for its intent, not by testing it.
+
+**The honest bit:** I nearly took this at face value. The backlog said "the repo side is done, the digest is yours" and the obvious move was to ask the founder whether they wanted it wired and move on. The only reason I found the breakage is that I read the digest's current prompt before proposing a change to it, rather than proposing a change to a thing I hadn't read. That is the same lesson this repo has written down at least three times: I trusted a document about a system instead of reading the system.
+
+**Hook material:** A backlog item that said "your call whether we wire this up" was actually "this silently breaks tomorrow at 08:30." The new event fires on every run; the digest's prompt says "no rows is the normal, good result." Nobody would have noticed for a week, and then they'd have stopped reading the digest.
+
+**Postable?:** yes — the producer/consumer-across-system-boundaries angle plus "the count goes up forever, the age is the signal" is a tight post.
+
+
 ## 2026-09-16 — LONG-RUNWAY-EARNS-PLAN-01 · The runway earns a longer plan, and the sweep found a bug that had been waiting two weeks for a longer plan to exist
 **Shipped:** A plan now runs to the distance's `max_weeks` whenever the calendar has surplus weeks, instead of only for a runner who passed the readiness gate — so a first-time marathoner 25 weeks out gets 20 weeks of plan instead of 18 and four uncovered weeks instead of... two.
 

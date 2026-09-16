@@ -62,21 +62,35 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > code.** So the path is everything between the email and a plan on screen.
 > Nothing else is on it.
 
-> ✅ **ENGINE STATE, 2026-09-15 (showcase is Friday).** The coaching constitution is
-> fully accounted for — **106 principles: 78 invariant · 22 named test · 6 exempt ·
-> 0 unverified**, and the build fails if that stops being true. `npm run verify`
-> exit 0 (**1,988 tests / 215 files**), property sweep **15,973 plans / 0
-> violations**, archetype matrix 65/0, `cohort:shape` unchanged, coaching deviation
-> scan **0 HIGH** across all 14 charity personas + 7 canonical cases.
-> **Two open items only** — `LONG-RUNWAY-EARNS-PLAN-01` (needs a board sitting) and
-> `OPS-DIGEST-PLAN-AUDIT-01` (a founder decision, repo side done). Detail in
-> `backlog.md`.
+> ✅ **ENGINE STATE, 2026-09-16 (showcase is Friday).** `npm run verify` exit 0
+> (**2,001 tests / 215+ files**), **115 invariants** registered, declared and
+> passing on the three canonical cases, property sweep **15,973 plans / 0
+> violations / 0 new above baseline**, archetype matrix 65/0,
+> `invariant:liveness` **84/115 woken**, coaching deviation scan **0 HIGH**
+> across all 14 charity personas + 7 canonical cases.
 >
-> ⚠️ **Four charity personas CHANGED today** (§6 Am.2, TAPER-DEPTH-02) and all four
-> improved: M5 masters marathon taper 48→41, M1d first-timer marathon 33→28, T2 10K
-> 31→28, M2 compressed marathon 33→31. M1d's first taper week had been **3% below
-> its pre-taper week**. Worth knowing before the demo, because those are the plans
-> on screen.
+> **The coaching & engine open list is now EMPTY.** Both items filed on 09-15
+> shipped on 09-16: `LONG-RUNWAY-EARNS-PLAN-01` (Coaching Board — §97 Amendment,
+> the plan-length headroom is granted on SURPLUS rather than on §89's readiness
+> gate) and `OPS-DIGEST-PLAN-AUDIT-01` (the daily digest now reads the plan-audit
+> heartbeat; the repo half had already broken the digest's interpretation, so it
+> was a fix, not the optional wiring it was filed as). A third defect was fixed
+> en route, surfaced by the sweep: §47's peak long-run alternation counted
+> POSITIONS where its invariant counts PAIRS, which agreed only while a peak
+> phase was two weeks long.
+>
+> ⚠️ **THREE charity personas changed today**, all improvements: **M1**
+> first-timer marathon **18 → 20 weeks** (uncovered runway 4 → 2), **M5** masters
+> marathon **18 → 20**, **H1** first-timer HM **14 → 16**. M1 and M5 now deliver
+> close to their own prescribed peak (47 of 52, 64 of 65) instead of undershooting.
+> Worth knowing before the demo, because those are the plans on screen.
+>
+> 🔴 **A FOUNDER SEQUENCING CALL IS OPEN, and it is not a coaching one.** §97 Am.
+> moved **2,106 of 5,832 parity cases (36.1%)** — the largest single-change blast
+> radius this engine has had, against §6 Am.2's 18.5% yesterday. The board ruled
+> it CORRECT and every gate is green, so correctness is settled. What is not
+> settled is whether two changes of that size should both land in the 48 hours
+> before the showcase. **Committed, not pushed — the deploy is yours.**
 
 > 🔴 **DEPLOYMENT IS RATE-LIMITED, 2026-09-11 evening.** Vercel Hobby caps at
 > **100 deployments per rolling 24h** and 80 commits in one day exhausted it:
