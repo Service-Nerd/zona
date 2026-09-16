@@ -6874,7 +6874,26 @@ function buildRulePlanOnce(
       }
     }
     if (peakLrMins === 0 || peakLrMins + 1 >= floorMins) return null
-    return `Your longest run tops out at ${Math.round(peakLrMins)} minutes. For a race you'll likely be moving for around ${Math.round(projectedRaceMins)} minutes, we'd normally want it nearer ${Math.round(floorMins)} — but the long-run time cap for this distance stops us going further. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.`
+    // ⚠️ SECOND INSTANCE OF THE SAME DEFECT AS `structuralNote` ABOVE, found
+    // while fixing that one (M5-EASY-CEILING-01, Coaching Board 2026-09-16).
+    //
+    // This block's own opening comment states the intent — "IF
+    // LONG_RUN_CAP_MINUTES STOPPED the peak long run reaching the floor, say
+    // so" — and the code never checked whether the cap was the cause. It fired
+    // on ANY shortfall and blamed the time cap for all of them. On the plan the
+    // board reviewed the long run was 151 minutes against a 210-minute cap: the
+    // shortfall was real, the stated reason was not.
+    //
+    // The cap is only one of three things that can hold the long run down; the
+    // others are §45's week-on-week progression cap and §9's share-of-the-week
+    // sizing. §40c requires the note to name the lever, so it now names whichever
+    // one is actually binding.
+    const capMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[dk]
+    const atTimeCap = capMins > 0 && peakLrMins + 1 >= capMins
+    const why = atTimeCap
+      ? 'but the long-run time cap for this distance stops us going further'
+      : 'but your weekly volume is what limits it: the long run is sized as a share of the week, and this week cannot carry more'
+    return `Your longest run tops out at ${Math.round(peakLrMins)} minutes. For a race you'll likely be moving for around ${Math.round(projectedRaceMins)} minutes, we'd normally want it nearer ${Math.round(floorMins)} — ${why}. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.`
   })()
 
   // Compose final values. §23's note wins (more specific) when both trigger.
@@ -6883,8 +6902,36 @@ function buildRulePlanOnce(
   // Names the LEVER, per §40c's rule: a note that only reports the loss is a
   // disclaimer. More days is the honest first lever, because the defect scales
   // with volume-per-available-day — 4% at <=8 km/day against 73% at 17+.
+  //
+  // ⚠️ THE MECHANISM CLAUSE IS MEASURED, NOT ASSERTED (M5-EASY-CEILING-01,
+  // Coaching Board 2026-09-16). This note used to state flatly that "the long
+  // run is already at its time cap" — and on the plan the board reviewed, the
+  // long run was at 165 minutes against a 210-minute cap. The EFFECT it
+  // describes is real (easy runs are held below the long run, so the week
+  // cannot grow itself); the CAUSE it named was false.
+  //
+  // Measured across 5,760 weeks: §9's easy ceiling binds on 35.3% of them, and
+  // the long run is at its time cap in only 19.8% of those. So the time cap was
+  // the stated reason for a constraint it was not causing four times out of five.
+  //
+  // §40c requires the note to NAME THE LEVER, which is exactly why naming the
+  // wrong one matters: a runner who reads "the long run is at its time cap"
+  // learns nothing they can act on when it is not.
+  const longRunCapMinsForNote = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[raceDistanceKey(input.race_distance_km)]
+  const peakLrMinsDelivered = Math.max(0, ...weeks
+    .filter(w => w.n >= 1 && w.type !== 'race')
+    .map(w => {
+      const lr = Object.values(w.sessions ?? {}).find(sn => !!sn && isLongRun(sn))
+      return lr?.duration_mins ?? 0
+    }))
+  const longRunIsAtTimeCap = longRunCapMinsForNote > 0
+    && peakLrMinsDelivered + 1 >= longRunCapMinsForNote
+  const whyItCannotGrow = longRunIsAtTimeCap
+    ? 'The long run is already at its time cap and the easy runs are capped against it'
+    : 'Your easy runs are held below your long run so it stays the longest run of the week, and the long run is itself a share of that week'
+
   const structuralNote: string | null = structuralPeakInversion
-    ? `This plan is built to hold your fitness rather than grow it — ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} cannot be built on. The long run is already at its time cap and the easy runs are capped against it, so adding a quality session takes volume out of the week rather than adding to it: this plan peaks at ${Math.round(structuralPeakInversion.peakMax)}km against ${Math.round(structuralPeakInversion.baseMax)}km earlier in the plan. It maintains your fitness rather than building it. The lever is days, not effort — ${input.days_available + 1} running days would let the same volume progress.`
+    ? `This plan is built to hold your fitness rather than grow it — ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} cannot be built on. ${whyItCannotGrow}, so adding a quality session takes volume out of the week rather than adding to it: this plan peaks at ${Math.round(structuralPeakInversion.peakMax)}km against ${Math.round(structuralPeakInversion.baseMax)}km earlier in the plan. It maintains your fitness rather than building it. The lever is days, not effort — ${input.days_available + 1} running days would let the same volume progress.`
     : null
 
   // §52 (2026-09-02) — LOPSIDED-WEEK maintenance trigger. §52 itself names the
