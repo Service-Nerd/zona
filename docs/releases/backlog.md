@@ -138,6 +138,11 @@ The build fails if that stops being true.
 >   `enforceViolations` throws on error in dev/test and 15.2% of inputs would have taken verify
 >   down. At 0.7% that objection is nearly gone. **If it does not reach ~0, the producer fix
 >   failed** and that is the test.
+> - 🔲 **BRAND-EMDASH-01** — the §23 `structuralPeakInversion` note (`ruleEngine.ts`) contains TWO
+>   em dashes in runner-facing copy, against the 2026-09-11 founder standard. Pre-existing and
+>   unnoticed because `noEmDash.test.ts` covers MARKETING surfaces only, not plan `meta` notes.
+>   Worth extending that guard to the engine's emitted copy rather than fixing the one line.
+>   *Verify still open:* `grep -c "—" <(grep "hold your fitness rather than grow" lib/plan/ruleEngine.ts)` → **non-zero = open**.
 > - 🔲 **Compliance themes still unruled:** zero-quality-by-accident (board asked for evidence on
 >   what a 3-day novice marathoner should deliberately receive), `maintenance` meaning three
 >   different things, and warn-severity triage (any warn >20% is promoted or explained).

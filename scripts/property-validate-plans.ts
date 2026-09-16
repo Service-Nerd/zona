@@ -461,6 +461,7 @@ let scErrFree = 0, scWarnFree = 0, scBoth = 0, scScored = 0
 //
 // ACCEPTABLE = CLEAN + CONSTRAINED. Target 95%.
 let gClean = 0, gConstrained = 0, gFailing = 0
+const gUndeclaredCodes = new Map<string, number>()
 const gDeclSrc = new Map<string, number>()
 const gFailReason = new Map<string, number>()
 // THE QUESTION THAT DECIDES WHETHER 95% IS REACHABLE. A plan that cannot build
@@ -698,8 +699,16 @@ for (const input of inputs) {
       // A residual the constitution ratifies. §106's shortfall is the big one;
       // the rest are the absorbed-warn family (§34).
       const hasResidual = warnCodes.size > 0
-      const anyDeclared = declared || Boolean(m.difficulty_note)
+      // ⚠️ THE BAR: a declaration must name the SPECIFIC shortfall, not merely
+      // report that the plan is demanding. `difficulty_note` was accepted in the
+      // gauge's first cut and carried 11.3% of CONSTRAINED on its own -- 5.6pp of
+      // the headline. It says "your inputs cap how far the plan can build", which
+      // names a cause and a lever but NOT what the runner is actually missing.
+      // §34's obligation is that the RESIDUAL is declared, and a generic
+      // difficulty label does not discharge it.
+      const anyDeclared = declared
         || Boolean(m.long_run_shortfall_note) || Boolean(m.uncovered_runway_note)
+        || Boolean(m.peak_shortfall_note) || Boolean(m.load_residual_note)
       if (errors.length > 0) { gFailing++; gFailReason.set('error violation', (gFailReason.get('error violation') ?? 0) + 1) }
       else if (structural.length > 0) { gFailing++; gFailReason.set(`structural: ${structural[0]}`, (gFailReason.get(`structural: ${structural[0]}`) ?? 0) + 1) }
       else if (!hasResidual) gClean++
@@ -708,10 +717,16 @@ for (const input of inputs) {
         const src = declared ? 'volume_constraint_note / maintenance'
           : m.long_run_shortfall_note ? 'long_run_shortfall_note'
           : m.uncovered_runway_note ? 'uncovered_runway_note'
-          : 'difficulty_note ONLY'
+          : m.peak_shortfall_note ? 'peak_shortfall_note (NEW)'
+          : m.load_residual_note ? 'load_residual_note (NEW)'
+          : 'UNREACHABLE — difficulty_note no longer counts'
         gDeclSrc.set(src, (gDeclSrc.get(src) ?? 0) + 1)
       }
-      else { gFailing++; gFailReason.set('residual NOT declared', (gFailReason.get('residual NOT declared') ?? 0) + 1) }
+      else {
+        gFailing++
+        gFailReason.set('residual NOT declared', (gFailReason.get('residual NOT declared') ?? 0) + 1)
+        for (const c of Array.from(warnCodes)) gUndeclaredCodes.set(c, (gUndeclaredCodes.get(c) ?? 0) + 1)
+      }
     }
     const mainW = composed.plan.weeks.filter(w => w.n >= 1)
     const trainW = mainW.filter(w => !Object.values(w.sessions ?? {})
@@ -1318,7 +1333,13 @@ if (SCORE) {
   for (const [r, n] of Array.from(gFailReason.entries()).sort((a, b) => b[1] - a[1])) {
     console.log(`      ${String(n).padStart(5)}  ${r}`)
   }
-  console.log('  what is doing the DECLARING in CONSTRAINED (is the test too soft?):')
+  if (gUndeclaredCodes.size) {
+    console.log('  WHICH residuals go undeclared (the work list):')
+    for (const [c, n] of Array.from(gUndeclaredCodes.entries()).sort((a, b) => b[1] - a[1]).slice(0, 8)) {
+      console.log(`      ${String(n).padStart(5)}  ${c}`)
+    }
+  }
+  console.log('  what is doing the DECLARING in CONSTRAINED:')
   for (const [r, n] of Array.from(gDeclSrc.entries()).sort((a, b) => b[1] - a[1])) {
     console.log(`      ${String(n).padStart(5)}  ${(n / gConstrained * 100).toFixed(1).padStart(5)}%  ${r}`)
   }

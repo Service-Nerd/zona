@@ -619,6 +619,14 @@ export interface PlanMeta {
   /** The honest note for those weeks. Present iff `uncovered_runway_weeks` is at
    *  or above `FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD`. */
   uncovered_runway_note?: string
+  /** §34/§106 — present when the delivered peak falls below the runner's stated
+   *  weekly volume and no more specific note (volume_constraint / maintenance)
+   *  already covers it. Names the binding constraint and the lever (§40c). */
+  peak_shortfall_note?: string
+  /** §34/ADR-022 — present when a training week's DELIVERED rise exceeds the
+   *  applicable weekly cap because the race-anchored long run cannot be trimmed.
+   *  Names the week and what to do with it. */
+  load_residual_note?: string
 
   fitness_intensity_level?: 'beginner' | 'intermediate' | 'experienced'
   /**

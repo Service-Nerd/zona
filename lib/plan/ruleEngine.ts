@@ -7219,6 +7219,108 @@ function buildRulePlanOnce(
       ?? longRunOverrunNote ?? structuredOverrunNote ?? easyOverrunNote
       ?? easyFloorProtectionNote ?? undefined
 
+  // §34 / §106 — WHEN THE PLAN PEAKS BELOW WHAT THE RUNNER ALREADY RUNS, SAY SO.
+  //
+  // §106's invariant fires on 29.6% of the sweep and, measured, 89.7% of those
+  // firings are plans the constitution EXPLICITLY licenses: §12's injury cap,
+  // §10/CD-6's refusal to believe a `<6mo` self-report, §23/§46's days and
+  // weekday-minute constraints. Those plans are not defective. What they were is
+  // SILENT: 654 of them carried no note of any kind, so a runner doing 60 km a
+  // week was handed a plan peaking at 45 and told nothing.
+  //
+  // §34's standing obligation is that a structural residual is DECLARED, and
+  // §40c's rule is that a note reporting only the loss is a disclaimer — it must
+  // name the lever. So this branches on the constraint that actually binds rather
+  // than emitting one generic line.
+  //
+  // Deliberately NOT emitted when `volume_constraint_note` or the maintenance
+  // label already covers it: two notes describing the same shortfall is worse
+  // than one (§23's note wins, more specific).
+  const peakShortfallNote: string | null = (() => {
+    const stated = input.current_weekly_km
+    if (!stated || stated <= 0) return null
+    if (finalVolumeNote || finalVolumeProfile === 'maintenance') return null
+    const training = weeks.filter(w =>
+      w.n >= 1 && w.type !== 'deload' && w.badge !== 'deload' && w.type !== 'race'
+      && !Object.values(w.sessions ?? {}).some(sn => sn?.type === 'race'))
+    if (!training.length) return null
+    const deliveredPeak = Math.max(...training.map(w => w.weekly_km ?? 0))
+    if (deliveredPeak <= 0 || deliveredPeak + 0.5 >= stated) return null
+
+    const injuryCapped = hasVolumeCappedInjury(input)
+    const overClaim = input.training_age === '<6mo'
+    const lowDays = input.days_available <= 3
+    const cap = input.max_weekday_mins
+
+    const why = injuryCapped
+      ? 'Your injury history caps how fast weekly volume is allowed to rise, and over this many weeks that cap cannot climb back to where you are.'
+      : overClaim
+        ? 'With under six months of running behind you, we size the opening weeks on what the plan can verify rather than the figure entered, then build from there.'
+        : lowDays
+          ? `On ${input.days_available} running days there is nowhere to put the difference without one run carrying too much of the week.`
+          : cap != null
+            ? `A ${cap} minute weekday ceiling limits what the midweek runs can carry, and the long run cannot absorb the rest on its own.`
+            : 'Your starting volume and the time available cap how far this plan can build.'
+
+    const lever = injuryCapped
+      ? 'That is the cap doing its job. The lever is time, not effort.'
+      : overClaim
+        ? 'Log a few weeks at your real volume and a regenerated plan will start from it.'
+        : lowDays
+          ? 'The lever is days: one more running day lifts the ceiling more than any change to the sessions.'
+          : 'The lever is one longer weekday, or an extra running day.'
+
+    return `This plan peaks at ${Math.round(deliveredPeak)}km a week, below the ${Math.round(stated)}km you told us you are running now. ${why} ${lever}`
+  })()
+
+  // §34 / ADR-022 — THE DELIVERED LOAD RESIDUAL, DECLARED.
+  //
+  // ADR-022 established that the load rules (§2/§3/§12) are enforced on the
+  // volume CURVE while the runner runs the PLACED SESSIONS, and that the two
+  // diverge upward because the §52-exempt long run is sized on its own
+  // race-anchored schedule and cannot be trimmed. The residual is real, ruled
+  // honest, and tracked by three `warn` invariants — INV-PLAN-INJURY-CAP-DELIVERED,
+  // INV-PLAN-DELIVERED-RAMP and INV-PLAN-BOUNCEBACK-BOUNDED.
+  //
+  // What it was NOT was declared. Measured: 244 + 225 + 138 plans carry one of
+  // those residuals and tell the runner nothing, which is the §34 obligation
+  // unmet — the same gap the peak-shortfall note above closes for §106.
+  //
+  // DELIBERATELY BROADER AND SIMPLER THAN THE INVARIANTS. The checkers carry
+  // careful exclusions (deloads, taper, bounceback, the trimable-portion test).
+  // Reproducing those here would be a second copy of three predicates, drifting
+  // (the fault this file has paid for repeatedly). Instead this asks the blunt
+  // question — did ANY training week rise faster than the applicable cap — so it
+  // OVER-declares rather than under-declares. Declaring a residual that the
+  // checker forgives is harmless; staying silent on one it catches is the defect.
+  const loadResidualNote: string | null = (() => {
+    if (finalVolumeNote || peakShortfallNote) return null   // more specific wins
+    const capPct = hasVolumeCappedInjury(input)
+      ? GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT
+      : GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
+    const training = weeks.filter(w =>
+      w.n >= 1 && w.phase !== 'taper' && w.type !== 'race'
+      && !Object.values(w.sessions ?? {}).some(sn => sn?.type === 'race'))
+    let worstPct = 0, worstWeek = 0
+    for (let i = 1; i < training.length; i++) {
+      const prev = training[i - 1].weekly_km ?? 0
+      const cur = training[i].weekly_km ?? 0
+      if (prev <= 0 || cur <= prev) continue
+      const rise = (cur - prev) / prev * 100
+      if (rise > worstPct) { worstPct = rise; worstWeek = training[i].n }
+    }
+    if (worstWeek === 0 || worstPct <= capPct) return null
+    const who = hasVolumeCappedInjury(input)
+      ? `Your injury history sets a ${capPct}% weekly ceiling`
+      : `We hold weekly volume to about ${capPct}% growth`
+    return `${who}, and week ${worstWeek} rises about ${Math.round(worstPct)}%. `
+      + 'The long run is set by your race distance and cannot be cut to make the arithmetic work, '
+      + `so that week lands heavier than the rule wants. Treat week ${worstWeek} as the one to be careful with: `
+      + 'hold the easy days genuinely easy, and move the long run rather than shorten it if the week is not going well.'
+  })()
+
+
+
   // CoachingPrinciples §31 — persona-aware compression classification. Computed
   // here (not inline in meta) so the difficulty band below reads the SAME value,
   // keeping the two consistent by construction.
@@ -7414,6 +7516,8 @@ function buildRulePlanOnce(
     ...(finalVolumeProfile ? { volume_profile: finalVolumeProfile } : {}),
     ...(finalVolumeNote    ? { volume_constraint_note: finalVolumeNote } : {}),
     ...(finishGoalLrShortfallNote ? { long_run_shortfall_note: finishGoalLrShortfallNote } : {}),
+    ...(peakShortfallNote ? { peak_shortfall_note: peakShortfallNote } : {}),
+    ...(loadResidualNote ? { load_residual_note: loadResidualNote } : {}),
     ...(volumeShortfallNote ? { volume_shortfall_note: volumeShortfallNote } : {}),
     ...(volumeShortfallPct != null ? { volume_shortfall_pct: Math.round(volumeShortfallPct * 10) / 10 } : {}),
     // §40b Amendment 2 (CB-TERRAIN-01) — runner-environment terrain governs the
