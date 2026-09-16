@@ -226,3 +226,44 @@ describe('GOAL-COHERENCE-01 — a time goal with no time is not a time goal', ()
     expect(plan.meta.goal_pace_per_km).toBeTruthy()
   })
 })
+
+describe('§110 / §40c — the note describes the PLAN, not the rule that ran', () => {
+  // Shipped wrong and caught by the board's cold re-review, not by a check:
+  // the note fired on `avoid` alone and told 1,615 runners "the plan keeps one
+  // a week at most" while delivering ZERO quality — the §10/§79 beginner
+  // ceiling zeroes quality before §110's cap has anything to cap.
+  //
+  // Claim/computation mismatch, and worse here than elsewhere: every honest-
+  // residual rule the engine has (§34, §40c) is undone by a sentence that is
+  // not true.
+  const avoidPlan = (extra: Record<string, unknown>) => {
+    const input = mk({ hard_session_relationship: 'avoid', ...extra })
+    const r = generateRulePlan(input, 'paid') as unknown as Record<string, unknown>
+    const plan = (r.plan ?? r) as { weeks: Array<{ n: number; sessions?: Record<string, Session | undefined> }>; meta: Record<string, unknown> }
+    const q = plan.weeks.filter(w => w.n >= 1)
+      .flatMap(w => Object.values(w.sessions ?? {}).filter(Boolean) as Session[])
+      .filter(s => s.type === 'quality').length
+    return { note: String(plan.meta.hard_pref_note ?? ''), quality: q }
+  }
+
+  it('claims the one-a-week cap ONLY when quality is actually delivered', () => {
+    const { note, quality } = avoidPlan({})
+    expect(quality).toBeGreaterThan(0)
+    expect(note).toMatch(/keeps one a week/i)
+  })
+
+  it('does NOT claim a cap when the plan is all easy — the T2 case', () => {
+    // A genuine beginner: the ratified ceiling zeroes quality, so there is no
+    // cap operating and nothing to promise.
+    const { note, quality } = avoidPlan({
+      fitness_level: 'beginner', training_age: '<6mo',
+      recent_quality_training: 'none', current_weekly_km: 10,
+      longest_recent_run_km: 4, days_available: 3,
+    })
+    expect(quality).toBe(0)
+    expect(note).not.toMatch(/keeps one a week/i)
+    // Still acknowledges what the runner told us — silence reads as ignoring it.
+    expect(note).toMatch(/avoid hard sessions/i)
+    expect(note).toBeTruthy()
+  })
+})

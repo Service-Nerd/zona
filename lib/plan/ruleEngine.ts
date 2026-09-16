@@ -7729,8 +7729,28 @@ function buildRulePlanOnce(
     // LEVER — so this says which lever (one a week, started later) rather than
     // gesturing at "your preferences". Unconditional on training_age: unlike
     // the `love` note above, nothing here is forward-looking.
+    // ⚠️ THE NOTE MUST DESCRIBE THE PLAN THAT WAS BUILT, NOT THE RULE THAT RAN.
+    // First cut fired on `avoid` alone and told 1,615 runners "the plan keeps
+    // one a week at most" while delivering ZERO quality — because the §10/§79
+    // BEGINNER CEILING zeroes quality before §110's cap has anything to cap,
+    // and the note never asked what actually landed. Caught by the board's cold
+    // re-review of T2, not by any check.
+    //
+    // That is the claim/computation mismatch class, and it is worse here than
+    // elsewhere: every honest-residual rule this engine has (§34, §40c) is
+    // undone by a sentence that is not true. A note is a claim about the
+    // artefact, so it is derived FROM the artefact.
+    //
+    // The preference is still acknowledged in the all-easy case rather than
+    // dropped — the runner told us something and silence reads as ignoring it —
+    // but the plan is attributed to the base, which is what actually shaped it.
     ...(input.hard_session_relationship === 'avoid'
-      ? { hard_pref_note: 'You said you avoid hard sessions. The plan keeps one a week at most and starts them later than usual. One is enough to prepare for the race; two is what you were trying to avoid.' }
+      ? {
+          hard_pref_note: weeks.some(w => w.n >= 1 && Object.values(w.sessions ?? {})
+            .some(sn => sn?.type === 'quality'))
+            ? 'You said you avoid hard sessions. The plan keeps one a week at most and starts them later than usual. One is enough to prepare for the race; two is what you were trying to avoid.'
+            : 'You said you avoid hard sessions. This plan has none to avoid: at your current base, easy running is what builds the most, so there was nothing to hold back.',
+        }
       : {}),
 
     // VDOT / zone model fields (CoachingPrinciples §10, §20).

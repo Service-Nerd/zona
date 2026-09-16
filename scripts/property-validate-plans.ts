@@ -503,6 +503,7 @@ const peakShortCause = new Map<string, number>()
 let psDeclared = 0, psSilent = 0
 const psEg: string[] = []
 const supSplit = new Map<string, number>()
+let hprLie = 0, hprOk = 0
 const regSplit = new Map<string, number>()
 const gUndeclaredCodes = new Map<string, number>()
 const gDeclSrc = new Map<string, number>()
@@ -772,6 +773,22 @@ for (const input of inputs) {
       }
     }
     const mainW = composed.plan.weeks.filter(w => w.n >= 1)
+    // §110's hard_pref_note claims "keeps one a week at most" — does the plan
+    // actually DELIVER any quality? A note describing training the runner does
+    // not get is the claim/computation mismatch class.
+    if ((input as { hard_session_relationship?: string }).hard_session_relationship === 'avoid'
+      && (m as Record<string, unknown>).hard_pref_note) {
+      const q = mainW.flatMap(w => Object.values(w.sessions ?? {}).filter(Boolean) as Array<{ type?: string }>)
+        .filter(sn => sn.type === 'quality').length
+      // Measure the CLAIM against the delivery, not the note's existence. The
+      // first cut of this probe counted "note present + zero quality" and so
+      // could not see the fix at all -- both the true and the false wording
+      // are present notes.
+      const txt = String((m as Record<string, unknown>).hard_pref_note ?? '')
+      const claimsACap = /keeps one a week/i.test(txt)
+      if (q === 0 && claimsACap) hprLie++
+      else hprOk++
+    }
     // §107 regression probe — which runners newly trip the two volume-shape
     // checks, split by the input §107 actually changed.
     for (const c of ['INV-PLAN-PEAK-IN-PEAK-PHASE', 'INV-PLAN-NOT-DETRAINING']) {
@@ -1491,6 +1508,7 @@ if (SCORE) {
   for (const e of psEg) console.log(`      SILENT EG: ${e}`)
   console.log('  §107 REGRESSION PROBE — who trips the volume-shape checks:')
   for (const [c, n] of Array.from(regSplit.entries()).sort()) console.log(`      ${String(n).padStart(5)}  ${c}`)
+  console.log(`  §110 NOTE HONESTY — 'avoid' notes whose CLAIM matches delivery: ${hprOk}, claim a cap but deliver ZERO: ${hprLie}`)
   console.log('  SUPPRESS split (non-beginner only):')
   for (const [c, n] of Array.from(supSplit.entries()).sort((a, b) => b[1] - a[1])) console.log(`      ${String(n).padStart(5)}  ${c}`)
   const acceptable = gClean + gConstrained
