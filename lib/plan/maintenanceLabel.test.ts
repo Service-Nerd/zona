@@ -15,13 +15,32 @@ import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import type { GeneratorInput } from '@/types/plan'
 
+// ⚠️ RE-ANCHORED 2026-09-16 (LR-CAP-BLIND-01), from 4 days to 3, and the reason
+// is a RESULT rather than test maintenance.
+//
+// On 4 days this runner no longer gets a `volume_constraint_note`, because the
+// plan is no longer downgraded to maintenance — it now builds 18 -> 43 km.
+// The old downgrade was an artefact of the §45 blind spot: a duration-anchored
+// long run was jumping uncapped, the week went past §52's 60% share, and the
+// lopsided-week trigger pushed the plan to maintenance. Cap the spike and the
+// trigger stops firing.
+//
+// So the plan this file was written about got BETTER, and the honest residuals
+// it still owes are still declared (`long_run_shortfall_note`,
+// `load_residual_note`). What it no longer does is call itself maintenance,
+// which was the whole complaint MAINT-LABEL-01 was raised about.
+//
+// The file's subject — what a beginner charity marathoner READS when the plan
+// genuinely cannot build — still exists at 3 days (§52's low-day rule owns that
+// shape and is untouched). Re-anchored there rather than weakened, so the prose
+// assertions below still test a real runner.
 const charityBeginner = (over: Record<string, unknown> = {}) => ({
   athlete_name: 'A', age: 38, race_name: 'Charity', primary_metric: 'distance',
   plan_start: '2026-04-27', race_distance_km: 42.2, race_date: '2026-10-05',
   goal: 'finish', current_weekly_km: 5, longest_recent_run_km: 0,
   fitness_level: 'beginner', recent_quality_training: 'none',
   hard_session_relationship: 'avoid', injury_history: [],
-  days_available: 4, days_cannot_train: [], ...over,
+  days_available: 3, days_cannot_train: [], ...over,
 }) as unknown as GeneratorInput
 
 const noteFor = (over: Record<string, unknown> = {}) => {
@@ -51,7 +70,16 @@ describe('the note a beginner charity marathoner reads', () => {
   it('still names the diagnosis and the lever (§38)', () => {
     const { note } = noteFor()
     expect(note!.toLowerCase(), 'diagnosis missing').toMatch(/long run|volume|days|time/)
-    expect(note!.toLowerCase(), 'lever missing').toContain('lever')
+    // ⚠️ ASSERTS THE PROPERTY, NOT THE WORD. This used to require the literal
+    // token 'lever', which passed only because the 4-day note happened to use
+    // it. §38/§40c require the note to name a concrete CHANGE the runner can
+    // make; the 3-day note does that perfectly ("run at least 4 days a week")
+    // without ever saying "lever". A test that pins vocabulary instead of
+    // behaviour fails on correct copy and passes on a disclaimer that happens
+    // to contain the right noun.
+    expect(note!.toLowerCase(), 'no actionable remedy named').toMatch(
+      /if you want it to build instead:|the lever is/,
+    )
   })
 
   // Sutherland's point, and the reason this item existed: they WILL get fitter.

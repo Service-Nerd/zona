@@ -4242,11 +4242,36 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     const capPct = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100
     const capAbs = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_ABS_KM
     const stepBackTol = 1 + GENERATION_CONFIG.LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT / 100
+    // ⚠️ READS THE SESSION'S SIZE, NOT ITS `distance_km` FIELD — and the
+    // difference was a live injury risk for months (LR-CAP-BLIND-01, found by
+    // the Coaching Board's cold re-review 2026-09-16).
+    //
+    // A session is anchored EITHER by distance OR by duration, and BEGINNERS
+    // GET DURATION-ANCHORED PLANS (§79/§80 — time on feet). So `distance_km`
+    // is null on a beginner's long run, this returned null, and the loop below
+    // `continue`d. §45 is titled "universal, no phase exemption" and had
+    // **never once run on a beginner's plan**.
+    //
+    // What it was missing: a 14-week first marathon went 7.3, 7.8, 8.7, 8.7,
+    // 9.7, 8.5 and then 26.0 km — a +206% single step to 2.9x the runner's
+    // lifetime longest run. §45's own founding case (2026-04-28) was +185%,
+    // so this is worse than the incident the principle was written to prevent,
+    // shipping to the least robust cohort the engine serves.
+    //
+    // Sims, on the record: a PRESENTATION choice (minutes rather than
+    // kilometres, made for good reasons) silently exempted one cohort from a
+    // SAFETY cap. Presentation is not supposed to have physiological
+    // consequences.
+    //
+    // `sessionKmSelfPaced` is the single owner for "how far is this session"
+    // when the caller holds no PaceGuide — the validator is named in its own
+    // docstring as one of those callers. Same correction as SESSION-KM-01/02
+    // made to the sibling checks; this site was missed.
     const longRunForWeek = (week: typeof plan.weeks[number]): number | null => {
       const long = Object.values(week.sessions).find(s =>
         !!s && isLongRun(s)
       )
-      return long?.distance_km ?? null
+      return long ? sessionKmSelfPaced(long) ?? null : null
     }
     for (let i = 1; i < plan.weeks.length; i++) {
       const prev = plan.weeks[i - 1]

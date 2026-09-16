@@ -1899,6 +1899,57 @@ The refusal tier — *"not achievable in this window"* — **is** the §44 `bloc
 
 The single permitted exception: a long run following a deload week may step back up to the pre-deload long-run distance (within +5%).
 
+### Amendment 1 — a runner prescribed in MINUTES is not exempt from a distance rule
+
+*Added 2026-09-16 (LR-CAP-BLIND-01). Found by the Coaching Board's cold re-review of a generated plan, not by any check.*
+
+**This section says "universal, no phase exemption" in its own title, and it had
+never once run on a beginner's plan.**
+
+A session is anchored EITHER by distance OR by duration, and §79/§80 prescribe
+**duration** to beginners and to every race at or above 50 km. Both the producer
+(`applyLongRunProgressionCap`) and the checker (`INV-PLAN-LR-PROGRESSION-CAP`)
+bailed out on `distance_km == null`. **One bug, two copies** — and the checker
+could not catch the producer because it shared the defect. Both now read the
+session's size through `sessionKm` / `sessionKmSelfPaced`, the single owner.
+
+**What was shipping.** A 14-week first marathon, 3 days, 45-minute weekday
+ceiling, under six months of running, longest run ever 9 km. The long run ran
+7.3, 7.8, 8.7, 8.7, 9.7, 8.5 and then **26.0 km — a +206% single step to 2.9×
+the runner's lifetime longest**, held for a second week at 76% of weekly volume.
+**§45's own founding case was +185%**, so the engine was producing something
+worse than the incident that caused this section to exist, for the cohort least
+able to absorb it. Willy named the injury (tibial or metatarsal bone stress) and
+the week it presents (ten or eleven).
+
+**Scope, measured:** 2,271 breaches across **1,568 plans, 9.8% of the sweep** —
+and not beginners only. Intermediate and experienced ultra runners were equally
+unchecked, because the exemption followed the ANCHOR, not the ability.
+
+**Sims, on the record:** a **presentation** decision (minutes rather than
+kilometres, made for good reasons under §79/§80) silently exempted one cohort
+from a **safety** cap. Presentation is not supposed to have physiological
+consequences. This one did, for months, aimed at the population with the highest
+baseline bone-stress-injury risk.
+
+**Downstream, declared rather than discovered later.** Capping the spike removes
+the lopsided weeks it was creating, so §52's maintenance trigger fires less
+often: `maintenancePct` **49.3 → 48.4**, marathon **71.8 → 68.7**,
+`constraintNotePct` **65.1 → 64.2**, mean delivered peak **38.74 → 38.44 km**,
+`INV-PLAN-LR-MAX-WEEKLY-PCT` **9.3% → 8.8%**. **Fewer plans are downgraded to
+maintenance because fewer plans are lopsided** — the spike was manufacturing the
+constraint it was then declared under. The beginner charity marathoner in
+`maintenanceLabel.test.ts` now BUILDS (18 → 43 km) where she used to be told the
+plan holds her fitness.
+
+**⚠️ One guard was found failing open and is recorded, not fixed here.**
+`INV-PLAN-DELIVERED-RAMP` requires BOTH the whole week and its trimable portion
+to breach, and returns early when the trimable portion did not rise. A long run
+that grows violently SHRINKS the rest of the week, so the check is silent
+**precisely on the most extreme cases**. It stayed silent on the 70% weekly rise
+above. Two independent guards missed one plan for two different reasons; that is
+what happens when guards are written against the common case.
+
 **Why.** Case 04 (2026-04-28 review) showed a W5 long run of 10.5km jumping to a W6 long run of 30km — a +185% week-on-week increase, presented in peak phase. The structural justification ("peak demands specificity") is the failure mode: peak phase needs the specificity *because* the runner has been progressively built toward it, not as a substitute. Spike-then-recover is the most reliable injury vector in the audience this engine serves.
 
 When the §24 floor (peak long-run race ratio) cannot be reached without violating this cap, this principle wins and the plan downgrades to `maintenance` with both a `volume_constraint_note` and a `long_run_constraint_note` — the same mechanism used in §23 / §38.

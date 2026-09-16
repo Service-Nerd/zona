@@ -19,7 +19,7 @@ import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type F
 import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
-import { sessionKmOrZero } from '@/lib/plan/sessionDistance'
+import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { zoneStringFromZoneKeys } from '@/lib/coaching/zoneRules'
 import { isLongRun, isShakeout, classifyStimulus, isStructuredSession, isVo2maxSession } from './sessionRole'
 import { PLAN_SIGNATURES } from './planSignatures'
@@ -4408,7 +4408,39 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
     const prevLR = findLong(prev)
     const currLR = findLong(curr)
     if (!prevLR || !currLR) continue
-    if (prevLR.session.distance_km == null || currLR.session.distance_km == null) continue
+
+    // ⚠️ THIS USED TO BAIL OUT ON `distance_km == null`, WHICH MEANT §45 WAS
+    // NEVER APPLIED TO A BEGINNER OR AN ULTRA (LR-CAP-BLIND-01, Coaching Board
+    // 2026-09-16). A session is anchored EITHER by distance OR by duration, and
+    // §79/§80 give duration to beginners AND to every race >= 50km — so the two
+    // cohorts with the least margin for a long-run spike were the two the cap
+    // silently skipped. `INV-PLAN-LR-PROGRESSION-CAP` carried the identical
+    // bail-out, so nothing caught the omission either: one bug, two copies, and
+    // the checker could not catch the producer because it shared the defect.
+    //
+    // Measured: 2,271 breaches across 1,568 plans (9.8% of the sweep). Worst
+    // seen is a 14-week first marathon whose long run went 8.5km -> 26.0km,
+    // +206%, to 2.9x the runner's lifetime longest — worse than the +185%
+    // incident §45 was written to prevent.
+    //
+    // ⚠️ `sessionKmSelfPaced`, NOT `sessionKm(s, pace.minPerKmEasy)` — AND THE
+    // FIRST CUT OF THIS FIX GOT IT WRONG, which parity caught.
+    //
+    // The two converters disagree for a duration-anchored session:
+    // `sessionKmSelfPaced` uses the session's OWN pace band, `sessionKm` a
+    // plan-level easy pace. Using one here and the other in
+    // `INV-PLAN-LR-PROGRESSION-CAP` made producer and checker disagree about how
+    // long the long run IS, so §45's deload-bounceback exemption fired on one
+    // side and not the other and the checker failed plans the producer had
+    // deliberately allowed. That is the producer/consumer split this file has
+    // paid for repeatedly (D-16, TIER-OWNER-01, §47's positions-vs-pairs) —
+    // reintroduced while fixing a different instance of it.
+    //
+    // The checker has no PaceGuide and therefore MUST use the self-paced
+    // reading, so the producer uses it too. Agreement by construction.
+    const prevKmOf = sessionKmSelfPaced(prevLR.session)
+    const currKmOf = sessionKmSelfPaced(currLR.session)
+    if (prevKmOf == null || currKmOf == null || prevKmOf <= 0 || currKmOf <= 0) continue
 
     // BOUNCEBACK EXEMPTION — from a deload OR from a long-run step-back.
     //
@@ -4425,20 +4457,35 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
     // Detected STRUCTURALLY (prev long run shorter than the one before it)
     // rather than by re-deriving the step-back cadence, so the two cannot drift.
     const prevPrevLR = i >= 2 ? findLong(weeks[i - 2]) : null
-    const prevPrevKm = prevPrevLR?.session.distance_km
+    const prevPrevKm = prevPrevLR ? sessionKmSelfPaced(prevPrevLR.session) : null
     const prevWasStepBack = prevPrevKm != null
       && prev.type !== 'race'
-      && prevLR.session.distance_km < prevPrevKm - 0.01
+      && prevKmOf < prevPrevKm - 0.01
     if (prev.type === 'deload' || prevWasStepBack) {
-      if (prevPrevKm != null && currLR.session.distance_km <= prevPrevKm * stepBackTol + 0.01) continue
+      if (prevPrevKm != null && currKmOf <= prevPrevKm * stepBackTol + 0.01) continue
     }
 
-    const allowedJumpKm = Math.max(prevLR.session.distance_km * capPct, capAbs)
-    const maxAllowedKm = prevLR.session.distance_km + allowedJumpKm
-    if (currLR.session.distance_km - 0.01 > maxAllowedKm) {
+    const allowedJumpKm = Math.max(prevKmOf * capPct, capAbs)
+    const maxAllowedKm = prevKmOf + allowedJumpKm
+    if (currKmOf - 0.01 > maxAllowedKm) {
       const newKm = Math.max(Math.floor(maxAllowedKm / precision) * precision, minLong)
-      currLR.session.distance_km = newKm
-      currLR.session.duration_mins = dur(newKm, pace.minPerKmEasy)
+      // WRITE BACK TO THE ANCHOR THE SESSION ACTUALLY USES. Setting
+      // `distance_km` on a duration-anchored session would flip a beginner's
+      // card from minutes to kilometres and break §79/§80's metric contract —
+      // fixing a load bug by silently changing what the runner is shown.
+      if (currLR.session.distance_km != null) {
+        currLR.session.distance_km = newKm
+        currLR.session.duration_mins = dur(newKm, pace.minPerKmEasy)
+      } else {
+        // SCALE THE DURATION BY THE KM RATIO rather than converting km -> minutes
+        // with some pace. Distance and duration are proportional at a fixed
+        // pace, so the ratio lands exactly on `newKm` under the SAME converter
+        // the checker will use — no second pace is introduced, so none can drift.
+        const mins = currLR.session.duration_mins
+        if (mins != null && mins > 0) {
+          currLR.session.duration_mins = Math.round(mins * (newKm / currKmOf))
+        }
+      }
 
       // CoachingPrinciples §9 — clamp easy runs so long-vs-easy ratio survives.
       const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
