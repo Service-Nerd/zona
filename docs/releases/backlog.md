@@ -10,70 +10,49 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at end of 2026-09-16
 
-**Everything shipped today is committed and in `feature-registry.md`.**
-`npm run verify` exit 0 (**2,001 tests / 216 files**) · property sweep **15,973 plans, 0 violations, 0 new above baseline** ·
-archetype matrix **65/0** · `invariant:liveness` **84/115 woken** · `test:liveness` nightly ·
-coaching deviation scan **HIGH 0** · `cohort:shape` re-baselined with every move declared ·
-`verify:parity` measured on every engine change.
+**Everything shipped today is committed, pushed, and recorded in `feature-registry.md` + `build-log.md`.**
+`npm run verify` exit 0 (**2,028 tests / 219 files**) · property sweep **15,974 plans, 0 violations, 0 new above baseline** ·
+archetype matrix **65/0** · `invariant:liveness` **86/117 woken (74%)** · coaching deviation scan **HIGH 0 / MED 23** ·
+`cohort:shape` re-baselined with every move declared · `verify:parity` **5,940 cases** (now varies `hard_session_relationship`).
 
-**The coaching constitution is fully accounted for: 115 invariants registered, declared, and passing on the three canonical cases.**
-The build fails if that stops being true.
+**The constitution is fully accounted for: 107 principles — 79 enforced by an invariant, 22 by a named test, 6 exempt with a reason, 0 unverified. 117 invariants registered, declared and passing.** The build fails if that stops being true.
 
-⚠️ **Charity showcase is Friday.** All 14 charity personas are **clean on every check** (0 error violations, deviation scan 0 HIGH).
+### 🏁 What today was
 
-> **THREE PERSONAS CHANGED TODAY** (§97 Amendment, LONG-RUNWAY-EARNS-PLAN-01), all improvements:
-> **M1** first-timer marathon **18 → 20 weeks** (uncovered runway 4 → 2, plan starts a fortnight earlier),
-> **M5** masters marathon **18 → 20**, **H1** first-timer HM **14 → 16**.
-> M1 and M5 now deliver close to their own prescribed peak (47 of 52, 64 of 65) instead of undershooting it.
-> Personas are re-measured per change, never assumed — that is why this line exists rather than "nothing affects them".
+A day of **coaching review, not feature work.** Eleven charity-cohort plans went to the Coaching Board **three times**. The board rejected four plans across those passes and **not one rejection reason survived contact with measurement**:
 
-> 🔴 **READ BEFORE DEPLOYING — this is a FOUNDER sequencing call, not a coaching one.**
-> §97 Am. moved **2,106 of 5,832 parity cases (36.1%)**, the largest single-change blast radius this engine has had —
-> bigger than §6 Am.2's 18.5% yesterday. The Coaching Board ruled it CORRECT and every gate is green, so the
-> *correctness* question is closed. What is open is **whether two changes of this size should both land in the
-> 48 hours before the showcase.** Hutchinson's own words when he held this item back on 2026-09-15:
-> *"stacking two changes of that size is how a good change gets blamed for a bad one."* That reasoning did not
-> expire because the board then approved the change. **The branch is committed, not pushed — the deploy is yours.**
+| Pass | Verdict | What it found |
+|---|---|---|
+| 1 (morning) | 9/11 | rejected M3 and T2 |
+| 2 (cold re-review) | 8/11 | rejected M3 and M5; **upheld T2's plan and flagged its NOTE** |
+| 3 (after fixes) | **11/11 FIT** | no plan rejected |
 
-### ✅ COACHING & ENGINE — the open list is EMPTY
+⚠️ **What was wrong was never the plans.** It was three notes describing training the runner never received, and a safety cap that had never run on beginners. **Every mechanical gate we own was green on the plan that would have put a first-time marathoner in a boot** — it was found by regenerating eleven plans and READING one.
 
-> Both items filed on 2026-09-15 shipped on 2026-09-16:
-> **LONG-RUNWAY-EARNS-PLAN-01** (Coaching Board, §97 Amendment — the headroom is granted on SURPLUS, not on §89's gate)
-> and **OPS-DIGEST-PLAN-AUDIT-01** (the digest reads the plan-audit heartbeat; it turned out the repo half had already
-> broken the digest's interpretation, so this was a fix rather than the optional wiring it was filed as).
+Shipped: **CB-HSR-AVOID-01** (§110 + Am.1 — `avoid` was an off switch for 2,953 plans) · **LR-CAP-BLIND-01** (§45 Am.1 — the long-run cap had never run on beginners or ultras; 1,568 plans) · **HSR-NOTE-HONESTY-01** (1,615 plans) · **M5-EASY-CEILING-01** (191 of 191 notes named the wrong lever) · **COMPLIANCE-SILENT-3** · **GOAL-COHERENCE-01** · **PARITY-HSR-01**.
+
+Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two thirds of that movement was the STANDARD being corrected, not the engine improving.** The 25.6% scored as failures two outcomes the constitution ratifies. Read §110 and `[[feedback-run-the-board-properly]]` before quoting any number from it.
+
+### 🔜 COACHING & ENGINE — two items, both for tomorrow
+
+> 🔲 **RAMP-GUARD-FAILS-OPEN-01 — a load guard that goes quiet exactly when things are worst.** *(P1, filed 2026-09-16 by Hutchinson at the LR-CAP-BLIND-01 sitting. Needs a MEASUREMENT and a board ruling, not an edit.)*
 >
-> A third defect was found and fixed en route, by the sweep rather than by anyone looking for it:
-> **§47's peak long-run alternation counted POSITIONS where its invariant counts PAIRS.** They agreed for exactly as
-> long as a peak phase was two weeks long, and §97 Am. made three-week peak phases reachable at HM. 9 plans in 15,973.
+> `INV-PLAN-DELIVERED-RAMP` requires **BOTH** the whole week **and** its trimable portion (week minus long run) to breach, and returns early when the trimable portion did not rise. **A long run that grows violently SHRINKS the rest of the week** — so the guard is silent *precisely* on the most extreme cases.
 >
-> Everything below this line is product, GTM, verification debt and cosmetics — nothing coaching-critical is open.
+> It stayed silent on M3's **70% single-week rise** while `INV-PLAN-LR-PROGRESSION-CAP` was blind to the same plan for an unrelated reason. **Two independent guards, one dangerous plan, two different failure modes.** Hutchinson: *"that is what happens when guards are written against the common case."*
+>
+> ⚠️ **Do not just delete the both-must-breach rule.** It guards a real false-positive class: a §52-exempt, race-anchored long run can legitimately jump, and when it does the trimable remainder swings violently for no change in load (the code's own example: 18/25 → 11/26 reads +114% trimable while the runner ran one extra km). **Measure first**, then rule.
+>
+> *Verify still open:* `grep -c "nowTrimable <= prevTrimable" lib/plan/invariants.ts` → **non-zero = still open**.
 
-> ✅ **§6 TAPER DEPTH — CLOSED 2026-09-15. Two board sittings: TAPER-DEPTH-01 vetoed the proposed remedy, TAPER-DEPTH-02 shipped §6 Amendment 2.** *(filed and closed the same day)*
-> **The filing's premise was wrong and the correction is the deliverable.** It claimed *"the curve is right and the delivery is not"*. Measured: the taper cut reaches the curve correctly — traced on a 50K plan the curve runs **95 → 78 → 60 → 43 km**, exactly `volume_reduction_pct: 55` over three steps — and across a 504-plan grid the **taper is the BEST-delivered phase in the plan**: delivered / curve mean **0.981**, against build 0.870 and peak 0.906.
-> **The real finding is peak-phase UNDER-delivery.** On 3-day plans the peak phase delivers as little as **0.67 of its own curve** while every other phase clears 0.87, so a correctly-tapered week lands above it. That is §23's `structuralPeakInversion`, **already ruled and already treated** — its own source comment names this exact shape (*"the delivered taper exceeding the delivered peak, since the taper's smaller targets are achievable where the peak's are not"*).
-> **DECISIVE: of the 8 plans in 504 whose first taper week exceeds the peak phase, 8 of 8 are `volume_profile: 'maintenance'` carrying a `volume_constraint_note`. Zero silent.** The runner is already told. Option A (cap the delivered taper week) would have trimmed a correct taper to fit a suppressed peak — D-21: honouring a rule to produce a worse plan.
-> **§6 Am.1's residual is 6 plans in 504 (1.2%), overshooting by 0.9–1.0 km** (21.5 vs 20.5; 31.0 vs 30.1) — §9's long-is-longest ratio, rounding-scale, stays `warn` (NOISE-GATE-01).
-> **Artifacts:** §6 Am.1's residual paragraph and `INV-PLAN-TAPER-LR-NOT-ABOVE-PEAK`'s comment both carried the false forward-reference *"fixing taper depth clears this residual"* — corrected in the same commit. No numeric, no new invariant; stated explicitly.
-> **SHIPPED — §6 Am.2: the cut is a percentage of the week the runner ACTUALLY DID.** `applyTaperDeliveredDepth` re-anchors each taper week's delivered volume on the delivered pre-taper week, trimming **easy runs only** (ADR-022's ratified lever order: the §52 long run never gives, a quality session is never touched). Bounded by `MIN_SESSION_DISTANCE_KM.easy` (Willy) and by §52's 60% long-run cap, and gated by `TAPER_DELIVERED_REANCHOR_MATERIAL_PCT: 5` (Sims). Over-tapering is structurally impossible — the configured target is a ceiling, so the pass can never cut below what §6 already ratified.
-> **Result: first taper week above 90% of peak 86/504 → 0.** New invariant `INV-PLAN-TAPER-DELIVERED-DEPTH` (`warn`) fires on **3 of 15,973** sweep plans. `verify` exit 0 (1,977 tests / 214 files), sweep 15,973 plans 0 new violations, `cohort:shape` UNCHANGED, liveness proves the new invariant wakeable (83/114).
-> **Blast radius declared:** parity **1,078 of 5,832 cases changed (18.5%)**; 137 of 504 first taper weeks moved, mean −17.7%, max −34.7%.
-> ⚠️ **The "none affects the 14 charity personas" line above is now STALE for this item — four do, and every one improves.** M5 masters marathon 48→41, M1d first-timer marathon **33→28** (its first taper week was 3% below its pre-taper week — a runner told they are tapering and handed the same week again, on the showcase list), T2 10K 31→28, M2 33→31.
-> **Three things caught by the gates, all worth keeping:**
-> 1. `week.weekly_km` is `sumWeeklyKm(sessions)` — the DELIVERED figure, **not** the curve. A first pass compared it against itself, scored 0.99, and read that as proof. A delivered-vs-curve claim must instrument `buildVolumeSequence`.
-> 2. The pass must run **after V1 and V4** — placed earlier it sized a week the runner never receives (6 sweep cases short with headroom untouched). And producer and checker must share a UNIT: `sumWeeklyKm` rounds to whole km, so a 0.94 km excess computed from 25 and 22 was really 1.36 from 24.5 and 22.0, the gate skipped the trim, and the unrounded invariant then fired on a week the pass had deliberately left.
-> 3. **`lopsidedWeek` is §52's classification owner, not a note.** Excluding taper weeks from it looked obviously right and stripped 24 plans of the `maintenance` label that makes `INV-PLAN-LR-MAX-WEEKLY-PCT` a `warn` — turning an absorbed warn into a hard failure. Reverted; the scan is unchanged.
-> **Also fixed:** `scripts/coaching-deviation-scan.ts` took `peak` as the max over ALL weeks including RACE WEEK, so for an ultra (whose race week is the biggest week in the plan) its §6 check could never fire — at exactly the distances where the taper matters most.
-
-> ✅ **FOUNDATION-LONG-RUNWAY-01 — CLOSED 2026-09-15, Coaching Board: the filed remedy VETOED, §57 + §76 amended, the void now DECLARED.**
-> **The filed question was "should a long runway earn a longer all-easy block?" — measured, and the answer is no.** §57's own ceiling ("the final foundation week must not exceed effective baseline × 1.10 **regardless of block length**") binds from week 2, so a forced 12-week block delivers **15.0 then 16.4 eleven times**. Nine identical weeks is not preparation, and CB-1 already ruled the block is *"habit and routine, not adaptation"* (Sims). Raising the ×1.10 ceiling instead would convert it into a base phase, which CB-1 ruled it is not.
-> **TWO REAL DEFECTS were underneath it, neither of them the cap:**
-> 1. **§76 named an owner that does not own it.** It asserted the pre-plan gap was *"already owned by the foundation block"*. `FOUNDATION_MAX_WEEKS` is 3, so at a 25-week runway M1 gets 3 + 18 = 21 covered and **4 uncovered**; at 30w 9, at 40w 19, at 52w **31**. §76 was describing the failure it was itself producing, at the other end of the plan. Corrected.
-> 2. **§57's "Start Now" option was UNSATISFIABLE, not unimplemented.** The table promised *"plan_start = today"*; §76 anchors backwards and `calcPlanLength` sets `planStart = raceWeekStart − (totalWeeks−1)×7`, so §76 **forbids** what §57 promised. Measured: `start_now` and `skip` produce byte-identical plans (49 idle days). **D-21 — the principle is the defect**; the row now says what the option actually is (start without a block) and must never be sold as moving the plan forward.
-> **SHIPPED:** `meta.uncovered_runway_note` on any plan leaving ≥ `FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD` (2) uncovered weeks, produced in `composePlanWithFoundation` (ADR-020's single owner of `today` + the built block). **`error`-severity** `INV-PLAN-UNCOVERED-RUNWAY-DECLARED`, on Sims's point: *a runner in that gap is not resting, they are training UNSUPERVISED*, and for the women in this cohort that is where energy availability and bone loading go wrong. The note is deliberately not a sales pitch — it says the weeks are not training and tells them not to ramp.
-> **GATES:** verify exit 0 (**1,988 tests / 215 files**) · sweep 15,973 plans 0 violations · liveness proves the new invariant wakeable (84/115) · **parity IDENTICAL** — and that is not evidence: the parity grid pins `plan_start`, so it has **no runway cases at all** and is structurally blind to this change. `lib/plan/uncoveredRunway.test.ts` (11 cases) is the coverage that reaches it.
-> **ALSO FIXED — the sweep could not see this cohort.** `foundationGapDays` topped out at **40 days**, which is 5 weeks: the block takes 3 and leaves 2, exactly the threshold and never past it. A charity runner typically gets their place **months** out. Added 91 and 175 days. ⚠️ **Widening a sweep axis re-rolls the entire seeded sample** — every warn rate in that table moved, and rates measured before and after are not comparable. It immediately exposed a real checker defect: `INV-PLAN-TAPER-DELIVERED-DEPTH` (shipped an hour earlier) went **3 → 181**, every one a 2-day week, every one FALSE — it measured easy-run headroom but not **§52's cap**, so a 5K taper week showing 5.5 km of headroom had **0.2 km of legal room**. Now 4. **A checker that knows only half the producer's constraints reports the other half as defects.**
-> ➡️ **The open half shipped the next day as LONG-RUNWAY-EARNS-PLAN-01** (Coaching Board 2026-09-16 — §97 Amendment; see feature-registry). The dissent §57 recorded is discharged: M1 now gets 20 main weeks of an available 20, and the uncovered weeks it declares fall 4 → 2.
-
+> 🔲 **PREP-ACK-UNLOCKS-MARATHON-01 — should acknowledging a prep warning unlock a marathon we know we cannot prepare you for?** *(P2, filed 2026-09-16. **SLT / founder decision — explicitly NOT a correctness question.** The board ruled the plan CORRECT.)*
+>
+> M3: first marathon, **14 weeks, 18 km/week, 3 days, 45-minute weekday ceiling, longest run ever 9 km.** §44 issues a prep-time warning; the runner acknowledges it; the block is built. Post-fix the plan is safe (the +206% long-run spike is gone) and it tells the runner **three separate times** that it cannot fully prepare them — day count, long-run shortfall, weekday cap.
+>
+> **McMillan:** at some point the honest answer stops being a better disclaimer and becomes *"this race, on these inputs, is the wrong goal."*
+> **Willy dissents:** an honest undertrained plan beats refusing someone who holds a charity place and will run it regardless.
+>
+> Both positions recorded. The question is whether §44's acknowledgement should gate differently, or steer to another race. **Product, not coaching.**
 
 > 🔲 **INPUT-SEX-01 — the engine has NO sex field, and cannot know it.** *(P2, filed 2026-09-16 from the charity-cohort board review. A QUESTION to take, not a build.)*
 > `GeneratorInput` carries `age` (for Tanaka max HR) and nothing about sex. So every numeric the
@@ -192,25 +171,9 @@ The build fails if that stops being true.
 >   was the last key field. A coverage guard that fails open is worse than none
 >   (the file's own trap 3). Both readers of the key layout now share one
 >   `KEY_FIELDS` definition, and the same presence guard covers `hsr`.
-> - 🔲 **RAMP-GUARD-FAILS-OPEN-01** — `INV-PLAN-DELIVERED-RAMP` requires **BOTH** the
->   whole week and its trimable portion (week minus long run) to breach, and returns
->   early when the trimable portion did not rise. **A long run that grows violently
->   SHRINKS the rest of the week, so the guard is silent precisely on the most
->   extreme cases.** It stayed silent on M3's 70% single-week rise while
->   `INV-PLAN-LR-PROGRESSION-CAP` was also blind to it (LR-CAP-BLIND-01) — two
->   independent guards, one plan, two different reasons. Recorded in §45 Am.1 and
->   raised by Hutchinson at that sitting; **not fixed.** The both-must-breach rule
->   exists for a real reason (a §52-exempt long run can legitimately jump and swing
->   the trimable remainder), so this needs measurement and a board ruling, not an
->   edit. *Verify still open:* `grep -c "nowTrimable <= prevTrimable" lib/plan/invariants.ts` → **non-zero = still open**.
-> - 🔲 **PREP-ACK-UNLOCKS-MARATHON-01 (SLT, not coaching)** — McMillan, at the third
->   full board pass: should acknowledging a §44 prep-time warning unlock a marathon
->   block off **18 km/week on 3 days with a 45-minute weekday cap**? M3 is now safe
->   and declares its shortfall three separate ways (days, long run, weekday cap), and
->   the board ruled the plan **CORRECT** — the question is whether we should build it
->   at all or steer that runner to a different race. Willy dissents: an honest
->   undertrained plan beats refusing someone who holds a charity place and will run
->   regardless. **Product decision, explicitly not a correctness one.**
+> - ↗️ **RAMP-GUARD-FAILS-OPEN-01** and **PREP-ACK-UNLOCKS-MARATHON-01** were filed
+>   here and have been PROMOTED to the top-level `PICK UP HERE` list — they are the
+>   only two open coaching items. Do not re-file them from this section.
 > - 🔲 **Compliance themes still unruled:** `maintenance` meaning three different things, and
 >   warn-severity triage (any warn >20% is promoted or explained). Sims's fuelling /
 >   energy-availability guidance is also still outstanding.
