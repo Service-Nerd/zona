@@ -81,6 +81,28 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 > insurance gate that holds ENGINE-03. Hutchinson carries it.
 > *Verify still open:* `grep -c "sex\|gender" types/plan.ts` → **0 = still open**.
 
+### 🔬 test.test marathon review — 3 board amendments (filed 2026-09-16)
+
+Coaching Board ran a fitness-for-purpose review of a real generated marathon plan (test.test@test.com, 26yo intermediate, 4:00 goal, 4 days, 60-min weekday cap, current 30 km/wk, longest-ever 12 km, plan_start 2026-09-21). Ruling: **CORRECT WITH AMENDMENT** — honest, runnable sub-4 plan; three amendments before clean sign-off. All three root-caused against `generateRulePlan` (live regen matches the stored plan byte-for-byte on the curve).
+
+> 🔲 **LR-RAMP-INTERMEDIATE-01 — the long run jumps +30–42% and the peak block has no volume down-week.** *(P1, filed 2026-09-16 by Willy. Needs a board ruling, not an edit — two coaching numerics.)*
+>
+> **Root A — the absolute cap overrides the percentage cap at low volume.** §45 caps a long-run step at **the GREATER of** `LONG_RUN_PROGRESSION_CAP_PCT` (20%) **or** `LONG_RUN_PROGRESSION_CAP_ABS_KM` (**5 km**) — `generationConfig.ts:1052-1056`. A flat 5 km step is fine on a 30 km long run (+17%) and aggressive on a 12 km one (**+42%**). This plan takes three big steps: w9→10 12→16.5 (+38%), w10→11 16.5→21.5 (+30%), w12→13 24→29 (+21%, exactly the 5 km cap). Willy: 5 km absolute carries no tissue meaning as a percentage — for a runner whose longest-ever run is 12 km, these are the injury weeks. Same shape as `peakKmByLevel` / LR-CAP-BLIND-01 — a numeric that scales badly at low volume.
+>
+> **Root B — the peak phase is a monotonic volume climb.** `isDeloadWeek` returns false for `phase==='peak'||'taper'` by design (`deloadCadence.ts:73`), and the every-4th cadence put deloads at w4 and w8 — the w12 slot lands in `peak`, where deloads are forbidden. So weeks **9–13 climb 36→41→45→50→54 unbroken** into the single biggest week. §47 *does* insert a peak long-run step-back (w12), but it eases only the long run's **intensity** (drops MP), never the week's **volume** — so the board's "insert a recovery week ~11" has nowhere to land under the current design. Question for the board: should the 5 km absolute cap taper at low long-run volume, and should the peak phase carry a *volume* step-back, not only an intensity one?
+>
+> ⚠️ **Distinct from RAMP-GUARD-FAILS-OPEN-01.** That item is about the *guard* going silent on violent jumps; this is about the *prescription* producing them. Fixing one does not fix the other.
+
+> 🔲 **STEPBACK-NOTE-VOLUME-01 — a "step-back / absorb last week's peak" note on a week whose volume went UP.** *(P2, filed 2026-09-16 by McMillan. Note-honesty defect — board-exempt if it only rewrites copy; board if it changes the week.)*
+>
+> §47 rewrites the stepped-back peak long run and stamps `coach_notes = ['Step-back week. Easy aerobic — let the legs absorb last week's peak before the next push.']` (`ruleEngine.ts:4275`). It is a step-back in **intensity** (MP dropped, capped at 80% of peak LR) — but the **week** climbs: w12 is 50 km / LR 24 km against w11's 45 km / 21.5 km. A runner reads "step-back / recovery" and gets a bigger week. Same class as HSR-NOTE-HONESTY-01 / M5-EASY-CEILING-01 (2026-09-16): the note names an easing that the delivered week does not contain. Fix is either (a) the note describes what actually changed ("long run eased to Zone 2; the week still builds") — copy only, board-exempt, or (b) §47 also holds weekly volume on a step-back week — prescription change, board. Recommend (a) first.
+
+> ❓ **VP-MAINT-NAMING-01 — an +80% build is labelled `volume_profile: 'maintenance'`. NOT a bug.** *(P3, filed 2026-09-16. Hutchinson flagged it as a suspected misclassification; investigation cleared it. Naming/consequences question only.)*
+>
+> **Verified against the live engine: this is the documented §24 behaviour, not a defect.** The peak long run (29 km) cannot reach the §24 floor (31.65 km = 75% of 42.2) because §45's week-on-week cap prevents it, so `lrFails` fires (`ruleEngine.ts:6630`) and the plan is classified maintenance-**grade against the time goal**, with the honest `volume_constraint_note` the runner already sees. "Maintenance" here means "won't build to the time-goal's volume floor", **not** "doesn't add volume" — the plan genuinely builds 30→54 km (+80%). The board's instinct ("smells like a bug") was the thing to verify, and it was wrong — a clean example of the verify-against-the-live-function rule. **Open question, low priority:** the *word* "maintenance" reads as "not building" to a human, and the flag has downstream teeth (exempts §1's intensity ceiling at `invariants.ts:2011`, changes taper at `:3394`, drives `cohort:shape`). Worth a board naming pass on whether a building-but-goal-short plan should carry this label, but no runner-facing defect and nothing to fix now.
+
+---
+
 > 🔲 **COMPLIANCE-PROGRAMME — the open half.** *(opened 2026-09-16; **gauge 97.7%, fit-for-purpose 97.7%, both past the 95% target** — what remains below is the residual, not the programme)*
 >
 > ✅ **CLOSED 2026-09-16 — CB-HSR-AVOID-01 (§110 + §110 Am.1 + the §21 defect).** `avoid` and an
