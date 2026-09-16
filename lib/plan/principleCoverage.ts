@@ -161,7 +161,7 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 103, by: 'test', ref: 'lib/coaching/recalibrationPrompt.test.ts', why: '`nextRecalibrationDue` (ADR-014) — the prompt fires only on a completed recalibration-week time trial, never on a non-TT day. Prompt timing, not a plan property.' },  // Fitness signal — benchmark recalibration prompt (ENGINE-01)
   { n: 104, by: 'invariant', ref: 'INV-PLAN-RACE-SPECIFIC-VARIETY' },  // A peak rehearses the race more than one way
   { n: 105, by: 'invariant', ref: 'INV-PLAN-MARATHON-RACE-PACE-NOT-ONLY-LONG-RUN' },  // Marathon pace must exist away from the long run
-  { n: 106, by: 'invariant', ref: 'INV-PLAN-PEAK-NOT-BELOW-START' },  // A plan never peaks below where the runner already is
+  { n: 106, by: 'invariant', ref: 'INV-PLAN-PEAK-NOT-BELOW-START', why: 'Peak vs the runner\'s STATED volume. The 2026-09-16 Amendment (plan may not fall below its OWN week 1) is enforced separately by INV-PLAN-NOT-DETRAINING -- the two reference points differ and overlap on only 5.8% of plans.' },  // A plan never peaks below where the runner already is
   { n: 107, by: 'invariant', ref: 'INV-PLAN-LR-SEGMENT-RECORDED' },  // A session may not prescribe work it does not record
   { n: 108, by: 'test', ref: 'lib/coaching/sessionScore.test.ts', why: 'Amendment 1 — no composite score when HR is unmeasured; pinned on the founder\'s own HR-less run' },  // What a run SCORES, and what stays outside the score
   { n: 109, by: 'test', ref: 'lib/coaching/raceProjectionHonesty.test.ts', why: 'may compare, may not predict' },  // A progress surface may remember and compare. It may not predict.

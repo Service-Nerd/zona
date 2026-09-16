@@ -215,6 +215,32 @@ export const GENERATION_CONFIG = {
   MASTERS_AGE_THRESHOLD: 45,
   RECOVERY_WEEK_VOLUME_PCT: 70,
 
+  // §106 Amendment (COMPLIANCE-FIX-1, Coaching Board 2026-09-16) — how far a
+  // PROGRESSIVE week may fall below the plan's own week 1 before the plan is
+  // detraining the runner rather than building them.
+  //
+  // DERIVED, NOT CHOSEN. It is the complement of RECOVERY_WEEK_VOLUME_PCT above:
+  // §3 sanctions a deload at 70% of the prior week, so a 30% drop is the largest
+  // reduction this constitution anywhere calls legitimate. A base/build/peak week
+  // that falls FURTHER than a sanctioned deload is not a training week. Tying the
+  // two means the floor moves if §3's deload depth ever moves, rather than
+  // drifting apart as two independently-chosen numbers.
+  //
+  // MEASURED ON THE RIGHT SET, which took three attempts and is the reason the
+  // number is 30 and not 50. Decline is compared against base/build/peak weeks
+  // only:
+  //   · RACE WEEK excluded — it contains the race (§106's own masking bug, fixed
+  //     the same day in COMPLIANCE-FIX-0).
+  //   · DELOAD weeks excluded — §3 makes them low ON PURPOSE.
+  //   · TAPER weeks excluded — §6 makes them low ON PURPOSE. Including the taper
+  //     put the median at 47%; it is 35% without it, and M5's lowest week was a
+  //     TAPER week while its actual defect was a build week.
+  // Across all 15,973 sweep plans the median decline is 0% and p75 is 14%, so 30%
+  // sits well into the tail and does not catch ordinary week-to-week variation.
+  // At 30%: 2,425 plans (15.2%) breach — 2,046 carrying the "maintains your
+  // fitness" claim and 379 saying nothing at all.
+  MAX_DELIVERED_DECLINE_PCT: 30,
+
   // ── Phase structure (CoachingPrinciples §4, §5) ─────────────────────────────
   // Specificity rises as the race approaches.
   // §93 (Coaching Board CB-SPEC-01, 2026-09-07) — how many VO2max exposures the

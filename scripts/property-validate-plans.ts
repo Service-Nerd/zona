@@ -448,6 +448,15 @@ let scFiresInv = 0, scFiresInvAndDescends = 0, scFiresInvButProgresses = 0, scDe
 // and does NOT exclude RACE WEEK. For a marathon that week contains the 42.2 km
 // race, so the "peak" is the race itself. Does that mask real detraining?
 let scMaskedByRaceWeek = 0
+// FIX 1 — does the "maintains your fitness" claim match what the plan delivers?
+// The note quotes its own numbers ("peaks at X against Y earlier") and then
+// concludes it MAINTAINS. Measure the gap between claim and delivery.
+let scMaintClaim = 0
+const scMaintDrop: number[] = []
+// The invariant must apply to EVERY plan, not only ones carrying the note --
+// a detraining plan is a defect whether or not it admits to being one.
+const scAllDrop: number[] = []
+let scAllDrop30 = 0, scAllDrop30Claimed = 0, scAllDrop30Silent = 0
 let scDescending = 0, scDescendingSilent = 0
 const scWarnPlansByCode = new Map<string, number>()
 // NOISE-GATE-01 — warn-severity violations were counted by NOTHING (the loop below
@@ -647,6 +656,36 @@ for (const input of inputs) {
       scFiresInv++
       if (noProg) scFiresInvAndDescends++; else scFiresInvButProgresses++
     } else if (noProg) scDescendsNoInv++
+    const progAll = trainW.filter(w =>
+      w.badge !== 'deload' && w.type !== 'deload' && w.phase !== 'taper')
+    const loAll = progAll.length ? Math.min(...progAll.map(w => w.weekly_km ?? 0)) : 0
+    if (wk1 > 0 && loAll > 0) {
+      const dropAll = (wk1 - loAll) / wk1 * 100
+      scAllDrop.push(dropAll)
+      if (dropAll >= 30) {
+        scAllDrop30++
+        if (/hold your fitness|maintains your fitness/i.test(String(m.volume_constraint_note ?? ''))) scAllDrop30Claimed++
+        else scAllDrop30Silent++
+      }
+    }
+    const noteTxt = String(m.volume_constraint_note ?? '')
+    if (/hold your fitness|maintains your fitness/i.test(noteTxt)) {
+      scMaintClaim++
+      // DELOADS EXCLUDED. A deload week is SUPPOSED to be ~70% of the prior
+      // week (§3), so counting it as "the plan fell" measures the deload, not
+      // the trajectory. Same denominator trap that made a race week look like a
+      // peak twice this week. Compare week 1 against the lowest PROGRESSIVE week.
+      // TAPER EXCLUDED TOO. A taper is a PLANNED decline (§6) and counting it
+      // measures the taper, not a defect: M5's lowest week (15 km) is a taper
+      // week, while its actual problem is build weeks 9-10 at 18 km against a
+      // week 1 of 43. Third denominator trap of the day -- race week, then
+      // deloads, now the taper. Decline is only ever illegitimate across
+      // base/build/peak, which is where the plan is supposed to be RISING.
+      const prog = trainW.filter(w =>
+        w.badge !== 'deload' && w.type !== 'deload' && w.phase !== 'taper')
+      const lo = prog.length ? Math.min(...prog.map(w => w.weekly_km ?? 0)) : 0
+      if (wk1 > 0 && lo > 0) scMaintDrop.push((wk1 - lo) / wk1 * 100)
+    }
     const lowest = trainW.length ? Math.min(...trainW.map(w => w.weekly_km ?? 0)) : 0
     if (wk1 > 0 && lowest < wk1 * 0.75 && pk <= wk1) {
       scDescending++
@@ -1055,6 +1094,32 @@ if (SCORE) {
   console.log(`    peak <= week 1 WITHOUT the invariant       ${scDescendsNoInv}  ${pct(scDescendsNoInv)}`)
   console.log(`\n  RACE-WEEK MASKING — plans §106 MISSES because race week inflates the peak:`)
   console.log(`    would fire if race week excluded           ${scMaskedByRaceWeek}  ${pct(scMaskedByRaceWeek)}`)
+  if (scMaintClaim > 0) {
+    const d = scMaintDrop.slice().sort((a, b) => a - b)
+    const q = (f: number) => d[Math.min(d.length - 1, Math.floor(d.length * f))]
+    const band = (lo: number, hi: number) => d.filter(x => x >= lo && x < hi).length
+    console.log(`\n  FIX 1 — plans CLAIMING "hold/maintains your fitness": ${scMaintClaim}  ${pct(scMaintClaim)}`)
+    console.log(`    delivered drop, week 1 -> lowest training week:`)
+    console.log(`      median ${q(0.5).toFixed(0)}%   p90 ${q(0.9).toFixed(0)}%   worst ${d[d.length - 1].toFixed(0)}%`)
+    console.log(`      drop <10% (genuinely holding)  ${band(-999, 10)}  ${(band(-999, 10) / d.length * 100).toFixed(1)}% of claimers`)
+    console.log(`      drop 10-25%                    ${band(10, 25)}  ${(band(10, 25) / d.length * 100).toFixed(1)}%`)
+    console.log(`      drop 25-40%                    ${band(25, 40)}  ${(band(25, 40) / d.length * 100).toFixed(1)}%`)
+    console.log(`      drop >=40% (claim is FALSE)    ${band(40, 9999)}  ${(band(40, 9999) / d.length * 100).toFixed(1)}%`)
+  }
+  if (scAllDrop.length) {
+    const a = scAllDrop.slice().sort((x, y) => x - y)
+    const qa = (f: number) => a[Math.min(a.length - 1, Math.floor(a.length * f))]
+    console.log(`\n  THRESHOLD — decline across base/build/peak, ALL plans (n=${a.length}):`)
+    console.log(`    median ${qa(0.5).toFixed(0)}%  p75 ${qa(0.75).toFixed(0)}%  p90 ${qa(0.9).toFixed(0)}%  worst ${a[a.length-1].toFixed(0)}%`)
+    for (const t of [10, 20, 25, 30, 35, 40, 50]) {
+      const n = a.filter(x => x >= t).length
+      console.log(`    >= ${String(t).padStart(2)}% decline : ${String(n).padStart(5)}  ${(n / a.length * 100).toFixed(1)}%`)
+    }
+    console.log(`\n    AT THE DERIVED 30% (= 100 - RECOVERY_WEEK_VOLUME_PCT):`)
+    console.log(`      breaching        ${scAllDrop30}`)
+    console.log(`      ...carrying the maintenance claim ${scAllDrop30Claimed}`)
+    console.log(`      ...saying NOTHING                 ${scAllDrop30Silent}`)
+  }
   console.log(`\n  PROGRESSION SPLIT — is the plan wrong, or correctly constrained and honest?`)
   console.log(`    peak <= week 1 (no progression) ${scNoProgress}  ${pct(scNoProgress)}`)
   console.log(`      of which DECLARED            ${scNoProgressDeclared}  ${pct(scNoProgressDeclared)}`)

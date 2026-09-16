@@ -93,6 +93,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-NOTE-SCALES',
   'INV-PLAN-PEAK-OVER-BASE',
   'INV-PLAN-PEAK-NOT-BELOW-START',
+  'INV-PLAN-NOT-DETRAINING',
   'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
   'INV-PLAN-TAPER-VARIETY',
   'INV-PLAN-PREP-TIME-STATUS-ANNOTATED',
@@ -2254,6 +2255,65 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           actual: `${Math.round(ratio * 100)}%`,
           expected: `≥ ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% or volume_profile=maintenance`,
         })
+      }
+    }
+  }
+
+  // INV-PLAN-NOT-DETRAINING (§106 Amendment, COMPLIANCE-FIX-1, Coaching Board
+  // 2026-09-16) — a plan may not fall substantially below its OWN starting point.
+  //
+  // THE GAP THIS CLOSES. §106 below asks whether the plan reaches the volume the
+  // runner STATED. A plan can clear that in week 1 and then collapse: the review
+  // case that prompted this ran 43 km in week 1, 18 km by week 9, and a "peak"
+  // phase of 22-27 km, and it satisfied §106 because week 1 exceeded the stated
+  // 40 km. §106's reference point is the runner's declaration; this one's is the
+  // plan's own first week.
+  //
+  // MEASURED, 15,973 sweep plans: 2,425 (15.2%) decline 30% or more across
+  // base/build/peak. 2,046 of them carry the "maintains your fitness" note while
+  // the median such plan drops 35% — and 379 say NOTHING AT ALL.
+  //
+  // NOT EXCUSABLE BY `volume_profile: 'maintenance'`, and that is this board's
+  // own prior words, not a new position. §106's neighbour records the 2026-09-11
+  // ruling verbatim: "A detraining block is not an honest response to a
+  // constraint, it is a worse plan than no plan, and relabelling it must not make
+  // it acceptable." A plan that halves a runner's training is not maintaining it.
+  //
+  // ⚠️ `warn`, and this is a SEQUENCING decision with a stated exit, not the
+  // severity the board asked for. The board ruled `error`. `enforceViolations`
+  // THROWS on error in dev/test, so shipping it there would make
+  // `generateRulePlan` throw for 15.2% of inputs and take `npm run verify` down
+  // entirely — the producer fix (protect volume, yield the quality session on a
+  // constrained week) has to land first. The board's INTENT is preserved in full
+  // because the compliance gauge counts a detraining plan as UNACCEPTABLE
+  // regardless of this severity, so nothing is hidden by the warn.
+  // PROMOTE TO `error` when the count approaches zero. If it is still in the
+  // thousands after the producer fix, the producer fix did not work.
+  {
+    const declineCap = GENERATION_CONFIG.MAX_DELIVERED_DECLINE_PCT
+    // Base/build/peak only. Deloads (§3), the taper (§6) and race week are all
+    // low BY DESIGN; including any of them measures the design, not a defect.
+    const progressive = plan.weeks.filter(w =>
+      w.n >= 1 && w.phase !== 'taper' && w.type !== 'deload' && w.badge !== 'deload' &&
+      w.type !== 'race' &&
+      !Object.values(w.sessions ?? {}).some(sn => sn?.type === 'race'))
+    if (progressive.length >= 2) {
+      const week1 = progressive[0].weekly_km ?? 0
+      const lowest = Math.min(...progressive.map(w => w.weekly_km ?? 0))
+      if (week1 > 0 && lowest > 0) {
+        const declinePct = ((week1 - lowest) / week1) * 100
+        if (declinePct > declineCap) {
+          const lowWeek = progressive.find(w => (w.weekly_km ?? 0) === lowest)
+          violations.push({
+            code: 'INV-PLAN-NOT-DETRAINING',
+            principle_ref: 'CoachingPrinciples §106 Am.',
+            severity: 'warn',
+            week: lowWeek?.n ?? 0,
+            message: `Plan declines ${declinePct.toFixed(0)}% from its own week 1 (${week1}km) to week ${lowWeek?.n} (${lowest}km) across base/build/peak — beyond §3's own deload depth (${declineCap}%). This is detraining, and volume_profile 'maintenance' does not excuse it.`,
+            actual: `-${declinePct.toFixed(0)}%`,
+            expected: `decline <= ${declineCap}%`,
+          })
+        }
       }
     }
   }

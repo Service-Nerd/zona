@@ -5506,6 +5506,73 @@ must not make it acceptable.
 
 ---
 
+
+---
+
+### Amendment — the plan may not fall below its OWN start either (COMPLIANCE-FIX-1, Coaching Board 2026-09-16)
+
+**Principle.** A plan's lowest **progressive** week (base, build or peak) may not fall
+more than `MAX_DELIVERED_DECLINE_PCT` below its own week 1. `volume_profile:
+'maintenance'` does **not** excuse it.
+
+**Why the section above was not enough.** §106 fixes the peak *target* against the
+volume the runner **stated**. A plan can clear that in week 1 and then collapse. The
+review case that prompted this amendment (2026-09-16 cohort sitting) ran **43 km in
+week 1, 18 km by week 9**, and a peak phase of 22-27 km — and satisfied §106
+throughout, because week 1 exceeded the stated 40 km. **§106's reference point is the
+runner's declaration; this amendment's is the plan's own first week.** The two are
+different questions and the sweep confirms it: they overlap on 5.8% of plans.
+
+**This is not a new position, it is the 2026-09-11 ruling reaching the shape it
+missed.** §106's invariant already records this board's words: *"A detraining block is
+not an honest response to a constraint, it is a worse plan than no plan, and
+relabelling it must not make it acceptable."*
+
+**Measured, 15,973 sweep plans.** 2,425 (15.2%) decline 30% or more across
+base/build/peak. **2,046 of them carry a note claiming the plan "maintains your
+fitness"** while the median such plan drops 35%; **379 say nothing at all.** Median
+decline across all plans is 0% and p75 is 14%, so this catches a tail, not ordinary
+variation.
+
+> ⚠️ **The claim and the delivery disagreed inside a single sentence.** The
+> maintenance note states its own numbers — *"this plan peaks at 27km against 43km
+> earlier in the plan"* — and then concludes *"It maintains your fitness rather than
+> building it."* A 37% fall described as maintenance. The board ruled the remedy is
+> **structural, not editorial**: the plan must stop descending, and the note follows
+> the plan rather than the reverse.
+
+**The mechanism, traced.** On a low-day, time-capped runner the long run is already at
+its §45/§80 time cap and easy runs are capped against it (§9). Adding a quality
+session therefore **displaces** easy volume instead of adding to it — the note says so
+itself. Volume collapses at exactly the base→build boundary where quality enters.
+**Fixing that trade is the producer half of this amendment and is not yet shipped.**
+
+**Config.** `GENERATION_CONFIG.MAX_DELIVERED_DECLINE_PCT = 30` — **derived, not
+chosen**: the complement of `RECOVERY_WEEK_VOLUME_PCT` (70). §3 sanctions a deload at
+70% of the prior week, so 30% is the largest reduction this constitution anywhere
+calls legitimate, and a base/build/peak week falling further than a sanctioned deload
+is not a training week.
+
+**Measured on the right set, which took three attempts.** Race week, deload weeks and
+the taper are all excluded — each is low **by design**, and including any of them
+measures the design rather than a defect. Including the taper put the median at 47%
+against 35% without it, and the prompting case's lowest week was a *taper* week while
+its actual defect was a *build* week.
+
+Enforced by `INV-PLAN-NOT-DETRAINING`.
+
+> ⚠️ **Shipped at `warn`, against the board's ruling of `error`, as a stated
+> sequencing decision.** `enforceViolations` throws on `error` in dev/test, so
+> shipping at that severity would make `generateRulePlan` throw for 15.2% of inputs
+> and take the whole verify suite down before the producer fix exists. The board's
+> intent is preserved in full: **the compliance gauge counts a detraining plan as
+> unacceptable regardless of this severity.** Promote to `error` once the producer
+> fix brings the count near zero — and if it does not, the producer fix failed.
+
+**Board:** COMPLIANCE-FIX-1, 2026-09-16 — CORRECT, Hutchinson chairing, no dissent on
+the finding. Extends §106. Does not touch §23/§46/§52's licensing of maintenance where
+the RUNNER's constraints genuinely bind.
+
 ## 107. A session may not prescribe work it does not record
 
 *(Coaching Board ZONE-BAND-02, 2026-09-12. CORRECT WITH AMENDMENT — the amendment
