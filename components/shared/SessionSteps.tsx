@@ -16,7 +16,7 @@
 import React from 'react'
 import type { SessionStructure } from '@/lib/plan/sessionComposer'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
-import { buildStepGroups, type StepRow } from '@/lib/plan/sessionSteps'
+import { buildStepGroups, resolveDisplayFigures, type StepRow } from '@/lib/plan/sessionSteps'
 import { formatDistance } from '@/lib/format'
 import type { Zone } from '@/components/shared/ZoneBar'
 
@@ -36,6 +36,9 @@ export interface SessionStepsProps {
   zoneRangeLabel: string
   metric: 'distance' | 'duration'
   preferredUnits: 'km' | 'mi'
+  /** The session's own total distance — the number at the top of the card. Part
+   *  figures are apportioned to sum to it exactly (SESSION-RECONCILE-01). */
+  sessionDistanceKm?: number | null
   /** Strava-derived easy band ("6:45/km") for warm-up / cool-down. Null → zone only. */
   easyPaceStr?: string | null
   /** Opens the zone-education sheet from the main-set ⓘ. */
@@ -51,17 +54,6 @@ function tint(token: string, pct: number): string {
 }
 
 const FONT = 'var(--font-ui)'
-
-function metricStr(
-  distanceKm: number | undefined,
-  durationMins: number,
-  metric: 'distance' | 'duration',
-  units: 'km' | 'mi',
-): string {
-  const dist = distanceKm != null ? `~${formatDistance(distanceKm, units) ?? ''}` : null
-  const dur = durationMins ? `${durationMins} min` : null
-  return (metric === 'distance' ? (dist ?? dur) : (dur ?? dist)) ?? ''
-}
 
 // ── row + card primitives ────────────────────────────────────────────────────
 
@@ -123,7 +115,7 @@ function SectionCard({
 
 export default function SessionSteps({
   structure, derivedSet, sessionType, displayZones, zoneRangeLabel,
-  metric, preferredUnits, easyPaceStr, onInfo,
+  metric, preferredUnits, sessionDistanceKm, easyPaceStr, onInfo,
 }: SessionStepsProps) {
   const peak = displayZones.length ? displayZones[displayZones.length - 1] : 3
   const mainAccent = peak >= 5 ? 'var(--s-inter)' : peak >= 4 ? 'var(--s-quality)' : 'var(--s-quality)'
@@ -134,9 +126,20 @@ export default function SessionSteps({
   let n = 0
   const nextNum = () => ++n
 
-  const wuTotal = metricStr(structure.warmup.distance_km, structure.warmup.duration_mins, metric, preferredUnits)
-  const mainTotal = metricStr(structure.main.distance_km, structure.main.duration_mins, metric, preferredUnits)
-  const cdTotal = metricStr(structure.cooldown.distance_km, structure.cooldown.duration_mins, metric, preferredUnits)
+  // SESSION-RECONCILE-01 — reconciled per-phase figures. warm-up + main-set +
+  // cool-down sum to the session total exactly, and (on an MP long run) the
+  // main set's easy + race-pace rows sum to the main-set total. Single owner:
+  // resolveDisplayFigures (pure, corpus-tested).
+  const figures = resolveDisplayFigures(structure, {
+    metric, units: preferredUnits, sessionDistanceKm,
+  })
+  const wuTotal = figures.warmup
+  const mainTotal = figures.mainSet
+  const cdTotal = figures.cooldown
+  const seg = structure.race_pace_segment
+  const racePaceDetail = seg
+    ? (metric === 'distance' ? `${seg.duration_mins} min · ${seg.pace_target}` : seg.pace_target)
+    : ''
 
   const groups = isV2DerivedSet(derivedSet)
     ? buildStepGroups(derivedSet, { metric, formatDist: (km) => formatDistance(km, preferredUnits, { exact: true }) ?? `${km}${preferredUnits}` })
@@ -171,10 +174,10 @@ export default function SessionSteps({
               </React.Fragment>
             ))
           : (
-            <StepRowView num={nextNum()} dotColor={workDot} row={{ kind: 'work', role: 'Main set', amount: mainTotal, amountIsEstimate: true, detail: structure.main.description }} />
+            <StepRowView num={nextNum()} dotColor={workDot} row={{ kind: 'work', role: seg ? 'Easy' : 'Main set', amount: figures.mainEasy, amountIsEstimate: true, detail: structure.main.description }} />
           )}
-        {structure.race_pace_segment && (
-          <StepRowView num={null} dotColor={workDot} row={{ kind: 'work', role: 'Race pace', amount: `${structure.race_pace_segment.duration_pct}%`, amountIsEstimate: false, detail: structure.race_pace_segment.pace_target }} />
+        {seg && figures.racePace && (
+          <StepRowView num={groups ? null : nextNum()} dotColor={workDot} row={{ kind: 'work', role: 'Race pace', amount: figures.racePace, amountIsEstimate: true, detail: racePaceDetail }} />
         )}
       </SectionCard>
 

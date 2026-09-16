@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-16 — SESSION-RECONCILE-01 · The numbers on the card didn't add up, and two tests swore they did
+**Shipped:** Every figure on a session card now sums to the session total — by distance or by duration. Before, a 22 km marathon-pace long run showed 2 + 9 + 2 = 13, with the missing ~9 km rendered as a bare "40%".
+
+**Dev learning:** The session card is composed at *display* time, not stored in the plan. Its composer carried a comment promising "parts sum to the session total exactly, by construction" — true for a plain run, false for the one shape that has four parts instead of three. A marathon-pace long run is warm-up + easy body + **race-pace segment** + cool-down, and the segment was rendered as a percentage with no km and never added in. So the visible parts summed to (total − segment), always.
+
+**AI-building learning:** the damning part is that TWO tests claimed to guard exactly this. One summed only warm-up + main + cool-down (three parts — structurally blind to the fourth). The other summed the segment too, but only in *minutes*, and computed the segment minutes *inside the test* rather than reading a figure off the structure — because the structure had no such figure. Both were green while the card lied. A test that reconstructs the value it is checking, instead of reading what the user sees, proves nothing. The new guard composes every session shape across the cohort and asserts on the *rendered* figure, in both metrics and both units.
+
+**The second, quieter bug:** even on a plain run the three parts were each rounded to whole km independently, so 1.4 + 7.1 + 1.4 showed 1 + 7 + 1 = 9 against a 10 km header. Fixed with largest-remainder apportionment — the same "what you add up is what you see" promise `sumRoundedDistance` already made for session→week, now applied to part→session.
+
+**The honest bit:** the founder found this by *reading a card*, same as LR-CAP-BLIND-01 the same day. Two shipped guards, both satisfied, both blind — because both were written from the same wrong mental model of the session (three parts, distance always present) that the code itself held.
+
+**Postable?:** yes — "a test that rebuilds the number it's checking isn't a test." Pairs with the morning's "your checker can't catch your producer if they share the bug."
+
+
 ## 2026-09-16 — LR-CAP-BLIND-01 · A safety rule titled "universal, no phase exemption" had never once run on a beginner's plan
 **Shipped:** §45's long-run progression cap now applies to duration-anchored plans. It was skipping every beginner and every ultra.
 

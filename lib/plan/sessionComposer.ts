@@ -40,9 +40,17 @@ export interface StridesBlock {
 }
 
 export interface RacePaceSegment {
-  duration_pct:    number   // % of total session main set
+  duration_pct:    number   // % of the whole session (§25 — "of the long run")
+  /** Absolute minutes the segment occupies (= round(total · pct/100)). Recorded
+   *  so the card can show a real amount and the parts reconcile to the session
+   *  total — before this the segment rendered as a bare "40%" with no km/min and
+   *  the visible parts summed to (total − segment), never the total. */
+  duration_mins:   number
   pace_target:     string   // e.g. "5:04 /km"
   description:     string
+  /** Estimated distance for the segment, in km. Stamped by `withDistances` from
+   *  the session's own overall pace, exactly like every `SessionPart`. */
+  distance_km?:    number
 }
 
 export interface SessionStructure {
@@ -159,6 +167,7 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
         main:     part(easyMins, 'Z2', 'Easy aerobic. Stay calm.'),
         race_pace_segment: {
           duration_pct: mpPct,
+          duration_mins: segMins,
           pace_target:  segPace,
           description:  `Final ${mpPct}% at ${zoneWord} target ${segPace}. Pace, not effort.`,
         },
@@ -223,13 +232,18 @@ function part(duration_mins: number, zone: string, description: string): Session
 // than threading a ratio through every `part(...)` call site.
 function withDistances(structure: SessionStructure, kmPerMin: number | null): SessionStructure {
   if (kmPerMin == null) return structure
-  const stamp = (p: SessionPart): SessionPart =>
+  const stamp = <T extends { duration_mins: number; distance_km?: number }>(p: T): T =>
     p.duration_mins > 0 ? { ...p, distance_km: +(p.duration_mins * kmPerMin).toFixed(2) } : p
   return {
     ...structure,
     warmup: stamp(structure.warmup),
     main: stamp(structure.main),
     cooldown: stamp(structure.cooldown),
+    // The race-pace segment is a real chunk of the run (§25, up to 40%). Stamp
+    // it too, or the parts on the card sum to (total − segment), not the total.
+    ...(structure.race_pace_segment
+      ? { race_pace_segment: stamp(structure.race_pace_segment) }
+      : {}),
   }
 }
 

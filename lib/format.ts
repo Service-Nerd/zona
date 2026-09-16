@@ -48,6 +48,55 @@ export function sumRoundedDistance(
   }, 0)
 }
 
+/** Apportion whole-unit display distances across a session's parts so the parts
+ *  a runner reads sum EXACTLY to the displayed session total.
+ *
+ *  `sumRoundedDistance` gives session→week reconciliation ("what you add up is
+ *  what you see") by rounding each session then summing. The within-session
+ *  breakdown needs the opposite direction: the total is fixed (it is the number
+ *  on the card) and the PARTS must be chosen to hit it. Rounding each part
+ *  independently loses a unit (a 21.5 km MP long run showed 2 + 9 + 2 against a
+ *  22 km header — the race-pace segment carried the missing ~9 and rendered as a
+ *  bare "40%"). Largest-remainder apportionment fixes it: floor every part, then
+ *  hand the leftover units to the largest fractional remainders (or reclaim from
+ *  the smallest when the target sits below the sum of floors).
+ *
+ *  Inputs are km; the conversion to `units` happens here so callers pass raw km.
+ *  Returns one whole-unit integer per input part, in order, guaranteed to sum to
+ *  `Math.round(total-in-units)`. A null/non-finite part contributes 0. */
+export function apportionRoundedDistance(
+  partsKm: Array<number | null | undefined>,
+  totalKm: number,
+  units: DistanceUnits = 'km',
+): number[] {
+  const toUnit = (km: number) => (units === 'mi' ? km / KM_PER_MI : km)
+  const values = partsKm.map(km =>
+    km != null && Number.isFinite(km) ? toUnit(km) : 0)
+  const target = Math.round(toUnit(totalKm))
+
+  const out = values.map(v => Math.floor(v))
+  let remainder = target - out.reduce((a, b) => a + b, 0)
+
+  // Order parts by fractional remainder, largest first.
+  const byFrac = values
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac)
+
+  for (let k = 0; k < byFrac.length && remainder > 0; k++) {
+    out[byFrac[k].i] += 1
+    remainder -= 1
+  }
+  // Target below the sum of floors (rare — heavy rounding down): reclaim from the
+  // smallest fractional remainders, never taking a part below zero.
+  for (let k = byFrac.length - 1; k >= 0 && remainder < 0; k--) {
+    if (out[byFrac[k].i] > 0) {
+      out[byFrac[k].i] -= 1
+      remainder += 1
+    }
+  }
+  return out
+}
+
 // ─── Pace formatting — single source of truth (ADR-015, INV-FMT-001) ─────────
 //
 // Pace is stored as seconds per KILOMETRE everywhere (analysis, cohort, splits),

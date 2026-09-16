@@ -1414,6 +1414,18 @@ SESSION STRUCTURE
 
 **Metric follows the toggle (§ ADR-015).** Distance leads when the user's toggle is on km; a duration-native rep (an interval) shows an estimated distance derived from its pace with the duration kept in the detail. A rep with no pace (a hill rep at RPE) keeps *time* as its primary — there is no honest distance to show. Flip the toggle and primary/secondary swap.
 
+**MP long-run variant.** A long run with a race-pace finish (§25) renders a second row *inside* the main set — the easy body, then a **Race pace** row carrying its own km/min plus `duration · pace` in the detail. The main-set header total covers both rows.
+
+```
+┌ MAIN SET ────────────── ~18km · Zone 2–3 ┐   ← easy body + segment
+│ 2 ● Easy                  ~9km            │
+│   ● Race pace             ~9km            │
+│                           60 min · 5:41 /km
+└───────────────────────────────────────────┘
+```
+
+**The figures reconcile (SESSION-RECONCILE-01).** Warm-up + main-set + cool-down always sum to the session total the runner sees at the top of the card, and on an MP long run the easy + race-pace rows sum to the main-set total — by distance under the km toggle, by duration under time. Before this the race-pace segment rendered as a bare `40%` with no km/min (so the visible parts summed to *total − segment*), and each part rounded independently (2 + 9 + 2 against a 22 km header). The single owner is `resolveDisplayFigures()` in `lib/plan/sessionSteps.ts` (whole-unit distances apportioned to the total via `apportionRoundedDistance`); the guarantee is corpus-tested in `sessionReconcile.test.ts`. **Any new session shape must keep it: its parts must sum to its total on the card.**
+
 **Data:** the main set renders from `session.derived_set` (ADR-019) via `buildStepGroups()` in `lib/plan/sessionSteps.ts` (pure, tested). Falls back to the composed one-line `structure.main.description` when a session has no derived set (v1 rows, easy runs). The ⓘ on the main-set header opens the zone-education sheet.
 
 **Provenance:** all rule-engine output — **no `<AIMark />`** (Pattern 16). Zones and pace are computed, not model-authored.

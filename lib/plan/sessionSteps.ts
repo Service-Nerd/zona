@@ -13,6 +13,8 @@
 // at RPE) keeps time as its primary, because there is no honest distance to show.
 
 import type { DerivedSet, DerivedStep } from './resolveMainSet'
+import type { SessionStructure } from './sessionComposer'
+import { apportionRoundedDistance } from '@/lib/format'
 
 export type StepKind = 'work' | 'rest'
 
@@ -161,6 +163,93 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
 
   // Text length ("until ready", "to the bottom of the hill").
   return { kind, role, amount: parsed.text, amountIsEstimate: false, detail: target || (kind === 'rest' ? 'rest' : '') }
+}
+
+// ── session-total reconciliation (SESSION-RECONCILE-01) ─────────────────────
+//
+// The card shows a per-phase breakdown (warm-up / main set / cool-down) plus,
+// on an MP long run, a race-pace row inside the main set. Every figure a runner
+// can add up must sum to the session total they see at the top of the card —
+// by distance when the toggle is on km, by duration when it is on time.
+//
+// Two ways it used to fail:
+//   1. the race-pace segment rendered as a bare "40%" with no km/min, so the
+//      visible parts summed to (total − segment), never the total;
+//   2. each part was rounded to whole km independently, so 1.4 + 7.1 + 1.4
+//      showed 1 + 7 + 1 = 9 against a 10 km header.
+// This owner fixes both: the segment folds into the main-set total, and the
+// distance figures are apportioned (largest-remainder) to hit the session total
+// exactly. Durations already sum exactly, so the time path needs no apportioning.
+
+export interface SessionDisplayFigures {
+  /** Section header totals — warm-up + main-set + cool-down sum to the session total. */
+  warmup:   string
+  mainSet:  string   // easy body + race-pace segment
+  cooldown: string
+  /** Main-set rows — mainEasy + racePace sum to `mainSet`. `racePace` is null when
+   *  the session has no race-pace segment. */
+  mainEasy: string
+  racePace: string | null
+}
+
+export interface DisplayFigureOpts {
+  metric: 'distance' | 'duration'
+  units: 'km' | 'mi'
+  /** The session's own total distance (the number at the top of the card). Parts
+   *  are apportioned to hit `Math.round` of this. Falls back to the sum of the
+   *  part distances when absent. */
+  sessionDistanceKm?: number | null
+}
+
+function amountStr(value: number, metric: 'distance' | 'duration', units: 'km' | 'mi'): string {
+  return metric === 'distance' ? `~${value}${units}` : `${value} min`
+}
+
+/** Reconciled per-phase figures for the session-structure card. Pure; the
+ *  component renders it and the corpus test asserts the parts sum to the total. */
+export function resolveDisplayFigures(
+  structure: SessionStructure,
+  opts: DisplayFigureOpts,
+): SessionDisplayFigures {
+  const seg = structure.race_pace_segment
+  const hasDistances =
+    structure.warmup.distance_km != null &&
+    structure.main.distance_km != null &&
+    structure.cooldown.distance_km != null &&
+    (seg == null || seg.distance_km != null)
+
+  // Distance path only when the toggle is on km AND every part has a distance
+  // (a pure-duration session has none — nothing to apportion, show minutes).
+  if (opts.metric === 'distance' && hasDistances) {
+    const partsKm = [
+      structure.warmup.distance_km!,
+      structure.main.distance_km!,
+      seg?.distance_km ?? 0,
+      structure.cooldown.distance_km!,
+    ]
+    const totalKm = opts.sessionDistanceKm ?? partsKm.reduce((a, b) => a + b, 0)
+    const [wu, easy, race, cd] = apportionRoundedDistance(partsKm, totalKm, opts.units)
+    return {
+      warmup:   amountStr(wu, 'distance', opts.units),
+      mainEasy: amountStr(easy, 'distance', opts.units),
+      racePace: seg ? amountStr(race, 'distance', opts.units) : null,
+      mainSet:  amountStr(easy + race, 'distance', opts.units),
+      cooldown: amountStr(cd, 'distance', opts.units),
+    }
+  }
+
+  // Duration path — minutes already sum to the total exactly.
+  const wu = structure.warmup.duration_mins
+  const easy = structure.main.duration_mins
+  const race = seg?.duration_mins ?? 0
+  const cd = structure.cooldown.duration_mins
+  return {
+    warmup:   amountStr(wu, 'duration', opts.units),
+    mainEasy: amountStr(easy, 'duration', opts.units),
+    racePace: seg ? amountStr(race, 'duration', opts.units) : null,
+    mainSet:  amountStr(easy + race, 'duration', opts.units),
+    cooldown: amountStr(cd, 'duration', opts.units),
+  }
 }
 
 /** Turn a resolved derived set into display-ready step groups. */

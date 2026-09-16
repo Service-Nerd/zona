@@ -4,6 +4,7 @@ import {
   formatDuration,
   formatSessionMetric,
   resolveSessionMetric,
+  apportionRoundedDistance,
 } from './format'
 
 describe('formatDuration — the ≥60→hours rule (ADR-015 / INV-FMT-002)', () => {
@@ -95,5 +96,50 @@ describe('resolveSessionMetric — resolution order is unchanged', () => {
   it('falls through global then to distance', () => {
     expect(resolveSessionMetric(1, 'mon', undefined, {}, 'duration')).toBe('duration')
     expect(resolveSessionMetric(1, 'mon', undefined, {}, undefined)).toBe('distance')
+  })
+})
+
+describe('apportionRoundedDistance — parts sum to the displayed total (SESSION-RECONCILE-01)', () => {
+  it('the real MP long-run case: parts sum to the header, not to (total − segment)', () => {
+    // 21.5 km / 151 min, segment 40%. Independent rounding showed 2 + 9 + 2 = 13
+    // against a 22 km header; the segment carried the missing ~9 as a bare "40%".
+    const parts = [2.14, 8.71, 8.58, 2.14] // warm-up, easy body, MP segment, cool-down
+    const out = apportionRoundedDistance(parts, 21.5)
+    expect(out.reduce((a, b) => a + b, 0)).toBe(Math.round(21.5)) // 22
+    // every part within 1 of its natural round
+    parts.forEach((p, i) => expect(Math.abs(out[i] - Math.round(p))).toBeLessThanOrEqual(1))
+  })
+
+  it('the plain-run rounding case: 1.4 + 7.1 + 1.4 shows parts summing to 10, not 9', () => {
+    const out = apportionRoundedDistance([1.42, 7.14, 1.42], 10)
+    expect(out.reduce((a, b) => a + b, 0)).toBe(10)
+  })
+
+  it('always sums to round(total), across a range', () => {
+    for (const total of [5, 8.4, 10, 16.5, 21.5, 29, 32.7, 42.2]) {
+      // split into thirds as a stand-in for arbitrary parts
+      const parts = [total * 0.15, total * 0.55, total * 0.3]
+      const out = apportionRoundedDistance(parts, total)
+      expect(out.reduce((a, b) => a + b, 0), `total ${total}`).toBe(Math.round(total))
+    }
+  })
+
+  it('converts to miles before apportioning, and sums to the mile total', () => {
+    const out = apportionRoundedDistance([3, 12, 3], 18, 'mi') // 18 km ≈ 11.2 mi
+    expect(out.reduce((a, b) => a + b, 0)).toBe(Math.round(18 / 1.609344)) // 11
+  })
+
+  it('reclaims a unit when the target sits below the sum of floors', () => {
+    // parts floor to 1+1+1 = 3 but the total rounds to 2 — one unit is reclaimed.
+    const out = apportionRoundedDistance([1.1, 1.1, 0.2], 2.4)
+    expect(out.reduce((a, b) => a + b, 0)).toBe(2)
+    expect(out.every(v => v >= 0)).toBe(true)
+  })
+
+  it('treats null / non-finite parts as zero', () => {
+    const out = apportionRoundedDistance([2, null, undefined, 3], 5)
+    expect(out.reduce((a, b) => a + b, 0)).toBe(5)
+    expect(out[1]).toBe(0)
+    expect(out[2]).toBe(0)
   })
 })

@@ -4778,6 +4778,7 @@ function SessionPopupInner({ session, weekTheme, weekN, preloadedRuns, onClose, 
                 zoneRangeLabel={dz?.rangeLabel ?? structure.main.zone}
                 metric={effectiveMetric}
                 preferredUnits={preferredUnits}
+                sessionDistanceKm={session.distance_km ?? null}
                 easyPaceStr={aerobicPace ?? null}
                 onInfo={() => setZoneSheetOpen(true)}
               />
