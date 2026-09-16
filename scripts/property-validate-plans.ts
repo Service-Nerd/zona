@@ -457,6 +457,15 @@ const scMaintDrop: number[] = []
 // a detraining plan is a defect whether or not it admits to being one.
 const scAllDrop: number[] = []
 let scAllDrop30 = 0, scAllDrop30Claimed = 0, scAllDrop30Silent = 0
+// FIX 2 — the volume/quality trade. When a quality session enters a constrained
+// week it takes a DAY SLOT. Quality is sized by STRUCTURE (§16/§40b), so it is a
+// near-fixed ~8 km whatever the runner; the easy run it displaces scales with
+// how few days they have. Measure the displacement per day-count and distance.
+const scDisp = new Map<string, { n: number; q: number; e: number; step: number }>()
+// IS WEEK 1 AN OUTLIER? INV-PLAN-NOT-DETRAINING references the plan's own week 1.
+// If week 1 is systematically a spike, that reference is wrong and the invariant
+// fires on plans that merely SETTLE rather than detrain.
+let scW1Spike = 0, scFiresFromW1 = 0, scFiresFromMed = 0
 let scDescending = 0, scDescendingSilent = 0
 const scWarnPlansByCode = new Map<string, number>()
 // NOISE-GATE-01 — warn-severity violations were counted by NOTHING (the loop below
@@ -666,6 +675,39 @@ for (const input of inputs) {
         scAllDrop30++
         if (/hold your fitness|maintains your fitness/i.test(String(m.volume_constraint_note ?? ''))) scAllDrop30Claimed++
         else scAllDrop30Silent++
+      }
+    }
+    if (progAll.length >= 4 && wk1 > 0 && loAll > 0) {
+      const first3 = progAll.slice(0, 3).map(w => w.weekly_km ?? 0).sort((a, b) => a - b)
+      const med3 = first3[1]
+      if (med3 > 0) {
+        if (wk1 > med3 * 1.15) scW1Spike++
+        if ((wk1 - loAll) / wk1 * 100 > 30) scFiresFromW1++
+        if ((med3 - loAll) / med3 * 100 > 30) scFiresFromMed++
+      }
+    }
+    {
+      const detr = wk1 > 0 && loAll > 0 && ((wk1 - loAll) / wk1 * 100) > 30
+      const AERO = new Set(['easy', 'recovery', 'rest', 'race', 'cross_train', 'strength'])
+      const lastBase = [...progAll.filter(w => w.phase === 'base')].pop()
+      const firstQ = progAll.find(w => w.phase !== 'base' &&
+        Object.values(w.sessions ?? {}).some(sn => sn && !AERO.has((sn as { type: string }).type)))
+      if (lastBase && firstQ) {
+        const kmOf = (sn: unknown) => (sn as { distance_km?: number })?.distance_km ?? 0
+        const qs = Object.values(firstQ.sessions ?? {}).filter(sn => sn && !AERO.has((sn as { type: string }).type))
+        const es = Object.values(lastBase.sessions ?? {}).filter(sn => (sn as { type?: string })?.type === 'easy')
+        if (qs.length && es.length) {
+          const days = (input as { days_available?: number }).days_available ?? 0
+          const dk = (input as { race_distance_km?: number }).race_distance_km ?? 0
+          const dl = dk <= 12 ? '10K' : dk <= 22 ? 'HM' : dk <= 43 ? 'MAR' : 'ULTRA'
+          const key = `${detr ? 'DETRAIN' : 'healthy'} ${dl} ${days}d`
+          const cur = scDisp.get(key) ?? { n: 0, q: 0, e: 0, step: 0 }
+          cur.n++
+          cur.q += qs.reduce((a, sn) => a + kmOf(sn), 0) / qs.length
+          cur.e += es.reduce((a, sn) => a + kmOf(sn), 0) / es.length
+          cur.step += (firstQ.weekly_km ?? 0) - (lastBase.weekly_km ?? 0)
+          scDisp.set(key, cur)
+        }
       }
     }
     const noteTxt = String(m.volume_constraint_note ?? '')
@@ -1119,6 +1161,18 @@ if (SCORE) {
     console.log(`      breaching        ${scAllDrop30}`)
     console.log(`      ...carrying the maintenance claim ${scAllDrop30Claimed}`)
     console.log(`      ...saying NOTHING                 ${scAllDrop30Silent}`)
+  }
+  console.log(`\n  IS WEEK 1 A SPIKE? (does INV-PLAN-NOT-DETRAINING reference the right week?)`)
+  console.log(`    week 1 > 1.15x median of first 3 progressive weeks : ${scW1Spike}  ${pct(scW1Spike)}`)
+  console.log(`    fires measured FROM WEEK 1                        : ${scFiresFromW1}  ${pct(scFiresFromW1)}`)
+  console.log(`    fires measured FROM MEDIAN of first 3             : ${scFiresFromMed}  ${pct(scFiresFromMed)}`)
+  if (scDisp.size) {
+    console.log(`\n  FIX 2 — DISPLACEMENT: what a quality session costs when it takes a day slot`)
+    console.log(`    cohort              n      base->build   quality km   easy km   net/swap`)
+    for (const [k, v] of Array.from(scDisp.entries()).filter(e => e[1].n >= 25).sort()) {
+      const q = v.q / v.n, e = v.e / v.n
+      console.log(`    ${k.padEnd(18)} ${String(v.n).padStart(5)}   ${(v.step / v.n).toFixed(1).padStart(9)} km   ${q.toFixed(1).padStart(9)}   ${e.toFixed(1).padStart(7)}   ${(q - e).toFixed(1).padStart(7)}`)
+    }
   }
   console.log(`\n  PROGRESSION SPLIT — is the plan wrong, or correctly constrained and honest?`)
   console.log(`    peak <= week 1 (no progression) ${scNoProgress}  ${pct(scNoProgress)}`)
