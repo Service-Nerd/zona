@@ -445,6 +445,24 @@ const violationsByCode = new Map<string, number>()
 // because one plan can carry several codes and the codes overlap.
 const SCORE = process.env.SWEEP_SCORE === '1'
 let scErrFree = 0, scWarnFree = 0, scBoth = 0, scScored = 0
+// ── THE COACHING COMPLIANCE GAUGE (three states) ─────────────────────────────
+// Agreed 2026-09-16. A binary clean/not-clean gauge is unreachable and, worse,
+// dishonest: measured, 89.7% of the biggest warn (§106, 29.6%) fires on plans the
+// constitution EXPLICITLY licenses -- §12's injury cap, §10's <6mo over-claim
+// cap, §23/§46's days and weekday-minute constraints. Counting those as failures
+// would mean the only route to 95% is suppressing checks that are working.
+//
+//   CLEAN        no errors, no warns.
+//   CONSTRAINED  a residual the constitution ratifies, AND the plan says so.
+//                §34's standing rule: a structural limit is acceptable when it is
+//                declared. This counts as ACCEPTABLE.
+//   FAILING      an error, a structural failure (detraining / inverted peak), or
+//                a residual the plan does NOT declare. Silence is the defect.
+//
+// ACCEPTABLE = CLEAN + CONSTRAINED. Target 95%.
+let gClean = 0, gConstrained = 0, gFailing = 0
+const gDeclSrc = new Map<string, number>()
+const gFailReason = new Map<string, number>()
 // THE QUESTION THAT DECIDES WHETHER 95% IS REACHABLE. A plan that cannot build
 // because the RUNNER's constraints forbid it (3 days, injury cap, time budget)
 // and SAYS SO is not a defective plan -- §23/§52 rule that outcome correct, and
@@ -487,6 +505,13 @@ const scRatchet = new Map<string, { n: number; decl: number; fired: number }>()
 // distance ceiling. §1's invariant exempts maintenance (CD-21) and §90 Am.1's
 // yield is gated off by it, so neither the checker nor the producer acts.
 let scSilent1 = 0, scMaintPlans = 0
+// §106 is the dominant blocker on the compliance gauge (29.6%). Is the shortfall
+// the RUNNER's constraint (days / weekday minutes — §23/§46 license that) or
+// ours? Split it, because only one of those is fixable.
+const scPeakShort = new Map<string, { n: number; gap: number }>()
+const scPeakEg: string[] = []
+// The three-state gauge rests on this: is a CONSTRAINED plan also an HONEST one?
+let scConstrained = 0, scConstrainedDeclared = 0, scOursUndeclared = 0
 const scSilent1Over: number[] = []
 let scSilent1AllEasy = 0
 let scDescending = 0, scDescendingSilent = 0
@@ -664,6 +689,30 @@ for (const input of inputs) {
 
     const m = composed.plan.meta as unknown as Record<string, unknown>
     const declared = Boolean(m.volume_constraint_note) || m.volume_profile === 'maintenance'
+
+    {
+      // Structural failures — a plan being WRONG, not merely limited.
+      const structural: string[] = []
+      if (warnCodes.has('INV-PLAN-NOT-DETRAINING')) structural.push('detraining')
+      if (warnCodes.has('INV-PLAN-PEAK-IN-PEAK-PHASE')) structural.push('peak not in peak phase')
+      // A residual the constitution ratifies. §106's shortfall is the big one;
+      // the rest are the absorbed-warn family (§34).
+      const hasResidual = warnCodes.size > 0
+      const anyDeclared = declared || Boolean(m.difficulty_note)
+        || Boolean(m.long_run_shortfall_note) || Boolean(m.uncovered_runway_note)
+      if (errors.length > 0) { gFailing++; gFailReason.set('error violation', (gFailReason.get('error violation') ?? 0) + 1) }
+      else if (structural.length > 0) { gFailing++; gFailReason.set(`structural: ${structural[0]}`, (gFailReason.get(`structural: ${structural[0]}`) ?? 0) + 1) }
+      else if (!hasResidual) gClean++
+      else if (anyDeclared) {
+        gConstrained++
+        const src = declared ? 'volume_constraint_note / maintenance'
+          : m.long_run_shortfall_note ? 'long_run_shortfall_note'
+          : m.uncovered_runway_note ? 'uncovered_runway_note'
+          : 'difficulty_note ONLY'
+        gDeclSrc.set(src, (gDeclSrc.get(src) ?? 0) + 1)
+      }
+      else { gFailing++; gFailReason.set('residual NOT declared', (gFailReason.get('residual NOT declared') ?? 0) + 1) }
+    }
     const mainW = composed.plan.weeks.filter(w => w.n >= 1)
     const trainW = mainW.filter(w => !Object.values(w.sessions ?? {})
       .some(sn => (sn as { type?: string } | undefined)?.type === 'race'))
@@ -756,6 +805,54 @@ for (const input of inputs) {
         if (sh > ceil) { scSilent1++; scSilent1Over.push(sh - ceil) }
         if (qn === 0) scSilent1AllEasy++
       }
+    }
+    if (warnCodes.has('INV-PLAN-PEAK-NOT-BELOW-START')) {
+      const declaredKm2 = (input as { current_weekly_km?: number }).current_weekly_km ?? 0
+      const days2 = (input as { days_available?: number }).days_available ?? 0
+      const cap2 = (input as { max_weekday_mins?: number }).max_weekday_mins
+      const nf = composed.plan.weeks.filter(w =>
+        w.phase !== 'foundation' && w.type !== 'deload' && w.type !== 'race' &&
+        !Object.values(w.sessions ?? {}).some(sn => (sn as { type?: string } | undefined)?.type === 'race'))
+      const pk2 = nf.length ? Math.max(...nf.map(w => w.weekly_km ?? 0)) : 0
+      // Which constraint plausibly binds? §23/§46 name days_available and
+      // max_weekday_mins explicitly as legitimate reasons a plan cannot overload.
+      const lowDays = days2 > 0 && days2 <= 3
+      const tightCap = cap2 != null && cap2 <= 45
+      // ⚠️ THE FIRST SPLIT WAS TOO NARROW and mislabelled a quarter of the
+      // firings as "ours". §23/§46 name days_available and max_weekday_mins, but
+      // they are not the only LEGITIMATE reasons a plan cannot reach the stated
+      // volume: §12's injury cap limits growth to 5%/week, and §10/CD-6 refuses
+      // to believe a `<6mo` runner's self-reported volume at all
+      // (BEGINNER_WEEK1_VOLUME_CAP_KM). A shin-splints runner claiming 60 km/wk
+      // on a `<6mo` training age is capped by BOTH, and the plan peaking at 31 km
+      // is those rules working, not §106 failing.
+      const injCapped = (((input as { injury_history?: string[] }).injury_history) ?? [])
+        .some(i => /knee|shin/i.test(i))
+      const overClaim = (input as { training_age?: string }).training_age === '<6mo'
+      const key = injCapped ? '§12 injury cap (5%/wk)'
+        : overClaim ? '§10 <6mo over-claim cap'
+        : lowDays && tightCap ? 'days<=3 AND cap<=45'
+        : lowDays ? 'days<=3 only'
+        : tightCap ? 'cap<=45 only'
+        : 'NONE OF THE ABOVE — ours'
+      if (key === 'NONE OF THE ABOVE — ours' && process.env.SWEEP_PEAK_EG === '1' && scPeakEg.length < 3) {
+        scPeakEg.push(`stated=${declaredKm2} peak=${pk2} days=${days2} cap=${cap2 ?? 'none'} ` +
+          `weeks=${composed.plan.weeks.filter(w => w.n >= 1).length} profile=${String((composed.plan.meta as unknown as Record<string, unknown>).volume_profile)} ` +
+          `input=${JSON.stringify(input).slice(0, 430)}`)
+      }
+      {
+        const declaredNote = Boolean((composed.plan.meta as unknown as Record<string, unknown>).volume_constraint_note)
+          || (composed.plan.meta as unknown as Record<string, unknown>).volume_profile === 'maintenance'
+          || Boolean((composed.plan.meta as unknown as Record<string, unknown>).difficulty_note)
+        if (key !== 'NONE OF THE ABOVE — ours') {
+          scConstrained++
+          if (declaredNote) scConstrainedDeclared++
+        } else if (!declaredNote) scOursUndeclared++
+      }
+      const cur = scPeakShort.get(key) ?? { n: 0, gap: 0 }
+      cur.n++
+      cur.gap += declaredKm2 > 0 ? (declaredKm2 - pk2) / declaredKm2 * 100 : 0
+      scPeakShort.set(key, cur)
     }
     const noteTxt = String(m.volume_constraint_note ?? '')
     if (/hold your fitness|maintains your fitness/i.test(noteTxt)) {
@@ -1212,7 +1309,21 @@ console.log(`✓ ${generated} plans generated and validated (${foundationPlans} 
 
 if (SCORE) {
   const pct = (n: number) => `${(n / scScored * 100).toFixed(1)}%`
-  console.log('\n── COACHING COMPLIANCE GAUGE (baseline, SWEEP_SCORE=1) ──')
+  const acceptable = gClean + gConstrained
+  console.log('\n══ COACHING COMPLIANCE GAUGE ══════════════════════════════════')
+  console.log(`  ACCEPTABLE   ${acceptable}/${scScored}   ${(acceptable / scScored * 100).toFixed(1)}%   (target 95%)`)
+  console.log(`    CLEAN        ${gClean}  ${(gClean / scScored * 100).toFixed(1)}%   no errors, no warns`)
+  console.log(`    CONSTRAINED  ${gConstrained}  ${(gConstrained / scScored * 100).toFixed(1)}%   ratified residual, declared`)
+  console.log(`  FAILING      ${gFailing}  ${(gFailing / scScored * 100).toFixed(1)}%`)
+  for (const [r, n] of Array.from(gFailReason.entries()).sort((a, b) => b[1] - a[1])) {
+    console.log(`      ${String(n).padStart(5)}  ${r}`)
+  }
+  console.log('  what is doing the DECLARING in CONSTRAINED (is the test too soft?):')
+  for (const [r, n] of Array.from(gDeclSrc.entries()).sort((a, b) => b[1] - a[1])) {
+    console.log(`      ${String(n).padStart(5)}  ${(n / gConstrained * 100).toFixed(1).padStart(5)}%  ${r}`)
+  }
+  console.log('═══════════════════════════════════════════════════════════════')
+  console.log('\n── detail (SWEEP_SCORE=1) ──')
   console.log(`  plans scored                 ${scScored}`)
   console.log(`  zero ERROR violations        ${scErrFree}  ${pct(scErrFree)}`)
   console.log(`  zero WARN violations         ${scWarnFree}  ${pct(scWarnFree)}`)
@@ -1255,6 +1366,21 @@ if (SCORE) {
     console.log(`    cohort                    n      mean decline   detraining`)
     for (const [k, v] of Array.from(scRatchet.entries()).sort()) {
       console.log(`    ${k.padEnd(22)} ${String(v.n).padStart(5)}   ${(v.decl / v.n).toFixed(1).padStart(11)}%   ${(v.fired / v.n * 100).toFixed(1).padStart(8)}%`)
+    }
+  }
+  if (scConstrained > 0) {
+    console.log(`\n  DOES A CONSTRAINED PLAN DECLARE ITSELF? (the three-state gauge rests on this)`)
+    console.log(`    §106 firings with a ratified constraint   ${scConstrained}`)
+    console.log(`      ...carrying a note / maintenance label  ${scConstrainedDeclared}  ${(scConstrainedDeclared / scConstrained * 100).toFixed(1)}%`)
+    console.log(`    "ours" firings that are ALSO silent        ${scOursUndeclared}`)
+  }
+  if (scPeakShort.size) {
+    console.log(`\n  §106 SHORTFALL — whose constraint is it?`)
+    console.log(`    cohort                        n      mean shortfall vs stated`)
+    let tot = 0
+    for (const v of Array.from(scPeakShort.values())) tot += v.n
+    for (const [k, v] of Array.from(scPeakShort.entries()).sort((a, b) => b[1].n - a[1].n)) {
+      console.log(`    ${k.padEnd(26)} ${String(v.n).padStart(5)}  ${(v.gap / v.n).toFixed(1).padStart(6)}%   (${(v.n / tot * 100).toFixed(1)}% of firings)`)
     }
   }
   console.log(`\n  SILENT §1 BREACH (maintenance exempts the check AND gates off the yield):`)
