@@ -102,6 +102,47 @@ The build fails if that stops being true.
 > insurance gate that holds ENGINE-03. Hutchinson carries it.
 > *Verify still open:* `grep -c "sex\|gender" types/plan.ts` → **0 = still open**.
 
+> 🔲 **COMPLIANCE-PROGRAMME — the open half.** *(opened 2026-09-16, gauge at 45.7% of a 95% target)*
+> The coaching-compliance gauge runs on the property sweep under `SWEEP_SCORE=1`. **A plan is
+> ACCEPTABLE when it carries no error, no HIGH coaching deviation, no structural failure, and
+> every residual it declares matches what it actually delivers.** Baseline 36.6% → **45.7%** after
+> FIX-0/1/2/3 + INJURY-MATCH-01. Target 95%.
+>
+> ⚠️ **The gauge must be allowed to go DOWN.** FIX-0 moved it 36.6% → 35.9% because it stopped
+> hiding 574 masked plans. A compliance metric that only ever rises is one being gamed; the
+> `ACKNOWLEDGED_WARN_RATES` entry and the sweep baseline both carry their reasoning for the same
+> purpose. Never re-baseline to go green.
+>
+> **Still open, in rough priority:**
+> - 🔴 **LOPSIDED-ORDER-01** — `lopsidedWeek` (§52's third remedy, `ruleEngine`) evaluates BEFORE
+>   the weekday-cap pass trims easy runs. Traced on the exact input: at `max_weekday_mins: 30` the
+>   week falls 58 → 39 km while the long run is race-anchored and §52-exempt, so its share crosses
+>   60% after the producer has already decided the week is fine. 2 plans in the sweep baseline.
+>   ⚠️ Re-scoping `lopsidedWeek` backfired on 2026-09-15 (stripped 24 plans of maintenance, turned
+>   an absorbed warn into a hard failure, reverted). Needs its own measurement, not a ride-along.
+>   *Verify still open:* `BASELINE['INV-PLAN-LR-MAX-WEEKLY-PCT']` in the sweep → **2 = still open**.
+> - 🔴 **SWEEP-AGE-01** — the sweep pins `age: 35` (corners 43), so `MASTERS_AGE_THRESHOLD` (45) is
+>   NEVER crossed and §3's masters 3-week deload cadence has never been swept. That is where the
+>   deload ratchet was worst (81.7% detraining vs 67.2%), so every masters figure in §2 Am.2 is
+>   instrumented arithmetic, not sweep measurement. **Widening it revealed a second unrelated
+>   defect immediately** — `INV-PLAN-MAIN-SET-ORDERING`, 13 plans — so it needs its own commit.
+>   Also: the input-coverage gate passed because `age` took two distinct values; it does not check
+>   whether variation crosses a threshold the engine BRANCHES on. That gate is worth strengthening.
+>   *Verify still open:* `grep -c "age: pick(ages)" scripts/property-validate-plans.ts` → **0 = open**.
+> - 🔲 **SWEEP-INJURY-01** — `'Plantar fasciitis'` is still unswept. The injury axis was held at 6
+>   entries during INJURY-MATCH-01 so the seeded sample would not re-roll and rates stayed
+>   comparable. Add it (and re-baseline the rates, declaring the move) as its own change.
+> - 🔲 **The 0.7% detraining residual** — `INV-PLAN-NOT-DETRAINING` fell 15.1% → 0.7% but is not
+>   zero, and the remaining cause is NOT traced. Do not present detraining as solved.
+> - 🔲 **Promote `INV-PLAN-NOT-DETRAINING` to `error`** — shipped at `warn` only because
+>   `enforceViolations` throws on error in dev/test and 15.2% of inputs would have taken verify
+>   down. At 0.7% that objection is nearly gone. **If it does not reach ~0, the producer fix
+>   failed** and that is the test.
+> - 🔲 **Compliance themes still unruled:** zero-quality-by-accident (board asked for evidence on
+>   what a 3-day novice marathoner should deliberately receive), `maintenance` meaning three
+>   different things, and warn-severity triage (any warn >20% is promoted or explained).
+>   Sims's fuelling / energy-availability guidance is also still outstanding.
+
 ### Off the table — do NOT re-open without reading the item first
 
 | Item | Why |
