@@ -2206,13 +2206,9 @@ function hasInjury(input: GeneratorInput, keyword: string): boolean {
 
 function applyInjuryAdjustments(
   weeklyKm: number,
-  prevWeeklyKm: number,
-  allowQuality: boolean,
   input: GeneratorInput,
-  phase: PhaseType,
-): { adjustedKm: number; allowQuality: boolean } {
+): { adjustedKm: number } {
   let km = weeklyKm
-  let quality = allowQuality
 
   // §12's weekly volume cap MOVED INTO buildVolumeSequence (2026-08-20).
   //
@@ -2228,18 +2224,30 @@ function applyInjuryAdjustments(
   // against an already-capped previous week. That drove delivered volume ~20%
   // below the curve on the very weeks the first fix was meant to smooth.
   //
-  // `prevWeeklyKm` is retained in the signature for the non-volume rules below
-  // and for callers; it is deliberately unused by the volume path now.
-  // Achilles: no quality work (any phase).
-  if (hasInjury(input, 'achilles')) {
-    quality = false
-  }
-  // Hip flexor: no quality in base phase only — allows return to quality once aerobic base is built.
-  if (hasInjury(input, 'hip_flexor') && phase === 'base') {
-    quality = false
-  }
-
-  return { adjustedKm: km, allowQuality: quality }
+  // `prevWeeklyKm` WAS retained in the signature "for the non-volume rules
+  // below"; those rules were dead and are now deleted, so the parameter went
+  // with them rather than staying as an unused argument the next reader has to
+  // account for.
+  // ⚠️ THE QUALITY LOGIC THAT USED TO LIVE HERE WAS DEAD, AND IS DELETED
+  // (§110 / §21, 2026-09-16). It computed an `allowQuality` that said:
+  //   · Achilles  -> no quality work, any phase
+  //   · Hip flexor -> no quality in base phase
+  // and returned it alongside `adjustedKm`. **The single call site destructures
+  // `{ adjustedKm }` only**, so neither rule has ever fired. (`maintenance.ts`
+  // has its own `allowQuality`, computed locally from `injured` — unrelated.)
+  //
+  // Deleted rather than wired up, on both counts:
+  //   · The Achilles rule is the one §110 just removed from `suppressQuality`
+  //     as a defect against §21, which prescribes SUBSTITUTION ("progression
+  //     runs or flat tempo at equivalent intensity"), not removal. Wiring it
+  //     would silently re-impose the thing the board just struck down.
+  //   · The hip-flexor rule is unreachable BY DESIGN: base phase carries no
+  //     quality for anyone (§4/§5, `plannedQuality` starts at 0 and only build
+  //     and peak raise it), so "no quality in base" can never subtract anything.
+  //
+  // Left in place it is a trap: it reads like a live safety rule, and the
+  // obvious "fix" (destructure the second field) would re-break §21.
+  return { adjustedKm: km }
 }
 
 function applyLongRunCap(distKm: number, paceMinPerKm: number, input: GeneratorInput): number {
@@ -2829,10 +2837,27 @@ function buildWeekSessions(
   }
   // base = 0; deload weeks (non-peak/taper) = 0
 
-  // Suppression rules — applied AFTER planned count so we keep intent visible.
-  const suppressQuality = input.hard_session_relationship === 'avoid'
-    || hasInjury(input, 'achilles')
-  if (suppressQuality) plannedQuality = 0
+  // §110 (Coaching Board 2026-09-16, CB-HSR-AVOID-01) — `avoid` is a FLOOR,
+  // not a switch. This line used to read `plannedQuality = 0` for the whole
+  // plan. It now CAPS. See GENERATION_CONFIG.HARD_AVERSE_QUALITY_PER_WEEK_MAX
+  // for the five-seat reasoning and why 1 is the value §96's precedent forces.
+  //
+  // ACHILLES REMOVED — it was a defect against §21, not a coaching choice.
+  // §21 prescribes SUBSTITUTION for hill-restricting injuries ("Substitutes are
+  // progression runs or flat tempo at equivalent intensity"), and that is
+  // ALREADY WIRED: `excludeHillSessions` (~:3244) filters hill rows out of
+  // `selectCatalogueSession()` using HILL_RESTRICTING_INJURIES, which contains
+  // 'achilles'. This line then deleted the flat session §21 had just
+  // substituted — the engine satisfied §21 and overrode itself 400 lines later,
+  // for 756 plans. Willy, decisive: tendinopathy management is progressive
+  // LOADING, not unloading; the hill exclusion is right because the eccentric
+  // load at the top of each rep is the aggravator, and flat tempo is not.
+  // Removing it needs no principle change — §21 already says the right thing.
+  if (input.hard_session_relationship === 'avoid') {
+    plannedQuality = Math.min(plannedQuality, GENERATION_CONFIG.HARD_AVERSE_QUALITY_PER_WEEK_MAX)
+    // §110 Am.1 reduces the DOSE, not the count — see qualKmPerSession
+    // below for why the frequency lever was built, measured and withdrawn.
+  }
 
   // Apply fitness ceiling — beginner = 0, intermediate/experienced = 2.
   const includeQualityCount = Math.min(plannedQuality, fitnessCeiling)
@@ -2875,7 +2900,33 @@ function buildWeekSessions(
       qualProgression = 1 + (GENERATION_CONFIG.QUALITY_PROGRESSION_RANGE_PCT / 100) * (t - 0.5)
     }
   }
-  const qualKmPerSession = weeklyKm * (qualPct / 100) * qualProgression
+  // §110 Am.1 (CB-HSR-AVOID-01 second sitting) — `avoid` gets a SMALLER quality
+  // session, not fewer of them. This is the lever that reaches an intermediate,
+  // who never earns the 2/week the per-week cap bites on.
+  //
+  // ⚠️ THE FREQUENCY LEVER WAS BUILT, MEASURED AND WITHDRAWN, and why is the
+  // transferable part. Skipping alternate BUILD weeks collided with three
+  // separately-ratified rules in succession: §5's VO2max adaptation deadline
+  // (on a 14-week 10K the natural slot lands EXACTLY on the deadline, so any
+  // earlier skip fires INV-PLAN-VO2MAX-ONSET), §53's variety cap (a thinner
+  // rotation repeats `tempo_continuous` — 61 new errors), and §79's intensity
+  // re-entry window (264 new errors). Each fix produced the next collision.
+  //
+  // The build rotation is tightly coupled — §5's deadline, §22's rename, §53's
+  // variety and §79's window all key off its index and calendar position — so
+  // removing half its weeks perturbs all four. Three collisions from one lever
+  // is a signal the lever is wrong, not that a fourth patch is needed.
+  //
+  // DOSE is the one axis nothing else keys on. Freed distance returns to the
+  // easy runs through §9's re-derivation, which VOL-SHORTFALL-01 measured as
+  // volume-preserving, so the week is the same size and only the hard part of
+  // it is smaller. That is what "spared" should mean (§96 line 4771), and what
+  // McMillan asked for: the runner who says the last one hurt gets a SHORTER
+  // one, not a later one.
+  const hardAverseDose = input.hard_session_relationship === 'avoid'
+    ? GENERATION_CONFIG.HARD_AVERSE_QUALITY_DOSE_PCT / 100
+    : 1
+  const qualKmPerSession = weeklyKm * (qualPct / 100) * qualProgression * hardAverseDose
 
   // SC-10 / CD-14 — VO2max main-set ceiling. Sizing quality as a share of weekly
   // volume makes the hardest session GROW into peak (§8, measured p50 25 min).
@@ -5696,6 +5747,17 @@ function buildRulePlanOnce(
   const overdoBrake = GENERATION_CONFIG.OVERDO_IS_A_BRAKE
     && input.hard_session_relationship === 'overdo'
 
+  // §110 — `avoid` joins §96's brake on ONSET (not on the Z2 cue, which §96
+  // scoped to `overdo`'s specific drift failure mode). Same argument as §96's:
+  // §89's gate is a list of DEMONSTRATED READINESS signals, and a runner who
+  // has told us they steer away from hard sessions is not the runner to hand
+  // intensity to two weeks early. Willy's position on the board; McMillan
+  // dissented, wanting the reduced dose to start on the normal schedule, and
+  // the dissent is recorded in §110 because the data that would settle it
+  // (first-quality-session adherence by hard_session_relationship) does not
+  // exist yet. Reuses the existing gate rather than adding a parallel one.
+  const cautionBrake = overdoBrake || input.hard_session_relationship === 'avoid'
+
   // §98 — the ladder's terminal rung regenerates the runner as if ungated.
   const earlyQualityOnset = !suppressEarlyOnset && tissueConditioned
     && intensityFitness === 'experienced'
@@ -5707,7 +5769,7 @@ function buildRulePlanOnce(
     // one declared RISK signal, and §79 already holds that self-report is
     // trusted MORE when it points toward caution than when it points toward
     // more work. Ignoring it entirely was the inconsistency.
-    && !overdoBrake
+    && !cautionBrake
 
   // §97 Amendment (LONG-RUNWAY-EARNS-PLAN-01, Coaching Board 2026-09-16) —
   // surplus weeks become plan weeks rather than a §57 block in front of the plan.
@@ -5993,11 +6055,10 @@ function buildRulePlanOnce(
 
     const weeklyKm = volumes[i]
     // §12's weekly cap now lives in buildVolumeSequence, so the curve already
-    // reflects it. This call still handles the non-volume injury rules
-    // (achilles/hip-flexor quality suppression).
-    const prevWeeklyKm = i > 0 ? volumes[i - 1] : startKm
-
-    const { adjustedKm } = applyInjuryAdjustments(weeklyKm, prevWeeklyKm, true, input, phase)
+    // reflects it. What remains here is the non-volume injury sizing only — the
+    // quality-suppression rules this function used to return were DEAD (never
+    // destructured) and were deleted with §110; see applyInjuryAdjustments.
+    const { adjustedKm } = applyInjuryAdjustments(weeklyKm, input)
 
     const isRotatingBuildWeek = phase === 'build' && !isDeload && !isRaceWeek
     const isRotatingPeakWeek  = phase === 'peak'  && !isDeload && !isRaceWeek
@@ -6057,6 +6118,25 @@ function buildRulePlanOnce(
       // FOUR quality sessions, which on a short 10K plan is most of them and
       // removes hill work entirely. That is a change to what the numeric MEANS
       // (D-22), so it needs the board, not an edit. See REENTRY-DEPTH-01.
+      // §110 — VO2max withhold for `avoid` was PROPOSED by the board and
+      // WITHDRAWN on measurement (D-21: a rule the catalogue cannot satisfy is a
+      // defect in the rule, not in the engine).
+      //
+      // Reusing §79's `excludeHighTissueStress` for the whole `avoid` cohort
+      // produced 61 NEW §53 variety errors -- "tempo_continuous appears 3 times
+      // across 5 quality sessions; cap is 2" -- because removing the vo2max
+      // category leaves the eligible pool too thin to satisfy §53's anti-repeat
+      // cap. Scoping it to build phase only made it WORSE (570 plans carrying a
+      // violation against 63). This is CAT-DEPTH-01's known catalogue thinness
+      // surfacing, not a fixable wiring error: §79's lever is calibrated for a
+      // few weeks of ONE runner's plan, and a standing preference is a different
+      // duration entirely.
+      //
+      // Nothing is lost by withdrawing it. §110 Am.1's build-week frequency cut
+      // ALREADY takes `avoid` to 0% inert for intermediate and experienced
+      // runners, which is the outcome arm 3 was reached for. Keeping a second
+      // mechanism that buys no measured reach and breaks a ratified invariant
+      // would be the opposite of SLC.
       reentry.withheldAtQualityIndex(buildRotationIndex),
       qualityPool,
       recentThresholdEligible,
@@ -7569,6 +7649,18 @@ function buildRulePlanOnce(
     // have not earned the 5yr+ exception).
     ...(input.hard_session_relationship === 'love' && input.training_age !== '5yr+'
       ? { hard_pref_note: 'You said you like hard sessions. The plan earns longer peak runs and more intensity as your training history deepens — not before your legs have proven they will take it.' }
+      : {}),
+
+    // §110 / §40c (Coaching Board 2026-09-16) — THE NOTE IS PART OF THE RULING,
+    // not decoration. Before §110 this field fired for `love` ONLY, so 2,197
+    // runners had every quality session removed from their plan and the plan
+    // said nothing. §40c's standing rule is that a suppressed target is STATED,
+    // never absorbed silently, and §40c also requires the note to NAME THE
+    // LEVER — so this says which lever (one a week, started later) rather than
+    // gesturing at "your preferences". Unconditional on training_age: unlike
+    // the `love` note above, nothing here is forward-looking.
+    ...(input.hard_session_relationship === 'avoid'
+      ? { hard_pref_note: 'You said you avoid hard sessions. The plan keeps one a week at most and starts them later than usual. One is enough to prepare for the race; two is what you were trying to avoid.' }
       : {}),
 
     // VDOT / zone model fields (CoachingPrinciples §10, §20).

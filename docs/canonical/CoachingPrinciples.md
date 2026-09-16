@@ -5938,6 +5938,172 @@ the component.
 
 ## 56. The constitution
 
+---
+
+## 110. `avoid` is a floor, not a switch
+
+*Added 2026-09-16 — Coaching Board (CB-HSR-AVOID-01). Unanimous on the ruling; one dissent recorded on scope.*
+
+**Principle.** `hard_session_relationship: 'avoid'` caps quality at
+`HARD_AVERSE_QUALITY_PER_WEEK_MAX` (1) per week and joins §96's brake on §89/§91
+early onset. It **never sets quality to zero.** A runner who says they avoid hard
+sessions gets fewer and later, not none.
+
+**What it replaced.** `suppressQuality` in `buildWeekSessions` set
+`plannedQuality = 0` for **every week of every plan**. Measured on the
+15,973-plan property sweep: **2,197 non-beginner plans (13.8%)** received zero
+quality across 8+ weeks. Those runners had chosen a race. Several had chosen a
+time goal.
+
+**Why no seat could defend zero.**
+
+- **Seiler.** Self-organising recreational runners land at 10–15% hard. 100/0 is
+  outside any population he has measured. It is not a conservative reading of
+  80/20; it is a different model, and LSD-only has a documented ceiling. *"The
+  point of the polarised distribution is that the easy is easy so the hard can
+  be hard."*
+- **Willy.** The volume curve still ramps. Zeroing intensity does not remove
+  load, it swaps intensity risk for monotonous-volume risk, which is the one
+  that produces bone stress injuries.
+- **Sims.** Monotonous low-intensity running is close to the worst osteogenic
+  stimulus available, and bone is where this lands for the peri- and
+  post-menopausal runners in this demographic. She also expects `avoid` to be
+  selected more often by women for cultural rather than physiological reasons:
+  **a default that silently removes intensity, selected disproportionately by
+  women, and justified nowhere in this document, is the pattern her seat exists
+  to catch.**
+- **McMillan.** *"I avoid hard sessions"* means *I don't know how*, or *the last
+  one hurt*. Each is an argument for one small well-explained hard session, not
+  none.
+- **Hutchinson.** No evidence supports zero intensity as preparation for a time-
+  goal race. The overclaim was in the product, not the physiology.
+
+**Why 1 — §96's precedent forces the number.** §96 ruled that a brake *"returns
+the runner to the standard plan, byte for byte. It does not cut below baseline."*
+1/week **is** the baseline for build phase (§8) and for a non-experienced peak.
+What `avoid` gives up is the experienced runner's **second** peak quality session.
+The brake removes the surplus, never the substance.
+
+**This is the rung §35 declared and never built.** §96 named the gap exactly —
+*"It never built the rung going the other way"* — and then built it for `overdo`.
+`avoid` was the other half, and what existed in its place was an off switch.
+
+**§40c applies and was breached.** `hard_pref_note` fired for `love` **only**, so
+2,197 runners had every quality session removed and **the plan said nothing**.
+§40c's standing rule is that a suppressed target is stated, never absorbed
+silently, and that the note must name the lever. It now does.
+
+**Achilles is removed from the suppression entirely, and that half is a DEFECT
+FIX, not a ruling.** §21 prescribes **substitution** for hill-restricting
+injuries — *"Substitutes are progression runs or flat tempo at equivalent
+intensity"* — and that is already wired: `excludeHillSessions` filters hill rows
+out of `selectCatalogueSession()` via `HILL_RESTRICTING_INJURIES`, which contains
+`achilles`. `suppressQuality` then **deleted the flat session §21 had just
+substituted**, for 756 plans. The engine satisfied §21 and overrode itself 400
+lines later. Willy, decisive: tendinopathy management is progressive **loading**,
+not unloading — the hill exclusion is right because the eccentric load at the top
+of each rep is the aggravator, and flat tempo is not. No principle change was
+needed; §21 already said the right thing.
+
+**⚠️ WHY THIS SURVIVED — the transferable part. §1 is a CEILING with no floor.**
+`QUALITY_SESSIONS_PER_WEEK_MAX` is an upper bound, so a plan delivering 0%
+quality breaches nothing, and **no invariant fired anywhere on 2,197 plans.** An
+assertion expressed only as an upper bound cannot detect the floor falling out.
+This is why `INV-PLAN-QUALITY-NOT-ZERO` is a condition of the ruling rather than
+a nicety: without it, the next mechanism to zero out quality is exactly as
+invisible as this one was. Same family as §5's `SPECIFICITY_BY_PHASE` (declared,
+never read) and §1's own four-month error — **a value nothing can falsify is not
+governed.**
+
+**Recorded dissent (McMillan).** He would have the reduced dose start on the
+normal schedule and not delay onset; Willy's position (delay, on §96's exact
+logic) prevailed as the more conservative and the one consistent with precedent.
+**What would settle it:** first-quality-session adherence by
+`hard_session_relationship`, which does not exist yet.
+
+**Measured blast radius.** Fit-for-purpose across the sweep **54.3% → 97.7%**.
+Delivered volume is **unchanged** — peak and week-1 identical in the traced cell,
+confirming VOL-SHORTFALL-01's finding that §9 redistribution preserves weekly
+total. `avoid` plans converge on the `neutral` cohort's existing residual rates
+(`INV-PLAN-PEAK-IN-PEAK-PHASE` 44 → 123 against neutral's 111;
+`INV-PLAN-NOT-DETRAINING` 28 → 48 against neutral's 50) — **they were previously
+quiet because zero quality left those checks partly unreachable, not because
+those plans were better shaped.** `INV-PLAN-PEAK-SPECIFICITY` rose 433 → 769 for
+the same reason: it opens `if (peakQuality > 0)` and could not see a plan with no
+key sessions at all.
+
+### Amendment 1 — what "fewer" means for a runner already at one a week
+
+*Added 2026-09-16, same day, second sitting. The first sitting's numeric was wrong and measurement is what said so.*
+
+The first sitting set `HARD_AVERSE_QUALITY_PER_WEEK_MAX = 1` and reasoned that
+§96's precedent fixed the value. **Measured across a 540-cell grid, that left
+`avoid` byte-identical to `neutral` for 72.6% of runners and 100% of
+intermediates** — an intermediate never earns two quality sessions a week, so a
+cap of 2→1 cannot bind on them. That is §96's own defect reproduced one section
+later, and it was caught by `coaching-deviation-scan` flagging the persona as
+unreached, not by review.
+
+**The misreading, stated plainly, because it is the reusable part.** §96's
+*"does not cut below baseline"* was scoped to `overdo`. §96 line 4771 had already
+settled the distinction: conflating the two *"would take work from a runner who
+asked to be **paced**, not **spared**."* `overdo` is paced — baseline. `avoid` is
+spared — **below** baseline. Quoting a precedent without checking which persona
+it was scoped to produced a numeric that did nothing.
+
+**The amendment.** `avoid`'s quality session is **smaller**, sized at
+`HARD_AVERSE_QUALITY_DOSE_PCT` (85%) of the standard share. Freed distance
+returns to the easy runs through §9's re-derivation, so the week is the same size
+and only the hard part of it is shorter. That is what *spared* should mean, and
+it is what McMillan asked for: the runner who says the last one hurt gets a
+**shorter** one.
+
+**⚠️ TWO OTHER LEVERS WERE BUILT, MEASURED AND WITHDRAWN. Recording why is the
+durable part of this amendment.**
+
+1. **A quality session every other build week.** It collided with **three**
+   separately-ratified rules in succession: §5's VO2max adaptation deadline (on a
+   14-week 10K the natural slot lands *exactly* on the deadline, so any earlier
+   skip fires `INV-PLAN-VO2MAX-ONSET`), then §53's variety cap (a thinner
+   rotation repeats `tempo_continuous` — **61 new errors**), then §79's intensity
+   re-entry window (**264 new errors**). Each fix produced the next collision.
+   **The build rotation is tightly coupled** — §5's deadline, §22's rename, §53's
+   variety and §79's window all key off its index and calendar position — so
+   removing half its weeks perturbs all four. Three collisions from one lever is
+   a signal the lever is wrong, not that a fourth patch is needed. **Dose is the
+   one axis nothing else keys on.**
+2. **Withholding VO2max plan-wide**, reusing §79's `excludeHighTissueStress`.
+   Produced **61 new §53 variety errors**: removing a whole category leaves the
+   eligible pool too thin to satisfy the anti-repeat cap. That is CAT-DEPTH-01's
+   known catalogue thinness, and §79's lever is calibrated for a few weeks of one
+   runner's plan, not a standing preference — **stretching a bounded mechanism
+   past its calibrated duration is what broke it, not the idea.** Withdrawn under
+   D-21, and it bought no measured reach.
+
+**Reach, measured.** Beginner 100% inert (correct — they have no quality for
+`avoid` to modify, which the 2026-08-30 classifier ruling ratifies); intermediate
+100% → **27%**; experienced 18% → **0%**. The intermediate residual is cells whose
+quality session is already pinned at `MIN_SESSION_DISTANCE_KM`, where a
+percentage cut cannot bind. **That residual is declared, not absorbed** (§34) —
+those runners still carry `hard_pref_note`.
+
+**Config.** `GENERATION_CONFIG.HARD_AVERSE_QUALITY_PER_WEEK_MAX = 1`,
+`GENERATION_CONFIG.HARD_AVERSE_QUALITY_DOSE_PCT = 85`,
+`GENERATION_CONFIG.QUALITY_FLOOR_MIN_PLAN_WEEKS = 8`. Enforced by
+`INV-PLAN-QUALITY-NOT-ZERO`.
+
+**85 is derived, not chosen.** Swept 70/75/80/85 across 15,973 plans: everything
+below 85 fires a new `INV-PLAN-LR-MAX-WEEKLY-PCT` error on a 3-day HM profile,
+and 85 is clean. The mechanism **qualifies a finding this document already relies
+on**: VOL-SHORTFALL-01 measured that shrinking a quality session preserves weekly
+volume, because §9 hands the freed distance to the easy runs — but that was
+measured on a **five**-day profile. On a three-day week there are not enough easy
+slots to absorb it against §9's own easy ceiling, so the week genuinely shrinks
+and the long run's share climbs past §52's 60% cap. **VOL-SHORTFALL-01's result
+holds where it was taken, and not below it.**
+
+---
+
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.

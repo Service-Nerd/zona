@@ -39,6 +39,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-ONSET-YIELD-BOUNDED',
   'INV-PLAN-DERIVED-SET-PACED',
   'INV-PLAN-PEAK-SPECIFICITY',
+  'INV-PLAN-QUALITY-NOT-ZERO',
   'INV-PLAN-DELIVERED-RAMP',
   'INV-PLAN-DELOAD-PHASE-POSITION',
   'INV-PLAN-OVERDO-BRAKE',
@@ -2155,6 +2156,53 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           expected: `>= ${target}% (§5 SPECIFICITY_BY_PHASE.peak)`,
         })
       }
+    }
+  }
+
+  // INV-PLAN-QUALITY-NOT-ZERO (CoachingPrinciples §110, enforcing §1)
+  //
+  // THE FLOOR §1 NEVER HAD, and the reason §110's defect survived two years.
+  // §1 is a CEILING -- QUALITY_SESSIONS_PER_WEEK_MAX, an upper bound. A plan
+  // delivering 0% quality does not breach a ceiling, so `suppressQuality`
+  // zeroed intensity for 2,197 non-beginner plans (13.8% of the sweep) and
+  // raised NO violation anywhere. An invariant expressed only as an upper bound
+  // cannot detect the floor falling out. Hutchinson made this the condition of
+  // the §110 ruling: without this check, the next mechanism to zero out quality
+  // is just as invisible as the last one.
+  //
+  // SCOPE -- non-beginner only, and that is ratified, not a convenience.
+  // CoachingPrinciples (the 2026-08-30 classifier ruling) is explicit: "A
+  // genuine beginner ... still gets no quality sessions, and that remains
+  // correct. The classifier was the defect, not the ceiling."
+  //
+  // READS A STAMP DELIBERATELY, same pattern and same justification as
+  // INV-PLAN-UNCOVERED-RUNWAY-DECLARED. `intensityFitness` is generation-time
+  // state the validator never receives, and re-deriving it here from
+  // `assessFitness` + the declared-level precedence would be a SECOND copy of
+  // a classifier this repo has already been bitten by twice (D-16, TIER-OWNER-01
+  // -- a checker that re-implements its producer cannot catch the producer being
+  // wrong, it can only drift from it). §79 sets `primary_metric: 'duration'`
+  // exactly when `intensityFitness === 'beginner' || race >= 50km`, from that
+  // same variable -- so the stamp IS the producer's answer, not a guess at it.
+  // Ultras are therefore also out of scope here; that is a known gap, recorded
+  // rather than papered over, and it is the conservative direction.
+  {
+    const qualityCount = plan.weeks
+      .filter(w => w.n >= 1 && (w.phase === 'build' || w.phase === 'peak'))
+      .flatMap(w => Object.values(w.sessions ?? {}).filter(Boolean) as Session[])
+      .filter(sn => sn.type === 'quality').length
+    const hasBuildOrPeak = plan.weeks.some(w => w.phase === 'build' || w.phase === 'peak')
+    const longEnough = plan.weeks.filter(w => w.n >= 1).length >= GENERATION_CONFIG.QUALITY_FLOOR_MIN_PLAN_WEEKS
+    if (plan.meta.primary_metric !== 'duration' && hasBuildOrPeak && longEnough && qualityCount === 0) {
+      violations.push({
+        code: 'INV-PLAN-QUALITY-NOT-ZERO',
+        principle_ref: 'CoachingPrinciples §110 (§1)',
+        severity: 'error',
+        week: 0,
+        message: `Plan has build/peak weeks and ${plan.weeks.filter(w => w.n >= 1).length} weeks, and prescribes ZERO quality sessions to a runner the engine does not classify beginner. §1 is a ceiling, not a target — but zero is not a training plan.`,
+        actual: '0 quality sessions',
+        expected: `>= 1 across build/peak`,
+      })
     }
   }
 

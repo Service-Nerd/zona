@@ -1296,6 +1296,100 @@ export const GENERATION_CONFIG = {
     experienced:  2,
   },
 
+  // §110 (Coaching Board 2026-09-16, CB-HSR-AVOID-01) — `avoid` is a FLOOR,
+  // not a switch. `hard_session_relationship: 'avoid'` used to set
+  // plannedQuality = 0 for EVERY week of EVERY plan: 2,197 non-beginner plans
+  // on the 15,973-plan sweep got zero quality across 8+ weeks, and — because
+  // §1 is a CEILING with no floor — raised no invariant anywhere.
+  //
+  // Every seat rejected zero. Seiler: self-organising recreational runners land
+  // at 10-15% hard, so 100/0 is outside any measured population and is a
+  // different model, not a cautious reading of 80/20. Willy: the volume curve
+  // still ramps, so zeroing intensity swaps intensity risk for monotonous-volume
+  // risk — the one that produces bone stress injuries. Sims: monotonous
+  // low-intensity running is close to the worst osteogenic stimulus available,
+  // and `avoid` is a box women select more often for cultural rather than
+  // physiological reasons. McMillan: "I avoid hard sessions" means "I don't
+  // know how", not "never give me one".
+  //
+  // 1 is the value §96's precedent forces. §96 ruled that a brake "returns the
+  // runner to the standard plan, byte for byte. It does not cut below baseline."
+  // 1/week IS the baseline for build phase (§8) and for a non-experienced peak;
+  // what `avoid` gives up is the experienced runner's SECOND peak quality
+  // session. The brake removes the surplus and never the substance.
+  //
+  // This is the downward rung §35 declared and never built, and which §96
+  // identified as missing ("It never built the rung going the other way").
+  HARD_AVERSE_QUALITY_PER_WEEK_MAX: 1,
+
+  // §110 — the plan length at or above which zero quality is a defect rather
+  // than a short-plan artifact, for a non-beginner. 8 weeks is the shortest
+  // PLAN_SIGNATURES minimum at any distance, so this binds on every plan the
+  // engine can emit that HAS build/peak weeks; the phase gate in
+  // INV-PLAN-QUALITY-NOT-ZERO does the real work, and this is the belt.
+  QUALITY_FLOOR_MIN_PLAN_WEEKS: 8,
+
+  // §110 Amendment 1 (CB-HSR-AVOID-01 second sitting, 2026-09-16) — `avoid`
+  // takes a quality session every Nth BUILD week, not every build week.
+  //
+  // WHY AN AMENDMENT, AND THE MEASUREMENT THAT FORCED IT. The first sitting set
+  // HARD_AVERSE_QUALITY_PER_WEEK_MAX = 1 on the reasoning that §96's precedent
+  // ("a brake returns the runner to the standard plan, byte for byte") fixed the
+  // value. Measured across a 540-cell grid, that left `avoid` BYTE-IDENTICAL to
+  // `neutral` for 72.6% of runners and 100% of intermediates — an intermediate
+  // never earns 2 quality/week, so a cap of 2->1 cannot bind on them. §96's own
+  // defect, reproduced one section later.
+  //
+  // The misreading was mine and the constitution had already settled it: §96
+  // line 4771 says conflating the two "would take work from a runner who asked
+  // to be PACED, not SPARED". `overdo` is paced — baseline. `avoid` is spared —
+  // BELOW baseline. "Does not cut below baseline" was scoped to `overdo`.
+  //
+  // BUILD ONLY. Peak and taper keep full frequency: the reduction belongs where
+  // tissue tolerance is still being established (Willy), and §110's floor
+  // depends on peak retaining quality, so this can never reach zero. 2 keeps a
+  // plan well inside §1's ceiling and gives McMillan the on-ramp the first
+  // sitting lost — every other week in build, weekly by peak.
+  // §110 Amendment 1 (CB-HSR-AVOID-01 second sitting, 2026-09-16) — `avoid`
+  // takes a SMALLER quality session, sized at this % of the standard share.
+  //
+  // WHY A DOSE AND NOT A FREQUENCY. The first sitting set
+  // HARD_AVERSE_QUALITY_PER_WEEK_MAX = 1 and, measured across a 540-cell grid,
+  // that left `avoid` byte-identical to `neutral` for 72.6% of runners and
+  // 100% of intermediates — an intermediate never earns 2 quality/week, so a
+  // cap of 2->1 cannot bind. §96's own defect, one section later.
+  //
+  // The obvious second lever — a quality session every OTHER build week — was
+  // built, measured and WITHDRAWN. It collided with §5's VO2max adaptation
+  // deadline, then §53's variety cap (61 new errors), then §79's intensity
+  // re-entry window (264 new errors). The build rotation is tightly coupled;
+  // dose is the one axis nothing else keys on, and §9's re-derivation returns
+  // the freed distance to the easy runs (VOL-SHORTFALL-01: volume-preserving).
+  //
+  // 85 IS DERIVED, NOT PICKED — it is the deepest cut §52 absorbs. Swept
+  // 70 / 75 / 80 / 85 across 15,973 plans: everything below 85 fires a NEW
+  // INV-PLAN-LR-MAX-WEEKLY-PCT error on a 3-day HM profile ("long run 18.5km is
+  // 62% of weekly volume 30km"), and 85 is clean.
+  //
+  // The mechanism is worth recording because it qualifies a finding this repo
+  // already relies on. VOL-SHORTFALL-01 measured that shrinking a quality
+  // session PRESERVES weekly volume, because §9's re-derivation hands the freed
+  // distance to the easy runs. That was measured on a FIVE-day profile. On a
+  // three-day week there are not enough easy slots to absorb it against §9's
+  // own easy ceiling, so the week genuinely shrinks and the long run's share
+  // rises past §52's 60% cap. **VOL-SHORTFALL-01's result holds where it was
+  // taken and not below it** — the same "a number surviving a change to what it
+  // means" trap CD-21 records.
+  //
+  // Reach is unaffected by the choice: 70, 75, 80 and 85 all leave `avoid`
+  // inert on the same 27% of intermediate cells (those already pinned at
+  // MIN_SESSION_DISTANCE_KM), so nothing is bought by cutting deeper.
+  //
+  // Bounded below by MIN_SESSION_DISTANCE_KM, which stops the session
+  // degenerating into a token effort on a low-volume week (Hutchinson/Sims —
+  // the same floor reasoning §8 uses for the VO2max work minimum).
+  HARD_AVERSE_QUALITY_DOSE_PCT: 85,
+
   // Fitness classification (D2, 2026-08-06). VDOT measures what a runner can
   // currently RACE; volume measures what they can currently ABSORB. Both are
   // consulted — see assessFitness(). On disagreement the lower level drives

@@ -461,6 +461,22 @@ let scErrFree = 0, scWarnFree = 0, scBoth = 0, scScored = 0
 //
 // ACCEPTABLE = CLEAN + CONSTRAINED. Target 95%.
 let gClean = 0, gConstrained = 0, gFailing = 0
+// ── FIT FOR PURPOSE ──────────────────────────────────────────────────────────
+// NOT the same question as the compliance gauge. That one asks "does the plan
+// ADMIT its limitations". This asks "would a coach hand this to a runner" —
+// which is the standard the Coaching Board actually applied on 2026-09-16, and
+// by which it rejected T2 (honest, and still unfit).
+// Criteria taken straight from the board's stated reasons for rejection.
+let fitOk = 0
+const fitFail = new Map<string, number>()
+// ROOT-CAUSE SPLIT for the two dominant unfit reasons, so the fix is aimed.
+const zeroQCause = new Map<string, number>()
+const zqEg: string[] = []
+const peakShortCause = new Map<string, number>()
+let psDeclared = 0, psSilent = 0
+const psEg: string[] = []
+const supSplit = new Map<string, number>()
+const regSplit = new Map<string, number>()
 const gUndeclaredCodes = new Map<string, number>()
 const gDeclSrc = new Map<string, number>()
 const gFailReason = new Map<string, number>()
@@ -729,6 +745,113 @@ for (const input of inputs) {
       }
     }
     const mainW = composed.plan.weeks.filter(w => w.n >= 1)
+    // §107 regression probe — which runners newly trip the two volume-shape
+    // checks, split by the input §107 actually changed.
+    for (const c of ['INV-PLAN-PEAK-IN-PEAK-PHASE', 'INV-PLAN-NOT-DETRAINING']) {
+      if (warnCodes.has(c)) {
+        const h = (input as { hard_session_relationship?: string }).hard_session_relationship ?? 'unset'
+        regSplit.set(`${c} / ${h}`, (regSplit.get(`${c} / ${h}`) ?? 0) + 1)
+      }
+    }
+
+      const reasons: string[] = []
+      if (errors.length > 0) reasons.push('has an error violation')
+      if (warnCodes.has('INV-PLAN-NOT-DETRAINING')) reasons.push('detrains the runner')
+      if (warnCodes.has('INV-PLAN-PEAK-IN-PEAK-PHASE')) reasons.push('peak phase is not the peak')
+      // Board on T2: "56% of target peak" and "zero quality against a declared focus".
+      const tgt = Number((m as Record<string, unknown>).peak_km_target ?? 0)
+      const trainW2 = mainW.filter((w: { sessions?: Record<string, unknown> }) =>
+        !Object.values(w.sessions ?? {}).some(sn => (sn as { type?: string } | undefined)?.type === 'race'))
+      const pk3 = trainW2.length ? Math.max(...trainW2.map((w: { weekly_km?: number }) => w.weekly_km ?? 0)) : 0
+      if (tgt > 0 && pk3 > 0 && pk3 < tgt * 0.75) {
+        // §40c / VOL-SHORTFALL-01 (Coaching Board 2026-08-20, unanimous):
+        // "The engine was RIGHT -- the life-first cap must win; the defect was
+        // SILENCE." So a peak shortfall is NOT a fitness failure in itself. An
+        // earlier cut of this gauge scored the raw shortfall and reported 25.6%
+        // fit for purpose -- it was testing, as a defect, the outcome the
+        // constitution ratifies. Only an UNDECLARED shortfall fails here.
+        const dv = (input as { days_available?: number }).days_available ?? 0
+        const cp = (input as { max_weekday_mins?: number }).max_weekday_mins
+        const injc = (((input as { injury_history?: string[] }).injury_history) ?? []).some(i => /knee|shin/i.test(i))
+        const stated = (input as { current_weekly_km?: number }).current_weekly_km ?? 0
+        // Is the TARGET itself unreachable from where the runner starts, given
+        // the plan length and §2's 10%/wk cap? That is an engine problem, not a
+        // runner constraint.
+        const weeksAvail = Math.max(1, mainW.length - 4)
+        const reachable = stated * Math.pow(1.10, weeksAvail)
+        const cause = injc ? 'INJ: §12 5%/wk cap cannot reach it'
+          : dv <= 3 ? 'DAYS: 3 or fewer running days'
+          : cp != null && cp <= 45 ? 'TIME: weekday ceiling <=45min'
+          : tgt > reachable ? 'TARGET: unreachable from start at 10%/wk — ENGINE'
+          : 'OTHER — ENGINE'
+        peakShortCause.set(cause, (peakShortCause.get(cause) ?? 0) + 1)
+        // §40c / VOL-SHORTFALL-01 (Coaching Board 2026-08-20, unanimous): a
+        // life-first cap WINNING is correct; the defect is silence. Measure the
+        // split before deciding whether this criterion is testing a defect.
+        const mm = m as Record<string, unknown>
+        const declared = !!(mm.volume_shortfall_note || mm.volume_constraint_note
+          || mm.long_run_shortfall_note || mm.peak_shortfall_note || mm.load_residual_note)
+        if (declared) psDeclared++
+        else {
+          psSilent++
+          reasons.push('peak below 75% of target and SAYS NOTHING (§40c)')
+          if (psEg.length < 5) psEg.push(`dist=${(input as {race_distance_km?:number}).race_distance_km} days=${dv} cap=${cp ?? '-'} `
+            + `cwk=${stated} tgt=${tgt} peak=${pk3} inj=${JSON.stringify((input as {injury_history?:string[]}).injury_history ?? [])} `
+            + `prof=${String(m.volume_profile)} weeks=${mainW.length}`)
+        }
+      }
+      const runs3 = mainW.flatMap((w: { sessions?: Record<string, unknown> }) =>
+        Object.values(w.sessions ?? {}).filter(Boolean) as Array<{ type: string }>)
+      const q3 = runs3.filter(sn => ['quality', 'intervals', 'tempo', 'hard'].includes(sn.type)).length
+      if (q3 === 0 && mainW.length >= 8) {
+        // NOTE the ordering: `cause` is computed first because the criterion
+        // depends on it. CoachingPrinciples line 3154 (2026-08-30 ruling) is
+        // explicit -- "A genuine beginner ... still gets no quality sessions,
+        // and that remains correct. The classifier was the defect, not the
+        // ceiling." So zero quality is only a FITNESS failure for a runner the
+        // engine does NOT classify beginner. Scoring the ratified case as a
+        // defect is the same error this gauge already made with §40c.
+        // Split by the MECHANISM in buildWeekSessions, not by inputs. The input
+        // -based cut left 695 "unexplained" because several inputs funnel into
+        // one code path. Quality is zero iff min(plannedQuality, fitnessCeiling)
+        // is 0, and there are exactly three ways in:
+        //   (1) fitnessCeiling  -- QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0
+        //   (2) suppressQuality -- hard_session_relationship 'avoid' | achilles
+        //   (3) plannedQuality  -- no build/peak/taper week ever asks for one
+        // §79 sets primary_metric 'duration' iff intensityFitness is beginner
+        // (or ultra), so the engine's own stamp reads (1) with no second
+        // classifier -- the drift class this repo has already been bitten by.
+        const dist0 = (input as { race_distance_km?: number }).race_distance_km ?? 0
+        // §79 sets primary_metric 'duration' for beginner OR ultra, so for an
+        // ultra the stamp cannot separate the two. The three causes above are
+        // EXHAUSTIVE, so an ultra that is not suppressed and does have build or
+        // peak weeks (i.e. plannedQuality did ask for one) can only be the
+        // ceiling. Deduced from the code's own exhaustion, not re-classified.
+        const hasBuildOrPeak = mainW.some((w: { phase?: string }) => w.phase === 'build' || w.phase === 'peak')
+        const beginnerCeiling = m.primary_metric === 'duration' && (dist0 < 50 || hasBuildOrPeak)
+        const avoidS = (input as { hard_session_relationship?: string }).hard_session_relationship === 'avoid'
+        const achilS = (((input as { injury_history?: string[] }).injury_history) ?? []).some(i => /achilles/i.test(i))
+        const suppressed = avoidS || achilS
+        if (suppressed && !beginnerCeiling) {
+          supSplit.set(achilS && avoidS ? 'both' : achilS ? 'achilles only (§21 says SUBSTITUTE)' : 'avoid only',
+            (supSplit.get(achilS && avoidS ? 'both' : achilS ? 'achilles only (§21 says SUBSTITUTE)' : 'avoid only') ?? 0) + 1)
+        }
+        const cause = beginnerCeiling && suppressed ? 'BOTH: beginner ceiling AND suppression'
+          : beginnerCeiling ? '1 CEILING: QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0 (§ ratified 3154)'
+          : suppressed ? '2 SUPPRESS: avoid / achilles -> plannedQuality = 0 (the T2 class)'
+          : '3 SHAPE: no week ever planned one'
+        zeroQCause.set(cause, (zeroQCause.get(cause) ?? 0) + 1)
+        if (!beginnerCeiling) reasons.push('zero quality, and the runner is NOT a beginner')
+        if (cause.startsWith('3 ') && zqEg.length < 4) {
+          zqEg.push(`weeks=${mainW.length} dist=${(input as {race_distance_km?:number}).race_distance_km} days=${(input as {days_available?:number}).days_available} ` +
+            `lvl=${(input as {fitness_level?:string}).fitness_level ?? '-'}/${(input as {user_declared_level?:string}).user_declared_level ?? '-'} ` +
+            `ta=${(input as {training_age?:string}).training_age ?? '-'} rq=${(input as {recent_quality_training?:string}).recent_quality_training ?? '-'} ` +
+            `cwk=${(input as {current_weekly_km?:number}).current_weekly_km} prof=${String(m.volume_profile)} hsr=${(input as {hard_session_relationship?:string}).hard_session_relationship ?? '-'}`)
+        }
+      }
+      if (reasons.length === 0) fitOk++
+      else for (const r of reasons) fitFail.set(r, (fitFail.get(r) ?? 0) + 1)
+
     const trainW = mainW.filter(w => !Object.values(w.sessions ?? {})
       .some(sn => (sn as { type?: string } | undefined)?.type === 'race'))
     const wk1 = trainW[0]?.weekly_km ?? 0
@@ -1324,6 +1447,23 @@ console.log(`✓ ${generated} plans generated and validated (${foundationPlans} 
 
 if (SCORE) {
   const pct = (n: number) => `${(n / scScored * 100).toFixed(1)}%`
+  console.log('\n== FIT FOR PURPOSE (the board\'s standard, not the honesty one) ==')
+  console.log(`  FIT          ${fitOk}/${scScored}   ${(fitOk / scScored * 100).toFixed(1)}%`)
+  console.log(`  NOT FIT      ${scScored - fitOk}  ${((scScored - fitOk) / scScored * 100).toFixed(1)}%   reasons (a plan can have several):`)
+  for (const [r, n] of Array.from(fitFail.entries()).sort((a, b) => b[1] - a[1])) {
+    console.log(`      ${String(n).padStart(5)}  ${(n / scScored * 100).toFixed(1).padStart(5)}%  ${r}`)
+  }
+  for (const e of zqEg) console.log(`  D3 EG: ${e}`)
+  console.log('\n  ROOT CAUSE — zero quality (7,087 plans):')
+  for (const [c, n] of Array.from(zeroQCause.entries()).sort((a, b) => b[1] - a[1])) console.log(`      ${String(n).padStart(5)}  ${c}`)
+  console.log('  ROOT CAUSE — peak below 75% of target (8,319 plans):')
+  for (const [c, n] of Array.from(peakShortCause.entries()).sort((a, b) => b[1] - a[1])) console.log(`      ${String(n).padStart(5)}  ${c}`)
+  console.log(`    peak-shortfall DECLARED (§40c satisfied): ${psDeclared}   SILENT: ${psSilent}`)
+  for (const e of psEg) console.log(`      SILENT EG: ${e}`)
+  console.log('  §107 REGRESSION PROBE — who trips the volume-shape checks:')
+  for (const [c, n] of Array.from(regSplit.entries()).sort()) console.log(`      ${String(n).padStart(5)}  ${c}`)
+  console.log('  SUPPRESS split (non-beginner only):')
+  for (const [c, n] of Array.from(supSplit.entries()).sort((a, b) => b[1] - a[1])) console.log(`      ${String(n).padStart(5)}  ${c}`)
   const acceptable = gClean + gConstrained
   console.log('\n══ COACHING COMPLIANCE GAUGE ══════════════════════════════════')
   console.log(`  ACCEPTABLE   ${acceptable}/${scScored}   ${(acceptable / scScored * 100).toFixed(1)}%   (target 95%)`)

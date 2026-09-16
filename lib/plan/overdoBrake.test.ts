@@ -104,11 +104,52 @@ describe('§96 — overdo changes the delivered plan', () => {
   it('does NOT suppress quality the way `avoid` does — they are different asks', () => {
     // Conflating them would take work from a runner who asked to be PACED, not
     // spared. `overdo` keeps the standard quality count; `avoid` cuts below it.
+    //
+    // ⚠️ AMENDED BY §110 (CB-HSR-AVOID-01, 2026-09-16), and the amendment is the
+    // finding. This asserted `avoid < neutral` on the DEFAULT fixture, which is
+    // an INTERMEDIATE runner — and it passed only because `avoid` used to mean
+    // ZERO. §110 makes `avoid` a cap of 1/week, and an intermediate never gets
+    // more than 1/week anyway (§8), so on this fixture the two are now equal.
+    //
+    // The claim itself survives intact; it was being tested on a cohort where
+    // the lever cannot be observed. `avoid`'s real cost is the EXPERIENCED
+    // runner's second peak quality session, so that is where it must be
+    // asserted. Same trap as the willy-gate test earlier in this repo's history:
+    // an assertion that passes by coincidence of fixture rather than by the rule.
     const q = (p: Plan) => p.weeks.flatMap(w =>
       Object.values(w.sessions).filter(s => s?.type === 'quality')).length
     const nonGated = { recent_quality_training: 'occasional' as const }
     expect(q(plan('overdo'))).toBe(q(plan('neutral', nonGated)))
-    expect(q(plan('avoid', nonGated))).toBeLessThan(q(plan('neutral', nonGated)))
+
+    // Where the cap BINDS — experienced, who would otherwise earn two in peak.
+    const exp = { ...nonGated, fitness_level: 'experienced' as const }
+    expect(q(plan('avoid', exp))).toBeLessThan(q(plan('neutral', exp)))
+
+    // AND FOR AN INTERMEDIATE TOO, via §110 Amendment 1 — but on DOSE, not
+    // count. The first cut of this assertion said `avoid` lands ON the standard
+    // plan here, quoting §96's "does not cut below baseline"; that precedent is
+    // scoped to `overdo` (§96 line 4771 separates a runner asking to be PACED
+    // from one asking to be SPARED). The second cut asserted strictly FEWER
+    // sessions, which was true of the frequency lever that was then withdrawn
+    // for colliding with §5, §53 and §79.
+    //
+    // What ships is a smaller session at the same cadence, so the count is
+    // equal and the prescribed quality DISTANCE is lower. Asserting the count
+    // here would pass for the wrong reason.
+    // ⚠️ ON THIS FIXTURE the dose cut cannot bind: at 55 km/week the quality
+    // session is sized by §8's ABSOLUTE VO2max main-set ceiling
+    // (VO2MAX_MAIN_SET_MAX_MINS), not by the weekly percentage, so a percentage
+    // reduction has nothing to reduce. Same cause as §110 Am.1's measured 27%
+    // intermediate residual. Asserting `avoid < neutral` here would fail for a
+    // reason that has nothing to do with the rule under test — and asserting
+    // `<=` would pass vacuously.
+    //
+    // What IS categorically true for this runner, and is the distinction this
+    // test exists to hold: `overdo` is silent, `avoid` declares itself (§40c).
+    // The dose reduction is asserted where it binds, in hardAverseFloor.test.ts.
+    expect(q(plan('avoid', nonGated))).toBe(q(plan('neutral', nonGated)))
+    expect(plan('overdo').meta.hard_pref_note).toBeUndefined()
+    expect(plan('avoid', nonGated).meta.hard_pref_note).toBeTruthy()
   })
 
   it('FALSIFICATION — INV-PLAN-OVERDO-BRAKE goes RED if the gate ever fires', () => {
