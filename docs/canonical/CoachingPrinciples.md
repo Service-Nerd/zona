@@ -202,6 +202,84 @@ Returning to a volume held comfortably two weeks earlier is not a spike. Chronic
 
 **Board:** RAMP-BOUNCEBACK-01, 2026-09-06 — CORRECT WITH AMENDMENT (Willy-led, Hutchinson chairing); the healthy/injury split was set by measurement.
 
+### Amendment 2 — the cut had to give, not the cap (COMPLIANCE-FIX-2, Coaching Board 2026-09-16)
+
+**Principle.** A runner §12's volume cap governs (knee / shin-splint history) takes a
+**shallower deload**: `INJURY_RECOVERY_WEEK_VOLUME_PCT` (85) rather than §3's 70. The
+bounceback stays bounded by the injury cap exactly as Amendment 1 requires.
+
+**Why — Amendment 1 above asserts something arithmetically impossible.** It states:
+*"The return to pre-deload volume still happens, but gradually, over the weeks that
+follow rather than in a single jump."* It does not happen at all. The cut is deeper
+than the cap can climb back before the next deload arrives:
+
+| | per cycle | |
+|---|---|---|
+| injury 5%, standard 4-week | 0.70 × 1.05³ = **0.810** | loses 19.0% |
+| injury 5%, masters 3-week | 0.70 × 1.05² = **0.772** | loses 22.8% |
+
+**The curve therefore RATCHETS DOWN geometrically.** Instrumented on a real plan:
+`w1=44 w2=31 w3=33 w4=35 w5=25 w6=26 w7=27 w8=19 w9=20` — each deload cuts, and the
+curve then resumes **from the deload floor**, never from the pre-deload week.
+**D-21: a principle that cannot be satisfied is a defect in the principle.**
+
+**Measured before the fix** on knee/shin plans: **67.2% detrained** at the standard
+cadence, **81.7%** at masters. Across the sweep's injury cohort, 18.0% against 0.6%
+for healthy runners — a 30× difference caused entirely by Amendment 1's removal of
+the bounceback exemption.
+
+**Why a shallower CUT rather than a faster CLIMB.** Break-even at the masters cadence
+needs a **19.5%** weekly cap, far past anything safe for this tissue. So the cut is
+the only lever. `85` is derived: the shallowest cut §12's 5% cap recovers within one
+standard cadence (0.85 × 1.05³ = 0.98).
+
+**It DOMINATES rather than trading off — this is the part that settled it.** Measured
+against the board's own blocking gate (do not re-create the spike Amendment 1
+removed):
+
+| | detraining | single-week rise p95 | max rise |
+|---|---|---|---|
+| before | 74.4% | 66.7% | 133% |
+| **shallower cut** | **17.5%** | **34.1%** | **78%** |
+| *(alternative: allow full return)* | *18.1%* | *66.7%* | *100%* |
+
+A shallower cut needs a **smaller jump back**, so it is safer on Willy's original
+concern too. The alternative of simply restoring the full return was measured and
+**REJECTED by that gate**: `INV-PLAN-BOUNCEBACK-BOUNDED` 15.6% → **88.9%**, which is
+Amendment 1's defect restored.
+
+Clinically this is also the plainer answer: a 30% cut is a *healthy* runner's deload.
+Tissue that has been deliberately de-loaded all block does not need that depth — it
+needs consistency. The deepest cut was being prescribed to the runners least able to
+climb out of it.
+
+**Delivered on the sweep:** injury detraining **18.0% → 0.7%**, mean decline
+**10.7% → 3.0%** — now indistinguishable from healthy runners (0.6%).
+`INV-PLAN-NOT-DETRAINING` **15.1% → 0.7%**.
+
+**Config.** `GENERATION_CONFIG.INJURY_RECOVERY_WEEK_VOLUME_PCT = 85`.
+`deloadCadence.ts → deloadVolumeFraction()` is the single owner of deload DEPTH, for
+the same reason that module owns cadence: the fraction had **two writers** in
+`ruleEngine` pointing opposite ways (the curve multiplies by it; the day-count pass
+divides by it to keep deload frequency, DELOAD-INVERSION-01 part 3). Splitting depth
+by cohort in one of them only would have made the gross-up recover a volume that was
+never cut.
+
+**Enforced by** the existing `INV-PLAN-NOT-DETRAINING` (§106 Am.) — deliberately NOT a
+new invariant. It already measures this exact outcome and moved 15.1% → 0.7%; a second
+checker for one phenomenon is the duplication this codebase keeps paying for.
+
+> ⚠️ **Two things recorded rather than claimed as solved.** (1) Detraining is reduced,
+> not eliminated — 0.7% remains and the residual is not traced. (2) The masters
+> cadence, where the ratchet is worst, **still cannot be swept**: the grid fixes
+> `age: 35`. Every masters figure above is instrumented arithmetic on targeted
+> inputs, not sweep measurement. Filed as SWEEP-AGE-01.
+
+**Board:** COMPLIANCE-FIX-2, 2026-09-16 — CORRECT WITH AMENDMENT, Hutchinson chairing.
+Willy led and recorded that his own 2026-09-06 remedy was the cause. Amends §2
+Amendment 1. Does not loosen §12's cap on genuine progression.
+
+
 **Config.**
 - `GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT = 10`
 - `GENERATION_CONFIG.RETURNING_RUNNER_ALLOWANCE_PCT = 15`

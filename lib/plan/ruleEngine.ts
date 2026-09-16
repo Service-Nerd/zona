@@ -16,7 +16,7 @@ import {
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
-import { validatePlan, enforceViolations } from './invariants'
+import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
 import { sessionKmOrZero } from '@/lib/plan/sessionDistance'
@@ -26,7 +26,7 @@ import { PLAN_SIGNATURES } from './planSignatures'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord, PACE_ANCHORS, type PaceAnchor } from './sessionStructureV2'
 import { durationForMainSet } from './sessionFormat'
 import { resolveMainSet, type PaceAnchorMap } from './resolveMainSet'
-import { isDeloadWeek, computeDeloadWeeks } from './deloadCadence'
+import { isDeloadWeek, computeDeloadWeeks, deloadVolumeFraction } from './deloadCadence'
 import { computeIntensityReentry } from './intensityReentry'
 import { catalogueRowFor } from './catalogueLink'
 import { plannedFoundationWeeks } from './foundationBlock'
@@ -594,7 +594,8 @@ function buildVolumeSequence(
   const taperConfig = GENERATION_CONFIG.TAPER_BY_DISTANCE[distKey]
   const taperPhaseWeeks = GENERATION_CONFIG.TAPER_QUALITY_PER_WEEK[distKey].length
   const fullTaperWeeks = Math.max(1, taperPhaseWeeks - 1)  // exclude race week
-  const recoveryPct = GENERATION_CONFIG.RECOVERY_WEEK_VOLUME_PCT / 100
+  // §2 Am.2 — depth comes from deloadCadence, the single owner (see there for why).
+  const recoveryPct = deloadVolumeFraction(injuryCapPct != null)
 
   // Returning-runner allowance (CoachingPrinciples §2): first 3 weeks may grow
   // at 15% instead of 10%.
@@ -2147,6 +2148,23 @@ function applyRecalibrationTimeTrial(
 
 // ─── Injury adjustments ───────────────────────────────────────────────────────
 
+/**
+ * Does §2/§12's injury VOLUME cap govern this runner?
+ *
+ * SINGLE OWNER (D-08). `hasInjury(input, 'knee') || hasInjury(input, 'shin_splints')`
+ * was written out FOUR times in this file — the volume curve's cap argument, the
+ * §90 delivered levers, the long-run trim and the note. Four writers of one fact,
+ * agreeing only by copy-paste, which is the DELOAD-OWNER-01 fault exactly.
+ *
+ * §12 names knee and shin-splint histories specifically: those are the tissues
+ * whose binding constraint is ACUTE weekly load. Other histories (achilles, hip
+ * flexor, back) are real but are not governed by this cap, and conflating them
+ * would silently widen the cap's population.
+ */
+function hasVolumeCappedInjury(input: GeneratorInput): boolean {
+  return hasInjury(input, 'knee') || hasInjury(input, 'shin_splints')
+}
+
 function hasInjury(input: GeneratorInput, keyword: string): boolean {
   return (input.injury_history ?? []).some(i => i.toLowerCase().includes(keyword))
 }
@@ -2572,7 +2590,7 @@ function buildWeekSessions(
   // the injury cap is a DELIVERED ceiling, not just a curve one: the peak quality
   // count drops to one (part 2a) and the easy-run COUNT is trimmed to fit the
   // ceiling (part 2b), never the race-anchored long run (§52).
-  const injuryVolumeCapped = hasInjury(input, 'knee') || hasInjury(input, 'shin_splints')
+  const injuryVolumeCapped = hasVolumeCappedInjury(input)
 
   if (isRaceWeek) {
     const sessions: Partial<Record<Day, Session>> = {}
@@ -2727,7 +2745,9 @@ function buildWeekSessions(
   // pre-deload level for the DAY-COUNT only (the sessions are still sized to the
   // real, reduced `weeklyKm` downstream, so volume still drops). Recovery weeks
   // thus keep the surrounding weeks' frequency.
-  const dayCountKm = isDeload ? weeklyKm / (GENERATION_CONFIG.RECOVERY_WEEK_VOLUME_PCT / 100) : weeklyKm
+  // Same owner as the cut above — this DIVIDES by it, so if the two ever read
+  // different depths the gross-up recovers a volume that was never cut.
+  const dayCountKm = isDeload ? weeklyKm / deloadVolumeFraction(hasVolumeCappedInjury(input)) : weeklyKm
   const daysVolumeCanFill = weeklyKm > 0
     ? Math.max(3, Math.floor(dayCountKm / GENERATION_CONFIG.MIN_KM_PER_TRAINING_DAY))
     : input.days_available
@@ -5801,7 +5821,7 @@ function buildRulePlanOnce(
   const { volumes, compressed: capCompressed } = buildVolumeSequence(
     totalWeeks, phases, startKm, peakKm, input.race_distance_km,
     recoveryFreq, returningRunner,
-    (hasInjury(input, 'knee') || hasInjury(input, 'shin_splints'))
+    hasVolumeCappedInjury(input)
       ? GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT
       : undefined,
     deloadWeeks,
@@ -6361,7 +6381,7 @@ function buildRulePlanOnce(
           // (→ few sessions) stays low, so the quality SHARE runs high. Narrow by
           // construction — injury + structural beginner + ultra (10 plans in the
           // sweep grid), and each is genuinely one no coach would call a build.
-          if ((hasInjury(input, 'knee') || hasInjury(input, 'shin_splints'))
+          if (hasVolumeCappedInjury(input)
               && fitness === 'beginner' && distKm > 43) {
             return {
               volume_profile: 'maintenance' as const,
@@ -6921,9 +6941,26 @@ function buildRulePlanOnce(
   // maintenance plan, so a yield that fired before the profile was known would
   // be trimming intensity from plans nothing was checking. Moved here from
   // before the §27 pass once parity showed the scale of it.
+  // ⚠️ THE `maintenance` GATE WAS REMOVED HERE (COMPLIANCE-FIX-3, Coaching Board
+  // 2026-09-16). It read `&& finalVolumeProfile !== 'maintenance'`, which
+  // disabled §1's only producer-side remedy on exactly the plans most likely to
+  // need it.
+  //
+  // MEASURED, 15,973-plan sweep: 7,057 plans (44.2%) are `maintenance`. Of those,
+  // 2,648 (16.6%) carry ZERO quality — CD-21's real case, still correctly exempt
+  // from §1's invariant — and 841 (5.3%) BREACH their §1 ceiling by a median of
+  // +5.0pp, p90 +10.0pp, worst +16.7pp. On a marathon that worst case is a 34.7%
+  // quality share, on an injured runner, with the check exempted AND the remedy
+  // gated off by the same label.
+  //
+  // CD-21's exemption is justified in its own words as "§1 is undefined over an
+  // all-easy block — no intensity to distribute". That is true of the 2,648 and
+  // FALSE of all 841: a plan breaching a quality SHARE has quality sessions by
+  // construction. The rule the board drew: a carve-out granted because a quantity
+  // is UNDEFINED may not be applied where the quantity is defined and out of
+  // range.
   if (GENERATION_CONFIG.INJURY_QUALITY_YIELD_TO_INTENSITY_CEILING
-      && finalVolumeProfile !== 'maintenance'
-      && (hasInjury(input, 'knee') || hasInjury(input, 'shin_splints'))) {
+      && hasVolumeCappedInjury(input)) {
     const yieldDistKey = raceDistanceKey(input.race_distance_km)
     const ceilingPct = GENERATION_CONFIG.INTENSITY_DISTRIBUTION[yieldDistKey]?.max_quality_session_pct
     if (ceilingPct != null) {
@@ -7087,8 +7124,12 @@ function buildRulePlanOnce(
         // can land on a build or taper week, and `INV-PLAN-COPY-MATCHES-SESSIONS`
         // reads label AND theme for intensity claims. Rewritten here rather than
         // by widening that pass, which would change copy on healthy plans too.
-        const promisesIntensity = /quality|threshold|tempo|interval|vo2|sharpen|intensity stays/i
-        if (promisesIntensity.test(`${c.w.label ?? ''} ${c.w.theme ?? ''}`)) {
+        // SHARED PREDICATE, not a local regex. This used to carry its own copy
+        // of the patterns and it had drifted from the checker's: it omitted
+        // `feels? hard`, so a peak week themed "This is where the fitness is
+        // built. It will feel hard." kept the promise after its last quality
+        // session was converted away. 84 plans on the sweep.
+        if (copyClaimsIntensity(c.w.label, c.w.theme)) {
           c.w.label = 'Easy week'
           c.w.theme = 'All easy this week. Your injury cap has already taken volume out, '
             + 'so the hard session comes out too rather than landing on a shorter week.'

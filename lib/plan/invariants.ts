@@ -682,6 +682,34 @@ function hasStrideNote(sn: Session): boolean {
   return /strides/i.test(notes) || /strides/i.test(sn.label ?? '')
 }
 
+/**
+ * The copy patterns that CLAIM a week contains intensity.
+ *
+ * SINGLE OWNER (D-08), exported because `ruleEngine`'s §90 Amendment 1 yield has
+ * to rewrite a week's copy when it converts that week's last quality session to
+ * easy — and it had its OWN regex, which drifted. The producer matched
+ * `quality|threshold|tempo|interval|vo2|sharpen|intensity stays` and missed
+ * `feels? hard`, so a peak week whose theme reads "This is where the fitness is
+ * built. It will feel hard." kept promising a hard session it no longer had:
+ * 84 plans on the 15,973-plan sweep, all invisible until the yield's reach was
+ * widened (COMPLIANCE-FIX-3, 2026-09-16).
+ *
+ * Producer and checker now read the same patterns, so they cannot diverge again.
+ * `benchmark|time trial` is deliberately NOT here: it is satisfied by
+ * `hasBenchmark`, which the quality yield does not touch.
+ */
+export const COPY_CLAIMS_INTENSITY_NAMED = /quality|threshold|tempo|interval|vo2/
+export const COPY_CLAIMS_INTENSITY_IMPLIED = /sharpen|raising the ceiling|intensity stays/
+export const COPY_CLAIMS_HARD = /feels? hard/
+
+/** Does this week's copy promise intensity the week must actually contain? */
+export function copyClaimsIntensity(label?: string | null, theme?: string | null): boolean {
+  const text = `${(label ?? '').toLowerCase()} | ${(theme ?? '').toLowerCase()}`
+  return COPY_CLAIMS_INTENSITY_NAMED.test(text)
+    || COPY_CLAIMS_INTENSITY_IMPLIED.test(text)
+    || COPY_CLAIMS_HARD.test(text)
+}
+
 export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   const violations: Violation[] = []
   const minDist = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM
@@ -975,9 +1003,9 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
 
       // Each claim names what must be present for it to be honest.
       const CLAIMS: Array<{ test: RegExp; ok: boolean; needs: string }> = [
-        { test: /quality|threshold|tempo|interval|vo2/,      ok: hasIntensity || hasBenchmark, needs: 'an intensity session' },
-        { test: /sharpen|raising the ceiling|intensity stays/, ok: hasIntensity,                 needs: 'an intensity session' },
-        { test: /feels? hard/,                                ok: hasIntensity || hasBenchmark, needs: 'a hard session' },
+        { test: COPY_CLAIMS_INTENSITY_NAMED,   ok: hasIntensity || hasBenchmark, needs: 'an intensity session' },
+        { test: COPY_CLAIMS_INTENSITY_IMPLIED, ok: hasIntensity,                 needs: 'an intensity session' },
+        { test: COPY_CLAIMS_HARD,              ok: hasIntensity || hasBenchmark, needs: 'a hard session' },
         { test: /benchmark|time trial/,                       ok: hasBenchmark,                 needs: 'a benchmark session' },
       ]
       for (const { test, ok, needs } of CLAIMS) {
@@ -2306,7 +2334,12 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
           const lowWeek = progressive.find(w => (w.weekly_km ?? 0) === lowest)
           violations.push({
             code: 'INV-PLAN-NOT-DETRAINING',
-            principle_ref: 'CoachingPrinciples §106 Am.',
+            // §2 Am.2 (COMPLIANCE-FIX-2) names this invariant as its enforcer —
+            // the deload ratchet's OUTCOME is exactly what this measures, so a
+            // second checker would be duplication. The § must be cited here or
+            // the claim is unlinked (the §92 failure: "enforced" for eight days
+            // while checking nothing).
+            principle_ref: 'CoachingPrinciples §106 Am., §2 Am.2',
             severity: 'warn',
             week: lowWeek?.n ?? 0,
             message: `Plan declines ${declinePct.toFixed(0)}% from its own week 1 (${week1}km) to week ${lowWeek?.n} (${lowest}km) across base/build/peak — beyond §3's own deload depth (${declineCap}%). This is detraining, and volume_profile 'maintenance' does not excuse it.`,

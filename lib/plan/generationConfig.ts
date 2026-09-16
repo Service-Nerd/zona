@@ -215,6 +215,41 @@ export const GENERATION_CONFIG = {
   MASTERS_AGE_THRESHOLD: 45,
   RECOVERY_WEEK_VOLUME_PCT: 70,
 
+  // §2 Amendment 2 (COMPLIANCE-FIX-2, Coaching Board 2026-09-16) — the deload
+  // depth for a runner §12's volume cap governs (knee / shin-splint history).
+  //
+  // WHY A SHALLOWER CUT RATHER THAN A FASTER CLIMB. RAMP-BOUNCEBACK-01
+  // (2026-09-06) correctly stopped injured runners taking a +43% jump out of a
+  // deload by binding the bounceback to the 5% injury cap. What nobody did was
+  // the arithmetic on the way back UP:
+  //
+  //     0.70 x 1.05^3 = 0.81   (standard 4-week cadence) -> loses 19% per cycle
+  //     0.70 x 1.05^2 = 0.77   (masters 3-week cadence)  -> loses 23% per cycle
+  //
+  // The cut is deeper than the cap can recover before the NEXT deload arrives, so
+  // the curve RATCHETS DOWN geometrically. §2's own amendment text claims "the
+  // return to pre-deload volume still happens, but gradually, over the weeks that
+  // follow" -- that is arithmetically impossible, and D-21 makes it a defect in
+  // the principle. Measured on knee/shin plans: 67.2% detrained at standard
+  // cadence, 81.7% at masters.
+  //
+  // DERIVED: 85 is the shallowest cut §12's 5% cap can recover within one
+  // standard cadence (0.85 x 1.05^3 = 0.98). Break-even at the masters cadence
+  // would need a 19.5% weekly cap, which is far past anything safe for this
+  // tissue -- so the CUT had to give, not the cap.
+  //
+  // MEASURED, and it DOMINATES rather than trading off. Against the board's own
+  // blocking gate (do not re-create the spike RAMP-BOUNCEBACK-01 removed):
+  //     detraining      74.4% -> 17.5%
+  //     single-week rise p95  66.7% -> 34.1%   max 133% -> 78%
+  // A shallower cut needs a smaller jump back, so it is SAFER on the original
+  // concern too. The alternative of simply allowing a full return was measured
+  // and REJECTED by that gate: INV-PLAN-BOUNCEBACK-BOUNDED 15.6% -> 88.9%.
+  //
+  // ⚠️ It does NOT eliminate detraining (17.5% remains). Something else
+  // contributes and is not yet traced. Do not read this as solved.
+  INJURY_RECOVERY_WEEK_VOLUME_PCT: 85,
+
   // §106 Amendment (COMPLIANCE-FIX-1, Coaching Board 2026-09-16) — how far a
   // PROGRESSIVE week may fall below the plan's own week 1 before the plan is
   // detraining the runner rather than building them.

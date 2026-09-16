@@ -12,6 +12,7 @@ import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import {
   generatorInputFields, assertParsedShape, inputCoverage,
 } from '../lib/plan/sweepInputCoverage'
+import { GENERATION_CONFIG } from '../lib/plan/generationConfig'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -466,6 +467,18 @@ const scDisp = new Map<string, { n: number; q: number; e: number; step: number }
 // If week 1 is systematically a spike, that reference is wrong and the invariant
 // fires on plans that merely SETTLE rather than detrain.
 let scW1Spike = 0, scFiresFromW1 = 0, scFiresFromMed = 0
+// THE RATCHET. §3 cuts a deload to 70%; §2's cap then limits the climb back.
+// 0.70 x 1.05^2 = 0.772 for an injury runner on the masters cadence -- a 23%
+// COMPOUNDING loss per cycle. RAMP-BOUNCEBACK-01 removed the bounceback
+// exemption for injury runners and asserted "the return to pre-deload still
+// happens, gradually". Does it?
+const scRatchet = new Map<string, { n: number; decl: number; fired: number }>()
+// SILENT §1 BREACH: plans labelled `maintenance` whose quality share exceeds the
+// distance ceiling. §1's invariant exempts maintenance (CD-21) and §90 Am.1's
+// yield is gated off by it, so neither the checker nor the producer acts.
+let scSilent1 = 0, scMaintPlans = 0
+const scSilent1Over: number[] = []
+let scSilent1AllEasy = 0
 let scDescending = 0, scDescendingSilent = 0
 const scWarnPlansByCode = new Map<string, number>()
 // NOISE-GATE-01 — warn-severity violations were counted by NOTHING (the loop below
@@ -686,6 +699,16 @@ for (const input of inputs) {
         if ((med3 - loAll) / med3 * 100 > 30) scFiresFromMed++
       }
     }
+    if (progAll.length >= 4 && wk1 > 0 && loAll > 0) {
+      const inj = ((input as { injury_history?: string[] }).injury_history ?? []).length > 0
+      const masters = ((input as { age?: number }).age ?? 0) >= 45
+      const key = `${inj ? 'INJURY ' : 'healthy'} ${masters ? 'masters(3wk)' : 'standard(4wk)'}`
+      const cur = scRatchet.get(key) ?? { n: 0, decl: 0, fired: 0 }
+      cur.n++
+      cur.decl += (wk1 - loAll) / wk1 * 100
+      if ((wk1 - loAll) / wk1 * 100 > 30) cur.fired++
+      scRatchet.set(key, cur)
+    }
     {
       const detr = wk1 > 0 && loAll > 0 && ((wk1 - loAll) / wk1 * 100) > 30
       const AERO = new Set(['easy', 'recovery', 'rest', 'race', 'cross_train', 'strength'])
@@ -708,6 +731,20 @@ for (const input of inputs) {
           cur.step += (firstQ.weekly_km ?? 0) - (lastBase.weekly_km ?? 0)
           scDisp.set(key, cur)
         }
+      }
+    }
+    if (m.volume_profile === 'maintenance') {
+      scMaintPlans++
+      const runs = mainW.flatMap((w: { sessions?: Record<string, unknown> }) => Object.values(w.sessions ?? {}).filter(Boolean) as Array<{ type: string }>)
+        .filter(sn => !['rest', 'race', 'strength', 'cross-train', 'cross_train'].includes(sn.type))
+      const qn = runs.filter(sn => ['quality', 'intervals', 'tempo', 'hard'].includes(sn.type)).length
+      const dk = (input as { race_distance_km?: number }).race_distance_km ?? 0
+      const key = dk <= 6 ? '5K' : dk <= 12 ? '10K' : dk <= 22 ? 'HM' : dk <= 43 ? 'MARATHON' : dk <= 55 ? '50K' : '100K'
+      const ceil = (GENERATION_CONFIG.INTENSITY_DISTRIBUTION as Record<string, { max_quality_session_pct: number }>)[key]?.max_quality_session_pct
+      if (runs.length && ceil != null) {
+        const sh = qn / runs.length * 100
+        if (sh > ceil) { scSilent1++; scSilent1Over.push(sh - ceil) }
+        if (qn === 0) scSilent1AllEasy++
       }
     }
     const noteTxt = String(m.volume_constraint_note ?? '')
@@ -828,6 +865,32 @@ if (hardFailures > 0) {
 // A baseline is a debt register, not an amnesty. Tracked in backlog.md as
 // SWEEP-BASELINE-01.
 const BASELINE: Record<string, number> = {
+  // ── §52 lopsided week, UNMASKED (not caused) by COMPLIANCE-FIX-2, 2026-09-16 ──
+  //
+  // 2 plans in 15,973. REVEALED, not introduced, and the mechanism is traced
+  // rather than assumed — reproduced on the exact failing input (100km, knee
+  // history, 4 days, days_cannot_train tue/thu):
+  //
+  //     max_weekday_mins=30   profile=build        week 23 = 39km   1 error
+  //     max_weekday_mins=60   profile=maintenance  week 23 = 42km   0
+  //     max_weekday_mins=none profile=build        week 23 = 58km   0
+  //
+  // `lopsidedWeek` (§52's third remedy, ruleEngine) evaluates BEFORE the
+  // weekday-cap pass trims easy runs. At a 30-minute cap the week falls 58 -> 39
+  // km while the long run is race-anchored and §52-exempt, so its share crosses
+  // 60% AFTER the producer has already decided the week is not lopsided. Producer
+  // ordering, entirely independent of deload depth.
+  //
+  // COMPLIANCE-FIX-2's only involvement: these plans used to detrain, which made
+  // them `maintenance`, which exempted them from this cap. Stopping the
+  // detraining removed the label and the pre-existing breach surfaced.
+  //
+  // NOT FIXED HERE DELIBERATELY. Re-ordering or re-scoping `lopsidedWeek` has a
+  // recorded history of backfiring: on 2026-09-15 excluding taper weeks from it
+  // "looked obviously right", stripped 24 plans of the maintenance label and
+  // turned an absorbed warn into a hard failure. It was reverted. That change
+  // needs its own measurement, not a ride-along. Filed as LOPSIDED-ORDER-01.
+
   // ── ADR-020 (2026-09-03): three classes made visible by WIDENING THE GRID ──
   //
   // Not regressions. The grid gained `max_weekday_mins: 30` (both real users had
@@ -970,7 +1033,22 @@ const BASELINE: Record<string, number> = {
   // exempt from this cap and already carries an honest runner-facing note).
   // Cost measured against the same grid: maintenance classification 131 -> 137 of
   // 315 (+1.9pp, 6 plans). Kept as an explicit 0 so a regression reads as NEW.
-  'INV-PLAN-LR-MAX-WEEKLY-PCT':          0,
+  // ⚠️ 0 -> 2 (2026-09-16, COMPLIANCE-FIX-2). UNMASKED, not introduced. Traced on
+  // the exact failing input (100km, knee, 4 days, tue/thu blocked):
+  //     max_weekday_mins=30   profile=build        week 23 = 39km   1 error
+  //     max_weekday_mins=60   profile=maintenance  week 23 = 42km   0
+  //     max_weekday_mins=none profile=build        week 23 = 58km   0
+  // `lopsidedWeek` (§52's third remedy) evaluates BEFORE the weekday-cap pass
+  // trims easy runs, so at a 30-min cap the week falls 58 -> 39 km while the long
+  // run is race-anchored and §52-exempt, and its share crosses 60% after the
+  // producer has already decided the week is fine. Producer ordering, independent
+  // of deload depth. These plans previously DETRAINED, which made them
+  // `maintenance`, which exempted them from this cap; stopping the detraining
+  // removed the label and the pre-existing breach surfaced.
+  // NOT fixed here on purpose — re-scoping `lopsidedWeek` backfired on 2026-09-15
+  // (stripped 24 plans of maintenance, turned an absorbed warn into a hard
+  // failure, reverted). Filed LOPSIDED-ORDER-01.
+  'INV-PLAN-LR-MAX-WEEKLY-PCT':          2,
   // 0 -> 1 (2026-09-10, INTENSITY-FOUNDATION-BLIND-02). NOT a regression from
   // this change and NOT a false positive: it is the first DELIVERED-plan §1
   // breach this sweep has ever been able to see.
@@ -1161,6 +1239,21 @@ if (SCORE) {
     console.log(`      breaching        ${scAllDrop30}`)
     console.log(`      ...carrying the maintenance claim ${scAllDrop30Claimed}`)
     console.log(`      ...saying NOTHING                 ${scAllDrop30Silent}`)
+  }
+  if (scRatchet.size) {
+    console.log(`\n  THE DELOAD RATCHET — mean decline and detraining rate by cohort:`)
+    console.log(`    cohort                    n      mean decline   detraining`)
+    for (const [k, v] of Array.from(scRatchet.entries()).sort()) {
+      console.log(`    ${k.padEnd(22)} ${String(v.n).padStart(5)}   ${(v.decl / v.n).toFixed(1).padStart(11)}%   ${(v.fired / v.n * 100).toFixed(1).padStart(8)}%`)
+    }
+  }
+  console.log(`\n  SILENT §1 BREACH (maintenance exempts the check AND gates off the yield):`)
+  console.log(`    maintenance plans                 ${scMaintPlans}  ${pct(scMaintPlans)}`)
+  console.log(`    ...breaching their §1 ceiling     ${scSilent1}  ${pct(scSilent1)}`)
+  console.log(`    maintenance plans with ZERO quality (CD-21's actual case) ${scSilent1AllEasy}  ${pct(scSilent1AllEasy)}`)
+  if (scSilent1Over.length) {
+    const o = scSilent1Over.slice().sort((a, b) => a - b)
+    console.log(`    breach magnitude over ceiling: median +${o[Math.floor(o.length / 2)].toFixed(1)}pp  p90 +${o[Math.floor(o.length * 0.9)].toFixed(1)}pp  worst +${o[o.length - 1].toFixed(1)}pp`)
   }
   console.log(`\n  IS WEEK 1 A SPIKE? (does INV-PLAN-NOT-DETRAINING reference the right week?)`)
   console.log(`    week 1 > 1.15x median of first 3 progressive weeks : ${scW1Spike}  ${pct(scW1Spike)}`)

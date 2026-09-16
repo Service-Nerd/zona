@@ -35,6 +35,7 @@
 // predicate is the producer.
 
 import type { GeneratorPhase } from '@/types/plan'
+import { GENERATION_CONFIG } from './generationConfig'
 
 /**
  * Is `weekN` a deload week?
@@ -220,4 +221,27 @@ export function computeDeloadWeeks(
   }
 
   return chosen
+}
+
+/**
+ * How deep a deload week cuts, as a fraction of the week it steps back from.
+ *
+ * SINGLE OWNER of deload DEPTH, for the same reason this module owns cadence.
+ * `RECOVERY_WEEK_VOLUME_PCT / 100` had TWO writers in `ruleEngine.ts` and they
+ * point in opposite directions:
+ *   · `buildVolumeSequence` multiplies BY it to cut the week;
+ *   · the day-count pass divides BY it to gross the week back up, so a deload
+ *     keeps the surrounding frequency (DELOAD-INVERSION-01 part 3).
+ * Split the depth by cohort in one of those places only and they silently
+ * disagree — the divider would recover a pre-deload volume that was never cut.
+ * That is producer-vs-producer drift, the exact fault this module exists for.
+ *
+ * §2 Amendment 2 (2026-09-16): a runner §12's volume cap governs gets a
+ * SHALLOWER cut, because the cap cannot climb back out of a deep one before the
+ * next deload arrives (0.70 x 1.05^3 = 0.81 — a 19% loss per cycle, compounding).
+ */
+export function deloadVolumeFraction(volumeCappedInjury: boolean): number {
+  return (volumeCappedInjury
+    ? GENERATION_CONFIG.INJURY_RECOVERY_WEEK_VOLUME_PCT
+    : GENERATION_CONFIG.RECOVERY_WEEK_VOLUME_PCT) / 100
 }
