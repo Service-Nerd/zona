@@ -133,3 +133,54 @@ describe('INV-PLAN-QUALITY-NOT-ZERO — the floor §1 never had', () => {
     expect(v).toHaveLength(0)
   })
 })
+
+describe('§40c — a target that was never reachable is STATED, not absorbed', () => {
+  // The sweep found 3 plans carrying a peak below 75% of `peak_km_target` with
+  // NO note of any kind. All three are 5K time goals off a 5-12km week, where
+  // the target is 28km and a 10%/week ramp from 5km over 11 weeks tops out near
+  // 13. The target was unreachable on day one and nothing said so.
+  //
+  // Every existing declaration missed it for the same reason: they measure
+  // delivered volume against the internal volume CURVE, and the curve is itself
+  // ramp-limited, so it reports no shortfall. The gap is between the CURVE and
+  // the TARGET, which nothing was comparing.
+  const future = (n: number) => { const x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10) }
+  const unreachable = (): GeneratorInput => ({
+    athlete_name: 'A', age: 35, primary_metric: 'distance', injury_history: ['Back'],
+    race_distance_km: 5, target_time: '0:22:00', current_weekly_km: 5,
+    longest_recent_run_km: 3, days_available: 7, fitness_level: 'beginner',
+    hard_session_relationship: 'avoid', recent_quality_training: 'none',
+    max_weekday_mins: 30, weeks_at_current_volume: 8, foundation_decision: 'add',
+    max_hr: 184, goal: 'time_target', preferred_long_run_day: 'sat',
+    benchmark: { type: 'race', distance_km: 10, time: '0:48:30' },
+    plan_start: future(1), race_date: future(1 + 7 * 11),
+  } as unknown as GeneratorInput)
+
+  it('declares the shortfall instead of shipping silently', () => {
+    const input = unreachable()
+    const r = generateRulePlan(input, 'paid') as unknown as Record<string, unknown>
+    const plan = (r.plan ?? r) as { weeks: Array<{ n: number; weekly_km?: number; sessions?: Record<string, Session | undefined> }>; meta: Record<string, unknown> }
+    const training = plan.weeks.filter(w => w.n >= 1
+      && !Object.values(w.sessions ?? {}).some(s => s?.type === 'race'))
+    const peak = Math.max(...training.map(w => w.weekly_km ?? 0))
+    const target = Number(plan.meta.peak_km_target ?? 0)
+
+    // The shortfall is real — this asserts the FIXTURE still reproduces it, so
+    // the test cannot pass by the plan quietly becoming adequate.
+    expect(peak).toBeLessThan(target * 0.75)
+
+    const declared = ['volume_shortfall_note', 'volume_constraint_note', 'long_run_shortfall_note',
+      'peak_shortfall_note', 'load_residual_note'].filter(k => plan.meta[k])
+    expect(declared.length).toBeGreaterThan(0)
+  })
+
+  it('§40c — the note NAMES THE LEVER rather than only reporting the loss', () => {
+    // §40c's own words: a note that reports only the loss is a disclaimer.
+    // The lever here is runway and starting base, NOT the weekday cap — naming
+    // the cap would be naming the wrong one, since the cap is not what stopped
+    // this plan.
+    const note = String((generateRulePlan(unreachable(), 'paid') as unknown as { meta: Record<string, unknown> }).meta.peak_shortfall_note ?? '')
+    expect(note).toMatch(/more weeks before race day|higher base/i)
+    expect(note).not.toMatch(/minute weekday ceiling/i)
+  })
+})

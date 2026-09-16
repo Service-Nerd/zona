@@ -7316,7 +7316,7 @@ function buildRulePlanOnce(
   // Deliberately NOT emitted when `volume_constraint_note` or the maintenance
   // label already covers it: two notes describing the same shortfall is worse
   // than one (§23's note wins, more specific).
-  const peakShortfallNote: string | null = (() => {
+  const peakShortfall: { note: string; targetOnly: boolean } | null = (() => {
     const stated = input.current_weekly_km
     if (!stated || stated <= 0) return null
     if (finalVolumeNote || finalVolumeProfile === 'maintenance') return null
@@ -7325,14 +7325,57 @@ function buildRulePlanOnce(
       && !Object.values(w.sessions ?? {}).some(sn => sn?.type === 'race'))
     if (!training.length) return null
     const deliveredPeak = Math.max(...training.map(w => w.weekly_km ?? 0))
-    if (deliveredPeak <= 0 || deliveredPeak + 0.5 >= stated) return null
+
+    // TWO DIFFERENT SHORTFALLS, and this note only ever covered the first.
+    //
+    //  1. §106 — the plan peaks BELOW WHAT THE RUNNER ALREADY RUNS.
+    //  2. §40c — the plan peaks far below ITS OWN TARGET, because that target
+    //     was never reachable from this runner's start over this runway.
+    //
+    // (2) went undeclared. Measured on the sweep: 3 plans carried a peak below
+    // 75% of `peak_km_target` with NO note of any kind — 5K time goals off a
+    // 5-12 km week, where `peak_km_target` is 28 and a 10%/week ramp from 5 km
+    // over 11 weeks tops out near 13. The target was unreachable on day one.
+    //
+    // Why the existing declarations all missed it: `volume_shortfall_note`
+    // measures delivered against the internal volume CURVE, and the curve is
+    // itself ramp-limited, so it reports NO shortfall — the gap is between the
+    // curve and the target, which nothing was comparing. §40c's obligation ("a
+    // suppressed target is stated, never absorbed silently") applies to both.
+    //
+    // Reuses VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT rather than adding a second
+    // number: "how large must a suppressed target be before we say so" is one
+    // question, already answered by §40c, and a parallel constant would be free
+    // to drift from it.
+    const belowStart = deliveredPeak + 0.5 < stated
+    const targetGapPct = peakKm > 0 ? ((peakKm - deliveredPeak) / peakKm) * 100 : 0
+    // TIME GOALS ONLY, and the restriction is §40c's own logic rather than a
+    // convenience. §40c declares a SUPPRESSED TARGET. A runner who asked only to
+    // finish was never promised a volume, so nothing is being suppressed and
+    // there is nothing to own up to.
+    //
+    // It is also load-bearing: without the gate this fired on two golden FINISH
+    // plans and DEMOTED their `load_residual_note` (which yields to this one as
+    // the more specific), replacing a real "week 9 rises 38%, be careful with
+    // it" safety warning with a volume-target observation those runners did not
+    // need. A note that displaces a better note is a regression, not a fix.
+    const belowTarget = input.goal === 'time_target'
+      && targetGapPct >= GENERATION_CONFIG.VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT
+    if (deliveredPeak <= 0 || (!belowStart && !belowTarget)) return null
 
     const injuryCapped = hasVolumeCappedInjury(input)
     const overClaim = input.training_age === '<6mo'
     const lowDays = input.days_available <= 3
     const cap = input.max_weekday_mins
 
-    const why = injuryCapped
+    // The unreachable-target case names a DIFFERENT lever from the others, so it
+    // branches first when the runner is not also below their own current volume.
+    // Naming the weekday cap here would be naming the wrong lever (§40c): the
+    // cap is not what stopped this plan, the runway and the starting base are.
+    const trainingWeeks = training.length
+    const why = (!belowStart && belowTarget)
+      ? `Getting there needs more weekly volume than ${trainingWeeks} weeks can safely build from ${Math.round(stated)}km, so the plan builds as far as it safely can and stops there.`
+      : injuryCapped
       ? 'Your injury history caps how fast weekly volume is allowed to rise, and over this many weeks that cap cannot climb back to where you are.'
       : overClaim
         ? 'With under six months of running behind you, we size the opening weeks on what the plan can verify rather than the figure entered, then build from there.'
@@ -7342,7 +7385,9 @@ function buildRulePlanOnce(
             ? `A ${cap} minute weekday ceiling limits what the midweek runs can carry, and the long run cannot absorb the rest on its own.`
             : 'Your starting volume and the time available cap how far this plan can build.'
 
-    const lever = injuryCapped
+    const lever = (!belowStart && belowTarget)
+      ? 'The levers are time and starting volume, not effort. More weeks before race day, or a higher base to build from.'
+      : injuryCapped
       ? 'That is the cap doing its job. The lever is time, not effort.'
       : overClaim
         ? 'Log a few weeks at your real volume and a regenerated plan will start from it.'
@@ -7350,8 +7395,28 @@ function buildRulePlanOnce(
           ? 'The lever is days: one more running day lifts the ceiling more than any change to the sessions.'
           : 'The lever is one longer weekday, or an extra running day.'
 
-    return `This plan peaks at ${Math.round(deliveredPeak)}km a week, below the ${Math.round(stated)}km you told us you are running now. ${why} ${lever}`
+    const opening = belowStart
+      ? `This plan peaks at ${Math.round(deliveredPeak)}km a week, below the ${Math.round(stated)}km you told us you are running now.`
+      : `This plan peaks at ${Math.round(deliveredPeak)}km a week, short of the ${Math.round(peakKm)}km a goal like this usually wants.`
+    return { note: `${opening} ${why} ${lever}`, targetOnly: !belowStart }
   })()
+
+  // §106's shortfall and §40c's are DIFFERENT FACTS, and only one of them makes
+  // the load residual redundant.
+  //
+  // `loadResidualNote` yields to this note as "more specific". That is right for
+  // the §106 case — "your plan peaks below where you already are" and "a week
+  // ramps faster than the cap" are two readings of one struggling plan. It is
+  // WRONG for the §40c case: "your goal wants more volume than this runway can
+  // build" says nothing about week 9 rising 38%, and letting it silence that
+  // swaps a safety warning for an expectation-setting one.
+  //
+  // Measured: unhandled, this demoted `load_residual_note` on 542 parity cases.
+  // Sessions were byte-identical on both sides (structure hash unchanged) — the
+  // whole delta was which note the runner reads, which is exactly the kind of
+  // change a hash diff flags and a human has to adjudicate.
+  const peakShortfallNote: string | null = peakShortfall?.note ?? null
+  const peakShortfallSupersedesResidual = peakShortfall != null && !peakShortfall.targetOnly
 
   // §34 / ADR-022 — THE DELIVERED LOAD RESIDUAL, DECLARED.
   //
@@ -7374,7 +7439,7 @@ function buildRulePlanOnce(
   // OVER-declares rather than under-declares. Declaring a residual that the
   // checker forgives is harmless; staying silent on one it catches is the defect.
   const loadResidualNote: string | null = (() => {
-    if (finalVolumeNote || peakShortfallNote) return null   // more specific wins
+    if (finalVolumeNote || peakShortfallSupersedesResidual) return null   // more specific wins
     const capPct = hasVolumeCappedInjury(input)
       ? GENERATION_CONFIG.INJURY_WEEKLY_INCREASE_CAP_PCT
       : GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT

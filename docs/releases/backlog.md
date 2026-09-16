@@ -111,12 +111,31 @@ The build fails if that stops being true.
 > constitution ratifies (§40c's declared volume shortfall; a genuine beginner's zero quality), and
 > the mandatory conflict scan would have caught both. Read §110 before re-measuring anything here.
 >
-> 🔲 **Still open from that work, and small:** **3 plans (0.019%)** carry a peak shortfall with no
-> declaration (§40c). Not fixed and not reproducible standalone — the exact sweep inputs refuse
-> with `weeks_available: -11` when replayed, because the sweep anchors race dates to a pinned
-> `PLAN_START` while the prep-time gate reads today. **Suspect the harness before the engine here**,
-> and fix the date anchoring first (same family as SWEEP-VACUOUS-01).
-> *Verify still open:* `SWEEP_SCORE=1 npm run sweep | grep "SILENT"` → **non-zero = still open**.
+> ✅ **CLOSED 2026-09-16 — the 3 undeclared plans (§40c).** They were REAL and
+> reachable, not harness artefacts as first reported: all three reproduce with
+> today's dates (5K time goal, 5-12 km/week, target 28 km, delivered peak 16 km,
+> **no note of any kind**). **Root cause: two different shortfalls, one check.**
+> `peak_shortfall_note` only fired when the plan peaked below the runner's
+> CURRENT VOLUME (§106). It never asked whether the plan peaked below its own
+> TARGET — and every other declaration missed it for the same reason, because
+> they measure delivered volume against the internal volume CURVE, which is
+> itself ramp-limited and so reports no shortfall. **The gap was curve-vs-target,
+> which nothing compared.** Gated to time goals (a `finish` runner was never
+> promised a volume, so §40c has nothing to declare). Reuses
+> `VOLUME_SHORTFALL_NOTE_THRESHOLD_PCT` rather than adding a parallel number.
+> SILENT **3 → 0**; all 14 charity personas still clean.
+>
+> ⚠️ **It demoted a better note twice before it was right, and both were caught
+> by a hash diff, not by review.** The new note supersedes `load_residual_note`,
+> so on first cut it replaced two golden FINISH plans' "week 9 rises 38%, be
+> careful with it" safety warning with a volume observation; the goal gate fixed
+> those, and 542 time-goal parity cases were still losing it until the
+> precedence was split. §106's shortfall makes the load residual redundant
+> (both read one struggling plan); §40c's does not (an unreachable target says
+> nothing about a week ramping too fast). **Sessions were byte-identical on
+> every one of those 542 cases** — the entire delta was which note the runner
+> reads, which is precisely what a parity hash flags and only a human can
+> adjudicate.
 > The coaching-compliance gauge runs on the property sweep under `SWEEP_SCORE=1`. **A plan is
 > ACCEPTABLE when it carries no error, no HIGH coaching deviation, no structural failure, and
 > every residual it declares matches what it actually delivers.** Baseline 36.6% → **45.7%** after
