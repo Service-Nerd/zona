@@ -2280,7 +2280,26 @@ export function validatePlan(plan: Plan, input: GeneratorInput): Violation[] {
   // bite. Same honest-residual precedent as ADR-022's `warn` invariants (§34).
   {
     const declared = input?.current_weekly_km
-    const nonFoundation = plan.weeks.filter(w => w.phase !== 'foundation' && w.type !== 'deload')
+    // ⚠️ RACE WEEK IS EXCLUDED (2026-09-16). It was not, and that masked the
+    // check on 574 plans (3.6% of the 15,973-plan sweep).
+    //
+    // `deliveredPeak` took the max over every non-foundation, non-deload week —
+    // INCLUDING race week, which contains the race. For a marathon that is 42.2
+    // km of "volume" the runner does not train, so the plan's peak was the race
+    // itself and a genuinely detraining block cleared the floor comfortably.
+    //
+    // THIS IS THE SAME DEFECT, THIRD OCCURRENCE. `coaching-deviation-scan.ts`
+    // carried it on its §6 taper arm until 2026-09-15 (an ultra's race week is
+    // its biggest week, so the check could never fire at exactly the distances
+    // where it mattered most). It reappeared in a measurement script the same
+    // week. A race week is not a training week, and every max-over-weeks in this
+    // file should be read with that in mind.
+    //
+    // Identified by the week carrying a `race` session rather than by index — a
+    // Monday race (PV2-G) sits in a week that is not the last.
+    const nonFoundation = plan.weeks.filter(w =>
+      w.phase !== 'foundation' && w.type !== 'deload' && w.type !== 'race' &&
+      !Object.values(w.sessions ?? {}).some(sn => sn?.type === 'race'))
     if (declared != null && declared > 0 && nonFoundation.length > 0) {
       const deliveredPeak = Math.max(...nonFoundation.map(w => w.weekly_km))
       const floor = declared * GENERATION_CONFIG.PEAK_FLOOR_VS_START_RATIO

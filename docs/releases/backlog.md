@@ -75,6 +75,33 @@ The build fails if that stops being true.
 > ➡️ **The open half shipped the next day as LONG-RUNWAY-EARNS-PLAN-01** (Coaching Board 2026-09-16 — §97 Amendment; see feature-registry). The dissent §57 recorded is discharged: M1 now gets 20 main weeks of an available 20, and the uncovered weeks it declares fall 4 → 2.
 
 
+> 🔲 **INPUT-SEX-01 — the engine has NO sex field, and cannot know it.** *(P2, filed 2026-09-16 from the charity-cohort board review. A QUESTION to take, not a build.)*
+> `GeneratorInput` carries `age` (for Tanaka max HR) and nothing about sex. So every numeric the
+> engine applies was derived predominantly on male cohorts, and the plan **cannot say so, because it
+> cannot tell**. Raised by Sims at the 2026-09-16 review sitting on a cohort described as
+> predominantly female 20-29.
+>
+> **Founder decision 2026-09-16: NOT being introduced now.** Parked as a question. If it is ever
+> added the shape is **male / female / prefer not to say / undisclosed** — a four-value optional
+> field, never a required one, and `undisclosed` must be a first-class value the engine handles
+> rather than a null it guesses around.
+>
+> ⚠️ **Do not confuse this with cycle-aware coaching (ENGINE-03 / CA-05).** Those are blocked on a
+> DATA bridge that does not exist — `@capgo/capacitor-health` exposes no menstrual data type
+> (ADR-011, verified 0 hits) — and Sims explicitly did **not** ask for cycle periodisation here.
+> A sex field is a wizard + data-model change and unblocks nothing on its own.
+>
+> **What it would actually change is the open question**, and the board did not answer it: knowing
+> the runner is female changes no pace, zone or volume formula we currently hold. The honest case
+> for the field is (a) honesty about whose data the numerics come from, and (b) it is the
+> precondition for the RED-S / energy-availability guidance Sims separately called the missing half
+> of a load prescription. Without (b) it is a field that is collected and unread, which
+> `configConsumer.test.ts` exists to prevent elsewhere.
+>
+> **SLT, not this board** — it touches reproductive-health data handling, the same incorporation +
+> insurance gate that holds ENGINE-03. Hutchinson carries it.
+> *Verify still open:* `grep -c "sex\|gender" types/plan.ts` → **0 = still open**.
+
 ### Off the table — do NOT re-open without reading the item first
 
 | Item | Why |

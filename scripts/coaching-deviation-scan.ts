@@ -26,14 +26,25 @@ type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 const DAYS: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 const HARD = new Set(['quality', 'intervals', 'tempo', 'hard'])
 
-interface Dev { severity: 'HIGH' | 'MED' | 'LOW'; what: string; detail: string }
+export interface Dev { severity: 'HIGH' | 'MED' | 'LOW'; what: string; detail: string }
 
 const mainWeeks = (p: Plan) => p.weeks.filter(w => w.n >= 1)
 const dayIndex = (d: string) => DAYS.indexOf(d as Day)
 const mins = (s: Session, easyPace = 6.5) =>
   s.duration_mins ?? (s.distance_km != null ? Math.round(s.distance_km * easyPace) : 0)
 
-function scan(input: GeneratorInput, plan: Plan): Dev[] {
+/**
+ * The coach's eye, as a pure function. EXPORTED 2026-09-16 so a one-off review
+ * can run the same checks instead of copying them — this file's own header says
+ * a check here should be promoted to validatePlan or deleted, never duplicated,
+ * and that applies to callers too.
+ *
+ * The run block below is guarded by `require.main === module`, so importing this
+ * gives you `scan` WITHOUT executing the whole standalone scan. No behaviour
+ * change when run directly: `npm run verify:coaching` output is byte-identical
+ * before and after (checked).
+ */
+export function scan(input: GeneratorInput, plan: Plan): Dev[] {
   const out: Dev[] = []
   const weeks = mainWeeks(plan)
   const raceWeek = weeks[weeks.length - 1]
@@ -154,11 +165,14 @@ function scan(input: GeneratorInput, plan: Plan): Dev[] {
 }
 
 // ── run ──────────────────────────────────────────────────────────────────────
+if (require.main === module) {
 console.log('COACHING DEVIATION SCAN — things a COACH catches that no invariant asserts')
 console.log('(the packet says "0 error violations"; this asks the other question)\n')
 
 let high = 0, med = 0, low = 0
-function run(label: string, input: GeneratorInput, tier: 'free' | 'trial' | 'paid') {
+// Arrow, not a declaration: function declarations are illegal inside a block
+// under ES5 strict mode (TS1252), and the run block is now guarded.
+const run = (label: string, input: GeneratorInput, tier: 'free' | 'trial' | 'paid'): void => {
   let plan: Plan
   try { plan = generateRulePlan(input, tier, CHARITY_PLAN_START, undefined, CHARITY_PLAN_START) }
   catch { console.log(`  ${label.padEnd(46)} refused by design`); return }
@@ -185,3 +199,4 @@ console.log(high === 0
   ? '✅ No HIGH-severity coaching deviation on any test plan.'
   : '❌ HIGH-severity deviations present — these reach a runner.')
 process.exit(high === 0 ? 0 : 1)
+}

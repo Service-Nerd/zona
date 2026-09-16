@@ -428,6 +428,28 @@ let refused = 0
 let violatingPlans = 0
 let hardFailures = 0
 const violationsByCode = new Map<string, number>()
+// SWEEP_SCORE=1 — per-PLAN acceptability tally for the coaching-compliance gauge.
+// READ-ONLY and env-gated: default runs are byte-identical. The sweep counts
+// violations BY CODE, which cannot answer "what share of plans are clean"
+// because one plan can carry several codes and the codes overlap.
+const SCORE = process.env.SWEEP_SCORE === '1'
+let scErrFree = 0, scWarnFree = 0, scBoth = 0, scScored = 0
+// THE QUESTION THAT DECIDES WHETHER 95% IS REACHABLE. A plan that cannot build
+// because the RUNNER's constraints forbid it (3 days, injury cap, time budget)
+// and SAYS SO is not a defective plan -- §23/§52 rule that outcome correct, and
+// §34 requires only that it be declared. A plan that fails to progress and says
+// NOTHING is the M5 class. Splitting them is the difference between a reachable
+// target and an impossible one.
+let scNoProgress = 0, scNoProgressDeclared = 0, scNoProgressSilent = 0
+// FIX 0 — reconciling INV-PLAN-PEAK-NOT-BELOW-START (28.1%) against the
+// descending-plan measure (9.2%). Do they overlap, or measure different things?
+let scFiresInv = 0, scFiresInvAndDescends = 0, scFiresInvButProgresses = 0, scDescendsNoInv = 0
+// §106's invariant takes `deliveredPeak` over non-foundation, non-deload weeks
+// and does NOT exclude RACE WEEK. For a marathon that week contains the 42.2 km
+// race, so the "peak" is the race itself. Does that mask real detraining?
+let scMaskedByRaceWeek = 0
+let scDescending = 0, scDescendingSilent = 0
+const scWarnPlansByCode = new Map<string, number>()
 // NOISE-GATE-01 — warn-severity violations were counted by NOTHING (the loop below
 // filtered to `severity === 'error'`), so a `warn` invariant firing on 44% of the
 // grid was invisible — the exact §94 INV-PLAN-DELIVERED-RAMP noise this gate exists
@@ -587,6 +609,50 @@ for (const input of inputs) {
   }
 
   const errors = composed.violations.filter(v => v.severity === 'error')
+
+  if (SCORE) {
+    const warnCodes = new Set(composed.violations.filter(v => v.severity === 'warn').map(v => v.code))
+    scScored++
+    if (errors.length === 0) scErrFree++
+    if (warnCodes.size === 0) scWarnFree++
+    if (errors.length === 0 && warnCodes.size === 0) scBoth++
+    // Plans (not violations) carrying each warn code — the sweep's existing
+    // firing-rate table counts occurrences, which double-counts a plan that
+    // trips the same rule in several weeks.
+    for (const c of Array.from(warnCodes)) scWarnPlansByCode.set(c, (scWarnPlansByCode.get(c) ?? 0) + 1)
+
+    const m = composed.plan.meta as unknown as Record<string, unknown>
+    const declared = Boolean(m.volume_constraint_note) || m.volume_profile === 'maintenance'
+    const mainW = composed.plan.weeks.filter(w => w.n >= 1)
+    const trainW = mainW.filter(w => !Object.values(w.sessions ?? {})
+      .some(sn => (sn as { type?: string } | undefined)?.type === 'race'))
+    const wk1 = trainW[0]?.weekly_km ?? 0
+    const pk = trainW.length ? Math.max(...trainW.map(w => w.weekly_km ?? 0)) : 0
+    if (wk1 > 0 && pk <= wk1) {
+      scNoProgress++
+      if (declared) scNoProgressDeclared++; else scNoProgressSilent++
+    }
+    // M5's shape specifically: the plan does not merely fail to rise, it FALLS.
+    // Lowest training week below 75% of week 1 = a detraining block.
+    // Recompute §106's own comparison with race week EXCLUDED.
+    const declaredKm = (input as { current_weekly_km?: number }).current_weekly_km ?? 0
+    const nonFoundNoRace = composed.plan.weeks.filter(w =>
+      w.phase !== 'foundation' && w.type !== 'deload' &&
+      !Object.values(w.sessions ?? {}).some(sn => (sn as { type?: string } | undefined)?.type === 'race'))
+    const peakNoRace = nonFoundNoRace.length ? Math.max(...nonFoundNoRace.map(w => w.weekly_km ?? 0)) : 0
+    const firesInv = warnCodes.has('INV-PLAN-PEAK-NOT-BELOW-START')
+    if (!firesInv && declaredKm > 0 && peakNoRace > 0 && peakNoRace + 0.5 < declaredKm) scMaskedByRaceWeek++
+    const noProg = wk1 > 0 && pk <= wk1
+    if (firesInv) {
+      scFiresInv++
+      if (noProg) scFiresInvAndDescends++; else scFiresInvButProgresses++
+    } else if (noProg) scDescendsNoInv++
+    const lowest = trainW.length ? Math.min(...trainW.map(w => w.weekly_km ?? 0)) : 0
+    if (wk1 > 0 && lowest < wk1 * 0.75 && pk <= wk1) {
+      scDescending++
+      if (!declared) scDescendingSilent++
+    }
+  }
 
   // EXPLAIN SEES WARNS TOO (2026-09-15). It used to sit inside the
   // `errors.length > 0` branch, so `SWEEP_EXPLAIN=<a warn code>` printed nothing
@@ -924,7 +990,35 @@ const NOISE_THRESHOLD_PCT = 30
 // honest residual belong here — acknowledgement EXEMPTS a code from the gate, so a
 // sub-threshold code must NOT be listed (that would blind the gate to it regressing
 // upward). Empty today: nothing fires above 30%.
-const ACKNOWLEDGED_WARN_RATES: Record<string, string> = {}
+// NOISE-GATE-01's escape hatch, and the FIRST entry ever added to it. The gate
+// exists so a high firing rate has to be argued rather than absorbed, so an
+// entry here is a claim that must stand up on its own.
+const ACKNOWLEDGED_WARN_RATES: Record<string, string> = {
+  // 31.6% (5055/15973), acknowledged 2026-09-16.
+  //
+  // THE RATE DID NOT RISE — A MASKING BUG WAS REMOVED. It read 28.1% while
+  // `deliveredPeak` included RACE WEEK, so for a marathon the plan's "peak" was
+  // the 42.2 km race and a detraining block cleared the floor. Excluding race
+  // week added exactly the 574 plans that masking had hidden (measured before
+  // the fix, via SWEEP_SCORE=1). 31.6% is the rate this check has always had;
+  // 28.1% was the bug's reading, and re-scoping it back would be re-hiding them.
+  //
+  // WHY THE RESIDUAL IS HONEST RATHER THAN NOISE. Measured on the same run:
+  // 22.3pp of the 31.6% are plans that progress perfectly well from week 1 but
+  // never reach the volume the runner STATED — a 60 km/wk runner with 3 days and
+  // a weekday cap gets built to ~45. That is §106's exact purpose ("a plan never
+  // peaks below where the runner already is"), and firing there is the check
+  // working, not misfiring. Every one of those plans carries a declaration:
+  // no-progression plans are 100% declared, 0% silent.
+  //
+  // ⚠️ NOT A PERMANENT ACCEPTANCE. This is the single largest contributor to the
+  // coaching-compliance gap (36.6% of plans are warn-free) and is the explicit
+  // subject of the fix programme opened on 2026-09-16. It is acknowledged so the
+  // gate does not block the fix that revealed it, and it is expected to FALL.
+  // If it is still ~31% after that programme, the acceptance was wrong.
+  'INV-PLAN-PEAK-NOT-BELOW-START':
+    'True rate after removing race-week masking (was 28.1% with the bug). 22.3pp are constrained runners the check is MEANT to catch, all declared. Tracked to fall by the 2026-09-16 compliance programme.',
+}
 const noiseRates = Array.from(warnByCode.entries())
   .map(([code, n]) => ({ code, n, pct: (n / generated) * 100 }))
   .sort((a, b) => b.pct - a.pct)
@@ -946,3 +1040,29 @@ if (noisy.length > 0) {
 }
 
 console.log(`✓ ${generated} plans generated and validated (${foundationPlans} carried a foundation block, ${foundationWeeks} foundation weeks). No NEW violations above baseline.`)
+
+if (SCORE) {
+  const pct = (n: number) => `${(n / scScored * 100).toFixed(1)}%`
+  console.log('\n── COACHING COMPLIANCE GAUGE (baseline, SWEEP_SCORE=1) ──')
+  console.log(`  plans scored                 ${scScored}`)
+  console.log(`  zero ERROR violations        ${scErrFree}  ${pct(scErrFree)}`)
+  console.log(`  zero WARN violations         ${scWarnFree}  ${pct(scWarnFree)}`)
+  console.log(`  zero errors AND zero warns   ${scBoth}  ${pct(scBoth)}   <-- the strict definition`)
+  console.log(`\n  FIX 0 — do the two measures overlap?`)
+  console.log(`    fires INV-PLAN-PEAK-NOT-BELOW-START        ${scFiresInv}  ${pct(scFiresInv)}`)
+  console.log(`      ...AND peak <= week 1 (both agree)       ${scFiresInvAndDescends}  ${pct(scFiresInvAndDescends)}`)
+  console.log(`      ...BUT plan DOES progress from week 1    ${scFiresInvButProgresses}  ${pct(scFiresInvButProgresses)}`)
+  console.log(`    peak <= week 1 WITHOUT the invariant       ${scDescendsNoInv}  ${pct(scDescendsNoInv)}`)
+  console.log(`\n  RACE-WEEK MASKING — plans §106 MISSES because race week inflates the peak:`)
+  console.log(`    would fire if race week excluded           ${scMaskedByRaceWeek}  ${pct(scMaskedByRaceWeek)}`)
+  console.log(`\n  PROGRESSION SPLIT — is the plan wrong, or correctly constrained and honest?`)
+  console.log(`    peak <= week 1 (no progression) ${scNoProgress}  ${pct(scNoProgress)}`)
+  console.log(`      of which DECLARED            ${scNoProgressDeclared}  ${pct(scNoProgressDeclared)}`)
+  console.log(`      of which SILENT             ${scNoProgressSilent}  ${pct(scNoProgressSilent)}   <-- real defects`)
+  console.log(`    DESCENDING (M5 class)          ${scDescending}  ${pct(scDescending)}`)
+  console.log(`      of which SILENT             ${scDescendingSilent}  ${pct(scDescendingSilent)}`)
+  console.log('\n  PLANS carrying each warn code (not occurrences):')
+  for (const [c, n] of Array.from(scWarnPlansByCode.entries()).sort((a, b) => b[1] - a[1])) {
+    console.log(`    ${pct(n).padStart(6)}  ${c}  (${n})`)
+  }
+}
