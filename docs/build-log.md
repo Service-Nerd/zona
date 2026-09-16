@@ -6,6 +6,59 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-16 — LR-CAP-BLIND-01 · A safety rule titled "universal, no phase exemption" had never once run on a beginner's plan
+**Shipped:** §45's long-run progression cap now applies to duration-anchored plans. It was skipping every beginner and every ultra.
+
+**Dev learning:** A session is anchored EITHER by distance OR by duration, and beginners are prescribed in minutes (time on feet). Both the producer and the checker read `distance_km`, found null, and bailed. **One bug, two copies — and the checker could not catch the producer because it shared the defect.** That is the part worth keeping: we have a whole governance layer built on the idea that a checker catches a producer, and it is silently void whenever both were written from the same wrong assumption about the data.
+
+The exemption followed the ANCHOR, not the ability. Nobody decided beginners were exempt from a long-run cap; a formatting decision made for good reasons decided it for them, two years ago, invisibly.
+
+**What it was shipping:** a 14-week first marathon, longest run ever 9 km, whose long run went 7.3, 7.8, 8.7, 8.7, 9.7, 8.5 and then **26.0 km**. +206%, to 2.9× the runner's lifetime longest, held two weeks at 76% of the week. §45 exists because of a +185% incident in April. The engine was producing worse than the thing the rule was written to prevent, for the cohort least able to absorb it. 2,271 breaches across 1,568 plans.
+
+**AI-building learning:** I reintroduced the exact defect I was fixing. My first cut read the producer through `sessionKm(s, planEasyPace)` and the checker through `sessionKmSelfPaced` — two converters that disagree for a duration-anchored session. So the two sides disagreed about how long the long run *is*, §45's deload exemption fired on one side only, and the checker started failing plans the producer had deliberately allowed. **Parity caught it; I would have shipped it.** The fix is that the checker has no PaceGuide and therefore MUST use the self-paced reading, so the producer uses it too — agreement by construction rather than by two people remembering.
+
+**Product/creator learning:** capping the spike made plans *smaller* and that was the improvement. It also made **fewer** plans get downgraded to "maintenance" — 49.3% → 48.5%, marathon 71.8% → 69.0% — because the spike was creating the lopsided weeks that triggered the downgrade. **It was manufacturing the constraint it was then excused under.** Our beginner charity marathoner now builds 18 → 43 km where she used to be told the plan holds her fitness.
+
+**The honest bit:** no automated check found this. The property sweep was green, the invariant suite was green, parity was identical. It was found by regenerating eleven plans and *reading one of them* — the Coaching Board's cold re-review. Every mechanical guard we have was satisfied by a plan that would have put a first-time marathoner in a boot.
+
+**Hook material:** the rule was called "universal, no phase exemption" in its own title. It had never run on the cohort that needed it most, because they're shown minutes instead of kilometres.
+
+**Postable?:** yes — "your checker can't catch your producer if they share the bug" is the strongest engineering lesson of the day.
+
+
+## 2026-09-16 — HSR-NOTE-HONESTY-01 · M5-EASY-CEILING-01 · GOAL-COHERENCE-01 · Three notes that described training the runner never got
+**Shipped:** Every runner-facing note that names a constraint now names the one that is actually binding. Three separate instances, all found in one day.
+
+**Dev learning:** The pattern is identical each time — a note asserts a *cause* that the code never checks.
+1. The `avoid` note promised *"one hard session a week at most"* to **1,615 plans that delivered zero**, because the beginner ceiling zeroes quality before the cap has anything to cap.
+2. Two notes blamed the long-run *time cap* for a shortfall. Measured on a 191-plan grid, the time cap was binding in **zero** of them. **All 191 named the wrong lever.** One of those notes had its own opening comment stating the condition — *"IF `LONG_RUN_CAP_MINUTES` stopped the peak long run…"* — that the code below it never implemented.
+3. `goal: 'time_target'` with no target time made 14 call sites believe a goal pace existed when it didn't.
+
+**AI-building learning:** my measurement probe for #1 counted *"note present AND zero quality"* — which is true of the **corrected** wording too, so it reported 1,615 after the fix landed and I briefly thought the fix had failed. Measuring the CLAIM ("does this text promise a cap?") against the delivery was the question I was actually asking. **A probe that can't distinguish the fixed state from the broken one isn't measuring the thing you care about.**
+
+**Product/creator learning:** we have three separate rules demanding honest declarations (§34, §40c, the whole compliance programme). All of them are undone by a sentence that isn't true. A wrong lever is worse than no note: a runner told *"the long run is at its time cap"* when it's at 151 of an available 210 minutes has been given something to act on that doesn't exist.
+
+**The honest bit:** #1 was mine, shipped that morning, in the same session. I wrote a §110 amendment about honest residuals and then attached a dishonest note to it. It was caught by the board reading T2 — the plan we'd spent the morning arguing about.
+
+**Postable?:** yes — "the note is a claim about the artefact, so derive it from the artefact" plus the probe-can't-see-its-own-fix story.
+
+
+## 2026-09-16 — PARITY-HSR-01 · COMPLIANCE-SILENT-3 · Two checks that failed open
+**Shipped:** The parity grid now varies `hard_session_relationship`; the plan now declares when its own target was never reachable.
+
+**Dev learning:** Parity had **never** varied the hard-sessions input — so it reported "IDENTICAL, 5,832 cases" on the exact change that rewrote what those runners are prescribed. Fixed with an appended focused block (108 rows, **+1.9%**) rather than a 9th cartesian axis (4× runtime to re-test 5,832 combinations against a lever that reads one field). **Falsification-tested** against the pre-change commit: `avoid=18/36, love=0/36, overdo=0/36` — it catches what it was blind to and clears what wasn't touched.
+
+Adding it **silently broke the grid's own coverage guard**, which asserted each goal branch existed via `endsWith('|finish')` — true only while `goal` happened to be the last field in the key. **A coverage guard that fails open is worse than no guard**, which is the lesson its own comment already recorded.
+
+**The second one:** three plans carried a peak far below their stated target with no note at all. Root cause was **two different shortfalls and one check** — we asked "does the plan peak below what the runner already runs?" and never "does it peak below its own target?" Every other declaration missed it the same way, because they all measure delivered volume against the internal volume *curve*, and the curve is itself ramp-limited so it honestly reports no gap. **The gap was curve-versus-target, and nothing was comparing those two.**
+
+**AI-building learning:** that fix demoted a *better* note twice before it was right — it outranks the load-residual warning, so a "week 9 rises 38%, be careful with that one" safety message got replaced by a volume observation on golden plans and then on 542 parity cases. Both were caught by a hash diff, not by review. **A note that displaces a better note is a regression, not a fix.**
+
+**The honest bit:** I filed both of these as "no user impact, note to our future selves" and the founder asked me to fix them anyway. Both turned out to be hiding something — the parity gap was hiding a whole cohort, and the silent-3 was hiding a class of unreachable targets. "Nobody can hit this today" is not the same as "there is nothing behind it."
+
+**Postable?:** maybe — the "coverage guard that fails open" bit is the sharp one.
+
+
 ## 2026-09-16 — OPS-DIGEST-PLAN-AUDIT-01 · The "should we wire this up?" question that turned out to be "this is already broken"
 **Shipped:** The daily ops digest now reads the plan-audit summary event — a heartbeat proving the backstop ran, plus the age of the newest breaching plan.
 

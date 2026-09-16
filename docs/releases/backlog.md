@@ -192,6 +192,25 @@ The build fails if that stops being true.
 >   was the last key field. A coverage guard that fails open is worse than none
 >   (the file's own trap 3). Both readers of the key layout now share one
 >   `KEY_FIELDS` definition, and the same presence guard covers `hsr`.
+> - 🔲 **RAMP-GUARD-FAILS-OPEN-01** — `INV-PLAN-DELIVERED-RAMP` requires **BOTH** the
+>   whole week and its trimable portion (week minus long run) to breach, and returns
+>   early when the trimable portion did not rise. **A long run that grows violently
+>   SHRINKS the rest of the week, so the guard is silent precisely on the most
+>   extreme cases.** It stayed silent on M3's 70% single-week rise while
+>   `INV-PLAN-LR-PROGRESSION-CAP` was also blind to it (LR-CAP-BLIND-01) — two
+>   independent guards, one plan, two different reasons. Recorded in §45 Am.1 and
+>   raised by Hutchinson at that sitting; **not fixed.** The both-must-breach rule
+>   exists for a real reason (a §52-exempt long run can legitimately jump and swing
+>   the trimable remainder), so this needs measurement and a board ruling, not an
+>   edit. *Verify still open:* `grep -c "nowTrimable <= prevTrimable" lib/plan/invariants.ts` → **non-zero = still open**.
+> - 🔲 **PREP-ACK-UNLOCKS-MARATHON-01 (SLT, not coaching)** — McMillan, at the third
+>   full board pass: should acknowledging a §44 prep-time warning unlock a marathon
+>   block off **18 km/week on 3 days with a 45-minute weekday cap**? M3 is now safe
+>   and declares its shortfall three separate ways (days, long run, weekday cap), and
+>   the board ruled the plan **CORRECT** — the question is whether we should build it
+>   at all or steer that runner to a different race. Willy dissents: an honest
+>   undertrained plan beats refusing someone who holds a charity place and will run
+>   regardless. **Product decision, explicitly not a correctness one.**
 > - 🔲 **Compliance themes still unruled:** `maintenance` meaning three different things, and
 >   warn-severity triage (any warn >20% is promoted or explained). Sims's fuelling /
 >   energy-availability guidance is also still outstanding.
