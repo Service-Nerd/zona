@@ -125,7 +125,36 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 >
 > *Verify still open:* `grep -c '"corpus"' lib/plan/__fixtures__/invariantLivenessBaseline.json` → **9 = still open**.
 
-> 🔲 **LR-DELOAD-RESUME-01 — the deload RESETS the long run, so a masters/injury runner can never reach §80's floor. Board ruled CORRECT; BUILT AND REVERTED as unsafe.** *(P1, filed 2026-09-17. Needs a SAFER DESIGN, not a retry of the same one.)*
+> 🔲 **LR-DELOAD-CUT-01 — the deload cuts the LONG RUN harder than it cuts the WEEK, and that is the single root cause of every remaining long-run shortfall.** *(P1, filed 2026-09-17. **Supersedes the framing of LR-DELOAD-RESUME-01 below — same defect, and the fix belongs at the CUT, not the resume.** Needs a §3/§9 board sitting.)*
+>
+> **Measured across 2,817 deload weeks:**
+>
+> | on a deload week | median cut | p90 |
+> |---|---|---|
+> | weekly volume | **22%** | 34% |
+> | **long run** | **30%** | **44%** |
+>
+> **On 50.4% of deloads the long run is cut more than 5pp harder than the week.** Worst traced: a week falling 44 → 43 km (−2%) while its long run fell 20.5 → 13.5 km (**−34%**).
+>
+> **Why:** the deload week's long run is re-derived from §9's phase share of the reduced week, while the *preceding* week's long run sat ABOVE that share (pulled up by §24/§80 specificity). The drop is the specificity pull switching off, not a deload.
+>
+> ⚠️ **THIS IS THE CAUSE OF ALL THREE REMAINING FIT-FOR-PURPOSE GAPS**, measured 2026-09-17 after PLAN-FITNESS-01 shipped:
+>
+> | scenario | peak long run | floor | gap |
+> |---|---|---|---|
+> | Marathon, **time goal, ANY runner** | 29.0 km | 31.7 km (§24, 75%) | **2.7 km** |
+> | Marathon, **finish goal, knee + 45+** | 26.0 km | 29.5 km (§80) | **3.5 km** |
+> | Marathon, **time goal, knee + 45+** | 26.0 km | 31.7 km | **5.7 km** |
+>
+> ⚠️ **PRE-EXISTING, NOT CAUSED BY PLAN-FITNESS-01.** Verified against `9543583~1`: the time-goal peak was **29.0 km before and after** today's work, with the identical sawtooth. Today's changes did not make it worse and did not fix it.
+>
+> ⚠️ **5K, 10K and HALF MARATHON are unaffected** — every cohort, both goal types, meets its floor. This is marathon-only.
+>
+> **The proposed fix (needs the board): the deload's long-run cut should track the WEEK's cut**, rather than re-deriving from §9's share. A smaller drop needs a smaller climb back, so it also reduces the week-on-week jumps `LR-CONSEC-01` tracks — the opposite trade from the resume-as-floor below, which created them.
+>
+> ⚠️ **Do not attempt this as a resume/bounceback.** That was built, board-approved, and reverted — see below for exactly how it failed.
+
+> 🔲 **LR-DELOAD-RESUME-01 — the resume-as-floor approach: board ruled CORRECT, BUILT AND REVERTED as unsafe. Kept as the record of what not to retry.** *(P2, filed 2026-09-17. Superseded in framing by LR-DELOAD-CUT-01 above.)*
 >
 > **The defect is real and measured.** §45 already says *"a long run following a deload week may step back up to the pre-deload long-run distance"* — but it is a **permission nothing ever asks for.** The allocator re-derives the long run from §9's share of the **reduced** week, so every deload resets it. Masters knee-history marathoner:
 >
