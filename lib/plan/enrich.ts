@@ -117,6 +117,22 @@ GOOD: "Threshold effort. Comfortably hard, and no harder."          (no zone nam
 BAD:  "Zone 4 work — hold it."          on a Zone 3 session          (contradicts the header)
 BAD:  "Push into the threshold zone (Z4)."                           (three-zone vocabulary)
 
+STRIDES — an engine-authored line you must KEEP (CoachingPrinciples §28):
+Some easy runs arrive with a "strides" field: the exact stride note the engine
+has already placed on that run, e.g. "4×20s strides at 5K effort, full recovery
+between." That line is prescription, not voice — 80 seconds of neuromuscular work
+the plan depends on. When a session carries a "strides" field, its coach_notes
+MUST still contain that stride line: copy it in verbatim as one of the (max 3)
+notes. Write your voice around it. NEVER drop it, never reword the numbers in it,
+never move it to a different day, and never add a stride note to a session that
+has NO "strides" field — the engine chose the one legal day and adding more, or
+moving it, breaks the placement and the whole week reverts to plain copy.
+
+GOOD (session has strides "4×20s strides at 5K effort, full recovery between."):
+      ["Easy in {{session_zone}} — nothing to prove today.",
+       "4×20s strides at 5K effort, full recovery between."]
+BAD:  dropping the stride line and returning only your own voice notes.
+
 WEEK COPY MUST MATCH WHAT THE WEEK CONTAINS — the single most common reason
 enrichment is REJECTED and a week reverts to plain copy:
 
@@ -283,6 +299,35 @@ export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Pro
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// §28 — the stride note is engine-authored PRESCRIPTION, not voice. The enricher
+// rewrites a session's coach_notes wholesale (mergePlan below), and because it
+// never received the engine's notes it silently deletes the stride line — the
+// exact failure the §78 time-trial guard prevents one field over. Observed live:
+// a 17-week marathon plan (a34d4892, 2026-09-16) lost 12 of its build weeks to
+// plain rule copy, each tripping INV-PLAN-STRIDES-PRESENT, because every rewritten
+// easy run dropped the line. A prompt instruction (added above) cannot GUARANTEE
+// "every week" — only the merge can — so the model is asked AND the merge enforces.
+const STRIDE_NOTE_RE = /strides/i
+
+// Re-attach the engine's stride line when the enricher's rewrite dropped it. A
+// scalpel, not a freeze: the enriched VOICE is kept and only the one stride line
+// is restored — last, matching the engine's own convention (ruleEngine §4b) — and
+// the result never exceeds the schema's 3 notes. If the enricher already kept a
+// stride line (it is told to), the enriched notes pass through untouched.
+function preserveStrideNote(
+  engineNotes: readonly (string | undefined)[] | undefined,
+  enrichedNotes: [string, string?, string?],
+): [string, string?, string?] {
+  const strideLine = engineNotes?.find((n): n is string => !!n && STRIDE_NOTE_RE.test(n))
+  if (!strideLine) return enrichedNotes                                    // engine placed none here
+  const notes = enrichedNotes.filter((n): n is string => !!n)
+  if (notes.some(n => STRIDE_NOTE_RE.test(n))) return enrichedNotes        // model kept one
+  const kept = notes.slice(0, 2)                                           // at most 2 voice notes, stride last
+  return kept.length === 2 ? [kept[0], kept[1], strideLine]
+       : kept.length === 1 ? [kept[0], strideLine]
+       : [strideLine]
+}
+
 // Exported for testing — pure function of its inputs (no I/O). Builds the enrichment
 // user prompt.
 export function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boolean): string {
@@ -302,13 +347,20 @@ export function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFiel
     // one place or they will disagree again.
     ...weekIntensityFlags(w, plan.weeks),
     sessions: Object.fromEntries(
-      Object.entries(w.sessions ?? {}).map(([day, s]) => [day, {
-        type: s?.type,
-        distance_km: s?.distance_km,
-        duration_mins: s?.duration_mins,
-        zone: s?.zone,
-        hr_target: s?.hr_target,
-      }])
+      Object.entries(w.sessions ?? {}).map(([day, s]) => {
+        // §28 — coach_notes are otherwise stripped from the enricher's view, so
+        // the one line it MUST keep (the stride note) is surfaced explicitly.
+        // Without this the model cannot preserve a note it never sees.
+        const strideNote = s?.coach_notes?.find((n): n is string => !!n && STRIDE_NOTE_RE.test(n))
+        return [day, {
+          type: s?.type,
+          distance_km: s?.distance_km,
+          duration_mins: s?.duration_mins,
+          zone: s?.zone,
+          hr_target: s?.hr_target,
+          ...(strideNote ? { strides: strideNote } : {}),
+        }]
+      })
     ),
   }))
 
@@ -397,7 +449,9 @@ function mergePlan(
       // the same defect one field over.
       if (session.type === 'hard') continue
       if (es.label) session.label = es.label
-      if (es.coach_notes) session.coach_notes = es.coach_notes
+      // §28 — keep the engine's stride line if the enricher's rewrite dropped it
+      // (session.coach_notes still holds the engine notes at this point).
+      if (es.coach_notes) session.coach_notes = preserveStrideNote(session.coach_notes, es.coach_notes)
     }
   }
 

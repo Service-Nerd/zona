@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-17 — ENRICH-STRIDES-01 · The AI quietly deleted 80 seconds of training on 12 of 17 weeks, and everything was "green"
+**Shipped:** The AI enrichment layer can no longer drop the §28 stride note ("4×20s strides at 5K effort, full recovery between.") when it rewrites an easy run's coaching copy. Found by this morning's ops digest reading a real test-account plan.
+
+**Dev learning:** the enricher rewrites `session.coach_notes` wholesale in `mergePlan`, but `buildUserMessage` had *stripped* `coach_notes` before sending the plan to the model — so the one line the engine cared about was invisible to the thing being asked to preserve it. Telling the model "keep the strides" would have been useless: you can't preserve what you never saw. The real fix is the same shape as the §78 time-trial guard sitting four lines away — `preserveStrideNote()` re-attaches the engine's line at merge, deterministically. A prompt instruction is probabilistic; an invariant needs a guarantee. I did both (prompt so the voice reads well, merge so it's certain), but the merge layer is the one that actually satisfies "every week".
+
+**Product/creator learning:** the damage wasn't a broken plan — the partial-revert system did its job and every plan stayed *valid*. The damage was that 12 of 15 build weeks fell back to plain rule copy, so the paid runner lost the AI coaching voice on exactly the weeks it was supposed to differentiate. Silent quality erosion on the paid tier is invisible in every dashboard that only asks "is it valid?".
+
+**AI-building learning:** two AI systems composing over the same field is the trap. The enricher (AI) writes `coach_notes`; the invariant classifies `coach_notes`. Each was individually correct; the composition silently deleted prescription. The `/ship` gate has a whole box (§3) for exactly this, and it's the third time this repo has been bitten by "feature B rewrites the string feature A reads."
+
+**The honest bit:** every mechanical gate was green. `npm run verify`, the 15,974-plan sweep, the archetype matrix — all passing, for months, while the enricher quietly reverted a chunk of every paid plan. It took a daily digest *reading one plan* to see it. Same lesson as PEAK-STEPBACK and LR-CAP-BLIND the day before: the check that catches these isn't a test, it's someone regenerating a real plan and looking at it.
+
+**Hook material:** 12 of 17 weeks reverted to plain copy on a single live plan; the fix is ~15 lines; the model literally could not preserve the note because the prompt deleted it before showing it the plan. "We asked the AI to keep something we'd already hidden from it."
+
+**Postable?:** yes — "two AIs editing the same field silently deleted the thing" is the engineering angle; "your paid feature can quietly downgrade itself to the free one and every test stays green" is the product one.
+
 ## 2026-09-16 — PEAK-STEPBACK-VOLUME-01 (§47 Am.2) · A "recovery week" that was 5km heavier than the week it recovered from
 **Shipped:** In the peak block, a step-back week now delivers less total volume than the week before it — not just an easier long run on a week that's still climbing. Came out of running a real generated marathon plan past the Coaching Board.
 
