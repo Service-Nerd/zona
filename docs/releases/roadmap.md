@@ -64,6 +64,19 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > code.** So the path is everything between the email and a plan on screen.
 > Nothing else is on it.
 
+> ✅ **ENGINE STATE, end of 2026-09-17.** `npm run verify` exit 0 (**2,066 tests /
+> 226 files**), **0 hard failures**, sweep 15,974 / no new violations, matrix 65/0,
+> `invariant:liveness` 107/118 with unclassified debt at **zero**, deviation **HIGH 0**.
+>
+> ⚠️ **PLANS ARE NOW FIT FOR PURPOSE** at 5K, 10K and half marathon for every cohort,
+> and at marathon except time goals (short 1.2 km — two principles in conflict,
+> `S24-FLOOR-REACHABILITY-01`). Before today an injury-history runner could get
+> **eighteen weeks that ended on the weekly volume they started**; never-builds are
+> now **0%** at every distance.
+>
+> **`npm run measure:fitness` is the fourth check** — *does this plan BUILD the
+> runner?* — gated on every build. Run it before and after any engine change.
+
 > ✅ **ENGINE STATE, 2026-09-17.** `npm run verify` exit 0 (**2,047 tests / 221
 > files**), **118 invariants**, property sweep **15,974 plans / 0 new above
 > baseline**, archetype matrix 65/0, **`invariant:liveness` 107/118 woken (91%)

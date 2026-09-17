@@ -8,47 +8,44 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-## 📍 PICK UP HERE — state at 2026-09-17 (midday)
+## 📍 PICK UP HERE — state at end of 2026-09-17
 
-**Everything shipped is committed, pushed, and recorded in `feature-registry.md` + `build-log.md`.**
-`npm run verify` exit 0 (**2,047 tests / 221 files**) · property sweep **15,974 plans, 0 violations, 0 new above baseline** ·
-archetype matrix **65/0** · **`invariant:liveness` 107/118 woken (91%), 84 mutations, `unclassified` debt = 0** ·
-`test:liveness` **15 tests checked, 83 mutations killed, 6 survivors (all EQUIVALENT with a written proof), 0 unproven** ·
-coaching deviation scan **HIGH 0 / MED 23**.
+**Everything is committed, pushed and deployed.** `npm run verify` exit 0 (**2,066 tests / 226 files**) · **0 hard failures** · sweep **15,974 plans, no new violations** · matrix **65/0** · `invariant:liveness` **107/118, unclassified = 0** · deviation scan **HIGH 0 / MED 26** · `verify:parity` 19.3% · `cohort:shape` re-baselined with every move declared.
 
-**The constitution is fully accounted for AND every claim of coverage is now mechanically cross-checked: 107 principles — 79 enforced by an invariant, 22 by a named test, 6 exempt with a reason, 0 unverified. 118 invariants registered, declared and passing.**
+### 🏁 What today was — two halves
 
-### ✅ What 2026-09-17 (morning) closed — the coverage-claim audit
+**Morning: a coverage-claim audit.** Three registers each claimed "this rule is checked" and none could see the others. `LIVENESS-DEBT-01` (unclassified **20 → 0**) · `COVERAGE-BITE-01` (a principle can no longer be "enforced" by an invariant nothing can wake — **11 of 107 were**, three of them injury guards) · `TEST-BITE-01`. All three registers now cross-check mechanically.
 
-Three registers each claimed "this rule is checked". None of them could see the others, so a green tick could hide a hole and did.
+**Afternoon: plans were not fit for purpose and no check could see it.**
 
-| Ship | What it closed |
+🔴 **An injury-history runner got eighteen weeks that never made them fitter.** Isolated by toggling ONE flag — same runner, everything else identical: net build **+91% healthy vs +6% injured** (standard cadence), **+79% vs +3%** (masters). **28.9%** of injury plans never exceeded week 1; **66.7%** at masters cadence. A knee-history runner reached a marathon start line never having run beyond **14 km**. Every check was green throughout.
+
+Shipped **PLAN-FITNESS-01** (§2 Am.3 + §24/§80 specificity ramp) and **LR-DELOAD-CUT-01** (§3 Am.). **Never-builds now 0% at every distance.**
+
+### ✅ Fit for purpose — the verdict
+
+| | |
 |---|---|
-| **LIVENESS-DEBT-01** | The liveness `unclassified` column, **20 → 0**. 19 newly proven wakeable, 1 reclassified `static`. ⚠️ **The bigger half was the CORPUS for the third time** — zero of the 64 probed plans had an injury history and zero were marathons, because a round-robin over three corpora only ever consumes their HEADS. Fixed with a coprime stride; `hard_session_relationship` added as a 6th `targetedGrid` axis. |
-| **COVERAGE-BITE-01** | A principle can no longer be marked "enforced by an invariant" while that invariant sits `unclassified` in the liveness baseline. **11 of the 107 were**, three of them injury guards (§21 no hills, §2 and §90 the injury caps). Declared-reason cases counted in `UNPROVEN_INVARIANT_COVERAGE_BASELINE` (§17, §18, §67, §75), may only shrink. |
-| **TEST-BITE-01** | Same gap one register over: a `by: 'test'` principle must have its test in the mutation harness. **21 of 22 did; §35's did not** and had never had anything try to turn it red. Falsified by hand, recorded with the evidence. |
+| 5K, 10K, half marathon | ✅ every cohort, both goal types |
+| Marathon, finish goal | ✅ including knee + over-45 (**26.0 → 29.5 km**) |
+| Marathon, time goal | ⚠️ **short 1.2 km** — §9's 210-min cap vs §24's 31.65 km (`S24-FLOOR-REACHABILITY-01`) |
 
-⚠️ **Every gate was falsified before shipping** — broken deliberately, build watched go red, then restored.
+Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's net build **54% → 79%**.
 
-⚠️ **New non-negotiable: `CLAUDE.md` § Completion claims.** Count the population from the code; name the noun before reporting done; state what the claim does NOT prove; falsify one item; reconcile the adjacent register; leave a gate, not a note. Written because "0 unverified" and "20 unproven" were both true on 2026-09-15 and neither looked wrong — **and the caveat that would have exposed it was already sitting in `principleCoverage.ts`'s own header, omitted from the summary.**
+### ⚠️ Read these before touching the engine
 
-⚠️ **A DECLARED REASON IS NOT A FIXED PROBLEM.** The `unclassified` pile sat 6 days under an honest label. Nothing in this repo schedules debt-register paydown.
+- **`npm run measure:fitness` is the FOURTH question** — *does this plan BUILD the runner?* Gated on every build by `planFitness.test.ts` (`PLAN-FITNESS-GATE-01`). `neverBuildsPct` above zero fails with **no tolerance**. Re-baseline only with a declared reason.
+- **The root cause of every marathon shortfall was the deload cutting the LONG RUN a median 30% while cutting the WEEK 22%** — on 50.4% of deloads. Mechanism: the long run hits §9's share of the **planned** week while the rest is trimmed in **placement** (median −6 km). Same numerator, smaller denominator.
+- 🔴 **FIVE diagnoses were presented before being tested and THREE were wrong** (long run as cause; back-loaded curve; post-pass caps subtracting; allocation shortfall; systemic under-delivery — that last was ~85% the runner's own weekday time budget, correctly handled and declared). **Measure the premise before the board sits.**
+- 🔴 **A board amendment passed its stated condition and missed its stated purpose TWICE** — Willy's §52 per-week bound. `S52-LOPSIDED-BOUND-01`. **Do not add a third per-week bound.**
+- 🟢 **Willy reversed his own RAMP-BOUNCEBACK-01 veto on measurement** — the +43% he vetoed became +17.6% once Am.2 made the cut shallower.
+- 🔴 **A board-approved fix was built and REVERTED as unsafe** (`LR-DELOAD-RESUME-01`) — it sent a low-base beginner **7.3 → 18.5 km in one week**. The shipped version made that same runner's worst jump go **DOWN** (+50% → +47%).
 
-### 🏁 What 2026-09-16 was
+### 🔜 OPEN — nothing urgent
 
-A day of **coaching review, not feature work.** Eleven charity-cohort plans went to the Coaching Board **three times**. The board rejected four plans across those passes and **not one rejection reason survived contact with measurement**:
-
-| Pass | Verdict | What it found |
-|---|---|---|
-| 1 (morning) | 9/11 | rejected M3 and T2 |
-| 2 (cold re-review) | 8/11 | rejected M3 and M5; **upheld T2's plan and flagged its NOTE** |
-| 3 (after fixes) | **11/11 FIT** | no plan rejected |
-
-⚠️ **What was wrong was never the plans.** It was three notes describing training the runner never received, and a safety cap that had never run on beginners. **Every mechanical gate we own was green on the plan that would have put a first-time marathoner in a boot** — it was found by regenerating eleven plans and READING one.
-
-Shipped: **CB-HSR-AVOID-01** (§110 + Am.1 — `avoid` was an off switch for 2,953 plans) · **LR-CAP-BLIND-01** (§45 Am.1 — the long-run cap had never run on beginners or ultras; 1,568 plans) · **HSR-NOTE-HONESTY-01** (1,615 plans) · **M5-EASY-CEILING-01** (191 of 191 notes named the wrong lever) · **COMPLIANCE-SILENT-3** · **GOAL-COHERENCE-01** · **PARITY-HSR-01**.
-
-Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two thirds of that movement was the STANDARD being corrected, not the engine improving.** The 25.6% scored as failures two outcomes the constitution ratifies. Read §110 and `[[feedback-run-the-board-properly]]` before quoting any number from it.
+> 🔲 `S52-LOPSIDED-BOUND-01` **(P1, board)** — longer long runs make more weeks lopsided; marathon `maintenance` rose 68% → 72.7%, all §52. Three routes recorded.
+> 🔲 `S24-FLOOR-REACHABILITY-01` **(P2, board)** — the last 1.2 km on marathon time goals.
+> 🔲 `LR-CONSEC-01` · `GRID-MARATHON-CAPABLE-01` · `MAINT-LIVENESS-01` · `STEPBACK-STALE-PEAK-01` · `INV-MSG-ROUNDING-01` (P3) · `LR-DELOAD-RESUME-01` (record only).
 
 ### 🔜 COACHING & ENGINE — two items, both for tomorrow
 
