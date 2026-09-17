@@ -53,6 +53,17 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ### 🔜 OPEN — nothing urgent
 
+> 🔲 **TT-PRICING-CLAIM-01 — `/pricing` sells the race projection as coming from "your real running". On 58% of plans there is none.** *(P2, filed 2026-09-17. **SLT escalation from the Coaching Board** — Hutchinson carried it up: the board rules on correctness and cannot rule on a marketing claim.)*
+>
+> **The claim**, `lib/marketing/pricing.ts`: *"What you are actually on for — a projected finish from your real running, updated as you train. No vanity numbers."*
+>
+> **Measured on the live database:** 11 of 19 plans (58%) carry no benchmark, so the estimate comes from two wizard answers and a derivation, not from running. State 4 is also **static by design** (the route's own comment: *"no R31/R32 — static estimate, can't show improvement"*). So on the majority path all three clauses fail: not from real running, not updated as you train, and the third is arguable.
+>
+> ⚠️ **`pricing.test.ts` passes throughout and always will** — it enforces that every PAID gate has a ROW on the pricing page. It cannot check whether the row is TRUE. The guard held while the claim rotted, which is worth knowing about every claim on that page, not just this one.
+>
+> **Traynor blocked the cheap fix** and the block should be recorded: do NOT quietly soften the copy so the derivation qualifies. That is writing the marketing down to meet the product. Either the majority path delivers something closer to the claim, or the claim names the states it applies to.
+
+
 > 🔲 **PLAN-NOTE-PLACEMENT-01 — does the plan rationale belong at the TOP of the Plan screen at all?** *(P2, filed 2026-09-17 by the SLT. Deliberately NOT bundled with PLAN-NOTE-VOICE-01.)*
 >
 > **Wood's argument:** a runner asks *"why is my long run short?"* in week 3, when the long run feels short. Not on day one. Putting the answer at the top of the plan on day one hands someone who has just committed a list of things their life prevents, in our warning colour. Context beats motivation, and that context says "here is what you cannot do".

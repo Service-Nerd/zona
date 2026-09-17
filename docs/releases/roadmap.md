@@ -99,6 +99,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > | `INV-MSG-ROUNDING-01` | P3. Invariant messages round inconsistently. |
 > | `PLAN-NOTE-PLACEMENT-01` | **Founder call.** Does the plan rationale belong at the TOP of the Plan screen at all? Wood says a runner asks in week 3, not day one. Held until the shortened version is seen on device. |
 > | `BRAND-EMDASH-01` | **Founder call.** Mechanism half CLOSED by COPY-GLYPH-01; what remains is the decision. Em dashes are in **100% of plans**, 26,727 session labels alone, so removing them renames every session. |
+> | `TT-PRICING-CLAIM-01` | **SLT, escalated by the Coaching Board.** `/pricing` sells the race projection as "from your real running"; 58% of plans have none. `pricing.test.ts` checks a row EXISTS, never that it is true. |
 > | `LR-DELOAD-RESUME-01` | **Record only** — board-approved, built, measured, reverted as unsafe. Kept so it is not retried. |
 >
 > ⚠️ **This block names the commit it describes.** `state-block-check.py` flags

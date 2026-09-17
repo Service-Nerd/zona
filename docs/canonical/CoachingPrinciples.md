@@ -6358,6 +6358,91 @@ the component.
 > was, where I am, what the potential is" invents anything — and the ruling is
 > that it must not.
 
+### Amendment 1 — when there is NO measurement, state the band, not the time (Coaching Board 2026-09-17)
+
+**The gap this closes.** The principle above permits *"where they are — an
+estimate from **measured** fitness, carrying its confidence **in the copy, not
+in a tooltip**"*. It never said what a progress surface may do when there is no
+measured fitness **at all**. The race-projections card fell straight through
+that gap, and breached both of the clause's conditions at once: nothing had been
+measured, and the confidence lived in the **colour of a chip**, which is less
+than a tooltip.
+
+**What it was doing.** With no benchmark and no qualifying runs, the card
+asserted a VDOT from a hand-authored 3×4 table indexed on two wizard answers,
+then rendered a marathon finish **to the second** (`3:54:16`). Measured on the
+live database: **11 of 19 plans (58%) carry no benchmark**, so this was the
+majority path, not an edge case. The whole no-benchmark population had **nine
+distinct outcomes**. One of the two inputs is an OPTIONAL wizard step, and a
+runner who declined it was silently given the middle bracket — so *"I'd rather
+not say"* and *"18 months"* produced **identical figures**, and 2 of 6
+comparable live plans were in exactly that state.
+
+**Principle.** Where no fitness has been measured, a progress surface may still
+orient the runner, but:
+
+1. **The estimate is DERIVED from the runner's classification band (§13), never
+   asserted independently of it.** A number that contradicts our own classifier
+   is not a conservative estimate, it is a second opinion nobody authored.
+2. **Its precision must match its evidence.** Minute precision, never seconds.
+   *Precision is a louder signal than any caveat* — a runner reads sixteen
+   seconds as a measurement whatever the label beside it says.
+3. **A declined input widens the estimate; it never substitutes a default.**
+   Silently taking the middle bracket converts a shrug into a finish time.
+4. **The action leads.** On this state the useful content is not the figures, it
+   is the one thing that replaces them with a measurement.
+
+**Why the table was ruled INCORRECT.** ⚠️ **Six of its twelve cells asserted a
+VDOT that §13's own `FITNESS_VDOT_THRESHOLDS` classifies as a DIFFERENT level
+from the label that selected the cell.** A runner classified `experienced` was
+handed 45 or 48, both below `experienced_min: 50`; a `beginner` was handed 37,
+above `intermediate_min: 35`. It also applied its own bare `× 0.95`, a second
+conservatism doctrine against §10's ratified 3%, named nowhere. And it lived in
+`app/api/race-times/route.ts` — outside `GENERATION_CONFIG`, so no principle
+explained it, `configPrincipleSync.test.ts` could not see it and the
+coaching-guard hook never fired on it. **The `peakKmByLevel` / §106 class
+exactly: every governance layer bypassed by a table being in the wrong file.**
+
+**Chair's note on the remedy (Hutchinson).** The board refused a re-tune. Twelve
+hand-authored numbers drift from the principle beside them — that is what had
+already happened — so the estimate is now **derived** and the contradiction is
+impossible by construction rather than corrected once.
+
+**Provenance, stated because nobody could state it before (Sims).** These are a
+**prior**, not a measurement, and the population they describe is unrecorded.
+Daniels' normative data skew male. They are **not** sex-adjusted and must not be:
+VDOT is a performance measure, and a woman who runs the time has the VDOT. The
+honest correction is the **width** of the claim, not its level.
+
+**Recorded, unresolved (Seiler vs McMillan).** The band fractions decelerate
+because improvement in recreational runners is front-loaded. The board recorded
+**INSUFFICIENT EVIDENCE** on the exact curve — nobody has the amateur cohort data
+— and anchoring on §13 sidesteps it, since that requires only that we stop
+contradicting ourselves, not that we know the true curve. McMillan separately
+defends the flat top of the beginner row on structural grounds ("beginner" is
+low volume and modest speed, not time served, so a plateau is honest). **Do not
+re-tune these fractions without cohort data.**
+
+**Config.** `GENERATION_CONFIG.ESTIMATE_VDOT_BAND_FRACTIONS` (positions within
+the band; they are offsets 3/7/10/13 of the 15-wide band, i.e. exactly the
+shipped intermediate row, so the majority path does not move) and
+`ESTIMATE_VDOT_DISCOUNT_PCT: 5` — deliberately larger than §10's 3%, which
+discounts paces from a **real** benchmark. Band edges are derived from
+`FITNESS_VDOT_THRESHOLDS`; no new band numeric enters.
+
+**Enforcement.** `INV-EST-VDOT-AGREES-WITH-CLASSIFIER` —
+`lib/plan/estimateVdotAgreesWithClassifier.test.ts`. ⚠️ **Deliberately NOT a
+`validatePlan()` invariant:** it asserts that two CONFIG SURFACES agree, and no
+Plan is involved at any point. As a plan invariant it would run only when a plan
+happened to be generated, which is strictly weaker than running always. Total,
+not sampled: twelve combinations, raw and discounted. Falsified against the
+shipped table, where it names all six offending cells.
+
+**Willy's condition, verified before the ruling landed:** the projected VDOT
+reaches no prescription path. `bracketVdotFor` has one call site, the route is
+read-only, and the only consumer is a display component. Had it fed goal pace or
+session targets, this would have been a separate sitting.
+
 ---
 
 ## 56. The constitution

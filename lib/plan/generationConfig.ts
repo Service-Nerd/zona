@@ -1591,6 +1591,68 @@ export const GENERATION_CONFIG = {
   // The signature Zonna move: err on the side of restraint when in doubt.
   VDOT_CONSERVATIVE_DISCOUNT_PCT: 3,
 
+  // §109 Amendment 1 — the no-measurement estimate (Coaching Board 2026-09-17).
+  //
+  // Where a runner has NO benchmark and NO qualifying runs, the race-projection
+  // card has nothing measured to work from. It used to assert a VDOT from a
+  // hand-authored 3x4 table living in `app/api/race-times/route.ts`: twelve
+  // numerics outside this file, explained by no principle, invisible to
+  // `configPrincipleSync.test.ts` and to the coaching-guard hook. The
+  // `peakKmByLevel` / §106 class exactly.
+  //
+  // ⚠️ IT CONTRADICTED §13 IN SIX OF TWELVE CELLS. A runner classified
+  // `experienced` was assigned VDOT 45 or 48, both BELOW `experienced_min: 50`;
+  // a runner classified `beginner` was assigned 37, ABOVE `intermediate_min: 35`.
+  // Two of our own numbers disagreeing, and the one reaching runners was the one
+  // no principle explained. Measured: this table is the sole source of the
+  // projected times for 58% of plans.
+  //
+  // SO IT IS DERIVED, NOT ASSERTED. The level's own §13 band supplies the
+  // anchor; training age only positions the runner WITHIN it. A §13
+  // contradiction is then impossible by construction rather than corrected once.
+  // Band width is `experienced_min - intermediate_min`, which §13 itself
+  // defines — no new band numeric enters.
+  //
+  // THE FRACTIONS ARE NOT NEW EITHER. They are the shipped intermediate row's
+  // own within-band positions (38/42/45/48 against [35,50]) — the one row that
+  // was already internally consistent. Applying them to every level leaves the
+  // intermediate row byte-identical, which matters: it is the majority path, so
+  // the blast radius is confined to the two rows that were actually wrong.
+  //
+  // ⚠️ PROVENANCE, stated because nobody could state it before (Sims): these
+  // are a PRIOR, not a measurement, and the population they describe is
+  // unrecorded. Daniels' normative data skew male. They are not sex-adjusted and
+  // must not be — VDOT is a performance measure, and a woman who runs the time
+  // has the VDOT. The honest correction is the width of the claim, not its level.
+  //
+  // ⚠️ Seiler: improvement in recreational runners is FRONT-LOADED, so these
+  // decelerate (+0.27, +0.20, +0.20) rather than climbing linearly. The exact
+  // curve is under-evidenced and the board recorded INSUFFICIENT EVIDENCE on it;
+  // anchoring on §13 sidesteps that, because it requires only that we stop
+  // contradicting ourselves, not that we know the true curve.
+  //
+  // ⚠️ NOT ROUND NUMBERS ON PURPOSE. These are offsets of 3, 7, 10 and 13
+  // within the 15-wide band, i.e. exactly the shipped intermediate row
+  // (35+3=38, 35+7=42, 35+10=45, 35+13=48). Rounding them to 0.47/0.67/0.87
+  // lands on 42.05/45.05/48.05 and moves the majority path by a tenth of a
+  // VDOT for no reason — the point of reusing this row is that it does NOT move.
+  ESTIMATE_VDOT_BAND_FRACTIONS: {
+    '<6mo':   0.2000,   //  3/15
+    '6-18mo': 0.4667,   //  7/15
+    '2-5yr':  0.6667,   // 10/15
+    '5yr+':   0.8667,   // 13/15
+  },
+
+  // §109 Am.1 — conservatism on an UNMEASURED estimate. Deliberately larger
+  // than §10's `VDOT_CONSERVATIVE_DISCOUNT_PCT: 3`, which discounts paces
+  // derived from a real benchmark: there the engine is protecting a runner from
+  // training at race-day output, here it is hedging a number nobody measured at
+  // all. The two are not the same quantity and must not share a constant — the
+  // route previously applied a bare `* 0.95` with no name and no principle,
+  // which is a second conservatism doctrine by accident.
+  ESTIMATE_VDOT_DISCOUNT_PCT: 5,
+
+
   // R2/L-03 — staleness compounding. Discount scales with benchmark age:
   // base discount ≤ FRESH_WEEKS, then +PER_4WK_PCT per additional 4-week
   // block, capped at MAX_PCT. Replaces the binary 6-month threshold; the

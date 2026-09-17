@@ -11,6 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { estimateVdotRange } from '@/lib/plan/estimateVdot'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { velocityAtFraction, applyVdotDiscount, parseBenchmarkTime, calcVDOT } from '@/lib/plan/ruleEngine'
@@ -191,21 +192,6 @@ function buildArc(
     currentSeconds,
     goalSeconds:     isUltra ? null : goalSeconds,
   }
-}
-
-// State 4 bracket: fitness_level × training_age → estimated VDOT midpoint, then −5% conservative discount
-function bracketVdot(fitnessLevel: string | undefined, trainingAge: string | undefined): number | null {
-  const table: Record<string, Record<string, number>> = {
-    beginner:     { '<6mo': 32, '6-18mo': 35, '2-5yr': 37, '5yr+': 37 },
-    intermediate: { '<6mo': 38, '6-18mo': 42, '2-5yr': 45, '5yr+': 48 },
-    experienced:  { '<6mo': 45, '6-18mo': 48, '2-5yr': 52, '5yr+': 56 },
-  }
-  const fl  = fitnessLevel ?? 'intermediate'
-  const ta  = trainingAge  ?? '6-18mo'
-  const row = table[fl]
-  if (!row) return null
-  const midpoint = row[ta] ?? row['6-18mo']
-  return midpoint * 0.95
 }
 
 // vdotFromAerobicSpeedMs now lives in lib/plan/aerobicEstimate (single owner,
@@ -478,19 +464,32 @@ export async function GET(req: NextRequest) {
   }
 
   // ── State 4: wizard bracket — no R31/R32 (static estimate, can't show improvement)
-  const bracketV = bracketVdot(meta.fitness_level, meta.training_age)
-  if (bracketV !== null) {
+  const bracketRange = estimateVdotRange(meta.fitness_level, meta.training_age)
+  if (bracketRange !== null) {
+    const isRange = bracketRange.high - bracketRange.low > 0.05
+    // A range renders as "24\u201329 min" (en dash — correct for a range, and the
+    // card prints whatever string the route hands it, so widening the estimate
+    // needed no UI change at all).
+    const distances = isRange
+      ? projectRaceTimes(bracketRange.high, true).map((d, i) => {
+          const slow = projectRaceTimes(bracketRange.low, true)[i]
+          return { ...d, formattedTime: `${d.formattedTime}\u2013${slow.formattedTime}` }
+        })
+      : projectRaceTimes(bracketRange.low, true)
+    const bracketV = (bracketRange.low + bracketRange.high) / 2
     return NextResponse.json({
       state:       4,
       confidence:  'low' as const,
       // Em dash removed (BRAND-EMDASH-01 standard) and the claim narrowed: it
       // is not a "rough estimate" OF the runner, it is an estimate FROM what
       // they told the wizard. The card's own lead says what fixes it.
-      label:       'Estimated from your wizard answers, not your running',
+      label:       isRange
+        ? 'Estimated from your wizard answers, and you skipped how long you have been running'
+        : 'Estimated from your wizard answers, not your running',
       source:      'wizard',
       vdot:        parseFloat(bracketV.toFixed(1)),
       discountPct:  5,
-      distances:   projectRaceTimes(bracketV, true),  // coarse: a table lookup cannot support seconds
+      distances,   // coarse: an unmeasured estimate cannot support seconds
       target:      null,   // no baseline comparison on bracket estimate
       recalibrationSuggested: false,
       upgradeCtaType: 'both',  // both benchmark and Strava improve this
