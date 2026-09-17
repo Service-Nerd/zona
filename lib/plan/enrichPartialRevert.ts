@@ -80,5 +80,8 @@ function revertWeekCopy(week: Week, rule: Week): Week {
     if (!s || !r) continue
     sessions[day] = { ...s, label: r.label, coach_notes: r.coach_notes }
   }
-  return { ...week, label: rule.label, theme: rule.theme, sessions }
+  // AI-PROVENANCE-01 — mark it. This week now carries the ENGINE's words on an
+  // otherwise-enriched plan, and nothing recorded that, so the Session Detail
+  // card went on crediting Kit for copy this function had just thrown away.
+  return { ...week, label: rule.label, theme: rule.theme, sessions, enrichment_reverted: true }
 }

@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-17 — AI-PROVENANCE-01 · Our AI coach was taking credit for things a human wrote
+**Shipped:** Kit's byline and the AI rail now appear only when a model demonstrably wrote the copy. Single owner, every unknown resolves to "not AI".
+**Dev learning:** The card decided whether AI wrote something by checking whether the notes field was non-empty. That answers "are there notes", not "did a model write them", and our rule engine writes notes too. Measured: 41.2% of sessions on a free plan carry rule-engine copy, and a free plan is never enriched at all, so every one of those was falsely attributed. The founder found it on the one session whose copy we deliberately protect FROM the AI.
+**Product/creator learning:** The error here is not symmetric and that single observation settled every ambiguous case. Crediting a model for something a human wrote is a false claim about who is talking to the runner. Failing to credit it is just modesty. So the rule became: answer true only when you can affirm a model wrote it, and let every unknown fall to false. That turned three genuinely hard edge cases into one line each.
+**AI-building learning:** Provenance has to be recorded at the moment of authorship, not reconstructed afterwards from the shape of the data. We had a plan-level flag saying enrichment "applied_partial", while a separate function was quietly handing individual weeks back to the rule engine and marking nothing. The flag was true and the week was not. Reconstructing provenance from a field's emptiness was always going to drift.
+**The honest bit:** This is the third time this week the actual defect was a comment or a signal that described something the code did not do. The card's own comment said "AI mark only when content came from the plan enricher" — which is exactly right, and exactly not what the line underneath it tested.
+**Hook material:** Our AI coach had a byline on 41% of the sessions in a free training plan. Free plans never touch the AI. The app was deciding "the model wrote this" by checking whether the text field had anything in it.
+**Postable?:** yes
+
 ## 2026-09-17 — TT-STRUCTURE-01 + TT-NOTE-HONESTY-01 · The 5K time trial was showing the runner 2 km, and the note beside it said 5
 **Shipped:** The §78 benchmark renders as its own shape: warm-up 10 min, main set 5 km exactly, cool-down 5 min. Plus the note stops promising free runners a paid outcome.
 **Dev learning:** One bug, not the three the founder reported. The rule engine builds the trial with a comment saying exactly what its fields mean — `distance_km` IS the measurement, `duration_mins` is the effort, warm-up and cool-down live in the note. The composer assumed the opposite for both fields, split the 29 minutes 15/main/5, and stamped distances at 5km ÷ total. So the warm-up ate three of the five kilometres, the time trial was left with two, and the cool-down absorbed the rounding and rendered as zero. A producer and a consumer disagreeing about what a field means, with a comment stating the truth and nothing enforcing it.

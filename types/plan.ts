@@ -349,6 +349,10 @@ export interface Week {
    *  layer can mark only this AI copy. Absent when the enricher is skipped or fails
    *  (silent — ADR-006). Only ever populated on maintenance_restoration/base weeks. */
   coach_debrief?: string
+  /** AI-PROVENANCE-01 — ENRICH-PARTIAL-01 reverted this week's copy to the rule
+   *  engine's, so `meta.enrichment: 'applied_partial'` must not be read as
+   *  "a model wrote this week". Set only by `revertWeekCopy`. */
+  enrichment_reverted?: boolean
 
   /** MAINT-07 — §75 Phase 3 marker: the final `PHASE3_LAST_WEEKS` weeks of the
    *  maintenance block, where the app re-opens the forward conversation (the

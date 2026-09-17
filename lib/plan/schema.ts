@@ -113,6 +113,12 @@ export const WeekSchema = z.object({
   // MAINT-02 — AI weekly debrief on maintenance weeks (PAID, `maintenance_coaching`).
   // Optional so legacy + non-enriched plans parse; distinct from `theme` (rule-engine).
   coach_debrief:        z.string().optional(),
+  // AI-PROVENANCE-01 — ENRICH-PARTIAL-01 reverted this week's copy to the rule
+  // engine's. Set ONLY by `revertWeekCopy`, so `meta.enrichment: 'applied_partial'`
+  // stops being a plan-wide claim that a model wrote every word: without it, a
+  // reverted week's engine copy still rendered Kit's byline. Absent on every
+  // other week and on every legacy plan, which reads as "not reverted".
+  enrichment_reverted:  z.boolean().optional(),
 })
 
 // ─── Phase ────────────────────────────────────────────────────────────────────
