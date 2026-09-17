@@ -6893,7 +6893,13 @@ function buildRulePlanOnce(
             reasons.push(`Peak weekly volume ${peakKmActual} km is below the ${Math.round(volumeFloor)} km floor for a time-targeted ${distKey} (${Math.round((volumeFloor / distKm) * 100)}% of race distance).`)
           }
           if (lrFails) {
-            reasons.push(`Peak long run ${Math.round(actualPeakLrKm * 10) / 10} km is below the ${Math.round(longRunFloorKm * 10) / 10} km floor (${Math.round(GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey as 'HM' | 'MARATHON'] * 100)}% of race distance) — week-on-week long-run cap (§45) prevented reaching the ratio.`)
+            // COPY-GLYPH-01 (founder-reported, 2026-09-17) — this sentence used to
+            // end "week-on-week long-run cap (§45) prevented reaching the ratio."
+            // A § is how the constitution talks to US; the runner cannot open
+            // CoachingPrinciples, so it reads as a glitch. "The ratio" was jargon
+            // for the same reason. The rule is stated in words instead, and the
+            // em dash went with it (BRAND-EMDASH-01's standard).
+            reasons.push(`Peak long run ${Math.round(actualPeakLrKm * 10) / 10} km is below the ${Math.round(longRunFloorKm * 10) / 10} km floor (${Math.round(GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey as 'HM' | 'MARATHON'] * 100)}% of race distance): there is a limit on how much the long run can grow week to week, and it ran out of room before reaching that floor.`)
           }
           // MAINT-LABEL-01 (2026-09-11, second pass) — two defects in one string.
           //

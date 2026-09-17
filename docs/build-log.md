@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-17 — COPY-GLYPH-01 · We were showing runners legal citations from our own rulebook
+**Shipped:** The § symbol no longer reaches a runner (10.8% of plans to 0%), and a guard on the engine's emitted copy keeps it out.
+**Dev learning:** One source string was responsible for all of it. The tempting fix is to grep the codebase for §, but that is the wrong instrument: there are ~259 of them and almost all are correct, because a doctrine reference in a code comment or a developer-facing invariant field is exactly what it should be. The only question that matters is "did a runner see it", and the only way to answer that is to generate plans and read what comes out.
+**Product/creator learning:** The founder has mentioned this symbol more than once and I had treated it as a typo each time. It is not a typo, it is a category error: the note was written in the register we use to talk to each other about the rules, and shipped to someone who cannot open the rulebook. "The ratio" in the same sentence was the same mistake wearing different clothes.
+**AI-building learning:** The guard had to test the OUTPUT, not the source, and that distinction keeps recurring. A string assembled at runtime from a template and three numbers does not exist anywhere you can grep. Our marketing em-dash guard reads files, which is precisely why the brand doc has carried "currently out of scope: the app" for weeks as a known gap.
+**The honest bit:** The em-dash half ships as a ratchet rather than a pass, because em dashes are in 100% of plans including 26,727 session labels. I could have made it green by scoping it to the fields that happen to be clean. A test that asserts the debt cannot grow is honest; a test that asserts a problem does not exist because you looked away from it is worse than no test.
+**Hook material:** Our training app was showing runners things like "(§45)" in their plan. That is a citation to our own internal rulebook, which they cannot read. We had been treating it as a typo. It was in 10.8% of every plan we generated.
+**Postable?:** yes
+
 ## 2026-09-17 — AI-PROVENANCE-01 · Our AI coach was taking credit for things a human wrote
 **Shipped:** Kit's byline and the AI rail now appear only when a model demonstrably wrote the copy. Single owner, every unknown resolves to "not AI".
 **Dev learning:** The card decided whether AI wrote something by checking whether the notes field was non-empty. That answers "are there notes", not "did a model write them", and our rule engine writes notes too. Measured: 41.2% of sessions on a free plan carry rule-engine copy, and a free plan is never enriched at all, so every one of those was falsely attributed. The founder found it on the one session whose copy we deliberately protect FROM the AI.

@@ -410,7 +410,8 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 >   `enforceViolations` throws on error in dev/test and 15.2% of inputs would have taken verify
 >   down. At 0.7% that objection is nearly gone. **If it does not reach ~0, the producer fix
 >   failed** and that is the test.
-> - 🔲 **BRAND-EMDASH-01** — the §23 `structuralPeakInversion` note (`ruleEngine.ts`) contains TWO
+> - 🔄 **BRAND-EMDASH-01** *(mechanism half CLOSED 2026-09-17 by COPY-GLYPH-01 — `emittedCopyGlyphs.test.ts` now guards the engine's EMITTED copy, which is what this item asked for. What remains is the FOUNDER DECISION: em dashes are in **100% of plans**, 26,727 session labels alone (`Easy run — Zone 2`), so removing them is a visible change to every session name, not a copy tidy. The guard holds the debt at 12 runner-facing fields meanwhile and re-baselines DOWN only.)*
+>   ORIGINAL FILING:  — the §23 `structuralPeakInversion` note (`ruleEngine.ts`) contains TWO
 >   em dashes in runner-facing copy, against the 2026-09-11 founder standard. Pre-existing and
 >   unnoticed because `noEmDash.test.ts` covers MARKETING surfaces only, not plan `meta` notes.
 >   Worth extending that guard to the engine's emitted copy rather than fixing the one line.
