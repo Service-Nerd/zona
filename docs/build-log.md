@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-17 — DOC-STATE-GATE-01 · Asked three times if the docs were current, right three times, wrong three times
+**Shipped:** A hook that flags a dated "state at end of day" paragraph once a ship has moved past the commit it names.
+**Dev learning:** Nothing I wrote was wrong when I wrote it. I wrote "state at END of the day" in the middle of the day and then kept working; six more ships landed after one of those commits. The document did not decay, the tree moved underneath a sentence that had frozen a number.
+**Product/creator learning:** Look at what did NOT go stale on the same day: every feature-registry row, every build-log entry, every principle amendment, every invariant. All of those are checked by a hook on every commit. The only things that rotted were the paragraphs where I am the only check. I had spent the whole day telling the founder that a rule which holds only while someone remembers is not a rule, and applying that to the engine and not to my own reporting.
+**AI-building learning:** Its first catch was my own next commit, two minutes after I wired it. That is the best possible outcome for a gate and the clearest sign the failure was structural rather than careless.
+**The honest bit:** The gate has a hole I found the same evening, by hand: it went six hours without a registry row of its own, because the ship-record hook exempts tooling-only commits and this one only touched hook scripts and CLAUDE.md. The thing I built to stop documents going stale had a stale document. Found by an audit, not by a hook, which is exactly the situation it exists to prevent.
+**Hook material:** I was asked three times in one day whether the documents were up to date. I said yes three times. All three answers were true when I gave them and false within the hour, because I had written "end of day" in the middle of the day and then carried on working.
+**Postable?:** yes
+
 ## 2026-09-17 — PLAN-NOTE-VOICE-01 · We shipped a feature nobody had looked at, and it was a wall of text
 **Shipped:** The "Why this plan" tiles go from a mean of 130 words to 67, worst case 254 to 117, and 510 of 513 plans now show exactly one tile instead of two or three.
 **Dev learning:** The registry entry for the original ship contains the sentence "Not visually smoke-tested behind auth (trivial map over tested logic + proven components)". That is the whole story. The logic was tested, the components were proven, the map between them was trivial, and the result was a page of engine-voice shortfall that no runner could use. Every part was verified and the thing itself was never seen.

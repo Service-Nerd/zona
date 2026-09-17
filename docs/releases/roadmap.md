@@ -64,8 +64,8 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > code.** So the path is everything between the email and a plan on screen.
 > Nothing else is on it.
 
-> ✅ **ENGINE STATE, end of 2026-09-17** (`6562836`). `npm run verify` exit 0
-> (**2,081 tests / 226 files**), **0 hard failures**, **118 invariants**
+> ✅ **ENGINE STATE, end of 2026-09-17** (`aa7bd7f`). `npm run verify` exit 0
+> (**2,095 tests / 228 files**), **0 hard failures**, **118 invariants**
 > reconciled against `plan-invariants.md` in both directions with zero orphans
 > either way, property sweep **15,974 plans / 0 new above baseline**, archetype
 > matrix 65/0, `invariant:liveness` **107/118 woken (91%) with the
@@ -97,6 +97,8 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > | `GRID-MARATHON-CAPABLE-01` | The cohort grid cannot express a marathon-capable runner. |
 > | `STEPBACK-STALE-PEAK-01` | Peak step-back reads a stale peak. |
 > | `INV-MSG-ROUNDING-01` | P3. Invariant messages round inconsistently. |
+> | `PLAN-NOTE-PLACEMENT-01` | **Founder call.** Does the plan rationale belong at the TOP of the Plan screen at all? Wood says a runner asks in week 3, not day one. Held until the shortened version is seen on device. |
+> | `BRAND-EMDASH-01` | **Founder call.** Mechanism half CLOSED by COPY-GLYPH-01; what remains is the decision. Em dashes are in **100% of plans**, 26,727 session labels alone, so removing them renames every session. |
 > | `LR-DELOAD-RESUME-01` | **Record only** — board-approved, built, measured, reverted as unsafe. Kept so it is not retried. |
 >
 > ⚠️ **This block names the commit it describes.** `state-block-check.py` flags

@@ -38,11 +38,40 @@ import sys
 # Docs that carry a dated state paragraph naming the commit it describes.
 STATE_DOCS = ["docs/releases/backlog.md", "docs/releases/roadmap.md"]
 
+
+def memory_index():
+    """The assistant's MEMORY.md for this project, if it exists on this machine.
+
+    ⚠️ ADDED 2026-09-17 BECAUSE MEMORY WENT STALE TWICE IN ONE DAY. The first
+    version of this hook guarded backlog.md and roadmap.md — the two docs the
+    founder had just caught — and memory, which carries the SAME dated state
+    paragraph and the same commit SHA, was not in the list. It then went stale
+    again within hours, in exactly the way the hook existed to prevent. Guarding
+    the instances you were caught on rather than the CLASS is how a fix leaves
+    the hole it was written for.
+
+    Lives outside the repo (~/.claude/projects/<slug>/memory/MEMORY.md), so this
+    is best-effort and silent when absent — another machine or another user must
+    not see a warning about a file they do not have.
+    """
+    slug = ROOT.replace("/", "-")
+    path = os.path.join(
+        os.path.expanduser("~"), ".claude", "projects", slug, "memory", "MEMORY.md"
+    )
+    return path if os.path.exists(path) else None
+
 # A short SHA in backticks inside a state paragraph. Anchored on the phrases
 # those blocks actually use, so an unrelated SHA elsewhere in the file is not
 # mistaken for the state marker.
+#
+# ⚠️ `State at \d` IS LOAD-BEARING, not tidiness. When the memory arm was added
+# the pattern only knew "state at end of", and MEMORY.md writes
+# "State at 2026-09-17 (end of day)" — so the arm was wired, shipped, and
+# matched nothing. Caught by falsifying it rather than by the tests passing:
+# a hook that reads a file it can never match is the inert-gate class this repo
+# has shipped more than once. Add the phrasing when you add the file.
 STATE_LINE_RE = re.compile(
-    r"(?:PICK UP HERE|state at end of|ENGINE STATE)[^\n]*\n(?:[^\n]*\n){0,3}?[^\n]*?`([0-9a-f]{7,40})`",
+    r"(?:PICK UP HERE|state at end of|State at \d|ENGINE STATE)[^\n]*(?:\n[^\n]*){0,3}?`([0-9a-f]{7,40})`",
     re.IGNORECASE,
 )
 
@@ -73,10 +102,11 @@ def main():
 
     head = run("git", "rev-parse", "--short=7", "HEAD")
     stale = []
-    for rel in STATE_DOCS:
-        path = os.path.join(ROOT, rel)
-        if not os.path.exists(path):
-            continue
+    targets = [(rel, os.path.join(ROOT, rel)) for rel in STATE_DOCS]
+    mem = memory_index()
+    if mem:
+        targets.append(("MEMORY.md (assistant memory)", mem))
+    for rel, path in targets:
         try:
             with open(path, encoding="utf-8") as fh:
                 src = fh.read()
