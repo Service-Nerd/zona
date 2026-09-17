@@ -125,6 +125,62 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 >
 > *Verify still open:* `grep -c '"corpus"' lib/plan/__fixtures__/invariantLivenessBaseline.json` → **9 = still open**.
 
+> 🔲 **LR-CONSEC-01 — §45 cannot see COMPOUNDING, and closing it collides with §38 and §47.** *(P1, filed 2026-09-17. Coaching Board ruled the mechanism **CORRECT** at 30%; **BUILD ATTEMPTED AND REVERTED** — it needs §38 and §47 amended first, which is a second sitting.)*
+>
+> **The defect is real and measured.** §45 compares a week to the one before it. **Nothing in the constitution looks across two**, so compounding is invisible — structurally the same blind spot §94's guard had, one principle over.
+>
+> | | Measured, 2,412 plans |
+> |---|---|
+> | Plans with a 2-week long-run rise > +40%, no deload between | **28.4%** |
+> | that window — median / p90 / **max** | 33% / 87% / **126%** |
+> | Plans with a 3-week rise > +50% | **13.1%** |
+> | that window — median / p90 / **max** | 96% / 133% / **193%** |
+>
+> Worst case **6 → 9 → 13.6 km in a fortnight**, every individual step legal.
+>
+> **Board ruling (2026-09-17): CORRECT, at a 30% rolling two-week ceiling.** 30 not 40 because only 30 closes the three-week window (13.1% → **1.6%** vs → 10.0%). McMillan's marathon-buildability objection was measured and **withdrawn**: peak long run is identical at 0/40/30 (median 29.0km, max 31.5km) because §9's 210-minute cap binds first, not §45.
+>
+> 🔴 **WHY IT DID NOT SHIP — the coupling, which is the whole point of this entry.** The invariant-level trial was clean (zero error-severity violations, zero refusals, and it made §52 and §94 *quieter*: 722→675 and 466→419). ⚠️ **That trial measured INVARIANTS and missed other principles' NAMED TESTS.** Building it broke three, and **two of them fail at 30%, 40% AND 50% — so the collision is the MECHANISM, not the number:**
+>
+> | Broken | What it asserts | Why it breaks |
+> |---|---|---|
+> | **§38** `maintenanceNotePrescriptive` | *"raising the named day count flips the profile to build"* — the note is a PRESCRIPTION, not decoration | With a two-week ceiling the long run cannot climb fast enough to clear §24's floor, so 6 days stays `maintenance`. **The plan makes a promise it no longer keeps.** |
+> | **§47** `peakLrStepbackMinutes` | the step-back is ≤ `PEAK_LR_STEPBACK_MAX_PCT` of peak | Peak is capped lower; the step-back is not, so it exceeds its own ratio (161 min vs 129.8 max). |
+> | §35 `peakLrEarnedTier` | earned tier clears §24's floor | HM peak 16km vs 17.4km floor. **Recovers at 40%** — value-dependent, unlike the two above. |
+>
+> Cohort at 30%: maintenance **48.7% → 51.6% (+2.9pp)**, mean delivered peak volume 38.4 → 37.7km, plus 2 golden snapshots.
+>
+> **DECISION NEEDED — this is a founder/board call, not an edit.** Three routes:
+> 1. **Amend §38 and §47** so the promise and the step-back ratio account for a capped climb. Correct but widest blast radius — §38's prescriptive-note doctrine is load-bearing.
+> 2. **Scope the ceiling to where it hurts most** (e.g. low-volume only, as §45 Am.2 does) and re-measure the collisions.
+> 3. **Accept the compounding** and record it as known-open under §34.
+>
+> ⚠️ **Do NOT re-attempt as a straight build.** It has been tried at 30/40/50 and §38 and §47 fail at all three.
+>
+> *Verify still open:* `grep -c "LONG_RUN_TWO_WEEK_MAX_RISE_PCT" lib/plan/generationConfig.ts` → **0 = still open**.
+
+> 🔲 **GRID-MARATHON-CAPABLE-01 — `cohortGrid` cannot express a marathon runner capable of §24, so every marathon measurement taken on it is scoped to runners who were never eligible.** *(P1, filed 2026-09-17 out of the LR-CONSEC-01 sitting. Infra, no board.)*
+>
+> §24 requires a marathon time-goal peak long run ≥ **31.65 km** (75% of race distance). §52 caps the long run at 60% of the week, so reaching that needs a week of **~52.8 km**. `cohortGrid`'s marathon `current_weekly_km` values are **20 / 35 / 50**. **Zero of its 7,776 marathon inputs can satisfy §24 by construction.**
+>
+> ⚠️ **This produced a measurement that read as a catastrophic engine finding and meant nothing**: "100% of marathon time-goal plans are maintenance-grade, 0% reach the §24 floor." True, and an artefact of the fixture. Caught only because the number was too extreme to believe. Same family as GRID-COVERAGE-01/02 and the liveness-corpus failures (2026-09-12, 09-15, 09-17) — **a grid that cannot build the shape reports the fixture, not the engine.**
+>
+> Fix: extend the marathon volume axis above ~55 km/wk, or add a targeted marathon grid (the `targetedGrid` pattern). ⚠️ **Adding an axis to `cohortGrid` doubles a check that runs in `npm run verify`** — the same runtime constraint GRID-COVERAGE-02 hit; prefer a second targeted grid.
+>
+> *Verify still open:* `npx tsx -e "import {cohortGrid} from './lib/plan/cohortGrid'; console.log(Math.max(...cohortGrid().filter(i=>i.race_distance_km>40).map(i=>i.current_weekly_km)))"` → **< 53 = still open**.
+
+> 🔲 **S24-FLOOR-REACHABILITY-01 — §24's marathon floor is unreachable for most runners, and the constitution does not say so.** *(P2, filed 2026-09-17 out of the LR-CONSEC-01 sitting. **Coaching Board question — a principle's own reachability.**)*
+>
+> Measured on 108 marathon plans built from runners who genuinely can build (55–75 km/wk, longest 24–32 km, 5–6 days, 16–20 weeks, intermediate/experienced): **peak long run median 29.0 km, MAX 31.5 km, against §24's 31.65 km floor. 0 of 108 reach it.** The best plan misses by **0.15 km — less than the 0.5 km rounding step.**
+>
+> **Cause is §9's `LONG_RUN_CAP_MINUTES` (210 min for marathon), and §24 already says the time cap wins** *("the engine never prescribes a long run that exceeds the time cap, even if doing so would satisfy this floor")*. **So this is documented intent, not a defect.**
+>
+> ⚠️ **But the consequence is not written down anywhere:** 210 minutes reaches 31.65 km only at an easy pace of ~6:38/km or quicker, so **§24's floor is structurally unreachable for every slower runner**, and **95.4% of well-trained marathon runners are classified maintenance-grade against their time goal** as a result. A principle whose floor most of its population cannot reach is either mis-stated or needs its reachability condition written into it.
+>
+> Question for the board: should §24 state the pace condition explicitly, should the floor scale with the time cap, or is "most marathoners get a maintenance-grade classification" the honest intended answer? **Do not change the time cap without a sitting — §9's 210 minutes is Willy's tissue-tolerance ceiling, not an arbitrary number.**
+>
+> *Verify still open:* `grep -c "6:38\|reachab" docs/canonical/CoachingPrinciples.md` → §24 carries no reachability note.
+
 ### 🔬 test.test marathon review — 3 board amendments (filed 2026-09-16)
 
 Coaching Board ran a fitness-for-purpose review of a real generated marathon plan (test.test@test.com, 26yo intermediate, 4:00 goal, 4 days, 60-min weekday cap, current 30 km/wk, longest-ever 12 km, plan_start 2026-09-21). Ruling: **CORRECT WITH AMENDMENT** — honest, runnable sub-4 plan; three amendments before clean sign-off. All three root-caused against `generateRulePlan` (live regen matches the stored plan byte-for-byte on the curve).
