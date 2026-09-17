@@ -1,0 +1,72 @@
+{
+  "buckets": {
+    "INJURY  masters ": {
+      "n": 3,
+      "medianBuildPct": 38.2,
+      "neverBuildsPct": 0,
+      "medianMarathonLrPctOfRace": 69.9
+    },
+    "INJURY  standard": {
+      "n": 304,
+      "medianBuildPct": 45.5,
+      "neverBuildsPct": 0,
+      "medianMarathonLrPctOfRace": 61.6
+    },
+    "healthy masters ": {
+      "n": 680,
+      "medianBuildPct": 33.3,
+      "neverBuildsPct": 10.1,
+      "medianMarathonLrPctOfRace": 62.8
+    },
+    "healthy standard": {
+      "n": 970,
+      "medianBuildPct": 41.5,
+      "neverBuildsPct": 8.1,
+      "medianMarathonLrPctOfRace": 61.6
+    }
+  },
+  "personas": [
+    {
+      "id": "M1 first-timer marathon, low base, long runway",
+      "peakLr": 26,
+      "pctOfRace": 61.61137440758293,
+      "netBuildPct": 161.11111111111111,
+      "refused": false
+    },
+    {
+      "id": "M2 charity marathon, low base, COMPRESSED 12wk",
+      "peakLr": 29.5,
+      "pctOfRace": 69.90521327014217,
+      "netBuildPct": 68,
+      "refused": false
+    },
+    {
+      "id": "M3 returning marathon + knee history",
+      "peakLr": 29.5,
+      "pctOfRace": 69.90521327014217,
+      "netBuildPct": 79.16666666666667,
+      "refused": false
+    },
+    {
+      "id": "M4 sub-4:00 marathon, busy 3-day, weekday cap 45",
+      "peakLr": 0,
+      "pctOfRace": 0,
+      "netBuildPct": 0,
+      "refused": true
+    },
+    {
+      "id": "M5 masters charity marathon (age 58)",
+      "peakLr": 29.5,
+      "pctOfRace": 69.90521327014217,
+      "netBuildPct": 94.11764705882352,
+      "refused": false
+    },
+    {
+      "id": "M1d first-timer marathon who DECLARES experienced",
+      "peakLr": 26,
+      "pctOfRace": 61.61137440758293,
+      "netBuildPct": 138.88888888888889,
+      "refused": false
+    }
+  ]
+}

@@ -13,8 +13,14 @@
  *   · a first-time marathoner with a 24-week runway and no constraints peaked at
  *     a **21 km** long run, 50% of race distance, against a 30-32 km norm.
  *
- * Run: `npm run measure:fitness [-- --json]`
+ * Run: `npm run measure:fitness [-- --json | --write]`
+ *
+ * ⚠️ GATED ON EVERY BUILD by `lib/plan/planFitness.test.ts`, inside
+ * `npm run verify`. It was NOT, for the first few hours of its life, and this
+ * repo's whole history says a check that only runs when someone remembers is a
+ * check that does not run.
  */
+import { join } from 'node:path'
 import { CHARITY_PERSONAS, charityInput, CHARITY_PLAN_START } from '../lib/plan/charityCohort'
 import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '../lib/plan/cohortGrid'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
@@ -119,7 +125,14 @@ const GENERATION_CONFIG_MASTERS = (G as unknown as { MASTERS_AGE_THRESHOLD: numb
 
 if (process.argv[1]?.includes('measure-plan-fitness')) {
   const r = measure()
-  if (process.argv.includes('--json')) { console.log(JSON.stringify(r, null, 2)); }
+  // Re-baseline. ONLY with a declared reason, exactly as cohort:shape requires —
+  // never to turn a red test green. The JSON diff is the statement.
+  if (process.argv.includes('--write')) {
+    const { writeFileSync } = require('node:fs') as typeof import('node:fs')
+    const out = join(process.cwd(), 'lib/plan/__fixtures__/planFitnessBaseline.json')
+    writeFileSync(out, JSON.stringify(r, null, 2) + '\n')
+    console.log(`baseline written: ${out}`)
+  } else if (process.argv.includes('--json')) { console.log(JSON.stringify(r, null, 2)); }
   else {
     console.log('NET BUILD — peak building week vs week 1 (deloads/taper/race excluded)\n')
     console.log('cohort               n      median build   never builds   marathon peak LR (% of race)')

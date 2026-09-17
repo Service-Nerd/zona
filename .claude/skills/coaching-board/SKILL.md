@@ -299,6 +299,14 @@ to be remembered later.
 If a change genuinely cannot be mechanically checked, say so explicitly and record
 why. An unenforceable principle is a known risk, not an oversight.
 
+**Before the board rules on anything that changes what the engine PRESCRIBES:** run
+`npm run measure:fitness` and put the numbers in the submission. It answers the one
+question the other checks cannot — *does this plan actually build the runner, and far
+enough to finish the race safely?* On 2026-09-17 a board sitting approved a change,
+the build hit its target, and the fitness harness plus the LR-CAP-BLIND-01 guard caught
+it sending a low-base beginner 7.3 → 18.5 km in a single week. A ruling made without
+these numbers is a ruling made on how a plan is CLASSIFIED, not on whether it works.
+
 **After the artifacts land:** run `scripts/r23-phase7-validation.ts` and
 `scripts/property-validate-plans.ts`. A new principle that breaks the matrix is a
 finding, not a build failure to route around.

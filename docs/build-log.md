@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-17 — PLAN-FITNESS-GATE-01 · The tool that found the bug was itself un-gated, which is the bug
+**Shipped:** `measure:fitness` now runs on every build with a baseline, instead of when someone remembers to type it.
+**Dev learning:** I built a harness that found the worst defect of the day, wrote it up, shipped two fixes off the back of it — and left it as a script nobody would run again. Asked directly whether it was part of the process, the honest answer was no. That is the exact shape of every silent-check failure already in this repo's history: eslint installed but never configured, invariants registered but never proven able to fire, config declared but never read.
+**Product/creator learning:** The assertion that matters has no tolerance. Build percentages and long-run distances get 5pp and 3pp of room because engine work legitimately moves them. "Did this runner's plan never make them fitter" gets zero, because there is no version of that which is a judgement call.
+**AI-building learning:** Falsifying it took two minutes and was the only part that proved anything: revert the fix it guards, watch three of five assertions fire and name the cohorts. A green new test tells you nothing at all — this session already shipped a gate that caught its own author eight hours later, and that only worked because it had been shown to go red first.
+**The honest bit:** The prompt for this was the founder asking "is that baked into our practice, and how does it run without prompting?" — not me noticing. I had just spent a day proving that checks which depend on memory do not run, and then left one depending on memory.
+**Hook material:** I built a tool that found a defect nothing else could see, used it to ship two fixes, and left it as a script you had to remember to type. On the same day I was explaining why checks that rely on remembering don't run.
+**Postable?:** yes
+
 ## 2026-09-17 — LR-DELOAD-CUT-01 (§3 Am.) · The recovery week was cutting the wrong thing, and I needed three goes to see it
 **Shipped:** A deload now cuts the long run in proportion to the week instead of harder than it. Closes the last marathon shortfalls; the masters knee-history runner goes 26 → 29.5km.
 **Dev learning:** §3 says volume drops to 70% "of the prior build week" — a sentence about the week. The long run was being cut a median 30% against the week's 22%, on half of all deloads, because it was re-derived from scratch rather than reduced. It then had to climb back and ran out of weeks. Every remaining marathon gap traced to that one line.
