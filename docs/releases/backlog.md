@@ -10,7 +10,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at end of 2026-09-17
 
-**Everything is committed, pushed and deployed** (`aa7bd7f`, production Ready, www.zonna.run HTTP 200). `npm run verify` exit 0 (**2,076 tests / 226 files**) · **0 hard failures** · sweep **15,974 plans, no new violations** · matrix **65/0** · `invariant:liveness` **107/118, unclassified = 0** · deviation scan **HIGH 0 / MED 26** · `verify:parity` 19.3% · `cohort:shape` re-baselined with every move declared.
+**Everything is committed, pushed and deployed** (`5da86d5`, production Ready, www.zonna.run HTTP 200). `npm run verify` exit 0 (**2,076 tests / 226 files**) · **0 hard failures** · sweep **15,974 plans, no new violations** · matrix **65/0** · `invariant:liveness` **107/118, unclassified = 0** · deviation scan **HIGH 0 / MED 26** · `verify:parity` 19.3% · `cohort:shape` re-baselined with every move declared.
 
 > ✅ **Doc audit run mechanically at end of day, not asserted.** All **10** of today's `feat(`/`fix(` scopes carry a feature-registry row (ID in the first cell) and a build-log `##` entry. All **5** principle amendments (§2 Am.3, §3 Am., §24/§80 Am., §45 Am.2, §94 Am.1) are in `CoachingPrinciples.md` with their sittings in `docs/decisions/`. **118 invariants in `invariants.ts` = 118 rows in `plan-invariants.md`**, reconciled in both directions with zero orphans either way. Every shipped item below is marked ✅ closed.
 

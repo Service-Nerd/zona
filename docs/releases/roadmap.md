@@ -64,7 +64,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > code.** So the path is everything between the email and a plan on screen.
 > Nothing else is on it.
 
-> ✅ **ENGINE STATE, end of 2026-09-17** (`aa7bd7f`). `npm run verify` exit 0
+> ✅ **ENGINE STATE, end of 2026-09-17** (`5da86d5`). `npm run verify` exit 0
 > (**2,095 tests / 228 files**), **0 hard failures**, **118 invariants**
 > reconciled against `plan-invariants.md` in both directions with zero orphans
 > either way, property sweep **15,974 plans / 0 new above baseline**, archetype
