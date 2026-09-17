@@ -12,7 +12,7 @@ import { z } from 'zod'
 // falling back to whatever data is available; never throws.
 
 import { SESSION_FORMAT, sessionSplit } from './sessionFormat'
-import { isLongRun, isShakeout } from './sessionRole'
+import { isLongRun, isShakeout, isTimeTrial } from './sessionRole'
 import type { Session } from '@/types/plan'
 import type { SessionCatalogueRow } from './sessionCatalogueData'
 
@@ -61,7 +61,7 @@ export interface SessionStructure {
   cooldown:           SessionPart
   total_duration_mins: number
   /** Stable identifier the UI may use to map to icons/labels. */
-  shape: 'easy_run' | 'long_run' | 'long_run_with_mp' | 'quality_continuous' | 'quality_repeats' | 'quality_progression' | 'shakeout' | 'race' | 'strength' | 'rest' | 'unknown'
+  shape: 'easy_run' | 'long_run' | 'long_run_with_mp' | 'quality_continuous' | 'quality_repeats' | 'quality_progression' | 'time_trial' | 'shakeout' | 'race' | 'strength' | 'rest' | 'unknown'
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────────
@@ -184,6 +184,45 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
       total_duration_mins: total,
       shape: isLong ? 'long_run' : 'easy_run',
     }, kmPerMin)
+  }
+
+  // ── 5K time trial (§78) ─────────────────────────────────────────────────────
+  //
+  // THE ONE SHAPE WHOSE PARTS DO NOT PARTITION THE TOTAL, and the reason this
+  // branch exists. `ruleEngine.ts` builds the trial saying so in as many words:
+  // `distance_km` IS the measurement and `duration_mins` is "a rough estimate of
+  // the effort itself (warm-up/cool-down live in the note)". Every other shape
+  // means the opposite by both fields, so the generic path below carved a
+  // warm-up OUT of the 5 km — and a runner opening their benchmark session read
+  // "warm-up ~3km · main set ~2km · cool-down ~0km" for a 5 km time trial,
+  // while Kit's note beside it said 5 km (founder-reported, 2026-09-17).
+  //
+  // No new numerics. The warm-up is `warmup_min_duration_mins` because that IS
+  // the ten minutes the ratified note already promises the runner, so the prose
+  // and the structure now read the same constant instead of drifting; the
+  // cool-down is the universal floor, which is what "cool down easy" means.
+  if (isTimeTrial(session)) {
+    const wuMins = SESSION_FORMAT.UNIVERSAL.warmup_min_duration_mins
+    const cdMins = SESSION_FORMAT.COOLDOWN.min_duration_mins
+    return {
+      warmup: part(wuMins, 'Z1→Z2', 'Easy build, then strides. Arrive ready, not tired.'),
+      strides: {
+        count:         SESSION_FORMAT.WARMUP.strides_count,
+        duration_secs: SESSION_FORMAT.WARMUP.strides_duration_seconds,
+        description:   `${SESSION_FORMAT.WARMUP.strides_count}×${SESSION_FORMAT.WARMUP.strides_duration_seconds}s strides at end of warm-up.`,
+      },
+      // The effort itself: the trial's own distance, at its own duration. NOT
+      // apportioned and NOT an estimate — you run exactly this far and the
+      // time is the result.
+      main: { ...part(total, session.zone ?? 'Zone 4–5', mainSetDescription(catalogueRow, session)), distance_km: session.distance_km ?? undefined },
+      cooldown: part(cdMins, 'Z1', 'Easy jog or walk. The measurement is done.'),
+      // Time on feet, honestly — the warm-up and cool-down are ADDITIVE here,
+      // not slices. `distance_km` stays the trial alone, because that is what
+      // the plan counts (sumWeeklyKm, §1, §52) and changing it would be a
+      // prescription change, not a display fix.
+      total_duration_mins: wuMins + total + cdMins,
+      shape: 'time_trial',
+    }
   }
 
   // ── Quality session ─────────────────────────────────────────────────────────

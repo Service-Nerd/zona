@@ -49,6 +49,17 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ### 🔜 OPEN — nothing urgent
 
+> 🔲 **TT-FREE-BENCHMARK-01 — a free runner is prescribed a benchmark whose result they cannot apply.** *(P2, filed 2026-09-17 out of the TT-STRUCTURE-01 investigation. **SLT question, not a defect** — the copy half is already fixed.)*
+>
+> **Measured:** the §78 recalibration time trial is placed on **both** tiers — `free → recalibration_weeks: [8]`, `paid → [8]` on identical input. Applying the result is PAID (`dynamic_reshape_r20`, ADR-014), so a free runner runs a maximal 5K measurement and the paces it exists to refresh never move.
+>
+> **Not obviously wrong.** CLAUDE.md’s rule is *gate richness, never gate access*, and a runner who knows their fresh 5K time has something real even if the engine will not rewrite around it. `RecalibrationTile` already says so honestly, and TT-NOTE-HONESTY-01 stopped the coach note promising otherwise. So nothing currently **lies** to a free runner — this is a question about whether prescribing it is the right product call.
+>
+> **The three options, for the SLT:** (a) leave it — the measurement has standalone value and the tile is the upgrade moment; (b) let free runners apply the result once per plan — the recalibration is a pure function, the cost is real but bounded; (c) stop placing the trial on free plans — cleanest, but removes a genuinely useful session and weakens §78 for the tier that most needs a reality check on pace.
+>
+> **Do not "fix" this by deleting the trial from free plans without the SLT** — §78 exists because a stale VDOT propagates for a whole plan, and that is worse for a beginner than for anyone.
+
+
 > 🔲 `S52-LOPSIDED-BOUND-01` **(P1, board)** — longer long runs make more weeks lopsided; marathon `maintenance` rose 68% → 72.7%, all §52. Three routes recorded.
 > 🔲 `S24-FLOOR-REACHABILITY-01` **(P2, board)** — the last 1.2 km on marathon time goals.
 > 🔲 `LR-CONSEC-01` · `GRID-MARATHON-CAPABLE-01` · `MAINT-LIVENESS-01` · `STEPBACK-STALE-PEAK-01` · `INV-MSG-ROUNDING-01` (P3) · `LR-DELOAD-RESUME-01` (record only).

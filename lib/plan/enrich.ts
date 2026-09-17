@@ -6,6 +6,7 @@
 // See ADR-006 for the hybrid generation architecture.
 
 import type { Plan, GeneratorInput } from '@/types/plan'
+import { isTimeTrial } from './sessionRole'
 import { EnrichedPlanSchema } from './schema'
 import type { Tier } from './ruleEngine'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
@@ -438,16 +439,15 @@ function mergePlan(
       // and silently deletes the only instruction that makes the feature work.
       // `meta.recalibration_weeks` still claimed the week recalibrated.
       //
-      // Keyed on `type === 'hard'`, which is structural and exact:
-      // `applyRecalibrationTimeTrial` (ruleEngine.ts) is the ONLY producer of
-      // that type anywhere in the codebase. Not keyed on the label, which the
-      // enricher is free to rewrite (D-17), nor on `meta.recalibration_weeks`,
-      // which would make this depend on two fields staying in step.
+      // `isTimeTrial()` (sessionRole.ts) is the single owner of the test — it
+      // was written out by hand here first, and `sessionComposer` needed the
+      // same fact, so it is named once (D-08). The reasoning lives with the
+      // predicate.
       //
       // The LABEL is protected with the notes, deliberately: "5K time trial"
       // tells the runner what the session is for, and a renamed measurement is
       // the same defect one field over.
-      if (session.type === 'hard') continue
+      if (isTimeTrial(session)) continue
       if (es.label) session.label = es.label
       // §28 — keep the engine's stride line if the enricher's rewrite dropped it
       // (session.coach_notes still holds the engine notes at this point).

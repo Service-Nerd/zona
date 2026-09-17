@@ -1426,6 +1426,24 @@ SESSION STRUCTURE
 
 **The figures reconcile (SESSION-RECONCILE-01).** Warm-up + main-set + cool-down always sum to the session total the runner sees at the top of the card, and on an MP long run the easy + race-pace rows sum to the main-set total — by distance under the km toggle, by duration under time. Before this the race-pace segment rendered as a bare `40%` with no km/min (so the visible parts summed to *total − segment*), and each part rounded independently (2 + 9 + 2 against a 22 km header). The single owner is `resolveDisplayFigures()` in `lib/plan/sessionSteps.ts` (whole-unit distances apportioned to the total via `apportionRoundedDistance`); the guarantee is corpus-tested in `sessionReconcile.test.ts`. **Any new session shape must keep it: its parts must sum to its total on the card.**
 
+**Time-trial variant — the one shape whose parts do NOT partition the total.** The §78 benchmark’s `distance_km` IS the measurement; `ruleEngine` puts the warm-up and cool-down *outside* it deliberately, because the trial alone is what the plan counts (`sumWeeklyKm`, §1, §52). So the main set shows the trial **exactly, with no `~`** — every other figure on this card is an estimate and this one is the prescription — while the bookends stay in **minutes**. There is no honest distance to put on them: *“cool down easy”* carries no number, and inventing one breaks `zone-rules.md`’s never-invent rule. That is the same principle the metric rule above already applies to a hill rep at RPE, applied per **part** rather than per session.
+
+```
+┌ WARM-UP ────────────── 10 min · Z1→Z2 ┐
+│ 1 ● Easy run                  10 min   │
+│ 2 ● Strides                  4 × 20s   │
+└─────────────────────────────────────┘
+┌ MAIN SET ⓘ ─────────── 5km · Zone 4–5 ┐   ← exact, the measurement itself
+│ 3 ● Main set                    5km    │
+│                        5K time trial    │
+└─────────────────────────────────────┘
+┌ COOL-DOWN ─────────────── 5 min · Z1 ┐
+│ 4 ○ Easy jog / walk            5 min   │
+└─────────────────────────────────────┘
+```
+
+> ⚠️ **Founder-reported, 2026-09-17 — what this variant exists to stop.** With no branch, the generic path carved the warm-up OUT of the 5 km and the card read **“warm-up ~3km · main set ~2km · cool-down ~0km”**, beside a Kit note saying *“5 km as hard as you can hold”*. The measurement the whole recalibration feature depends on was shown as 2 km. **The warm-up minutes are sourced from `warmup_min_duration_mins` precisely because that is the number the note already promises**, so the prose and the structure now read the same constant instead of drifting apart. Contract: `TT-STRUCTURE-01` in `sessionReconcile.test.ts`, which asserts the main set equals the trial AND that the card agrees with the note.
+
 **Data:** the main set renders from `session.derived_set` (ADR-019) via `buildStepGroups()` in `lib/plan/sessionSteps.ts` (pure, tested). Falls back to the composed one-line `structure.main.description` when a session has no derived set (v1 rows, easy runs). The ⓘ on the main-set header opens the zone-education sheet.
 
 **Provenance:** all rule-engine output — **no `<AIMark />`** (Pattern 16). Zones and pace are computed, not model-authored.

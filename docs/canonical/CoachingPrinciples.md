@@ -3403,11 +3403,36 @@ in place of the engine's own:
 
 > "This is a measurement, not a session. **Log the result in your profile and your paces update for the next block.**"
 
+> **Amendment (TT-NOTE-HONESTY-01, 2026-09-17) — that second sentence is no
+> longer the shipped copy, and the reason is not style.** It promised every
+> runner an outcome the free tier cannot deliver: recalibration is PAID
+> (`dynamic_reshape_r20`, ADR-014), and free plans carry the trial too
+> (measured 2026-09-17 — both tiers generate `recalibration_weeks: [8]`). The
+> runner was told "your paces update" while `RecalibrationTile`, one surface
+> away, correctly told the same runner it was a paid feature. **Two surfaces,
+> one fact, disagreeing** — and the honest one was not the prescription.
+> "In your profile" was also the wrong place: the entry point is a tile on
+> Today, and Me's route is labelled "Race benchmark".
+>
+> Now: *"This is a measurement, not a session. Log the time when you're done
+> and you'll get the option to rebuild your paces around it."* True at both
+> tiers, names no screen, and keeps ADR-014's prompted-and-confirmed model
+> intact — the rewrite is never silent. The tile remains the single owner of
+> what the option costs.
+>
+> **Board-exempt:** coaching copy and voice, governed by `brand.md`, not the
+> Coaching Board (ADR-017). No numeric, no prescription change — the session,
+> its distance and its effort are untouched.
+>
+> **Still open, and it is an SLT question rather than a copy one:** a free
+> runner is prescribed a benchmark whose result they cannot apply. Filed as
+> `TT-FREE-BENCHMARK-01`.
+
 Fluent, on-voice, and **states the opposite of this principle** — while deleting the only instruction the feature depends on. **Nothing recalibrates unless the runner logs a result** (ADR-014), so the plan went on claiming week 8 was a recalibration week while the runner had been told it was pace work.
 
 **How it escaped — the transferable part.** `validatePlan` *does* run post-enrichment (PV2-A), so the architecture was right. But the only copy invariant that could have caught it opened with `if (session.type !== 'quality') continue`, and this session is typed `hard`. **The `hard` typing chosen above so the trial would not count against `QUALITY_SESSIONS_PER_WEEK_MAX` also exempted it from every quality-scoped copy check** — a type chosen to opt out of one rule silently opted it out of an unrelated one. Worth remembering whenever a type is picked to dodge a specific rule: check what else keys on it. Compounding this, the invariant was a **two-phrase denylist**, and the harm here is what went *missing* — no banned-phrase check can ever catch that.
 
-**Config.** No numeric — structural. Enforced at the single owner (`applyEnrichment` in `lib/plan/enrich.ts`, keyed on `type === 'hard'`, which `applyRecalibrationTimeTrial` is the only producer of anywhere in the codebase) and backstopped by a **positive** arm of `INV-PLAN-COACH-NOTES-MATCH-INTENT` that requires the instruction to be present. The check requires the *instruction*, not a specific sentence — a legitimate rewording that still says it passes, so this does not freeze the copy.
+**Config.** No numeric — structural. Enforced at the single owner (`applyEnrichment` in `lib/plan/enrich.ts`, keyed on `type === 'hard'`, which `applyRecalibrationTimeTrial` is the only producer of anywhere in the codebase) and backstopped by a **positive** arm of `INV-PLAN-COACH-NOTES-MATCH-INTENT` that requires the instruction to be present. The check requires the *instruction*, not a specific sentence — a legitimate rewording that still says it passes, so this does not freeze the copy. ⚠️ **That arm required `measurement` OR `log the result` until 2026-09-17** — an OR, so dropping the instruction passed as long as the word "measurement" survived, which is half the defect it was written for. It now requires **both**.
 
 ---
 

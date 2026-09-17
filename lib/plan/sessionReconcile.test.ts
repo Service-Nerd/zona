@@ -34,6 +34,19 @@ const KM_PER_MI = 1.609344
 // show a zero structure the SessionSteps block skips.
 const SKIP_SHAPES = new Set(['rest', 'race', 'strength'])
 
+// ⚠️ NOT A LOOSENED TOLERANCE — a shape whose PREMISE differs, with its own
+// stricter contract asserted in the second describe block below.
+//
+// Every shape above partitions its total: warm-up + main + cool-down IS the
+// session. The §78 time trial does not. `ruleEngine` sets `distance_km` to the
+// trial alone and puts the warm-up and cool-down outside it on purpose (that is
+// what the plan counts — sumWeeklyKm, §1, §52), so there is nothing to
+// apportion and no honest distance for the bookends: "cool down easy" carries
+// no number. Its parts therefore differ in KIND, which the same-unit assertion
+// below correctly refuses. Asserting it here would mean either inventing a
+// warm-up distance or hiding the 5 km, and both are worse than the bug.
+const NON_PARTITIONED_SHAPES = new Set(['time_trial'])
+
 // A deterministic sample of the (exhaustive) cohort grid. The reconciliation is
 // a pure function of the composed structure, so one representative of each SHAPE
 // proves as much as tens of thousands do — the sample keeps the build fast while
@@ -82,7 +95,9 @@ describe('SESSION-RECONCILE-01 — card figures sum to the session total', () =>
   it('the sample covers every prescribable session shape (nothing untested)', () => {
     const shapes = new Set(cases.map(c => c.structure.shape))
     // long_run_with_mp is the shape the two old guards were structurally blind to.
-    for (const required of ['easy_run', 'long_run', 'long_run_with_mp', 'shakeout']) {
+    // `time_trial` is listed so the shape cannot silently stop being generated
+    // and take its own contract (below) quietly out of the suite with it.
+    for (const required of ['easy_run', 'long_run', 'long_run_with_mp', 'shakeout', 'time_trial']) {
       expect(shapes.has(required as SessionStructure['shape']), `sample produced no ${required} — coverage gap`).toBe(true)
     }
     // At least one quality shape (repeats / continuous / progression).
@@ -94,6 +109,7 @@ describe('SESSION-RECONCILE-01 — card figures sum to the session total', () =>
     for (const units of ['km', 'mi'] as const) {
       it(`warm-up + main-set + cool-down = session total (${metric}, ${units})`, () => {
         for (const { session, structure, label } of cases) {
+          if (NON_PARTITIONED_SHAPES.has(structure.shape)) continue
           const f = resolveDisplayFigures(structure, { metric, units, sessionDistanceKm: session.distance_km ?? null })
           const wu = parseFigure(f.warmup)
           const main = parseFigure(f.mainSet)
@@ -133,6 +149,72 @@ describe('SESSION-RECONCILE-01 — card figures sum to the session total', () =>
         const main = parseFigure(f.mainSet)
         expect(easy.value + race.value, `${label}: easy+race ≠ main-set (${metric})`).toBe(main.value)
       }
+    }
+  })
+})
+
+// ── The §78 time trial's own contract (TT-STRUCTURE-01) ─────────────────────
+//
+// FOUNDER-REPORTED, 2026-09-17. A 5K time trial rendered "warm-up ~3km · main
+// set ~2km · cool-down ~0km" while Kit's note beside it said "warm up easy for
+// 10 minutes, then 5 km as hard as you can hold". The trial's OWN 5 km was
+// being carved up into a warm-up, and the measurement the whole recalibration
+// feature depends on showed as 2 km.
+//
+// This block is stricter than the partition assertion above, not looser: the
+// main set must equal the trial EXACTLY, and — the assertion that would have
+// caught the original bug — the warm-up the card shows must be the same number
+// the coach note promises. A prose/structure disagreement is the defect class;
+// nothing checked the two against each other.
+describe('TT-STRUCTURE-01 — the time trial shows the trial, and agrees with its own note', () => {
+  const trials = collectCases().filter(c => c.structure.shape === 'time_trial')
+
+  it('the sample contains time trials at all', () => {
+    expect(trials.length, 'no time trial in the sample — this block asserts nothing').toBeGreaterThan(0)
+  })
+
+  it('the main set IS the trial distance, exactly and without a ~ estimate marker', () => {
+    for (const { session, structure, label } of trials) {
+      for (const units of ['km', 'mi'] as const) {
+        const f = resolveDisplayFigures(structure, { metric: 'distance', units, sessionDistanceKm: session.distance_km ?? null })
+        const km = session.distance_km ?? 0
+        expect(km, `${label}: a time trial with no distance`).toBeGreaterThan(0)
+        const expected = Math.round(units === 'mi' ? km / KM_PER_MI : km)
+        const main = parseFigure(f.mainSet)
+        expect(main.kind, `${label}: main set should be a distance under the km toggle`).toBe(units)
+        expect(main.value, `${label}: main set ${f.mainSet} ≠ the ${km}km trial`).toBe(expected)
+        // The trial is prescribed, not estimated — every other figure on the
+        // card carries "~" and this one must not.
+        expect(f.mainSet.includes('~'), `${label}: the trial distance is exact, not an estimate`).toBe(false)
+      }
+    }
+  })
+
+  it('warm-up and cool-down are minutes — never an invented distance', () => {
+    for (const { session, structure, label } of trials) {
+      const f = resolveDisplayFigures(structure, { metric: 'distance', units: 'km', sessionDistanceKm: session.distance_km ?? null })
+      expect(parseFigure(f.warmup).kind, `${label}: warm-up must stay in minutes`).toBe('min')
+      expect(parseFigure(f.cooldown).kind, `${label}: cool-down must stay in minutes`).toBe('min')
+    }
+  })
+
+  it('the card agrees with the coach note — same warm-up minutes, same trial distance', () => {
+    for (const { session, structure, label } of trials) {
+      const note = (session.coach_notes ?? []).join(' ')
+      const wuNote = note.match(/warm up easy for (\d+) minutes/i)
+      const distNote = note.match(/then ([\d.]+) km as hard as you can hold/i)
+      expect(wuNote, `${label}: the trial's warm-up note has gone missing`).not.toBeNull()
+      expect(distNote, `${label}: the trial's distance note has gone missing`).not.toBeNull()
+      expect(structure.warmup.duration_mins, `${label}: card says ${structure.warmup.duration_mins} min warm-up, note says ${wuNote![1]}`).toBe(Number(wuNote![1]))
+      expect(session.distance_km, `${label}: card trial ${session.distance_km}km, note says ${distNote![1]}km`).toBe(Number(distNote![1]))
+    }
+  })
+
+  it('the session total is warm-up + trial + cool-down, not the trial alone', () => {
+    for (const { structure, label } of trials) {
+      const sum = structure.warmup.duration_mins + structure.main.duration_mins + structure.cooldown.duration_mins
+      expect(structure.total_duration_mins, `${label}: total ${structure.total_duration_mins} ≠ ${sum}`).toBe(sum)
+      expect(structure.total_duration_mins, `${label}: total must exceed the effort alone`).toBeGreaterThan(structure.main.duration_mins)
     }
   })
 })

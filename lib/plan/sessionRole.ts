@@ -29,6 +29,25 @@ export function isShakeout(s: ClassifiableSession): boolean {
 }
 
 /**
+ * The §78 recalibration benchmark — the 5K time trial.
+ *
+ * `type === 'hard'` is structural and exact: `applyRecalibrationTimeTrial()`
+ * in `ruleEngine.ts` is the ONLY producer of that type anywhere in the
+ * codebase, and it is the type that keeps the trial out of §1's quality
+ * numerator. Deliberately NOT the label, which the enricher may rewrite
+ * (D-17), and not `meta.recalibration_weeks`, which would make this depend on
+ * two fields staying in step.
+ *
+ * `enrich.ts` reached this same conclusion independently and wrote the
+ * predicate out by hand; naming it once here is the D-08 fix for that. Because
+ * it reads a field every existing plan already carries, it needs no new stamp
+ * and classifies plans generated before it existed.
+ */
+export function isTimeTrial(s: ClassifiableSession): boolean {
+  return s.type === 'hard'
+}
+
+/**
  * The canonical COACHING classification for a session, as a string. This is the
  * single source of truth for the `sessionType` signal that the coaching engine
  * (planAdjustment, limiter, manualSessionFeedback, readiness) branches on.

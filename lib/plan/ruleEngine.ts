@@ -2164,7 +2164,19 @@ function applyRecalibrationTimeTrial(
   delete s.hr_target
   s.coach_notes = [
     `Warm up easy for 10 minutes, then ${cfg.distance_km} km as hard as you can hold. Cool down easy.`,
-    'This is a measurement, not a session. Log the result in your profile and your paces update for the next block.',
+    // TIER-HONEST, and it names no screen (TT-NOTE-HONESTY-01, 2026-09-17).
+    // It used to promise "Log the result in your profile and your paces update
+    // for the next block" to EVERY runner. Two things were wrong with that.
+    // (1) Recalibration is PAID (`dynamic_reshape_r20`, ADR-014) and free plans
+    // carry the trial too — measured, both tiers get `recalibration_weeks: [8]`
+    // — so the free runner was promised an outcome the tier cannot deliver,
+    // while `RecalibrationTile` sitting one surface away already told them the
+    // truth. (2) "In your profile" is the wrong place: the entry point is a
+    // tile on Today, and Me's route is labelled "Race benchmark".
+    // "You'll get the option" is what actually happens at BOTH tiers, and it
+    // keeps ADR-014's prompted-and-confirmed model honest: the rewrite is never
+    // silent. The tile stays the single owner of what the option costs.
+    "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
     'A parkrun counts. So does a solo effort — just make it honest.',
   ]
   return day

@@ -212,6 +212,34 @@ export function resolveDisplayFigures(
   opts: DisplayFigureOpts,
 ): SessionDisplayFigures {
   const seg = structure.race_pace_segment
+
+  // ── Time trial (§78) — the one shape whose parts do not partition the total ──
+  //
+  // The trial's distance IS the main set; the warm-up and cool-down sit OUTSIDE
+  // it (see the branch in sessionComposer). So there is nothing to apportion and
+  // no honest distance to put on the warm-up: "cool down easy" carries no
+  // number, and inventing one would contradict zone-rules.md's never-invent
+  // rule. The parts therefore differ in KIND — minutes for the bookends, the
+  // measured distance for the trial — which is the same principle Pattern 21b
+  // already applies to a hill rep at RPE ("there is no honest distance to
+  // show"), applied per PART rather than per session.
+  //
+  // The distance is EXACT, not `~`: you run precisely this far and the clock is
+  // the output. Every other figure on this card is an estimate; this one is the
+  // prescription.
+  if (structure.shape === 'time_trial') {
+    const wu = amountStr(structure.warmup.duration_mins, 'duration', opts.units)
+    const cd = amountStr(structure.cooldown.duration_mins, 'duration', opts.units)
+    const trialKm = structure.main.distance_km ?? opts.sessionDistanceKm ?? null
+    // Same owner as every other distance on this card — apportioning a single
+    // part against itself is just "convert and round to the header", which is
+    // exactly the guarantee we want and saves a second km→mi constant.
+    const mainStr = opts.metric === 'distance' && trialKm != null
+      ? `${apportionRoundedDistance([trialKm], trialKm, opts.units)[0]}${opts.units}`
+      : amountStr(structure.main.duration_mins, 'duration', opts.units)
+    return { warmup: wu, mainSet: mainStr, mainEasy: mainStr, racePace: null, cooldown: cd }
+  }
+
   const hasDistances =
     structure.warmup.distance_km != null &&
     structure.main.distance_km != null &&

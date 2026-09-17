@@ -15,6 +15,11 @@ import type { Plan, GeneratorInput, Session } from '@/types/plan'
  *   "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy."
  *   "This is a measurement, not a session. Log the result in your profile and
  *    your paces update for the next block."
+ *
+ * (That second sentence is the 2026-09 copy and is kept here as the historical
+ *  record of this defect. It was replaced on 2026-09-17 by TT-NOTE-HONESTY-01,
+ *  because it promised a PAID outcome to free runners, who get the trial too.
+ *  The assertions below read the engine's current notes, never a frozen string.)
  *   "A parkrun counts. So does a solo effort — just make it honest."
  *
  * What reached the runner:
@@ -97,7 +102,12 @@ describe('§78 — the recalibration time trial survives enrichment', () => {
     expect(tts.length, 'no `hard` session — the benchmark path did not place a time trial').toBeGreaterThan(0)
     expect(plan.meta.recalibration_weeks?.length ?? 0).toBeGreaterThan(0)
     expect(tts[0].coach_notes?.join(' ')).toMatch(/measurement/i)
-    expect(tts[0].coach_notes?.join(' ')).toMatch(/log the result/i)
+    // The INSTRUCTION must be there, not a frozen sentence — §78 says the check
+    // "requires the instruction, not a specific sentence" so a legitimate
+    // rewording passes. TT-NOTE-HONESTY-01 (2026-09-17) is exactly such a
+    // rewording: "log the result" became "log the time" when the note stopped
+    // promising free runners a paid outcome.
+    expect(tts[0].coach_notes?.join(' ')).toMatch(/log the (result|time)/i)
   })
 
   it('enrichment does NOT overwrite its notes or its label', async () => {

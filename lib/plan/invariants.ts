@@ -14,7 +14,7 @@ import { GENERATION_CONFIG } from './generationConfig'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { catalogueRowFor } from './catalogueLink'
-import { isLongRun, isShakeout, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
+import { isLongRun, isShakeout, isTimeTrial, classifyStimulus, isVo2maxSession, isStructuredSession } from './sessionRole'
 import { mainSetMinutes, durationForMainSet } from './sessionFormat'
 import { isV2Structure, StructureV2Schema, goalPaceShapeWord } from './sessionStructureV2'
 import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
@@ -1064,20 +1064,28 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // in your profile and your paces update for the next block". A banned-phrase
     // check can never catch that, because the harm is what went MISSING.
     //
+    // ⚠️ REQUIRES BOTH HALVES since 2026-09-17. It was `measurement|log the
+    // result` — an OR, so dropping the instruction passed as long as the word
+    // "measurement" survived, which is half the defect it was written for.
+    //
     // Nothing recalibrates unless the runner logs a result (ADR-014), so this is
     // the sentence the whole feature hangs on. `meta.recalibration_weeks` went on
     // claiming the week recalibrated while the instruction was gone.
     //
-    // Structural: `type === 'hard'` is produced ONLY by
-    // applyRecalibrationTimeTrial. Runs OUTSIDE the `quality`-scoped loop below,
+    // Structural: `isTimeTrial()` (sessionRole.ts) — `type === 'hard'` is
+    // produced ONLY by applyRecalibrationTimeTrial. Sharing the predicate with
+    // the producer is safe HERE and is not the DELOAD-OWNER-01 case: it only
+    // SELECTS which sessions to check, it does not compute the property being
+    // checked (whether the notes carry the instruction). Runs OUTSIDE the
+    // `quality`-scoped loop below,
     // which is the second half of the root cause — the `hard` typing chosen in
     // §78 so the trial would not count against QUALITY_SESSIONS_PER_WEEK_MAX also
     // exempted it from every quality-scoped copy check. A type chosen to opt out
     // of one rule opted it out of an unrelated one.
     for (const { day, session } of placedRunning) {
-      if (session.type !== 'hard') continue
+      if (!isTimeTrial(session)) continue
       const notes = (session.coach_notes ?? []).join(' ').toLowerCase()
-      if (!/measurement|log the result/.test(notes)) {
+      if (!/measurement/.test(notes) || !/log the (result|time)/.test(notes)) {
         violations.push({
           code: 'INV-PLAN-COACH-NOTES-MATCH-INTENT',
           principle_ref: 'CoachingPrinciples §78, §33',
@@ -4767,7 +4775,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         })
         continue
       }
-      const hasBenchmark = Object.values(week.sessions ?? {}).some(s => s?.type === 'hard')
+      const hasBenchmark = Object.values(week.sessions ?? {}).some(s => s && isTimeTrial(s))
       if (!hasBenchmark) {
         violations.push({
           code: 'INV-PLAN-RECALIBRATION-HAS-SESSION',
