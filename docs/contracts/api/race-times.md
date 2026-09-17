@@ -17,7 +17,7 @@ surfaces: Coach (`variant="status"` — the canonical home), Benchmark entry
 | 1 | Benchmark in plan meta | `high` | Yes, when `race_distance_km > 0` |
 | 2 | ≥4 qualifying aerobic runs | `moderate` | Yes, when `race_distance_km > 0` |
 | 3 | 1–3 qualifying aerobic runs | `low` | Yes, when `race_distance_km > 0` |
-| 4 | Wizard `fitness_level` × `training_age` bracket | `low` | **No** — a bracket guess is not a measurement, so an arc off it would show fabricated progress |
+| 4 | Derived from the runner's §13 fitness band (§109 Am.1) | `low` | **No** — nothing is measured, so an arc off it would show fabricated progress |
 | 5 | No signal | `null` | No |
 
 ## Response — 200
@@ -56,6 +56,34 @@ surfaces: Coach (`variant="status"` — the canonical home), Benchmark entry
   "upgradeCtaType": "benchmark"
 }
 ```
+
+### State 4 — the no-measurement estimate (§109 Amendment 1, Coaching Board 2026-09-17)
+
+State 4 has **no benchmark and no qualifying runs**, so it differs from 1–3 in
+three ways a consumer must not assume away.
+
+**1. `formattedTime` is COARSE on this state — minute precision, never seconds.**
+`"3:54"`, and under an hour `"24 min"` rather than `"24:00"`, which would
+re-imply the precision being removed. States 1–3 keep their seconds: a
+benchmark-derived projection earned them. ⚠️ **`confidence` drives the NUMBER'S
+precision on this state, not just a chip colour** — that was the defect
+(RACE-PROJ-PRECISION-01).
+
+**2. `formattedTime` may be a RANGE when the runner declined the training-age
+question**, e.g. `"3:30–4:14"` (en dash). `timeSeconds` is then the midpoint.
+Consumers render `formattedTime` verbatim and must not parse it as a single
+clock value. A declined input **widens** the estimate; it is never silently
+replaced with the middle bracket.
+
+**3. The VDOT is DERIVED, not asserted.** `lib/plan/estimateVdot.ts` computes it
+from the runner's own §13 band (`FITNESS_VDOT_THRESHOLDS`), with
+`GENERATION_CONFIG.ESTIMATE_VDOT_BAND_FRACTIONS` positioning them within it and
+`ESTIMATE_VDOT_DISCOUNT_PCT` applied after. It was a hand-authored 3×4 table in
+this route until 2026-09-17, and **six of its twelve cells contradicted §13**.
+Guarded by `INV-EST-VDOT-AGREES-WITH-CLASSIFIER`.
+
+`label` on this state names the source honestly and differs by whether the
+training age was answered.
 
 ## `target` — the progress arc
 
@@ -120,7 +148,7 @@ they left it. **One measurement is one point.** Guarded by
 ## Consumer rules
 
 - The arc's SHAPE is decided by `lib/coaching/raceProgressArc.ts → buildRaceProgressArc()`, not by the consumer. It returns `null` without a `currentSeconds`, drops absent points, and clamps the goal gap at zero. Unit-tested there.
-- All clock strings come from `lib/format.ts` (`formatClockTime`, `formatElapsedDelta`) per ADR-015. This route formats `formattedTime` and `deltaFormatted`; a consumer formatting `baselineSeconds` / `currentSeconds` / `goalSeconds` itself **must** use the same owners. Both copies of a local `formatTime` were retired on 2026-09-12.
+- All clock strings come from `lib/format.ts` (`formatClockTime`, **`formatClockTimeCoarse`**, `formatElapsedDelta`) per ADR-015. This route formats `formattedTime` and `deltaFormatted`; a consumer formatting `baselineSeconds` / `currentSeconds` / `goalSeconds` itself **must** use the same owners. Both copies of a local `formatTime` were retired on 2026-09-12.
 
 ## Errors
 
