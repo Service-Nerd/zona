@@ -3055,21 +3055,52 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         // already holds.
         if (deliveredKm(w) <= (input.current_weekly_km ?? 0)) continue
 
+        // Trimable volume is still COMPUTED — it is useful context in the
+        // message — but it no longer GATES anything. The early return that stood
+        // here (bail out when the trimable portion did not rise) was the second
+        // of the two arms §94 Amendment 1 retires, and it is the one that hid the
+        // most extreme shape of all: a long run growing so hard that the rest of
+        // the week SHRANK to accommodate it. 22 of the 926 measured breaches
+        // (2.4%) were lost to exactly that, every one of them long-run-driven.
         const nowTrimable = deliveredKm(w) - longKmOf(w)
         const prevTrimable = deliveredKm(prev) - longKmOf(prev)
-        if (prevTrimable <= 0 || nowTrimable <= prevTrimable) continue
-        const risePct = ((nowTrimable - prevTrimable) / prevTrimable) * 100
+        const risePct = prevTrimable > 0
+          ? ((nowTrimable - prevTrimable) / prevTrimable) * 100
+          : 0
 
-        // BOTH the whole week AND its trimable portion must breach.
+        // §94 AMENDMENT 1 — THE TRIMABLE ARM IS RETIRED (Coaching Board
+        // 2026-09-17, RAMP-GUARD-FAILS-OPEN-01).
         //
-        // §2 speaks about WEEKLY volume, so the whole-week rise is the claim.
-        // The trimable portion is required as well because the long run is
-        // §52-exempt and race-anchored: it can legitimately jump, and when it
-        // does the trimable remainder swings violently for no change in load
-        // (a week going long 18/total 25 to long 11/total 26 reads +114%
-        // trimable while the runner ran one extra kilometre). Requiring both
-        // means every case this reports is a genuine rise in the work the
-        // engine was free to place, inside a week that genuinely got bigger.
+        // What stood here required BOTH the whole week AND its trimable
+        // (non-long-run) portion to breach, justified on the long run being
+        // "§52-exempt and race-anchored" so that its jumps swing the trimable
+        // remainder for no change in load. TWO THINGS WERE WRONG WITH THAT:
+        //
+        //  1. IT NEVER ONCE DID ITS JOB. Measured over 2,799 plans / 14,515
+        //     healthy week-pairs: 926 weeks breached §2's own claim at delivery;
+        //     202 were silenced by a trimable arm; and **202 of 202 had the long
+        //     run GROW**. Zero were the false-positive class the arm existed to
+        //     prevent. A long run that grows sharply SHRINKS the rest of the
+        //     week, so the arm fell silent precisely on the worst cases —
+        //     Hutchinson's "a load guard that goes quiet exactly when things are
+        //     worst".
+        //  2. §52 SAYS THE OPPOSITE OF WHAT THE COMMENT CLAIMED. It is a 60%
+        //     CEILING, not a shield: when the long run forces it, §52 requires
+        //     the engine to consider "(a) reduce the long run" FIRST. Below 60%
+        //     it grants no protection at all, and only 25 of the 202 (12.4%)
+        //     were anywhere near it. The exemption was invented in a comment and
+        //     then relied on as if it were doctrine.
+        //
+        // §2 speaks about WEEKLY volume, so the whole-week rise IS the claim and
+        // is now the only percentage arm. The chronic-load gate and the absolute
+        // -km floor are unchanged; severity stays `warn`.
+        //
+        // ⚠️ THE ROOT MECHANISM IS §45, NOT THIS CHECK. All 202 jumps are legal
+        // under §45 — and all 202 are legal ONLY via its `+5km absolute`
+        // allowance (`+20% OR +5km, whichever is GREATER`). On an 8 km long run
+        // that is +63%. Willy's objection to that allowance on a small base is
+        // recorded and filed as LR-ABS-ALLOWANCE-01; it changes what the engine
+        // PRESCRIBES and was deliberately not taken here.
         const totalRisePct = ((deliveredKm(w) - deliveredKm(prev)) / deliveredKm(prev)) * 100
         // §94 amendment (CHARITY-CAP-ABSFLOOR-01, Coaching Board 2026-09-13): as
         // for §90, the delivered ramp must clear an absolute-km floor as well as
@@ -3077,11 +3108,23 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         // percentage of a small number. Measured on the whole-week rise (§2's
         // own claim). Gates the warn, not the producer.
         const totalAbsRiseKm = deliveredKm(w) - deliveredKm(prev)
-        const bothBreach =
-          risePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT &&
+        const breaches =
           totalRisePct > capPct + DELIVERED_ROUNDING_TOLERANCE_PCT &&
           totalAbsRiseKm > GENERATION_CONFIG.DELIVERED_ABSOLUTE_FLOOR_KM
-        if (bothBreach) {
+        // ATTRIBUTE THE DRIVER (§94 Am.1, McMillan's and Seiler's condition of
+        // approval). Where the long run accounts for more than
+        // DELIVERED_RAMP_LR_ATTRIBUTION_PCT of the week's rise, say so: the
+        // engine has no lever on a race-anchored long run, so a message implying
+        // it failed to prevent the spike is false, and a code that reports a
+        // quality-trim spike and an aerobic long-run spike identically gets read
+        // as one thing.
+        const lrRiseKm = longKmOf(w) - longKmOf(prev)
+        const longRunLed = totalAbsRiseKm > 0
+          && (lrRiseKm / totalAbsRiseKm) * 100 > GENERATION_CONFIG.DELIVERED_RAMP_LR_ATTRIBUTION_PCT
+        const driver = longRunLed
+          ? `The LONG RUN is driving it (${longKmOf(prev).toFixed(0)}→${longKmOf(w).toFixed(0)}km, +${lrRiseKm.toFixed(0)}km of the +${totalAbsRiseKm.toFixed(0)}km) — legal under §45, which permits +20% or +5km whichever is greater. The engine may not deform a race-anchored long run, so treat this as a week to take the easy days genuinely easy.`
+          : `Typically a volume/quality-split trim held the previous week flat and handed its deficit forward (§100).`
+        if (breaches) {
           violations.push({
             code: 'INV-PLAN-DELIVERED-RAMP',
             // §100 added 2026-09-15: "a safety trim must not hand its deficit to
@@ -3091,7 +3134,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             principle_ref: 'CoachingPrinciples §94 (§2), §100',
             severity: 'warn',
             week: w.n,
-            message: `Week ${w.n}: DELIVERED volume rose ${totalRisePct.toFixed(0)}% from week ${prev.n} (${deliveredKm(prev).toFixed(0)}→${deliveredKm(w).toFixed(0)}km; trimable ${prevTrimable.toFixed(0)}→${nowTrimable.toFixed(0)}km, +${risePct.toFixed(0)}%), above §2's ${capPct}% cap. The curve may be compliant while the placed sessions are not — typically because a volume/quality-split trim held the previous week flat and handed its deficit forward.`,
+            message: `Week ${w.n}: DELIVERED volume rose ${totalRisePct.toFixed(0)}% from week ${prev.n} (${deliveredKm(prev).toFixed(0)}→${deliveredKm(w).toFixed(0)}km; trimable ${prevTrimable.toFixed(0)}→${nowTrimable.toFixed(0)}km, +${risePct.toFixed(0)}%), above §2's ${capPct}% cap. The curve may be compliant while the placed sessions are not. ${driver}`,
             actual: `+${totalRisePct.toFixed(0)}% week, +${risePct.toFixed(0)}% non-long-run`,
             expected: `<= ${capPct}% (§2, measured at delivery)`,
           })

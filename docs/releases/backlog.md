@@ -52,24 +52,43 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 
 ### 🔜 COACHING & ENGINE — two items, both for tomorrow
 
-> 🔲 **RAMP-GUARD-FAILS-OPEN-01 — a load guard that goes quiet exactly when things are worst.** *(P1, filed 2026-09-16 by Hutchinson at the LR-CAP-BLIND-01 sitting. Needs a MEASUREMENT and a board ruling, not an edit.)*
+> ✅ **RAMP-GUARD-FAILS-OPEN-01 — SHIPPED 2026-09-17. Coaching Board: CORRECT WITH AMENDMENT (§94 Amendment 1).**
 >
-> `INV-PLAN-DELIVERED-RAMP` requires **BOTH** the whole week **and** its trimable portion (week minus long run) to breach, and returns early when the trimable portion did not rise. **A long run that grows violently SHRINKS the rest of the week** — so the guard is silent *precisely* on the most extreme cases.
+> Both trimable arms retired. `INV-PLAN-DELIVERED-RAMP` now fires on the whole-week delivered rise, above chronic load and above the absolute-km floor. Stays `warn`; no change to what the engine prescribes.
 >
-> It stayed silent on M3's **70% single-week rise** while `INV-PLAN-LR-PROGRESSION-CAP` was blind to the same plan for an unrelated reason. **Two independent guards, one dangerous plan, two different failure modes.** Hutchinson: *"that is what happens when guards are written against the common case."*
+> **The measurement settled it and partly corrected the filing.** Over 2,799 plans / 14,515 healthy week-pairs: 926 weeks breached §2's own claim at delivery, **202 were silenced by a trimable arm, and 202 of 202 had the long run GROW.** Zero were the false-positive class the arm existed to prevent — a plausible mechanism written into a comment and never measured.
 >
-> ⚠️ **Do not just delete the both-must-breach rule.** It guards a real false-positive class: a §52-exempt, race-anchored long run can legitimately jump, and when it does the trimable remainder swings violently for no change in load (the code's own example: 18/25 → 11/26 reads +114% trimable while the runner ran one extra km). **Measure first**, then rule.
+> ⚠️ **§52 was misread in the enforcing code.** It justified the arm on the long run being "§52-exempt, not permitted to trim". §52 is a 60% **ceiling** whose FIRST named lever is *"(a) reduce the long run"*, and below 60% it grants no protection at all — only 25 of the 202 were near it.
 >
-> *Verify still open:* `grep -c "nowTrimable <= prevTrimable" lib/plan/invariants.ts` → **non-zero = still open**.
+> ⚠️ **The root mechanism is §45, not §94** — all 202 jumps are legal ONLY via §45's `+5km absolute` allowance. Filed as `LR-ABS-ALLOWANCE-01` below.
+>
+> Live result: **764 violations / 651 plans (23.3%)**, matching prediction; sweep firing rate **6.3%**. Record: `docs/decisions/coaching-board-2026-09-17-ramp-guard.md`.
+>
+> *Verify closed:* `grep -c "nowTrimable <= prevTrimable" lib/plan/invariants.ts` → **0**.
 
-> 🔲 **PREP-ACK-UNLOCKS-MARATHON-01 — should acknowledging a prep warning unlock a marathon we know we cannot prepare you for?** *(P2, filed 2026-09-16. **SLT / founder decision — explicitly NOT a correctness question.** The board ruled the plan CORRECT.)*
+> 🔲 **LR-ABS-ALLOWANCE-01 — §45's `+5km absolute` allowance is not defensible on a small base.** *(P2, filed 2026-09-17 by Willy at the RAMP-GUARD-FAILS-OPEN-01 sitting. Needs a MEASUREMENT and a board ruling. **Changes what the engine PRESCRIBES — wider blast radius than §94.**)*
 >
-> M3: first marathon, **14 weeks, 18 km/week, 3 days, 45-minute weekday ceiling, longest run ever 9 km.** §44 issues a prep-time warning; the runner acknowledges it; the block is built. Post-fix the plan is safe (the +206% long-run spike is gone) and it tells the runner **three separate times** that it cannot fully prepare them — day count, long-run shortfall, weekday cap.
+> §45 permits a long-run increase of **`+20% week-on-week OR +5km absolute, whichever is GREATER`**. On an 8 km long run, +5 km is **+63%** — in the single highest-load session of the week, for a runner whose whole week is 26 km.
 >
-> **McMillan:** at some point the honest answer stops being a better disclaimer and becomes *"this race, on these inputs, is the wrong goal."*
-> **Willy dissents:** an honest undertrained plan beats refusing someone who holds a charity place and will run it regardless.
+> **Measured 2026-09-17:** of the 202 delivered-ramp breaches that §94 Amendment 1 newly surfaces, **202 of 202 (100%) are legal under §45 ONLY because of the absolute allowance.** Not one would be legal on the 20% arm alone.
 >
-> Both positions recorded. The question is whether §44's acknowledgement should gate differently, or steer to another race. **Product, not coaching.**
+> **Willy:** *"the session that breaks people"* — bone and tendon load accumulate in a single continuous bout, and an aerobic jump is less alarming to the runner in the moment, which makes it worse rather than better. **Sims** adds bone-stress risk is not evenly distributed (higher in female runners, with low energy availability, and peri/post-menopause) and the engine cannot know sex (`INPUT-SEX-01`, parked).
+>
+> ⚠️ **Deliberately NOT taken on 2026-09-17** — the chair refused a prescription change the day before the charity showcase on a measurement taken that morning. This is a scheduling decision, not a disagreement about the evidence.
+>
+> **What would settle it:** the same measurement with the allowance scaled on a small base (e.g. `min(+5km, X% of weekly volume)`), plus a `cohort:shape` diff and a `verify:parity` run — this moves delivered long runs, so parity WILL move.
+>
+> *Verify still open:* `grep -c "LONG_RUN_ABS_ALLOWANCE_WEEKLY_PCT" lib/plan/generationConfig.ts` → **0 = still open**.
+
+> ✅ **PREP-ACK-UNLOCKS-MARATHON-01 — RESOLVED 2026-09-17, FOUNDER DECISION, NO CODE CHANGE.**
+>
+> **Ruling (Russ, 2026-09-17):** *"As long as we present them the facts and they tick 'I understand', that's fine. We shouldn't refuse people plans, we should just give them honest feedback."* **Willy's position carried; McMillan's recorded and not taken.**
+>
+> ⚠️ **Verified in code before closing, not assumed.** M3 (first marathon, 14 weeks, 18 km/wk, 3 days, 45-min weekday cap, longest ever 9 km) **builds today with or without the acknowledgement** — `validatePrepTime` returns `ok`, because §44's warn band binds only on `time_target` and M3 is a `finish` goal. It builds as `volume_profile: maintenance`, `difficulty_band: comfortable`, carrying the honest line: *"This plan is built to get you round, not to build you up — 3 days/week is below the recommended 4-day-minimum for a MARATHON build."*
+>
+> So the engine already does what was decided. The item asked whether to make §44 **stricter** (gate differently, or steer to another race); the answer is **no**. Nothing to build.
+>
+> 🔲 **ONE QUESTION LEFT OVER, NOT ANSWERED BY THIS RULING — the `block` tier.** *(P2, open 2026-09-17.)* §44 and the days gate each have TWO tiers: `warn` (acknowledgement unlocks it — the tier this ruling covers) and **`block`, which has NO acknowledgement path at all.** A runner is hard-refused at: marathon **< 10 weeks**, HM < 8, 10K < 6, 5K < 4, ultra < 14 (+2 for returning runners); and marathon/ultra on **fewer than 3 days a week**. Read literally, *"we shouldn't refuse people plans"* removes that tier too — which is a **§44 doctrine change and a Coaching Board question**, not a docs edit, and Willy's structural argument (a long run forced to dominate the week) is the thing that would be overruled. **Ask Russ before touching it.**
 
 > 🔲 **INPUT-SEX-01 — the engine has NO sex field, and cannot know it.** *(P2, filed 2026-09-16 from the charity-cohort board review. A QUESTION to take, not a build.)*
 > `GeneratorInput` carries `age` (for Tanaka max HR) and nothing about sex. So every numeric the

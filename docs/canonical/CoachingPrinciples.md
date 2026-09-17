@@ -4674,6 +4674,84 @@ Hutchinson chairing (Willy leading; the chronic-load and both-portions scopes ar
 conditions of approval). Extends §90's basis to healthy runners at `warn`; does
 not loosen §2, §12, §52 or §90.
 
+### Amendment 1 — the trimable arm is retired; §2's claim is the WHOLE week
+
+*(Coaching Board, 2026-09-17 — RAMP-GUARD-FAILS-OPEN-01. CORRECT WITH AMENDMENT.
+Filed by Hutchinson at the LR-CAP-BLIND-01 sitting: "a load guard that goes quiet
+exactly when things are worst.")*
+
+**Principle.** `INV-PLAN-DELIVERED-RAMP` fires on the **whole-week delivered
+rise**, once the week exceeds the runner's established chronic load and the rise
+clears the absolute-km floor. The additional requirement that the **trimable
+(non-long-run) portion** also breach — stated in the original principle above and
+the condition of CB-RAMP-02's approval — **is removed.** Severity stays `warn`.
+
+**Why.** A long run that grows sharply *shrinks the rest of the week*, so the
+trimable arm fell silent precisely when the long run was driving the spike.
+Measured over 2,799 generated plans and 14,515 healthy week-pairs (2026-09-17):
+
+| | |
+|---|---|
+| Weeks breaching §2's own claim at delivery | **926** |
+| Reported by the guard | 562 (60.7%) |
+| Silenced, below chronic load — legitimate | 162 (17.5%) |
+| **Silenced by a trimable arm** | **202 (21.8%)** |
+
+⚠️ **Of those 202, all 202 had the long run GROW. Zero were the false-positive
+class the trimable arm was written to prevent.** The arm's stated defence — that a
+race-anchored long run can jump and swing the trimable remainder for no change in
+load — is a plausible mechanism that was never measured, and in the population
+where §2's claim is actually breached it has never once performed its function.
+It only suppressed.
+
+⚠️ **§52 was misread in the enforcing code, and the misreading is the interesting
+part.** The comment justified the arm on the long run being *"§52-exempt… not
+permitted to trim"*. §52 says the opposite: when the long run forces the 60%
+ceiling the engine **MUST** consider *"(a) reduce the long run"* first. §52 is a
+ceiling, not a shield, and below 60% it says nothing at all — only 25 of the 202
+(12.4%) were near it. A protection was invented in a comment and then relied on.
+
+⚠️ **The root mechanism is §45, not §94.** All 202 silenced jumps are legal under
+§45 — and **all 202 are legal only because of its `+5km absolute` allowance**
+(`+20% OR +5km, whichever is greater`). On an 8 km long run, +5 km is **+63%**.
+§94 is the messenger. **Willy's objection to that allowance on a small base is
+recorded and filed separately (`LR-ABS-ALLOWANCE-01`) — it changes what the engine
+PRESCRIBES and was not taken the day before the charity showcase.**
+
+**The amendment (McMillan's condition, with Seiler's).** The violation MUST
+attribute the driver. Where the long run accounts for more than
+`DELIVERED_RAMP_LR_ATTRIBUTION_PCT` of the week's rise, the message names it.
+Two reasons, from two seats:
+
+- **Seiler:** §94 was written for a spike created by a *quality* trim handing its
+  deficit forward — intensity and volume colliding. These 202 are pure aerobic
+  growth in one long easy run. Physiologically distinct exposures; one code
+  reporting both, undifferentiated, gets read as one thing.
+- **McMillan:** the engine has no lever here — the long run is race-anchored and
+  §45 permits the jump. A warning that reads as "the engine failed" when it did
+  not is how runners learn to ignore warnings. Named as long-run-led, it reads as
+  coaching.
+
+**Willy and Sims, on why silence was the worse option.** The long run is a single
+continuous bout and is where bone and tendon load accumulate; a 63% step in it is
+the acute-on-chronic pattern that presents in clinic, and it is *less* alarming to
+the runner in the moment precisely because it is aerobic. Sims adds that bone-stress
+risk is not evenly distributed — higher in female runners, with low energy
+availability, and peri/post-menopause — and the engine **cannot know sex**
+(`INPUT-SEX-01`, parked), so the load signal is the only lever left.
+
+**Blast radius.** Purely additive; nothing that fires today stops firing.
+Week-pair rate 3.9% → 5.3%; plans carrying ≥1 warn 17.9% → 23.3%. Within the noise
+standard this board has applied (Willy rejected a check at 71%;
+`INV-PLAN-PEAK-NOT-BELOW-START` is acknowledged at 29.2%). No change to what the
+engine prescribes.
+
+**Config.** `GENERATION_CONFIG.DELIVERED_RAMP_LR_ATTRIBUTION_PCT` (50).
+
+**Board:** 2026-09-17 — CORRECT WITH AMENDMENT, Hutchinson chairing. Recorded
+disagreements: McMillan on actionability (resolved by the attribution amendment);
+Willy vs the chair on whether to fix §45 now (filed, not folded in).
+
 ---
 
 ## 95. A recovery week must not fall on a phase's second week either

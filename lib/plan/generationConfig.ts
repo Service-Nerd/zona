@@ -1246,6 +1246,24 @@ export const GENERATION_CONFIG = {
   // the CHECKER's warn, never the engine's trim — the producer still caps to §2's injury cap.
   DELIVERED_ABSOLUTE_FLOOR_KM: 3,  // km; a rise below this is not a delivered-cap breach
 
+  // §94 Amendment 1 (RAMP-GUARD-FAILS-OPEN-01, Coaching Board 2026-09-17).
+  //
+  // Share of a week's DELIVERED rise attributable to the long run above which the
+  // §94 violation NAMES the long run as the driver. Gates the MESSAGE, never the
+  // prescription — the engine has no lever here, and that is precisely the point.
+  //
+  // WHY IT EXISTS, from two seats. Seiler: §94 was written for a spike created by
+  // a QUALITY trim handing its deficit forward (intensity and volume colliding);
+  // the 202 cases that retiring the trimable arm newly surfaces are pure aerobic
+  // growth in one long easy run. Different exposures, and one undifferentiated
+  // code reporting both gets read as one thing. McMillan: the long run is
+  // race-anchored and §45 permits the jump, so a message that reads "the engine
+  // failed to prevent this" is false and teaches runners to ignore warnings.
+  // Named as long-run-led it reads as coaching.
+  //
+  // 50% = "more of the rise came from the long run than from everything else".
+  DELIVERED_RAMP_LR_ATTRIBUTION_PCT: 50,
+
   // ── Injury-aware session selection (CoachingPrinciples §21) ────────────────
   // Injury keywords that trigger exclusion of hill sessions during base/build
   // phases. Substrings; matched case-insensitively against injury_history.
