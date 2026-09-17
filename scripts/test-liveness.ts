@@ -67,6 +67,14 @@ const NO_SUBJECT: Record<string, string> = {
   'lib/coaching/reframeCohort.test.ts':
     'Composes sessionRole + constants rather than owning a module; the behaviour it guards lives '
     + 'in classifiers already covered by invariant liveness.',
+  'lib/plan/peakLrEarnedTier.test.ts':
+    'Subject is ruleEngine.ts (~7k lines) via generateRulePlan, the same case as '
+    + 'maintenanceNotePrescriptive below: scoping mutations to the one symbol it imports scopes '
+    + 'them to the whole engine, and the signal drowns. FALSIFIED BY HAND INSTEAD (2026-09-17): '
+    + 'flattening PEAK_LR_RATIO_VS_RACE.HM onto PEAK_LR_RATIO_TARGET.HM turns it red in two '
+    + 'places at once — the tier lift ("expected 19 to be >= 19.545") and the rung ordering. '
+    + 'Restored byte-identical; 7/7 green after. The comparative assertions ARE the proof: a '
+    + 'runner who has proven the distance must get a longer peak long run than one who has not.',
   'lib/plan/maintenanceNotePrescriptive.test.ts':
     'Subject is ruleEngine.ts (~7k lines). Mutating it at random produces mutants unrelated to §38 '
     + 'and drowns the signal. Its profile-flip assertions ARE the falsification: change the named '

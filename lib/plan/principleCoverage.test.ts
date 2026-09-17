@@ -125,6 +125,27 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
     ).toEqual([])
   })
 
+  it('every `test` entry is reachable by the mutation harness, or recorded as unmutable', () => {
+    // The same gap as the invariant one above, one register over. `by: 'test'`
+    // claims a test EXISTS; nothing claimed it BITES. `scripts/test-liveness.ts`
+    // breaks each subject and re-runs the test — but only for the files it maps,
+    // and a principle whose test is in NEITHER of its two maps has never had
+    // anything try to turn it red. Measured 2026-09-17: 21 of the 22 were
+    // mapped; §35's was not, and nobody could have known without cross-reading
+    // two files. That is the gap this closes, mechanically.
+    const harness = readFileSync(join(process.cwd(), 'scripts', 'test-liveness.ts'), 'utf8')
+    const unmapped = PRINCIPLE_COVERAGE
+      .filter(e => e.by === 'test' && e.ref && !harness.includes(e.ref.replace(/^\.?\//, '')))
+      .map(e => `§${e.n} → ${e.ref}`)
+    expect(
+      unmapped,
+      'These principles are covered by a test that the mutation harness has ' +
+      'never touched, so nothing has ever shown the test can fail. Add the test ' +
+      'to SUBJECTS in scripts/test-liveness.ts, or to NO_SUBJECT with a written ' +
+      'reason and the falsification you did by hand instead.',
+    ).toEqual([])
+  })
+
   it('every `test` entry sits where vitest actually collects it', () => {
     // FOUND THE HARD WAY, 2026-09-15: §74's test was first written at
     // `app/api/post-race-reshape/writeBoundary.test.ts`. The file EXISTED, so
