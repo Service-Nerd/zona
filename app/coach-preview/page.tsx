@@ -18,6 +18,7 @@ import { RaceProgressArcRow } from '@/components/shared/RaceProgressArcRow'
 import { RACE_PROJECTIONS_COPY } from '@/components/shared/raceProjectionsCopy'
 import ZoneRings from '@/components/shared/ZoneRings'
 import TrendCard from '@/components/shared/TrendCard'
+import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 
 const ARC_COPY = RACE_PROJECTIONS_COPY.status.arc!
 
@@ -208,6 +209,51 @@ export default function CoachPreviewPage() {
           )
         })}
       </div>
+      {/* ── RACE PROJECTIONS — the wizard-bracket state (RACE-PROJ-LEAD-01) ──
+          THE STATE THIS SECTION EXISTS FOR. Measured on the live database,
+          **11 of 19 plans (58%) carry no benchmark**, so this is what most
+          paying runners see — and it had never been rendered anywhere it could
+          be looked at, because the card is PAID, auth-gated, and fetches on
+          mount. The founder found it on a test account.
+
+          Before: four times to the SECOND (3:54:16) from a 3x4 lookup table,
+          full-width and open, with the action last.
+          After: minute precision, the action first, the table behind a tap. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '420px', marginTop: '28px' }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            Race projections — state 4 (wizard bracket, 58% of plans)
+          </div>
+          <RaceTimesCard
+            variant="status"
+            stravaConnected={false}
+            onOpenBenchmark={() => {}}
+            previewData={{
+              state: 4,
+              confidence: 'low',
+              label: 'Estimated from your wizard answers, not your running',
+              source: 'wizard',
+              vdot: 39.9,
+              // Minute precision: what `formatClockTimeCoarse` now returns for
+              // the exact bracket the founder was shown (intermediate x 6-18mo).
+              distances: [
+                { distanceKm: 5,       label: '5K',       timeSeconds: 1426,  formattedTime: '24 min' },
+                { distanceKm: 10,      label: '10K',      timeSeconds: 2949,  formattedTime: '49 min' },
+                { distanceKm: 21.0975, label: 'HM',       timeSeconds: 6692,  formattedTime: '1:52' },
+                { distanceKm: 42.195,  label: 'Marathon', timeSeconds: 14056, formattedTime: '3:54' },
+              ],
+              target: null,
+              recalibrationSuggested: false,
+              upgradeCtaType: 'both',
+            }}
+          />
+          <p style={{ fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, margin: '10px 0 0' }}>
+            The action leads, the table is one tap away, and no figure claims a
+            precision the lookup cannot support.
+          </p>
+        </div>
+      </div>
+
     </main>
   )
 }

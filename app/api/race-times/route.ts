@@ -21,7 +21,7 @@ import { RACE_ARC } from '@/lib/coaching/raceProgressArc'
 import {
   deriveFitnessBaseline, weightedAerobicSpeed, type AerobicRun,
 } from '@/lib/coaching/fitnessBaseline'
-import { formatClockTime, formatElapsedDelta } from '@/lib/format'
+import { formatClockTime, formatClockTimeCoarse, formatElapsedDelta } from '@/lib/format'
 
 // Jack Daniels race VDOT utilisation fractions
 const RACE_FRACTIONS: { label: string; distanceKm: number; fraction: number }[] = [
@@ -40,12 +40,22 @@ const STRAVA_WINDOW_WEEKS = 6
 // High-confidence run count threshold
 const HIGH_CONFIDENCE_MIN_RUNS = 4
 
-function projectRaceTimes(vdot: number) {
+/**
+ * RACE-PROJ-PRECISION-01 (SLT 2026-09-17) — the PRECISION follows the evidence.
+ *
+ * `coarse` is set for the wizard-bracket estimate (state 4), where the number
+ * comes from a lookup table and no run of the runner's has been measured at
+ * all. It then renders at minute precision, so the shape of the figure says
+ * "estimate" before any caveat is read. A benchmark-derived projection keeps
+ * its seconds: it earned them.
+ */
+function projectRaceTimes(vdot: number, coarse = false) {
   return RACE_FRACTIONS.map(({ label, distanceKm, fraction }) => {
     const velocityMperMin = velocityAtFraction(vdot, fraction)
     const timeMinutes     = (distanceKm * 1000) / velocityMperMin
     const timeSeconds     = Math.round(timeMinutes * 60)
-    return { distanceKm, label, timeSeconds, formattedTime: formatClockTime(timeSeconds) ?? '\u2014' }
+    const fmt = coarse ? formatClockTimeCoarse(timeSeconds) : formatClockTime(timeSeconds)
+    return { distanceKm, label, timeSeconds, formattedTime: fmt ?? '\u2014' }
   })
 }
 
@@ -473,11 +483,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       state:       4,
       confidence:  'low' as const,
-      label:       'Rough estimate — add a benchmark or connect Strava for accuracy',
+      // Em dash removed (BRAND-EMDASH-01 standard) and the claim narrowed: it
+      // is not a "rough estimate" OF the runner, it is an estimate FROM what
+      // they told the wizard. The card's own lead says what fixes it.
+      label:       'Estimated from your wizard answers, not your running',
       source:      'wizard',
       vdot:        parseFloat(bracketV.toFixed(1)),
       discountPct:  5,
-      distances:   projectRaceTimes(bracketV),
+      distances:   projectRaceTimes(bracketV, true),  // coarse: a table lookup cannot support seconds
       target:      null,   // no baseline comparison on bracket estimate
       recalibrationSuggested: false,
       upgradeCtaType: 'both',  // both benchmark and Strava improve this

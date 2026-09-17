@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-17 — RACE-PROJ-PRECISION-01 · We were telling runners their marathon time to the second, from a dropdown
+**Shipped:** The wizard-bracket race projection renders at minute precision, the action leads, and the table sits behind a tap.
+**Dev learning:** The founder asked how four race times were derived for a runner with no history and no benchmark. Answer: a three-by-four lookup table indexed on two wizard answers. I reproduced all four numbers to the second from the table cell. The whole no-benchmark population has nine possible outcomes.
+**Product/creator learning:** Precision is a claim, and it is a louder claim than any caveat sitting next to it. We had a grey "LOW" pill beside "3:54:16" and told ourselves that was honest. Sixteen seconds of precision overrides a pill. The fix was not better labelling, it was making the shape of the number say estimate: 3:54, and under an hour "49 min" rather than "49:00", because mm:00 re-implies the thing you just removed.
+**AI-building learning:** I queried the live database rather than reasoning about how common this was, and it changed the recommendation. Fifty-eight percent of real plans have no benchmark, so this was not an edge case, it was the default experience. Better still: of six comparable plans, two runners answered the training-age question and two declined it, and all four were shown identical figures. Our code substitutes the middle bracket for a declined question, so "I would rather not say" and a real answer produce the same confident output. That is the sharpest version of the problem and I would not have found it by reading code.
+**The honest bit:** The design already had the right mechanism and applied it backwards. A pass three days earlier collapsed the table behind a tap when a runner had real trajectory data, and left it fully open when they had none. The state with the least evidence was showing the most numbers, full width, at the top of the card. Nobody noticed because the card is paid, auth-gated, and fetches on mount, so the majority path had never been rendered anywhere a person could look at it.
+**Hook material:** Our app told a runner their marathon finish time would be 3:54:16. Sixteen seconds of precision. It came from a dropdown they filled in during signup, and for 58% of our users that is the only input we had. Two of them had declined to answer the question entirely and got the same number as the people who answered.
+**Postable?:** yes
+
 ## 2026-09-17 — DOC-STATE-GATE-01 · Asked three times if the docs were current, right three times, wrong three times
 **Shipped:** A hook that flags a dated "state at end of day" paragraph once a ship has moved past the commit it names.
 **Dev learning:** Nothing I wrote was wrong when I wrote it. I wrote "state at END of the day" in the middle of the day and then kept working; six more ships landed after one of those commits. The document did not decay, the tree moved underneath a sentence that had frozen a number.

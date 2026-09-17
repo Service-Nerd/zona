@@ -274,6 +274,34 @@ export function formatClockTime(totalSeconds: number | null | undefined): string
  * next to an arrow that already means the same thing, and `Math.abs()` inside
  * a caller is how direction gets lost entirely.
  */
+/**
+ * A clock time at MINUTE precision, for an estimate that cannot support seconds.
+ *
+ * RACE-PROJ-PRECISION-01 (SLT 2026-09-17). The race-projections card rendered
+ * `3:54:16` — sixteen seconds of precision — for a runner with no benchmark and
+ * no run history, whose estimate came from a 3x4 lookup table indexed on two
+ * wizard answers. Measured on the live database: **11 of 19 plans (58%) have no
+ * benchmark**, so that was the majority path, and `confidence` drove only the
+ * colour of a chip, never the precision of the number beside it.
+ *
+ * Sutherland's point, and the reason this function exists rather than a label
+ * change: **precision is a louder signal than any caveat.** A runner reads
+ * sixteen seconds as a measurement whatever the grey pill next to it says.
+ *
+ * Rounds to the nearest minute and drops the seconds field entirely, so the
+ * shape itself says "estimate": `3:54` / `49` rather than `3:54:16` / `49:09`.
+ * Under an hour it returns bare minutes, because `49:00` re-implies the
+ * precision this removes.
+ */
+export function formatClockTimeCoarse(totalSeconds: number | null | undefined): string | null {
+  if (totalSeconds == null || !Number.isFinite(totalSeconds) || totalSeconds < 0) return null
+  const mins = Math.round(totalSeconds / 60)
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}`
+  return `${m} min`
+}
+
 export function formatElapsedDelta(seconds: number | null | undefined): string | null {
   if (seconds == null || !Number.isFinite(seconds)) return null
   const abs = Math.round(Math.abs(seconds))

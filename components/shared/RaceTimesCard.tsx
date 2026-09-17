@@ -64,6 +64,7 @@ export function RaceTimesCard({
   benchmarkRecalDismissedAt,
   onOpenBenchmark,
   onDismissRecal,
+  previewData,
 }: {
   /** Surface this card is rendered on — drives copy framing. Defaults to `status` (Coach screen). */
   variant?:                   RaceProjectionsVariant
@@ -71,9 +72,16 @@ export function RaceTimesCard({
   benchmarkRecalDismissedAt?: string | null
   onOpenBenchmark?:          () => void
   onDismissRecal?:           () => void
+  /** Fixture seam for `/coach-preview` ONLY. When set, the card renders this
+   *  instead of fetching. This card is PAID and auth-gated, so every state of
+   *  it was previously unviewable without being a user in that state — which
+   *  is how the wizard-bracket state, the MAJORITY path at 58% of plans, went
+   *  unexamined until the founder read it on a test account. Never passed from
+   *  the app. */
+  previewData?:              RaceTimeData
 }) {
-  const [data, setData]       = useState<RaceTimeData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [data, setData]       = useState<RaceTimeData | null>(previewData ?? null)
+  const [loading, setLoading] = useState(!previewData)
   const [error, setError]     = useState<string | null>(null)
   // Progressive disclosure (UX-COACH-01 polish): when the arc is the hero, the
   // per-distance reference table collapses behind a tap so the runner's own
@@ -83,6 +91,7 @@ export function RaceTimesCard({
   const copy = RACE_PROJECTIONS_COPY[variant]
 
   useEffect(() => {
+    if (previewData) return
     authedFetch('/api/race-times')
       .then(async (res) => {
         if (!res.ok) throw new Error('Failed')
@@ -90,7 +99,7 @@ export function RaceTimesCard({
       })
       .catch(() => setError('Could not load race projections.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [previewData])
 
   // R32: recal nudge is visible when (a) variant supports it — only `status`
   // does, since `anchor`/`result` ARE the recalibrate flow — (b) the route
@@ -249,6 +258,33 @@ export function RaceTimesCard({
             )
           })()}
 
+          {/* ── RACE-PROJ-LEAD-01: the bracket estimate leads with the action ──
+              State 4 only. The numbers below it are a lookup table indexed on
+              two wizard answers, so the useful content on this state is not the
+              figures — it is the one thing that replaces them with a
+              measurement. Same pill CTA as the recalibration nudge below: one
+              visual language for "do this thing" inside this card. ── */}
+          {data.source === 'wizard' && copy.bracket && (
+            <div style={{ marginBottom: '4px' }}>
+              <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 10px' }}>
+                {copy.bracket.body}
+              </p>
+              {onOpenBenchmark && (
+                <button
+                  onClick={onOpenBenchmark}
+                  style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
+                    color: 'var(--moss)', background: 'rgba(107,142,107,0.10)',
+                    border: 'none', borderRadius: '20px', padding: '7px 14px',
+                    minHeight: '36px', cursor: 'pointer',
+                  }}
+                >
+                  {copy.bracket.cta}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* ── Estimated times per distance ──────────────────────────────
               UX-COACH-01 polish (2026-09-13). Progressive disclosure: when the
               arc is the hero (the runner's OWN race trajectory), this reference
@@ -260,6 +296,16 @@ export function RaceTimesCard({
               (▾ collapsed / ▴ expanded). ── */}
           {data.distances && data.distances.length > 0 && (() => {
             const arcShown = !!(arc && arcLabels)
+            // RACE-PROJ-LEAD-01 (SLT 2026-09-17). The table also collapses when
+            // the estimate is the WIZARD BRACKET (state 4) — the state with the
+            // least evidence behind it was the one showing the most numbers,
+            // full width, because the 2026-09-13 disclosure keyed on the ARC
+            // and state 4 has none. `source` is the route's own structural
+            // discriminator, so this is not inferred from confidence.
+            const isBracket = data.source === 'wizard'
+            const toggleLabel = isBracket
+              ? (copy.bracket?.toggle ?? arcLabels?.distancesToggle ?? '')
+              : (arcLabels?.distancesToggle ?? '')
             const rows = (
               <div style={{ marginTop: arcShown ? '4px' : 0 }}>
                 {data.distances!.map((d, i) => (
@@ -282,7 +328,9 @@ export function RaceTimesCard({
               </div>
             )
 
-            if (!arcShown) return rows   // the table is the primary content
+            // The table is the primary content only when something the runner
+            // actually ran is behind it.
+            if (!arcShown && !isBracket) return rows
 
             return (
               <div>
@@ -297,7 +345,7 @@ export function RaceTimesCard({
                   }}
                 >
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)' }}>
-                    {arcLabels!.distancesToggle}
+                    {toggleLabel}
                   </span>
                   <span aria-hidden style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginLeft: '12px' }}>
                     {distancesOpen ? '▴' : '▾'}
@@ -309,7 +357,10 @@ export function RaceTimesCard({
           })()}
 
           {/* Low-confidence prompt */}
-          {(data.state === 3 || data.state === 4) && (() => {
+          {/* State 4 says this at the TOP now (RACE-PROJ-LEAD-01), so repeating
+              it underneath would be the two-tiles-one-cause mistake one screen
+              over. State 3 HAS a benchmark, so its prompt stays where it is. */}
+          {(data.state === 3 || (data.state === 4 && !copy.bracket)) && (() => {
             const message = data.state === 3
               ? copy.lowConf.withBenchmark
               : stravaConnected

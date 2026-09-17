@@ -32,6 +32,28 @@ export interface RaceProjectionsCopy {
     withoutBenchmarkNoStrava: string
   }
   /**
+   * RACE-PROJ-LEAD-01 (SLT 2026-09-17) — state 4 only: the estimate came from
+   * the runner's WIZARD ANSWERS, not from anything they have run.
+   *
+   * Measured on the live database: 11 of 19 plans (58%) carry no benchmark, so
+   * this is the MAJORITY path, not an edge case. The numbers behind it are a
+   * 3x4 lookup table with nine distinct outcomes for the entire population, and
+   * a runner who DECLINED the training-age question gets the same figures as
+   * one who answered "6-18 months" — the two are indistinguishable on screen.
+   *
+   * So on this state the action leads and the table follows, which is the
+   * reverse of what shipped: the 2026-09-13 pass collapsed the table when an
+   * arc was present (MORE evidence) and left it fully open when there was none.
+   */
+  bracket?: {
+    /** Leads the card. Says where the numbers came from, plainly. */
+    body:   string
+    /** The one action that replaces a lookup with a measurement. */
+    cta:    string
+    /** Tap-to-expand label for the table, which is collapsed on this state. */
+    toggle: string
+  }
+  /**
    * Recalibration nudge — only present on the `status` variant. Other surfaces
    * either ARE the recalibration UI (`anchor`) or just confirmed it (`result`),
    * so a "go recalibrate" CTA would be a tautology.
@@ -96,6 +118,11 @@ export const RACE_PROJECTIONS_COPY: Record<RaceProjectionsVariant, RaceProjectio
       withBenchmark:           'Log a benchmark result in Profile for a higher-confidence estimate.',
       withoutBenchmarkStrava:  'Log a benchmark result in Profile to improve accuracy.',
       withoutBenchmarkNoStrava:'Add a benchmark in Profile, or complete a few easy runs with heart rate.',
+    },
+    bracket: {
+      body:   'These come from your wizard answers, not from anything you have run yet.',
+      cta:    'Add a benchmark \u2192',
+      toggle: 'See the rough estimates',
     },
     recal: {
       body:    'Aerobic fitness has moved since plan start. Your training zones may be set too low for where you are now.',
