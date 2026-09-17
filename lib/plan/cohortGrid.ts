@@ -173,6 +173,18 @@ const TARGETED_DECLARED = [undefined, 'beginner', 'intermediate', 'experienced']
 const TARGETED_WEEKS_AT_VOLUME = [undefined, 1, 4, 12] as const
 const TARGETED_FOUNDATION = [undefined, 'add', 'skip', 'start_now'] as const
 const TARGETED_DAY_BUDGETS = [undefined, { mon: 30, tue: 45, wed: 30, thu: 60, fri: 30 }] as const
+// LIVENESS-DEBT-01 (2026-09-17). A SIXTH axis, and it is here for the reason the
+// other five are: `INV-PLAN-OVERDO-BRAKE` is gated on
+// `hard_session_relationship === 'overdo'`, NEITHER grid ever set anything but
+// 'neutral', and a plan mutation cannot reach an INPUT field — so the rule was
+// structurally unwakeable and sat in the liveness debt register as "nobody has
+// looked yet".
+//
+// All four values, not just 'overdo': 'avoid' gates §110 (CB-HSR-AVOID-01, where
+// `avoid` acted as an off switch, 2,953 plans got zero quality and no invariant
+// fired) and 'love' gates §96's honesty line. A declared enum held at one value
+// is the exact shape GRID-COVERAGE-01 was written against.
+const TARGETED_HSR = ['neutral', 'overdo', 'avoid', 'love'] as const
 const TARGETED_DISTANCES = [
   { km: 10,   weeks: 12 },
   { km: 21.1, weeks: 16 },
@@ -182,7 +194,7 @@ const TARGETED_DISTANCES = [
 /**
  * The five `GeneratorInput` fields `cohortGrid` still never varies.
  *
- * 3 x 4 x 4 x 4 x 4 x 2 = 1,536 inputs (~3s). Held at ONE representative base
+ * 3 x 4 x 4 x 4 x 4 x 2 x 4 = 6,144 inputs (~9s). Held at ONE representative base
  * otherwise, because the point is to make each mechanism REACHABLE, not to
  * re-measure the population — `cohortGrid` owns that.
  *
@@ -198,7 +210,8 @@ export function targetedGrid(): GeneratorInput[] {
       for (const declared of TARGETED_DECLARED)
         for (const weeksAtVolume of TARGETED_WEEKS_AT_VOLUME)
           for (const foundation of TARGETED_FOUNDATION)
-            for (const dayBudgets of TARGETED_DAY_BUDGETS) {
+            for (const dayBudgets of TARGETED_DAY_BUDGETS)
+              for (const hsr of TARGETED_HSR) {
               out.push({
                 athlete_name: 'Athlete', age: 40, race_name: 'Test',
                 primary_metric: 'distance', plan_start: COHORT_PLAN_START,
@@ -207,7 +220,7 @@ export function targetedGrid(): GeneratorInput[] {
                 current_weekly_km: 30, longest_recent_run_km: 12,
                 fitness_level: 'beginner',
                 recent_quality_training: 'occasional',
-                hard_session_relationship: 'neutral',
+                hard_session_relationship: hsr,
                 training_age: '6-18mo',
                 days_available: 4, days_cannot_train: [],
                 injury_history: [...injury_history],

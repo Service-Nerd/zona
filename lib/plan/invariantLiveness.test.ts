@@ -71,7 +71,7 @@ describe('invariant liveness — a rule that cannot fail is not a check', () => 
 
   it('the recorded reasons are from the fixed set', () => {
     const bad = Object.entries(BASELINE.unproven)
-      .filter(([, r]) => !['corpus', 'mutation', 'unclassified'].includes(r))
+      .filter(([, r]) => !['corpus', 'mutation', 'static', 'unclassified'].includes(r))
     expect(bad).toEqual([])
   })
 })

@@ -418,6 +418,224 @@ export const MUTATIONS: Mutation[] = [
         ;(s as unknown as Poke).distance_km = km
       })
     } },
+  // ──────────────────────────────────────────────────────────────────────────
+  // LIVENESS-DEBT-01 (2026-09-17) — the `unclassified` column, worked.
+  //
+  // Twenty invariants sat in the baseline marked "nobody has looked yet". Each
+  // mutation below was written against the rule's own gate, not against a guess
+  // at what it means, and every one is the SHAPE the rule exists to forbid.
+  // ──────────────────────────────────────────────────────────────────────────
+
+  // §2 / INV-PLAN-BOUNCEBACK-BOUNDED — an injury-history runner's post-deload
+  // week returning to pre-deload volume. Needs a clean [pre, deload, bounce]
+  // triple: no blanket weekly_km mutation makes one, because scaling every week
+  // by the same factor leaves the RATIO the rule reads unchanged.
+  { name: 'bounceback back to pre-deload', apply: p => {
+    for (let i = 2; i < p.weeks.length; i++) {
+      const [pre, dl, bounce] = [p.weeks[i - 2], p.weeks[i - 1], p.weeks[i]]
+      const isDl = (w: typeof dl) => w.type === 'deload' || w.badge === 'deload'
+      if (!isDl(dl) || isDl(bounce) || isDl(pre) || bounce.phase === 'taper') continue
+      bounce.weekly_km = pre.weekly_km * 1.2
+      return
+    }
+  } },
+
+  // §90 / INV-PLAN-INJURY-CAP-DELIVERED — the cap is a promise about the
+  // TRIMABLE (non-long-run) portion, so the long run has to be held DOWN while
+  // the week climbs. 'weekly_km x5' cannot reach it: it scales the long run too,
+  // and the non-long ratio it reads comes out unchanged.
+  { name: 'ramp the trimable portion', apply: p => {
+    realWeeks(p).forEach((w, i) => {
+      for (const s of Object.values(w.sessions ?? {})) {
+        if (s && isLongRun(s)) (s as unknown as Poke).distance_km = 1
+      }
+      w.weekly_km = Math.round(20 * Math.pow(1.6, Math.min(i, 6)))
+    })
+  } },
+
+  // §98 / INV-PLAN-ONSET-YIELD-BOUNDED — the yield ladder walking PAST its own
+  // ungated bound. Plan-level meta the session battery cannot reach.
+  { name: 'onset yield past its bound', apply: p => {
+    (p.meta as unknown as Poke).onset_yield = { rungs: 3, bound: 2, effective: 5 }
+  } },
+
+  // CAT-ROW-ELIGIBILITY-01 / INV-PLAN-DERIVED-SET-PACED — a work step authored
+  // at a pace anchor whose pace never resolved: a distance with no target. The
+  // opposite of 'strip derived_set', which removes the claim along with the gap.
+  { name: 'paced work step with no pace', apply: p => {
+    for (const s of sessionsOf(p)) {
+      const ds = (s as unknown as { derived_set?: { blocks?: Array<{ steps?: Array<Record<string, unknown>> }> } }).derived_set
+      if (!ds?.blocks?.length) continue
+      for (const b of ds.blocks) for (const st of b.steps ?? []) {
+        if (st.role !== 'work') continue
+        st.pace_mode = st.pace_mode ?? 'target'
+        st.pace = null
+      }
+      return
+    }
+  } },
+
+  // §40b / INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED — neither grid ever sets
+  // `terrain`, but the rule reads `plan.meta.terrain`, which IS mutable. The
+  // shape is an effort-governed terrain carrying no effort-lead note.
+  { name: 'effort-governed terrain, no note', apply: p => {
+    const meta = p.meta as unknown as Poke
+    meta.terrain = GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS[0]
+    delete meta.terrain_effort_note
+  } },
+
+  // §40b / INV-PLAN-EFFORT-GOVERNED-NOT-GOAL-PACED — a pace number on a row
+  // whose every work step is effort-targeted. `hill_reps` is such a row; the
+  // mutation gives it the one thing the runner cannot act on.
+  { name: 'goal-pace an effort-governed row', apply: p => {
+    for (const s of sessionsOf(p)) {
+      const sn = s as unknown as Poke & { type?: string }
+      if (sn.type !== 'quality') continue
+      sn.catalogue_id = 'hill_reps'
+      sn.pace_target = '4:30–4:50 /km'
+      return
+    }
+  } },
+
+  // §82 / INV-PLAN-EASY-FLOOR-PROTECTION-DECLARED — the floor fired and the
+  // plan absorbed it silently. Needs BOTH gates: enough protected weeks, and a
+  // profile that does not declare the suppression.
+  { name: 'floor protection, undeclared', apply: p => {
+    (p.meta as unknown as Poke).volume_profile = 'build'
+    delete (p.meta as unknown as Poke).volume_constraint_note
+    let hit = 0
+    for (const w of realWeeks(p)) {
+      const s = Object.values(w.sessions ?? {}).find(Boolean)
+      if (!s) continue
+      ;(s as unknown as Poke).floor_protected = true
+      if (++hit >= GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS + 1) return
+    }
+  } },
+
+  // §5 / INV-PLAN-VO2MAX-ONSET — VO2max introduced too late to adapt to it.
+  // BOTH halves are needed: the early weeks must be CLEARED of vo2max (else
+  // `vo2Weeks[0]` is early and the gap is legal) and the last build week loaded.
+  { name: 'vo2max on the taper doorstep', apply: p => {
+    const taperN = p.weeks.find(w => w.phase === 'taper')?.n
+    if (taperN == null) return
+    for (const s of sessionsOf(p)) {
+      const sn = s as unknown as Poke & { stimulus?: string }
+      if (sn.stimulus === 'vo2max') sn.stimulus = 'tempo'
+      if (sn.catalogue_id === 'intervals_classic') sn.catalogue_id = 'tempo_continuous'
+    }
+    const target = p.weeks.filter(w => w.n >= 1 && w.n < taperN).pop()
+    if (!target) return
+    const q = Object.values(target.sessions ?? {}).find(s => s && (s as { type?: string }).type === 'quality')
+      ?? Object.values(target.sessions ?? {}).find(Boolean)
+    if (!q) return
+    const sn = q as unknown as Poke
+    sn.type = 'quality'; sn.stimulus = 'vo2max'
+    sn.catalogue_id = 'intervals_classic'; sn.label = 'Classic VO2max'
+  } },
+
+  // §26 / INV-PLAN-RACE-WEEK-SHARPENING — race week is for sharpening, not
+  // training. 'all sessions quality' leaves the LABEL alone and the rule reads
+  // the label; 'all sessions hills' leaves the TYPE alone. It needs both.
+  { name: 'tempo work in race week', apply: p => {
+    for (const w of p.weeks) {
+      const entries = Object.entries(w.sessions ?? {})
+      if (!entries.some(([, s]) => (s as { type?: string } | null)?.type === 'race')) continue
+      const donor = entries.find(([, s]) => {
+        const t = (s as { type?: string } | null)?.type
+        return t && t !== 'race' && t !== 'rest'
+      })?.[1]
+      if (!donor) continue
+      const sn = donor as unknown as Poke
+      sn.type = 'quality'; sn.label = 'Threshold tempo'
+      return
+    }
+  } },
+
+  // §44 / INV-PLAN-DIFFICULTY-ANNOTATED — 'drop every meta note' matches
+  // /note|status|annotat/ and `difficulty_band` matches none of them, so the
+  // one field this rule reads survived every existing meta mutation.
+  { name: 'drop difficulty_band', apply: p => {
+    delete (p.meta as unknown as Poke).difficulty_band
+  } },
+
+  // §83 / INV-PLAN-INTENSITY-ORDERING — threshold work prescribed FASTER than
+  // VO2max work. Needs a matched pair in two different zone bands, which the
+  // engine never produces, and the escape hatch closed (a surfaced goal-beyond-
+  // fitness plan is allowed to invert).
+  { name: 'threshold faster than vo2max', apply: p => {
+    (p.meta as unknown as Poke).goal_beyond_measured_fitness = false
+    const qs = sessionsOf(p).filter(s => (s as unknown as { type?: string }).type === 'quality')
+    if (qs.length < 2) return
+    const [a, b] = qs as unknown as Poke[]
+    a.zone = 'Zone 3'; a.pace_target = '3:00–3:10 /km'
+    b.zone = 'Zone 4'; b.pace_target = '5:00–5:10 /km'
+  } },
+
+  // §46 / INV-PLAN-PEAK-VOLUME-FLOOR-LONG-RACES — a marathon/ultra peak below
+  // the volume floor. 'weekly_km = 0' cannot reach it alone: the rule exempts
+  // maintenance, which is what a zeroed plan classifies as.
+  { name: 'peak below the long-race floor', apply: p => {
+    (p.meta as unknown as Poke).volume_profile = 'build'
+    for (const w of p.weeks) if (w.phase === 'peak') w.weekly_km = 1
+  } },
+
+  // §50 / INV-PLAN-HR-ASSUMPTIONS-SURFACED — the plan stops saying which of the
+  // six fallback methods produced the zones the runner is training in.
+  { name: 'drop hr_zone_method', apply: p => {
+    delete (p.meta as unknown as Poke).hr_zone_method
+  } },
+
+  // §50 / INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR — a derived max BELOW the
+  // age estimate with nothing but an estimate behind it. Every zone in the plan
+  // is then anchored to a ceiling the runner demonstrably clears.
+  { name: 'derived max below the estimate', apply: p => {
+    const meta = p.meta as unknown as Poke
+    meta.hr_estimated_max = 180
+    meta.hr_derived_max = 150
+    meta.hr_max_source = 'estimated'
+  } },
+
+  // §79 / INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE — the load-bearing half of the
+  // two-axis rule: declaring yourself experienced buys INTENSITY, never
+  // TONNAGE. The shape is a declared lift that moved the peak target.
+  { name: 'declared level buys tonnage', apply: p => {
+    const meta = p.meta as unknown as Poke
+    meta.fitness_level_declared = 'experienced'
+    meta.fitness_level = 'beginner'
+    meta.peak_km_target = 500
+  } },
+
+  // §24c / INV-PLAN-BUILD-LR-SEGMENT-CAP and §24d / INV-PLAN-FINISH-GOAL-LR-CAP
+  // — a paced segment inside a long run that should not carry one (a 5K/10K
+  // build week; any finish-goal plan). 'strip lr_segment_pace' removes the
+  // field; nothing in the battery ever ADDED it, so both rules read as dead.
+  { name: 'segment every long run', apply: p => {
+    sessionsOf(p).forEach(s => {
+      if (isLongRun(s)) (s as unknown as Poke).lr_segment_pace = '5:10–5:30 /km'
+    })
+  } },
+
+  // §96 / INV-PLAN-OVERDO-BRAKE — the readiness gate firing for a runner who
+  // declared they will push too hard if allowed. The existing 'claim a gated
+  // runner with a foundation block' mutation also sets this flag, but it drops
+  // weeks and prepends a block at the same time, so it can throw before the
+  // check is reached. This asserts the flag and nothing else.
+  { name: 'claim early quality onset', apply: p => {
+    (p.meta as unknown as Poke).early_quality_onset = true
+  } },
+
+  // §21 / INV-PLAN-INJURY-NO-HILLS — hill work for a runner whose injury
+  // history forbids it. Sets the STRUCTURAL half (a catalogue row whose steps
+  // are uphill) as well as the label, because the rule accepts either and a
+  // label-only mutation proves only half the gate.
+  { name: 'hill reps for a hill-restricted runner', apply: p => {
+    sessionsOf(p).forEach(s => {
+      const sn = s as unknown as Poke & { type?: string }
+      if (sn.type === 'rest') return
+      sn.catalogue_id = 'hill_reps'
+      sn.label = 'Hill reps — 90s'
+    })
+  } },
 ]
 
 export interface LivenessReport {
@@ -476,8 +694,16 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
   const targetedSeen = new Set<string>()
   const byTargetedShape = targetedGrid().filter(i => {
     const r = i as unknown as Record<string, unknown>
+    // `hard_session_relationship` is IN THE KEY, and leaving it out is not a
+    // detail: the key is what the dedup calls a distinct shape, so a field the
+    // key omits collapses back to whichever value happens to come first.
+    // Measured 2026-09-17 — adding the axis took the grid 1,536 -> 6,144 and the
+    // dedup put it straight back to 1,536, all 'neutral', leaving
+    // INV-PLAN-OVERDO-BRAKE exactly as unwakeable as before the widening. Same
+    // failure as §107's in 2026-09-12 and PEAK-LR-EARNED-TIER's in 2026-09-15.
     const k = `${r.race_distance_km}|${JSON.stringify(r.injury_history)}|${r.user_declared_level}`
       + `|${r.weeks_at_current_volume}|${r.foundation_decision}|${r.day_budgets ? 'budgets' : 'none'}`
+      + `|${r.hard_session_relationship}`
     if (targetedSeen.has(k)) return false
     targetedSeen.add(k)
     return true
@@ -489,7 +715,36 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
   // that only the BULK reaches, because the budget ran out before the bulk
   // started. Interleaving makes each corpus's share proportional to the budget
   // rather than to its position in the list.
-  const corpora = [byShape, byTargetedShape, cohortGrid() as GeneratorInput[]]
+  // SPREAD EACH CORPUS, because a round-robin CONSUMES HEADS (LIVENESS-DEBT-01,
+  // 2026-09-17). This is the third time the sample has been the bug rather than
+  // the rules, and the first two fixes did not reach it:
+  //
+  //   · the by-shape dedup fixed WHICH SHAPES EXIST in the list (2026-09-12),
+  //   · the shape key fixed WHICH FIELD distinguishes them (2026-09-15),
+  //   · neither changed the fact that only the first ~21 entries of each corpus
+  //     are ever reached, because the budget is 64 across three corpora.
+  //
+  // Measured before this change: **zero of the 64 probed plans had an injury
+  // history and zero were marathons.** `targetedGrid` exists precisely to reach
+  // injury-gated mechanisms, and its dedup key names every axis it varies — so
+  // the key is distinct for all 1,536 rows, the filter removes nothing, and the
+  // head of the list is the base case with each axis at its FIRST value. Three
+  // injury-gated invariants (BOUNCEBACK-BOUNDED, INJURY-CAP-DELIVERED,
+  // INJURY-NO-HILLS) and the marathon volume floor read as unwakeable on a
+  // corpus that could not contain their trigger.
+  //
+  // A coprime stride makes every PREFIX low-discrepancy, so the budget lands
+  // across each corpus instead of on its first rows, and the walk still visits
+  // every index exactly once (deterministic, no sampling).
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
+  const spread = <T,>(c: readonly T[]): T[] => {
+    const n = c.length
+    if (n < 3) return [...c]
+    let step = Math.max(1, Math.round(n * 0.6180339887))
+    while (step > 1 && gcd(step, n) !== 1) step--
+    return Array.from({ length: n }, (_, k) => c[(k * step) % n] as T)
+  }
+  const corpora = [spread(byShape), spread(byTargetedShape), spread(cohortGrid() as GeneratorInput[])]
   const ordered: GeneratorInput[] = []
   for (let i = 0; ordered.length < sampleSize * 4; i++) {
     let anyLeft = false

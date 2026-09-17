@@ -21,7 +21,7 @@ describe('targetedGrid — the fields the main grid cannot reach', () => {
     // unreachable while the suite stays green.
     const REQUIRED = [
       'injury_history', 'user_declared_level', 'weeks_at_current_volume',
-      'foundation_decision', 'day_budgets',
+      'foundation_decision', 'day_budgets', 'hard_session_relationship',
     ] as const
     const constant: string[] = []
     for (const field of REQUIRED) {

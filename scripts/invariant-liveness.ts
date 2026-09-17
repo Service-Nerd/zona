@@ -44,6 +44,11 @@ if (process.argv.includes('--write')) {
     reasons: {
       corpus: 'the harness never builds this plan SHAPE (maintenance has its own generator; foundation / recalibration / ultra are not in the cohort grid). Not a defect in the check.',
       mutation: 'the battery does not yet perturb the field this rule reads. Add a mutation, not a fixture.',
+      static: 'the rule reads STATIC CONFIGURATION (the catalogue, the plan '
+        + 'signatures), not the plan, so no plan mutation can reach it by '
+        + 'construction — a `Plan => void` cannot perturb a module constant. '
+        + 'Not debt and not a defect: it needs a config test that breaks the '
+        + 'data, which is a different harness. Name that test when you use this.',
       unclassified: 'nobody has looked yet. THIS is the column that should shrink.',
     },
     generated: new Date().toISOString().slice(0, 10),
