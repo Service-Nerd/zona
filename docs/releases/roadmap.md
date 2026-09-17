@@ -64,33 +64,46 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > code.** So the path is everything between the email and a plan on screen.
 > Nothing else is on it.
 
-> ✅ **ENGINE STATE, end of 2026-09-17.** `npm run verify` exit 0 (**2,066 tests /
-> 226 files**), **0 hard failures**, sweep 15,974 / no new violations, matrix 65/0,
-> `invariant:liveness` 107/118 with unclassified debt at **zero**, deviation **HIGH 0**.
+> ✅ **ENGINE STATE, end of 2026-09-17** (`6562836`). `npm run verify` exit 0
+> (**2,081 tests / 226 files**), **0 hard failures**, **118 invariants**
+> reconciled against `plan-invariants.md` in both directions with zero orphans
+> either way, property sweep **15,974 plans / 0 new above baseline**, archetype
+> matrix 65/0, `invariant:liveness` **107/118 woken (91%) with the
+> `unclassified` debt column at ZERO**, `test:liveness` 6 survivors all
+> classified, coaching deviation scan **HIGH 0 / MED 26**.
 >
-> ⚠️ **PLANS ARE NOW FIT FOR PURPOSE** at 5K, 10K and half marathon for every cohort,
-> and at marathon except time goals (short 1.2 km — two principles in conflict,
-> `S24-FLOOR-REACHABILITY-01`). Before today an injury-history runner could get
-> **eighteen weeks that ended on the weekly volume they started**; never-builds are
-> now **0%** at every distance.
+> ⚠️ **PLANS ARE NOW FIT FOR PURPOSE** at 5K, 10K and half marathon for every
+> cohort, and at marathon except time goals (short 1.2 km — two principles in
+> conflict, `S24-FLOOR-REACHABILITY-01`). Before today an injury-history runner
+> could get **eighteen weeks that ended on the weekly volume they started**;
+> never-builds are now **0%** at every distance.
 >
 > **`npm run measure:fitness` is the fourth check** — *does this plan BUILD the
 > runner?* — gated on every build. Run it before and after any engine change.
-
-> ✅ **ENGINE STATE, 2026-09-17 (end of day).** `npm run verify` exit 0 (**2,076
-> tests / 226 files**), **118 invariants** — reconciled against
-> `plan-invariants.md` in both directions, zero orphans either way — property
-> sweep **15,974 plans / 0 new above
-> baseline**, archetype matrix 65/0, **`invariant:liveness` 107/118 woken (91%)
-> with the `unclassified` debt column at ZERO**, `test:liveness` 6 survivors all
-> classified, coaching deviation scan **0 HIGH**.
 >
 > **All three coverage registers now cross-check each other mechanically**
 > (LIVENESS-DEBT-01 · COVERAGE-BITE-01 · TEST-BITE-01). A principle can no longer
 > be marked "checked" by an invariant or a test that nothing has ever made fail.
 >
-> **Open:** `MAINT-LIVENESS-01` (9 maintenance invariants have no liveness corpus;
-> §67 and §75 rest on two of them), plus the two coaching items below.
+> **OPEN — the full engine/coaching list, detail in `backlog.md`. Nothing urgent.**
+>
+> | Item | What it is |
+> |---|---|
+> | `S52-LOPSIDED-BOUND-01` | P1. A board amendment passed its stated condition and missed its stated purpose, twice. **Do not add a third per-week bound.** |
+> | `S24-FLOOR-REACHABILITY-01` | §9's 210-min cap vs §24's 31.65 km — marathon time goals land 1.2 km short. Two ratified principles in conflict. |
+> | `TT-FREE-BENCHMARK-01` | **SLT question, not a defect.** A free runner is prescribed a 5K benchmark whose result only a paid tier can apply. Three options written up. |
+> | `MAINT-LIVENESS-01` | 9 maintenance invariants have no liveness corpus; §67 and §75 rest on two of them. |
+> | `LR-CONSEC-01` | §45 is blind to compounding week-on-week long-run rises. |
+> | `GRID-MARATHON-CAPABLE-01` | The cohort grid cannot express a marathon-capable runner. |
+> | `STEPBACK-STALE-PEAK-01` | Peak step-back reads a stale peak. |
+> | `INV-MSG-ROUNDING-01` | P3. Invariant messages round inconsistently. |
+> | `LR-DELOAD-RESUME-01` | **Record only** — board-approved, built, measured, reverted as unsafe. Kept so it is not retried. |
+>
+> ⚠️ **This block names the commit it describes.** `state-block-check.py` flags
+> it on any `feat(`/`fix(` commit that postdates that SHA — it went stale three
+> times on 2026-09-17 while every hook-checked record stayed correct. There used
+> to be **two** competing "end of 2026-09-17" blocks here disagreeing on the test
+> count; they are merged, and a second one must not be added.
 
 > ✅ **ENGINE STATE, 2026-09-16 (showcase is Friday).** `npm run verify` exit 0
 > (**2,001 tests / 215+ files**), **115 invariants** registered, declared and
