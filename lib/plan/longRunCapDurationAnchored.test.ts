@@ -83,12 +83,25 @@ describe('§45 on a duration-anchored plan', () => {
     }
   })
 
-  it('specifically: no 26km long run off an 8.5km base', () => {
+  it('specifically: no runaway long run off an 8.5km base', () => {
     // The measured defect, pinned as a number. Pre-fix this plan peaked at
-    // 26.0km with the prior long run at 8.5km.
+    // 26.0km with the prior long run at 8.5km — a +206% single-week jump.
+    //
+    // ⚠️ PIN RAISED 20 -> 22 on 2026-09-17 (LR-DELOAD-CUT-01), and the reason
+    // matters because this guard exists for the worst incident in this repo.
+    // The DEFECT was the JUMP, not the peak. The jump is policed by the
+    // week-on-week test above, which passes — and it got SAFER, not worse:
+    // measured on this persona the deload's long-run cut goes -61% -> -34% and
+    // the worst single-week jump +50% -> +47%. Cutting less means climbing less.
+    // The peak rises 18.5 -> 20.5km as the intended consequence: this runner is
+    // attempting a marathon and 18.5km was not preparing them.
+    //
+    // ⚠️ IF THIS EVER NEEDS RAISING AGAIN, check the worst-jump number first.
+    // A peak pin that keeps drifting up while the jump also rises is the
+    // original defect coming back wearing a different number.
     const { plan } = gen()
     const peak = Math.max(...longRuns(plan).map(r => r.km))
-    expect(peak).toBeLessThan(20)
+    expect(peak).toBeLessThan(22)
   })
 
   it('the invariant agrees — and it can see the plan at all', () => {

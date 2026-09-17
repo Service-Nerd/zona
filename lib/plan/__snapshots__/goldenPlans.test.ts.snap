@@ -591,7 +591,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         },
         "sat": {
           "detail": null,
-          "distance_km": 10,
+          "distance_km": 10.5,
           "duration_mins": 79,
           "hr_target": "< 146 bpm",
           "id": "w8-sat",
@@ -622,7 +622,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       },
       "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
-      "weekly_km": 23,
+      "weekly_km": 24,
     },
     {
       "date": "2026-09-28",
@@ -5998,7 +5998,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         },
         "sun": {
           "detail": null,
-          "distance_km": 13.5,
+          "distance_km": 15.5,
           "duration_mins": 75,
           "hr_target": "< 147 bpm",
           "id": "w8-sun",
@@ -6042,7 +6042,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       },
       "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
-      "weekly_km": 43,
+      "weekly_km": 45,
     },
     {
       "date": "2026-09-28",
@@ -7511,7 +7511,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "detail": null,
-          "distance_km": 6.5,
+          "distance_km": 7.5,
           "duration_mins": 46,
           "hr_target": "< 138 bpm",
           "id": "w8-sun",
@@ -7539,7 +7539,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       },
       "theme": "Adaptation happens in recovery. This week counts.",
       "type": "deload",
-      "weekly_km": 17,
+      "weekly_km": 18,
     },
     {
       "date": "2026-09-28",
@@ -9277,7 +9277,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         },
         "sun": {
           "detail": null,
-          "distance_km": 13.5,
+          "distance_km": 14.5,
           "duration_mins": 77,
           "hr_target": "< 148 bpm",
           "id": "w8-sun",
@@ -9321,7 +9321,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
       },
       "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
       "type": "deload",
-      "weekly_km": 43,
+      "weekly_km": 44,
     },
     {
       "date": "2026-09-28",

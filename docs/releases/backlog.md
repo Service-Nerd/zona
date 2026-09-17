@@ -125,7 +125,9 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 >
 > *Verify still open:* `grep -c '"corpus"' lib/plan/__fixtures__/invariantLivenessBaseline.json` → **9 = still open**.
 
-> 🔲 **LR-DELOAD-CUT-01 — the deload cuts the LONG RUN harder than it cuts the WEEK, and that is the single root cause of every remaining long-run shortfall.** *(P1, filed 2026-09-17. **Supersedes the framing of LR-DELOAD-RESUME-01 below — same defect, and the fix belongs at the CUT, not the resume.** Needs a §3/§9 board sitting.)*
+> ✅ **LR-DELOAD-CUT-01 — SHIPPED 2026-09-17 (§3 Amendment).** Marathon finish knee+45+ **26.0 → 29.5km**, time-goal knee **30.5 → 32.0km**, M3 persona net build 54% → 79%. Worst single-week jump **+50% → +47%**; 2-week spikes 23.0% → 19.3%. ⚠️ Cost: marathon `maintenance` 68% → 72.7%, all §52 lopsidedness, founder-accepted. ⚠️ Willy's §52 bound did NOT prevent it — second time an amendment passed its condition and missed its purpose. Original entry below.
+>
+> 🔲 **(original) the deload cuts the LONG RUN harder than it cuts the WEEK.** *(P1, filed 2026-09-17. **Supersedes the framing of LR-DELOAD-RESUME-01 below — same defect, and the fix belongs at the CUT, not the resume.** Needs a §3/§9 board sitting.)*
 >
 > **Measured across 2,817 deload weeks:**
 >

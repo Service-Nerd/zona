@@ -387,6 +387,71 @@ Age is derived from `user_settings.date_of_birth` at plan generation time.
 
 ---
 
+### Amendment — the deload's LONG-RUN cut tracks the WEEK's cut (LR-DELOAD-CUT-01, Coaching Board 2026-09-17)
+
+**Principle.** On a recovery week the long run is reduced **in proportion to the
+week's own reduction**, bounded by §52's 60% share and §9's absolute minutes cap. It
+is never cut harder than the week is.
+
+**Why.** §3 above says *"volume drops to 70% of the prior build week"* — a statement
+about the **week**. Nothing in §3 asks the long run to be cut harder, and it was, on
+**half of all deloads**. Measured over 2,817 deload weeks: the week cut a median
+**22%**, the long run a median **30%**, with the long run cut >5pp harder on
+**50.4%**. Worst traced: a week falling 44 → 43 km (−2%) while its long run fell
+20.5 → 13.5 km (**−34%**).
+
+⚠️ **THE MECHANISM, established only after two hypotheses were disproved.** It is
+**not** the §24/§80 specificity pull switching off in deloads — the gap is identical
+in base phase, where no such pull exists. It is **not** sessions going unplaced —
+placed easy count equals planned on 100% of weeks. It is this: **the long run hits
+§9's share of the PLANNED week, and the rest of the week is trimmed during placement
+(median −6 km, p10 −22 km).** Same numerator, smaller denominator, so the delivered
+share rises from §9's 28–30% to **37–42%**. A deload's planned week is smaller, the
+trim bites proportionally harder, and the share falls back to 33–34%. That asymmetry
+*is* the disproportionate cut.
+
+**The consequence.** The long run then has to climb all the way back and runs out of
+weeks — the single root cause of every marathon shortfall left after PLAN-FITNESS-01.
+
+**Measured after:**
+
+| scenario | before | after |
+|---|---|---|
+| Marathon finish, knee + 45+ | 26.0 km ❌ | **29.5 km ✅** |
+| Marathon time goal, knee | 30.5 km ❌ | **32.0 km ✅** |
+| Marathon time goal, knee + 45+ | 26.0 km (−5.7) | **30.5 km** (−1.2) |
+| M3 review persona | 26.0 km, +54% build | **29.5 km, +79% build** |
+
+⚠️ **It is SAFER, not merely longer** — the point Willy's veto of the resume approach
+turned on. On the low-base beginner the deload cut goes **−61% → −34%** and the worst
+single-week jump **+50% → +47%**. Cutting less means climbing less. Across the
+population, plans carrying a two-week long-run rise above +40% fall **23.0% → 19.3%**.
+
+**Bounds (Willy's amendment, McMillan and Sims concurring).** §52's 60% and §9's
+`LONG_RUN_CAP_MINUTES` both bind on the result. ⚠️ The minutes cap was missed on the
+first build and `INV-PLAN-LONG-CAP-MINS` threw on 48 grid plans — a 5K long run at 92
+minutes against a 90-minute ceiling. `applyLongRunCap` is the single owner and is
+reused rather than re-expressed.
+
+⚠️ **WILLY'S §52 BOUND DOES NOT PREVENT THE §52 COST, AND THIS IS THE SECOND TIME
+THAT PATTERN HAS APPEARED.** It caps the **deload week**; the lopsidedness arises in
+the weeks **after** it, because the long run stays higher through the cycle. Measured:
+marathon plans classified `maintenance` rise **68% → 72.7% (+4.7pp)**, driven entirely
+by §52 (88 → 106 in a 753-plan sample) and **not** by floor failures (293 → 292).
+
+**The cost was accepted by the founder on 2026-09-17**: those weeks genuinely *are*
+long-run-dominated and §52 saying so is correct behaviour, against the alternative of
+leaving knee-history and masters runners 3.5–5.7 km short on the session that decides
+whether they finish. **If §52's lopsidedness is ever tightened, this is one of the
+things holding it up, and bounding the deload week will not be the lever.**
+
+**Config.** No new numeric — reuses `LONG_RUN_MAX_PCT_OF_WEEKLY` and
+`LONG_RUN_CAP_MINUTES`.
+
+**Board:** 2026-09-17 — CORRECT WITH AMENDMENT, Hutchinson chairing. Both conditions
+discharged: the mechanism is explained above, and §52 binding does not reopen the gaps.
+Record: `docs/decisions/coaching-board-2026-09-17-plan-fitness.md`.
+
 ## 4. Phase structure — base, build, peak, taper
 
 **Principle.** Plans progress through four phases. Each phase has a different purpose, a different intensity distribution, and a different long-run fraction.

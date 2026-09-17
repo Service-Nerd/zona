@@ -6421,6 +6421,76 @@ function buildRulePlanOnce(
   // CoachingPrinciples §9 (CD-9) — build-phase long-run step-backs. Runs LAST so
   // the progression cap can't re-inflate the reduced week. Peak long runs are
   // left alone (culmination + §80 floor), so this can't create a floor violation.
+  // §3 AMENDMENT — THE DELOAD'S LONG-RUN CUT TRACKS THE WEEK'S CUT
+  // (LR-DELOAD-CUT-01, Coaching Board 2026-09-17).
+  //
+  // §3 says "volume drops to 70% of the prior build week" — a statement about
+  // the WEEK. Nothing in §3 asks for the long run to be cut HARDER than the
+  // week, and it was, on HALF of all deloads. Measured over 2,817 deload weeks:
+  // week cut a median 22%, long run cut a median 30%, and on 50.4% the long run
+  // was cut >5pp harder. Worst traced: a week falling 44 -> 43km (-2%) while its
+  // long run fell 20.5 -> 13.5km (-34%).
+  //
+  // ⚠️ WHY THE LONG RUN SITS ABOVE §9's SHARE IN NORMAL WEEKS — the mechanism,
+  // established only after two wrong hypotheses were disproved. It is NOT the
+  // specificity pull switching off (the gap is identical in base phase, where no
+  // such pull exists) and NOT sessions going unplaced (placed easy count equals
+  // planned on 100% of weeks). It is this: THE LONG RUN HITS §9's SHARE OF THE
+  // PLANNED WEEK, AND THE REST OF THE WEEK IS TRIMMED DURING PLACEMENT — median
+  // -6km, p10 -22km. Same numerator, smaller denominator, so the delivered share
+  // rises from §9's 28-30% to 37-42%. A deload's planned week is smaller, the
+  // trim bites proportionally harder, and the share falls back to 33-34%. That
+  // asymmetry IS the disproportionate cut.
+  //
+  // THE CONSEQUENCE, and why this is a fitness defect rather than a curiosity:
+  // the long run then has to climb all the way back, and runs out of weeks. It
+  // is the single root cause of every remaining marathon shortfall — the
+  // knee+masters finish goal (26.0 vs §80's 29.5) and both time-goal cases.
+  //
+  // ⚠️ §52 BINDS ON THE RESULT (Willy's amendment, McMillan and Sims
+  // concurring). Without it a first marathoner off a 9km base reached a 24.5km
+  // long run — "not a long run inside a training week, a training week with a
+  // run attached". With it they reach 20.5km, and the worst single-week jump is
+  // +47% against +50% BEFORE this change: cutting less means climbing less.
+  for (let i = 1; i < weeks.length; i++) {
+    const prev = weeks[i - 1], curr = weeks[i]
+    const isDeloadWeek = curr.type === 'deload' || curr.badge === 'deload'
+    const prevIsDeload = prev.type === 'deload' || prev.badge === 'deload'
+    if (!isDeloadWeek || prevIsDeload || curr.type === 'race') continue
+    if (prev.weekly_km <= 0 || (curr.weekly_km ?? 0) <= 0) continue
+    const prevLr = Object.values(prev.sessions).find(x => x && isLongRun(x)) as Session | undefined
+    const currLr = Object.values(curr.sessions).find(x => x && isLongRun(x)) as Session | undefined
+    if (!prevLr || !currLr) continue
+    const prevKm = sessionKmSelfPaced(prevLr)
+    const currKm = sessionKmSelfPaced(currLr)
+    if (prevKm == null || currKm == null || prevKm <= 0) continue
+    // Proportional to the week's own cut, bounded by §52's ceiling, and then by
+    // §9's ABSOLUTE minutes cap.
+    //
+    // ⚠️ The minutes cap is not optional and was missed on the first build:
+    // raising a deload long run toward its proportional target pushed a 5K plan
+    // to a 92-minute long run against §9's 90-minute ceiling, and
+    // INV-PLAN-LONG-CAP-MINS threw on 48 grid plans. `applyLongRunCap` is the
+    // single owner of that ceiling, so it is reused rather than re-expressed.
+    const target = applyLongRunCap(
+      Math.min(
+        prevKm * (curr.weekly_km / prev.weekly_km),
+        curr.weekly_km * (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100),
+      ),
+      pace.minPerKmEasy,
+      input,
+    )
+    if (currKm >= target - 0.01) continue   // already at or above: a deload never ADDS
+    const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+    const set = Math.max(
+      Math.floor(target / precision) * precision,
+      GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long)
+    // Written on the axis the session already uses (§79/§80).
+    if (currLr.distance_km != null) currLr.distance_km = set
+    else currLr.duration_mins = Math.round(dur(set, pace.minPerKmEasy))
+    curr.weekly_km = sumWeeklyKm(curr.sessions, pace)
+  }
+
   applyLongRunStepBacks(weeks, pace)
   // §45 runs AFTER the step-backs, not before (fixed 2026-08-20). Running it
   // first meant it never saw the sequence the runner actually gets:
