@@ -994,6 +994,52 @@ Reference: inline render in `MeScreen` above the existing Identity card.
 
 ### 18. Plan Rationale — "Why this plan" (PLAN-NOTE-SURFACE-01)
 
+> ⚠️ **REVISED BY SLT 2026-09-17 after the founder read a real plan on device.**
+> Measured across 563 plans: **91.1% of runners saw a note, 74% saw two or three,
+> the mean was 130 words and the worst case 254** — a page of shortfall read
+> before the runner had seen a single session. The MAINTENANCE and VOLUME tiles
+> appeared together on 200 plans and **157 of those (78.5%) blamed the same cause**
+> (the weekday time cap), with 68 prescribing the identical lever. The runner read
+> the same advice twice with different numbers.
+>
+> Three rules now govern this section:
+>
+> 1. **One cause, one tile.** The volume-shortfall note is not shown beside the
+>    maintenance note; the maintenance note is the larger statement and wins.
+>    Applied inside a note too — two readings of "your mileage does not climb"
+>    collapse to the one that names an actionable gap.
+> 2. **Consequence, then cause, then the one lever.** No thresholds, no ratios, no
+>    "% of race distance". *"Peak-phase volume 52 km is 104% of week 1, below the
+>    110% overload threshold"* became *"Your weekly mileage holds steady across
+>    this plan rather than climbing into the final weeks."* Same fact, actionable.
+>    **Where a gap exists, both figures stay** — Hutchinson: a note that reports a
+>    constraint without naming what it costs is a disclaimer, not coaching.
+> 3. **Length is capped, not just count.** Wood's original guardrail capped COUNT
+>    at 3 and the wall arrived anyway, three items tall.
+>
+> **Result: mean 130 → 67 words, worst 254 → 117, and 510 of 513 plans now carry
+> exactly one tile.**
+>
+> ⚠️ **The runtime word budget is NOT what keeps these short.** It drops whole
+> notes and always keeps the first, and after the de-dupe almost every plan has
+> one note — so it decides nearly nothing at runtime. The guard that binds is the
+> per-note ratchet in `planRationale.test.ts`. Do not mistake the constant for
+> the control.
+>
+> **Still open (deliberately NOT bundled):** Wood argued the rationale does not
+> belong at the top of the plan at all — a runner asks "why is my long run short"
+> in week 3, not on day one. Held until the shortened version has been seen on
+> device, since the 254-word version is what made that argument feel obvious.
+> Filed as `PLAN-NOTE-PLACEMENT-01`.
+>
+> **Voice stays the RULE ENGINE'S, never Kit's.** Traynor's block: the enricher
+> never runs for free users, so "route these through the model for a friendlier
+> voice" would leave the free tier permanently with the cold copy. The registry's
+> old optional follow-up to do exactly that is **rejected on tier grounds**. These
+> notes also carry no byline and no rail (`AI-PROVENANCE-01`) because no model
+> wrote them.
+
+
 The engine's honest, rule-engine explanation of **why the plan is shaped this way**, surfaced on the Plan screen. Closes a systemic gap: a family of plan-level `meta` notes (`volume_constraint_note`, `volume_shortfall_note`, `long_run_shortfall_note`, `fitness_signal_note`, `terrain_effort_note`, `hard_pref_note`, plus a derived level-fit line) that were stamped but rendered nowhere.
 
 ```

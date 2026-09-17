@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-17 — PLAN-NOTE-VOICE-01 · We shipped a feature nobody had looked at, and it was a wall of text
+**Shipped:** The "Why this plan" tiles go from a mean of 130 words to 67, worst case 254 to 117, and 510 of 513 plans now show exactly one tile instead of two or three.
+**Dev learning:** The registry entry for the original ship contains the sentence "Not visually smoke-tested behind auth (trivial map over tested logic + proven components)". That is the whole story. The logic was tested, the components were proven, the map between them was trivial, and the result was a page of engine-voice shortfall that no runner could use. Every part was verified and the thing itself was never seen.
+**Product/creator learning:** Two tiles blamed the same cause on 78.5% of the plans where they appeared together, and 68 of them prescribed the identical lever. That is not a design debate, it is the app repeating itself and undermining both tellings. The fix that mattered was not shortening sentences, it was deciding that one cause gets one telling and holding to it inside a note as well as between tiles.
+**AI-building learning:** One of my new tests was green for the wrong reason and I only found it because I falsified it. The "these two tiles are never shown together" assertion passed with the de-duplication removed, because the word budget I had added in the same change was dropping the second note on length. Two mechanisms, one test, and it was measuring the wrong one. Real notes are long enough that the budget always masks the rule, so the test now runs on six-word synthetic notes where only the rule under test can act.
+**The honest bit:** The obvious fix was to make the copy sound like our AI coach, and it is wrong. Free users are never enriched, so routing these notes through the model would have left the free tier permanently holding the cold version of the copy while paid users got the warm one. The honest fix was to write better rule-engine prose, which is more work and less satisfying, and it is the only version that reaches everyone.
+**Hook material:** We shipped a feature that explains to runners why their training plan is shaped the way it is. It averaged 130 words of arithmetic. Nobody on the team had ever opened the screen: the logic was tested, the components were proven, and the map between them was "trivial".
+**Postable?:** yes
+
 ## 2026-09-17 — COPY-GLYPH-01 · We were showing runners legal citations from our own rulebook
 **Shipped:** The § symbol no longer reaches a runner (10.8% of plans to 0%), and a guard on the engine's emitted copy keeps it out.
 **Dev learning:** One source string was responsible for all of it. The tempting fix is to grep the codebase for §, but that is the wrong instrument: there are ~259 of them and almost all are correct, because a doctrine reference in a code comment or a developer-facing invariant field is exactly what it should be. The only question that matters is "did a runner see it", and the only way to answer that is to generate plans and read what comes out.

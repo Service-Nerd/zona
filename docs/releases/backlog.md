@@ -51,6 +51,15 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ### 🔜 OPEN — nothing urgent
 
+> 🔲 **PLAN-NOTE-PLACEMENT-01 — does the plan rationale belong at the TOP of the Plan screen at all?** *(P2, filed 2026-09-17 by the SLT. Deliberately NOT bundled with PLAN-NOTE-VOICE-01.)*
+>
+> **Wood's argument:** a runner asks *"why is my long run short?"* in week 3, when the long run feels short. Not on day one. Putting the answer at the top of the plan on day one hands someone who has just committed a list of things their life prevents, in our warning colour. Context beats motivation, and that context says "here is what you cannot do".
+>
+> **Why it was held, not actioned:** the 254-word version is what made the argument feel obvious, and it no longer exists (mean is now 67 words, one tile). Sutherland and Fried both wanted one tile kept where it is. **See the shortened version on device before deciding** — this is a placement question and it deserves its own decision, not a bundled one.
+>
+> **What would settle it:** evidence that runners act on the lever early (keep it on day one) versus go looking for the explanation later (move it behind the question).
+
+
 > 🔲 **TT-FREE-BENCHMARK-01 — a free runner is prescribed a benchmark whose result they cannot apply.** *(P2, filed 2026-09-17 out of the TT-STRUCTURE-01 investigation. **SLT question, not a defect** — the copy half is already fixed.)*
 >
 > **Measured:** the §78 recalibration time trial is placed on **both** tiers — `free → recalibration_weeks: [8]`, `paid → [8]` on identical input. Applying the result is PAID (`dynamic_reshape_r20`, ADR-014), so a free runner runs a maximal 5K measurement and the paces it exists to refresh never move.

@@ -31,6 +31,32 @@ export interface PlanRationaleNote {
 export const PLAN_RATIONALE_MAX_NOTES = 3
 
 /**
+ * The SAME guardrail, at the variable that actually binds (SLT 2026-09-17).
+ *
+ * Wood capped COUNT at 3 and never capped LENGTH, so the wall she was guarding
+ * against arrived anyway — just three items tall. Measured across 563 plans:
+ * **91.1% of runners see at least one note, 74% see two or three, the mean is
+ * 130 words and the worst case is 254** — a page of shortfall read before the
+ * runner has seen a single session.
+ *
+ * Whole notes are dropped, never truncated: a half-sentence is worse than a
+ * missing one, and the list is already in priority order, so what falls off the
+ * end is what mattered least. The first note is always kept, however long it
+ * is — a budget that can show nothing is a budget that hides a constraint.
+ *
+ * ⚠️ BE HONEST ABOUT WHERE THIS BINDS. Because the first note is always kept and
+ * the one-cause-one-tile rule above left **510 of 513 plans carrying a single
+ * note**, this budget now decides almost nothing at runtime. It is correct for
+ * the multi-note case and costs nothing, but it is NOT what keeps a note short.
+ * That job belongs to `planRationale.test.ts`'s per-note ratchet, which fails the
+ * build when any single note grows past the measured worst — the only guard that
+ * can reach copy the runtime has to show whatever its length.
+ */
+export const PLAN_RATIONALE_MAX_WORDS = 70
+
+const wordCount = (s: string): number => s.trim().split(/\s+/).filter(Boolean).length
+
+/**
  * The CAT-DEPTH-01 SLT pivot: name the level decision the engine already made, honestly.
  * DERIVED from existing meta — no new prescription, no engine change, no Coaching Board.
  * Only fires where there is a genuine, non-obvious level decision to explain; early
@@ -83,7 +109,20 @@ export function planRationaleNotes(meta: Plan['meta'] | undefined | null): PlanR
 
   // Priority order — honest constraints first (they explain a surprising shape).
   if (meta.volume_constraint_note)  notes.push({ label: 'Maintenance',   text: meta.volume_constraint_note })
-  if (meta.volume_shortfall_note)   notes.push({ label: 'Volume',        text: meta.volume_shortfall_note })
+
+  // ONE CAUSE, ONE TILE (SLT 2026-09-17). The volume-shortfall note is not shown
+  // beside the maintenance note, because measured across 563 plans the two
+  // appeared together on 200 and **157 of those (78.5%) blamed the same cause —
+  // the runner's weekday time cap — while 68 prescribed the identical lever**
+  // ("run 5 days instead of 4"). The runner read the same advice twice with
+  // different numbers, which undermines both tellings.
+  //
+  // The maintenance note wins because it is the larger statement: it says what
+  // the plan WILL do, why, and names the levers. What is lost is the shortfall's
+  // arithmetic ("peak week reaches 54km where it would have gone to 65km, about
+  // 17% less") — which is exactly the precision the board judged unusable:
+  // nobody has ever acted on 17%.
+  else if (meta.volume_shortfall_note) notes.push({ label: 'Volume', text: meta.volume_shortfall_note })
   if (meta.long_run_shortfall_note) notes.push({ label: 'Long run',      text: meta.long_run_shortfall_note })
   if (meta.fitness_signal_note)     notes.push({ label: 'Your level',    text: meta.fitness_signal_note })
   if (meta.hard_pref_note)          notes.push({ label: 'Hard sessions', text: meta.hard_pref_note })
@@ -102,5 +141,17 @@ export function planRationaleNotes(meta: Plan['meta'] | undefined | null): PlanR
   const fit = levelFitNote(meta)
   if (fit) notes.push({ label: 'Shaped for you', text: fit })
 
-  return notes.slice(0, PLAN_RATIONALE_MAX_NOTES)
+  // Both caps, in order: count first (Wood's original), then the word budget.
+  const capped = notes.slice(0, PLAN_RATIONALE_MAX_NOTES)
+  const out: PlanRationaleNote[] = []
+  let words = 0
+  for (const n of capped) {
+    const w = wordCount(n.text)
+    // Always keep the first: a budget that can return nothing would silently
+    // drop a constraint, and honesty outranks brevity when they collide.
+    if (out.length > 0 && words + w > PLAN_RATIONALE_MAX_WORDS) break
+    out.push(n)
+    words += w
+  }
+  return out
 }

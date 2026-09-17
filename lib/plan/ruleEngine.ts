@@ -6877,20 +6877,38 @@ function buildRulePlanOnce(
           }
 
           const reasons: string[] = []
-          if (ratioFails) {
+          // ONE CAUSE, ONE TELLING — applied inside the note as well as between
+          // tiles (SLT 2026-09-17). `ratioFails` and `volumeFails` are two
+          // readings of the same fact: the weekly mileage does not get big
+          // enough. Stacking both produced three consecutive sentences about
+          // weekly volume, two of them opening "Your biggest week" with
+          // different meanings. When the floor reading is available it wins,
+          // because it names the actual gap the runner can act on; the ratio
+          // reading only says "it did not climb".
+          if (ratioFails && !volumeFails) {
             // V7 / CD-10 — the ratio is deliberately peak-PHASE-scoped (§23: does the
             // plan overload INTO the peak?), but the note must not imply peakKmActual
             // is the plan's maximum. For a beginner the highest week can sit in base
             // (peak = long run + specificity, not tonnage — §80). State both figures
             // so the note is arithmetically honest about the plan the runner holds.
             const planMaxKm = Math.max(...weeks.map(wk => wk.weekly_km), 0)
+            // SLT 2026-09-17 — consequence first, arithmetic out. This read
+            // "Peak-phase volume 52 km is 104% of week 1 (50 km), below the 110%
+            // overload threshold." Precise, unarguable, and unusable: nobody has
+            // ever acted on 110%. The runner needs to know their weekly mileage
+            // holds steady instead of climbing, which is the same fact in words
+            // they can do something with.
             const baseNote = planMaxKm > peakKmActual
-              ? ` The plan's highest week is ${planMaxKm} km, earlier in the block — volume holds rather than building into the peak, which is by design for this level.`
+              ? ` Your biggest week comes earlier in the block, not at the end.`
               : ''
-            reasons.push(`Peak-phase volume ${peakKmActual} km is ${Math.round(ratio * 100)}% of week 1 (${w1} km) — below the ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% overload threshold.${baseNote}`)
+            reasons.push(`Your weekly mileage holds steady across this plan rather than climbing into the final weeks.${baseNote}`)
           }
           if (volumeFails) {
-            reasons.push(`Peak weekly volume ${peakKmActual} km is below the ${Math.round(volumeFloor)} km floor for a time-targeted ${distKey} (${Math.round((volumeFloor / distKm) * 100)}% of race distance).`)
+            // Keep BOTH figures — Hutchinson: the gap is the coaching fact, and a
+            // note that reports a constraint without naming what it costs the
+            // runner is a disclaimer, not coaching. Dropped: "floor", "% of race
+            // distance", and the raw distance key.
+            reasons.push(`Your biggest week reaches ${peakKmActual} km, where a time goal at this distance usually wants nearer ${Math.round(volumeFloor)}.`)
           }
           if (lrFails) {
             // COPY-GLYPH-01 (founder-reported, 2026-09-17) — this sentence used to
@@ -6899,7 +6917,11 @@ function buildRulePlanOnce(
             // CoachingPrinciples, so it reads as a glitch. "The ratio" was jargon
             // for the same reason. The rule is stated in words instead, and the
             // em dash went with it (BRAND-EMDASH-01's standard).
-            reasons.push(`Peak long run ${Math.round(actualPeakLrKm * 10) / 10} km is below the ${Math.round(longRunFloorKm * 10) / 10} km floor (${Math.round(GENERATION_CONFIG.PEAK_LR_RATIO_VS_RACE[distKey as 'HM' | 'MARATHON'] * 100)}% of race distance): there is a limit on how much the long run can grow week to week, and it ran out of room before reaching that floor.`)
+            // The one genuinely SAFETY-relevant line here, so it keeps both
+            // numbers and gains the consequence: this runner arrives at the start
+            // line never having run the distance the race asks for, and should be
+            // told what that feels like rather than what ratio it breaches.
+            reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}, so the closing stretch will be new ground on the day. The long run can only grow so much week to week, and it ran out of weeks before it got there.`)
           }
           // MAINT-LABEL-01 (2026-09-11, second pass) — two defects in one string.
           //
@@ -6911,16 +6933,20 @@ function buildRulePlanOnce(
           //     from 4 to 5", "raise max_weekday_mins from 30 to 90". Same
           //     defect class as UX-BEGINNER-01, which was fixed in `inputs.ts`
           //     and missed here: a runner is told to change a column name.
-          const diagnosis = reasons.join(' ')
-            + ' You will get fitter doing it — starting from where you are, you could hardly not.'
-            + ' What it will not do is push your volume toward a time goal.'
+          // SLT 2026-09-17 — ONE reassurance, not two, and no em dash (the
+          // COPY-GLYPH-01 ratchet). Sutherland: the tile opened by explaining
+          // what the plan could not do, in our warning colour. Lead with what it
+          // WILL do; the runner has just committed to this.
+          const diagnosis = 'This plan is built to get you round, not to chase a time. '
+            + reasons.join(' ')
+            + ' You will still get fitter: starting from where you are, you could hardly not.'
 
           const suggestions: string[] = []
           if (input.days_available < 6) {
             suggestions.push(`run ${input.days_available + 1} days a week instead of ${input.days_available}`)
           }
           if (input.max_weekday_mins != null && input.max_weekday_mins < 90) {
-            suggestions.push(`give your weekday runs more room — you have capped them at ${input.max_weekday_mins} minutes`)
+            suggestions.push(`give your weekday runs more room than the ${input.max_weekday_mins} minutes you have allowed`)
           }
           // The weeks suggestion is gated on the weeks ACTUALLY being short.
           // It used to fire whenever the long-run or volume floor failed, so a
@@ -7179,8 +7205,11 @@ function buildRulePlanOnce(
     ? 'The long run is already at its time cap and the easy runs are capped against it'
     : 'Your easy runs are held below your long run so it stays the longest run of the week, and the long run is itself a share of that week'
 
+  // SLT 2026-09-17 — was 103 words and said "it holds rather than grows" twice,
+  // once at each end. BRAND-EMDASH-01: this note carried two of the em dashes
+  // that item was filed for, and they go with the rewrite.
   const structuralNote: string | null = structuralPeakInversion
-    ? `This plan is built to hold your fitness rather than grow it — ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} cannot be built on. ${whyItCannotGrow}, so adding a quality session takes volume out of the week rather than adding to it: this plan peaks at ${Math.round(structuralPeakInversion.peakMax)}km against ${Math.round(structuralPeakInversion.baseMax)}km earlier in the plan. It maintains your fitness rather than building it. The lever is days, not effort — ${input.days_available + 1} running days would let the same volume progress.`
+    ? `This plan holds your fitness rather than growing it. ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} leaves no room to add: ${whyItCannotGrow}, so a harder session takes volume out of the week instead of adding to it. The lever is days, not effort: ${input.days_available + 1} running days would let the same volume climb.`
     : null
 
   // §52 (2026-09-02) — LOPSIDED-WEEK maintenance trigger. §52 itself names the
@@ -7213,8 +7242,13 @@ function buildRulePlanOnce(
     }
     return longest / w.weekly_km > lrCapPct
   })
+  // SLT 2026-09-17 — 123 words, the longest note the engine emitted, on 37 plans
+  // in a 563-plan sample. It made the same point four times: the long run is big
+  // relative to the week, the race sets it, your volume sets the rest, and the
+  // lever is volume. Now: the consequence, the cause, the lever. The 60% figure
+  // went with it — it is our threshold, not a number the runner can act on.
   const lopsidedNote: string | null = lopsidedWeek
-    ? `This plan is built to get you to the finish, not to chase a time — the long run this race needs is larger than your current weekly volume can carry around it. By week ${lopsidedWeek.n} the long run is ${Math.round(GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY)}%+ of the whole week, which is a lopsided week however it is arranged: the race sets the long run, your current ${input.current_weekly_km}km a week sets everything else. You will get fitter doing it — starting from where you are, you could hardly not. What it will not do is push your volume toward a time goal, because the long run already takes most of the week. The lever is weekly volume: more running on the other days, not a longer long run.`
+    ? `This plan is built to get you round, not to chase a time. The long run this race needs is big next to the ${input.current_weekly_km}km a week you run now, so by week ${lopsidedWeek.n} it takes up most of the week on its own. You will still get fitter: starting from where you are, you could hardly not. The lever is the other days: more running across the week, not a longer long run.`
     : null
 
   // ── MAINT-LABEL-01 (2026-09-11) — WHAT THESE NOTES CALL THE PLAN ──────────
@@ -7323,8 +7357,11 @@ function buildRulePlanOnce(
   // So the runner is TOLD (the original defect — silence — is fixed), and the
   // reclassification waits for a board sitting with this measurement in front of
   // it. Tracked as CAT/MWM-STRUCTURED-MAINTENANCE-01 in the backlog.
+  // SLT 2026-09-17 — was 90 words on 84 plans. The middle two sentences explained
+  // an ENGINE decision (why we did not shorten the label) rather than telling the
+  // runner anything they can use. Kept: the clash, and the lever.
   const structuredOverrunNote: string | null = structuredOverrun
-    ? `Your hard sessions do not fit the time you have. You've capped weekdays at ${structuredOverrun.cap} minutes, but by week ${structuredOverrun.n} the quality session this race needs runs about ${Math.round(structuredOverrun.mins)} minutes. It stays in the plan at full length, because shortening the label without shortening the intervals would just hand you the same work in less time. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
+    ? `Your hard sessions do not fit the time you have. You've capped weekdays at ${structuredOverrun.cap} minutes, and by week ${structuredOverrun.n} the session this race needs runs about ${Math.round(structuredOverrun.mins)} minutes. It stays at full length rather than being trimmed into something easier. The lever is one longer session a week: a weekend morning, or a single weekday you can give more time to.`
     : null
 
   // THE MISSING THIRD NOTE. `structuredOverrunNote` talks about "hard sessions"

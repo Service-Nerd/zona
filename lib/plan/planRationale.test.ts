@@ -88,3 +88,103 @@ describe('§98 — the §1 yield is visible to the runner (ONSET-YIELD-NOTE-01)'
     expect(planRationaleNotes({} as any)).toEqual([])
   })
 })
+
+// ── PLAN-NOTE-LENGTH-01 — the wall guard, at the variable that binds ─────────
+//
+// SLT 2026-09-17, founder-reported. Wood's original guardrail capped the note
+// COUNT at 3 and never capped LENGTH, so the wall arrived anyway, three items
+// tall: **91.1% of plans showed a note, 74% showed two or three, the mean was
+// 130 words and the worst case 254** — a page of shortfall read before the
+// runner had seen a single session. Two tiles also blamed the same cause on
+// **157 of the 200 plans (78.5%)** where they appeared together.
+//
+// ⚠️ THE RUNTIME BUDGET CANNOT DO THIS JOB. `PLAN_RATIONALE_MAX_WORDS` drops
+// whole notes and always keeps the first, and the one-cause-one-tile rule left
+// 510 of 513 plans carrying a single note — so at runtime it now decides almost
+// nothing. A note the renderer must show is a note the renderer must show at
+// whatever length it is. Only a test can hold copy short, so this is the guard.
+//
+// RATCHET, not a tolerance. Re-baseline DOWN whenever the worst case falls;
+// never up. A new note longer than the current worst means new copy was written
+// without the board's consequence-then-lever shape — fix the copy.
+import { cohortGrid, COHORT_PLAN_START } from './cohortGrid'
+import { generateRulePlan } from './ruleEngine'
+
+describe('PLAN-NOTE-LENGTH-01 — no single rationale note becomes a wall', () => {
+  const WORST_NOTE_WORDS = 117   // measured 2026-09-17, down from 254
+  const MEAN_WORDS       = 70    // measured 67
+  const STRIDE           = 53
+
+  const words = (s: string) => s.trim().split(/\s+/).filter(Boolean).length
+
+  const sample = (() => {
+    const grid = cohortGrid()
+    const out: { label: string; text: string }[][] = []
+    for (let i = 0; i < grid.length; i += STRIDE) {
+      try {
+        const plan = generateRulePlan(grid[i], 'paid', COHORT_PLAN_START)
+        const notes = planRationaleNotes(plan.meta)
+        if (notes.length) out.push(notes)
+      } catch { /* refusals carry no plan */ }
+    }
+    return out
+  })()
+
+  it('the sample actually contains rationale notes', () => {
+    expect(sample.length, 'no plan in the sample carried a note — this asserts nothing').toBeGreaterThan(100)
+  })
+
+  it('no single note exceeds the measured worst case', () => {
+    let worst = 0, worstText = ''
+    for (const notes of sample) {
+      for (const n of notes) {
+        const w = words(n.text)
+        if (w > worst) { worst = w; worstText = n.text }
+      }
+    }
+    expect(worst, `longest note is now ${worst} words (ratchet ${WORST_NOTE_WORDS}):\n\n  "${worstText}"\n\n` +
+      'Shorten the copy: consequence, then cause, then the one lever. Do not raise the ratchet.')
+      .toBeLessThanOrEqual(WORST_NOTE_WORDS)
+  })
+
+  it('the MEAN stays low, so the tail cannot hide behind a good worst case', () => {
+    let total = 0, n = 0
+    for (const notes of sample) {
+      total += notes.reduce((a, x) => a + words(x.text), 0)
+      n++
+    }
+    const mean = total / n
+    expect(mean, `mean ${mean.toFixed(1)} words per plan (ratchet ${MEAN_WORDS})`).toBeLessThanOrEqual(MEAN_WORDS)
+  })
+
+  it('the maintenance and volume tiles are never shown together', () => {
+    // ONE CAUSE, ONE TILE. They blamed the same thing on 157 of the 200 plans
+    // where they appeared together (78.5%), and prescribed the identical lever
+    // on 68.
+    //
+    // ⚠️ ASSERTED ON SHORT SYNTHETIC NOTES, DELIBERATELY. Written first against
+    // the generated corpus, this passed even with the de-dupe REMOVED — the word
+    // budget was dropping the second note on length, so the test was green for a
+    // reason that had nothing to do with the rule it names. Real notes are long
+    // enough that the budget always masks the de-dupe. Six-word notes take the
+    // budget out of the picture and leave only the rule under test.
+    const both = planRationaleNotes(meta({
+      volume_constraint_note: 'Short maintenance note here.',
+      volume_shortfall_note:  'Short shortfall note here.',
+    }))
+    const labels = both.map(x => x.label)
+    expect(labels, `both tiles shown: ${labels.join(' + ')}`).not.toContain('Volume')
+    expect(labels).toContain('Maintenance')
+
+    // The shortfall note still shows on its own when maintenance is absent —
+    // de-duping must not silently delete a constraint that has no other teller.
+    const alone = planRationaleNotes(meta({ volume_shortfall_note: 'Short shortfall note here.' }))
+    expect(alone.map(x => x.label)).toEqual(['Volume'])
+
+    // And it never happens on the real corpus either.
+    for (const notes of sample) {
+      const ls = notes.map(x => x.label)
+      expect(ls.includes('Maintenance') && ls.includes('Volume'), `both on a real plan: ${ls.join(' + ')}`).toBe(false)
+    }
+  })
+})

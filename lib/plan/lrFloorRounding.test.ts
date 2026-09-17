@@ -24,7 +24,15 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 
 const PLAN_START = '2026-09-14'
 const STEP = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-const LR_REASON = /Peak long run ([\d.]+) km is below the ([\d.]+) km floor/
+// ⚠️ THIS SAFETY CHECK PARSES RUNNER-FACING COPY, because the peak long run and
+// the floor are not stamped on `meta` — the sentence is the only place both
+// numbers exist together. So a copy rewrite can blind it (D-17: never couple
+// logic to a display string). It survived the SLT 2026-09-17 rewrite only
+// because the test asserts its OWN fixture validity — `withReason > 0` fired
+// loudly instead of passing on zero matches. Keep that assertion. If this
+// pattern needs updating again, consider stamping the two figures on `meta`
+// instead of writing a third version of this regex.
+const LR_REASON = /Your longest run reaches ([\d.]+) km, where this race wants nearer ([\d.]+)/
 
 const base = (o: Partial<GeneratorInput>): GeneratorInput => ({
   race_date: '2027-06-13', goal: 'time_target',

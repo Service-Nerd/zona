@@ -65,7 +65,10 @@ describe('VOL-STRUCTURE-01 — a plan that cannot progress says so', () => {
       .toBeGreaterThanOrEqual(GENERATION_CONFIG.PEAK_INVERSION_MATERIAL_PCT)
 
     expect(plan.meta.volume_profile).toBe('maintenance')
-    expect(plan.meta.volume_constraint_note).toMatch(/cannot be built on/)
+    // Wording updated by the SLT 2026-09-17 rewrite ("cannot be built on" ->
+    // "leaves no room to add"). The SUBSTANCE asserted is unchanged: the note
+    // must say the plan cannot grow, not merely that it is maintenance.
+    expect(plan.meta.volume_constraint_note).toMatch(/leaves no room to add/)
   })
 
   it('the note names the lever — days, not effort', () => {
