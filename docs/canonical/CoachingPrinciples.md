@@ -1899,6 +1899,86 @@ The refusal tier — *"not achievable in this window"* — **is** the §44 `bloc
 
 The single permitted exception: a long run following a deload week may step back up to the pre-deload long-run distance (within +5%).
 
+### Amendment 2 — the ABSOLUTE arm tapers on a small week (LR-ABS-CAP-LOWVOL-01, Coaching Board 2026-09-17)
+
+**Principle.** The absolute arm of the cap is no longer a flat +5 km. The permitted
+step is:
+
+> `max( prevLongRun × LONG_RUN_PROGRESSION_CAP_PCT , min( LONG_RUN_PROGRESSION_CAP_ABS_KM , prevLongRun × LONG_RUN_ABS_STEP_MAX_PCT_OF_LR ) )`
+
+The `+20%` arm and the deload step-back exception are unchanged.
+
+⚠️ **Basis is the prior LONG RUN, not the prior week — and that is the board's rule
+re-expressed, not a different one.** §9 sizes the build-phase long run at 30% of the
+week, so **15% of the week IS 50% of the long run.** The board ruled on the weekly
+basis; implementation found the week is *not stable* at the point §45 runs — the long
+run is re-anchored (duration → distance) by later passes, so the producer and
+`INV-PLAN-LR-PROGRESSION-CAP` read different weekly volumes and **disagreed on 140
+plans, which threw**. `prevLongRun` is the value the `+20%` arm already reads, so the
+two cannot drift. LR-CAP-BLIND-01 was one bug in two copies; this refuses to recreate
+that shape.
+
+**Why.** §9 sizes the long run itself as a share of weekly volume (base 28%, build
+30%, peak 32%). The `+5 km` allowance was **the one part of long-run prescription
+that ignored weekly volume entirely** — which, as Seiler put it at the sitting, is
+usually the signature of a constant written once for a typical case and never
+revisited. It is a sensible step on a 30 km long run (+17%) and a different training
+stimulus arriving in a single week on a 6 km one (**+83%**).
+
+**Why this number, specifically.** The first attempt at this was ruled INSUFFICIENT EVIDENCE
+on 2026-09-16 — Hutchinson: *"a 33% ceiling is a number I made up."* The ruled value is
+**half the long run's own build-phase share of the week under §9** — a single week's
+STEP may not exceed half of what the long run is entitled to BE. Derived from the
+constitution, not tuned to a chart. Expressed on the long run itself (§9's 30% build
+share) that is **50%**. *(Honest caveat: build phase is a choice — base would give 14%
+of the week, peak 16%.)*
+
+**The measurement** (Willy's condition: scoped to the low-volume cohort — longest
+recent run < 18 km AND current volume < 35 km/wk). 1,200 cohort plans / 5,586 steps,
+against a 1,200-plan control of everyone else:
+
+| | Cohort | Control |
+|---|---|---|
+| Steps legal **only** via the absolute arm | 29.2% | **37.8%** |
+| Median jump | 33% | 26% |
+| p90 jump | 52% | 33% |
+| Max jump | **83%** | 45% |
+| **≥ +40% in one week** | **32.5%** | **2.7%** |
+
+⚠️ **Frequency was never the tell.** The absolute arm binds *more* often on ordinary
+runners. **Magnitude is the tell, by twelve-fold** — and a measurement averaged over
+the whole population would have shown nothing wrong, which is exactly why the board
+refused to rule without the cohort scope.
+
+⚠️ **Willy withdrew his own supporting argument on the data.** He had reasoned these
+jumps might be tolerable where a recovery week follows. Measured: 61.9% of cohort
+jumps have no down week after, against **73.0%** in the control — the cohort is
+slightly *better* protected on that axis, not worse. The case rests on magnitude alone
+and does not need the down-week argument.
+
+**The cost, accepted explicitly.** Counterfactual regeneration over 1,149 comparable
+plans: peak long run falls on **22.7%** (median −1.5 km, max −8.5 km); **18 plans
+(1.6%) can no longer reach §24's specificity floor** and reclassify as
+maintenance-grade against their time goal. They keep the honest
+`volume_constraint_note` — McMillan's condition of approval, and the reason he did not
+object. Worst in-plan jump **83% → 57%**; p90 53% → 46%; **median unmoved at 33%**;
+**zero** plans newly refused.
+
+⚠️ **This does not "fix long-run progression". 57% is still a large jump**, and the
+median plan is untouched. It cuts the extreme tail and leaves the ordinary case alone,
+which is the correct shape for a safety cap — but say what it does, not what we would
+like it to do.
+
+**Config.** `GENERATION_CONFIG.LONG_RUN_ABS_STEP_MAX_PCT_OF_LR` (50 — the board's 15%-of-week, re-expressed on §9's 30% build share).
+Enforced by `INV-PLAN-LR-PROGRESSION-CAP` in both producer and checker — kept in step
+deliberately, because LR-CAP-BLIND-01 was one bug in two copies and the checker could
+not catch the producer while it shared the defect.
+
+**Board:** 2026-09-17 — **CORRECT**, Hutchinson chairing. No dissent on correctness.
+Ship timing was withheld by the board and escalated; **the founder elected to ship
+immediately, the day before the charity showcase, with the blast radius above stated.**
+Record: `docs/decisions/coaching-board-2026-09-17-lr-abs-cap.md`.
+
 ### Amendment 1 — a runner prescribed in MINUTES is not exempt from a distance rule
 
 *Added 2026-09-16 (LR-CAP-BLIND-01). Found by the Coaching Board's cold re-review of a generated plan, not by any check.*

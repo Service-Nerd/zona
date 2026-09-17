@@ -4541,7 +4541,29 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
       if (prevPrevKm != null && currKmOf <= prevPrevKm * stepBackTol + 0.01) continue
     }
 
-    const allowedJumpKm = Math.max(prevKmOf * capPct, capAbs)
+    // §45 Amendment 2 — the ABSOLUTE arm tapers on a small week. §9 already
+    // sizes the long run as a share of weekly volume; this was the one part of
+    // long-run prescription that ignored the week entirely, so +5km was a
+    // sensible step on a 30km long run (+17%) and a different training stimulus
+    // arriving in one week on a 6km one (+83%). Basis is the PRIOR week's
+    // delivered volume — non-circular, since the current week's volume is partly
+    // determined by the long run being capped.
+    //
+    // ⚠️ BASIS IS THE PRIOR LONG RUN, NOT THE PRIOR WEEK, AND THAT IS NOT A
+    // WEAKENING — it is arithmetically the same rule on a stable input. §9 sizes
+    // the build-phase long run at 30% of the week, so "15% of the week" IS "50%
+    // of the long run". The week is NOT stable here: §45 runs mid-pipeline and
+    // the long run is re-anchored (duration -> distance) afterwards, so
+    // `prev.weekly_km` differs between the producer and the checker and the two
+    // disagreed on 140 plans when this shipped on a weekly basis. `prevKmOf` is
+    // the exact value the % arm already reads, so producer and checker cannot
+    // drift — which is the whole lesson of LR-CAP-BLIND-01 (one bug, two
+    // copies, checker blind because it shared the defect).
+    const absArmKm = Math.min(
+      capAbs,
+      prevKmOf * GENERATION_CONFIG.LONG_RUN_ABS_STEP_MAX_PCT_OF_LR / 100,
+    )
+    const allowedJumpKm = Math.max(prevKmOf * capPct, absArmKm)
     const maxAllowedKm = prevKmOf + allowedJumpKm
     if (currKmOf - 0.01 > maxAllowedKm) {
       const newKm = Math.max(Math.floor(maxAllowedKm / precision) * precision, minLong)

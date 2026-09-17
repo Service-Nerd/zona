@@ -1054,6 +1054,47 @@ export const GENERATION_CONFIG = {
   // pre-deload distance is permitted within LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT.
   LONG_RUN_PROGRESSION_CAP_PCT:           20,
   LONG_RUN_PROGRESSION_CAP_ABS_KM:         5,
+
+  // §45 Amendment 2 (LR-ABS-CAP-LOWVOL-01, Coaching Board 2026-09-17).
+  //
+  // The +5km ABSOLUTE arm above is tapered on a small week:
+  //   allowed step = max(prevLR × CAP_PCT, min(CAP_ABS, prevLR × this))
+  //
+  // WHY THIS NUMBER, because "a 33% ceiling is a number I made up" is what got
+  // the first attempt ruled INSUFFICIENT EVIDENCE. The board's rule was "15% of
+  // the prior WEEK", derived as half the long run's own build-phase share under
+  // §9 (`LONG_RUN_PCT_OF_WEEKLY_VOLUME` build = 30%). Since §9 sizes the long run
+  // AT 30% of the week, 15% of the week IS 50% of the long run — the same rule,
+  // re-expressed on an input that is stable. A single week's STEP may not exceed
+  // half of what the long run already is.
+  //
+  // ⚠️ THE BASIS CHANGED DURING IMPLEMENTATION, AND THE REASON MATTERS. Shipped
+  // against `prev.weekly_km` it broke 140 plans: §45 runs mid-pipeline and the
+  // long run is re-anchored (duration -> distance) afterwards, so the producer
+  // and `INV-PLAN-LR-PROGRESSION-CAP` read DIFFERENT weekly volumes and
+  // disagreed. `prevLR` is the value the % arm already uses, so the two cannot
+  // drift. LR-CAP-BLIND-01 was one bug in two copies; this avoids re-creating
+  // that shape.
+  //
+  // WHAT IT FIXES. §9 sizes the long run as a share of weekly volume; the +5km
+  // allowance was the one part of long-run prescription that ignored weekly
+  // volume entirely — the signature of a constant written for a typical case and
+  // never revisited (Seiler). Measured on the low-volume cohort (longest recent
+  // run < 18km AND volume < 35km/wk), 1,200 plans / 5,586 steps:
+  //
+  //   · 29.2% of long-run steps were legal ONLY via the absolute arm
+  //   · of those, 32.5% were >= +40% in a single week — against **2.7%** in the
+  //     control group. Frequency was never the tell (the arm binds MORE often on
+  //     ordinary runners, 37.8%); MAGNITUDE is, by 12x.
+  //   · worst observed 6 -> 11km (+83%) on a 17km week.
+  //
+  // COST, accepted with open eyes: 22.7% of low-volume plans get a smaller peak
+  // long run (median -1.5km), and 18 of 1,149 (1.6%) can no longer reach §24's
+  // specificity floor and reclassify as maintenance-grade against their time
+  // goal — they keep the honest `volume_constraint_note` (McMillan's condition).
+  // Worst in-plan jump 83% -> 57%; p90 53% -> 46%; median unmoved at 33%; zero
+  // plans newly refused. A cap that bites only the tail is the correct shape.
+  LONG_RUN_ABS_STEP_MAX_PCT_OF_LR:        50,
   // §6 Amendment 1 (Coaching Board PEAK-LR-NOT-IN-PEAK-01, 2026-09-15) — the
   // taper long run may not exceed the PEAK phase's long run.
   //

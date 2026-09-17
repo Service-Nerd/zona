@@ -6969,9 +6969,9 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
     "resting_hr": 0,
     "rule_adjustments": [
       {
-        "resolution": "Held weekly volume at 21 km (target 17) by trimming easy runs; long run + quality preserved.",
+        "resolution": "Held weekly volume at 20 km (target 17) by trimming easy runs; long run + quality preserved.",
         "rule": "V1-volume-quality-split",
-        "violation": "Week 6 introduced the first quality session AND stepped volume up from 17 to 24 km (>5% bump).",
+        "violation": "Week 6 introduced the first quality session AND stepped volume up from 17 to 23 km (>5% bump).",
         "weeks_affected": [
           6,
         ],
@@ -6979,7 +6979,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       {
         "resolution": "Re-anchored week 7 to §2's 10% cap measured from delivered volume (now 23 km) by trimming easy runs; long run + quality preserved.",
         "rule": "V1-volume-quality-split-reanchor",
-        "violation": "Week 7 stepped up from the volume curve (26 km) rather than from the 21 km week 6 actually delivered after its quality-split trim, a +24% delivered rise.",
+        "violation": "Week 7 stepped up from the volume curve (26 km) rather than from the 20 km week 6 actually delivered after its quality-split trim, a +30% delivered rise.",
         "weeks_affected": [
           7,
         ],
@@ -7296,7 +7296,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
     {
       "date": "2026-09-07",
       "label": "Build — first quality session",
-      "long_run_hrs": 1.3,
+      "long_run_hrs": 1.1,
       "n": 6,
       "phase": "build",
       "sessions": {
@@ -7318,8 +7318,8 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         },
         "sun": {
           "detail": null,
-          "distance_km": 11,
-          "duration_mins": 77,
+          "distance_km": 9.5,
+          "duration_mins": 67,
           "hr_target": "< 138 bpm",
           "id": "w6-sun",
           "label": "Long run — Zone 2",
@@ -7373,7 +7373,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       },
       "theme": "One quality session. Everything else stays easy.",
       "type": "normal",
-      "weekly_km": 21,
+      "weekly_km": 20,
     },
     {
       "date": "2026-09-14",

@@ -4356,7 +4356,14 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // Same grounding as INV-PLAN-MAIN-SET-ORDERING's tolerance and §83's:
       // an assertion made finer than the data's own precision is asserting
       // noise. The cap itself (§45: +20% or +5km) does not move.
-      const allowedJumpKm = Math.max(prevLR * capPct, capAbs)
+      // §45 Amendment 2 — mirrors the producer's tapered absolute arm. Kept in
+      // step deliberately: LR-CAP-BLIND-01 was ONE bug in TWO copies, and the
+      // checker could not catch the producer because it shared the defect.
+      const absArmKm = Math.min(
+        capAbs,
+        prevLR * GENERATION_CONFIG.LONG_RUN_ABS_STEP_MAX_PCT_OF_LR / 100,
+      )
+      const allowedJumpKm = Math.max(prevLR * capPct, absArmKm)
         + GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
       const actualJumpKm = currLR - prevLR
       if (actualJumpKm > allowedJumpKm + 0.01) {
@@ -4366,7 +4373,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           principle_ref: 'CoachingPrinciples §45',
           severity: 'error',
           week: curr.n,
-          message: `W${curr.n} long run ${currLR}km is a ${pctJump}% jump from W${prev.n} (${prevLR}km). Cap is +${GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT}% or +${capAbs}km, whichever is greater.`,
+          message: `W${curr.n} long run ${currLR}km is a ${pctJump}% jump from W${prev.n} (${prevLR}km). Cap is +${GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT}% or +${absArmKm.toFixed(1)}km, whichever is greater (§45 Am.2: the absolute arm tapers to ${GENERATION_CONFIG.LONG_RUN_ABS_STEP_MAX_PCT_OF_LR}% of the prior long run, capped at +${capAbs}km).`,
           actual: `${currLR} (jump +${actualJumpKm.toFixed(1)}km)`,
           expected: `≤ ${prevLR + allowedJumpKm}km`,
         })
