@@ -439,6 +439,21 @@ Gate richness (AI labels, coaching voice), never gate access (the plan itself, t
 - One release at a time, shipped properly before starting the next
 - All new features tagged FREE or PAID before building begins
 
+### Completion claims (non-negotiable)
+
+**Origin, because the rule is only credible with it.** On 2026-09-15 the founder asked that every invariant have a test or a written reason. The work shipped and was reported as *"0 unverified — all 107 principles accounted for."* Both halves of that sentence were true. Neither was the answer to the question. **107 principles is not 118 invariants**, and two days later 20 invariants turned out never to have been shown capable of failing — eleven of them cited as a principle's only enforcement, three of those injury guards. The limitation was already written, in English, in `principleCoverage.ts`'s own header. It went in a code comment and not in the summary to the founder. **A limitation understood well enough to document is understood well enough to say out loud.**
+
+When reporting that an audit, sweep, or "make sure every X is covered" task is done:
+
+1. **Count the population from the code**, never from memory, a doc, or a previous session's number. State the count and how it was derived.
+2. **Name the noun actually worked on.** If the request said *invariants* and the deliverable covers *principles*, say so **before** reporting done — and say it at the start, when the target is chosen, not at the end.
+3. **State the negative space.** Every completion claim carries one explicit line: *what this does not prove.*
+4. **Falsify at least one item.** Show that a check believed green can be made to go red, and name which one and how.
+5. **Reconcile the adjacent register.** If another file, test, baseline or doc tracks the same objects by a different measure, report both counts and explain any gap. Two registers with a human in between is how a green tick hides a hole.
+6. **Leave a gate, not a note.** If the state can silently regress, the mechanical check ships in the same commit.
+
+⚠️ **A DECLARED REASON IS NOT A FIXED PROBLEM.** The debt-register pattern (`SWEEP-BASELINE-01`, the liveness baseline, `UNPROVEN_INVARIANT_COVERAGE_BASELINE`) makes debt visible and stops it growing. It does not make it shrink, and nothing in this repo schedules it. When a register's reason column is the answer, say how long the entry has been there.
+
 ## Development Approach — SLC (Non-Negotiable)
 
 All development uses the **Simple, Lovable, Complete** model. No exceptions.

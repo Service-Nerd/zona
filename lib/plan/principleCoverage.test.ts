@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { PRINCIPLE_COVERAGE, UNVERIFIED_BASELINE } from './principleCoverage'
+import { PRINCIPLE_COVERAGE, UNVERIFIED_BASELINE, UNPROVEN_INVARIANT_COVERAGE_BASELINE } from './principleCoverage'
 import { INVARIANT_CODES } from './invariants'
 
 /**
@@ -62,6 +62,54 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
       broken,
       'These claim an invariant that is not in INVARIANT_CODES — the rule reads ' +
       'as enforced and is not.',
+    ).toEqual([])
+  })
+
+  it('no principle is covered by an invariant nobody has proven can FAIL', () => {
+    // THE GAP THIS CLOSES, stated plainly because it cost us: on 2026-09-15 this
+    // file reported 0 unverified principles while 20 invariants sat in the
+    // liveness baseline marked `unclassified` — "nobody has looked yet". Both
+    // numbers were true. Neither looked wrong. Eleven principles were counted as
+    // enforced by a check that had never been shown capable of firing, three of
+    // them injury guards (§21 no hills, §2 and §90 the injury caps).
+    //
+    // Two registers, two files, and a human in between to notice. Now it is one
+    // assertion. `by: 'invariant'` claims a check EXISTS; this claims it BITES.
+    const baseline = JSON.parse(
+      readFileSync(join(process.cwd(), 'lib/plan/__fixtures__/invariantLivenessBaseline.json'), 'utf8'),
+    ) as { unproven: Record<string, string> }
+
+    const unclassified = PRINCIPLE_COVERAGE
+      .filter(e => e.by === 'invariant' && e.ref && baseline.unproven[e.ref] === 'unclassified')
+      .map(e => `§${e.n} → ${e.ref}`)
+    expect(
+      unclassified,
+      'These principles are marked enforced by an invariant that sits in the ' +
+      'liveness baseline as `unclassified` — nobody has shown it can fail. That ' +
+      'is an undeclared gap wearing a green tick. Either add a mutation that ' +
+      'wakes it (`npm run invariant:liveness`), or classify it with a real ' +
+      'reason and add the section to UNPROVEN_INVARIANT_COVERAGE_BASELINE.',
+    ).toEqual([])
+
+    // The declared-reason cases are allowed, counted, and may only shrink.
+    const reasoned = PRINCIPLE_COVERAGE
+      .filter(e => e.by === 'invariant' && e.ref && e.ref in baseline.unproven)
+      .map(e => e.n)
+      .sort((a, b) => a - b)
+    const added = reasoned.filter(n => !UNPROVEN_INVARIANT_COVERAGE_BASELINE.includes(n))
+    expect(
+      added,
+      'These principles newly rest on an invariant that cannot be woken. Prove ' +
+      'the invariant instead — and if it genuinely cannot be reached, say why ' +
+      'in UNPROVEN_INVARIANT_COVERAGE_BASELINE rather than adding it silently.',
+    ).toEqual([])
+
+    const paid = UNPROVEN_INVARIANT_COVERAGE_BASELINE.filter(n => !reasoned.includes(n))
+    expect(
+      paid,
+      `These sections are listed as resting on an unwakeable invariant but no ` +
+      `longer do. Remove them from UNPROVEN_INVARIANT_COVERAGE_BASELINE so the ` +
+      `debt count stays honest.`,
     ).toEqual([])
   })
 

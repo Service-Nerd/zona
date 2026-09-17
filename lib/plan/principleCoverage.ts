@@ -58,6 +58,43 @@ export interface PrincipleCoverage {
  */
 export const UNVERIFIED_BASELINE = 0
 
+/**
+ * Principles whose stated enforcer is an invariant that has NEVER BEEN PROVEN
+ * ABLE TO FAIL — the gap that made "0 unverified" and "20 unproven" both true
+ * at the same time, on 2026-09-15, without either number looking wrong.
+ *
+ * WHY THIS LIST EXISTS. `by: 'invariant'` asserts that a check EXISTS. It says
+ * nothing about whether the check BITES, and this file's own header has said so
+ * since it was written — in a comment, which is not a gate. On 2026-09-17 the
+ * liveness debt register was worked down and the overlap was measured for the
+ * first time: **11 of the 107 principles were counted as enforced by an
+ * invariant that nothing could wake**, including §21 (no hill work for a
+ * hill-restricting injury), §2 and §90 (the injury caps) and §26 (race week).
+ * Every one of those 11 is now proven. This list is what stops it coming back.
+ *
+ * THE RULE:
+ *   · An invariant sitting in the liveness baseline as `unclassified` — nobody
+ *     has looked — may NEVER be a principle's coverage. That is a hard failure,
+ *     because it is an undeclared gap wearing a green tick.
+ *   · An invariant unproven for a DECLARED reason (`corpus`, `mutation`,
+ *     `static`) may be, and lands here. The list may only SHRINK.
+ *
+ * The four below, and why each is tolerated rather than fixed:
+ *   §17  INV-PLAN-PHASE-FOCUS-REACHABLE   `static`   — reads PLAN_SIGNATURES and
+ *        the catalogue, never the plan, so a `Plan => void` mutation cannot
+ *        reach it. Falsified independently by `thresholdReachable.test.ts`.
+ *   §18  INV-INPUT-LONGEST-LE-WEEKLY      `mutation` — an INPUT-field rule; the
+ *        battery mutates plans, not inputs.
+ *   §67  INV-MAINT-REENGAGEMENT-WINDOW    `corpus`   — maintenance blocks have
+ *   §75  INV-MAINT-REST-DAY               `corpus`     their own generator and
+ *        are not built by the cohort grid at all.
+ *
+ * ⚠️ §67 and §75 are the visible edge of a bigger hole: NINE `INV-MAINT-*`
+ * invariants are unproven for the same reason, and the maintenance generator has
+ * no liveness corpus of its own. Filed as MAINT-LIVENESS-01.
+ */
+export const UNPROVEN_INVARIANT_COVERAGE_BASELINE: readonly number[] = [17, 18, 67, 75]
+
 export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 1, by: 'invariant', ref: 'INV-PLAN-QUALITY-EXPECTED' },  // Polarised training — protection from grey zone
   { n: 2, by: 'invariant', ref: 'INV-PLAN-BOUNCEBACK-BOUNDED' },  // The 10% rule — injury prevention through gradual load

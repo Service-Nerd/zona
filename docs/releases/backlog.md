@@ -81,6 +81,28 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 > insurance gate that holds ENGINE-03. Hutchinson carries it.
 > *Verify still open:* `grep -c "sex\|gender" types/plan.ts` → **0 = still open**.
 
+> 🔲 **MAINT-LIVENESS-01 — the maintenance generator has NO liveness corpus, so NINE of its invariants have never been proven able to fire.** *(P2, filed 2026-09-17 out of LIVENESS-DEBT-01. Infra, no board.)*
+>
+> `INV-MAINT-PHASE1-SESSION-TYPES`, `-QUALITY-CAP`, `-VOLUME-CEILING`, `-REST-DAY`,
+> `-NO-RACE-SPECIFIC`, `-CADENCE`, `-INJURY-EASY-ONLY`, `-REENGAGEMENT-WINDOW` and
+> `INV-PLAN-ULTRA-NO-PACE-SEGMENTS` all sit in the liveness baseline under `corpus` — the harness
+> never builds that plan SHAPE. That reason is honest and it has been honest for six days, which is
+> exactly how the `unclassified` pile survived: **a declared reason is not a fixed problem.**
+>
+> ⚠️ **Two of these are a principle's ONLY stated mechanical coverage** — §67 (re-engagement window)
+> and §75 (maintenance rest day) — and they are now the entire content of
+> `UNPROVEN_INVARIANT_COVERAGE_BASELINE` in `principleCoverage.ts`. So two live coaching rules are
+> counted as enforced by checks nobody has ever seen fire.
+>
+> ADR-013 makes post-race maintenance its own plan object with its own generator, so the fix is a
+> **second corpus**, not a wider grid: build N maintenance plans from the maintenance path and run
+> the same mutation battery over them. The `corpus` reason then has to be re-earned or paid down.
+>
+> ⚠️ **Do NOT fold maintenance into `cohortGrid`** — it is a different plan object, and the
+> exhaustive-and-un-sampled property of that grid is doctrine (CLAUDE.md, cohort:shape).
+>
+> *Verify still open:* `grep -c '"corpus"' lib/plan/__fixtures__/invariantLivenessBaseline.json` → **9 = still open**.
+
 ### 🔬 test.test marathon review — 3 board amendments (filed 2026-09-16)
 
 Coaching Board ran a fitness-for-purpose review of a real generated marathon plan (test.test@test.com, 26yo intermediate, 4:00 goal, 4 days, 60-min weekday cap, current 30 km/wk, longest-ever 12 km, plan_start 2026-09-21). Ruling: **CORRECT WITH AMENDMENT** — honest, runnable sub-4 plan; three amendments before clean sign-off. All three root-caused against `generateRulePlan` (live regen matches the stored plan byte-for-byte on the curve).
