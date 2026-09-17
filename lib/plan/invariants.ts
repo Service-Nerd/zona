@@ -2816,7 +2816,14 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       const preIs = preDeload.type === 'deload' || preDeload.badge === 'deload'
       // Only a clean [pre-deload, deload, bounceback] triple in a building phase.
       if (!deloadIs || bounceIs || preIs || bounce.phase === 'taper') continue
-      if (bounce.weekly_km >= preDeload.weekly_km) {
+      // §2 AMENDMENT 3 (PLAN-FITNESS-01, 2026-09-17) — `>` NOT `>=`.
+      //
+      // Amendment 3 makes a return TO pre-deload legal for injury-history runners
+      // (it was already legal for healthy ones). Only a return ABOVE it is a
+      // violation. Left as `>=` this would fire on exactly the plans the
+      // amendment intends to produce — a checker contradicting its own principle,
+      // which is the §92 class this repo has shipped before.
+      if (bounce.weekly_km > preDeload.weekly_km + 0.01) {
         violations.push({
           code: 'INV-PLAN-BOUNCEBACK-BOUNDED',
           principle_ref: 'CoachingPrinciples §2',

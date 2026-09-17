@@ -202,6 +202,66 @@ Returning to a volume held comfortably two weeks earlier is not a spike. Chronic
 
 **Board:** RAMP-BOUNCEBACK-01, 2026-09-06 — CORRECT WITH AMENDMENT (Willy-led, Hutchinson chairing); the healthy/injury split was set by measurement.
 
+### Amendment 3 — the injury bounceback returns to pre-deload (PLAN-FITNESS-01, Coaching Board 2026-09-17)
+
+**Principle.** For an injury-history runner the post-deload week may return to the
+**pre-deload volume, and no higher** — the same ceiling healthy runners already have.
+Amendment 1's cap on the bounceback is withdrawn, conditional on the cut staying
+shallow (below).
+
+**Why — Amendment 1's own acceptance criterion was not met.** It accepted a lower peak
+for injured runners and said why that was right, then set the limit:
+
+> *"The curve still **rises** within each block — slow is right, **stuck is not**."*
+
+Measured 2026-09-17, the same runner with and without the knee flag, 18 weeks,
+everything else identical:
+
+| | net build | never builds |
+|---|---|---|
+| healthy, standard cadence | **+91%** | 8.1% |
+| **injury, standard cadence** | **+6%** | **28.9%** |
+| healthy, masters cadence | **+79%** | 10.1% |
+| **injury, masters cadence** | **+3%** | **66.7%** |
+
+That is stuck, not slow. A knee-history runner reached a marathon start line having
+never run beyond **14 km**.
+
+**Amendment 2 found the ratchet and under-shot the number.** It raised the injury
+deload 70% → 85%, but break-even needs the deload to cover what the 5% cap can climb
+back before the next one arrives:
+
+| cadence | growth weeks | break-even deload | shipped |
+|---|---|---|---|
+| standard 4-week | 3 | 1 ÷ 1.05³ = **86.4%** | 85% → **−1.6%/cycle** |
+| masters 3-week | 2 | 1 ÷ 1.05² = **90.7%** | 85% → **−6.3%/cycle** |
+
+⚠️ **The injury × masters cohort existed in no grid** (`cohortGrid` does not vary
+injury; `targetedGrid` is all age 40), so the worst case had never been measured. The
+fitness harness now constructs it explicitly.
+
+**Why Willy reversed his own veto, recorded in his words.** He rejected the unbounded
+return in RAMP-BOUNCEBACK-01 because a 70% cut returning to 100% is a **+43%** week
+onto healing tissue. Amendment 2's shallower cut makes the same return **+17.6%**, of
+a load the tissue carried seven days earlier. *"The injury I was protecting against
+has been replaced by a worse one."*
+
+⚠️ **His condition is mechanical, not a note.** The exemption is valid only while
+`INJURY_RECOVERY_WEEK_VOLUME_PCT >= INJURY_BOUNCEBACK_MIN_DELOAD_PCT` (85). Lower the
+cut and the exemption **withdraws itself**, restoring Amendment 1's capped bounceback.
+
+**Measured after.** Injury/standard net build **18.2% → 45.5%**, injury/masters
+**0% → 31.3%**, never-builds **28.9% → 0%** and **66.7% → 0%**. **Healthy runners are
+byte-identical** — the branch only differs for injury.
+
+**Config.** `INJURY_BOUNCEBACK_MIN_DELOAD_PCT` (85). **Enforced by**
+`INV-PLAN-BOUNCEBACK-BOUNDED`, amended: a return **to** pre-deload is now legal; only
+a return **above** it is a violation.
+
+**Board:** 2026-09-17 — CORRECT WITH AMENDMENT, Hutchinson chairing, Willy reversing
+his own prior position on measurement. Record:
+`docs/decisions/coaching-board-2026-09-17-plan-fitness.md`.
+
 ### Amendment 2 — the cut had to give, not the cap (COMPLIANCE-FIX-2, Coaching Board 2026-09-16)
 
 **Principle.** A runner §12's volume cap governs (knee / shin-splint history) takes a
@@ -3545,6 +3605,54 @@ PLACED SESSIONS so the producer cannot satisfy it by asserting it behaved.
 **Invariant.** `INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES` — a `duration_anchored` session must keep `duration_mins > 0` and `primary_metric: 'duration'`.
 
 ---
+
+### Amendment — the specificity floor ramps through BUILD (PLAN-FITNESS-01, Coaching Board 2026-09-17)
+
+**Principle.** The peak long-run specificity floor — §24's for time-targeted plans and
+§80's duration floor for finish goals — is applied from the **start of the build
+phase**, scaled from `SPECIFICITY_RAMP_START_PCT` of its peak value to 100% by the end
+of build. The peak value itself is unchanged, and §45's week-on-week cap still clamps
+every step.
+
+**Why.** Both floors were gated on `phase === 'peak'`. The floor was right — §80 asks a
+finish-goal marathoner for 42.2 × 0.70 = **29.5 km** — but it was only *requested* in
+peak, and §45 permits **+5 km/week**, so the climb from §9's share (~11 km) could not
+finish in the two or three peak weeks remaining.
+
+Measured 2026-09-17 on the review personas: **M1, a first marathon with a 24-week
+runway, no injury and no time cap, peaked at a 21 km long run — 50% of race distance**
+against a 30–32 km coaching norm. M3 reached 14 km; M1d 19 km.
+
+⚠️ **Two earlier diagnoses of this were wrong and are recorded so they are not
+repeated.** The long run is **not** held down by §52 (its 60% ceiling was never within
+reach — the long run sat at ~30% of the week for 14 of 19 weeks) and **not** by §9
+being violated. §9's share was simply the only thing asking, because the floor had not
+arrived yet. **The defect is a floor arriving too late to be climbed to, not a cap
+holding the long run down.**
+
+**Measured after**, peak long run as a share of race distance:
+
+| persona | before | after |
+|---|---|---|
+| M1 first-timer, 24wk | 21.0 km (50%) | **26.0 km (62%)** |
+| M2 compressed 12wk | 25.0 km (59%) | **29.5 km (70%)** |
+| M3 returning + knee | 14.0 km (33%) | **26.0 km (62%)** |
+| M5 masters 58 | 27.5 km (65%) | **29.5 km (70%)** |
+| M1d declares experienced | 19.0 km (45%) | **23.5 km (56%)** |
+
+⚠️ **Still short of the 30–32 km norm on M1.** §45's +5 km/week remains binding from a
+15 km/week base. This closes most of the gap; it does not close all of it, and saying
+otherwise would overclaim.
+
+**Config.** `SPECIFICITY_RAMP_START_PCT` (60) — the share of the peak floor a build
+phase opens at. Not tuned to a chart: §9's own build share already puts a typical build
+long run near 60% of its peak value, so the ramp starts where the long run naturally
+sits and pulls it up from there.
+
+**Board:** 2026-09-17 — CORRECT, Hutchinson chairing. ⚠️ **The ruling named §24; the
+operative section for the charity cohort is §80**, because every marathon persona is
+`goal: 'finish'` and §24 gates on `time_target`. Both carry the amendment — same
+defect, same shape. Record: `docs/decisions/coaching-board-2026-09-17-plan-fitness.md`.
 
 ## 101. `compressed` means two different things, so it is two fields
 

@@ -703,7 +703,31 @@ function buildVolumeSequence(
       // volume held two weeks ago is not a spike for healthy tissue, and no
       // mainstream model caps a bounceback. The measurement resolved the board's
       // recorded Willy/Hutchinson split toward Hutchinson for healthy runners.
-      if (injuryCapPct != null) {
+      //
+      // §2 AMENDMENT 3 (PLAN-FITNESS-01, Coaching Board 2026-09-17) — THE INJURY
+      // BOUNCEBACK MAY RETURN TO PRE-DELOAD, AND NO HIGHER.
+      //
+      // Amendment 1 set the condition this failed: "the curve still RISES within
+      // each block — slow is right, STUCK IS NOT." Measured, same runner with and
+      // without the knee flag, 18 weeks, nothing else changed: net build
+      // **+91% healthy vs +6% injured** (standard cadence), **+79% vs +3%**
+      // (masters). 28.9% of injury plans never exceeded their own week-1 volume.
+      //
+      // Amendment 2 raised the injury deload 70% -> 85% but the number is short of
+      // its own break-even: standard needs 1/1.05^3 = 86.4%, masters 1/1.05^2 =
+      // 90.7%. At 85% that is -1.6%/cycle and -6.3%/cycle. D-21.
+      //
+      // WHY WILLY REVERSED HIS OWN VETO: he rejected the unbounded return because
+      // a 70% cut returning to 100% is **+43%** onto healing tissue. Amendment 2's
+      // shallower cut makes the same return **+17.6%**, of a load the tissue
+      // carried seven days earlier.
+      //
+      // ⚠️ HIS CONDITION IS MECHANICAL: valid only while the cut stays shallow.
+      // Lower INJURY_RECOVERY_WEEK_VOLUME_PCT and this exemption withdraws itself.
+      const injuryCutShallowEnough =
+        GENERATION_CONFIG.INJURY_RECOVERY_WEEK_VOLUME_PCT
+          >= GENERATION_CONFIG.INJURY_BOUNCEBACK_MIN_DELOAD_PCT
+      if (injuryCapPct != null && !injuryCutShallowEnough) {
         const bounceMax = Math.round(volumes[i - 1] * (1 + injuryCapPct / 100))
         maxAllowed = Math.max(maxAllowed, Math.min(preDeload, bounceMax))
       } else {
@@ -2993,7 +3017,7 @@ function buildWeekSessions(
   // signals support more aggressive prescription). Selects the highest tier
   // the persona qualifies for; LONG_RUN_CAP_MINUTES still wins below.
   let lrFloorPrinciple = 0
-  if (phase === 'peak'
+  if ((phase === 'peak' || phase === 'build')
       && !isDeload
       && input.goal === 'time_target'
       && (distKey === 'HM' || distKey === 'MARATHON')) {
@@ -3015,7 +3039,7 @@ function buildWeekSessions(
     const tierRatio = recentMeetsFloor ? targetRatio : floorRatio
     const precisionKm = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
     lrFloorPrinciple = Math.ceil((input.race_distance_km * tierRatio) / precisionKm) * precisionKm
-    if (longKm < lrFloorPrinciple) longKm = lrFloorPrinciple
+    longKm = Math.max(longKm, rampedSpecificityFloor(lrFloorPrinciple, phase, weekN, phases))
   }
 
   // CoachingPrinciples §80 (D3) — finish-goal HM/marathon long-run floor,
@@ -3032,7 +3056,7 @@ function buildWeekSessions(
   // The run-walk permission attaches to every finish-goal peak long run, not
   // only the ones this floor happened to lift — a first-timer facing a two-hour
   // effort needs it either way.
-  const isFinishGoalPeakLongRun = phase === 'peak'
+  const isFinishGoalPeakLongRun = (phase === 'peak' || phase === 'build')
     && !isDeload
     && input.goal === 'finish'
     && (distKey === 'HM' || distKey === 'MARATHON')
@@ -3041,7 +3065,7 @@ function buildWeekSessions(
     const projectedRaceMins = input.race_distance_km * pace.minPerKmEasy
     const floorMins = projectedRaceMins * GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION
     const floorKm = floorMins / pace.minPerKmEasy
-    if (longKm < floorKm) longKm = floorKm
+    longKm = Math.max(longKm, rampedSpecificityFloor(floorKm, phase, weekN, phases))
   }
 
   longKm = applyLongRunCap(longKm, pace.minPerKmEasy, input)
@@ -4458,6 +4482,38 @@ function applyLongRunStepBacks(weeks: Week[], pace: PaceGuide): void {
     w.weekly_km    = sumWeeklyKm(w.sessions, pace)
     w.long_run_hrs = computeLongRunHrs(w.sessions, pace)
   }
+}
+
+/**
+ * §24 / §80 Amendment (PLAN-FITNESS-01, Coaching Board 2026-09-17) — THE
+ * SPECIFICITY FLOOR RAMPS THROUGH BUILD INSTEAD OF STEPPING AT PEAK.
+ *
+ * Both floors were gated on `phase === 'peak'`. The floor itself was right —
+ * §80 asks a finish-goal marathoner for 42.2 x 0.70 = 29.5 km — but it was only
+ * REQUESTED in peak, and §45's +5 km/week cannot climb from §9's share (~11 km)
+ * to 29.5 km in the two or three peak weeks that remain. Measured: M1, a first
+ * marathon with a 24-WEEK RUNWAY, no injury and no time cap, peaked at 21 km —
+ * 50% of race distance against a 30-32 km norm.
+ *
+ * ⚠️ THE LONG RUN WAS NEVER HELD DOWN BY §52 OR §9, which is where two earlier
+ * diagnoses went wrong. It tracked §9's share for 14 of 19 weeks because nothing
+ * asked it to do otherwise; §52's 60% ceiling was never within reach. The defect
+ * is a floor arriving too late to be climbed to, not a cap holding it down.
+ *
+ * §45's progression cap still runs afterwards, so this changes WHEN the climb
+ * starts, never how fast it is allowed to go.
+ */
+function rampedSpecificityFloor(
+  peakFloorKm: number, phase: PhaseType, weekN: number, phases: Phase[],
+): number {
+  if (phase === 'peak') return peakFloorKm
+  if (phase !== 'build') return 0
+  const build = phases.find(p => p.name === 'build')
+  if (!build) return 0
+  const span = Math.max(1, build.end_week - build.start_week + 1)
+  const pos  = Math.min(1, Math.max(0, (weekN - build.start_week + 1) / span))
+  const start = GENERATION_CONFIG.SPECIFICITY_RAMP_START_PCT / 100
+  return peakFloorKm * (start + (1 - start) * pos)
 }
 
 function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {

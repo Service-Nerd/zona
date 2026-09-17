@@ -24,6 +24,7 @@
     "check:db": "tsx scripts/check-db-drift.ts",
     "cohort:shape": "tsx scripts/cohort-shape.ts",
     "prepare": "git config core.hooksPath .githooks || true",
+    "measure:fitness": "tsx scripts/measure-plan-fitness.ts",
     "invariant:liveness": "tsx scripts/invariant-liveness.ts",
     "test:liveness": "tsx scripts/test-liveness.ts"
   },

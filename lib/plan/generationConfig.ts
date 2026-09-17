@@ -250,6 +250,43 @@ export const GENERATION_CONFIG = {
   // contributes and is not yet traced. Do not read this as solved.
   INJURY_RECOVERY_WEEK_VOLUME_PCT: 85,
 
+  // §2 Amendment 3 (PLAN-FITNESS-01, Coaching Board 2026-09-17) — WILLY'S
+  // CONDITION, MADE MECHANICAL.
+  //
+  // The injury bounceback may return to pre-deload volume ONLY while the injury
+  // deload is shallow enough that the return is a modest rise. At the 85% cut it
+  // is +17.6%; at the old 70% cut it would be **+43%**, which is the number Willy
+  // vetoed in RAMP-BOUNCEBACK-01 and would veto again.
+  //
+  // Gated on the constant, not on a reviewer remembering: lower
+  // INJURY_RECOVERY_WEEK_VOLUME_PCT below this and the exemption withdraws
+  // itself, restoring Amendment 1's capped bounceback automatically.
+  INJURY_BOUNCEBACK_MIN_DELOAD_PCT:       85,
+
+  // §24 / §80 Amendment (PLAN-FITNESS-01, Coaching Board 2026-09-17).
+  //
+  // Where the specificity floor starts, as a share of its PEAK value, at the
+  // beginning of the build phase — ramping to 100% by the end of build.
+  //
+  // WHY IT EXISTS. Both specificity floors were gated on `phase === 'peak'`, so
+  // a finish-goal marathoner was asked for 29.5 km (§80: 42.2 x 0.70) only in the
+  // last two or three weeks, starting from §9's share of ~11 km. §45 permits
+  // +5 km/week, so the climb could not finish: M1, a FIRST MARATHON WITH A
+  // 24-WEEK RUNWAY, no injury and no time cap, peaked at **21 km — 50% of race
+  // distance** against a 30-32 km coaching norm.
+  //
+  // 60 is the share of the peak floor a build phase opens at. It is not tuned to
+  // a chart: §9's own build share (30% of the week) already puts a typical build
+  // long run near 60% of its peak value, so this starts the ramp where the long
+  // run naturally already sits and then pulls it steadily up. Below ~50 the ramp
+  // does nothing (§9's share already exceeds it); above ~70 it front-loads
+  // long-run distance into early build, which is the load pattern §45 exists to
+  // prevent.
+  //
+  // ⚠️ THIS CHANGES WHEN THE CLIMB STARTS, NEVER HOW FAST IT MAY GO. §45's
+  // week-on-week progression cap runs afterwards and still clamps every step.
+  SPECIFICITY_RAMP_START_PCT:             60,
+
   // §106 Amendment (COMPLIANCE-FIX-1, Coaching Board 2026-09-16) — how far a
   // PROGRESSIVE week may fall below the plan's own week 1 before the plan is
   // detraining the runner rather than building them.

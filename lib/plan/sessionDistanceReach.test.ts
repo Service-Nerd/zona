@@ -40,13 +40,30 @@ describe('SESSION-KM-02 — who is actually affected', () => {
   })
 
   it('duration-anchored plans are a BEGINNER phenomenon', () => {
-    const rate = (lvl: string) => {
+    // TWO DIFFERENT QUESTIONS, and they need two different measures — amended
+    // 2026-09-17 (PLAN-FITNESS-01).
+    //
+    // For NON-beginners the question is SESSION-KM-02's blast radius: does any
+    // session lack `distance_km`, so that `?? 0` under-counted it? Must be zero.
+    //
+    // For BEGINNERS the question is the §79/§80 CONTRACT: are they prescribed in
+    // minutes? `distance_km == null` is only a proxy for that, and §80's
+    // finish-goal long run breaks the proxy by design — it is duration-anchored
+    // (`duration_anchored`, `primary_metric: 'duration'`) AND carries distance as
+    // a deliberate SECONDARY value so the card can show both. The §24/§80
+    // specificity ramp makes that lift fire in build as well as peak, which moved
+    // the proxy 92.1% -> 90.0% while the contract itself did not change. Measured
+    // before and after; the drift is entirely secondary distances.
+    const lacksDistance = (x: { s: { distance_km?: number | null } }) => x.s.distance_km == null
+    const durationAnchored = (x: { s: { distance_km?: number | null; primary_metric?: string; duration_anchored?: boolean } }) =>
+      lacksDistance(x) || x.s.duration_anchored === true || x.s.primary_metric === 'duration'
+    const rate = (lvl: string, f: (x: never) => boolean) => {
       const g = all.filter(x => x.level === lvl)
-      return g.filter(x => x.s.distance_km == null).length / g.length
+      return g.filter(f as (x: unknown) => boolean).length / g.length
     }
-    expect(rate('beginner')).toBeGreaterThan(0.9)
-    expect(rate('intermediate')).toBe(0)
-    expect(rate('experienced')).toBe(0)
+    expect(rate('beginner', durationAnchored as never)).toBeGreaterThan(0.9)
+    expect(rate('intermediate', lacksDistance as never)).toBe(0)
+    expect(rate('experienced', lacksDistance as never)).toBe(0)
   })
 
   it('quality sessions always carry a distance — why four sites were left alone', () => {

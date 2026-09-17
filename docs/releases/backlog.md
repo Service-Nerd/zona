@@ -125,6 +125,18 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 >
 > *Verify still open:* `grep -c '"corpus"' lib/plan/__fixtures__/invariantLivenessBaseline.json` → **9 = still open**.
 
+> 🔲 **STEPBACK-STALE-PEAK-01 — §47's step-back is measured against a peak that a later pass then trims.** *(P2, filed 2026-09-17 out of PLAN-FITNESS-01. Infra/ordering, no board — restores documented intent.)*
+>
+> `applyPeakLongRunAlternation` sizes the step-back as a ratio of the peak long run **it can see**. `applyLongRunProgressionCap` runs **afterwards** and can trim that peak, so the ratio ends up measured against a number that no longer exists. Measured: a **166-minute step-back against a final peak of 206 — 80.6% against §47's 80% ceiling.**
+>
+> ⚠️ **Pre-existing.** The §24/§80 specificity ramp moved peak durations into a range where the gap exceeds one minute; it surfaced this rather than causing it.
+>
+> Interim: `peakLrStepbackMinutes.test.ts` tolerance widened 1 → 2 minutes (1% of a 206-minute session) **with the cause written into the test**. ⚠️ **If it ever needs widening again, fix the ordering instead** — a tolerance that keeps growing is a check being switched off a minute at a time.
+>
+> Fix is a pass-ordering change (re-clamp the step-back against the final peak, on whichever axis the plan is anchored). ⚠️ **A naive re-clamp was tried and reverted** — treating every sub-peak week as a step-back breaks §35 and §24. The clamp must key on the step-back itself.
+>
+> *Verify still open:* `grep -c "pct + 2" lib/plan/peakLrStepbackMinutes.test.ts` → **non-zero = still open**.
+
 > 🔲 **LR-CONSEC-01 — §45 cannot see COMPOUNDING, and closing it collides with §38 and §47.** *(P1, filed 2026-09-17. Coaching Board ruled the mechanism **CORRECT** at 30%; **BUILD ATTEMPTED AND REVERTED** — it needs §38 and §47 amended first, which is a second sitting.)*
 >
 > **The defect is real and measured.** §45 compares a week to the one before it. **Nothing in the constitution looks across two**, so compounding is invisible — structurally the same blind spot §94's guard had, one principle over.
@@ -156,6 +168,8 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 > 3. **Accept the compounding** and record it as known-open under §34.
 >
 > ⚠️ **Do NOT re-attempt as a straight build.** It has been tried at 30/40/50 and §38 and §47 fail at all three.
+>
+> ⚠️ **UPDATED 2026-09-17 after PLAN-FITNESS-01.** The specificity ramp was expected to make compounding worse (it climbs the long run harder). Measured: it **improved**. Plans with a 2-week window >40% **28.4% → 23.0%**, 3-week >50% **13.1% → 10.7%**, worst 2-week **126% → 121%**, worst 3-week **193% → 165%**. Fewer plans and lower extremes, because plans that previously never climbed at all now do. p90 rises (87% → 95%) for the same reason. **Still open — the mechanism (§45 sees one week at a time) is unchanged.**
 >
 > *Verify still open:* `grep -c "LONG_RUN_TWO_WEEK_MAX_RISE_PCT" lib/plan/generationConfig.ts` → **0 = still open**.
 

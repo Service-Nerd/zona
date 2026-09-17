@@ -39,7 +39,13 @@ const gen = (o: Record<string, unknown>, weeks = 16) => {
       const lr = Object.values(w.sessions ?? {}).find(s => !!s && isLongRun(s))
       return lr?.duration_mins ?? 0
     }))
-  return { plan, peakLrMins, capMins: GENERATION_CONFIG.LONG_RUN_CAP_MINUTES.MARATHON }
+  const peakLrKm = Math.max(0, ...plan.weeks
+    .filter(w => w.n >= 1 && w.type !== 'race')
+    .map(w => {
+      const lr = Object.values(w.sessions ?? {}).find(sn => !!sn && isLongRun(sn))
+      return lr?.distance_km ?? 0
+    }))
+  return { plan, peakLrMins, peakLrKm, capMins: GENERATION_CONFIG.LONG_RUN_CAP_MINUTES.MARATHON }
 }
 
 /** The M5 persona: second marathon, 40 km/wk over 4 days, knee history. */
@@ -58,15 +64,37 @@ describe('the note names the constraint that is actually binding', () => {
     expect(structural + shortfall).not.toMatch(/time cap for this distance stops us/)
   })
 
-  it('M5: the structural note names the real mechanism instead', () => {
-    const note = String(gen(M5).plan.meta.volume_constraint_note ?? '')
-    expect(note).toBeTruthy()
+  it('M5: the structural note names the real mechanism — or there is no shortfall left', () => {
+    // ⚠️ AMENDED 2026-09-17 (PLAN-FITNESS-01). The §24/§80 specificity ramp lifts
+    // this runner's peak long run to §80's floor, so there is no shortfall left
+    // to declare and the note is correctly ABSENT. Absence is only acceptable
+    // WITH that evidence — otherwise this test would pass on a plan that had
+    // silently stopped explaining itself, which is the exact failure it exists
+    // to catch. So the floor is asserted as a number.
+    const { plan, peakLrKm } = gen(M5)
+    const note = String(plan.meta.volume_constraint_note ?? '')
+    if (!note) {
+      const floorKm = 42.2 * GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION
+        - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+      expect(peakLrKm, 'no constraint note is only honest if the long run actually reaches its floor')
+        .toBeGreaterThanOrEqual(floorKm)
+      return
+    }
     expect(note).toMatch(/longest run of the week|share of that week/i)
   })
 
-  it('M5: the shortfall note names weekly volume, and still states the shortfall', () => {
-    const note = String(gen(M5).plan.meta.long_run_shortfall_note ?? '')
-    expect(note).toBeTruthy()
+  it('M5: the shortfall note names weekly volume — or there is no shortfall', () => {
+    // Same amendment as above: M5 now meets §80's floor, so no shortfall note is
+    // produced. When one IS produced it must still name weekly volume rather
+    // than blame the time cap (M5-EASY-CEILING-01's finding).
+    const { plan, peakLrKm } = gen(M5)
+    const note = String(plan.meta.long_run_shortfall_note ?? '')
+    if (!note) {
+      const floorKm = 42.2 * GENERATION_CONFIG.FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION
+        - GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+      expect(peakLrKm).toBeGreaterThanOrEqual(floorKm)
+      return
+    }
     expect(note).toMatch(/weekly volume is what limits it/i)
     expect(note).toMatch(/tops out at \d+ minutes/)
   })
