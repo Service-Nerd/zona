@@ -66,20 +66,6 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 >
 > *Verify closed:* `grep -c "nowTrimable <= prevTrimable" lib/plan/invariants.ts` → **0**.
 
-> 🔲 **LR-ABS-ALLOWANCE-01 — §45's `+5km absolute` allowance is not defensible on a small base.** *(P2, filed 2026-09-17 by Willy at the RAMP-GUARD-FAILS-OPEN-01 sitting. Needs a MEASUREMENT and a board ruling. **Changes what the engine PRESCRIBES — wider blast radius than §94.**)*
->
-> §45 permits a long-run increase of **`+20% week-on-week OR +5km absolute, whichever is GREATER`**. On an 8 km long run, +5 km is **+63%** — in the single highest-load session of the week, for a runner whose whole week is 26 km.
->
-> **Measured 2026-09-17:** of the 202 delivered-ramp breaches that §94 Amendment 1 newly surfaces, **202 of 202 (100%) are legal under §45 ONLY because of the absolute allowance.** Not one would be legal on the 20% arm alone.
->
-> **Willy:** *"the session that breaks people"* — bone and tendon load accumulate in a single continuous bout, and an aerobic jump is less alarming to the runner in the moment, which makes it worse rather than better. **Sims** adds bone-stress risk is not evenly distributed (higher in female runners, with low energy availability, and peri/post-menopause) and the engine cannot know sex (`INPUT-SEX-01`, parked).
->
-> ⚠️ **Deliberately NOT taken on 2026-09-17** — the chair refused a prescription change the day before the charity showcase on a measurement taken that morning. This is a scheduling decision, not a disagreement about the evidence.
->
-> **What would settle it:** the same measurement with the allowance scaled on a small base (e.g. `min(+5km, X% of weekly volume)`), plus a `cohort:shape` diff and a `verify:parity` run — this moves delivered long runs, so parity WILL move.
->
-> *Verify still open:* `grep -c "LONG_RUN_ABS_ALLOWANCE_WEEKLY_PCT" lib/plan/generationConfig.ts` → **0 = still open**.
-
 > ✅ **PREP-ACK-UNLOCKS-MARATHON-01 — RESOLVED 2026-09-17, FOUNDER DECISION, NO CODE CHANGE.**
 >
 > **Ruling (Russ, 2026-09-17):** *"As long as we present them the facts and they tick 'I understand', that's fine. We shouldn't refuse people plans, we should just give them honest feedback."* **Willy's position carried; McMillan's recorded and not taken.**
@@ -148,6 +134,12 @@ Coaching Board ran a fitness-for-purpose review of a real generated marathon pla
 > 🔲 **LR-ABS-CAP-LOWVOL-01 (was Root A / Lever B) — should the +5 km absolute long-run cap taper at low volume?** *(P2, filed 2026-09-16. Coaching Board ruled **INSUFFICIENT EVIDENCE** — needs a MEASUREMENT scoped to the low-volume cohort, not a number picked by intuition.)*
 >
 > §45 caps a long-run step at **the GREATER of** `LONG_RUN_PROGRESSION_CAP_PCT` (20%) **or** `LONG_RUN_PROGRESSION_CAP_ABS_KM` (**5 km**) — `generationConfig.ts:1055-1056`. A flat 5 km step is fine on a 30 km long run (+17%) and aggressive on a 12 km one (**+42%**): test.test took w9→10 12→16.5 (+38%), w10→11 16.5→21.5 (+30%). Willy would have accepted a number at the sitting; the room ruled measure-first (Hutchinson: "a 33% ceiling is a number I made up"). **The measurement, per Willy's condition: scope to the low-volume cohort (longest run < ~18 km, current volume < ~35 km/wk) — a sweep averaged over all runners will show the abs cap looks fine because it IS fine at 40 km long runs.** Run it AFTER PEAK-STEPBACK-VOLUME-01 (now shipped) so the injury exposure is re-measured with the down-week present — the board's view was that the jumps are less dangerous with a recovery week than without. Pairs with `RAMP-GUARD-FAILS-OPEN-01` (guard side; this is the prescription side).
+>
+> ⚠️ **MEASUREMENT ADDED 2026-09-17 (from the RAMP-GUARD-FAILS-OPEN-01 sitting — the guard side, now shipped).** Of the 202 delivered-ramp breaches that §94 Amendment 1 newly surfaces, **202 of 202 (100%) are legal under §45 ONLY because of the +5 km absolute allowance.** Not one would be legal on the 20% arm alone. Worst observed: long run **8→13 km (+63%)** on a 26 km week; **6→11 km (+83%)** on a 17 km week. Willy at that sitting: *"the session that breaks people"* — and an aerobic jump is less alarming to the runner in the moment, which makes it worse rather than better. Sims: bone-stress risk is not evenly distributed (higher in female runners, with low energy availability, and peri/post-menopause) and the engine cannot know sex (`INPUT-SEX-01`, parked).
+>
+> ⚠️ **This does NOT discharge the board's condition.** Willy asked for a measurement scoped to the **low-volume cohort** (longest run < ~18 km, current volume < ~35 km/wk). The 2026-09-17 numbers are scoped to *plans where the delivered ramp breached*, which is a different population. **Still INSUFFICIENT EVIDENCE — run the cohort-scoped version.**
+>
+> ⚠️ **Deliberately not taken on 2026-09-17:** the chair refused a change to what the engine PRESCRIBES the day before the charity showcase, on a measurement taken that morning. Scheduling, not disagreement about the evidence. Expect `verify:parity` and `cohort:shape` to move when this does ship.
 
 > ✅ **STEPBACK-NOTE-VOLUME-01 — RESOLVED by PEAK-STEPBACK-VOLUME-01 (512f289).** The note "absorb last week's peak" is now honest: the step-back week genuinely delivers less than the preceding week, so no copy change was needed — Lever A's option (b) (hold the week's volume) made the existing note true rather than rewriting it. The latent stale-`catalogue_id` concern flagged alongside it was already handled (`ruleEngine.ts` deletes it when §47 rewrites the session).
 

@@ -4715,7 +4715,7 @@ ceiling, not a shield, and below 60% it says nothing at all — only 25 of the 2
 §45 — and **all 202 are legal only because of its `+5km absolute` allowance**
 (`+20% OR +5km, whichever is greater`). On an 8 km long run, +5 km is **+63%**.
 §94 is the messenger. **Willy's objection to that allowance on a small base is
-recorded and filed separately (`LR-ABS-ALLOWANCE-01`) — it changes what the engine
+recorded and filed separately (`LR-ABS-CAP-LOWVOL-01`) — it changes what the engine
 PRESCRIBES and was not taken the day before the charity showcase.**
 
 **The amendment (McMillan's condition, with Seiler's).** The violation MUST

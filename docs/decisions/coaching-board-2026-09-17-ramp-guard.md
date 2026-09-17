@@ -77,7 +77,7 @@ the false-positive class the arm was written to prevent.**
 2. **Willy vs the chair — scope.** Willy wants §45's `+5km` absolute allowance revisited on
    a small base. The chair agrees the evidence points there but will not change what the
    engine PRESCRIBES the day before the charity showcase on a measurement taken that
-   morning. **Filed as `LR-ABS-ALLOWANCE-01`, not folded in.** What would settle it: the
+   morning. **Filed as `LR-ABS-CAP-LOWVOL-01`, not folded in.** What would settle it: the
    same measurement with the allowance scaled on a small base, plus a `cohort:shape` diff.
 
 ## Artifacts

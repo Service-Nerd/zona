@@ -3099,7 +3099,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         // under §45 — and all 202 are legal ONLY via its `+5km absolute`
         // allowance (`+20% OR +5km, whichever is GREATER`). On an 8 km long run
         // that is +63%. Willy's objection to that allowance on a small base is
-        // recorded and filed as LR-ABS-ALLOWANCE-01; it changes what the engine
+        // recorded and filed as LR-ABS-CAP-LOWVOL-01; it changes what the engine
         // PRESCRIBES and was deliberately not taken here.
         const totalRisePct = ((deliveredKm(w) - deliveredKm(prev)) / deliveredKm(prev)) * 100
         // §94 amendment (CHARITY-CAP-ABSFLOOR-01, Coaching Board 2026-09-13): as
