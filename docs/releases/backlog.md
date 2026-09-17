@@ -10,7 +10,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at end of 2026-09-17
 
-**Everything is committed, pushed and deployed** (`baed70c`, production Ready, www.zonna.run HTTP 200). `npm run verify` exit 0 (**2,076 tests / 226 files**) · **0 hard failures** · sweep **15,974 plans, no new violations** · matrix **65/0** · `invariant:liveness` **107/118, unclassified = 0** · deviation scan **HIGH 0 / MED 26** · `verify:parity` 19.3% · `cohort:shape` re-baselined with every move declared.
+**Everything is committed, pushed and deployed** (`4314e98`, production Ready, www.zonna.run HTTP 200). `npm run verify` exit 0 (**2,076 tests / 226 files**) · **0 hard failures** · sweep **15,974 plans, no new violations** · matrix **65/0** · `invariant:liveness` **107/118, unclassified = 0** · deviation scan **HIGH 0 / MED 26** · `verify:parity` 19.3% · `cohort:shape` re-baselined with every move declared.
 
 > ✅ **Doc audit run mechanically at end of day, not asserted.** All **10** of today's `feat(`/`fix(` scopes carry a feature-registry row (ID in the first cell) and a build-log `##` entry. All **5** principle amendments (§2 Am.3, §3 Am., §24/§80 Am., §45 Am.2, §94 Am.1) are in `CoachingPrinciples.md` with their sittings in `docs/decisions/`. **118 invariants in `invariants.ts` = 118 rows in `plan-invariants.md`**, reconciled in both directions with zero orphans either way. Every shipped item below is marked ✅ closed.
 
@@ -44,6 +44,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 - 🔴 **A board amendment passed its stated condition and missed its stated purpose TWICE** — Willy's §52 per-week bound. `S52-LOPSIDED-BOUND-01`. **Do not add a third per-week bound.**
 - 🟢 **Willy reversed his own RAMP-BOUNCEBACK-01 veto on measurement** — the +43% he vetoed became +17.6% once Am.2 made the cut shallower.
 - 🔴 **A board-approved fix was built and REVERTED as unsafe** (`LR-DELOAD-RESUME-01`) — it sent a low-base beginner **7.3 → 18.5 km in one week**. The shipped version made that same runner's worst jump go **DOWN** (+50% → +47%).
+- 🟢 **`DOC-STATE-GATE-01` — this paragraph is now hook-checked.** It names the commit it describes; `state-block-check.py` flags it on any `feat(`/`fix(` commit that postdates that SHA. It exists because this exact paragraph went stale **three times on 2026-09-17** while every hook-checked record stayed correct. **Write it LAST, after the final push, and never type a count from memory.**
 - 🔴 **`??` DOES NOT CATCH AN EMPTY STRING, and that class has now cost FOUR measured defects.** `ruleEngine` stamps `athlete_name ?? ''`, so `plan.meta.athlete` is an empty *string* and every downstream `?? 'fallback'` is already dead — the Me-screen avatar drew a blank circle for months and `postRaceReshape.ts` addressed nobody. Same shape as `distance_km ?? 0` (SESSION-KM-01). **When you guard a read with `??`, go and look at what WRITES it.**
 
 ### 🔜 OPEN — nothing urgent
