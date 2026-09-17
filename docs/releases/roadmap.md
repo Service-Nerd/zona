@@ -77,8 +77,10 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > **`npm run measure:fitness` is the fourth check** — *does this plan BUILD the
 > runner?* — gated on every build. Run it before and after any engine change.
 
-> ✅ **ENGINE STATE, 2026-09-17.** `npm run verify` exit 0 (**2,047 tests / 221
-> files**), **118 invariants**, property sweep **15,974 plans / 0 new above
+> ✅ **ENGINE STATE, 2026-09-17 (end of day).** `npm run verify` exit 0 (**2,076
+> tests / 226 files**), **118 invariants** — reconciled against
+> `plan-invariants.md` in both directions, zero orphans either way — property
+> sweep **15,974 plans / 0 new above
 > baseline**, archetype matrix 65/0, **`invariant:liveness` 107/118 woken (91%)
 > with the `unclassified` debt column at ZERO**, `test:liveness` 6 survivors all
 > classified, coaching deviation scan **0 HIGH**.

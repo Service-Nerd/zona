@@ -10,9 +10,11 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at end of 2026-09-17
 
-**Everything is committed, pushed and deployed.** `npm run verify` exit 0 (**2,066 tests / 226 files**) · **0 hard failures** · sweep **15,974 plans, no new violations** · matrix **65/0** · `invariant:liveness` **107/118, unclassified = 0** · deviation scan **HIGH 0 / MED 26** · `verify:parity` 19.3% · `cohort:shape` re-baselined with every move declared.
+**Everything is committed, pushed and deployed** (`baed70c`, production Ready, www.zonna.run HTTP 200). `npm run verify` exit 0 (**2,076 tests / 226 files**) · **0 hard failures** · sweep **15,974 plans, no new violations** · matrix **65/0** · `invariant:liveness` **107/118, unclassified = 0** · deviation scan **HIGH 0 / MED 26** · `verify:parity` 19.3% · `cohort:shape` re-baselined with every move declared.
 
-### 🏁 What today was — two halves
+> ✅ **Doc audit run mechanically at end of day, not asserted.** All **10** of today's `feat(`/`fix(` scopes carry a feature-registry row (ID in the first cell) and a build-log `##` entry. All **5** principle amendments (§2 Am.3, §3 Am., §24/§80 Am., §45 Am.2, §94 Am.1) are in `CoachingPrinciples.md` with their sittings in `docs/decisions/`. **118 invariants in `invariants.ts` = 118 rows in `plan-invariants.md`**, reconciled in both directions with zero orphans either way. Every shipped item below is marked ✅ closed.
+
+### 🏁 What today was — three parts
 
 **Morning: a coverage-claim audit.** Three registers each claimed "this rule is checked" and none could see the others. `LIVENESS-DEBT-01` (unclassified **20 → 0**) · `COVERAGE-BITE-01` (a principle can no longer be "enforced" by an invariant nothing can wake — **11 of 107 were**, three of them injury guards) · `TEST-BITE-01`. All three registers now cross-check mechanically.
 
@@ -21,6 +23,8 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 🔴 **An injury-history runner got eighteen weeks that never made them fitter.** Isolated by toggling ONE flag — same runner, everything else identical: net build **+91% healthy vs +6% injured** (standard cadence), **+79% vs +3%** (masters). **28.9%** of injury plans never exceeded week 1; **66.7%** at masters cadence. A knee-history runner reached a marathon start line never having run beyond **14 km**. Every check was green throughout.
 
 Shipped **PLAN-FITNESS-01** (§2 Am.3 + §24/§80 specificity ramp) and **LR-DELOAD-CUT-01** (§3 Am.). **Never-builds now 0% at every distance.**
+
+**Evening: the first UI work in days.** `PROFILE-NAME-01` — five defects on the Me screen, all one family: **the app collected a name on one of its three sign-up routes and then used it almost nowhere.** The profile placeholders were the founder's own first and last name and read as stored data on a test account; `athlete_name` was set by NOTHING and read by three things, so **every plan the engine has ever built addressed the runner as "Athlete"**. Email/password signup now captures a name (via the same `user_metadata.full_name` field Google and Apple use), `/api/generate-plan` resolves it server-side from `user_settings` at the auth boundary, the identity card prompts instead of labelling, and the avatar can no longer draw blank. **No prescription change, no doctrine file touched — Coaching Board exempt.**
 
 ### ✅ Fit for purpose — the verdict
 
@@ -40,6 +44,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 - 🔴 **A board amendment passed its stated condition and missed its stated purpose TWICE** — Willy's §52 per-week bound. `S52-LOPSIDED-BOUND-01`. **Do not add a third per-week bound.**
 - 🟢 **Willy reversed his own RAMP-BOUNCEBACK-01 veto on measurement** — the +43% he vetoed became +17.6% once Am.2 made the cut shallower.
 - 🔴 **A board-approved fix was built and REVERTED as unsafe** (`LR-DELOAD-RESUME-01`) — it sent a low-base beginner **7.3 → 18.5 km in one week**. The shipped version made that same runner's worst jump go **DOWN** (+50% → +47%).
+- 🔴 **`??` DOES NOT CATCH AN EMPTY STRING, and that class has now cost FOUR measured defects.** `ruleEngine` stamps `athlete_name ?? ''`, so `plan.meta.athlete` is an empty *string* and every downstream `?? 'fallback'` is already dead — the Me-screen avatar drew a blank circle for months and `postRaceReshape.ts` addressed nobody. Same shape as `distance_km ?? 0` (SESSION-KM-01). **When you guard a read with `??`, go and look at what WRITES it.**
 
 ### 🔜 OPEN — nothing urgent
 
