@@ -12,6 +12,7 @@
 import type React from 'react'
 
 export function TextField({
+  id,
   value,
   onChange,
   type = 'text',
@@ -25,6 +26,9 @@ export function TextField({
   autoComplete,
   ariaLabel,
 }: {
+  /** DOM id. Pairs the field with a `<label htmlFor>`, and lets a caller focus
+   *  it from elsewhere on the screen (the profile prompt on Me does this). */
+  id?: string
   value: string
   onChange: (v: string) => void
   type?: 'text' | 'email' | 'password' | 'number' | 'date'
@@ -41,6 +45,7 @@ export function TextField({
 }) {
   const input = (
     <input
+      id={id}
       type={type}
       value={value}
       onChange={e => onChange(e.target.value)}

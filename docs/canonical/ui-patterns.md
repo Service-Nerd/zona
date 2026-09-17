@@ -2394,3 +2394,58 @@ it — and this repo has shipped a comment describing a change to a component
 nobody could see.
 
 Reference: `RunFeedbackCard` in `app/dashboard/DashboardClient.tsx`.
+
+---
+
+### 36. Identity Card (Me screen)
+
+The top card on Me: who is signed in, and on what. Avatar + name + tier.
+
+```
+┌─────────────────────────────────────────┐
+│  (RS)   Russell Shear                   │  ← 17px 500 --ink, brand font
+│         Pro                             │  ← 12px 400 --mute
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│  (T)    Add your name              [›]  │  ← MISSING-NAME state: one tap target
+│         Trial · Kit will use it.        │
+└─────────────────────────────────────────┘
+```
+
+**Structure:**
+- Container: `--card`, `var(--radius-lg)`, `1px solid --line`, `var(--shadow-card)`, `16px` padding
+- Avatar: `48px` circle, `--moss` fill, initials in `var(--font-brand)` `16px 600`, `--card` text
+- Name: `var(--font-brand)` `17px 500 --ink`, single line, ellipsis
+- Sub-line: `var(--font-ui)` `12px 400 --mute`, single line, ellipsis
+- Chevron (missing-name state only): `--mute`, `marginLeft: 12px` — Pattern 20's chevron
+
+**The missing-name state is the whole point of this pattern.** With a name the
+card is inert. Without one the entire card becomes a single `<button>` following
+**Pattern 20 (Action List Card)** — label, supporting detail, chevron — and taps
+through to the real first-name field further down the same screen. It does not
+open a sheet or a second screen: one input does not earn a navigation.
+
+> **A prompt with nothing to tap is Pattern 8's mistake in miniature.** This card
+> previously rendered a grey `"Your name"` in the name slot: it read as a value
+> the app already held, it was not tappable, and on a test account the founder
+> could not tell whether the app knew his name or not. An empty state must either
+> resolve itself or say plainly that there is nothing to do — never sit in
+> between.
+
+**Initials never render blank.** `lib/profileInitials.ts` is the single owner:
+saved profile name → `plan.meta.athlete` → the account's email → `'?'`. The email
+tail is load-bearing, not a nicety (`plan.meta.athlete` is an empty *string*, so
+a `??` guard never fires). Regression-tested in `lib/profileInitials.test.ts`.
+
+**Copy:** the sub-line names the tier, and in the missing-name state adds one
+short reason sourced from `BRAND.coachName`. No exclamation, no "Complete your
+profile!" — the runner is told what it is for and left to decide.
+
+**Harness:** `/me-preview` renders the real `IdentityCard` and `ProfileSection`
+across five states (no name, no name and no plan, first name only, full name,
+overflowing long name) plus a live profile form. 404s in production. Both sit
+behind auth, a plan and a tab, which is exactly how a hardcoded placeholder
+survived to production.
+
+Reference: `components/shared/IdentityCard.tsx`, `components/shared/ProfileSection.tsx`.

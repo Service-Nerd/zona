@@ -45,6 +45,7 @@ export default function LoginPage() {
   const [mode, setMode]         = useState<'signin' | 'signup'>('signin')
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
+  const [signupName, setSignupName] = useState('')
   const [message, setMessage]   = useState<string | null>(null)
   const [ageConfirmed, setAgeConfirmed] = useState(false)
   // AUTH-RESET-01 — forgot-password request view (toggled from signin mode).
@@ -190,9 +191,19 @@ export default function LoginPage() {
         return
       }
 
+      // The name rides in on `user_metadata.full_name` — the SAME field Google
+      // and Apple populate — because DashboardClient already reads that field on
+      // first load and writes it to `user_settings`. Reusing that path means one
+      // name-capture mechanism for all three sign-up routes rather than a fourth.
+      // Optional on purpose: an account is not worth losing over a nicety, and
+      // the Me screen prompts for it when it is missing.
+      const fullName = signupName.trim()
       const { data, error } = await supabase.auth.signUp({
         email, password,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          ...(fullName ? { data: { full_name: fullName } } : {}),
+        },
       })
       if (error) { setError(authErrorCopy(error.message, 'signup')); setLoading(false); return }
       // Auto-confirm (email confirmation disabled): signUp returns a live session
@@ -433,6 +444,14 @@ export default function LoginPage() {
 
           {/* Email/password form */}
           <form onSubmit={handleEmail} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {mode === 'signup' && (
+              <TextField
+                type="text" placeholder="First name"
+                autoComplete="given-name"
+                ariaLabel="First name"
+                value={signupName} onChange={setSignupName}
+              />
+            )}
             <TextField
               type="email" placeholder="Email" required
               autoComplete="email"
@@ -440,7 +459,7 @@ export default function LoginPage() {
             />
             <TextField
               type="password" placeholder="Password" required
-              autoComplete="current-password"
+              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
               value={password} onChange={setPassword}
             />
             {mode === 'signup' && (

@@ -27,12 +27,15 @@ import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { ZONE_DRIFT_ABOVE_CEILING_PCT } from '@/lib/coaching/constants'
 import { driftContextFor } from '@/lib/coaching/loadCalc'
 import { BRAND, PRICING } from '@/lib/brand'
+import { profileInitials } from '@/lib/profileInitials'
 import { Wordmark } from '@/components/ui/Wordmark'
 import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
 import { planRationaleNotes } from '@/lib/plan/planRationale'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
 import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
 import { TextField } from '@/components/shared/TextField'
+import { IdentityCard } from '@/components/shared/IdentityCard'
+import { ProfileSection, focusProfileNameField } from '@/components/shared/ProfileSection'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
@@ -712,17 +715,14 @@ export default function DashboardClient() {
     } catch { /* malformed url — leave the user on the inbox */ }
   }, [applyDeepLink])
 
-  const initials = (() => {
-    if (firstName || lastName) {
-      return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase().slice(0, 2) || '?'
-    }
-    return (plan?.meta?.athlete ?? '?')
-      .split(' ')
-      .map((w: string) => w[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  })()
+  // Avatar initials — lib/profileInitials.ts is the single owner, so the circle
+  // and its regression test cannot drift apart.
+  const initials = profileInitials({
+    firstName,
+    lastName,
+    planAthlete: plan?.meta?.athlete,
+    email: profileEmail,
+  })
 
   // Register service worker on load — subscription requires a user gesture (iOS requirement)
   useEffect(() => {
@@ -11126,77 +11126,6 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
   )
 }
 
-// ── PROFILE SECTION ───────────────────────────────────────────────────────
-
-function ProfileSection({ firstName, lastName, email, onSave }: {
-  firstName: string; lastName: string; email: string
-  onSave: (fn: string, ln: string, em: string) => void
-}) {
-  const [fn, setFn] = useState(firstName)
-  const [ln, setLn] = useState(lastName)
-  const [saved, setSaved] = useState(false)
-  const [saving, setSaving] = useState(false)
-
-  useEffect(() => { setFn(firstName) }, [firstName])
-  useEffect(() => { setLn(lastName) }, [lastName])
-
-  // Email is read-only — it's the auth identity, owned by the OAuth provider.
-  // Changing it requires a re-verification flow we don't have, so the field
-  // is shown for orientation only ("which account am I logged in with?").
-  const isDirty = fn !== firstName || ln !== lastName
-  const isValid = fn.trim().length > 0 || ln.trim().length > 0
-
-  async function handleSave() {
-    if (!isValid) return
-    setSaving(true)
-    await onSave(fn.trim(), ln.trim(), email)
-    setSaved(true)
-    setSaving(false)
-    setTimeout(() => setSaved(false), 2000)
-  }
-
-  const labelStyle: React.CSSProperties = {
-    fontFamily: 'var(--font-ui)', fontSize: '10px',
-    color: 'var(--text-muted)', textTransform: 'uppercase',
-    letterSpacing: '0.08em', marginBottom: '6px', display: 'block',
-  }
-
-  return (
-    <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <div>
-          <label style={labelStyle}>First name</label>
-          <TextField type="text" placeholder="Russell" value={fn} onChange={setFn} autoComplete="given-name" />
-        </div>
-        <div>
-          <label style={labelStyle}>Last name</label>
-          <TextField type="text" placeholder="Shear" value={ln} onChange={setLn} autoComplete="family-name" />
-        </div>
-      </div>
-      <div>
-        <label style={labelStyle}>Email</label>
-        <TextField type="email" value={email} onChange={() => {}} readOnly />
-      </div>
-      <button
-        onClick={handleSave}
-        disabled={!isDirty || !isValid || saving}
-        style={{
-          width: '100%', padding: '11px',
-          background: saved ? 'var(--teal-dim)' : isDirty && isValid ? 'var(--accent-soft)' : 'var(--bg)',
-          border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : isDirty && isValid ? 'var(--accent-mid)' : 'var(--border-col)'}`,
-          borderRadius: '8px', cursor: isDirty && isValid ? 'pointer' : 'not-allowed',
-          fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-          color: saved ? 'var(--teal)' : isDirty && isValid ? 'var(--accent)' : 'var(--text-muted)',
-          transition: 'all 0.15s',
-        }}
-      >
-        {saving ? 'Saving...' : saved ? 'Saved' : 'Save profile'}
-      </button>
-    </div>
-  )
-}
-
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
 function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
@@ -11712,20 +11641,16 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '40px' }}>
 
-        {/* Identity card — avatar + name + tier */}
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', padding: '16px', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--moss)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--card)', flexShrink: 0 }}>
-            {initials}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {[firstName, lastName].filter(Boolean).join(' ') || 'Your name'}
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '3px' }}>
-              {tierLabel}
-            </div>
-          </div>
-        </div>
+        {/* Identity card — who is signed in, and on what.
+            Lives in components/shared/IdentityCard.tsx so its missing-name
+            state can be seen at /me-preview rather than only reasoned about. */}
+        <IdentityCard
+          initials={initials}
+          firstName={firstName}
+          lastName={lastName}
+          tierLabel={tierLabel}
+          onAddName={focusProfileNameField}
+        />
 
         {/* ── ME-ATHLETE — "What Kit knows about you" ──────────────────
             Read-only synthesis of the inputs the engine runs on. Surfaces

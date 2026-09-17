@@ -98,7 +98,7 @@ Body: GeneratorInput
   hard_session_relationship?: 'avoid' | 'neutral' | 'love' | 'overdo'
   injury_history?: ('achilles' | 'knee' | 'back' | 'shin_splints' | 'hip_flexor' | 'plantar_fasciitis')[]
   terrain?: 'road' | 'trail' | 'mixed'
-  athlete_name?: string
+  athlete_name?: string   // SERVER-OWNED — see "Athlete name" below. Anything sent here is overridden.
 
   // Removed in R23 rebuild — `motivation_type`, `training_style`. Server ignores these fields if sent.
 
@@ -381,6 +381,24 @@ Determined by rule engine:
 - `beginner` → `duration`
 - `race_distance_km >= 50` → `duration`
 - otherwise → `distance`
+
+### Athlete name (PROFILE-NAME-01, 2026-09-17)
+`athlete_name` is resolved **server-side** from the caller's own
+`user_settings.first_name` and overwrites whatever the request body carried. It is
+the one `GeneratorInput` field that is not a coaching input: nothing it touches
+changes what the engine prescribes. Its only consumers are the enrichment prompt
+(`lib/plan/enrich.ts`), the free-plan intro (`lib/plan/freeIntro.ts`) and the
+`plan.meta.athlete` stamp.
+
+The wizard never collected it, so every plan the engine has ever built addressed
+the runner as "Athlete". Reading it at the auth boundary (ADR-003) rather than
+adding a wizard step means the server decides who the runner is, the field cannot
+be spoofed by a client, and an existing account gets its name on its next plan
+with no extra input.
+
+**Never blocks generation.** No bearer token, no settings row, an unset column or
+a failed read all resolve to absent, which is exactly the behaviour every plan
+had before this existed.
 
 ---
 

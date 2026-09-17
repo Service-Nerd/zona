@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { GeneratorInput, Plan } from '@/types/plan'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import { guardAiRequest } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
 import { canGenerateDistance } from '@/lib/plan/canUseFeature'
@@ -39,6 +40,37 @@ function validate(input: GeneratorInput): string | null {
   return null
 }
 
+/**
+ * The runner's own first name, read from their profile row.
+ *
+ * WHY THE SERVER OWNS THIS RATHER THAN THE WIZARD. `athlete_name` is the one
+ * GeneratorInput field that is not a coaching input: it changes nothing the
+ * engine prescribes. Its only consumers are the enrichment prompt
+ * (`enrich.ts`), the free-plan intro (`freeIntro.ts`) and the `plan.meta.athlete`
+ * stamp. Nothing in the app ever set it, so every plan ever generated addressed
+ * the runner as "Athlete" while their name sat in `user_settings` the whole
+ * time. Resolving it at the auth boundary (ADR-003) means the server decides who
+ * the runner is, it cannot be spoofed by the client, and an existing account
+ * gets its name on the next plan with no new wizard step.
+ *
+ * Never throws and never blocks generation: no token, no row, or a failed read
+ * returns null, which is precisely the behaviour every plan had before.
+ */
+async function resolveAthleteFirstName(req: NextRequest, userId: string): Promise<string | null> {
+  try {
+    const supabase = createUserScopedClient(req)
+    if (!supabase) return null
+    const { data } = await supabase
+      .from('user_settings')
+      .select('first_name')
+      .eq('id', userId)
+      .maybeSingle()
+    return (data?.first_name ?? '').trim() || null
+  } catch {
+    return null
+  }
+}
+
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -49,7 +81,12 @@ export async function POST(req: NextRequest) {
     const tier = await getUserTier(user.id)
     const guard = await guardAiRequest(req, user.id, 'generate-plan')
     if (!guard.ok) return guard.response
-    const input: GeneratorInput = guard.body
+    // Name comes from the profile, not the request body — see
+    // resolveAthleteFirstName. Anything the client sent is only a fallback.
+    const athleteFirstName = await resolveAthleteFirstName(req, user.id)
+    const input: GeneratorInput = athleteFirstName
+      ? { ...guard.body, athlete_name: athleteFirstName }
+      : guard.body
     const planStart = formatDate(nextMonday())
 
     const guardError = validate(input)

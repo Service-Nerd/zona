@@ -12,6 +12,21 @@ export const BRAND = {
   name: 'Zonna',
 
   /**
+   * Surname half of the profile name-field placeholder pair. The first half is
+   * `name` itself, so the pair reads as the product standing in for a person:
+   * it demonstrates the shape of the field without looking like a stored value.
+   *
+   * WHY THIS EXISTS AS A CONSTANT. The placeholders used to be the founder's
+   * own first and last name, which read as data rather than as a prompt: a test
+   * account showed "Russell / Shear" greyed out and the account holder could not
+   * tell whether the app had their name or not. Deriving the first half from
+   * `name` means a rebrand carries it (see the brand-name history in CLAUDE.md);
+   * this surname half is the only part that is its own string, and it is
+   * deliberately a plain word so it survives a rename beside any brand name.
+   */
+  surnamePlaceholder: 'Run',
+
+  /**
    * The AI coach's name. Used in CoachByline, CoachNoteBlock, coach identity card,
    * and anywhere the AI coach is named in-product. Change here → changes everywhere.
    * Never hardcode 'Kit' in components — always reference BRAND.coachName.

@@ -69,7 +69,10 @@ export function buildPostRaceReshapePrompt(ctx: PostRaceReshapePromptContext): s
   const { plan, result, raceWeekN, weeksAffected, distanceBucket, peakWeeklyKm, reshapedWeeks } = ctx
   const units: DistanceUnits = ctx.units ?? 'km'
   const { fmtPlanned, fmtRace } = promptDistanceFormatters(units)
-  const athlete = plan.meta.athlete ?? 'the runner'
+  // `||`, not `??`: ruleEngine stamps `input.athlete_name ?? ''`, so a plan with
+  // no name carries an EMPTY STRING, which `??` passes straight through and the
+  // prompt then addresses nobody. Same defect class as the avatar initials.
+  const athlete = plan.meta.athlete || 'the runner'
   const raceName = plan.meta.race_name ?? 'the race'
   const raceDistKm = result.distance_km ?? plan.meta.race_distance_km
 
