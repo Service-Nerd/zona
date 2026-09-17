@@ -186,6 +186,33 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 >
 > *Verify still open:* `grep -c "resumeFloorKm" lib/plan/ruleEngine.ts` → **0 = still open**.
 
+> 🔲 **S52-LOPSIDED-BOUND-01 — bounding §52 on ONE week does not stop lopsidedness in the weeks after it, and that has now failed TWICE.** *(P1, filed 2026-09-17. Coaching Board question — Willy's amendment, twice.)*
+>
+> Two separate fixes this session were amended by Willy with the same bound — *"resume/cut to the target, but never above §52's 60% of that week"* — specifically to stop §52 breaches rising. **Measured both times, apples to apples: it does not work.**
+>
+> | change | §52 warns without the bound | with it | baseline |
+> |---|---|---|---|
+> | LR-DELOAD-RESUME-01 (reverted) | 964 | **964 — identical** | 792 |
+> | LR-DELOAD-CUT-01 (shipped) | — | **965** | 792 |
+>
+> **Why:** the bound caps the week it acts on. The long run then stays higher through the rest of the cycle, so the breaches land in the weeks **after** — which the bound never sees.
+>
+> ⚠️ **The visible consequence, shipped and founder-accepted:** marathon plans classified `maintenance` rose **68% → 72.7% (+4.7pp)**, driven **entirely** by §52 lopsidedness (88 → 106 in a 753-plan sample), **not** by floor failures (293 → 292). Those weeks genuinely are long-run-dominated; §52 is telling the truth. The question is whether the truth is acceptable.
+>
+> **Three routes for the board:** (a) accept §52 as a warn that is now breached ~965 times and stop bounding for it; (b) make §52 bind across the whole block rather than per-week — a much wider prescription change, since §52's lever (a) is "reduce the long run" and that would undo LR-DELOAD-CUT-01; (c) treat rising lopsidedness as the signal that the runner needs MORE DAYS or MORE WEEKLY VOLUME (§52's lever (b)) and say so in the note.
+>
+> ⚠️ **Do not add a third per-week bound.** It has been measured twice and moves nothing.
+>
+> *Verify still open:* `grep -c "LONG_RUN_MAX_PCT_OF_WEEKLY" lib/plan/ruleEngine.ts` → the per-week bound is still the only mechanism.
+
+> 🔲 **INV-MSG-ROUNDING-01 — a violation message can read as self-contradictory because both numbers are rounded to integers.** *(P3, filed 2026-09-17. Cosmetic but corrosive.)*
+>
+> Observed on `INV-PLAN-MAIN-SET-ORDERING` during the PLAN-FITNESS-01 investigation: *"Got 18 min, expected ≤ 18 min (tempo + 3 min rounding tolerance)"*. **18 ≤ 18 is true, so the message says the check fired on a value that satisfies it.**
+>
+> The check itself is correct — it does not reproduce on a clean generate and the full sweep is clean. The real values are fractional (e.g. 18.4 against 17.6) and **both are `.toFixed(0)`-rounded for display**, which collapses them onto the same integer.
+>
+> ⚠️ **Why it is worth fixing:** the next person to hit this will conclude the invariant is broken and go looking for a bug that is not there — exactly the cost this repo keeps paying for misleading output. One decimal place in the message fixes it. Check the other invariants that format with `.toFixed(0)` at the same time.
+
 > 🔲 **STEPBACK-STALE-PEAK-01 — §47's step-back is measured against a peak that a later pass then trims.** *(P2, filed 2026-09-17 out of PLAN-FITNESS-01. Infra/ordering, no board — restores documented intent.)*
 >
 > `applyPeakLongRunAlternation` sizes the step-back as a ratio of the peak long run **it can see**. `applyLongRunProgressionCap` runs **afterwards** and can trim that peak, so the ratio ends up measured against a number that no longer exists. Measured: a **166-minute step-back against a final peak of 206 — 80.6% against §47's 80% ceiling.**
