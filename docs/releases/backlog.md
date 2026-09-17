@@ -125,6 +125,36 @@ Fit-for-purpose **25.6% → 97.7%** against a 95% target — ⚠️ but **two th
 >
 > *Verify still open:* `grep -c '"corpus"' lib/plan/__fixtures__/invariantLivenessBaseline.json` → **9 = still open**.
 
+> 🔲 **LR-DELOAD-RESUME-01 — the deload RESETS the long run, so a masters/injury runner can never reach §80's floor. Board ruled CORRECT; BUILT AND REVERTED as unsafe.** *(P1, filed 2026-09-17. Needs a SAFER DESIGN, not a retry of the same one.)*
+>
+> **The defect is real and measured.** §45 already says *"a long run following a deload week may step back up to the pre-deload long-run distance"* — but it is a **permission nothing ever asks for.** The allocator re-derives the long run from §9's share of the **reduced** week, so every deload resets it. Masters knee-history marathoner:
+>
+> | wk | 7 | 8 | 9 ↓ | 10 | 11 | 12 ↓ | 13 | 14 |
+> |---|---|---|---|---|---|---|---|---|
+> | long run | 14 | 19 | **10.5** | 15.5 | 20.5 | **11** | 16 | 21 |
+>
+> The 3-week masters cadence leaves two weeks to climb back, each cycle nets ~+1km, and it converges at **21km against §80's 29.5km floor**. At week 10 the specificity ramp asks for 25.6km and §45's cap from the reset base clamps it to 15.5.
+>
+> ⚠️ **Third rule found on 2026-09-17 re-deriving from a reduced week** instead of resuming what the runner had already done (§2 Am.3 is the weekly-volume twin, shipped). Hutchinson: assume there is a fourth.
+>
+> **Board 2026-09-17: CORRECT WITH AMENDMENT** — resume to pre-deload, bounded by §52's 60% of the resumed week (Willy), with the deload week itself untouched so §3 holds (McMillan).
+>
+> 🔴 **BUILT, MEASURED, AND REVERTED — it is UNSAFE as designed.** It delivered the target (marathon knee+masters **26.0 → 29.5km**, net build 35% → 41%, everything else unchanged, zero hard failures, §94 delivered-ramp warns **555 → 444**). But `longRunCapDurationAnchored.test.ts` — the LR-CAP-BLIND-01 guard — caught this on a **healthy low-base beginner**:
+>
+> | wk | 7 | 8 ↓ | 9 |
+> |---|---|---|---|
+> | long run | 18.5 | **7.3 (−61%)** | **18.5 (+154%)** |
+>
+> A first-time marathoner, 3 days/week, **longest run ever 9km**, jumping to **18.5km in one week**. ⚠️ **Willy's 60% bound did not catch it** (18.5 is 68% of that week — the bound reads a `weekly_km` that later changes, the same staleness class as `STEPBACK-STALE-PEAK-01`).
+>
+> ⚠️ **AND THE BOUND FAILED ITS OTHER PURPOSE TOO.** Willy added it to stop §52 breaches rising. Measured with and without, apples to apples on 1,452 plans: **identical either way, 792 → 964 (+21.7%)** — the breaches arise in the weeks AFTER the resume, not in it.
+>
+> **The real cause is one layer down:** the deload cuts the LONG RUN by ~61% while cutting the WEEK by 15-30%. §45's exception was written assuming a modest dip; resuming from a 61% cut is violent by construction. **A safer design likely bounds the deload's long-run cut rather than the resume** — but that is a §3 question and needs its own sitting.
+>
+> ⚠️ **Do NOT retry the resume-as-floor as built.** It is measured, it works for the target cohort, and it injures the low-base beginner.
+>
+> *Verify still open:* `grep -c "resumeFloorKm" lib/plan/ruleEngine.ts` → **0 = still open**.
+
 > 🔲 **STEPBACK-STALE-PEAK-01 — §47's step-back is measured against a peak that a later pass then trims.** *(P2, filed 2026-09-17 out of PLAN-FITNESS-01. Infra/ordering, no board — restores documented intent.)*
 >
 > `applyPeakLongRunAlternation` sizes the step-back as a ratio of the peak long run **it can see**. `applyLongRunProgressionCap` runs **afterwards** and can trim that peak, so the ratio ends up measured against a number that no longer exists. Measured: a **166-minute step-back against a final peak of 206 — 80.6% against §47's 80% ceiling.**
