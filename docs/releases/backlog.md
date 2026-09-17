@@ -8,16 +8,33 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-## 📍 PICK UP HERE — state at end of 2026-09-16
+## 📍 PICK UP HERE — state at 2026-09-17 (midday)
 
-**Everything shipped today is committed, pushed, and recorded in `feature-registry.md` + `build-log.md`.**
-`npm run verify` exit 0 (**2,028 tests / 219 files**) · property sweep **15,974 plans, 0 violations, 0 new above baseline** ·
-archetype matrix **65/0** · `invariant:liveness` **86/117 woken (74%)** · coaching deviation scan **HIGH 0 / MED 23** ·
-`cohort:shape` re-baselined with every move declared · `verify:parity` **5,940 cases** (now varies `hard_session_relationship`).
+**Everything shipped is committed, pushed, and recorded in `feature-registry.md` + `build-log.md`.**
+`npm run verify` exit 0 (**2,047 tests / 221 files**) · property sweep **15,974 plans, 0 violations, 0 new above baseline** ·
+archetype matrix **65/0** · **`invariant:liveness` 107/118 woken (91%), 84 mutations, `unclassified` debt = 0** ·
+`test:liveness` **15 tests checked, 83 mutations killed, 6 survivors (all EQUIVALENT with a written proof), 0 unproven** ·
+coaching deviation scan **HIGH 0 / MED 23**.
 
-**The constitution is fully accounted for: 107 principles — 79 enforced by an invariant, 22 by a named test, 6 exempt with a reason, 0 unverified. 117 invariants registered, declared and passing.** The build fails if that stops being true.
+**The constitution is fully accounted for AND every claim of coverage is now mechanically cross-checked: 107 principles — 79 enforced by an invariant, 22 by a named test, 6 exempt with a reason, 0 unverified. 118 invariants registered, declared and passing.**
 
-### 🏁 What today was
+### ✅ What 2026-09-17 (morning) closed — the coverage-claim audit
+
+Three registers each claimed "this rule is checked". None of them could see the others, so a green tick could hide a hole and did.
+
+| Ship | What it closed |
+|---|---|
+| **LIVENESS-DEBT-01** | The liveness `unclassified` column, **20 → 0**. 19 newly proven wakeable, 1 reclassified `static`. ⚠️ **The bigger half was the CORPUS for the third time** — zero of the 64 probed plans had an injury history and zero were marathons, because a round-robin over three corpora only ever consumes their HEADS. Fixed with a coprime stride; `hard_session_relationship` added as a 6th `targetedGrid` axis. |
+| **COVERAGE-BITE-01** | A principle can no longer be marked "enforced by an invariant" while that invariant sits `unclassified` in the liveness baseline. **11 of the 107 were**, three of them injury guards (§21 no hills, §2 and §90 the injury caps). Declared-reason cases counted in `UNPROVEN_INVARIANT_COVERAGE_BASELINE` (§17, §18, §67, §75), may only shrink. |
+| **TEST-BITE-01** | Same gap one register over: a `by: 'test'` principle must have its test in the mutation harness. **21 of 22 did; §35's did not** and had never had anything try to turn it red. Falsified by hand, recorded with the evidence. |
+
+⚠️ **Every gate was falsified before shipping** — broken deliberately, build watched go red, then restored.
+
+⚠️ **New non-negotiable: `CLAUDE.md` § Completion claims.** Count the population from the code; name the noun before reporting done; state what the claim does NOT prove; falsify one item; reconcile the adjacent register; leave a gate, not a note. Written because "0 unverified" and "20 unproven" were both true on 2026-09-15 and neither looked wrong — **and the caveat that would have exposed it was already sitting in `principleCoverage.ts`'s own header, omitted from the summary.**
+
+⚠️ **A DECLARED REASON IS NOT A FIXED PROBLEM.** The `unclassified` pile sat 6 days under an honest label. Nothing in this repo schedules debt-register paydown.
+
+### 🏁 What 2026-09-16 was
 
 A day of **coaching review, not feature work.** Eleven charity-cohort plans went to the Coaching Board **three times**. The board rejected four plans across those passes and **not one rejection reason survived contact with measurement**:
 

@@ -64,6 +64,19 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > code.** So the path is everything between the email and a plan on screen.
 > Nothing else is on it.
 
+> ✅ **ENGINE STATE, 2026-09-17.** `npm run verify` exit 0 (**2,047 tests / 221
+> files**), **118 invariants**, property sweep **15,974 plans / 0 new above
+> baseline**, archetype matrix 65/0, **`invariant:liveness` 107/118 woken (91%)
+> with the `unclassified` debt column at ZERO**, `test:liveness` 6 survivors all
+> classified, coaching deviation scan **0 HIGH**.
+>
+> **All three coverage registers now cross-check each other mechanically**
+> (LIVENESS-DEBT-01 · COVERAGE-BITE-01 · TEST-BITE-01). A principle can no longer
+> be marked "checked" by an invariant or a test that nothing has ever made fail.
+>
+> **Open:** `MAINT-LIVENESS-01` (9 maintenance invariants have no liveness corpus;
+> §67 and §75 rest on two of them), plus the two coaching items below.
+
 > ✅ **ENGINE STATE, 2026-09-16 (showcase is Friday).** `npm run verify` exit 0
 > (**2,001 tests / 215+ files**), **115 invariants** registered, declared and
 > passing on the three canonical cases, property sweep **15,973 plans / 0
