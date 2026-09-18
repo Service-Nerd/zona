@@ -2,6 +2,8 @@
 
 **Authority**: This document defines the prop interface and rendering contract for the session-detail structure block (ui-patterns.md §21b "Session steps"). Any change to props or the card hierarchy must update this document in the same commit.
 
+**Component:** `components/shared/SessionSteps.tsx`
+
 Introduced: SESSION-STRUCTURE-REDESIGN, 2026-09-04.
 
 ---
@@ -17,6 +19,7 @@ interface SessionStepsProps {
   zoneRangeLabel: string              // e.g. "Zone 4–5" — the range label the main header shows
   metric: 'distance' | 'duration'     // the resolved per-session metric (toggle)
   preferredUnits: 'km' | 'mi'
+  sessionDistanceKm?: number          // added to this contract 2026-09-18: it was on the component and not here
   easyPaceStr?: string | null         // Strava-derived easy band for warm-up/cool-down; null → zone only
   onInfo?: () => void                 // opens the zone-education sheet from the main-set ⓘ
 }

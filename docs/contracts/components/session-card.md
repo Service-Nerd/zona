@@ -2,21 +2,42 @@
 
 **Authority**: This document defines the prop interface and rendering contract for the session card component (collapsed and expanded states). Any change to props or card hierarchy must update this document in the same commit.
 
+**Component:** `components/shared/SessionCard.tsx`
+
 ---
 
 ## Prop Interface
 
 ```typescript
-interface SessionCardProps {
-  session: SessionEntry          // canonical session shape — see docs/canonical/plan-schema.md
-  preferredUnits: 'km' | 'mi'
-  preferredMetric: 'distance' | 'duration'   // global default from Me screen
-  zone2Ceiling: number           // Karvonen-derived; from user_settings or plan meta
-  restingHR: number              // from user_settings
-  maxHR: number                  // from user_settings
-  aerobicPace: string | null     // Strava-derived; null if no qualifying runs
+// Corrected 2026-09-18 against the source. See the warning below.
+type Props = {
+  type: string
+  role?: Session['role']          // PLAN-LONGRUN-COLOUR-01 — a long run is type:'easy',
+                                  // so type alone cannot pick the accent
+  name: string
+  detail?: string                 // e.g. "Zone 2 · ≤145bpm"
+  distanceKm?: number
+  durationMin?: number
+  state?: SessionState
+  completion?: CompletionData
+  onClick?: () => void
+  showDragHandle?: boolean
+  units?: DistanceUnits           // INV-PREF-001; plan distances are stored in km
+  metric?: SessionMetric          // resolve via resolveSessionMetric UPSTREAM so the
+                                  // per-session → plan → global cascade stays consistent
+  hrPendingState?: HrPendingState | null   // HR-SYNC-02
+  onHrRetry?: () => void | Promise<void>   // required when hrPendingState === 'fallback'
+  isHrRetrying?: boolean
 }
 ```
+
+> ⚠️ **This block was fiction until 2026-09-18, and the scale is the point.** It
+> documented seven props — `session`, `preferredUnits`, `preferredMetric`,
+> `zone2Ceiling`, `restingHR`, `maxHR`, `aerobicPace` — and **not one of them
+> existed on the component**, while all fifteen real props went undocumented. It
+> described a component that was never built, or was rewritten around, and
+> nothing caught it because `docs/contracts/components/` had no mechanical check
+> at all. It does now: `lib/contracts/componentContracts.test.ts`.
 
 ---
 

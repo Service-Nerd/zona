@@ -2,6 +2,8 @@
 
 **Authority**: This document defines the prop interface and interaction contract for `components/shared/PullToRefresh.tsx` (PTR-01). Any change to props or gesture behaviour must update this document in the same commit.
 
+**Component:** `components/shared/PullToRefresh.tsx`
+
 ---
 
 ## Prop Interface

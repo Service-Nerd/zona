@@ -50,6 +50,20 @@ for f in $(touched | grep -E '^app/api/.*/route\.tsx?$'); do
 done
 [ "$cfail" = "0" ] && say "  ok"
 
+say "── CONTRACTS: changed components vs docs/contracts/components ──"
+# Mirrors the API check above. The mapping comes from each contract's own
+# `**Component:** \`path\`` line, NOT from a list in this script — a checker
+# holding the producer's list is blind to that list.
+kfail=0
+for c in docs/contracts/components/*.md; do
+  [ -f "$c" ] || continue
+  comp=$(sed -n 's/^\*\*Component:\*\* *`\([^`]*\)`.*/\1/p' "$c" | head -1)
+  [ -n "$comp" ] && [ "$comp" != "none" ] || continue
+  touched | grep -qx "$comp" || continue          # component unchanged today
+  touched | grep -qx "$c" || { say "  STALE $c (component changed, contract did not)"; kfail=1; fail=1; }
+done
+[ "$kfail" = 0 ] && say "  ok"
+
 say "── state blocks name the last SHIP ──"
 last=$(git log --pretty=format:'%h %s' | grep -E '^[a-f0-9]+ (feat|fix)\(' | head -1 | cut -d' ' -f1)
 mem="$HOME/.claude/projects/$(pwd | tr '/' '-')/memory/MEMORY.md"

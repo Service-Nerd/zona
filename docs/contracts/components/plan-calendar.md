@@ -2,6 +2,8 @@
 
 **Authority**: This document defines the prop interface and rendering contract for `components/training/PlanCalendar.tsx`. Any change to props or session tap shape must update this document in the same commit.
 
+**Component:** `components/training/PlanCalendar.tsx`
+
 ---
 
 ## Prop Interface
