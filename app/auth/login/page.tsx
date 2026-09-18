@@ -445,10 +445,25 @@ export default function LoginPage() {
           {/* Email/password form */}
           <form onSubmit={handleEmail} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {mode === 'signup' && (
+              /* PROFILE-NAME-01 follow-up (SLT 2026-09-18). The field was
+                 already optional in code — no `required`, and the handler does
+                 `...(fullName ? { data } : {})` — but it rendered as the FIRST
+                 of three identical boxes, above two that ARE required, with
+                 nothing to say so. Nobody skips a field they believe is
+                 mandatory, so the optionality existed only for whoever read the
+                 source.
+                 The founder asked to delete the field for slickness. The board
+                 declined: it feeds six prompt builders, the trial emails and
+                 the avatar initials, and removing it would part-revert
+                 PROFILE-NAME-01 shipped the day before. Naming it optional
+                 delivers the same slickness and keeps the name.
+                 Placeholder rather than a label: this form is placeholder-only
+                 for email and password, and one labelled field would break that
+                 rhythm for the sake of a word. */
               <TextField
-                type="text" placeholder="First name"
+                type="text" placeholder="First name (optional)"
                 autoComplete="given-name"
-                ariaLabel="First name"
+                ariaLabel="First name, optional"
                 value={signupName} onChange={setSignupName}
               />
             )}

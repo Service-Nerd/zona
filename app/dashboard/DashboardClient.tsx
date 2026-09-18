@@ -48,6 +48,7 @@ import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
 import { clearWidgetState } from '@/lib/native/sharedStore'
+import SignOutLink from '@/components/shared/SignOutLink'
 import ZoneBar, { zoneNumberForType, zoneShortName, type Zone } from '@/components/shared/ZoneBar'
 import SessionSteps from '@/components/shared/SessionSteps'
 import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
@@ -2913,6 +2914,10 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
         >
           I&apos;m ready
         </button>
+
+        {/* ONBOARD-EXIT-01 — Orientation renders in front of the nav, so the
+            Me screen (where sign-out lives) is unreachable from here. */}
+        <SignOutLink />
       </div>
     </div>
   )
@@ -3086,26 +3091,12 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
           Connect later
         </button>
 
-        {/* Sign-out escape. Onboarding sits in front of the Me screen (where
-            sign-out lives), so an authenticated user with no plan — e.g. wanting
-            to switch accounts — would otherwise be trapped here with no exit.
-            Subtle by design: secondary to "Connect later", not part of the
-            primary flow. */}
-        <button
-          onClick={async () => {
-            if (busy) return
-            try { await supabase.auth.signOut() } finally { window.location.href = '/auth/login' }
-          }}
-          disabled={busy}
-          style={{
-            width: '100%', background: 'none', border: 'none',
-            padding: '10px 0', minHeight: '40px',
-            fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-            cursor: busy ? 'default' : 'pointer',
-          }}
-        >
-          Not you? Sign out
-        </button>
+        {/* ONBOARD-EXIT-01 — was a hand-rolled copy of this button, and it had
+            already DRIFTED: it never called `clearWidgetState()`, so signing out
+            here left the previous account's race countdown on the home-screen
+            widget. A user at this screen HAS a plan, so that was reachable.
+            One owner now; the drift cannot recur. */}
+        <SignOutLink disabled={busy} />
       </div>
     </div>
   )
@@ -3258,6 +3249,10 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
         >
           {denied ? 'Continue without notifications.' : "Skip for now."}
         </button>
+
+        {/* ONBOARD-EXIT-01 — last screen of the onboarding gate, still in front
+            of the nav. Secondary to "Skip for now", not part of the flow. */}
+        <SignOutLink disabled={busy} />
       </div>
     </div>
   )

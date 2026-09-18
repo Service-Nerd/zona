@@ -8,6 +8,7 @@ import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
+import SignOutLink from '@/components/shared/SignOutLink'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
@@ -1446,6 +1447,18 @@ export default function GeneratePlanScreen({
         >
           {ctaLabel}
         </button>
+
+        {/* ONBOARD-EXIT-01 — the escape, on EVERY step and only when trapped.
+            The back button is hidden on step 0 during onboarding
+            (`!(isOnboarding && currentIdx === 0)`), so backing up from step 12
+            lands on a screen with no exit at all. Founder's ask was explicit:
+            reachable from every page of the wizard, not just the first.
+            Gated on `isOnboarding`: a runner REGENERATING a plan reached this
+            screen from Me and has a working back button, so the link would be
+            noise on the one flow that does not need it.
+            No `disabled` guard needed: generation replaces this whole shell with
+            `GeneratingCeremony`, so the footer is unmounted while a plan builds. */}
+        {isOnboarding && <SignOutLink />}
       </div>
     </div>
   )
