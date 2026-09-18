@@ -61,40 +61,56 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ---
 
-## 📋 SLT-ORDERED WORK QUEUE — Make-A-Wish London 2027 (SLT batch review, 2026-09-18)
+## 📋 SLT-ORDERED WORK QUEUE — Make-A-Wish London 2027
 
-*Ordered by the SLT against one measure: **did they still be running in week 8?** Not activation, not conversion. Work top-down. The tier boundaries are dates, not preferences.*
+**RE-ORDERED 2026-09-18 (v2).** *Five things changed after v1 was set and three items left the queue entirely. Ordered against one measure: **did they still be running in week 8?***
 
-### Now — this week. Cheap, and they are lies.
+> **What changed since v1, and why the order moved:**
+> - 🔴 **`MARATHON-VOLUME-GATE-01` did not exist when v1 was written.** It refuses a marathon plan below 20 km/week — *"build your base first"* — which is a plain description of much of this cohort. **A runner refused at the door never sees anything else on this list**, so it goes above all the experience work.
+> - ✅ **`§44 block tier` LEAVES THE QUEUE** — Coaching Board ruled **CORRECT AS IS**. No work.
+> - ✅ **`GTM-DECK-CORRECT-01` LEAVES THE QUEUE** — withdrawn, the deck was right.
+> - 🔽 **`FOUNDATION-DECIDE-LATER-01` got cheaper** — SLT chose "delete the button", so it is now minutes, not a build.
+> - 🔽 **`GTM-CHARITY-09` got cheaper** — SLT chose a partner FAQ, so it is writing, not a support surface.
+> - 🆕 **`FIRSTRUN-MOMENTS-01a–f`** and **`FIRSTRUN-MISSED-01`** are new, specced, and five of the six moments are S-sized.
 
-| # | Item | Why it is here |
+### 🚪 Tier 1 — THE DOOR. Nothing else matters if they cannot get in.
+
+| # | Item | Size | Why here |
+|---|---|---|---|
+| 1 | **`AUTH-BEARER-MISSING-01`** | S | One helper, two sites. Fixes a **PAID** feature silently 401ing on native, and probably #4 |
+| 2 | **`MARATHON-VOLUME-GATE-01`** | **L** | 🔴 **P0.** Refuses much of the cohort at the first screen. Board ruled: floor is correct, implementation is not. **Three artifacts — start it early because it is the only L in Tier 1** |
+| 3 | **`REFUSAL-SCREEN-01`** (copy + *"not yet"*) | S | The refusal that remains must stop reading as a crash. Ships with #2 |
+| 4 | **`FOUNDATION-ADD-FAIL-01`** | S | Re-test after #1; may already be closed |
+
+### 🙂 Tier 2 — THE FIRST FIVE MINUTES. Cheap, and it reaches every one of the 500.
+
+| # | Item | Size | Why here |
+|---|---|---|---|
+| 5 | **`ONBOARD-SKIP-LABEL-01`** + **`COPY-DAYS-PLURAL-01`** | S | Both lie to a beginner inside their first two minutes |
+| 6 | **`FOUNDATION-DECIDE-LATER-01`** | S | Delete the button. "Later" never comes |
+| 7 | **`FIRSTRUN-MOMENTS-01a`** runway reveal | S | 🥇 **Best value on the entire backlog.** The words exist and are ratified; this is a MOVE |
+| 8 | **`FIRSTRUN-MOMENTS-01b`** first-run reveal | S | Wood funds this one: it lowers the activation cost of the first action |
+| 9 | **`FIRSTRUN-MOMENTS-01c/d/e`** ceremony · distance · worst day | S | ⚠️ (e) **only if derived live** — Hutchinson's binding condition |
+
+### 📉 Tier 3 — THE DROP-OUT MECHANISM. Where the cohort is actually lost.
+
+| # | Item | Size | Why here |
+|---|---|---|---|
+| 10 | **`FIRSTRUN-MISSED-01` part 1** — the dead input | S/M | A runner reports an **injury** and it is read by **nothing**. One column, two disjoint vocabularies. A defect, unblocked |
+| 11 | **`FIRSTRUN-MISSED-01` part 2** → Coaching Board | — | Routing it to §R20-T4 is prescription. **Convene once part 1 lands** |
+
+### 📦 Tier 4 — before the cohort arrives, not before the codes.
+
+| # | Item | Size |
 |---|---|---|
-| 1 | **`AUTH-BEARER-MISSING-01`** | One helper swap, two call sites. Fixes a **PAID** feature silently 401ing on native (ADR-014 recalibration, real revenue, nobody reported it) and probably #5 as well. Best ratio on the list — Traynor |
-| 2 | **`GTM-DECK-CORRECT-01`** | Minutes, founder, a measured-false engine claim in a partner-facing document |
-| 3 | **`ONBOARD-SKIP-LABEL-01`** + **`COPY-DAYS-PLURAL-01`** | Trivial. Both lie to a beginner inside their first two minutes — Fried: *"you don't need a strategy to stop lying, you need an afternoon"* |
+| 12 | **`GTM-CHARITY-09`** partner FAQ (5 questions, charity's voice, **include "why hasn't my plan started"**) | S |
+| 13 | **`FIRSTRUN-MOMENTS-01f`** "one of 500" — **needs redemption moved to sign-up first** | M |
+| 14 | **`WIZARD-TIME-CHIPS-01`** — value-key the draft FIRST | S |
+| 15 | **iOS 16.6** — tell Jack, do not build | — |
 
-### Before codes go out — OCTOBER IS A HARD DEADLINE. A runner lost in October is lost.
+### ⏭️ Deliberately not in this queue
 
-| # | Item | Why it is here |
-|---|---|---|
-| 4 | **`REFUSAL-SCREEN-01`** — copy and framing ONLY | The only item on the list that **actively manufactures a non-runner** (Sutherland). ⚠️ Do **not** bundle the "offer an alternative distance" question; that is a separate SLT decision, recorded below |
-| 5 | **`FOUNDATION-ADD-FAIL-01`** | Re-test after #1. May already be closed by it |
-| 6 | **`FOUNDATION-DECIDE-LATER-01`** | 🔺 **PROMOTED by the SLT on Wood's argument.** Not a redundant button: Oct→Apr is the **habit-formation window** for ~500 people, and a runner can dismiss that sheet by accident and **never be asked again** |
-
-### In parallel — decides November/December work
-
-| # | Item | Why it is here |
-|---|---|---|
-| 7 | **`FIRSTRUN-MARATHON-01`** | 🔺 **RE-SCOPED BY THE SLT. Wood killed the "wow experience" framing as the illusion-of-progress class.** The priority inside this item is **touchpoint 7 — the first missed session**, because that is *when the drop-out actually happens*. A generating ceremony changes no behaviour in February |
-| 8 | **§44 `block` tier** | Coaching Board. **Must sit before October.** Ruling recorded below |
-
-### Before the cohort arrives — not before the codes
-
-| # | Item | Why it is here |
-|---|---|---|
-| 9 | **`GTM-CHARITY-09`** | The partner-facing FAQ, not a help centre |
-| 10 | **`WIZARD-TIME-CHIPS-01`** | Value-key the saved draft FIRST, then relabel |
-| 11 | **iOS 16.6 minimum** | **Tell Jack. Do not build.** No Android, no mobile-web dashboard |
+`FIRSTRUN-MARATHON-01` touchpoints 1, 3, 4, 6 · `REFUSAL-SCREEN-01` part 2 (the base-building plan — **Coaching Board first**, `FOUNDATION_MAX_WEEKS` is 3 and it needs ~20).
 
 ### What the SLT disagreed about, preserved rather than synthesised
 
@@ -186,6 +202,98 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 **🏃 Hutchinson.** One condition: *"why is my plan so easy"* is answered by §1 and §12, and the FAQ must not soften that into an apology. It is the product.
 
 **✅ RECOMMENDATION — BUILD DIFFERENTLY: a partner-facing FAQ, not a support surface.** Five questions, drafted for Jack to send with the codes, in the charity's register. **Add the runway question** — Wood's point is not on the current list. Ships with the codes, not before them. **Still FREE, still one inbox** — no ticketing, no chat.
+
+---
+
+## 🎬 FIRSTRUN-MOMENTS-01 — full specs (SLT-approved 2026-09-18)
+
+*Six sub-items. **Five are copy and arithmetic over data the app already holds** — no new screens, no prescription change, no board. The sixth is blocked on redemption sequencing. Ordered by the SLT's own ranking.*
+
+> **The framing, per Wood, and it is binding on how these are judged:** the outcome is **not** "they felt special". It is **the perceived enormity of the first action falls far enough that they do it.** (a) and (b) do that structurally; (c)–(e) are cheap and pleasant and **must not be counted as behaviour change.**
+
+---
+
+### `FIRSTRUN-MOMENTS-01a` — move the runway line to the reveal · **S** · 🥇 highest value on the list
+
+**Simple.** The `uncovered_runway_note` already written by `foundationCompose.ts` is shown **at the moment the plan is revealed**, not buried as a note further down the plan screen.
+
+**Why it is first.** It already exists, is already ratified (§57/§76), is already in perfect voice, and for a London 2027 first-timer it says **"You have 11 weeks before this plan starts"**. Sutherland: *the emotion is relief, and nobody else is selling it.* **This is a MOVE, not a write.**
+
+- **Data:** `plan.meta.uncovered_runway_note` + `uncovered_runway_weeks` (already stamped).
+- **Surface:** `GeneratePlanScreen` preview header, above the week list.
+- **Lovable:** lead with the number. The sentence that lands is *"You are eleven weeks early"*, not *"you have spare weeks"*.
+- **Complete:** absent when `uncovered_runway_weeks < FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD` (2) · absent for a plan starting immediately · ⚠️ **must not render twice** — decide whether it also stays lower down, and assert the decision in a test.
+- **Done when:** a first-timer generating a London 2027 plan reads it without scrolling.
+
+---
+
+### `FIRSTRUN-MOMENTS-01b` — the first run, before the plan · **S**
+
+**Simple.** Before 20 weeks of marathon block renders, show one thing: the first session.
+
+> **Monday. 20 minutes. Easy.**
+> That's the whole job this week.
+
+**Why.** A first-timer sees a wall of marathon and feels sick. This collapses *"marathon"* into something they can picture doing on Monday. Wood funds this one: **it lowers the activation cost of the first action**, which is the behaviour that matters.
+
+- **Data:** `weeks[0]` first non-rest session; **duration via `formatDuration`** (ADR-015 — it is `20 min`, never `20 minutes`).
+- **Complete:** rest-day-first weeks · a foundation block present (the first run is then a foundation run, which is even gentler and **better**) · duration-anchored *and* distance-anchored sessions (beginners are duration-anchored 95.8% of the time).
+- **Done when:** the first thing a first-timer reads is one sentence they could do tomorrow.
+
+---
+
+### `FIRSTRUN-MOMENTS-01c` — the ceremony says what they just told us · **S/M**
+
+**Simple.** Replace the five fixed ceremony lines with lines derived from **this runner's** `GeneratorInput`.
+
+Today, to everyone: *"Calculating your Zone 2 ceiling. Lower than you'd expect."*
+Proposed, to them:
+> *"You said three days a week. We're not going to ask you for five."*
+> *"Your longest run is 8 km. Week one asks for 4."*
+> *"You've told us about a knee. Every hard week is followed by an easy one."*
+> *"Twenty weeks to Sunday the 25th of April."*
+
+**Why.** This is not motivation. It is **the app proving it listened**, to someone who has just handed over fifteen answers including their injuries and their fears.
+
+- **Lovable:** the voice table applies unchanged. Dry, specific, never congratulatory. **No line may claim anything the plan does not do.**
+- **Complete:** a fallback line when a field is absent · never more lines than the enrichment window supports (28–35s) · free tier gets the same treatment (no AI needed — these are template lines over inputs).
+- ⚠️ **Fried's condition:** put them in the existing component. **No `MomentFramework`.**
+
+---
+
+### `FIRSTRUN-MOMENTS-01d` — the distance reframe · **S**
+
+**Simple.** One line on the reveal: *"Between now and April you'll run about 900 km. The race is 42 of them."*
+
+**Why.** The marathon stops being the biggest thing they will ever do and becomes a fraction of what they will already have done.
+
+- **Data:** sum `weekly_km` across all weeks including foundation. **Round hard** — "about 900 km", never 897.3.
+- **Complete:** duration-anchored plans have no per-session km, so **use the same owner the engine uses** (`sessionKm` / `sumWeeklyKm`), never `distance_km ?? 0` (SESSION-KM-01: that reads a beginner's plan as zero) · suppress if the total is implausible.
+
+---
+
+### `FIRSTRUN-MOMENTS-01e` — name the worst day · **S** · ⚠️ conditional
+
+**Simple.** *"The hardest thing this plan asks of you is one 3h 28 run, in March. Once."*
+
+**Why.** Dread lives in the unknown. Naming the ceiling removes it, and it is very on-brand: honest, blunt, no comfort offered.
+
+🔴 **HUTCHINSON'S BINDING CONDITION.** This is a **promise about a plan that can reshape**. It is true at generation and may be false in February. **Derive it live wherever it is shown, or do not say it.** Never stamp it into meta at generation.
+
+- **Data:** max `duration_mins` across long runs, **via `formatDuration`** · the week it falls in.
+- **Complete:** recompute on every render · absent if the plan has no long run yet.
+
+---
+
+### `FIRSTRUN-MOMENTS-01f` — "you are one of 500" · **M** · 🔴 BLOCKED
+
+**Simple.** Once, for a charity-grant runner: *"You're one of 500 running London for Make-A-Wish. Most of them have never done this either."*
+
+**Why.** The honest version of "not alone": a **true fact**, stated once. No feed, no leaderboard, no comparison — those are barred.
+
+🔴 **BLOCKER, and it is the real work:** the charity code is redeemed on the **Me screen, after onboarding**, so at wizard time the app does not know they are a Make-A-Wish runner. **Moving redemption to sign-up is the dependency** (touches `GTM-CHARITY-04`).
+
+- **Complete:** only for a live charity grant (`resolveTier` reason) · the number must be **real** (redeemed codes), never a marketing round number · **shown once, never a running counter** — a counter is a leaderboard with extra steps.
 
 ---
 
