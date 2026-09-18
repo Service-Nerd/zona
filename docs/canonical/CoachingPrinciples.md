@@ -6679,3 +6679,30 @@ holds where it was taken, and not below it.**
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.
+
+## 112. Consecutive self-reported cost softens the long run — and a skip is part of the evidence
+
+*Added 2026-09-18 — Coaching Board (FIRSTRUN-MISSED-01 part 2). Willy and Sims carried; McMillan's dissent recorded below and not taken.*
+
+**Principle.** When a runner reports, on `FATIGUE_ACCUMULATION_THRESHOLD` (3) **consecutive** sessions, that the training is costing more than it should, the next long run is softened to `FATIGUE_SOFTENING_LONG_RUN_PCT` (80%). **A session skipped because the runner was too tired to start counts toward that evidence**, provided the window also contains at least one session they ran and tagged.
+
+🔴 **THIS SECTION EXISTS BECAUSE THE MECHANISM HAD NO PRINCIPLE AT ALL.** `lib/coaching/constants.ts:89` cited *"CoachingPrinciples §R20-T4"* for a year. **There is no §R20-T4.** The constitution's only `R20` reference is `FEATURE_GATES.PAID_ONLY_ONGOING`, an unrelated tier gate. Worse, two ratified sections **depend** on the mechanism while never defining it: §70's risk gate silences the reframe on *"fatigue accumulation (3 consecutive Heavy/Wrecked)"*, and the recalibration trigger requires *"no concurrent fatigue accumulation"*. **The constitution leaned on a rule nobody wrote.** This is the §92 claimed-enforcement class inverted: there a principle named an invariant that did not exist; here code named a principle that did not exist.
+
+> ⚠️ **NOT a file-path bypass, and the distinction matters.** `lib/coaching/constants.ts` is the **sanctioned** home for coaching scoring and load thresholds (CLAUDE.md, config table). Unlike `peakKmByLevel` (§106) and the base-volume gate (§111), the numerics were in the right place. **The file was right and the principle was missing** — a different failure with a different fix, and calling it the same thing would have sent the remedy to the wrong layer.
+
+**Why a skip counts.** A runner who logs `Heavy` **completed** the session. A runner who reports *"too tired"* **could not begin it**. Willy: *"Not starting is not a weaker signal than starting and feeling heavy — it is a stronger one."* Sims: repeated inability to start, in a day-job runner, is a low-energy-availability presentation until proven otherwise, **and the previous design guaranteed we would never see it** — they did not run, so they logged no fatigue tag, so the trigger that exists to catch exactly this could not observe them.
+
+**Measured, and the n is stated because it is small.** Across 83 tagged completions in production, **one** runner shows `Injury / illness → Too tired → Too tired → Too tired`: four consecutive *"I could not run"* reports, three of them explicitly fatigue, and the plan never softened. **`FATIGUE_ACCUMULATION` has never fired in production** — there exists no run of three consecutive `Heavy/Wrecked/Cooked` anywhere in the data. ⚠️ **n = 1 user, 3 events. That is a signal, not a rate, and it is not offered as one.** The chair declined to move the threshold on this evidence; it stays at 3.
+
+**A skip may not reach the threshold alone** (`FATIGUE_WINDOW_REQUIRES_LOGGED_SESSION`). McMillan's objection, taken at its cheapest price: *"'Too tired' on a Tuesday is often a bad night's sleep, a late meeting, a toddler. Softening a long run for three of those is coaching the dataset, not the athlete."* So the window must contain **at least one session the runner actually ran and tagged**. A runner who only ever skips is a different problem and not this rule's job.
+
+**Recorded disagreement, preserved.** McMillan holds that a plan which softens when you skip may teach skipping. Willy: *"a 20% long-run cut is not a reward, and a runner on three consecutive skips is already not training."* **What would settle it:** whether skip rate rises in the window after a softening fires. **Not measurable today** — too few events. Revisit once the charity cohort produces volume.
+
+**Asymmetry the chair recorded.** A skip is a **stronger** signal of *cost* and a **weaker** one of *magnitude*: no RPE, no HR, no duration. It is counted as evidence of cost only; it does not scale the softening.
+
+**Config.** `FATIGUE_ACCUMULATION_THRESHOLD` (3), `FATIGUE_SOFTENING_LONG_RUN_PCT` (0.80), `FATIGUE_COUNTING_SKIP_REASONS` (`['Too tired']`) and `FATIGUE_WINDOW_REQUIRES_LOGGED_SESSION` (true) in `lib/coaching/constants.ts`.
+
+**Enforcement: a named test, not an invariant, and the reason is structural.** `validatePlan()` validates a generated **plan object**. This mechanism runs at **coaching time** against `session_completions` and never appears in a plan, so no `Plan => Violation[]` can reach it by construction — the same `static` class the invariant-liveness baseline already records. Enforced by `lib/coaching/fatigueAccumulation.test.ts`.
+
+---
+

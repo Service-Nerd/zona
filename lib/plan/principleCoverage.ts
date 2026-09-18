@@ -204,4 +204,5 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 109, by: 'test', ref: 'lib/coaching/raceProjectionHonesty.test.ts', why: 'may compare, may not predict' },  // A progress surface may remember and compare. It may not predict.
   { n: 110, by: 'invariant', ref: 'INV-PLAN-QUALITY-NOT-ZERO' },  // `avoid` is a floor, not a switch
   { n: 111, by: 'invariant', ref: 'INV-PLAN-BASE-BUILD-RATIO', why: 'The engine refuses over the ceiling (BaseVolumeError), so the invariant is the defense-in-depth backstop; both read lib/plan/baseVolume.ts. Refusal + backstop exercised by baseVolume.test.ts.' },  // The base-build ceiling
+  { n: 112, by: 'test', ref: 'lib/coaching/fatigueAccumulation.test.ts', why: 'Coaching-time mechanism: it reads session_completions and never appears in a plan, so no Plan => Violation[] can reach it by construction (the `static` class the liveness baseline records). §112 also RATIFIES a rule that ran for a year citing a §R20-T4 that does not exist, while §70 and the recalibration trigger both depended on it.' },  // Fatigue accumulation — consecutive reported cost softens the long run; a 'Too tired' skip counts
 ] as const

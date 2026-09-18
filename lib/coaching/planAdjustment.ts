@@ -1,3 +1,4 @@
+import { assessFatigueWindow, type FatigueSignalRow } from './fatigueAccumulation'
 import {
   LOAD_RATIO,
   SHADOW_LOAD_THRESHOLD_PCT,
@@ -77,7 +78,15 @@ export interface AdjustmentCheckInput {
   adjustmentsThisWeek: number
   currentPhase?:    'base' | 'build' | 'peak' | 'taper'
   /** Fatigue tags from session_completions, ordered chronologically (oldest first). */
+  /** @deprecated §112 — superseded by `recentFatigueRows`, which can see a
+   *  skip. Retained so existing callers keep compiling; it is no longer read. */
   recentFatigueTags?: string[]
+  /**
+   * §112 — the completions window, CHRONOLOGICAL, oldest first. Carries both
+   * columns because a skip reports cost through `skip_reason` while a completed
+   * session reports it through `fatigue_tag`.
+   */
+  recentFatigueRows?: FatigueSignalRow[]
   /**
    * RPE signal from most-recently logged session.
    * Triggers RPE-disconnect coach note when rpe >= 8 on easy/long.
@@ -201,12 +210,15 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
 
   if (!guardCheck(input)) return null
 
-  // Fatigue accumulation — highest priority automatic signal
-  if (input.recentFatigueTags && input.recentFatigueTags.length >= FATIGUE_ACCUMULATION_THRESHOLD) {
-    const lastN = input.recentFatigueTags.slice(-FATIGUE_ACCUMULATION_THRESHOLD)
-    if (lastN.every(t => (FATIGUE_HIGH_TAGS as readonly string[]).includes(t))) {
-      return buildFatigueAdjustment(input, lastN.length)
-    }
+  // Fatigue accumulation — highest priority automatic signal (§112).
+  //
+  // The predicate moved to `assessFatigueWindow`, the single owner: the window
+  // was assembled in app/api/adjust-plan/route.ts and judged here, two halves of
+  // one rule in two files. It now also counts a 'Too tired' SKIP as evidence —
+  // a runner who could not START is reporting more cost than one who ran and
+  // tagged Heavy — while requiring at least one logged session in the window.
+  if (input.recentFatigueRows && assessFatigueWindow(input.recentFatigueRows).fires) {
+    return buildFatigueAdjustment(input, FATIGUE_ACCUMULATION_THRESHOLD)
   }
 
   const ratio   = acuteChronicRatio(input.actualKm, input.priorWeeksKm)

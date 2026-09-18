@@ -39,6 +39,7 @@ import { join } from 'node:path'
 // and makes an unmapped test file a visible gap rather than an absent one.
 const SUBJECTS: Record<string, string[]> = {
   'lib/coaching/cohortSimilarity.test.ts':          ['lib/coaching/runHistory.ts'],
+  'lib/coaching/fatigueAccumulation.test.ts':       ['lib/coaching/fatigueAccumulation.ts'],
   'lib/coaching/dayBoundary.test.ts':               ['lib/coaching/dayBoundary.ts'],
   'lib/coaching/limiter.test.ts':                   ['lib/coaching/limiter.ts'],
   'lib/coaching/postRaceRecoveryCurve.test.ts':     ['lib/coaching/postRaceReshape.ts'],

@@ -86,10 +86,40 @@ export const HR_ZONE_TOLERANCE_BPM = 2
 // Max adjustments per week
 export const MAX_ADJUSTMENTS_PER_WEEK = 2
 
-// Fatigue-accumulation trigger (Trigger 4 — CoachingPrinciples §R20-T4)
+// Fatigue-accumulation trigger — CoachingPrinciples §112.
+//
+// 🔴 THIS COMMENT USED TO CITE "§R20-T4", WHICH DOES NOT EXIST and never did.
+// The constitution's only `R20` reference is FEATURE_GATES.PAID_ONLY_ONGOING, an
+// unrelated tier gate — while TWO ratified sections DEPEND on this mechanism
+// (§70's reframe risk gate silences on "3 consecutive Heavy/Wrecked"; the
+// recalibration trigger requires "no concurrent fatigue accumulation"). The
+// constitution leaned on a rule nobody had written. Ratified as §112 on
+// 2026-09-18 (Coaching Board, FIRSTRUN-MISSED-01 part 2).
+//
+// ⚠️ The FILE was never the problem — CLAUDE.md sanctions this module as the
+// home for coaching scoring and load thresholds. Unlike §106's peakKmByLevel
+// and §111's base-volume gate, these numerics were in the right place; only the
+// principle was missing. Different failure, different fix.
 export const FATIGUE_HIGH_TAGS = ['Heavy', 'Wrecked', 'Cooked'] as const
 export const FATIGUE_ACCUMULATION_THRESHOLD = 3   // consecutive sessions before softening fires
 export const FATIGUE_SOFTENING_LONG_RUN_PCT = 0.80 // long run reduced to 80% (20% cut)
+
+// §112 — a session SKIPPED for these reasons is evidence of cost too. A runner
+// who logs 'Heavy' COMPLETED the session; one who reports 'Too tired' could not
+// begin it, which Willy holds is the stronger signal and Sims reads as a
+// low-energy-availability presentation in this demographic. Before this, the
+// trigger could never observe them: they did not run, so they logged no tag.
+//
+// Only 'Too tired'. 'Life got busy' and 'Bad weather' are life, not load, and
+// already propose a make-up slot; 'Injury / illness' has §21.
+export const FATIGUE_COUNTING_SKIP_REASONS = ['Too tired'] as const
+
+// §112 — McMillan's dissent, taken at its cheapest price. "Too tired" on a
+// Tuesday is often a bad night's sleep or a toddler, so a skip may CONTRIBUTE to
+// the window but may not fill it alone: at least one session in the window must
+// have been run and tagged. A runner who only ever skips is a different problem
+// and not this rule's job.
+export const FATIGUE_WINDOW_REQUIRES_LOGGED_SESSION = true
 
 // Quality session minimum gap (hours) — re-exported from generationConfig so
 // reshape rules and plan generation read the same source (CoachingPrinciples §7,

@@ -150,18 +150,24 @@ export async function POST(req: NextRequest) {
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
-    // Recent fatigue tags for Trigger 4 (fatigue_accumulation)
-    // RESHAPE-FIX-WAVE2B-AUDIT: self-protecting against bare stubs — the
-    // `.not('fatigue_tag', 'is', null)` filter already excludes them by
-    // construction (a bare stub has null fatigue_tag), so the fatigue-
-    // accumulation trigger never sees a data-less "done" tap.
+    // Recent reported cost for Trigger 4 (fatigue_accumulation, §112).
+    //
+    // 🔴 WIDENED AT §112, AND THE OLD SHAPE IS WHY THE TRIGGER COULD NOT SEE A
+    // SKIP. `.eq('status', 'complete')` meant a skipped session was NEVER in
+    // this window — not since part 1 moved the column, but from the beginning.
+    // So the runner most obviously reporting cost, the one who could not start,
+    // was the one the trigger was blind to.
+    //
+    // RESHAPE-FIX-WAVE2B-AUDIT's bare-stub protection is PRESERVED, not
+    // dropped: a data-less "done" tap has null in BOTH columns, so the `.or()`
+    // excludes it exactly as `.not('fatigue_tag','is',null)` used to.
     serviceSupabase
       .from('session_completions')
-      .select('week_n, session_day, fatigue_tag')
+      .select('week_n, session_day, fatigue_tag, skip_reason, status')
       .eq('user_id', user.id)
       .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
-      .eq('status', 'complete')
-      .not('fatigue_tag', 'is', null)
+      .in('status', ['complete', 'skipped'])
+      .or('fatigue_tag.not.is.null,skip_reason.not.is.null')
       .order('week_n', { ascending: false })
       .limit(10),
     // AI-DEPTH-10 — connective tissue. Most recent non-pending adjustment
@@ -188,6 +194,16 @@ export async function POST(req: NextRequest) {
       return (DAY_ORDER[a.session_day] ?? 99) - (DAY_ORDER[b.session_day] ?? 99)
     })
     .map((c: any) => c.fatigue_tag as string)
+
+  // §112 — the same window, carrying BOTH columns so a 'Too tired' skip can
+  // count. `recentFatigueTags` above is kept only for callers not yet migrated.
+  const recentFatigueRows = (completionsRes.data ?? [])
+    .slice()
+    .sort((a: any, b: any) => {
+      if (a.week_n !== b.week_n) return a.week_n - b.week_n
+      return (DAY_ORDER[a.session_day] ?? 99) - (DAY_ORDER[b.session_day] ?? 99)
+    })
+    .map((c: any) => ({ fatigue_tag: c.fatigue_tag ?? null, skip_reason: c.skip_reason ?? null }))
 
   // Return existing pending adjustment instead of creating a duplicate
   if (existingPendingRes.data) {
@@ -310,6 +326,7 @@ export async function POST(req: NextRequest) {
     adjustmentsThisWeek,
     currentPhase,
     recentFatigueTags,
+    recentFatigueRows,
     rpeSignal,
     skipSignal,
     reorderSignal,
