@@ -10,7 +10,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at 2026-09-18
 
-**Everything is committed and pushed** (last ship `892bfd7`, 2026-09-18 — SLT queue #1-#10, through FIRSTRUN-MISSED-01 part 1). `npm run verify` exit 0 (**2,235 tests / 248 files**, **120 invariants**, matrix 65/0) · `npm run check:db` exit 0 · sweep **14,221 plans, no new violations** (§111 now refuses ~1,750 low-base marathon/ultra inputs) · coaching HIGH 0 / MED 26 · `verify:parity` **208/5,940 moved, all OK→REFUSED** (§111; generated plans byte-identical).
+**Everything is committed and pushed** (last ship `a0becdd`, 2026-09-18 — SLT queue #1-#11, through FIRSTRUN-MISSED-01 parts 1-2 (§112)). `npm run verify` exit 0 (**2,252 tests / 249 files**, **120 invariants**, matrix 65/0) · `npm run check:db` exit 0 · sweep **14,221 plans, no new violations** (§111 now refuses ~1,750 low-base marathon/ultra inputs) · coaching HIGH 0 / MED 26 · `verify:parity` **208/5,940 moved, all OK→REFUSED** (§111; generated plans byte-identical).
 
 > ▶️ **NEXT UP when we restart — the FIRSTRUN-MARATHON-01 queue, Tier 1 + Tier 2 (#5–8) are DONE.** Resume at the **SLT-ORDERED WORK QUEUE** (§ below):
 > - ~~#9 `FIRSTRUN-MOMENTS-01c/d/e`~~ ✅ **SHIPPED.** Next is #10. Original:
@@ -158,7 +158,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | # | Item | Size | Why here |
 |---|---|---|---|
 | ~~10~~ | ✅ **`FIRSTRUN-MISSED-01` part 1** — SHIPPED 2026-09-18 → feature-registry. ⚠️ The "read by nothing" framing was **retracted before building** (the reason drives §21 via `/api/adjust-plan`); the real defect was the storage **displacing** real fatigue data in a five-entry window — 2 users had an unreachable trigger | S/M | done |
-| 11 | **`FIRSTRUN-MISSED-01` part 2** → Coaching Board | — | Routing it to §R20-T4 is prescription. **Convene once part 1 lands** |
+| ~~11~~ | ✅ **`FIRSTRUN-MISSED-01` part 2** — SHIPPED 2026-09-18 as **§112** → feature-registry. 🔴 The conflict scan found **`§R20-T4` DOES NOT EXIST** (cited for a year; two ratified sections depended on it), and the trigger was blind for a reason nobody had found: the route fetched the window with `.eq('status','complete')`, so a skip was **never in it** | — | done |
 
 > 🟢 **FATIGUE-ARRAY-DRY-01 — five inline `['Fresh','Fine','Heavy','Wrecked']` arrays.** *(P3, filed 2026-09-18 from FIRSTRUN-MISSED-01.)* `lib/coaching/completionVocab.ts → FATIGUE_TAGS` is now the owner and the skip side uses it, but the fatigue side is still written out by hand at `DashboardClient.tsx:4233, 4850, 5655, 13622` and re-derived as a membership test in `post-run-reframe/route.ts:373` and `weekly-free-insight/route.ts:151`. **Deliberately NOT done as a drive-by** — it is a five-site refactor of colour logic in a 13k-line file for no user-visible change. Do it when one of those screens is open for another reason.
 
