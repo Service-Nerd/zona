@@ -8,9 +8,11 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-## 📍 PICK UP HERE — state at end of 2026-09-17
+## 📍 PICK UP HERE — state at 2026-09-18
 
-**Everything is committed** (`2f0049c`). `npm run verify` exit 0 (**2,139 tests / 233 files**) · `npm run check:db` exit 0 · sweep **15,974 plans, no new violations** · HIGH 0.
+**Everything is committed** (`3def186`). `npm run verify` exit 0 (**2,139 tests / 233 files**) · `npm run check:db` exit 0 · sweep **15,974 plans, no new violations** · HIGH 0.
+
+> 🟢 **ONBOARD-EXIT-01 — sign-out now exists on every onboarding screen, and the optional name field says it is optional.** A new user was **trapped in the wizard**: the gate sequence hides the bottom nav, step 0 suppresses the back button, and the only escape was Today → Me → the **"Careful Now"** section next to Delete Account. ⚠️ **ConnectRunsScreen already had this button and it had DRIFTED** — no `clearWidgetState()`, so signing out there left the previous account's race countdown on the home-screen widget; fixed by deleting the copy and making `components/shared/SignOutLink.tsx` the single owner. The founder asked to **delete** the first-name field; the SLT declined (six prompt builders, trial emails, avatar initials, and it would part-revert PROFILE-NAME-01) and labelled it optional instead. ⚠️ **The three onboarding screens were NOT visually verified — they are auth-gated and have no fixture page**, unlike `/me-preview` and `/coach-preview`.
 
 > 🔴 **PLAN-WEEK-COLLISION-01 shipped today, in TWO passes, and the second pass is the lesson.** A new 12-week plan arrived **94% pre-completed** because `week_n` is a within-plan coordinate that seven tables used as a cross-plan key. ⚠️ **The recommended fix (continue the week sequence, ADR-013's own mechanism) was WITHDRAWN before shipping** — foundation weeks are numbered NEGATIVE and the engine guards on `w.n > 0`, so it would have corrupted the taper curve. ⚠️ **Then the fix itself shipped incomplete**: the table list was written from memory and missed `weekly_reports` (which ADR-013 names explicitly) and `plan_adjustments` — and the guard could not tell, because it ITERATES that same list. Authority moved to the live schema in `scripts/check-db-drift.ts`. Record: `docs/incidents/2026-09-18-plan-week-collision.md`.
 
