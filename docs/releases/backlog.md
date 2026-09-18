@@ -51,7 +51,422 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 - 🟢 **`DOC-STATE-GATE-01` — this paragraph is now hook-checked.** It names the commit it describes; `state-block-check.py` flags it on any `feat(`/`fix(` commit that postdates that SHA. It exists because this exact paragraph went stale **three times on 2026-09-17** while every hook-checked record stayed correct. **Write it LAST, after the final push, and never type a count from memory.**
 - 🔴 **`??` DOES NOT CATCH AN EMPTY STRING, and that class has now cost FOUR measured defects.** `ruleEngine` stamps `athlete_name ?? ''`, so `plan.meta.athlete` is an empty *string* and every downstream `?? 'fallback'` is already dead — the Me-screen avatar drew a blank circle for months and `postRaceReshape.ts` addressed nobody. Same shape as `distance_km ?? 0` (SESSION-KM-01). **When you guard a read with `??`, go and look at what WRITES it.**
 
-### 🔜 OPEN — nothing urgent
+### 🔜 OPEN — two launch blockers (infrastructure), then nothing urgent
+
+---
+
+#### 🤝 Make-A-Wish UK partnership readiness — filed 2026-09-18
+
+Source: `docs/partners/make-a-wish-readiness-2026-09.md`, a code-and-live-systems audit of the proposal
+(~500 runners, full paid access via the existing code flow, Oct 2026 → Apr 2027). **Verdict: CONDITIONAL
+GO.** The product mechanism is ready and shipped. The two blockers are both infrastructure and cost $315
+across the seven months combined.
+
+> ⚠️ **Provenance, checked before filing.** `DEPLOY-QUOTA-01` already held the Hobby-vs-Pro decision
+> (deployment quota). `STRAVA-APP-INACTIVE-01` already holds the Strava application. `APNS_PRODUCTION=1`
+> is already recorded as set at item 5 of the Make-A-Wish critical path. None of those are re-filed below;
+> `OPS-VERCEL-PLAN-01` is a **different argument** for the same decision and says so.
+
+> 🔴 **OPS-VERCEL-PLAN-01 — Vercel Hobby is contractually non-commercial, and Zonna sells a subscription.** *(P0 BLOCKER, founder, filed 2026-09-18.)*
+>
+> Live check: `list_teams` returns `service-nerd's projects`, **`plan: "hobby"`**.
+>
+> Vercel's fair-use page: *"Hobby teams are restricted to non-commercial personal use only. All commercial
+> usage of the platform requires either a Pro or Enterprise plan"*, and it defines commercial usage to
+> include *"any method of requesting or processing payment from visitors of the site."* Zonna sells
+> £7.99/month through RevenueCat. **The account is out of compliance today**, before any charity runner
+> exists; a 500-person partnership raises both the visibility and the cost of enforcement, and the
+> enforcement action is an account pause.
+>
+> ⚠️ **This is NOT the same item as `DEPLOY-QUOTA-01`.** That one is the 100-deploys-per-day cap, which is
+> a capacity annoyance with a workaround (batch pushes). This is a terms breach with no workaround. They
+> resolve together but only one of them is a reason you cannot decline.
+>
+> **Second reason, independent of the terms:** Hobby caps function duration at **60 s**; plan enrichment is
+> measured at **28–35 s** in the code's own comment (`app/api/generate-plan/route.ts:234`), and **no route
+> sets `maxDuration`**, so every route runs at the platform default. Pro raises the ceiling to 300 s.
+>
+> **Capacity is otherwise fine on Hobby** and that is worth recording so nobody re-derives it: at 500
+> users, ~150k invocations/month against 1M, under 1 hr Active CPU against 4, ~40–70 GB-hrs provisioned
+> memory against 360.
+>
+> **Fix:** Vercel Pro, $20/month. Also frees the 2-cron cap that forced six crons onto GitHub Actions.
+> **Closes the open half of `DEPLOY-QUOTA-01`.**
+
+> 🔴 **OPS-SUPABASE-PLAN-01 — Supabase Free breaks at ~250–320 active runners, and has no backups at all.** *(P0 BLOCKER, founder, filed 2026-09-18.)*
+>
+> Live check: organisation `zqxxahbsnzyouuwaugjv`, **`plan: "free"`**. Project `Zonna Run`
+> (`wkppmpsvqkaxbekdgzdm`), `eu-west-1`, **15 MB used**, 26 auth users.
+>
+> **Storage, measured not guessed.** Per-row cost from `pg_total_relation_size ÷ rows` (so indexes and
+> TOAST included): activities **4.3 kB**, run analysis 1.5 kB, completions 0.78 kB, health samples 0.62 kB,
+> notifications 0.75 kB, weekly reports 6.5 kB, plans ~12 kB. A 28-week block at 4 runs/week comes to
+> **~1.5 MB per runner**, 2.0 MB for a heavy trainer.
+>
+> | | 500 runners | 150 (30%) |
+> |---|---|---|
+> | DB size | **765 MB – 1.02 GB** | 240 – 315 MB |
+> | vs Free's 500 MB | **1.5× to 2× over** | 48–63% |
+>
+> **Breaks at roughly 250–320 active runners.** Egress is second: ~3 GB/month estimated against a 5 GB
+> allowance, so ~60% used at full redemption. Compute (shared CPU, 500 MB RAM) is third and least
+> predictable. Auth MAU (526 of 50,000) and file storage (0 of 1 GB, no bucket in use) are not factors, and
+> the pooler is not a factor either because the app talks PostgREST over HTTP rather than direct Postgres.
+>
+> 🔴 **The part that is already true, with no runners at all: Free includes NO backups and NO PITR**, and
+> the project auto-pauses after 7 idle days. Taking 500 people's training data for a season on a plan with
+> zero recovery point is the risk here, not the 500 MB.
+>
+> **Fix:** Supabase Pro, $25/month: 8 GB (10× headroom on the worst case), 250 GB egress, 100k MAU,
+> dedicated Micro compute, **7-day backups**, never pauses.
+>
+> **Deliberately NOT doing first:** stripping `hrSamples` from `strava_activities.raw_payload` would cut
+> the biggest table 30–40% (the derived columns `avg_hr`/`max_hr`/`hr_pct_z*`/`hr_bpm_histogram` already
+> carry everything the app reads). It is the right lever **if storage ever binds on Pro**, and the wrong
+> one now: the raw stream is what would let a zone recalibration re-bucket historic runs, which ADR-011
+> §263 records as a live defect.
+
+> 🔴 **LEGAL-PRIVACY-01 — the privacy policy understates what goes to Anthropic, and omits Resend entirely.** *(P1, founder + me, filed 2026-09-18. Must land before codes go out; a charity will read this page.)*
+>
+> **What the page says:** *"When you use the AI coaching features, session data is sent to Anthropic's API
+> to generate a coaching response."*
+>
+> **What `lib/plan/enrich.ts → buildUserMessage` actually sends:** the runner's **first name**
+> (`- Name: ${input.athlete_name}`, resolved server-side from `user_settings.first_name` at the auth
+> boundary so it cannot be spoofed) and their **injury history**
+> (`- Injury history: ${input.injury_history.join(', ')}`), alongside race, date, distance, goal, weekly
+> volume, days available, fitness level and difficulty band.
+>
+> A first name + an injury history + a named race on a named date is **not anonymous**, and "session data"
+> does not cover it. What is genuinely never sent is worth stating too, because it is the reassuring half:
+> no email, no surname, no user ID, no date of birth, no auth token, no billing detail, and **not the raw
+> per-second HR stream** (only derived summaries and zone percentages).
+>
+> **Second gap: Resend is an undisclosed processor.** `lib/email/resend.ts` sends the trial emails and
+> receives the runner's **email address**. The third-party list names Supabase, Anthropic, Strava, Vercel
+> and RevenueCat. Not Resend.
+>
+> ⚠️ **Do not fix this by softening the sentence.** Same trap as `TT-PRICING-CLAIM-01`: name what is sent.
+>
+> **Also decide while in there:** `/privacy` and `/terms` still carry a full Strava section, including "your
+> Strava access token is stored" and a cookies line about a Strava session token, while the Strava screen is
+> admin-URL-only and the application is Inactive (`STRAVA-APP-INACTIVE-01`). Accurate *if* a runner ever
+> connects; unreachable in practice. One clause settles it.
+
+> 🔲 **GTM-CHARITY-05 — `admin_user_tiers` does not know charity grants exist, so 500 comped runners will read as free.** *(P1, me, filed 2026-09-18.)*
+>
+> `lib/trial.ts → resolveTier` is documented as **the single owner** of
+> `admin → subscription → grant → trial → free`, and its header comment exists precisely because that order
+> once lived in three places and drifted. The Supabase view `admin_user_tiers` is a **fourth copy**, and its
+> `CASE` stops at `admin → subscription → trial → free`. It never reads `charity_codes`.
+>
+> **Consequence at 500 runners:** every comped runner reads `free` or `trial` in every admin and reporting
+> surface, and `v_trial_conversion` (which is `LEFT JOIN subscriptions` on anyone with a `trial_started_at`)
+> counts them as unconverted trials, which will make trial→paid look worse than it is for a whole season.
+> `v_paying_users` counts `tier = 'premium'` and is unaffected.
+>
+> **Fix:** add the grant arm to the view, between subscription and trial, matching `resolveTier` exactly.
+> **This is D-16 again** (no parallel semantics), so the fix should also answer why a SQL view is allowed to
+> restate a rule the codebase says has one owner — either it reads a shared source, or it carries a comment
+> naming `resolveTier` as the thing it must track.
+
+> 🔲 **GTM-CHARITY-06 — there is no per-partner reporting, and only one analytics event exists in the whole app.** *(P1, me, filed 2026-09-18.)*
+>
+> The partnership will be asked "how did it go". Today nothing can answer it.
+>
+> - `lib/analytics.ts` declares **exactly one** event name: `coach_open`. That union is the documented
+>   source of truth, so that is the entire behavioural dataset (90 rows).
+> - The six admin views (`admin_user_tiers`, `admin_user_directory`, `v_paying_users`,
+>   `v_trial_conversion`, `v_hr_present_pct`, `v_coach_engagement`) **none of them join `charity_batches`**.
+> - `ops_events` is operational telemetry, not product analytics.
+>
+> **All six metrics asked for ARE derivable** from existing tables: codes redeemed, plans generated, weekly
+> active, HealthKit-connected, sessions logged, against the batch cap. Smallest change is one view
+> (`v_partner_cohort`, ~30 lines, drafted in full in the brief).
+>
+> ⚠️ **Two honesty caveats that must ship WITH the view, not after it.** "Weekly active" would be
+> `auth.users.last_sign_in_at`, which is a **sign-in, not an app open** — there is no app-open event to
+> count. And `healthkit_connected_at` records that the permission sheet was accepted, which iOS does not let
+> the app distinguish from a silent denial, so it is an **upper bound**. Reporting either number to a
+> partner without its caveat is the overclaim class this repo keeps catching.
+>
+> **Depends on `GTM-CHARITY-05`** if the view is to carry a tier column.
+
+> 🔲 **GTM-CHARITY-07 — deleting an account returns a claimed code to the unclaimed pool.** *(P2, me, filed 2026-09-18.)*
+>
+> `charity_codes.claimed_by` is `ON DELETE SET NULL` (verified against production `pg_constraint`). Deleting
+> an account nulls it while leaving `claimed_at` and `expires_at` populated. `/api/charity/redeem` gates
+> only on `row.claimed_by`, so **the code becomes redeemable again by anyone who has it**, and the batch's
+> redemption count silently drifts downward.
+>
+> Low likelihood, two real consequences: a small abuse path (redeem, delete, re-redeem), and reporting that
+> understates redemption over a season.
+>
+> **Not obviously a `CASCADE`** — deleting the code row would destroy the batch's own record that a seat was
+> used. More likely: keep the row, add a `released_at` or a `claim_state`, and have the redeem route treat
+> a previously-claimed row as spent. **Decide the semantics before writing the migration.**
+>
+> ⚠️ Same sweep should cover `ai_rate_limits`, whose `bucket_key` is text (`ai:<route>:<userId>`) with no
+> FK, so a row containing a user ID survives account deletion until its window rolls. Minor, but it is a
+> user identifier persisting past a deletion the privacy policy calls permanent.
+
+> 🔲 **GTM-CHARITY-08 — mint and field-test the 500-code batch, and fix the redeem-before-distance ordering in the charity's instructions.** *(P1, founder, filed 2026-09-18.)*
+>
+> **Mint:** `npx tsx scripts/mint-charity-codes.ts "Make-A-Wish UK" 500 --notes "London 2027 · race 2027-04-25" > mawuk-codes.csv`
+> (script hard-caps at 1000; progress goes to stderr so the redirect captures only codes).
+>
+> ⚠️ **Redeem the test code on a NON-ADMIN account.** `getUserTier` resolves `admin → paid` before it ever
+> reaches the grant, so redeeming on an admin account looks identical whether the grant landed or silently
+> failed. `scripts/check-charity-code.ts` reads the row directly, which is the only check that means
+> anything. (This is the same shape as the RevenueCat webhook defect that acknowledged events and wrote
+> nothing.)
+>
+> 🔴 **The ordering problem, which is a wording fix not a code fix.** "Have a charity code?" sits on step 1
+> of the wizard (`GeneratePlanScreen.tsx:1527`). A runner who taps **Marathon** first meets a PAID lock and
+> is routed to Upgrade. The redeem link is on that screen too so the path recovers, but **the first thing a
+> Make-A-Wish runner would see is a paywall.** The charity's instructions must say to tap the code link
+> *before* choosing a distance. Three-step runner wording is drafted in the brief, section I.
+>
+> **No batch-level expiry exists, and that is fine here** — every runner in this cohort shares a race date,
+> so re-anchoring gives each of them 2027-05-02 (race + 7) automatically on first plan save. A runner who
+> redeems and never builds a plan lapses at 90 days, which is the intended outcome. Adding a batch expiry
+> (~half a day: nullable column, `min()` in two pure functions, two tests) would only ever cut someone off
+> **earlier** than race day, which is the exact failure the grant design exists to prevent. **Do not build
+> it for this partnership.**
+>
+> **Founder verifications owed before codes go out** (all outside the repo, none checkable from here):
+> App Store Connect — is `1.9.1` build 15 actually live? · Vercel env — is `APNS_PRODUCTION=1` set? (item 5
+> of the critical path records it as set; nothing here can confirm it, and if it is wrong **every push
+> silently fails for the whole cohort**) · Supabase Auth — reset-password template + `/auth/reset` redirect
+> (the device test is still owed, `UX-AUTH-03`) · Anthropic Console — set a spend alert
+> (`OPS-AI-SPEND-01`).
+>
+> ⚠️ **Minimum iOS is 16.6**, which excludes iPhone 7 and older. In a cohort of 500 a handful cannot install
+> at all, and there is no Android build and no mobile-web fallback for the dashboard. Worth telling the
+> charity rather than discovering it in the support inbox.
+
+> 🔲 **GTM-CHARITY-09 — support for 500 runners is one email inbox.** *(P2, founder decision, filed 2026-09-18.)*
+>
+> The entire support surface is `support@zonna.run`: an in-app pre-filled email (Me → Support, free for all
+> tiers, with a copy-address button), the `/support` page, and the same address in `/privacy` and `/terms`.
+> No live chat, no ticketing, no help centre, **no in-app FAQ**.
+>
+> That has been correct at 26 users. 500 runners arriving as a single cohort, most of them first-time
+> marathoners, is a different shape: they will arrive together, hit the same few questions (code won't
+> redeem, no HR data, why is my plan so easy), and they will arrive at the charity too if the app is slow to
+> answer.
+>
+> **Not necessarily a build.** The cheapest version is a short partner-facing FAQ the charity can send with
+> the codes, covering exactly the questions this audit predicts. Decide which.
+
+> 🔲 **SEC-15 — `/api/weekly-report` is the only AI route with no rate limiter.** *(P2, me, filed 2026-09-18.)*
+>
+> Eleven of the twelve AI routes call `guardAiRequest` or `enforceAiRateLimit`. `/api/weekly-report` calls
+> neither, and it is a **Sonnet** route. It is authenticated and tier-gated on `activity_intelligence`, so
+> it is not an open door, but it is the one path where a client loop could run Sonnet with no per-user
+> ceiling.
+>
+> Add `enforceAiRateLimit(user.id, 'weekly-report')` after the tier gate. It takes no body, so the
+> rate-limit-only guard is the right one (same shape as `daily-coach-note`).
+>
+> ⚠️ **Related, and NOT a bug to fix:** `checkAiRateLimit` **fails open** by design — an RPC error or an
+> unreachable DB allows the request, because a false denial breaks the product while a brief limiter outage
+> has bounded exposure. That trade is documented and correct. It does mean the limiter is not a hard cap,
+> which is why `OPS-AI-SPEND-01` exists.
+
+> 🔲 **OPS-AI-SPEND-01 — nothing in the app records token usage, so there is no spend visibility at all.** *(P2, founder + me, filed 2026-09-18.)*
+>
+> Grepped every AI call site: **not one reads `response.usage`.** No `input_tokens`, no `output_tokens`, no
+> per-user or per-route accounting anywhere. The Anthropic Console is the only source of truth, and nothing
+> in the repo can reconcile against it.
+>
+> The estimate in the brief (**~$2.40/runner over seven months; $1,200 at 100% redemption, $360 at 30%**) is
+> therefore derived from prompt-file sizes and the literal `max_tokens` at each call site, **not measured**.
+> It is almost certainly the right order of magnitude and it is not a reason to hold the partnership: AI cost
+> per comped runner is under one month's subscription. But nobody can currently answer "what did it actually
+> cost" without opening a browser.
+>
+> **Cheapest useful version:** a founder-set spend alert in the Console (minutes, no code). **Next
+> increment:** persist `usage` into `ops_events` on the two Sonnet paths that dominate the recurring spend
+> (post-run reframe and weekly report, together ~40% of the per-runner total). Do not instrument all twelve.
+
+> 🔲 **PLAN-RUNWAY-CHARITY-01 — nobody has generated the plan shape every Make-A-Wish runner will get.** *(P1, me, filed 2026-09-18.)*
+>
+> Codes go out ~Oct 2026 for a late-April 2027 race: **~26 weeks of runway**. Marathon plan length maxes at
+> **20 weeks** (`PLAN_SIGNATURES.MARATHON.max_weeks`) and the foundation block adds at most **3**
+> (`FOUNDATION_MAX_WEEKS`). So a runner starting immediately gets ~23 covered weeks and **2–3 uncovered**,
+> which crosses `FOUNDATION_UNCOVERED_WEEKS_NOTE_THRESHOLD: 2` and surfaces the uncovered-runway note. A gap
+> over 28 days (`FOUNDATION_GAP_AUTO_DAYS`) routes through the **deferred** foundation decision rather than
+> auto-generating.
+>
+> **This is the exact shape all ~500 of them will hit, and it is not in any harness.** The charity personas
+> and the cohort grid do not pin a 26-week runway against a 20-week cap. `verify:parity` pins `plan_start`,
+> so it contains **no pre-plan-runway cases at all** and was already documented as structurally blind to
+> FOUNDATION-LONG-RUNWAY-01.
+>
+> **Do:** generate one on a comped non-admin test account with an October start and 2027-04-25, then read
+> the runner-facing note out loud. Not "does it validate" — `verify` already says yes. **Does the runway
+> note read like something a first-time marathoner would act on**, and does the deferred foundation decision
+> present sensibly on device.
+>
+> **Prep-time thresholds for reference, because the numbers differ from the plan-length ones:** marathon
+> refuses below **10** weeks (12 for a returning runner), warns below 16 **on a time goal only**. A finish
+> goal at 10–15 weeks generates with no friction. `PLAN_SIGNATURES.min_weeks` is 14 and is **not** the
+> refusal threshold — it governs construction length. Nobody meets 14.
+
+> 🔲 **TIER-TRIAL-CONFIDENCE-01 — the 14-day reverse trial is not literally full access.** *(P2, me, filed 2026-09-18. **Does not affect Make-A-Wish**; filed because the marketing claim is repo-wide.)*
+>
+> `canUseFeature('confidence_score', 'trial')` returns **allowed**. `lib/plan/enrich.ts:226` sets
+> `wantPaidFields = tier === 'paid'`, and a trial resolves to `'trial'`. So **a trial user never receives
+> `confidence_score`, `confidence_risks` or `coach_intro`** — the gate layer and the engine layer disagree,
+> and the engine wins.
+>
+> ✅ **Charity grants resolve to `'paid'`, so comped runners DO get it.** Verified in `resolveTier`; pinned
+> by `distancePaywall.test.ts` for the adjacent distance case.
+>
+> Why it still matters: the reverse trial is described everywhere as full access for 14 days, and on this
+> one feature it is not. Either `enrich` should read `tier !== 'free'` (matching every other paid gate in
+> the codebase) or the trial's description should stop saying everything.
+>
+> ⚠️ **`pricing.test.ts` cannot catch this** — it proves every PAID gate has a ROW on the pricing page. It
+> cannot check that the row is reachable by everyone the page implies. Same blind spot as
+> `TT-PRICING-CLAIM-01`, second instance, and worth noting as a pattern rather than a one-off.
+
+---
+
+
+#### 💷 Cost, resilience and unit economics — filed 2026-09-18 (second pass)
+
+From a founder cost review of the Make-A-Wish grant: *what does it cost per month, and what happens if
+the Anthropic credit runs out mid-block?* Tracing the failure path found one real defect and three gaps.
+
+> ⚠️ **Provenance:** `session_reflections`, `weekly-free-insight`, `MIN_LOGS`, "commission" and
+> "auto-reload" each return **zero** hits across `backlog.md` and `roadmap.md`. The eleven existing
+> `reframe` entries are all REFRAME-02 (voice input) or the risk gate; none touches persistence. Nothing
+> below is a re-file. `OPS-AI-SPEND-01` is adjacent to `OPS-AI-FAILURE-ALERT-01` and the two are
+> deliberately separate — one is *what did it cost*, the other is *did it work*.
+
+> 🔴 **REFRAME-NOTE-LOSS-01 — the runner writes a reflection, the AI call fails, and their words are thrown away.** *(P1 DEFECT, me, filed 2026-09-18.)*
+>
+> `app/api/post-run-reframe/route.ts:505`:
+>
+> ```ts
+> if (!reframeText) {
+>   return NextResponse.json({ reframe: null, tier: dataTier, fallback: true }, { status: 200 })
+> }
+> // Persist          ← never reached
+> ```
+>
+> `note_text: userNote` is written **only** in the upsert below that early return. So on any path where
+> `reframeText` is null, the runner's own writing is discarded. The client
+> (`components/training/ReflectionInput.tsx:108`) then does `setView('input')` with **no message**: the
+> screen returns to an empty box and nothing says why.
+>
+> 🔴 **The route already knows this is wrong, and says so.** Three hundred lines earlier, the risk-gated
+> path persists the note with this comment:
+>
+> > *"Persist a silenced row — the runner's note is sacred even when we don't reframe."*
+>
+> Same route, same table, same field, opposite behaviour. The principle is written down and then broken by
+> the branch next to it.
+>
+> ⚠️ **This is NOT only an outage case.** `reframeText` stays null three ways, and only two are failures:
+> 1. `!aiRes.ok` — credit exhausted, rate limit, API error.
+> 2. `fetch` throws — network.
+> 3. **`BAD_OUTPUT_RE.test(cleaned)`** (line 62: `amazing|crushing|smash|beast mode|you've got this|crushed|don't give up`). **The model answered, we were billed, the output was rejected for cheerleader words, and the runner still loses their note.** That fires in normal operation.
+>
+> **How often is unmeasured** and should be the first thing established: a reflection that reached the
+> route but has no `session_reflections` row is invisible by construction, so nobody would ever report it.
+>
+> **Fix:** move the upsert above the early return and write the note with `reframe_text: null`, mirroring
+> the silenced path exactly. Then give the client something to render other than an empty box.
+> ⚠️ **`fix-test-check.py` will ask for a regression test and it should** — this is precisely the silent
+> class where there is no symptom to notice next time.
+
+> 🔲 **OPS-AI-FAILURE-ALERT-01 — every AI failure is silent to the OPERATOR as well as the runner.** *(P2, me, filed 2026-09-18.)*
+>
+> Every one of the twelve AI routes uses the same shape: `if (aiRes.ok) { use it } catch { silent
+> fallback }`. That is correct design (ADR-006 — the deterministic engine always succeeds, AI is
+> enrichment) and it should not change. **The gap is that nothing tells you it is happening.**
+>
+> `ops_events` records `plan_enrich_failed` for the generation path only. The other eleven routes log to
+> `console` and return a fallback. With 500 comped runners mid-block you could serve the rule-engine
+> version of the product for days, and **no runner would report it** (nothing looks broken) and **no
+> dashboard would show it**.
+>
+> **Distinct from `OPS-AI-SPEND-01`**, which is about token accounting and cost. This is about knowing the
+> coaching layer is degraded. A run of `api_error` responses is also the *earliest* signal that the credit
+> balance is gone, which is what makes it worth having before the partnership starts.
+>
+> **Smallest useful version:** record an ops event on the non-ok branch of the two or three highest-traffic
+> routes (daily note, run analysis, reframe) and surface a count in the existing daily digest. Do not
+> instrument all twelve.
+
+> 🔲 **OPS-ANTHROPIC-CREDIT-01 — enable auto-reload on the Anthropic account before codes go out.** *(P1, founder, XS, filed 2026-09-18.)*
+>
+> The API runs on a prepaid balance. At zero, Anthropic returns a non-2xx, `aiRes.ok` is false everywhere,
+> and every AI surface silently degrades to rule-engine output for **all 500 runners at once**.
+>
+> ✅ **Nothing breaks, and that is worth stating plainly:** plans still generate, reshapes still apply, run
+> scoring still works, Apple Health still syncs. The engine never calls Anthropic. What is lost is the
+> written voice — plus `REFRAME-NOTE-LOSS-01` above, which is the one place a runner actively loses
+> something.
+>
+> **But it would be a broken promise**, not a broken app: Make-A-Wish is being told "full access including
+> AI enrichment", and the quiet version is close to the free tier.
+>
+> **Do:** turn on auto-reload at [platform.claude.com/settings/billing](https://platform.claude.com/settings/billing)
+> and load **£900** (the central estimate for 7 months at 100% redemption; range £560–£1,870). Pair with
+> the spend alert in `OPS-AI-SPEND-01`. A balance that *can* reach zero is the only version of this problem
+> that exists; auto-reload deletes it.
+
+> 🔲 **FIN-APPLE-COMMISSION-01 — Apple's cut is modelled nowhere, so every unit-economics number in the repo is 15% optimistic.** *(P2, founder + me, filed 2026-09-18.)*
+>
+> `lib/brand.ts → BRAND.PRICING` carries £7.99/month and £59.99/year **gross**. Grepped
+> `monetisation-strategy.md` and `brand.ts`: **zero** mentions of commission, 15%, or 30%.
+>
+> Under Apple's Small Business Program (under $1M/year) Apple takes **15%**, so net is **£6.79/month** and
+> **£50.99/year**. Above $1M it becomes 30% and net drops to **£5.59/month**.
+>
+> **What this touches:** `GTM-11 — pricing review` (currently reasons about £7.99 vs £9.99 on gross),
+> every payback and break-even calculation, and the trial→paid economics the roadmap gates Apple Search
+> Ads on. Traynor's *"kill in ~90 days if trial rate is ~0"* threshold is being judged against a number
+> that is 15% too high.
+>
+> **Not necessarily a code change.** `BRAND.PRICING` should stay gross — that is what the runner is charged
+> and what the App Store displays. The fix is a documented net figure wherever the business reasons about
+> revenue, and a note on the pricing review that the £2 gap between £7.99 and £9.99 is really **£1.70**
+> after Apple.
+>
+> ⚠️ **Also unmodelled: the annual plan.** At £59.99 the net is £50.99, or **£4.25/month** — cheaper than
+> the monthly net and a 37% headline discount that is closer to **46%** against monthly net revenue.
+
+> 🔲 **GTM-FREE-HOOK-01 — the free tier's only AI touchpoint is unreachable by the users it is meant to convert.** *(P2, SLT question, filed 2026-09-18.)*
+>
+> Traced while costing the free tier. A free user can reach **exactly one** AI surface: the weekly free
+> insight. To see it they must satisfy all three of:
+> 1. open the **Coach** screen (`CoachTeaser` fetches on view),
+> 2. have logged **2+ sessions with an RPE** in the last 7 days (`MIN_LOGS_TO_QUALIFY = 2`,
+>    `SESSION_WINDOW_DAYS = 7`), and
+> 3. not be risk-gated.
+>
+> And free users get **no daily push** (`send-daily/route.ts:225` — `if (tier === 'free') skip`).
+>
+> **So the one thing that might pull a lapsed free user back requires them to already be back, logging
+> consistently, and to go looking for it.** The cohort it can reach is the cohort least in need of it.
+>
+> **The cost argument is on the other side.** Measured this session: a free user costs **~$0.003 per
+> insight**, capped at one per week by the `(user_id, week_start_date)` cache. 500 free users is **under
+> $2/month** even at full engagement. There is no cost reason for the gate.
+>
+> **SLT question, not a build:** is the 2-log gate protecting output quality (a real concern — a model
+> writing about nothing produces the cheerleader copy `BAD_OUTPUT_RE` exists to catch), or is it
+> suppressing the only re-engagement loop the free tier has? **Measure before changing it:** how many free
+> users hit `state: 'insufficient'` versus `state: 'insight'`. That number is not currently recorded, which
+> is itself part of `GTM-CHARITY-06`.
+>
+> ⚠️ **Does not affect Make-A-Wish** — comped runners resolve to `paid` and never see this path. Filed
+> because it is a live conversion question for everyone else.
 
 > 🔲 **TT-PRICING-CLAIM-01 — `/pricing` sells the race projection as coming from "your real running". On 58% of plans there is none.** *(P2, filed 2026-09-17. **SLT escalation from the Coaching Board** — Hutchinson carried it up: the board rules on correctness and cannot rule on a marketing claim.)*
 >
