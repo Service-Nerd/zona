@@ -2941,13 +2941,16 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
    *  write to user_settings based on what's currently saved. */
   onHRFound?: (rhr: number | null, mhr: number | null) => void
 }) {
-  const [busy, setBusy] = useState(false)
+  // ONBOARD-SKIP-LABEL-01 — the pending action, NOT a bare boolean. The primary
+  // button's label must key on WHICH action is running, or tapping "Connect
+  // later" (skip) makes the primary button claim it is "Connecting…".
+  const [pending, setPending] = useState<'connect' | 'skip' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
   async function connectHealthKit() {
-    if (busy) return
-    setBusy(true)
+    if (pending) return
+    setPending('connect')
     setError(null)
     try {
       const { requestHealthKitAuth, syncOnAppOpen, fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
@@ -2983,13 +2986,13 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
       console.warn('[HealthKit] connect failed:', e)
       setError("Couldn't reach Apple Health. Try again, or connect from Me later.")
     } finally {
-      setBusy(false)
+      setPending(null)
     }
   }
 
   async function skip() {
-    if (busy) return
-    setBusy(true)
+    if (pending) return
+    setPending('skip')
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -3000,7 +3003,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
       })
       onSkip()
     } finally {
-      setBusy(false)
+      setPending(null)
     }
   }
 
@@ -3038,7 +3041,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             change the ask copy above. */}
         <button
           onClick={connectHealthKit}
-          disabled={busy}
+          disabled={pending !== null}
           style={{
             width: '100%',
             background: 'var(--moss)', color: 'var(--card)',
@@ -3047,8 +3050,8 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             minHeight: '52px',  // bigger than the 44pt min — primary ceremony CTA.
             fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
             letterSpacing: '-0.01em',
-            cursor: busy ? 'wait' : 'pointer',
-            opacity: busy ? 0.7 : 1,
+            cursor: pending ? 'wait' : 'pointer',
+            opacity: pending ? 0.7 : 1,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
           }}
         >
@@ -3063,7 +3066,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
           }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--card)' }} />
           </span>
-          {busy ? 'Connecting…' : 'Connect Apple Health'}
+          {pending === 'connect' ? 'Connecting…' : 'Connect Apple Health'}
         </button>
 
         {error && (
@@ -3080,7 +3083,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             looked exit-less until the user had already tapped Connect. */}
         <button
           onClick={skip}
-          disabled={busy}
+          disabled={pending !== null}
           style={{
             width: '100%',
             background: 'none', border: 'none',
@@ -3089,10 +3092,10 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             minHeight: '44px',
             fontFamily: 'var(--font-ui)', fontSize: '13px',
             color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
-            cursor: busy ? 'default' : 'pointer',
+            cursor: pending ? 'default' : 'pointer',
           }}
         >
-          Connect later
+          {pending === 'skip' ? 'One sec…' : 'Connect later'}
         </button>
 
         {/* ONBOARD-EXIT-01 — was a hand-rolled copy of this button, and it had
@@ -3100,7 +3103,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             here left the previous account's race countdown on the home-screen
             widget. A user at this screen HAS a plan, so that was reachable.
             One owner now; the drift cannot recur. */}
-        <SignOutLink disabled={busy} />
+        <SignOutLink disabled={pending !== null} />
       </div>
     </div>
   )
@@ -3116,7 +3119,10 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
   onEnabled: () => void
   onSkip: () => void
 }) {
-  const [busy, setBusy] = useState(false)
+  // ONBOARD-SKIP-LABEL-01 — the pending action, not a bare boolean (see
+  // ConnectRunsScreen). Tapping "Skip for now" must not make the primary button
+  // say "Setting up…".
+  const [pending, setPending] = useState<'enable' | 'skip' | null>(null)
   const [denied, setDenied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
@@ -3134,8 +3140,8 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
   }
 
   async function enableNotifications() {
-    if (busy) return
-    setBusy(true)
+    if (pending) return
+    setPending('enable')
     setError(null)
     try {
       const { PushNotifications } = await import('@capacitor/push-notifications')
@@ -3145,7 +3151,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
         // User needs Settings → {BRAND.name} → Notifications to reverse this.
         await stampFlag(false)
         setDenied(true)
-        setBusy(false)
+        setPending(null)
         return
       }
       try { localStorage.removeItem(PUSH_OFF_KEY) } catch {}
@@ -3162,18 +3168,18 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
       console.warn('[push onboarding] failed:', e)
       setError(`Couldn't set up notifications. Skip for now — try from Me later.`)
     } finally {
-      setBusy(false)
+      setPending(null)
     }
   }
 
   async function skip() {
-    if (busy) return
-    setBusy(true)
+    if (pending) return
+    setPending('skip')
     try {
       await stampFlag(false)
       onSkip()
     } finally {
-      setBusy(false)
+      setPending(null)
     }
   }
 
@@ -3205,7 +3211,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
         {!denied && (
           <button
             onClick={enableNotifications}
-            disabled={busy}
+            disabled={pending !== null}
             style={{
               width: '100%',
               background: 'var(--moss)', color: 'var(--card)',
@@ -3214,8 +3220,8 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
               minHeight: '52px',
               fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
               letterSpacing: '-0.01em',
-              cursor: busy ? 'wait' : 'pointer',
-              opacity: busy ? 0.7 : 1,
+              cursor: pending ? 'wait' : 'pointer',
+              opacity: pending ? 0.7 : 1,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
             }}
           >
@@ -3228,7 +3234,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
             }}>
               🔔
             </span>
-            {busy ? 'Setting up…' : 'Enable Notifications'}
+            {pending === 'enable' ? 'Setting up…' : 'Enable Notifications'}
           </button>
         )}
 
@@ -3240,7 +3246,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
 
         <button
           onClick={skip}
-          disabled={busy}
+          disabled={pending !== null}
           style={{
             width: '100%', background: 'none', border: 'none',
             padding: '14px 0',
@@ -3248,15 +3254,15 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
             minHeight: '44px',
             fontFamily: 'var(--font-ui)', fontSize: '13px',
             color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
-            cursor: busy ? 'default' : 'pointer',
+            cursor: pending ? 'default' : 'pointer',
           }}
         >
-          {denied ? 'Continue without notifications.' : "Skip for now."}
+          {pending === 'skip' ? 'One sec…' : denied ? 'Continue without notifications.' : "Skip for now."}
         </button>
 
         {/* ONBOARD-EXIT-01 — last screen of the onboarding gate, still in front
             of the nav. Secondary to "Skip for now", not part of the flow. */}
-        <SignOutLink disabled={busy} />
+        <SignOutLink disabled={pending !== null} />
       </div>
     </div>
   )
