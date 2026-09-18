@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — CB-BEGINNER-HILLS-01 · half the ruling I was told to build was already built
+**Shipped:** Beginners get short hill strides, alternating with §28's strides so the dose is unchanged. The other half of the board's ruling was withdrawn as a no-op.
+
+**Dev learning:** I told the Coaching Board beginners got "no strides, no hills, no tempo, no intervals, ever". Wrong. **100% of plans at every level carry strides, mean 10.1 runs** — I had measured session `type` and `label`, and strides are a **coach note on an easy run**. Then I made the same mistake twice more inside the build: my first cut of the invariant read a `strides` property that doesn't exist (they're in `coach_notes`), and my `canCarry` guard re-derived §28's eligibility by hand and got it wrong for 2-day plans. Three instances of the same error in one feature: **measuring a proxy for the thing rather than the thing.**
+
+**Product/creator learning:** The genuinely valuable output was going back to the board with the correction *before* building. Half the ruling would have been a config constant that changed nothing — decorative config, which this repo has a test that fails the build for. The board withdrew it, three seats withdrew or narrowed their own positions, and what survived was one real gap: hills reach beginners through no path at all, because `hill_reps` is typed `vo2max` and beginners are capped at zero quality. **Nobody decided that. It fell out of a type assignment.**
+
+**AI-building learning:** My build plan predicted `cohort:shape` would move, and it didn't — because a hill stride is a *note*, not a session, so it touches no volume, session count or classification metric. Writing the prediction down is what made the miss visible; if I'd only checked afterwards I'd have read "no change" as confirmation instead of as a falsified assumption. Parity was the check that actually proved the scope: `beginner=1400/1980, intermediate=0, experienced=0`.
+
+**The honest bit:** the invariant took three attempts. The first two asked "does this plan carry stimulus anywhere?" and then tried to except plans that can't — and each exception was me re-implementing the producer's predicate by hand, which is this repo's most repeated defect class and which I have a memory file about. The third version asks the exact question instead: *where the producer's own predicate says a carrier exists, is the note on it?* That one found a real pre-existing bug — `applyWeekdayMinsCap` runs after stride placement and can create an eligible run that never gets offered strides — which I filed rather than fixed, and downgraded to a warn with the residual declared.
+
+**Hook material:** I asked a board to rule that beginners should get strides. They already got them, in 100% of plans. I'd measured the session type instead of the session.
+
+**Postable?:** yes
+
 ## 2026-09-18 — CB-SUBFLOOR-ADMIT-01 · the safety rule was causing the danger it refused over
 **Shipped:** A first-time charity marathoner with a 3 km longest run and seven months now gets a plan. They were refused.
 

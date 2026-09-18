@@ -10,6 +10,8 @@
 // logs in production (does not break the user).
 
 import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
+import { strideCarrierDay } from './neuromuscular'
+import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
 import { GENERATION_CONFIG } from './generationConfig'
 import { assessBaseBuild } from './baseVolume'
@@ -86,6 +88,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-WEEK-1-2-LONG-CAP',
   'INV-INPUT-LONGEST-LE-WEEKLY',
   'INV-PLAN-QUALITY-PER-WEEK',
+  'INV-PLAN-BEGINNER-NEUROMUSCULAR',
   'INV-PLAN-QUALITY-LONG-SPACING',
   'INV-PLAN-QUALITY-EXPECTED',
   'INV-PLAN-MAX-WEEKDAY-MINS',
@@ -6456,6 +6459,96 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       })
     }
   }
+
+  // ── INV-PLAN-BEGINNER-NEUROMUSCULAR (CoachingPrinciples §28 Am.1) ──────────
+  //
+  // A beginner plan must carry neuromuscular stimulus, and a hill stride must
+  // never appear on a quality-typed session.
+  //
+  // ⚠️ WHY THE SECOND HALF EXISTS. The whole safety of §28 Am.1 is that a hill
+  // stride is a COACH NOTE ON AN EASY RUN, so QUALITY_SESSIONS_PER_WEEK_MAX
+  // (0 for beginners, §110) cannot be breached BY CONSTRUCTION. If a future
+  // change ever attaches one to a quality session, that construction argument
+  // silently stops being true and a beginner acquires quality through a door
+  // nobody is watching. This is that watch.
+  if (input.fitness_level === 'beginner') {
+    const neuro = (s: Session | undefined): boolean =>
+      !!s?.coach_notes?.some(n => typeof n === 'string' && /strides/i.test(n))
+    const buildWeeks = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.phase !== 'taper')
+
+    // ⚠️ CHECKED PER WEEK, NOT PER PLAN, and that is the third attempt.
+    //
+    // The first two asked "does this plan carry stimulus anywhere?" and then
+    // tried to except the plans that cannot. Both approximated the producer's
+    // eligibility and both false-fired: a 2-day plan has no midweek easy run
+    // from week 3 (12 cases in the property sweep, invisible to both cohort
+    // grids). Every exception I added was me re-deriving §28 by hand, which is
+    // this repo's most repeated defect class.
+    //
+    // So the check asks the exact question instead: WHERE the producer's own
+    // predicate says a carrier exists, is the note on it? A week with no
+    // carrier is a legitimate, common answer and is simply not asserted on
+    // (§34 — the gap is recorded in the principle, not enforced here).
+    const longDayOf = (w: Week): Day => {
+      for (const d of DAYS) {
+        const sess = w.sessions[d] as Session | undefined
+        if (sess && isLongRun(sess)) return d
+      }
+      return 'sun'
+    }
+    const blockedForStrides = normaliseDays(input.days_cannot_train)
+
+    for (const w of buildWeeks) {
+      if (w.n < GENERATION_CONFIG.STRIDES_FIRST_WEEK) continue
+      if (w.type === 'deload') continue
+      const carrier = strideCarrierDay(w.sessions as never, longDayOf(w), blockedForStrides)
+      if (!carrier) continue
+      if (!neuro(w.sessions[carrier] as Session | undefined)) {
+        violations.push({
+          code: 'INV-PLAN-BEGINNER-NEUROMUSCULAR',
+          principle_ref: 'CoachingPrinciples §28',
+          // ⚠️ WARN, NOT ERROR, AND THE REASON IS A PRE-EXISTING §28 ORDERING
+          // GAP — not a beginner problem and not this amendment's doing.
+          //
+          // §28 places the note in step 4 of `buildWeekSessions`;
+          // `applyWeekdayMinsCap` runs in step 5 and can CONVERT a quality
+          // session to easy. A run that becomes eligible after the cap has run
+          // never gets offered strides. That affects every level, is older than
+          // §28 Am.1, and fixing it means re-running placement after the cap —
+          // a change with its own blast radius that has had no board sitting.
+          //
+          // The board's requirement — "a beginner plan carries neuromuscular
+          // stimulus" — IS met: measured 100% of beginner plans, mean 4.6
+          // stride runs plus hill strides on the alternating weeks. What this
+          // arm reports is the residual, declared rather than absorbed (§34).
+          // Filed as S28-CAP-ORDER-01.
+          severity: 'warn',
+          week: w.n, day: carrier,
+          message: 'Week has an eligible stride carrier but no neuromuscular note (§28 / §28 Am.1) — see S28-CAP-ORDER-01',
+          actual: 'no strides or hill strides',
+          expected: `strides or hill strides on ${carrier}`,
+        })
+      }
+    }
+
+    for (const w of plan.weeks) {
+      for (const [day, s] of Object.entries(w.sessions) as [string, Session | undefined][]) {
+        if (!s || !neuro(s)) continue
+        if (s.type === 'quality' || s.type === 'hard') {
+          violations.push({
+            code: 'INV-PLAN-BEGINNER-NEUROMUSCULAR',
+            principle_ref: 'CoachingPrinciples §28',
+            severity: 'error',
+            week: w.n, day,
+            message: 'Stride/hill note on a quality-typed session — §28 Am.1 relies on these being easy runs so they cannot count as quality',
+            actual: `type '${s.type}'`,
+            expected: "type 'easy'",
+          })
+        }
+      }
+    }
+  }
+
 
   return violations
 }

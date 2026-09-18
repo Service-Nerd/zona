@@ -1267,6 +1267,24 @@ export const GENERATION_CONFIG = {
   // midweek easy run per week. Skipped in race week and deload weeks.
   STRIDES_FIRST_WEEK: 3,
 
+  // §28 Amendment 1 (Coaching Board 2026-09-18, CB-BEGINNER-HILLS-01) — how
+  // often a BEGINNER's stride run becomes a short HILL stride run.
+  //
+  // MEASURED GAP: plans containing any hills — beginner 0.0%, intermediate
+  // 43.7%, experienced 40.5%. Nobody decided beginners should not do hills; it
+  // falls out of `hill_reps` being typed `vo2max` in the catalogue against
+  // QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0. Willy: "a short hill sprint is
+  // not a VO2max session — six by ten seconds is neuromuscular and
+  // tendon-loading, and carries LOWER impact per unit of stimulus than flat
+  // fast running because the ground comes up to meet you."
+  //
+  // ⚠️ 2 MEANS ALTERNATE, NOT ADD. On a hill week the stride run BECOMES the
+  // hill run. The board authorised hills "dosed like §28's strides"; placing a
+  // hill run alongside the stride run would DOUBLE the weekly neuromuscular
+  // dose, which no seat asked for and which Willy would object to. Total dose
+  // is unchanged; only the variety increases.
+  BEGINNER_HILL_STRIDE_EVERY_N_WEEKS: 2,
+
   // ── Tune-up race callout (CoachingPrinciples §32) ──────────────────────────
   // Plans of this length or longer get a mid-build tune-up race suggestion.
   // Placed on the latest non-deload build week before peak. Optional — the

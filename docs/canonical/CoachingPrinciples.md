@@ -1460,6 +1460,59 @@ Two of those rendered **on the same card**: the runner read *"Final 30–50% at 
 
 ---
 
+### §28 Amendment 1 — strides and hill strides are ONE neuromuscular family (Coaching Board 2026-09-18, CB-BEGINNER-HILLS-01)
+
+**The gap, measured across 4,259 generated plans.** Plans containing any hills:
+**beginner 0.0%, intermediate 43.7%, experienced 40.5%.**
+
+**Nobody decided beginners should not do hills.** It falls out of a type
+assignment: `session-catalogue.md` types `hill_reps` as `vo2max` and
+`aerobic_hills` as `intermediate`-minimum, and
+`QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0` (§110, ratified). Hills reach a
+beginner through no path at all — an exclusion by accident, not by ruling.
+
+**Willy:** *"A short hill sprint is not a VO2max session. Six by ten seconds up
+a moderate gradient is neuromuscular and tendon-loading — eccentric-heavy, it
+builds exactly the tissue stiffness that pure easy volume does not, and it
+carries lower impact per unit of stimulus than flat fast running because the
+ground comes up to meet you. For a novice ramping volume for eighteen weeks that
+is protective, not risky."*
+
+**Principle.** For a runner at `fitness_level: 'beginner'`, every
+`BEGINNER_HILL_STRIDE_EVERY_N_WEEKS`-th stride run **becomes** a short hill
+stride run. Strides and hill strides are one family, governed by one onset
+(`STRIDES_FIRST_WEEK`) and one placement rule.
+
+⚠️ **IT ALTERNATES, IT DOES NOT ADD.** The board authorised hills *"dosed like
+§28's strides"*. A hill run placed ALONGSIDE the weekly stride run would double
+the neuromuscular dose, which no seat asked for. Measured after shipping:
+beginner stride runs 10.1 → 4.6 per plan with hill strides on the remainder,
+**zero weeks carrying both**, and intermediate/experienced unchanged at 10.1 /
+10.2. Total dose is identical; only the variety changed.
+
+⚠️ **IT REMAINS A COACH NOTE ON AN EASY RUN**, and that is what makes it
+structurally incapable of counting as quality. `session.type` stays `'easy'`, so
+`QUALITY_SESSIONS_PER_WEEK_MAX` (0 for beginners) and §1's session-count
+distribution are untouched **by construction**, not by a rule anyone has to
+remember. The board was explicit that
+`QUALITY_SESSIONS_PER_WEEK_MAX.beginner = 0` stays and must not be raised.
+
+⚠️ **THIS IS NOT A ROUTE TO `hill_reps`.** The catalogue's hill rows are
+`vo2max` and `build`/`peak` phase and stay closed to this cohort. What is
+authorised is a short neuromuscular hill stride, not a hill workout.
+
+⚠️ **The strides half of the original ruling was WITHDRAWN.** It required
+beginners to receive strides — which §28 had already given them, universally
+(100% of plans at every level, mean 10.1 runs). The submission that prompted it
+measured session `type` and `label` and could not see a coach-note
+prescription. Legislating it would have shipped a no-op.
+
+**Config.** `GENERATION_CONFIG.BEGINNER_HILL_STRIDE_EVERY_N_WEEKS = 2`, onset
+shared with `STRIDES_FIRST_WEEK`.
+**Enforced by** `INV-PLAN-BEGINNER-NEUROMUSCULAR`.
+
+---
+
 ## 29. Fresh-from-layoff detection
 
 **Principle.** When a user reports `weeks_at_current_volume < FRESH_RETURN_WEEKS_THRESHOLD`, the engine treats `current_weekly_km` as aspirational rather than consolidated. The plan starts at `FRESH_RETURN_START_FRACTION × current_weekly_km` and ramps at the standard 10% rate (no returning-runner allowance). The `plan.meta.fresh_return_active` flag exposes this so consumers can present a different framing.

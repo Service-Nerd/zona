@@ -30,6 +30,7 @@ import { validatePlan, copyClaimsIntensity, enforceViolations } from './invarian
 import { assessBaseBuild, baseVolumeRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
+import { strideCarrierDay, neuromuscularNote } from './neuromuscular'
 import { weeksBetweenLocal } from './length'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
@@ -3634,28 +3635,17 @@ function buildWeekSessions(
       && weekN >= GENERATION_CONFIG.STRIDES_FIRST_WEEK
       && !isRaceWeek
       && !isDeload) {
-    const stridePreferred: Day[] = ['wed', 'tue', 'thu', 'mon', 'fri']
-    const blockedFromStrides: Set<Day> = new Set()
-    // Don't append to a session on the day before the long run (heavy legs)
-    // or the day after a quality session (recovery day).
-    const longDayIdx = DAY_ORDER.indexOf(longDay)
-    blockedFromStrides.add(DAY_ORDER[(longDayIdx - 1 + 7) % 7])
-    for (const u of used) {
-      const s = sessions[u]
-      if (s?.type === 'quality') {
-        blockedFromStrides.add(DAY_ORDER[(DAY_ORDER.indexOf(u) + 1) % 7])
-      }
-    }
-    for (const d of stridePreferred) {
-      if (blocked.has(d) || blockedFromStrides.has(d)) continue
-      const s = sessions[d]
-      if (!s || s.type !== 'easy') continue
-      if (isLongRun(s) || isShakeout(s)) continue
-      const note = '4×20s strides at 5K effort, full recovery between.'
+    // §28 + §28 Am.1 — placement delegates to `lib/plan/neuromuscular.ts`, which
+    // the INVARIANT also calls. The eligibility rule used to live only here, and
+    // when the invariant re-derived it the two disagreed on 2-day plans: 12 cases
+    // in the property sweep, invisible to both cohort grids.
+    const carrier = strideCarrierDay(sessions, longDay, blocked)
+    if (carrier) {
+      const s = sessions[carrier]!
+      const note = neuromuscularNote(weekN, input.fitness_level)
       const e0 = s.coach_notes?.[0]
       const e1 = s.coach_notes?.[1]
       s.coach_notes = e0 && e1 ? [e0, e1, note] : e0 ? [e0, note] : [note]
-      break  // one stride run per week
     }
   }
 
