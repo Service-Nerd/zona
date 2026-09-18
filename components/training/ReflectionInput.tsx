@@ -20,6 +20,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { authedFetch } from '@/lib/supabase/authedFetch'
 import AIMark from '@/components/shared/AIMark'
 import { REFRAME_TIER } from '@/lib/coaching/constants'
 import { messageForReframeRiskReason, type ReframeRiskReason } from '@/lib/coaching/reframeRiskGate'
@@ -80,16 +81,11 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
     if (!trimmed) return
     setView('submitting')
     try {
-      // getUserFromRequest requires a bearer token — cookie auth is unreliable
-      // on native (Capacitor). Same pattern as authedFetch in DashboardClient.
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      const res = await fetch('/api/post-run-reframe', {
+      // authedFetch attaches the bearer getUserFromRequest needs — cookie auth
+      // is unreliable on native (Capacitor). AUTH-BEARER-MISSING-01.
+      const res = await authedFetch('/api/post-run-reframe', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ week_n: weekN, session_day: sessionDay, user_note: trimmed }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)

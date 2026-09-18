@@ -2187,7 +2187,10 @@ export default function DashboardClient() {
     if (!recalDue) return
     setRecalStatus('confirming')
     try {
-      const res = await fetch('/api/recalibrate-zones', {
+      // AUTH-BEARER-MISSING-01 — recalibrate-zones calls getUserFromRequest,
+      // which needs the bearer explicitly (cookie sync is unreliable on native).
+      // authedFetch attaches it; a bare fetch here 401'd every paid recalibration.
+      const res = await authedFetch('/api/recalibrate-zones', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

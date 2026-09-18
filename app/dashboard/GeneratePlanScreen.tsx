@@ -8,6 +8,7 @@ import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
 import { createClient } from '@/lib/supabase/client'
+import { authedFetch } from '@/lib/supabase/authedFetch'
 import SignOutLink from '@/components/shared/SignOutLink'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
@@ -958,17 +959,11 @@ export default function GeneratePlanScreen({
     }
 
     try {
-      // Pass the access token explicitly — cookie sync to server is unreliable
-      // with @supabase/ssr; getSession() always returns the in-memory session.
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-
-      const res = await fetch('/api/generate-plan', {
+      // authedFetch attaches the bearer (cookie sync to server is unreliable
+      // with @supabase/ssr) — single owner of the pattern, AUTH-BEARER-MISSING-01.
+      const res = await authedFetch('/api/generate-plan', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(input),
       })
 
@@ -1088,7 +1083,9 @@ export default function GeneratePlanScreen({
     if (!plan || !lastInputRef.current) { setFoundationModalOpen(false); return }
     setFoundationAddStatus('loading')
     try {
-      const res = await fetch('/api/generate-plan/foundation', {
+      // AUTH-BEARER-MISSING-01 — the foundation route calls getUserFromRequest;
+      // a bare fetch sent no bearer, so the add silently 401'd on native.
+      const res = await authedFetch('/api/generate-plan/foundation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input: lastInputRef.current, plan }),
