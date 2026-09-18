@@ -90,7 +90,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | ~~1~~ | ~~**`AUTH-BEARER-MISSING-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Both bearer-less calls routed through `authedFetch`; guard `authedFetchGuard.test.ts` walks the source so it cannot recur. Found a 6th site the table missed (already correct). → feature-registry. **Re-test #4 on device.** |
 | ~~2~~ | ~~**`MARATHON-VOLUME-GATE-01`**~~ ✅ **ENGINE HALF SHIPPED 2026-09-18** | **L** | 🔴 **P0.** Governed §111 base-build ceiling (peak/current, not stated volume); admits M1, refuses the reckless 5km tail. 3 artifacts + reconvened board on the MAINT-LABEL collision. Parity 208/5940, all OK→REFUSED. → feature-registry. **The humane "not yet" screen is `REFUSAL-SCREEN-01` (#3).** |
 | ~~3~~ | ~~**`REFUSAL-SCREEN-01`**~~ ✅ **SHIPPED 2026-09-18** | S | A 422 refusal reframes as a calm "Not yet" + the levers + "Adjust my answers"; a real fault keeps "Something went wrong". Ships with #2. **Follow-up:** voice the §44/§52 message internals + add the weeks-remaining runway line. → feature-registry |
-| 4 | **`FOUNDATION-ADD-FAIL-01`** | S | Re-test after #1; may already be closed |
+| ~~4~~ | ~~**`FOUNDATION-ADD-FAIL-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Cause (missing bearer) fixed by #1; observability half added — route records `plan_foundation_add_failed` on 500, client catch no longer swallows. → feature-registry. **On-device re-test is the residual.** |
 
 ### 🙂 Tier 2 — THE FIRST FIVE MINUTES. Cheap, and it reaches every one of the 500.
 
@@ -591,7 +591,9 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 >
 > **Fix:** separate the pending action from the flag (`busy: 'connect' | 'skip' | null`), or disable rather than relabel. One owner, both screens. **Add a markup test** — `signOutLink.markup.test.ts` is the pattern; this is exactly the class it exists for.
 
-> 🔴 **FOUNDATION-ADD-FAIL-01 — "Add Foundation Block" fails, and the app records nothing about why.** *(P1. Blocks FIRSTRUN-MARATHON-01 touchpoint 5.)*
+> ✅ **FOUNDATION-ADD-FAIL-01 — SHIPPED 2026-09-18.** Cause (the missing bearer on the foundation call) fixed under AUTH-BEARER-MISSING-01; the observability half added — the route records a durable `plan_foundation_add_failed` ops event on its 500 path (was a bare server console.error), and the client catch console.errors instead of swallowing. Engine path proven clean, so a firing is now a real regression, and it leaves a trace. → feature-registry. **On-device re-test is the residual** (needs the founder's device). Original analysis kept for the record:
+>
+> 🔴 **"Add Foundation Block" fails, and the app records nothing about why.** *(P1. Blocks FIRSTRUN-MARATHON-01 touchpoint 5.)*
 >
 > Founder tapped **Add Foundation Block** on the plan-setup sheet and got *"Couldn't add that. Try again."*
 >
