@@ -80,6 +80,18 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > - 🔽 **`GTM-CHARITY-09` got cheaper** — SLT chose a partner FAQ, so it is writing, not a support surface.
 > - 🆕 **`FIRSTRUN-MOMENTS-01a–f`** and **`FIRSTRUN-MISSED-01`** are new, specced, and five of the six moments are S-sized.
 
+> 🟡 **OPS-DBCHECK-NOISE-01 — `check:db` writes ~43 errors into the Supabase log view on a HEALTHY run.** *(P2, filed 2026-09-18 after the founder investigated them.)*
+>
+> `scripts/check-db-drift.ts:234` answers *"does this table carry `week_n`?"* by **attempting a select and seeing whether it fails**. So every clean run emits **21 Postgres `42703` ERRORs and 22 HTTP 400s**, one per table that correctly does not have the column. `:237` adds the `superseded_at` probes, `:125`'s `exec_sql` RPC 404s and falls back, and the `ops_events` anon probe logs a `42501` for a permission denial that is **correct**.
+>
+> **Nothing is broken and every answer in those logs is right** — the eight tables that return 200 to both probes are exactly the seven `WEEK_KEYED_TABLES` plus the documented `plan_weekly_notes` exemption, which is PLAN-WEEK-COLLISION-01 confirming itself in production.
+>
+> 🔴 **The cost is not correctness, it is ATTENTION.** A dashboard that shows 40+ red lines after every healthy check trains you to scroll past red. **The founder spent time on these today, which is the proof** — and it is the same NOISE-GATE-01 class this repo already records: *a check that cries wolf gets disabled, which is the same as having no check.* The next real Postgres error will land in exactly this haystack.
+>
+> **Do:** one query against `information_schema.columns` for every column named `week_n` / `superseded_at`, instead of 21 deliberately-failing selects. Same answer, one round trip, zero errors. Keep the `ops_events` permission probe but expect and swallow the denial rather than logging it.
+>
+> **Verify:** run `npm run check:db`, then confirm the Supabase log view shows **no** new `42703` rows.
+
 > 🟡 **CI-SLOW-DRIFT-01 — `slowTestThreshold` PRINTS drift and nothing GATES it.** *(P2, filed 2026-09-18 from the CI failure.)*
 >
 > `targetedGrid.test.ts` went red in CI on a 30s timeout. It was **not** a regression: measured both sides of the same day's change, 8.65s → 8.77s (+1.4%), and the 30s budget already breaks at ~8,571ms of local work. **The test had been over the line for some time and CI was a coin flip.**
