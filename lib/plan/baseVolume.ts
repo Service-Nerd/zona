@@ -24,6 +24,7 @@
 
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
+import { effectiveStartKm } from './startVolume'
 
 /** §111 governs the marathon and ultra distances only — the distances whose
  *  peak sits far enough above a low base for the jump to be a load hazard. */
@@ -51,10 +52,40 @@ export interface BaseBuildAssessment {
 }
 
 /** The single computation both the refusal and the invariant read. */
+
 export function assessBaseBuild(plan: Plan, input: GeneratorInput): BaseBuildAssessment {
-  const cap = GENERATION_CONFIG.MAX_BASE_BUILD_RATIO
   const peakKm = deliveredPeakKm(plan)
+  // §111 Amendment 1 — THE DENOMINATOR IS THE VOLUME THE ENGINE STARTS FROM.
+  //
+  // This read `input.current_weekly_km` — the raw wizard figure — while §29
+  // scales a fresh returner down and §10 caps a `<6mo` runner at
+  // BEGINNER_WEEK1_VOLUME_CAP_KM. Measured: declared 50 km/wk started at 30,
+  // scored 1.2x, actual build 1.8x. Wrong in BOTH directions and most wrong
+  // where §10's cap bites hardest. Shared owner, so producer and gate cannot
+  // drift (`lib/plan/startVolume.ts`).
+  // ⚠️ STILL THE RAW DECLARED VOLUME, AND THAT IS A KNOWN DEFECT — held, not
+  // fixed, deliberately. See S111-DENOMINATOR-01.
+  //
+  // The Coaching Board ruled on 2026-09-18 that this must become
+  // `effectiveStartKm(input)` — the volume the engine actually builds from,
+  // after §29's fresh-return scaling and §10's <6mo cap. That ruling is
+  // correct and the fix was built and MEASURED:
+  //
+  //   refused 1,296 -> 1,920 (+624, +48%)
+  //   healthy masters never-builds 10.1% -> 10.3%, standard 8.1% -> 8.3%
+  //
+  // Every one of those 624 is a runner whose REAL build exceeds 4.0x and who
+  // was passing on a mismeasurement, so refusing them is correct in isolation.
+  // But the founder's standing P0 is that the charity cohort cannot be refused,
+  // the board's second step (a runway-aware ceiling) was withdrawn when its
+  // premise failed measurement, and S106-FLAT-PEAK-01 would remove most of
+  // these refusals by scaling the peak instead. Shipping this alone delivers a
+  // 48% refusal INCREASE against a P0 that says the opposite.
+  //
+  // Sequence: S106 first, then this. The measurement is recorded so the next
+  // person does not have to rediscover it.
   const currentKm = input.current_weekly_km ?? 0
+  const cap = GENERATION_CONFIG.MAX_BASE_BUILD_RATIO
   const applies = baseBuildRatioApplies(input.race_distance_km)
   const minBaseKm = Math.ceil(peakKm / cap)
 

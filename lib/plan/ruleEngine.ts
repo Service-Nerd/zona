@@ -31,6 +31,7 @@ import { assessBaseBuild, baseVolumeRefusal, BaseVolumeError } from './baseVolum
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
 import { strideCarrierDay, neuromuscularNote } from './neuromuscular'
+import { effectiveStartKm } from './startVolume'
 import { weeksBetweenLocal } from './length'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
@@ -5950,14 +5951,11 @@ function buildRulePlanOnce(
     && input.longest_recent_run_km < GENERATION_CONFIG.HEURISTIC_FRESH_RETURN_LONG_RUN_KM
   const isFreshReturn = explicitFreshReturn || heuristicFreshReturn
 
-  const declaredStartKm = isFreshReturn
-    ? input.current_weekly_km * GENERATION_CONFIG.FRESH_RETURN_START_FRACTION
-    : input.current_weekly_km
-  // CD-6 / §10 — a <6mo runner's declared volume is a self-reported bucket, not
-  // measured; cap the start so an over-claim can't hand a beginner too much.
-  const startKm = input.training_age === '<6mo'
-    ? Math.min(declaredStartKm, GENERATION_CONFIG.BEGINNER_WEEK1_VOLUME_CAP_KM)
-    : declaredStartKm
+  // §111 Am.1 — extracted to `lib/plan/startVolume.ts`, which §111 now also
+  // reads. It used to live only here while §111 measured its ratio against the
+  // RAW declared volume, so the gate scored a build no runner experienced
+  // (declared 50, started at 30: scored 1.2x, actual 1.8x).
+  const startKm = effectiveStartKm(input)
 
   // §106 (Coaching Board MAINT-PROFILE-01, 2026-09-11) — THE CEILING GETS A FLOOR.
   //
