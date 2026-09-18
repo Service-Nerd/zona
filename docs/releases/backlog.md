@@ -89,14 +89,14 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 |---|---|---|---|
 | ~~1~~ | ~~**`AUTH-BEARER-MISSING-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Both bearer-less calls routed through `authedFetch`; guard `authedFetchGuard.test.ts` walks the source so it cannot recur. Found a 6th site the table missed (already correct). → feature-registry. **Re-test #4 on device.** |
 | ~~2~~ | ~~**`MARATHON-VOLUME-GATE-01`**~~ ✅ **ENGINE HALF SHIPPED 2026-09-18** | **L** | 🔴 **P0.** Governed §111 base-build ceiling (peak/current, not stated volume); admits M1, refuses the reckless 5km tail. 3 artifacts + reconvened board on the MAINT-LABEL collision. Parity 208/5940, all OK→REFUSED. → feature-registry. **The humane "not yet" screen is `REFUSAL-SCREEN-01` (#3).** |
-| 3 | **`REFUSAL-SCREEN-01`** (copy + *"not yet"*) | S | The refusal that remains must stop reading as a crash. Ships with #2 |
+| ~~3~~ | ~~**`REFUSAL-SCREEN-01`**~~ ✅ **SHIPPED 2026-09-18** | S | A 422 refusal reframes as a calm "Not yet" + the levers + "Adjust my answers"; a real fault keeps "Something went wrong". Ships with #2. **Follow-up:** voice the §44/§52 message internals + add the weeks-remaining runway line. → feature-registry |
 | 4 | **`FOUNDATION-ADD-FAIL-01`** | S | Re-test after #1; may already be closed |
 
 ### 🙂 Tier 2 — THE FIRST FIVE MINUTES. Cheap, and it reaches every one of the 500.
 
 | # | Item | Size | Why here |
 |---|---|---|---|
-| 5 | **`ONBOARD-SKIP-LABEL-01`** + **`COPY-DAYS-PLURAL-01`** | S | Both lie to a beginner inside their first two minutes |
+| 5 | **`ONBOARD-SKIP-LABEL-01`** + ~~**`COPY-DAYS-PLURAL-01`**~~ ✅ | S | `COPY-DAYS-PLURAL-01` shipped with #3 (REFUSAL-SCREEN-01). `ONBOARD-SKIP-LABEL-01` still open. |
 | 6 | **`FOUNDATION-DECIDE-LATER-01`** | S | Delete the button. "Later" never comes |
 | 7 | **`FIRSTRUN-MOMENTS-01a`** runway reveal | S | 🥇 **Best value on the entire backlog.** The words exist and are ratified; this is a MOVE |
 | 8 | **`FIRSTRUN-MOMENTS-01b`** first-run reveal | S | Wood funds this one: it lowers the activation cost of the first action |
