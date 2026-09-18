@@ -139,7 +139,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | # | Item | Size | Why here |
 |---|---|---|---|
 | ~~1~~ | ~~**`AUTH-BEARER-MISSING-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Both bearer-less calls routed through `authedFetch`; guard `authedFetchGuard.test.ts` walks the source so it cannot recur. Found a 6th site the table missed (already correct). → feature-registry. **Re-test #4 on device.** |
-| ~~2~~ | ~~**`MARATHON-VOLUME-GATE-01`**~~ ✅ **ENGINE HALF SHIPPED 2026-09-18** | **L** | 🔴 **P0.** Governed §111 base-build ceiling (peak/current, not stated volume); admits M1, refuses the reckless 5km tail. 3 artifacts + reconvened board on the MAINT-LABEL collision. Parity 208/5940, all OK→REFUSED. → feature-registry. **The humane "not yet" screen is `REFUSAL-SCREEN-01` (#3).** |
+| ~~2~~ | ~~**`MARATHON-VOLUME-GATE-01`**~~ ✅ **FULLY SHIPPED 2026-09-18** (the label read "engine half" until the UI half was confirmed landed — it is: `REFUSAL-SCREEN-01`, #3) | **L** | 🔴 **P0.** Governed §111 base-build ceiling (peak/current, not stated volume); admits M1, refuses the reckless 5km tail. 3 artifacts + reconvened board on the MAINT-LABEL collision. Parity 208/5940, all OK→REFUSED. → feature-registry. **The humane "not yet" screen is `REFUSAL-SCREEN-01` (#3).** |
 | ~~3~~ | ~~**`REFUSAL-SCREEN-01`**~~ ✅ **SHIPPED 2026-09-18** | S | A 422 refusal reframes as a calm "Not yet" + the levers + "Adjust my answers"; a real fault keeps "Something went wrong". Ships with #2. **Follow-up:** voice the §44/§52 message internals + add the weeks-remaining runway line. → feature-registry |
 | ~~4~~ | ~~**`FOUNDATION-ADD-FAIL-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Cause (missing bearer) fixed by #1; observability half added — route records `plan_foundation_add_failed` on 500, client catch no longer swallows. → feature-registry. **On-device re-test is the residual.** |
 
@@ -166,10 +166,10 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 | # | Item | Size |
 |---|---|---|
-| 12 | **`GTM-CHARITY-09`** partner FAQ (5 questions, charity's voice, **include "why hasn't my plan started"**) | S |
+| 12 | ⏸️ **PARKED (founder, 2026-09-18)** — **`GTM-CHARITY-09`** partner FAQ (5 questions, charity's voice, **include "why hasn't my plan started"**). Writing, not a build; ships WITH the codes | S |
 | ~~13~~ | ✅ **`FIRSTRUN-MOMENTS-01f`** — SHIPPED 2026-09-18 → feature-registry. ⚠️ **It was never blocked** (three doors into redeem, one is the wizard) and checking the data **cut a line of approved copy** that nothing measures | M |
 | ~~14~~ | ✅ **`WIZARD-TIME-CHIPS-01`** — SHIPPED 2026-09-18 → feature-registry. Key-based chips + legacy-draft shim; labels now derived through `formatDuration` | S |
-| 15 | **iOS 16.6** — tell Jack, do not build | — |
+| 15 | ⏸️ **PARKED (founder, 2026-09-18)** — **iOS 16.6** minimum excludes iPhone 7 and older; no Android, no mobile-web dashboard. Tell Jack, do not build | — |
 
 ### ⏭️ Deliberately not in this queue
 
