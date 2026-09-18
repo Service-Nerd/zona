@@ -43,9 +43,9 @@ Both fields required. Returns 422 if either is missing.
 
 | Status | Condition |
 |--------|-----------|
-| 401 | No valid session |
+| 401 | No valid session. **The client MUST send the bearer token** — `getUserFromRequest` only falls back to cookies, which are unreliable on native (AUTH-BEARER-MISSING-01); the caller uses `authedFetch`. |
 | 422 | `input` or `plan` missing |
-| 500 | Unexpected error |
+| 500 | Unexpected error — **records a durable `plan_foundation_add_failed` ops event** (FOUNDATION-ADD-FAIL-01), not just a server console.error. The engine path is proven clean, so a firing here is a real regression or environment fault. |
 
 ## Behaviour
 
@@ -89,4 +89,7 @@ only caller. It's a real network call (unlike the old client-side
 `generateFoundationBlock` splice it replaced), so it carries first-class
 loading/error UI state (`foundationAddStatus`). On failure the runner keeps
 whatever plan they already have — the modal stays open with a retry
-affordance, never a silent block or a lost plan (ADR-006).
+affordance, never a silent block or a lost plan (ADR-006). The catch
+`console.error`s the failure (with the response status from the thrown error)
+rather than swallowing it, so a client-side leg (a network drop before the
+route) is not silent either (FOUNDATION-ADD-FAIL-01).

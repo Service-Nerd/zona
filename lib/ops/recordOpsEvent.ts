@@ -41,6 +41,14 @@ export type OpsEventKind =
   // mean a paying or comped runner being refused a plan. Recorded so the
   // difference is visible rather than inferred from a support email.
   | 'plan_distance_gate_blocked'
+  // FOUNDATION-ADD-FAIL-01 (2026-09-18) — the deferred "Add Foundation Block"
+  // POST failed on the founder's device and the app recorded NOTHING: the client
+  // catch set an error state with no code, message, console or ops event, and the
+  // route 500'd with only a server console.error (not a durable, queryable row).
+  // The cause (a missing bearer token — the client sent no Authorization header)
+  // was fixed under AUTH-BEARER-MISSING-01; this is the observability half, so the
+  // NEXT failure here is diagnosable rather than another "it just says try again".
+  | 'plan_foundation_add_failed'
   // PLAN-WEEK-COLLISION-01 (2026-09-18) — a LIVE week-keyed row that predates the
   // plan it now resolves against. `week_n` restarts at 1 on every new race plan,
   // so a stale row does not merely sit there: it renders as a completed session

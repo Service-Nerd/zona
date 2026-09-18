@@ -5,6 +5,7 @@ import { composePlanWithFoundation } from '@/lib/plan/foundationCompose'
 import { resizeForDeferredFoundationAdd } from '@/lib/plan/foundationResize'
 import { enforceViolations } from '@/lib/plan/invariants'
 import { formatDate } from '@/lib/plan/length'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
 // POST /api/generate-plan/foundation
@@ -29,9 +30,13 @@ import type { GeneratorInput, Plan } from '@/types/plan'
 // ("the client supplies the decision... the server owns construction").
 
 export async function POST(req: NextRequest) {
+  // FOUNDATION-ADD-FAIL-01 — hoisted so the failure ops event below can name the
+  // runner even though the throw happens deep in compose/enforce.
+  let userId: string | null = null
   try {
     const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    userId = user.id
 
     const body = await req.json() as { input?: GeneratorInput; plan?: Plan }
     if (!body.input || !body.plan) {
@@ -51,7 +56,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ plan: composed })
   } catch (e) {
+    // FOUNDATION-ADD-FAIL-01 — a DURABLE, queryable record, not just a server
+    // console.error nobody reads. The engine path is proven clean (reproduced:
+    // 200, 3 weeks, 0 violations), so a firing here is a real regression or an
+    // environment fault, and it now leaves a trace. recordOpsEvent never throws.
     console.error('generate-plan/foundation error:', e)
+    await recordOpsEvent('plan_foundation_add_failed',
+      { detail: e instanceof Error ? e.message : String(e) }, userId)
     return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
   }
 }

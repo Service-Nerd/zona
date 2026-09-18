@@ -1112,7 +1112,11 @@ export default function GeneratePlanScreen({
       setPlan(data.plan)
       setFoundationAddStatus('idle')
       setFoundationModalOpen(false)
-    } catch {
+    } catch (e) {
+      // FOUNDATION-ADD-FAIL-01 — do not swallow. The route records a durable ops
+      // event on a 500; this catches the client-side leg (a network drop before
+      // the route, carrying the status from the throw above) so it is not silent.
+      console.error('[foundation-add] failed', e)
       setFoundationAddStatus('error')
     }
   }
