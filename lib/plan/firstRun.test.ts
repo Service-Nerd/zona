@@ -1,0 +1,48 @@
+import { describe, it, expect } from 'vitest'
+import { firstRunOfPlan } from './firstRun'
+import type { Week, Session } from '@/types/plan'
+
+// FIRSTRUN-MOMENTS-01b — the first session pulled out of the wall of weeks.
+
+const sess = (o: Partial<Session>): Session => ({ type: 'easy', ...o } as Session)
+const week = (sessions: Week['sessions']): Week => ({ n: 1, phase: 'base', sessions, weekly_km: 10 } as unknown as Week)
+
+describe('firstRunOfPlan', () => {
+  it('returns the first non-rest session in mon-sun order', () => {
+    // Monday rest (absent), Tuesday easy 20 min → Tuesday is first.
+    const r = firstRunOfPlan([week({ tue: sess({ duration_mins: 20 }), thu: sess({ duration_mins: 30 }) })])
+    expect(r).toEqual({ dayLabel: 'Tuesday', metric: '20 min', effort: 'Easy' })
+  })
+
+  it('prefers Monday when Monday has a session', () => {
+    const r = firstRunOfPlan([week({ mon: sess({ duration_mins: 25 }), wed: sess({ duration_mins: 40 }) })])
+    expect(r?.dayLabel).toBe('Monday')
+  })
+
+  it('formats a duration-anchored session via ADR-015 (never "20 minutes")', () => {
+    expect(firstRunOfPlan([week({ mon: sess({ duration_mins: 20 }) })])?.metric).toBe('20 min')
+  })
+
+  it('falls back to a rounded km distance for a distance-anchored session', () => {
+    const r = firstRunOfPlan([week({ mon: sess({ duration_mins: undefined, distance_km: 5.2 }) })])
+    expect(r?.metric).toBe('5 km')
+  })
+
+  it('maps effort honestly — never calls a hard session easy', () => {
+    expect(firstRunOfPlan([week({ mon: sess({ type: 'tempo', duration_mins: 40 }) })])?.effort).toBe('Tempo')
+    expect(firstRunOfPlan([week({ mon: sess({ type: 'intervals', duration_mins: 40 }) })])?.effort).toBe('Hard')
+    expect(firstRunOfPlan([week({ mon: sess({ type: 'long', duration_mins: 60 }) })])?.effort).toBe('Easy')
+  })
+
+  it('uses the FIRST week — a foundation week if one is prepended', () => {
+    const foundation = { n: -1, phase: 'foundation', sessions: { mon: sess({ duration_mins: 15 }) }, weekly_km: 6 } as unknown as Week
+    const main = week({ mon: sess({ duration_mins: 30 }) })
+    expect(firstRunOfPlan([foundation, main])?.metric).toBe('15 min')
+  })
+
+  it('returns null when there is nothing concrete to promise', () => {
+    expect(firstRunOfPlan([])).toBeNull()
+    expect(firstRunOfPlan([week({})])).toBeNull()                       // all-rest first week
+    expect(firstRunOfPlan([week({ mon: sess({ duration_mins: undefined, distance_km: undefined }) })])).toBeNull()
+  })
+})

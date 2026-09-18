@@ -16,6 +16,8 @@ import { isPaidDistance } from '@/lib/plan/canUseFeature'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import RunwayRevealCard from '@/components/shared/RunwayRevealCard'
+import FirstRunCard from '@/components/shared/FirstRunCard'
+import { firstRunOfPlan } from '@/lib/plan/firstRun'
 import Sheet from '@/components/shared/Sheet'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
@@ -1268,6 +1270,18 @@ export default function GeneratePlanScreen({
               <RunwayRevealCard weeks={meta.uncovered_runway_weeks} note={meta.uncovered_runway_note} />
             </div>
           )}
+          {/* FIRSTRUN-MOMENTS-01b — the first session, pulled out of the wall of
+              weeks, so a first-timer reads one thing they could do tomorrow. Sits
+              under the runway relief (01a): "you're early" then "here's where it
+              starts". Absent when there is nothing concrete to promise. */}
+          {(() => {
+            const firstRun = firstRunOfPlan(weeks)
+            return firstRun ? (
+              <div style={{ marginBottom: '16px' }}>
+                <FirstRunCard {...firstRun} />
+              </div>
+            ) : null
+          })()}
           {/* FREE demand band — feasibility read, above the PAID confidence score */}
           <DifficultyCard band={meta.difficulty_band} note={meta.difficulty_note} alternatives={meta.prep_time_alternatives} />
           {meta.confidence_score != null && (
