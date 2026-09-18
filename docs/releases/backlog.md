@@ -215,6 +215,28 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > **↗️ SLT escalation:** one question only, and it is commercial, not coaching — **what a refused charity runner with an allocated place should be offered.** "Race the Half instead" is the governed §52 answer and is unusable for someone with a London Marathon place. Recorded under `REFUSAL-SCREEN-01`.
 
+> ⚖️ **SLT — "what do we offer a refused runner who already has the place?" Escalated by the Coaching Board, sat 2026-09-18.**
+>
+> **The question, precisely.** §52 computes the governed alternatives — *"Race the Half at this event instead"*, *"Switch goal to finish"*, defer the race. **All three are unusable for this cohort.** The place is for the London Marathon, the charity allocated it, the date is fixed, and the goal is already `finish`. So the one screen where we refuse someone has three ratified answers and none of them apply.
+>
+> **🧠 Sutherland.** You are asking what to say instead of "no". The answer is **"not yet"**, and it is not a softening — it is more accurate. A runner refused in October has **twenty-eight weeks**. "No" describes their state today; "not yet" describes the same fact and leaves them inside the product. The refusal screen is currently the only place in this app that forgets we know what the date is.
+>
+> **📦 Fried.** And it needs no new feature. You already build foundation blocks. The honest screen says *here is what you do for now, and we will build the marathon plan when you are ready for it*. **That is using what exists, not inventing a ceremony.** I would object to anything bigger.
+>
+> **🔬 Wood.** This is the strongest version of the habit argument I made on the queue. A runner who gets a small, achievable thing in October forms the behaviour in the low-stakes window. A runner who gets a door forms nothing. ⚠️ **But the plan we hand them must not be a marathon plan wearing a hat** — if "not yet" quietly becomes "here is the marathon plan anyway", we have lied twice.
+>
+> **💰 Traynor.** Commercially this is the whole item. These 500 are comped, so there is no conversion to protect — **the asset is Make-A-Wish as a referral channel**, and the thing that damages it is a runner telling Jack the app turned them away. "Not yet, here is the path" costs nothing and is the difference between a complaint and a story.
+>
+> **🏃 Hutchinson.** Agreed in direction, and I am going to slow the build down. **A base-building block that leads into a marathon plan is PRESCRIPTION**, and it is not the thing we already have: `FOUNDATION_MAX_WEEKS` is **3**. A twenty-week ramp from 12 km/week to marathon readiness is a new plan type, not a longer foundation block. **That goes to my other board before a line is written.**
+>
+> **✅ RECOMMENDATION — BUILD DIFFERENTLY, in two parts, and only the first is cheap.**
+> 1. **Now (copy, brand, no board):** the refusal becomes **"not yet"** and states the date arithmetic the app already knows — how many weeks remain, and what would make the plan buildable. **Ship this with `REFUSAL-SCREEN-01`.**
+> 2. **Not now (prescription, Coaching Board first):** an actual base-building plan that leads into the marathon block. **`FOUNDATION_MAX_WEEKS` is 3 and this needs ~20.** Do not scope it as a foundation-block tweak.
+>
+> **🚨 MUST/NEVER.** No new modal (`ui-patterns.md`). No gamification of the "not yet" state. **And the screen must not promise a plan we have not built** — Wood's second point is a hard line: *"not yet"* may only be said if part 2 exists, otherwise the copy says what is true today and nothing more.
+>
+> **⚠️ Risk to existing features.** Part 2 touches `foundationCompose` / `FOUNDATION_MAX_WEEKS` (§92) and the §91 on-ramp credit; `foundationResize.test.ts` pins onset parity and must stay green.
+
 > 🔴 **REFUSAL-SCREEN-01 — a deliberate coaching decision is presented as a crash.** *(P1. The actionable half of REFUSAL-THRESHOLDS-01 below. Belongs to FIRSTRUN-MARATHON-01 touchpoint 2.)*
 >
 > `GeneratePlanScreen.tsx:1176`. When the engine declines to build a plan, the runner gets:
