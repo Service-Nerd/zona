@@ -112,6 +112,81 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ---
 
+## ⚖️ GOVERNANCE TRIAGE — every queue item checked, 2026-09-18
+
+*Asked before starting work: which of the agreed items need a Coaching Board or SLT sitting? All 13 checked; 3 needed one; all 3 sat below.*
+
+| Item | Sitting | Why / why not |
+|---|---|---|
+| `AUTH-BEARER-MISSING-01` | **None** | Auth plumbing defect. No prescription, no tier change. Architecture call |
+| `ONBOARD-SKIP-LABEL-01` | **None** | UI state defect restoring documented intent |
+| `COPY-DAYS-PLURAL-01` | **None** | Copy typo. `inputs.ts` is not a doctrine file |
+| `FOUNDATION-ADD-FAIL-01` | **None** | Bug plus observability |
+| `WIZARD-TIME-CHIPS-01` | **None** | ADR-015 display formatting — **explicitly excluded** from the Coaching Board |
+| iOS 16.6 minimum | **None** | Tell the charity. Founder comms, no build |
+| `REFUSAL-SCREEN-01` part 1 (copy) | **Done** | SLT sat today on the alternatives question |
+| `REFUSAL-SCREEN-01` part 2 (base-building plan) | **Gated** | Prescription → Coaching Board **before any line is written**. Not in the current queue |
+| `MARATHON-VOLUME-GATE-01` | **Done** | Coaching Board sat today — CORRECT WITH AMENDMENT |
+| `FIRSTRUN-MARATHON-01` | **Partially done** | The batch review re-scoped it (killed the "wow" framing, set touchpoint 7 as the priority). ⚠️ **Touchpoint 7's actual intervention needs its own sitting when scoped** — it is #7 in the queue, not immediate, and a sitting now would be ruling on a brief that does not exist yet |
+| **§44/§52 `block` tier** | **🔴 SAT BELOW** | Date-critical, Hutchinson required it before October |
+| **`FOUNDATION-DECIDE-LATER-01`** | **🔴 SAT BELOW** | The fix has two forms and choosing between them is a product call |
+| **`GTM-CHARITY-09`** | **🔴 SAT BELOW** | *"Not necessarily a build"* — somebody has to decide which |
+
+---
+
+### ⚖️ COACHING BOARD — §44/§52 `block` tier: marathon on fewer than 3 days a week. Sat 2026-09-18.
+
+**The question.** The founder ruled on 2026-09-17 *"we shouldn't refuse people plans, we should just give them honest feedback."* The `warn` tier honours that via `acknowledged_prep_warning`. **The `block` tier has no acknowledgement path at all** — marathon/ultra below 3 days a week, and marathon below 10 weeks, are hard refusals. Read literally the ruling removes that tier too.
+
+**🔍 Conflict scan.** §44 (refusal mechanism) · §52 (low-day extension, and the **60% long-run ceiling**) · §9 (long run as share of week) · §2 (weekly increase) · §40c (name the lever). **Unlike `MARATHON-VOLUME-GATE-01`, this gate IS governed**: thresholds live in `GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS`, §52 owns the principle, and `daysAlternativesFor()` already returns alternatives.
+
+**📊 Measured before ruling** — marathon, finish, first-timer, 25 km/week base:
+
+| Days/week | Peak week | Peak long run | **Long run as share of its week** |
+|---|---|---|---|
+| **3 (lowest permitted)** | 52 km | 26.0 km | **50.0%** |
+| 4 | 52 km | 26.0 km | 50.0% |
+| 5 | 52 km | 26.0 km | 50.0% |
+
+**🩹 Willy.** There is the argument, and it is arithmetic rather than opinion. At the lowest day count we permit, the long run is **already at 50% of the week** with ten points of headroom under §52's 60% ceiling. Take a day away and the same 26 km run sits in a week roughly 10 km shorter: **~65%, through the ceiling.** A two-day marathon week is not a worse plan, it is an **invalid** one.
+
+**🏃 Hutchinson (chair).** That is the distinction the founder's ruling turns on, and it is not the same case as prep time. A `warn` acknowledgement says *"I accept a worse outcome"* — legitimate, and the runner is the right person to decide. **An acknowledgement here would say "I accept a plan that breaches our own long-run ceiling", and that is not the runner's to accept.** Acknowledging does not change the arithmetic.
+
+**🎯 McMillan.** Agreed, with the practical caveat: two days a week is not a marathon, it is an injury. But the screen must say *which* lever — one more day — and §52 already computes it. The defect is display, not doctrine.
+
+**📊 Seiler / ⚕️ Sims.** No objection from either seat.
+
+**⚖️ RULING — CORRECT AS IS. The `block` tier stands.** The founder's ruling is honoured where it applies — the `warn` tier — and does not extend to a tier where acknowledgement would ratify an invalid plan. **No artifacts required: no principle, numeric or invariant changes.**
+
+⚠️ **What this does NOT license.** The refusal is correct; **the way it is presented is not** — see `REFUSAL-SCREEN-01`. §52 computes the alternatives and the UI discards them. Fixing that is brand work and needs no board.
+
+---
+
+### ⚖️ SLT — `FOUNDATION-DECIDE-LATER-01`: delete the button, or make "later" real? Sat 2026-09-18.
+
+**The choice.** Two handlers are byte-identical and the modal has one trigger, so "Decide later" is a promise the app cannot keep. **Fix A:** delete the third button. **Fix B:** build a real "later" — stamp the outstanding decision and re-offer it on the Plan screen.
+
+**🔬 Wood.** I promoted this item, so let me be precise about what I promoted. The risk is not the duplicate button, it is **losing the foundation decision for ~500 people in the one low-stakes window where running becomes automatic.** But B only helps if the re-offer arrives somewhere the runner will act on it, and a banner on a plan screen they are already ignoring is not that. **A now. B only with a place to put it.**
+**📦 Fried.** Three buttons where two are the same is just a mistake. Delete it today.
+**🧠 Sutherland.** "Decide later" is the option people pick when they do not understand the question. The real fix is the sheet explaining itself better, which neither A nor B is.
+**💰 Traynor.** No commercial dimension. Cheapest honest fix.
+
+**✅ RECOMMENDATION — Fix A now.** Delete the button; two honest options remain. **Do not build B as scoped** — re-offering needs a surface that does not exist, and inventing one is the illusion-of-progress class. ⚠️ **Sutherland's point is the real follow-on** and belongs to `FIRSTRUN-MARATHON-01` touchpoint 5: the sheet should explain the 28 weeks, not just offer three buttons.
+
+---
+
+### ⚖️ SLT — `GTM-CHARITY-09`: is a partner FAQ enough for 500? Sat 2026-09-18.
+
+**💰 Traynor.** 500 comped runners produce no support revenue and every ticket is a cost against a channel we are trying to build. **The failure mode is not volume, it is the charity fielding our questions** — that is what damages the referral. A partner FAQ that Jack can send with the codes is the cheapest thing that prevents it.
+**📦 Fried.** Do not build a help centre for a cohort that arrives once. Write the document.
+**🔬 Wood.** The predictable questions are knowable *today* — code will not redeem, no HR data, why is my plan so easy, why does it not start yet. That last one is new and matters: **the 28-week runway will generate support load nobody has planned for.**
+**🧠 Sutherland.** Put it in the charity's voice, not ours. It arrives from Jack, so it should sound like Jack.
+**🏃 Hutchinson.** One condition: *"why is my plan so easy"* is answered by §1 and §12, and the FAQ must not soften that into an apology. It is the product.
+
+**✅ RECOMMENDATION — BUILD DIFFERENTLY: a partner-facing FAQ, not a support surface.** Five questions, drafted for Jack to send with the codes, in the charity's register. **Add the runway question** — Wood's point is not on the current list. Ships with the codes, not before them. **Still FREE, still one inbox** — no ticketing, no chat.
+
+---
+
 ## 🥇 P0 — FIRSTRUN-MARATHON-01: the first-time marathoner is the product
 
 *Filed 2026-09-18 after the founder's call with Jack (Make-A-Wish UK). **This is now the number one priority.** Everything below it waits.*
