@@ -189,6 +189,44 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ---
 
+### ⚖️ SLT — `FIRSTRUN-MOMENTS-01`: make the generation moment feel like something. Sat 2026-09-18.
+
+**Founder's brief.** *"Up to 500 marathon runners, the vast majority have never run the distance. Drop-off is high and some never start. When they use the app I want them to feel something. On the wizard and the generation, what can we do to inspire them, or let them know they're not alone, or that they can do this?"*
+
+**Tier: FREE.** Onboarding is FREE by doctrine and this cohort is comped regardless.
+
+**📋 THE FINDING THAT REFRAMES THE WHOLE ITEM.** Two things established in code before this sitting:
+1. **The generating ceremony is entirely generic.** Five fixed lines — *"Calculating your Zone 2 ceiling. Lower than you'd expect."* — shown to everyone. We hold a nervous first-timer's full attention for 28–35 seconds, having just asked them fifteen questions about themselves, and say **nothing that could only be about them.**
+2. 🔴 **The single most reassuring sentence we own is already written, already ratified, and buried.** A London 2027 first-timer generating today gets `uncovered_runway_note`: *"You have **11 weeks** before this plan starts, and we are not going to pretend they are training… arriving at week one with the legs you have today is the point."* **It renders as a note on the plan screen.** So the brief is not "write inspiring copy". It is: **we already have the words and we say them in the wrong place, at the wrong moment, to someone who has stopped reading.**
+
+**🧠 Sutherland.** Then stop calling it inspiration. **The emotion you are selling is RELIEF, and nobody else is selling it.** Every competitor tells a first-timer they can do it; you are the only one who can tell them *they have eleven weeks in hand and we are not going to fill them*. That is a genuinely novel sensation for someone who was handed a marathon place and immediately felt behind. Lead the reveal with it.
+
+**📦 Fried.** Ideas 1 through 5 are copy and arithmetic over data we already hold. That is not a feature, it is writing, and I support all of it. **What I would kill is the word "moments"** — the second this becomes a thing with a name and a component, somebody builds a ceremony framework. Put the sentences in the existing surfaces.
+
+**🔬 Wood.** I will support this and I will not support the framing. **"Feel special" is not a behavioural outcome and cannot be measured in week 8.** Reframe it: the job is to reduce the perceived enormity of the first action. Two of these do that structurally rather than emotionally, and they are the two I would fund — **the first-run reveal** (*"Monday. 20 minutes. Easy."*) collapses "marathon" into something a person can picture doing, and **the runway reveal** removes the "I am already behind" frame that produces the October drop-out. The other three are pleasant and change nothing. Ship them anyway, they are cheap, but do not count them.
+
+**💰 Traynor.** This is the referral asset in one screen. A first-timer who feels *understood* at generation tells Jack. One who feels processed tells nobody, and one who feels patronised tells Jack something worse. **Cheapest brand-building available to us.**
+
+**🏃 Hutchinson.** No prescription changes here, so this is not my other board's business. **One accuracy guard, and it is binding: idea 5 makes a PROMISE about a plan that can reshape.** *"The hardest thing this plan asks of you is one 3h 28 run in March"* is true at generation and may not be true in February after a reshape. Either derive it live every time it is shown, or do not say it.
+
+**⚡ Conflicts**
+- **Wood vs the founder's framing, twice in one day.** "Feel something" is not measurable; "acted on Monday" is. **The ideas survive, the framing does not** — and note this is the *second* time this week the wow/feeling framing has been reduced to a structural one.
+- **Sutherland vs Wood on the other three.** He thinks relief is the product; she thinks only the two that lower activation cost count. **Unresolved, and cheap to resolve empirically** — they cost an afternoon, ship all five and see which the founder cuts by ear.
+
+**✅ RECOMMENDATION — BUILD. Mostly re-placement, not new writing.**
+1. **Move the runway line to the reveal.** It exists, it is ratified, it is the best thing we have. **Highest value on the list and it is a move, not a write.**
+2. **First-run reveal before the plan renders** — *"Monday. 20 minutes. Easy. That's the whole job this week."* Data is in `weeks[0]`.
+3. **Ceremony lines built from their own inputs** — *"You said three days. We're not going to ask for five."* One function over `GeneratorInput`.
+4. **The distance reframe** — *"Between now and April you'll run about 900 km. The race is 42 of them."*
+5. **Name the worst day** — ⚠️ **only if derived live**, per Hutchinson.
+6. **The cohort fact** (*"one of 500, most have never done this either"*) — **BLOCKED, and worth unblocking**: the charity code is redeemed on Me *after* onboarding, so at wizard time we do not know they are a Make-A-Wish runner. Moving redemption to sign-up is the dependency.
+
+**🚨 MUST/NEVER.** No streaks, no badges, no confetti, no *"You've got this"*. The voice table bars cheerleading and **a missed session is the worst place in this app to have taught someone to expect praise**. No new modal. No component called anything like `MomentFramework`.
+
+**⚠️ Risks.** Item 1 moves ratified §57/§76 copy to a new surface — **the note must not appear twice**; decide whether it stays on the plan as well. Item 6 touches `GTM-CHARITY-04` redemption sequencing.
+
+---
+
 ### ⚖️ SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7: the first missed session. Sat 2026-09-18.
 
 **Why this touchpoint.** The SLT batch named it the priority inside the P0: *the drop-out happens at the first missed session*, not at onboarding, where motivation is highest.
