@@ -1,6 +1,6 @@
 # Roadmap — Zonna
 
-**Everything is committed** (`85dfb7a`). `npm run verify` exit 0 (**2162 tests / 237 files**) · `npm run check:db` exit 0 · sweep **15,974 plans, no new violations** · HIGH 0 / MED 26 · `verify:parity` **IDENTICAL, 5,940 cases** with notes stripped (prescription unmoved).
+**Everything is committed** (last ship `c2363e1`). `npm run verify` exit 0 (**2162 tests / 237 files**) · `npm run check:db` exit 0 · sweep **15,974 plans, no new violations** · HIGH 0 / MED 26 · `verify:parity` **IDENTICAL, 5,940 cases** with notes stripped (prescription unmoved).
 
 > 🟢 **LR-SHORTFALL-CAUSE-01 + NOTE-DURATION-FMT-01 (§80 Am.1).** Founder read the long-run tile on his own London Marathon plan: raw minutes everywhere (**48.2% of 42,444 values were ≥60**, largest 338) and one number with **no unit at all** on 5,264 of 5,264 firings. Underneath it: the note named the time cap **0 times in 5,264** while **71.0% sat 2–3 min beneath that cap** — because the cap is applied on the kilometre axis and the distance is then rounded. Now `LONG_RUN_AT_CAP_TOLERANCE_MINS` (3, chosen from an empty 4–5 band) and `LONG_RUN_SHORTFALL_MATERIAL_PCT` (5). ⚠️ **My "the branch is structurally dead" framing was TOO STRONG and an existing test disproved it** — zero in the corpus is not "cannot fire".
 
