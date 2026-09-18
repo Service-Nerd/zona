@@ -33,6 +33,29 @@ describe('targetedGrid — the fields the main grid cannot reach', () => {
       .toEqual([])
   })
 
+  // ⚠️ EXPLICIT TIMEOUT — CI-TIMEOUT-01 again, and this time the wall was real.
+  //
+  // MEASURED 2026-09-18, and the FIRST measurement was misleading, which is the
+  // part worth keeping. Run ALONE this file takes 8.7s; run inside the full
+  // suite, where workers contend, the same test takes **15.3s**. `ubuntu-latest`
+  // is the measured **3.5x** slower runner (CI-TIMEOUT-01), so the real
+  // projection is **~54s** against a 30s budget — not the ~31s an isolated
+  // measurement suggests. **Measure a timeout in the context it times out in.**
+  //
+  // Both sides of the same day's change: 8.65s before, 8.77s after (+1.4%, the
+  // new INV-PLAN-LR-SHORTFALL-CAUSE walking weeks). The 30s budget breaks at
+  // ~8,571ms of local work even in ISOLATION, so **this test was already over
+  // the line before the change** — CI was a coin flip that landed red.
+  //
+  // The grid is exhaustive by doctrine (GRID-COVERAGE-02) and will only grow,
+  // so a budget that merely clears today's number is the same race one test
+  // from now — CI-TIMEOUT-01's own stated reasoning. 120s is ~2.2x the
+  // realistic ~54s. A genuinely hung test still trips well inside the job's
+  // 20-minute bound.
+  //
+  // ⚠️ `slowTestThreshold: 1000` was supposed to make this drift visible, and
+  // it did: 8.7s has been printed on every run for some time. **Printing is not
+  // a gate** — nobody reads a green run's output. Tracked as CI-SLOW-DRIFT-01.
   it('every input generates or refuses by design — no hard failures', () => {
     const failures: string[] = []
     for (const input of grid) {
@@ -45,7 +68,7 @@ describe('targetedGrid — the fields the main grid cannot reach', () => {
       }
     }
     expect(failures, 'These inputs break the constitution.').toEqual([])
-  })
+  }, 120_000)
 
   it('a first-timer who DECLARES a level is a real, covered path', () => {
     // The charity-critical case, pinned because it had no coverage anywhere

@@ -73,6 +73,16 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > - 🔽 **`GTM-CHARITY-09` got cheaper** — SLT chose a partner FAQ, so it is writing, not a support surface.
 > - 🆕 **`FIRSTRUN-MOMENTS-01a–f`** and **`FIRSTRUN-MISSED-01`** are new, specced, and five of the six moments are S-sized.
 
+> 🟡 **CI-SLOW-DRIFT-01 — `slowTestThreshold` PRINTS drift and nothing GATES it.** *(P2, filed 2026-09-18 from the CI failure.)*
+>
+> `targetedGrid.test.ts` went red in CI on a 30s timeout. It was **not** a regression: measured both sides of the same day's change, 8.65s → 8.77s (+1.4%), and the 30s budget already breaks at ~8,571ms of local work. **The test had been over the line for some time and CI was a coin flip.**
+>
+> `vitest.config.ts` sets `slowTestThreshold: 1000` specifically so *"drift toward the wall is VISIBLE in the run output before it is red"*. It worked exactly as designed — **8.7s has been printed on every green run for weeks, and nobody reads a green run's output.** Printing is not a gate; this repo has the lesson written down about `--section-gap`, decorative config and the eslint rule that was installed but never configured.
+>
+> **Do:** a check that fails when any test's duration exceeds a stated fraction of its budget, with a committed baseline like `SWEEP-BASELINE-01`. Cheap, and it converts a coin-flip CI failure into a deliberate decision.
+>
+> ⚠️ **Measure under contention, not in isolation.** Run alone, that test is 8.7s; inside the full suite it is **15.3s**. The isolated number understates the real projection by 75%.
+
 ### 🚪 Tier 1 — THE DOOR. Nothing else matters if they cannot get in.
 
 | # | Item | Size | Why here |

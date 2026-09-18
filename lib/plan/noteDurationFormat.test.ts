@@ -47,7 +47,11 @@ describe('plan notes never print raw minutes (ADR-015)', () => {
   it('generated notes read in hours past the hour, and still exist', () => {
     // A deterministic slice: enough to hit the constraint notes, small enough
     // to belong in the unit suite.
-    const inputs = cohortGrid().filter((_, i) => i % 37 === 0)
+    // A coprime stride, not a head slice, so the sample is spread across the
+    // grid rather than drawn from its first rows. 211 keeps this under a second:
+    // at i % 37 this file was the SECOND SLOWEST in the suite (4.7s) for a
+    // check that only needs enough notes to be non-vacuous.
+    const inputs = cohortGrid().filter((_, i) => i % 211 === 0)
     const notes: string[] = []
     for (const input of inputs) {
       let plan
