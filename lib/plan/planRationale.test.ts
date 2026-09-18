@@ -15,6 +15,18 @@ describe('planRationaleNotes — the single owner of "why this plan"', () => {
     expect(notes).toEqual([{ label: 'Off-road', text: 'Off-road, effort leads.' }])
   })
 
+  // FIRSTRUN-MOMENTS-01a — the uncovered-runway note is surfaced ONCE, at the plan
+  // reveal (RunwayRevealCard), led by the number. It must NOT also appear in the
+  // "Why this plan" surface, or a first-timer reads the same relief twice. This
+  // locks the "render once" decision the spec asked to assert.
+  it('does NOT surface the uncovered-runway note (it belongs to the reveal, not here)', () => {
+    const notes = planRationaleNotes(meta({
+      uncovered_runway_weeks: 11,
+      uncovered_runway_note: 'You have 11 weeks before this plan starts.',
+    }))
+    expect(notes).toEqual([])
+  })
+
   it('honest constraints rank ABOVE the "shaped for you" line (Wood: never a brag first)', () => {
     const notes = planRationaleNotes(meta({
       early_quality_onset: true,                 // → "Shaped for you"

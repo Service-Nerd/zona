@@ -15,6 +15,7 @@ import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
+import RunwayRevealCard from '@/components/shared/RunwayRevealCard'
 import Sheet from '@/components/shared/Sheet'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
@@ -1257,6 +1258,16 @@ export default function GeneratePlanScreen({
             which floated the CTA over the plan on native — D7 padding was papering
             over a broken scroll model. Now matches the wizard footer.) */}
         <div style={{ flex: 1, padding: '0 20px 24px', overflowY: 'auto' }}>
+          {/* FIRSTRUN-MOMENTS-01a — the uncovered-runway note, surfaced at the
+              reveal led by the number (it was stamped on meta and shown nowhere).
+              First card so a long-runway first-timer reads the relief without
+              scrolling. Rendered ONLY here — it is not in planRationaleNotes, so
+              there is no second copy lower down or on the Plan screen. */}
+          {meta.uncovered_runway_note && meta.uncovered_runway_weeks != null && (
+            <div style={{ marginBottom: '16px' }}>
+              <RunwayRevealCard weeks={meta.uncovered_runway_weeks} note={meta.uncovered_runway_note} />
+            </div>
+          )}
           {/* FREE demand band — feasibility read, above the PAID confidence score */}
           <DifficultyCard band={meta.difficulty_band} note={meta.difficulty_note} alternatives={meta.prep_time_alternatives} />
           {meta.confidence_score != null && (
