@@ -151,19 +151,22 @@ with the paid `coach_intro`; subsequent free plans (a `plans` row exists) omit i
 { "error": "Unauthorized" }
 ```
 
-### 422 — Guard rail violation
+### 422 — Guard rail / coaching refusal
 
 ```json
-{ "error": "string" }
+{ "error": "string" }                                    // bare guard-rail string
+{ "error": "string", "reason": "block|warn_unacknowledged", "prep": {…}, "requires_acknowledgment": bool }   // §44 prep-time
+{ "error": "string", "reason": "block|warn_unacknowledged", "days": {…}, "requires_acknowledgment": bool }    // §52 days
+{ "error": "string", "reason": "base_volume", "base": { "message", "alternatives": string[], "min_base_km", "peak_km", "ratio", "cap" } }   // §111 base-build
+{ "error": "string", "field": "…", "value": …, "range": {…} }   // §55 input range
 ```
 
 Triggered by:
-- Race fewer than 3 weeks away
-- Marathon+ race fewer than 8 weeks away
-- Half marathon race fewer than 4 weeks away
-- Fewer than 2 days available per week
-- Marathon distance with current_weekly_km < 20
-- HM+ distance with longest_recent_run_km < 5
+- Race fewer than 3 weeks away · Marathon+ fewer than 8 · Half fewer than 4 (§44 prep-time — carries `prep` + alternatives)
+- Fewer than 2 training days per week (bare guard-rail string)
+- Marathon/ultra days below the per-distance minimum (§52 — carries `days` + alternatives)
+- **MARATHON-VOLUME-GATE-01 / §111 (2026-09-18): a marathon/ultra plan whose delivered peak would exceed `MAX_BASE_BUILD_RATIO` (4.0) × the runner's `current_weekly_km`** — the governed replacement for the old hardcoded `current_weekly_km < 20` gate. Thrown as `BaseVolumeError` from `generateRulePlan`, carried as `reason: 'base_volume'` with the base to reach and §44-style alternatives. **The `current_weekly_km < 20` line is gone**; the floor is now on the ramp, not stated volume.
+- HM+ distance with longest_recent_run_km < 5 (still a bare guard-rail string in the route's `validate()` — the same ungoverned-number smell as the old volume gate, flagged for a separate Coaching Board sitting, not yet governed)
 
 ### 500 — Unexpected error
 
