@@ -21,6 +21,7 @@
 //
 // ui-patterns.md § Form Fields & Pickers → WeekGrid (same family).
 
+import { formatDuration } from '@/lib/format'
 import { cycleDayBudget, WEEKDAYS, type WeekPlan, type DayBudgets, type DayKey } from './WeekGrid.logic'
 
 const LABEL: Record<DayKey, string> = {
@@ -54,7 +55,10 @@ export function DayBudgetRows({
   if (running.length === 0) return null
 
   const values = options.map(o => o.value)
-  const labelFor = (v: number) => options.find(o => o.value === v)?.label ?? `${v} min`
+  // WIZARD-TIME-CHIPS-01 — the fallback went through the ADR-015 owner too.
+  // `${v} min` re-implemented the rule and would print "90 min" for a value
+  // the rest of the app reads as "1h 30".
+  const labelFor = (v: number) => options.find(o => o.value === v)?.label ?? formatDuration(v) ?? `${v}`
 
   return (
     <div>

@@ -12,6 +12,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import SignOutLink from '@/components/shared/SignOutLink'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
+import { formatDuration } from '@/lib/format'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
@@ -120,22 +121,57 @@ const LONGEST_RUN_CHIPS = [
   { label: '40+km',      value: 45 },
 ] as const
 
-const MAX_WEEKDAY_CHIPS: { label: string; value: number | undefined }[] = [
-  { label: '30 min',   value: 30        },
-  { label: '45 min',   value: 45        },
-  { label: '60 min',   value: 60        },
-  { label: '90 min',   value: 90        },
-  { label: '2 hrs',    value: 120       },
-  { label: '3 hrs',    value: 180       },
-  { label: 'No limit', value: undefined },
+// WIZARD-TIME-CHIPS-01 — the chips carry a STABLE KEY and derive their label.
+//
+// 🔴 WHY A KEY AND NOT A LABEL. The selected chip was stored as its LABEL, in
+// React state AND in the saved `zona_wizard_draft`, and `weekdayDefaultMins`
+// matched it back with `find(c => c.label === maxWeekdayChip)`. So renaming a
+// label — which is exactly what ADR-015 compliance requires here — makes an
+// in-flight draft match nothing, `?.value` yields `undefined`, and the runner's
+// stated weekday cap silently becomes "No limit", changing the plan they get.
+// The `??`-over-a-missing-value class this repo has now paid for five times.
+//
+// The key is an identity and never changes. The LABEL is derived through
+// `formatDuration`, the ADR-015 owner, so these read "1h 30" like every other
+// duration in the app instead of "90 min" — a third convention that survived
+// because the input screen was the one surface nobody swept.
+const MAX_WEEKDAY_CHIPS: { key: string; mins: number | undefined }[] = [
+  { key: '30',   mins: 30        },
+  { key: '45',   mins: 45        },
+  { key: '60',   mins: 60        },
+  { key: '90',   mins: 90        },
+  { key: '120',  mins: 120       },
+  { key: '180',  mins: 180       },
+  { key: 'none', mins: undefined },
 ]
+
+/** A chip's display text. "No limit" is a word, not a duration. */
+const weekdayChipLabel = (mins: number | undefined): string =>
+  mins == null ? 'No limit' : (formatDuration(mins) ?? `${mins} min`)
+
+/**
+ * Restore shim for drafts saved BEFORE this change, which stored the label.
+ * Without it, anyone mid-wizard when this deploys loses their weekday cap
+ * silently — which is the exact defect this item exists to prevent, caused by
+ * the fix for it. Safe to delete once no legacy drafts remain.
+ */
+const LEGACY_CHIP_LABEL_TO_KEY: Record<string, string> = {
+  '30 min': '30', '45 min': '45', '60 min': '60',
+  '90 min': '90', '2 hrs': '120', '3 hrs': '180', 'No limit': 'none',
+}
+const normaliseWeekdayChip = (stored: string | null): string | null =>
+  stored == null ? null
+    : MAX_WEEKDAY_CHIPS.some(c => c.key === stored) ? stored
+    : (LEGACY_CHIP_LABEL_TO_KEY[stored] ?? null)
 
 // UX-WIZARD-01 Stage C — the per-day override cycle reuses the SAME time buckets
 // as the weekday cap (one source of truth), minus "No limit": an absent day
 // already means "same as the cap", so a per-day override is always a concrete
 // number. `DayBudgetRows` renders the label; the value is what the engine sizes to.
+// DayBudgetRows wants {value,label}; the label is derived, same owner.
 const DAY_BUDGET_OPTIONS = MAX_WEEKDAY_CHIPS
-  .filter((c): c is { label: string; value: number } => c.value != null)
+  .filter((c): c is { key: string; mins: number } => c.mins != null)
+  .map(c => ({ value: c.mins, label: weekdayChipLabel(c.mins) }))
 
 const TRAINING_AGE_CHIPS: { label: string; value: TrainingAge }[] = [
   { label: '< 6 months',   value: '<6mo'   },
@@ -658,7 +694,7 @@ export default function GeneratePlanScreen({
           ? s.preferredLongRunDay : null
         setWeekPlan(weekPlanFromLegacy(restShort, longDay))
       }
-      if (s.maxWeekdayChip)  setMaxWeekdayChip(s.maxWeekdayChip)
+      if (s.maxWeekdayChip)  setMaxWeekdayChip(normaliseWeekdayChip(s.maxWeekdayChip))
       if (s.dayBudgets && typeof s.dayBudgets === 'object') setDayBudgets(s.dayBudgets as DayBudgets)
       if (s.hardSessions)    setHardSessions(s.hardSessions)
       if (s.terrain)         setTerrain(s.terrain)
@@ -886,7 +922,7 @@ export default function GeneratePlanScreen({
     // prunes to the weekdays actually run and derives `max_weekday_mins` as the
     // MIN across them, so a stale budget can never cap a week it has no part in.
     const weekdayDefaultMins = maxWeekdayChip
-      ? MAX_WEEKDAY_CHIPS.find(c => c.label === maxWeekdayChip)?.value : undefined
+      ? MAX_WEEKDAY_CHIPS.find(c => c.key === maxWeekdayChip)?.mins : undefined
     const week = weekPlanToInputs(weekPlan, weekdayDefaultMins, dayBudgets)
     const maxWeekdayVal = week.maxWeekdayMins
 
@@ -1948,10 +1984,10 @@ export default function GeneratePlanScreen({
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {MAX_WEEKDAY_CHIPS.map(c => (
                   <Chip
-                    key={c.label}
-                    label={c.label}
-                    active={maxWeekdayChip === c.label}
-                    onClick={() => setMaxWeekdayChip(maxWeekdayChip === c.label ? null : c.label)}
+                    key={c.key}
+                    label={weekdayChipLabel(c.mins)}
+                    active={maxWeekdayChip === c.key}
+                    onClick={() => setMaxWeekdayChip(maxWeekdayChip === c.key ? null : c.key)}
                   />
                 ))}
               </div>
