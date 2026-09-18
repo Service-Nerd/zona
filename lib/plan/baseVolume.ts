@@ -36,7 +36,23 @@ export function baseBuildRatioApplies(distanceKm: number): boolean {
  *  excluding §57 foundation weeks (pre-plan). Mirrors the peak computation in
  *  INV-PLAN-PEAK-NOT-BELOW-START so the two agree on what "peak" means. */
 export function deliveredPeakKm(plan: Plan): number {
-  const main = plan.weeks.filter(w => w.phase !== 'foundation' && w.n > 0)
+  // ⚠️ THE RACE WEEK IS NOT A TRAINING PEAK, and counting it was a defect.
+  //
+  // This filtered foundation weeks and `n > 0` and stopped there, so for a
+  // marathon the 42.2 km RACE ITSELF landed in §111's numerator. Measured on a
+  // beginner marathon: the training peak is week 16 at **52 km** — exactly
+  // `PEAK_KM_BY_LEVEL.MARATHON.beginner` — while week 20, the race week,
+  // reports 59 km because it contains the marathon plus shakeouts. §111 was
+  // scoring every marathon runner's build **13% higher than the training they
+  // actually do**, and the minimum base it demanded was 14.75 km/week instead
+  // of 13.
+  //
+  // This is a DEFECT FIX, not a doctrine change: §111's own header defines the
+  // metric as "the acute stimulus", and ratified it citing "5 km/week → 47 km
+  // peak", a figure that already excluded the race. The code did not match the
+  // principle it was written from.
+  const main = plan.weeks.filter(w =>
+    w.phase !== 'foundation' && w.n > 0 && w.type !== 'race')
   const weeks = main.length ? main : plan.weeks
   return weeks.reduce((mx, w) => Math.max(mx, w.weekly_km ?? 0), 0)
 }

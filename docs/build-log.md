@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — S106-RACE-PEAK-01 · the gate was counting the marathon as training
+**Shipped:** §111's peak-over-base ratio no longer counts the race week, so a beginner with a long runway is admitted from 12 km/week instead of 16.
+
+**Dev learning:** I spent an hour building a case that the engine delivers a "flat 59 km/week peak with 16 km of surplus no long-run requirement demands", and took it to the board twice. Then I printed the volume curve week by week. **Week 20 is the race week** — 59 km because it contains the 42.2 km marathon plus shakeouts. The actual training peak is week 16 at **52 km, exactly the configured target**. There was no surplus, no overshoot, and nothing unexplained. `deliveredPeakKm` filtered foundation weeks and `n > 0` and simply forgot that the race is not training.
+
+**Product/creator learning:** The fix is four words in a filter and it moves the door by 4 km/week — 240 more plans in the property sweep. Everything I'd proposed before finding it (a runway-aware ratio, scaling the peak to the long-run requirement) was more elaborate, more dangerous, and aimed at a problem that wasn't there. One of them I built and it refused a runner who'd passed comfortably.
+
+**AI-building learning:** I asked the board to "demand the measurement for anything I assert, including the 43 km figure" — and then falsified my own 43 km figure in the next command, because at a 43 km week the long run sits at exactly §52's 60% limit. That habit is the only reason this landed anywhere useful. **Writing down which of my own numbers to distrust turned out to be more valuable than any of the numbers.**
+
+**The honest bit:** this was my **fifth** wrong premise in one session, and the fourth and fifth were both on the same item. The pattern never varied: I measured an aggregate (max weekly_km) instead of looking at the thing (which week, and what's in it). A one-line `console.log` of the volume curve would have found it at the start, before two board sittings and a reverted build.
+
+**Hook material:** I told a review board the plan had 16 km/week of unexplained surplus volume. It was the marathon. The race was in the training total.
+
+**Postable?:** yes
+
 ## 2026-09-18 — CB-BEGINNER-HILLS-01 · half the ruling I was told to build was already built
 **Shipped:** Beginners get short hill strides, alternating with §28's strides so the dose is unchanged. The other half of the board's ruling was withdrawn as a no-op.
 
