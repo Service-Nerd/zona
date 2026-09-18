@@ -171,6 +171,8 @@ longest_recent_run_km × GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
 
 This prevents a "first long run" being a 50% jump for a returning runner.
 
+⚠️ **§113 Amendment 1 (2026-09-18) — THE CAP IS NOW ACTUALLY THE CAP.** `MIN_SESSION_DISTANCE_KM.long` used to be applied AFTER this cap and won, so for a runner below the floor the cap was silently discarded (3 km longest: cap places 3.3 km, the floor overrode it to 5.0 km, +67%). Floors are now resolved per runner (`lib/plan/sessionFloors.ts`) and bounded by the runner's own longest run, so the override is unreachable. `INV-PLAN-WEEK-1-2-LONG-CAP` no longer carries a floor allowance.
+
 ---
 
 ## 6. Long-Run Rules
@@ -427,8 +429,8 @@ Enforced before the engine runs. See `app/api/generate-plan/route.ts → validat
 | Marathon (≥ 42 km) and race < 8 weeks | Refuse |
 | HM (≥ 21 km, < 42 km) and race < 4 weeks | Refuse |
 | Days available < 2 | Refuse |
-| Marathon and current_weekly_km < 20 | Refuse |
-| Half marathon or longer and longest_recent_run_km < 5 | Refuse |
+| Marathon and base volume too low for the delivered peak | Refuse — **§111**, `peak / effective start > MAX_BASE_BUILD_RATIO` (4.0). ⚠️ **Was a hardcoded `current_weekly_km < 20` in the API route until 2026-09-18**; it is now a ratio, and the effective threshold for a beginner marathon is ~13 km/week (`S106-RACE-PEAK-01` removed the race week from the numerator) |
+| Half marathon or longer and longest_recent_run_km below the floor | Refuse **ONLY IF THE RUNWAY CANNOT BUILD THEM** — §113 **Amendment 1**, 2026-09-18. ⚠️ **This row used to read `< 5 | Refuse` flat.** The Coaching Board VETOED that: the 5 km floor was applied after §45's cap and overrode it, turning a +10% opening week into +67%, and §113 then refused the runner for the leap the floor had created. A 3 km runner with 29 weeks is now admitted; with 12 weeks is still refused |
 | Long run exceeds safe % | Adjust automatically — never refuse |
 | Over-constrained schedule | Simplify plan |
 | Weekday time < 45 min | Simplify sessions |
