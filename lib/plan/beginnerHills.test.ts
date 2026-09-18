@@ -90,7 +90,9 @@ describe('§28 Am.1 — beginners get hill strides', () => {
     const first = GENERATION_CONFIG.STRIDES_FIRST_WEEK
     expect(isHillStrideWeek(first, 'beginner')).toBe(true)
     expect(isHillStrideWeek(first + n, 'beginner')).toBe(true)
-    expect(isHillStrideWeek(first + 1, 'beginner')).toBe(n === 1)
+    // Widened: `n` is a literal type in config, so a direct `n === 1` is a
+    // compile error rather than a runtime check.
+    expect(isHillStrideWeek(first + 1, 'beginner')).toBe((n as number) === 1)
     expect(isHillStrideWeek(first, 'intermediate')).toBe(false)
   })
 
