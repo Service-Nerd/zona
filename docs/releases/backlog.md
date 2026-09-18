@@ -13,7 +13,8 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 **Everything is committed and pushed** (last ship `198e177`, 2026-09-18 — FIRSTRUN-MARATHON-01 Tier 1 door + Tier 2 reveal). `npm run verify` exit 0 (**2,197 tests / 244 files**, **120 invariants**, matrix 65/0) · `npm run check:db` exit 0 · sweep **14,221 plans, no new violations** (§111 now refuses ~1,750 low-base marathon/ultra inputs) · coaching HIGH 0 / MED 26 · `verify:parity` **208/5,940 moved, all OK→REFUSED** (§111; generated plans byte-identical).
 
 > ▶️ **NEXT UP when we restart — the FIRSTRUN-MARATHON-01 queue, Tier 1 + Tier 2 (#5–8) are DONE.** Resume at the **SLT-ORDERED WORK QUEUE** (§ below):
-> - **#9 `FIRSTRUN-MOMENTS-01c/d/e`** — the generating ceremony derived from the runner's own `GeneratorInput`, the distance reframe, the worst-day naming. ⚠️ **(e) only if derived live** (Hutchinson's binding condition). Full specs in § "🎬 FIRSTRUN-MOMENTS-01 — full specs". *Actionable without founder input (SLT already approved the specs); UI → trigger `frontend-design`.*
+> - ~~#9 `FIRSTRUN-MOMENTS-01c/d/e`~~ ✅ **SHIPPED.** Next is #10. Original:
+> - ~~#9~~ — the generating ceremony derived from the runner's own `GeneratorInput`, the distance reframe, the worst-day naming. ⚠️ **(e) only if derived live** (Hutchinson's binding condition). Full specs in § "🎬 FIRSTRUN-MOMENTS-01 — full specs". *Actionable without founder input (SLT already approved the specs); UI → trigger `frontend-design`.*
 > - **#10 `FIRSTRUN-MISSED-01` part 1** — a runner reports an injury and nothing reads it (a defect, unblocked). Part 2 (#11) → Coaching Board once part 1 lands.
 > - **Tier 4:** #12 `GTM-CHARITY-09` partner FAQ (founder/partner comms), #13 `01f` (blocked — needs redemption moved to sign-up first), #14 `WIZARD-TIME-CHIPS-01`, #15 iOS 16.6 (tell Jack, no build).
 >
@@ -119,7 +120,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | ~~6~~ | ~~**`FOUNDATION-DECIDE-LATER-01`**~~ ✅ **SHIPPED 2026-09-18** | S | "Decide later" button deleted (SLT Fix A); the two identical handlers consolidated into one `handleFoundationDismiss`. → feature-registry |
 | ~~7~~ | ~~**`FIRSTRUN-MOMENTS-01a`** runway reveal~~ ✅ **SHIPPED 2026-09-18** | S | 🥇 The runway note (stamped on meta, rendered nowhere) now surfaces as the first card at the reveal, led by the number. `RunwayRevealCard` + markup test; render-once decision locked. → feature-registry |
 | ~~8~~ | ~~**`FIRSTRUN-MOMENTS-01b`** first-run reveal~~ ✅ **SHIPPED 2026-09-18** | S | The first session ("Monday. 20 min. Easy.") surfaces at the reveal under the runway card. `firstRunOfPlan` + `FirstRunCard`, both tested. → feature-registry |
-| 9 | **`FIRSTRUN-MOMENTS-01c/d/e`** ceremony · distance · worst day | S | ⚠️ (e) **only if derived live** — Hutchinson's binding condition |
+| ~~9~~ | ✅ **`FIRSTRUN-MOMENTS-01c/d/e`** — SHIPPED 2026-09-18 → feature-registry. (e) derived live, per Hutchinson. Also threaded `preferredUnits` into the reveal, which had never received it, fixing 01a/01b too | S | done |
 
 ### 📉 Tier 3 — THE DROP-OUT MECHANISM. Where the cohort is actually lost.
 
