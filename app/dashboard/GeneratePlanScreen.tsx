@@ -480,6 +480,13 @@ export default function GeneratePlanScreen({
   const [appStep, setAppStep]   = useState<AppStep>('distance')
   const [plan, setPlan]         = useState<Plan | null>(null)
   const [error, setError]       = useState<string | null>(null)
+  // REFUSAL-SCREEN-01 — a deliberate coaching refusal (HTTP 422: §44 prep-time,
+  // §52 days, §111 base-volume, §55 input) is NOT a crash. It reframes as "not
+  // yet" with the lever, never "something went wrong" (which is kept for a real
+  // fault: a 500 or a network drop). `errorAlternatives` carries the §44-style
+  // levers the route returns in base/prep/days.
+  const [errorIsRefusal, setErrorIsRefusal] = useState(false)
+  const [errorAlternatives, setErrorAlternatives] = useState<string[]>([])
   const [isSaving, setIsSaving] = useState(false)
   // N8b — the preview is reachable as soon as the RULE plan is ready + the reveal
   // has played (fast). Waiting for the full enricher stream stranded the user on
@@ -969,7 +976,15 @@ export default function GeneratePlanScreen({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
-        setError(data.error ?? 'Something went wrong building the plan.')
+        // 422 is a deliberate coaching refusal (§44/§52/§55/§111), not a fault.
+        // The route puts the brand-voiced message in `error` and the levers in
+        // base/prep/days.alternatives. A 500 or a parse-empty body is a real
+        // error and keeps the "something went wrong" framing.
+        const isRefusal = res.status === 422
+        const payload = data.base ?? data.prep ?? data.days ?? {}
+        setError(data.error ?? (isRefusal ? 'This plan is not ready for you yet.' : 'Something went wrong building the plan.'))
+        setErrorIsRefusal(isRefusal)
+        setErrorAlternatives(Array.isArray(payload.alternatives) ? payload.alternatives : [])
         setAppStep('error')
         return
       }
@@ -1068,6 +1083,8 @@ export default function GeneratePlanScreen({
       }
     } catch {
       setError('Could not reach the server. Check your connection.')
+      setErrorIsRefusal(false)
+      setErrorAlternatives([])
       setAppStep('error')
     }
   }
@@ -1171,6 +1188,10 @@ export default function GeneratePlanScreen({
   }
 
   if (appStep === 'error') {
+    // REFUSAL-SCREEN-01 — a coaching refusal (422) reads as a calm "not yet" with
+    // the lever, in the CoachNoteBlock amber palette (this IS coach voice). A real
+    // fault (500 / network) keeps the honest "something went wrong". No popup, no
+    // alarm colour, no raw diagnostic string: the message is already brand-voiced.
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
         <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
@@ -1178,18 +1199,31 @@ export default function GeneratePlanScreen({
         </div>
         <div style={{ flex: 1, padding: '0 20px 24px' }}>
           <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '20px', marginBottom: '16px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--warn)', marginBottom: '8px' }}>
-              Something went wrong building the plan.
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', marginBottom: '8px' }}>
+              {errorIsRefusal ? 'Not yet' : 'Something went wrong'}
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>
-              {error}
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>
+              {errorIsRefusal ? error : (error ?? 'Something went wrong building the plan.')}
             </div>
+            {errorIsRefusal && errorAlternatives.length > 0 && (
+              <div style={{ marginTop: '16px', borderTop: '1px solid var(--line)', paddingTop: '14px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', opacity: 0.75, marginBottom: '10px' }}>
+                  What would get you there
+                </div>
+                {errorAlternatives.map((alt, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: i < errorAlternatives.length - 1 ? '8px' : 0 }}>
+                    <span aria-hidden style={{ color: 'var(--warn)', fontWeight: 700, lineHeight: 1.55 }}>·</span>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>{alt}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <button
             onClick={() => navigateTo(getLastWizardStep(), 'back')}
             style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)' }}
           >
-            Try again
+            {errorIsRefusal ? 'Adjust my answers' : 'Try again'}
           </button>
         </div>
       </div>

@@ -233,7 +233,7 @@ function daysAlternativesFor(
   alts.push(`Increase your training days from ${daysAvailable} to ${okThreshold} per week.`)
   const shorter = shortcuts[distKey]
   if (shorter) {
-    alts.push(`Race the ${shorter} at this event instead — it's trainable on ${daysAvailable} days/wk.`)
+    alts.push(`Race the ${shorter} at this event instead — it's trainable on ${daysAvailable} day${daysAvailable === 1 ? '' : 's'}/wk.`)
   }
   if (input.goal === 'time_target') {
     alts.push(`Switch goal to "finish" — finish goals tolerate lower training frequencies.`)
@@ -255,7 +255,7 @@ export function validateDaysAvailable(input: GeneratorInput): DaysAvailableResul
   if (days < blockAt) {
     return {
       status: 'block',
-      message: `${days} days/week is not enough for a ${distKey}. Minimum is ${blockAt} days/wk${shift ? ' for a returning runner' : ''}; ${okAt}+ recommended.`,
+      message: `${days} day${days === 1 ? '' : 's'}/week is not enough for a ${distKey}. Minimum is ${blockAt} days/wk${shift ? ' for a returning runner' : ''}; ${okAt}+ recommended.`,
       alternatives: daysAlternativesFor(distKey, days, okAt, input),
       days_available: days,
       days_required_ok: okAt,
@@ -269,7 +269,7 @@ export function validateDaysAvailable(input: GeneratorInput): DaysAvailableResul
   if (days < okAt && input.goal === 'time_target') {
     return {
       status: 'warn',
-      message: `${days} days/week is below the recommended ${okAt}-day minimum for a time-targeted ${distKey}. The plan can be generated as maintenance-grade — expect to finish, not to hit the time goal.`,
+      message: `${days} day${days === 1 ? '' : 's'}/week is below the recommended ${okAt}-day minimum for a time-targeted ${distKey}. The plan can be generated as maintenance-grade — expect to finish, not to hit the time goal.`,
       alternatives: daysAlternativesFor(distKey, days, okAt, input),
       days_available: days,
       days_required_ok: okAt,

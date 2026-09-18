@@ -148,7 +148,7 @@ export function cohortGrid(): GeneratorInput[] {
  *  base-build ceiling). Anything else that throws is a real failure and must not
  *  be counted as one. */
 export const COHORT_REFUSAL =
-  /is not enough preparation|days\/week is (not enough|below)|is below the recommended \d+-week minimum|too low to build safely/
+  /is not enough preparation|days?\/week is (not enough|below)|is below the recommended \d+-week minimum|too low to build safely/
 
 // ── GRID-COVERAGE-02 Phase 2 (2026-09-15) — the SECOND, TARGETED grid ────────
 //
