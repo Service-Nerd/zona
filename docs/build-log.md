@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — COMPONENT-CONTRACT-GATE-01 · a contract that described a component nobody built
+**Shipped:** `docs/contracts/components/` is checked by something now — a prop-name test in both directions, plus the mirror of the API touch-check in `audit-docs.sh`.
+
+**Dev learning:** The repo rule is "any API route **or component prop interface** changed → update `docs/contracts/` in the same commit." Only the route half was ever mechanical. Reading the four component contracts by hand: `session-card.md` documented seven props — `session`, `preferredUnits`, `zone2Ceiling`, `restingHR`… — and **not one of them exists on the component**, while all fifteen real props were undocumented. It described something that was never built, or was rewritten around, and it has read as authority ever since. A contract nobody checks is worse than no contract, because "no contract" at least tells you to go read the source.
+
+**Product/creator learning:** The founder asked "have we updated the contracts as well, where we need to?" after I'd reported the docs clean. The audit said ALL CLEAN and it was, within its own scope — which turned out to be `app/api/**/route.ts` and nothing else. **An audit is only ever as wide as its list**, and this repo already has that written down about a different category. Saying "clean" without saying "clean *of what*" is the bit I keep getting wrong.
+
+**AI-building learning:** My instinct was a `{contract: component}` map inside the test. That would have been the third instance in this repo of a checker holding the same hand-written list as the thing it checks — the exact flaw behind `supersedeCoverage.test.ts` and `deloadCadence.test.ts`. Made each contract declare its own `**Component:**` line instead, and made a missing declaration a failure, so a new contract can't be added without naming what it governs.
+
+**The honest bit:** I couldn't falsify the audit arm in the commit that shipped it, and I said so in the commit message rather than claiming it. The reason is subtle: `touched()` unions "committed since SINCE" with "uncommitted", and my own commit touched all four contracts, so nothing could be shown to go stale. Falsifying it needed a **future** `SINCE` — `./scripts/audit-docs.sh 2026-09-19` counts no commits, so only the uncommitted probe is touched. Three earlier attempts failed and each time I nearly concluded the check was broken. It wasn't; the test setup was.
+
+**Hook material:** A contract file documented seven props. The component had fifteen. The overlap was zero.
+
+**Postable?:** yes
+
 ## 2026-09-18 — REFUSAL-COPY-02 + FIRSTRUN-GATE-CALL-01 · the refusal copy was a wire format and nothing said so
 **Shipped:** The §44/§52 refusal messages are voiced and carry the runway; the plan-reveal's reassurance sentence is now gated (the card isn't).
 
