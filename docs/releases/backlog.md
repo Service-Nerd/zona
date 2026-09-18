@@ -88,7 +88,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | # | Item | Size | Why here |
 |---|---|---|---|
 | ~~1~~ | ~~**`AUTH-BEARER-MISSING-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Both bearer-less calls routed through `authedFetch`; guard `authedFetchGuard.test.ts` walks the source so it cannot recur. Found a 6th site the table missed (already correct). → feature-registry. **Re-test #4 on device.** |
-| 2 | **`MARATHON-VOLUME-GATE-01`** | **L** | 🔴 **P0.** Refuses much of the cohort at the first screen. Board ruled: floor is correct, implementation is not. **Three artifacts — start it early because it is the only L in Tier 1** |
+| ~~2~~ | ~~**`MARATHON-VOLUME-GATE-01`**~~ ✅ **ENGINE HALF SHIPPED 2026-09-18** | **L** | 🔴 **P0.** Governed §111 base-build ceiling (peak/current, not stated volume); admits M1, refuses the reckless 5km tail. 3 artifacts + reconvened board on the MAINT-LABEL collision. Parity 208/5940, all OK→REFUSED. → feature-registry. **The humane "not yet" screen is `REFUSAL-SCREEN-01` (#3).** |
 | 3 | **`REFUSAL-SCREEN-01`** (copy + *"not yet"*) | S | The refusal that remains must stop reading as a crash. Ships with #2 |
 | 4 | **`FOUNDATION-ADD-FAIL-01`** | S | Re-test after #1; may already be closed |
 
