@@ -43,7 +43,11 @@ describe('§35 — the tier lift is REAL where it is observable', () => {
     // runner on the floor. Measured across 36 comparable plans: the target lift
     // is observable in 33 of them.
     const earned = peakLongRunKm(runner())                              // 19 km recent
-    const floorOnly = peakLongRunKm(runner({ longest_recent_run_km: 4 }))
+    // ⚠️ RAISED 4 -> 5 when §113 landed: at 4 this runner is now refused a
+    // plan entirely (long-run readiness), which is a different assertion
+    // from the one this test makes. 5 is still far below §24's HM floor,
+    // so the runner remains on the floor tier and the comparison holds.
+    const floorOnly = peakLongRunKm(runner({ longest_recent_run_km: 5 }))
     expect(earned, 'the tier lift no longer changes anything — §35 is inert')
       .toBeGreaterThan(floorOnly)
   })

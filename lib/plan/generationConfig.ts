@@ -1012,6 +1012,19 @@ export const GENERATION_CONFIG = {
   // INTERACTION, which is why it was invisible to both axes for months.
   MIN_KM_PER_TRAINING_DAY: 5,
 
+  // §113 (LONGEST-RUN-GATE-01, Coaching Board 2026-09-18) — the distances whose
+  // long run cannot be improvised, and so where a readiness floor applies.
+  // 21 km: a half is the shortest race whose long run the engine builds FROM the
+  // runner's stated longest rather than from weekly volume alone. Below it,
+  // §45's week-1 cap is never the binding constraint.
+  //
+  // ⚠️ THERE IS NO SECOND NUMBER HERE ON PURPOSE. The floor itself is
+  // `MIN_SESSION_DISTANCE_KM.long` below, read through
+  // `longRunReadiness.minLongestRunKm()`. The route used to hardcode its own
+  // `5`; changing the engine's floor would have left the gate matching the old
+  // value with nothing to notice.
+  LONG_RUN_READINESS_MIN_RACE_KM: 21,
+
   MIN_SESSION_DISTANCE_KM: {
     long:               5,
     easy:               4,

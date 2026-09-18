@@ -40,6 +40,7 @@ import { join } from 'node:path'
 const SUBJECTS: Record<string, string[]> = {
   'lib/coaching/cohortSimilarity.test.ts':          ['lib/coaching/runHistory.ts'],
   'lib/coaching/fatigueAccumulation.test.ts':       ['lib/coaching/fatigueAccumulation.ts'],
+  'lib/plan/longRunReadiness.test.ts':              ['lib/plan/longRunReadiness.ts'],
   'lib/coaching/dayBoundary.test.ts':               ['lib/coaching/dayBoundary.ts'],
   'lib/coaching/limiter.test.ts':                   ['lib/coaching/limiter.ts'],
   'lib/coaching/postRaceRecoveryCurve.test.ts':     ['lib/coaching/postRaceReshape.ts'],

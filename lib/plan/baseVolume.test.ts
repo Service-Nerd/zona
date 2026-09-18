@@ -36,7 +36,12 @@ function gen(input: GeneratorInput): { plan: Plan | null; err: Error | null } {
 
 describe('§111 base-build ceiling — the refusal', () => {
   it('refuses a reckless low base (5 km/week marathon) with a structured BaseVolumeError', () => {
-    const { plan, err } = gen(marathon({ current_weekly_km: 5, longest_recent_run_km: 4 }))
+    // ⚠️ `longest_recent_run_km` RAISED 4 -> 5 when §113 landed. At 4 this
+    // fixture is refused by §113 (long-run readiness) BEFORE §111 is
+    // reached, so it would have tested the wrong refusal. The runner under
+    // test here is low-VOLUME, not long-run-unready; 5 keeps them at §113's
+    // floor so §111 is the rule actually exercised.
+    const { plan, err } = gen(marathon({ current_weekly_km: 5, longest_recent_run_km: 5 }))
     expect(plan).toBeNull()
     expect(err).toBeInstanceOf(BaseVolumeError)
     const base = (err as BaseVolumeError).base

@@ -18,6 +18,7 @@ import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { nextMonday, formatDate } from '@/lib/plan/length'
 import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/inputs'
 import { BaseVolumeError } from '@/lib/plan/baseVolume'
+import { LongRunReadinessError } from '@/lib/plan/longRunReadiness'
 
 // ─── Guard rails ──────────────────────────────────────────────────────────────
 //
@@ -36,13 +37,11 @@ function validate(input: GeneratorInput): string | null {
   // BaseVolumeError (caught below) — expressed on the delivered peak vs the
   // runner's real base, with alternatives, not a bare string here.
   //
-  // The longest_recent_run_km < 5 gate that was also here is the same
-  // ungoverned-number smell but a distinct coaching question (long-run
-  // readiness, not weekly ramp) — flagged for a separate Coaching Board sitting,
-  // deliberately not silently deleted.
-  if (input.race_distance_km >= 21 && input.longest_recent_run_km < 5) {
-    return 'Longest recent run is very short for this distance. Log at least a 5 km run in the last 6 weeks before generating this plan.'
-  }
+  // The longest_recent_run_km < 5 gate that was also here is now §113
+  // (LONGEST-RUN-GATE-01, Coaching Board 2026-09-18): governed, reading the
+  // floor from MIN_SESSION_DISTANCE_KM.long rather than a second copy of `5`,
+  // and thrown from generateRulePlan as LongRunReadinessError with the
+  // alternatives §44's own text requires. Nothing hardcoded remains here.
 
   return null
 }
@@ -180,6 +179,14 @@ export async function POST(req: NextRequest) {
       // CoachingPrinciples §111 — base-build ceiling. Same structured shape as
       // the §44/§52 refusals so the client renders a "not yet" screen with the
       // base to reach and the alternatives, never a bare error.
+      // §113 — long-run readiness. Same 422 shape as §44/§52/§111 so the
+      // "not yet" screen renders every refusal identically.
+      if (err instanceof LongRunReadinessError) {
+        return NextResponse.json(
+          { error: err.message, reason: 'long_run_readiness', readiness: err.readiness },
+          { status: 422 },
+        )
+      }
       if (err instanceof BaseVolumeError) {
         return NextResponse.json(
           {

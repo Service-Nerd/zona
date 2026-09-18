@@ -184,6 +184,14 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > **Do:** Coaching Board sitting. Measure first, as §111 required — what the engine actually builds below the threshold, and whether the refusal tracks anything. **Given the cohort, I would put this above the parked Tier 4 items.**
 
+> 🟡 **GRID-SUBFLOOR-01 — neither grid can reach the cohort §113 exists for.** *(P2, filed 2026-09-18 while shipping §113.)*
+>
+> `cohortGrid` + `targetedGrid` carry exactly four `longest_recent_run_km` values: **8, 12, 14, 20**. The minimum is **8**, and §113's floor is **5**. So **§113 refuses 0 of 35,952 grid rows** — not because the rule is inert (12 unit tests, 3 mutations killed, and it throws for a real input) but because **the corpus cannot express the runner it protects**.
+>
+> ⚠️ **That runner is the charity first-timer.** Someone attempting London 2027 in October whose longest run is 3 km is exactly who §113 refuses, and exactly who no grid row describes. Same class as `GRID-MARATHON-CAPABLE-01`, and the same distinction I got wrong on §80 this morning: **zero in the corpus is not "cannot fire"**.
+>
+> **Do NOT just add a row.** Both grids are exhaustive-by-doctrine and `cohort:shape` counts refusals — adding a sub-floor value changes rates and needs a declared re-baseline. Decide whether the sub-floor cohort belongs in the **targeted** grid (its stated job is the fields the main grid cannot reach) and re-baseline with the reason stated.
+
 > 🔴 **PREF-SWEEP-01 — the units and metric preferences do not reach the whole app, and nothing checks that they do.** *(P1, founder-raised 2026-09-18. MEASURED before filing — this is a defect with numbers, not an audit request.)*
 >
 > **The ask.** Profile lets a runner switch **km ↔ miles** and **distance ↔ duration**. Every surface must honour it: screens, cards, notes, push, emails, **and the AI prompts** — anywhere a unit or a metric is shown or spoken. ADR-015 already says exactly this (`INV-FMT-001/002`, `INV-PREF-001`, and the 2026-09-11 amendment that *"the AI layer is a display surface"*). **The doctrine is not the gap. The reach is.**

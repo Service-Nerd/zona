@@ -28,6 +28,7 @@ import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
 import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
 import { assessBaseBuild, baseVolumeRefusal, BaseVolumeError } from './baseVolume'
+import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
@@ -5806,6 +5807,21 @@ function buildRulePlanOnce(
   // block or warn-without-acknowledgment; falls through with a result the
   // meta block consumes when ok or warn-acknowledged.
   const prepTime: PrepTimeResult = enforcePrepTime(input as PrepTimeAwareInput, planStartIso)
+
+  // CoachingPrinciples §113 — long-run readiness. Runs with the other input
+  // gates, before any generation work, because it is a fact about the runner
+  // rather than about the plan they would get. Throws LongRunReadinessError,
+  // the same shape as §44/§52/§111, so the route renders one refusal screen.
+  //
+  // MOVED HERE FROM app/api/generate-plan/route.ts, where it was a hardcoded
+  // `longest_recent_run_km < 5` with a bare string. In the route it was
+  // invisible to the sweep, to configPrincipleSync and to the coaching-guard
+  // hook — the same blind spot that let me "refute" §111's threshold by
+  // measuring the engine and never going through the boundary.
+  {
+    const readiness = assessLongRunReadiness(input)
+    if (!readiness.ok) throw new LongRunReadinessError(readiness)
+  }
 
   // ── Derive zones with HR fallback hierarchy (CoachingPrinciples §50) ────────
   const hrFallback = buildHRZonesWithFallback(input)

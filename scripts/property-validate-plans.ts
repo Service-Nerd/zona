@@ -456,7 +456,12 @@ function randomInput(): any {
 // A warn-band throw is still the engine working: §44 refuses without
 // `acknowledged_prep_warning`, which the sweep deliberately never sets (see
 // COVERAGE_EXEMPTIONS) because setting it would admit shapes the product refuses.
-const REFUSAL = /is not enough preparation|days?\/week is (not enough|below)|is below the recommended \d+-week minimum|too low to build safely/
+// §113 (LONGEST-RUN-GATE-01, 2026-09-18) — long-run readiness. Added the day
+// it shipped, and the sweep is the ONLY corpus that reaches it: both plan grids
+// carry a minimum `longest_recent_run_km` of 8, above the floor of 5, so they
+// refuse 0 of 35,952. The sweep refuses **2,634**. That is the whole reason this
+// repo records "measure a new rule on the SWEEP, not the cohort grid".
+const REFUSAL = /is not enough preparation|days?\/week is (not enough|below)|is below the recommended \d+-week minimum|too low to build safely|needs to start from at least/
 
 let attempted = 0
 let generated = 0

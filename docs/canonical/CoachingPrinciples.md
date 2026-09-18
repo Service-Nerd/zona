@@ -6706,3 +6706,35 @@ If you are reviewing a plan that feels wrong, this is the document to read first
 
 ---
 
+
+## 113. Long-run readiness — a plan must have something to build FROM
+
+*Added 2026-09-18 — Coaching Board (LONGEST-RUN-GATE-01). Willy carried; McMillan concurring on delivery.*
+
+**Principle.** For a race at or beyond `LONG_RUN_READINESS_MIN_RACE_KM` (21 km), the engine refuses to build when the runner's longest recent run is below `MIN_SESSION_DISTANCE_KM.long`. Week one's long run would be a leap rather than a step, and the refusal **names what would change it**.
+
+**Why the floor is exactly that number, and not a second one.** §45's `WEEK_1_2_LONG_RUN_CAP_MULTIPLIER` (1.10) already bounds the opening long run against the runner's real longest run, and it works — at a 5 km longest run, week one lands **+7%**. But `MIN_SESSION_DISTANCE_KM.long` is applied **after** that cap (`ruleEngine.ts:3033`, then `:3101`), so below the floor **the floor wins and the cap is silently discarded**:
+
+| Longest recent run | Week-1 long run | Jump |
+|---|---|---|
+| 5 km *(permitted)* | 5.3 km | **+7%** |
+| 4 km *(refused)* | 4.8 km | +21% |
+| 3 km *(refused)* | 4.8 km | +62% |
+| 2 km *(refused)* | 4.8 km | **+142%** |
+
+**The engine cannot honour its own safety cap for a runner below its own floor.** The refusal states that limitation honestly instead of shipping a plan that pretends otherwise. Willy: *"+142% into a first marathon block is exactly the acute jump I object to, and unlike §111 the concern and the threshold agree."*
+
+> ⚠️ **THIS IS THE OPPOSITE RULING TO §111 ON SUBSTANCE AND THE SAME ON GOVERNANCE, and the distinction is the point.** §111's base-volume gate was **non-monotonic** — it refused 15 km/week at +135% while permitting 20 km/week at +160% — so its threshold was wrong and had to be re-expressed on the ramp. This gate **is** monotonic and tracks exactly what it protects against, so the threshold is right. What was wrong is everything around it: a hardcoded `5` in an API route, ungoverned, invisible to `configPrincipleSync` and to `coaching-guard.py`, returning a bare string where §44's own text requires alternatives — and a **second copy of a number that already had an owner**. Ruling one of these the way the other was ruled would have destroyed a correct threshold in the name of consistency.
+
+**Single owner, deliberately.** The floor is not restated here: `minLongestRunKm()` reads `MIN_SESSION_DISTANCE_KM.long`. The route's own `5` is deleted. Change the engine's floor and the gate follows it, which was not true before.
+
+**The refusal names the lever** (§44). *"Build up to one 5 km run, then come back. Nothing else needs to change."* McMillan: to a runner with months in hand that is real coaching, not a door — and it is the one refusal in this engine whose remedy is entirely within the runner's control.
+
+**A missing value is not a short one.** No stated longest run means §113 has nothing to say, and it passes. Turning an unanswered question into a rejection is a different defect.
+
+**Config.** `GENERATION_CONFIG.LONG_RUN_READINESS_MIN_RACE_KM` (21); the floor itself is `MIN_SESSION_DISTANCE_KM.long`. Thrown as `LongRunReadinessError` from `generateRulePlan`, mirroring §44/§52/§111 so one screen renders every refusal. Enforced by `lib/plan/longRunReadiness.test.ts`.
+
+**Enforcement is a named test, not an invariant, and the reason is structural** — the same as §112. This refuses *before* a plan exists, so there is no `Plan` for `validatePlan()` to inspect. ⚠️ **But unlike the old route gate, the sweep now sees it**, because it throws from the engine rather than from the boundary.
+
+---
+
