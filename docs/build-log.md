@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — FOUNDATION-DECIDE-LATER-01 · A button that promised "later" when there was no later
+**Shipped:** Deleted the "Decide later" option from the foundation-block sheet and merged two identical handlers into one — the two remaining choices are both honest.
+**Dev learning:** Three buttons, two handlers byte-for-byte identical, and the third option ("Decide later") wired to a modal that has exactly one trigger in the entire codebase. The tell was mechanical: `setFoundationModalOpen(true)` appears once, at generation. So "later" could never arrive — there was no code path to bring the sheet back. Grepping for the single setter is what turned "this feels wrong" into "this is provably broken."
+**Product/creator learning:** "Decide later" is the option people pick when they don't understand the question, and it's the most tempting one to offer because it feels kind. But an app that offers to defer a decision it will never re-raise is lying gently. The honest version is two real choices — do it, or don't — and let dismissing the sheet mean the same as "don't". Fewer buttons, more honesty.
+**AI-building learning:** The SLT review (recorded earlier) explicitly said do NOT build a real "later" — that needs a re-offer surface that doesn't exist, and inventing one is illusion-of-progress. Easy to over-engineer this into a whole "pending decisions" system; the right answer was a deletion. Knowing when the correct amount of code is negative code.
+**The honest bit:** Barely any code — a button removed and two functions merged into one. The work was reading the handlers closely enough to be sure "Start plan as-is" and "Decide later" really were the same thing underneath, and that dismissing the sheet already did the honest thing, so deleting the button lost nothing.
+**Hook material:** An onboarding sheet offered "Decide later" for a decision it would never ask about again — the code to re-open that sheet existed in exactly zero places.
+**Postable?:** maybe — "the kindest-looking button was the dishonest one" is a decent short post.
+
 ## 2026-09-18 — ONBOARD-SKIP-LABEL-01 · One boolean, two actions, and the button lied about which one you tapped
 **Shipped:** The two onboarding ceremony screens stopped saying "Connecting…"/"Setting up…" when you tap the skip link — the primary button's working label now keys on which action is actually running.
 **Dev learning:** The bug is a tiny, classic one: a single `busy` boolean serving two mutually exclusive actions, with the primary button's label bound to it. `{busy ? 'Connecting…' : ...}` is true whether you tapped Connect or Skip. The fix is to make the flag carry *which* action ('connect' | 'skip' | null) rather than just *whether* something is happening. The nice property: all the other usages (disabled, cursor, opacity) are truthy checks, so they carry over untouched — only the label needed the specific-action guard.

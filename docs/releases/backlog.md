@@ -97,7 +97,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | # | Item | Size | Why here |
 |---|---|---|---|
 | ~~5~~ | ~~**`ONBOARD-SKIP-LABEL-01`** + **`COPY-DAYS-PLURAL-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Both done. `ONBOARD-SKIP-LABEL-01`: busy flag → pending-action enum, primary label keys on the specific action (markup-guarded). `COPY-DAYS-PLURAL-01` shipped with #3. → feature-registry |
-| 6 | **`FOUNDATION-DECIDE-LATER-01`** | S | Delete the button. "Later" never comes |
+| ~~6~~ | ~~**`FOUNDATION-DECIDE-LATER-01`**~~ ✅ **SHIPPED 2026-09-18** | S | "Decide later" button deleted (SLT Fix A); the two identical handlers consolidated into one `handleFoundationDismiss`. → feature-registry |
 | 7 | **`FIRSTRUN-MOMENTS-01a`** runway reveal | S | 🥇 **Best value on the entire backlog.** The words exist and are ratified; this is a MOVE |
 | 8 | **`FIRSTRUN-MOMENTS-01b`** first-run reveal | S | Wood funds this one: it lowers the activation cost of the first action |
 | 9 | **`FIRSTRUN-MOMENTS-01c/d/e`** ceremony · distance · worst day | S | ⚠️ (e) **only if derived live** — Hutchinson's binding condition |
@@ -609,7 +609,9 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 >
 > **Do:** add the error detail, switch all four authed bare-fetch sites to `authedFetch`, then re-test on device.
 
-> 🟡 **FOUNDATION-DECIDE-LATER-01 — two of the three buttons do exactly the same thing, and "later" never comes.** *(P1, and the founder spotted both halves.)*
+> ✅ **FOUNDATION-DECIDE-LATER-01 — SHIPPED 2026-09-18 (SLT Fix A).** The "Decide later" button is deleted; the two byte-identical handlers (`handleFoundationStartNow` / `handleFoundationSkip`) are consolidated into one `handleFoundationDismiss` used by "Start plan as-is" and the sheet's onClose. Two honest options remain; dismissing = start as-is, no hidden deferred state. → feature-registry. Original analysis kept for the record:
+>
+> 🟡 **two of the three buttons do exactly the same thing, and "later" never comes.** *(P1, and the founder spotted both halves.)*
 >
 > The sheet offers **Add Foundation Block** / **Start plan as-is** / **Decide later**.
 >
