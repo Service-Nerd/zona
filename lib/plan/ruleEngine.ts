@@ -29,6 +29,8 @@ import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type F
 import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
 import { assessBaseBuild, baseVolumeRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
+import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
+import { weeksBetweenLocal } from './length'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
@@ -3099,7 +3101,15 @@ function buildWeekSessions(
   const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
   const roundDist = (n: number) => Math.round(n / precision) * precision
   const floorDist = (n: number) => Math.floor(n / precision) * precision
-  const minDist   = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM
+  // CB-SUBFLOOR-ADMIT-01 — floors resolved FOR THIS RUNNER, not the flat config.
+  //
+  // `Math.max(floorDist(longKm), minDist.long)` below runs three lines after
+  // §45's cap and used to break it: at longest 3 km the cap places 3.3 km
+  // (+10%) and the flat 5 km floor overrode it to 5.0 km (+67%). §113 then
+  // refused the runner FOR THE LEAP THE FLOOR HAD JUST CREATED. Coaching Board
+  // 2026-09-18 vetoed that. Identical to the old constant for every runner at
+  // or above the floor — see `sessionFloors.test.ts`'s no-op property.
+  const minDist   = sessionFloorsFor(input.longest_recent_run_km)
   // Long run uses floor-rounding so post-round value never exceeds upstream caps
   // (longest_recent × 1.10 in weeks 1-2; LONG_RUN_CAP_MINUTES per distance).
   // Round-nearest would round 8.8 → 9.0 and break the cap by 0.5 km.
@@ -3744,7 +3754,7 @@ function applyWeekdayMinsCap(
     // Without this, the shakeout cap (RACE_WEEK_SHAKEOUT_MAX_MINS, 35) got
     // overridden by the floor and a 30-minute-capped runner got a 56-minute
     // "shortened" shakeout — the opposite of §30's intent.
-    const floorKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+    const floorKm = sessionFloorsFor(input.longest_recent_run_km).easy
     if (!isRaceWeek && s.type === 'easy' && cappedDistance != null && cappedDistance < floorKm && s.distance_km) {
       const paceMinPerKm = originalDurationMins / s.distance_km
       s.distance_km = floorKm
@@ -4069,6 +4079,7 @@ function applyTaperLongRunCap(weeks: Week[], pace: PaceGuide): void {
  */
 function applyTaperDeliveredDepth(
   weeks: Week[], pace: PaceGuide, peakKm: number, raceDistanceKm: number,
+  floors: SessionFloors,
 ): void {
   const taperWeeks = weeks.filter(w => w.n > 0 && w.phase === 'taper' && w.type !== 'race')
   if (taperWeeks.length === 0) return
@@ -4103,7 +4114,7 @@ function applyTaperDeliveredDepth(
     ? taperConfig.volume_reduction_pct * (GENERATION_CONFIG.LOW_VOLUME_TAPER_REDUCTION_FACTOR_PCT / 100)
     : taperConfig.volume_reduction_pct
   const stepPct = reductionFull / fullTaperWeeks
-  const easyFloorKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+  const easyFloorKm = floors.easy
   const gatePct = GENERATION_CONFIG.TAPER_DELIVERED_REANCHOR_MATERIAL_PCT
 
   for (const w of taperWeeks) {
@@ -4285,7 +4296,10 @@ function applyPeakLongRunAlternation(
     // into a plan that never speaks in kilometres.
     const durationAnchored = lr.session.distance_km == null
     const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-    const minLong = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+  // CB-SUBFLOOR-ADMIT-01 — resolved FOR THIS RUNNER. Was the flat
+  // GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long, which re-floored the long
+  // run straight back up to 5 km after the cap above had just bounded it.
+    const minLong = sessionFloorsFor(input.longest_recent_run_km).long
 
     let flooredKm: number | null = null
     let flooredMins: number | null = null
@@ -4340,7 +4354,7 @@ function applyPeakLongRunAlternation(
     // CoachingPrinciples §9 — long must remain ≥ minRatio × any easy. After
     // reducing the LR, clamp easy runs in this week so the ratio survives.
     const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
-    const minEasy = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+    const minEasy = sessionFloorsFor(input.longest_recent_run_km).easy
     // The fourth `distance_km` gate on this path, and the one that would have
     // made the fix above cosmetic: it `continue`d past every duration-anchored
     // easy run, so §9's ratio would have been restored for distance-anchored
@@ -4407,7 +4421,7 @@ function applyPeakStepBackVolume(weeks: Week[], pace: PaceGuide, input: Generato
   // pass then lowered beneath this trim — the sweep, not cohortGrid, surfaced it.)
   if ((input.injury_history ?? []).length > 0) return
   const STEPBACK_NOTE = 'Step-back week. Easy aerobic'
-  const minEasy = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+  const minEasy = sessionFloorsFor(input.longest_recent_run_km).easy
   const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
   const minEasyMins = dur(minEasy, pace.minPerKmEasy)
   const kmOf = (s: Session): number =>
@@ -4463,7 +4477,7 @@ function applyPeakStepBackVolume(weeks: Week[], pace: PaceGuide, input: Generato
 // isn't repeating the same long run for weeks. Build phase only: peak long runs
 // are the culmination (and carry the §80 finish-goal floor), deloads already
 // step the whole week back. Metric-agnostic (distance or duration).
-function applyLongRunStepBacks(weeks: Week[], pace: PaceGuide): void {
+function applyLongRunStepBacks(weeks: Week[], pace: PaceGuide, minLongKm: number): void {
   const longRunOf = (w: Week): Session | null => {
     for (const s of Object.values(w.sessions)) {
       if (s && isLongRun(s)) return s
@@ -4479,7 +4493,10 @@ function applyLongRunStepBacks(weeks: Week[], pace: PaceGuide): void {
   const cadence   = GENERATION_CONFIG.LONG_RUN_STEPBACK_CADENCE_N
   const factor    = 1 - GENERATION_CONFIG.LONG_RUN_STEPBACK_PCT / 100
   const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-  const minLong   = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+  // CB-SUBFLOOR-ADMIT-01 — resolved FOR THIS RUNNER. Was the flat
+  // GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long, which re-floored the long
+  // run straight back up to 5 km after the cap above had just bounded it.
+  const minLong   = minLongKm
   const ratio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
   for (let k = 0; k < buildLRs.length; k++) {
     if ((k + 1) % cadence !== 0) continue  // every Nth: 3rd, 6th, …
@@ -4540,12 +4557,24 @@ function rampedSpecificityFloor(
   return peakFloorKm * (start + (1 - start) * pos)
 }
 
-function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
+/**
+ * ⚠️ `minLongKm` is a PARAMETER, not a config read, since CB-SUBFLOOR-ADMIT-01.
+ * It used to read `GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long` directly —
+ * the THIRD producer site on the flat floor — so it capped the week-on-week
+ * progression correctly and then floored the result straight back up to 5 km,
+ * re-creating the jump it had just removed. Measured: W2 2.9 km -> W3 4.97 km,
+ * a 71% step, which `INV-PLAN-LR-PROGRESSION-CAP` caught the moment the flat
+ * floor stopped masking it everywhere else.
+ */
+function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide, floors: SessionFloors): void {
   const capPct = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100
   const capAbs = GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_ABS_KM
   const stepBackTol = 1 + GENERATION_CONFIG.LONG_RUN_DELOAD_STEP_BACK_TOLERANCE_PCT / 100
   const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-  const minLong = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+  // CB-SUBFLOOR-ADMIT-01 — resolved FOR THIS RUNNER. Was the flat
+  // GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long, which re-floored the long
+  // run straight back up to 5 km after the cap above had just bounded it.
+  const minLong = floors.long
 
   const findLong = (w: Week): { day: Day; session: Session } | null => {
     for (const [d, s] of Object.entries(w.sessions) as [Day, Session | undefined][]) {
@@ -4667,7 +4696,7 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide): void {
 
       // CoachingPrinciples §9 — clamp easy runs so long-vs-easy ratio survives.
       const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
-      const minEasy = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+      const minEasy = floors.easy
       const easyCeiling = newKm / minRatio
       const easyCeilingFloored = Math.floor(easyCeiling / precision) * precision
       for (const [d, s] of Object.entries(curr.sessions) as [Day, Session | undefined][]) {
@@ -4762,10 +4791,11 @@ function applyV1VolumeQualityStimulusSplit(
   weeks: Week[],
   pace: PaceGuide,
   adjustments: RuleAdjustment[],
+  floors: SessionFloors,
 ): void {
   const threshold = 1 + GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT / 100
   const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-  const minEasy   = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+  const minEasy   = floors.easy
   const minRatio  = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
 
   // TWO TRIGGER WEEKS, one rule.
@@ -5819,7 +5849,13 @@ function buildRulePlanOnce(
   // hook — the same blind spot that let me "refute" §111's threshold by
   // measuring the engine and never going through the boundary.
   {
-    const readiness = assessLongRunReadiness(input)
+    // §113 Am.1 — the runway is what turns "not ready" into "not ready YET".
+    // weeksBetweenLocal is the same helper §44 uses, so the two gates cannot
+    // disagree about how long a runway is.
+    const readiness = assessLongRunReadiness(
+      input,
+      input.race_date ? weeksBetweenLocal(planStartIso, input.race_date) : undefined,
+    )
     if (!readiness.ok) throw new LongRunReadinessError(readiness)
   }
 
@@ -6530,20 +6566,20 @@ function buildRulePlanOnce(
     const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
     const set = Math.max(
       Math.floor(target / precision) * precision,
-      GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long)
+      sessionFloorsFor(input.longest_recent_run_km).long)
     // Written on the axis the session already uses (§79/§80).
     if (currLr.distance_km != null) currLr.distance_km = set
     else currLr.duration_mins = Math.round(dur(set, pace.minPerKmEasy))
     curr.weekly_km = sumWeeklyKm(curr.sessions, pace)
   }
 
-  applyLongRunStepBacks(weeks, pace)
+  applyLongRunStepBacks(weeks, pace, sessionFloorsFor(input.longest_recent_run_km).long)
   // §45 runs AFTER the step-backs, not before (fixed 2026-08-20). Running it
   // first meant it never saw the sequence the runner actually gets:
   // applyLongRunStepBacks then cut every Nth build long run, and the week after
   // became a jump nothing re-checked. All 430 remaining sweep violations of this
   // code were that ordering — re-running the cap at the end cleared every one.
-  applyLongRunProgressionCap(weeks, pace)
+  applyLongRunProgressionCap(weeks, pace, sessionFloorsFor(input.longest_recent_run_km))
 
   // §6 Amendment 1 — THE TAPER LONG RUN MAY NOT EXCEED THE PEAK LONG RUN.
   // (Coaching Board PEAK-LR-NOT-IN-PEAK-01, 2026-09-15.)
@@ -6621,7 +6657,7 @@ function buildRulePlanOnce(
       return false
     })
   applyV5StimulusProgression(weeks, input.race_distance_km, pace, zones, ruleAdjustments)
-  applyV1VolumeQualityStimulusSplit(weeks, pace, ruleAdjustments)
+  applyV1VolumeQualityStimulusSplit(weeks, pace, ruleAdjustments, sessionFloorsFor(input.longest_recent_run_km))
   applyV4LongRunRepeatCeiling(weeks, input, pace, ruleAdjustments)
 
   // §47 Amendment 2 (Coaching Board 2026-09-16) — the peak step-back is a VOLUME
@@ -6640,7 +6676,7 @@ function buildRulePlanOnce(
   // non-quality sessions and V4 mutates long-run distances, so the week this
   // pass sized was not the week the runner receives. Same lesson §6 Am.1's own
   // comment records: anchor on the number no later pass will move.
-  applyTaperDeliveredDepth(weeks, pace, peakKm, input.race_distance_km)
+  applyTaperDeliveredDepth(weeks, pace, peakKm, input.race_distance_km, sessionFloorsFor(input.longest_recent_run_km))
 
   // V8 / CD-20 (SC-01) — record the withheld second quality session.
   //
@@ -7606,7 +7642,7 @@ function buildRulePlanOnce(
           ? Math.floor((longKmOfWeek / GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY) / prec) * prec
           : Infinity
         const km = Math.min(rawKm, easyCeilingKm)
-        if (km < GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy) continue   // no room to convert into
+        if (km < sessionFloorsFor(input.longest_recent_run_km).easy) continue   // no room to convert into
 
         c.w.sessions[c.d] = easySession(
           c.w.n, c.d, km, c.sn.primary_metric ?? 'distance', zones, pace,

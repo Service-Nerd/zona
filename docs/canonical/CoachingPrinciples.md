@@ -6738,3 +6738,58 @@ If you are reviewing a plan that feels wrong, this is the document to read first
 
 ---
 
+### §113 Amendment 1 — the floor may not manufacture the leap it then refuses over (Coaching Board 2026-09-18, CB-SUBFLOOR-ADMIT-01)
+
+**Ruling: the refusal as written is INCORRECT. This was a veto.**
+
+**The mechanism, measured.** `MIN_SESSION_DISTANCE_KM.long` (5 km) is applied
+AFTER §45's week-1 cap, three lines later in `ruleEngine`, and wins:
+
+| runner's longest run | §45 cap alone | after the flat floor |
+|---|---|---|
+| 3 km | 3.3 km (**+10%, safe**) | 5.0 km (**+67%, unsafe**) |
+
+§113 then refused that runner **because week one was a leap** — a leap the engine
+itself introduced. §113's original header documented this exact sequence
+(*"the floor wins and the cap is silently discarded"*) without drawing the
+conclusion. **A rule that manufactures the hazard it then refuses over is not
+coaching-correct** (Hutchinson, chair).
+
+**Willy, for the record, because he was the seat expected to defend the floor:**
+*"I cannot. At longest 3 km, §45 gives 3.3 km. That is a 10% step and it is safe.
+The floor makes it 5.0, a 67% step, which is not — and then §113 refuses the
+runner to protect them from a jump the engine introduced. The tissue-tolerance
+argument runs the other way from how it has been implemented."*
+
+**The principle.** A session-size floor expresses what is worth PRESCRIBING. A
+progression cap expresses what is SAFE. **Where they conflict, the cap wins.**
+The floor is resolved for the runner in front of the engine
+(`lib/plan/sessionFloors.ts → sessionFloorsFor`), never as a flat constant, and
+is bounded below by `MIN_SESSION_DISTANCE_ABSOLUTE_KM` — under which a long run
+is not a session at all.
+
+⚠️ **This does NOT open the door to everyone.** §113 still refuses; it now
+refuses on longest run **and runway together**, not on distance alone. A 3 km
+runner with eight weeks is still correctly told no. What was vetoed is refusing a
+runner with seven months because of a constant.
+
+⚠️ **The floor was MASKING two other defects, both found only once it moved.**
+Pinning every early week at 5 km hid (a) a §45 week-on-week progression breach
+(W2 2.9 km → W3 4.97 km, +71%) in `applyLongRunProgressionCap`, which re-floored
+the long run straight back up after bounding it, and (b) a §9 long-vs-easy ratio
+inversion once both floors collapsed to the same value. **A floor that hides
+violations is not a safety feature.**
+
+**Config.** `GENERATION_CONFIG.MIN_SESSION_DISTANCE_ABSOLUTE_KM = 2`.
+**Enforced by** `INV-PLAN-WEEK-1-2-LONG-CAP`, **amended** rather than duplicated.
+
+⚠️ This section first named a NEW invariant, `INV-PLAN-WEEK-1-LONG-NO-FLOOR-OVERRIDE`,
+and `principleCoverage.test.ts` rejected it within the minute: *"§113 claims
+enforcement by … which is not registered at all."* That is precisely the §92
+failure class — a principle naming an enforcer nobody wrote, which read as
+enforced for eight days. The board's requirement is satisfied by **removing the
+floor allowance from the existing check** (`effectiveCap` was
+`Math.max(rawCap, minDist.long)` and is now `rawCap`), because a second invariant
+asserting the same rule is duplication, not coverage.
+
+

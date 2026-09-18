@@ -27,7 +27,9 @@
 // where §44's own text requires alternatives, and a SECOND COPY of a number
 // that already had an owner in `MIN_SESSION_DISTANCE_KM.long`.
 
-import { GENERATION_CONFIG } from './generationConfig'
+import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
+
+const thresholdsKeyFor = raceDistanceKey
 import type { GeneratorInput } from '@/types/plan'
 
 export interface LongRunReadinessResult {
@@ -81,7 +83,39 @@ function alternativesFor(floor: number, raceDistanceKm: number): string[] {
   return alts
 }
 
-export function assessLongRunReadiness(input: GeneratorInput): LongRunReadinessResult {
+
+/**
+ * §113 Amendment 1 — how many weeks does this runner need to reach the floor,
+ * progressing at the rate §45 already governs?
+ *
+ * This is the whole amendment in one function. The old gate asked "is your
+ * longest run below 5 km?" and refused. It never asked the only question a
+ * coach would: **how long have you got?** A 3 km runner with seven months and a
+ * 3 km runner with six weeks are not the same runner, and the engine treated
+ * them identically.
+ *
+ * Compounding at `LONG_RUN_PROGRESSION_CAP_PCT` is the honest model because it
+ * is the rate the engine will actually build them at — the same constant
+ * `applyLongRunProgressionCap` enforces, so this cannot promise a ramp the
+ * producer would then refuse to deliver.
+ */
+export function weeksToReachFloor(longestKm: number, floorKm: number): number {
+  if (!(longestKm > 0) || longestKm >= floorKm) return 0
+  const rate = 1 + GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100
+  return Math.ceil(Math.log(floorKm / longestKm) / Math.log(rate))
+}
+
+export function assessLongRunReadiness(
+  input: GeneratorInput,
+  /**
+   * Weeks between the plan start and race day. OPTIONAL and the default is
+   * DELIBERATE: a caller that cannot supply it gets the pre-amendment
+   * distance-only behaviour rather than a silent admission. "Runway unknown"
+   * must never read as "runway sufficient" — that is the `?? 0` class inverted,
+   * and it would admit exactly the runner this gate exists to catch.
+   */
+  weeksAvailable?: number,
+): LongRunReadinessResult {
   const floor = minLongestRunKm()
   const longest = input.longest_recent_run_km
   const base = {
@@ -98,6 +132,19 @@ export function assessLongRunReadiness(input: GeneratorInput): LongRunReadinessR
   }
 
   if (longest >= floor) return { ...base, ok: true, message: '' }
+
+  // §113 Amendment 1 — below the floor is no longer an automatic refusal.
+  // Admit the runner when the runway covers BOTH bringing them to the floor at
+  // §45's governed rate AND the §44 minimum block for their race. A 3 km runner
+  // with 29 weeks is admitted; a 3 km runner with 8 weeks is still refused,
+  // which is what the board ruled and is not a formality.
+  if (typeof weeksAvailable === 'number' && Number.isFinite(weeksAvailable)) {
+    const rampWeeks  = weeksToReachFloor(longest, floor)
+    const blockWeeks = GENERATION_CONFIG.PREP_TIME_THRESHOLDS[thresholdsKeyFor(input.race_distance_km)].block
+    if (weeksAvailable >= rampWeeks + blockWeeks) {
+      return { ...base, ok: true, message: '' }
+    }
+  }
 
   return {
     ...base,

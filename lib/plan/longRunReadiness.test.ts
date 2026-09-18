@@ -77,8 +77,25 @@ describe('§113 — long-run readiness', () => {
   it('the ENGINE throws it, so the sweep and the route both see it', () => {
     // The whole governance point: in the route it was invisible to every check
     // that starts inside the engine.
-    expect(() => generateRulePlan(base({ longest_recent_run_km: 2 }), 'paid', '2026-10-05'))
-      .toThrow(LongRunReadinessError)
+    //
+    // ⚠️ RUNWAY ADDED 2026-09-18 (§113 Am.1). This case used to pass a 2 km
+    // longest run with the base fixture's 2027-04-25 race — a 29-week runway —
+    // and that runner is now ADMITTED, which is the entire point of the
+    // amendment. A refusal now requires a runway too short to build them:
+    // 6 ramp weeks (2 km -> the 5 km floor at §45's 20%) + §44's 10-week
+    // marathon block = 16, so a ~12-week runway refuses.
+    expect(() => generateRulePlan(
+      base({ longest_recent_run_km: 2, race_date: '2026-12-28' }), 'paid', '2026-10-05',
+    )).toThrow(LongRunReadinessError)
+  })
+
+  it('🔴 and ADMITS the same runner when the runway is long enough', () => {
+    // §113 Am.1's positive case. The Coaching Board vetoed refusing a 3 km
+    // runner with seven months because of a constant; this is that veto,
+    // asserted. Same runner, same longest run, different runway.
+    expect(() => generateRulePlan(
+      base({ longest_recent_run_km: 2, race_date: '2027-04-25' }), 'paid', '2026-10-05',
+    )).not.toThrow()
   })
 
   it('and still builds for a runner at the floor', () => {

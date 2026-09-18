@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — CB-SUBFLOOR-ADMIT-01 · the safety rule was causing the danger it refused over
+**Shipped:** A first-time charity marathoner with a 3 km longest run and seven months now gets a plan. They were refused.
+
+**Dev learning:** `MIN_SESSION_DISTANCE_KM.long` (5 km) was applied three lines after §45's week-1 cap and won. At a 3 km longest run the cap places 3.3 km — a 10% step — and the floor overrode it to 5.0 km, a **67% step**. §113 then refused the runner *because week one was a leap*. The leap was ours. What makes it worth writing down is that §113's own header **documented the sequence** — "the floor wins and the cap is silently discarded" — and nobody, me included, followed the sentence to its conclusion. The comment above the offending line even shows the author carefully stopping *rounding* from breaking the cap, then breaking it outright with a `Math.max` on the next line.
+
+**Product/creator learning:** The founder said "we cannot refuse them, it's priority one." I went in expecting to have to argue safety against commercial pressure, and the board arrived at the same answer on purely coaching grounds — Willy, the seat most likely to defend a floor, was the one who said he couldn't. Worth remembering: when a product constraint and the engine disagree, it's worth checking whether the engine is actually right before assuming the pressure is the problem.
+
+**AI-building learning:** I wrote the plan file first, and the single most valuable line in it turned out to be the measurement trap: *neither grid holds a row with `longest_recent_run_km < 5` (0 of 37,248), so parity and cohort:shape will report NO CHANGE and that is blindness, not safety.* Both harnesses did report no change. Without having written that down beforehand I would very likely have quoted a clean parity run as evidence. The proof came from the property sweep instead — **1,216 more plans generated**, which is the number that actually means "runners who were refused now get a plan."
+
+**The honest bit:** the fix took five iterations because I migrated the floor one site at a time, and every partial migration produced a NEW failure — producer and checker disagreeing, then §9's long-vs-easy ratio inverting when both floors collapsed to 4, then a floor of 3.2 km being unsatisfiable on a 0.5 km rounding grid, then three more producer sites still reading the flat constant. Each one was a real defect that the flat floor had been masking, but the sequencing was mine: I should have enumerated all 27 call sites before touching the first one. My own test also pinned the wrong thing on its first write — asserting a literal where the rule was a ratio — which is the third time in one day I've done that.
+
+**Hook material:** The app refused a runner because week one would be a 67% jump. Week one was a 10% jump until our own safety floor overrode the safety cap.
+
+**Postable?:** yes
+
 ## 2026-09-18 — REFUSAL-ALT-REACHABLE-01 · the refusal offered a door that was also locked
 **Shipped:** A refused first-time marathoner is now pointed at a 10K plan, which actually generates, instead of a half marathon, which refuses them for the identical reason.
 

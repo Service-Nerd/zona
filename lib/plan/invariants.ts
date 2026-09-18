@@ -10,6 +10,7 @@
 // logs in production (does not break the user).
 
 import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
+import { sessionFloorsFor } from './sessionFloors'
 import { GENERATION_CONFIG } from './generationConfig'
 import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
@@ -725,7 +726,15 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // One owner, both sides. See `coherentGoal`.
   const input = coherentGoal(rawInput)
   const violations: Violation[] = []
-  const minDist = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM
+  // CB-SUBFLOOR-ADMIT-01 — the CHECKER reads the same owner as the PRODUCER.
+  //
+  // `ruleEngine` resolves its floors through `sessionFloorsFor(input)`. If this
+  // kept reading the flat config, the validator would reject exactly the plans
+  // the engine had just been told to build: measured on the first wiring, the
+  // T1 charity persona threw INV-PLAN-MIN-SESSION-SIZE on every week
+  // ("Got 4, expected 5"). A checker reading a different source from the
+  // producer is this repo's most repeated defect class.
+  const minDist = sessionFloorsFor(input.longest_recent_run_km)
   const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
   const distKey = raceDistanceKey(input.race_distance_km)
   const longCapMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey]
@@ -1686,17 +1695,35 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     }
 
     // INV-PLAN-WEEK-1-2-LONG-CAP — first two weeks: long ≤ longest_recent_run × 1.10
-    // (CoachingPrinciples §9 / spec 3.6). Floor takes precedence when the cap
-    // falls below MIN_SESSION_DISTANCE_KM.long — a session below floor is
-    // not coaching-meaningful, so the engine clamps to floor and accepts the
-    // higher early-week long.
+    // (CoachingPrinciples §9 / spec 3.6).
+    //
+    // ⚠️ §113 Amendment 1 (CB-SUBFLOOR-ADMIT-01, 2026-09-18) REMOVED THE FLOOR
+    // ALLOWANCE, and this comment used to be the written permission for the
+    // defect. It read: "Floor takes precedence when the cap falls below
+    // MIN_SESSION_DISTANCE_KM.long — a session below floor is not
+    // coaching-meaningful, so the engine clamps to floor and accepts the higher
+    // early-week long." That sentence is how a +67% opening week was ratified in
+    // advance: at a 3 km longest run the cap places 3.3 km and the flat 5 km
+    // floor overrode it, and §113 then refused the runner for the resulting leap.
+    //
+    // The floor is now resolved per runner (`sessionFloorsFor`) and is bounded
+    // by the runner's own longest run, so it can never exceed `rawCap` —
+    // `min(config, longest) <= longest < longest × 1.10`. The `Math.max` is
+    // therefore not merely unnecessary, it is UNREACHABLE, and leaving it would
+    // leave the permission standing for the next person who changes the floor.
+    // THE CAP IS NOW THE CAP: this is the "no floor override" check the
+    // Coaching Board required, enforced by amending the existing invariant
+    // rather than adding a second one that would assert the same rule twice.
     if (w.n <= 2 && input.longest_recent_run_km > 0 && long?.session.distance_km != null) {
       const rawCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
-      const effectiveCap = Math.max(rawCap, minDist.long)
+      const effectiveCap = rawCap
       if (long.session.distance_km > effectiveCap + 0.01) {
         violations.push({
           code: 'INV-PLAN-WEEK-1-2-LONG-CAP',
-          principle_ref: 'CoachingPrinciples §9',
+          // §113 Am.1 joins §9 here: the amendment REMOVED this check's floor
+          // allowance, so the claim and the code must cite each other or
+          // principleCoverage cannot tell them apart from §92's phantom enforcer.
+          principle_ref: 'CoachingPrinciples §9, §113',
           severity: 'error',
           week: w.n, day: long.day,
           message: `Week ${w.n} long run exceeds longest_recent_run × ${GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER}`,

@@ -1032,6 +1032,20 @@ export const GENERATION_CONFIG = {
     secondary_quality:  4,
   },
 
+  // §113 Amendment 1 (Coaching Board 2026-09-18, CB-SUBFLOOR-ADMIT-01) — the
+  // hard bottom of `sessionFloorsFor()`.
+  //
+  // MIN_SESSION_DISTANCE_KM is a floor on what is worth PRESCRIBING; this is the
+  // floor on what is a SESSION at all. Between them sits the runner whose
+  // longest run is 3 km, whom the engine refused rather than coached, because
+  // the 5 km floor overrode §45's cap and turned a +10% step into +67%.
+  //
+  // 2 km, not lower: below it a "long run" is a walk to the shops, and §113
+  // still refuses — that gate becomes runway-aware, it is not removed. A runner
+  // under this value with any runway is genuinely not ready for a marathon
+  // block and is told so, with an alternative that actually opens.
+  MIN_SESSION_DISTANCE_ABSOLUTE_KM: 2,
+
   // ── Returning runner detection threshold ────────────────────────────────────
   // A user is detected as a "returning runner" when their training_age > 2 years
   // AND their current_weekly_km is below this fraction of peakKm. Below this

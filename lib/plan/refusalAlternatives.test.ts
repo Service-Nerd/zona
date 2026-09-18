@@ -22,9 +22,20 @@ import type { GeneratorInput } from '@/types/plan'
 
 const START = '2026-10-12'
 
+// ⚠️ RACE DATE MOVED IN 2026-09-18 (§113 Am.1). This fixture used to sit at
+// 2027-04-25 — a 29-week runway — and that runner is now ADMITTED rather than
+// refused, because readiness became a function of longest run AND runway. The
+// rule under test here is unchanged (a suggested alternative must actually
+// generate); only the persona who still triggers a refusal has moved. A
+// short-runway first-timer is that persona.
+//
+// The window is narrow and deliberate: §44 refuses a marathon under 10 weeks,
+// and §113 Am.1 now needs `weeksToReachFloor + block`. At a 2 km longest run
+// that is 6 + 10 = 16 weeks, so a ~12-week runway passes §44 and is refused by
+// §113 — which is the case this file has to reach.
 const firstTimer = (race_distance_km: number, longest: number): GeneratorInput => ({
   athlete_name: 'A', age: 38, race_name: 'R', primary_metric: 'distance',
-  plan_start: START, race_distance_km, race_date: '2027-04-25', goal: 'finish',
+  plan_start: START, race_distance_km, race_date: '2027-01-04', goal: 'finish',
   resting_hr: 60, max_hr: 184, current_weekly_km: 10, longest_recent_run_km: longest,
   fitness_level: 'beginner', training_age: '<6mo', recent_quality_training: 'none',
   days_available: 4, days_cannot_train: [], injury_history: [],
@@ -35,7 +46,8 @@ function refuse(input: GeneratorInput): any | null {
 }
 
 describe('REFUSAL-ALT-REACHABLE-01 — a suggested alternative must actually generate', () => {
-  const subFloor = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long - 1
+  // Deep enough below the floor that §113's ramp requirement exceeds the runway.
+  const subFloor = GENERATION_CONFIG.MIN_SESSION_DISTANCE_ABSOLUTE_KM
 
   it('the case exists: a sub-floor first-timer IS refused for the marathon', () => {
     // Anti-vacuous. If this ever stops refusing, the rest of the file is inert.
