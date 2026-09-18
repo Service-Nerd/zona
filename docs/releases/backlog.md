@@ -152,6 +152,32 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 #### 🐞 Four observations from the founder's device — filed 2026-09-18
 
+> 🔴🔴 **MARATHON-VOLUME-GATE-01 — an UNGOVERNED refusal sits in an API route and will refuse a large share of the Make-A-Wish cohort.** *(P0. Supersedes GTM-DECK-CORRECT-01, which is withdrawn. Coaching Board ruling below.)*
+>
+> `app/api/generate-plan/route.ts:28` — a `validate()` wrapper called at `:92`, **before** `generateRulePlan` at `:128`:
+>
+> ```ts
+> if (input.days_available < 2) return 'At least 2 training days per week are required.'
+> if (input.race_distance_km >= 42 && input.current_weekly_km < 20)
+>   return 'Current weekly volume is very low for a marathon. We need at least 20 km/week to generate a safe plan. Build your base first.'
+> if (input.race_distance_km >= 21 && input.longest_recent_run_km < 5)
+>   return 'Longest recent run is very short for this distance. Log at least a 5 km run in the last 6 weeks before generating this plan.'
+> ```
+>
+> **Who this refuses.** A first-time marathoner running **under 20 km a week** in October — which is a plain description of a large part of a charity marathon cohort — gets **no plan at all**. So does anyone attempting a half or a marathon whose longest recent run is under 5 km. **This is Jack's drop-out population, refused at the first screen**, and told to *"build your base first"* with no base-building plan offered.
+>
+> 🔴 **THE GOVERNANCE FAILURE IS THE POINT, and it is a class this repo has already paid for.** These three numbers:
+> - are **hardcoded in an API route**, not in `GENERATION_CONFIG`;
+> - have **no `CoachingPrinciples` section** — the comment says *"kept until promoted to a CoachingPrinciples section in a future round"*, and that round never came;
+> - were therefore **never ratified by the Coaching Board**;
+> - are **invisible to `configPrincipleSync.test.ts`** (it reads `GENERATION_CONFIG`) and to **`coaching-guard.py`** (it does not watch `app/api/`).
+>
+> **Identical to `peakKmByLevel` (§106, MAINT-PROFILE-01):** *"Every governance layer this project has, bypassed by a table being in the wrong place."* It happened again, and this time it is the gate that decides whether a runner gets a plan at all.
+>
+> ⚠️ **They also contradict the two gates that ARE governed.** §44 (prep time) and §52 (days) both compute **`alternatives`** — `daysAlternativesFor()` returns *"Race the Half at this event instead"*, *"Switch goal to finish"*. These three return a **bare string with no alternatives**, which §44's own text requires (*"Return error explaining why and listing alternatives"*).
+>
+> 🔴 **HOW I GOT THIS WRONG, recorded because the method matters more than the item.** Earlier the same day I "refuted" this claim by generating 42 combinations of volume × longest run and finding that **every one built a plan**. That measurement was correct and irrelevant: it called `generateRulePlan` directly and **never went through the route**. I verified the engine, not the path a runner takes, and told the founder to change a deck that was right. **A refusal that lives at the boundary is invisible to every test that starts inside it.**
+
 > 🔴 **REFUSAL-SCREEN-01 — a deliberate coaching decision is presented as a crash.** *(P1. The actionable half of REFUSAL-THRESHOLDS-01 below. Belongs to FIRSTRUN-MARATHON-01 touchpoint 2.)*
 >
 > `GeneratePlanScreen.tsx:1176`. When the engine declines to build a plan, the runner gets:
@@ -183,7 +209,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > **Fix:** both call sites use `authedFetch` (56 other sites already do). Then re-test the foundation add on device. **Add a guard** — a test that walks `app/` + `components/` for `fetch('/api/` and fails on any site whose route calls `getUserFromRequest` without an `Authorization` header, with `waitlist` allowlisted. The pattern is `signOutOwner.test.ts`.
 
-> 🟡 **GTM-DECK-CORRECT-01 — the Make-A-Wish deck carries a false engine claim.** *(P1, founder action, no code.)*
+> ~~🟡 **GTM-DECK-CORRECT-01 — the Make-A-Wish deck carries a false engine claim.**~~ 🔴 **WITHDRAWN 2026-09-18, SAME DAY. THE DECK WAS RIGHT AND I WAS WRONG. DO NOT CHANGE THE DECK.** See `MARATHON-VOLUME-GATE-01` below. Original text kept for the record:
 >
 > The deck states the engine refuses a marathon below 20 km/week or a 5 km longest run. **Measured false** — see REFUSAL-THRESHOLDS-01 below; every one of 42 volume × longest-run combinations generated. **Correct it before the deck is shown again or sent to Jack.** The true constraints are *fewer than 3 days a week* and *fewer than 10 weeks* — and the 10-week one cannot affect anyone who signs up on time for London 2027.
 >
@@ -203,7 +229,9 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > **The claim** (from a previous session, carried into the Make-A-Wish deck): *"The engine refuses a marathon plan if someone's running under 20 km a week, or their longest recent run is under 5 km."*
 >
-> 🔴 **FALSE. Measured, not read.** A 7 × 6 grid over `current_weekly_km` (5→40) × `longest_recent_run_km` (2→12), marathon, `finish` goal, 4 days, ~30 weeks out: **every single combination generated a 20-week plan.** 5 km/week with a 2 km longest run builds a marathon plan. **There is no volume threshold and no longest-run threshold anywhere in the refusal path.** (Both fields feed `fitnessThresholds` — which *classifies* a runner as beginner, e.g. `beginner_max_long_km: 8` — and a classification threshold is not a refusal. That is the likely source of the confusion.)
+> 🔴 **RETRACTED 2026-09-18 — THE CLAIM IS TRUE AND MY REFUTATION WAS WRONG.** I measured `generateRulePlan` directly, which **bypasses `app/api/generate-plan/route.ts`'s own `validate()` wrapper** (`:28`), called at `:92` **before** generation at `:128`. The route holds exactly the thresholds the claim described. **I verified the engine, not the path a runner takes.** The grid below is accurate about the ENGINE and says nothing about the app. Original, wrong, kept for the record:
+>
+> ~~FALSE. Measured, not read.~~ A 7 × 6 grid over `current_weekly_km` (5→40) × `longest_recent_run_km` (2→12), marathon, `finish` goal, 4 days, ~30 weeks out: **every single combination generated a 20-week plan.** 5 km/week with a 2 km longest run builds a marathon plan. **There is no volume threshold and no longest-run threshold anywhere in the refusal path.** (Both fields feed `fitnessThresholds` — which *classifies* a runner as beginner, e.g. `beginner_max_long_km: 8` — and a classification threshold is not a refusal. That is the likely source of the confusion.)
 >
 > ✅ **What ACTUALLY refuses a marathon, both verified by generating:**
 > | Condition | Message |
