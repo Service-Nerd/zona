@@ -18,7 +18,9 @@
 // plan, so signing out there left the previous account's race countdown on the
 // home-screen widget for whoever signed in next. Two copies, one of them wrong,
 // which is the D-16 class this repo keeps paying for (the tier ladder had
-// three copies, the deload cadence five). One owner now.
+// three copies, the deload cadence five). One owner now — and the SEQUENCE
+// itself is owned one level down, in `lib/auth/signOut.ts`, because the Me
+// screen's button is presented differently and must still behave identically.
 //
 // ⚠️ NOT the "Careful Now" treatment. `ui-patterns.md` § SectionLabel groups
 // sign-out with account deletion, which is right on Me — a considered action
@@ -27,8 +29,7 @@
 // link, secondary to whatever the screen's real secondary action is.
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { clearWidgetState } from '@/lib/native/sharedStore'
+import { signOutAndReturnToLogin } from '@/lib/auth/signOut'
 
 export default function SignOutLink({ disabled = false }: {
   /** True while the host screen is mid-action, so the escape cannot fire
@@ -43,25 +44,26 @@ export default function SignOutLink({ disabled = false }: {
       onClick={async () => {
         if (blocked) return
         setBusy(true)
-        try {
-          // Clear the App-Group store BEFORE the session goes: the widget reads
-          // race countdown and today's session from it, and a stale one outlives
-          // the account that wrote it.
-          await clearWidgetState().catch(() => {})
-          await createClient().auth.signOut()
-        } finally {
-          // Hard navigation, not router.replace. The auth cookie write can race
-          // a soft nav — the same reason the login screen navigates this way
-          // after a successful sign-in.
-          window.location.href = '/auth/login'
-        }
+        // The sequence (clear the widget store, end the session, hard-navigate)
+        // belongs to lib/auth/signOut.ts, shared with the Me screen's button.
+        await signOutAndReturnToLogin()
       }}
       disabled={blocked}
       style={{
         width: '100%', background: 'none', border: 'none',
         // 44px is the iOS HIG minimum. The hand-rolled original used 40.
         padding: '12px 0', minHeight: '44px',
+        // Separation, not decoration. On Connect Runs this link sits directly
+        // under the screen's own "Not now →" skip, and at 375px the two read as
+        // a pair of near-identical muted links — one skips a step, the other
+        // ends the session, on the one onboarding screen where the user already
+        // HAS a plan to lose. Caught on /onboarding-preview; no test sees this.
+        // A rule would be a decorative divider (banned), so it is space.
+        marginTop: '8px',
         fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+        // A disabled control must look unavailable. `cursor` alone changed
+        // nothing a user could see.
+        opacity: blocked ? 0.4 : 1,
         cursor: blocked ? 'default' : 'pointer',
       }}
     >
