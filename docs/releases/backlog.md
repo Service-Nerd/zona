@@ -138,6 +138,14 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > ⚠️ **The wider lesson, worth more than the correction:** this claim came from a previous session, went into a partner-facing deck unverified, and was ~10 minutes of code-reading away from being caught. **An engine claim in a customer-facing document gets checked against the engine.**
 
+> 🟡 **WIZARD-TIME-CHIPS-01 — the wizard's own time chips break the rule the notes now follow, and relabelling them silently breaks a saved draft.** *(P2. Found while fixing NOTE-DURATION-FMT-01; recorded in the feature registry and NOT filed here until now.)*
+>
+> ADR-015 locks the duration rule: under 60 reads `45 min`, at or above it reads in hours. `MAX_WEEKDAY_CHIPS` (`GeneratePlanScreen.tsx:116`) reads **`30 min · 45 min · 60 min · 90 min · 2 hrs · 3 hrs`** — a third convention: minutes past the hour for two values, then hours, and `hrs` rather than `h`. The plan notes were fixed on 2026-09-18; the input screen the runner meets *first* was not.
+>
+> 🔴 **It is not a one-line relabel, which is why it is filed rather than done.** The saved wizard draft stores the chip's **LABEL**, and restore matches on it: `MAX_WEEKDAY_CHIPS.find(c => c.label === maxWeekdayChip)?.value` (`:870`). Change a label and any in-flight `zona_wizard_draft` matches nothing, `?.value` yields `undefined`, and the runner's stated weekday cap **silently becomes "No limit"** — which then changes the plan they get. Same `??`-over-a-missing-value class this repo has now paid for four times.
+>
+> **Do:** make the draft value-keyed first, then relabel through `formatDuration`. **Verify:** save a draft on the old labels, deploy, reopen the wizard, confirm the cap survived.
+
 > 🟢 **COPY-DAYS-PLURAL-01 — "1 days/week".** *(P3, one line.)* The days-gate message does not singularise: a runner who says they can run one day a week is told *"1 days/week is not enough"*. Fix while in REFUSAL-SCREEN-01.
 
 > ⚠️ **REFUSAL-THRESHOLDS-01 — the claim that shaped the marketing deck is WRONG about the trigger and RIGHT about the consequence.** *(Checked in code 2026-09-18. Correct the deck before it goes further.)*
