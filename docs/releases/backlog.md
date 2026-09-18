@@ -10,7 +10,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at 2026-09-18
 
-**Everything is committed and pushed** (last ship `a0becdd`, 2026-09-18 — SLT queue #1-#11, through FIRSTRUN-MISSED-01 parts 1-2 (§112)). `npm run verify` exit 0 (**2,252 tests / 249 files**, **120 invariants**, matrix 65/0) · `npm run check:db` exit 0 · sweep **14,221 plans, no new violations** (§111 now refuses ~1,750 low-base marathon/ultra inputs) · coaching HIGH 0 / MED 26 · `verify:parity` **208/5,940 moved, all OK→REFUSED** (§111; generated plans byte-identical).
+**Everything is committed and pushed** (last ship `a0becdd`, 2026-09-18 — SLT queue #1-#11, through FIRSTRUN-MISSED-01 parts 1-2 (last ship `2fb668c`, 2026-09-18 — SLT queue complete through Tier 4 bar the FAQ). `npm run verify` exit 0 (**2,266 tests / 251 files**) · sweep **14,221 plans, no new violations** · HIGH 0 / MED 26.
 
 > ▶️ **NEXT UP when we restart — the FIRSTRUN-MARATHON-01 queue, Tier 1 + Tier 2 (#5–8) are DONE.** Resume at the **SLT-ORDERED WORK QUEUE** (§ below):
 > - ~~#9 `FIRSTRUN-MOMENTS-01c/d/e`~~ ✅ **SHIPPED.** Next is #10. Original:
@@ -167,8 +167,8 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | # | Item | Size |
 |---|---|---|
 | 12 | **`GTM-CHARITY-09`** partner FAQ (5 questions, charity's voice, **include "why hasn't my plan started"**) | S |
-| 13 | **`FIRSTRUN-MOMENTS-01f`** "one of 500" — **needs redemption moved to sign-up first** | M |
-| 14 | **`WIZARD-TIME-CHIPS-01`** — value-key the draft FIRST | S |
+| ~~13~~ | ✅ **`FIRSTRUN-MOMENTS-01f`** — SHIPPED 2026-09-18 → feature-registry. ⚠️ **It was never blocked** (three doors into redeem, one is the wizard) and checking the data **cut a line of approved copy** that nothing measures | M |
+| ~~14~~ | ✅ **`WIZARD-TIME-CHIPS-01`** — SHIPPED 2026-09-18 → feature-registry. Key-based chips + legacy-draft shim; labels now derived through `formatDuration` | S |
 | 15 | **iOS 16.6** — tell Jack, do not build | — |
 
 ### ⏭️ Deliberately not in this queue
