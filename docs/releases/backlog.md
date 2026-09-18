@@ -15,7 +15,8 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > ▶️ **NEXT UP when we restart — the FIRSTRUN-MARATHON-01 queue, Tier 1 + Tier 2 (#5–8) are DONE.** Resume at the **SLT-ORDERED WORK QUEUE** (§ below):
 > - ~~#9 `FIRSTRUN-MOMENTS-01c/d/e`~~ ✅ **SHIPPED.** Next is #10. Original:
 > - ~~#9~~ — the generating ceremony derived from the runner's own `GeneratorInput`, the distance reframe, the worst-day naming. ⚠️ **(e) only if derived live** (Hutchinson's binding condition). Full specs in § "🎬 FIRSTRUN-MOMENTS-01 — full specs". *Actionable without founder input (SLT already approved the specs); UI → trigger `frontend-design`.*
-> - **#10 `FIRSTRUN-MISSED-01` part 1** — a runner reports an injury and nothing reads it (a defect, unblocked). Part 2 (#11) → Coaching Board once part 1 lands.
+> - ~~#10 `FIRSTRUN-MISSED-01` part 1~~ ✅ **SHIPPED.** Next is #11 (Coaching Board) or Tier 4. Original:
+> - ~~#10~~ — a runner reports an injury and nothing reads it (a defect, unblocked). Part 2 (#11) → Coaching Board once part 1 lands.
 > - **Tier 4:** #12 `GTM-CHARITY-09` partner FAQ (founder/partner comms), #13 `01f` (blocked — needs redemption moved to sign-up first), #14 `WIZARD-TIME-CHIPS-01`, #15 iOS 16.6 (tell Jack, no build).
 >
 > **Carried residuals from this session (not blockers):** on-device visual of the refusal screen + the two reveal cards (auth/state-gated — reused proven patterns + markup-tested); a small copy follow-up under `REFUSAL-SCREEN-01` (voice the §44/§52 message internals + add the "you have N weeks" runway line — a parity-moving governed-message change); and an open call on whether to gate `FirstRunCard` ("first up") to first-timers only (shipped ungated + neutral). The route's `longest_recent_run_km < 5` gate is the same ungoverned-number smell as the old volume gate → its own Coaching Board sitting.
@@ -156,8 +157,10 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 | # | Item | Size | Why here |
 |---|---|---|---|
-| 10 | **`FIRSTRUN-MISSED-01` part 1** — the dead input | S/M | A runner reports an **injury** and it is read by **nothing**. One column, two disjoint vocabularies. A defect, unblocked |
+| ~~10~~ | ✅ **`FIRSTRUN-MISSED-01` part 1** — SHIPPED 2026-09-18 → feature-registry. ⚠️ The "read by nothing" framing was **retracted before building** (the reason drives §21 via `/api/adjust-plan`); the real defect was the storage **displacing** real fatigue data in a five-entry window — 2 users had an unreachable trigger | S/M | done |
 | 11 | **`FIRSTRUN-MISSED-01` part 2** → Coaching Board | — | Routing it to §R20-T4 is prescription. **Convene once part 1 lands** |
+
+> 🟢 **FATIGUE-ARRAY-DRY-01 — five inline `['Fresh','Fine','Heavy','Wrecked']` arrays.** *(P3, filed 2026-09-18 from FIRSTRUN-MISSED-01.)* `lib/coaching/completionVocab.ts → FATIGUE_TAGS` is now the owner and the skip side uses it, but the fatigue side is still written out by hand at `DashboardClient.tsx:4233, 4850, 5655, 13622` and re-derived as a membership test in `post-run-reframe/route.ts:373` and `weekly-free-insight/route.ts:151`. **Deliberately NOT done as a drive-by** — it is a five-site refactor of colour logic in a 13k-line file for no user-visible change. Do it when one of those screens is open for another reason.
 
 ### 📦 Tier 4 — before the cohort arrives, not before the codes.
 
