@@ -359,6 +359,29 @@ across the seven months combined.
 > whether a deferral should carry its completions forward. **Affects the charity cohort directly** — a
 > London Marathon place moved by a week would trigger it.
 
+> 🔲 **PLAN-CONCURRENCY-01 — plans are archive-and-overwrite, not two separate entities.** *(P3, founder-requested park, filed 2026-09-18.)*
+>
+> **Founder decision 2026-09-18: ONE plan at a time is fine for now. Parked deliberately, not deferred by neglect.**
+>
+> `PLAN-WEEK-COLLISION-01` fixed the BEHAVIOUR — a new plan now inherits nothing from the old one, and the
+> old one's completions, analyses, reports, reshapes, overrides and reflections are all preserved. What it
+> did not change is the STRUCTURE: `plans` is still one row per user (`onConflict: 'user_id'`), and the
+> previous plan lives in `plan_archive` as a read-only snapshot.
+>
+> **What that means concretely:** you cannot switch back to a previous plan, and Plan History cannot show
+> "plan one, with its sessions" — the superseded rows carry a timestamp, not a link to the archive row that
+> owns them.
+>
+> **This is the multi-plan concurrency ADR-013 explicitly deferred**, in its own Follow-ons: *"If true
+> multi-plan concurrency is ever needed, revisit the `plan_id`-scoped-completions migration (the rejected
+> alternative)."* ⚠️ **Read that line carefully before picking this up** — the same Follow-ons note is what
+> covered the transition that produced the 94%-pre-completed defect. A rejection that was correct for the
+> case in front of it is not a rejection for every case.
+>
+> **Shape if it is ever built:** `plan_id` on `plans` (it has none today), the same column on the seven
+> week-keyed tables, `superseded_at` retired in its favour, and a plan picker. Large — a migration across
+> seven tables plus every read and write site. **Do not start it without a reason beyond tidiness.**
+
 #### 💷 Cost, resilience and unit economics — filed 2026-09-18 (second pass)
 
 From a founder cost review of the Make-A-Wish grant: *what does it cost per month, and what happens if
