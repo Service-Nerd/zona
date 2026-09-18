@@ -5,7 +5,7 @@ import FirstRunCard from './FirstRunCard'
 
 // FIRSTRUN-MOMENTS-01b — assertions on the rendered card.
 
-const html = (props = { dayLabel: 'Monday', metric: '20 min', effort: 'Easy' }) =>
+const html = (props = { dayLabel: 'Monday', metric: '20 min', effort: 'Easy', reassure: true }) =>
   renderToStaticMarkup(React.createElement(FirstRunCard, props))
 
 describe('FirstRunCard markup', () => {
@@ -25,5 +25,30 @@ describe('FirstRunCard markup', () => {
 
   it('has no em dash (brand rule)', () => {
     expect(html()).not.toContain('—')
+  })
+
+  // FIRSTRUN-GATE-CALL-01 (SLT, 2026-09-18) — the card is ungated, the
+  // reassurance is not.
+  describe('the reassurance sentence', () => {
+    const experienced = { dayLabel: 'Tuesday', metric: '8km', effort: 'Easy', reassure: false }
+
+    it('🔴 is withheld from an experienced runner', () => {
+      const out = html(experienced)
+      expect(out).not.toContain('This is where it starts')
+      expect(out, 'the card itself is NEVER gated — the cue is for everyone').toContain('Tuesday. 8km. Easy.')
+    })
+
+    it('appears for a new runner', () => {
+      expect(html()).toContain('This is where it starts. It is meant to feel too easy.')
+    })
+
+    it('🔴 never asserts what the runner is capable of', () => {
+      // Hutchinson's block: "Nothing here you can't do" is a capability claim,
+      // and §111/§113 exist because it is false for some of the people most
+      // likely to check. Reassure about SIZE, which §12 makes true by design.
+      for (const props of [undefined, experienced]) {
+        expect(html(props as never)).not.toMatch(/can't do|cannot do|you've got this/i)
+      }
+    })
   })
 })

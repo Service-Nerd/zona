@@ -140,7 +140,12 @@ export default function OnboardingPreviewPage() {
               weeks={11}
               note={'You have 11 weeks before this plan starts, and we are not going to pretend they are training. Your plan is laid out backwards from race day and there is a limit to how long a useful one runs for, so the spare weeks sit in front of it rather than being added to it. Keep running easy through them, at the volume you are on now. Do not use the time to ramp up: arriving at week one with the legs you have today is the point.'}
             />
-            <FirstRunCard dayLabel="Monday" metric="20 min" effort="Easy" />
+            <FirstRunCard dayLabel="Monday" metric="20 min" effort="Easy" reassure />
+            {/* FIRSTRUN-GATE-CALL-01 — the same card for an experienced runner.
+                Both states are shown because the SLT ruling is about which
+                sentence appears, and a harness that only renders one of them
+                cannot show whether the ruling landed. */}
+            <FirstRunCard dayLabel="Tuesday" metric="8km" effort="Easy" reassure={false} />
             <PlanScaleCard totalDistance="780km" raceDistance="42.2km" hardestRun="3h 28" hardestMonth="March" />
             <CharityCohortCard partnerName="Make-A-Wish UK" cohortSize={500} />
           </div>

@@ -1349,7 +1349,7 @@ export default function GeneratePlanScreen({
               under the runway relief (01a): "you're early" then "here's where it
               starts". Absent when there is nothing concrete to promise. */}
           {(() => {
-            const firstRun = firstRunOfPlan(weeks, preferredUnits)
+            const firstRun = firstRunOfPlan(weeks, preferredUnits, trainingAge)
             return firstRun ? (
               <div style={{ marginBottom: '16px' }}>
                 <FirstRunCard {...firstRun} />

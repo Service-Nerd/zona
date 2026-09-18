@@ -7,7 +7,7 @@
 
 import type { FirstRun } from '@/lib/plan/firstRun'
 
-export default function FirstRunCard({ dayLabel, metric, effort }: FirstRun) {
+export default function FirstRunCard({ dayLabel, metric, effort, reassure }: FirstRun) {
   return (
     <div
       style={{
@@ -37,9 +37,11 @@ export default function FirstRunCard({ dayLabel, metric, effort }: FirstRun) {
         {dayLabel}. {metric}. {effort}.
       </div>
 
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: '8px' }}>
-        This is where it starts. Nothing here you can&rsquo;t do.
-      </div>
+      {reassure && (
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: '6px' }}>
+          This is where it starts. It is meant to feel too easy.
+        </div>
+      )}
     </div>
   )
 }
