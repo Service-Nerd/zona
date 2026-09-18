@@ -14,6 +14,8 @@
 // Guarded by `signOutOwner.test.ts`, which walks `app/` and `components/` and
 // fails the build on any `auth.signOut()` outside this module.
 
+import { useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { clearWidgetState } from '@/lib/native/sharedStore'
 
@@ -25,20 +27,49 @@ import { clearWidgetState } from '@/lib/native/sharedStore'
  * write outlives the account that made it. `clearWidgetState` swallows its own
  * errors and no-ops on web, so it cannot block the sign-out.
  *
- * Navigation is a HARD load, not `router.replace`. Sign-in already does this
- * (`app/auth/login/page.tsx:188` — "router.push (soft nav) can race the cookie
- * write"), and the same applies leaving: a hard load also tears down every
- * in-memory copy of the previous user's plan, name and sessions rather than
- * trusting React to unmount them.
+ * 🔴 NAVIGATION MUST BE A CLIENT-SIDE ROUTE CHANGE, NOT `window.location`.
+ * On iOS this is the difference between staying in the app and being thrown
+ * out into Safari. Capacitor's `WebViewDelegationHandler.decidePolicyFor`:
+ *
+ *     if let host = navURL.host, bridge.config.shouldAllowNavigation(to: host) { .allow }
+ *     let isApplicationNavigation =
+ *         navURL.absoluteString.starts(with: bridge.config.serverURL.absoluteString) || ...
+ *     if !isApplicationNavigation, toplevelNavigation { UIApplication.shared.open(navURL); .cancel }
+ *
+ * `shouldAllowNavigation` consults ONLY the `allowNavigation` hostname list —
+ * the server's own host is NOT implicitly allowed. So the only thing keeping a
+ * full-document load inside the webview is a PREFIX match on the whole
+ * absolute string, and our `server.url` carries a path:
+ * `https://www.zonna.run/dashboard`. `https://www.zonna.run/auth/login` does
+ * not start with it, so iOS opened the login page in Safari and the user was
+ * left signed in, in a browser, outside the app.
+ *
+ * A history navigation never reaches `decidePolicyFor`, so `router.replace`
+ * simply cannot escape. `window.location` is therefore banned here, and
+ * `signOutNavigation.test.ts` fails the build if it comes back.
+ *
+ * (`capacitor.config.ts` also now lists `www.zonna.run` under
+ * `allowNavigation`, which makes the first check pass and closes this for ANY
+ * future full navigation — but that only takes effect on the next native
+ * build, whereas this file ships over the air to phones already installed.)
  */
-export async function signOutAndReturnToLogin(): Promise<void> {
+export async function signOutAndReturnToLogin(navigate: () => void): Promise<void> {
   try {
     await clearWidgetState()
     const { error } = await createClient().auth.signOut()
     if (error) forgetLocalSession(error)
   } finally {
-    window.location.href = '/auth/login'
+    navigate()
   }
+}
+
+/**
+ * The one way a screen should sign a runner out. Owns the sequence AND the
+ * navigation, so no call site has to remember the iOS rule above.
+ */
+export function useSignOut(): () => Promise<void> {
+  const router = useRouter()
+  return useCallback(() => signOutAndReturnToLogin(() => router.replace('/auth/login')), [router])
 }
 
 /**

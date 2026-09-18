@@ -29,7 +29,7 @@
 // link, secondary to whatever the screen's real secondary action is.
 
 import { useState } from 'react'
-import { signOutAndReturnToLogin } from '@/lib/auth/signOut'
+import { useSignOut } from '@/lib/auth/signOut'
 
 export default function SignOutLink({ disabled = false }: {
   /** True while the host screen is mid-action, so the escape cannot fire
@@ -37,6 +37,7 @@ export default function SignOutLink({ disabled = false }: {
   disabled?: boolean
 }) {
   const [busy, setBusy] = useState(false)
+  const signOut = useSignOut()
   const blocked = disabled || busy
 
   return (
@@ -44,9 +45,11 @@ export default function SignOutLink({ disabled = false }: {
       onClick={async () => {
         if (blocked) return
         setBusy(true)
-        // The sequence (clear the widget store, end the session, hard-navigate)
-        // belongs to lib/auth/signOut.ts, shared with the Me screen's button.
-        await signOutAndReturnToLogin()
+        // The sequence AND the navigation belong to lib/auth/signOut.ts.
+        // ⚠️ It must be a ROUTE CHANGE, not window.location — on iOS a
+        // full-document load to a path outside `server.url`'s /dashboard
+        // prefix is handed to Safari. See that file.
+        await signOut()
       }}
       disabled={blocked}
       style={{

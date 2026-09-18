@@ -35,7 +35,20 @@ const config: CapacitorConfig = {
     // Capacitor opens any non-server-host navigation in Safari — which
     // breaks Supabase OAuth (Google) and Strava OAuth, since the user
     // ends up authenticated in Safari instead of returning to the app.
+    //
+    // 🔴 OUR OWN HOST MUST BE IN THIS LIST, and the reason is the `/dashboard`
+    // above. Capacitor's iOS policy (WebViewDelegationHandler.decidePolicyFor)
+    // checks `shouldAllowNavigation(to: host)`, which consults ONLY this list —
+    // the server's own host is NOT implicitly allowed — and then falls back to
+    //     navURL.absoluteString.starts(with: serverURL.absoluteString)
+    // a PREFIX match on the whole absolute string. Because `server.url` carries
+    // a path, that degenerates into "only /dashboard/* counts as in-app", and
+    // every other route is handed to `UIApplication.shared.open` — i.e. Safari.
+    // That is how signing out took the user OUT of the app and into a browser,
+    // still signed in (ONBOARD-EXIT-01, found on device 2026-09-18).
+    // The path optimisation is kept; this line makes it safe.
     allowNavigation: [
+      'www.zonna.run',
       'accounts.google.com',
       '*.googleapis.com',
       '*.googleusercontent.com',

@@ -10,6 +10,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // have passed everything shipped so far.
 
 const clearWidgetState = vi.fn()
+/** The navigation is injected, so a test can see it happen without a DOM. */
+const nav = vi.fn()
 const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 const signOut = vi.fn()
 const calls: string[] = []
@@ -23,15 +25,9 @@ vi.mock('@/lib/supabase/client', () => ({
 
 import { signOutAndReturnToLogin } from './signOut'
 
-function stubWindow() {
-  const loc = { href: '' }
-  // The module reads `window.location.href`; the node environment has none.
-  ;(globalThis as any).window = {
-    get location() { return loc },
-    set location(v: any) { loc.href = v },
-  }
-  return loc
-}
+/** Kept only so the module's environment looks like a browser. Navigation is
+ *  asserted through the injected `nav`, never through `window`. */
+function stubWindow() { (globalThis as any).window = {} }
 
 describe('signOutAndReturnToLogin', () => {
   beforeEach(() => {
@@ -39,51 +35,52 @@ describe('signOutAndReturnToLogin', () => {
     clearWidgetState.mockReset().mockResolvedValue(undefined)
     signOut.mockReset().mockResolvedValue({ error: null })
     warn.mockReset()
+    nav.mockReset()
   })
 
   it('clears the widget store BEFORE ending the session', async () => {
     stubWindow()
-    await signOutAndReturnToLogin()
+    await signOutAndReturnToLogin(nav)
     expect(calls).toEqual(['clearWidgetState', 'signOut'])
   })
 
   it('lands on the login page', async () => {
-    const loc = stubWindow()
-    await signOutAndReturnToLogin()
-    expect(loc.href).toBe('/auth/login')
+    stubWindow()
+    await signOutAndReturnToLogin(nav)
+    expect(nav).toHaveBeenCalledTimes(1)
   })
 
   it('navigates even when signOut REJECTS — the user must not be stranded', async () => {
-    const loc = stubWindow()
+    stubWindow()
     signOut.mockRejectedValue(new Error('network'))
     // The whole point of the `finally`. Without it a runner on a flaky
     // connection presses Sign out, nothing happens, and they are still stuck
     // on the screen that has no other way out.
-    await expect(signOutAndReturnToLogin()).rejects.toThrow('network')
-    expect(loc.href).toBe('/auth/login')
+    await expect(signOutAndReturnToLogin(nav)).rejects.toThrow('network')
+    expect(nav).toHaveBeenCalledTimes(1)
   })
 
   it('navigates even when the widget clear REJECTS', async () => {
-    const loc = stubWindow()
+    stubWindow()
     // clearWidgetState swallows its own errors today, so this can only happen
     // if that changes. It must not become a way to trap the user.
     clearWidgetState.mockRejectedValue(new Error('app group missing'))
-    await expect(signOutAndReturnToLogin()).rejects.toThrow('app group missing')
-    expect(loc.href).toBe('/auth/login')
+    await expect(signOutAndReturnToLogin(nav)).rejects.toThrow('app group missing')
+    expect(nav).toHaveBeenCalledTimes(1)
     expect(calls).toEqual(['clearWidgetState'])
   })
 
   it('awaits the session teardown before navigating (a hard load kills pending work)', async () => {
-    const loc = stubWindow()
+    stubWindow()
     let released!: () => void
     // Must resolve to the real `{ error }` shape — the caller destructures it.
     signOut.mockReturnValue(new Promise(res => { released = () => res({ error: null }) }))
-    const done = signOutAndReturnToLogin()
+    const done = signOutAndReturnToLogin(nav)
     await Promise.resolve()
-    expect(loc.href, 'navigated while signOut was still in flight').toBe('')
+    expect(nav, 'navigated while signOut was still in flight').not.toHaveBeenCalled()
     released()
     await done
-    expect(loc.href).toBe('/auth/login')
+    expect(nav).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -122,22 +119,23 @@ describe('signOut FAILED but resolved — the case supabase-js leaves signed in'
     calls.length = 0
     clearWidgetState.mockReset().mockResolvedValue(undefined)
     warn.mockReset()
+    nav.mockReset()
   })
 
   it('clears the auth COOKIE when the revoke errors', async () => {
-    const loc = stubWindow()
+    stubWindow()
     const { removed } = stubStorage(['sb-wkppmpsvqkaxbekdgzdm-auth-token=live', 'other=keep'])
     signOut.mockResolvedValue({ error: { message: 'Failed to fetch' } })
-    await signOutAndReturnToLogin()
+    await signOutAndReturnToLogin(nav)
     expect(removed).toEqual(['sb-wkppmpsvqkaxbekdgzdm-auth-token'])
-    expect(loc.href).toBe('/auth/login')
+    expect(nav).toHaveBeenCalledTimes(1)
   })
 
   it('clears the auth key from localStorage too (a plain browser client uses it)', async () => {
     stubWindow()
     const { localStorage } = stubStorage([])
     signOut.mockResolvedValue({ error: { message: 'Failed to fetch' } })
-    await signOutAndReturnToLogin()
+    await signOutAndReturnToLogin(nav)
     expect(localStorage['sb-abc-auth-token' as keyof typeof localStorage]).toBeUndefined()
   })
 
@@ -145,7 +143,7 @@ describe('signOut FAILED but resolved — the case supabase-js leaves signed in'
     stubWindow()
     const { store, localStorage } = stubStorage(['sb-x-auth-token=live', 'other=keep'])
     signOut.mockResolvedValue({ error: { message: 'boom' } })
-    await signOutAndReturnToLogin()
+    await signOutAndReturnToLogin(nav)
     expect(store.value).toBe('other=keep')
     expect(localStorage['zona_wizard_draft' as keyof typeof localStorage]).toBe('keep')
   })
@@ -153,7 +151,7 @@ describe('signOut FAILED but resolved — the case supabase-js leaves signed in'
   it('leaves the reason where a bug report can find it', async () => {
     stubWindow(); stubStorage([])
     signOut.mockResolvedValue({ error: { message: 'Failed to fetch' } })
-    await signOutAndReturnToLogin()
+    await signOutAndReturnToLogin(nav)
     expect(warn).toHaveBeenCalled()
   })
 
@@ -161,7 +159,7 @@ describe('signOut FAILED but resolved — the case supabase-js leaves signed in'
     stubWindow()
     const { store } = stubStorage(['sb-x-auth-token=live'])
     signOut.mockResolvedValue({ error: null })
-    await signOutAndReturnToLogin()
+    await signOutAndReturnToLogin(nav)
     expect(store.value).toBe('sb-x-auth-token=live')
     expect(warn).not.toHaveBeenCalled()
   })

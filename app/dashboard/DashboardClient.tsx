@@ -48,7 +48,7 @@ import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
 import { clearWidgetState } from '@/lib/native/sharedStore'
-import { signOutAndReturnToLogin } from '@/lib/auth/signOut'
+import { useSignOut } from '@/lib/auth/signOut'
 import SignOutLink from '@/components/shared/SignOutLink'
 import ZoneBar, { zoneNumberForType, zoneShortName, type Zone } from '@/components/shared/ZoneBar'
 import SessionSteps from '@/components/shared/SessionSteps'
@@ -11546,6 +11546,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
    */
   recentChanges?: any[]
 }) {
+  const signOut = useSignOut()
   const [activeSection, setActiveSection] = useState<'main' | 'quit' | 'delete-account' | 'support' | 'plan-history'>('main')
 
   // Push subscription state — bubbled up from PushNotificationsRow so we can
@@ -12129,7 +12130,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         <SectionLabel>Careful Now</SectionLabel>
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <button
-            onClick={signOutAndReturnToLogin}
+            onClick={signOut}
             style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
           >
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', fontWeight: 500 }}>Sign out</span>

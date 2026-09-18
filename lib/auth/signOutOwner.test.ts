@@ -81,6 +81,22 @@ describe('sign-out has one owner', () => {
     }
   })
 
+  it('never navigates with window.location — that is the Safari escape', () => {
+    // 🔴 FOUND ON DEVICE. Capacitor iOS treats a full-document load to any URL
+    // that does not literally start with `server.url` as an EXTERNAL link and
+    // hands it to Safari. `server.url` is 'https://www.zonna.run/dashboard',
+    // so '/auth/login' failed that prefix test and signing out threw the user
+    // out of the app into a browser — still signed in. A history navigation
+    // never reaches `decidePolicyFor`, so `router.replace` cannot escape.
+    // capacitor.config.ts also allow-lists our host now, but that needs a
+    // NATIVE BUILD; this file ships over the air, so the rule lives here too.
+    for (const rel of ['lib/auth/signOut.ts', 'components/shared/SignOutLink.tsx']) {
+      const src = readFileSync(join(process.cwd(), rel), 'utf8')
+        .split('\n').filter(l => !l.trim().startsWith('*') && !l.trim().startsWith('//')).join('\n')
+      expect(src, `${rel} navigates with window.location`).not.toMatch(/window\s*\.\s*location/)
+    }
+  })
+
   it('the owner clears widget state BEFORE ending the session', () => {
     const src = readFileSync(join(process.cwd(), 'lib/auth/signOut.ts'), 'utf8')
     expect(src.indexOf('clearWidgetState')).toBeLessThan(src.indexOf('auth.signOut'))

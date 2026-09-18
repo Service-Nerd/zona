@@ -1,6 +1,13 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+
+// The component reads `useRouter` (ONBOARD-EXIT-01: sign-out must be a ROUTE
+// CHANGE, never `window.location`, or Capacitor iOS hands it to Safari).
+// There is no app-router context under `renderToStaticMarkup`, and this file
+// is about MARKUP — the navigation itself is asserted in lib/auth/signOut.test.ts.
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: () => {} }) }))
+
 import SignOutLink from './SignOutLink'
 
 // ONBOARD-EXIT-01 — assertions on rendered HTML, not on the comment above it.
