@@ -8,9 +8,9 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-## 📍 PICK UP HERE — state at 2026-09-18
+## 📍 PICK UP HERE — state at 2026-09-18 (end of the autonomous run)
 
-**Everything is committed and pushed** (last ship `ff24218`, 2026-09-18 — SLT queue complete, plus §113 LONGEST-RUN-GATE-01). `npm run verify` exit 0 (**2,278 tests / 252 files**) · sweep **13,014 generated / 6,993 refused by design / 0 hard failures** · HIGH 0 / MED 26 · 120 invariants = 120 rows.
+**Committed, NOT yet pushed — 8 commits** (last ship `9f1888e`, 2026-09-18). `npm run verify` exit 0 (**2,296 tests / 254 files**) · `check:db` exit 0, and it no longer writes 43 errors into the log view per healthy run · sweep 13,014 plans, **0 hard failures**, no new violations · HIGH 0. **Seven items shipped in one autonomous run:** `PREF-SWEEP-01` (the unit preference reaches the last five surfaces, + a gate) · `FATIGUE-ARRAY-DRY-01` (seven copies, not five, and the sharpest was a TYPE) · `OPS-DBCHECK-NOISE-01` (the drift check reads the schema; the noise was the smaller half) · `CI-SLOW-DRIFT-01` (`npm run check:slow`) · `REFUSAL-COPY-02` (and the discovery that the refusal COPY WAS A WIRE FORMAT in eight places) · `FIRSTRUN-GATE-CALL-01` (SLT ruled; card ungated, sentence gated, original wording blocked as a capability claim) · `GRID-SUBFLOOR-01` (resolved as DO NOT ADD, with the numbers). ⚠️ **Three findings came from checks catching ME mid-edit, not history** — the new units gate caught my own unreachable fallback, and I twice built measurements on inputs that cannot occur (`distance_km ?? 0` on a duration-anchored plan; `cwk 40 / longest 4`) and was drafting false findings from both. **Nothing here has run on iOS** (`DEVICE-VERIFY-01`, parked).
 
 > 📌 **EVERYTHING OPEN FROM 2026-09-18, one line each — the index exists because two findings hid in prose today.**
 >
