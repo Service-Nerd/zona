@@ -15,6 +15,7 @@ import { getCurrentWeekIndex, isDateWithinWeek, isDateBeforePlan } from '@/lib/p
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 
 // POST /api/weekly-report
@@ -245,6 +246,16 @@ export async function POST(req: NextRequest) {
     })
     .map(d => (week.sessions[d as keyof typeof week.sessions] as any)?.type ?? 'run')
 
+  // PREF-SWEEP-01 — the reader's units are needed HERE, not only at the prompt
+  // call. These labels are assembled before `buildWeeklyReportPrompt` runs and
+  // are handed to it as finished strings, so a `km` written in by hand survives
+  // the `displayUnits` argument completely: the prompt told the model to speak
+  // miles while these lines said "8km". ADR-015's amendment — a number handed
+  // to the model is a display surface — so the prescribed session distance goes
+  // through `fmtPlanned`, the same string the session card shows.
+  const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userId)
+  const { fmtPlanned } = promptDistanceFormatters(displayUnits)
+
   // Remaining scheduled sessions: today (if not yet completed) + all future
   // days. Today goes first so the model can frame "still to do today" as
   // present-tense intent, not past-tense miss.
@@ -252,8 +263,8 @@ export async function POST(req: NextRequest) {
     const s = week.sessions[d as keyof typeof week.sessions]
     if (!isCountableSession(s)) return null
     const label = DAY_LABELS[DAY_ORDER_REPORT.indexOf(d as typeof DAY_ORDER_REPORT[number])]
-    const km    = (s as any)?.distance_km ? ` (${(s as any).distance_km}km)` : ''
-    return `${label}: ${(s as any)?.type}${km}`
+    const dist  = (s as any)?.distance_km ? ` (${fmtPlanned((s as any).distance_km)})` : ''
+    return `${label}: ${(s as any)?.type}${dist}`
   }
   const todayRemaining = !weekComplete && todayKey && !completedDays.has(todayKey)
     ? formatRemainingDay(todayKey)
@@ -368,7 +379,7 @@ export async function POST(req: NextRequest) {
 
   try {
     // FMT-01 — render distances in the reader's unit (INV-PREF-001).
-    const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userId)
+    // `displayUnits` is resolved once, above, where the session labels are built.
     const prompt = buildWeeklyReportPrompt(
       reportDataWithRpe,
       plan,

@@ -12,7 +12,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import SignOutLink from '@/components/shared/SignOutLink'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { formatDuration } from '@/lib/format'
+import { formatDistance, formatDuration } from '@/lib/format'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
@@ -69,13 +69,21 @@ const WIZARD_KEY = 'zona_wizard_draft'
 // server APPLIES. While it lived here, this client component was the only place
 // the paywall existed at all.
 
+// PREF-SWEEP-01 — the SUB-LABEL is derived, not written. It used to be a
+// hardcoded '42.2 km' on every row, so a miles runner picked "Marathon" and was
+// told it was 42.2 km. `exact` keeps the iconic decimals (ADR-015): 42.2km /
+// 26.2mi, never a rounded 26.
+//
+// The NAME stays fixed on purpose. "Marathon", "10K" and "Half" are what the
+// race is called, in every country — they are not a unit conversion, and
+// rendering "6.2M" would be wrong rather than localised.
 const DISTANCES = [
-  { label: '5K',       sub: '5 km',    value: 5,    paid: isPaidDistance(5)    },
-  { label: '10K',      sub: '10 km',   value: 10,   paid: isPaidDistance(10)   },
-  { label: 'Half',     sub: '21.1 km', value: 21.1, paid: isPaidDistance(21.1) },
-  { label: 'Marathon', sub: '42.2 km', value: 42.2, paid: isPaidDistance(42.2) },
-  { label: '50K',      sub: '50 km',   value: 50,   paid: isPaidDistance(50)   },
-  { label: '100K',     sub: '100 km',  value: 100,  paid: isPaidDistance(100)  },
+  { label: '5K',       value: 5,    paid: isPaidDistance(5)    },
+  { label: '10K',      value: 10,   paid: isPaidDistance(10)   },
+  { label: 'Half',     value: 21.1, paid: isPaidDistance(21.1) },
+  { label: 'Marathon', value: 42.2, paid: isPaidDistance(42.2) },
+  { label: '50K',      value: 50,   paid: isPaidDistance(50)   },
+  { label: '100K',     value: 100,  paid: isPaidDistance(100)  },
 ]
 
 const BENCHMARK_DISTANCES = [
@@ -148,7 +156,7 @@ const MAX_WEEKDAY_CHIPS: { key: string; mins: number | undefined }[] = [
 
 /** A chip's display text. "No limit" is a word, not a duration. */
 const weekdayChipLabel = (mins: number | undefined): string =>
-  mins == null ? 'No limit' : (formatDuration(mins) ?? `${mins} min`)
+  mins == null ? 'No limit' : (formatDuration(mins) ?? 'No limit')
 
 /**
  * Restore shim for drafts saved BEFORE this change, which stored the label.
@@ -323,7 +331,9 @@ const PHASE_DESCRIPTION: Record<string, string> = {
 }
 
 // Full-width strip — every week as a coloured bar. No scrolling.
-function PreviewPhaseStrip({ weeks }: { weeks: Plan['weeks'] }) {
+function PreviewPhaseStrip(
+  { weeks, units }: { weeks: Plan['weeks']; units: DistanceUnits },
+) {
   if (!weeks.length) return null
   const foundationCount = weeks.filter(w => w.phase === 'foundation').length
   const mainWeeks = weeks.filter(w => w.phase !== 'foundation')
@@ -346,8 +356,8 @@ function PreviewPhaseStrip({ weeks }: { weeks: Plan['weeks'] }) {
             <div
               key={w.n}
               title={isFoundation
-                ? `Foundation · ${w.weekly_km}km`
-                : `Week ${w.n} · ${w.weekly_km}km · ${w.phase ?? 'base'}${isDeload ? ' · recovery' : ''}${isRaceWeek ? ' · race' : ''}`}
+                ? `Foundation · ${formatDistance(w.weekly_km, units) ?? ''}`
+                : `Week ${w.n} · ${formatDistance(w.weekly_km, units) ?? ''} · ${w.phase ?? 'base'}${isDeload ? ' · recovery' : ''}${isRaceWeek ? ' · race' : ''}`}
               style={{
                 flex: 1,
                 height: isFoundation ? '60%' : '100%',  // subdued height for foundation
@@ -373,7 +383,7 @@ function PreviewPhaseStrip({ weeks }: { weeks: Plan['weeks'] }) {
 }
 
 // Per-phase summary card — left accent in phase colour, key stats, character line.
-function PhaseSummaryCard({ phase, weeks }: { phase: string; weeks: Plan['weeks'] }) {
+function PhaseSummaryCard({ phase, weeks, units }: { phase: string; weeks: Plan['weeks']; units: DistanceUnits }) {
   if (!weeks.length) return null
   const startW = weeks[0].n
   const endW   = weeks[weeks.length - 1].n
@@ -403,7 +413,7 @@ function PhaseSummaryCard({ phase, weeks }: { phase: string; weeks: Plan['weeks'
             {phase}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
-            {weekRange} · peak {peakKm}km
+            {weekRange} · peak {formatDistance(peakKm, units)}
           </div>
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.5 }}>
@@ -1313,7 +1323,7 @@ export default function GeneratePlanScreen({
               {meta.race_name || 'Your plan'}
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginTop: '4px' }}>
-              {weeks.length} weeks · starts {meta.plan_start} · {meta.race_distance_km}km
+              {weeks.length} weeks · starts {meta.plan_start} · {formatDistance(meta.race_distance_km, preferredUnits, { exact: true })}
             </div>
           </div>
         </div>
@@ -1392,7 +1402,7 @@ export default function GeneratePlanScreen({
           )}
 
           <div style={{ margin: '20px 0 0' }}>
-            <PreviewPhaseStrip weeks={weeks} />
+            <PreviewPhaseStrip weeks={weeks} units={preferredUnits} />
           </div>
 
           <div style={{ marginTop: '20px' }}>
@@ -1402,7 +1412,7 @@ export default function GeneratePlanScreen({
             {PHASES.map(phase => {
               const phaseWeeks = weeks.filter(w => w.phase === phase)
               if (!phaseWeeks.length) return null
-              return <PhaseSummaryCard key={phase} phase={phase} weeks={phaseWeeks} />
+              return <PhaseSummaryCard key={phase} phase={phase} weeks={phaseWeeks} units={preferredUnits} />
             })}
           </div>
         </div>
@@ -1636,7 +1646,7 @@ export default function GeneratePlanScreen({
                   key={d.value}
                   layout="tile"
                   label={d.label}
-                  sub={d.sub}
+                  sub={formatDistance(d.value, preferredUnits, { exact: true }) ?? ''}
                   active={distanceKm === d.value}
                   locked={locked}
                   lockLabel="PAID"

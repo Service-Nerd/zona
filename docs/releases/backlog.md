@@ -17,7 +17,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > | Item | P | What it is |
 > |---|---|---|
 > | `GRID-SUBFLOOR-01` | P2 | Neither plan grid can express a sub-floor runner (min longest run 8, floor 5), so §113 refuses 0 of 35,952 there and **2,634 in the sweep** |
-> | `PREF-SWEEP-01` | **P1** | km↔miles does not reach the app: **90 hardcoded `km`**, 3 of 14 prompt builders unit-blind, `formatSessionMetric` has 1 call site against a docstring claiming 4 surfaces |
+> | ~~`PREF-SWEEP-01`~~ | ✅ | **SHIPPED 2026-09-18.** Real runner-facing scope was **~24 sites, not 90** (58 of the original count were developer-facing `invariants.ts` messages). 5 live sites fixed — the wizard's phase strip and plan header, `PlanCalendar`'s Strava distance, `SessionSteps`' race-pace segment, and the **weekly-report prompt**, which built its session labels in km *before* fetching the reader's units and handed them to a model it had just told to speak miles. Gate: `lib/hardcodedUnits.test.ts`, 6 baselined with reasons |
 > | ~~`LONGEST-RUN-GATE-01`~~ | ✅ | **SHIPPED as §113, 2026-09-18.** Board ruled the threshold **RIGHT** (monotonic, unlike §111) and everything around it wrong. The route now holds **no coaching number at all**. Spawned `GRID-SUBFLOOR-01` |
 > | `DEVICE-VERIFY-01` | ⏸️ **P1** | **Nothing shipped today has run on iOS.** ⏸️ **PARKED — needs the founder's device**, not a code change |
 > | `REFUSAL-COPY-02` | P2 | The refusal FRAMING is fixed; the message inside is still raw engine copy. Parity-moving |
@@ -192,55 +192,6 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > ⚠️ **That runner is the charity first-timer.** Someone attempting London 2027 in October whose longest run is 3 km is exactly who §113 refuses, and exactly who no grid row describes. Same class as `GRID-MARATHON-CAPABLE-01`, and the same distinction I got wrong on §80 this morning: **zero in the corpus is not "cannot fire"**.
 >
 > **Do NOT just add a row.** Both grids are exhaustive-by-doctrine and `cohort:shape` counts refusals — adding a sub-floor value changes rates and needs a declared re-baseline. Decide whether the sub-floor cohort belongs in the **targeted** grid (its stated job is the fields the main grid cannot reach) and re-baseline with the reason stated.
-
-> 🔴 **PREF-SWEEP-01 — the units and metric preferences do not reach the whole app, and nothing checks that they do.** *(P1, founder-raised 2026-09-18. MEASURED before filing — this is a defect with numbers, not an audit request.)*
->
-> **The ask.** Profile lets a runner switch **km ↔ miles** and **distance ↔ duration**. Every surface must honour it: screens, cards, notes, push, emails, **and the AI prompts** — anywhere a unit or a metric is shown or spoken. ADR-015 already says exactly this (`INV-FMT-001/002`, `INV-PREF-001`, and the 2026-09-11 amendment that *"the AI layer is a display surface"*). **The doctrine is not the gap. The reach is.**
->
-> **Measured 2026-09-18:**
->
-> | | Count |
-> |---|---|
-> | `preferredUnits` referenced in `app/` + `components/` | 100 |
-> | `formatDistance` call sites (the ADR-015 owner) | **36** |
-> | 🔴 **Hardcoded `km` in user-facing strings, `app/` + `components/`** | **90** |
-> | 🔴 Interpolated `km` in runner-facing engine/coaching strings | **29** |
-> | ~~Prompt builders that never receive `units`~~ | ~~3 of 14~~ |
-> | `getUserDisplayPrefs` call sites (server-side owner, healthy) | 24 |
->
-> 🔴 **THE HEADLINE NUMBERS WERE CRUDE AND ARE CORRECTED HERE (2026-09-18, before starting work).** A proper classified inventory of 173 candidate sites:
->
-> | Bucket | Sites | In scope? |
-> |---|---|---|
-> | `lib/plan/invariants.ts` violation messages | **58** | ❌ **developer-facing, never shown to a runner** |
-> | `lib` internal / config / liveness | 56 | ❌ |
-> | **Runner-facing UI** | **24** | ✅ |
-> | **AI prompts** | **14** | ⚠️ see below |
-> | Marketing pages | 12 | ⚠️ separate surface |
-> | Dev harness / `format.ts` itself | 9 | ❌ |
->
-> **So the real user-facing scope is ~24 sites, not 90.** The original figure counted violation messages and config comments.
->
-> ⚠️ **TWO OF MY OWN CLAIMS WERE WRONG and are struck:**
-> - *"3 of 14 prompt builders never receive units."* True but **misleading** — those three (`athleteContext`, `planAdjustment`, `voiceRules`) reference **no distance at all**. Every prompt builder that renders a distance does receive units.
-> - `DashboardClient:3311` looked like the *"never a lone 78m"* ADR-015 violation. It is `formatNotifTime` — a **relative timestamp** ("5m ago"), correctly formatted. Not a defect.
->
-> ⚠️ **The 14 AI-prompt sites are FEW-SHOT EXAMPLES**, not runner data (*"Input: Easy run, 10km, avg HR 162…"*). The runner's real numbers already route through `promptDistanceFormatters(units)`. Whether an all-km example set biases the model to echo km for a miles runner is a **real but separate question** — it needs measuring, not assuming.
-
-> **Confirmed sites, not a sample estimate:** `GeneratePlanScreen.tsx:312-313` (`${w.weekly_km}km`), `DashboardClient.tsx:13751`, `PlanCalendar.tsx:832`, `StravaPanel.tsx:57` and `:72`, and **`app/api/weekly-report/route.ts:255`** — a `${s.distance_km}km` inside a generated report.
->
-> 🔴 **THE SHARPEST FINDING: `formatSessionMetric` has ONE call site.** Its own docstring says it is *"used by collapsed cards, the plan, session detail, and the daily push, so those surfaces are mechanically incapable of disagreeing."* The only caller is `lib/coaching/voiceLines.ts:77`. ⚠️ **Stated precisely: this does not prove those surfaces disagree** — they may each reach `formatDistance`/`formatDuration` directly and agree by accident of care. It proves **the mechanism named as guaranteeing agreement is not the one in use**, which is the same claim/computation mismatch as §80's note comment asserting it named the binding lever when it never did (LR-SHORTFALL-CAUSE-01, same day).
->
-> ⚠️ **PROVEN LIVE, TODAY:** `GeneratePlanScreen` had **never been passed `preferredUnits`** — DashboardClient hands it to Today, Plan and PostRun and not to that screen — so every card on the plan reveal rendered km to a miles runner. Fixed under FIRSTRUN-MOMENTS-01c. **One screen was missed silently; this item is the systematic version of that.**
->
-> **SLC:**
-> - **Simple** — one job: every displayed or spoken distance and metric resolves through the ADR-015 owners.
-> - **Lovable** — a miles runner never sees km anywhere, including in what the coach *says*.
-> - **Complete** — screens · cards · plan notes · push · emails · **AI prompts** · the wizard's own chips · charts and axis labels · anything with a literal `km`/`mi`/`miles` glyph.
->
-> 🔴 **SHIP A GATE, NOT A SWEEP.** A one-off pass regresses — this repo has the lesson three times over (`--section-gap`, decorative config, `slowTestThreshold`). The deliverable is a **test that walks `app/`, `components/` and the runner-facing engine strings and fails on a hardcoded unit glyph**, with a baselined debt register exactly like `SWEEP-BASELINE-01` so the 90 known sites are visible and cannot grow while they are worked down. Pattern: `noteDurationFormat.test.ts` (static scan + live assertion + anti-vacuous floor), shipped the same day.
->
-> **Sequencing note:** this is P1 and **not** ahead of the Tier 1 door items — a runner refused at the door never sees a unit at all. But it belongs before the charity cohort arrives, because **~500 runners is the first time this app meets a population large enough to contain miles users in numbers.**
 
 ### 🚪 Tier 1 — THE DOOR. Nothing else matters if they cannot get in.
 

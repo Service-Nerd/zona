@@ -17,7 +17,7 @@ import React from 'react'
 import type { SessionStructure } from '@/lib/plan/sessionComposer'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { buildStepGroups, resolveDisplayFigures, type StepRow } from '@/lib/plan/sessionSteps'
-import { formatDistance } from '@/lib/format'
+import { formatDistance, formatDuration } from '@/lib/format'
 import type { Zone } from '@/components/shared/ZoneBar'
 
 /** Narrow the Session's `unknown` derived_set to a renderable v2 set. */
@@ -138,7 +138,7 @@ export default function SessionSteps({
   const cdTotal = figures.cooldown
   const seg = structure.race_pace_segment
   const racePaceDetail = seg
-    ? (metric === 'distance' ? `${seg.duration_mins} min · ${seg.pace_target}` : seg.pace_target)
+    ? (metric === 'distance' ? `${formatDuration(seg.duration_mins)} · ${seg.pace_target}` : seg.pace_target)
     : ''
 
   const groups = isV2DerivedSet(derivedSet)

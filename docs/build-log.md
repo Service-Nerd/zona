@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — PREF-SWEEP-01 · I filed the bug with a number that was 4x too big, then corrected it before touching code
+**Shipped:** Five live sites where a hardcoded `km`/`min` bypassed the reader's unit preference, plus `lib/hardcodedUnits.test.ts` — a gate that fails on a unit glyph welded to a template interpolation, with six sites baselined with reasons.
+
+**Dev learning:** The worst one was invisible for a structural reason, not a careless one. `app/api/weekly-report/route.ts` builds its remaining-session labels at line 251 — `` `Thu: easy (8km)` `` — and fetches the runner's units at line **371**, 120 lines later, to pass into the prompt builder. So the prompt correctly said "speak in miles" while the strings it was handed had already said km. Both halves were right in isolation. The defect only exists in the ordering, and nothing about reading either half reveals it. Fix was to hoist one `await` above the label construction and route the number through `promptDistanceFormatters(units).fmtPlanned` — the owner that already existed for exactly this.
+
+**Product/creator learning:** Deciding what counts as a defect was most of the work. The raw grep said 90 hardcoded `km` in user-facing strings. A classified inventory said **58 of those were `invariants.ts` violation messages** — developer-facing, never rendered — and the real runner-facing scope was ~24. Two more of my own filed claims were wrong: "3 of 14 prompt builders never receive units" was technically true and misleading (those three reference no distance at all), and a `DashboardClient` site I'd flagged as an ADR-015 violation was `formatNotifTime` rendering "5m ago", which is correct. I committed the correction as its own commit before writing any fix, because the wrong number was already in the backlog where someone would size work against it.
+
+**AI-building learning:** The gate caught **my own fix** within a minute of being written. I'd replaced `` `${min[1]}min` `` with ``formatDuration(...) ?? `${min[1]} min` `` — used the owner, kept a "safe" fallback, felt done. The scanner flagged the fallback, and it was right: `formatDuration` returns null only for null/NaN/negative, and the input is a `\d+` regex capture, so the fallback was unreachable code re-implementing the exact rule the line above had just delegated. That is the single most useful thing a mechanical check does — not catching the other guy, catching you in the same edit.
+
+**The honest bit:** My first falsification of the gate **passed when it should have failed**, and for ten seconds I believed the arm was broken. It was shell escaping: I'd written the mutation as `python3 -c` inside a bash heredoc and the `$` in `${w.long_run_hrs}hr` never survived, so the string replace was a silent no-op. A mutation that doesn't apply looks exactly like a test that doesn't fire. Redone with a real heredoc and an `assert count==1` on the target, it went red correctly. Falsification needs its own assertion that the mutation landed — otherwise you're falsifying nothing and recording a pass.
+
+**Hook material:** I filed the bug as "90 hardcoded units". The real number was 24. 58 of the other 66 were error messages only I would ever read. I spent the first hour proving my own bug report wrong.
+
+**Postable?:** yes
+
 ## 2026-09-18 — FIRSTRUN-MOMENTS-01b · Collapsing "marathon" into "Monday, 20 minutes, easy"
 **Shipped:** The plan reveal now shows the first session as a single concrete line before the wall of 20 weeks — the one thing a first-timer can picture doing.
 **Dev learning:** The honest-effort mapping was the bit that needed care. It would have been easy to hardcode "Easy" (true for every beginner's week one) and ship a card that occasionally tells someone a tempo session is easy. Mapped the session type properly instead, so the card is correct for any plan, not just the cohort it was built for. Small thing, but "correct for the case in front of me" vs "correct in general" is the difference between a fixture and a feature.

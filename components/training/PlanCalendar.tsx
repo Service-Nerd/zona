@@ -829,7 +829,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
               ) : null}
               {isComplete && completion?.strava_activity_name && (
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--strava)' }}>
-                  ● {completion.strava_activity_name}{completion.strava_activity_km ? ` · ${completion.strava_activity_km}km` : ''}
+                  ● {completion.strava_activity_name}{completion.strava_activity_km ? ` · ${formatDistance(completion.strava_activity_km, units, { exact: true })}` : ''}
                 </span>
               )}
               {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)' }}>skipped</span>}

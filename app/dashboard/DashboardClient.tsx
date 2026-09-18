@@ -5901,7 +5901,10 @@ function parseSessionDetail(detail: string | null): { distance?: number; duratio
   const h = s.match(/^(\d+)h\b/)
   if (h) return { duration: `${h[1]}h` }
   const min = s.match(/^(\d+(?:\.\d+)?)\s*min\b/i)
-  if (min) return { duration: `${min[1]}min` }
+  if (min) {
+    const d = formatDuration(parseFloat(min[1]))
+    if (d) return { duration: d }
+  }
   const km = s.match(/^(\d+(?:\.\d+)?)\s*km\b/i)
   if (km) return { distance: parseFloat(km[1]) }
   return {}
