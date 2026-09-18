@@ -7,7 +7,8 @@
 // card (components/shared/FirstRunCard.tsx) only renders what this returns.
 
 import type { Week, Session } from '@/types/plan'
-import { formatDuration } from '@/lib/format'
+import { formatDistance, formatDuration } from '@/lib/format'
+import type { DistanceUnits } from '@/lib/format'
 
 const DAY_ORDER = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 const DAY_LABEL: Record<string, string> = {
@@ -36,8 +37,8 @@ function effortWord(s: Session): string {
 export interface FirstRun {
   /** Full weekday name, e.g. "Monday". */
   dayLabel: string
-  /** ADR-015 duration string ("20 min") when duration-anchored (beginners are,
-   *  95.8% of the time), else a rounded km distance. */
+  /** ADR-015 string: a duration ("20 min") when duration-anchored (beginners
+   *  are, 95.8% of the time), else a distance in the runner's own units. */
   metric: string
   /** "Easy" / "Tempo" / "Hard" / "Race". */
   effort: string
@@ -47,15 +48,18 @@ export interface FirstRun {
  *  FIRST week (a foundation week if one is present, which is gentler still).
  *  Returns null when there is nothing concrete to promise: no weeks, an all-rest
  *  first week, or a session carrying neither a duration nor a distance. */
-export function firstRunOfPlan(weeks: Week[]): FirstRun | null {
+export function firstRunOfPlan(weeks: Week[], units: DistanceUnits = 'km'): FirstRun | null {
   const first = weeks[0]
   if (!first) return null
   for (const day of DAY_ORDER) {
     const s = first.sessions[day]
     if (!s || (s.type as string) === 'rest') continue
+    // ⚠️ `${Math.round(km)} km` shipped here first and was TWO defects: it
+    // re-implemented the ADR-015 rounding rule (INV-FMT-001 says do not, ever)
+    // and it hardcoded the unit, so a miles runner read km on this card.
     const metric =
       formatDuration(s.duration_mins)
-      ?? (s.distance_km != null ? `${Math.round(s.distance_km)} km` : null)
+      ?? formatDistance(s.distance_km, units)
     if (!metric) return null
     return { dayLabel: DAY_LABEL[day] ?? day, metric, effort: effortWord(s) }
   }

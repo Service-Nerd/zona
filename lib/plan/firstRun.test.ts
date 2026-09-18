@@ -23,9 +23,19 @@ describe('firstRunOfPlan', () => {
     expect(firstRunOfPlan([week({ mon: sess({ duration_mins: 20 }) })])?.metric).toBe('20 min')
   })
 
-  it('falls back to a rounded km distance for a distance-anchored session', () => {
+  it('falls back to a distance via the ADR-015 owner, in the runner’s units', () => {
+    // ⚠️ THIS TEST USED TO PIN THE DEFECT. It asserted '5 km', which was the
+    // output of a hand-rolled `${Math.round(km)} km` in firstRun.ts — an
+    // INV-FMT-001 violation (never re-implement the rule) that also hardcoded
+    // the unit, so a miles runner read km on this card. It now routes through
+    // `formatDistance`, whose spacing is '5km' across the whole app.
     const r = firstRunOfPlan([week({ mon: sess({ duration_mins: undefined, distance_km: 5.2 }) })])
-    expect(r?.metric).toBe('5 km')
+    expect(r?.metric).toBe('5km')
+  })
+
+  it('honours the runner’s units on that fallback', () => {
+    const r = firstRunOfPlan([week({ mon: sess({ duration_mins: undefined, distance_km: 5.2 }) })], 'mi')
+    expect(r?.metric).toMatch(/mi$/)
   })
 
   it('maps effort honestly — never calls a hard session easy', () => {

@@ -8,8 +8,9 @@
 // See docs/canonical/ui-patterns.md §10 for the canonical pattern.
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import type { Plan } from '@/types/plan'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { Plan, GeneratorInput } from '@/types/plan'
+import { ceremonyLinesFor } from '@/lib/plan/ceremonyLines'
 import AIMark from './shared/AIMark'
 
 // ─── Copy ─────────────────────────────────────────────────────────────────────
@@ -30,6 +31,23 @@ const COPY_FREE = [
 ]
 
 const COPY_REVEAL = "There it is. Don't ruin it."
+
+/**
+ * FIRSTRUN-MOMENTS-01c — the runner's own answers lead, generic copy backfills.
+ *
+ * Personal lines FIRST (that is the whole point: the app proving it listened),
+ * then the fixed copy tops the list up so the ceremony is never short of lines
+ * for its 28-35s window. Deduped against the generic set so nothing repeats, and
+ * capped at the length the timing was built for.
+ */
+function ceremonyCopy(input: Partial<GeneratorInput> | null | undefined, generic: string[]): string[] {
+  const personal = ceremonyLinesFor(input)
+  if (personal.length === 0) return generic
+  // "Almost done." is the closer and must stay last.
+  const closer = generic[generic.length - 1]
+  const body = [...personal, ...generic.slice(0, -1)].slice(0, generic.length - 1)
+  return [...body, closer]
+}
 
 // ─── Session / phase colours ──────────────────────────────────────────────────
 
@@ -168,13 +186,21 @@ type CeremonyPhase = 'loading' | 'revealing' | 'done'
 export default function GeneratingCeremony({
   hasPaidAccess,
   plan,
+  input,
   onRevealComplete,
 }: {
   hasPaidAccess: boolean
   plan: Plan | null
+  /** FIRSTRUN-MOMENTS-01c — the runner's own wizard answers, so the ceremony can
+   *  say something only true of them. Optional: without it the generic copy runs
+   *  exactly as before. */
+  input?: Partial<GeneratorInput> | null
   onRevealComplete: () => void
 }) {
-  const lines = hasPaidAccess ? COPY_PAID : COPY_FREE
+  const lines = useMemo(
+    () => ceremonyCopy(input, hasPaidAccess ? COPY_PAID : COPY_FREE),
+    [input, hasPaidAccess],
+  )
   const minDelay = hasPaidAccess ? 3600 : 1800   // ms — minimum ceremony duration
 
   const [phase, setPhase]               = useState<CeremonyPhase>('loading')

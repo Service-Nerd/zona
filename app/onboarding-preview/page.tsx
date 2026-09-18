@@ -16,6 +16,11 @@
 
 import { notFound } from 'next/navigation'
 import SignOutLink from '@/components/shared/SignOutLink'
+import RunwayRevealCard from '@/components/shared/RunwayRevealCard'
+import FirstRunCard from '@/components/shared/FirstRunCard'
+import PlanScaleCard from '@/components/shared/PlanScaleCard'
+import { ceremonyLinesFor } from '@/lib/plan/ceremonyLines'
+import type { GeneratorInput } from '@/types/plan'
 
 /** The link is live code — clicking it here would really end your session.
  *  A capture-phase stop keeps the rendering real and the action inert. */
@@ -118,6 +123,49 @@ export default function OnboardingPreviewPage() {
           <div style={{ padding: '20px' }}>
             <button style={{ ...MOSS_CTA, background: 'var(--moss-soft)', color: 'var(--mute)' }}>Connecting…</button>
             <Inert><SignOutLink disabled /></Inert>
+          </div>
+        </Case>
+
+        {/* FIRSTRUN-MOMENTS-01a/b/c/d/e — the plan reveal. Auth-gated AND
+            gated on "has no plan yet", so these three cards shipped without
+            anyone seeing them stacked. This is the three-beat arc as a London
+            2027 first-timer meets it. */}
+        <Case
+          title="Plan reveal — the three-beat arc (01a · 01b · 01d/e)"
+          note="Relief, then the first concrete action, then the honest size of it. Read them in order: does the sequence feel like it was written for one person? Real components, fixture props from a London 2027 first-timer."
+        >
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <RunwayRevealCard
+              weeks={11}
+              note={'You have 11 weeks before this plan starts, and we are not going to pretend they are training. Your plan is laid out backwards from race day and there is a limit to how long a useful one runs for, so the spare weeks sit in front of it rather than being added to it. Keep running easy through them, at the volume you are on now. Do not use the time to ramp up: arriving at week one with the legs you have today is the point.'}
+            />
+            <FirstRunCard dayLabel="Monday" metric="20 min" effort="Easy" />
+            <PlanScaleCard totalDistance="780km" raceDistance="42.2km" hardestRun="3h 28" hardestMonth="March" />
+          </div>
+        </Case>
+
+        <Case
+          title="Plan scale — no long run to name (01e absent)"
+          note="A plan with nothing to call the longest run drops that line entirely rather than rendering half a sentence. The reframe still stands alone."
+        >
+          <div style={{ padding: '16px' }}>
+            <PlanScaleCard totalDistance="180km" raceDistance="10km" hardestRun={null} hardestMonth={null} />
+          </div>
+        </Case>
+
+        <Case
+          title="Ceremony lines (01c) — what this runner is told while it builds"
+          note="Was five FIXED lines shown to everyone. These are derived from the runner's own answers: 3 days, longest run 8 km, a knee, a 45-minute weekday cap, marathon. The job is proving we listened, not motivating."
+        >
+          <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {ceremonyLinesFor({
+              days_available: 3, longest_recent_run_km: 8, max_weekday_mins: 45,
+              race_distance_km: 42.2, injury_history: ['knee'],
+            } as Partial<GeneratorInput>).map(line => (
+              <div key={line} style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', color: 'var(--ink)', lineHeight: 1.5 }}>
+                {line}
+              </div>
+            ))}
           </div>
         </Case>
 

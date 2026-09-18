@@ -17,6 +17,9 @@ import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import RunwayRevealCard from '@/components/shared/RunwayRevealCard'
 import FirstRunCard from '@/components/shared/FirstRunCard'
+import PlanScaleCard from '@/components/shared/PlanScaleCard'
+import { planScale } from '@/lib/plan/planScale'
+import type { DistanceUnits } from '@/lib/format'
 import { firstRunOfPlan } from '@/lib/plan/firstRun'
 import Sheet from '@/components/shared/Sheet'
 import { DurationPicker } from '@/components/shared/DurationPicker'
@@ -457,8 +460,13 @@ export default function GeneratePlanScreen({
   onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR, maxHR: initialMHR,
   maxHrSource: initialMhrSource,
   birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, onPlanEnriched, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade, onOpenRedeem,
+  preferredUnits = 'km',
 }: {
   onBack: () => void
+  /** ADR-015 / INV-PREF-001 — the unit preference propagates EVERYWHERE, and
+   *  this screen was the one that never received it, so its reveal cards read km
+   *  to a miles runner. Every sibling screen already takes this prop. */
+  preferredUnits?: DistanceUnits
   firstName?: string
   lastName?: string
   restingHR?: number | null
@@ -968,6 +976,14 @@ export default function GeneratePlanScreen({
       terrain:                   hasPaidAccess ? (terrain ?? undefined) : undefined,
     }
 
+    // FIRSTRUN-MOMENTS-01c — stash the payload the moment it is built, not on
+    // arrival. It used to be set ONLY inside `applyFoundationIfNeeded`, i.e.
+    // after the response AND only on the >28-day 'choice' branch, so during the
+    // ceremony it was still null and the personalised lines would never have
+    // rendered at all. Setting it here also gives the foundation follow-up its
+    // input on every path rather than one.
+    lastInputRef.current = input
+
     try {
       // authedFetch attaches the bearer (cookie sync to server is unreliable
       // with @supabase/ssr) — single owner of the pattern, AUTH-BEARER-MISSING-01.
@@ -1001,7 +1017,8 @@ export default function GeneratePlanScreen({
       // they choose "Add".
       const applyFoundationIfNeeded = (incoming: Plan): Plan => {
         if (incoming.meta.foundation_gap_class === 'choice') {
-          lastInputRef.current = input
+          // `lastInputRef` is already set, before the fetch — only the modal
+          // needs opening here now.
           setFoundationModalOpen(true)
         }
         return incoming
@@ -1190,6 +1207,12 @@ export default function GeneratePlanScreen({
       <GeneratingCeremony
         hasPaidAccess={!!hasPaidAccess}
         plan={plan}
+        // FIRSTRUN-MOMENTS-01c — the answers this runner just gave, so the
+        // ceremony says something only true of them. `lastInputRef` already
+        // holds the exact payload sent to /api/generate-plan (it is the
+        // foundation-add follow-up's source of truth), so there is no second
+        // copy of the wizard state to drift from.
+        input={lastInputRef.current}
         onRevealComplete={() => setRevealComplete(true)}
       />
     )
@@ -1275,10 +1298,22 @@ export default function GeneratePlanScreen({
               under the runway relief (01a): "you're early" then "here's where it
               starts". Absent when there is nothing concrete to promise. */}
           {(() => {
-            const firstRun = firstRunOfPlan(weeks)
+            const firstRun = firstRunOfPlan(weeks, preferredUnits)
             return firstRun ? (
               <div style={{ marginBottom: '16px' }}>
                 <FirstRunCard {...firstRun} />
+              </div>
+            ) : null
+          })()}
+          {/* FIRSTRUN-MOMENTS-01d + 01e — the third beat: "you're early" (01a),
+              "here's where it starts" (01b), then the honest size of it. Derived
+              LIVE, never stamped: the longest-run line is a promise about a plan
+              that can reshape (Hutchinson's binding condition at the SLT). */}
+          {(() => {
+            const scale = planScale(plan, preferredUnits)
+            return scale ? (
+              <div style={{ marginBottom: '16px' }}>
+                <PlanScaleCard {...scale} />
               </div>
             ) : null
           })()}
