@@ -57,7 +57,89 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 - 🟢 **`DOC-STATE-GATE-01` — this paragraph is now hook-checked.** It names the commit it describes; `state-block-check.py` flags it on any `feat(`/`fix(` commit that postdates that SHA. It exists because this exact paragraph went stale **three times on 2026-09-17** while every hook-checked record stayed correct. **Write it LAST, after the final push, and never type a count from memory.**
 - 🔴 **`??` DOES NOT CATCH AN EMPTY STRING, and that class has now cost FOUR measured defects.** `ruleEngine` stamps `athlete_name ?? ''`, so `plan.meta.athlete` is an empty *string* and every downstream `?? 'fallback'` is already dead — the Me-screen avatar drew a blank circle for months and `postRaceReshape.ts` addressed nobody. Same shape as `distance_km ?? 0` (SESSION-KM-01). **When you guard a read with `??`, go and look at what WRITES it.**
 
-### 🔜 OPEN — two launch blockers (infrastructure), then nothing urgent
+### 🔜 OPEN — P0 is now the first-time marathoner experience
+
+---
+
+## 🥇 P0 — FIRSTRUN-MARATHON-01: the first-time marathoner is the product
+
+*Filed 2026-09-18 after the founder's call with Jack (Make-A-Wish UK). **This is now the number one priority.** Everything below it waits.*
+
+**Why, in Jack's words.** Make-A-Wish give away marathon places and **a large share of the people who take them never run**. That is the charity's stated pain, said more than once on the call. Most of the 500 are **first-time marathoners or beginners**. So the thing Zonna is being asked to fix is not plan quality in the abstract: it is **the drop-out rate between "I have a place" and "I got to the start line"**.
+
+**The brief.** From the first moment someone opens the app to the moment their plan appears, a first-time marathoner should get an experience they do not forget, and should never feel they are doing this alone.
+
+**The measure that matters is not conversion. It is: did they still be running in week 8?** A first-timer who abandons in February costs the charity a place and Zonna a reference. Every decision under this item is judged against that, not against activation.
+
+**Touchpoints in scope, in the order the runner meets them.**
+
+| # | Touchpoint | What exists today |
+|---|---|---|
+| 1 | First open / sign-up | Generic. Nothing knows they are a charity runner or a first-timer. The code is redeemed on Me, *after* onboarding |
+| 2 | The wizard | ~15 questions. Asks a beginner their VDOT-adjacent inputs, `hard_session_relationship`, weekday minute budgets |
+| 3 | The generating moment | `GeneratingCeremony` — the single best "wow" surface we own and the least considered |
+| 4 | First sight of the plan | 20+ weeks of a marathon block, which for a first-timer is the most intimidating object in the app |
+| 5 | The long pre-plan runway | Oct → April is ~28 weeks. Most will get a **foundation-block choice** and an **uncovered-runway note** |
+| 6 | Week 1 | No differentiated first-timer experience at all |
+| 7 | The first missed session | The moment the drop-out actually starts, and we treat it identically for everyone |
+
+**Known blockers and impediments already on this backlog** *(checked, not assumed — these are the items that make this harder, and each needs a decision under this priority)*:
+
+- 🔴 **`FOUNDATION-DECIDE-LATER-01` (filed below).** The foundation-block sheet is touchpoint 5 for nearly every one of these 500 runners, and **"Decide later" never comes** — the modal has exactly one trigger, at generation.
+- 🔴 **`FOUNDATION-ADD-FAIL-01` (filed below).** The founder could not add a foundation block at all, and the error path records nothing.
+- 🟡 **`ONBOARD-SKIP-LABEL-01` (filed below).** Touchpoints 1–2: tapping "Connect later" tells the runner it is connecting.
+- 🟡 **§44's `block` tier** (open sub-question under the resolved `PREP-ACK-UNLOCKS-MARATHON-01`). Marathon on **fewer than 3 days a week is a hard refusal with no acknowledgement path**. A charity first-timer who can genuinely only run twice a week is refused outright. **Willy's structural argument is the thing that would be overruled — Coaching Board, not a docs edit.**
+- 🟡 **`GTM-CHARITY-09`** — support is one inbox, and this cohort arrives together with the same few questions.
+- 🟡 **Minimum iOS 16.6**, no Android, no mobile-web dashboard — a handful of 500 cannot install at all.
+- ⚪ **`CAT-DEPTH-01`** — personalisation has no inventory; a beginner's plan is thin by construction. Four measured attempts have failed; **do not retry blind**.
+
+**What is NOT in scope, and why.** Not a new coaching model: the engine was measured fit-for-purpose for first-time marathoners on 2026-09-16 (11/11 charity personas) and again after PLAN-FITNESS-01. **The gap is experience, not prescription.** Anything here that would change what the engine prescribes goes to the Coaching Board first.
+
+**Next step is an SLT review, not a build.** This is a scope-setting item with a stated outcome measure, and Wood's kill mandate applies hard: most "wow" ideas are the illusion-of-progress class she exists to stop. Run `/slt-review FIRSTRUN-MARATHON-01` before anything is built.
+
+---
+
+#### 🐞 Four observations from the founder's device — filed 2026-09-18
+
+> 🔴 **ONBOARD-SKIP-LABEL-01 — tapping "Connect later" tells you it is connecting. Same defect, two screens.** *(P1, analysed in code, reproduction is by inspection.)*
+>
+> **Root cause, `app/dashboard/DashboardClient.tsx`.** One `busy` flag serves two mutually exclusive actions, and the PRIMARY button's label is bound to the flag rather than to which action is running:
+> - `ConnectRunsScreen` — `skip()` sets `busy = true`; the primary button renders `{busy ? 'Connecting…' : 'Connect Apple Health'}` (`:3063`). Tap **"Connect later"** and the screen says **"Connecting…"**.
+> - `PushOnboardingScreen` — identical shape: `{busy ? 'Setting up…' : 'Enable Notifications'}`. Tap skip, it says **"Setting up…"**.
+>
+> **The database is correct in both cases** — skip writes `connect_runs_seen: false` and never sets `healthkit_connected_at`; the Me-screen row reads `healthkit_connected_at` and reports honestly. **This is a lie told for the duration of one tap, and it is told at exactly the moment a beginner is deciding whether to trust the app.**
+>
+> **Fix:** separate the pending action from the flag (`busy: 'connect' | 'skip' | null`), or disable rather than relabel. One owner, both screens. **Add a markup test** — `signOutLink.markup.test.ts` is the pattern; this is exactly the class it exists for.
+
+> 🔴 **FOUNDATION-ADD-FAIL-01 — "Add Foundation Block" fails, and the app records nothing about why.** *(P1. Blocks FIRSTRUN-MARATHON-01 touchpoint 5.)*
+>
+> Founder tapped **Add Foundation Block** on the plan-setup sheet and got *"Couldn't add that. Try again."*
+>
+> ✅ **The engine is NOT the cause — reproduced, not assumed.** Running exactly what `POST /api/generate-plan/foundation` runs (`resizeForDeferredFoundationAdd` → `composePlanWithFoundation(…, 'add')` → `enforceViolations`) on three shapes including **London Marathon 2027, first-timer, low base**: all return **200, 3 foundation weeks added, 0 error violations**. `enforceViolations` only throws in dev/test, so it cannot 500 production either.
+>
+> 🔴 **THE REAL DEFECT IS THAT THIS CANNOT BE DIAGNOSED.** `handleFoundationAddBlock` (`GeneratePlanScreen.tsx:1101`) is `catch { setFoundationAddStatus('error') }` — **no status code, no message, no console, no ops event**. The runner gets a generic string and we learn nothing. **Fix this first, regardless of cause**, or the next report is identical.
+>
+> 🟡 **Prime suspect: the call is one of only FIVE bare `fetch('/api/…')` sites in the whole app against 56 `authedFetch` call sites** — and it hits a `getUserFromRequest` route. `getUserFromRequest` falls back to cookies, and `@supabase/ssr` cookie sync to the server is documented **unreliable on native** in that helper's own comment. The sibling `/api/generate-plan` call two hundred lines up is bare too and works for him, so this is a suspect, not a conclusion. The other bare sites (`/api/recalibrate-zones`, `/api/post-run-reframe`) are the same latent shape.
+>
+> **Do:** add the error detail, switch all four authed bare-fetch sites to `authedFetch`, then re-test on device.
+
+> 🟡 **FOUNDATION-DECIDE-LATER-01 — two of the three buttons do exactly the same thing, and "later" never comes.** *(P1, and the founder spotted both halves.)*
+>
+> The sheet offers **Add Foundation Block** / **Start plan as-is** / **Decide later**.
+>
+> **Proven by reading the handlers:** `handleFoundationStartNow` and `handleFoundationSkip` are **byte-for-byte identical** — `setFoundationAddStatus('idle'); setFoundationModalOpen(false)`. "Start plan as-is" carries a comment saying it "communicates user intent" and communicates it to nothing.
+>
+> 🔴 **And "Decide later" is a promise the app cannot keep.** `setFoundationModalOpen(true)` appears **exactly once** (`:992`), immediately after generation. There is no re-offer on the Plan screen, none on Me, no stamp that a decision is outstanding. Dismiss it and the choice is gone permanently. **A brand-voice violation as well as a UX one — honest is the first word in the voice rules.**
+>
+> **Fix:** drop the third button. Two honest options, and the sheet's own copy already frames it.
+
+> ✅ **Marathon / ultra tier gating — NOT A BUG, and the capability question is already decided.** *(Answered 2026-09-18, no item.)*
+>
+> **Marathon and both ultras ARE paid.** `PLAN_SIGNATURES` sets `free_tier_available: false` for MARATHON/50K/100K; `isPaidDistance` reads it; the wizard flags the chips; `POST /api/generate-plan` enforces `canGenerateDistance` at `route.ts:114` with an **allowlist** (`tier === 'paid' || 'trial' || 'admin'`) so it fails closed.
+>
+> **Why it looked ungated:** the Option A **hybrid reverse trial gives every new user 14 days of full access**, and a charity grant resolves to `paid` via `resolveTier` — so no Make-A-Wish runner will ever meet this gate. The founder's own account is `admin`.
+>
+> **The capability question — should a first-timer be allowed to pick a marathon at all — was resolved by founder decision on 2026-09-17** (`PREP-ACK-UNLOCKS-MARATHON-01`): *"present them the facts and they tick 'I understand' … we shouldn't refuse people plans."* ⚠️ **The one piece still open is the `block` tier**, and it is now charity-relevant: see FIRSTRUN-MARATHON-01's blocker list.
 
 ---
 

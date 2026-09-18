@@ -62,6 +62,29 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 
 ## 🔴 NOW — CRITICAL PATH: Make-A-Wish handover (SLT-sequenced 2026-09-11)
 
+> 🥇 **P0 SINCE 2026-09-18 — FIRSTRUN-MARATHON-01: the first-time marathoner experience.** Set by the founder
+> after the call with Jack (Make-A-Wish UK). **The charity's stated pain is that a large share of the people
+> given a place never run it**, and most of the 500 are first-time marathoners or beginners. So the target is
+> **the drop-out between "I have a place" and "I got to the start line"**, and the measure is *still running
+> in week 8* — not activation, not conversion. Seven touchpoints in scope, from first open through the first
+> missed session, with the generating ceremony and the ~28-week pre-plan runway the two biggest unclaimed
+> surfaces. ⚠️ **Not a coaching change** — the engine measured fit-for-purpose for this cohort on 2026-09-16
+> (11/11 personas) and again after PLAN-FITNESS-01; the gap is experience, not prescription. **Next step is
+> `/slt-review`, not a build** — Wood's kill mandate applies, most "wow" ideas are the illusion-of-progress
+> class. Blockers and full scope in `backlog.md`.
+
+> 🐞 **Four founder observations from device, 2026-09-18 — three are real, one is not.**
+> **`ONBOARD-SKIP-LABEL-01`** (P1): tapping "Connect later" / skip renders *"Connecting…"* / *"Setting up…"* on
+> the primary button — one shared `busy` flag, two screens, the DB is correct and only the label lies.
+> **`FOUNDATION-ADD-FAIL-01`** (P1): "Add Foundation Block" fails on device; **the engine path is proven
+> clean (reproduced: 200, 3 weeks, 0 violations)**, and the real defect is that the catch records nothing at
+> all. Prime suspect is one of only five bare `fetch` sites against 56 `authedFetch`.
+> **`FOUNDATION-DECIDE-LATER-01`** (P1): "Start plan as-is" and "Decide later" are **byte-for-byte identical
+> handlers**, and the modal has exactly one trigger, so "later" never comes.
+> ✅ **Marathon/ultra gating is NOT a bug** — they are paid (`free_tier_available: false`, enforced at
+> `route.ts:114`); the 14-day reverse trial is why it looks open, and the first-timer capability question was
+> settled by founder decision on 2026-09-17.
+
 > 🔴 **PARTNERSHIP READINESS AUDIT, 2026-09-18 — CONDITIONAL GO, two infrastructure blockers.**
 > Full brief: `docs/partners/make-a-wish-readiness-2026-09.md`. Scope audited: ~500 runners on full paid
 > access via the existing code flow, Oct 2026 → Apr 2027, iOS only.
