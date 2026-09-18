@@ -68,6 +68,28 @@ export const MUTATIONS: Mutation[] = [
   // TELLING removed — stripping the note alone is not enough, because on most
   // probe plans the decision was never made. Stripping session `coach_notes`
   // does not reach them either: these notes live on `plan.meta`.
+  // §80 Am.1 — the shortfall note's CAUSE clause. Same family as the note
+  // mutations below: the invariant asserts that what the plan SAYS matches what
+  // the plan DID, so waking it means stating a cause the plan contradicts.
+  // Here: blame weekly volume while parking the long run against its own
+  // ceiling. That is precisely the live state found on 2026-09-18, where 71.0%
+  // of real firings sat 2–3 minutes under the cap and blamed volume.
+  { name: 'blame weekly volume while the long run sits at its cap', apply: p => {
+    const meta = p.meta as unknown as Record<string, unknown>
+    const km = typeof meta.race_distance_km === 'number' ? meta.race_distance_km : 42.2
+    meta.race_distance_km = km
+    const cap = km >= 40 ? 210 : km >= 20 ? 135 : km >= 9 ? 120 : 90
+    meta.long_run_shortfall_note =
+      'Your longest run tops out at 3h 28. For a race you will likely be moving for around 5h 38, '
+      + 'and we would normally want it nearer 3h 57, but your weekly volume is what limits it: the long '
+      + 'run is sized as a share of the week, and this week cannot carry more.'
+    // Park the longest long run one minute under the ceiling.
+    for (const w of realWeeks(p)) {
+      for (const sn of Object.values(w.sessions ?? {})) {
+        if (sn && isLongRun(sn)) (sn as unknown as Poke).duration_mins = cap - 1
+      }
+    }
+  } },
   { name: 'claim returning allowance, delete its note', apply: p => {
     const meta = p.meta as unknown as Record<string, unknown>
     meta.returning_runner_allowance_active = true

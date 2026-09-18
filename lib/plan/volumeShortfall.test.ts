@@ -66,7 +66,10 @@ describe('VOL-SHORTFALL-01 — the cost is stated', () => {
   it('states the actual numbers, not a vague warning', () => {
     const plan = generateRulePlan({ ...HM, max_weekday_mins: 45 }, 'paid', PLAN_START)
     const note = plan.meta.volume_shortfall_note!
-    expect(note).toContain('45-minute')
+    // ADR-015 — the adjectival "45-minute" form was dropped with §80 Am.1's
+    // formatting pass: it cannot carry an hours value ("Your 1h 30-minute
+    // weekday limit"), so the sentence names the limit instead.
+    expect(note).toContain('weekday limit of 45 min')
     expect(note).toMatch(/\d+km/)
     expect(note).toMatch(/\d+% less/)
   })

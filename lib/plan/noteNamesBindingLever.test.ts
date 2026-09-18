@@ -61,7 +61,9 @@ describe('the note names the constraint that is actually binding', () => {
     const structural = String(plan.meta.volume_constraint_note ?? '')
     const shortfall = String(plan.meta.long_run_shortfall_note ?? '')
     expect(structural + shortfall).not.toMatch(/already at its time cap/)
-    expect(structural + shortfall).not.toMatch(/time cap for this distance stops us/)
+    // §80 Am.1 reworded the cap branch: it no longer names a lever, because
+    // when the ceiling binds there isn't one (McMillan).
+    expect(structural + shortfall).not.toMatch(/ceiling for this distance is deliberate/)
   })
 
   it('M5: the structural note names the real mechanism — or there is no shortfall left', () => {
@@ -96,7 +98,9 @@ describe('the note names the constraint that is actually binding', () => {
       return
     }
     expect(note).toMatch(/weekly volume is what limits it/i)
-    expect(note).toMatch(/tops out at \d+ minutes/)
+    // ADR-015: durations read "3h 28" / "45 min", never a raw minute count.
+    expect(note).toMatch(/tops out at (?:\d+h(?: \d{2})?|\d+ min)\./)
+    expect(note, 'raw minutes are an ADR-015 breach').not.toMatch(/\d+ minutes/)
   })
 
   it('a runner who IS at the time cap still gets told so — the branch is live', () => {
@@ -108,8 +112,14 @@ describe('the note names the constraint that is actually binding', () => {
       training_age: '5yr+', fitness_level: 'intermediate',
       benchmark: { type: 'race', distance_km: 10, time: '1:05:00' },
     }, 20)
-    expect(peakLrMins).toBeGreaterThanOrEqual(capMins - 1)
+    // §80 Am.1 — the tolerance is now LONG_RUN_AT_CAP_TOLERANCE_MINS, not 1.
+    // ⚠️ THIS TEST IS WHY THE BOARD'S "the branch is dead" FRAMING WAS TOO
+    // STRONG. The branch was unreachable across 5,264 firings in the cohort and
+    // targeted grids, but THIS constructed persona does reach it, and did so
+    // under the old +1 predicate. "Zero in the corpus" is not "cannot fire" —
+    // the same lesson the liveness harness records about its own sample.
+    expect(peakLrMins).toBeGreaterThanOrEqual(capMins - GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS)
     expect(String(plan.meta.long_run_shortfall_note ?? ''))
-      .toMatch(/time cap for this distance stops us/)
+      .toMatch(/ceiling for this distance is deliberate/)
   })
 })

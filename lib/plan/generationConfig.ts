@@ -1541,6 +1541,38 @@ export const GENERATION_CONFIG = {
   // through frequency + total volume, not extended LRs.
   LONG_RUN_CAP_MINUTES_5K_FINISH: 70,
 
+  // §80 Amendment 1 (LR-SHORTFALL-CAUSE-01, Coaching Board 2026-09-18) — how
+  // close to LONG_RUN_CAP_MINUTES counts as "the cap is what stopped us".
+  //
+  // NOT a fudge factor. The cap is applied on the KILOMETRE axis
+  // (`result = absCapMins / paceMinPerKm`) and the distance is then rounded, so
+  // a capped long run lands slightly UNDER its own ceiling and rarely satisfies
+  // a one-minute tolerance: 0 of 5,264 notes named the cap across the cohort and
+  // targeted grids, while 71.0% sat 2–3 minutes beneath it and blamed the
+  // runner's weekly volume instead. (NOT impossible — `noteNamesBindingLever`
+  // builds a persona that does reach `cap − 1`. Zero in the corpus is not
+  // "cannot fire".)
+  //
+  // Measured, per §40c's standard. Gap below cap: 2 min × 2,420 · 3 min × 1,316
+  // · NOTHING at 4 or 5 · a scattered tail from 6. The empty band means any
+  // value in 3–5 splits the population identically, so this sits in a flat
+  // region rather than on a cliff.
+  LONG_RUN_AT_CAP_TOLERANCE_MINS: 3,
+
+  // §80 Amendment 1 — the smallest long-run shortfall worth telling a runner
+  // about, as a share of §80's floor.
+  //
+  // The note had NO floor and fired at a 2-minute shortfall (1.7% of the
+  // floor), attached to "expect the last stretch of race day to be new
+  // territory". §40c sets the doctrine: "notes that fire on noise get ignored,
+  // which costs more than the note gains" (McMillan).
+  //
+  // 5%, not §40c's 10%. Shortfall as a share of the floor: min 1.7%, p10 8.8%,
+  // median 11.9%, max 39.0%. 5% silences 2.6% — the rounding cases — while 10%
+  // would silence 30.5%, and a marathoner 10% short of the §80 floor is ~24
+  // minutes short, which is signal, not noise.
+  LONG_RUN_SHORTFALL_MATERIAL_PCT: 5,
+
   // ── Peak long-run race specificity (CoachingPrinciples §24, §35) ──────────
   // Time-targeted plans for HM and longer require race-distance specificity in
   // the long run. Floor (not ceiling) — peak long run must REACH this fraction

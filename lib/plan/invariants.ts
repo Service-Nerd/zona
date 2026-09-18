@@ -126,6 +126,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PEAK-STEPBACK-VOLUME',
   'INV-PLAN-TAPER-DURATION-CAP',
   'INV-PLAN-RETURNING-RUNNER-NOTE-PRESENT',
+  'INV-PLAN-LR-SHORTFALL-CAUSE',
   'INV-PLAN-REENTRY-OMISSION-DECLARED',
   'INV-PLAN-QUALITY-VARIETY-FULL-PLAN',
   'INV-PLAN-LR-MAX-WEEKLY-PCT',
@@ -6285,6 +6286,56 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         actual: `${uncovered} uncovered weeks, no note`,
         expected: 'meta.uncovered_runway_note present',
       })
+    }
+  }
+
+  // INV-PLAN-LR-SHORTFALL-CAUSE (§80 Am.1) — when §80's long-run shortfall note
+  // blames the runner's WEEKLY VOLUME, the long run must not in fact be sitting
+  // against its own time cap.
+  //
+  // WHY THIS EXISTS AND WHY IT IS NOT A CHECKER SHARING THE PRODUCER'S
+  // PREDICATE. The producer decides the cause with `peakLrMins + TOLERANCE >=
+  // capMins`; this reads the NOTE TEXT the runner receives and compares it
+  // against the plan's own delivered long run. The old producer carried a
+  // comment claiming it "names whichever one is actually binding" and named the
+  // cap 0 times in 5,264 firings across both grids — a claim and a computation
+  // that had never been reconciled because nothing checked the OUTPUT.
+  //
+  // `error`: a note that tells a marathoner sitting two minutes under a
+  // 210-minute ceiling to look at their weekly volume is an injury vector
+  // delivered as advice (Willy, §80 Am.1), not a cosmetic slip.
+  {
+    const note = plan.meta.long_run_shortfall_note
+    if (typeof note === 'string' && note.length > 0) {
+      // NOT `?? 0`: `raceDistanceKey(0)` returns '5K', so a missing race
+      // distance would silently compare a marathon long run against a
+      // 90-minute cap. Absent distance means this check has nothing to say.
+      const raceKm = plan.meta.race_distance_km
+      const distKey = typeof raceKm === 'number' && raceKm > 0 ? raceDistanceKey(raceKm) : null
+      const capMins = distKey ? GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[distKey] : 0
+      // The delivered peak long run, read from the plan rather than recomputed
+      // from the curve — the note describes what the runner actually got.
+      let peakLrMins = 0
+      for (const w of plan.weeks) {
+        if (w.n < 1 || w.type === 'race') continue
+        for (const sn of Object.values(w.sessions ?? {})) {
+          if (!sn || !isLongRun(sn)) continue
+          if (typeof sn.duration_mins === 'number') peakLrMins = Math.max(peakLrMins, sn.duration_mins)
+        }
+      }
+      const blamesVolume = note.includes('your weekly volume is what limits it')
+      const tol = GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS
+      if (blamesVolume && capMins > 0 && peakLrMins > 0 && peakLrMins + tol >= capMins) {
+        violations.push({
+          code: 'INV-PLAN-LR-SHORTFALL-CAUSE',
+          principle_ref: 'CoachingPrinciples §80 Am.1, §40c',
+          severity: 'error',
+          week: 0,
+          message: `Long-run shortfall note blames weekly volume, but the peak long run (${Math.round(peakLrMins)} min) is within ${tol} min of its ${capMins}-minute cap — the ceiling is what bound it. §40c requires the note to name the constraint that is actually binding.`,
+          actual: `note blames weekly volume; long run ${Math.round(peakLrMins)} min vs cap ${capMins} min`,
+          expected: `note names the long-run ceiling when the long run is within ${tol} min of it`,
+        })
+      }
     }
   }
 

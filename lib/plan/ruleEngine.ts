@@ -14,6 +14,16 @@ import {
   formatDate, addDays, parseDateLocal,
 } from './length'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
+// ADR-015 / INV-FMT-001 — `lib/format.ts` is the SOLE owner of every duration a
+// runner reads, and the rule is locked: under 60 minutes reads "45 min", at or
+// above it reads in hours ("3h 28"). These notes are a display surface like any
+// card, and they were printing raw minute counts: "tops out at 208 minutes ...
+// moving for around 338 minutes". Measured before the fix: 42,444 minute values
+// across 29,624 notes, 48.2% of them >= 60, the largest 338 (5h 38).
+import { formatDuration } from '@/lib/format'
+// Notes are prose, so a null (impossible here: every caller passes a finite
+// positive number) must not print "null".
+const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.round(mins)} min`
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
 import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
@@ -6946,7 +6956,7 @@ function buildRulePlanOnce(
             suggestions.push(`run ${input.days_available + 1} days a week instead of ${input.days_available}`)
           }
           if (input.max_weekday_mins != null && input.max_weekday_mins < 90) {
-            suggestions.push(`give your weekday runs more room than the ${input.max_weekday_mins} minutes you have allowed`)
+            suggestions.push(`give your weekday runs more room than the ${durationText(input.max_weekday_mins)} you have allowed`)
           }
           // The weeks suggestion is gated on the weeks ACTUALLY being short.
           // It used to fire whenever the long-run or volume floor failed, so a
@@ -7119,13 +7129,13 @@ function buildRulePlanOnce(
     // 25%, so the day count is the honest first lever.
     const lever = input.days_available < 5
       ? `running ${input.days_available + 1} days instead of ${input.days_available}`
-      : `raising the weekday limit to ${input.max_weekday_mins + 15} minutes`
+      : `raising the weekday limit to ${durationText(input.max_weekday_mins + 15)}`
 
     // Voice per brand.md: honest, specific, never motivational. The earlier
     // draft included "a 44km week you run beats a 65km week you abandon" —
     // true, but it is encouragement, and the brand rule is that we state the
     // fact and let the runner draw the conclusion.
-    return `Your ${input.max_weekday_mins}-minute weekday limit is shaping this plan — peak week reaches ${Math.round(peakActual)}km where it would otherwise have gone to ${Math.round(peakIntent)}km, about ${Math.round(lostPct)}% less. Only the volume moves; the sessions and their balance don't. If you want it back, ${lever} is the lever.`
+    return `Your weekday limit of ${durationText(input.max_weekday_mins)} is shaping this plan — peak week reaches ${Math.round(peakActual)}km where it would otherwise have gone to ${Math.round(peakIntent)}km, about ${Math.round(lostPct)}% less. Only the volume moves; the sessions and their balance don't. If you want it back, ${lever} is the lever.`
   })()
 
   // §80 — if LONG_RUN_CAP_MINUTES stopped the peak long run reaching the
@@ -7148,7 +7158,12 @@ function buildRulePlanOnce(
         peakLrMins = Math.max(peakLrMins, mins)
       }
     }
-    if (peakLrMins === 0 || peakLrMins + 1 >= floorMins) return null
+    // §80 Am.1 — MATERIALITY. The note used to fire at a 2-minute shortfall
+    // (1.7% of the floor) and then tell the runner to expect race day to be
+    // "new territory". §40c: "notes that fire on noise get ignored, which costs
+    // more than the note gains". 5% silences 2.6%; 10% would silence 30.5%.
+    const materialFloorMins = floorMins * (1 - GENERATION_CONFIG.LONG_RUN_SHORTFALL_MATERIAL_PCT / 100)
+    if (peakLrMins === 0 || peakLrMins >= materialFloorMins) return null
     // ⚠️ SECOND INSTANCE OF THE SAME DEFECT AS `structuralNote` ABOVE, found
     // while fixing that one (M5-EASY-CEILING-01, Coaching Board 2026-09-16).
     //
@@ -7164,11 +7179,23 @@ function buildRulePlanOnce(
     // sizing. §40c requires the note to name the lever, so it now names whichever
     // one is actually binding.
     const capMins = GENERATION_CONFIG.LONG_RUN_CAP_MINUTES[dk]
-    const atTimeCap = capMins > 0 && peakLrMins + 1 >= capMins
+    // §80 Am.1 — the `+ 1` here was DEAD. `LONG_RUN_CAP_MINUTES` is applied on
+    // the kilometre axis and the distance is then rounded, so a capped long run
+    // lands 2–3 minutes UNDER its ceiling and can never satisfy `+1 >= cap`.
+    // Measured: 0 of 5,264 notes named the cap; 71.0% sat 2–3 min beneath it
+    // and blamed weekly volume, which for a marathoner 2 minutes under a
+    // 210-minute ceiling is an injury vector served as advice (Willy).
+    const atTimeCap = capMins > 0
+      && peakLrMins + GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS >= capMins
+    // ⚠️ THE CAP BRANCH NAMES NO LEVER, ON PURPOSE (McMillan, §80 Am.1). §40c
+    // says name the lever that would change it; when the ceiling binds there
+    // isn't one, and §40 already settled that "the caps do not move". Implying
+    // the runner could train their way past it would be the same defect in the
+    // opposite direction.
     const why = atTimeCap
-      ? 'but the long-run time cap for this distance stops us going further'
+      ? 'and this is as far as we take it: the long-run ceiling for this distance is deliberate, not a gap in the plan'
       : 'but your weekly volume is what limits it: the long run is sized as a share of the week, and this week cannot carry more'
-    return `Your longest run tops out at ${Math.round(peakLrMins)} minutes. For a race you'll likely be moving for around ${Math.round(projectedRaceMins)} minutes, we'd normally want it nearer ${Math.round(floorMins)} — ${why}. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.`
+    return `Your longest run tops out at ${durationText(peakLrMins)}. For a race you'll likely be moving for around ${durationText(projectedRaceMins)}, and we'd normally want it nearer ${durationText(floorMins)}, ${why}. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.`
   })()
 
   // Compose final values. §23's note wins (more specific) when both trigger.
@@ -7361,7 +7388,7 @@ function buildRulePlanOnce(
   // an ENGINE decision (why we did not shorten the label) rather than telling the
   // runner anything they can use. Kept: the clash, and the lever.
   const structuredOverrunNote: string | null = structuredOverrun
-    ? `Your hard sessions do not fit the time you have. You've capped weekdays at ${structuredOverrun.cap} minutes, and by week ${structuredOverrun.n} the session this race needs runs about ${Math.round(structuredOverrun.mins)} minutes. It stays at full length rather than being trimmed into something easier. The lever is one longer session a week: a weekend morning, or a single weekday you can give more time to.`
+    ? `Your hard sessions do not fit the time you have. You've capped weekdays at ${durationText(structuredOverrun.cap)}, and by week ${structuredOverrun.n} the session this race needs runs about ${durationText(structuredOverrun.mins)}. It stays at full length rather than being trimmed into something easier. The lever is one longer session a week: a weekend morning, or a single weekday you can give more time to.`
     : null
 
   // THE MISSING THIRD NOTE. `structuredOverrunNote` talks about "hard sessions"
@@ -7375,11 +7402,11 @@ function buildRulePlanOnce(
   // this run is simply longer than the time the runner said they had, and the
   // honest thing is to say which day and what the lever is.
   const easyOverrunNote: string | null = easyOverrun
-    ? `Your easy runs do not fit the time you have. You've capped weekdays at ${easyOverrun.cap} minutes, but by week ${easyOverrun.n} an easy run lands at about ${Math.round(easyOverrun.mins)} minutes. It stays at that length because cutting it would leave the week too short to build on, and the long run would end up carrying too much of it. The lever is one longer weekday, or moving a run to the weekend.`
+    ? `Your easy runs do not fit the time you have. You've capped weekdays at ${durationText(easyOverrun.cap)}, but by week ${easyOverrun.n} an easy run lands at about ${durationText(easyOverrun.mins)}. It stays at that length because cutting it would leave the week too short to build on, and the long run would end up carrying too much of it. The lever is one longer weekday, or moving a run to the weekend.`
     : null
 
   const longRunOverrunNote: string | null = longRunOverrun
-    ? `This plan is built to get you round on the time you have — your long run does not fit it. You've kept both weekend days clear of training and capped weekdays at ${longRunOverrun.cap} minutes, but by week ${longRunOverrun.n} the long run this race needs is about ${Math.round(longRunOverrun.mins)} minutes. It stays in the plan at full length, because a long run cut to ${longRunOverrun.cap} minutes stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
+    ? `This plan is built to get you round on the time you have — your long run does not fit it. You've kept both weekend days clear of training and capped weekdays at ${durationText(longRunOverrun.cap)}, but by week ${longRunOverrun.n} the long run this race needs is about ${durationText(longRunOverrun.mins)}. It stays in the plan at full length, because a long run cut to ${durationText(longRunOverrun.cap)} stops being a long run. What it can't do is build toward the race on those terms. The lever is one longer session a week — a weekend morning, or a single weekday you can give more time to.`
     : null
 
   // §82 — easy-run floor protection recurring across weeks. One week is
@@ -7393,7 +7420,13 @@ function buildRulePlanOnce(
   }, 0)
   const easyFloorProtectionOverrun = floorProtectedWeekCount >= GENERATION_CONFIG.EASY_RUN_FLOOR_PROTECTION_MAINTENANCE_WEEKS
   const easyFloorProtectionNote: string | null = easyFloorProtectionOverrun
-    ? `This plan is shaped by the time you have — your easy runs don't fit it on ${floorProtectedWeekCount} of this plan's weeks. You've capped weekdays at ${input.max_weekday_mins} minutes, and at that limit some easy runs would shrink to a distance too short to train anything, so they stay a few minutes over your cap instead. The lever is day count — fewer, fuller sessions fit your time better than more, thinner ones.`
+    // ⚠️ `max_weekday_mins` is OPTIONAL ("No limit" in the wizard), and this
+    // note is gated on floor-protected WEEKS, not on the cap existing. The
+    // previous template interpolated it raw, so an unset cap would have read
+    // "You've capped weekdays at undefined minutes". Measured across 16,080
+    // no-cap plans in both grids: 0 occurrences, so this is latent rather than
+    // live — but a note whose premise may be false should not assert it.
+    ? `This plan is shaped by the time you have — your easy runs don't fit it on ${floorProtectedWeekCount} of this plan's weeks.${input.max_weekday_mins != null ? ` You've capped weekdays at ${durationText(input.max_weekday_mins)}, and at that limit some` : ' Some'} easy runs would shrink to a distance too short to train anything, so they stay a few minutes over${input.max_weekday_mins != null ? ' your cap' : ' the budget those days allow'} instead. The lever is day count — fewer, fuller sessions fit your time better than more, thinner ones.`
     : null
 
   const finalVolumeProfile: 'build' | 'maintenance' | undefined =
@@ -7767,7 +7800,7 @@ function buildRulePlanOnce(
         : lowDays
           ? `On ${input.days_available} running days there is nowhere to put the difference without one run carrying too much of the week.`
           : cap != null
-            ? `A ${cap} minute weekday ceiling limits what the midweek runs can carry, and the long run cannot absorb the rest on its own.`
+            ? `A weekday ceiling of ${durationText(cap)} limits what the midweek runs can carry, and the long run cannot absorb the rest on its own.`
             : 'Your starting volume and the time available cap how far this plan can build.'
 
     const lever = (!belowStart && belowTarget)

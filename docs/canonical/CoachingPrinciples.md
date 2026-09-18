@@ -3744,6 +3744,39 @@ operative section for the charity cohort is §80**, because every marathon perso
 `goal: 'finish'` and §24 gates on `time_target`. Both carry the amendment — same
 defect, same shape. Record: `docs/decisions/coaching-board-2026-09-17-plan-fitness.md`.
 
+### §80 Amendment 1 — the shortfall note must name the constraint that is actually binding, and must not fire on rounding
+
+*Added 2026-09-18 — Coaching Board (LR-SHORTFALL-CAUSE-01). Raised by the founder from his own London Marathon 2027 plan.*
+
+**Principle.** When §80's long-run shortfall is declared, the note states **which constraint produced it**, and it only fires when the shortfall is **material**. A note that names a lever the runner cannot pull is worse than no note: it converts a deliberate safety ceiling into an instruction to train more.
+
+**The defect, measured across 35,952 plans (both grids).** The note fires on 5,264 (14.6%). It offers two causes — the long-run time cap, or weekly volume. **It named the time cap 0 times.** All 5,264 said *"your weekly volume is what limits it"*. The code carried a comment from §110's sitting (M5-EASY-CEILING-01, 2026-09-16) asserting it "now names whichever one is actually binding"; the claim and the computation had never agreed.
+
+**Why it almost never fired, and why the fix is a tolerance rather than a rewrite.** The predicate was `peakLrMins + 1 >= capMins` — a one-minute tolerance. `LONG_RUN_CAP_MINUTES` is applied on the **kilometre** axis (`result = absCapMins / paceMinPerKm`) and the resulting distance is then rounded, so a capped long run lands a little **under** its own ceiling and almost never satisfies a one-minute tolerance.
+
+> ⚠️ **Not "structurally impossible" — that was the board's first framing and it was too strong.** `noteNamesBindingLever.test.ts` constructs a high-volume, slow-paced marathoner whose long run DOES reach `cap − 1`, and that case fired correctly under the old predicate. The honest claim is **0 firings in 5,264 across the cohort and targeted grids**, not that the branch could never fire. "Zero in the corpus" is not "cannot happen" — the same distinction the liveness harness records about its own sample.
+
+**The line is measured, not chosen** (the §40c standard). Gap between the delivered peak long run and its own cap, for notes blaming volume:
+
+| Gap below cap | Notes |
+|---|---|
+| 2 min | 2,420 |
+| 3 min | 1,316 |
+| **4–5 min** | **0** |
+| 6 min and beyond | 1,528, scattered |
+
+**71.0% sit 2–3 minutes under the ceiling, and nothing at all sits at 4 or 5.** That discontinuity is two populations: the cap binding through a rounding artefact, and a genuinely volume-limited week. Any tolerance in 3–5 gives an identical split, so the threshold sits in a flat region rather than on a cliff.
+
+**A cap-bound note names no lever, deliberately.** §40c requires the note to name the lever that would change the outcome. When the ceiling is what binds, there is none — the ceiling is the coaching decision, and §40 already settled that *"the caps do not move"*. So the note says the limit is deliberate rather than implying the runner should train more. Telling a marathoner two minutes under a 210-minute ceiling that their weekly volume is the problem hands them an injury vector as advice (Willy), unfuelled volume the plan never asked for (Sims), and volume most likely to be added in the grey zone (Seiler).
+
+**Materiality, in §40c's idiom.** §40c fires at 10% of the intended peak week because *"below it is rounding and phase noise"*. §80's note had **no floor at all** and fired on a shortfall as small as 2 minutes (1.7% of the floor). Shortfall as a share of the floor: min 1.7%, p10 8.8%, median 11.9%, max 39.0%. **A 5% floor silences 2.6%** — the rounding cases — and keeps every genuine shortfall. 10% was rejected here: it would silence 30.5%, and a marathoner 10% short of the §80 floor is roughly 24 minutes short, which is signal.
+
+**This changes what the plan SAYS, never what it prescribes.** No cap, ratio or session moves; `measure:fitness` is not gating.
+
+**Config.** `GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS` (3) and `LONG_RUN_SHORTFALL_MATERIAL_PCT` (5). Enforced by `INV-PLAN-LR-SHORTFALL-CAUSE` in `lib/plan/invariants.ts`.
+
+---
+
 ## 101. `compressed` means two different things, so it is two fields
 
 *(Renumbered 2026-09-11 — this section shared its number with another. Code and cross-references cited the OTHER one, so that kept the number and this took a fresh one. See the duplicate-number guard in `principlesIntegrity.test.ts`.)*
