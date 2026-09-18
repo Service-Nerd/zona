@@ -46,10 +46,17 @@ describe('§113 — long-run readiness', () => {
     expect(r.alternatives.join(' ')).toMatch(/build up to/i)
   })
 
-  it('offers the half only when the runner asked for a marathon', () => {
+  it('🔴 offers a 10K to a refused marathoner, and NEVER the half', () => {
+    // ⚠️ THIS TEST PINNED THE DEFECT. It used to assert the opposite — that a
+    // refused marathoner IS offered "a half marathon plan, which asks less of
+    // your longest run". It asks exactly the same: §113's floor governs every
+    // race at or above LONG_RUN_READINESS_MIN_RACE_KM (21 km), so the half
+    // refuses the same runner identically. The suggestion spent a first-timer's
+    // one retry and sent them away (REFUSAL-ALT-REACHABLE-01, 2026-09-18).
     const m = assessLongRunReadiness(base({ longest_recent_run_km: 2, race_distance_km: 42.2 }))
     const h = assessLongRunReadiness(base({ longest_recent_run_km: 2, race_distance_km: 21.1 }))
-    expect(m.alternatives.join(' ')).toMatch(/half marathon/i)
+    expect(m.alternatives.join(' '), 'the half carries the SAME floor').not.toMatch(/half marathon/i)
+    expect(m.alternatives.join(' '), 'offer a distance that actually opens').toMatch(/10K/i)
     expect(h.alternatives.join(' '), 'do not offer a half to someone already running one')
       .not.toMatch(/half marathon/i)
   })

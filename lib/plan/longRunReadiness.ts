@@ -63,7 +63,19 @@ function alternativesFor(floor: number, raceDistanceKm: number): string[] {
     `Build up to one ${floor} km run, then come back. Nothing else needs to change.`,
   ]
   if (raceDistanceKm >= 42) {
-    alts.push('Or start with a half marathon plan, which asks less of your longest run.')
+    // ⚠️ THIS USED TO SAY "start with a half marathon plan, which asks less of
+    // your longest run." IT IS FALSE, and it is false for the single worst
+    // reader: a first-time charity marathoner who has just been refused.
+    // §113's floor is `MIN_SESSION_DISTANCE_KM.long` for EVERY race at or above
+    // LONG_RUN_READINESS_MIN_RACE_KM (21 km) — the half marathon asks exactly
+    // the same 5 km and refuses them again, identically. Measured 2026-09-18:
+    // at longest_recent_run_km = 4, marathon REFUSED, half marathon REFUSED,
+    // 10K generates, 5K generates.
+    //
+    // A refusal that hands someone a door which is also locked is worse than a
+    // refusal that hands them nothing: they spend the attempt, fail again, and
+    // leave. Point them at a distance that actually opens.
+    alts.push('Or take a 10K plan for now: it starts from where you are, and it builds the exact base this one needs.')
   }
   alts.push('Already run further than that? Update your longest recent run and try again.')
   return alts

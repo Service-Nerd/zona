@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — REFUSAL-ALT-REACHABLE-01 · the refusal offered a door that was also locked
+**Shipped:** A refused first-time marathoner is now pointed at a 10K plan, which actually generates, instead of a half marathon, which refuses them for the identical reason.
+
+**Dev learning:** §113's refusal carried three alternatives, and one of them was *"Or start with a half marathon plan, which asks less of your longest run."* It asks exactly the same. `LONG_RUN_READINESS_MIN_RACE_KM` is 21 km, so the floor governs the half identically. Measured at `longest_recent_run_km = 4`: marathon refused, **half marathon refused**, 10K generates, 5K generates. The copy made a claim about the engine that the engine contradicts, and nothing could catch it because refusal *alternatives* are prose and no test had ever tried to **follow** one. The new gate follows them.
+
+**Product/creator learning:** This is the single worst place in the product to be wrong. The reader is a charity first-timer, in October, for a race in April, who has just been told no. Jack's stated problem is that people who take a place never run. A refusal offering nothing would have done less damage than one offering a second locked door, because the locked door spends their one retry and teaches them the app doesn't work. I only found it because the founder asked "are our beginners actually catered for" and I went looking at what a refused beginner literally sees.
+
+**AI-building learning:** I nearly reported "the refusal has good alternatives, it's fine" — the copy is well-written, in voice, and offers three routes. Reading it was not enough. The only thing that found the bug was executing the suggestion: generate a half marathon plan for that same runner and see what comes back. **For any copy that tells a user to go do X, the test is to go do X.**
+
+**The honest bit:** the existing §113 test asserted the half **is** offered. It pinned the defect. That's the second time today a test locked in the wrong behaviour — the first was `firstRun.ts`'s `${Math.round(km)} km` unit bug. Both were written by me, both alongside the code they were supposed to check, and in both cases the test just agreed with whatever the code did.
+
+**Hook material:** The app told a first-time marathoner to try a half marathon instead. The half marathon rejects them for exactly the same reason. Nobody noticed because no test had ever followed the advice the app gives.
+
+**Postable?:** yes
+
 ## 2026-09-18 — COMPONENT-CONTRACT-GATE-01 · a contract that described a component nobody built
 **Shipped:** `docs/contracts/components/` is checked by something now — a prop-name test in both directions, plus the mirror of the API touch-check in `audit-docs.sh`.
 
