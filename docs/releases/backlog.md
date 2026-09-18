@@ -178,6 +178,43 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > 🔴 **HOW I GOT THIS WRONG, recorded because the method matters more than the item.** Earlier the same day I "refuted" this claim by generating 42 combinations of volume × longest run and finding that **every one built a plan**. That measurement was correct and irrelevant: it called `generateRulePlan` directly and **never went through the route**. I verified the engine, not the path a runner takes, and told the founder to change a deck that was right. **A refusal that lives at the boundary is invisible to every test that starts inside it.**
 
+> ⚖️ **COACHING BOARD — MARATHON-VOLUME-GATE-01, sat 2026-09-18. Ruling: the CONCERN is correct, the IMPLEMENTATION is INCORRECT.**
+>
+> **Trigger:** soft (`app/api/generate-plan/route.ts`) and it qualifies — this decides whether a runner gets a plan at all. ⚠️ **The hook did not fire and could not**: `coaching-guard.py` does not watch `app/api/`.
+>
+> **🔍 Conflict scan.** Touches **§44** (refusal mechanism — its own text requires *"listing alternatives"*, which these three do not do) · **§52** (days gate, which DOES compute alternatives) · **§2** (weekly increase cap) · **§18/§10** (longest run ≤ weekly volume) · **§23** (peak overload) · **§40c** (name the lever) · **§106** (the `peakKmByLevel` precedent — *"every governance layer bypassed by a table being in the wrong place"*). **No principle governs these three numbers at all**, which is itself the finding.
+>
+> **📊 Measured before ruling** — marathon, finish goal, 3 days, first-timer, London 2027, engine called directly:
+>
+> | Stated weekly km | Peak week built | Net build | `validatePlan` errors |
+> |---|---|---|---|
+> | 5 | 47 km | **+262%** | **0** |
+> | 12 | 47 km | +135% | 0 |
+> | **15 (REFUSED by the route)** | 47 km | **+135%** | 0 |
+> | **20 (PERMITTED by the route)** | 52 km | **+160%** | 0 |
+> | 40 | 53 km | +61% | 0 |
+>
+> **🩹 Willy.** The concern is real and I will not have it deleted: a first-timer declaring 5 km a week is handed a block peaking at 47 km, **+262%**, and **`validatePlan` returns zero errors** — nothing downstream catches it. Remove this gate with nothing in its place and that ships.
+>
+> **🏃 Hutchinson (chair).** And yet the gate does not track the thing Willy is worried about. **It refuses 15 km/week at +135% and permits 20 km/week at +160%.** The rule is non-monotonic in the quantity that matters: the runner it turns away gets a *gentler* ramp than the one it lets through. A threshold that inverts its own purpose across its own boundary is not a safety rule, it is a number someone typed.
+>
+> **🎯 McMillan.** *"Build your base first"* to someone holding a London place is not coaching, it is a door. And we already know how to do this properly — §44 and §52 both hand back alternatives. This one hands back a full stop.
+>
+> **📊 Seiler.** No objection to a floor existing. Note only that the refused runner and the permitted runner receive the same 208-minute long run, so the gate is not protecting the long run either.
+>
+> **⚕️ Sims.** A first-time marathoner told to "build your base" with no plan will build it unsupervised, which is where energy availability and bone loading go wrong. §76's *"they will fill it by guessing"* applies exactly.
+>
+> **⚖️ RULING — CORRECT WITH AMENDMENT.** A floor is **correct**: +262% off a 5 km base must not ship, and nothing downstream catches it. The **current implementation is incorrect** on four counts: ungoverned, non-monotonic across its own boundary, offers no alternatives (violating §44's own text), and expressed on `current_weekly_km` rather than on the ramp it is trying to bound.
+>
+> ⚠️ **DO NOT SIMPLY DELETE THESE THREE LINES.** That is the trap, and Willy's number is why.
+>
+> **📦 Required artifacts — this is the P0 build, not a docs edit:**
+> 1. **Principle** — a new `CoachingPrinciples` section owning the base-volume floor, expressed as a bound on **net build / ramp**, not on stated weekly volume. Must state the §44 obligation to return alternatives.
+> 2. **Numeric** — the threshold moves into `GENERATION_CONFIG` so `configPrincipleSync` and `coaching-guard` can both see it.
+> 3. **Invariant** — `validatePlan` must catch the +262% case. **It currently returns 0 errors on it**, so this is a live hole independent of where the gate lives.
+>
+> **↗️ SLT escalation:** one question only, and it is commercial, not coaching — **what a refused charity runner with an allocated place should be offered.** "Race the Half instead" is the governed §52 answer and is unusable for someone with a London Marathon place. Recorded under `REFUSAL-SCREEN-01`.
+
 > 🔴 **REFUSAL-SCREEN-01 — a deliberate coaching decision is presented as a crash.** *(P1. The actionable half of REFUSAL-THRESHOLDS-01 below. Belongs to FIRSTRUN-MARATHON-01 touchpoint 2.)*
 >
 > `GeneratePlanScreen.tsx:1176`. When the engine declines to build a plan, the runner gets:
