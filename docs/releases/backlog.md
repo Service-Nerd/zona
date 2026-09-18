@@ -18,14 +18,14 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > |---|---|---|
 > | `PREF-SWEEP-01` | **P1** | km↔miles does not reach the app: **90 hardcoded `km`**, 3 of 14 prompt builders unit-blind, `formatSessionMetric` has 1 call site against a docstring claiming 4 surfaces |
 > | `LONGEST-RUN-GATE-01` | **P1** | The **third** ungoverned refusal in the function §111 was convened to fix. Refuses any HM/marathon with a longest run under 5 km — a charity first-timer in October. **Coaching Board** |
-> | `DEVICE-VERIFY-01` | **P1** | **Nothing shipped today has run on iOS.** One TestFlight pass. Not a code item |
+> | `DEVICE-VERIFY-01` | ⏸️ **P1** | **Nothing shipped today has run on iOS.** ⏸️ **PARKED — needs the founder's device**, not a code change |
 > | `REFUSAL-COPY-02` | P2 | The refusal FRAMING is fixed; the message inside is still raw engine copy. Parity-moving |
 > | `OPS-DBCHECK-NOISE-01` | P2 | `check:db` writes ~43 errors into Supabase on a **healthy** run |
 > | `CI-SLOW-DRIFT-01` | P2 | `slowTestThreshold` prints drift and nothing gates it |
 > | `FATIGUE-ARRAY-DRY-01` | P3 | Five inline fatigue arrays left after §112 gave them an owner |
-> | `S112-HAZARD-01` | P3 | Board-deferred measurement: does softening teach skipping? Unparks when the cohort gives volume |
+> | `S112-HAZARD-01` | ⏸️ P3 | ⏸️ **PARKED — unmeasurable today** (§112 has never fired; 83 tagged rows total). Unparks when the cohort gives volume |
 > | `FIRSTRUN-GATE-CALL-01` | P3 | Open call: gate "First up" to first-timers? Shipped ungated |
-> | `SIGNOUT-TOKEN-RESIDUAL-01` | P3 | Accepted risk: a failed revoke leaves the token alive until expiry |
+> | `SIGNOUT-TOKEN-RESIDUAL-01` | ⏸️ P3 | ⏸️ **ACCEPTED, no action.** A failed revoke leaves the token alive until expiry; unreachable without a network |
 > | `GTM-CHARITY-09` · iOS 16.6 | ⏸️ | **Parked by the founder.** Both writing, no build |
 
 > ▶️ **NEXT UP when we restart — the FIRSTRUN-MARATHON-01 queue, Tier 1 + Tier 2 (#5–8) are DONE.** Resume at the **SLT-ORDERED WORK QUEUE** (§ below):
