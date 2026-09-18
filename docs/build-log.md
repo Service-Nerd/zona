@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — CI-SLOW-DRIFT-01 · the gate's first run failed on a test that hadn't got slower
+**Shipped:** `npm run check:slow` — test-duration drift is now gated with a committed baseline instead of printed into a green run nobody reads.
+
+**Dev learning:** The number that mattered was only visible under contention. `targetedGrid.test.ts` is ~8.7s measured alone and **15,017 ms inside the full suite** — 50.1% of the 30s budget, and 39% of the entire suite's test time in one test. Any duration gate built on an isolated measurement understates by most of the gap.
+
+**Product/creator learning:** I deliberately made this report-only in CI, which feels backwards given the incident happened in CI. The reasoning: the baseline is a dev-machine number, CI runs on a ~3.5x slower runner, and comparing the two is comparing different measurements — it would turn green builds red for reasons that say nothing about the commit. CI's protection against a runaway test is `testTimeout` itself, which is what the earlier fix raised to 30s. This check's job is to make drift a *decision at commit time*, and commit time is local. Worth being explicit about, because "we added a gate and exempted CI" reads like cowardice unless the reason is written down.
+
+**AI-building learning:** Multiplying the two numbers I had — 15,017 ms local under contention x the 3.5x CI ratio — projects the test past the 30s wall, and CI demonstrably doesn't hit it. That's the tell that they're different measurements, not two points on one scale. I printed the projection in the tool's output labelled "orientation only, NOT a gate" rather than deleting it, because the temptation to treat it as a prediction is exactly what I'd fall for reading this in six weeks.
+
+**The honest bit:** The gate's first real run **failed**, on `lib/hooksGate.test.ts` — which had not got slower. It measured 793, 847 and 1,063 ms on three consecutive full-suite runs, so it sits *on* the 1,000 ms reporting line and crosses it with ordinary noise. I'd written a gate that fires depending on which side of its own boundary a test happened to land that minute. Fixed by only failing on newcomers at 1.5x the reporting threshold and registering only tests above that line. Spending twenty minutes making a check *not* fire is not wasted time — a flaky gate gets deleted, and this repo already records that as identical to having no gate.
+
+**Hook material:** I built a test-speed gate. Its first run failed on a test that hadn't changed speed — it had just landed on the other side of my own threshold that minute.
+
+**Postable?:** yes
+
 ## 2026-09-18 — OPS-DBCHECK-NOISE-01 · my healthy check was writing 43 errors a run, and the noise was the smaller problem
 **Shipped:** `check:db` now asks one read-only `schema_columns_named()` RPC instead of 21 selects designed to fail, and the answer is bidirectional.
 

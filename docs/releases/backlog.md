@@ -22,7 +22,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > | `DEVICE-VERIFY-01` | ⏸️ **P1** | **Nothing shipped today has run on iOS.** ⏸️ **PARKED — needs the founder's device**, not a code change |
 > | `REFUSAL-COPY-02` | P2 | The refusal FRAMING is fixed; the message inside is still raw engine copy. Parity-moving |
 > | ~~`OPS-DBCHECK-NOISE-01`~~ | ✅ | **SHIPPED 2026-09-18.** One read-only `schema_columns_named()` RPC replaces 21 deliberately-failing selects. ⚠️ **The noise was the smaller half** — probing "each known table" built the candidate set from the three arrays the check audits, so a new `week_n` table in none of them was invisible to the check written to find it. Now schema-sourced and bidirectional |
-> | `CI-SLOW-DRIFT-01` | P2 | `slowTestThreshold` prints drift and nothing gates it |
+> | ~~`CI-SLOW-DRIFT-01`~~ | ✅ | **SHIPPED 2026-09-18** as `npm run check:slow`, inside `npm run verify`. Measured under contention: `targetedGrid` is **15,017 ms — 50.1% of budget and 39% of the whole suite's test time**. ⚠️ **Report-only in CI on purpose** — a CI duration against a dev-machine baseline is two different measurements |
 > | ~~`FATIGUE-ARRAY-DRY-01`~~ | ✅ | **SHIPPED 2026-09-18.** It was **seven** copies, not five, and the sharpest was a TYPE: `reframeRiskGate.ts` still declared its own `FatigueTag` union although `completionVocab`'s own comment says it exists because "a type without its values is the split that lets two lists drift". One declaration now; gate in `completionVocab.test.ts` |
 > | `S112-HAZARD-01` | ⏸️ P3 | ⏸️ **PARKED — unmeasurable today** (§112 has never fired; 83 tagged rows total). Unparks when the cohort gives volume |
 > | `FIRSTRUN-GATE-CALL-01` | P3 | Open call: gate "First up" to first-timers? Shipped ungated |
@@ -98,16 +98,6 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > - 🔽 **`FOUNDATION-DECIDE-LATER-01` got cheaper** — SLT chose "delete the button", so it is now minutes, not a build.
 > - 🔽 **`GTM-CHARITY-09` got cheaper** — SLT chose a partner FAQ, so it is writing, not a support surface.
 > - 🆕 **`FIRSTRUN-MOMENTS-01a–f`** and **`FIRSTRUN-MISSED-01`** are new, specced, and five of the six moments are S-sized.
-
-> 🟡 **CI-SLOW-DRIFT-01 — `slowTestThreshold` PRINTS drift and nothing GATES it.** *(P2, filed 2026-09-18 from the CI failure.)*
->
-> `targetedGrid.test.ts` went red in CI on a 30s timeout. It was **not** a regression: measured both sides of the same day's change, 8.65s → 8.77s (+1.4%), and the 30s budget already breaks at ~8,571ms of local work. **The test had been over the line for some time and CI was a coin flip.**
->
-> `vitest.config.ts` sets `slowTestThreshold: 1000` specifically so *"drift toward the wall is VISIBLE in the run output before it is red"*. It worked exactly as designed — **8.7s has been printed on every green run for weeks, and nobody reads a green run's output.** Printing is not a gate; this repo has the lesson written down about `--section-gap`, decorative config and the eslint rule that was installed but never configured.
->
-> **Do:** a check that fails when any test's duration exceeds a stated fraction of its budget, with a committed baseline like `SWEEP-BASELINE-01`. Cheap, and it converts a coin-flip CI failure into a deliberate decision.
->
-> ⚠️ **Measure under contention, not in isolation.** Run alone, that test is 8.7s; inside the full suite it is **15.3s**. The isolated number understates the real projection by 75%.
 
 > 🔴 **DEVICE-VERIFY-01 — NOTHING shipped on 2026-09-18 has run on iOS.** *(P1, and it gates the TestFlight build, not a code change.)*
 >

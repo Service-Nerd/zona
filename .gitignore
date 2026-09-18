@@ -30,3 +30,4 @@ scripts/sql/
 
 # Coaching-review round packets are generated build artifacts (CI uploads them).
 coaching-review/*/generated-plans.md
+.vitest-report.json

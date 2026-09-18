@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run",
+    "test": "vitest run --reporter=default --reporter=json --outputFile=.vitest-report.json",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "verify:matrix": "tsx scripts/r23-phase7-validation.ts",
@@ -16,7 +16,7 @@
     "verify:hooks": "eslint --no-eslintrc --config ./.eslintrc.hooks.json --ext .ts,.tsx --quiet app components lib",
     "verify:rules": "NODE_ENV=production tsx scripts/plan-rules-report.ts",
     "verify:coaching": "NODE_ENV=production tsx scripts/coaching-deviation-scan.ts",
-    "verify": "npm run typecheck && npm run verify:hooks && npm run test && npm run verify:invariants && npm run verify:matrix && npm run verify:sweep && npm run verify:rules && npm run verify:coaching",
+    "verify": "npm run typecheck && npm run verify:hooks && npm run test && npm run check:slow && npm run verify:invariants && npm run verify:matrix && npm run verify:sweep && npm run verify:rules && npm run verify:coaching",
     "sync:ios": "npx cap sync ios && node scripts/fix-cap-config.mjs && node scripts/verify-cap-config.mjs",
     "verify:ios-plugins": "node scripts/verify-cap-config.mjs",
     "icons:pwa": "node scripts/generate-pwa-icons.mjs",
@@ -26,7 +26,8 @@
     "prepare": "git config core.hooksPath .githooks || true",
     "measure:fitness": "tsx scripts/measure-plan-fitness.ts",
     "invariant:liveness": "tsx scripts/invariant-liveness.ts",
-    "test:liveness": "tsx scripts/test-liveness.ts"
+    "test:liveness": "tsx scripts/test-liveness.ts",
+    "check:slow": "tsx scripts/check-test-duration.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
