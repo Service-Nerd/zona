@@ -1121,14 +1121,15 @@ export default function GeneratePlanScreen({
     }
   }
 
-  function handleFoundationSkip() {
-    setFoundationAddStatus('idle')
-    setFoundationModalOpen(false)
-  }
-
-  function handleFoundationStartNow() {
-    // No structural change — the plan starts at plan_start as generated.
-    // "Start now" communicates user intent to begin immediately without a block.
+  // FOUNDATION-DECIDE-LATER-01 (SLT Fix A, 2026-09-18) — one handler for "proceed
+  // without a block", reached by "Start plan as-is" and by dismissing the sheet,
+  // which are the same outcome: the plan starts as generated. This used to be TWO
+  // byte-identical handlers (handleFoundationSkip / handleFoundationStartNow), and
+  // a third "Decide later" button that implied a re-offer which never came — the
+  // modal has exactly one trigger, at generation, so "later" was a promise the app
+  // could not keep. Deleted. "Start plan as-is" and dismissing are the two honest
+  // ways out; there is no hidden deferred state to lose.
+  function handleFoundationDismiss() {
     setFoundationAddStatus('idle')
     setFoundationModalOpen(false)
   }
@@ -1325,8 +1326,8 @@ export default function GeneratePlanScreen({
 
         {/* Foundation Block choice modal — shown when gap > 28 days */}
         {foundationModalOpen && (
-          <Sheet onClose={handleFoundationSkip} ariaLabel="Foundation Block">
-            {(close) => (
+          <Sheet onClose={handleFoundationDismiss} ariaLabel="Foundation Block">
+            {() => (
             <div style={{ padding: '6px 20px 24px' }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 800, color: 'var(--ink)', marginBottom: '6px' }}>
                 You've got some time.
@@ -1354,7 +1355,7 @@ export default function GeneratePlanScreen({
                 {foundationAddStatus === 'loading' ? 'Adding…' : 'Add Foundation Block'}
               </button>
               <button
-                onClick={handleFoundationStartNow}
+                onClick={handleFoundationDismiss}
                 style={{
                   width: '100%', padding: '15px', marginBottom: '10px',
                   borderRadius: 'var(--radius-md)', background: 'var(--bg-soft)',
@@ -1363,16 +1364,6 @@ export default function GeneratePlanScreen({
                 }}
               >
                 Start plan as-is
-              </button>
-              <button
-                onClick={close}
-                style={{
-                  width: '100%', padding: '12px',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)',
-                }}
-              >
-                Decide later
               </button>
             </div>
             )}
