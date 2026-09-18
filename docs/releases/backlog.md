@@ -358,7 +358,9 @@ Proposed, to them:
 
 **Why.** The honest version of "not alone": a **true fact**, stated once. No feed, no leaderboard, no comparison — those are barred.
 
-🔴 **BLOCKER, and it is the real work:** the charity code is redeemed on the **Me screen, after onboarding**, so at wizard time the app does not know they are a Make-A-Wish runner. **Moving redemption to sign-up is the dependency** (touches `GTM-CHARITY-04`).
+🔴 **BLOCKER RETRACTED 2026-09-18 — IT WAS NEVER BLOCKED.** I filed it as *"redeemed on the Me screen, after onboarding"*. **There are THREE doors into redeem** — `DashboardClient.tsx:306` says so in a comment — and one of them is **the onboarding wizard itself** (`GeneratePlanScreen.tsx:1662`, rendered when `isOnboarding || !hasPaidAccess`, with `redeemReturnTo: 'generate'` so a half-finished plan survives). A charity runner can redeem **before** generating, and `charityGrantRes` is already loaded on mount, so the grant IS known at the reveal. **Fourth "X is impossible" claim retracted today** — see [[feedback-trace-the-producer-not-the-consumers]].
+>
+> ⚠️ **What IS a real constraint, found by checking the data:** `charity_batches` holds `partner_name` and `cap`, so *"one of 500 for Make-A-Wish"* is real and fixed. **But "most of them have never run a marathon either" cannot be substantiated** — nothing measures that, and asserting it is the claim/computation mismatch class retracted three times today. **That sentence is cut.** The redeemed count is deliberately NOT used: it is a running counter, which this item's own spec bars as *"a leaderboard with extra steps"*, and it would change daily.
 
 - **Complete:** only for a live charity grant (`resolveTier` reason) · the number must be **real** (redeemed codes), never a marketing round number · **shown once, never a running counter** — a counter is a leaderboard with extra steps.
 

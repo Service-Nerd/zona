@@ -19,6 +19,7 @@ import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import RunwayRevealCard from '@/components/shared/RunwayRevealCard'
 import FirstRunCard from '@/components/shared/FirstRunCard'
 import PlanScaleCard from '@/components/shared/PlanScaleCard'
+import CharityCohortCard, { type CharityCohortCardProps } from '@/components/shared/CharityCohortCard'
 import { planScale } from '@/lib/plan/planScale'
 import type { DistanceUnits } from '@/lib/format'
 import { firstRunOfPlan } from '@/lib/plan/firstRun'
@@ -497,12 +498,16 @@ export default function GeneratePlanScreen({
   maxHrSource: initialMhrSource,
   birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, onPlanEnriched, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade, onOpenRedeem,
   preferredUnits = 'km',
+  charityCohort,
 }: {
   onBack: () => void
   /** ADR-015 / INV-PREF-001 — the unit preference propagates EVERYWHERE, and
    *  this screen was the one that never received it, so its reveal cards read km
    *  to a miles runner. Every sibling screen already takes this prop. */
   preferredUnits?: DistanceUnits
+  /** FIRSTRUN-MOMENTS-01f — set only for a runner on a live charity grant whose
+   *  batch declared a size. Absent for everyone else, which is most people. */
+  charityCohort?: CharityCohortCardProps | null
   firstName?: string
   lastName?: string
   restingHR?: number | null
@@ -1353,6 +1358,15 @@ export default function GeneratePlanScreen({
               </div>
             ) : null
           })()}
+          {/* FIRSTRUN-MOMENTS-01f — the fourth beat, and only for the cohort it
+              is true of: one checkable fact, stated once. Sits last because
+              "you are not alone" lands after the plan has been made concrete,
+              not before it. */}
+          {charityCohort && (
+            <div style={{ marginBottom: '16px' }}>
+              <CharityCohortCard {...charityCohort} />
+            </div>
+          )}
           {/* FREE demand band — feasibility read, above the PAID confidence score */}
           <DifficultyCard band={meta.difficulty_band} note={meta.difficulty_note} alternatives={meta.prep_time_alternatives} />
           {meta.confidence_score != null && (

@@ -300,6 +300,11 @@ export default function DashboardClient() {
   // GTM-CHARITY-04 — ISO end date of a live charity grant, or null. Surfaced on
   // Me so the grant never lapses silently.
   const [charityGrantEndsAt, setCharityGrantEndsAt] = useState<string | null>(null)
+  /** FIRSTRUN-MOMENTS-01f — the partner and cohort size behind a live grant, so
+   *  the plan reveal can state one true fact about not being alone. Null unless
+   *  the runner holds a grant from a live batch that declared a cap. */
+  const [charityCohort, setCharityCohort] =
+    useState<{ partnerName: string; cohortSize: number } | null>(null)
   /** This runner was comped at some point, live grant or lapsed. Decides which
    *  words the Upgrade screen uses when access ends. */
   const [hadCharityGrant, setHadCharityGrant] = useState(false)
@@ -877,7 +882,12 @@ export default function DashboardClient() {
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
           // GTM-CHARITY-04 — readable under RLS by its owner only (the policy is
           // `auth.uid() = claimed_by`), which is all the client needs.
-          supabase.from('charity_codes').select('expires_at').eq('claimed_by', user.id).maybeSingle(),
+          // FIRSTRUN-MOMENTS-01f — the batch comes back with the grant so the
+          // reveal can name the partner and their cohort size. One join, in the
+          // query that already runs, rather than a second round trip.
+          supabase.from('charity_codes')
+            .select('expires_at, charity_batches(partner_name, cap, revoked_at)')
+            .eq('claimed_by', user.id).maybeSingle(),
           supabase.from('session_guidance').select('*').order('phase', { ascending: false, nullsFirst: false }),
           supabase.from('post_race_reshapes')
             .select('id, summary_text, weeks_affected, sessions_modified, recovery_config_key')
@@ -1057,6 +1067,13 @@ export default function DashboardClient() {
         // memory: there is one owner and the client cannot drift from it.
         const sub = subRes.data
         const charityExpiry = charityGrantRes.data?.expires_at ?? null
+        // §01f — only a LIVE batch names a cohort. A revoked batch is not a
+        // cohort the runner belongs to, and a null cap means the partner never
+        // stated a size, so there is no honest number to show.
+        const batch = (charityGrantRes.data as any)?.charity_batches ?? null
+        if (batch && !batch.revoked_at && typeof batch.cap === 'number' && batch.cap > 0 && batch.partner_name) {
+          setCharityCohort({ partnerName: batch.partner_name, cohortSize: batch.cap })
+        }
         const now = new Date()
 
         const { tier, reason } = resolveTier({
@@ -2493,7 +2510,7 @@ export default function DashboardClient() {
           if (wN == null) return
           setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
-        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenRedeem={() => { setRedeemReturnTo('generate'); setScreen('redeem') }} />}
+        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenRedeem={() => { setRedeemReturnTo('generate'); setScreen('redeem') }} />}
         {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} grantExpired={hadCharityGrant && !hasPaidAccess} onOpenRedeem={() => { setRedeemReturnTo('upgrade'); setScreen('redeem') }} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')

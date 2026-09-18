@@ -19,6 +19,7 @@ import SignOutLink from '@/components/shared/SignOutLink'
 import RunwayRevealCard from '@/components/shared/RunwayRevealCard'
 import FirstRunCard from '@/components/shared/FirstRunCard'
 import PlanScaleCard from '@/components/shared/PlanScaleCard'
+import CharityCohortCard from '@/components/shared/CharityCohortCard'
 import { ceremonyLinesFor } from '@/lib/plan/ceremonyLines'
 import type { GeneratorInput } from '@/types/plan'
 
@@ -132,7 +133,7 @@ export default function OnboardingPreviewPage() {
             2027 first-timer meets it. */}
         <Case
           title="Plan reveal — the three-beat arc (01a · 01b · 01d/e)"
-          note="Relief, then the first concrete action, then the honest size of it. Read them in order: does the sequence feel like it was written for one person? Real components, fixture props from a London 2027 first-timer."
+          note="Relief, then the first concrete action, then the honest size of it, then (for a charity runner only) one true fact about not being alone. Read them in order: does the sequence feel like it was written for one person? Real components, fixture props from a London 2027 first-timer."
         >
           <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <RunwayRevealCard
@@ -141,6 +142,7 @@ export default function OnboardingPreviewPage() {
             />
             <FirstRunCard dayLabel="Monday" metric="20 min" effort="Easy" />
             <PlanScaleCard totalDistance="780km" raceDistance="42.2km" hardestRun="3h 28" hardestMonth="March" />
+            <CharityCohortCard partnerName="Make-A-Wish UK" cohortSize={500} />
           </div>
         </Case>
 
