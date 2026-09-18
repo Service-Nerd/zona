@@ -16,7 +16,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 >
 > | Item | P | What it is |
 > |---|---|---|
-> | `GRID-SUBFLOOR-01` | P2 | Neither plan grid can express a sub-floor runner (min longest run 8, floor 5), so §113 refuses 0 of 35,952 there and **2,634 in the sweep** |
+> | ~~`GRID-SUBFLOOR-01`~~ | ✅ | **RESOLVED 2026-09-18 — decided NOT to add a grid row, with measurements.** The sub-floor cohort is already reached by the property sweep (2,634 §113 refusals); adding it to `cohortGrid` costs +33% rows on every build and moves four published rates 5.5–8.3pp to describe runners who receive **no plan**. It also falsified a §113 proposal on mechanism. See the detail block below |
 > | ~~`PREF-SWEEP-01`~~ | ✅ | **SHIPPED 2026-09-18.** Real runner-facing scope was **~24 sites, not 90** (58 of the original count were developer-facing `invariants.ts` messages). 5 live sites fixed — the wizard's phase strip and plan header, `PlanCalendar`'s Strava distance, `SessionSteps`' race-pace segment, and the **weekly-report prompt**, which built its session labels in km *before* fetching the reader's units and handed them to a model it had just told to speak miles. Gate: `lib/hardcodedUnits.test.ts`, 6 baselined with reasons |
 > | ~~`LONGEST-RUN-GATE-01`~~ | ✅ | **SHIPPED as §113, 2026-09-18.** Board ruled the threshold **RIGHT** (monotonic, unlike §111) and everything around it wrong. The route now holds **no coaching number at all**. Spawned `GRID-SUBFLOOR-01` |
 > | `DEVICE-VERIFY-01` | ⏸️ **P1** | **Nothing shipped today has run on iOS.** ⏸️ **PARKED — needs the founder's device**, not a code change |
@@ -147,13 +147,29 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > **Do:** Coaching Board sitting. Measure first, as §111 required — what the engine actually builds below the threshold, and whether the refusal tracks anything. **Given the cohort, I would put this above the parked Tier 4 items.**
 
-> 🟡 **GRID-SUBFLOOR-01 — neither grid can reach the cohort §113 exists for.** *(P2, filed 2026-09-18 while shipping §113.)*
+> 🟢 **GRID-SUBFLOOR-01 — RESOLVED: the sub-floor cohort stays out of both grids, and the §113 proposal it raised is falsified.** *(Decided 2026-09-18, architectural call + measurement. No board sitting: see below.)*
 >
-> `cohortGrid` + `targetedGrid` carry exactly four `longest_recent_run_km` values: **8, 12, 14, 20**. The minimum is **8**, and §113's floor is **5**. So **§113 refuses 0 of 35,952 grid rows** — not because the rule is inert (12 unit tests, 3 mutations killed, and it throws for a real input) but because **the corpus cannot express the runner it protects**.
+> **1. The grid decision (architectural, mine).** `targetedGrid` is wrong: `longest_recent_run_km` is a FIXED 12 there, not an axis, so adding one would double a test already at **15,017 ms / 50.1% of the timeout budget**. `cohortGrid` could reach it, because `longest_recent_run_km` is DERIVED (`max(3, round(cwk * 0.4))`), so adding `10` to `VOLUMES` yields a longest run of 4, below §113's floor of 5. **I built that and measured it before deciding:**
 >
-> ⚠️ **That runner is the charity first-timer.** Someone attempting London 2027 in October whose longest run is 3 km is exactly who §113 refuses, and exactly who no grid row describes. Same class as `GRID-MARATHON-CAPABLE-01`, and the same distinction I got wrong on §80 this morning: **zero in the corpus is not "cannot fire"**.
+> | Metric | 20/35/50 | with 10 | Move |
+> |---|---|---|---|
+> | refused | 1,296 | 6,480 | **+5,184** |
+> | maintenancePct | 49.4 | 43.0 | **−6.4pp** |
+> | constrainedByInputsPct | 27.3 | 35.6 | **+8.3pp** |
+> | constraintNotePct | 64.9 | 59.4 | **−5.5pp** |
 >
-> **Do NOT just add a row.** Both grids are exhaustive-by-doctrine and `cohort:shape` counts refusals — adding a sub-floor value changes rates and needs a declared re-baseline. Decide whether the sub-floor cohort belongs in the **targeted** grid (its stated job is the fields the main grid cannot reach) and re-baseline with the reason stated.
+> Refusals by distance at 10 km/wk, 2,592 rows each: **5K 0% · 10K 0% · HM 100% · marathon 100%** (83% §113, 17% §52). No ultras in that grid.
+>
+> 🔴 **DECISION: do not add it.** `cohort:shape` answers *"who gets what KIND of plan"*, and these rows produce **no plan at all** — they would dilute every published rate by 5–8pp while informing none of them, at +33% runtime on every build. §113's liveness is already proven by the property sweep, which refuses **2,634**. The filed premise ("§113 refuses 0 of 35,952 grid rows") is true and is not a gap in what `cohortGrid` is FOR.
+>
+> **2. The §113 question it raised, and why no board sat.** The finding looked serious: a runner 1 km below the floor is refused with 29 weeks of runway, while a runner AT the floor is built to a marathon (week 1 long run 5.3 km, +7%, §45's cap honoured). §57/§92 foundation weeks exist precisely for pre-plan runway, so *should §113 yield to a foundation block?*
+>
+> ⚠️ **I falsified my own premise before convening.** Measured with **coherent** inputs (longest = 0.4 × cwk, as the grid derives), the foundation block's biggest week-1 session runs **−13%** against the runner's longest at cwk 20/30/40/50. The single coherent case that exceeds §45's 1.10× is **cwk 10 → +25%**, and it is forced by `MIN_SESSION_DISTANCE_KM.easy` binding at 5 km (`foundationBlock.ts:406`). **That is the identical mechanism §113 documents** for `.long`: below the floor, the floor wins and the cap is discarded. A foundation block therefore cannot rescue a sub-floor runner; it hits the same floor. The proposal fails on mechanism, so convening five seats to ratify a measurement would be theatre.
+>
+> ⚠️ **TWO ERRORS OF MY OWN, RECORDED because both produced confident wrong findings.** (a) I first measured with `distance_km ?? 0` on a **duration-anchored beginner plan** and read `0.0 km` long runs — the exact antipattern SESSION-KM-01 exists for. (b) I then measured `cwk 40 / longest 4`, an **input that cannot occur** (the grid derives longest 16 at that volume), and was drafting a §45 defect report claiming +100% and +400% jumps. Coherent inputs showed −13%. **A grid of invented inputs prints a clean table and a false finding.**
+>
+> **Still true and NOT closed by this:** foundation weeks contain no `long` session at low volume (four equal easy runs), so `INV-PLAN-WEEK-1-2-LONG-CAP` — guarded on `long?.session.distance_km` — does not evaluate them. That is correct as written (there is no long run to cap) but means the foundation block's session sizing is bounded by its own floors rather than by §45. Not a defect on any coherent input measured; recorded so the next person does not re-derive it.
+
 
 ### 🚪 Tier 1 — THE DOOR. Nothing else matters if they cannot get in.
 
