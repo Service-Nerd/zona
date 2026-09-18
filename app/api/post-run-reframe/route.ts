@@ -31,6 +31,7 @@ import { buildSessionReframePrompt, REFRAME_PROMPT_VERSION } from '@/lib/coachin
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { detectReframeTier } from '@/lib/coaching/reframeTier'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
+import { isFatigueTag } from '@/lib/coaching/completionVocab'
 import { COHORT_SIMILARITY, REFRAME_RISK, REFRAME_TIER, FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { inferLimiter } from '@/lib/coaching/limiter'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
@@ -370,7 +371,7 @@ export async function POST(req: NextRequest) {
       .limit(REFRAME_RISK.REPEATED_OVERLOAD_WINDOW)
     recentFatigueTags = (recentRows ?? [])
       .map(r => r.fatigue_tag as FatigueTag | null)
-      .filter((t): t is FatigueTag => t === 'Fresh' || t === 'Fine' || t === 'Heavy' || t === 'Wrecked')
+      .filter(isFatigueTag)
     recentCompletionFlags = (recentRows ?? [])
       .map(r => r.coaching_flag as CoachingFlag | null)
       .filter((f): f is CoachingFlag => f === 'ok' || f === 'watch' || f === 'flag')

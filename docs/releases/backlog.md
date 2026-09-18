@@ -23,7 +23,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > | `REFUSAL-COPY-02` | P2 | The refusal FRAMING is fixed; the message inside is still raw engine copy. Parity-moving |
 > | `OPS-DBCHECK-NOISE-01` | P2 | `check:db` writes ~43 errors into Supabase on a **healthy** run |
 > | `CI-SLOW-DRIFT-01` | P2 | `slowTestThreshold` prints drift and nothing gates it |
-> | `FATIGUE-ARRAY-DRY-01` | P3 | Five inline fatigue arrays left after §112 gave them an owner |
+> | ~~`FATIGUE-ARRAY-DRY-01`~~ | ✅ | **SHIPPED 2026-09-18.** It was **seven** copies, not five, and the sharpest was a TYPE: `reframeRiskGate.ts` still declared its own `FatigueTag` union although `completionVocab`'s own comment says it exists because "a type without its values is the split that lets two lists drift". One declaration now; gate in `completionVocab.test.ts` |
 > | `S112-HAZARD-01` | ⏸️ P3 | ⏸️ **PARKED — unmeasurable today** (§112 has never fired; 83 tagged rows total). Unparks when the cohort gives volume |
 > | `FIRSTRUN-GATE-CALL-01` | P3 | Open call: gate "First up" to first-timers? Shipped ungated |
 > | `SIGNOUT-TOKEN-RESIDUAL-01` | ⏸️ P3 | ⏸️ **ACCEPTED, no action.** A failed revoke leaves the token alive until expiry; unreachable without a network |
@@ -218,8 +218,6 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 |---|---|---|---|
 | ~~10~~ | ✅ **`FIRSTRUN-MISSED-01` part 1** — SHIPPED 2026-09-18 → feature-registry. ⚠️ The "read by nothing" framing was **retracted before building** (the reason drives §21 via `/api/adjust-plan`); the real defect was the storage **displacing** real fatigue data in a five-entry window — 2 users had an unreachable trigger | S/M | done |
 | ~~11~~ | ✅ **`FIRSTRUN-MISSED-01` part 2** — SHIPPED 2026-09-18 as **§112** → feature-registry. 🔴 The conflict scan found **`§R20-T4` DOES NOT EXIST** (cited for a year; two ratified sections depended on it), and the trigger was blind for a reason nobody had found: the route fetched the window with `.eq('status','complete')`, so a skip was **never in it** | — | done |
-
-> 🟢 **FATIGUE-ARRAY-DRY-01 — five inline `['Fresh','Fine','Heavy','Wrecked']` arrays.** *(P3, filed 2026-09-18 from FIRSTRUN-MISSED-01.)* `lib/coaching/completionVocab.ts → FATIGUE_TAGS` is now the owner and the skip side uses it, but the fatigue side is still written out by hand at `DashboardClient.tsx:4233, 4850, 5655, 13622` and re-derived as a membership test in `post-run-reframe/route.ts:373` and `weekly-free-insight/route.ts:151`. **Deliberately NOT done as a drive-by** — it is a five-site refactor of colour logic in a 13k-line file for no user-visible change. Do it when one of those screens is open for another reason.
 
 ### 📦 Tier 4 — before the cohort arrives, not before the codes.
 

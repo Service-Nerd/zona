@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — FATIGUE-ARRAY-DRY-01 · the module that closed the split was standing in one
+**Shipped:** Unified seven hand-written copies of the `Fresh | Fine | Heavy | Wrecked` vocabulary onto `lib/coaching/completionVocab.ts`, plus a gate that fails on an eighth.
+
+**Dev learning:** The filed item said "five inline arrays". It was seven, and the one that mattered wasn't an array at all — `reframeRiskGate.ts` still had `export type FatigueTag = 'Fresh' | 'Fine' | 'Heavy' | 'Wrecked'`. The module I'd written hours earlier to own those values opens with a comment saying it exists because "a type without its values is exactly the split that lets two lists drift." It closed the split it named and left the one it was standing in. A grep for the *values* found the arrays; nothing found the type, because a union is the same four strings arranged so a value-shaped search misses them. The gate now checks three shapes — array, union, and `=== 'Fresh' ||` chain — because the duplicate takes whatever form the local file needs.
+
+**Product/creator learning:** Unifying the two route filters on `isFatigueTag` quietly widened them: the owner accepts a legacy `'Cooked'`, the inline guards didn't. I checked production before shipping rather than after — 71 tagged rows, zero `'Cooked'`, so it's a provable no-op today. That let me state the delta as a fact instead of a risk, and made the Coaching Board question answerable in one line (it restores documented intent, since `FATIGUE_HIGH_TAGS` already matched `'Cooked'`, so exclusion at the filter was silently dropping evidence the consumer wanted).
+
+**AI-building learning:** I nearly wrote the gate as "no file except the owner contains these four strings" and it would have been useless — the test file itself quotes the pattern in order to search for it, and the first run failed on its own source. Any static gate that greps for a string is a file that contains that string. Excluding `*.test.ts` from the pathspec is two words and the difference between a gate and a permanently-red test someone deletes.
+
+**The honest bit:** This is the second time today a check caught my own edit rather than a historical bug, and both times my first instinct was that the check was wrong. It wasn't, either time.
+
+**Hook material:** The file's own header says it exists to stop a type and its values drifting apart. It shipped with its type declared in a different file.
+
+**Postable?:** yes
+
 ## 2026-09-18 — PREF-SWEEP-01 · I filed the bug with a number that was 4x too big, then corrected it before touching code
 **Shipped:** Five live sites where a hardcoded `km`/`min` bypassed the reader's unit preference, plus `lib/hardcodedUnits.test.ts` — a gate that fails on a unit glyph welded to a template interpolation, with six sites baselined with reasons.
 

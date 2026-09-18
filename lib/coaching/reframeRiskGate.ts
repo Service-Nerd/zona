@@ -16,7 +16,13 @@
 import { REFRAME_RISK } from './constants'
 
 export type CoachingFlag = 'ok' | 'watch' | 'flag'
-export type FatigueTag = 'Fresh' | 'Fine' | 'Heavy' | 'Wrecked'
+
+// FATIGUE-ARRAY-DRY-01 — this file used to DECLARE the union. `completionVocab`
+// was created precisely because "a type without its values is the split that
+// lets two lists drift", and then this second declaration survived it. Re-export
+// so there is one FatigueTag, derived from the one FATIGUE_TAGS.
+import type { FatigueTag } from './completionVocab'
+export type { FatigueTag }
 
 export interface ReframeRiskInput {
   /** This session's coaching_flag, computed at link time. */

@@ -23,6 +23,7 @@
 // renderer + @capacitor/share for higher-fidelity export.
 
 import React from 'react'
+import type { FatigueTag } from '@/lib/coaching/completionVocab'
 import ZoneBar, { zoneNumberForType } from './ZoneBar'
 import { getSessionLabel } from '@/lib/session-types'
 import { BRAND } from '@/lib/brand'
@@ -39,8 +40,10 @@ export interface SessionCompleteCardProps {
   zonePct: number | null
   /** Self-reported effort 1–10. Always shown in State B; small chip in State A. */
   rpe: number | null
-  /** Fatigue tag — 'Fresh' / 'Fine' / 'Heavy' / 'Wrecked'. */
-  fatigueTag: 'Fresh' | 'Fine' | 'Heavy' | 'Wrecked' | string | null
+  /** Fatigue tag. `| string` is deliberate: the column is free text and holds
+   *  legacy values (see `isFatigueTag`), so the card must render what it is
+   *  given rather than assume the union. */
+  fatigueTag: FatigueTag | string | null
   /** DOCTRINE-01 — when the discipline ledger advanced this week, the card
    *  surfaces `BRAND.brandStatement` quietly below the voice anchor. False
    *  / undefined → only the voice anchor renders. */

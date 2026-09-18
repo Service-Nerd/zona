@@ -4,6 +4,7 @@ import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { getUserTier } from '@/lib/trial'
 import { buildFreeInsightPrompt } from '@/lib/coaching/prompts/freeInsight'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
+import { isFatigueTag } from '@/lib/coaching/completionVocab'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
@@ -148,7 +149,7 @@ export async function GET(req: NextRequest) {
     .filter((f): f is CoachingFlag => f === 'ok' || f === 'watch' || f === 'flag')
   const recentFatigueTags: FatigueTag[] = completions
     .map(c => c.fatigue_tag as FatigueTag | null)
-    .filter((t): t is FatigueTag => t === 'Fresh' || t === 'Fine' || t === 'Heavy' || t === 'Wrecked')
+    .filter(isFatigueTag)
   const riskOutcome = assessReframeRiskGate({
     currentSessionFlag:    recentFlags[0] ?? null,
     recentCompletionFlags: recentFlags,

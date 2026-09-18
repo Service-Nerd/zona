@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
+import { execSync } from 'child_process'
 import { join } from 'path'
 import {
-  FATIGUE_TAGS, SKIP_REASONS, isFatigueTag, isSkipReason,
+  FATIGUE_TAGS, SKIP_REASONS, isFatigueTag, isSkipReason, type FatigueTag,
 } from './completionVocab'
 import { FATIGUE_HIGH_TAGS } from './constants'
 
@@ -93,5 +94,65 @@ describe('no writer puts a skip reason back into fatigue_tag', () => {
     const src = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
     const inlineArrays = src.match(/\['Injury \/ illness',\s*'Too tired'/g) ?? []
     expect(inlineArrays).toEqual([])
+  })
+})
+
+describe('FATIGUE-ARRAY-DRY-01 — one fatigue vocabulary, one type', () => {
+  // The module comment says it exists because "a type without its values is
+  // exactly the split that lets two lists drift". It then shipped while
+  // `reframeRiskGate.ts` still DECLARED its own `FatigueTag` union and four UI
+  // call sites and two route filters still wrote the values out by hand. This
+  // is the gate that stops a seventh copy appearing.
+  const SCANNED = [
+    'app/dashboard/DashboardClient.tsx',
+    'app/api/post-run-reframe/route.ts',
+    'app/api/coaching/weekly-free-insight/route.ts',
+    'lib/coaching/reframeRiskGate.ts',
+    'components/shared/SessionCompleteCard.tsx',
+  ]
+
+  it('🔴 nobody writes the four values out by hand', () => {
+    // Matches both shapes the duplicates took: the `as const` array the UI
+    // mapped over, and the `t === 'Fresh' || ...` chain the routes filtered by.
+    const ARRAY   = /\['Fresh',\s*'Fine',\s*'Heavy',\s*'Wrecked'\]/
+    const UNION   = /'Fresh'\s*\|\s*'Fine'\s*\|\s*'Heavy'\s*\|\s*'Wrecked'/
+    const OR_CHAIN = /===\s*'Fresh'\s*\|\|/
+    const offenders: string[] = []
+    for (const rel of SCANNED) {
+      readFileSync(join(process.cwd(), rel), 'utf8').split('\n').forEach((line, i) => {
+        const t = line.trim()
+        // A comment naming the values is documentation, not a second list.
+        if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return
+        if (ARRAY.test(line) || UNION.test(line) || OR_CHAIN.test(line)) {
+          offenders.push(`${rel}:${i + 1}  ${t.slice(0, 100)}`)
+        }
+      })
+    }
+    expect(
+      offenders,
+      'Import FATIGUE_TAGS / FatigueTag / isFatigueTag from lib/coaching/completionVocab instead.',
+    ).toEqual([])
+  })
+
+  it('there is exactly ONE FatigueTag declaration in the tree', () => {
+    // A RE-EXPORT (`export type { FatigueTag }`) is not a declaration — it is
+    // the same type under a second import path, which is what keeps existing
+    // importers of reframeRiskGate working. A literal union is.
+    const declarations = execSync(
+      "git grep -ln 'export type FatigueTag' -- 'lib/**/*.ts' 'app/**/*.ts' 'components/**/*.ts*' " +
+        // This file quotes the pattern in order to search for it.
+        "':!*.test.ts' ':!*.test.tsx' || true",
+      { encoding: 'utf8', cwd: process.cwd() },
+    ).trim().split('\n').filter(Boolean)
+    expect(declarations).toEqual(['lib/coaching/completionVocab.ts'])
+  })
+
+  it('the derived type and the values cannot disagree', () => {
+    // `FatigueTag = typeof FATIGUE_TAGS[number]` makes this true by
+    // construction — asserted so that replacing the derivation with a literal
+    // union (which is what reframeRiskGate had) fails here.
+    const each: FatigueTag[] = [...FATIGUE_TAGS]
+    expect(each).toHaveLength(FATIGUE_TAGS.length)
+    expect(FATIGUE_TAGS.every(isFatigueTag)).toBe(true)
   })
 })

@@ -48,7 +48,7 @@ import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
 import { clearWidgetState } from '@/lib/native/sharedStore'
-import { SKIP_REASONS, isFatigueTag } from '@/lib/coaching/completionVocab'
+import { SKIP_REASONS, FATIGUE_TAGS, isFatigueTag } from '@/lib/coaching/completionVocab'
 import { useSignOut } from '@/lib/auth/signOut'
 import SignOutLink from '@/components/shared/SignOutLink'
 import ZoneBar, { zoneNumberForType, zoneShortName, type Zone } from '@/components/shared/ZoneBar'
@@ -4257,7 +4257,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         <div style={{ marginBottom: '28px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Body state</div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {(['Fresh', 'Fine', 'Heavy', 'Wrecked'] as const).map(tag => {
+            {FATIGUE_TAGS.map(tag => {
               const isActive = fatigueTag === tag
               const tagColor = tag === 'Fresh' ? 'var(--session-green)' : tag === 'Fine' ? 'var(--accent)' : tag === 'Heavy' ? 'var(--amber)' : 'var(--coral)'
               return (
@@ -4874,7 +4874,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
               <div style={{ marginBottom: '4px' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Body feeling</div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {(['Fresh', 'Fine', 'Heavy', 'Wrecked'] as const).map(tag => {
+                  {FATIGUE_TAGS.map(tag => {
                     const isActive = fatigueTag === tag
                     const tagColor = tag === 'Fresh' ? 'var(--moss)' : tag === 'Fine' ? 'var(--moss)' : tag === 'Heavy' ? 'var(--warn)' : 'var(--danger)'
                     return (
@@ -5679,7 +5679,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             <div style={{ marginBottom: '20px' }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Body state</div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {(['Fresh', 'Fine', 'Heavy', 'Wrecked'] as const).map(tag => {
+                {FATIGUE_TAGS.map(tag => {
                   const active = fatigueTag === tag
                   const tagColor = tag === 'Fresh' ? 'var(--session-green)' : tag === 'Fine' ? 'var(--accent)' : tag === 'Heavy' ? 'var(--amber)' : 'var(--coral)'
                   return (
@@ -13654,7 +13654,7 @@ function PostRunScreen({
               Body state
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              {(['Fresh', 'Fine', 'Heavy', 'Wrecked'] as const).map(tag => {
+              {FATIGUE_TAGS.map(tag => {
                 const isActive = fatigueTag === tag
                 const tagColor = tag === 'Fresh'  ? 'var(--moss)'
                               : tag === 'Fine'   ? 'var(--s-easy)'
