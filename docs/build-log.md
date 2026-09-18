@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — OPS-DBCHECK-NOISE-01 · my healthy check was writing 43 errors a run, and the noise was the smaller problem
+**Shipped:** `check:db` now asks one read-only `schema_columns_named()` RPC instead of 21 selects designed to fail, and the answer is bidirectional.
+
+**Dev learning:** The original code's comment said "information_schema is not exposed over PostgREST, so probe each known table for the columns instead." True, and it stopped one step early — you can expose it yourself with a four-line `stable security invoker` SQL function granted to `service_role` only. That's the whole fix. Worth remembering as a shape: when PostgREST can't reach something, the answer is usually a narrow function, not a workaround built out of failures.
+
+**Product/creator learning:** The item was filed as a noise complaint and the noise was genuinely worth fixing — the founder spent time investigating 40+ red lines that meant nothing, and a dashboard that's red when healthy is a dashboard nobody reads. But rewriting it surfaced something worse. Probing "each known table" meant the list of tables to check came from `WEEK_KEYED_TABLES ∪ WEEK_KEYED_EXEMPT ∪ RLS_POLICIES` — three hand-written arrays in the repo. The function's own header says, in as many words, "the authority has to be the SCHEMA," because the incident that caused it was a list written from memory and a guard that iterated that same list. It was doing the thing it was written to stop. A new table carrying `week_n` that nobody added to any array was invisible to the check built to find exactly that.
+
+**AI-building learning:** I only found the second problem because I had to read the function properly to rewrite it, and the header was three screens above the code that contradicted it. If I'd fixed the noise the narrow way — kept the loop, swallowed the errors — the check would have gone quiet and stayed blind, and it would have looked like a clean fix in the diff. Cheap tasks are where you find the expensive ones, but only if you read past the line you were sent to change.
+
+**The honest bit:** I couldn't complete the verification the backlog entry asked for. It said "run check:db, then confirm the Supabase log view shows no new 42703 rows," and log querying isn't exposed through the tooling I have. So I proved the mechanism instead — the script no longer issues a select that can fail — and wrote a test that fails if anyone puts one back. That's a different claim from the one that was asked for, and it's worth saying which one I actually made.
+
+**Hook material:** A schema-drift checker whose own comment says "the authority has to be the SCHEMA" was asking three hand-written arrays which tables to look at.
+
+**Postable?:** yes
+
 ## 2026-09-18 — FATIGUE-ARRAY-DRY-01 · the module that closed the split was standing in one
 **Shipped:** Unified seven hand-written copies of the `Fresh | Fine | Heavy | Wrecked` vocabulary onto `lib/coaching/completionVocab.ts`, plus a gate that fails on an eighth.
 

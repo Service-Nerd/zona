@@ -222,23 +222,53 @@ async function checkWeekKeyedCoverage(url: string, serviceKey: string): Promise<
   console.log('\n── week_n coverage (PLAN-WEEK-COLLISION-01) ──')
   const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
 
-  // information_schema is not exposed over PostgREST, so probe each known table
-  // for the columns instead. Cheap, and it needs no RPC.
-  const candidates = new Set<string>([
-    ...WEEK_KEYED_TABLES, ...Object.keys(WEEK_KEYED_EXEMPT), ...Object.keys(RLS_POLICIES),
-  ])
+  // OPS-DBCHECK-NOISE-01 — ONE read-only introspection call, not 21 selects
+  // that are designed to fail.
+  //
+  // ⚠️ THE NOISE WAS THE SMALLER PROBLEM. The previous version probed "each
+  // known table", building its candidate set from `WEEK_KEYED_TABLES ∪
+  // WEEK_KEYED_EXEMPT ∪ RLS_POLICIES` — three hand-written arrays in this
+  // repo. This function's own header says "the authority has to be the SCHEMA",
+  // and it was asking the codebase. A NEW table carrying `week_n` that nobody
+  // added to any of the three lists was invisible to the check written to find
+  // exactly that — the same flaw as `supersedeCoverage.test.ts` iterating the
+  // array it guards, which is what let the original list ship wrong.
+  //
+  // `schema_columns_named` is service_role-only and read-only
+  // (`20260918_schema_columns_rpc.sql`).
+  const { data, error } = await admin.rpc('schema_columns_named', {
+    col_names: ['week_n', 'superseded_at'],
+  })
+  if (error) {
+    console.log(`✗ cannot read the schema: ${error.message}`)
+    console.log('    Apply supabase/migrations/20260918_schema_columns_rpc.sql, then re-run.')
+    process.exitCode = 1
+    return
+  }
+
+  const rows = (data ?? []) as Array<{ table_name: string; column_name: string }>
+  if (rows.length === 0) {
+    // An empty answer means the probe reached nothing, not that the schema is
+    // clean — the failure mode where a check reports a green zero from a scan
+    // that never ran.
+    console.log('✗ the schema returned no week_n or superseded_at columns at all.')
+    console.log('    That is not a clean schema, it is a probe that reached nothing.')
+    process.exitCode = 1
+    return
+  }
+
+  const hasWeekN  = new Set(rows.filter(r => r.column_name === 'week_n').map(r => r.table_name))
+  const hasStamp  = new Set(rows.filter(r => r.column_name === 'superseded_at').map(r => r.table_name))
 
   const missing: string[] = []
   let covered = 0
-  for (const table of Array.from(candidates)) {
-    const { error: noWeek } = await admin.from(table).select('week_n').limit(1)
-    if (noWeek) continue                                   // no week_n column
+
+  // Direction 1 — every table the SCHEMA says is week-keyed is accounted for.
+  for (const table of Array.from(hasWeekN).sort()) {
     if ((WEEK_KEYED_TABLES as readonly string[]).includes(table)) {
-      const { error: noStamp } = await admin.from(table).select('superseded_at').limit(1)
-      if (noStamp) {
-        console.log(`✗ ${table}: listed in WEEK_KEYED_TABLES but has NO superseded_at column`)
-        missing.push(table)
-      } else { covered++ }
+      if (hasStamp.has(table)) { covered++; continue }
+      console.log(`✗ ${table}: listed in WEEK_KEYED_TABLES but has NO superseded_at column`)
+      missing.push(table)
       continue
     }
     if (WEEK_KEYED_EXEMPT[table]) {
@@ -252,12 +282,30 @@ async function checkWeekKeyedCoverage(url: string, serviceKey: string): Promise<
     missing.push(table)
   }
 
+  // Direction 2 — and nothing in the LIST has quietly lost the column. A table
+  // dropped or renamed leaves a name in the array that supersede() will write
+  // to and that nothing else notices.
+  for (const table of WEEK_KEYED_TABLES) {
+    if (!hasWeekN.has(table)) {
+      console.log(`✗ ${table}: in WEEK_KEYED_TABLES but the live schema has no week_n column`)
+      console.log(`    Dropped, renamed, or never applied. supersede() is writing to a`)
+      console.log(`    table that cannot be keyed the way the code believes.`)
+      missing.push(table)
+    }
+  }
+  for (const table of Object.keys(WEEK_KEYED_EXEMPT)) {
+    if (!hasWeekN.has(table)) {
+      console.log(`· ${table}: exemption is STALE — no week_n column in the live schema`)
+      console.log(`    Harmless today, but an exemption nobody can falsify is a comment.`)
+    }
+  }
+
   if (missing.length) {
-    console.log(`\n✗ ${missing.length} week_n table(s) uncovered: ${missing.join(', ')}`)
+    console.log(`\n✗ ${missing.length} week_n discrepancy(ies): ${missing.join(', ')}`)
     process.exitCode = 1
     return
   }
-  console.log(`✓ ${covered} week-keyed table(s) carry superseded_at; none uncovered.`)
+  console.log(`✓ ${covered} week-keyed table(s) carry superseded_at; none uncovered, none stale.`)
 }
 
 main().catch(e => { console.error(e); process.exit(2) })

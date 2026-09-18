@@ -21,7 +21,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > | ~~`LONGEST-RUN-GATE-01`~~ | ✅ | **SHIPPED as §113, 2026-09-18.** Board ruled the threshold **RIGHT** (monotonic, unlike §111) and everything around it wrong. The route now holds **no coaching number at all**. Spawned `GRID-SUBFLOOR-01` |
 > | `DEVICE-VERIFY-01` | ⏸️ **P1** | **Nothing shipped today has run on iOS.** ⏸️ **PARKED — needs the founder's device**, not a code change |
 > | `REFUSAL-COPY-02` | P2 | The refusal FRAMING is fixed; the message inside is still raw engine copy. Parity-moving |
-> | `OPS-DBCHECK-NOISE-01` | P2 | `check:db` writes ~43 errors into Supabase on a **healthy** run |
+> | ~~`OPS-DBCHECK-NOISE-01`~~ | ✅ | **SHIPPED 2026-09-18.** One read-only `schema_columns_named()` RPC replaces 21 deliberately-failing selects. ⚠️ **The noise was the smaller half** — probing "each known table" built the candidate set from the three arrays the check audits, so a new `week_n` table in none of them was invisible to the check written to find it. Now schema-sourced and bidirectional |
 > | `CI-SLOW-DRIFT-01` | P2 | `slowTestThreshold` prints drift and nothing gates it |
 > | ~~`FATIGUE-ARRAY-DRY-01`~~ | ✅ | **SHIPPED 2026-09-18.** It was **seven** copies, not five, and the sharpest was a TYPE: `reframeRiskGate.ts` still declared its own `FatigueTag` union although `completionVocab`'s own comment says it exists because "a type without its values is the split that lets two lists drift". One declaration now; gate in `completionVocab.test.ts` |
 > | `S112-HAZARD-01` | ⏸️ P3 | ⏸️ **PARKED — unmeasurable today** (§112 has never fired; 83 tagged rows total). Unparks when the cohort gives volume |
@@ -98,18 +98,6 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > - 🔽 **`FOUNDATION-DECIDE-LATER-01` got cheaper** — SLT chose "delete the button", so it is now minutes, not a build.
 > - 🔽 **`GTM-CHARITY-09` got cheaper** — SLT chose a partner FAQ, so it is writing, not a support surface.
 > - 🆕 **`FIRSTRUN-MOMENTS-01a–f`** and **`FIRSTRUN-MISSED-01`** are new, specced, and five of the six moments are S-sized.
-
-> 🟡 **OPS-DBCHECK-NOISE-01 — `check:db` writes ~43 errors into the Supabase log view on a HEALTHY run.** *(P2, filed 2026-09-18 after the founder investigated them.)*
->
-> `scripts/check-db-drift.ts:234` answers *"does this table carry `week_n`?"* by **attempting a select and seeing whether it fails**. So every clean run emits **21 Postgres `42703` ERRORs and 22 HTTP 400s**, one per table that correctly does not have the column. `:237` adds the `superseded_at` probes, `:125`'s `exec_sql` RPC 404s and falls back, and the `ops_events` anon probe logs a `42501` for a permission denial that is **correct**.
->
-> **Nothing is broken and every answer in those logs is right** — the eight tables that return 200 to both probes are exactly the seven `WEEK_KEYED_TABLES` plus the documented `plan_weekly_notes` exemption, which is PLAN-WEEK-COLLISION-01 confirming itself in production.
->
-> 🔴 **The cost is not correctness, it is ATTENTION.** A dashboard that shows 40+ red lines after every healthy check trains you to scroll past red. **The founder spent time on these today, which is the proof** — and it is the same NOISE-GATE-01 class this repo already records: *a check that cries wolf gets disabled, which is the same as having no check.* The next real Postgres error will land in exactly this haystack.
->
-> **Do:** one query against `information_schema.columns` for every column named `week_n` / `superseded_at`, instead of 21 deliberately-failing selects. Same answer, one round trip, zero errors. Keep the `ops_events` permission probe but expect and swallow the denial rather than logging it.
->
-> **Verify:** run `npm run check:db`, then confirm the Supabase log view shows **no** new `42703` rows.
 
 > 🟡 **CI-SLOW-DRIFT-01 — `slowTestThreshold` PRINTS drift and nothing GATES it.** *(P2, filed 2026-09-18 from the CI failure.)*
 >

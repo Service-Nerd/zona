@@ -63,3 +63,4 @@
 20260914_run_analysis_load_mins.sql
 20260918_supersede_week_keyed_rows.sql
 20260918_skip_reason.sql
+20260918_schema_columns_rpc.sql
