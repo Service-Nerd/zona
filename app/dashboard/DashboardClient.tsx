@@ -48,6 +48,7 @@ import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
 import { clearWidgetState } from '@/lib/native/sharedStore'
+import { SKIP_REASONS, isFatigueTag } from '@/lib/coaching/completionVocab'
 import { useSignOut } from '@/lib/auth/signOut'
 import SignOutLink from '@/components/shared/SignOutLink'
 import ZoneBar, { zoneNumberForType, zoneShortName, type Zone } from '@/components/shared/ZoneBar'
@@ -872,7 +873,7 @@ export default function DashboardClient() {
         const [settingsRes, overridesRes, completionsRes, subRes, charityGrantRes, guidanceRes, pendingReshapeRes] = await Promise.all([
           supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
           supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id).is('superseded_at', null),
-          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id).is('superseded_at', null),
+          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, skip_reason, avg_hr, coaching_flag').eq('user_id', user.id).is('superseded_at', null),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
           // GTM-CHARITY-04 — readable under RLS by its owner only (the policy is
           // `auth.uid() = claimed_by`), which is all the client needs.
@@ -1381,7 +1382,7 @@ export default function DashboardClient() {
       if (!user) return
       const { data } = await supabase
         .from('session_completions')
-        .select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag')
+        .select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, skip_reason, avg_hr, coaching_flag')
         .eq('user_id', user.id)
         .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       if (data) {
@@ -2533,7 +2534,14 @@ export default function DashboardClient() {
                 week_n: missedSessionPrompt.weekN,
                 session_day: completionKey,
                 status: 'skipped',
-                fatigue_tag: reason,
+                // FIRSTRUN-MISSED-01 — the reason is NOT a fatigue level. It
+                // used to go into fatigue_tag, where no fatigue consumer could
+                // match it AND it occupied a slot in the five-entry fatigue
+                // trend whose last three drive `heavyFatigue`. Measured in
+                // production: 13 of 83 tagged rows were reasons, and two users
+                // had all three of their last-three slots taken by them, making
+                // their high-fatigue trigger unreachable.
+                skip_reason: reason,
                 updated_at: new Date().toISOString(),
               }, { onConflict: 'user_id,week_n,session_day' })
               // Trigger 2: fire skip adjustment (except "Too tired" — absorbed)
@@ -3522,7 +3530,7 @@ function MissedSessionSheet({
 
         {/* Skip reason buttons */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-          {(['Injury / illness', 'Too tired', 'Life got busy', 'Bad weather'] as const).map(reason => (
+          {SKIP_REASONS.map(reason => (
             <button
               key={reason}
               onClick={() => onSkip(reason)}
@@ -3845,7 +3853,9 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
   // Load existing RPE/fatigue from completion
   useEffect(() => {
     if (completion?.rpe != null) setRpe(completion.rpe)
-    if (completion?.fatigue_tag) setFatigueTag(completion.fatigue_tag)
+    // Same owner as the trend filter: only a real fatigue value may prefill a
+    // Fresh/Fine/Heavy/Wrecked control (FIRSTRUN-MISSED-01).
+    if (isFatigueTag(completion?.fatigue_tag)) setFatigueTag(completion.fatigue_tag)
   }, [completion])
 
   async function saveRPEFatigue(newRpe: number | null, newTag: string | null) {
@@ -4372,7 +4382,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '28px' }}>
-          {(['Injury / illness', 'Too tired', 'Life got busy', 'Bad weather'] as const).map(reason => {
+          {SKIP_REASONS.map(reason => {
             const isActive = skipReason === reason
             return (
               <button key={reason} onClick={async () => {
@@ -4383,7 +4393,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                   if (user) {
                     await supabase.from('session_completions').upsert({
                       user_id: user.id, week_n: weekN, session_day: session.key,
-                      status: 'skipped', fatigue_tag: reason, updated_at: new Date().toISOString(),
+                      status: 'skipped', skip_reason: reason, updated_at: new Date().toISOString(),
                     }, { onConflict: 'user_id,week_n,session_day' })
                     // Trigger 2: skip with reason — fire adjustment check (not "Too tired" — absorbed)
                     if (reason !== 'Too tired') {
@@ -6903,7 +6913,12 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
     Object.entries(allCompletions).forEach(([wn, days]) => {
       const wNum = Number(wn)
       Object.entries(days).forEach(([day, c]: [string, any]) => {
-        if (c?.fatigue_tag) {
+        // FIRSTRUN-MISSED-01 — `if (c?.fatigue_tag)` accepted ANY truthy value,
+        // so a missed-session reason entered this window and displaced real
+        // fatigue data. The backfill moved the existing ones to `skip_reason`;
+        // this makes it structurally impossible for a non-fatigue value to
+        // re-enter, rather than trusting that no writer ever gets it wrong again.
+        if (isFatigueTag(c?.fatigue_tag)) {
           const di = DOW_ORDER.indexOf(day)
           entries.push({ tag: c.fatigue_tag, weekN: wNum, dayIdx: di >= 0 ? di : 99 })
         }
@@ -13237,7 +13252,7 @@ function PostRunScreen({
           .maybeSingle()
         if (!cancelled && row) {
           if (row.rpe != null) setRpe(row.rpe as number)
-          if (row.fatigue_tag) setFatigueTag(row.fatigue_tag as string)
+          if (isFatigueTag(row.fatigue_tag)) setFatigueTag(row.fatigue_tag)
           const isHK = row.apple_health_uuid != null
           if (isHK) setIsHKCompletion(true)
           if (!linkedActivity && (row.strava_activity_name || row.strava_activity_km)) {

@@ -403,7 +403,15 @@ Proposed, to them:
 
 **Why this touchpoint.** The SLT batch named it the priority inside the P0: *the drop-out happens at the first missed session*, not at onboarding, where motivation is highest.
 
-**📋 WHAT HAPPENS TODAY — established in code, and it is worse than "missing".**
+🔴 **CORRECTED 2026-09-18, BEFORE BUILDING — I OVERSTATED THIS AND THE SITTING BELOW IS WRONG IN ITS HEADLINE CLAIM.** The skip reason is **NOT** "read by nothing". Tracing the PRODUCER rather than grepping the consumers I had thought of: `DashboardClient.tsx:2541` and `:4390` fire `POST /api/adjust-plan` with `skipReason`, which becomes `planAdjustment`'s `skipSignal`, which applies **§21's content filter and a volume reduction for `'Injury / illness'`** (`planAdjustment.ts:586`). **A runner who reports an injury DOES get a plan response.** ⚠️ `'Too tired'` is deliberately excluded from that call (*"absorbed"*, both sites) — a design choice, not a defect.
+>
+> **The real defect is narrower, and still real: the reason is STORED in the wrong column.** It is written to `session_completions.fatigue_tag`, whose vocabulary is `Fresh · Fine · Heavy · Wrecked`. Two consequences, and the second is the one that bites:
+> 1. No fatigue consumer can ever match it (`limiter.ts:236`, `disciplineLedger.ts:124`) — inert, as filed.
+> 2. 🔴 **IT DEGRADES THE FATIGUE SIGNAL.** `DashboardClient:6901` pushes **any** truthy `fatigue_tag` into the trend, then `heavyFatigue` reads the **last three** and needs two of `Heavy/Wrecked/Cooked`. A `'Life got busy'` occupies a slot and **dilutes the trigger**. The dead input is not inert; it displaces real fatigue data in a fixed-size window.
+>
+> ⚠️ **THIRD RETRACTION TODAY OF A "NOTHING READS THIS" CLAIM** (after §80's branch and the deck's refusal thresholds). The pattern is the same every time: I grepped the consumers I could think of instead of tracing the producer's call path. See [[feedback-trace-the-producer-not-the-consumers]].
+>
+> **📋 WHAT HAPPENS TODAY — established in code, and the storage is the defect.**
 
 A runner who misses a session gets `MissedSessionSheet`: *"Looks like Tuesday's session wasn't logged. What happened?"* with four buttons — **Injury / illness · Too tired · Life got busy · Bad weather** — and an immediate, well-written response (`getSkipResponse`): *"Right call. Don't push it."*
 

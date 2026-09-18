@@ -193,7 +193,7 @@ Migration: `supabase/migrations/20260420_coaching_signal.sql`
 - Reflect view is shown after logging; "How did it feel?" section in expanded is for editing existing logs only.
 - Zonna voice response in reflect view is session-type-aware — see `getReflectResponse()` in `DashboardClient.tsx`.
 - Fatigue vocabulary is canonical: `Fresh / Fine / Heavy / Wrecked`. No other tags.
-- Skip reason vocabulary: `Injury / illness / Too tired / Life got busy / Bad weather`. Saves to `fatigue_tag` column.
+- Skip reason vocabulary: `Injury / illness / Too tired / Life got busy / Bad weather`. **Owned by `lib/coaching/completionVocab.ts → SKIP_REASONS`** — do not write the list out by hand; it is a **wire format** (`planAdjustment.ts` matches `'Injury / illness'` exactly, and both handlers special-case `'Too tired'` to suppress the adjustment call). **Saves to the `skip_reason` column** (FIRSTRUN-MISSED-01, 2026-09-18). ⚠️ **It used to save to `fatigue_tag`, and that was the defect:** no fatigue consumer can match a reason, and worse, the five-entry fatigue trend accepted any truthy value, so a reason displaced real fatigue data in the window whose last three drive `heavyFatigue`. Measured in production: 13 of 83 tagged rows were reasons, and two users had all three of their last-three slots occupied by them.
 - `coaching_flag` is never persisted as a display string — always the raw enum value. Display strings are derived at render time.
 - `avg_hr` is captured only at Strava activity link time (`saveCompletion`). Manual logs have `avg_hr = null`.
 - Collapsed card badge uses text + colour — never colour alone (cross-train teal collision risk).
