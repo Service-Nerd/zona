@@ -17,6 +17,8 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > | Item | P | What it is |
 > |---|---|---|
 > | ~~`GRID-SUBFLOOR-01`~~ | ✅ | **RESOLVED 2026-09-18 — decided NOT to add a grid row, with measurements.** The sub-floor cohort is already reached by the property sweep (2,634 §113 refusals); adding it to `cohortGrid` costs +33% rows on every build and moves four published rates 5.5–8.3pp to describe runners who receive **no plan**. It also falsified a §113 proposal on mechanism. See the detail block below |
+> | `BRAND-MAINT-LABEL-01` | P2 | **SLT**, escalated by the Coaching Board 2026-09-18. 4 of 5 marathon charity personas are classified `maintenance`; should a first-time charity marathoner ever see language derived from that label? |
+> | `S80-MATERIALITY-EVIDENCE-01` | P3 | Board ruled **INSUFFICIENT EVIDENCE** on tightening §80 Am.1's 5% shortfall materiality. Needs the shortfall-magnitude DISTRIBUTION, not an opinion |
 > | ~~`PREF-SWEEP-01`~~ | ✅ | **SHIPPED 2026-09-18.** Real runner-facing scope was **~24 sites, not 90** (58 of the original count were developer-facing `invariants.ts` messages). 5 live sites fixed — the wizard's phase strip and plan header, `PlanCalendar`'s Strava distance, `SessionSteps`' race-pace segment, and the **weekly-report prompt**, which built its session labels in km *before* fetching the reader's units and handed them to a model it had just told to speak miles. Gate: `lib/hardcodedUnits.test.ts`, 6 baselined with reasons |
 > | ~~`LONGEST-RUN-GATE-01`~~ | ✅ | **SHIPPED as §113, 2026-09-18.** Board ruled the threshold **RIGHT** (monotonic, unlike §111) and everything around it wrong. The route now holds **no coaching number at all**. Spawned `GRID-SUBFLOOR-01` |
 > | `DEVICE-VERIFY-01` | ⏸️ **P1** | **Nothing shipped today has run on iOS.** ⏸️ **PARKED — needs the founder's device**, not a code change |
@@ -170,6 +172,24 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > **Still true and NOT closed by this:** foundation weeks contain no `long` session at low volume (four equal easy runs), so `INV-PLAN-WEEK-1-2-LONG-CAP` — guarded on `long?.session.distance_km` — does not evaluate them. That is correct as written (there is no long run to cap) but means the foundation block's session sizing is bounded by its own floors rather than by §45. Not a defect on any coherent input measured; recorded so the next person does not re-derive it.
 
+
+> 🟡 **BRAND-MAINT-LABEL-01 — four of five marathon charity personas are labelled `maintenance`, and the word may be read as a verdict.** *(P2 — **SLT**, escalated by the Coaching Board 2026-09-18. Not a coaching question: the classification is CORRECT and drives real safety behaviour.)*
+>
+> **Measured at the sitting.** M1, M2, M3 and M1d all come out `volume_profile: 'maintenance'`; only M5 is `build`. Those plans carry peak weeks of **50–59 km**, which Seiler noted is not maintenance in any ordinary sense of the word — it is the label the engine applies when §52's 60%-of-week bound binds.
+>
+> ⚠️ **The recorded disagreement is the item.** Seiler: it is a mechanical classification, and reading it as a verdict is a category error. McMillan: *"put yourself on the sofa in October — for a first-timer, 'get you round' IS the goal"*, and language derived from a label that sounds like a downgrade lands badly on exactly the cohort whose charity's stated pain is that people who take a place never run.
+>
+> 🟢 **Partly already right, which is why this is P2 and not P1.** The runner-facing string is *"This plan is built to get you round, not to build you up"* and **never uses the word "maintenance"**. The ask is to confirm that holds on every surface that derives from `volume_profile`, and to rule on whether the honest-but-deflating framing is the one we want for a first-timer.
+>
+> **Do NOT change the classification** — Willy and Seiler both rely on it, and it gates `INV-PLAN-LR-MAX-WEEKLY-PCT` severity.
+
+> 🟢 **S80-MATERIALITY-EVIDENCE-01 — is 5% the right shortfall materiality, or just the first number that stopped the noise?** *(P3, Coaching Board 2026-09-18 ruled **INSUFFICIENT EVIDENCE**.)*
+>
+> §80 Am.1 added `LONG_RUN_SHORTFALL_MATERIAL_PCT = 5` so the long-run shortfall note stops firing on rounding. It works: the measured case it silenced was a **2-minute, 1.7%** shortfall (*"tops out at 116 minutes… we'd normally want it nearer 118"*), and 32 plans stopped carrying the note on 2026-09-18 as a result.
+>
+> **What would settle the threshold, and nothing else will:** the DISTRIBUTION of shortfall magnitudes across the finish-goal corpus. Bimodal (a rounding cluster near 0 and a real cluster further out) → 5% sits in the gap and is fine. Continuous → 5% is arbitrary and the cut point needs an argument.
+>
+> ⚠️ **Do not change it on intuition.** This board has twice accepted a premise that did not survive measurement. Sims' dissent is also recorded: the axis that matters at the bottom of the volume range is **energy availability**, not marathon experience, and that is unbuildable today (ADR-011, no cycle or intake data) — so 5% remains a male-derived default for "meaningful shortfall" with no data either way.
 
 ### 🚪 Tier 1 — THE DOOR. Nothing else matters if they cannot get in.
 
