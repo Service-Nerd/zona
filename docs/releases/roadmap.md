@@ -73,6 +73,17 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > `/slt-review`, not a build** — Wood's kill mandate applies, most "wow" ideas are the illusion-of-progress
 > class. Blockers and full scope in `backlog.md`.
 
+> 🔴 **Four actionable items from the 2026-09-18 findings, all under FIRSTRUN-MARATHON-01.**
+> **`REFUSAL-SCREEN-01`** (P1) — a deliberate coaching refusal is headlined *"Something went wrong building
+> the plan"*, prints the raw engine string, offers only *"Try again"* and names no lever. Copy and framing are
+> brand work, do it now; **offering an alternative distance is an SLT call**, and removing the refusal is a
+> Coaching Board one.
+> **`AUTH-BEARER-MISSING-01`** (P1) — two client calls hit authenticated routes with no token. One is the
+> foundation-add failure; **the other is `/api/recalibrate-zones`, a PAID feature (ADR-014) that nobody has
+> reported because nothing surfaces the 401.**
+> **`GTM-DECK-CORRECT-01`** (P1, founder) — correct the deck before it is shown again.
+> **`COPY-DAYS-PLURAL-01`** (P3) — *"1 days/week"*.
+
 > ⚠️ **REFUSAL-THRESHOLDS-01 — the marketing deck carries a WRONG claim. Correct it.** The line *"the engine
 > refuses a marathon if someone runs under 20 km a week or their longest run is under 5 km"* is **false**:
 > measured over a 7 × 6 grid of volume × longest run, **every combination generated a 20-week plan**, down to

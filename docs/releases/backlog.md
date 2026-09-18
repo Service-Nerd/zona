@@ -101,6 +101,45 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 #### 🐞 Four observations from the founder's device — filed 2026-09-18
 
+> 🔴 **REFUSAL-SCREEN-01 — a deliberate coaching decision is presented as a crash.** *(P1. The actionable half of REFUSAL-THRESHOLDS-01 below. Belongs to FIRSTRUN-MARATHON-01 touchpoint 2.)*
+>
+> `GeneratePlanScreen.tsx:1176`. When the engine declines to build a plan, the runner gets:
+> 1. **An amber headline: *"Something went wrong building the plan."*** Nothing went wrong. **Change this first** — it is one string, it is false, and it is the sentence that makes a considered refusal feel like a broken app.
+> 2. **The raw engine string** — `"2 days/week is not enough for a MARATHON. Minimum is 3 days/wk; 4+ recommended."` Diagnostic copy: shouty caps, `days/wk`, no voice. Every *generated* note in this engine is written for a runner; this one was written for a log.
+> 3. ***"Try again"*** as the only action, which implies a transient fault and returns to the wizard **naming no lever**. §40c governs every note the engine emits and is absent from the one screen where the runner receives nothing at all.
+> 4. **No alternative.** A charity runner with a fixed race date and two available days is told no and offered nothing.
+>
+> **Scope, and what needs whose approval:**
+> - **Copy + framing (headline, voice, naming the lever): brand, no board.** Do this now. The lever is already known at the refusal point — the engine's own message contains it.
+> - **Offering an alternative distance ("a half fits what you have") is a PRODUCT decision → `/slt-review`.** It changes what we sell someone who came for a marathon, and for a charity runner with a place already allocated it may be the wrong answer entirely.
+> - **Removing the refusal itself is a Coaching Board question**, not this item. See §44's `block` tier under `PREP-ACK-UNLOCKS-MARATHON-01`.
+>
+> **Verify when done:** generate a marathon at 2 days/week and read the screen out loud.
+
+> 🔴 **AUTH-BEARER-MISSING-01 — two client calls hit authenticated routes with no token.** *(P1. Root cause candidate for FOUNDATION-ADD-FAIL-01, and one other feature is silently exposed.)*
+>
+> `getUserFromRequest` reads the `Authorization` header and **falls back to cookies** — and its own comment says `@supabase/ssr` cookie sync to the server is **unreliable**, which is why most call sites send the token explicitly. Checked all five bare `fetch('/api/…')` sites against their routes:
+>
+> | Call site | Route needs auth | Sends bearer |
+> |---|---|---|
+> | `GeneratePlanScreen.tsx:966` → `/api/generate-plan` | yes | ✅ explicitly |
+> | `ReflectionInput.tsx:87` → `/api/post-run-reframe` | yes | ✅ explicitly |
+> | `GeneratePlanScreen.tsx:1091` → `/api/generate-plan/foundation` | yes | 🔴 **NO** |
+> | `DashboardClient.tsx:2190` → `/api/recalibrate-zones` | yes | 🔴 **NO** |
+> | `WaitlistForm.tsx:22` → `/api/waitlist` | no | n/a, correct |
+>
+> **Two defects, and the second is not one anybody has reported.** `/api/recalibrate-zones` is **ADR-014's time-trial recalibration — a PAID feature** (`dynamic_reshape_r20`). If the cookie does not reach the server on native, a paid runner completes a time trial, confirms the recalibration, and it **401s**. Nobody has looked, because nothing surfaces it.
+>
+> **Fix:** both call sites use `authedFetch` (56 other sites already do). Then re-test the foundation add on device. **Add a guard** — a test that walks `app/` + `components/` for `fetch('/api/` and fails on any site whose route calls `getUserFromRequest` without an `Authorization` header, with `waitlist` allowlisted. The pattern is `signOutOwner.test.ts`.
+
+> 🟡 **GTM-DECK-CORRECT-01 — the Make-A-Wish deck carries a false engine claim.** *(P1, founder action, no code.)*
+>
+> The deck states the engine refuses a marathon below 20 km/week or a 5 km longest run. **Measured false** — see REFUSAL-THRESHOLDS-01 below; every one of 42 volume × longest-run combinations generated. **Correct it before the deck is shown again or sent to Jack.** The true constraints are *fewer than 3 days a week* and *fewer than 10 weeks* — and the 10-week one cannot affect anyone who signs up on time for London 2027.
+>
+> ⚠️ **The wider lesson, worth more than the correction:** this claim came from a previous session, went into a partner-facing deck unverified, and was ~10 minutes of code-reading away from being caught. **An engine claim in a customer-facing document gets checked against the engine.**
+
+> 🟢 **COPY-DAYS-PLURAL-01 — "1 days/week".** *(P3, one line.)* The days-gate message does not singularise: a runner who says they can run one day a week is told *"1 days/week is not enough"*. Fix while in REFUSAL-SCREEN-01.
+
 > ⚠️ **REFUSAL-THRESHOLDS-01 — the claim that shaped the marketing deck is WRONG about the trigger and RIGHT about the consequence.** *(Checked in code 2026-09-18. Correct the deck before it goes further.)*
 >
 > **The claim** (from a previous session, carried into the Make-A-Wish deck): *"The engine refuses a marathon plan if someone's running under 20 km a week, or their longest recent run is under 5 km."*
