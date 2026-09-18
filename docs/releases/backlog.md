@@ -10,7 +10,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at 2026-09-18
 
-**Everything is committed and pushed** (last ship `198e177`, 2026-09-18 — FIRSTRUN-MARATHON-01 Tier 1 door + Tier 2 reveal). `npm run verify` exit 0 (**2,197 tests / 244 files**, **120 invariants**, matrix 65/0) · `npm run check:db` exit 0 · sweep **14,221 plans, no new violations** (§111 now refuses ~1,750 low-base marathon/ultra inputs) · coaching HIGH 0 / MED 26 · `verify:parity` **208/5,940 moved, all OK→REFUSED** (§111; generated plans byte-identical).
+**Everything is committed and pushed** (last ship `cf0683e`, 2026-09-18 — SLT queue #1-#9, through FIRSTRUN-MOMENTS-01c/d/e). `npm run verify` exit 0 (**2,226 tests / 247 files**, **120 invariants**, matrix 65/0) · `npm run check:db` exit 0 · sweep **14,221 plans, no new violations** (§111 now refuses ~1,750 low-base marathon/ultra inputs) · coaching HIGH 0 / MED 26 · `verify:parity` **208/5,940 moved, all OK→REFUSED** (§111; generated plans byte-identical).
 
 > ▶️ **NEXT UP when we restart — the FIRSTRUN-MARATHON-01 queue, Tier 1 + Tier 2 (#5–8) are DONE.** Resume at the **SLT-ORDERED WORK QUEUE** (§ below):
 > - ~~#9 `FIRSTRUN-MOMENTS-01c/d/e`~~ ✅ **SHIPPED.** Next is #10. Original:
