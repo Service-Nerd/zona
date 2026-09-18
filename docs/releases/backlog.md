@@ -96,7 +96,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 | # | Item | Size | Why here |
 |---|---|---|---|
-| 5 | **`ONBOARD-SKIP-LABEL-01`** + ~~**`COPY-DAYS-PLURAL-01`**~~ ✅ | S | `COPY-DAYS-PLURAL-01` shipped with #3 (REFUSAL-SCREEN-01). `ONBOARD-SKIP-LABEL-01` still open. |
+| ~~5~~ | ~~**`ONBOARD-SKIP-LABEL-01`** + **`COPY-DAYS-PLURAL-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Both done. `ONBOARD-SKIP-LABEL-01`: busy flag → pending-action enum, primary label keys on the specific action (markup-guarded). `COPY-DAYS-PLURAL-01` shipped with #3. → feature-registry |
 | 6 | **`FOUNDATION-DECIDE-LATER-01`** | S | Delete the button. "Later" never comes |
 | 7 | **`FIRSTRUN-MOMENTS-01a`** runway reveal | S | 🥇 **Best value on the entire backlog.** The words exist and are ratified; this is a MOVE |
 | 8 | **`FIRSTRUN-MOMENTS-01b`** first-run reveal | S | Wood funds this one: it lowers the activation cost of the first action |
@@ -581,7 +581,9 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 > **This is the "bounce off at the first attempt and never come back" case, and it is real.** It belongs to `FIRSTRUN-MARATHON-01` touchpoint 2. Minor defect while in there: the message reads **"1 days/week"**.
 
 
-> 🔴 **ONBOARD-SKIP-LABEL-01 — tapping "Connect later" tells you it is connecting. Same defect, two screens.** *(P1, analysed in code, reproduction is by inspection.)*
+> ✅ **ONBOARD-SKIP-LABEL-01 — SHIPPED 2026-09-18.** The boolean `busy` became a pending-action enum (`'connect'|'skip'|null` / `'enable'|'skip'|null`) on both screens; the primary label keys on the specific action (`pending === 'connect' ? 'Connecting…'`), and the skip link shows a neutral "One sec…" while its own write runs. Guarded by `lib/onboarding/onboardingSkipLabel.test.ts` (walks the source, falsified). → feature-registry. Original analysis kept for the record:
+>
+> 🔴 **tapping "Connect later" tells you it is connecting. Same defect, two screens.** *(P1, analysed in code, reproduction is by inspection.)*
 >
 > **Root cause, `app/dashboard/DashboardClient.tsx`.** One `busy` flag serves two mutually exclusive actions, and the PRIMARY button's label is bound to the flag rather than to which action is running:
 > - `ConnectRunsScreen` — `skip()` sets `busy = true`; the primary button renders `{busy ? 'Connecting…' : 'Connect Apple Health'}` (`:3063`). Tap **"Connect later"** and the screen says **"Connecting…"**.
