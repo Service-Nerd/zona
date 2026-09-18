@@ -5175,7 +5175,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       "Defer the race to one with at least 16 weeks of prep.",
     ],
     "prep_time_status": "warned",
-    "prep_time_warning": "15 weeks is below the recommended 16-week minimum for a time-targeted MARATHON. The plan can be generated but the time goal may not be achievable safely. Expect maintenance-grade volume rather than a true build.",
+    "prep_time_warning": "15 weeks is under the 16 weeks a time goal needs for a marathon. The plan will build at maintenance volume rather than a true build, so the time may not be there on the day.",
     "prep_time_weeks_available": 15,
     "prep_time_weeks_required_ok": 16,
     "primary_metric": "distance",

@@ -7,6 +7,7 @@
 // (NODE_ENV=production prevents the engine from throwing — we want to collect.)
 
 import { generateRulePlan } from '../lib/plan/ruleEngine'
+import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { validatePlan, type Violation } from '../lib/plan/invariants'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import {
@@ -461,7 +462,13 @@ function randomInput(): any {
 // carry a minimum `longest_recent_run_km` of 8, above the floor of 5, so they
 // refuse 0 of 35,952. The sweep refuses **2,634**. That is the whole reason this
 // repo records "measure a new rule on the SWEEP, not the cohort grid".
-const REFUSAL = /is not enough preparation|days?\/week is (not enough|below)|is below the recommended \d+-week minimum|too low to build safely|needs to start from at least/
+//
+// ⚠️ REFUSAL-COPY-02 (2026-09-18) — THIS WAS A REGEX OVER THE MESSAGE TEXT, and
+// the paragraph above is the record of it drifting once already. It drifted a
+// SECOND time the day the §44/§52 copy was voiced for tone: five by-design
+// refusals were re-reported as "unexpected generation failures". The refusal
+// copy was a wire format and nothing said so. It now matches the error TYPE.
+const isRefusal = (e: unknown) => isDesignedRefusal(e)
 
 let attempted = 0
 let generated = 0
@@ -685,7 +692,7 @@ for (const input of inputs) {
   } catch (e) {
     const full = e instanceof Error ? e.message : String(e)
     const msg = full.split('\n')[0]
-    if (REFUSAL.test(msg)) { refused++; continue }
+    if (isRefusal(e)) { refused++; continue }
     hardFailures++
     // Report the VIOLATION LINES, not just the header. `validatePlan` throws with
     // "Plan invariant violations:" on line 1 and the actual codes underneath, so

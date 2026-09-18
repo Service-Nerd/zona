@@ -3,7 +3,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { generateRulePlan } from './ruleEngine'
 import { composePlanWithFoundation } from './foundationCompose'
-import { cohortGrid, COHORT_PLAN_START, COHORT_REFUSAL } from './cohortGrid'
+import { cohortGrid, COHORT_PLAN_START, isDesignedRefusal } from './cohortGrid'
 
 // ADR-015 / INV-FMT-001 — a plan NOTE is a display surface.
 //
@@ -59,7 +59,7 @@ describe('plan notes never print raw minutes (ADR-015)', () => {
         const raw = generateRulePlan(input, 'trial', COHORT_PLAN_START, undefined, COHORT_PLAN_START)
         plan = composePlanWithFoundation(raw, input, COHORT_PLAN_START, 'add').plan
       } catch (e: any) {
-        if (COHORT_REFUSAL.test(e?.message ?? '')) continue
+        if (isDesignedRefusal(e)) continue
         throw e
       }
       for (const v of Object.values(plan.meta ?? {})) {

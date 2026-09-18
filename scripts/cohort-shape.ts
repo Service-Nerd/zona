@@ -11,7 +11,7 @@ import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
-import { cohortGrid, COHORT_PLAN_START, COHORT_REFUSAL } from '../lib/plan/cohortGrid'
+import { cohortGrid, COHORT_PLAN_START, isDesignedRefusal } from '../lib/plan/cohortGrid'
 import { summariseCohort, type CohortCase } from '../lib/plan/cohortShape'
 
 export function runCohort(): CohortCase[] {
@@ -24,7 +24,7 @@ export function runCohort(): CohortCase[] {
       return { input, plan, refused: false }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      if (COHORT_REFUSAL.test(msg)) return { input, plan: null, refused: true }
+      if (isDesignedRefusal(e)) return { input, plan: null, refused: true }
       console.error('UNEXPECTED FAILURE:', msg.split('\n')[0])
       return { input, plan: null, refused: false }
     }

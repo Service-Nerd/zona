@@ -9,6 +9,7 @@
 import type { GeneratorInput } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
 import { weeksBetweenLocal } from './length'
+import { raceLabelFor } from './raceLabel'
 
 /**
  * §22 / GOAL-COHERENCE-01 (2026-09-16) — A TIME GOAL WITH NO TIME IS NOT A TIME
@@ -161,7 +162,10 @@ export function validatePrepTime(input: GeneratorInput, planStart: string): Prep
   if (weeks < blockAt) {
     return {
       status: 'block',
-      message: `${weeks} weeks is not enough preparation for a ${distKey}. Minimum is ${blockAt} weeks${shift ? ' for a returning runner' : ''}.`,
+      // REFUSAL-COPY-02 — voiced. Was: "N weeks is not enough preparation for
+      // a MARATHON. Minimum is X weeks." A refused runner is being told no; the
+      // config key shouted back at them is the worst possible register for it.
+      message: `${weeks} weeks isn't enough to build a ${raceLabelFor(distKey)} safely. It needs ${blockAt} weeks${shift ? " while you're coming back" : ''}.`,
       alternatives: alternativesFor(distKey, weeks, warnAt, input),
       weeks_available: weeks,
       weeks_required_ok: warnAt,
@@ -174,7 +178,7 @@ export function validatePrepTime(input: GeneratorInput, planStart: string): Prep
   if (weeks < warnAt && input.goal === 'time_target') {
     return {
       status: 'warn',
-      message: `${weeks} weeks is below the recommended ${warnAt}-week minimum for a time-targeted ${distKey}. The plan can be generated but the time goal may not be achievable safely. Expect maintenance-grade volume rather than a true build.`,
+      message: `${weeks} weeks is under the ${warnAt} weeks a time goal needs for a ${raceLabelFor(distKey)}. The plan will build at maintenance volume rather than a true build, so the time may not be there on the day.`,
       alternatives: alternativesFor(distKey, weeks, warnAt, input),
       weeks_available: weeks,
       weeks_required_ok: warnAt,
@@ -241,8 +245,33 @@ function daysAlternativesFor(
   return alts
 }
 
+/**
+ * REFUSAL-COPY-02 — "you have N weeks", but only when it is TRUE that the
+ * weeks are not also the problem.
+ *
+ * `planStart` is optional because the days gate is conceptually independent of
+ * the date: a caller that has no plan start still gets a correct refusal, just
+ * without the reassurance. It is NOT optional in practice — `ruleEngine` passes
+ * it — and a silent `''` would read as "no runway" rather than "unknown", which
+ * is the `?? ''` class this repo has paid for four times.
+ */
+function runwayNote(
+  input: GeneratorInput,
+  planStart: string | undefined,
+  distKey: keyof typeof GENERATION_CONFIG.PREP_TIME_THRESHOLDS,
+): string {
+  if (!planStart || !input.race_date) return ''
+  const weeks = weeksBetweenLocal(planStart, input.race_date)
+  const prepBlockAt = GENERATION_CONFIG.PREP_TIME_THRESHOLDS[distKey].block
+    + (isReturningForPrepTime(input) ? GENERATION_CONFIG.PREP_TIME_RETURNING_RUNNER_SHIFT_WEEKS : 0)
+  // Short on weeks AND short on days: say nothing about time. §44 refuses this
+  // input on the next attempt and the runner would be told twice, once wrongly.
+  if (weeks < prepBlockAt) return ''
+  return ` You've got ${weeks} weeks before race day, so the runway is fine; it's the days.`
+}
+
 /** Pre-generation check. See CoachingPrinciples §52 (low-day extension). */
-export function validateDaysAvailable(input: GeneratorInput): DaysAvailableResult {
+export function validateDaysAvailable(input: GeneratorInput, planStart?: string): DaysAvailableResult {
   const days = input.days_available
   const distKey = thresholdsKey(input.race_distance_km)
   const thresholds = GENERATION_CONFIG.DAYS_AVAILABILITY_THRESHOLDS[distKey]
@@ -255,7 +284,12 @@ export function validateDaysAvailable(input: GeneratorInput): DaysAvailableResul
   if (days < blockAt) {
     return {
       status: 'block',
-      message: `${days} day${days === 1 ? '' : 's'}/week is not enough for a ${distKey}. Minimum is ${blockAt} days/wk${shift ? ' for a returning runner' : ''}; ${okAt}+ recommended.`,
+      // REFUSAL-COPY-02 — voiced, and it now says the ONE reassuring thing we
+      // know and the refusal screen forgot: how much runway there is. Only when
+      // the runway is genuinely adequate — asserting "time isn't the problem"
+      // to someone who is also short on weeks is a claim the data does not
+      // support, and §44 would refuse them on the next attempt anyway.
+      message: `${days} day${days === 1 ? '' : 's'} a week won't build a ${raceLabelFor(distKey)}. It needs ${blockAt}${shift ? " while you're coming back" : ''}, and ${okAt} works better.${runwayNote(input, planStart, distKey)}`,
       alternatives: daysAlternativesFor(distKey, days, okAt, input),
       days_available: days,
       days_required_ok: okAt,
@@ -269,7 +303,7 @@ export function validateDaysAvailable(input: GeneratorInput): DaysAvailableResul
   if (days < okAt && input.goal === 'time_target') {
     return {
       status: 'warn',
-      message: `${days} day${days === 1 ? '' : 's'}/week is below the recommended ${okAt}-day minimum for a time-targeted ${distKey}. The plan can be generated as maintenance-grade — expect to finish, not to hit the time goal.`,
+      message: `${days} day${days === 1 ? '' : 's'} a week is under the ${okAt} days a time goal needs for a ${raceLabelFor(distKey)}. The plan will build at maintenance volume, so expect to finish rather than hit the time.`,
       alternatives: daysAlternativesFor(distKey, days, okAt, input),
       days_available: days,
       days_required_ok: okAt,
@@ -289,8 +323,8 @@ export function validateDaysAvailable(input: GeneratorInput): DaysAvailableResul
 
 /** Convenience wrapper — applies the validator and throws DaysAvailableError
  *  on block / warn-unacknowledged. Used at the top of generateRulePlan(). */
-export function enforceDaysAvailable(input: PrepTimeAwareInput): DaysAvailableResult {
-  const days = validateDaysAvailable(input)
+export function enforceDaysAvailable(input: PrepTimeAwareInput, planStart?: string): DaysAvailableResult {
+  const days = validateDaysAvailable(input, planStart)
   if (days.status === 'block') {
     throw new DaysAvailableError('block', days)
   }

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
+import { isDesignedRefusal } from './designedRefusal'
 import { validatePlan } from './invariants'
 import { CHARITY_PERSONAS, charityInput, CHARITY_PLAN_START } from './charityCohort'
 
@@ -23,8 +24,16 @@ describe('charity cohort — every persona is valid or a by-design refusal', () 
     it(p.id, () => {
       const input = charityInput(p)
       if (p.expectRefusal) {
-        expect(() => generateRulePlan(input, 'paid', CHARITY_PLAN_START))
-          .toThrow(/preparation|days\/week|minimum|prep/i)
+        // REFUSAL-COPY-02 — assert the refusal TYPE, never the wording. This
+        // matched prose and broke the moment the §52 message was voiced, which
+        // is the tell that the copy was an undeclared wire format.
+        let thrown: unknown = null
+        try { generateRulePlan(input, 'paid', CHARITY_PLAN_START) } catch (e) { thrown = e }
+        expect(thrown, `${p.id} was expected to be refused by design`).not.toBeNull()
+        expect(
+          isDesignedRefusal(thrown),
+          `${p.id} threw something that is not a designed refusal: ${(thrown as Error)?.name} ${(thrown as Error)?.message}`,
+        ).toBe(true)
         return
       }
       const plan = generateRulePlan(input, 'paid', CHARITY_PLAN_START)

@@ -20,12 +20,12 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > | ~~`PREF-SWEEP-01`~~ | ✅ | **SHIPPED 2026-09-18.** Real runner-facing scope was **~24 sites, not 90** (58 of the original count were developer-facing `invariants.ts` messages). 5 live sites fixed — the wizard's phase strip and plan header, `PlanCalendar`'s Strava distance, `SessionSteps`' race-pace segment, and the **weekly-report prompt**, which built its session labels in km *before* fetching the reader's units and handed them to a model it had just told to speak miles. Gate: `lib/hardcodedUnits.test.ts`, 6 baselined with reasons |
 > | ~~`LONGEST-RUN-GATE-01`~~ | ✅ | **SHIPPED as §113, 2026-09-18.** Board ruled the threshold **RIGHT** (monotonic, unlike §111) and everything around it wrong. The route now holds **no coaching number at all**. Spawned `GRID-SUBFLOOR-01` |
 > | `DEVICE-VERIFY-01` | ⏸️ **P1** | **Nothing shipped today has run on iOS.** ⏸️ **PARKED — needs the founder's device**, not a code change |
-> | `REFUSAL-COPY-02` | P2 | The refusal FRAMING is fixed; the message inside is still raw engine copy. Parity-moving |
+> | ~~`REFUSAL-COPY-02`~~ | ✅ | **SHIPPED 2026-09-18.** Messages voiced, `'MARATHON'` no longer shouted at a refused runner (`lib/plan/raceLabel.ts` owns the noun), and the days refusal now says the runway. ⚠️ **It exposed that the refusal COPY WAS A WIRE FORMAT** — eight prose matchers across five files broke; all now match the error TYPE via `isDesignedRefusal` |
 > | ~~`OPS-DBCHECK-NOISE-01`~~ | ✅ | **SHIPPED 2026-09-18.** One read-only `schema_columns_named()` RPC replaces 21 deliberately-failing selects. ⚠️ **The noise was the smaller half** — probing "each known table" built the candidate set from the three arrays the check audits, so a new `week_n` table in none of them was invisible to the check written to find it. Now schema-sourced and bidirectional |
 > | ~~`CI-SLOW-DRIFT-01`~~ | ✅ | **SHIPPED 2026-09-18** as `npm run check:slow`, inside `npm run verify`. Measured under contention: `targetedGrid` is **15,017 ms — 50.1% of budget and 39% of the whole suite's test time**. ⚠️ **Report-only in CI on purpose** — a CI duration against a dev-machine baseline is two different measurements |
 > | ~~`FATIGUE-ARRAY-DRY-01`~~ | ✅ | **SHIPPED 2026-09-18.** It was **seven** copies, not five, and the sharpest was a TYPE: `reframeRiskGate.ts` still declared its own `FatigueTag` union although `completionVocab`'s own comment says it exists because "a type without its values is the split that lets two lists drift". One declaration now; gate in `completionVocab.test.ts` |
 > | `S112-HAZARD-01` | ⏸️ P3 | ⏸️ **PARKED — unmeasurable today** (§112 has never fired; 83 tagged rows total). Unparks when the cohort gives volume |
-> | `FIRSTRUN-GATE-CALL-01` | P3 | Open call: gate "First up" to first-timers? Shipped ungated |
+> | ~~`FIRSTRUN-GATE-CALL-01`~~ | ✅ | **RULED + SHIPPED 2026-09-18 (SLT).** Not the filed binary: the **card is ungated** (it is a cue specification, valuable to everyone), the **sentence is gated**, and Hutchinson blocked the old wording as a capability claim §111/§113 contradict. Now *"It is meant to feel too easy."* |
 > | `SIGNOUT-TOKEN-RESIDUAL-01` | ⏸️ P3 | ⏸️ **ACCEPTED, no action.** A failed revoke leaves the token alive until expiry; unreachable without a network |
 > | `GTM-CHARITY-09` · iOS 16.6 | ⏸️ | **Parked by the founder.** Both writing, no build |
 
@@ -119,22 +119,6 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > **What would settle it, in the board's own words: whether skip rate rises in the window AFTER a softening fires.** **Not measurable today** — §112's trigger has never fired in production, and there are 83 tagged completions in total.
 >
 > **Unpark trigger:** once the charity cohort produces volume. Until then this is a known, argued, accepted risk with a named test — not an oversight.
-
-> 🟡 **REFUSAL-COPY-02 — the §44/§52 refusal messages are still engine copy.** *(P2, carried from the REFUSAL-SCREEN-01 ship.)*
->
-> `REFUSAL-SCREEN-01` fixed the **framing** — the amber "something went wrong" headline is gone and the screen reads as *"not yet"*. **The message INSIDE it is still the raw engine string**: *"2 days/week is not enough for a MARATHON. Minimum is 3 days/wk; 4+ recommended."* Shouty caps, `days/wk`, written for a log.
->
-> Two parts, and the second is the reason this is P2 rather than P3:
-> 1. **Voice the message internals** (`validateDaysAvailable`, `validatePrepTime`) — brand work.
-> 2. **Add the "you have N weeks" runway line**, which is the single most reassuring fact we hold and the refusal screen is the one place that forgets we know the date.
->
-> ⚠️ **This is a governed-message change and will move parity** — the strings live in `lib/plan/inputs.ts` and are stamped into `prep_time_warning` / alternatives. Re-baseline with a declared reason.
-
-> 🟢 **FIRSTRUN-GATE-CALL-01 — should "First up" be gated to first-timers?** *(P3, an open CALL, not a defect. Founder/SLT.)*
->
-> `FirstRunCard` shipped **ungated and neutral** — every runner sees *"Monday. 20 min. Easy. This is where it starts."* For an experienced runner regenerating a plan that may read as slightly obvious. **Gating it to first-timers is one line** (`training_age` / `fitness_level` are both to hand at the reveal).
->
-> **Not done because nobody has ruled on it**, and the neutral copy was written to survive both audiences. Decide by reading it, not by argument.
 
 > 🟢 **SIGNOUT-TOKEN-RESIDUAL-01 — a failed sign-out leaves the access token alive server-side.** *(P3, stated at ship rather than hidden.)*
 >

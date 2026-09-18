@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-18 — REFUSAL-COPY-02 + FIRSTRUN-GATE-CALL-01 · the refusal copy was a wire format and nothing said so
+**Shipped:** The §44/§52 refusal messages are voiced and carry the runway; the plan-reveal's reassurance sentence is now gated (the card isn't).
+
+**Dev learning:** I changed four strings for tone. It broke **eight matchers across five files**, because every grid harness identified "was that throw the engine working or a real fault?" by running a regex over the message prose. The refusal copy was a wire format and nothing in the codebase said so. Worse, `cohortGrid.ts`'s own comment already recorded that regex drifting once before, in 2026-09-04, when a new input axis reached a warn band the pattern didn't cover. Fixed properly with `isDesignedRefusal(e)` matching the error TYPE, with an `e.name` fallback because `instanceof` fails across the duplicate module instances `verify:parity` creates by design.
+
+**Product/creator learning:** The refusal said *"2 days/week is not enough for a MARATHON."* That's the config key, shouted, at someone who has just been told no. And the screen knew the race date the whole time and never mentioned it, so the §52 refusal never said the one reassuring thing we actually hold. It now does, but only when true: if the runner is also short on weeks, the runway line is withheld, because §44 would refuse them next attempt and we'd have told them twice, once wrongly.
+
+On the reveal card, the SLT rejected the binary I brought them. I'd asked "gate the card to first-timers or not"; Wood reframed it as a cue specification that everyone benefits from and Sutherland pointed out the third sentence was the only part that was audience-specific. Then Hutchinson blocked the sentence itself on accuracy grounds I hadn't considered: *"Nothing here you can't do"* is a capability claim, and §111 and §113 exist because it is false for some of the readers most likely to check it.
+
+**AI-building learning:** I nearly reported a big win that wasn't real. After the migration the sweep read "Hard failures: 0, Refused by design: 6,993" against "4,033 / 2,960" before, and I started writing up a 4,033-case measurement correction. Then I stashed and ran the sweep at HEAD: **6,993 / 0**, identical. The 4,033 was caused entirely by my own copy change minutes earlier. The correct claim is the boring one, and it's better evidence anyway: before and after are byte-identical, which is what proves the refactor changed nothing.
+
+**The honest bit:** Five of the eight duplicate matchers I only found because the property sweep went red at the end of `npm run verify`, after I'd already declared the work done twice and re-run the test suite clean both times. The unit tests pass in 40 seconds; the sweep takes two minutes and runs last. I had a green suite and an incomplete migration at the same moment, twice.
+
+**Hook material:** I changed four sentences for tone. It broke eight things, in five files, none of which were about tone.
+
+**Postable?:** yes
+
 ## 2026-09-18 — CI-SLOW-DRIFT-01 · the gate's first run failed on a test that hadn't got slower
 **Shipped:** `npm run check:slow` — test-duration drift is now gated with a committed baseline instead of printed into a green run nobody reads.
 

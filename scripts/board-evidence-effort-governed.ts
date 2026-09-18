@@ -26,6 +26,7 @@
 //   NODE_ENV=production npx tsx scripts/board-evidence-effort-governed.ts
 //   NODE_ENV=production ONLY_KM=50,100 SWEEP_N=3000 npx tsx scripts/board-evidence-effort-governed.ts
 import { generateRulePlan } from '../lib/plan/ruleEngine'
+import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { GENERATION_CONFIG } from '../lib/plan/generationConfig'
 import { V1_SESSION_CATALOGUE } from '../lib/plan/sessionCatalogueData'
 import { durationForMainSet } from '../lib/plan/sessionFormat'
@@ -183,7 +184,7 @@ function sessionSplit(dur: number) {
 }
 
 let generated = 0, refused = 0, threw = 0
-const REFUSAL = /is not enough preparation|days\/week is (not enough|below)/
+// REFUSAL-COPY-02 — match the error TYPE, never the wording.
 
 for (let i = 0; i < SWEEP_N; i++) {
   const input = randomInput()
@@ -192,7 +193,7 @@ for (let i = 0; i < SWEEP_N; i++) {
   try {
     plan = generateRulePlan(input, tier, PLAN_START)
   } catch (e: any) {
-    if (REFUSAL.test(String(e?.message))) { refused++; continue }
+    if (isDesignedRefusal(e)) { refused++; continue }
     threw++; continue
   }
   generated++

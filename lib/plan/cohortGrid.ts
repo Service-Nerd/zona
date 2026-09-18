@@ -144,11 +144,18 @@ export function cohortGrid(): GeneratorInput[] {
   return out
 }
 
-/** A refusal is the engine working (§44 prep-time, days-per-week minimums, §111
- *  base-build ceiling). Anything else that throws is a real failure and must not
- *  be counted as one. */
-export const COHORT_REFUSAL =
-  /is not enough preparation|days?\/week is (not enough|below)|is below the recommended \d+-week minimum|too low to build safely/
+/**
+ * A refusal is the engine working (§44 prep-time, §52 days, §111 base volume,
+ * §113 long-run readiness). Anything else that throws is a real failure and
+ * must not be counted as one.
+ *
+ * ⚠️ REFUSAL-COPY-02 — this used to be a REGEX OVER THE MESSAGE TEXT, which
+ * made the refusal copy a wire format without saying so: rewording the §44/§52
+ * messages for tone broke four checks across three files. Re-exported from
+ * `designedRefusal.ts`, which matches the ERROR TYPE, so copy is free to change
+ * and a genuine fault can never drift into matching.
+ */
+export { isDesignedRefusal } from './designedRefusal'
 
 // ── GRID-COVERAGE-02 Phase 2 (2026-09-15) — the SECOND, TARGETED grid ────────
 //

@@ -16,6 +16,7 @@
 // Run: NODE_ENV=production npx tsx scripts/coaching-review-round.ts
 
 import fs from 'node:fs'
+import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import path from 'node:path'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { validatePlan } from '../lib/plan/invariants'
@@ -67,7 +68,7 @@ function run(label: string, input: GeneratorInput, tier: 'free' | 'trial' | 'pai
     }
   } catch (e: any) {
     const msg = String(e?.message ?? e).split('\n')[0]
-    const refusal = /preparation|days\/week|minimum|prep/i.test(msg)
+    const refusal = isDesignedRefusal(e)   // REFUSAL-COPY-02 — type, not wording
     if (expectRefusal && refusal) {
       rows.push({ id: label, distanceKm: input.race_distance_km, errors: 0, warns: 0, status: '⛔ refused (by design)' })
     } else {

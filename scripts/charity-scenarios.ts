@@ -14,6 +14,7 @@
 // (production so generateRulePlan COLLECTS violations rather than throwing.)
 
 import { generateRulePlan } from '../lib/plan/ruleEngine'
+import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { validatePlan } from '../lib/plan/invariants'
 import { sessionKmSelfPaced } from '../lib/plan/sessionDistance'
 import { isLongRun } from '../lib/plan/sessionRole'
@@ -84,7 +85,7 @@ for (const p of PERSONAS) {
     rows.push(`${errors.length ? '❌' : '✅'} ${p.id.padEnd(46)} lvl=${(m.fitness_level ?? '?').padEnd(12)} ${(m.volume_profile ?? '?').padEnd(12)} peak=${String(peakKm).padStart(3)}km LR=${String(lrPeak).padStart(3)}km(${lrPeakPctOfWeek}%) err=${errors.length} warn=${warns.length}`)
   } catch (e: any) {
     const msg = String(e?.message ?? e)
-    const refusal = /is not enough preparation|days\/week is (not enough|below)|below the recommended \d+-week minimum|prep/i.test(msg)
+    const refusal = isDesignedRefusal(e)   // REFUSAL-COPY-02 — type, not wording
     console.log(`  ${refusal ? '⛔ BY-DESIGN REFUSAL' : '💥 THREW'}: ${msg.split('\n')[0]}`)
     rows.push(`${refusal ? '⛔' : '💥'} ${p.id.padEnd(46)} ${refusal ? 'refused (prep/days)' : 'THREW: ' + msg.split('\n')[0]}`)
     if (!refusal) anyError = true

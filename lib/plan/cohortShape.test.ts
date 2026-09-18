@@ -26,7 +26,7 @@
 import { describe, it, expect } from 'vitest'
 import baseline from './__fixtures__/cohortShapeBaseline.json'
 import { summariseCohort, type CohortShape, type CohortCase } from './cohortShape'
-import { cohortGrid, COHORT_PLAN_START, COHORT_REFUSAL } from './cohortGrid'
+import { cohortGrid, COHORT_PLAN_START, isDesignedRefusal } from './cohortGrid'
 import { generateRulePlan } from './ruleEngine'
 import { composePlanWithFoundation } from './foundationCompose'
 
@@ -38,7 +38,7 @@ function runCohort(): CohortCase[] {
       return { input, plan, refused: false }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      return { input, plan: null, refused: COHORT_REFUSAL.test(msg) }
+      return { input, plan: null, refused: isDesignedRefusal(e) }
     }
   })
 }

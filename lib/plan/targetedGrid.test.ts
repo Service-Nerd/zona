@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { targetedGrid, COHORT_PLAN_START, COHORT_REFUSAL } from './cohortGrid'
+import { targetedGrid, COHORT_PLAN_START, isDesignedRefusal } from './cohortGrid'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import type { GeneratorInput, Plan } from '@/types/plan'
@@ -63,7 +63,7 @@ describe('targetedGrid — the fields the main grid cannot reach', () => {
         generateRulePlan(input, 'trial', COHORT_PLAN_START, undefined, COHORT_PLAN_START)
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
-        if (COHORT_REFUSAL.test(msg)) continue
+        if (isDesignedRefusal(e)) continue
         if (failures.length < 3) failures.push(msg.split('\n').slice(0, 2).join(' | '))
       }
     }

@@ -5800,7 +5800,7 @@ function buildRulePlanOnce(
   // (marathon and ultras require ≥3, ideally ≥4). Throws DaysAvailableError
   // on block / warn-unacknowledged. Runs before prep-time so the more
   // structural infeasibility surfaces first.
-  const daysCheck: DaysAvailableResult = enforceDaysAvailable(input as PrepTimeAwareInput)
+  const daysCheck: DaysAvailableResult = enforceDaysAvailable(input as PrepTimeAwareInput, planStartIso)
 
   // CoachingPrinciples §44 — prep-time validation. Runs first so block/warn
   // outcomes surface before any generation work. Throws PrepTimeError on
