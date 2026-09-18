@@ -34,8 +34,53 @@ import { clearWidgetState } from '@/lib/native/sharedStore'
 export async function signOutAndReturnToLogin(): Promise<void> {
   try {
     await clearWidgetState()
-    await createClient().auth.signOut()
+    const { error } = await createClient().auth.signOut()
+    if (error) forgetLocalSession(error)
   } finally {
     window.location.href = '/auth/login'
   }
+}
+
+/**
+ * Make sure the session is gone from THIS device even when the revoke failed.
+ *
+ * ⚠️ READ `_signOut` IN `@supabase/auth-js` BEFORE CHANGING THIS. It revokes
+ * the token first and, on any error that is not 401/403/404/session-missing —
+ * a flat network failure being the obvious one on a phone mid-onboarding —
+ * it `return`s **before** `_removeSession()`. The promise RESOLVES, carrying
+ * `{ error }`. So the default behaviour of a failed sign-out is: the user is
+ * told nothing, lands on the login screen, and is still signed in, because the
+ * `sb-<ref>-auth-token` cookie was never touched. That is the founder's exact
+ * demo — sign out of the test account, hand the phone over — failing silently
+ * in the direction that matters.
+ *
+ * Cookies, not localStorage: `createBrowserClient` (@supabase/ssr) stores the
+ * session in `document.cookie` so the server can read it. Both are cleared
+ * anyway — a plain browser client uses localStorage, and being wrong about
+ * which one is in play is how this class of bug survives.
+ *
+ * What this does NOT fix: the access token stays valid on Supabase's side
+ * until it expires. That is unreachable from a device with no network, and it
+ * is the same exposure as force-quitting the app. What must not happen — and
+ * no longer does — is the user believing they signed out while the credential
+ * is still on the device.
+ */
+function forgetLocalSession(cause: unknown): void {
+  const isAuthKey = (k: string) => k.startsWith('sb-') && k.includes('-auth-token')
+  try {
+    for (const raw of document.cookie.split(';')) {
+      const name = raw.trim().split('=')[0]
+      if (name && isAuthKey(name)) {
+        document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`
+      }
+    }
+  } catch { /* no document (SSR/test) — the localStorage sweep still runs */ }
+  try {
+    for (const k of Object.keys(localStorage)) {
+      if (isAuthKey(k) || k === 'supabase.auth.token') localStorage.removeItem(k)
+    }
+  } catch { /* storage blocked (private mode) */ }
+  // Not swallowed silently: the navigation still happens, but the reason is
+  // left where a bug report can find it. There is no network to report it on.
+  console.warn('[signOut] revoke failed; cleared the local session anyway:', cause)
 }

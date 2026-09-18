@@ -10,6 +10,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // have passed everything shipped so far.
 
 const clearWidgetState = vi.fn()
+const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 const signOut = vi.fn()
 const calls: string[] = []
 
@@ -37,6 +38,7 @@ describe('signOutAndReturnToLogin', () => {
     calls.length = 0
     clearWidgetState.mockReset().mockResolvedValue(undefined)
     signOut.mockReset().mockResolvedValue({ error: null })
+    warn.mockReset()
   })
 
   it('clears the widget store BEFORE ending the session', async () => {
@@ -74,12 +76,93 @@ describe('signOutAndReturnToLogin', () => {
   it('awaits the session teardown before navigating (a hard load kills pending work)', async () => {
     const loc = stubWindow()
     let released!: () => void
-    signOut.mockReturnValue(new Promise<void>(res => { released = res }))
+    // Must resolve to the real `{ error }` shape — the caller destructures it.
+    signOut.mockReturnValue(new Promise(res => { released = () => res({ error: null }) }))
     const done = signOutAndReturnToLogin()
     await Promise.resolve()
     expect(loc.href, 'navigated while signOut was still in flight').toBe('')
     released()
     await done
     expect(loc.href).toBe('/auth/login')
+  })
+})
+
+describe('signOut FAILED but resolved — the case supabase-js leaves signed in', () => {
+  // ⚠️ THIS IS THE REALISTIC FAILURE, and it is not a rejection.
+  // `GoTrueClient._signOut` revokes the token first and, on any error that is
+  // not 401/403/404/session-missing (a flat network failure), `return`s BEFORE
+  // `_removeSession()`. The promise RESOLVES with `{ error }`. So the default
+  // is: the user lands on the login page still holding a live session cookie.
+  // The earlier tests only covered a REJECTION, which this call does not do.
+
+  function stubStorage(cookies: string[]) {
+    const store = { value: cookies.join('; ') }
+    const removed: string[] = []
+    ;(globalThis as any).document = {
+      get cookie() { return store.value },
+      set cookie(v: string) {
+        const name = v.split('=')[0]
+        if (!/Max-Age=0/.test(v)) return
+        removed.push(name)
+        store.value = store.value.split('; ').filter(c => c.split('=')[0] !== name).join('; ')
+      },
+    }
+    // A session key and a non-session key, so "clears the right thing" and
+    // "leaves everything else alone" are both observable.
+    const ls: Record<string, string> = { 'sb-abc-auth-token': 'x', 'zona_wizard_draft': 'keep' }
+    const localStorage = {
+      ...ls,
+      removeItem(k: string) { delete (this as Record<string, unknown>)[k] },
+    }
+    ;(globalThis as any).localStorage = localStorage
+    return { removed, store, localStorage }
+  }
+
+  beforeEach(() => {
+    calls.length = 0
+    clearWidgetState.mockReset().mockResolvedValue(undefined)
+    warn.mockReset()
+  })
+
+  it('clears the auth COOKIE when the revoke errors', async () => {
+    const loc = stubWindow()
+    const { removed } = stubStorage(['sb-wkppmpsvqkaxbekdgzdm-auth-token=live', 'other=keep'])
+    signOut.mockResolvedValue({ error: { message: 'Failed to fetch' } })
+    await signOutAndReturnToLogin()
+    expect(removed).toEqual(['sb-wkppmpsvqkaxbekdgzdm-auth-token'])
+    expect(loc.href).toBe('/auth/login')
+  })
+
+  it('clears the auth key from localStorage too (a plain browser client uses it)', async () => {
+    stubWindow()
+    const { localStorage } = stubStorage([])
+    signOut.mockResolvedValue({ error: { message: 'Failed to fetch' } })
+    await signOutAndReturnToLogin()
+    expect(localStorage['sb-abc-auth-token' as keyof typeof localStorage]).toBeUndefined()
+  })
+
+  it('touches nothing that is not an auth key', async () => {
+    stubWindow()
+    const { store, localStorage } = stubStorage(['sb-x-auth-token=live', 'other=keep'])
+    signOut.mockResolvedValue({ error: { message: 'boom' } })
+    await signOutAndReturnToLogin()
+    expect(store.value).toBe('other=keep')
+    expect(localStorage['zona_wizard_draft' as keyof typeof localStorage]).toBe('keep')
+  })
+
+  it('leaves the reason where a bug report can find it', async () => {
+    stubWindow(); stubStorage([])
+    signOut.mockResolvedValue({ error: { message: 'Failed to fetch' } })
+    await signOutAndReturnToLogin()
+    expect(warn).toHaveBeenCalled()
+  })
+
+  it('does NOT touch storage on the happy path', async () => {
+    stubWindow()
+    const { store } = stubStorage(['sb-x-auth-token=live'])
+    signOut.mockResolvedValue({ error: null })
+    await signOutAndReturnToLogin()
+    expect(store.value).toBe('sb-x-auth-token=live')
+    expect(warn).not.toHaveBeenCalled()
   })
 })
