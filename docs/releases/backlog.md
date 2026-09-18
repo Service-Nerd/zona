@@ -104,6 +104,27 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > ⚠️ **Measure under contention, not in isolation.** Run alone, that test is 8.7s; inside the full suite it is **15.3s**. The isolated number understates the real projection by 75%.
 
+> 🔴 **LONGEST-RUN-GATE-01 — the third ungoverned refusal in the same function §111 was convened to fix.** *(P1, filed 2026-09-18. ⚠️ Flagged in a code comment on the day and NOT filed until the founder asked why it was not on the list — the same "flagged but unfiled" failure as `WIZARD-TIME-CHIPS-01` earlier the same day.)*
+>
+> `app/api/generate-plan/route.ts → validate()` held **three** hardcoded refusals. §111 replaced the second. This is the third, still live:
+>
+> ```ts
+> if (input.race_distance_km >= 21 && input.longest_recent_run_km < 5) {
+>   return 'Longest recent run is very short for this distance. Log at least a 5 km run in the last 6 weeks before generating this plan.'
+> }
+> ```
+>
+> **Who it refuses.** Anyone attempting a **half or a marathon** whose longest recent run is under 5 km — which is a plain description of a charity first-timer in October. They get **no plan**, and are told to go and log a run first.
+>
+> **It carries every defect §111 was convened to fix**, and they are the board's own words from that sitting:
+> - **Ungoverned** — no `CoachingPrinciples` section, never ratified, invisible to `configPrincipleSync` and to `coaching-guard.py` (which does not watch `app/api/`).
+> - **A bare string with no alternatives**, which **§44's own text forbids**: *"Return error explaining why and listing alternatives."* §44 and §52 both compute them; this returns a full stop.
+> - **Expressed on the wrong quantity, probably.** §111's finding was that a floor on *stated volume* was non-monotonic in the ramp it existed to bound. This is a floor on a *stated longest run* — the same shape of claim, and nobody has checked whether it tracks long-run readiness any better.
+>
+> ⚠️ **DO NOT SIMPLY DELETE IT.** Exactly the trap the board named on §111: the concern may be real even when the implementation is wrong. A first-timer whose longest run is 3 km being handed a marathon block is a genuine question — it is just one nobody has ever ruled on.
+>
+> **Do:** Coaching Board sitting. Measure first, as §111 required — what the engine actually builds below the threshold, and whether the refusal tracks anything. **Given the cohort, I would put this above the parked Tier 4 items.**
+
 > 🔴 **PREF-SWEEP-01 — the units and metric preferences do not reach the whole app, and nothing checks that they do.** *(P1, founder-raised 2026-09-18. MEASURED before filing — this is a defect with numbers, not an audit request.)*
 >
 > **The ask.** Profile lets a runner switch **km ↔ miles** and **distance ↔ duration**. Every surface must honour it: screens, cards, notes, push, emails, **and the AI prompts** — anywhere a unit or a metric is shown or spoken. ADR-015 already says exactly this (`INV-FMT-001/002`, `INV-PREF-001`, and the 2026-09-11 amendment that *"the AI layer is a display surface"*). **The doctrine is not the gap. The reach is.**
