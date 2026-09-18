@@ -29,6 +29,11 @@
 | Tenure caption | `auth.users.created_at`, formatted `"Holding the zone since Mmm YYYY"`. **Suppressed entirely when the account was created in the current calendar month.** Hardcoded `MONTH_ABBREV` table (three-letter month) — no Intl locale dependency in the edge/og rendering. |
 | Colours | `BRAND.og.*` — Warm Slate hex (no CSS custom props in the og runtime). |
 
+**PLAN-WEEK-COLLISION-01 (2026-09-18).** Every read here filters
+`superseded_at IS NULL`, so it sees the LIVE plan only. `week_n` is a
+WITHIN-PLAN coordinate: a new race plan restarts numbering at 1, so an
+unfiltered read serves the previous plan's rows for the same `week_n`.
+
 ## Tenure caption rules (canonical — never violate)
 
 - Format: `"Holding the zone since Mmm YYYY"`. Three-letter month, four-digit year. No day, no time, no emoji.

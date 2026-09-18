@@ -39,8 +39,11 @@ say "── CONTRACTS: changed API routes vs docs/contracts ──"
 # true check earns a reputation for crying wolf.
 touched() { { git log --since="$SINCE 00:00" --name-only --pretty=format:; git status --porcelain | cut -c4-; } | sort -u; }
 cfail=0
-for f in $(touched | grep -E '^app/api/.*/route\.ts$'); do
-  name=$(printf '%s' "$f" | sed -E 's#^app/api/##; s#/route\.ts$##; s#/#-#g')
+# .tsx as well as .ts — the OG routes are route.tsx, and a `.ts`-only regex
+# meant this check reported ALL CLEAN while two changed routes with contracts
+# were never examined (found by hand 2026-09-18, not by the script).
+for f in $(touched | grep -E '^app/api/.*/route\.tsx?$'); do
+  name=$(printf '%s' "$f" | sed -E 's#^app/api/##; s#/route\.tsx?$##; s#/#-#g')
   c="docs/contracts/api/${name}.md"
   [ -f "$c" ] || continue
   touched | grep -qx "$c" || { say "  STALE $c (route changed, contract did not)"; cfail=1; fail=1; }

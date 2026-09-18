@@ -13,8 +13,23 @@ interface Props {
   allCompletions: Record<number, Record<string, any>>   // keyed by week number, then day
   onOverrideChange: (overrides: { week_n: number; original_day: string; new_day: string }[]) => void
   onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
+
+  // Corrected 2026-09-18: these four were on the component and NOT in this
+  // contract. Found by hand during a docs audit, because the audit script
+  // checks API routes against docs/contracts/api only and never looks at
+  // docs/contracts/components.
+  overridesReady?: boolean                          // false while overrides are still loading
+  units?: DistanceUnits                             // 'km' | 'mi' — INV-PREF-001
+  preferredMetric?: SessionMetric                   // distance vs duration (ADR-015)
+  sessionMetricOverrides?: SessionMetricOverrides   // per-session metric override
 }
 ```
+
+**Units (INV-PREF-001).** Every distance this component renders resolves through
+`lib/format.ts` with `units` — the prescribed session distance, the week header
+total (`sumRoundedDistance`), and, since PREF-SWEEP-01 (2026-09-18), the linked
+**Strava activity distance** on a completed day, which previously hardcoded `km`
+and so showed km to a miles runner.
 
 ### SessionTapPayload (passed to onSessionTap)
 

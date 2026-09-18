@@ -33,6 +33,11 @@
 | Wordmark | `BRAND.name`, double-letter moss via `splitOnDoubleLetter` from `lib/brand-og.ts` |
 | Colours | `BRAND.og.*` + resolved hex for session/fatigue colours (CSS custom properties don't resolve in next/og) |
 
+**PLAN-WEEK-COLLISION-01 (2026-09-18).** Every read here filters
+`superseded_at IS NULL`, so it sees the LIVE plan only. `week_n` is a
+WITHIN-PLAN coordinate: a new race plan restarts numbering at 1, so an
+unfiltered read serves the previous plan's rows for the same `week_n`.
+
 ## Render states
 
 | State | Trigger | Anatomy |
