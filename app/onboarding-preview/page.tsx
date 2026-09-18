@@ -120,6 +120,15 @@ export default function OnboardingPreviewPage() {
             <Inert><SignOutLink disabled /></Inert>
           </div>
         </Case>
+
+        <Case
+          title="LIVE — this one really signs you out"
+          note="Every case above is inert so the page can be read. This one is not: pressing it runs the real sequence and must land you on /auth/login. It is the only way to exercise the wiring without a phone and a fresh account, and it is why this page exists rather than a screenshot."
+        >
+          <div style={{ padding: '20px' }}>
+            <SignOutLink />
+          </div>
+        </Case>
       </div>
     </main>
   )
