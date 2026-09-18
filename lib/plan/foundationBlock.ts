@@ -7,6 +7,7 @@
 // (e.g. -2, -1, 0 for a 3-week block). Week 1 of the main plan is always n=1.
 
 import { GENERATION_CONFIG } from './generationConfig'
+import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
 import { normaliseDays, DAY_ORDER, type Day } from './days'
 import type { GeneratorInput } from '@/types/plan'
 import type { Week } from '@/types/plan'
@@ -126,6 +127,17 @@ function buildFoundationSessions(
   // the gate has one owner (generateRulePlan) and a second evaluation of the
   // same predicate is the two-writer split DELOAD-OWNER-01 removed.
   earlyOnset = false,
+  /**
+   * CB-SUBFLOOR-ADMIT-01 follow-up — floors resolved FOR THIS RUNNER.
+   *
+   * ⚠️ MEASURED HOLE, found immediately after §113 Am.1 shipped: this module
+   * kept reading the flat `GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM`, so a
+   * runner whose longest run is 3 km was handed a **5.0 km foundation session
+   * (+67%)** — the exact leap the amendment removed from the main plan — and it
+   * landed in week -1, BEFORE the 2.9 km week 1. The first session the runner
+   * ever saw was the unsafe one.
+   */
+  floors: SessionFloors = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM,
 ): Week['sessions'] {
   // Normalise before comparing. The wizard sends full day names ('monday') and
   // DEFAULT_DAYS is short form ('mon'), so a raw `new Set(blockedDays)` matched
@@ -137,8 +149,8 @@ function buildFoundationSessions(
   const sessions: Week['sessions'] = {}
   if (!available.length || weeklyKm <= 0) return sessions
 
-  const minEasyKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
-  const minLongKm = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+  const minEasyKm = floors.easy
+  const minLongKm = floors.long
   const minRatio  = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
   // §64 — six training days is the upper limit for a non-elite runner; every
   // week keeps a rest day (INV-PLAN-WEEK-HAS-REST-DAY). Foundation weeks are no
@@ -377,6 +389,7 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       input.days_cannot_train ?? [],
       input.preferred_long_run_day,
       earlyOnset,
+      sessionFloorsFor(input.longest_recent_run_km),
     )
 
     weeks.push({
@@ -403,8 +416,8 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
       // if and only if `weeklyKm < minEasyKm`, because for any larger week the
       // day-fitting picks n such that weeklyKm/n >= minEasyKm by construction.
       weekly_km: Object.keys(sessions).length > 0
-        && weeklyKm < GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
-        ? GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+        && weeklyKm < sessionFloorsFor(input.longest_recent_run_km).easy
+        ? sessionFloorsFor(input.longest_recent_run_km).easy
         : weeklyKm,
     })
   }

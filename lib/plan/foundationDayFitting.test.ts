@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
+import { sessionFloorsFor } from './sessionFloors'
 import { generateRulePlan } from './ruleEngine'
 import { generateFoundationBlock } from './foundationBlock'
 import { composePlanWithFoundation } from './foundationCompose'
@@ -86,10 +87,23 @@ describe('CB-1 — foundation day-fitting', () => {
     }
   })
 
-  it('reduces DAYS rather than shrinking sessions below the floor', () => {
-    // 8 km at a 4 km floor supports 2 sessions, not the 4 days offered.
+  it('reduces DAYS rather than shrinking sessions below THIS RUNNER\'s floor', () => {
+    // ⚠️ AMENDED BY §113 Am.1 (CB-SUBFLOOR-ADMIT-01). This asserted "8 km at a
+    // 4 km floor supports 2 sessions", which was the FLAT floor. The fixture's
+    // runner has a longest run of 3 km, so their floor is now resolved to their
+    // own capacity — and the outcome is the safer one: 4 sessions of ~2 km each
+    // rather than 2 of 4 km, which would have been +33% on their longest run
+    // TWICE A WEEK. CB-1's rule is unchanged (never shrink below the floor);
+    // what changed is whose floor it is.
+    const floors = sessionFloorsFor(3)
     const { weeks } = block({ current_weekly_km: 8, days_available: 4, longest_recent_run_km: 3 })
-    expect(runs(weeks[0]).length).toBeLessThanOrEqual(2)
+    for (const s of runs(weeks[0])) {
+      expect(s.distance_km!, 'no session below this runner\'s easy floor')
+        .toBeGreaterThanOrEqual(floors.easy - 1e-9)
+    }
+    // And the week still fits its budget rather than inventing volume.
+    const total = runs(weeks[0]).reduce((a, s) => a + (s.distance_km ?? 0), 0)
+    expect(total).toBeLessThanOrEqual(8 + 1e-9)
   })
 
   it('stamps role on the long run — never classified by label (INV-CLASS-002)', () => {

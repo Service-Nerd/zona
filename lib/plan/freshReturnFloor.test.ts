@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { sessionFloorsFor } from './sessionFloors'
 import { generateRulePlan } from './ruleEngine'
 import { composePlanWithFoundation } from './foundationCompose'
 import { GENERATION_CONFIG } from './generationConfig'
@@ -37,7 +38,19 @@ const FRESH_RETURNER: GeneratorInput = {
   fitness_level: 'experienced', weeks_at_current_volume: 7,
 } as GeneratorInput
 
-const MIN_EASY = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+// Two floors with two different jobs, since §113 Am.1.
+//
+// CONFIG_EASY defines the SCENARIO — "a week smaller than one session" is only
+// an interesting case relative to the configured floor, and the anti-vacuous
+// guard below has to keep using it or the test silently stops reaching FRESH-
+// FLOOR-01's shape.
+//
+// RESOLVED_EASY is the RULE — what this runner's sessions may not go below.
+// For this fixture (longest run 3 km) it is lower than the config, which is the
+// amendment working: their week is no longer smaller than one session, because
+// the session scaled to them.
+const CONFIG_EASY = GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+const MIN_EASY = sessionFloorsFor(FRESH_RETURNER.longest_recent_run_km).easy
 
 function composed(input: GeneratorInput, gapDays = 10) {
   const plan = generateRulePlan(input, 'paid', PLAN_START)
@@ -59,7 +72,7 @@ describe('FRESH-FLOOR-01 — a week smaller than one session', () => {
     const budget = FRESH_RETURNER.current_weekly_km
       * (GENERATION_CONFIG as unknown as { FRESH_RETURN_START_FRACTION: number }).FRESH_RETURN_START_FRACTION
     expect(budget, 'the fresh-return budget is no longer below the easy floor — profile is stale')
-      .toBeLessThan(MIN_EASY)
+      .toBeLessThan(CONFIG_EASY)
   })
 
   it('holds the single session at the floor rather than shipping one below it', () => {
@@ -68,6 +81,8 @@ describe('FRESH-FLOOR-01 — a week smaller than one session', () => {
     expect(weeks.length, 'no foundation block — test reaches nothing').toBeGreaterThan(0)
     for (const w of weeks) {
       for (const s of runsOf(w)) {
+        // §113 Am.1 — THIS RUNNER's floor, not the flat config. The fixture's
+        // longest run is 3 km, so a 4 km session would be +33% on it.
         expect(s.distance_km!, `W${w.n} session below the easy floor`).toBeGreaterThanOrEqual(MIN_EASY)
       }
     }
