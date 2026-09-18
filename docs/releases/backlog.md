@@ -61,6 +61,57 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ---
 
+## 📋 SLT-ORDERED WORK QUEUE — Make-A-Wish London 2027 (SLT batch review, 2026-09-18)
+
+*Ordered by the SLT against one measure: **did they still be running in week 8?** Not activation, not conversion. Work top-down. The tier boundaries are dates, not preferences.*
+
+### Now — this week. Cheap, and they are lies.
+
+| # | Item | Why it is here |
+|---|---|---|
+| 1 | **`AUTH-BEARER-MISSING-01`** | One helper swap, two call sites. Fixes a **PAID** feature silently 401ing on native (ADR-014 recalibration, real revenue, nobody reported it) and probably #5 as well. Best ratio on the list — Traynor |
+| 2 | **`GTM-DECK-CORRECT-01`** | Minutes, founder, a measured-false engine claim in a partner-facing document |
+| 3 | **`ONBOARD-SKIP-LABEL-01`** + **`COPY-DAYS-PLURAL-01`** | Trivial. Both lie to a beginner inside their first two minutes — Fried: *"you don't need a strategy to stop lying, you need an afternoon"* |
+
+### Before codes go out — OCTOBER IS A HARD DEADLINE. A runner lost in October is lost.
+
+| # | Item | Why it is here |
+|---|---|---|
+| 4 | **`REFUSAL-SCREEN-01`** — copy and framing ONLY | The only item on the list that **actively manufactures a non-runner** (Sutherland). ⚠️ Do **not** bundle the "offer an alternative distance" question; that is a separate SLT decision, recorded below |
+| 5 | **`FOUNDATION-ADD-FAIL-01`** | Re-test after #1. May already be closed by it |
+| 6 | **`FOUNDATION-DECIDE-LATER-01`** | 🔺 **PROMOTED by the SLT on Wood's argument.** Not a redundant button: Oct→Apr is the **habit-formation window** for ~500 people, and a runner can dismiss that sheet by accident and **never be asked again** |
+
+### In parallel — decides November/December work
+
+| # | Item | Why it is here |
+|---|---|---|
+| 7 | **`FIRSTRUN-MARATHON-01`** | 🔺 **RE-SCOPED BY THE SLT. Wood killed the "wow experience" framing as the illusion-of-progress class.** The priority inside this item is **touchpoint 7 — the first missed session**, because that is *when the drop-out actually happens*. A generating ceremony changes no behaviour in February |
+| 8 | **§44 `block` tier** | Coaching Board. **Must sit before October.** Ruling recorded below |
+
+### Before the cohort arrives — not before the codes
+
+| # | Item | Why it is here |
+|---|---|---|
+| 9 | **`GTM-CHARITY-09`** | The partner-facing FAQ, not a help centre |
+| 10 | **`WIZARD-TIME-CHIPS-01`** | Value-key the saved draft FIRST, then relabel |
+| 11 | **iOS 16.6 minimum** | **Tell Jack. Do not build.** No Android, no mobile-web dashboard |
+
+### What the SLT disagreed about, preserved rather than synthesised
+
+- **Wood vs the founder's brief.** *"A wow experience they won't forget"* is feature-theatre language (Fried) and illusion-of-progress (Wood). **The item survives; its framing does not.** Fix the seven broken things and the experience is fixed.
+- **Traynor vs Fried on what goes first.** Traynor wanted the paid-feature bug (live revenue); Fried wanted the cohort-facing lies (October deadline). **Resolved by fact, not vote:** #1 is one change at two sites and likely fixes a cohort item too, so it costs Fried nothing.
+- **Sutherland vs Hutchinson on the refusal.** Sutherland wants the refused runner redirected; Hutchinson will not have Willy overruled by copywriting. **Genuinely unresolved — which is exactly why the copy fix and the alternative-distance decision are two items.**
+
+### Sutherland's note, recorded because it may be the best idea in the review
+
+> Oct to April is twenty-eight weeks. Every other running app would fill that with training. We are going to tell 500 anxious first-timers **"do almost nothing yet"** — that is the brand, in the one moment it matters most, to the one audience that has never heard it. **The foundation block is not touchpoint 5. It is the product.**
+
+### MUST/NEVER, checked
+
+**Nothing in this queue may change what the engine prescribes** — measured fit for this cohort (11/11 charity personas, and again after PLAN-FITNESS-01). **No gamification in touchpoint 7**: the first-missed-session response is a *context* intervention, never a streak, a badge or encouragement. `ui-patterns.md` bars popups; the foundation sheet is an existing `Sheet`, so fixing it is in-pattern — do not add a second one.
+
+---
+
 ## 🥇 P0 — FIRSTRUN-MARATHON-01: the first-time marathoner is the product
 
 *Filed 2026-09-18 after the founder's call with Jack (Make-A-Wish UK). **This is now the number one priority.** Everything below it waits.*
