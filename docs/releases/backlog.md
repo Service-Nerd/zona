@@ -99,7 +99,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | ~~5~~ | ~~**`ONBOARD-SKIP-LABEL-01`** + **`COPY-DAYS-PLURAL-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Both done. `ONBOARD-SKIP-LABEL-01`: busy flag → pending-action enum, primary label keys on the specific action (markup-guarded). `COPY-DAYS-PLURAL-01` shipped with #3. → feature-registry |
 | ~~6~~ | ~~**`FOUNDATION-DECIDE-LATER-01`**~~ ✅ **SHIPPED 2026-09-18** | S | "Decide later" button deleted (SLT Fix A); the two identical handlers consolidated into one `handleFoundationDismiss`. → feature-registry |
 | ~~7~~ | ~~**`FIRSTRUN-MOMENTS-01a`** runway reveal~~ ✅ **SHIPPED 2026-09-18** | S | 🥇 The runway note (stamped on meta, rendered nowhere) now surfaces as the first card at the reveal, led by the number. `RunwayRevealCard` + markup test; render-once decision locked. → feature-registry |
-| 8 | **`FIRSTRUN-MOMENTS-01b`** first-run reveal | S | Wood funds this one: it lowers the activation cost of the first action |
+| ~~8~~ | ~~**`FIRSTRUN-MOMENTS-01b`** first-run reveal~~ ✅ **SHIPPED 2026-09-18** | S | The first session ("Monday. 20 min. Easy.") surfaces at the reveal under the runway card. `firstRunOfPlan` + `FirstRunCard`, both tested. → feature-registry |
 | 9 | **`FIRSTRUN-MOMENTS-01c/d/e`** ceremony · distance · worst day | S | ⚠️ (e) **only if derived live** — Hutchinson's binding condition |
 
 ### 📉 Tier 3 — THE DROP-OUT MECHANISM. Where the cohort is actually lost.
@@ -239,7 +239,9 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ---
 
-### `FIRSTRUN-MOMENTS-01b` — the first run, before the plan · **S**
+### `FIRSTRUN-MOMENTS-01b` — the first run, before the plan · **S** · ✅ SHIPPED 2026-09-18
+
+> ✅ **SHIPPED.** `lib/plan/firstRun.ts → firstRunOfPlan(weeks)` (pure) pulls the first non-rest session of the first week (foundation week if present); `components/shared/FirstRunCard.tsx` renders "First up / {Day}. {metric}. {effort}." under the runway card at the reveal. Duration via `formatDuration` (ADR-015); rounded km fallback; effort mapped honestly; null (card absent) when nothing concrete. No AI mark (rule-engine data). Tested both layers. → feature-registry.
 
 **Simple.** Before 20 weeks of marathon block renders, show one thing: the first session.
 
