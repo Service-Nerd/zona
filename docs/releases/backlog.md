@@ -12,6 +12,22 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 **Everything is committed and pushed** (last ship `a0becdd`, 2026-09-18 — SLT queue #1-#11, through FIRSTRUN-MISSED-01 parts 1-2 (last ship `2fb668c`, 2026-09-18 — SLT queue complete through Tier 4 bar the FAQ). `npm run verify` exit 0 (**2,266 tests / 251 files**) · sweep **14,221 plans, no new violations** · HIGH 0 / MED 26.
 
+> 📌 **EVERYTHING OPEN FROM 2026-09-18, one line each — the index exists because two findings hid in prose today.**
+>
+> | Item | P | What it is |
+> |---|---|---|
+> | `PREF-SWEEP-01` | **P1** | km↔miles does not reach the app: **90 hardcoded `km`**, 3 of 14 prompt builders unit-blind, `formatSessionMetric` has 1 call site against a docstring claiming 4 surfaces |
+> | `LONGEST-RUN-GATE-01` | **P1** | The **third** ungoverned refusal in the function §111 was convened to fix. Refuses any HM/marathon with a longest run under 5 km — a charity first-timer in October. **Coaching Board** |
+> | `DEVICE-VERIFY-01` | **P1** | **Nothing shipped today has run on iOS.** One TestFlight pass. Not a code item |
+> | `REFUSAL-COPY-02` | P2 | The refusal FRAMING is fixed; the message inside is still raw engine copy. Parity-moving |
+> | `OPS-DBCHECK-NOISE-01` | P2 | `check:db` writes ~43 errors into Supabase on a **healthy** run |
+> | `CI-SLOW-DRIFT-01` | P2 | `slowTestThreshold` prints drift and nothing gates it |
+> | `FATIGUE-ARRAY-DRY-01` | P3 | Five inline fatigue arrays left after §112 gave them an owner |
+> | `S112-HAZARD-01` | P3 | Board-deferred measurement: does softening teach skipping? Unparks when the cohort gives volume |
+> | `FIRSTRUN-GATE-CALL-01` | P3 | Open call: gate "First up" to first-timers? Shipped ungated |
+> | `SIGNOUT-TOKEN-RESIDUAL-01` | P3 | Accepted risk: a failed revoke leaves the token alive until expiry |
+> | `GTM-CHARITY-09` · iOS 16.6 | ⏸️ | **Parked by the founder.** Both writing, no build |
+
 > ▶️ **NEXT UP when we restart — the FIRSTRUN-MARATHON-01 queue, Tier 1 + Tier 2 (#5–8) are DONE.** Resume at the **SLT-ORDERED WORK QUEUE** (§ below):
 > - ~~#9 `FIRSTRUN-MOMENTS-01c/d/e`~~ ✅ **SHIPPED.** Next is #10. Original:
 > - ~~#9~~ — the generating ceremony derived from the runner's own `GeneratorInput`, the distance reframe, the worst-day naming. ⚠️ **(e) only if derived live** (Hutchinson's binding condition). Full specs in § "🎬 FIRSTRUN-MOMENTS-01 — full specs". *Actionable without founder input (SLT already approved the specs); UI → trigger `frontend-design`.*
@@ -19,7 +35,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > - ~~#10~~ — a runner reports an injury and nothing reads it (a defect, unblocked). Part 2 (#11) → Coaching Board once part 1 lands.
 > - **Tier 4:** #12 `GTM-CHARITY-09` partner FAQ (founder/partner comms), #13 `01f` (blocked — needs redemption moved to sign-up first), #14 `WIZARD-TIME-CHIPS-01`, #15 iOS 16.6 (tell Jack, no build).
 >
-> **Carried residuals from this session (not blockers):** on-device visual of the refusal screen + the two reveal cards (auth/state-gated — reused proven patterns + markup-tested); a small copy follow-up under `REFUSAL-SCREEN-01` (voice the §44/§52 message internals + add the "you have N weeks" runway line — a parity-moving governed-message change); and an open call on whether to gate `FirstRunCard` ("first up") to first-timers only (shipped ungated + neutral). The route's `longest_recent_run_km < 5` gate is the same ungoverned-number smell as the old volume gate → its own Coaching Board sitting.
+> ✅ **Carried residuals are now FILED ITEMS, not prose.** The paragraph that used to sit here named four things in a sentence and gave none of them an ID, so nothing could pick them up — which is exactly how the `longest_recent_run_km < 5` gate stayed invisible until the founder asked why it was not on the list. They are now `DEVICE-VERIFY-01`, `REFUSAL-COPY-02`, `FIRSTRUN-GATE-CALL-01` and `LONGEST-RUN-GATE-01`.
 
 > 🟢 **LR-SHORTFALL-CAUSE-01 + NOTE-DURATION-FMT-01 (§80 Am.1).** Founder read the long-run tile on his own London Marathon plan: raw minutes everywhere (**48.2% of 42,444 values were ≥60**, largest 338) and one number with **no unit at all** on 5,264 of 5,264 firings. Underneath it: the note named the time cap **0 times in 5,264** while **71.0% sat 2–3 min beneath that cap** — because the cap is applied on the kilometre axis and the distance is then rounded. Now `LONG_RUN_AT_CAP_TOLERANCE_MINS` (3, chosen from an empty 4–5 band) and `LONG_RUN_SHORTFALL_MATERIAL_PCT` (5). ⚠️ **My "the branch is structurally dead" framing was TOO STRONG and an existing test disproved it** — zero in the corpus is not "cannot fire".
 
@@ -103,6 +119,49 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > **Do:** a check that fails when any test's duration exceeds a stated fraction of its budget, with a committed baseline like `SWEEP-BASELINE-01`. Cheap, and it converts a coin-flip CI failure into a deliberate decision.
 >
 > ⚠️ **Measure under contention, not in isolation.** Run alone, that test is 8.7s; inside the full suite it is **15.3s**. The isolated number understates the real projection by 75%.
+
+> 🔴 **DEVICE-VERIFY-01 — NOTHING shipped on 2026-09-18 has run on iOS.** *(P1, and it gates the TestFlight build, not a code change.)*
+>
+> Fourteen items shipped today. **Every one was verified by `npm run verify`, by a markup test, or at 375px in `/onboarding-preview` — a dev-only harness in a desktop browser.** That is honest verification of code and pixels and it is not the same claim as "it works on a phone", which is the only claim that matters before 500 runners install it.
+>
+> **What is specifically unverified, and why each one can only fail on device:**
+> - **The sign-out escape** (`ONBOARD-EXIT-01`). The Safari-escape fix ships over the air, but `clearWidgetState()` is a **no-op on web by construction** — the App-Group write actually being removed is the one behaviour that exists only on iOS. The `allowNavigation` half needs a native build regardless.
+> - **The four reveal cards** (`FIRSTRUN-MOMENTS-01a/b/d/e/f`). Seen as components with fixture props. **Never seen inside the real wizard**, which is auth-gated AND gated on having no plan.
+> - **The refusal screen** (`REFUSAL-SCREEN-01`) and the **§111 refusal** — the "not yet" path, on a real refused input.
+> - **The foundation-add fix** (`FOUNDATION-ADD-FAIL-01`) — the failure the founder hit was device-only, and the fix is an inference from the auth asymmetry, not a reproduction.
+> - **The wizard chips** (`WIZARD-TIME-CHIPS-01`) — and specifically the **legacy-draft shim**, which can only be exercised by a draft saved under the old labels.
+>
+> **Do:** one TestFlight build, then a single pass — generate a plan as a fresh account, read the reveal, sign out from the wizard, and refuse a plan deliberately. ⚠️ **Not a code item.** It is the difference between "the tests pass" and "it works", and this repo has a recorded incident where a comment described an arc that was never built and the founder found it on device.
+
+> 🟡 **S112-HAZARD-01 — does softening the plan teach skipping?** *(P3, deferred by the Coaching Board 2026-09-18. NOT a build — a measurement with a trigger.)*
+>
+> §112 lets a `'Too tired'` skip count toward fatigue accumulation. **McMillan dissented and the board recorded it rather than synthesising it away:** a plan that softens when you skip may teach skipping. Willy's answer: *"a 20% long-run cut is not a reward, and a runner on three consecutive skips is already not training."*
+>
+> **What would settle it, in the board's own words: whether skip rate rises in the window AFTER a softening fires.** **Not measurable today** — §112's trigger has never fired in production, and there are 83 tagged completions in total.
+>
+> **Unpark trigger:** once the charity cohort produces volume. Until then this is a known, argued, accepted risk with a named test — not an oversight.
+
+> 🟡 **REFUSAL-COPY-02 — the §44/§52 refusal messages are still engine copy.** *(P2, carried from the REFUSAL-SCREEN-01 ship.)*
+>
+> `REFUSAL-SCREEN-01` fixed the **framing** — the amber "something went wrong" headline is gone and the screen reads as *"not yet"*. **The message INSIDE it is still the raw engine string**: *"2 days/week is not enough for a MARATHON. Minimum is 3 days/wk; 4+ recommended."* Shouty caps, `days/wk`, written for a log.
+>
+> Two parts, and the second is the reason this is P2 rather than P3:
+> 1. **Voice the message internals** (`validateDaysAvailable`, `validatePrepTime`) — brand work.
+> 2. **Add the "you have N weeks" runway line**, which is the single most reassuring fact we hold and the refusal screen is the one place that forgets we know the date.
+>
+> ⚠️ **This is a governed-message change and will move parity** — the strings live in `lib/plan/inputs.ts` and are stamped into `prep_time_warning` / alternatives. Re-baseline with a declared reason.
+
+> 🟢 **FIRSTRUN-GATE-CALL-01 — should "First up" be gated to first-timers?** *(P3, an open CALL, not a defect. Founder/SLT.)*
+>
+> `FirstRunCard` shipped **ungated and neutral** — every runner sees *"Monday. 20 min. Easy. This is where it starts."* For an experienced runner regenerating a plan that may read as slightly obvious. **Gating it to first-timers is one line** (`training_age` / `fitness_level` are both to hand at the reveal).
+>
+> **Not done because nobody has ruled on it**, and the neutral copy was written to survive both audiences. Decide by reading it, not by argument.
+
+> 🟢 **SIGNOUT-TOKEN-RESIDUAL-01 — a failed sign-out leaves the access token alive server-side.** *(P3, stated at ship rather than hidden.)*
+>
+> `signOutAndReturnToLogin` now clears the local session even when the revoke call fails, so **the device is genuinely signed out**. What it cannot do is revoke the token at Supabase when there is no network. **The token stays valid until it expires** — unreachable from a dead connection, and the same exposure as force-quitting the app.
+>
+> **Accepted, not fixed.** Revisit only if a retry-on-reconnect becomes cheap; do not bolt one on for its own sake.
 
 > 🔴 **LONGEST-RUN-GATE-01 — the third ungoverned refusal in the same function §111 was convened to fix.** *(P1, filed 2026-09-18. ⚠️ Flagged in a code comment on the day and NOT filed until the founder asked why it was not on the list — the same "flagged but unfiled" failure as `WIZARD-TIME-CHIPS-01` earlier the same day.)*
 >

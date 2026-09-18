@@ -62,6 +62,13 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 
 ## 🔴 NOW — CRITICAL PATH: Make-A-Wish handover (SLT-sequenced 2026-09-11)
 
+> 📌 **2026-09-18 — the SLT queue is SHIPPED (13 of 15; #12 and #15 parked by the founder). Ten items carried out of it, indexed in `backlog.md`.**
+> **P1:** `PREF-SWEEP-01` (km↔miles does not reach the app — 90 hardcoded `km`) · `LONGEST-RUN-GATE-01` (the **third** ungoverned refusal in the same function §111 fixed; refuses a charity first-timer whose longest run is under 5 km — **Coaching Board**) · `DEVICE-VERIFY-01` (**nothing shipped today has run on iOS**).
+> **P2:** `REFUSAL-COPY-02` · `OPS-DBCHECK-NOISE-01` · `CI-SLOW-DRIFT-01`.
+> **P3:** `FATIGUE-ARRAY-DRY-01` · `S112-HAZARD-01` · `FIRSTRUN-GATE-CALL-01` · `SIGNOUT-TOKEN-RESIDUAL-01`.
+> ⚠️ **Two of these hid in prose and a code comment until asked for** — the index exists so that cannot happen again.
+
+
 > 🥇 **P0 SINCE 2026-09-18 — FIRSTRUN-MARATHON-01: the first-time marathoner experience.** Set by the founder
 > after the call with Jack (Make-A-Wish UK). **The charity's stated pain is that a large share of the people
 > given a place never run it**, and most of the 500 are first-time marathoners or beginners. So the target is
