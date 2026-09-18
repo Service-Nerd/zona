@@ -87,7 +87,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 | # | Item | Size | Why here |
 |---|---|---|---|
-| 1 | **`AUTH-BEARER-MISSING-01`** | S | One helper, two sites. Fixes a **PAID** feature silently 401ing on native, and probably #4 |
+| ~~1~~ | ~~**`AUTH-BEARER-MISSING-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Both bearer-less calls routed through `authedFetch`; guard `authedFetchGuard.test.ts` walks the source so it cannot recur. Found a 6th site the table missed (already correct). → feature-registry. **Re-test #4 on device.** |
 | 2 | **`MARATHON-VOLUME-GATE-01`** | **L** | 🔴 **P0.** Refuses much of the cohort at the first screen. Board ruled: floor is correct, implementation is not. **Three artifacts — start it early because it is the only L in Tier 1** |
 | 3 | **`REFUSAL-SCREEN-01`** (copy + *"not yet"*) | S | The refusal that remains must stop reading as a crash. Ships with #2 |
 | 4 | **`FOUNDATION-ADD-FAIL-01`** | S | Re-test after #1; may already be closed |
@@ -522,7 +522,9 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 >
 > **Verify when done:** generate a marathon at 2 days/week and read the screen out loud.
 
-> 🔴 **AUTH-BEARER-MISSING-01 — two client calls hit authenticated routes with no token.** *(P1. Root cause candidate for FOUNDATION-ADD-FAIL-01, and one other feature is silently exposed.)*
+> ✅ **AUTH-BEARER-MISSING-01 — SHIPPED 2026-09-18.** Both bearer-less calls (`/api/generate-plan/foundation`, `/api/recalibrate-zones`) now use `authedFetch`; the three hand-rolled inline-bearer copies were folded onto the same helper (except `wizard-benchmark-estimate`, which keeps its bespoke getSession timeout). Guard `lib/supabase/authedFetchGuard.test.ts` fails the build on any bare `fetch('/api/…')` to an authenticated route. **The scan found a sixth site the table below missed — `wizard-benchmark-estimate` — already sending its bearer.** Original analysis kept for the record:
+>
+> 🔴 **two client calls hit authenticated routes with no token.** *(P1. Root cause candidate for FOUNDATION-ADD-FAIL-01, and one other feature is silently exposed.)*
 >
 > `getUserFromRequest` reads the `Authorization` header and **falls back to cookies** — and its own comment says `@supabase/ssr` cookie sync to the server is **unreliable**, which is why most call sites send the token explicitly. Checked all five bare `fetch('/api/…')` sites against their routes:
 >
