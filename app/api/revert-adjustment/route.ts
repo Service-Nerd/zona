@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
     .select('*')
     .eq('id', adjustment_id)
     .eq('user_id', user.id)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
     .single()
 
   if (adjError || !adjustment) {

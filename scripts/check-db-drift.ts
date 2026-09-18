@@ -6,6 +6,24 @@
 //
 //   1. Does every table a committed migration CREATEs actually exist?
 //   2. Does `lib/supabase/rlsPolicyManifest.ts` still match the live policies?
+//   3. Does `WEEK_KEYED_TABLES` still list every table carrying `week_n`?
+//
+// ── WHY (3) EXISTS ─────────────────────────────────────────────────────────
+// PLAN-WEEK-COLLISION-01 (2026-09-18). `week_n` is a WITHIN-PLAN coordinate, so
+// any user-scoped table keyed on it inherits the previous plan's rows when a new
+// race plan restarts numbering at 1. The fix marks those rows superseded — but
+// only for the tables `WEEK_KEYED_TABLES` names, and THAT LIST WAS WRONG ON ITS
+// FIRST WRITE: five tables listed from memory and ADR-013's prose, with
+// `weekly_reports` (which the ADR names explicitly) and `plan_adjustments` both
+// missed. Three rows were still resolving against the new plan.
+//
+// The guard shipped alongside it, `supersedeCoverage.test.ts`, could not tell:
+// it ITERATES that array, so its coverage was defined by the same list that was
+// incomplete. A checker sharing the producer's predicate cannot catch the
+// producer being wrong — CLAUDE.md records the identical flaw for
+// `deloadCadence.test.ts`. The authority has to be the SCHEMA, and adding a
+// table to the database is the act that re-opens the defect, so this is where
+// the question belongs.
 //
 // ── WHY (1) EXISTS ─────────────────────────────────────────────────────────
 // `daily_coach_notes` was committed as a migration on 2026-04-28 AND recorded
@@ -31,6 +49,7 @@ import { loadEnvConfig } from '@next/env'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { RLS_POLICIES, ALL_OPS, type PolicyOp } from '../lib/supabase/rlsPolicyManifest'
+import { WEEK_KEYED_TABLES } from '../lib/plan/supersede'
 
 loadEnvConfig(process.cwd())
 
@@ -177,8 +196,68 @@ async function probeFallback(url: string, key: string) {
   if (bad > 0) { console.log(`\n✗ ${bad} table(s) contradict the manifest.`); process.exit(1) }
   console.log(`\n✓ ${locked.length} zero-policy tables verified locked.`)
   console.log('  NOTE: partial check only — policy SHAPES were not compared.')
+
+  await checkWeekKeyedCoverage(url, key)
+
   // Never override a table-existence failure recorded earlier.
   process.exit(process.exitCode === 1 ? 1 : 0)
+}
+
+/** Tables carrying `week_n` that deliberately do NOT need a `superseded_at`
+ *  stamp. An entry is a DECISION with a mechanism behind it, not a TODO. */
+const WEEK_KEYED_EXEMPT: Record<string, string> = {
+  plan_weekly_notes:
+    'savePlanForUser DELETEs every row for the user on EVERY save, not only on a ' +
+    'race-identity change, so these rows cannot outlive their plan. Covered by a ' +
+    'stronger mechanism than the stamp.',
+}
+
+/**
+ * (3) Does `WEEK_KEYED_TABLES` still match the live schema?
+ *
+ * Asks the database, not the codebase: every user-scoped table carrying a
+ * `week_n` column must be in the list, be exempt with a reason, or fail the run.
+ */
+async function checkWeekKeyedCoverage(url: string, serviceKey: string): Promise<void> {
+  console.log('\n── week_n coverage (PLAN-WEEK-COLLISION-01) ──')
+  const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
+
+  // information_schema is not exposed over PostgREST, so probe each known table
+  // for the columns instead. Cheap, and it needs no RPC.
+  const candidates = new Set<string>([
+    ...WEEK_KEYED_TABLES, ...Object.keys(WEEK_KEYED_EXEMPT), ...Object.keys(RLS_POLICIES),
+  ])
+
+  const missing: string[] = []
+  let covered = 0
+  for (const table of Array.from(candidates)) {
+    const { error: noWeek } = await admin.from(table).select('week_n').limit(1)
+    if (noWeek) continue                                   // no week_n column
+    if ((WEEK_KEYED_TABLES as readonly string[]).includes(table)) {
+      const { error: noStamp } = await admin.from(table).select('superseded_at').limit(1)
+      if (noStamp) {
+        console.log(`✗ ${table}: listed in WEEK_KEYED_TABLES but has NO superseded_at column`)
+        missing.push(table)
+      } else { covered++ }
+      continue
+    }
+    if (WEEK_KEYED_EXEMPT[table]) {
+      console.log(`· ${table}: exempt — ${WEEK_KEYED_EXEMPT[table]}`)
+      continue
+    }
+    console.log(`✗ ${table}: carries week_n but is NOT in WEEK_KEYED_TABLES and is not exempt`)
+    console.log(`    A new race plan restarts week.n at 1, so this table will serve the`)
+    console.log(`    PREVIOUS plan's rows. Add it to lib/plan/supersede.ts (+ a migration`)
+    console.log(`    adding superseded_at), or add an argued exemption here.`)
+    missing.push(table)
+  }
+
+  if (missing.length) {
+    console.log(`\n✗ ${missing.length} week_n table(s) uncovered: ${missing.join(', ')}`)
+    process.exitCode = 1
+    return
+  }
+  console.log(`✓ ${covered} week-keyed table(s) carry superseded_at; none uncovered.`)
 }
 
 main().catch(e => { console.error(e); process.exit(2) })

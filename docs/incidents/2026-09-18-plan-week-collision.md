@@ -101,6 +101,35 @@ Recorded because both were caught by mechanism rather than by care:
 | `lib/planArchiveGuard.test.ts` (+4 tests) | Archive and stamp drifting apart, in either direction |
 | `lib/ops/planWeekCollision.ts` (6 tests) | A row already wrong in production. Runs daily inside the plan audit, records `plan_week_collision` |
 
+## The fix was incomplete on its first ship, and the guard could not tell
+
+Asked to double-check, a schema query (`week_n` + `user_id` across every public
+table) found **three tables the fix had missed**: `weekly_reports` and
+`plan_adjustments`, both uncovered, and `plan_weekly_notes`, which is safe
+because `savePlanForUser` deletes every row on every save. On the founder's
+account **1 weekly report and 2 plan adjustments were still resolving against
+the new Dorney plan**.
+
+⚠️ **`weekly_reports` is named explicitly in ADR-013's own list of week-keyed
+tables, and was still left out.** The list in `WEEK_KEYED_TABLES` was written
+from memory and prose rather than from the schema.
+
+🔴 **The guard shipped alongside it could not catch this.**
+`supersedeCoverage.test.ts` ITERATES `WEEK_KEYED_TABLES`, so its coverage was
+defined by the same hand-written list that was incomplete. That is the exact
+flaw CLAUDE.md records for `deloadCadence.test.ts`: *a checker that shares the
+producer's predicate cannot catch the producer being wrong.* A guard can be
+green, thorough, falsification-tested, and still blind to the thing it was
+built for, if it asks the codebase instead of the world.
+
+**Resolution.** `scripts/check-db-drift.ts` gained a third question —
+*does `WEEK_KEYED_TABLES` still list every table carrying `week_n`?* — asked
+against the **live schema**, with an argued exemption list. Falsification-tested
+both ways: removing `weekly_reports` from the list makes `npm run check:db`
+print the offender and **exit 1**; restoring it exits 0. Adding a table to the
+database is the act that re-opens this defect, so that is where the question
+belongs.
+
 ## New failure class
 
 **"Hazard solved for one transition, named but not solved for its twin."** An ADR

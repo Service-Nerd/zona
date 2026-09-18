@@ -1173,8 +1173,8 @@ export default function DashboardClient() {
             const recentChangesCutoff = new Date(Date.now() - 14 * 86_400_000).toISOString()
             const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, ledgerData, recentChangesRes] = await Promise.all([
               supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id).is('superseded_at', null),
-              supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
-              supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
+              supabase.from('weekly_reports').select('*').eq('user_id', user.id).is('superseded_at', null).order('week_n', { ascending: false }).limit(1).maybeSingle(),
+              supabase.from('plan_adjustments').select('*').eq('user_id', user.id).is('superseded_at', null).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
               // NOTIF-01 — unread notification count for the Today-screen bell dot.
               // head:true returns the count without the rows (we only need the badge).
               supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).is('read_at', null),
@@ -1191,6 +1191,7 @@ export default function DashboardClient() {
               supabase.from('plan_adjustments')
                 .select('id, week_n, summary, sessions_before, sessions_after, created_at')
                 .eq('user_id', user.id).eq('status', 'auto_applied')
+                .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
                 .gte('created_at', recentChangesCutoff)
                 .order('created_at', { ascending: false }).limit(10),
             ])

@@ -51,3 +51,23 @@ CREATE INDEX IF NOT EXISTS session_reflections_live_idx
 
 COMMENT ON COLUMN session_completions.superseded_at IS
   'PLAN-WEEK-COLLISION-01. Non-null when this row belongs to a plan that has been replaced by a new RACE IDENTITY. week_n is a within-plan coordinate, so without this a new plan inherits the old plan''s rows. NULL = live plan. Stamped by lib/plan/supersede.ts, called from savePlanForUser.';
+
+-- ── Completion pass, same day ───────────────────────────────────────────────
+-- The list above was written from memory and ADR-013's prose, and was INCOMPLETE.
+-- A schema query (`week_n` + `user_id` across every public table) found three
+-- more: `weekly_reports` and `plan_adjustments`, both uncovered, and
+-- `plan_weekly_notes`, which is safe because `savePlanForUser` deletes every row
+-- on EVERY save rather than only on a race change.
+--
+-- ⚠️ THE GUARD COULD NOT HAVE CAUGHT THIS. `supersedeCoverage.test.ts` iterates
+-- `WEEK_KEYED_TABLES`, so its coverage was defined by the same hand-written list
+-- that was wrong — a checker sharing the producer's predicate cannot catch the
+-- producer being wrong (CLAUDE.md records this for `deloadCadence.test.ts`).
+-- `scripts/check-db-drift.ts` now reconciles that list against the live schema.
+ALTER TABLE weekly_reports    ADD COLUMN IF NOT EXISTS superseded_at TIMESTAMPTZ;
+ALTER TABLE plan_adjustments  ADD COLUMN IF NOT EXISTS superseded_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS weekly_reports_live_idx
+  ON weekly_reports (user_id, week_n) WHERE superseded_at IS NULL;
+CREATE INDEX IF NOT EXISTS plan_adjustments_live_idx
+  ON plan_adjustments (user_id, week_n) WHERE superseded_at IS NULL;

@@ -137,6 +137,7 @@ export async function POST(req: NextRequest) {
       .from('plan_adjustments')
       .select('id')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN)
       .in('status', ['pending', 'confirmed', 'auto_applied']),
     // Return any existing pending adjustment rather than creating a duplicate
@@ -144,6 +145,7 @@ export async function POST(req: NextRequest) {
       .from('plan_adjustments')
       .select('*')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
       .limit(1)
@@ -169,6 +171,7 @@ export async function POST(req: NextRequest) {
       .from('plan_adjustments')
       .select('summary, trigger_type, adjustment_type, week_n, created_at, status')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .in('status', ['confirmed', 'auto_applied', 'reverted'])
       .order('created_at', { ascending: false })
       .limit(1)

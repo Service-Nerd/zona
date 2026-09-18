@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
     .eq('status', 'auto_applied')
     .lt('created_at', graceCutoff)
     .order('created_at', { ascending: false })
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
   if (adjErr) {
     return NextResponse.json({ error: `plan_adjustments read failed: ${adjErr.message}` }, { status: 500 })
   }

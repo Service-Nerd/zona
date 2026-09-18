@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { savePlanForUser } from './plan'
+import { WEEK_KEYED_TABLES } from './plan/supersede'
 import type { Plan } from '@/types/plan'
 
 // ADR-013 follow-on: the race→maintenance handoff fired savePlanForUser 3×
@@ -110,10 +111,16 @@ describe('savePlanForUser archive guard', () => {
 // dangerous state is a plan archived with its rows left live — that is exactly
 // how a new plan arrives 94% pre-completed.
 describe('savePlanForUser supersedes week-keyed rows with the archive', () => {
-  const WEEK_KEYED = [
-    'session_completions', 'run_analysis', 'session_overrides',
-    'session_metric_overrides', 'session_reflections',
-  ]
+  // IMPORTED, never restated. This exact list was hardcoded here on the first
+  // write and went stale within the hour when the completion pass added
+  // `weekly_reports` and `plan_adjustments` — the second hand-written copy of
+  // the same list to be wrong in one session.
+  //
+  // Self-referential on purpose: this test asks "does savePlanForUser stamp
+  // every table the OWNER declares?". Whether the owner's list is COMPLETE is a
+  // different question with a different authority — `scripts/check-db-drift.ts`
+  // asks it against the live schema, because a test cannot see the database.
+  const WEEK_KEYED = WEEK_KEYED_TABLES
 
   it('stamps every week-keyed table on a race-identity change', async () => {
     const state = { plans: racePlan, archive: [] as ArchiveRow[], superseded: [] as string[] }
@@ -132,7 +139,7 @@ describe('savePlanForUser supersedes week-keyed rows with the archive', () => {
     }
     await savePlanForUser('u', maintenancePlan, makeClient(state))
     expect(state.archive).toHaveLength(1)                       // archive deduped
-    expect(Array.from(new Set(state.superseded))).toHaveLength(5)      // stamp still ran
+    expect(Array.from(new Set(state.superseded))).toHaveLength(WEEK_KEYED_TABLES.length)   // stamp still ran
   })
 
   // The inverse, and the more destructive failure if it ever regressed: a

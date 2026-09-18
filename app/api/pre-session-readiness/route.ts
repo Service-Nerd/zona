@@ -158,6 +158,7 @@ export async function GET(req: NextRequest) {
     .from('plan_adjustments')
     .select('*')
     .eq('user_id', userId)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
     .eq('status', 'pending')
     .eq('week_n', week.n)
     .eq('trigger_type', 'readiness_signal')

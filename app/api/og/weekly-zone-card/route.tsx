@@ -106,6 +106,7 @@ export async function GET(req: NextRequest) {
     .from('weekly_reports')
     .select('week_n, dominant_flag')
     .eq('user_id', user.id)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
     .not('generated_at', 'is', null)
     .order('week_n', { ascending: false })
     .limit(1)

@@ -27,15 +27,35 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-/** Every table keyed on `week_n` with no plan identity. Adding a sixth such
- *  table without adding it here re-opens the defect, which is why
- *  `supersede.test.ts` asserts this list against a grep of the schema. */
+/** Every table keyed on `week_n` with no plan identity.
+ *
+ *  ⚠️ THIS LIST WAS WRONG ON ITS FIRST WRITE, and the guard built alongside it
+ *  could not tell: `supersedeCoverage.test.ts` iterates THIS array, so its
+ *  coverage was defined by the same list that was incomplete. That is the exact
+ *  flaw CLAUDE.md records for `deloadCadence.test.ts` — a checker sharing the
+ *  producer's predicate cannot catch the producer being wrong.
+ *
+ *  `scripts/check-db-drift.ts` now reconciles this array against the LIVE
+ *  SCHEMA: any user-scoped table carrying a `week_n` column must appear here or
+ *  in that script's argued exemption list. Adding a table to the database is
+ *  what re-opens the defect, so that is where the check belongs.
+ *
+ *  `plan_weekly_notes` is deliberately ABSENT despite carrying `week_n`:
+ *  `savePlanForUser` deletes every row on EVERY save, so it is covered by a
+ *  stronger mechanism than this one. */
 export const WEEK_KEYED_TABLES = [
   'session_completions',
   'run_analysis',
   'session_overrides',
   'session_metric_overrides',
   'session_reflections',
+  // ⚠️ ADDED IN THE COMPLETION PASS, hours after the first cut shipped. The
+  // original list was written from memory and ADR-013's prose, which names
+  // `weekly_reports` explicitly — and it was still left out. A schema query
+  // found both of these carrying `week_n`, with 3 rows live against the new
+  // plan on the founder's account.
+  'weekly_reports',
+  'plan_adjustments',
 ] as const
 
 export type WeekKeyedTable = typeof WEEK_KEYED_TABLES[number]

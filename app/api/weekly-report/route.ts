@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
     .from('weekly_reports')
     .select('*')
     .eq('user_id', userId)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
     .eq('week_n', weekN)
     .maybeSingle()
 
@@ -144,6 +145,7 @@ export async function POST(req: NextRequest) {
           .from('weekly_reports')
           .select('headline, body')
           .eq('user_id', userId)
+          .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
           .eq('week_n', weekN - 1)
           .maybeSingle()
       : Promise.resolve({ data: null }),

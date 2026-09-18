@@ -115,6 +115,7 @@ export async function GET(req: NextRequest) {
       .from('weekly_reports')
       .select('headline, body, week_n')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .not('headline', 'is', null)
       .order('week_n', { ascending: false })
       .limit(1)
