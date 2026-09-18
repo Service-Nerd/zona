@@ -10,7 +10,9 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at end of 2026-09-17
 
-**Everything is committed, pushed and deployed** (`b3887f9`, production Ready, www.zonna.run HTTP 200). `npm run verify` exit 0 (**2,108 tests / 230 files**) · **0 hard failures** · sweep **15,974 plans, no new violations** · matrix **65/0** · `invariant:liveness` **107/118, unclassified = 0** · deviation scan **HIGH 0 / MED 26** · `verify:parity` 19.3% · `cohort:shape` re-baselined with every move declared.
+**Everything is committed** (`2f0049c`). `npm run verify` exit 0 (**2,139 tests / 233 files**) · `npm run check:db` exit 0 · sweep **15,974 plans, no new violations** · HIGH 0.
+
+> 🔴 **PLAN-WEEK-COLLISION-01 shipped today, in TWO passes, and the second pass is the lesson.** A new 12-week plan arrived **94% pre-completed** because `week_n` is a within-plan coordinate that seven tables used as a cross-plan key. ⚠️ **The recommended fix (continue the week sequence, ADR-013's own mechanism) was WITHDRAWN before shipping** — foundation weeks are numbered NEGATIVE and the engine guards on `w.n > 0`, so it would have corrupted the taper curve. ⚠️ **Then the fix itself shipped incomplete**: the table list was written from memory and missed `weekly_reports` (which ADR-013 names explicitly) and `plan_adjustments` — and the guard could not tell, because it ITERATES that same list. Authority moved to the live schema in `scripts/check-db-drift.ts`. Record: `docs/incidents/2026-09-18-plan-week-collision.md`.
 
 > ✅ **Doc audit run mechanically at end of day, not asserted.** All **10** of today's `feat(`/`fix(` scopes carry a feature-registry row (ID in the first cell) and a build-log `##` entry. All **5** principle amendments (§2 Am.3, §3 Am., §24/§80 Am., §45 Am.2, §94 Am.1) are in `CoachingPrinciples.md` with their sittings in `docs/decisions/`. **118 invariants in `invariants.ts` = 118 rows in `plan-invariants.md`**, reconciled in both directions with zero orphans either way. Every shipped item below is marked ✅ closed.
 

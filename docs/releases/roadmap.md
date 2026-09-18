@@ -1,5 +1,8 @@
 # Roadmap — Zonna
 
+**Everything is committed** (`2f0049c`). `npm run verify` exit 0 (**2,139 tests / 233 files**) · `npm run check:db` exit 0 · sweep **15,974 plans, no new violations** · HIGH 0.
+
+> 🔴 **PLAN-WEEK-COLLISION-01 shipped today, in TWO passes, and the second pass is the lesson.** A new 12-week plan arrived **94% pre-completed** because `week_n` is a within-plan coordinate that seven tables used as a cross-plan key. ⚠️ **The recommended fix (continue the week sequence, ADR-013's own mechanism) was WITHDRAWN before shipping** — foundation weeks are numbered NEGATIVE and the engine guards on `w.n > 0`, so it would have corrupted the taper curve. ⚠️ **Then the fix itself shipped incomplete**: the table list was written from memory and missed `weekly_reports` (which ADR-013 names explicitly) and `plan_adjustments` — and the guard could not tell, because it ITERATES that same list. Authority moved to the live schema in `scripts/check-db-drift.ts`. Record: `docs/incidents/2026-09-18-plan-week-collision.md`.
 **Job:** The single Now / Next / Later view across **everything** — product *and* go-to-market. Open this to answer "what are we doing, in what order, across the app and the business?"
 
 **How the planning docs fit together:**
