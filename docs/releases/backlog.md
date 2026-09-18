@@ -416,7 +416,7 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 
 **What is NOT in scope, and why.** Not a new coaching model: the engine was measured fit-for-purpose for first-time marathoners on 2026-09-16 (11/11 charity personas) and again after PLAN-FITNESS-01. **The gap is experience, not prescription.** Anything here that would change what the engine prescribes goes to the Coaching Board first.
 
-**Next step is an SLT review, not a build.** This is a scope-setting item with a stated outcome measure, and Wood's kill mandate applies hard: most "wow" ideas are the illusion-of-progress class she exists to stop. Run `/slt-review FIRSTRUN-MARATHON-01` before anything is built.
+**✅ SLT HAS SAT (2026-09-18). The scope-setting review is done — this is now a build queue, not an open question.** The founder overruled the initial deferral (correctly — see the governance triage below); Wood's kill mandate was applied at the sitting and the "wow-feature" framing was killed. The output is a ranked, mostly-S-sized queue of concrete moments — `FIRSTRUN-MOMENTS-01a–f` (full specs below, from § "🎬 FIRSTRUN-MOMENTS-01 — full specs") and `FIRSTRUN-MISSED-01`. The two sittings are recorded below (§ "⚖️ SLT — `FIRSTRUN-MOMENTS-01`" and § "⚖️ SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7"), and the SLT-ordered work queue is at the top of this file. **Touchpoint 7's actual intervention still needs its own sitting once scoped** — a brief does not exist for it yet. Anything that would change what the engine prescribes still goes to the Coaching Board first.
 
 ---
 

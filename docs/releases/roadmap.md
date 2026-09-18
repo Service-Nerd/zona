@@ -69,9 +69,12 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > in week 8* — not activation, not conversion. Seven touchpoints in scope, from first open through the first
 > missed session, with the generating ceremony and the ~28-week pre-plan runway the two biggest unclaimed
 > surfaces. ⚠️ **Not a coaching change** — the engine measured fit-for-purpose for this cohort on 2026-09-16
-> (11/11 personas) and again after PLAN-FITNESS-01; the gap is experience, not prescription. **Next step is
-> `/slt-review`, not a build** — Wood's kill mandate applies, most "wow" ideas are the illusion-of-progress
-> class. Blockers and full scope in `backlog.md`.
+> (11/11 personas) and again after PLAN-FITNESS-01; the gap is experience, not prescription. **✅ THE SLT HAS
+> SAT (2026-09-18) — this is now a build queue, not an open question.** The founder overruled the initial
+> deferral; Wood's kill mandate was applied and the "wow-feature" framing killed. Output is a ranked, mostly
+> S-sized queue of concrete moments — `FIRSTRUN-MOMENTS-01a–f` + `FIRSTRUN-MISSED-01`, with `01a` (move the
+> ratified runway line to the reveal) the highest-value item on the whole backlog. Touchpoint 7 still needs
+> its own sitting once scoped. Sittings, the ordered queue and full specs in `backlog.md`.
 
 > 🔴 **Four actionable items from the 2026-09-18 findings, all under FIRSTRUN-MARATHON-01.**
 > **`REFUSAL-SCREEN-01`** (P1) — a deliberate coaching refusal is headlined *"Something went wrong building
