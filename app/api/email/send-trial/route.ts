@@ -31,6 +31,7 @@ async function getRunSummary(supabase: any, userId: string): Promise<RunSummary>
     .from('run_analysis')
     .select('actual_load_km, hr_in_zone_pct, verdict, created_at')
     .eq('user_id', userId)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
     .order('created_at', { ascending: false })
     .limit(10)
 

@@ -123,12 +123,14 @@ export async function POST(req: NextRequest) {
       // for fitness-signal and long-run-shortfall triggers.
       .select('week_n, session_day, hr_in_zone_pct, actual_load_km, planned_load_km, actual_load_mins, planned_load_mins, ef_trend_pct, pace_score, hr_above_ceiling_pct, distance_score')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .order('created_at', { ascending: false })
       .limit(30),
     serviceSupabase
       .from('run_analysis')
       .select('week_n, actual_load_km')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .order('week_n', { ascending: false })
       .limit(40),
     serviceSupabase
@@ -155,6 +157,7 @@ export async function POST(req: NextRequest) {
       .from('session_completions')
       .select('week_n, session_day, fatigue_tag')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('status', 'complete')
       .not('fatigue_tag', 'is', null)
       .order('week_n', { ascending: false })

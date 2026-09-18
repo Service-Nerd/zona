@@ -869,8 +869,8 @@ export default function DashboardClient() {
         // Fetch overrides + user settings + completions in parallel
         const [settingsRes, overridesRes, completionsRes, subRes, charityGrantRes, guidanceRes, pendingReshapeRes] = await Promise.all([
           supabase.from('user_settings').select('strava_refresh_token, smoke_tracker_enabled, quit_date, gist_url, plan_json, has_onboarded, is_admin, preferred_units, preferred_metric, resting_hr, max_hr, max_hr_source, birth_year, date_of_birth, first_name, last_name, email, trial_started_at, dynamic_adjustments_enabled, orientation_seen, zone_drift_dismissed_at, benchmark_recal_dismissed_at, last_adjustment_check_at, last_adjustment_check_found_change, daily_push_enabled, timezone, connect_runs_seen, connect_runs_banner_dismissed_at, push_permission_seen, healthkit_connected_at').eq('id', user.id).single(),
-          supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id),
-          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id),
+          supabase.from('session_overrides').select('week_n, original_day, new_day').eq('user_id', user.id).is('superseded_at', null),
+          supabase.from('session_completions').select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag').eq('user_id', user.id).is('superseded_at', null),
           supabase.from('subscriptions').select('status, current_period_end').eq('user_id', user.id).maybeSingle(),
           // GTM-CHARITY-04 — readable under RLS by its owner only (the policy is
           // `auth.uid() = claimed_by`), which is all the client needs.
@@ -1172,7 +1172,7 @@ export default function DashboardClient() {
             // 14 days for the Me-screen audit surface. Read-only; capped at 10.
             const recentChangesCutoff = new Date(Date.now() - 14 * 86_400_000).toISOString()
             const [analysisRes, reportRes, adjustmentsRes, unreadCountRes, phaseSummaryRes, raceReadinessRes, ledgerData, recentChangesRes] = await Promise.all([
-              supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id),
+              supabase.from('run_analysis').select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5').eq('user_id', user.id).is('superseded_at', null),
               supabase.from('weekly_reports').select('*').eq('user_id', user.id).order('week_n', { ascending: false }).limit(1).maybeSingle(),
               supabase.from('plan_adjustments').select('*').eq('user_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).maybeSingle(),
               // NOTIF-01 — unread notification count for the Today-screen bell dot.
@@ -1380,6 +1380,7 @@ export default function DashboardClient() {
         .from('session_completions')
         .select('week_n, session_day, status, strava_activity_id, apple_health_uuid, strava_activity_name, strava_activity_km, rpe, fatigue_tag, avg_hr, coaching_flag')
         .eq('user_id', user.id)
+        .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       if (data) {
         const map: Record<number, Record<string, any>> = {}
         data.forEach((r: any) => {
@@ -1401,6 +1402,7 @@ export default function DashboardClient() {
         .from('run_analysis')
         .select('week_n, session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score, actual_load_km, hr_pct_z1, hr_pct_z2, hr_pct_z3, hr_pct_z4_5')
         .eq('user_id', user.id)
+        .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       if (data) {
         const map: Record<number, Record<string, any>> = {}
         data.forEach((r: any) => {
@@ -3883,7 +3885,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
           supabase
             .from('session_completions')
             .select('strava_activity_id, apple_health_uuid')
-            .or('strava_activity_id.not.is.null,apple_health_uuid.not.is.null'),
+            .or('strava_activity_id.not.is.null,apple_health_uuid.not.is.null')
+            .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
           // Re-query strava_activities to pick up runs ingested after the boot-time
           // snapshot in preloadedRuns (race: CapacitorBoot.syncOnAppOpen writes the
           // run concurrently with DashboardClient.fetchSettings reading the DB).
@@ -12847,6 +12850,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
           .from('run_analysis')
           .select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score')
           .eq('user_id', user.id)
+          .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
           .eq('session_day', sessionDay)
           .maybeSingle()
         if (!cancelled && data) {
@@ -13226,6 +13230,7 @@ function PostRunScreen({
           .from('session_completions')
           .select('rpe, fatigue_tag, strava_activity_name, strava_activity_km, apple_health_uuid')
           .eq('user_id', user.id)
+          .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
           .eq('week_n', weekN)
           .eq('session_day', sessionDay)
           .maybeSingle()
@@ -13332,6 +13337,7 @@ function PostRunScreen({
           .from('run_analysis')
           .select('session_day, source, verdict, total_score, feedback_text, hr_in_zone_pct, ef_trend_pct, hr_discipline_score, distance_score, pace_score, ef_score')
           .eq('user_id', user.id)
+          .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
           .eq('session_day', sessionDay)
           .maybeSingle()
         if (!cancelled && row) {

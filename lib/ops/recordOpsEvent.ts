@@ -41,6 +41,16 @@ export type OpsEventKind =
   // mean a paying or comped runner being refused a plan. Recorded so the
   // difference is visible rather than inferred from a support email.
   | 'plan_distance_gate_blocked'
+  // PLAN-WEEK-COLLISION-01 (2026-09-18) — a LIVE week-keyed row that predates the
+  // plan it now resolves against. `week_n` restarts at 1 on every new race plan,
+  // so a stale row does not merely sit there: it renders as a completed session
+  // of the plan the runner is looking at today. Measured once in production — a
+  // fresh 12-week 10K arrived 94% pre-completed — and found only because a human
+  // opened his own plan and read it. `validatePlan()` cannot see this class by
+  // construction: it validates the plan OBJECT, and the collision lives in
+  // another table. With 500 charity runners arriving, "someone happens to look"
+  // stops being a control.
+  | 'plan_week_collision'
   // ONBOARD-OBS-01 (2026-09-13) — the onboarding finalise (has_onboarded flip +
   // HR persist in handlePlanSaved) is a live browser write, so it cannot call
   // this helper (service-role, server-only) and could previously only

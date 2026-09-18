@@ -128,6 +128,7 @@ export async function GET(req: NextRequest) {
     .from('run_analysis')
     .select('hr_in_zone_pct, actual_load_km, session_day')
     .eq('user_id', user.id)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
     .like('session_day', `week_${weekN}_%`)
 
   const scored = (analysisRows ?? [])

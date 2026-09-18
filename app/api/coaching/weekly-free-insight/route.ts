@@ -124,6 +124,7 @@ export async function GET(req: NextRequest) {
     service.from('session_completions')
       .select('week_n, session_day, status, rpe, fatigue_tag, coaching_flag, updated_at')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .gte('updated_at', windowStart.toISOString())
       .order('updated_at', { ascending: false })
       .limit(20),

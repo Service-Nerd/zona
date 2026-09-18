@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { reanchorCharityGrant } from '@/lib/charity/reanchor'
+import { supersedeWeekKeyedRows, isRaceIdentityChange } from './plan/supersede'
 import type { Plan, Session, Week } from '@/types/plan'
 import {
   resolveEffectiveSessions,
@@ -108,8 +109,15 @@ export async function savePlanForUser(
   const prior = priorRow?.plan_json as Plan | undefined
   if (prior && (prior.weeks?.length ?? 0) > 0) {
     const priorSig = `${prior.meta?.race_name ?? ''}|${prior.meta?.race_date ?? ''}`
-    const nextSig  = `${plan.meta?.race_name ?? ''}|${plan.meta?.race_date ?? ''}`
-    if (priorSig !== nextSig) {
+    // PLAN-WEEK-COLLISION-01 — the race-identity test now has ONE owner
+    // (`isRaceIdentityChange`), shared with the supersede stamp below. It was
+    // written out by hand here as a `priorSig !== nextSig` comparison, and a
+    // second copy of that rule is how the archive and the stamp would drift:
+    // a plan archived without its rows stamped is precisely this defect
+    // returning. Same D-16 class as the tier ladder (three copies) and the
+    // deload cadence (five). `priorSig` survives because the archive
+    // idempotency check below matches on it.
+    if (isRaceIdentityChange(prior.meta, plan.meta)) {
       // Idempotency (ADR-013 follow-on): the race→maintenance handoff fired
       // savePlanForUser 3× near-simultaneously and archived the SAME completed
       // race plan 3× — every concurrent read saw the pre-handoff plan before any
@@ -144,6 +152,26 @@ export async function savePlanForUser(
           console.error(`[savePlanForUser] plan_archive insert failed — ${archiveRes.error.message}`)
         }
       }
+
+      // PLAN-WEEK-COLLISION-01 — stamp the outgoing plan's week-keyed rows.
+      //
+      // `week_n` is a WITHIN-PLAN coordinate that five tables use as a
+      // cross-plan key, and a new race plan restarts `week.n` at 1 — so without
+      // this, the new plan inherits the old plan's completions, run analyses,
+      // day-swaps, metric overrides and reflections. Measured on production
+      // 2026-09-18: a fresh 12-week 10K plan arrived 94% pre-completed, five
+      // sessions linked to runs from five months earlier.
+      //
+      // DELIBERATELY OUTSIDE the `alreadyArchived` guard. That guard dedupes a
+      // burst of identical archive writes; the stamp is idempotent on its own
+      // (it filters `superseded_at IS NULL`), and skipping it because an archive
+      // row already existed is how a plan ends up archived with its rows live.
+      //
+      // THROWS on failure, matching the `plan_weekly_notes` invalidation twenty
+      // lines below. That one throws because "a cached note narrating sessions
+      // that no longer exist is brand-destroying" — these rows ARE the sessions
+      // that note was narrating, and a silent failure here is the defect itself.
+      await supersedeWeekKeyedRows(userId, supabase)
     }
   }
 

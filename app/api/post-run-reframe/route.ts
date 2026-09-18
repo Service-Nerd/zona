@@ -103,6 +103,7 @@ export async function POST(req: NextRequest) {
       .from('session_completions')
       .select('rpe, fatigue_tag, avg_hr, coaching_flag, strava_activity_id, apple_health_uuid, strava_activity_km, updated_at')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN)
       .eq('session_day', sessionDay)
       .maybeSingle(),
@@ -110,6 +111,7 @@ export async function POST(req: NextRequest) {
       .from('run_analysis')
       .select('hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, verdict')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN)
       .eq('session_day', sessionDay)
       .maybeSingle(),
@@ -224,6 +226,7 @@ export async function POST(req: NextRequest) {
         .from('run_analysis')
         .select('week_n, session_day, verdict, hr_in_zone_pct, created_at')
         .eq('user_id', userId)
+        .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
         .order('created_at', { ascending: false })
         .limit(REFRAME_TIER.PREVIOUS_SIMILAR_SCAN_ROWS)
       for (const row of priorRows ?? []) {
@@ -267,6 +270,7 @@ export async function POST(req: NextRequest) {
         .from('session_completions')
         .select('week_n, session_day, status, rpe, updated_at')
         .eq('user_id', userId)
+        .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
         .gte('updated_at', rpeWindowStart.toISOString())
       const completionsList = recent ?? []
       const completionWindowMs = completionWindowStart.getTime()
@@ -344,6 +348,7 @@ export async function POST(req: NextRequest) {
       .from('session_completions')
       .select('week_n', { count: 'exact', head: true })
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('status', 'complete')
     totalSessionsLogged = count ?? null
   } catch {
@@ -359,6 +364,7 @@ export async function POST(req: NextRequest) {
       .from('session_completions')
       .select('fatigue_tag, coaching_flag, updated_at')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .not('updated_at', 'is', null)
       .order('updated_at', { ascending: false })
       .limit(REFRAME_RISK.REPEATED_OVERLOAD_WINDOW)

@@ -119,6 +119,7 @@ export async function POST(req: NextRequest) {
       .from('session_completions')
       .select('rpe, fatigue_tag, avg_hr')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', week_n)
       .eq('session_day', session_day)
       .maybeSingle(),
@@ -136,7 +137,8 @@ export async function POST(req: NextRequest) {
     serviceSupabase
       .from('run_analysis')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId),
+      .eq('user_id', userId)
+      .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
     // AI-DEPTH-10 — most recent analysed sessions, used to find the last
     // SAME-TYPE session for continuity ("Tuesday's easy 4 days ago: nailed").
     // Distinct from the R25 cohort (averaged across many similar runs) — this
@@ -146,6 +148,7 @@ export async function POST(req: NextRequest) {
       .from('run_analysis')
       .select('week_n, session_day, verdict, hr_in_zone_pct, created_at')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .order('created_at', { ascending: false })
       .limit(20),
   ])
@@ -314,6 +317,7 @@ export async function POST(req: NextRequest) {
         .from('session_completions')
         .select('fatigue_tag, updated_at')
         .eq('user_id', userId)
+        .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
         .not('updated_at', 'is', null)
         .order('updated_at', { ascending: false })
         .limit(5)

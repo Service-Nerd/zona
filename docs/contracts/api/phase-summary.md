@@ -62,3 +62,22 @@ Keyed on `(user_id, phase_ended, transition_week_n)` via the `phase_summaries` p
 ## Prompt source
 
 `lib/coaching/prompts/phaseSummary.ts → buildPhaseSummaryPrompt()`
+
+## Data scoping — PLAN-WEEK-COLLISION-01 (2026-09-18)
+
+Every read this route makes against a **week-keyed** table
+(`session_completions`, `run_analysis`, `session_overrides`,
+`session_metric_overrides`, `session_reflections`) filters
+`superseded_at IS NULL`, so it sees the LIVE plan only.
+
+`week_n` is a within-plan coordinate: a new race plan restarts `week.n` at 1 and
+would otherwise resolve against the previous plan's rows. No request or response
+shape changes — this is a scoping guarantee, and the route's output for a runner
+on their first plan is byte-identical to before.
+
+⚠️ Reads that resolve a **RUN** rather than a week (`apple_health_uuid`,
+`strava_activity_id`) are deliberately NOT filtered: `run_analysis` is
+`UNIQUE (user_id, apple_health_uuid)`, so hiding a superseded row would make the
+caller believe none exists and the follow-up insert would violate the constraint.
+
+Enforced by `lib/plan/supersedeCoverage.test.ts`.

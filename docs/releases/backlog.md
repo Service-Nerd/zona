@@ -335,6 +335,28 @@ across the seven months combined.
 ---
 
 
+> ✅ **PLAN-WEEK-COLLISION-01 — SHIPPED 2026-09-18. A brand-new plan arrived 94% already completed.**
+>
+> `week_n` is a WITHIN-PLAN coordinate that five tables used as a cross-plan key. A new race plan restarts
+> `week.n` at 1 and inherited the previous plan's rows. **Measured: a fresh 12-week 10K arrived with 44 of
+> 47 sessions (94%) complete or skipped, five linked to runs from five months earlier.**
+>
+> ⚠️ **The recommended fix was wrong and was withdrawn before it shipped.** Continuing the week sequence
+> (ADR-013's own mechanism for the maintenance handoff) would have pushed foundation weeks — numbered
+> NEGATIVE — positive, and the engine uses `w.n > 0` as its main-plan guard in the taper and peak passes.
+> A display defect would have been fixed by shipping a coaching one.
+>
+> Resolution: nullable `superseded_at`, stamped on a race-identity change. **Marked, not deleted** — the
+> trend card, discipline ledger and `v_coach_engagement` aggregate across plans. 45 reads filtered;
+> run-keyed reads deliberately not, because `run_analysis` is `UNIQUE (user_id, apple_health_uuid)`.
+> Record: `docs/incidents/2026-09-18-plan-week-collision.md` · ADR-013 amended · → feature-registry.
+>
+> 🔲 **ONE FOLLOW-ON, open.** A race-DATE change counts as a new race identity, so a runner **deferring
+> their race** supersedes their whole history and starts from an empty plan. That is correct for the
+> collision and arguably wrong for the runner: their completed sessions to date are still theirs. Decide
+> whether a deferral should carry its completions forward. **Affects the charity cohort directly** — a
+> London Marathon place moved by a week would trigger it.
+
 #### 💷 Cost, resilience and unit economics — filed 2026-09-18 (second pass)
 
 From a founder cost review of the Make-A-Wish grant: *what does it cost per month, and what happens if

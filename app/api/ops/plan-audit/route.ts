@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { secretMatches } from '@/lib/security/secrets'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { findWeekCollisions, type LiveWeekRow } from '@/lib/ops/planWeekCollision'
 import { validateReshapedPlan } from '@/lib/plan/invariants'
 import type { Plan } from '@/types/plan'
 
@@ -223,5 +224,48 @@ export async function POST(req: NextRequest) {
   // `plan_enrich_server_saved` record its success case.
   await recordOpsEvent('plan_rule_invalid', { source: 'plan-audit-summary', ...summary }, null)
 
-  return NextResponse.json({ ...summary, unchanged, changed, flagged })
+  // ── PLAN-WEEK-COLLISION-01 — does any LIVE week-keyed row predate its plan? ──
+  //
+  // Piggy-backs on this probe because it has already fetched every user's plan,
+  // and a second daily cron for one query is cost with no added coverage. The
+  // detector is pure (`lib/ops/planWeekCollision.ts`) and tested at a pinned
+  // clock; this half only supplies the rows.
+  //
+  // Never throws. An ops probe that can fail the run it is observing is worse
+  // than no probe: it takes the plan audit down with it.
+  let collisions: ReturnType<typeof findWeekCollisions> = []
+  try {
+    const WEEK_KEYED: Array<[string, string]> = [
+      ['session_completions', 'created_at'],
+      ['run_analysis', 'created_at'],
+      ['session_reflections', 'created_at'],
+      ['session_overrides', 'updated_at'],
+      ['session_metric_overrides', 'updated_at'],
+    ]
+    const byUser = new Map<string, Record<string, LiveWeekRow[]>>()
+    for (const [table, tsCol] of WEEK_KEYED) {
+      const { data } = await supabase
+        .from(table)
+        .select(`user_id, week_n, ${tsCol}`)
+        .is('superseded_at', null)
+        .limit(20000)
+      for (const r of (data ?? []) as any[]) {
+        const bucket = byUser.get(r.user_id) ?? {}
+        ;(bucket[table] ??= []).push({ week_n: r.week_n, at: r[tsCol] ?? null })
+        byUser.set(r.user_id, bucket)
+      }
+    }
+    for (const row of rows ?? []) {
+      const found = findWeekCollisions(
+        row.user_id, row.plan_json as any, byUser.get(row.user_id) ?? {})
+      collisions.push(...found)
+    }
+    for (const c of collisions) {
+      await recordOpsEvent('plan_week_collision', { ...c }, c.userId)
+    }
+  } catch (e) {
+    console.error('[plan-audit] week-collision probe failed', e)
+  }
+
+  return NextResponse.json({ ...summary, unchanged, changed, flagged, collisions: collisions.length })
 }

@@ -95,12 +95,14 @@ export async function GET(req: NextRequest) {
     service.from('session_completions')
       .select('week_n, session_day, status, rpe, fatigue_tag, updated_at')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN)
       .eq('session_day', sessionDay)
       .maybeSingle(),
     service.from('run_analysis')
       .select('week_n, session_day, hr_in_zone_pct')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN)
       .eq('session_day', sessionDay)
       .maybeSingle(),
@@ -108,12 +110,14 @@ export async function GET(req: NextRequest) {
     // Ledger inputs — same shape as /api/discipline-ledger uses.
     service.from('session_completions')
       .select('week_n, session_day, status, fatigue_tag')
-      .eq('user_id', user.id),
+      .eq('user_id', user.id)
+      .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
     tier === 'free'
       ? Promise.resolve({ data: [] as any[] })
       : service.from('run_analysis')
           .select('week_n, hr_in_zone_pct')
-          .eq('user_id', user.id),
+          .eq('user_id', user.id)
+          .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
   ])
 
   // Race tolerance: RPE upsert and Save-image tap can interleave. If the

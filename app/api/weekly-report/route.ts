@@ -121,16 +121,19 @@ export async function POST(req: NextRequest) {
       // run would be misclassified as a bare stub and dropped from the count.
       .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, coaching_flag, strava_activity_id, apple_health_uuid')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN),
     serviceSupabase
       .from('run_analysis')
       .select('session_day, total_score, verdict, hr_in_zone_pct, hr_above_ceiling_pct, hr_below_floor_pct, ef_trend_pct, actual_load_km, planned_load_km')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN),
     serviceSupabase
       .from('run_analysis')
       .select('week_n, actual_load_km')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .order('week_n', { ascending: false })
       .limit(40),
     // AI-DEPTH-04: conversation memory — pull last week's headline + body so the

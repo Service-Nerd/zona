@@ -96,6 +96,7 @@ export async function GET(req: NextRequest) {
       .from('session_completions')
       .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, updated_at, apple_health_uuid, strava_activity_id')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .order('week_n', { ascending: false })
       .order('updated_at', { ascending: false, nullsFirst: false })
       .limit(8),
@@ -103,6 +104,7 @@ export async function GET(req: NextRequest) {
       .from('run_analysis')
       .select('week_n, session_day, verdict, hr_above_ceiling_pct, created_at')
       .eq('user_id', userId)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .order('created_at', { ascending: false })
       .limit(5),
     // AI-DEPTH-10 — connective tissue. The daily note may reference the
@@ -119,7 +121,8 @@ export async function GET(req: NextRequest) {
       .maybeSingle(),
     serviceSupabase.from('session_overrides')
       .select('week_n, original_day, new_day')
-      .eq('user_id', userId),
+      .eq('user_id', userId)
+      .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
   ])
 
   const plan = planRes.data?.plan_json as Plan | null

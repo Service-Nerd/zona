@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
     .from('session_completions')
     .select('rpe, fatigue_tag, week_n, session_day, status')
     .eq('user_id', user.id)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
   const planResponse = aggregatePlanResponse(completions ?? [])
 
   // §75 — match the athlete's ACTUAL run cadence: prefer what they COMPLETED

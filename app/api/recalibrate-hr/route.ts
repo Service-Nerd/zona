@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
     .from('run_analysis')
     .select('id, strava_activity_id, apple_health_uuid, session_day')
     .eq('user_id', user.id)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
     .gte('created_at', cutoff.toISOString())
 
   const analysisMap = new Map<string, any>()

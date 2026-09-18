@@ -120,6 +120,7 @@ export async function POST(req: NextRequest) {
         .from('run_analysis')
         .select('feedback_text, week_n, session_day, created_at')
         .eq('user_id', userId)
+        .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
         .not('feedback_text', 'is', null)
         .order('created_at', { ascending: false })
         .limit(5)

@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       .from('run_analysis')
       .select('week_n, hr_in_zone_pct, ef_trend_pct, actual_load_km, source')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .neq('source', 'manual'),
     serviceSupabase
       .from('session_completions')
@@ -79,7 +80,8 @@ export async function POST(req: NextRequest) {
       // count below can exclude bare stubs without misclassifying an
       // activity-linked no-RPE/HR run as one.
       .select('week_n, status, session_type, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid')
-      .eq('user_id', user.id),
+      .eq('user_id', user.id)
+      .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
     // AI-DEPTH-10 — connective tissue across phase transitions. Most recent
     // prior phase summary so the new one can frame "base → build" against
     // what was said when "foundation → base" was written. Null on first phase.

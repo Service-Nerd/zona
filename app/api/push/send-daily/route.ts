@@ -228,7 +228,8 @@ export async function POST(req: NextRequest) {
         supabase.from('plans').select('plan_json').eq('user_id', userId).single(),
         supabase.from('session_overrides')
           .select('week_n, original_day, new_day')
-          .eq('user_id', userId),
+          .eq('user_id', userId)
+          .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
         loadSessionMetricOverrides(supabase, userId),
       ])
 

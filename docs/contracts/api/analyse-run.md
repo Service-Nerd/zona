@@ -73,3 +73,22 @@ Coaching row for a session completed without a linked device activity. Writes `r
 - **PAID/trial with metrics** — additionally runs `scoreSession` on the entered distance/pace + a coarse avg-HR-vs-band read (`hr_target` ceiling fallback), writing `distance_score` / `pace_score` / `hr_discipline_score` / `total_score` + a metric-anchored verdict. `hr_in_zone_pct` stays null (a single avg HR is not a stream). Gated on `activity_intelligence`.
 
 The run itself is stored separately as a `source='manual'` row in `strava_activities` via the `/api/health/ingest` manual branch (see ADR-011 §4b) — that row is what counts in history / cohorts / load.
+
+## Data scoping — PLAN-WEEK-COLLISION-01 (2026-09-18)
+
+Every read this route makes against a **week-keyed** table
+(`session_completions`, `run_analysis`, `session_overrides`,
+`session_metric_overrides`, `session_reflections`) filters
+`superseded_at IS NULL`, so it sees the LIVE plan only.
+
+`week_n` is a within-plan coordinate: a new race plan restarts `week.n` at 1 and
+would otherwise resolve against the previous plan's rows. No request or response
+shape changes — this is a scoping guarantee, and the route's output for a runner
+on their first plan is byte-identical to before.
+
+⚠️ Reads that resolve a **RUN** rather than a week (`apple_health_uuid`,
+`strava_activity_id`) are deliberately NOT filtered: `run_analysis` is
+`UNIQUE (user_id, apple_health_uuid)`, so hiding a superseded row would make the
+caller believe none exists and the follow-up insert would violate the constraint.
+
+Enforced by `lib/plan/supersedeCoverage.test.ts`.

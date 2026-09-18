@@ -92,13 +92,15 @@ export async function POST(req: NextRequest) {
       .from('run_analysis')
       .select('week_n, hr_in_zone_pct, ef_trend_pct, actual_load_km, source')
       .eq('user_id', user.id)
+      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .neq('source', 'manual'),
     serviceSupabase
       .from('session_completions')
       // RESHAPE-FIX-WAVE2B-AUDIT: verification columns so the completed-session
       // count excludes bare stubs without dropping an activity-linked no-RPE/HR run.
       .select('week_n, status, session_type, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid')
-      .eq('user_id', user.id),
+      .eq('user_id', user.id)
+      .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
   ])
 
   const firstName = settingsRes.data?.first_name ?? null

@@ -22,6 +22,7 @@ export async function loadSessionMetricOverrides(
     .from('session_metric_overrides')
     .select('week_n, session_key, metric')
     .eq('user_id', userId)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
 
   const out: SessionMetricOverrides = {}
   for (const row of data ?? []) {
