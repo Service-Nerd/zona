@@ -144,10 +144,11 @@ export function cohortGrid(): GeneratorInput[] {
   return out
 }
 
-/** A refusal is the engine working (§44 prep-time, days-per-week minimums).
- *  Anything else that throws is a real failure and must not be counted as one. */
+/** A refusal is the engine working (§44 prep-time, days-per-week minimums, §111
+ *  base-build ceiling). Anything else that throws is a real failure and must not
+ *  be counted as one. */
 export const COHORT_REFUSAL =
-  /is not enough preparation|days\/week is (not enough|below)|is below the recommended \d+-week minimum/
+  /is not enough preparation|days\/week is (not enough|below)|is below the recommended \d+-week minimum|too low to build safely/
 
 // ── GRID-COVERAGE-02 Phase 2 (2026-09-15) — the SECOND, TARGETED grid ────────
 //

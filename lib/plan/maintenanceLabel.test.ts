@@ -34,10 +34,16 @@ import type { GeneratorInput } from '@/types/plan'
 // genuinely cannot build — still exists at 3 days (§52's low-day rule owns that
 // shape and is untouched). Re-anchored there rather than weakened, so the prose
 // assertions below still test a real runner.
+// ⚠️ RE-ANCHORED 2026-09-18 (§111), current_weekly_km 5 -> 15. A 5km base is now
+// REFUSED for a marathon (BaseVolumeError): the week-1 floor of 18km is a 3.6x
+// jump off it. 15km is the representative first-time charity marathoner (persona
+// M1) — still a beginner, still lands in genuine maintenance at 3 days (§52's
+// low-day rule owns the shape), and still reads exactly the honest note this file
+// is about. The reckless base was refused, not the note weakened.
 const charityBeginner = (over: Record<string, unknown> = {}) => ({
   athlete_name: 'A', age: 38, race_name: 'Charity', primary_metric: 'distance',
   plan_start: '2026-04-27', race_distance_km: 42.2, race_date: '2026-10-05',
-  goal: 'finish', current_weekly_km: 5, longest_recent_run_km: 0,
+  goal: 'finish', current_weekly_km: 15, longest_recent_run_km: 8,
   fitness_level: 'beginner', recent_quality_training: 'none',
   hard_session_relationship: 'avoid', injury_history: [],
   days_available: 3, days_cannot_train: [], ...over,

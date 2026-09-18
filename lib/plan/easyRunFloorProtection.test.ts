@@ -22,10 +22,16 @@ afterAll(() => { vi.useRealTimers() })
 
 // SWEEP_EXPLAIN=INV-PLAN-MIN-SESSION-SIZE npm run verify:sweep, first sample:
 // week 3 wed — got 3.5, expected 4 (pre-fix).
+// ⚠️ RE-ANCHORED 2026-09-18 (§111), current_weekly_km 12 -> 16. The original 12km
+// sample is now refused for a marathon (BaseVolumeError): 12km is at the base-build
+// ceiling for this shape. 16km clears it and still reproduces the floor-protection
+// case, because that is driven by the 30-minute weekday cap (max_weekday_mins),
+// not the base volume — the cap still shrinks weekday easy runs to the distance
+// floor. This test is about §82, not the base gate.
 const LOW_VOLUME_MARATHON: GeneratorInput = {
   age: 35, race_name: 'Test', target_time: '0:45:00',
   injury_history: ['back'], race_distance_km: 42.2, race_date: '2027-02-06',
-  current_weekly_km: 12, longest_recent_run_km: 6, days_available: 5,
+  current_weekly_km: 16, longest_recent_run_km: 6, days_available: 5,
   days_cannot_train: ['tue'], training_age: '<6mo', user_declared_level: 'intermediate',
   hard_session_relationship: 'neutral', max_weekday_mins: 30, goal: 'finish',
   resting_hr: 55, max_hr: 184, preferred_long_run_day: 'sun',

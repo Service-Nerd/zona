@@ -27,6 +27,7 @@ const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.r
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
 import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
+import { assessBaseBuild, baseVolumeRefusal, BaseVolumeError } from './baseVolume'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
 import { normaliseDays } from './days'
 import { sessionKmOrZero, sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
@@ -5687,6 +5688,13 @@ export function generateRulePlan(
     if (yielded) {
       plan.meta.onset_yield = { ...yielded, effective: effectiveOnRamp(plan) }
     }
+    // §111 — the base-build ceiling. Refuse (with the base to reach) before the
+    // generic invariant throw, so the runner gets the structured "not yet"
+    // refusal and its alternatives rather than a bare violation. Thrown here, on
+    // the single exit path, so every candidate the ladder can return is checked
+    // against the plan it actually delivers. Mirrors the §44/§52 refusals.
+    const bb = assessBaseBuild(plan, input)
+    if (bb.exceeded) throw new BaseVolumeError(baseVolumeRefusal(bb, input))
     enforceViolations(validatePlan(plan, input))
     return plan
   }

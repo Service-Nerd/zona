@@ -456,7 +456,7 @@ function randomInput(): any {
 // A warn-band throw is still the engine working: §44 refuses without
 // `acknowledged_prep_warning`, which the sweep deliberately never sets (see
 // COVERAGE_EXEMPTIONS) because setting it would admit shapes the product refuses.
-const REFUSAL = /is not enough preparation|days\/week is (not enough|below)|is below the recommended \d+-week minimum/
+const REFUSAL = /is not enough preparation|days\/week is (not enough|below)|is below the recommended \d+-week minimum|too low to build safely/
 
 let attempted = 0
 let generated = 0

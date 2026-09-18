@@ -18,6 +18,7 @@ import { validateInputFields, InputFieldError } from './inputs'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
+import { BaseVolumeError } from './baseVolume'
 import type { GeneratorInput } from '@/types/plan'
 
 const beginner = (over: Record<string, unknown> = {}) => ({
@@ -50,8 +51,13 @@ describe('a beginner who has never run', () => {
   // test summed distance, read 0, and reported an empty week 1 for a plan that
   // is four sessions of 32–44 minutes. The same flaw was in `cohortShape.ts`
   // and understated mean peak volume by 30%.
-  it('generates a real plan, not an empty one', () => {
-    const input = beginner()
+  // §111 (2026-09-18) — a never-run beginner targeting a MARATHON is now refused
+  // with a governed "not yet" (BaseVolumeError), because the week-1 floor (18km)
+  // is a 3.6x acute jump off a 5km base. So this positive case moves to the 10K,
+  // which §111 does not govern — where the never-run beginner still gets a real,
+  // duration-anchored plan, which is UX-BEGINNER-01's actual claim.
+  it('generates a real plan, not an empty one (10K — a distance §111 permits)', () => {
+    const input = beginner({ race_distance_km: 10, race_date: '2026-08-17' })
     const plan = generateRulePlan(input, 'paid', '2026-04-27', undefined, '2026-04-27')
     const week1 = plan.weeks.find(w => w.n === 1)!
     expect(week1.weekly_km, 'week 1 must contain actual running').toBeGreaterThan(0)
@@ -64,6 +70,21 @@ describe('a beginner who has never run', () => {
         'every session must state a distance or a duration').toBe(true)
     }
     expect(validatePlan(plan, input).filter(v => v.severity === 'error')).toEqual([])
+  })
+
+  // §111 — the marathon case: a never-run beginner is not crash-refused and not
+  // handed the reckless 18km-week-1 plan; they get a governed "not yet" naming
+  // the base to reach. UX-BEGINNER-01's spirit (a coaching answer, not a DB
+  // field name), honoured through a refusal rather than a hazardous plan.
+  it('a never-run beginner targeting a MARATHON gets a governed "not yet" (§111)', () => {
+    let err: Error | null = null
+    try { generateRulePlan(beginner(), 'paid', '2026-04-27', undefined, '2026-04-27') }
+    catch (e) { err = e as Error }
+    expect(err).toBeInstanceOf(BaseVolumeError)
+    const base = (err as BaseVolumeError).base
+    expect(base.message).toMatch(/too low to build safely/)
+    expect(base.message).not.toMatch(/[a-z]+_[a-z_]+/) // no schema words, per UX-BEGINNER-01
+    expect(base.min_base_km).toBeGreaterThan(0)
   })
 })
 

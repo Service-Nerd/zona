@@ -1038,6 +1038,18 @@ export const GENERATION_CONFIG = {
   PEAK_OVER_BASE_RATIO: 1.10,            // peak weekly_km / W1 weekly_km
   PEAK_OVERLOAD_MIN_PLAN_WEEKS: 8,       // below this length, ratio not enforced
 
+  // ── Base-build ceiling (CoachingPrinciples §111) ───────────────────────────
+  // The MAXIMUM the delivered peak may exceed the runner's REAL current volume,
+  // for marathon and ultra. Distinct from §23 above: §23 is a MINIMUM on
+  // peak/WEEK1 (build enough); this is a MAXIMUM on peak/CURRENT (do not build
+  // recklessly far off the base the runner actually has). Over the cap, the
+  // engine refuses (BaseVolumeError) and names the base to reach, rather than
+  // shipping the jump. 4.0 admits the charity cohort (M1 first-timer 15 km/wk →
+  // peak 47 = 3.13x) and refuses the reckless case (5 km/wk → 9.4x); any cap
+  // ≤ 3.13 would refuse M1. (Coaching Board MARATHON-VOLUME-GATE-01, 2026-09-18.)
+  MAX_BASE_BUILD_RATIO: 4.0,              // delivered peak weekly_km / current_weekly_km
+  BASE_BUILD_RATIO_MIN_DISTANCE_KM: 42,  // §111 governs marathon and ultra only
+
   // ── Prep-time validation (CoachingPrinciples §44) ──────────────────────────
   // Minimum weeks of preparation per race distance / goal type. Two-step UX:
   //   block → refuse generation, list alternatives.

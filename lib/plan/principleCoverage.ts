@@ -203,4 +203,5 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 108, by: 'test', ref: 'lib/coaching/sessionScore.test.ts', why: 'Amendment 1 — no composite score when HR is unmeasured; pinned on the founder\'s own HR-less run' },  // What a run SCORES, and what stays outside the score
   { n: 109, by: 'test', ref: 'lib/coaching/raceProjectionHonesty.test.ts', why: 'may compare, may not predict' },  // A progress surface may remember and compare. It may not predict.
   { n: 110, by: 'invariant', ref: 'INV-PLAN-QUALITY-NOT-ZERO' },  // `avoid` is a floor, not a switch
+  { n: 111, by: 'invariant', ref: 'INV-PLAN-BASE-BUILD-RATIO', why: 'The engine refuses over the ceiling (BaseVolumeError), so the invariant is the defense-in-depth backstop; both read lib/plan/baseVolume.ts. Refusal + backstop exercised by baseVolume.test.ts.' },  // The base-build ceiling
 ] as const

@@ -11,6 +11,7 @@
 
 import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
+import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { catalogueRowFor } from './catalogueLink'
@@ -94,6 +95,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-NO-RACE-EVE-SESSION',
   'INV-PLAN-RACE-NOTE-SCALES',
   'INV-PLAN-PEAK-OVER-BASE',
+  'INV-PLAN-BASE-BUILD-RATIO',
   'INV-PLAN-PEAK-NOT-BELOW-START',
   'INV-PLAN-NOT-DETRAINING',
   'INV-PLAN-VDOT-RAW-EXCEEDS-ANCHOR',
@@ -2350,6 +2352,30 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           expected: `≥ ${Math.round(GENERATION_CONFIG.PEAK_OVER_BASE_RATIO * 100)}% or volume_profile=maintenance`,
         })
       }
+    }
+  }
+
+  // INV-PLAN-BASE-BUILD-RATIO — the base-build ceiling (CoachingPrinciples §111).
+  // For marathon/ultra, delivered peak weekly volume may not exceed
+  // MAX_BASE_BUILD_RATIO times the runner's RAW current_weekly_km. The engine
+  // refuses over the ceiling (BaseVolumeError from generateRulePlan.finalise), so
+  // in the generation path this backstop never fires — the refusal pre-empts it.
+  // It catches any plan that reaches validatePlan over the ceiling by another
+  // route. Computation shared with the refusal via assessBaseBuild, so the check
+  // and the refusal cannot drift. Distinct from §23 above (a MINIMUM on
+  // peak/WEEK1); this is a MAXIMUM on peak/CURRENT.
+  {
+    const bb = assessBaseBuild(plan, input)
+    if (bb.exceeded && bb.ratio != null) {
+      violations.push({
+        code: 'INV-PLAN-BASE-BUILD-RATIO',
+        principle_ref: 'CoachingPrinciples §111',
+        severity: 'error',
+        week: 0,
+        message: `Peak volume ${bb.peakKm}km is ${bb.ratio === Infinity ? '∞' : bb.ratio.toFixed(1)}x the runner's ${bb.currentKm}km/week base — above the ${bb.cap}x ceiling for marathon/ultra; the plan should have been refused (base ~${bb.minBaseKm}km needed)`,
+        actual: bb.ratio === Infinity ? '∞' : `${bb.ratio.toFixed(1)}x`,
+        expected: `≤ ${bb.cap}x current_weekly_km`,
+      })
     }
   }
 

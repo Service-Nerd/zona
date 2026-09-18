@@ -36,9 +36,13 @@ const gen = (over: Record<string, unknown>) => {
   return { note: p.meta.volume_constraint_note ?? null, profile: p.meta.volume_profile }
 }
 
+// §111 (2026-09-18) — current_weekly_km 5 -> 15. A 5km base is now refused for a
+// marathon (the 18km week-1 floor is a 3.6x jump off it); 15km is the flagship
+// first-time charity marathoner (M1), which at 3 days lands in genuine
+// maintenance via §52's low-day rule — the §38 days-bottleneck note this tests.
 const BEGINNER_MARATHON = {
   race_distance_km: 42.2, race_date: '2026-10-05',
-  current_weekly_km: 5, longest_recent_run_km: 0, fitness_level: 'beginner',
+  current_weekly_km: 15, longest_recent_run_km: 8, fitness_level: 'beginner',
   days_available: 3,
 }
 

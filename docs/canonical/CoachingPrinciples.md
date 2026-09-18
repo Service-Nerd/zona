@@ -6644,6 +6644,36 @@ slots to absorb it against §9's own easy ceiling, so the week genuinely shrinks
 and the long run's share climbs past §52's 60% cap. **VOL-SHORTFALL-01's result
 holds where it was taken, and not below it.**
 
+## 111. The base-build ceiling — a marathon plan may not build too far off the base the runner actually has
+
+*Added 2026-09-18 — Coaching Board (MARATHON-VOLUME-GATE-01), CORRECT WITH AMENDMENT. Ratifies the artifacts for a floor the board had already ruled correct in concept; the amendment set the metric, the cap, and error severity.*
+
+**Principle.** For the marathon and ultra distances (`race_distance_km ≥ `BASE_BUILD_RATIO_MIN_DISTANCE_KM` = 42`), the plan's **delivered peak weekly volume** may not exceed `MAX_BASE_BUILD_RATIO` (4.0) times the runner's **raw stated `current_weekly_km`**. Over that ceiling the engine **refuses to generate** — it does not ship the plan — and returns, per §44, the lever and an alternative: the base volume to reach first (`ceil(peak / cap)` km/week). A `current_weekly_km` of 0 is an infinite ratio and is refused. The refusal is surfaced as "not yet", not "no" (SLT, REFUSAL-SCREEN-01): the runner has a fixed race date weeks away and the honest thing is the base to build, not a door.
+
+**Why the metric is peak ÷ current, and not peak ÷ week1.** The danger is the jump from where the runner **is** to what the plan **demands** — a 5 km/week first-timer handed a 47 km peak is being asked for a 9.4× build, and nothing downstream caught it (`validatePlan` returned zero errors). Measured, `peak/week1` cannot see this: week 1 is floored at `BUILD_VOL_INIT_FLOOR_VS_PEAK` (35%) of peak, so `peak/week1` sits flat at ~2.6 across the entire low-volume cohort and a cap there would refuse everyone or no one. `peak/current` is monotonic in current volume and discriminating: first-timer marathon 5 km→9.4×, 12 km→3.9×, 15 km→3.1×, 20 km→2.6×, 40 km→1.3×.
+
+**Why 4.0.** Two binding points fixed it. **The admission floor:** the flagship first-time charity marathoner (persona M1, 15 km/week → peak 47 = **3.13×**) must generate — any cap ≤ 3.13 refuses the exact cohort this exists to serve, and the board explicitly ruled 15 km (3.1×) and 20 km (2.6×) should pass. **The reckless ceiling:** ≤ 10 km/week beginner marathon (≥ 4.7×) must be refused. 4.0 sits between them: it admits current ≥ ~12 km/week (peak ~47) and refuses below, which is *less* restrictive than the ungoverned gate it replaces (`current < 20`, which refused M1 itself).
+
+**What it replaced, and why the old gate was wrong on four counts** *(the board's ruling, recorded).* The gate was `if (race_distance_km ≥ 42 && current_weekly_km < 20) refuse`, hardcoded in `app/api/generate-plan/route.ts`. It was **(1) ungoverned** — no principle, invisible to `configPrincipleSync` and the coaching-guard hook, the `peakKmByLevel`/§106 class again; **(2) non-monotonic across its own boundary** — it refused 15 km/week (peak/week1 2.61) and permitted 20 km/week (2.60), near-identical plans; **(3) alternative-less** — a bare string where §44 requires the lever; **(4) expressed on stated volume, not the ramp it was trying to bound.** And because it lived at the route, every internal test (which calls `generateRulePlan` directly) passed while the live app refused the cohort — the boundary-invisibility §44's siblings avoid by throwing from the engine.
+
+**Relationship to the neighbours.**
+- **§23 (peak overload).** §23 is the opposite bound on a different denominator: a **minimum** on peak/**week1** (a build must overload). §111 is a **maximum** on peak/**current** (the overload must not be reckless off the real base). A plan satisfies both; they do not collide, because §111 refuses the low-base case before §23's "is this enough of a build" regime is reached.
+- **§46** (absolute peak-LR floor) is about long-run distance, not weekly ramp — orthogonal.
+- **§29 (fresh-return)** lowers the *start* when current volume is aspirational; §111 uses raw `current_weekly_km` as the base deliberately — it is measuring how far the ask is from where the runner says they are.
+- **§10/CD-6** treats a beginner's declared volume as a claim; §111 is the refusal side of the same input.
+
+**The base-building plan that would let a low-base runner in is deferred** (SLT part 2, Coaching Board first): `FOUNDATION_MAX_WEEKS` is 3 and a ~20-week ramp from 10 km/week to marathon readiness is a new plan type, not a longer foundation block. Until it exists, §111 refuses honestly rather than promising a plan we have not built.
+
+**Config.**
+- `GENERATION_CONFIG.MAX_BASE_BUILD_RATIO = 4.0` — delivered peak weekly_km / current_weekly_km ceiling.
+- `GENERATION_CONFIG.BASE_BUILD_RATIO_MIN_DISTANCE_KM = 42` — marathon and ultra only.
+
+**Enforcement.** The refusal is thrown from `generateRulePlan` (`BaseVolumeError`, mirroring `PrepTimeError`/`DaysAvailableError`); the computation is owned by `lib/plan/baseVolume.ts` and read by both the refusal and `INV-PLAN-BASE-BUILD-RATIO` (error) so they cannot drift. The invariant is the defense-in-depth backstop: the refusal pre-empts it in the generation path, and it catches any plan that reaches `validatePlan` over the ceiling by another route.
+
+**Supersedes MAINT-LABEL-01/UX-BEGINNER-01 for the reckless tail only** *(Coaching Board, reconvened same day on the collision the first scan missed).* MAINT-LABEL-01 gave a very-low-base beginner marathoner (5 km/week) an honest-labelled plan rather than refusing them. **Measured, that plan starts week 1 at 18 km regardless of the stated base** (the week-1 floor is 35% of peak), so for a 5 km runner it is a **3.6× acute jump in week one** that §2's ramp cap does not govern — the load hazard MAINT-LABEL-01 never audited (it fixed the *label*, not the load). §111 refuses that tail with "not yet", which is a coaching answer, not the database-field-name refusal UX-BEGINNER-01 removed and not "you'll fail". For a 12–15 km runner the same 18 km week 1 is a 1.2–1.5× step, safe, and the honest note still fires — so MAINT-LABEL-01's actual subject (the beginner who *does* generate) and UX-BEGINNER-01's input acceptance (`validateInputFields` still accepts a 0 base, §55) are both untouched. Short distances (5K/10K/HM) are outside §111 entirely, so a never-run beginner still generates there.
+
+**Out of scope, flagged not fixed.** The route's `longest_recent_run_km < 5` gate for half-plus is the same ungoverned-number smell but a distinct coaching question (long-run readiness, not weekly ramp) — a separate sitting, untouched here.
+
 ---
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.

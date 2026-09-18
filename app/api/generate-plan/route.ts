@@ -17,6 +17,7 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { nextMonday, formatDate } from '@/lib/plan/length'
 import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/inputs'
+import { BaseVolumeError } from '@/lib/plan/baseVolume'
 
 // ─── Guard rails ──────────────────────────────────────────────────────────────
 //
@@ -28,11 +29,17 @@ import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/i
 function validate(input: GeneratorInput): string | null {
   if (input.days_available < 2) return 'At least 2 training days per week are required.'
 
-  // Volume vs distance mismatch — kept until promoted to a CoachingPrinciples
-  // section in a future round.
-  if (input.race_distance_km >= 42 && input.current_weekly_km < 20) {
-    return 'Current weekly volume is very low for a marathon. We need at least 20 km/week to generate a safe plan. Build your base first.'
-  }
+  // MARATHON-VOLUME-GATE-01 (§111, Coaching Board 2026-09-18) — the marathon
+  // base-volume floor used to live here as `current_weekly_km < 20`. It was
+  // ungoverned, non-monotonic and refused the charity cohort at the door. It is
+  // now the governed §111 base-build ceiling, thrown from generateRulePlan as
+  // BaseVolumeError (caught below) — expressed on the delivered peak vs the
+  // runner's real base, with alternatives, not a bare string here.
+  //
+  // The longest_recent_run_km < 5 gate that was also here is the same
+  // ungoverned-number smell but a distinct coaching question (long-run
+  // readiness, not weekly ramp) — flagged for a separate Coaching Board sitting,
+  // deliberately not silently deleted.
   if (input.race_distance_km >= 21 && input.longest_recent_run_km < 5) {
     return 'Longest recent run is very short for this distance. Log at least a 5 km run in the last 6 weeks before generating this plan.'
   }
@@ -166,6 +173,19 @@ export async function POST(req: NextRequest) {
             reason: err.reason,
             days: err.days,
             requires_acknowledgment: err.reason === 'warn_unacknowledged',
+          },
+          { status: 422 },
+        )
+      }
+      // CoachingPrinciples §111 — base-build ceiling. Same structured shape as
+      // the §44/§52 refusals so the client renders a "not yet" screen with the
+      // base to reach and the alternatives, never a bare error.
+      if (err instanceof BaseVolumeError) {
+        return NextResponse.json(
+          {
+            error: err.message,
+            reason: 'base_volume',
+            base: err.base,
           },
           { status: 422 },
         )
