@@ -98,7 +98,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 |---|---|---|---|
 | ~~5~~ | ~~**`ONBOARD-SKIP-LABEL-01`** + **`COPY-DAYS-PLURAL-01`**~~ ✅ **SHIPPED 2026-09-18** | S | Both done. `ONBOARD-SKIP-LABEL-01`: busy flag → pending-action enum, primary label keys on the specific action (markup-guarded). `COPY-DAYS-PLURAL-01` shipped with #3. → feature-registry |
 | ~~6~~ | ~~**`FOUNDATION-DECIDE-LATER-01`**~~ ✅ **SHIPPED 2026-09-18** | S | "Decide later" button deleted (SLT Fix A); the two identical handlers consolidated into one `handleFoundationDismiss`. → feature-registry |
-| 7 | **`FIRSTRUN-MOMENTS-01a`** runway reveal | S | 🥇 **Best value on the entire backlog.** The words exist and are ratified; this is a MOVE |
+| ~~7~~ | ~~**`FIRSTRUN-MOMENTS-01a`** runway reveal~~ ✅ **SHIPPED 2026-09-18** | S | 🥇 The runway note (stamped on meta, rendered nowhere) now surfaces as the first card at the reveal, led by the number. `RunwayRevealCard` + markup test; render-once decision locked. → feature-registry |
 | 8 | **`FIRSTRUN-MOMENTS-01b`** first-run reveal | S | Wood funds this one: it lowers the activation cost of the first action |
 | 9 | **`FIRSTRUN-MOMENTS-01c/d/e`** ceremony · distance · worst day | S | ⚠️ (e) **only if derived live** — Hutchinson's binding condition |
 
@@ -223,7 +223,9 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ---
 
-### `FIRSTRUN-MOMENTS-01a` — move the runway line to the reveal · **S** · 🥇 highest value on the list
+### `FIRSTRUN-MOMENTS-01a` — move the runway line to the reveal · **S** · ✅ SHIPPED 2026-09-18
+
+> ✅ **SHIPPED.** `components/shared/RunwayRevealCard.tsx` renders `meta.uncovered_runway_note` as the FIRST card at the plan reveal (`GeneratePlanScreen` preview), led by a bold `uncovered_runway_weeks` number ("You're early / 11 weeks early"). ⚠️ **It was not "buried further down" — it was rendered NOWHERE** (stamped on meta, required by an invariant, in `planRationaleNotes` never). No AI mark (rule-engine copy, AI-PROVENANCE-01). Rendered ONCE — a test locks that `planRationaleNotes` does not also surface it. Markup-guarded (number-first, plural, tokens, no em dash). → feature-registry.
 
 **Simple.** The `uncovered_runway_note` already written by `foundationCompose.ts` is shown **at the moment the plan is revealed**, not buried as a note further down the plan screen.
 
