@@ -10,14 +10,15 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## 📍 PICK UP HERE — state at 2026-09-18
 
-**Everything is committed and pushed** (last ship `a0becdd`, 2026-09-18 — SLT queue #1-#11, through FIRSTRUN-MISSED-01 parts 1-2 (last ship `2fb668c`, 2026-09-18 — SLT queue complete through Tier 4 bar the FAQ). `npm run verify` exit 0 (**2,266 tests / 251 files**) · sweep **14,221 plans, no new violations** · HIGH 0 / MED 26.
+**Everything is committed and pushed** (last ship `ff24218`, 2026-09-18 — SLT queue complete, plus §113 LONGEST-RUN-GATE-01). `npm run verify` exit 0 (**2,278 tests / 252 files**) · sweep **13,014 generated / 6,993 refused by design / 0 hard failures** · HIGH 0 / MED 26 · 120 invariants = 120 rows.
 
 > 📌 **EVERYTHING OPEN FROM 2026-09-18, one line each — the index exists because two findings hid in prose today.**
 >
 > | Item | P | What it is |
 > |---|---|---|
+> | `GRID-SUBFLOOR-01` | P2 | Neither plan grid can express a sub-floor runner (min longest run 8, floor 5), so §113 refuses 0 of 35,952 there and **2,634 in the sweep** |
 > | `PREF-SWEEP-01` | **P1** | km↔miles does not reach the app: **90 hardcoded `km`**, 3 of 14 prompt builders unit-blind, `formatSessionMetric` has 1 call site against a docstring claiming 4 surfaces |
-> | `LONGEST-RUN-GATE-01` | **P1** | The **third** ungoverned refusal in the function §111 was convened to fix. Refuses any HM/marathon with a longest run under 5 km — a charity first-timer in October. **Coaching Board** |
+> | ~~`LONGEST-RUN-GATE-01`~~ | ✅ | **SHIPPED as §113, 2026-09-18.** Board ruled the threshold **RIGHT** (monotonic, unlike §111) and everything around it wrong. The route now holds **no coaching number at all**. Spawned `GRID-SUBFLOOR-01` |
 > | `DEVICE-VERIFY-01` | ⏸️ **P1** | **Nothing shipped today has run on iOS.** ⏸️ **PARKED — needs the founder's device**, not a code change |
 > | `REFUSAL-COPY-02` | P2 | The refusal FRAMING is fixed; the message inside is still raw engine copy. Parity-moving |
 > | `OPS-DBCHECK-NOISE-01` | P2 | `check:db` writes ~43 errors into Supabase on a **healthy** run |

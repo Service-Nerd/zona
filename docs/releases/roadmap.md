@@ -1,6 +1,6 @@
 # Roadmap — Zonna
 
-**Everything is committed and pushed** (last ship `a0becdd`, 2026-09-18 — SLT queue #1-#11: the Tier 1 "door", the Tier 2 reveal, FIRSTRUN-MOMENTS-01c/d/e and FIRSTRUN-MISSED-01 parts 1-2 (last ship `2fb668c`, 2026-09-18 — SLT queue complete through Tier 4 bar the FAQ). `npm run verify` exit 0 (**2,266 tests / 251 files**) · sweep **14,221 plans, no new violations** · HIGH 0 / MED 26.
+**Everything is committed and pushed** (last ship `ff24218`, 2026-09-18 — SLT queue complete, plus §113 LONGEST-RUN-GATE-01). `npm run verify` exit 0 (**2,278 tests / 252 files**) · sweep **13,014 generated / 6,993 refused by design / 0 hard failures** · HIGH 0 / MED 26 · 120 invariants = 120 rows.
 
 > 🟢 **LR-SHORTFALL-CAUSE-01 + NOTE-DURATION-FMT-01 (§80 Am.1).** Founder read the long-run tile on his own London Marathon plan: raw minutes everywhere (**48.2% of 42,444 values were ≥60**, largest 338) and one number with **no unit at all** on 5,264 of 5,264 firings. Underneath it: the note named the time cap **0 times in 5,264** while **71.0% sat 2–3 min beneath that cap** — because the cap is applied on the kilometre axis and the distance is then rounded. Now `LONG_RUN_AT_CAP_TOLERANCE_MINS` (3, chosen from an empty 4–5 band) and `LONG_RUN_SHORTFALL_MATERIAL_PCT` (5). ⚠️ **My "the branch is structurally dead" framing was TOO STRONG and an existing test disproved it** — zero in the corpus is not "cannot fire".
 
