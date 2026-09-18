@@ -127,10 +127,12 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | `REFUSAL-SCREEN-01` part 1 (copy) | **Done** | SLT sat today on the alternatives question |
 | `REFUSAL-SCREEN-01` part 2 (base-building plan) | **Gated** | Prescription → Coaching Board **before any line is written**. Not in the current queue |
 | `MARATHON-VOLUME-GATE-01` | **Done** | Coaching Board sat today — CORRECT WITH AMENDMENT |
-| `FIRSTRUN-MARATHON-01` | **Partially done** | The batch review re-scoped it (killed the "wow" framing, set touchpoint 7 as the priority). ⚠️ **Touchpoint 7's actual intervention needs its own sitting when scoped** — it is #7 in the queue, not immediate, and a sitting now would be ruling on a brief that does not exist yet |
+| `FIRSTRUN-MARATHON-01` | **🔴 SAT 2026-09-18** (challenged by the founder — my deferral was wrong) | The batch review re-scoped it (killed the "wow" framing, set touchpoint 7 as the priority). ⚠️ **Touchpoint 7's actual intervention needs its own sitting when scoped** — it is #7 in the queue, not immediate, and a sitting now would be ruling on a brief that does not exist yet |
 | **§44/§52 `block` tier** | **🔴 SAT BELOW** | Date-critical, Hutchinson required it before October |
 | **`FOUNDATION-DECIDE-LATER-01`** | **🔴 SAT BELOW** | The fix has two forms and choosing between them is a product call |
 | **`GTM-CHARITY-09`** | **🔴 SAT BELOW** | *"Not necessarily a build"* — somebody has to decide which |
+
+> ⚠️ **I DEFERRED `FIRSTRUN-MARATHON-01` AND THE FOUNDER OVERRULED ME, CORRECTLY.** My reason — *"it is #7 in the queue"* — confused the **shipping order** with the **priority**. It is the P0. The real obstacle was that no brief existed, and **writing the brief was my job, not a blocker**. Research done, sitting below.
 
 ---
 
@@ -184,6 +186,43 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 **🏃 Hutchinson.** One condition: *"why is my plan so easy"* is answered by §1 and §12, and the FAQ must not soften that into an apology. It is the product.
 
 **✅ RECOMMENDATION — BUILD DIFFERENTLY: a partner-facing FAQ, not a support surface.** Five questions, drafted for Jack to send with the codes, in the charity's register. **Add the runway question** — Wood's point is not on the current list. Ships with the codes, not before them. **Still FREE, still one inbox** — no ticketing, no chat.
+
+---
+
+### ⚖️ SLT — `FIRSTRUN-MARATHON-01`, touchpoint 7: the first missed session. Sat 2026-09-18.
+
+**Why this touchpoint.** The SLT batch named it the priority inside the P0: *the drop-out happens at the first missed session*, not at onboarding, where motivation is highest.
+
+**📋 WHAT HAPPENS TODAY — established in code, and it is worse than "missing".**
+
+A runner who misses a session gets `MissedSessionSheet`: *"Looks like Tuesday's session wasn't logged. What happened?"* with four buttons — **Injury / illness · Too tired · Life got busy · Bad weather** — and an immediate, well-written response (`getSkipResponse`): *"Right call. Don't push it."*
+
+Then the answer is written to `session_completions.fatigue_tag` and **read by nothing.**
+
+🔴 **ONE COLUMN, TWO DISJOINT VOCABULARIES.** `fatigue_tag` is also written by the post-run flow with `Fresh · Fine · Heavy · Wrecked`. **Every downstream consumer matches only that second vocabulary:**
+
+| Consumer | Matches | Sees a missed-session reason? |
+|---|---|---|
+| `limiter.ts:236` (Trigger 4 fatigue accumulation) | `FATIGUE_HIGH_TAGS = ['Heavy','Wrecked','Cooked']` | **No** |
+| `disciplineLedger.ts:124` | `'Heavy' \|\| 'Wrecked'` | **No** |
+| `DashboardClient:6907` fatigue warning | `['Heavy','Wrecked','Cooked']` | **No** |
+| `DashboardClient:3864` | `['Heavy','Wrecked','Cooked']` | **No** |
+
+**The sets are disjoint. A first-time marathoner who reports an INJURY produces exactly one sentence of copy and zero change to anything else.** The limiter cannot fire, the discipline ledger cannot see it, the plan does not adapt. This is the `'Shin splints' ≠ 'shin_splints'` class (`feedback-fixtures-must-use-product-values`) and the INPUT-EFFECT-01 dead-input class, together, on the single most fragile moment in a beginner's training.
+
+**🔬 Wood.** This is my argument, and I did not expect the evidence to be this clean. **We ask the question, we print a kind sentence, and we discard the answer.** The behavioural cost is precise: the runner has just told us they are injured, and the plan's silence teaches them the app is decorative at exactly the moment they are deciding whether they are *"someone who is behind"* or *"someone who missed a run"*. ⚠️ **And the fix is NOT to add encouragement.** It is to make the context respond — the same principle that decided ADR-012.
+**📦 Fried.** Nobody has to build a feature here. **A dead input is a bug.** Fix the vocabulary, then decide what reads it.
+**🧠 Sutherland.** Note which reason is most common and which is most serious are different questions. *"Life got busy"* will dominate; *"Injury / illness"* is the one that ends a marathon. Do not average them.
+**💰 Traynor.** Jack's entire problem in one screen. The moment a place-holder becomes a non-runner is the moment they miss one session and nothing happens.
+**🏃 Hutchinson.** Agreed on the defect, and here is the boundary. **Making the plan RESPOND to a missed session is prescription** — that is the Coaching Board, not this one, and §R20-T4 already owns fatigue-triggered softening. **What is in scope here without my other board: make the input reach the consumers that already exist.** Whether an injury report should reshape the plan is a separate ruling.
+
+**✅ RECOMMENDATION — BUILD, in three separable parts. Only the first is unblocked.**
+1. **Fix the dead input (defect, no board).** One column cannot carry two vocabularies. Separate the missed-session reason from the fatigue tag, or map it — and add a guard test that fails when a written value has no reader. **This is the whole of what can be built today.**
+2. **Route it to the consumers that already exist (Coaching Board).** §R20-T4's softening, the discipline ledger, the limiter. Existing mechanisms, new input — still prescription, still a ruling.
+3. **The runner-facing response (brand + Wood's condition).** Only after 1 and 2. **No encouragement, no streak, no "you've got this".** Context, not motivation.
+
+**🚨 MUST/NEVER.** No gamification of a missed session — **the single highest-risk place in this app to put a streak**. No new modal; the sheet exists. Part 3 must not promise adaptation that part 2 has not delivered.
+**⚠️ Risks.** `session_completions` is read by the discipline ledger, the reframe risk gate and `v_coach_engagement`. **Changing what `fatigue_tag` carries touches all three** — and `completionVerification.ts:55` already assumes *"skip-with-reason carries a fatigue_tag by definition"*.
 
 ---
 
