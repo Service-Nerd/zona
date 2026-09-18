@@ -101,6 +101,29 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 #### 🐞 Four observations from the founder's device — filed 2026-09-18
 
+> ⚠️ **REFUSAL-THRESHOLDS-01 — the claim that shaped the marketing deck is WRONG about the trigger and RIGHT about the consequence.** *(Checked in code 2026-09-18. Correct the deck before it goes further.)*
+>
+> **The claim** (from a previous session, carried into the Make-A-Wish deck): *"The engine refuses a marathon plan if someone's running under 20 km a week, or their longest recent run is under 5 km."*
+>
+> 🔴 **FALSE. Measured, not read.** A 7 × 6 grid over `current_weekly_km` (5→40) × `longest_recent_run_km` (2→12), marathon, `finish` goal, 4 days, ~30 weeks out: **every single combination generated a 20-week plan.** 5 km/week with a 2 km longest run builds a marathon plan. **There is no volume threshold and no longest-run threshold anywhere in the refusal path.** (Both fields feed `fitnessThresholds` — which *classifies* a runner as beginner, e.g. `beginner_max_long_km: 8` — and a classification threshold is not a refusal. That is the likely source of the confusion.)
+>
+> ✅ **What ACTUALLY refuses a marathon, both verified by generating:**
+> | Condition | Message |
+> |---|---|
+> | **Fewer than 3 days/week** | *"2 days/week is not enough for a MARATHON. Minimum is 3 days/wk; 4+ recommended."* |
+> | **Fewer than 10 weeks of preparation** | *"9 weeks is not enough preparation for a MARATHON. Minimum is 10 weeks."* |
+>
+> **For this cohort:** the 10-week gate cannot bite anyone who signs up on time — London 2027 is 2027-04-25, so it only starts refusing around **mid-February 2027**, and codes go out in October. **The 3-day gate is the live risk**, and it is the `block` tier with **no acknowledgement path** — the open sub-question under the resolved `PREP-ACK-UNLOCKS-MARATHON-01`.
+>
+> 🔴 **AND THE CONSEQUENCE IN THE CLAIM IS EXACTLY RIGHT — the refusal screen is a bare error.** Read from `GeneratePlanScreen.tsx:1176`. A charity first-timer who can run two days a week sees:
+> - **Headline, in amber: *"Something went wrong building the plan."*** ⚠️ **This is false.** Nothing went wrong. The engine made a deliberate, correct coaching decision and the screen reports it as a system failure.
+> - **Body: the raw engine string** — `"2 days/week is not enough for a MARATHON. Minimum is 3 days/wk; 4+ recommended."` Diagnostic copy, shouty caps, abbreviations. Not the brand voice.
+> - **One button: *"Try again"***, which returns to the wizard. It implies a transient fault and **names no lever** — §40c's own doctrine, which every *generated* note obeys, is absent from the one screen where the runner gets nothing at all.
+> - **No alternative offered.** Not "run three days", not "a half marathon fits what you have", not "talk to your charity". A dead end with a fixed race date.
+>
+> **This is the "bounce off at the first attempt and never come back" case, and it is real.** It belongs to `FIRSTRUN-MARATHON-01` touchpoint 2. Minor defect while in there: the message reads **"1 days/week"**.
+
+
 > 🔴 **ONBOARD-SKIP-LABEL-01 — tapping "Connect later" tells you it is connecting. Same defect, two screens.** *(P1, analysed in code, reproduction is by inspection.)*
 >
 > **Root cause, `app/dashboard/DashboardClient.tsx`.** One `busy` flag serves two mutually exclusive actions, and the PRIMARY button's label is bound to the flag rather than to which action is running:
@@ -119,7 +142,9 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > 🔴 **THE REAL DEFECT IS THAT THIS CANNOT BE DIAGNOSED.** `handleFoundationAddBlock` (`GeneratePlanScreen.tsx:1101`) is `catch { setFoundationAddStatus('error') }` — **no status code, no message, no console, no ops event**. The runner gets a generic string and we learn nothing. **Fix this first, regardless of cause**, or the next report is identical.
 >
-> 🟡 **Prime suspect: the call is one of only FIVE bare `fetch('/api/…')` sites in the whole app against 56 `authedFetch` call sites** — and it hits a `getUserFromRequest` route. `getUserFromRequest` falls back to cookies, and `@supabase/ssr` cookie sync to the server is documented **unreliable on native** in that helper's own comment. The sibling `/api/generate-plan` call two hundred lines up is bare too and works for him, so this is a suspect, not a conclusion. The other bare sites (`/api/recalibrate-zones`, `/api/post-run-reframe`) are the same latent shape.
+> 🔴 **SHARPENED 2026-09-18 — near-conclusive.** Its sibling `/api/generate-plan` call, 120 lines earlier in the same file (`:966`), is also a bare `fetch` **but explicitly attaches the bearer token**, with the comment *"cookie sync to server is unreliable with @supabase/ssr"*. The foundation call at `:1091` sends **no `Authorization` header at all**. Same file, same route family, one authenticates and one does not — and the route's `getUserFromRequest` returns null without a token unless the cookie happens to work. That is the asymmetry, and on native the cookie is exactly what is documented not to work.
+>
+> 🟡 **Context: the call is one of only FIVE bare `fetch('/api/…')` sites in the whole app against 56 `authedFetch` call sites** — and it hits a `getUserFromRequest` route. `getUserFromRequest` falls back to cookies, and `@supabase/ssr` cookie sync to the server is documented **unreliable on native** in that helper's own comment. The sibling `/api/generate-plan` call two hundred lines up is bare too and works for him, so this is a suspect, not a conclusion. The other bare sites (`/api/recalibrate-zones`, `/api/post-run-reframe`) are the same latent shape.
 >
 > **Do:** add the error detail, switch all four authed bare-fetch sites to `authedFetch`, then re-test on device.
 

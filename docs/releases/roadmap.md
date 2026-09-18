@@ -73,6 +73,16 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > `/slt-review`, not a build** — Wood's kill mandate applies, most "wow" ideas are the illusion-of-progress
 > class. Blockers and full scope in `backlog.md`.
 
+> ⚠️ **REFUSAL-THRESHOLDS-01 — the marketing deck carries a WRONG claim. Correct it.** The line *"the engine
+> refuses a marathon if someone runs under 20 km a week or their longest run is under 5 km"* is **false**:
+> measured over a 7 × 6 grid of volume × longest run, **every combination generated a 20-week plan**, down to
+> 5 km/week with a 2 km longest run. There is no volume or longest-run refusal. What actually refuses a
+> marathon is **fewer than 3 days/week** and **fewer than 10 weeks of preparation** — and for London 2027 the
+> 10-week gate cannot bite before mid-February 2027, so **only the 3-day gate is a live risk** for this cohort.
+> 🔴 **The claim's CONSEQUENCE was right, though:** the refusal screen headlines *"Something went wrong
+> building the plan"* over a deliberate coaching decision, prints the raw engine string, offers only
+> *"Try again"*, names no lever and suggests no alternative. That is the bounce-off case, and it is real.
+
 > 🐞 **Four founder observations from device, 2026-09-18 — three are real, one is not.**
 > **`ONBOARD-SKIP-LABEL-01`** (P1): tapping "Connect later" / skip renders *"Connecting…"* / *"Setting up…"* on
 > the primary button — one shared `busy` flag, two screens, the DB is correct and only the label lies.
