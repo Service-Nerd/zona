@@ -17,6 +17,8 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { generateFreeIntro } from '@/lib/plan/freeIntro'
 import { nextMonday, formatDate } from '@/lib/plan/length'
 import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/inputs'
+import { isDesignedRefusal } from '@/lib/plan/designedRefusal'
+import { effectiveStartKm } from '@/lib/plan/startVolume'
 import { BaseVolumeError } from '@/lib/plan/baseVolume'
 import { LongRunReadinessError } from '@/lib/plan/longRunReadiness'
 
@@ -150,6 +152,25 @@ export async function POST(req: NextRequest) {
       // CoachingPrinciples §44 — prep-time refusal surfaces structured data so
       // the client can render the warning + alternatives and re-submit with
       // acknowledged_prep_warning: true.
+      // REFUSAL-TELEMETRY-01 — record every designed refusal with the inputs
+      // that caused it, BEFORE the branch-specific response. One call site, so
+      // a new refusal type cannot be added without it.
+      if (isDesignedRefusal(err)) {
+        await recordOpsEvent('plan_refused_by_design', {
+          rule: (err as Error).name,
+          race_distance_km: input.race_distance_km,
+          current_weekly_km: input.current_weekly_km,
+          effective_start_km: Math.round(effectiveStartKm(input) * 10) / 10,
+          longest_recent_run_km: input.longest_recent_run_km,
+          days_available: input.days_available,
+          fitness_level: input.fitness_level,
+          training_age: input.training_age,
+          goal: input.goal,
+          weeks_to_race: input.race_date
+            ? Math.round((new Date(input.race_date).getTime() - Date.now()) / 6048e5)
+            : null,
+        }, user.id)
+      }
       if (err instanceof PrepTimeError) {
         return NextResponse.json(
           {

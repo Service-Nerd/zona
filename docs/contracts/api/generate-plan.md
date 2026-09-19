@@ -153,6 +153,22 @@ with the paid `coach_intro`; subsequent free plans (a `plans` row exists) omit i
 
 ### 422 — Guard rail / coaching refusal
 
+> **Every 422 designed refusal is recorded (REFUSAL-TELEMETRY-01, 2026-09-19).**
+> One `recordOpsEvent('plan_refused_by_design', …)` call sits above the
+> branch-specific responses, gated on `isDesignedRefusal(err)`, so a new refusal
+> type cannot be added without telemetry. The detail carries the inputs that
+> caused it — `rule`, `race_distance_km`, `current_weekly_km`,
+> `effective_start_km`, `longest_recent_run_km`, `days_available`,
+> `fitness_level`, `training_age`, `goal`, `weeks_to_race`. **Behavioural only:
+> no name, no free text.**
+>
+> Why it exists: §111's door sits at 12 km/week and no public data says what
+> share of real charity signups fall under it — the literature says what a
+> runner *should* have before a marathon block, not what they *do* have, and
+> the charity cannot tell us. The refusals themselves are the measurement.
+> It is also the honest test of `S111-DENOMINATOR-01`, which added 456
+> refusals **on a grid**; this counts how many land on real people.
+
 ```json
 { "error": "string" }                                    // bare guard-rail string
 { "error": "string", "reason": "block|warn_unacknowledged", "prep": {…}, "requires_acknowledgment": bool }   // §44 prep-time

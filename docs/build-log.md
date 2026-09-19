@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — REFUSAL-TELEMETRY-01 · when you cannot find the number, collect it
+**Shipped:** every designed refusal now records the inputs that caused it.
+
+**Dev learning:** We had a P0 blocked on a question nobody could answer: what share of 500 charity runners run less than 12 km a week. I searched for it. The literature is all prescriptive — it will tell you a first-time marathoner should have 24 to 40 km a week before starting a block, and that a complete beginner needs three to six months to get there. Nobody publishes what people signing up for a charity place actually run, because nobody measures it. The charity does not know either.
+
+**Product/creator learning:** The instinct was to estimate. The better move was to notice that we generate the refusal ourselves, so every single one is a data point we were throwing away. One event, no migration, and the answer arrives on its own within days of the codes going out. **A question you cannot answer by research is sometimes a question you can answer by instrumentation.**
+
+**AI-building learning:** I put it at ONE call site above the branch-specific responses, gated on the shared `isDesignedRefusal` predicate, rather than adding a line to each of the four refusal branches. Four copies would have been four chances to add a fifth refusal type and forget. The codebase already had the pattern — `plan_distance_gate_blocked` — so this reused the path instead of inventing one.
+
+**The honest bit:** this is also the test of something I shipped an hour earlier. The denominator fix added 456 refusals **on a grid of synthetic inputs**. I do not know how many real people that is, and neither does anyone else. Now it will tell us, and it may say I was wrong about the size of it.
+
+**Hook material:** We needed to know what beginner runners actually run before a marathon. The research only says what they should run. So we stopped asking and started counting.
+
+---
+
 ## 2026-09-19 — S111-DENOMINATOR-01 · shipping the expensive truth
 **Shipped:** the safety gate now measures the volume runners actually start from, and refuses 456 more first-time marathoners.
 

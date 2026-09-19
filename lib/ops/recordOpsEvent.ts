@@ -8,6 +8,24 @@ import { createClient } from '@supabase/supabase-js'
 // failure that can't be recorded at its site.
 
 export type OpsEventKind =
+  // REFUSAL-TELEMETRY-01 (2026-09-19) — every DESIGNED refusal, with the inputs
+  // that caused it.
+  //
+  // WHY: §111's door sits at 12 km/week and we could not say what share of real
+  // runners fall under it. There is no public data — the coaching literature
+  // says what a runner SHOULD have before a marathon block (24-40 km/week), not
+  // what charity signups ACTUALLY run, and the charity cannot tell us either.
+  // So we stopped trying to find the number and started collecting it: every
+  // refusal is a data point, and the answer arrives on its own within days of
+  // the codes going out.
+  //
+  // This is also the honest test of a P0. `S111-DENOMINATOR-01` added 456
+  // refusals on a GRID; this records how many land on real people.
+  //
+  // Behavioural only, no PII: the volume, distance and day-count the runner
+  // typed, plus which rule fired. Never a name, never free text.
+  | 'plan_refused_by_design'
+
   | 'plan_save_failed'          // savePlanForUser threw on a server reshape/write path
   | 'plan_integrity_mismatch'   // an auto_applied adjustment never landed in plan_json (probe)
   | 'reshape_invalid'           // a reshaped plan failed a constitutional invariant (prod soft-degrade)
