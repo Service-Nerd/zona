@@ -1,3 +1,5 @@
+import { validatePlan } from './plan/invariants'
+import { recordOpsEvent } from './ops/recordOpsEvent'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { reanchorCharityGrant } from '@/lib/charity/reanchor'
 import { supersedeWeekKeyedRows, isRaceIdentityChange } from './plan/supersede'
@@ -90,6 +92,48 @@ export async function savePlanForUser(
   plan: Plan,
   supabase: SupabaseClient
 ): Promise<void> {
+  // SAVE-VALIDATE-01 (2026-09-19) — THE LAST GATE BEFORE THE DATABASE.
+  //
+  // Nine mutation routes call this function and NONE of them validated.
+  // Only `generate-plan` and `adjust-plan` did, leaving `post-race-reshape`
+  // (+confirm/revert), `recalibrate-zones`, `recalibrate-taper`,
+  // `maintenance-block`, `confirm-adjustment` and `revert-adjustment` writing
+  // unchecked, with `ops/plan-audit` — a DAILY cron — as the only net. That
+  // DETECTS rather than prevents, so an invalid plan could be live 24 hours.
+  //
+  // Here rather than on the routes: one owner covers every current writer and
+  // every future one. Nine copies of one rule is a D-08 violation whose tenth
+  // copy is the one somebody forgets.
+  //
+  // ⚠️ NEVER BLOCKS A SAVE IN PRODUCTION. A runner whose reshape fails to
+  // persist is worse off than a runner holding a plan with a violation in it,
+  // and the daily audit still sweeps. This turns 24 hours into minutes.
+  // It throws only under NODE_ENV=test, where we control the inputs — the same
+  // split `generateRulePlan` already uses.
+  //
+  // ⚠️ GATED ON `generator_input`, WHICH IS A REAL LIMITATION AND IS MEASURED.
+  // `validatePlan` needs the input the plan was built from. Generated plans
+  // stamp it (17 keys, survives the JSON round trip through `plan_json`), but
+  // legacy plans predate it and are skipped rather than guessed at. Measured
+  // across the whole test suite: 8 saves, ALL skipped for want of it — so this
+  // check is inert in tests except where a test supplies it deliberately, and
+  // `planSaveValidate.test.ts` is that test.
+  const generatorInput = plan?.meta?.generator_input
+  if (generatorInput && plan.weeks?.length) {
+    const errors = validatePlan(plan, generatorInput).filter(v => v.severity === 'error')
+    if (errors.length) {
+      const detail = {
+        count: errors.length,
+        codes: Array.from(new Set(errors.map(v => v.code))).slice(0, 8),
+        first: errors[0]?.message?.slice(0, 200) ?? null,
+        weeks: plan.weeks.length,
+      }
+      if (process.env.NODE_ENV === 'test') {
+        throw new Error(`savePlanForUser: refusing to persist an invalid plan in test — ${detail.codes.join(', ')}`)
+      }
+      void recordOpsEvent('plan_save_invalid', detail, userId)
+    }
+  }
   // Plan history (data protection + the Me → Plan history screen): archive the
   // CURRENTLY-stored plan before it's overwritten. Centralised HERE so every
   // mutation path archives consistently — previously only the wizard's

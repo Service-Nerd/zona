@@ -481,6 +481,13 @@ export function validateInputFields(input: GeneratorInput): void {
   // right WEEK 1 for someone who has never run is a beginner-floor question for
   // the Coaching Board. It is not new and not caused by this change — the same
   // plan is produced at `current_weekly_km: 1` today. Filed, not fixed here.
+  // RACE-DIST-UNVALIDATED-01 — the bounds of a race this engine will build for.
+  // Structural, not a coaching knob (INV-CFG-001's exemption): 1 km is below any
+  // real road race and `raceDistanceKey`'s top bucket is '100K', so a figure
+  // beyond 300 km is a typo, not an ultra we support.
+  const RACE_DISTANCE_MIN_KM = 1
+  const RACE_DISTANCE_MAX_KM = 300
+
   const MISSING_OR_NEGATIVE = (v: unknown) =>
     typeof v !== 'number' || !Number.isFinite(v) || v < 0
 
@@ -489,6 +496,53 @@ export function validateInputFields(input: GeneratorInput): void {
   }
   if (MISSING_OR_NEGATIVE(input.current_weekly_km)) {
     throw new InputFieldError('current_weekly_km', Number(input.current_weekly_km), { min: 0, max: 300 })
+  }
+
+  // RACE-DIST-UNVALIDATED-01 (2026-09-19) — THE MOST FUNDAMENTAL INPUT HAD NO
+  // GUARD AT ALL, AND IT FAILS SILENTLY INTO AN ULTRA.
+  //
+  // `raceDistanceKey` is a descending ladder of `<=` comparisons with no lower
+  // bound and no NaN arm. EVERY comparison against a non-number is false, so it
+  // falls through to the last line and returns '100K'. Measured:
+  //
+  //   undefined -> '100K'      NaN   -> '100K'      'abc' -> '100K'
+  //   0         -> '5K'        -5    -> '5K'
+  //
+  // A request missing this field therefore does not fail. It generates a
+  // 26-week HUNDRED-KILOMETRE ULTRA plan, and the runner is shown a race day
+  // reading `"Race day — undefined km"` with the coach note `"Start slower than
+  // feels right. First NaN km at Zone 2."` Nothing upstream stops it: the
+  // route's only distance check is `canGenerateDistance`, which asks whether the
+  // TIER may have this distance and answers "yes, 100K is a paid distance and
+  // this is a paid user" — a permission question, never a validity one.
+  //
+  // ⚠️ IT IS ALSO INVISIBLE IN PRODUCTION BY DESIGN. `validatePlan` does catch
+  // it (`INV-PLAN-LONG-RUN-HAS-AN-AXIS`, because the race session ends up with
+  // no axis), but `enforceViolations` only THROWS under development/test — in
+  // production it logs to console.error and returns the plan anyway. So the
+  // one mechanism that noticed was the one switched off where it mattered.
+  //
+  // Found while writing the SAVE-VALIDATE-01 fixture, which invented a
+  // `race_distance` field that does not exist. That is the third fixture-enum
+  // slip of the day and the lesson holds — but here the wrong fixture was the
+  // instrument: the engine accepted the omission and built a plan from it.
+  //
+  // Guarded HERE because `validateInputFields` is already the single owner of
+  // "is this input nonsense" (§55, D-04: failure is data) and already guards the
+  // two volume fields this way. A second copy at the route would be the
+  // producer/checker split this repo has paid for repeatedly.
+  //
+  // Exempt from the Coaching Board: this changes no prescription. It converts a
+  // silent wrong plan into the designed refusal §55 already calls for.
+  if (
+    typeof input.race_distance_km !== 'number'
+    || !Number.isFinite(input.race_distance_km)
+    || input.race_distance_km < RACE_DISTANCE_MIN_KM
+    || input.race_distance_km > RACE_DISTANCE_MAX_KM
+  ) {
+    throw new InputFieldError('race_distance_km', Number(input.race_distance_km), {
+      min: RACE_DISTANCE_MIN_KM, max: RACE_DISTANCE_MAX_KM,
+    })
   }
 
   // ENUM FIELDS WERE NEVER VALIDATED (added 2026-09-11) — the same class this

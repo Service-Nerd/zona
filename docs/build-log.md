@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — SAVE-VALIDATE-01 + RACE-DIST-UNVALIDATED-01 · the wrong fixture was the instrument
+**Shipped:** every plan is validated on its way into the database, and a missing race distance can no longer build a hundred-kilometre ultra.
+
+**Dev learning:** Nine routes could write a plan and two of them validated it. The net was a daily cron, which means an invalid plan could be live for twenty-four hours before anything noticed. The fix is one check in the one function they all call, not nine checks in nine places. Before writing it I put a log-only probe in that function and ran the whole suite: eight saves, all eight skipped, because every fixture builds plans by hand and none carried the field the validator needs. A guard nothing in the suite can reach is the thing this repo keeps finding under a green tick, so the guard shipped with the one test that supplies the field.
+
+**The honest bit:** I found the second defect by writing a broken fixture. I invented a `race_distance` field that does not exist; the real one is `race_distance_km`. Third time today I have got a fixture value wrong, and I have a written rule about exactly this. But the engine did not reject the omission. It built a plan. `raceDistanceKey` is a ladder of `<=` comparisons with no lower bound and no NaN arm, so every comparison against `undefined` is false and it falls through to the last line, which is `100K`. The runner would have been shown a twenty-six-week ultra whose race day read "Race day — undefined km" and whose coach note read "Start slower than feels right. First NaN km at Zone 2." The validator did catch it, and in production that catch only writes to console.error. So the one mechanism that noticed was switched off precisely where it mattered. My mistake was the test case nobody had written.
+
+---
+
 ## 2026-09-19 — PERSONA-CORPUS-01 · the grid cannot describe a person
 **Shipped:** six realistic runners join the permanent test corpus, and the grids stop being the only witness.
 

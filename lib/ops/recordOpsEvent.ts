@@ -8,6 +8,26 @@ import { createClient } from '@supabase/supabase-js'
 // failure that can't be recorded at its site.
 
 export type OpsEventKind =
+  // SAVE-VALIDATE-01 (2026-09-19) — a plan reached the database carrying an
+  // error-severity constitutional violation.
+  //
+  // WHY: NINE mutation routes call `savePlanForUser` and NONE of them called
+  // `validatePlan`. Only `generate-plan` (6 calls) and `adjust-plan` validated.
+  // `post-race-reshape` (+confirm/revert), `recalibrate-zones`,
+  // `recalibrate-taper`, `maintenance-block`, `confirm-adjustment` and
+  // `revert-adjustment` all persisted unchecked, and the only net was
+  // `ops/plan-audit` — a DAILY cron, so an invalid plan could be live for 24
+  // hours before anything noticed.
+  //
+  // The check lives in `savePlanForUser` rather than on the nine routes: one
+  // owner covers every current writer AND every future one, where nine copies
+  // of one rule is a D-08 violation whose tenth copy gets forgotten.
+  //
+  // ⚠️ IT NEVER BLOCKS A SAVE IN PRODUCTION. A runner's reshape failing to
+  // persist is a worse outcome than a plan with a violation in it, and the
+  // daily audit still sweeps. This makes the 24-hour window minutes instead.
+  | 'plan_save_invalid'
+
   // REFUSAL-TELEMETRY-01 (2026-09-19) — every DESIGNED refusal, with the inputs
   // that caused it.
   //
