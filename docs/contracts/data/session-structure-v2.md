@@ -73,6 +73,17 @@ main_set_structure (v2)
 
 This is D-03 ("versioned behaviour only — never silently reinterpret old shapes") applied literally: v1 rows keep v1 semantics forever.
 
+**New v2 rows since this contract was written:** `beginner_goal_pace_blocks` (§110b, Coaching Board
+CB-BEGINNER-CATALOGUE-01, 2026-09-19) — goal-pace blocks inside an easy run for a beginner with a time target.
+`scaling: 'reps'`, work steps in DURATION with an easy-run recovery rather than a jog, on Willy's condition that
+"reps invite a beginner to race the recovery".
+
+⚠️ **It is also the first row to carry `fitness_level_max`**, a row-eligibility field added the same day. That field
+is NOT part of `main_set_structure` and so is out of this contract's scope, but it is noted here because the row is:
+`fitness_level_min` means "and everyone above", so a row written for one cohort leaks upward without an upper bound.
+Measured: an unscoped new row changed **2,324 of 5,940 parity cases — 0 beginner plans and ~59% of intermediate and
+experienced ones**. See `docs/canonical/session-catalogue.md`.
+
 ## The derived set reaches the plan
 
 A catalogue row is shared across runners, so it cannot hold both *"4 × 1000 m"* and *this runner's* numbers. The row holds the shape; the **session** holds the resolved set.

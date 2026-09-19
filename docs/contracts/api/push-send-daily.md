@@ -41,6 +41,13 @@ For each `push_subscriptions` row (grouped by `user_id` so multi-device users ar
 5. Resolve tier via `getUserTier()`. Skip free tier.
 6. Load plan + session overrides. Skip if no plan or no current week.
 7. Resolve today's effective session via `resolveEffectiveSessions`. **Every planned session type pushes, rest included** (product decision 2026-05-27). Skip only if the day has no session at all.
+
+   > ⚠️ **Collision semantics changed 2026-09-19 (EFFSESS-COLLISION-01), and this route is a consumer.**
+   > `resolveEffectiveSessions` used to OVERWRITE the occupant when a one-sided move landed on an occupied day, so a
+   > session could vanish from the week entirely and this route would push nothing for it. It now displaces the
+   > occupant to the day the mover vacated, and refuses the move if that day is also taken. **Consequence for this
+   > route: a displaced session is now pushed on its NEW day**, and a day that previously went silent after a
+   > collision now sends. This route never ran the UI's guard, which is why the fix is in the resolver.
 8. Build the payload via `lib/coaching/voiceLines.ts → buildDailyPushTitle / buildDailyPushBody`:
    - `title` — e.g. `"Today: easy 45m."` Prefix comes from `BRAND.push.dailyTraining`.
    - `body` — voice line for the session type (from `getSessionVoiceLine`).
