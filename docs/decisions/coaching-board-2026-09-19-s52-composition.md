@@ -103,6 +103,26 @@ is frequently post-injury, post-illness or post-partum here.
 5. **Do not add a third per-week §52 bound.** That instruction survives; a floor on
    composition is a different object.
 
+## Candidate C — built and measured after the sitting, to discharge condition (3)
+
+Let the trim place up to **two** easy runs and let the easy size floor yield to
+`MIN_SESSION_DISTANCE_ABSOLUTE_KM` (2 km) on injury-capped weeks only. **Deliberately uses no
+new constant** — that value is already ratified by §113 Amendment 1.
+
+**Result on the worst case: partial, and it FAILS binding condition (1).**
+
+| wk | 7 | 8 | 9 | 11 | 12 | 13 | 14 |
+|---|---|---|---|---|---|---|---|
+| before | 2 runs / 71% | 2 / 78% | 2 / 83% | 2 / 79% | 2 / 83% | 2 / 86% | 2 / **87%**, 30 km |
+| after | **3 / 53%** | **3 / 63%** | 2 / 83% | 2 / 79% | 2 / 83% | 2 / 86% | **3 / 76%**, **34 km** |
+
+Three weeks recover and four do not. **Week 14 rises from 30 km to 34 km — it breaches the
+injury ceiling**, which is exactly what condition (1) forbids. Reverted, not shipped.
+
+**What this proves:** the remaining volume genuinely cannot support more runs without either
+more volume (forbidden) or a smaller long run (§80 vs §90, unruled). The deferral below is
+not caution; it is the measured position.
+
 ## Why the instrument is deferred
 
 More easy runs at the configured `MIN_SESSION_DISTANCE_KM.easy` (4 km) pushes the week above
