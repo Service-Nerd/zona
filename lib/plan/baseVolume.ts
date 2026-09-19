@@ -98,8 +98,30 @@ export function assessBaseBuild(plan: Plan, input: GeneratorInput): BaseBuildAss
   // these refusals by scaling the peak instead. Shipping this alone delivers a
   // 48% refusal INCREASE against a P0 that says the opposite.
   //
-  // Sequence: S106 first, then this. The measurement is recorded so the next
-  // person does not have to rediscover it.
+  // ⚠️ RE-MEASURED AND RE-HELD 2026-09-19, AND THE RE-MEASUREMENT WAS WRONG
+  // FIRST — recorded because the mistake is the transferable part.
+  //
+  // The hold above cites "+624, +48%". On 2026-09-19 I re-measured after
+  // S106-RACE-PEAK-01 and §114 shipped, on `cohortGrid + targetedGrid`, and got
+  // **§111 refuses 0 today, 112 with the fix — 0.24%, not 48%**. I concluded the
+  // blocker had evaporated and shipped it.
+  //
+  // `audit:plans` then failed on its OWN corpus:
+  //
+  //     BEGINNER MARATHON (priority one)  generated 4,159 -> 3,703
+  //                                       refused   2,321 -> 2,777  (+456, +19.6%)
+  //
+  // **The 6,480-input beginner-marathon corpus is not in `cohortGrid` or
+  // `targetedGrid`.** I measured the cohort the fix is safe for and missed the
+  // cohort it endangers — the founder's priority one. Reverted.
+  //
+  // THE HOLD STANDS, now with the right number and the right corpus. A held
+  // item's cost must be re-measured on the corpus that contains the cohort the
+  // hold PROTECTS, not on whichever grid is nearest to hand.
+  //
+  // What would release it: a change that lifts low-base beginners' delivered
+  // peak (so the real ratio falls below the cap) BEFORE the denominator is
+  // corrected — not a re-measurement of this fix in isolation.
   const currentKm = input.current_weekly_km ?? 0
   const cap = GENERATION_CONFIG.MAX_BASE_BUILD_RATIO
   const applies = baseBuildRatioApplies(input.race_distance_km)

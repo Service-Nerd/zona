@@ -1168,24 +1168,34 @@ if (hardFailures > 0) {
 // A baseline is a debt register, not an amnesty. Tracked in backlog.md as
 // SWEEP-BASELINE-01.
 const BASELINE: Record<string, number> = {
-  // ── §53 variety, UNSATISFIABLE POOL for one beginner profile (CB-BEGINNER-CATALOGUE-01, 2026-09-19) ──
+  // ── §53 variety, ROTATION SPENDS A SHARED ROW (CB-BEGINNER-CATALOGUE-01, 2026-09-19) ──
   //
-  // 2 plans in 14,486, both `5km / beginner / days=3 / cwk=40`: five quality
-  // sessions drawn from a pool of TWO eligible rows, so some row must appear
-  // three times while the cap computes 2. **Arithmetically unsatisfiable**,
-  // which is the D-21 shape §53's own pigeonhole arm exists to prevent — the
-  // arm is computing 2 where ceil(5/2) = 3, and that is a question about §53's
-  // arithmetic, not about these plans.
+  // 2 plans in 14,486, both `5km / beginner / days=3 / cwk=40`.
   //
-  // ⚠️ NOT FIXED BY ADDING A THIRD ROW, DELIBERATELY. The row that would widen
-  // this pool is `tempo_cruise_short` (threshold repeats) — rung 5 of §110b's
-  // ladder, which the Coaching Board explicitly DEFERRED on 2026-09-19 pending
-  // evidence that beginners complete rung 6. Widening the pool to clear a
-  // check would be overriding a board deferral with a test result.
+  // ⚠️ THIS NOTE FIRST READ "arithmetically unsatisfiable". THAT WAS WRONG, and
+  // it was wrong because I asserted it from the COUNTS without printing the
+  // POOLS. Corrected by measurement the same day:
   //
-  // Filed as `S53-PIGEONHOLE-ARM-01`. The VALUE lives with the other
-  // variety codes further down this object — a second key here would be a
-  // silent duplicate that the later one overrides.
+  //     pools  [3, 2, 2, 2, 2]
+  //     picks  progressive_tempo, tempo_continuous, progressive_tempo,
+  //            tempo_continuous, progressive_tempo   (+ a taper sharpener)
+  //
+  // Four of the five picks come from a TWO-row pool, so those two rows must
+  // each appear twice. The FIRST pick had a THREE-row pool, and the rotation
+  // spent `progressive_tempo` on it rather than the third row. Choosing the
+  // third row there gives 2 / 2 / 1 and satisfies the cap.
+  // **The pigeonhole arm computes correctly (2). The ROTATION is the defect.**
+  //
+  // ⚠️ NOT FIXED, AND THE REASON IS THE COST. The fix is a scarcity heuristic:
+  // when pools vary, spend the row the LATER, narrower pools cannot offer.
+  // `selectCatalogueSession` is called per pick and sees only the pool in front
+  // of it, so this needs lookahead across every quality slot in the plan —
+  // re-ordering session selection for EVERY runner to correct 0.014% of plans.
+  // Both affected sessions are legitimate threshold work: the cost is variety,
+  // not safety.
+  //
+  // Filed as `S53-ROTATION-SCARCITY-01` (supersedes `S53-PIGEONHOLE-ARM-01`,
+  // which blamed the wrong component).
 
   // ── §52 lopsided week, UNMASKED (not caused) by COMPLIANCE-FIX-2, 2026-09-16 ──
   //
@@ -1338,7 +1348,7 @@ const BASELINE: Record<string, number> = {
   // made honester-but-quieter, because distinct labels no longer hint at the
   // row repetition underneath. The row-count flip is still gated on the Coaching
   // Board's §53 cap ruling; both halves ship together or neither does.
-  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':    2,  // S53-PIGEONHOLE-ARM-01, 2026-09-19 — see the note at the top of this object
+  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':    2,  // S53-ROTATION-SCARCITY-01, 2026-09-19 — see the note at the top of this object
   // 54 -> 98 -> 0 (2026-08-20). Cleared by identifying a taper session by its
   // catalogue ROW rather than its display label: §22's goal-pace rename made two
   // genuinely different sessions read as a repeat. The row check is also
