@@ -8,6 +8,16 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
+**State at END of 2026-09-19 (last ship `34fe629`):** ✅ tree clean. `npm run verify` chain green — **2,341 tests / 261 files** · 121 invariants (121↔121 reconciled) · matrix 65/0 · sweep **14,470 plans, no new violations** · `measure:fitness` unchanged · `audit:plans` no regression. **7 commits.**
+
+🔴 **THE ENGINE IS NOT FIT FOR PURPOSE FOR PRIORITY ONE AND IT IS NOW MEASURED.** `npm run audit:plans` (new, baselined), 6,480 beginner-marathon inputs: **36.4% refused outright**, and of those that generate **49.4% short of declared days · 45.2% with a ≥75% single session · 40.5% with ≤2-run weeks · 32.8% with a >30% week-1 leap**. **83% regress the midweek runs when the build begins** (long run 5.3→26.0 km while Mon/Wed/Fri stay 3.9 km from week 1 to 13). 14 volumes → 6 distinct plans.
+
+🔴 **SIX INSTRUMENTS BUILT AND MEASURED, ALL SIX TRADED ONE DEFECT FOR ANOTHER** (table in §9's Recorded structural finding — do not retry blind). Reason: **§45's cap is multiplicative on the prior week's long run, so any reduction ratchets the trajectory down and never recovers.** **The remedy is architectural — size the long run and the week TOGETHER in `buildWeekSessions` — and it is the highest-value open engine item.**
+
+🟢 **Shipped:** `CB-HILL-INJURY-01` (§28 Am.2 — **a live safety defect: knee-history beginners were prescribed hill strides**, invisible because §21's invariant matches the LABEL and the label lied; **found by making the label honest, not by measuring**) · `STRIDE-VISIBILITY-01` · `TAPER-FLOOR-FLAT-01` (38.8% of taper weeks, not the 5K edge case filed) · `PLAN-QUALITY-AUDIT-01` · `INV-MSG-ROUNDING-01` · `XREF-DANGLE-01`.
+
+🟢 **Closed by measurement:** `S80-MATERIALITY` (bimodal, **exactly empty 2–5% band** — 5% correct) · `BEGINNER-5K-QUALITY-01` (0% lack neuromuscular) · `S28-CAP-ORDER-01` (**filed mechanism does not exist**) · `S45-ABS-STEP-01` (harm > benefit) · `QUALITY-FLOOR-SUBFLOOR-01` · `BRAND-MAINT-LABEL-01`. `PLAN-RUNWAY-CHARITY-01` **answered: SIX WEEKS UNCOVERED for every charity runner**, and the lowest-volume ones refused.
+
 ## 🥇 2026-09-19 — THE ENGINE AUDIT. Batched board + SLT, every open coaching item ruled.
 
 **The founder's standing instruction, and the standard everything below is judged against:**
