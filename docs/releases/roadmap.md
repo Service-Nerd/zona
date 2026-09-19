@@ -213,13 +213,25 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 >
 > **Four of its rows shipped that day** (`MAINT-LIVENESS-01`, `GRID-MARATHON-CAPABLE-01`, `STEPBACK-STALE-PEAK-01`, `INV-MSG-ROUNDING-01`), two were ruled and sequenced (`S52-LOPSIDED-BOUND-01`, `S24-FLOOR-REACHABILITY-01`) and one was superseded (`LR-CONSEC-01`). ⚠️ **`audit-docs.sh` reported ALL CLEAN throughout** — an OPEN table is in none of its five categories, which is the same width problem that let `coaching-rules.md` carry two stale refusal rows on 2026-09-18. **An audit is only ever as wide as its list.**
 >
-> **OPEN — the engine/coaching list as at 2026-09-19.**
+> ## ⚠️ READ THIS BEFORE ANSWERING "WHAT COACHING-ENGINE ITEMS ARE OPEN?"
+>
+> **This table used to mix ENGINE work with brand, UI and SLT items, and five of
+> its eight open rows were not engine work at all.** Asked "is the engine done?"
+> on 2026-09-19 the answer kept moving, and that was the largest single reason:
+> the list being read was not the list being asked about. Split below. **Do not
+> re-merge them.** An item that is not a change to what the engine PRESCRIBES
+> does not belong in the ENGINE table, however it was found.
+>
+> **THE ANSWER, as at 2026-09-19: 3 engine items open, 0 of them defects.**
+> One is finished-but-reverted and needs a FOUNDER DECISION; one is blocked on
+> data only the charity can give; one is a P3 whose cost has been measured.
+>
+> **OPEN — ENGINE (changes what the engine prescribes)**
 >
 > | Item | What it is |
 > |---|---|
 > | ~~`S52-LOPSIDED-BOUND-01`~~ | ✅ **CLOSED 2026-09-19 — the eleventh instrument was built, measured and REVERTED, and its failure is ARITHMETIC not ordering.** A post-pass re-applying §114's share bound against the FINISHED week (placed correctly on the third attempt, after V1/V4/§47 Am.2/§6 Am.2). **Shortening the long run also shortens the week, so the share is a fixed point:** at 3 days with a 30-min weekday cap the week is `lr + 7.2`, so ≤60% requires a **10.8 km marathon long run**. Measured: worst share 78%→72%, affected plans 287→280 of 899, while the **injury cohort's median marathon peak long run fell 61.6%→52.1% of race distance** (~4 km off a knee-history runner's longest run). Reverted; `measure:fitness` back at baseline exactly. Residual declared under §34; `lopsidedNote` already names the real lever (the other days). **Do not propose a twelfth.** See CoachingPrinciples §52 *Recorded finding*. |
 > | ~~`S24-FLOOR-REACHABILITY-01`~~ | ✅ **CLOSED 2026-09-19 — DOES NOT REPRODUCE.** §24 requires a marathon time-goal peak long run ≥75% of race (31.65 km), and the invariant **relaxes for `maintenance` plans by design**. Measured across 3,456 marathon time-goal plans: **3,408 are maintenance (§24 does not bind), 48 are not — and 0 of those 48 are short. 100% compliance where the rule binds.** ⚠️ **My first measurement said 98% short, median 5.15 km** — because I used every marathon time-goal plan as the denominator instead of the ones where §24 applies. The filed "short 1.2 km" came from a single review persona, and the review personas are **finish**-goal, which §24 does not govern (they use `FINISH_GOAL_PEAK_LR_RATIO_VS_RACE_DURATION`). No conflict between §9's 210-minute cap and §24 materialises in any binding plan. |
-> | `TT-FREE-BENCHMARK-01` | **SLT question, not a defect.** A free runner is prescribed a 5K benchmark whose result only a paid tier can apply. Three options written up. |
 > | ~~`MAINT-LIVENESS-01`~~ | ✅ **SHIPPED 2026-09-19.** It was **8**, not 9 — and not a corpus gap at all: the harness was calling `validatePlan` when these are checked by `validateMaintenanceBlock`. Liveness 107 → **118/121**; §67/§75 debt discharged. |
 > | ~~`LR-CONSEC-01`~~ | ✅ **SUPERSEDED 2026-09-19** by §9's Recorded structural finding — §45 is blind to compounding because nothing bounds the long run against its week. |
 > | ~~`GRID-MARATHON-CAPABLE-01`~~ | ✅ **SHIPPED 2026-09-19.** `VOLUMES` gains 70; §24 now reached by 68 rows against 0. It surfaced `PEAK-VS-DELIVERED-BUILD-01`. |
@@ -236,10 +248,19 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > | ~~`EFFSESS-COLLISION-01`~~ | ✅ **SHIPPED 2026-09-19** — found by the regression pass. Moving a session onto a day whose session was already COMPLETED silently deleted it; a two-session week became one. Module had 6 callers and 0 tests. |
 > | ~~`S9-DURATION-FLOOR-01`~~ | ✅ **CLOSED 2026-09-19 — the gap is real, there is NO defect behind it, and it now has a gate.** §9's floor is in KM and `INV-PLAN-MIN-SESSION-SIZE` skips duration-anchored sessions, so it reaches no beginner session at all. **Measured across 818,760 duration-anchored sessions: the shortest is 30 min (easy) and 25 min (quality); nothing under 20, 15 or 10 minutes.** Durations come from the work-minute bands and `SESSION_FORMAT`, not from a share of a small week, so there is nothing for a floor to catch. ⚠️ **A minutes floor would be a new invariant with nothing to catch** — doctrine written for a hole no plan falls through. ⚠️ **And the obvious fix is wrong:** routing the KM floor through `sessionKmSelfPaced` fires on ordinary beginner easy runs (30 min at beginner pace = 3.9 km vs a 4 km floor). **Gate, not a note:** `sessionDistanceReach.test.ts` now fails if any duration-anchored session drops under 20 minutes, so the board gets a real case rather than a hypothetical. |
 > | 🔵 `S53-ROTATION-SCARCITY-01` | **P3, renamed from `S53-PIGEONHOLE-ARM-01` because that name blamed the wrong component.** 2 plans in 14,486. ⚠️ **My filing said "arithmetically unsatisfiable" and that was WRONG** — printing the pools gave `[3,2,2,2,2]`: four picks come from a 2-row pool, and the FIRST pick had three rows available, so spending the third there gives 2/2/1 and satisfies the cap. **The pigeonhole arm computes correctly; the ROTATION is the defect.** **Not fixed, cost stated:** the fix is a scarcity heuristic needing lookahead across every quality slot (the selector sees one pool at a time), which would re-order session selection for every runner to correct **0.014%** of plans. Both sessions are legitimate threshold work — the cost is variety, not safety. Baselined in the sweep with this reason. |
-> | `PLAN-NOTE-PLACEMENT-01` | **Founder call.** Does the plan rationale belong at the TOP of the Plan screen at all? Wood says a runner asks in week 3, not day one. Held until the shortened version is seen on device. |
-> | `BRAND-EMDASH-01` | **Founder call.** Mechanism half CLOSED by COPY-GLYPH-01; what remains is the decision. Em dashes are in **100% of plans**, 26,727 session labels alone, so removing them renames every session. |
-> | `TT-PRICING-CLAIM-01` | **SLT, escalated by the Coaching Board.** `/pricing` sells the race projection as "from your real running"; 58% of plans have none. `pricing.test.ts` checks a row EXISTS, never that it is true. |
-> | `LR-DELOAD-RESUME-01` | **Record only** — board-approved, built, measured, reverted as unsafe. Kept so it is not retried. |
+>
+> 
+> **NOT ENGINE — moved off the engine table 2026-09-19.** These are real open
+> items; none of them changes what the engine prescribes, so none of them is an
+> answer to "is the coaching engine done?".
+>
+> | Item | What it is | Owner |
+> |---|---|---|
+> | `TT-FREE-BENCHMARK-01` | **SLT question, not a defect.** A free runner is prescribed a 5K benchmark whose result only a paid tier can apply. Three options written up. | **SLT** |
+> | `TT-PRICING-CLAIM-01` | **SLT, escalated by the Coaching Board.** `/pricing` sells the race projection as "from your real running"; 58% of plans have none. `pricing.test.ts` checks a row EXISTS, never that it is true. | **SLT** |
+> | `PLAN-NOTE-PLACEMENT-01` | **Founder call.** Does the plan rationale belong at the TOP of the Plan screen at all? Wood says a runner asks in week 3, not day one. Held until the shortened version is seen on device. | **Founder** |
+> | `BRAND-EMDASH-01` | **Founder call.** Mechanism half CLOSED by COPY-GLYPH-01; what remains is the decision. Em dashes are in **100% of plans**, 26,727 session labels alone, so removing them renames every session. | **Founder** |
+> | `LR-DELOAD-RESUME-01` | **Record only** — board-approved, built, measured, reverted as unsafe. Kept so it is not retried. | **Nobody — record only, not work** |
 >
 > ⚠️ **This block names the commit it describes.** `state-block-check.py` flags
 > it on any `feat(`/`fix(` commit that postdates that SHA — it went stale three
