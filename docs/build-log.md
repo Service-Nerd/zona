@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — MAINT-LIVENESS-01 · the harness was calling the wrong validator
+**Shipped:** maintenance blocks are now probed for liveness. 107/121 invariants proven able to fail, up to 118/121.
+
+**Dev learning:** Eight maintenance invariants had sat in the "unproven" baseline for months with the reason "the harness never builds this plan shape". That reason was wrong, and being wrong is what kept it there — it described a plausible cause, it sounded like a known limitation, and nobody checked it. The truth was narrower and worse: those invariants are not checked by `validatePlan`. They are checked by `validateMaintenanceBlock`, and the harness only ever called `validatePlan`. No corpus, however wide, could ever have woken them. Two coaching principles rested on them.
+
+**Product/creator learning:** This is the fourth time the liveness debt has been investigated and the first time the sample was not the problem. The three previous fixes were all about which inputs got probed — a dedup, a key, a round-robin that only ever consumed list heads. Each one was real. Each one also made the remaining debt look more legitimate, because the obvious suspect had just been fixed. A stale reason in a debt register is worse than no reason, because it answers the question and stops the asking.
+
+**AI-building learning:** My first mutation battery woke four of the eight and I had guessed at all of them. The four that failed were failing for boring reasons: the race-specific check reads `session.category` and I had set the label; the quality cap counts sessions against a per-week limit and I had added one. Reading the four checks took two minutes and fixed all four. Guessing at what a rule reads is the same error as guessing at what a metric measures, and I did both today.
+
+**The honest bit:** the test suite then went red on a *different* file — `principleCoverage.test.ts` complaining that §67 and §75 were still listed as resting on unwakeable invariants when they no longer were. That is a cross-register check catching me tidying one register and leaving another stale, which is the exact failure the three registers were built to catch in each other a day earlier. It is the first time one of them has caught me rather than the code.
+
+**Hook material:** A test harness reported eight rules as unprovable for months. It had been calling the wrong function the whole time.
+
 ## 2026-09-19 — CB-HILL-INJURY-01 · a label told the truth and a safety bug fell out
 
 **Shipped:** `npm run audit:plans` (the fifth question — would we be proud to hand this plan over?), stride labels that say "strides", a §21 gate on hill strides that was missing, and the taper's floors routed through the resolver everything else already uses.

@@ -1,9 +1,10 @@
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
-import { validatePlan, INVARIANT_CODES } from '@/lib/plan/invariants'
+import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
+import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
 import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
-import type { GeneratorInput, Plan, Session } from '@/types/plan'
+import type { GeneratorInput, Plan, Session, Week } from '@/types/plan'
 
 /**
  * INVARIANT LIVENESS — can each rule still be made to fail? (test-coverage #5)
@@ -667,6 +668,61 @@ export interface LivenessReport {
 }
 
 /** Break `sampleSize` valid plans every way we know, and see what wakes up. */
+/**
+ * MAINT-LIVENESS-01 — the deliberate-breakage battery for maintenance blocks.
+ *
+ * A maintenance block is meant to be quiet, so silence on a healthy one cannot
+ * tell a working rule from a dead one — the same reason the plan battery exists.
+ * Each mutation targets one thing `validateMaintenanceBlock` claims to check.
+ */
+const MAINTENANCE_MUTATIONS: { name: string; apply: (w: Week[]) => void }[] = [
+  { name: 'maint: blow the volume ceiling', apply: ws => { for (const w of ws) w.weekly_km = (w.weekly_km ?? 0) * 4 + 100 } },
+  { name: 'maint: add a hard quality session', apply: ws => {
+      const w = ws.find(x => Object.keys(x.sessions ?? {}).length > 0) ?? ws[0]
+      if (w) (w.sessions as Record<string, unknown>).wed =
+        { type: 'intervals', label: 'Intervals — Zone 4', distance_km: 10, duration_mins: 50 }
+    } },
+  { name: 'maint: fill every day (no rest)', apply: ws => {
+      for (const w of ws) w.sessions = Object.fromEntries(
+        ['mon','tue','wed','thu','fri','sat','sun'].map(d =>
+          [d, { type: 'easy', label: 'Easy run — Zone 2', distance_km: 5, duration_mins: 30 }]),
+      ) as Week['sessions']
+    } },
+  // ⚠️ EACH OF THESE READS A SPECIFIC FIELD, AND THE FIRST CUT MISSED FOUR OF
+  // THEM BY GUESSING. `NO-RACE-SPECIFIC` reads `session.category`, not the
+  // label; `INJURY-EASY-ONLY` reads /strides/ in the label; `QUALITY-CAP`
+  // counts quality sessions in a PHASE-2 week against a per-week cap, so one
+  // is not enough; `REENGAGEMENT-WINDOW` reads the `reengagement` flag against
+  // the week's position. Mutations have to name the field the rule names.
+  { name: 'maint: prescribe race-specific work', apply: ws => {
+      for (const w of ws) (w.sessions as Record<string, unknown>).sat =
+        { type: 'quality', category: 'race_specific', label: 'Race-pace progression', distance_km: 20, duration_mins: 110 }
+    } },
+  { name: 'maint: exceed the phase-2 quality cap', apply: ws => {
+      for (const w of ws) {
+        if (w.phase !== 'maintenance_base') continue
+        w.sessions = {
+          mon: { type: 'intervals', label: 'Intervals — Zone 4', distance_km: 8, duration_mins: 45 },
+          wed: { type: 'tempo',     label: 'Tempo — Zone 3',     distance_km: 9, duration_mins: 45 },
+          fri: { type: 'quality',   label: 'Cruise intervals',   distance_km: 9, duration_mins: 45 },
+          sun: { type: 'easy',      label: 'Easy run — Zone 2',  distance_km: 6, duration_mins: 36 },
+        } as Week['sessions']
+      }
+    } },
+  { name: 'maint: give an injured runner strides', apply: ws => {
+      for (const w of ws) (w.sessions as Record<string, unknown>).thu =
+        { type: 'easy', label: 'Easy run + strides — Zone 2', distance_km: 6, duration_mins: 36 }
+    } },
+  { name: 'maint: invert the reengagement flags', apply: ws => {
+      for (const w of ws) (w as unknown as Record<string, unknown>).reengagement = !w.reengagement
+    } },
+  { name: 'maint: flag reengagement during restoration', apply: ws => {
+      for (const w of ws) if (w.phase === 'maintenance_restoration')
+        (w as unknown as Record<string, unknown>).reengagement = true
+    } },
+  { name: 'maint: strip every session', apply: ws => { for (const w of ws) w.sessions = {} as Week['sessions'] } },
+]
+
 export function probeLiveness(sampleSize = 64): LivenessReport {
   // 32 -> 64 (GRID-COVERAGE-02 Phase 2). The sample is a FIXED BUDGET shared by
   // three corpora — population shapes, targeted shapes, then bulk — so adding
@@ -796,6 +852,62 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
       for (const v of vs) if (!woken.has(v.code)) woken.set(v.code, m.name)
     }
   }
+  // ── MAINT-LIVENESS-01 — the maintenance block gets probed too ──────────────
+  //
+  // 🔴 THE BASELINE'S STATED REASON WAS WRONG, AND IT HID THE ACTUAL CAUSE.
+  // Eight `INV-MAINT-*` codes sat as `corpus` debt — "the harness never builds
+  // this plan SHAPE" — for months. The truth is narrower and worse: these
+  // invariants are not checked by `validatePlan` at all. They are checked by
+  // `validateMaintenanceBlock`, and this harness only ever called `validatePlan`.
+  // **The harness was calling the wrong validator**, so no corpus, however wide,
+  // could ever have woken them. §67 and §75 rest on two of these.
+  //
+  // Same class as the three previous liveness-debt findings (by-shape dedup,
+  // shape key, round-robin heads): every one turned out to be the SAMPLE rather
+  // than the rules. This is the fourth, and the first where the sample was not
+  // the problem — the CALL was.
+  {
+    const raceWeek: Week = {
+      n: 12, date: '2026-07-07', label: 'Race week', theme: 'Race day.',
+      type: 'race', phase: 'taper', weekly_km: 30, long_run_hrs: null, sessions: {},
+    } as Week
+    // A spread of the axes the maintenance invariants actually gate on: base
+    // volume, cadence, injury, and race distance (which sets the blackout).
+    const maintCases: { baseKm: number; days: number; injured: boolean; distKm: number }[] = [
+      { baseKm: 40, days: 4, injured: false, distKm: 42.2 },
+      { baseKm: 25, days: 3, injured: true,  distKm: 21.1 },
+      { baseKm: 60, days: 5, injured: false, distKm: 42.2 },
+      { baseKm: 18, days: 2, injured: true,  distKm: 10 },
+    ]
+    for (const c of maintCases) {
+      let weeks: Week[]
+      try {
+        weeks = generateMaintenanceBlock({
+          raceResult: { finish_time: '3:45:00', distance_km: c.distKm, date: '2026-07-12', rpe: 7, outcome: 'on_target' },
+          lastRaceWeek: raceWeek,
+          baseWeeklyKm: c.baseKm,
+          raceDistanceKm: c.distKm,
+          daysAvailable: c.days,
+          ...(c.injured ? { injuryHistory: ['Knee'] } : {}),
+        })
+      } catch { continue }
+      const check = (ws: Week[], why: string) => {
+        let vs: Violation[]
+        try { vs = validateMaintenanceBlock(ws, c.baseKm, c.injured, c.days) } catch { return }
+        for (const v of vs) if (!woken.has(v.code)) woken.set(v.code, why)
+      }
+      check(weeks, 'fires on a valid maintenance block')
+      // The same deliberate-breakage discipline the plan mutations use: a rule
+      // that nothing can wake is UNPROVEN, and silence on a healthy block
+      // cannot tell a working rule from a dead one.
+      for (const m of MAINTENANCE_MUTATIONS) {
+        const w = JSON.parse(JSON.stringify(weeks)) as Week[]
+        try { m.apply(w) } catch { continue }
+        check(w, m.name)
+      }
+    }
+  }
+
   const unwoken = (INVARIANT_CODES as readonly string[]).filter(c => !woken.has(c))
   return { woken, unwoken, plansProbed: sample.length }
 }

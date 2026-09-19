@@ -93,7 +93,15 @@ export const UNVERIFIED_BASELINE = 0
  * invariants are unproven for the same reason, and the maintenance generator has
  * no liveness corpus of its own. Filed as MAINT-LIVENESS-01.
  */
-export const UNPROVEN_INVARIANT_COVERAGE_BASELINE: readonly number[] = [17, 18, 67, 75]
+// §67 and §75 REMOVED 2026-09-19 (MAINT-LIVENESS-01). Both rested on
+// `INV-MAINT-*` invariants that nothing had ever proven could fail, and the
+// recorded reason — "the harness never builds this plan shape" — was wrong.
+// Those invariants are checked by `validateMaintenanceBlock`; the liveness
+// harness only ever called `validatePlan`, so no corpus could have woken them.
+// All eight are now woken by a maintenance corpus plus its own mutation
+// battery, which discharges these two sections' coverage debt for real rather
+// than by re-describing it. 17 and 18 remain and are genuinely open.
+export const UNPROVEN_INVARIANT_COVERAGE_BASELINE: readonly number[] = [17, 18]
 
 export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 1, by: 'invariant', ref: 'INV-PLAN-QUALITY-EXPECTED' },  // Polarised training — protection from grey zone
