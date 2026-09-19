@@ -4174,16 +4174,32 @@ function applyTaperDeliveredDepth(
 // marks every other one as a step-back: drop race-pace catalogue specificity,
 // reduce LR distance to ≤ PEAK_LR_STEPBACK_MAX_PCT of the peak-level distance,
 // and rewrite the label / coach notes to a generic long run.
+/**
+ * Returns the week numbers it actually STEPPED BACK.
+ *
+ * STEPBACK-STALE-PEAK-01 — §47 sizes the step-back as a ratio of the peak long
+ * run IT CAN SEE, and `applyLongRunProgressionCap` runs afterwards and can trim
+ * that peak, so the ratio ends up measured against a number that no longer
+ * exists (measured: a 166-minute step-back against a final peak of 206, 80.6%
+ * against §47's 80% bound).
+ *
+ * ⚠️ THE SET IS RETURNED RATHER THAN RE-DERIVED, because a naive re-clamp was
+ * tried and reverted: treating every SUB-PEAK week as a step-back breaks §35
+ * and §24. Only the weeks this function chose are step-backs, and only this
+ * function knows which those are — the §47 exception, the deload interaction
+ * and the alternation parity all feed that choice.
+ */
 function applyPeakLongRunAlternation(
   weeks: Week[],
   pace: PaceGuide,
   input: GeneratorInput,
-): void {
+): Set<number> {
+  const steppedBack = new Set<number>()
   const peakWeekIdxs: number[] = []
   for (let i = 0; i < weeks.length; i++) {
     if (weeks[i].phase === 'peak' && weeks[i].type !== 'deload') peakWeekIdxs.push(i)
   }
-  if (peakWeekIdxs.length < 2) return  // single peak week — nothing to alternate
+  if (peakWeekIdxs.length < 2) return steppedBack  // single peak week — nothing to alternate
 
   // Find max peak-level LR distance to anchor the step-back fraction.
   const longRunOf = (w: Week): { day: Day; session: Session } | null => {
@@ -4216,7 +4232,7 @@ function applyPeakLongRunAlternation(
     .filter((l): l is { day: Day; session: Session } => l != null)
   const peakMaxLrKm   = Math.max(...peakLrs.map(l => l.session.distance_km  ?? 0), 0)
   const peakMaxLrMins = Math.max(...peakLrs.map(l => l.session.duration_mins ?? 0), 0)
-  if (peakMaxLrKm <= 0 && peakMaxLrMins <= 0) return
+  if (peakMaxLrKm <= 0 && peakMaxLrMins <= 0) return steppedBack
 
   // §47 only applies to weeks where the long run carries race-pace specificity
   // (MP-finish / HM-pace). Plans whose peak long runs are flat Zone 2 (5K, 10K,
@@ -4231,7 +4247,7 @@ function applyPeakLongRunAlternation(
     const lr = longRunOf(weeks[i])
     return lr ? labelHasRacePace(lr.session.label ?? '') : false
   })
-  if (!anyPeakIsRacePace) return
+  if (!anyPeakIsRacePace) return steppedBack
 
   const stepBackMaxKm = peakMaxLrKm * (GENERATION_CONFIG.PEAK_LR_STEPBACK_MAX_PCT / 100)
   const exceptionEligible = input.hard_session_relationship === 'love'
@@ -4319,6 +4335,10 @@ function applyPeakLongRunAlternation(
     // of the branch deliberately: every `continue` above leaves the week
     // peak-level, and the flag must still say so when the trim could not happen.
     laterWeekIsPeakLevel = false
+    // STEPBACK-STALE-PEAK-01 — record the week so the post-cap re-clamp knows
+    // which weeks §47 actually stepped back. Only these are step-backs; a week
+    // merely below peak is not (§35, §24).
+    steppedBack.add(w.n)
 
     // Rewrite the session: strip race-specific label, coach notes, and pace
     // segment fields; restore the standard "Long run — Zone 2" prescription.
@@ -4387,6 +4407,74 @@ function applyPeakLongRunAlternation(
   for (const idx of peakWeekIdxs) {
     weeks[idx].weekly_km = sumWeeklyKm(weeks[idx].sessions, pace)
     weeks[idx].long_run_hrs = computeLongRunHrs(weeks[idx].sessions, pace)
+  }
+  return steppedBack
+}
+
+/**
+ * STEPBACK-STALE-PEAK-01 — re-clamp §47's step-backs against the FINAL peak.
+ *
+ * Runs after `applyLongRunProgressionCap`, which is the pass that can trim the
+ * peak out from under the ratio. Keys strictly on the weeks §47 chose, so a
+ * week that is merely below peak is untouched (§35, §24).
+ *
+ * Interim note retired: `peakLrStepbackMinutes.test.ts` had its tolerance
+ * widened 1 -> 2 minutes to absorb this, with "fix the ordering instead"
+ * written into it. This is that fix.
+ */
+function reclampPeakStepBacks(
+  weeks: Week[], pace: PaceGuide, input: GeneratorInput, steppedBack: ReadonlySet<number>,
+): void {
+  if (steppedBack.size === 0) return
+  const peak = weeks.filter(w => w.n > 0 && w.phase === 'peak' && w.type !== 'deload' && w.type !== 'race')
+  const lrOf = (w: Week) => Object.values(w.sessions ?? {}).find(s => s && isLongRun(s)) as Session | undefined
+  // ⚠️ ABSENT IS NOT ZERO (SESSION-KM-01). A peak week whose long run is
+  // duration-anchored has no `distance_km` at all, and reading that as 0 would
+  // drag the max down and under-bound every step-back on the plan. Each axis
+  // takes only the weeks that actually speak it.
+  const notSteppedBack = peak.filter(w => !steppedBack.has(w.n))
+  const kmVals = notSteppedBack.map(w => lrOf(w)?.distance_km).filter((k): k is number => k != null)
+  const minsVals = notSteppedBack.map(w => lrOf(w)?.duration_mins).filter((m): m is number => m != null)
+  const peakKmFinal = kmVals.length ? Math.max(...kmVals) : 0
+  const peakMinsFinal = minsVals.length ? Math.max(...minsVals) : 0
+  const pct = GENERATION_CONFIG.PEAK_LR_STEPBACK_MAX_PCT / 100
+  const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
+  const minLong = sessionFloorsFor(input.longest_recent_run_km).long
+  const minRatio = GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY
+  for (const w of weeks) {
+    if (!steppedBack.has(w.n)) continue
+    const s = lrOf(w)
+    if (!s) continue
+    // §9 — the long run must stay the LONGEST run of its week. Lowering it
+    // without this floor inverts the long-vs-easy ratio and
+    // `INV-PLAN-LONG-IS-LONGEST` throws (measured: long 21 km against easy
+    // 17 km, ratio 1.235 against a 1.25 minimum, 16 hard failures in the
+    // cohort grid). The easy runs are not touched — they are sized by the
+    // volume curve, and re-cutting them here would be a second owner for a
+    // decision step 0 already made.
+    // ⚠️ NULLS ARE DROPPED, NOT READ AS ZERO. `sessionDistanceReach.test.ts`
+    // caught the first cut using `?? 0` here — the SESSION-KM-01 antipattern,
+    // which asserts "this session covered no ground" and has produced four
+    // measured defects. A session with no resolvable distance is unknown, and
+    // an unknown must not lower a ratio floor.
+    const easyKms = Object.values(w.sessions ?? {})
+      .filter(x => x && x !== s && x.type !== 'rest' && x.type !== 'strength')
+      .map(x => sessionKmSelfPaced(x as Session))
+      .filter((k): k is number => k != null)
+    const ratioFloorKm = easyKms.length ? Math.max(...easyKms) * minRatio : 0
+    // Written on the axis the session already uses (§79/§80).
+    if (s.distance_km != null) {
+      if (peakKmFinal <= 0) continue
+      const bound = Math.max(Math.floor((peakKmFinal * pct) / precision) * precision, minLong, ratioFloorKm)
+      if (s.distance_km > bound) { s.distance_km = bound; s.duration_mins = dur(bound, pace.minPerKmEasy) }
+    } else if (s.duration_mins != null) {
+      if (peakMinsFinal <= 0) continue
+      const bound = Math.max(Math.round(peakMinsFinal * pct), Math.round(dur(minLong, pace.minPerKmEasy)),
+        Math.round(dur(ratioFloorKm, pace.minPerKmEasy)))
+      if (s.duration_mins > bound) s.duration_mins = bound
+    }
+    w.weekly_km = sumWeeklyKm(w.sessions, pace)
+    w.long_run_hrs = computeLongRunHrs(w.sessions, pace)
   }
 }
 
@@ -6489,7 +6577,7 @@ function buildRulePlanOnce(
   // CoachingPrinciples §47 — alternate peak long runs (step-back vs peak-level).
   // Runs first because §47 reduces some peak LRs to step-back distances, which
   // affects the §45 cap calculation that follows.
-  applyPeakLongRunAlternation(weeks, pace, input)
+  const peakStepBackWeeks = applyPeakLongRunAlternation(weeks, pace, input)
 
   // CoachingPrinciples §45 — long-run progression cap. Walks the plan and
   // clamps any LR that exceeds +20% / +5km from the prior week's LR.
@@ -6573,6 +6661,20 @@ function buildRulePlanOnce(
   // applyLongRunStepBacks then cut every Nth build long run, and the week after
   // became a jump nothing re-checked. All 430 remaining sweep violations of this
   // code were that ordering — re-running the cap at the end cleared every one.
+  applyLongRunProgressionCap(weeks, pace, sessionFloorsFor(input.longest_recent_run_km))
+
+  // STEPBACK-STALE-PEAK-01 — §47's ratio is re-measured against the peak that
+  // survived the cap above, not the one it saw before.
+  //
+  // ⚠️ §45 RUNS AGAIN AFTER IT, and that is not belt-and-braces. Lowering a
+  // step-back raises the step the FOLLOWING week has to take, and measured, it
+  // breaks §45: re-clamping W15 to 23 km turned W16's untouched 29 km into a
+  // 26% jump. Same ratchet shape as §114's post-pass attempts. §45 is already
+  // the documented cleanup pass for this class, and it only ever REDUCES, so a
+  // second run converges rather than oscillating. Any residual staleness is
+  // bounded by one §45 trim of the peak, well inside `peakLrStepbackMinutes`'s
+  // tolerance.
+  reclampPeakStepBacks(weeks, pace, input, peakStepBackWeeks)
   applyLongRunProgressionCap(weeks, pace, sessionFloorsFor(input.longest_recent_run_km))
 
   // §6 Amendment 1 — THE TAPER LONG RUN MAY NOT EXCEED THE PEAK LONG RUN.

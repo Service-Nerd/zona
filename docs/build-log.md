@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — STEPBACK-STALE-PEAK-01 · the ratio measured against a number that no longer existed
+**Shipped:** §47's peak long-run step-back is re-clamped against the peak that actually survives the pipeline.
+
+**Dev learning:** §47 sizes a step-back week as 80% of the peak long run. It ran early in the pipeline, and a later pass could trim that peak — so the ratio ended up measured against a value no runner ever sees. Measured: a 166-minute step-back against a final peak of 206. That is 80.6%, against an 80% bound, from a rule that had done its arithmetic correctly on stale input.
+
+**Product/creator learning:** The fix is ten lines and it took four attempts, because the pipeline order is load-bearing in both directions. Lowering the step-back raises the step the following week has to take, which breaks §45's progression cap. Lowering it far enough drops the long run under §9's long-vs-easy ratio, which threw 16 hard failures across the cohort grid. Every local change in this engine pushes on two other rules, and the only way to find out which is to run the whole chain.
+
+**AI-building learning:** Two guards caught me. The first was §9's invariant, which is doing its job. The second was `sessionDistanceReach.test.ts`, which failed because I had written `distance_km ?? 0` — the exact antipattern that has produced four measured defects in this codebase, in a fix written by someone who had re-read that memory the same morning. Knowing a rule and applying it under load are different skills, and the test is the only one of the two that is reliable.
+
+**The honest bit:** the change moves three plans out of 2,868 from "builds" to "never builds". I could have quietly re-baselined that. Declaring it costs a line in the registry and means the next person can argue with the trade rather than discover it.
+
+**Hook material:** A rule was checking 80% of a number that had been changed after it looked.
+
 ## 2026-09-19 — MAINT-LIVENESS-01 · the harness was calling the wrong validator
 **Shipped:** maintenance blocks are now probed for liveness. 107/121 invariants proven able to fail, up to 118/121.
 
