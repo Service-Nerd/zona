@@ -6727,6 +6727,41 @@ holds where it was taken, and not below it.**
 
 **Out of scope, flagged not fixed.** The route's `longest_recent_run_km < 5` gate for half-plus is the same ungoverned-number smell but a distinct coaching question (long-run readiness, not weekly ramp) — a separate sitting, untouched here.
 
+### §111 — RECORDED LIMITATION, not yet remedied (Coaching Board 2026-09-19, S111-SUBFLOOR-VOLUME-01)
+
+**The board ruled INSUFFICIENT EVIDENCE on admitting the sub-12 km/week cohort, and ruled CORRECT on the finding below. §111 stands unchanged. This is a limitation written down so the next reader does not rediscover it.**
+
+**1. The threshold sits where the acute step is WORST.** §111's stated hazard is *"the jump from where the runner **is** to what the plan **demands**"*. Measured on the delivered week 1 (London-2027 profile: 29 weeks, finish goal, 4 days, age 38, `<6mo`, longest = 0.4 × cwk), with the cap temporarily lifted to see what the refused cohort would receive:
+
+| `current_weekly_km` | 4 | 6 | **8** | **10** | **11** | **12** | 14 | 16 | 20 |
+|---|---|---|---|---|---|---|---|---|---|
+| delivered week 1 | 9 | 9 | 9 | 13 | 13 | **18** | 18 | 18 | 24 |
+| acute step | +125% | +50% | **+13%** | **+30%** | **+18%** | **+50%** | +29% | +13% | +20% |
+| §111 | refuse | refuse | **refuse** | **refuse** | **refuse** | **admit** | admit | admit | admit |
+
+The step is **sawtooth, not monotonic**, because week 1 is `max(startKm, peakKm × BUILD_VOL_INIT_FLOOR_VS_PEAK)` and the floor is flat across a band while the base rises through it. §111 therefore **refuses +13%, +18% and +30% and admits +50%** — its admitted edge case is the largest acute jump in the band.
+
+⚠️ **This is the second of the four defects §111 was convened to remove, reproduced one layer up.** The ruling that created §111 records the old gate as *"non-monotonic across its own boundary — it refused 15 km/week and permitted 20 km/week, near-identical plans"*. The metric changed; the property did not. Willy, who owns this ceiling: *"a gate that admits +50% and refuses +18% is not enforcing my concern, it is enforcing a proxy for my concern that inverts at the boundary."*
+
+**2. The ceiling is runway-blind.** At `current_weekly_km` 10 with **20, 29 and 52** weeks of preparation the ratio is 4.70 and the refusal is byte-identical. A runner with a full year is refused exactly as hard as one with twenty weeks. A ratio with no time denominator is not a measure of load — §2's own text locates the risk in *"the relationship between acute and chronic load"*, and this measures neither over time.
+
+**3. §2 does not govern the step, and cannot.** §2's implementation compares week *n* to week *n−1* **inside the plan**; week 1 has no predecessor, so the current→week-1 jump is unguarded by construction. `validatePlan` returns five violations on the admitted 12 km/week plan and **none of them is about the +50%**. No invariant can close this: the step compares a plan to an input outside it.
+
+**4. Why nothing shipped, recorded so it is not retried blind.** Two candidates were built and measured at the sitting:
+
+| Candidate | Result |
+|---|---|
+| Floor yields to §2's ramp — `min(peak × 35%, startKm × 1.10)` | Opens the door 12 → 8 km/wk and makes the peak scale (cwk 10 → 35, 16 → 46, 30 → 65), **but +884 NEW error violations on the property sweep**: `INV-PLAN-LR-MAX-WEEKLY-PCT` +516, `INV-PLAN-QUALITY-VARIETY-FULL-PLAN` +207, `INV-PLAN-INTENSITY-DISTRIBUTION` +161. **Rejected.** |
+| Same, bounded below by `days_available × MIN_KM_PER_TRAINING_DAY` | **Measured no-op.** At 4 days that floor is 20 km, above the 16.45 km init floor, so it dominates and nothing moves. |
+
+The first candidate's 884 violations are **§52 failing to apply its own remedies** (*"reduce the long run, raise weekly volume, or downgrade to maintenance"*) at week sizes the engine has never had to produce: a 6.9 km tempo is 62% of an 11 km week, and removing easy running from the denominator raises §1's quality *share* without adding a single quality session (Seiler). ⚠️ **Willy additionally blocks any form that scales the PEAK off `current_weekly_km`** — §106 made "never a scaled target" his condition of approval, and it binds in both directions because self-report is unverified in both.
+
+**5. The blocking chain, and the remedy §111 already named.** `S52-LOPSIDED-BOUND-01` (P1, failed twice, standing instruction: *do not add a third per-week bound*) → `S111-SUBFLOOR-VOLUME-01` → `S111-DENOMINATOR-01`. Nothing that lowers the opening week can ship until §52's remedy path works below ~15 km/week.
+
+**Escalated to the SLT, because the question stopped being correctness.** Four of five seats would admit this runner; Willy will not admit them through *this* mechanism; and §111's own paragraph above already names the answer — a base-building plan — and says it is not built (`FOUNDATION_MAX_WEEKS` is 3 against the ~20 weeks needed). Whether to build it before October is commercial, not coaching.
+
+⚠️ **This board reached the OPPOSITE conclusion to §113 Amendment 1 on the same structural question, nine hours apart, on 2026-09-18.** §113 Am.1 vetoed a refusal because *"a rule that manufactures the hazard it then refuses over is not coaching-correct"*; §111 was ratified citing the manufactured 18 km week 1 **as its justification for refusing**. Neither ruling is wrong in isolation — a session floor sizes one session, a weekly floor decides whether the week can hold a structure at all, which is why the precedent does not transfer. **What was missed is that they were the same question.**
+
 ---
 
 These principles are the constitution. Every numeric the generator uses points back to one of them. If a numeric exists with no principle, it is a defect — either the numeric should be removed or the principle should be added.
