@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — WEEK1-LEAP-ABS-01 + ULTRA-LR-BAR-01 + ENVELOPE-COHERENCE-01 · three times the measuring stick was the broken thing
+**Shipped:** three criterion fixes, no prescription change between them. 5K reaches 100% fit for purpose; whole product 66.7% to 85.3%.
+
+**Dev learning:** I spent the day building an instrument to answer "are we serving our runners", and then found three separate places where the instrument was wrong rather than the engine. The long-run check demanded a fifty-five kilometre training run for a hundred-kilometre race and failed forty-six of forty-eight ultra plans, which is why ultras first read zero percent fit for purpose when they are the best-served distances we have. The week-one check flagged a runner going from four kilometres to five as a forty-three percent leap. And my own weighted population contained a "beginner" running fifty kilometres a week, worth seven percent of everything, contradicting the engine's own definition of what beginner means.
+
+**The pattern in all three is the same:** a rule that is correct in the middle of its range, applied at an edge where the arithmetic stops meaning anything. A percentage on a four-kilometre base. A proportion of race distance at a hundred kilometres. Two axes multiplied together that a real person does not vary independently. None of them was a bug in the sense of a wrong line of code; all three produced confident, specific, wrong numbers.
+
+**The honest bit:** the envelope one is the one that stings. I wrote a header criticising our existing grids for treating every combination of inputs as equally likely, and then built a grid that treated level and volume as independent, which is the same mistake in the same file on the same day. I conditioned training age on level because I was thinking about it, and did not condition level on volume because I was not. Thirteen point six percent of the population I was measuring could not exist.
+
+**Also fixed two things while proving a third:** the ultra reconciliation was living in a test rather than in the predicate it reconciled, so the audit and the envelope disagreed about what a defect was. And a dead exported table went with it, because nothing read it and a table nothing reads is the thing we have a test to catch.
+
+---
+
 ## 2026-09-19 — FREQ-SILENCE-01 · we were overruling people and not telling them
 **Shipped:** when weekly volume rather than the runner's life is what limits their running days, the plan says so. 5K fit-for-purpose 50.6% to 91.8%; whole product 66.7% to 78.0%.
 
