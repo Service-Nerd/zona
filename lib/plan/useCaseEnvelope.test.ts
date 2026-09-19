@@ -125,9 +125,13 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
         const maintDeclared = m.volume_profile === 'maintenance' && !!m.volume_constraint_note
         const errs = validatePlan(plan, c.input).filter(v => v.severity === 'error')
         if (errs.length) invalid.push(`${c.label} :: ${errs.map(e => e.code).join(',')}`)
+        // ⚠️ The LONG-RUN-SHORT ultra exclusion USED TO BE HERE and has moved
+        // into `planQuality` itself (ULTRA-LR-BAR-01). Knowledge about what
+        // counts as a defect belongs to the owner of the predicates, not to
+        // one of its consumers — while it lived here, `audit:plans` and this
+        // harness disagreed about whether an ultra plan was defective.
         const objs = auditPlanQuality(plan, c.input).filter(o =>
-          !(o.code === 'LONG-RUN-SHORT' && distanceKm > 42.2)
-          && !(o.code === 'NEVER-BUILDS' && maintDeclared))
+          !(o.code === 'NEVER-BUILDS' && maintDeclared))
         for (const o of objs) codes[o.code] = (codes[o.code] ?? 0) + c.weight
         if (!errs.length && !objs.length) fit += c.weight
       }

@@ -78,3 +78,46 @@ describe('WEEK1-LEAP-ABS-01', () => {
     expect(biggest, 'and the large ones must still be visible').toBeGreaterThan(5)
   })
 })
+
+describe('ULTRA-LR-BAR-01 — the long-run bar is a MARATHON bar', () => {
+  const mk = (km: number, cwk: number) => ({
+    athlete_name: 'A', age: 40, race_name: 'T', primary_metric: 'distance',
+    race_distance_km: km, race_date: '2027-06-06', plan_start: '2026-11-02',
+    goal: 'finish', fitness_level: 'experienced', training_age: '5yr+',
+    resting_hr: 52, max_hr: 182, current_weekly_km: cwk,
+    longest_recent_run_km: Math.round(cwk * 0.45), days_available: 5,
+    injury_history: [], hard_session_relationship: 'neutral',
+    recent_quality_training: 'regular',
+  }) as never
+
+  it('4. a 100K plan is NOT flagged for a long run under 55km', () => {
+    // 55% of 100 km is a 55 km training long run. Nobody prescribes that;
+    // §24e prescribes back-to-backs. It fired on 46 of 48 sampled 100K plans.
+    const input = mk(100, 65)
+    const plan = generateRulePlan(input, 'paid')
+    expect(auditPlanQuality(plan, input).map(o => o.code)).not.toContain('LONG-RUN-SHORT')
+  })
+
+  it('5. a MARATHON plan with a genuinely short long run IS still flagged', () => {
+    // The bar must not have been switched off, only scoped.
+    let flagged = false
+    for (const c of distanceEnvelope(42.2).filter((_, i) => i % 149 === 0)) {
+      let plan
+      try { plan = generateRulePlan(c.input, 'paid') }
+      catch (e) { if (isDesignedRefusal(e)) continue; throw e }
+      if (auditPlanQuality(plan, c.input).some(o => o.code === 'LONG-RUN-SHORT')) { flagged = true; break }
+    }
+    expect(flagged, 'LONG-RUN-SHORT must still fire somewhere at the marathon').toBe(true)
+  })
+
+  it('6. the gap is HONEST, not filled with an invented number', () => {
+    // Ultras now have NO long-run adequacy check. That is recorded rather than
+    // papered over: picking a 50K/100K bar is a coaching judgement (§24e makes
+    // a single longest run the wrong unit), and inventing one here to keep a
+    // column populated is how a decorative check is born.
+    const input = mk(50, 60)
+    const plan = generateRulePlan(input, 'paid')
+    const codes = auditPlanQuality(plan, input).map(o => o.code)
+    expect(codes).not.toContain('LONG-RUN-SHORT')
+  })
+})

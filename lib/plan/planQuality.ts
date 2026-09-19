@@ -107,7 +107,27 @@ export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
     f.push({ code: 'WEEK1-LEAP', detail: `week 1 is ${Math.round(w1)}km against a ${start}km base (+${((w1 / start - 1) * 100).toFixed(0)}%)` })
 
   // P6 — a marathon plan whose longest run never approaches the race.
-  if (input.race_distance_km >= 42) {
+  //
+  // ⚠️ SCOPED TO THE MARATHON BAND, NOT ">= 42" (ULTRA-LR-BAR-01, 2026-09-19).
+  // The bar is 55% of race distance. At 100K that demands a **55 km TRAINING
+  // LONG RUN**, which no coach prescribes and which §24e explicitly replaces
+  // with back-to-back long runs. Measured: it fired on 46 of 48 sampled 100K
+  // plans whose median long run was 36 km, and on 69% of 50K plans — a
+  // criterion defect that made the ultra distances read 17.1% and 0.0%
+  // fit-for-purpose when they are in fact the best-served distances we have.
+  //
+  // ⚠️ ULTRAS NOW HAVE NO LONG-RUN ADEQUACY CHECK AT ALL, and that is an
+  // HONEST GAP rather than a fixed one. Picking the right bar for a 50K/100K
+  // is a coaching judgement (§24e's back-to-back structure means a single
+  // longest run is the wrong unit), and inventing a number here to keep a
+  // column populated is how a decorative check is born. Filed as a board
+  // question; recorded in the fit-for-purpose rubric's negative space.
+  //
+  // The reconciliation used to live in the CALLERS — `useCaseEnvelope.test.ts`
+  // filtered this code out for `distanceKm > 42.2`. That put the knowledge in
+  // the consumer instead of the owner, so `audit:plans` and the envelope
+  // disagreed about what a defect was. Fixed here, once.
+  if (input.race_distance_km >= 42 && input.race_distance_km <= 43) {
     const peakLR = Math.max(0, ...weeks.filter(w => w.type !== 'deload').flatMap(kmsIn))
     if (peakLR < input.race_distance_km * 0.55)
       f.push({ code: 'LONG-RUN-SHORT', detail: `peak long run ${peakLR.toFixed(1)}km = ${(peakLR / input.race_distance_km * 100).toFixed(0)}% of race` })

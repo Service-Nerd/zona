@@ -30,9 +30,9 @@ violation** and **no coach objection**.
 |---|---|---|
 | ~~`DAYS-SHORT` — runner declares N days, plan gives fewer, no note~~ | ~~18.7%~~ **FIXED** (FREQ-SILENCE-01) | now declared |
 | zero quality for the entire block | **17.8%** | 5K 33% |
-| `WEEK1-LEAP` — week 1 >1.30× real starting volume | **14.0%** | 10K 30% |
+| `WEEK1-LEAP` — week 1 >1.30× real start **AND >2 km absolute** | **9.1%** (was 14.0%; the rest was artefact) | 10K 30% |
 | marathon refusals (§111 10.0% + §52 8.4%) | 18.3% *of marathon* | — |
-| `LONG-RUN-SHORT` (marathon only) | 2.0% | marathon 6% |
+| `LONG-RUN-SHORT` (**marathon band only** since ULTRA-LR-BAR-01) | 2.0% | marathon 6% |
 | long run never progresses across the build | 1.7% | 5K 11% |
 | quality monotony (≤2 distinct sessions across ≥6) | 0.6% | 100K 11% |
 | `DEGENERATE-WEEK` / `BINGE-WEEK` | 0.3% / 0.2% | — |
@@ -43,7 +43,7 @@ violation** and **no coach objection**.
 | claim | why it is not a finding |
 |---|---|
 | "93.7% of sessions carry no pace/HR/RPE target" | **100% are race-day sessions.** A race has no target; it is the race. My criterion. |
-| "LONG-RUN-SHORT fails 91% of 100K plans" | Bar is 55% of race = a **55 km training run** for 100K. §24e prescribes back-to-backs. Criterion defect. |
+| "LONG-RUN-SHORT fails 91% of 100K plans" | Bar is 55% of race = a **55 km training run** for 100K. §24e prescribes back-to-backs. Criterion defect — **FIXED** at source (`ULTRA-LR-BAR-01`); ultras now have no long-run check, recorded in the negative space. |
 | "9.2% of plans never build" | Almost all are **declared maintenance with a note** (§23). An earlier audit reconciled 15,236 of these to zero. |
 | "2.1% fall short in silence" | They carry `volume_constraint_note`. My shortfall test omitted that field. |
 | "zero-quality blocks are undifferentiated" | **100% beginners, 0% intermediate/experienced, at every distance**, and it scales with volume (marathon: 53% at 8 km/wk → 0% at 70 km/wk). **100% carry a note explaining it.** Seiler's question, closed. |
@@ -61,6 +61,11 @@ violation** and **no coach objection**.
 - **Adherence and dropout — no data exists at all.** One analytics event in
   the product, no charity code ever redeemed. Every judgement here is a
   coaching opinion with a number attached, never an outcome.
+- **Ultras have NO long-run adequacy check at all** since `ULTRA-LR-BAR-01`.
+  The 55%-of-race bar demanded a 55 km training run for a 100K; §24e replaces
+  the single longest run with back-to-backs, so the right unit is different and
+  picking a number without a board ruling would be an invented one. **Honest
+  gap, filed, not papered over.**
 - **Nothing has run on a device.**
 
 ## 5. The envelope weights are assumptions
