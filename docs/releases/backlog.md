@@ -1049,7 +1049,22 @@ across the seven months combined.
 > increment:** persist `usage` into `ops_events` on the two Sonnet paths that dominate the recurring spend
 > (post-run reframe and weekly report, together ~40% of the per-runner total). Do not instrument all twelve.
 
-> 🔲 **PLAN-RUNWAY-CHARITY-01 — nobody has generated the plan shape every Make-A-Wish runner will get.** *(P1, me, filed 2026-09-18.)*
+> ✅ **PLAN-RUNWAY-CHARITY-01 — ANSWERED 2026-09-19. Here is the shape, generated.** *(was P1. The measurement is done; what it FOUND is now the open item.)*
+>
+> Codes out **2026-10-05**, London **2027-04-25** = **29 weeks of runway**. Every runner who gets a plan gets the same shape:
+>
+> | cwk | longest | outcome | main weeks | foundation | **UNCOVERED** | peak | profile |
+> |---|---|---|---|---|---|---|---|
+> | 10 | 5 | 🔴 **REFUSED** (§111) | — | — | — | — | — |
+> | 12 | 5 | built | 20 | 3 | **6** | 47 | maintenance |
+> | 16 | 6 | built | 20 | 3 | **6** | 47 | maintenance |
+> | 20 | 8 | built | 20 | 3 | **6** | 62 | build |
+> | 30 | 12 | built | 20 | 3 | **6** | 65 | build |
+>
+> 🔴 **SIX WEEKS UNCOVERED, FOR EVERY ONE OF THEM.** The engine uses 23 of the 29 weeks (`FOUNDATION_MAX_WEEKS` is 3). A runner redeems a code in October, generates a plan, and then waits **a month and a half** before it starts. That is the window the charity's stated pain lives in — people who take a place and never run it — and the product currently has nothing in it.
+> This is Sutherland's recorded point, now with a number against it: *"Oct to April is twenty-eight weeks… the foundation block is not touchpoint 5. It is the product."*
+>
+> ⚠️ **And the lowest-volume runners are refused outright**, which is the §111 chain. **The two findings compound: the cohort most at risk of dropping out gets either nothing, or six empty weeks followed by a plan labelled `maintenance`.**
 >
 > Codes go out ~Oct 2026 for a late-April 2027 race: **~26 weeks of runway**. Marathon plan length maxes at
 > **20 weeks** (`PLAN_SIGNATURES.MARATHON.max_weeks`) and the foundation block adds at most **3**

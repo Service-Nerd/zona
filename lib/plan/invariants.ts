@@ -3761,9 +3761,12 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             principle_ref: 'CoachingPrinciples §16, §40b',
             severity: 'error',
             week: w.n, day,
-            message: `"${sn.label}"'s stated duration cannot hold its own prescribed structure: ${closed.toFixed(1)} min of measurable steps needs >= ~${minTotal.toFixed(0)} min once the warm-up and cool-down floors are applied, and the open recoveries are not counted at all.`,
+            // INV-MSG-ROUNDING-01 — one decimal on both sides, so the stated
+            // comparison is actually true as rendered. See the VO2max ordering
+            // message below for the failure this prevents.
+            message: `"${sn.label}"'s stated duration cannot hold its own prescribed structure: ${closed.toFixed(1)} min of measurable steps needs >= ~${minTotal.toFixed(1)} min once the warm-up and cool-down floors are applied, and the open recoveries are not counted at all.`,
             actual: `${sn.duration_mins} min`,
-            expected: `>= ~${minTotal.toFixed(0)} min (${tol} min rounding tolerance)`,
+            expected: `>= ~${minTotal.toFixed(1)} min (${tol} min rounding tolerance)`,
           })
         }
       }
@@ -3907,9 +3910,16 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
           // against the full test suite and property sweep before promoting.
           severity: 'error',
           week: vo2.week,
-          message: `Largest VO2max main set is ${vo2.mins.toFixed(0)} min ("${vo2.label}", week ${vo2.week}), exceeding the largest ${softer} main set of ${other.mins.toFixed(0)} min ("${other.label}", week ${other.week}). VO2max work is the least sustainable per minute and must not be the plan's longest quality session.`,
-          actual: `${vo2.mins.toFixed(0)} min`,
-          expected: `<= ${(other.mins + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS).toFixed(0)} min (${softer} + ${GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS} min rounding tolerance)`,
+          // INV-MSG-ROUNDING-01 (2026-09-19) — ONE DECIMAL, NOT ZERO.
+          // These rounded both sides to integers, so a real breach rendered as
+          // "Got 18 min, expected <= 18 min" — a message asserting the check
+          // fired on a value that satisfies it. The next person to hit that
+          // concludes the invariant is broken and goes looking for a bug that is
+          // not there, which is precisely the cost this repo keeps paying for
+          // misleading output. Cosmetic in effect, corrosive in practice.
+          message: `Largest VO2max main set is ${vo2.mins.toFixed(1)} min ("${vo2.label}", week ${vo2.week}), exceeding the largest ${softer} main set of ${other.mins.toFixed(1)} min ("${other.label}", week ${other.week}). VO2max work is the least sustainable per minute and must not be the plan's longest quality session.`,
+          actual: `${vo2.mins.toFixed(1)} min`,
+          expected: `<= ${(other.mins + GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS).toFixed(1)} min (${softer} + ${GENERATION_CONFIG.MAIN_SET_ORDERING_TOLERANCE_MINS} min rounding tolerance)`,
         })
       }
     }
