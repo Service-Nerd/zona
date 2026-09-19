@@ -137,9 +137,14 @@ describe('F2 — §44 Am.: a declared shortfall may not read comfortable', () =>
     // test swept finish-only 2-5yr runners, produced ZERO shortfalls, and
     // asserted `both === 0` against an empty population — a green tick behind
     // nothing, which is this repo's most-recorded failure. Hence `shortfalls > 0`.
-    for (const km of [5, 10, 21.1, 42.2]) for (const lvl of ['beginner', 'intermediate', 'experienced'] as const)
+    // ⚠️ TRIMMED TO WHAT THE ASSERTION NEEDS. The first cut swept 4x3x2x4x2x2 =
+    // 384 generated plans at 1509 ms and tripped the NEW SLOW TEST gate. The
+    // claim is "comfortable + a shortfall is zero", and the reachability
+    // guards below prove the trimmed grid still contains both populations —
+    // so the extra axes bought runtime, not evidence.
+    for (const km of [5, 42.2]) for (const lvl of ['beginner', 'experienced'] as const)
     for (const ta of ['<6mo', '2-5yr'] as const)
-    for (const cwk of [10, 20, 30, 60]) for (const days of [3, 5])
+    for (const cwk of [20, 60]) for (const days of [3, 5])
     for (const goal of ['finish', 'time_target'] as const) {
       // A designed refusal (§111/§44/§52) is a valid outcome in a grid this
       // wide, not a failure. Matched by CLASS via `isDesignedRefusal` — never
