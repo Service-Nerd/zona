@@ -1,6 +1,6 @@
 # Backlog — Zonna
 
-**State at end of 2026-09-19 (last ship `4ba1783`):** `npm run verify` exit 0 — **2,397 tests / 269 files** · 122 invariants · sweep clean · `audit-docs.sh` ALL CLEAN. **ENGINE WORK IS DONE; the backlog is NOT empty.** ⚠️ Earlier state blocks said "ENGINE BACKLOG CLOSED" and that was WRONG — `S111-SUBFLOOR-VOLUME-01` remains open. It needs no engineering: it asks whether to build a base-building plan type for runners under §111's 12 km/week door, and the SLT ruled not to build it blind. **What changed today is that it is no longer blocked on a person** — `REFUSAL-TELEMETRY-01` records every designed refusal, so the distribution arrives from real redemptions instead of from an answer nobody has. Final ship: `S111-DENOMINATOR-01` (§111 Am.2 + 2a), both boards unanimous, **+456 beginner-marathon refusals accepted** because those plans carried a **+114% week-one leap with ZERO invariant violations**.
+**State at end of 2026-09-19 (last ship `4f2b74c`):** `npm run verify` exit 0 — **2,401 tests / 270 files** · 122 invariants · sweep clean · `verify:parity` IDENTICAL · `audit-docs.sh` ALL CLEAN. **Engine WORK done; `S111-SUBFLOOR-VOLUME-01` remains** (needs a number, not engineering — `REFUSAL-TELEMETRY-01` now collects it). **End-to-end regression pass complete:** 7 defects found and fixed, 3 filed, 5 recommendations reviewed by the architect and planned (see *REGRESSION-PASS OUTCOMES* below — **A and C are P1**). ⚠️ **Every one of the 9 new gates has been FALSIFIED**, not just run green.
 
 **The engine day, in one line each.** Three items CLOSED as **withdrawn or negative results** (§23 already legislated `PEAK-VS-DELIVERED-BUILD-01` and the engine complies 15,464/15,464; §114 took §111's 93% hazard to **0.00%**; §52's share is a **fixed point** and cannot be driven down by shortening the long run). Two defect fixes SHIPPED (`V4-ANCHOR-01`, `QUALITY-ZERO-SCOPE-01`). One board ruling **CORRECT and DELIBERATELY NOT SHIPPED** (§110 Am.2 — blocked by the catalogue, **1 of 29 rows is beginner-eligible**).
 
@@ -30,6 +30,104 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 🟢 **Also shipped today:** `CB-HILL-INJURY-01` (**a live safety defect — knee-history beginners were prescribed hill strides; §21's invariant matches the LABEL and the label lied. Found by making a label honest, not by measuring**) · `MAINT-LIVENESS-01` (**the harness was calling the wrong validator**, 107→118/121) · `GRID-MARATHON-CAPABLE-01` (**the grid could not contain a §24-capable marathoner**) · `STRIDE-VISIBILITY-01` · `TAPER-FLOOR-FLAT-01` · `STEPBACK-STALE-PEAK-01` · `PLAN-QUALITY-AUDIT-01` · `PLAN-NOTE-LENGTH-01` · `INV-MSG-ROUNDING-01` · `XREF-DANGLE-01`.
 
 🟢 **ENGINE OPEN LIST, end of 2026-09-19:** ~~`PEAK-VS-DELIVERED-BUILD-01`~~ CLOSED (withdrawn — §23 legislates it, 100% compliance) · ~~`S111` metric anti-correlation~~ CLOSED (§114 took the hazard to 0.00%) · ~~`S52-LOPSIDED-BOUND-01`~~ CLOSED (negative result) · ~~`CAT-DEPTH-01`~~ **CLOSED — shipped 2026-09-19**. *(Device verification is founder-owned, untracked.)*
+
+## 🔬 2026-09-19 — REGRESSION-PASS OUTCOMES: architect's verdict on the five recommendations
+
+*Source: the end-to-end regression pass over six hand-built runners, plus the
+coverage analysis and the Phase 2 board review. **Seven defects found and
+fixed, three filed, five recommendations below.** Every fix carries a gate and
+**every gate has been falsified** — proven able to go red, not merely green.*
+
+> ⚠️ **Read the pattern before the list.** Three of the seven defects were found
+> by **printing a plan or reading a line of code**, not by a failing test — the
+> suite was green throughout. And **two of them were latent holes that only
+> became reachable because of something shipped hours earlier the same day.**
+> Opening a dormant path is a change to every rule that path touches.
+
+### ✅ A — VALIDATE INSIDE `savePlanForUser`, not on the routes *(P1, TAKE FORWARD)*
+
+**The gap.** Nine mutation routes call `savePlanForUser` and **none** calls
+`validatePlan`. Only `generate-plan` (6 calls) and `adjust-plan` (via
+`reshape_invalid`) validate. `post-race-reshape` (+confirm/revert),
+`recalibrate-zones`, `recalibrate-taper`, `maintenance-block`,
+`confirm-adjustment` and `revert-adjustment` all persist unchecked. The safety
+net is `ops/plan-audit`, a **daily cron** — it DETECTS, it does not PREVENT, so
+an invalid plan can be live for up to 24 hours.
+
+⚠️ **DO NOT add `validatePlan` to nine routes.** That is nine copies of one
+rule and a D-08 single-owner violation; the tenth route added next month would
+not have it. **Put it in `savePlanForUser`** — one owner, every current writer
+covered, and every future writer covered by construction.
+
+**Severity pattern must match the existing one:** throw in dev/test, log +
+`recordOpsEvent` in production. `generateRulePlan` already does exactly this,
+and a validation error must never stop a runner's reshape from saving — the
+plan they have is better than a failed write.
+
+**Why it is P1 and not P0:** no measured incident. `adjust-plan` — the highest
+-traffic mutation — is already covered, and the daily audit has not been
+reporting a backlog of invalid plans.
+
+### 🟡 B — RUN `PlanSchema` ON THE LIVE PATH, SOFTLY *(P2, TAKE FORWARD, sequenced after A)*
+
+`schema.ts` calls itself *"the single source of runtime validation for plan
+JSON, shared by the rule engine, enricher, reshaper and multi-race"* and **had
+one caller: the enricher.** Pointing it at engine output found `PHASE-EMPTY-01`
+immediately. It is now checked in a TEST; the live path still does not.
+
+⚠️ **It must NOT throw.** The schema has already drifted out of step with the
+engine once — that is how the defect hid. A schema that blocks generation would
+refuse runners for schema drift rather than for real defects, which is a worse
+failure than the one it prevents. **Record an ops event on mismatch and ship
+the plan.** Same soft-degrade shape as A.
+
+Do it with A: both are "one check, one owner, soft in prod".
+
+### ✅ C — WIDEN THE PERSONA CORPUS *(P1, TAKE FORWARD — highest value per hour)*
+
+**Six hand-built runners found what 45,776 corpus plans could not.** That is now
+the **third** time this month the answer has been *"the grid cannot see that
+cell"* — injury × masters, `CB-SUBFLOOR-ADMIT-01`, and `GRID-EARLY-ONSET-01`.
+
+⚠️ **This is NOT a new harness.** The mechanism already exists: `audit:plans`
+carries 14 charity personas and `measure:fitness` carries 6 marathon personas.
+**Widen those, do not build a third thing.** A persona is a person with
+contradictory, realistic inputs; a grid is an axis product that cannot express
+"experienced but only 12 weeks and back running regularly".
+
+Cheapest concrete step: add the six E2E runners from this pass as permanent
+personas, then add one per defect found from here on — the corpus grows from
+real failures rather than from imagination.
+
+### 🟢 D — COVER THE FOUR REMAINING UNTESTED MODULES *(P3, TAKE FORWARD with B)*
+
+`schema`, `freeIntro`, `renderGuidance`, `raceLabel`. Low individual risk.
+**`schema` stops being low-risk the moment B lands**, so do that one with B and
+the other three whenever convenient.
+
+### 🔵 E — DEVICE VERIFICATION *(founder-owned)*
+
+Eleven ships on 2026-09-19, none run on hardware. Not actionable here.
+
+### 📋 THE PLAN, SEQUENCED
+
+| # | Step | Gate | Expected impact |
+|---|---|---|---|
+| 1 | **C** — add the six E2E runners as permanent personas | they run in `audit:plans`; re-baseline with the reason | none to plans; the corpus stops lying |
+| 2 | **A** — `validatePlan` inside `savePlanForUser`, soft in prod | a test that a deliberately-invalid plan records the ops event and still saves | none to valid plans; `verify:parity` must be IDENTICAL |
+| 3 | **B + D(schema)** — `PlanSchema` soft-check on the live path | ops event on mismatch; `schema.test.ts` | none; it only observes |
+| 4 | **D(rest)** — `freeIntro`, `renderGuidance`, `raceLabel` | tests | none |
+
+⚠️ **Sequence C first, deliberately.** A and B add checks; C adds the ability to
+SEE. Running A and B against a corpus that cannot reach the interesting cells
+would tell us they are clean, which is exactly what the corpus told us this
+morning about the engine.
+
+⚠️ **None of these is a coaching change.** No Coaching Board sitting is needed
+for any of A–D: they are checks, coverage and corpus. The board is needed only
+if a check starts refusing plans, which is why A and B are both specified as
+soft in production.
+
 
 ## 🥇 2026-09-19 — THE ENGINE AUDIT. Batched board + SLT, every open coaching item ruled.
 
