@@ -7028,3 +7028,54 @@ floor allowance from the existing check** (`effectiveCap` was
 asserting the same rule is duplication, not coverage.
 
 
+
+---
+
+## 114. The long run fits the week it is in — the "get you round" plan
+
+*Added 2026-09-19. **Founder decision**, taken after the Coaching Board reached a genuine trilemma and recorded it. McMillan's position carried.*
+
+**Principle.** For HM and marathon, a single run may not exceed `LONG_RUN_MAX_PCT_OF_DELIVERED_WEEK` of the week it sits in. Where §24/§80's specificity floor would push it past that, **the long run yields and the plan says so.** The alternative on the table was refusing these runners outright.
+
+**The decision, in the founder's words:** *"Give them a get you round plan."*
+
+**The contradiction it resolves.** Three principles sized the same object and had never been reconciled — §9 (28–40% of the week, *">35% is a binge"*), §52 (60%, a *backstop*), and §80/§24/§45 (sized from the **race**, silent about the other days). The specificity floors are applied with `Math.max`, so the race won unconditionally and **every kilometre it demanded came out of the other days.**
+
+**What that produced, printed rather than summarised.** A knee-history runner at 8 km/week, 19 weeks out:
+
+| wk | 1–7 | 8 | 9 | 10 | 13 | 14 | **15** | 16 |
+|---|---|---|---|---|---|---|---|---|
+| week km | 7–22 | 14 | 18 | 23 | 24 | 23 | **28** | 29 |
+| long run | 2.9–8.2 | 10.0 | 15.0 | 20.0 | 21.5 | 21.0 | **26.0** | 26.0 |
+| share | 34–42% | 71% | 83% | 87% | 90% | 91% | **93%** | 90% |
+
+**A 26 km long run inside a 28 km week.** Across 6,480 beginner-marathon inputs: **45.2%** of plans carried a week with one session ≥75% of it, **40.5%** had loading weeks with ≤2 runs, and **83% regressed the midweek runs when the build phase began.**
+
+**Why the long run yields and not the week.** §114 was first built as a floor on the **volume curve** — raise the week to hold the run — in four formulations. All four were inert or broke §2/§3 (recorded in §9's *Recorded structural finding*). **The week cannot be raised:** an 8 km/week runner cannot reach the 43 km a 26 km long run needs, in nineteen weeks, under §2's 10% rule once §3's deloads take 30% four times over. That is arithmetic about running.
+
+**McMillan, whose position the founder took.** *"For a first-timer, 'get you round' IS the goal."* A runner who does a 17 km longest run and run-walks the last stretch finishes. A runner handed a 26 km run off an 8 km/week base is injured in week 15 and does not start.
+
+**Measured result on priority one:**
+
+| | before | after |
+|---|---|---|
+| a week with one session ≥75% of it | 45.2% | **0%** |
+| loading weeks with ≤2 runs | 40.5% | **0%** |
+| any week over §52's 60% | 37.9% | **0.2%** |
+| delivers fewer days than asked | 49.4% | **33.7%** |
+| **refused outright** | 2,358 | **2,321** — *fewer* |
+
+**The shortfall is DECLARED, never silent, and that is half the decision.** §80's shortfall note fires on the delivered long run, so an affected runner is told: *"Your longest run tops out at 2h 20… we'd normally want it nearer 3h 27, but your weekly volume is what limits it… Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late."* **A shorter long run nobody mentions is not a "get you round" plan, it is a worse plan.**
+
+**Why 60 and not 45.** Seiler's first number was 45%, from §9's sizing intent. Measurement falsified it: at a 47 km peak week a 26 km long run is 55%, which is what every novice marathon plan in print does, and 45% took plans short of 55% of race distance from 0% to 88.7%. **60 is §52's own number** — this introduces no new threshold, it makes §52's existing one bind at construction instead of warning after the fact.
+
+**Mechanics, and each one is a measured correction.**
+- **Applied at CONSTRUCTION, not as a post-pass.** Ten post-hoc bounds were built first and every one destroyed specificity: §45's cap is multiplicative on the previous week's long run, so reducing any week ratchets the trajectory down permanently.
+- **It only ever REDUCES.** Written with the §9 ratio floor as a `Math.max` it could *raise* the long run past §45's week-1 cap — `INV-PLAN-WEEK-1-2-LONG-CAP` threw across the charity cohort.
+- **Race week exempt** — its long run is the race (§77).
+- **Floored by §9's long-vs-easy ratio**, so the bound can never make the long run shorter than the easy runs it must exceed. Where that floor sits above the 60% share, the share gives way and §52's warn declares the residual (§34).
+
+**Supersedes, for this cohort, PLAN-FITNESS-01's unconditional §80 floor.** `deloadLongRunCut.test.ts` now asserts a disjunction: the floor is met **or** the shortfall note is present.
+
+**Config.** `GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_DELIVERED_WEEK = 60`.
+**Enforced by** `INV-PLAN-LR-MAX-WEEKLY-PCT` — deliberately the same invariant as §52, because §114's number is §52's number and its observable consequence is exactly what that invariant already asserts. A second invariant on the same threshold would be duplication, not coverage.

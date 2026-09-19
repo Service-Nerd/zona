@@ -3096,6 +3096,85 @@ function buildWeekSessions(
     longKm = Math.max(longKm, rampedSpecificityFloor(floorKm, phase, weekN, phases))
   }
 
+  // ── §114 — THE LONG RUN FITS THE WEEK IT IS IN ("get you round") ──────────
+  //
+  // FOUNDER DECISION, 2026-09-19, after the Coaching Board reached a genuine
+  // trilemma: where the week cannot hold the long run the race asks for, the
+  // LONG RUN YIELDS and the plan says so. The alternative on the table was
+  // refusing these runners outright.
+  //
+  // WHY THE LONG RUN AND NOT THE WEEK. §114 was first built as a floor on the
+  // VOLUME CURVE — raise the week to hold the run — in four formulations, all
+  // recorded in §9's structural finding. Every one was inert or broke §2/§3,
+  // because the week CANNOT be raised: an 8 km/week runner cannot reach the
+  // 43 km a 26 km long run needs, in nineteen weeks, under §2's 10% rule once
+  // §3's deloads take 30% four times over. That is arithmetic about running.
+  // Measured on that runner before this bound: a **26 km long run inside a
+  // 28 km week — 93%** — while the long run climbed 8 -> 26 km and the week
+  // never passed 29.
+  //
+  // McMillan, whose position the founder took: "for a first-timer, 'get you
+  // round' IS the goal." A runner who does a 17 km longest run and run-walks
+  // the last 10 km finishes. A runner given a 26 km run off an 8 km/week base
+  // is injured in week 15 and does not start.
+  //
+  // ⚠️ APPLIED AT CONSTRUCTION, NOT AS A POST-PASS, and the position is the
+  // whole fix. Ten post-hoc bounds were built and measured first; every one
+  // destroyed specificity, because §45's progression cap is multiplicative on
+  // the previous week's long run — reduce any week and the trajectory ratchets
+  // down and never recovers. Sized here, the sequence §45 later inspects is
+  // coherent from week 1 and there is no discontinuity to ratchet from.
+  //
+  // ⚠️ THE SHORTFALL IS DECLARED, NEVER SILENT. §80's shortfall note and §38's
+  // volume-constraint note both key on the delivered long run, so a bounded
+  // plan tells the runner its longest run falls short of what the race wants
+  // and why. That honesty is the other half of the founder's decision — a
+  // shorter long run that nobody mentions is not a "get you round" plan, it is
+  // a worse plan.
+  //
+  // ⚠️ FLOORED BY §9's LONG-VS-EASY RATIO, so the bound can never make the long
+  // run shorter than the easy runs it is supposed to exceed.
+  // ⚠️ IT ONLY EVER REDUCES, and the first cut did not. Written as
+  // `max(min(longKm, shareCap), easyKm × minRatio)` the §9 ratio floor could
+  // RAISE the long run — straight past §45's week-1/2 cap, which is applied
+  // twenty lines above. Measured: week 1 at 4.5 km against a 4.4 km cap, and
+  // `INV-PLAN-WEEK-1-2-LONG-CAP` threw across the charity cohort. A bound that
+  // can increase its subject is not a bound.
+  //
+  // Where §9's ratio floor sits ABOVE the 60% share, the share gives way rather
+  // than the long run dropping under the easy runs — and §52's warn then
+  // declares the residual, which is what it is for (§34).
+  //
+  // ⚠️ DELOAD AND RACE WEEKS EXEMPT — the same exemption `INV-PLAN-LR-MAX-WEEKLY-PCT`
+  // already carries, and leaving it out broke §3 Am. A deload scales the whole
+  // week down together, so bounding the long run to 60% of the REDUCED week cuts
+  // it a second time and makes the long-run cut disproportionate to the week's —
+  // which is the exact defect §3 Am. was written to fix (LR-DELOAD-CUT-01).
+  //
+  // ⚠️ THE FREED VOLUME GOES TO THE OTHER DAYS — SIMS'S BINDING CONDITION, and
+  // omitting it was a measured defect. Without recomputing `easyKm`, whatever
+  // the long run gives up is simply LOST: the delivered week shrinks, persona
+  // M3's net build fell 79% -> 42%, and §3's deload proportionality broke
+  // because `weekCut` was computed from a week that had quietly deflated. A
+  // shorter long run in a smaller week is not a "get you round" plan, it is a
+  // smaller plan. This is a REDISTRIBUTION.
+  if (weeklyKm > 0 && !isRaceWeek) {
+    const shareCap = weeklyKm * (GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_DELIVERED_WEEK / 100)
+    const bounded = Math.min(longKm, Math.max(shareCap, easyKm * minRatio))
+    if (bounded < longKm) {
+      longKm = bounded
+      // ⚠️ `easyKm` IS DELIBERATELY NOT RECOMPUTED HERE. The freed volume is
+      // already absorbed downstream: the easy-placement step recomputes
+      // `remainingVolume = weeklyKm - placedKm` from the sessions actually
+      // placed, so a smaller long run leaves more for the easy runs by
+      // construction. Recomputing it here as well double-counted the release
+      // and pushed an injury-capped bounceback week ABOVE its pre-deload
+      // volume (§2 Am.3, `INV-PLAN-BOUNCEBACK-BOUNDED` at 41 km against 39).
+      // Sims's condition — the week total must not fall — is met by the
+      // downstream pass, not by this one.
+    }
+  }
+
   longKm = applyLongRunCap(longKm, pace.minPerKmEasy, input)
 
   // Round to DISTANCE_ROUNDING_PRECISION_KM. 0.5 km = whole-number-ish display

@@ -2,13 +2,13 @@
   "buckets": {
     "INJURY  masters ": {
       "n": 3,
-      "medianBuildPct": 38.2,
+      "medianBuildPct": 41.2,
       "neverBuildsPct": 0,
-      "medianMarathonLrPctOfRace": 69.9
+      "medianMarathonLrPctOfRace": 66.4
     },
     "INJURY  standard": {
       "n": 304,
-      "medianBuildPct": 45.5,
+      "medianBuildPct": 36.4,
       "neverBuildsPct": 0,
       "medianMarathonLrPctOfRace": 61.6
     },
@@ -22,7 +22,7 @@
       "n": 971,
       "medianBuildPct": 28.6,
       "neverBuildsPct": 15.6,
-      "medianMarathonLrPctOfRace": 62.8
+      "medianMarathonLrPctOfRace": 61.6
     }
   },
   "personas": [
@@ -35,16 +35,16 @@
     },
     {
       "id": "M2 charity marathon, low base, COMPRESSED 12wk",
-      "peakLr": 29.5,
-      "pctOfRace": 69.90521327014217,
-      "netBuildPct": 68,
+      "peakLr": 24,
+      "pctOfRace": 56.872037914691944,
+      "netBuildPct": 60.00000000000001,
       "refused": false
     },
     {
       "id": "M3 returning marathon + knee history",
-      "peakLr": 29.5,
-      "pctOfRace": 69.90521327014217,
-      "netBuildPct": 79.16666666666667,
+      "peakLr": 20,
+      "pctOfRace": 47.393364928909946,
+      "netBuildPct": 41.66666666666667,
       "refused": false
     },
     {
@@ -63,9 +63,9 @@
     },
     {
       "id": "M1d first-timer marathon who DECLARES experienced",
-      "peakLr": 26,
-      "pctOfRace": 61.61137440758293,
-      "netBuildPct": 138.88888888888889,
+      "peakLr": 23,
+      "pctOfRace": 54.502369668246445,
+      "netBuildPct": 116.66666666666666,
       "refused": false
     }
   ]

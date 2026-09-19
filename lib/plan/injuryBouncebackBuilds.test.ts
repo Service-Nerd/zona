@@ -68,7 +68,20 @@ describe('§2 Am.3 — an injury-history runner still builds', () => {
     // the plans Am.3 intends to produce.
     const input = runner({ injury_history: ['knee'] })
     const plan = generateRulePlan(input, 'trial', PLAN_START, undefined, PLAN_START)
-    expect(validatePlan(plan, input).filter(v => v.code === 'INV-PLAN-BOUNCEBACK-BOUNDED')).toEqual([])
+    // ⚠️ NARROWED TO ERROR SEVERITY ON 2026-09-19 (§114), and the direction
+    // matters. This asserted zero violations of any severity. §114 bounds the
+    // long run to 60% of its week, which lowers some DELIVERED weeks — and
+    // when the lowered week is the PRE-DELOAD reference, a later bounceback
+    // reads as +5% above it. **The bounceback did not grow; the thing it is
+    // measured against shrank.** The invariant's own message already names this
+    // residual class: "the curve caps the bounceback; placement (long run)
+    // still inflates it — the delivered residual clears with
+    // DELOAD-INVERSION-01", and it is a `warn` for exactly that reason.
+    //
+    // The safety claim is unchanged: an ERROR-severity bounceback breach is
+    // still zero, and the falsification below still proves the rule can fire.
+    expect(validatePlan(plan, input)
+      .filter(v => v.code === 'INV-PLAN-BOUNCEBACK-BOUNDED' && v.severity === 'error')).toEqual([])
 
     // FALSIFICATION — push one bounceback above pre-deload and it must fire.
     for (let i = 2; i < plan.weeks.length; i++) {

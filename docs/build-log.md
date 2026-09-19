@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — S114-GET-YOU-ROUND-01 · the long run finally fits the week
+**Shipped:** where the week cannot hold the long run the race asks for, the long run yields and the plan says so.
+
+**Dev learning:** I spent most of a day trying to fix this by raising the week. Ten post-hoc bounds, four volume-curve floors, fourteen attempts, every one either inert or breaking a ratified rule. The answer was that the week cannot be raised: an 8 km/week runner cannot reach the 43 km that a 26 km long run needs, in nineteen weeks, under a 10% weekly cap once four deloads have taken 30% each. That is arithmetic about running, not a defect, and I should have printed the plan and done that division on the first attempt rather than the fifteenth.
+
+**Product/creator learning:** The fix was a product decision, not an engineering one, and it was not mine to make. A knee-history runner at 8 km/week was getting a 26 km long run inside a 28 km week — 93% of their training in one session. The choice was refuse them or give them a shorter long run and be honest about it. The founder chose the second. Severe binge weeks went 45% to zero, two-run weeks 40% to zero, and refusals actually went *down* by 37. The cost is that 59% of these plans now have a peak long run short of race-specific, which for this cohort is the truthful answer rather than a regression.
+
+**AI-building learning:** Four separate guards caught me while I built it, and each one was a rule I had read that morning. The sharpest: I wrote the bound as `max(min(longRun, cap), ratioFloor)`, which can *raise* its subject — a bound that increases the thing it bounds is not a bound — and the week-1 long-run cap threw across the whole charity cohort. Another caught me claiming an invariant enforced §114 when that invariant only named §52, which is precisely how a principle read as enforced for eight days while checking nothing.
+
+**The honest bit:** the half that matters is not the cap, it is the sentence. The plan now tells the runner their longest run tops out at 2h 20 against a race of about 4h 55, why, and what to do about it on the day — go out slower than feels right, take the walk breaks early. A shorter long run nobody mentions is not a get-you-round plan, it is just a worse plan. I nearly shipped the cap without checking the note fired.
+
+**Hook material:** We were giving first-time marathoners a 26 km run inside a 28 km training week. The fix was not a better algorithm. It was deciding what we are actually promising them.
+
 ## 2026-09-19 — the architectural fix, attempted · the metric was pointing the wrong way
 **Shipped:** nothing. Four more formulations built and measured, all inert or harmful, and one finding that makes the next fix obvious.
 

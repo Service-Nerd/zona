@@ -4667,7 +4667,14 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         if (fraction > cap + 0.005) {
           violations.push({
             code: 'INV-PLAN-LR-MAX-WEEKLY-PCT',
-            principle_ref: 'CoachingPrinciples §52',
+            // §114 (2026-09-19) shares this invariant deliberately: its number
+            // IS §52's 60%, and its observable consequence is exactly what this
+            // check already asserts. What §114 changed is WHICH SIDE gives — the
+            // long run yields at construction rather than the week being raised
+            // — and the check is the same either way. Named here because a
+            // principle claiming an invariant that does not acknowledge it is
+            // how §92 read as enforced for eight days while checking nothing.
+            principle_ref: 'CoachingPrinciples §52, §114',
             // §52 Amendment 1 — error for a build plan, warn for maintenance.
             // Same shape as INV-PLAN-NO-PLACEHOLDER-COPY's context-dependent
             // severity a few hundred lines below.

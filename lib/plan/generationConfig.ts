@@ -1260,6 +1260,26 @@ export const GENERATION_CONFIG = {
   // No single run may exceed this fraction of the week's total volume. Above
   // this threshold the week is structurally lopsided — the long run becomes
   // the only run, weekday training disappears.
+  // ── §114 — THE LONG RUN FITS THE WEEK IT IS IN (founder decision 2026-09-19) ──
+  //
+  // Where the week cannot hold the long run the race asks for, the long run
+  // yields and the plan says so. The alternative on the table was refusing
+  // these runners outright; the founder took McMillan's position that for a
+  // first-timer "get you round" IS the goal.
+  //
+  // ⚠️ THE VALUE IS §52's OWN 60%, DELIBERATELY. This introduces no new
+  // threshold — it makes the cap §52 has always stated bind at CONSTRUCTION
+  // instead of warning after the fact. Seiler's first number was 45%, reasoning
+  // from §9's 28-40% sizing intent, and measurement falsified it: at a 47 km
+  // peak week a 26 km long run is 55%, which is what every novice marathon plan
+  // in print does.
+  //
+  // ⚠️ FOUR ATTEMPTS TO RAISE THE WEEK INSTEAD ARE RECORDED IN §9's STRUCTURAL
+  // FINDING AND ALL FOUR FAILED. The week cannot be raised: an 8 km/week runner
+  // cannot reach the 43 km a 26 km long run needs, in nineteen weeks, under §2
+  // once §3's deloads take 30% four times.
+  LONG_RUN_MAX_PCT_OF_DELIVERED_WEEK: 60,
+
   LONG_RUN_MAX_PCT_OF_WEEKLY: 60,
 
   // ── Strides on midweek easy (CoachingPrinciples §28) ───────────────────────
