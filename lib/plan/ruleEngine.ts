@@ -7064,7 +7064,14 @@ function buildRulePlanOnce(
             // ever acted on 110%. The runner needs to know their weekly mileage
             // holds steady instead of climbing, which is the same fact in words
             // they can do something with.
-            const baseNote = planMaxKm > peakKmActual
+            // PLAN-NOTE-LENGTH-01 — this clause is a SECOND detail on the same
+            // point as "holds steady rather than climbing", so it only earns
+            // its 12 words when it is the note's only reason. With the long-run
+            // clause also present the note reached 127 words against a 117
+            // ratchet, and the test's instruction is to shorten the copy.
+            // Decided here rather than by trimming at the join, because only
+            // here is it known that this clause is the redundant one.
+            const baseNote = planMaxKm > peakKmActual && reasons.length === 0 && !volumeFails && !lrFails
               ? ` Your biggest week comes earlier in the block, not at the end.`
               : ''
             reasons.push(`Your weekly mileage holds steady across this plan rather than climbing into the final weeks.${baseNote}`)
@@ -7103,8 +7110,25 @@ function buildRulePlanOnce(
           // COPY-GLYPH-01 ratchet). Sutherland: the tile opened by explaining
           // what the plan could not do, in our warning colour. Lead with what it
           // WILL do; the runner has just committed to this.
+          // PLAN-NOTE-LENGTH-01 — AT MOST TWO REASONS, and the cap is the fix
+          // the ratchet test asks for rather than a raised ratchet.
+          //
+          // `reasons` accumulates one clause per failing check, and nothing
+          // bounded the count. Three stacking (ratio + volume + long run) put
+          // the note at **127 words** against a 117-word ratchet, surfaced when
+          // GRID-MARATHON-CAPABLE-01 widened the grid to a cohort that trips
+          // all three at once. The test's own instruction is "shorten the copy,
+          // do not raise the ratchet", and the SLT's PLAN-NOTE-VOICE-01 ruling
+          // is consequence, then cause, then the one lever — singular.
+          //
+          // ⚠️ THE ORDER OF `reasons` IS THE PRIORITY ORDER and it is already
+          // correct: the long-run clause is pushed last and is the one
+          // Hutchinson called "the one genuinely SAFETY-relevant line here", so
+          // it is kept and the earlier, softer clauses are what drop. Taking
+          // the LAST two rather than the first preserves that.
+          const shown = reasons.slice(-2)
           const diagnosis = 'This plan is built to get you round, not to chase a time. '
-            + reasons.join(' ')
+            + shown.join(' ')
             + ' You will still get fitter: starting from where you are, you could hardly not.'
 
           const suggestions: string[] = []

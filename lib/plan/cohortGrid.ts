@@ -53,7 +53,24 @@ const DISTANCES = [
   { km: 42.2, target: '4:15:00', weeks: 18 },
 ] as const
 
-const VOLUMES = [20, 35, 50] as const
+// GRID-MARATHON-CAPABLE-01 (2026-09-19) — 70 ADDED, and the arithmetic is why.
+//
+// §24 requires a marathon peak long run of >= 75% of race distance: 31.65 km.
+// §52 caps any single run at 60% of its week. A runner who satisfies both
+// therefore needs a week of at least 31.65 / 0.6 = ~53 km — and the grid topped
+// out at 50. **Every marathon measurement ever taken on this grid was scoped to
+// runners who could not satisfy §24 in the first place**, which is how "100% of
+// marathon time-goal plans are maintenance-grade, 0% reach the §24 floor" got
+// reported as a catastrophic engine finding when it was an artefact of the
+// corpus (LR-CONSEC-01 sitting, 2026-09-17).
+//
+// Same class as `training_age` never being set (GRID-COVERAGE-01) and the
+// round-robin consuming heads (LIVENESS-DEBT-01): the grid was answering a
+// narrower question than the one being asked of it, and said nothing about the
+// difference. Costs +33% grid size; `cohort:shape` rates re-baselined with the
+// move declared, since a fourth volume genuinely changes who is in the
+// population.
+const VOLUMES = [20, 35, 50, 70] as const
 
 // ── GRID-COVERAGE-01 (2026-09-14) — three axes the grid was BLIND to ──────────
 //

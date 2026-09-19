@@ -1330,7 +1330,9 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 
 > 🔲 `S52-LOPSIDED-BOUND-01` **(P1, board)** — longer long runs make more weeks lopsided; marathon `maintenance` rose 68% → 72.7%, all §52. Three routes recorded.
 > 🔲 `S24-FLOOR-REACHABILITY-01` **(P2, board)** — the last 1.2 km on marathon time goals.
-> 🔲 `LR-CONSEC-01` · `GRID-MARATHON-CAPABLE-01` · `MAINT-LIVENESS-01` · `STEPBACK-STALE-PEAK-01` · `INV-MSG-ROUNDING-01` (P3) · `LR-DELOAD-RESUME-01` (record only).
+> ✅ **2026-09-19 — `GRID-MARATHON-CAPABLE-01`, `MAINT-LIVENESS-01`, `STEPBACK-STALE-PEAK-01` and `INV-MSG-ROUNDING-01` all SHIPPED.** `LR-CONSEC-01` is **superseded** — §45 was blind to compounding because nothing bounded the long run against the week, and that is now §9's recorded structural finding, not a separate item. `LR-DELOAD-RESUME-01` remains record-only.
+>
+> 🔴 **NEW, FOUND BY THE WIDENED GRID — `PEAK-VS-DELIVERED-BUILD-01` (P1, Coaching Board).** With `VOLUMES` reaching 70 km/week, **47.8% of EXPERIENCED 70 km/week marathon runners get a plan whose delivered peak is under 110% of delivered week 1** — §23's own overload threshold. 5K 65.7%, 10K 63.0%, HM 48.1%. ⚠️ **Not a grid artefact:** an experienced 70 km/week runner is entirely realistic, and the rate barely improves with level (beginner 86.2%, intermediate 60.1%, experienced 56.5%). ⚠️ **The CURVE satisfies §23 by construction** — `BUILD_VOL_INIT_CEILING_VS_PEAK` caps week 1 at 85% of peak, giving ≥1.176 — **so this is the curve-vs-delivered gap again**, the same class as §90/ADR-022 and §94. **Invisible until today because the grid topped out at 50 km/week.** Second-highest open engine item after the §9 architectural fix.
 
 ### 🔜 COACHING & ENGINE — two items, both for tomorrow
 

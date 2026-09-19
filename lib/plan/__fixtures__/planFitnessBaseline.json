@@ -13,16 +13,16 @@
       "medianMarathonLrPctOfRace": 61.6
     },
     "healthy masters ": {
-      "n": 680,
-      "medianBuildPct": 33.3,
-      "neverBuildsPct": 10.1,
-      "medianMarathonLrPctOfRace": 62.8
+      "n": 674,
+      "medianBuildPct": 17.4,
+      "neverBuildsPct": 18.8,
+      "medianMarathonLrPctOfRace": 62.7
     },
     "healthy standard": {
-      "n": 970,
-      "medianBuildPct": 41.5,
-      "neverBuildsPct": 8.1,
-      "medianMarathonLrPctOfRace": 61.6
+      "n": 971,
+      "medianBuildPct": 28.6,
+      "neverBuildsPct": 15.6,
+      "medianMarathonLrPctOfRace": 62.8
     }
   },
   "personas": [

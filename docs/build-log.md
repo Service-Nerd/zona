@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — GRID-MARATHON-CAPABLE-01 · the grid could not contain the runner it was measuring
+**Shipped:** the cohort grid gains a 70 km/week volume. It now reaches a marathoner capable of §24, which it never could before.
+
+**Dev learning:** §24 wants a marathon long run of at least 31.65 km. §52 caps any single run at 60% of its week. So a runner who satisfies both needs a week of about 53 km, and the grid's highest volume was 50. Every marathon measurement ever taken on it was therefore scoped to runners who could not satisfy the rule being measured. That is how "0% of marathon time-goal plans reach the §24 floor" got reported as a catastrophic engine finding when it was a fact about the corpus. It is now 68 rows out of 5,184 — low, arguable, and real.
+
+**Product/creator learning:** Widening it immediately broke three baselines, and that is the point rather than the cost. Maintenance classification rose 7.8pp and never-builds nearly doubled, not because anything changed but because runners who had never been measured got measured. The interesting one: 47.8% of experienced 70 km/week marathoners get a plan whose delivered peak is under 110% of delivered week one. The volume curve guarantees that ratio by construction — week one is capped at 85% of peak — so the gap opens somewhere in delivery, which is the same curve-versus-delivered split this engine has now paid for three times. Filed rather than fixed: it deserves the same care as the others, not a tenth instrument at the end of a long day.
+
+**AI-building learning:** Four things went red that were not the grid: a rationale note hit 127 words against a 117 ratchet, a golden snapshot moved, and two fitness baselines shifted. Each one was a check doing its job on a population it had never seen. A wider corpus is not a bigger number, it is a different set of runners, and every threshold tuned on the old set has to be re-argued rather than re-baselined by reflex.
+
+**The honest bit:** I capped the note at two reasons and cut a twelve-word clause. I could have raised the ratchet from 117 to 127 and the suite would have gone green in one line. The test says "shorten the copy, do not raise the ratchet" in its own failure message, which is someone who had already been tempted leaving a note for the next person who would be.
+
+**Hook material:** Our test grid could not contain a runner capable of passing the rule it was testing. We had been measuring the rule against people who were never eligible for it.
+
 ## 2026-09-19 — STEPBACK-STALE-PEAK-01 · the ratio measured against a number that no longer existed
 **Shipped:** §47's peak long-run step-back is re-clamped against the peak that actually survives the pipeline.
 
