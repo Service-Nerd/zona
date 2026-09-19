@@ -17,6 +17,7 @@
 import type { Plan, Week, Session, Phase } from '@/types/plan'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { isLongRun } from '@/lib/plan/sessionRole'
+import { sessionFloorsFor, type SessionFloors } from '@/lib/plan/sessionFloors'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -42,13 +43,30 @@ export interface TaperRecalibrationResult {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function scaleSession(session: Session, scaleFactor: number): Session {
+/**
+ * TAPER-FLOOR-FLAT-01 (Coaching Board 2026-09-19) — the taper reads the SAME
+ * runner-resolved floors as the rest of the engine.
+ *
+ * These were three reads of the flat `MIN_SESSION_DISTANCE_KM`, the last
+ * producer site still on it after §113 Amendment 1 moved everything else to
+ * `sessionFloorsFor`. ⚠️ **The item was filed claiming it "cannot bind" and
+ * then that it binds only at 5K. Measured across 6,738 taper weeks it pins a
+ * session at the flat easy floor on 38.8% of them** — so the filed severity was
+ * wrong in both directions and the fix is the ordinary one: one owner for
+ * "how short may this runner's sessions be".
+ *
+ * A plan with no recorded `generator_input` (legacy rows) resolves to the
+ * configured floors unchanged, which is exactly what `sessionFloorsFor` returns
+ * for a missing longest run — "we do not know" must not read as "this runner
+ * can only manage 2 km".
+ */
+function scaleSession(session: Session, scaleFactor: number, floors: SessionFloors): Session {
   if (!session.distance_km) return session
   const minFloor =
-    isLongRun(session)          ? GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.long
+    isLongRun(session)          ? floors.long
     : session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals' || session.type === 'hard'
-      ? GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.quality
-      : GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM.easy
+      ? floors.quality
+      : floors.easy
   const scaled = Math.round(session.distance_km * scaleFactor * 2) / 2  // 0.5 km precision
   const newKm = Math.max(minFloor, scaled)
   if (newKm === session.distance_km) return session
@@ -82,6 +100,9 @@ export function computeTaperRecalibration(
   if (plan.meta.taper_recalibrated_at) {
     return { applied: false, skipReason: 'already recalibrated' }
   }
+
+  // §113 Am.1 — floors are resolved for the runner, never read flat.
+  const floors: SessionFloors = sessionFloorsFor(plan.meta.generator_input?.longest_recent_run_km)
 
   const taperPhase = resolveTaperPhase(plan)
   if (!taperPhase) {
@@ -158,7 +179,7 @@ export function computeTaperRecalibration(
     for (const [day, session] of Object.entries(week.sessions) as [string, Session | undefined][]) {
       const d = day as keyof Week['sessions']
       if (!session || session.type === 'rest') { newSessions[d] = session; continue }
-      newSessions[d] = scaleSession(session, scaleFactor)
+      newSessions[d] = scaleSession(session, scaleFactor, floors)
     }
 
     weeksModified.push(weekN)

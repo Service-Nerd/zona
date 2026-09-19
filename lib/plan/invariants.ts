@@ -10,7 +10,7 @@
 // logs in production (does not break the user).
 
 import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
-import { strideCarrierDay } from './neuromuscular'
+import { strideCarrierDay, hasHillRestrictingInjury } from './neuromuscular'
 import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
 import { GENERATION_CONFIG } from './generationConfig'
@@ -688,8 +688,24 @@ const RUN_FLOAT_ROWS = new Set(['intervals_rolling'])
  * the first time it did.
  */
 function hasStrideNote(sn: Session): boolean {
+  // 🔴 THE LABEL ARM WAS REMOVED 2026-09-19 AND IT MATTERS.
+  //
+  // This read `/strides/i.test(sn.label ?? '')` as a second arm. That arm was
+  // DEAD — no engine label had ever contained the word — right up until
+  // STRIDE-VISIBILITY-01 made labels say `Easy run + strides — Zone 2`. At that
+  // moment it became a hole in the net: the invariant exists to catch a stride
+  // NOTE being stripped (ENRICH-STRIDES-01, where the AI enricher silently
+  // dropped it from 12 of 17 weeks of a live plan), and the enricher can rewrite
+  // `label` as well as `coach_notes`. A stripped note under an intact label
+  // would have passed silently.
+  //
+  // Caught by `stridesCopyProtected.test.ts`'s falsification case, which exists
+  // for exactly this and went from red to green the moment the label changed —
+  // the failure direction that hides a defect rather than showing one.
+  //
+  // The NOTE is the prescription; the label is display (D-17).
   const notes = Array.isArray(sn.coach_notes) ? sn.coach_notes.join(' ') : String(sn.coach_notes ?? '')
-  return /strides/i.test(notes) || /strides/i.test(sn.label ?? '')
+  return /strides/i.test(notes)
 }
 
 /**
@@ -1254,10 +1270,11 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // phase. §21's peak reintroduction is gated on a symptom-free build that is
     // not yet wired, so peak is NOT exempt until it is. (CoachingPrinciples §21)
     {
-      const hasRestricting = (input.injury_history ?? []).some(i => {
-        const lower = i.toLowerCase()
-        return GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => lower.includes(k))
-      })
+      // §21 — the shared owner, not a third copy of the expression. A checker
+      // that re-derives the producer's predicate cannot catch the producer
+      // being wrong, and here it could not catch the producer being SILENT:
+      // §28 Am.1's hill strides never consulted this list at all.
+      const hasRestricting = hasHillRestrictingInjury(input.injury_history)
       if (hasRestricting) {
         for (const { day, session } of placedRunning) {
           // SC-09 — structural first, label second. The label check alone is

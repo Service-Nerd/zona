@@ -30,7 +30,7 @@ import { validatePlan, copyClaimsIntensity, enforceViolations } from './invarian
 import { assessBaseBuild, baseVolumeRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
-import { strideCarrierDay, neuromuscularNote } from './neuromuscular'
+import { strideCarrierDay, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury } from './neuromuscular'
 import { effectiveStartKm } from './startVolume'
 import { weeksBetweenLocal } from './length'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
@@ -3351,9 +3351,11 @@ function buildWeekSessions(
     // ungated; it stayed safe only because the stateless selector never happened
     // to pick hill_reps in peak, which the least-used rotation (CAT-ULTRA-THIN-01)
     // no longer guarantees. Restores documented §21 intent.
-    const excludeHillSessions = (input.injury_history ?? []).some(i =>
-      GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k))
-    )
+    // §21 — one owner for this predicate (see `neuromuscular.ts`). It was
+    // written out here, again in `invariants.ts`, and a third copy was about to
+    // be added for §28 Am.1's hill strides — which is how the hill-stride
+    // defect reached production.
+    const excludeHillSessions = hasHillRestrictingInjury(input.injury_history)
 
     // CoachingPrinciples §22 — race-specific exposure for time-targeted goals.
     // From the half-week onwards (inclusive — R2/H-02), prescribe quality at
@@ -3643,10 +3645,14 @@ function buildWeekSessions(
     const carrier = strideCarrierDay(sessions, longDay, blocked)
     if (carrier) {
       const s = sessions[carrier]!
-      const note = neuromuscularNote(weekN, input.fitness_level)
+      const note = neuromuscularNote(weekN, input.fitness_level, input.injury_history)
       const e0 = s.coach_notes?.[0]
       const e1 = s.coach_notes?.[1]
       s.coach_notes = e0 && e1 ? [e0, e1, note] : e0 ? [e0, note] : [note]
+      // STRIDE-VISIBILITY-01 (SLT) — the label names what the session contains.
+      // Derived HERE, where "strides were placed" is a structural fact, never
+      // re-parsed from the string afterwards (D-17).
+      if (s.label) s.label = neuromuscularLabel(s.label, weekN, input.fitness_level, input.injury_history)
     }
   }
 

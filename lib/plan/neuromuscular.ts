@@ -59,22 +59,86 @@ export function strideCarrierDay(
 }
 
 /**
+ * §21 — the single owner of "does this runner's history bar hill work?".
+ *
+ * ⚠️ THIS EXISTED THREE TIMES BEFORE IT EXISTED ONCE. The same expression was
+ * written out in `ruleEngine`'s catalogue selector, in `invariants`' §21 check,
+ * and was about to be written a fourth time here. That is the producer/checker
+ * split this repo has paid for in `deloadCadence`, `tierResolution` and §47's
+ * positions-vs-pairs: a predicate two sides must agree on gets ONE owner.
+ */
+export function hasHillRestrictingInjury(injuryHistory: readonly string[] | undefined): boolean {
+  return (injuryHistory ?? []).some(i =>
+    GENERATION_CONFIG.HILL_RESTRICTING_INJURIES.some(k => i.toLowerCase().includes(k)))
+}
+
+/**
  * §28 Am.1 — for a BEGINNER, every Nth stride week becomes a hill-stride week.
  *
  * ⚠️ ALTERNATES, NEVER ADDS. On a hill week the stride run BECOMES the hill
  * run. A hill run alongside the stride run would double the weekly
  * neuromuscular dose; the board authorised hills "dosed like §28's strides".
+ *
+ * 🔴 §21 GATE — ADDED 2026-09-19, AND IT CLOSED A LIVE SAFETY DEFECT.
+ * §28 Am.1 shipped on 2026-09-18 without consulting `injury_history`, so a
+ * knee-history beginner was prescribed "6×10s hill strides up a moderate
+ * gradient" in weeks 5 and 9 — with 'knee' in `HILL_RESTRICTING_INJURIES` and
+ * §21 barring exactly that.
+ *
+ * ⚠️ IT WAS INVISIBLE BECAUSE THE LABEL LIED. `INV-PLAN-INJURY-NO-HILLS`
+ * classifies by matching the session LABEL, and the label was
+ * `Easy run — Zone 2` while the coach note said hill strides. The invariant was
+ * looking straight at the session and could not see it. It surfaced the moment
+ * STRIDE-VISIBILITY-01 made the label tell the truth — the D-17 failure mode
+ * (never couple logic to a display string) catching itself.
+ *
+ * A barred runner still gets §28's flat strides every stride week, which is the
+ * alternation collapsing to its safe arm, not a loss of stimulus.
  */
-export function isHillStrideWeek(weekN: number, fitnessLevel: string | undefined): boolean {
+export function isHillStrideWeek(
+  weekN: number, fitnessLevel: string | undefined, injuryHistory?: readonly string[],
+): boolean {
   if (fitnessLevel !== 'beginner') return false
+  if (hasHillRestrictingInjury(injuryHistory)) return false
   return (weekN - GENERATION_CONFIG.STRIDES_FIRST_WEEK)
     % GENERATION_CONFIG.BEGINNER_HILL_STRIDE_EVERY_N_WEEKS === 0
 }
 
-export function neuromuscularNote(weekN: number, fitnessLevel: string | undefined): string {
-  return isHillStrideWeek(weekN, fitnessLevel)
+export function neuromuscularNote(
+  weekN: number, fitnessLevel: string | undefined, injuryHistory?: readonly string[],
+): string {
+  return isHillStrideWeek(weekN, fitnessLevel, injuryHistory)
     ? '6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.'
     : '4×20s strides at 5K effort, full recovery between.'
+}
+
+/**
+ * STRIDE-VISIBILITY-01 (SLT 2026-09-18, built 2026-09-19) — the label says the
+ * session carries strides.
+ *
+ * §28 places strides on one midweek easy run from week 3 — measured, **100% of
+ * eligible weeks across 22,558 weeks in the corpus**, mean 10.1 stride runs per
+ * plan — and every one of them was labelled `Easy run — Zone 2`, byte-identical
+ * to a plain easy run. The runner did the work for months and the plan never
+ * said so.
+ *
+ * ⚠️ DERIVED FROM THE STRUCTURAL FACT, NEVER PARSED BACK (D-17). This is called
+ * at the point the note is placed, because that is where "strides were placed"
+ * is known. Nothing branches on the resulting string — the enricher rewrites
+ * labels, which is exactly why `role` and `catalogue_id` exist.
+ *
+ * ⚠️ WOOD'S BINDING CONDITION: descriptive, never congratulatory. It names what
+ * the session contains. No chip, no badge, no encouragement, and no change to
+ * the description — those were explicitly excluded from the ruling.
+ */
+export function neuromuscularLabel(
+  baseLabel: string, weekN: number, fitnessLevel: string | undefined, injuryHistory?: readonly string[],
+): string {
+  if (/\+ (strides|hill strides)/.test(baseLabel)) return baseLabel   // idempotent
+  const kind = isHillStrideWeek(weekN, fitnessLevel, injuryHistory) ? 'hill strides' : 'strides'
+  // Insert before the zone suffix so the existing "— Zone N" convention holds.
+  const m = baseLabel.match(/^(.*?)(\s+—\s+Zone\s+.*)$/)
+  return m ? `${m[1]} + ${kind}${m[2]}` : `${baseLabel} + ${kind}`
 }
 
 /** Does any session in this week carry the note? Used by the invariant. */

@@ -894,6 +894,40 @@ It is also **3 of 4 sessions hard — 50% by session count**, against §1's 25% 
 - `GENERATION_CONFIG.LONG_RUN_MIN_RATIO_VS_EASY = 1.25` — long run must always be ≥ 1.25× the easy session distance. Engine redistributes weekly volume when the natural phase-fraction would invert this (low-volume / low-day-count plans).
 - `GENERATION_CONFIG.MIN_SESSION_DISTANCE_KM` — floor distances per session type (long: 5, easy: 4, quality: 5, secondary_quality: 4). Below these, the session is too short to be coaching-meaningful.
 
+### §9 — RECORDED STRUCTURAL FINDING: three principles size the long run and the engine obeys the loosest (2026-09-19, PLAN-QUALITY-AUDIT-01)
+
+**This is not a rule change. It is a contradiction in the constitution, measured, written down so it is not rediscovered.**
+
+**The contradiction.** Three principles size the same object and have never been reconciled:
+
+| | says the long run is |
+|---|---|
+| **§9** (this section) | **28–40% of the week**, and *">35% is a binge — fatigue accumulates faster than aerobic gain"* |
+| **§52** | permitted up to **60%**, as a *backstop against lopsidedness* |
+| **§80 / §24 / §45** | sized from the **race**, silent about the other days |
+
+**The engine ships 87%.** §52's 60% was written as a ceiling and has been read as a target; §9's sizing intent is enforced by nothing.
+
+**Measured on priority one** (beginner marathon, 6,480 inputs, 4,122 generated): **45.2%** of plans contain a week where one session is ≥75% of it · **83%** regress the midweek runs below their base-phase best when the build phase begins · **29%** stall a midweek run for 5+ consecutive build weeks · **40.5%** contain loading weeks with ≤2 runs. The long run is being funded by the rest of the week.
+
+🔴 **SIX INSTRUMENTS WERE BUILT AND MEASURED. EVERY ONE TRADED ONE DEFECT FOR ANOTHER.** Recorded in full so none is retried blind:
+
+| instrument | result |
+|---|---|
+| Week-1 floor yields to §2's ramp | Door 12 → 8 km/wk, peak scales — **+884 sweep violations** |
+| …bounded by `days × MIN_KM_PER_TRAINING_DAY` | **Measured no-op** (floor sits above the init floor) |
+| Injury trim floors at 2 easy runs, sub-floor sizes | 3 weeks recover, 4 do not, **peak week breaches the injury ceiling** |
+| §114 delivered-week bound at **45%** | BINGE-SEVERE eliminated — **LONG-RUN-SHORT 0 → 88.7%** |
+| §114 at **60%** / **70%** | **0 → 44.2% / 39.6%**; M2 and M3 regress 70% → 56–60% of race |
+| §45 absolute arm 50% → 30% | 50 plans better; **M2 net build 68% → 44%** |
+| `MIN_KM_PER_TRAINING_DAY` 5 → 4 | DAYS-SHORT −31; **WEEK1-LEAP +135** |
+
+**Why every one failed, which is the finding.** §45's cap is *multiplicative on the previous week's long run*. Reduce a long run in any week and the next week's permitted step is computed from the lower base, so **the trajectory ratchets down and never recovers.** A post-hoc bound on the long run is therefore structurally incapable of fixing composition without destroying specificity.
+
+**The remedy, named but not built.** The long run and the week must be sized **together at construction** (`buildWeekSessions`), not adjusted afterwards — the week's composition decided as one allocation rather than a long run followed by whatever volume remains. That is an engine-architecture change, not a numeric, and it is the one thing that would let §9 and §24 both hold.
+
+**Until then §52's 60% warn is the honest backstop it was written as**, and `npm run audit:plans` holds the numbers so they cannot silently worsen.
+
 ---
 
 ## 10. VDOT conservatism — protect users from themselves (selectively)
@@ -1510,6 +1544,48 @@ prescription. Legislating it would have shipped a no-op.
 **Config.** `GENERATION_CONFIG.BEGINNER_HILL_STRIDE_EVERY_N_WEEKS = 2`, onset
 shared with `STRIDES_FIRST_WEEK`.
 **Enforced by** `INV-PLAN-BEGINNER-NEUROMUSCULAR`.
+
+### §28 Amendment 2 — hill strides yield to §21, and the label tells the truth (2026-09-19, CB-HILL-INJURY-01 / STRIDE-VISIBILITY-01)
+
+🔴 **A LIVE SAFETY DEFECT, shipped by §28 Amendment 1 on 2026-09-18 and closed
+the next day.** `isHillStrideWeek()` keyed on week number and fitness level and
+**never consulted `injury_history`**, so a beginner with knee history was
+prescribed *"6×10s hill strides up a moderate gradient"* in weeks 5 and 9 —
+with `'knee'` in `HILL_RESTRICTING_INJURIES` and §21 barring exactly that
+session.
+
+⚠️ **IT WAS INVISIBLE BECAUSE THE LABEL LIED, AND THAT IS THE LESSON.**
+`INV-PLAN-INJURY-NO-HILLS` classifies hill work by matching the session
+**label**. The label was `Easy run — Zone 2` while the coach note said hill
+strides, so a §21 safety invariant was looking straight at the session and could
+not see it. It surfaced the moment `STRIDE-VISIBILITY-01` made the label say
+`Easy run + hill strides — Zone 2` — **the D-17 failure mode (never couple logic
+to a display string) catching itself.** No measurement found this; making a
+label honest did.
+
+**The rule.** Hill strides are a hill session. Where §21 bars hill work, the
+alternation collapses to its safe arm and the runner gets §28's flat strides
+every stride week — a change of modality, never a loss of stimulus.
+
+**Single owner.** `neuromuscular.ts → hasHillRestrictingInjury()`. ⚠️ **This
+predicate existed THREE times before it existed once** — in `ruleEngine`'s
+catalogue selector, in `invariants`' §21 check, and a fourth copy was about to be
+written for hill strides. That omission *is* how the defect reached production:
+the producer never asked the question the checker was asking.
+
+**The label (`STRIDE-VISIBILITY-01`, SLT 2026-09-18).** §28 places strides on
+**100% of eligible weeks — 22,558 of 22,558 measured** — and every one was
+labelled identically to a plain easy run. The label is now derived at the point
+of placement from the structural fact that strides were placed; nothing branches
+on the string. Wood's binding condition holds: descriptive, never
+congratulatory, no chip, no change to the description.
+
+⚠️ **A second latent hazard went with it.** `hasStrideNote()` carried a
+`label` arm that was dead while no label said "strides" and became a hole the
+instant one did: the enricher can rewrite labels, so a stripped stride note
+under an intact label would have passed the net that exists because the enricher
+once stripped notes from 12 of 17 weeks of a live plan (`ENRICH-STRIDES-01`).
+The arm is removed — **the note is the prescription, the label is display.**
 
 ---
 

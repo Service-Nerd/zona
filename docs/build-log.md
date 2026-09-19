@@ -6,6 +6,20 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — the engine audit · a label told the truth and a safety bug fell out
+
+**Shipped:** `npm run audit:plans` (the fifth question — would we be proud to hand this plan over?), stride labels that say "strides", a §21 gate on hill strides that was missing, and the taper's floors routed through the resolver everything else already uses.
+
+**Dev learning:** The founder reframed the whole day: stop closing backlog items, start judging the plans. So I built a harness that generates 6,480 beginner-marathon plans — cwk 0 to 30, longest run 0 to 12, injury and returning toggled — and asks a coach's questions of each one. 36.4% get no plan at all. Of the rest, 45% have a week where one session is three quarters of the week, 49% deliver fewer days than the runner asked for, 40% have weeks with two runs in them. Then I printed an actual plan and found the thing no predicate caught: the Sunday long run goes 5.3 km to 26.0 km while the Monday, Wednesday and Friday runs sit at 3.9 km from week 1 to week 13. The engine builds a first-time marathoner by growing one session and freezing the rest. 83% of plans do it.
+
+**Product/creator learning:** I then tried six different fixes and every single one traded one defect for another. Bound the long run to 45% of its week: the binge weeks vanish and the peak long run collapses to 45% of race distance. Try 60%, try 70%: same shape, smaller. Tighten the long-run step cap: one persona's net build drops from 68% to 44%. Lower the per-day minimum: days improve by 31 plans, week-one jumps get worse by 135. The reason is the same every time and it took six attempts to see it — §45's cap is multiplicative on the previous week's long run, so reducing any week ratchets the whole trajectory down and it never recovers. A post-hoc bound on the long run cannot fix composition without destroying specificity. That is not a number to tune, it is an architecture to change.
+
+**AI-building learning:** The best thing that happened all day was an accident. The SLT asked for stride runs to be labelled — a cosmetic change, "Easy run + strides" instead of "Easy run". The test suite immediately went red on a §21 injury invariant, and the reason was that a knee-history beginner had been prescribed hill strides for a day, since §28's amendment the previous afternoon never consulted injury history. The invariant that should have caught it classifies hill sessions by reading the label, and the label said "Easy run — Zone 2" while the coach note said "6×10s hill strides up a moderate gradient". A safety check was staring straight at the session and could not see it. **Making a display string honest found a bug that no amount of measuring had.**
+
+**The honest bit:** I was wrong a lot today and the pattern is consistent. I compared a raw floor against a delivered value and called a gate non-monotonic on the strength of it. I blamed 30-minute weekday caps for a collapsed week and removing them changed nothing. I reconstructed a failing case by hand from printed fields and it did not reproduce, because I had missed two inputs. I measured long-run steps between non-adjacent weeks and reported a 62% jump that does not exist. Every one was caught by running the measurement again rather than by thinking harder, and one of them had already reached a board sitting before I caught it. The fix for the six failed instruments is not that I should have been cleverer — it is that six honest negative results, written down with their numbers, are worth more than one plausible change shipped on a hunch.
+
+**Hook material:** We labelled a running session more accurately. The test suite went red and told us we had been prescribing hill sprints to people with knee injuries.
+
 ## 2026-09-19 — XREF-DANGLE-01 · the doc fix that missed the file it was editing
 **Shipped:** a test that fails the build when a backlog line says "filed as X below" and there is no X below.
 

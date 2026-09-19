@@ -66,7 +66,18 @@ describe('Plan row — the type chip is gone, and stays gone', () => {
       const label = s.label.toLowerCase()
       return label.includes(chip) || chip.includes(label)
     })
-    expect(dup.length / sessions.length).toBeGreaterThan(0.5)
+    // ⚠️ RE-BASED 0.5 -> 0.4 on 2026-09-19 (STRIDE-VISIBILITY-01), and the
+    // direction matters. `SESSION_LABELS.easy` is the FULL string
+    // 'Easy run — Zone 2', so a stride-carrying session now labelled
+    // 'Easy run + strides — Zone 2' no longer matches it exactly and the rate
+    // fell 50.x% -> 45.1%.
+    //
+    // The reason this test protects is UNCHANGED and in fact stronger: the chip
+    // is a static per-type string, and on those sessions the label now carries
+    // strictly MORE information than the chip does. Fewer exact duplicates
+    // because the label got better is not an argument for bringing the chip
+    // back. Re-based rather than deleted so the claim stays executable.
+    expect(dup.length / sessions.length).toBeGreaterThan(0.4)
   })
 
   it('the chip would be WRONG on a long run, not merely redundant', () => {
