@@ -37,6 +37,26 @@ This union is **not** changing. It is the display contract.
 
 ```
 aerobic         — base/build aerobic work, including unstructured fartlek
+
+> **Beginner eligibility — CB-BEGINNER-CATALOGUE-01 (2026-09-19).** A beginner
+> who set a TIME TARGET may be prescribed quality (§110 Am.2, 1/week). The rows
+> they can reach are `progressive_tempo` and `tempo_continuous` (both LOWERED to
+> `fitness_level_min: 'beginner'`, measured parity-IDENTICAL) plus
+> `beginner_goal_pace_blocks` (new, and the only row in the catalogue carrying
+> `fitness_level_max`). A beginner on a FINISH goal still receives none, which
+> the board ruled CORRECT AS IS the same day.
+>
+> ⚠️ **`fitness_level_min` means "and everyone above".** ADDING an unscoped row
+> was measured changing **2,324 of 5,940 parity cases — 0 of 1,980 beginner
+> plans and ~59% of intermediate and experienced ones**, because the §53
+> rotation is least-used-first and a new row starts at usage 0. LOWERING an
+> existing row is free. **Prefer lowering; scope with `fitness_level_max` when a
+> new row is genuinely needed.**
+>
+> ⚠️ **Two threshold rows were lowered, not one.** With only `progressive_tempo`
+> a beginner marathon plan received it TEN times, and §53 would not have caught
+> it — its cap is `max(fraction, pigeonhole)` and one row picked ten times
+> satisfies the pigeonhole arm. See §110b.
 threshold       — sustained sub-threshold and threshold work (Z3)
 vo2max          — short hard intervals targeting Z4–Z5
 race_specific   — sessions that resemble race demands (MP segments, HM-pace intervals)
@@ -92,7 +112,7 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 
 ---
 
-## V1 catalogue (29 sessions)
+## V1 catalogue (30 sessions)
 
 **These are the rows the engine actually ships**, generated from `lib/plan/sessionCatalogueData.ts` — the runtime source of truth (SC-00; the Supabase table is retired).
 
@@ -103,10 +123,11 @@ Phase 1 specifies the full schema for `main_set_structure` and freezes it before
 | 1 | `aerobic_steady` | Steady aerobic | aerobic | base, build | all | beginner | T1 | Z2 block |
 | 2 | `aerobic_hills` | Aerobic with hills | aerobic | base, build | all | intermediate | T2 | Z2 (hills) block |
 | 3 | `fartlek_unstructured` | Unstructured fartlek | aerobic | base | all | intermediate | T2 | fartlek |
-| 4 | `tempo_continuous` | Continuous tempo | threshold | build, peak, taper | all | intermediate | T3 | **v2** · continuous, single T-pace effort · `scaling: 'fixed'`, sized by fitness×phase (`THRESHOLD_WORK_TARGET_MINS`) — not a fixed 30 min block. Migrated 2026-09-03. |
+| 30 | `beginner_goal_pace_blocks` | Goal-pace blocks | race_specific | build, peak | 5K, 10K, HM, MARATHON | **beginner ONLY** (`fitness_level_max`) | T2 | blocks |
+| 4 | `tempo_continuous` | Continuous tempo | threshold | build, peak, taper | all | **beginner** (CB-BEGINNER-CATALOGUE-01) | T3 | **v2** · continuous, single T-pace effort · `scaling: 'fixed'`, sized by fitness×phase (`THRESHOLD_WORK_TARGET_MINS`) — not a fixed 30 min block. Migrated 2026-09-03. |
 | 5 | `tempo_cruise` | Cruise intervals | threshold | build | all | intermediate | T3 | **v2** · reps × (10 min at T / 2 min jog) · `scaling: 'reps'` — rep length is the fixed stimulus identity, rep COUNT scales by fitness×phase (`THRESHOLD_WORK_TARGET_MINS`). Migrated 2026-09-03. |
 | 6 | `tempo_cruise_short` | Cruise intervals — short | threshold | build, peak | 5K, 10K | intermediate | T3 | **v2** · reps × (5 min at T / 90s jog) · `scaling: 'reps'` — rep count scales by fitness×phase. Migrated 2026-09-03. |
-| 7 | `progressive_tempo` | Progressive tempo | threshold | build, peak, taper | all | intermediate | T3 | **v2** · continuous, 3 equal thirds (E ceiling → Z2-Z3 transition → T target) · `scaling: 'fixed'`, sized by fitness×phase (`PROGRESSIVE_TEMPO_MAIN_MINS`). Migrated 2026-09-03. |
+| 7 | `progressive_tempo` | Progressive tempo | threshold | build, peak, taper | all | **beginner** (CB-BEGINNER-CATALOGUE-01) | T3 | **v2** · continuous, 3 equal thirds (E ceiling → Z2-Z3 transition → T target) · `scaling: 'fixed'`, sized by fitness×phase (`PROGRESSIVE_TEMPO_MAIN_MINS`). Migrated 2026-09-03. |
 | 8 | `threshold_ladder` | Threshold ladder | threshold | build, peak | 10K, HM, MARATHON, 50K, 100K | intermediate | T3 | **v2** · 3-5-8-5-3 min at T, 90s jogged recovery between · `scaling: fixed` — the ladder's shape IS the session. **Structure-driven sizing added CB-CAT-02 (§86), 2026-09-04:** it previously took the flat quality-session formula and stated **61 min** for a session whose own structure needs **50**. Now summed from its own steps by `fixedShapePlan`, and checked by `INV-PLAN-STRUCTURED-SESSION-DURATION-COHERENT`, whose scope was extended to reach it. Audit §E.5, unblocked by v2 case 1. Eligible at `weeklyKm >= 45` OR a sustained recent threshold pattern (§53, Coaching Board 2026-09-03) — see `THRESHOLD_LADDER_MIN_WEEKLY_KM`/`THRESHOLD_LADDER_ALT_*`. "Fitness ≥" column corrected from `experienced` (stale — CAT-ULTRA-THIN-01, 2026-08-21, replaced the fitness-label gate with the volume floor itself; this table wasn't regenerated). |
 | 9 | `intervals_classic` | Classic VO2max | vo2max | build, peak | 5K, 10K | intermediate | T4 | **v2** · reps × (3 min at I / 2 min jog) · `scaling: 'reps'` — rep count scales by fitness×phase (`VO2MAX_WORK_TARGET_MINS`). Migrated 2026-08-21 (SC-08 vo2max). |
 | 10 | `intervals_short` | Short VO2max | vo2max | build, peak | 5K | intermediate | T4 | **v2** · reps × (400m at I / 90s jog) · `scaling: 'reps'` — rep count scales by fitness×phase. Migrated 2026-08-21. |

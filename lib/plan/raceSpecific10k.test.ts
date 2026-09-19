@@ -43,7 +43,13 @@ describe('SC-05 — 10K owns a race-specific session', () => {
       && r.distance_eligibility.includes('10K')
       && r.distance_eligibility.length < 6)   // the all-distance generic doesn't count
     expect(own.length).toBeGreaterThan(0)
-    expect(own[0].name).toBe('10K-pace intervals')
+    // Asserted by MEMBERSHIP, not by array position — amended 2026-09-19.
+    // `own[0]` made this depend on catalogue ordering, and it broke when
+    // `beginner_goal_pace_blocks` (§110b) was inserted earlier in the file: a
+    // beginner-scoped row that also happens to be race_specific and 10K-eligible.
+    // The claim SC-05 makes is that 10K OWNS a race-specific session, which is
+    // a membership question.
+    expect(own.map(r => r.name)).toContain('10K-pace intervals')
   })
 
   it('a 10K plan actually receives it — the row is not dead weight', () => {

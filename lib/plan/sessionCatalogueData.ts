@@ -39,6 +39,29 @@ export interface SessionCatalogueRow {
   phase_eligibility:    Array<'base' | 'build' | 'peak' | 'taper'>
   distance_eligibility: Array<'5K' | '10K' | 'HM' | 'MARATHON' | '50K' | '100K'>
   fitness_level_min:    CatalogueFitness
+  /**
+   * CB-BEGINNER-CATALOGUE-01 (2026-09-19) — the UPPER bound on who may be
+   * prescribed this row. Optional; absent means "no upper bound", which is
+   * every row that existed before this field, so adding it is inert.
+   *
+   * ⚠️ WHY IT EXISTS, MEASURED. `fitness_level_min` means "and everyone above":
+   * the filter is `FITNESS_RANK[row.fitness_level_min] <= userRank`, and the
+   * §53 rotation is least-used-first, so a NEW row starts at usage 0 and is
+   * picked FIRST by the cohorts it was not written for. Probe, 2026-09-19:
+   * adding one beginner-eligible row changed **2,324 of 5,940 parity cases
+   * (39.1%) — 0 of 1,980 beginner plans and ~59% of intermediate AND
+   * experienced plans.** The exact inverse of the intent.
+   *
+   * So a row written FOR a cohort must be scopeable TO that cohort. Sims at the
+   * sitting: this is the honest mechanism, because it says "this row is for
+   * this runner" rather than dropping a soft row into everyone's rotation.
+   *
+   * ⚠️ NOT a general tiering system, and deliberately not. LOWERING an existing
+   * row's `fitness_level_min` is measured byte-for-byte free (it cannot enter a
+   * pool it was already in), so that remains the preferred route and this field
+   * is only for a row that would otherwise leak upward.
+   */
+  fitness_level_max?:   CatalogueFitness
   // §53 (CAT-ULTRA-THIN-01) — optional per-row weekly-volume floor. A row is
   // ineligible in a week carrying less than this many km. Used by threshold_ladder
   // to gate its ~24 min of threshold work on volume rather than a fitness label.
@@ -118,6 +141,17 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     coach_voice_notes: 'Pick a tree. Run to it. Recover. No watch.',
   },
   {
+    // CB-BEGINNER-CATALOGUE-01 — lowered to `beginner` alongside
+    // `progressive_tempo`. WHY A SECOND ROW AND NOT JUST THE FIRST: measured
+    // with only `progressive_tempo` lowered, a beginner marathon time-target
+    // plan received it TEN TIMES (weeks 8-17, 19). `MIDWEEK_QUALITY_LADDER`
+    // excludes `race_specific`, so marathon's midweek rotation can only ask for
+    // threshold, and a pool of one row means the same session every week —
+    // which is CAT-DEPTH-01's symptom reappearing for the cohort the founder
+    // ranks first. §53 would NOT have caught it: its cap is
+    // max(fraction, pigeonhole), and one row picked ten times satisfies the
+    // pigeonhole arm. Sizes off THRESHOLD_WORK_TARGET_MINS, so the beginner
+    // dose added for `progressive_tempo` already covers it — no new config.
     id: 'tempo_continuous', name: 'Continuous tempo', category: 'threshold',
     purpose: 'Sustained sub-threshold work. Builds the ceiling.',
     // CD-2/§36 — taper-eligible so a finish-goal taper has a second honest
@@ -126,7 +160,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     // which is a time-target-only tool now correctly gated out of finish tapers.
     phase_eligibility: ['build', 'peak', 'taper'],
     distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
-    fitness_level_min: 'intermediate', difficulty_tier: 3,
+    fitness_level_min: 'beginner', difficulty_tier: 3,
     // Coaching Board 2026-09-03 — v2, scaling: 'fixed'. Genuinely new shape (one
     // continuous block, single sustained pace — not reps, not a progression),
     // but the DOSE is the same threshold work band already ruled correct for
@@ -242,7 +276,7 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     purpose: 'Gradual ramp from aerobic to threshold. Trains discipline at the start, honesty at the end.',
     phase_eligibility: ['build', 'peak', 'taper'],
     distance_eligibility: ['5K', '10K', 'HM', 'MARATHON', '50K', '100K'],
-    fitness_level_min: 'intermediate', difficulty_tier: 3,
+    fitness_level_min: 'beginner', difficulty_tier: 3,  // CB-BEGINNER-CATALOGUE-01: lowered, measured parity-IDENTICAL
     // Coaching Board 2026-09-03 — v2, scaling: 'fixed'. Not a reps shape (there
     // is nothing to repeat — one continuous effort that changes character as it
     // goes), so it does not use pacedRepPlan's WORK_MIN/MAX/TARGET band pattern.
@@ -837,6 +871,73 @@ export const V1_SESSION_CATALOGUE: SessionCatalogueRow[] = [
     typical_duration_max: 50,
     is_free_tier: true,
     coach_voice_notes: 'No track, no measured loop, no pace to chase. The gradient does the work — you just have to keep the effort honest and come back down slowly.',
+  },
+  {
+    id: 'beginner_goal_pace_blocks', name: 'Goal-pace blocks', category: 'race_specific',
+    purpose: 'Short blocks at goal pace inside an easy run. Teaches the pace without turning it into a race.',
+    // CB-BEGINNER-CATALOGUE-01 (Coaching Board 2026-09-19). The ONE new row of
+    // that ruling, and the only rung of the beginner ladder Zonna did not own.
+    //
+    // WHY IT HAD TO BE A NEW ROW RATHER THAN A LOWERED ONE. §22
+    // (INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO) raises a PER-SESSION error for
+    // any second-half build/peak quality on a time-target plan that is not
+    // `race_pace`. Lowering `progressive_tempo` alone would therefore have
+    // taken the beginner time-target cohort from VACUOUSLY PASSING (no quality
+    // at all) to FAILING. Its mixed-anchor exemption does not apply: that test
+    // counts PACE-anchored work steps excluding E, and the progression's middle
+    // third is a ZONE target, so its anchor set is {T} — size 1. §22 was not an
+    // obstacle to route around; it was naming the right prescription.
+    //
+    // WILLY'S CONDITION OF APPROVAL — BLOCKS, NOT REPEATS. The recovery is an
+    // easy RUN, not a standing jog, and the work steps are minutes rather than
+    // a rep distance: "reps invite a beginner to race the recovery." This is
+    // also what the coaching literature prescribes for a first-time marathoner
+    // with a time goal — short goal-pace blocks embedded in a midweek run, not
+    // intervals.
+    //
+    // SCOPED BEGINNER-ONLY via `fitness_level_max`, and that is load-bearing:
+    // a new row with no upper bound was measured changing 2,324 of 5,940 parity
+    // cases, 59% of intermediate and experienced plans and 0% of beginner ones.
+    // Non-beginners already have `goal_pace_sharpener` and the pace rows.
+    //
+    // Named with "-pace" deliberately: `classifyStimulus` resolves race_pace
+    // from the label, so the name is load-bearing for §22 (D-17's exception —
+    // the stamp is preferred, and this row is stamped via catalogue_id, but the
+    // label test is the live path for the stimulus classification).
+    // HM AND MARATHON ONLY, and the restriction is measured rather than
+    // stylistic. (1) The coaching basis is specifically the long-race one:
+    // short goal-pace blocks inside a midweek run, for a first-timer who needs
+    // to have FELT the pace. At 5K/10K a beginner's goal pace sits at or above
+    // threshold, so blocks at it are not a first structured session. (2) At
+    // 5K/10K the engine already relabels the tempo rows "5K-pace sustained" /
+    // "10K-pace progression", which `classifyStimulus` reads as `race_pace`,
+    // so §22's goal-pace requirement is satisfied there WITHOUT this row.
+    // (3) Measured with 5K/10K included: 69 NEW §53 variety violations, because
+    // a beginner has no threshold PACE ANCHOR, so the T-anchored tempo rows are
+    // filtered out by CAT-ROW-ELIGIBILITY-01 and the eligible pool collapses to
+    // this row alone, which then repeats.
+    phase_eligibility: ['build', 'peak'],
+    distance_eligibility: ['HM', 'MARATHON'],
+    fitness_level_min: 'beginner', fitness_level_max: 'beginner', difficulty_tier: 2,
+    main_set_structure: {
+      version: 2,
+      sizing: { scaling: 'reps' },
+      blocks: [{
+        repeat: { kind: 'parameter', param: 'reps' },
+        label: 'blocks',
+        steps: [
+          { role: 'work', modality: 'run', length: { kind: 'duration', secs: 420 },
+            target: { kind: 'pace', anchor: 'goal', mode: 'target' }, advance: 'auto',
+            note: 'Settle into goal pace. It should feel controlled, not fast.' },
+          { role: 'recovery', modality: 'run', length: { kind: 'duration', secs: 180 },
+            target: { kind: 'pace', anchor: 'E', mode: 'ceiling' }, advance: 'auto',
+            note: 'Keep running, easy. This is part of the session, not a break from it.' },
+        ],
+      }],
+    },
+    intensity_zones: ['Z3'],
+    typical_duration_min: 30, typical_duration_max: 45, is_free_tier: true,
+    coach_voice_notes: 'This is the pace you are aiming for. Learn what it feels like when it is easy.',
   },
   {
     id: 'goal_pace_sharpener', name: 'Goal-pace sharpener', category: 'race_specific',
@@ -1440,6 +1541,9 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
     row.phase_eligibility.includes(phase) &&
     row.distance_eligibility.includes(distanceKey) &&
     FITNESS_RANK[row.fitness_level_min] <= userRank &&
+    // CB-BEGINNER-CATALOGUE-01 — the upper bound. Vacuous for every row that
+    // does not set it, which is every row that predates the field.
+    (row.fitness_level_max == null || userRank <= FITNESS_RANK[row.fitness_level_max]) &&
     // §53 (CAT-ULTRA-THIN-01) — a volume-gated row (threshold_ladder) is eligible
     // when the week's own volume supports its load, OR (Coaching Board
     // 2026-09-03) the runner has sustained threshold-category work across

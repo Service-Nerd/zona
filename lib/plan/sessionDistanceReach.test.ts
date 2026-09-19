@@ -18,20 +18,28 @@ import type { GeneratorInput, Session } from '@/types/plan'
  */
 
 const plans = (() => {
-  const out: { level: string; sessions: Session[] }[] = []
+  const out: { level: string; engineLevel: string; sessions: Session[] }[] = []
   for (const input of cohortGrid()) {
     try {
       const p = generateRulePlan(input as GeneratorInput, 'trial', COHORT_PLAN_START, undefined, COHORT_PLAN_START)
       const sessions = (p.weeks ?? []).flatMap(w =>
         (Object.values(w.sessions ?? {}) as (Session | null)[])
           .filter((s): s is Session => !!s && s.type !== 'rest' && s.type !== 'strength'))
-      out.push({ level: (input as GeneratorInput).fitness_level as string, sessions })
+      // The DECLARED level and the level the ENGINE classified are different
+      // axes (§79) and they disagree often — a runner declaring `experienced`
+      // at 12 km/week is classified beginner, which is what governs catalogue
+      // eligibility and the duration anchor. Capture both.
+      out.push({
+        level: (input as GeneratorInput).fitness_level as string,
+        engineLevel: String(p.meta?.fitness_intensity_level ?? p.meta?.fitness_level ?? ''),
+        sessions,
+      })
     } catch { /* refusals are the engine working */ }
   }
   return out
 })()
 
-const all = plans.flatMap(p => p.sessions.map(s => ({ level: p.level, s })))
+const all = plans.flatMap(p => p.sessions.map(s => ({ level: p.level, engineLevel: p.engineLevel, s })))
 
 describe('SESSION-KM-02 — who is actually affected', () => {
   it('generated a real corpus', () => {
@@ -66,10 +74,39 @@ describe('SESSION-KM-02 — who is actually affected', () => {
     expect(rate('experienced', lacksDistance as never)).toBe(0)
   })
 
-  it('quality sessions always carry a distance — why four sites were left alone', () => {
+  it('NON-BEGINNER quality carries a distance; BEGINNER quality does not — and that changed', () => {
+    // ⚠️ THIS ASSERTION USED TO READ "quality sessions ALWAYS carry a distance",
+    // and SESSION-KM-02 used that measured fact to justify leaving four
+    // `distance_km ?? 0` sites in `invariants.ts` alone. **§110 Am.2 (2026-09-19)
+    // invalidated it**: a beginner who set a time target now receives quality,
+    // and beginners are duration-anchored (§79/§80), so those sessions carry
+    // `duration_mins` and no `distance_km`.
+    //
+    // The recorded assumption was TRUE when written and a later ruling made it
+    // false. That is why this test exists — it is the tripwire on a premise,
+    // not a restatement of it.
+    //
+    // Consequence, recorded not silently accepted: §9's km floor
+    // (`INV-PLAN-MIN-SESSION-SIZE`) skips duration-anchored sessions, so it
+    // does not reach beginner quality. Filed as `S9-DURATION-FLOOR-01`. The
+    // obvious fix — reading the size through `sessionKmSelfPaced` — was tried
+    // and is WRONG: it fires on ordinary beginner easy runs too (30 minutes at
+    // a beginner's pace is 3.9 km against a 4 km floor). A km floor applied to
+    // a session prescribed in minutes asks the wrong question, and §9 has no
+    // minutes equivalent yet.
     const quality = all.filter(x => ['quality', 'intervals', 'tempo', 'hard'].includes(x.s.type ?? ''))
     expect(quality.length).toBeGreaterThan(1000)
-    expect(quality.filter(x => x.s.distance_km == null)).toEqual([])
+
+    const paceless = quality.filter(x => x.s.distance_km == null)
+    // Every one of them must be a duration-anchored prescription, never a
+    // session that simply lost its size.
+    for (const x of paceless) {
+      expect(x.s.duration_mins, 'a quality session with neither distance nor duration').toBeGreaterThan(0)
+    }
+    // And they must all be BEGINNER plans — if a non-beginner quality session
+    // ever loses its distance, the four `?? 0` sites under-count it for real.
+    const nonBeginnerPaceless = paceless.filter(x => x.engineLevel !== 'beginner')
+    expect(nonBeginnerPaceless).toEqual([])
   })
 
   it('long runs do not — which is why the long-run sites were fixed', () => {

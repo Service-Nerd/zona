@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — CAT-DEPTH-01 · the catalogue was the second of three gates
+**Shipped:** a beginner who sets a time target now gets one quality session a week, from rows they are actually eligible for.
+
+**Dev learning:** The item said "the catalogue is thin" and had said so for weeks. It was thin, but that was not what blocked it. The first gate was a ceiling of zero, so there was no slot for a row to fill — I proved it by adding a row and measuring: zero beginner plans changed and fifty-nine percent of everyone else's did, because a row marked for beginners is eligible for every level above them and the rotation picks least-used first. The third gate was four dose tables with no beginner row, typed loosely enough that a missing key is a runtime crash rather than a compile error. Three gates, and the one in the title was the middle one.
+
+**Product/creator learning:** The constitution had already said this. A comment inside the config block read "beginner → 0 (no quality at all in base; light tempo only after week 4)" — the sentence describes light tempo, the number forbids it, and both have been sitting there since the original spec. Nobody implemented the sentence and nobody deleted it. A comment is read by people and by nothing else, which is exactly how it survives being wrong for a year.
+
+**AI-building learning:** Three times during the build a measurement told me my plan was wrong and each correction is now written into the principle rather than quietly applied. The new row without a scope field cost other cohorts fifty-nine percent of their plans. Shipping it without a volume floor produced six hundred and forty lopsided-week breaches, all on people running five to twelve kilometres a week. Allowing it at 5K and 10K produced sixty-nine variety breaches, because a beginner has no threshold pace anchor so the tempo rows drop out and my row was the only thing left to pick. None of that was predictable from reading the code.
+
+**The honest bit:** I shipped this once already today and reverted it, because the ruling was right and the engine could not honour it. The measurement that looked like success — goal-pace exposure going from zero to a hundred percent — was reading sessions that had no catalogue row at all. A label is not a prescription. The invariant caught it; my own metric did not.
+
+**Hook material:** The feature was blocked for weeks on "we need more content". The content was the second of three problems, and the first one was a zero someone typed in 2025.
+
+---
+
 ## 2026-09-19 — QUALITY-ZERO-SCOPE-01 · the check was fine, it just could not reach anyone
 **Shipped:** the zero-quality floor now applies to ultra runners, who were never meant to be exempt.
 

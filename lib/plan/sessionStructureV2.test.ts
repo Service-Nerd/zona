@@ -259,6 +259,7 @@ describe('SC-08b — migration posture (D-03)', () => {
       'intervals_30_30',         // §88 — 30s rep divides the VO2 band finely
       'intervals_rolling',       // §88 — first continuous VO2max fast-float
       'cv_intervals',            // §88 Tier A — critical-velocity reps, threshold-domain (A5)
+      'beginner_goal_pace_blocks', // §110b (CB-BEGINNER-CATALOGUE-01, 2026-09-19) — born v2; the beginner ladder's rung 6, scoped beginner-only.
     ])
     for (const row of V1_SESSION_CATALOGUE) {
       expect(

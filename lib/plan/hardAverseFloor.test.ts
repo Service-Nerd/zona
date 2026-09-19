@@ -253,10 +253,19 @@ describe('§110 / §40c — the note describes the PLAN, not the rule that ran',
   })
 
   it('does NOT claim a cap when the plan is all easy — the T2 case', () => {
-    // A genuine beginner: the ratified ceiling zeroes quality, so there is no
-    // cap operating and nothing to promise.
+    // A genuine beginner ON A FINISH GOAL: the ratified ceiling zeroes quality,
+    // so there is no cap operating and nothing to promise.
+    //
+    // ⚠️ `goal: 'finish'` is load-bearing as of 2026-09-19 (§110 Am.2). This
+    // fixture inherited the suite's `time_target`, and a beginner with a time
+    // target now DOES receive quality (1/week, once the week reaches
+    // BEGINNER_QUALITY_MIN_WEEKLY_KM) — so the plan stopped being all-easy and
+    // the note correctly began claiming the cap. The T2 case this guards is
+    // "the plan is all easy", and the finish goal is what makes it all easy
+    // now. Changing the fixture keeps the test's subject; leaving it would have
+    // turned it into an assertion that §110 Am.2 had not shipped.
     const { note, quality } = avoidPlan({
-      fitness_level: 'beginner', training_age: '<6mo',
+      fitness_level: 'beginner', training_age: '<6mo', goal: 'finish',
       recent_quality_training: 'none', current_weekly_km: 10,
       longest_recent_run_km: 4, days_available: 3,
     })

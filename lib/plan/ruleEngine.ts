@@ -13,6 +13,7 @@ import {
   getDistanceConfig, calcPlanLength, nextMonday,
   formatDate, addDays, parseDateLocal,
 } from './length'
+import { qualityCeilingFor } from './qualityCeiling'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 // ADR-015 / INV-FMT-001 — `lib/format.ts` is the SOLE owner of every duration a
 // runner reads, and the rule is locked: under 60 minutes reads "45 min", at or
@@ -2857,7 +2858,11 @@ function buildWeekSessions(
 
   // Quality count for this week — config-driven (CoachingPrinciples §1, §6, §8).
   // Taper retains intensity per TAPER_QUALITY_PER_WEEK[distKey].
-  const fitnessCeiling = GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[intensityFitness]
+  // §110 Amendment 2 — a beginner who set a TIME TARGET has a ceiling of 1, not
+  // 0; finish-goal beginners are unchanged. `qualityCeilingFor` is the single
+  // owner, shared with INV-PLAN-QUALITY-PER-WEEK so producer and checker cannot
+  // disagree about the ceiling.
+  const fitnessCeiling = qualityCeilingFor(intensityFitness, input.goal, weeklyKm)
   let plannedQuality = 0
   if (phase === 'taper') {
     const taperPhase = phases.find(p => p.name === 'taper')!

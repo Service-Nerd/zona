@@ -770,12 +770,32 @@ Note: the rebuild spec proposed 24 h for the second value. Overridden to 48 h on
 **Config.** `GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX`
 
 ```
-beginner     → 0 (no quality at all in base; light tempo only after week 4)
+beginner     → 0 for a FINISH goal; 1 for a TIME TARGET (§110 Am.2)
 intermediate → 2
 experienced  → 2
 ```
 
 (Spec proposed 3 for experienced. Overridden to 2 — for the target audience, the third quality session is rarely accommodated by life and consistently produces the symptoms ZONNA exists to prevent.)
+
+### §8 Amendment 1 — the parenthetical said one thing and the value forbade it (Coaching Board CB-BEGINNER-CATALOGUE-01, 2026-09-19)
+
+**This line read `beginner → 0 (no quality at all in base; light tempo only
+after week 4)` from the original spec until 2026-09-19.** The parenthetical
+declares light tempo after week 4. The value makes light tempo impossible, at
+week 4 or ever. **Documented intent with a number that forbids it** — the §92
+phantom-enforcement class in reverse, and it survived because a comment inside a
+config block is read by people and by nothing else.
+
+The reconciliation is NOT "implement the parenthetical as written". The board
+ruled the same day that a beginner on a **finish** goal correctly receives no
+quality (CORRECT AS IS, unanimous) — for a first marathon the limiter is tissue
+and time on feet, and §28's strides and hill strides already supply the
+neuromuscular stimulus. The parenthetical was too broad, not merely unimplemented.
+
+**What replaces it:** the ceiling is 0 for a finish goal and 1 for a time
+target, via §110 Amendment 2. The value and its description now agree, and the
+one case the parenthetical was right about — a beginner who has declared a
+target and needs to have run at it — is the case that got built.
 
 **Quality session sizing:**
 - `GENERATION_CONFIG.QUALITY_SESSION_PCT_OF_WEEKLY = 18` — primary quality session distance as % of weekly volume.
@@ -6883,69 +6903,187 @@ slots to absorb it against §9's own easy ceiling, so the week genuinely shrinks
 and the long run's share climbs past §52's 60% cap. **VOL-SHORTFALL-01's result
 holds where it was taken, and not below it.**
 
-### Amendment 2 — RULED CORRECT AND **NOT SHIPPED**: the catalogue cannot deliver it (Coaching Board CB-BEGINNER-TIMEGOAL-01, 2026-09-19)
+### Amendment 2 — a beginner who set a TIME TARGET gets one quality session (Coaching Board CB-BEGINNER-TIMEGOAL-01 + CB-BEGINNER-CATALOGUE-01, 2026-09-19)
 
-**Status: the ruling stands and the code is reverted.** This section records a
-ruling the engine cannot currently honour, with the number that blocks it, so
-the next person neither re-derives the finding nor re-ships the broken path.
+**Principle.** A runner the engine classifies `beginner` who has set a **time
+target** receives quality capped at `BEGINNER_TIME_TARGET_QUALITY_PER_WEEK_MAX`
+(1) per week, entering at the **existing onset and never earlier**. A beginner
+on a **finish** goal is unchanged and still receives none — the same board ruled
+that half CORRECT AS IS, unanimously, and did not reopen it.
 
-**What was ruled.** A beginner who set a **time target** receives quality capped
-at 1 per week at the existing onset; a beginner on a **finish** goal is
-unchanged at zero (that half was ruled CORRECT AS IS the same day).
-
-**Why the board ruled it. The gap was BINARY, not a lighter dose** — measured
-across 45,888 plans:
+**Why. The gap was BINARY, not a lighter dose** — measured across 45,888 plans:
 
 | cohort | n | zero-quality | any goal-pace session |
 |---|---|---|---|
 | beginner · time_target | 6,336 | **100%** | **0%** |
-| intermediate · time_target | 6,336 | 0% | 100% |
-| experienced · time_target | 6,336 | 0% | 100% |
+| intermediate · time_target | 6,336 | 0% | **100%** |
+| experienced · time_target | 6,336 | 0% | **100%** |
 
 Every cohort that sets a time target runs at that pace except one, which runs at
-it zero percent of the time. The contradiction was already inside §110: its own
-ratified rationale records Hutchinson — *"No evidence supports zero intensity as
-preparation for a time-goal race"* — and the floor built from that ruling
-exempted beginners **without separating the beginner who set a time goal from
-the one who did not.**
+it **zero percent of the time** — handed a goal pace they will never once have
+run. The contradiction was already inside §110: its own ratified rationale
+records Hutchinson — *"No evidence supports zero intensity as preparation for a
+time-goal race"* — and the floor built from that ruling exempted beginners
+**without separating the beginner who set a time goal from the one who did
+not.** §8 had said the same thing even longer (§8 Am.1).
 
-**⚠️ WHY IT IS NOT SHIPPED — ONE NUMBER.** Of the **29 quality rows in the
-session catalogue, exactly ONE is `fitness_level_min: 'beginner'`** — 26 are
-`intermediate`, 2 are `experienced`. That single row is `aerobic_steady`
-("Steady aerobic", category `aerobic`), which is **not a goal-pace session at
-all.** So `selectCatalogueSession` returns `null` for a beginner
-(`baseEligible.length === 0`), the session is built with **no `catalogue_id`**,
-and `INV-PLAN-CATALOGUE-LINK` (ADR-018) fires — the rep structure is lost the
-moment the label changes, which is the exact 31%-of-quality-sessions defect
-ADR-018 was written to end. Built, measured, **31 test failures across 13 files**,
-reverted.
+**Why 1.** §96's precedent, the same one that fixed
+`HARD_AVERSE_QUALITY_PER_WEEK_MAX`: 1/week **is** the build-phase baseline (§8).
+McMillan: *"I am not asking for six kinds of session, I am asking for one."*
+**Willy raised the frequency objection and withdrew it on the numbers** — the
+literature starts a new runner at one session every *two* weeks, and measured
+onset here is week 5–7 with 6–10 sessions across a 20-week plan, which averaged
+over the block already is roughly every other week. The onset gate is unchanged
+and deliberately so.
+
+**§28 is not a substitute and was checked.** Beginner plans already carry
+strides and hill strides (14 sessions in the traced 20-week plan) — genuine
+neuromuscular and osteogenic stimulus, which is why Sims did not press her §110
+bone-loading objection. Seiler's point stands regardless: strides are not **a
+repeatable hard session the runner can learn to pace**, and pacing is the entire
+content of a time goal.
+
+**⚠️ FIRST ATTEMPT WAS REVERTED, AND THE REASON IS THE USEFUL PART.** Shipping
+the ceiling alone produced **31 test failures across 13 files**: of 29 catalogue
+rows exactly ONE was beginner-eligible (`aerobic_steady`, Z2 aerobic, base+build),
+so a beginner had no eligible row in peak or taper, `selectCatalogueSession`
+returned null, and the session shipped with no `catalogue_id`
+(`INV-PLAN-CATALOGUE-LINK`, ADR-018). **The ruling was correct and the engine
+could not honour it.** That is what CB-BEGINNER-CATALOGUE-01 then fixed.
 
 **⚠️ AND THE MEASUREMENT THAT LOOKED LIKE SUCCESS WAS READING THE DEFECT.** The
 post-change table showed beginner time-target goal-pace exposure going 0% →
-**100%**, which is what a working fix looks like. Those labels
-("10K-pace intervals") came from the null-row fallback — sessions with no
-catalogue row, i.e. the broken path. **A label is not a prescription.** Recorded
-because the number was convincing and wrong, and the invariant caught it, not
-the measurement.
+**100%**, which is exactly what a working fix looks like. Those labels came from
+the null-row fallback — sessions with no catalogue row. **A label is not a
+prescription.** The invariant caught it; the measurement did not.
 
-**This is CAT-DEPTH-01's root cause, now named with a figure rather than a
-suspicion.** The backlog has said "root cause is catalogue thinness" and "four
-measured attempts have failed; do not retry blind" for weeks. The figure is
-**1 of 29**. §110 Am.2 is therefore blocked on catalogue depth, which is a
-`session-catalogue.md` change — a hard-trigger doctrine file and its own piece
-of work, not a numeric.
+**Config.** `GENERATION_CONFIG.BEGINNER_TIME_TARGET_QUALITY_PER_WEEK_MAX = 1`.
+**Single owner:** `lib/plan/qualityCeiling.ts → qualityCeilingFor()`, read by
+BOTH `buildWeekSessions` and `INV-PLAN-QUALITY-PER-WEEK`. The ceiling stopped
+being a plain table lookup the moment it became conditional, and a checker
+holding its own copy of a table cannot catch the producer's copy being wrong
+(DELOAD-OWNER-01, TIER-OWNER-01).
 
-**What unblocks it:** beginner-eligible quality rows that are goal-pace capable.
-That is a Coaching Board sitting on the catalogue (what may a beginner be
-prescribed), sequenced behind an SLT call on CAT-DEPTH-01, which is already
-escalated.
+**Enforcement.** `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` (error) — a time-target
+plan with build/peak weeks and `QUALITY_FLOOR_MIN_PLAN_WEEKS`+ weeks must carry
+at least one quality session. A floor on the COUNT, not the dose.
 
-**No config key and no invariant ship with this section**, deliberately:
-`BEGINNER_TIME_TARGET_QUALITY_PER_WEEK_MAX` and
-`INV-PLAN-TIME-TARGET-QUALITY-FLOOR` were both written and both reverted, since
-the floor would fire on every beginner time-target plan the moment the ceiling
-went back to 0. **A gate that ships red is worse than no gate.**
+---
 
+## 110b. What a beginner may be prescribed — the rung ladder
+
+*Added 2026-09-19 — Coaching Board CB-BEGINNER-CATALOGUE-01, CORRECT WITH AMENDMENT.*
+
+**Principle.** A beginner progresses through a **ladder** of stimuli, and the
+engine may only prescribe a rung the runner has reached. The ladder is:
+
+| rung | stimulus | status |
+|---|---|---|
+| 1 | strides | §28 — every beginner plan |
+| 2 | hill strides / short hill sprints | §28 Am.1 — alternating with strides |
+| 3 | unstructured fartlek | **not granted** — deferred, see below |
+| 4 | progression run / continuous tempo | `progressive_tempo`, `tempo_continuous` |
+| 5 | threshold repeats | **deferred** |
+| 6 | goal-pace blocks inside an easy run | `beginner_goal_pace_blocks` |
+
+**Why a ladder rather than a level flag.** Mainstream coaching practice for new
+runners is strides and hill sprints for three to four weeks, *then* effort-based
+work, *then* pace-based work. Zonna shipped rungs 1–2 and gated off everything
+above them, so the ladder stopped one rung in. Rungs 4 and 6 are now reachable
+for the beginner who set a time target (§110 Am.2); rungs 3 and 5 are deferred
+with reasons, not forgotten.
+
+**Rung 3 (fartlek) deferred.** `fartlek_unstructured` is `base`-phase only, and
+a beginner's quality slot opens in **build**, so granting it would change other
+cohorts' plans without serving this one. Revisit only with a phase change, which
+is its own measurement.
+
+**Rung 5 (threshold repeats) deferred.** McMillan would allow `tempo_cruise_short`
+at 5K/10K; Hutchinson and Willy prefer to see whether beginners complete rung 6
+first. **Recorded as a disagreement, not a rejection.** What would settle it:
+completion data, which does not exist.
+
+**⚠️ WHY RUNG 6 HAD TO BE A NEW ROW — §22 IS THE BINDING CONSTRAINT.**
+`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` raises a **per-session error** for any
+second-half build/peak quality on a time-target plan that is not `race_pace`.
+Lowering only the tempo rows would have taken this cohort from **vacuously
+passing** (no quality at all) to **failing**. `progressive_tempo`'s mixed-anchor
+exemption does not apply — that test counts PACE-anchored work steps excluding
+E, and the progression's middle third is a ZONE target, so its anchor set is
+`{T}`, size 1. **§22 was not an obstacle to route around; it was naming the
+right prescription.**
+
+**Willy's condition of approval — BLOCKS, NOT REPEATS.** `beginner_goal_pace_blocks`
+recovers with an easy **run**, not a standing jog, and its work steps are minutes
+rather than a rep distance: *"reps invite a beginner to race the recovery."*
+This is also what the literature prescribes for a first-time marathoner with a
+time goal — short goal-pace blocks embedded in a midweek run, not intervals.
+
+**⚠️ A ROW WRITTEN FOR A COHORT MUST BE SCOPED TO IT — `fitness_level_max`.**
+`fitness_level_min` means "and everyone above", and the §53 rotation is
+least-used-first, so a NEW row starts at usage 0 and is picked **first** by the
+cohorts it was not written for. Measured: adding one beginner-eligible row
+changed **2,324 of 5,940 parity cases (39.1%) — 0 of 1,980 beginner plans and
+~59% of intermediate AND experienced plans.** The exact inverse of the intent.
+`fitness_level_max` is optional and absent on every pre-existing row, so adding
+it is inert (measured: parity IDENTICAL).
+
+**⚠️ LOWERING an existing row is FREE; ADDING one is not.** Lowering
+`fitness_level_min` cannot put a row into a pool it was not already in —
+measured byte-for-byte identical across 5,940 cases. That is why rungs 4 came
+from lowering and only rung 6 is new.
+
+**⚠️ TWO THRESHOLD ROWS, NOT ONE, AND §53 WOULD NOT HAVE CAUGHT IT.** With only
+`progressive_tempo` lowered, a beginner marathon time-target plan received it
+**ten times** (weeks 8–17, 19). `MIDWEEK_QUALITY_LADDER` excludes
+`race_specific`, so marathon's midweek rotation can only ask for threshold, and
+a pool of one row means the same session every week. **§53's cap is
+`max(fraction, pigeonhole)` and one row picked ten times satisfies the
+pigeonhole arm** — the checkers would have gone green on the exact symptom
+CAT-DEPTH-01 describes. `tempo_continuous` was lowered as well; both size off
+`THRESHOLD_WORK_TARGET_MINS`, so no new config.
+
+**Config.**
+- `GENERATION_CONFIG.THRESHOLD_WORK_TARGET_MINS.beginner = { build: 14, peak: 17 }`
+- `GENERATION_CONFIG.PROGRESSIVE_TEMPO_MAIN_MINS.beginner = { build: 18, peak: 21, taper: 15 }`
+- `GENERATION_CONFIG.BEGINNER_QUALITY_MIN_WEEKLY_KM = 20` — **the week must be
+  able to carry the session** (Willy's condition of approval). A quality session
+  is sized by an ABSOLUTE work-minute band, deliberately decoupled from weekly
+  volume (§8/SC-08), so the same 8–11 km session is a quarter of a 40 km week
+  and **71% of a 16 km one**. Measured without this floor: **640 NEW §52
+  breaches on the property sweep, every one a beginner at 5–12 km/week.** The
+  value is derived, not chosen — the largest beginner quality session measured
+  is 11.4 km and §52's 60% cap needs a week of at least 11.4 / 0.6 = 19 km to
+  carry it. Below the floor the runner gets the plan they had before: all easy,
+  plus §28's strides and hill strides.
+  **⚠️ A FLOOR ON THE WEEK, NOT A SCALING OF THE DOSE** — shrinking the session
+  to fit the week is the CD-1 error (a share of volume cannot express "least
+  sustainable per minute") and would hand a 5 km/week runner a homeopathic
+  tempo. **⚠️ FAILS CLOSED:** unknown volume yields no quality, never unchecked
+  quality. **⚠️ CONSTRUCTION-TIME ONLY** — the checker cannot re-evaluate this
+  arm, because the post-passes trim the delivered week and re-reading it
+  produced **216 false violations** (the curve-vs-delivered gap, §90/ADR-022's
+  class). §52 catches the real consequence on the delivered week.
+
+**⚠️ The evidence for those two numbers is PROPORTIONALITY AND NOTHING ELSE.**
+Each level in the existing ladder steps roughly +20–25% on the one below, so
+beginner steps down by the same. There is no external source for 14 any more
+than there is for 18, and this section does not imply otherwise (the same
+honesty §8 applies to `QUALITY_SESSION_PCT_OF_WEEKLY`).
+
+**⚠️ A FITNESS-KEYED TABLE WITH A MISSING LEVEL IS A LATENT CRASH.** These
+tables are typed `Record<string, Record<string, number>>`, so a missing key is
+`undefined` and TypeScript is silent. Before the beginner entries existed,
+lowering `progressive_tempo` and opening the slot threw
+`resolveMainSet: parameter "third_secs" has no value in this variant` on **every**
+beginner time-target plan. When a level becomes reachable, every fitness-keyed
+table must be checked.
+
+**Enforcement.** `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` (see §110 Am.2) plus
+`INV-PLAN-CATALOGUE-LINK` (ADR-018), which is what caught the first attempt.
+The `fitness_level_max` scope is covered by `lib/plan/beginnerCatalogue.test.ts`.
+
+---
 
 ## 111. The base-build ceiling — a marathon plan may not build too far off the base the runner actually has
 

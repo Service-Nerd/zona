@@ -745,6 +745,15 @@ export const GENERATION_CONFIG = {
   THRESHOLD_WORK_MIN_MINS:          15,
   THRESHOLD_WORK_MAX_MINS:          30,
   THRESHOLD_WORK_TARGET_MINS: {
+    // CB-BEGINNER-CATALOGUE-01 (2026-09-19) — the beginner rung. §8's config
+    // block has said "light tempo only after week 4" since the original spec
+    // while its own value made light tempo impossible; this is the dose that
+    // sentence always implied. Set by the ladder's OWN step (each level is
+    // roughly +20-25% on the one below, so beginner steps DOWN by the same),
+    // and the board recorded that the evidence for these two numbers is
+    // PROPORTIONALITY AND NOTHING ELSE — there is no external source for 14
+    // any more than there is for 18.
+    beginner:     { build: 14, peak: 17 },
     intermediate: { build: 18, peak: 22 },
     experienced:  { build: 22, peak: 26 },
   } as Record<string, Record<string, number>>,
@@ -835,6 +844,16 @@ export const GENERATION_CONFIG = {
   // as `VO2MAX_WORK_TARGET_MINS`/`THRESHOLD_WORK_TARGET_MINS` minus the
   // reps-count derivation those two need.
   PROGRESSIVE_TEMPO_MAIN_MINS: {
+    // CB-BEGINNER-CATALOGUE-01 — see THRESHOLD_WORK_TARGET_MINS above for the
+    // derivation and its stated weakness.
+    // ⚠️ THE MISSING KEY WAS A RUNTIME CRASH, NOT A COMPILE ERROR. This object
+    // is typed `Record<string, Record<string, number>>`, so `[...]['beginner']`
+    // is `undefined` and TypeScript is silent. Measured 2026-09-19: lowering
+    // `progressive_tempo` to beginner and opening the quality slot threw
+    // `resolveMainSet: parameter "third_secs" has no value in this variant` on
+    // EVERY beginner time-target plan. A fitness-keyed table with a missing
+    // level is a live defect waiting for the level to become reachable.
+    beginner:     { build: 18, peak: 21, taper: 15 },
     intermediate: { build: 24, peak: 28, taper: 20 },
     experienced:  { build: 28, peak: 32, taper: 24 },
   } as Record<string, Record<string, number>>,
@@ -1503,6 +1522,65 @@ export const GENERATION_CONFIG = {
   // This is the downward rung §35 declared and never built, and which §96
   // identified as missing ("It never built the rung going the other way").
   HARD_AVERSE_QUALITY_PER_WEEK_MAX: 1,
+
+  // §110 Amendment 2 (Coaching Board CB-BEGINNER-TIMEGOAL-01, 2026-09-19) — a
+  // BEGINNER WHO SET A TIME TARGET gets one quality session per week. Beginners
+  // on a FINISH goal stay at zero, which the same board ruled CORRECT AS IS the
+  // same day, unanimously, and did not reopen.
+  //
+  // ⚠️ §8 HAS DECLARED THIS SINCE THE ORIGINAL SPEC AND THE VALUE CONTRADICTED
+  // IT. §8's config block reads `beginner -> 0 (no quality at all in base;
+  // light tempo only after week 4)`. The parenthetical describes light tempo;
+  // the value makes light tempo impossible. Same shape as §92's phantom
+  // enforcement, in reverse — documented intent with a number that forbids it.
+  //
+  // WHY, MEASURED across 45,888 plans. The gap was BINARY, not a lighter dose:
+  //
+  //   cohort                        n       zero-quality   any goal-pace session
+  //   beginner     · time_target    6,336       100%                0%
+  //   intermediate · time_target    6,336         0%              100%
+  //   experienced  · time_target    6,336         0%              100%
+  //
+  // Every cohort that sets a time target runs at that pace except one, which
+  // runs at it zero percent of the time. Hutchinson's line was already on the
+  // record in §110: "No evidence supports zero intensity as preparation for a
+  // time-goal race."
+  //
+  // ⚠️ WHY 1. §96's precedent, the same one that fixed
+  // HARD_AVERSE_QUALITY_PER_WEEK_MAX: 1/week IS the build-phase baseline (§8).
+  // Willy's frequency concern (the literature starts a new runner at one
+  // session every TWO weeks) was raised and WITHDRAWN ON THE NUMBERS: measured
+  // onset is week 5-7 with 6-10 sessions across a 20-week plan, which averaged
+  // over the block is already close to every-other-week. The onset gate is
+  // unchanged and deliberately so — `plannedQuality` is already 0 in base and
+  // 1 in build.
+  BEGINNER_TIME_TARGET_QUALITY_PER_WEEK_MAX: 1,
+
+  // §110b — THE WEEK MUST BE ABLE TO CARRY THE SESSION (Willy's condition of
+  // approval, sized by measurement 2026-09-19).
+  //
+  // A quality session is sized by an ABSOLUTE work-minute band
+  // (THRESHOLD_WORK_TARGET_MINS), deliberately decoupled from weekly volume
+  // (§8/SC-08). That is right for the dose and wrong for a tiny week: the same
+  // 8-11 km session is 25% of a 40 km week and 71% of a 16 km one.
+  //
+  // MEASURED without this gate: **640 NEW §52 breaches on the property sweep**,
+  // every one of them a beginner at 5-12 km/week — e.g. "Goal-pace blocks
+  // 11.4km is 71% of weekly volume 16km". §52 was right and the ruling needed
+  // a floor.
+  //
+  // 20 km/week is derived, not chosen: the largest beginner quality session
+  // measured is 11.4 km, and §52's 60% cap needs a week of at least
+  // 11.4 / 0.6 = 19 km to carry it. Below this a beginner gets the plan they
+  // got before — all easy, plus §28's strides and hill strides — which the
+  // board ruled correct for the finish-goal beginner and is the conservative
+  // direction for a time-goal beginner who simply is not running enough yet.
+  //
+  // ⚠️ THIS IS A FLOOR ON THE WEEK, NOT A SCALING OF THE DOSE. Shrinking the
+  // session to fit the week is the CD-1 error (a share of volume cannot express
+  // "least sustainable per minute") and would hand a 5 km/week runner a
+  // homeopathic tempo. The session keeps its dose; the week has to earn it.
+  BEGINNER_QUALITY_MIN_WEEKLY_KM: 20,
 
   // §110 — the plan length at or above which zero quality is a defect rather
   // than a short-plan artifact, for a non-beginner. 8 weeks is the shortest

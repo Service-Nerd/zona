@@ -13,6 +13,7 @@ import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
 import { strideCarrierDay, hasHillRestrictingInjury } from './neuromuscular'
 import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
+import { qualityCeilingFor } from './qualityCeiling'
 import { GENERATION_CONFIG } from './generationConfig'
 import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
@@ -45,6 +46,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-DERIVED-SET-PACED',
   'INV-PLAN-PEAK-SPECIFICITY',
   'INV-PLAN-QUALITY-NOT-ZERO',
+  'INV-PLAN-TIME-TARGET-QUALITY-FLOOR',
   'INV-PLAN-DELIVERED-RAMP',
   'INV-PLAN-DELOAD-PHASE-POSITION',
   'INV-PLAN-OVERDO-BRAKE',
@@ -779,7 +781,32 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // (1,664 hard failures on `fitness_level: 'beginner'` + an upward
   // `user_declared_level`). Meta first, input second, structural last.
   const fitness = plan.meta.fitness_intensity_level ?? input.fitness_intensity_level ?? input.fitness_level
-  const qualityMaxPerWeek = fitness ? GENERATION_CONFIG.QUALITY_SESSIONS_PER_WEEK_MAX[fitness] : undefined
+  // §110 Am.2 — the ceiling is CONDITIONAL now (a beginner who set a time
+  // target gets 1, not 0), so it comes from the shared owner rather than a
+  // lookup repeated here. `buildWeekSessions` reads the same function: a
+  // checker holding its own copy of a table cannot catch the producer's copy
+  // being wrong, which is DELOAD-OWNER-01 and TIER-OWNER-01, twice paid for.
+  // ⚠️ THE VOLUME ARM OF §110b IS CONSTRUCTION-TIME AND IS NOT RE-CHECKED HERE,
+  // and that is a deliberate limitation rather than an oversight.
+  //
+  // `qualityCeilingFor` gates a beginner's quality on the week's volume. The
+  // PRODUCER evaluates that against the volume it is building; by the time the
+  // plan reaches this checker the post-passes (weekday cap, V1, V4, §47, §6)
+  // have trimmed the delivered week, so re-reading `w.weekly_km` asks a
+  // different question of a different number. Measured: passing the delivered
+  // value here produced **216 false violations** on weeks the engine had
+  // constructed correctly — the curve-vs-delivered gap, the same class as
+  // ADR-022 and §90.
+  //
+  // So the checker verifies the arms it CAN see — level and goal, which is
+  // where producer/checker drift would actually be dangerous (a finish-goal
+  // beginner receiving quality). The volume arm's real consequence, a lopsided
+  // week, is caught by §52/`INV-PLAN-LR-MAX-WEEKLY-PCT` on the DELIVERED week,
+  // which is the right instrument for it and already fires there.
+  const qualityMaxPerWeek = fitness
+    ? qualityCeilingFor(fitness, plan.meta.generator_input?.goal ?? input?.goal,
+                        Number.POSITIVE_INFINITY)
+    : undefined
   const minHoursQualLong = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG
   const minDaysQualLong = Math.ceil(minHoursQualLong / 24)
   const blocked = parseBlockedDays(input)
@@ -1650,8 +1677,29 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         : isSecondaryQuality ? minDist.secondary_quality
         : session.type === 'quality' ? minDist.quality
         : minDist.easy
+      // ⚠️ SKIPS DURATION-ANCHORED SESSIONS, AND THAT IS NOW A KNOWN GAP
+      // RATHER THAN A SAFE ASSUMPTION (recorded 2026-09-19).
+      //
+      // SESSION-KM-02 left this site alone on the measured grounds that
+      // "quality sessions are never duration-anchored". §110 Am.2 made that
+      // false — a beginner who set a time target now gets quality, and
+      // beginners are duration-anchored (§79/§80), so **47,232 quality
+      // sessions carry no `distance_km`** and §9's km floor does not reach any
+      // of them.
+      //
+      // ⚠️ THE OBVIOUS FIX IS WRONG AND WAS TRIED. Reading the size through
+      // `sessionKmSelfPaced` makes the floor reach them — and it then fires on
+      // ordinary beginner EASY runs too: 30 minutes at a beginner's pace is
+      // 3.9 km against a 4 km floor. A km floor applied to a session
+      // prescribed in minutes is asking the wrong question; 30 minutes is a
+      // real session whatever it converts to. §9's floor has no minutes
+      // equivalent, and authoring one is a coaching decision, not a defect fix.
+      //
+      // Filed as `S9-DURATION-FLOOR-01`. The gap PRE-DATES this ruling (every
+      // beginner easy run has always been unchecked); §110 Am.2 widens the
+      // population it applies to, it does not create it.
       const dist = session.distance_km ?? 0
-      if (session.distance_km != null && dist < expected) {
+      if (dist > 0 && dist < expected) {
         violations.push({
           code: 'INV-PLAN-MIN-SESSION-SIZE',
           principle_ref: 'CoachingPrinciples §9',
@@ -2290,6 +2338,61 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         message: `Plan has build/peak weeks and ${plan.weeks.filter(w => w.n >= 1).length} weeks, and prescribes ZERO quality sessions to a runner the engine does not classify beginner. §1 is a ceiling, not a target — but zero is not a training plan.`,
         actual: '0 quality sessions',
         expected: `>= 1 across build/peak`,
+      })
+    }
+  }
+
+  // INV-PLAN-TIME-TARGET-QUALITY-FLOOR — a plan with a TIME TARGET prescribes at
+  // least one quality session. (CoachingPrinciples §110 Am.2, §22)
+  //
+  // ⚠️ THE FLOOR §22 NEVER HAD, and Sims named the shape at the sitting.
+  // INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO polices whether second-half quality
+  // is at GOAL PACE — it iterates the quality sessions, so a plan with NO
+  // quality at all passes it in silence. An assertion over a set is mute on an
+  // empty set. Same family as §1 being a ceiling with no floor, which is how
+  // 2,197 plans shipped with zero quality before §110.
+  //
+  // What it was missing, measured across 45,888 plans before §110 Am.2:
+  //
+  //   beginner     · time_target  n=6,336   100% zero-quality    0% goal-pace
+  //   intermediate · time_target              0% zero-quality  100% goal-pace
+  //   experienced  · time_target              0% zero-quality  100% goal-pace
+  //
+  // Every cohort that set a time target ran at that pace except one, which ran
+  // at it zero percent of the time. Deliberately a floor on the COUNT and not
+  // the dose: §110 Am.2 caps a beginner at one per week, and this answers only
+  // "did the runner who asked for a time get any exposure to it at all".
+  //
+  // Scoped to plans long enough to carry build/peak, matching
+  // INV-PLAN-QUALITY-NOT-ZERO, so a short or foundation-only plan is not
+  // reported for a structure it cannot hold.
+  {
+    const isTimeTarget = (plan.meta.generator_input?.goal ?? input?.goal) === 'time_target'
+    const hasBuildOrPeak = plan.weeks.some(w => w.phase === 'build' || w.phase === 'peak')
+    const longEnough = plan.weeks.filter(w => w.n >= 1).length >= GENERATION_CONFIG.QUALITY_FLOOR_MIN_PLAN_WEEKS
+    const qualityTotal = plan.weeks
+      .filter(w => w.n >= 1)
+      .flatMap(w => Object.values(w.sessions ?? {}).filter(Boolean) as Session[])
+      .filter(sn => sn.type === 'quality').length
+    // §110b — a plan whose weeks never reach the volume that can CARRY a
+    // quality session is not defective for having none. The engine declined
+    // deliberately (`qualityCeilingFor` fails closed below
+    // BEGINNER_QUALITY_MIN_WEEKLY_KM), and reporting that as a violation would
+    // be the §52-exemption mistake in reverse: a check firing on the engine
+    // doing the right thing. Measured: without this the sweep reported it on
+    // 5 km/week beginners AND on a 5 km/week intermediate, whose zero quality
+    // comes from §9's session floors rather than from this rule at all.
+    const canCarryQuality = plan.weeks.some(w =>
+      (w.weekly_km ?? 0) >= GENERATION_CONFIG.BEGINNER_QUALITY_MIN_WEEKLY_KM)
+    if (isTimeTarget && hasBuildOrPeak && longEnough && canCarryQuality && qualityTotal === 0) {
+      violations.push({
+        code: 'INV-PLAN-TIME-TARGET-QUALITY-FLOOR',
+        principle_ref: 'CoachingPrinciples §110 Am.2, §22',
+        severity: 'error',
+        week: 0,
+        message: `Plan has a TIME TARGET and prescribes ZERO quality sessions, so the runner never runs at the pace they are aiming for. §22's exposure check cannot see this — it iterates the quality sessions and is silent on an empty set.`,
+        actual: '0 quality sessions',
+        expected: '>= 1 across the plan',
       })
     }
   }
