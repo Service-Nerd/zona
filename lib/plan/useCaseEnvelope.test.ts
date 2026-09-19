@@ -81,6 +81,10 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
     '%s km — a weighted majority of entrants get a plan we would hand over (floor %s)',
     (distanceKm, floor) => {
       let total = 0, fit = 0, refused = 0
+      // COPY-STALE-GEN-01 — no generated plan may carry an error-severity
+      // violation. Asserted HERE because this suite already generates the
+      // corpus; a second walk elsewhere cost 3.6s and proved the same thing.
+      const invalid: string[] = []
       const codes: Record<string, number> = {}
       for (const c of distanceEnvelope(distanceKm).filter((_, i) => i % STRIDE === 0)) {
         total += c.weight
@@ -100,12 +104,14 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
         const m = plan.meta as unknown as Record<string, unknown>
         const maintDeclared = m.volume_profile === 'maintenance' && !!m.volume_constraint_note
         const errs = validatePlan(plan, c.input).filter(v => v.severity === 'error')
+        if (errs.length) invalid.push(`${c.label} :: ${errs.map(e => e.code).join(',')}`)
         const objs = auditPlanQuality(plan, c.input).filter(o =>
           !(o.code === 'LONG-RUN-SHORT' && distanceKm > 42.2)
           && !(o.code === 'NEVER-BUILDS' && maintDeclared))
         for (const o of objs) codes[o.code] = (codes[o.code] ?? 0) + c.weight
         if (!errs.length && !objs.length) fit += c.weight
       }
+      expect(invalid, `${distanceKm} km: plans failing the engine's own constitution`).toEqual([])
       const rate = fit / total
       const top = Object.entries(codes).sort((a, b) => b[1] - a[1]).slice(0, 3)
         .map(([k, v]) => `${k} ${(v / total * 100).toFixed(0)}%`).join(', ')

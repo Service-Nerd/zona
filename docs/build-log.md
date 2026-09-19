@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — COPY-STALE-GEN-01 · the fix was already written and the generator could not reach it
+**Shipped:** ninety-six plans that shipped invalid now generate clean. Zero error-severity violations across the whole weighted population.
+
+**Dev learning:** A week told the runner "recovery plus benchmark, one hard effort in the middle" and contained three easy runs. There is a function in this codebase whose entire job is to notice that and rewrite the copy. It had one caller, and that caller was the reshape endpoint. So a plan born with stale copy stayed stale forever unless the runner happened to move a session later. The fix was four words long: call it on the generation path too.
+
+**The interesting part is why the copy went stale at all,** because it is the second time today. The label is computed from a fact, not a guess: does this week contain a hard session. It was correct when it was written. Then a later pass removed the hard session and nothing went back to re-read the sentence. This morning the same shape cost me a fuelling note: a long run measures 116 minutes when the note is written and 124 by the time the runner sees it. Anything computed in the middle of a pipeline is stale by the end of it, and copy about sessions has to be written after everything that can move a session.
+
+**The honest bit:** fixing the copy fixed half of it. The other invariant kept firing on all ninety-six, because the plan's metadata listing which weeks are benchmark weeks is built in the same loop and rots in exactly the same way. The principle governing it already says, in writing, that the metadata follows the produced plan and never the intent. It was right; it just ran too early. I would have shipped a half-fix and called it done if the second invariant had not still been red.
+
+---
+
 ## 2026-09-19 — ENVELOPE-ALL-DISTANCES-01 · we had been watching one distance and it was not the worst one
 **Shipped:** the 90-95% target measured and gated for every distance. 5K 50.6%, 10K 59.3%, half 70.3%, marathon 67.4%, 50K 91.6%, 100K 89.9%. Whole product 66.7%.
 

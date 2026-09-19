@@ -35,7 +35,7 @@ violation** and **no coach objection**.
 | long run never progresses across the build | 1.7% | 5K 11% |
 | quality monotony (≤2 distinct sessions across ≥6) | 0.6% | 100K 11% |
 | `DEGENERATE-WEEK` / `BINGE-WEEK` | 0.3% / 0.2% | — |
-| **100K plans shipping INVALID** | 0.02% | 100K 2.2% |
+| ~~100K plans shipping INVALID~~ | ~~0.02%~~ **FIXED** (COPY-STALE-GEN-01) | now 0 of 2,558 |
 
 ## 3. Findings CHECKED AND DISMISSED — do not re-raise without new evidence
 

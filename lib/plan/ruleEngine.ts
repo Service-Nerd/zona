@@ -5954,6 +5954,62 @@ export function generateRulePlan(
     // against the plan it actually delivers. Mirrors the §44/§52 refusals.
     const bb = assessBaseBuild(plan, input)
     if (bb.exceeded) throw new BaseVolumeError(baseVolumeRefusal(bb, input))
+
+    // COPY-STALE-GEN-01 (2026-09-19) — WEEK COPY IS REFRESHED ON THE GENERATION
+    // PATH, NOT ONLY ON RESHAPE.
+    //
+    // ⚠️ THE REPAIR ALREADY EXISTED AND THE GENERATOR COULD NOT REACH IT.
+    // `refreshWeekCopyIfStale` detects a week whose label/theme promise work
+    // the sessions do not contain and rewrites both. It had exactly ONE caller:
+    // `app/api/adjust-plan/route.ts`. So a plan whose copy went stale DURING
+    // GENERATION shipped stale, and only a later reshape would ever fix it.
+    //
+    // ⚠️ MEASURED: 96 of the 100K envelope's plans shipped with error-severity
+    // violations — `INV-PLAN-COPY-MATCHES-SESSIONS` and
+    // `INV-PLAN-RECALIBRATION-HAS-SESSION` on a week labelled "Build — recovery
+    // + benchmark" whose theme promises "one hard effort in the middle" and
+    // whose three sessions are all easy. Every one was 3 days/week at 100K on a
+    // 26-week runway. In PRODUCTION these ship: `enforceViolations` throws only
+    // under development/test and otherwise logs.
+    //
+    // ⚠️ WHY THE COPY WENT STALE, WHICH IS THE ACTUAL BUG: the label reads
+    // `hasBenchmark` — a FACT, `sessions.some(type === 'hard')` — so it was
+    // correct when written. A later post-pass removed the hard session and
+    // nothing re-read the copy. Identical shape to LONG-SESSION-FUEL-01 hours
+    // earlier, where a duration read at placement was 116 min against the 124
+    // the runner receives. A value computed mid-pipeline is stale by the end of
+    // it; copy about sessions belongs AFTER every pass that can move a session.
+    //
+    // It runs here, immediately before validation, so nothing can mutate a
+    // session between the refresh and the check.
+    for (const w of plan.weeks) refreshWeekCopyIfStale(plan, w.n)
+
+    // §78 — AND THE METADATA FOLLOWS THE PLAN TOO, WHICH IS THE PRINCIPLE'S
+    // OWN WORDING AND WAS ONLY HALF TRUE.
+    //
+    // `recalibrationWeeks` is built inside the week loop and already gates on
+    // the FACT (`sessions.some(type === 'hard')`) rather than the intent —
+    // §78's comment says so explicitly. But it is computed MID-PIPELINE, and a
+    // later pass removes the hard session, so the array kept a week that no
+    // longer holds a benchmark. Fixing the copy alone left
+    // `INV-PLAN-RECALIBRATION-HAS-SESSION` still firing on all 96 plans.
+    //
+    // Recomputed from the finished weeks. §78: "the metadata follows the
+    // produced plan, never the intent" — this is that sentence, applied at the
+    // point the plan is actually produced.
+    //
+    // Coaching Board EXEMPT: a defect fix restoring documented intent. It
+    // changes no prescription; it stops the plan claiming a session it does
+    // not contain.
+    if (plan.meta.recalibration_weeks?.length) {
+      const real = plan.meta.recalibration_weeks.filter(n => {
+        const w = plan.weeks.find(x => x.n === n)
+        return !!w && Object.values(w.sessions ?? {}).some(sn => sn?.type === 'hard')
+      })
+      if (real.length) plan.meta.recalibration_weeks = real
+      else delete (plan.meta as { recalibration_weeks?: number[] }).recalibration_weeks
+    }
+
     enforceViolations(validatePlan(plan, input))
     return plan
   }
