@@ -928,6 +928,35 @@ It is also **3 of 4 sessions hard — 50% by session count**, against §1's 25% 
 
 **Until then §52's 60% warn is the honest backstop it was written as**, and `npm run audit:plans` holds the numbers so they cannot silently worsen.
 
+### §9 — THE ARCHITECTURAL FIX WAS ATTEMPTED, AND IT IS NOT IN THE CURVE (2026-09-19, second pass)
+
+**§114 was built — the weekly volume curve carrying a floor derived from the long run the race asks for — and it is INERT. Four formulations, all measured, none shipped.** The finding below is what the attempt bought, and it is worth more than the code would have been.
+
+| formulation | result |
+|---|---|
+| Floor on the raw requirement, applied after §2's cap pass | **Composition fixed outright** — severe binge 45.2% → 2.0%, degenerate weeks 40.5% → 7.5%, days-short 49.4% → 24.3%, specificity untouched. **But it broke §3 Am. (a 24% long-run cut against a 5% week cut) and §2 Am.3 (bounceback against a stale pre-deload value)**, because §2's cap, §3's re-anchor and the bounceback all read surrounding weeks and were computed before the floor moved them. |
+| Same, applied *before* pass 2 | Relationships hold; **§2's cap erases the floor.** |
+| Floor bounded by `week1 × 1.1^i` | **Inert** — the ramp already grows at §2's maximum for most of the plan. |
+| Floor bounded by the §2-legal step from the previous week | **Inert** — that bound is *more* restrictive than the curve already is. |
+
+🔴 **WHY THE CURVE WAS THE WRONG PLACE, and this is the finding.** The 93% week is not a week the curve under-sized. Printed for a knee-history runner at 8 km/week:
+
+| wk | 1–7 (base) | 8 | 9 | 10 | 12 | 13 | 14 | **15** | 16 |
+|---|---|---|---|---|---|---|---|---|---|
+| week km | 7–22 | 14 | 18 | 23 | 19 | 24 | 23 | **28** | 29 |
+| long run | 2.9–8.2 | 10.0 | 15.0 | 20.0 | 16.5 | 21.5 | 21.0 | **26.0** | 26.0 |
+| share | 34–42% | 71% | 83% | 87% | 87% | 90% | 91% | **93%** | 90% |
+
+**The long run climbs from 8 km to 26 km while the week never passes 29.** A coherent 26 km long run needs a 43 km week. **An 8 km/week runner cannot reach 43 km in nineteen weeks under §2's 10% rule once §3's deloads take their 30% four times over.** That is arithmetic about running, not a defect in the engine, and no volume lever can move it.
+
+🔴 **AND §111 LETS EXACTLY THIS RUNNER THROUGH, because its metric falls as the plan degrades.** §111 refuses on **delivered peak ÷ current volume**. This runner's delivered peak is **29**, so their ratio is **3.63** — comfortably inside the 4.0 cap — *precisely because their week could not grow*. **A runner whose week cannot hold their long run has a LOW peak, therefore a LOW ratio, therefore passes.** §111 is **anti-correlated with the hazard it exists to guard**, and that single fact explains the sawtooth and the admitted-edge-worse-than-refused finding recorded under §111 earlier the same day.
+
+**What this means for the fix.** The remedy is not in `buildVolumeSequence`. Either:
+1. **§52's lopsidedness becomes a refusal or a plan-shape change for the marathon**, rather than a `warn` — the engine already knows the week cannot hold the run; it just ships it and says so quietly; or
+2. **§111's metric changes** from peak ÷ current to the long run's share of its delivered week, which is the quantity that actually tracks the hazard.
+
+**Both are Coaching Board decisions about what a first-time marathon plan should BE, not sizing rules.** They are also the same question from two ends, and (2) subsumes `PEAK-VS-DELIVERED-BUILD-01` — the curve-versus-delivered gap found the same day from the opposite direction, at 70 km/week.
+
 ---
 
 ## 10. VDOT conservatism — protect users from themselves (selectively)

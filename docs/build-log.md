@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — the architectural fix, attempted · the metric was pointing the wrong way
+**Shipped:** nothing. Four more formulations built and measured, all inert or harmful, and one finding that makes the next fix obvious.
+
+**Dev learning:** I had been describing the fix for weeks as "size the long run and the week together in the volume curve". So I built it: a per-week floor on the curve, derived from the long run the race asks for. The first version fixed composition outright — severe binge weeks 45% to 2% — and broke two ratified rules, because §2's cap, §3's deload re-anchor and the bounceback all read surrounding weeks and I had moved those weeks after they were computed. I extracted the pass and ran it either side. Then §2 correctly erased the floor. Then I bounded the floor to be §2-legal and it became inert, because the curve already grows at §2's maximum for most of a plan. Four formulations, and the fourth one told me the answer: the curve was never the problem.
+
+**Product/creator learning:** I printed the actual plan. An 8 km/week runner with a knee history: the long run climbs from 8 km to 26 km across the build while the week never passes 29. Week 15 is a 26 km long run in a 28 km week. A coherent 26 km long run needs a 43 km week, and an 8 km/week runner cannot reach 43 km in nineteen weeks under a 10% weekly cap once four deloads have taken 30% each. That is arithmetic about running. No volume lever moves it.
+
+**AI-building learning:** Then the thing that actually matters. That runner passes the gate meant to catch them. §111 refuses on delivered peak divided by current volume. Their peak is 29, so their ratio is 3.63, comfortably inside the 4.0 cap — and it is low *precisely because their week could not grow*. A runner whose week cannot hold their long run has a low peak, therefore a low ratio, therefore is admitted. The metric falls as the plan degrades. It is anti-correlated with the hazard it guards, and that single fact explains every strange result the gate has produced this week, including one I had already taken to two board sittings.
+
+**The honest bit:** fourteen instruments across one day, and the useful output is a sentence rather than a commit. I kept trying to build the thing I had already named, and the naming was wrong — "size the long run and the week together" assumes the week can be sized, and for this cohort it cannot. The fix is now a choice between two coaching positions, not an engineering task, which is a better place to be than where I started even though nothing shipped.
+
+**Hook material:** The safety gate let the runner through because his plan was too broken to trip it.
+
 ## 2026-09-19 — GRID-MARATHON-CAPABLE-01 · the grid could not contain the runner it was measuring
 **Shipped:** the cohort grid gains a 70 km/week volume. It now reaches a marathoner capable of §24, which it never could before.
 
