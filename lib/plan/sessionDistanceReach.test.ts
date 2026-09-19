@@ -109,6 +109,37 @@ describe('SESSION-KM-02 — who is actually affected', () => {
     expect(nonBeginnerPaceless).toEqual([])
   })
 
+  it('S9-DURATION-FLOOR-01 — no duration-anchored session is too short to be worth doing', () => {
+    // §9's minimum-session-size floor is expressed in KM, and
+    // `INV-PLAN-MIN-SESSION-SIZE` skips duration-anchored sessions, so the
+    // floor reaches NO beginner session — quality or easy. That gap is real
+    // and pre-dates §110 Am.2.
+    //
+    // ⚠️ THERE IS NO DEFECT BEHIND IT, MEASURED. Across 818,760
+    // duration-anchored sessions the SHORTEST is 30 min (easy) and 25 min
+    // (quality); nothing falls under 20, 15 or 10 minutes, because durations
+    // come from the work-minute bands and SESSION_FORMAT rather than from a
+    // share of a small week. So a minutes floor would be a new invariant with
+    // nothing to catch — doctrine written to close a hole that no plan is
+    // falling through, which this repo already has too much of.
+    //
+    // ⚠️ AND THE OBVIOUS FIX IS WRONG. Reading the size through
+    // `sessionKmSelfPaced` so the KM floor reaches these sessions fires on
+    // ordinary beginner easy runs: 30 minutes at a beginner's pace is 3.9 km
+    // against a 4 km floor. A km floor applied to a session prescribed in
+    // minutes asks the wrong question.
+    //
+    // This is the GATE rather than the note: if a future change ever emits a
+    // duration-anchored session short enough to matter, this fails, and the
+    // minutes-floor question goes to the Coaching Board with a real case
+    // instead of a hypothetical.
+    const durationAnchored = all.filter(x =>
+      x.s.distance_km == null && x.s.type !== 'rest' && x.s.type !== 'strength')
+    expect(durationAnchored.length).toBeGreaterThan(10000)
+    const tooShort = durationAnchored.filter(x => (x.s.duration_mins ?? 0) < 20)
+    expect(tooShort.map(x => `${x.s.type} ${x.s.duration_mins}min`)).toEqual([])
+  })
+
   it('long runs do not — which is why the long-run sites were fixed', () => {
     const longs = all.filter(x => isLongRun(x.s))
     expect(longs.filter(x => x.s.distance_km == null).length).toBeGreaterThan(500)
