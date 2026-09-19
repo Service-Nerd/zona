@@ -1,0 +1,70 @@
+# Fit-for-purpose rubric — the complete criteria space
+
+**Why this file exists.** Three board sittings in one day produced three
+different answers to "are we serving our runners". The board was consistent;
+the submissions were not. Each sitting measured a different population with a
+different set of criteria and called the result the same thing. **This file
+fixes the criteria space so a sitting is comparable to the one before it.**
+
+Measured 2026-09-19. **Whole product: 66.7% fit for purpose against a 90–95%
+target.** Per distance: 5K **50.6%** · 10K 59.3% · HM 70.3% · marathon 67.4% ·
+50K 91.6% · 100K 89.9%.
+
+---
+
+## 1. What "fit for purpose" is tested against
+
+| layer | what it is | count |
+|---|---|---|
+| **Constitution** | `validatePlan()` error-severity invariants | 115 codes |
+| **Coach objections** | `lib/plan/planQuality.ts` — "would a coach object?" | 7 predicates |
+| **Population** | `lib/plan/useCaseEnvelope.ts` — weighted, per distance | 9,216 marathon / 4,608 each other |
+
+A plan is fit for purpose when it generates, carries **no error-severity
+violation** and **no coach objection**.
+
+## 2. Findings that are REAL, with measured weight
+
+| finding | product-wide | worst distance |
+|---|---|---|
+| `DAYS-SHORT` — runner declares N days, plan gives fewer, **no note** | **18.7%** | 5K 46% |
+| zero quality for the entire block | **17.8%** | 5K 33% |
+| `WEEK1-LEAP` — week 1 >1.30× real starting volume | **14.0%** | 10K 30% |
+| marathon refusals (§111 10.0% + §52 8.4%) | 18.3% *of marathon* | — |
+| `LONG-RUN-SHORT` (marathon only) | 2.0% | marathon 6% |
+| long run never progresses across the build | 1.7% | 5K 11% |
+| quality monotony (≤2 distinct sessions across ≥6) | 0.6% | 100K 11% |
+| `DEGENERATE-WEEK` / `BINGE-WEEK` | 0.3% / 0.2% | — |
+| **100K plans shipping INVALID** | 0.02% | 100K 2.2% |
+
+## 3. Findings CHECKED AND DISMISSED — do not re-raise without new evidence
+
+| claim | why it is not a finding |
+|---|---|
+| "93.7% of sessions carry no pace/HR/RPE target" | **100% are race-day sessions.** A race has no target; it is the race. My criterion. |
+| "LONG-RUN-SHORT fails 91% of 100K plans" | Bar is 55% of race = a **55 km training run** for 100K. §24e prescribes back-to-backs. Criterion defect. |
+| "9.2% of plans never build" | Almost all are **declared maintenance with a note** (§23). An earlier audit reconciled 15,236 of these to zero. |
+| "2.1% fall short in silence" | They carry `volume_constraint_note`. My shortfall test omitted that field. |
+| "zero-quality blocks are undifferentiated" | **100% beginners, 0% intermediate/experienced, at every distance**, and it scales with volume (marathon: 53% at 8 km/wk → 0% at 70 km/wk). **100% carry a note explaining it.** Seiler's question, closed. |
+| "the difficulty band should read training load" | **VETOED** — §44 point 3, Willy's own constraint. Do not re-propose. |
+| "the plan does not warn a knee-history marathoner they will walk" | It does: *"take the walk breaks early rather than late."* |
+
+## 4. NOT MEASURED — the honest negative space
+
+- **`daysShortSilent` was declared as a metric and never implemented.** It
+  reported 0% because nothing called it. The underlying gap is real and was
+  confirmed by hand on one 5K case; the *rate* is unmeasured.
+- **Note honesty in general.** Specific notes are checked; there is no
+  systematic test that every constraint a plan imposes is explained.
+- **Session-level copy quality** beyond the glyph and em-dash guards.
+- **Adherence and dropout — no data exists at all.** One analytics event in
+  the product, no charity code ever redeemed. Every judgement here is a
+  coaching opinion with a number attached, never an outcome.
+- **Nothing has run on a device.**
+
+## 5. The envelope weights are assumptions
+
+Stated in `useCaseEnvelope.ts`'s header and repeated here because it governs
+every number above. When Make-A-Wish answers the volume question
+(`docs/runbooks/charity-volume-question.md`, drafted, unsent), the weights
+change and so does the baseline — deliberately.
