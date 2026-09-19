@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — PHASE-EMPTY-01 · the validator that had never seen the thing it validates
+**Shipped:** the engine's own output is now checked against the engine's own schema.
+
+**Dev learning:** `schema.ts` describes itself as the single source of runtime validation for plan JSON, shared by the rule engine, the enricher, the reshaper and multi-race. It had one caller: the enricher. So the canonical schema had only ever been applied to AI output, and nobody had ever pointed it at the plans the engine actually produces. The first time I did, four of six failed. Two of those were my own bad fixtures. One was real.
+
+**Product/creator learning:** The real one is small and instructive. When a runner is demonstrably ready we shorten their base phase, and on a twelve-week plan we shorten it to nothing — so the plan recorded a base phase running from week 1 to week 0. Nothing broke, because every consumer either matches a week against a range (which an empty range never matches) or looks the phase up by name. It was harmless by luck. A consumer computing length as end minus start would have got a negative number.
+
+**AI-building learning:** Forty-five thousand corpus plans could not reach it. Six hand-built runners found it immediately, because the corpus never pairs an experienced runner with regular recent quality on a short runway. That is the third time this month the answer has been "the grid cannot see that cell" rather than "the engine is fine", and it is the strongest argument I know for building test cases from people rather than from axes.
+
+**The honest bit:** two of my six test runners had a training age that does not exist in the product. The schema caught it and I briefly logged it as a schema drift before checking the type. My own fixtures were wrong in exactly the way I have a written note telling me they will be.
+
+**Hook material:** Our plan validator had never once been run against a plan our engine produced. It had only ever checked the AI.
+
+---
+
 ## 2026-09-19 — REFUSAL-TELEMETRY-01 · when you cannot find the number, collect it
 **Shipped:** every designed refusal now records the inputs that caused it.
 

@@ -551,12 +551,38 @@ function computePhases(
   const peakEnd  = buildEnd + peakWeeks
   const taperEnd = totalWeeks
 
-  return [
+  const built: Phase[] = [
     { name: 'base',  start_week: 1,            end_week: baseEnd  },
     { name: 'build', start_week: baseEnd + 1,  end_week: buildEnd },
     { name: 'peak',  start_week: buildEnd + 1, end_week: peakEnd  },
     { name: 'taper', start_week: peakEnd + 1,  end_week: taperEnd },
+    // A PHASE WITH NO WEEKS IS NOT A PHASE (PHASE-EMPTY-01, 2026-09-19).
+    //
+    // ADR-021's early-onset gate shortens the base for a demonstrably-ready
+    // runner, and on a SHORT plan it shortens to nothing: `baseWeeks` reaches 0
+    // and this emitted `{ name: 'base', start_week: 1, end_week: 0 }` — an
+    // INVERTED range persisted into `plan_json`. `PlanSchema`, which calls
+    // itself the single source of runtime validation for plan JSON, rejects it
+    // (`end_week` must be positive); nothing else did, because the schema is
+    // only ever run against ENRICHER output and never against engine output.
+    //
+    // Measured: 12 of 360 plans in the affected cell — `experienced` +
+    // `recent_quality_training: 'regular'` + a 12-week plan, across 10K, HM
+    // and marathon, both goals.
+    //
+    // ⚠️ AND NEITHER GRID CAN REACH IT: **0 of 45,776** corpus plans hit this,
+    // because `cohortGrid` and `targetedGrid` never combine an experienced
+    // runner with regular recent quality on a short runway. A hand-built
+    // realistic runner hit it on the first attempt. Same class as the
+    // injury x masters cell and CB-SUBFLOOR-ADMIT-01: the corpus cannot see it,
+    // so the corpus said the engine was clean.
+    //
+    // Benign today by luck rather than design — `adjust-plan` matches phases
+    // with `start <= w <= end` so an empty one never matches, and every other
+    // consumer looks up by NAME. A consumer computing `end - start + 1` would
+    // get -1 - 1 = a negative length.
   ]
+  return built.filter(p => p.end_week >= p.start_week)
 }
 
 function getPhaseForWeek(weekN: number, phases: Phase[]): PhaseType {
