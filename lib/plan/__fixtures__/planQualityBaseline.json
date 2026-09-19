@@ -1,0 +1,37 @@
+{
+  "BEGINNER MARATHON (priority one)": {
+    "generated": 4122,
+    "refused": 2358,
+    "DAYS-SHORT": 2038,
+    "BINGE-SEVERE-75": 1863,
+    "DEGENERATE-WEEK": 1671,
+    "BINGE-WEEK": 1562,
+    "WEEK1-LEAP": 1351
+  },
+  "cohortGrid": {
+    "generated": 2868,
+    "refused": 132,
+    "NEVER-BUILDS": 812,
+    "BINGE-WEEK": 366,
+    "WEEK1-LEAP": 227,
+    "DAYS-SHORT": 218,
+    "LONG-RUN-SHORT": 34,
+    "BINGE-SEVERE-75": 13
+  },
+  "targetedGrid": {
+    "generated": 1500,
+    "refused": 0,
+    "BINGE-WEEK": 314,
+    "DAYS-SHORT": 151,
+    "NEVER-BUILDS": 63,
+    "DEGENERATE-WEEK": 58,
+    "BINGE-SEVERE-75": 58
+  },
+  "charity personas": {
+    "generated": 13,
+    "refused": 1,
+    "BINGE-WEEK": 4,
+    "WEEK1-LEAP": 3,
+    "DAYS-SHORT": 2
+  }
+}
