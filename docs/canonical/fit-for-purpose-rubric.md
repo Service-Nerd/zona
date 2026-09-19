@@ -6,9 +6,10 @@ the submissions were not. Each sitting measured a different population with a
 different set of criteria and called the result the same thing. **This file
 fixes the criteria space so a sitting is comparable to the one before it.**
 
-Measured 2026-09-19. **Whole product: 66.7% fit for purpose against a 90–95%
-target.** Per distance: 5K **50.6%** · 10K 59.3% · HM 70.3% · marathon 67.4% ·
-50K 91.6% · 100K 89.9%.
+Measured 2026-09-19. **Whole product: 78.0%** (was 66.7% before COPY-STALE-GEN-01 and FREQ-SILENCE-01)
+against a 90–95% target. Per distance: 5K **91.8%** · 10K 73.0% · HM 84.0% ·
+marathon **72.8%** · 50K 93.3% · 100K 93.4%. The marathon now lags because its
+remaining gap is **18.5% refusals**, not silence.
 
 ---
 
@@ -27,7 +28,7 @@ violation** and **no coach objection**.
 
 | finding | product-wide | worst distance |
 |---|---|---|
-| `DAYS-SHORT` — runner declares N days, plan gives fewer, **no note** | **18.7%** | 5K 46% |
+| ~~`DAYS-SHORT` — runner declares N days, plan gives fewer, no note~~ | ~~18.7%~~ **FIXED** (FREQ-SILENCE-01) | now declared |
 | zero quality for the entire block | **17.8%** | 5K 33% |
 | `WEEK1-LEAP` — week 1 >1.30× real starting volume | **14.0%** | 10K 30% |
 | marathon refusals (§111 10.0% + §52 8.4%) | 18.3% *of marathon* | — |

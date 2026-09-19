@@ -8470,6 +8470,53 @@ function buildRulePlanOnce(
     // shortfall note itself names WHICH part and why, so this does not repeat it.
       : `Demanding — this plan does not fully reach what this distance usually asks for. The shortfall note says which part, and what would lift it.`
 
+  // §18 Amendment (FREQ-SILENCE-01, 2026-09-19) — WHEN VOLUME, NOT LIFE, SETS
+  // THE NUMBER OF RUNNING DAYS, SAY SO.
+  //
+  // ⚠️ MEASURED: 18.7% of the weighted population across every distance gets
+  // fewer running days than they declared, and the plan never mentions it.
+  // 46% of 5K plans. A runner who told the wizard "six days" and opens a plan
+  // with three has been silently overruled, and has no way to know the engine
+  // did it on purpose.
+  //
+  // ⚠️ THE PRESCRIPTION IS CORRECT AND IS NOT CHANGING. `daysVolumeCanFill`
+  // caps frequency at `weeklyKm / MIN_KM_PER_TRAINING_DAY` (5 km), floored at
+  // 3, and the reasoning above it is sound: "a runner on 12 km a week who
+  // selects seven days gets seven ~1.7km jogs, and no session in the week does
+  // anything". Measured against the cap: this NEVER fires at 40+ km/week and
+  // fires on 65% of runners under 20. It is volume, exactly as designed.
+  // ⚠️ I nearly filed the cap itself as a defect after seeing a plan hold 3
+  // runs from 5 km/week to 17 km/week. It is `MIN_KM_PER_TRAINING_DAY`
+  // working: floor(17/5) = 3. Traced before filing.
+  //
+  // ⚠️ COMPUTED FROM THE FINAL WEEKS, not from the intent. Twice today a value
+  // read mid-pipeline was stale by the time the runner saw it
+  // (LONG-SESSION-FUEL-01, COPY-STALE-GEN-01). Frequency also GROWS within a
+  // plan as volume does — measured 4→5 on a marathon, 3→5 on a half — so the
+  // note quotes the real low and high rather than a single number that would
+  // be wrong for most of the block.
+  //
+  // Coaching Board EXEMPT: no prescription change. It declares a behaviour
+  // doctrine already documents, which is §40c's rule ("a suppressed target is
+  // stated, never absorbed") applied to frequency instead of intensity.
+  const frequencyConstraintNote: string | null = (() => {
+    const declared = input.days_available
+    if (!declared) return null
+    const loading = weeks.filter(w => w.n > 0 && (w.phase === 'build' || w.phase === 'peak'))
+    if (!loading.length) return null
+    const counts = loading.map(w => Object.values(w.sessions ?? {}).filter(
+      sn => sn && sn.type !== 'rest' && sn.type !== 'strength' && sn.type !== 'cross-train').length)
+    const lo = Math.min(...counts), hi = Math.max(...counts)
+    if (lo >= declared) return null
+    const grows = hi > lo
+    return `You told us you can run ${declared} days a week. This plan uses `
+      + (grows ? `${lo}, building to ${hi}` : `${lo}`)
+      + `, because your weekly volume spread any thinner would make every run too short to do much. `
+      + (grows
+          ? `The days come back as the volume grows.`
+          : `More weekly volume is what adds days: until then, ${lo} honest runs beat ${declared} token ones.`)
+  })()
+
   const meta: Plan['meta'] = {
     // F6 — empty, not invented. Every consumer already falls back gracefully
     // (`race_name || 'your race'`, `|| 'Your plan'`); a placeholder string does
@@ -8603,6 +8650,7 @@ function buildRulePlanOnce(
     ...(loadResidualNote ? { load_residual_note: loadResidualNote } : {}),
     ...(volumeShortfallNote ? { volume_shortfall_note: volumeShortfallNote } : {}),
     ...(volumeShortfallPct != null ? { volume_shortfall_pct: Math.round(volumeShortfallPct * 10) / 10 } : {}),
+    ...(frequencyConstraintNote ? { frequency_constraint_note: frequencyConstraintNote } : {}),
     // §40b Amendment 2 (CB-TERRAIN-01) — runner-environment terrain governs the
     // pace-vs-effort EMPHASIS, never a fabricated pace. Off-road, effort/HR leads
     // and pace is a road reference (§40b: do not invent a number the runner cannot

@@ -1201,6 +1201,53 @@ The error is recorded rather than quietly fixed because the cause is procedural 
 
 ---
 
+### §18 Amendment — when VOLUME, not life, caps the running days, the plan says so (FREQ-SILENCE-01, 2026-09-19)
+
+**Principle.** Where `daysVolumeCanFill` reduces the week below the runner's
+declared `days_available`, the plan MUST carry `frequency_constraint_note`
+naming the days declared, the days used, and the reason.
+
+**Why.** Measured: **18.7% of the weighted population across every distance
+gets fewer running days than they declared, and the plan never mentioned it** —
+**46% of 5K plans**. A runner who told the wizard "six days" and opens a plan
+with three has been silently overruled and has no way to know it was
+deliberate. §18 is life-first: the runner's availability is *honoured*, and
+declining to spread volume thinner is a coaching decision made **on top** of it.
+A decision made on the runner's behalf and not stated is the §40c failure
+("a suppressed target is stated, never absorbed") applied to frequency.
+
+**⚠️ THE PRESCRIPTION IS CORRECT AND DOES NOT CHANGE.**
+`daysVolumeCanFill = max(3, floor(weeklyKm / MIN_KM_PER_TRAINING_DAY))`, and the
+reasoning already recorded there holds: *"a runner on 12 km a week who selects
+seven days gets seven ~1.7 km jogs, and no session in the week does anything."*
+Measured against real inputs it **never fires above 40 km/week** and fires on
+**65% of runners under 20 km/week**. It is volume, exactly as designed.
+
+**⚠️ THE CAP WAS NEARLY FILED AS A DEFECT.** A plan holding three runs from
+5 km/week to 17 km/week looks broken until you substitute the constant:
+`floor(17 / 5) = 3`. Pinned by a test so it is not re-filed.
+
+**⚠️ THE NOTE IS COMPUTED FROM THE FINAL WEEKS.** Twice on the same day a value
+read mid-pipeline was stale by the time the runner saw it
+(LONG-SESSION-FUEL-01, COPY-STALE-GEN-01). Frequency also **grows** within a
+plan as volume does (measured 4→5 on a marathon, 3→5 on a half), so the note
+quotes the real low and high rather than one number wrong for most of the block.
+
+**Effect.** Fit-for-purpose **5K 50.6% → 91.8%**, whole product **66.7% → 78.0%**.
+`verify:parity` IDENTICAL with the note stripped: 654 plans gained a sentence
+and no plan changed a session.
+
+**Config.** No new numeric — it reads `days_available` and
+`MIN_KM_PER_TRAINING_DAY`.
+
+**Enforced by** `planQuality`'s `DAYS-SHORT` predicate, which now fires only on
+an **undeclared** shortfall. ⚠️ That relaxation raises the measured rate by
+~18.7pp and is legitimate **only because the prescription was measured correct
+first**; `frequencyConstraintNote.test.ts` case 5 strips the note and asserts
+the objection returns, so the predicate is conditional and not switched off.
+
+---
+
 ## 19. Session label integrity — name matches prescribed physiology
 
 **Principle.** A session's name carries physiological meaning. If a session is named "VO2max" the prescription MUST land in Z4–Z5 at I-pace (95–100% vVO2max). If it is named "Threshold" / "Tempo" / "Cruise" the prescription MUST land in Z3 at T-pace (83–88% vVO2max). If a session is named after a race distance ("10K-pace intervals", "HM-pace intervals") the prescription MUST land within ±2% of derived goal pace. If the engine cannot satisfy the label given the runner's VDOT, it MUST rename the session to one the prescription does satisfy.

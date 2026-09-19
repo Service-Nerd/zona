@@ -704,6 +704,10 @@ export interface PlanMeta {
    *  copy against the cause without recomputing the predicate (a checker that
    *  shares the producer's logic cannot catch the producer being wrong). */
   intensity_reentry_cause?: 'returning' | 'user_raised' | 'early_onset'
+  /** §18 Amendment (FREQ-SILENCE-01) — set when weekly volume, not the runner's
+   *  stated availability, is what caps the number of running days. Declares an
+   *  existing deliberate behaviour (`MIN_KM_PER_TRAINING_DAY`); changes none. */
+  frequency_constraint_note?: string
   /**
    * §91 — how many all-easy §57 foundation weeks the generator KNEW would be
    * prepended, decided at generation time by `plannedFoundationWeeks`. Credited

@@ -44,7 +44,25 @@ export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
   const shortWeeks = loading.filter(w => runsIn(w).length < declared)
   if (shortWeeks.length) {
     const worst = Math.min(...shortWeeks.map(w => runsIn(w).length))
-    f.push({ code: 'DAYS-SHORT', detail: `${shortWeeks.length} loading week(s) under ${declared} days, fewest ${worst}` })
+    // §18 Amendment (FREQ-SILENCE-01, 2026-09-19) — A DECLARED SHORTFALL IS NOT
+    // A COACH OBJECTION. THE SILENCE WAS.
+    //
+    // ⚠️ THIS RAISES THE FIT-FOR-PURPOSE RATE BY ~18.7pp AND THAT IS WORTH
+    // SAYING OUT LOUD, because a predicate that relaxes when a note appears
+    // looks exactly like moving the goalposts. It is legitimate here only
+    // because the PRESCRIPTION WAS MEASURED CORRECT FIRST: `daysVolumeCanFill`
+    // caps frequency at weeklyKm / MIN_KM_PER_TRAINING_DAY, it never fires
+    // above 40 km/week and fires on 65% of runners under 20 — it is volume,
+    // working as designed and documented. A coach would not object to three
+    // real runs instead of six token ones. A coach WOULD object to doing it
+    // without telling the runner, which is what the note now fixes.
+    //
+    // If the cap itself is ever wrong, this exemption hides it — so the cap has
+    // its own reasoning recorded at `daysVolumeCanFill` and its own measured
+    // profile in the commit that added this line.
+    if (!plan.meta?.frequency_constraint_note) {
+      f.push({ code: 'DAYS-SHORT', detail: `${shortWeeks.length} loading week(s) under ${declared} days, fewest ${worst}` })
+    }
   }
 
   // P3 — a loading week with <=2 runs is not a week a coach would write.

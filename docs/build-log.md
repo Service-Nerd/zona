@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — FREQ-SILENCE-01 · we were overruling people and not telling them
+**Shipped:** when weekly volume rather than the runner's life is what limits their running days, the plan says so. 5K fit-for-purpose 50.6% to 91.8%; whole product 66.7% to 78.0%.
+
+**Dev learning:** Nearly one plan in five gave the runner fewer running days than they said they had, and said nothing about it. The engine is right to do it: five kilometres a week spread over six runs is six eight-minute jogs and none of them trains anything. But the runner filled in a form saying six days, opened a plan showing three, and got no explanation. That is not a coaching mistake, it is a manners mistake, and it was the single biggest thing standing between us and the target.
+
+**The part I nearly got wrong:** I watched a plan hold three runs a week while volume climbed from five kilometres to seventeen, and started writing it up as a frequency bug. It is one line of arithmetic — the floor is five kilometres per training day, and seventeen divided by five is three. The cap was doing exactly what its own comment says it does. I have now written a test whose only job is to stop the next person filing that same non-defect, because I would have.
+
+**The honest bit:** this fix raises our headline number by eighteen points by adding a sentence, not by changing a single session. That is legitimate only because I measured the prescription first and found it correct, and it would be very easy to do the same trick when the prescription is wrong. So the test strips the note back out and checks the complaint comes back. If the day ever comes that the underlying cap is wrong, this exemption hides it, and I would rather write that down now than discover someone leaning on it later.
+
+---
+
 ## 2026-09-19 — COPY-STALE-GEN-01 · the fix was already written and the generator could not reach it
 **Shipped:** ninety-six plans that shipped invalid now generate clean. Zero error-severity violations across the whole weighted population.
 

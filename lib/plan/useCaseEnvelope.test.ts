@@ -73,12 +73,28 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   //  · NEVER-BUILDS is excluded where the plan is DECLARED maintenance with a
   //    note — §23 licenses exactly that, and an earlier audit already
   //    reconciled 15,236 such findings to zero in breach.
+  // FLOORS RAISED DELIBERATELY 2026-09-19 after COPY-STALE-GEN-01 and
+  // FREQ-SILENCE-01, and the movement is stated rather than absorbed:
+  //   5K   50.6 -> 91.8  (+41.2pp — almost all of it FREQ-SILENCE-01; 46% of
+  //                       5K plans were silently short on days)
+  //   10K  59.3 -> 73.0  (+13.7)
+  //   HM   70.3 -> 84.0  (+13.7)
+  //   42.2 67.4 -> 72.8  (+5.4 — the marathon gains least because its gap is
+  //                       18.5% REFUSALS, which item 4 addresses, not silence)
+  //   50K  91.6 -> 93.3  ·  100K 89.9 -> 93.4 (COPY-STALE-GEN-01)
+  //   whole product 66.7 -> 78.0
+  // Floors sit a little under measured so ordinary noise does not fail a build;
+  // a real regression still does.
   const FLOORS: Record<number, number> = {
-    5: 0.45, 10: 0.54, 21.1: 0.65, 42.2: 0.62, 50: 0.86, 100: 0.84,
+    5: 0.88, 10: 0.70, 21.1: 0.81, 42.2: 0.69, 50: 0.90, 100: 0.90,
   }
 
+  // ⚠️ THE FLOOR IS NOT IN THE TITLE, deliberately. It was, and raising a floor
+  // then renamed the test, which broke its entry in the duration baseline
+  // (matched on file + title). A test name that embeds a number churns every
+  // time the number moves; the floor belongs in the failure message.
   it.each(DISTANCE_BANDS.map(d => [d.value, FLOORS[d.value]] as const))(
-    '%s km — a weighted majority of entrants get a plan we would hand over (floor %s)',
+    '%s km — a weighted majority of entrants get a plan we would hand over',
     (distanceKm, floor) => {
       let total = 0, fit = 0, refused = 0
       // COPY-STALE-GEN-01 — no generated plan may carry an error-severity
