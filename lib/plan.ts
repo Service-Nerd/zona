@@ -1,4 +1,5 @@
 import { validatePlan } from './plan/invariants'
+import { PlanSchema } from './plan/schema'
 import { recordOpsEvent } from './ops/recordOpsEvent'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { reanchorCharityGrant } from '@/lib/charity/reanchor'
@@ -118,6 +119,17 @@ export async function savePlanForUser(
   // across the whole test suite: 8 saves, ALL skipped for want of it — so this
   // check is inert in tests except where a test supplies it deliberately, and
   // `planSaveValidate.test.ts` is that test.
+  //
+  // ⚠️ BUNDLE COST, MEASURED, SO NOBODY RE-LITIGATES IT. `savePlanForUser` is
+  // imported by `DashboardClient`, a CLIENT component, so these static imports
+  // pull the 7,018-line invariants module and Zod toward the dashboard bundle.
+  // That looks alarming and is not: /dashboard First Load JS is 346 kB with
+  // static imports and 345 kB with both behind `await import()`. ONE kB —
+  // because the client already imports twelve `lib/plan/*` modules directly
+  // (`generationConfig`, `maintenance`, `sessionComposer` among them), so the
+  // dependency graph is almost entirely present already. The lazy version was
+  // built and measured before being reverted: it bought a rounding error and
+  // cost a dynamic import in a hot path.
   const generatorInput = plan?.meta?.generator_input
   if (generatorInput && plan.weeks?.length) {
     const errors = validatePlan(plan, generatorInput).filter(v => v.severity === 'error')
@@ -133,6 +145,40 @@ export async function savePlanForUser(
       }
       void recordOpsEvent('plan_save_invalid', detail, userId)
     }
+  }
+
+  // SCHEMA-LIVE-01 (2026-09-19) — run the CANONICAL SCHEMA on the live path.
+  //
+  // `lib/plan/schema.ts` opens by declaring itself the "single source of runtime
+  // validation for plan JSON", "shared by the rule engine (R23), enricher (R23),
+  // reshaper (R20), and multi-race (R24)". Four declared consumers. `PlanSchema`
+  // had ONE — a conformance test written the same day as this — and had never
+  // been run against live engine output in the repo's history. PHASE-EMPTY-01
+  // hid in exactly that gap: the engine emitted a shape its own canonical schema
+  // rejected, and no code path existed that would have noticed.
+  //
+  // ⚠️ IT NEVER THROWS, IN ANY ENVIRONMENT, TEST INCLUDED — deliberately unlike
+  // the `validatePlan` block above. The schema is a DESCRIPTION of the plan
+  // shape, not the constitution; it has drifted from the engine once already,
+  // and a throwing check would then refuse real runners for drift rather than
+  // for defects. `validatePlan` is the rule with teeth. This is the smoke alarm.
+  //
+  // ⚠️ SO ITS LIVENESS CANNOT COME FROM A THROW. It is proved two ways instead:
+  // `planSchemaConformance.test.ts` asserts `PlanSchema.safeParse` directly on
+  // generated plans, and `planSaveValidate.test.ts` spies on `recordOpsEvent` to
+  // prove THIS call site fires on a non-conforming plan. A check whose only
+  // evidence is that it never complained is the failure class this repo keeps
+  // finding under a green tick.
+  //
+  // Cost measured before wiring: 0.22 ms per parse on a 20-week marathon plan.
+  const shape = PlanSchema.safeParse(plan)
+  if (!shape.success) {
+    void recordOpsEvent('plan_schema_drift', {
+      issues: shape.error.issues.length,
+      paths: Array.from(new Set(shape.error.issues.map(i => i.path.join('.')))).slice(0, 8),
+      first: shape.error.issues[0]?.message?.slice(0, 200) ?? null,
+      weeks: plan?.weeks?.length ?? 0,
+    }, userId)
   }
   // Plan history (data protection + the Me → Plan history screen): archive the
   // CURRENTLY-stored plan before it's overwritten. Centralised HERE so every

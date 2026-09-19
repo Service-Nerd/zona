@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — SCHEMA-LIVE-01 · the check that must never throw, and how you prove it works
+**Shipped:** the canonical plan schema now runs on every save as an observation, and the four untested modules with production callers have tests.
+
+**Dev learning:** The schema file opens by calling itself the single source of runtime validation, shared by four systems. It had one consumer, a test written the same morning, and had never been run against real engine output in the repo's history. A declared consumer is not a consumer. The fix is small; the interesting part is that this check must never throw, because the schema has already drifted from the engine once and a throwing version would then refuse real people for drift rather than for defects. Which means it cannot prove itself the usual way. A check whose only evidence is that it has never complained is indistinguishable from a check that is not wired up, so its liveness comes from a test that spies on the telemetry call and asserts the call site fires.
+
+**The honest bit:** I nearly shipped a bundle regression and then nearly shipped a wrong number about it. The save function is imported by a client component, so importing a seven-thousand-line validator into it looked like putting the validator on the first screen a runner sees. I wrote a comment claiming the lazy version saved forty kilobytes. Then I built both. It saved one, because the client already imports twelve modules from the same directory and the dependency graph was nearly all there. I reverted to the simple version and kept the measurement in the comment, because the next person will have the same worry and should not have to build twice to answer it.
+
+---
+
 ## 2026-09-19 — SAVE-VALIDATE-01 + RACE-DIST-UNVALIDATED-01 · the wrong fixture was the instrument
 **Shipped:** every plan is validated on its way into the database, and a missing race distance can no longer build a hundred-kilometre ultra.
 

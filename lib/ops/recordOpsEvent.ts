@@ -27,6 +27,20 @@ export type OpsEventKind =
   // persist is a worse outcome than a plan with a violation in it, and the
   // daily audit still sweeps. This makes the 24-hour window minutes instead.
   | 'plan_save_invalid'
+  // SCHEMA-LIVE-01 (2026-09-19) — a saved plan did not match the canonical
+  // Zod schema `types/plan.ts` and `lib/plan/schema.ts` jointly declare.
+  //
+  // WHY: `schema.ts`'s own header says it is "shared by the rule engine,
+  // enricher, reshaper and multi-race" — FOUR declared consumers. `PlanSchema`
+  // had exactly ONE, a test written the same day, and had never been run
+  // against live engine output. That is how PHASE-EMPTY-01 hid: the engine
+  // emitted a shape its own canonical schema rejected and nothing looked.
+  //
+  // ⚠️ OBSERVATION ONLY. It never throws, in ANY environment, including test.
+  // The schema has already drifted from the engine once, so a throwing check
+  // would refuse real runners for DRIFT rather than for defects — the schema is
+  // not the constitution, `validatePlan` is. This records and moves on.
+  | 'plan_schema_drift'
 
   // REFUSAL-TELEMETRY-01 (2026-09-19) — every DESIGNED refusal, with the inputs
   // that caused it.

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { savePlanForUser } from '../plan'
+import * as ops from '../ops/recordOpsEvent'
 import { generateRulePlan } from './ruleEngine'
 import type { GeneratorInput, Plan } from '@/types/plan'
 
@@ -90,5 +91,31 @@ describe('SAVE-VALIDATE-01 — savePlanForUser validates before it persists', ()
     const empty = JSON.parse(JSON.stringify(plan)) as Plan
     empty.weeks = []
     await expect(savePlanForUser('u1', empty, stubSupabase())).resolves.toBeUndefined()
+  })
+})
+
+describe('SCHEMA-LIVE-01 — the canonical schema runs on the live save path', () => {
+  beforeEach(() => vi.spyOn(console, 'error').mockImplementation(() => {}))
+  afterEach(() => vi.restoreAllMocks())
+
+  it('6. a conforming plan records NO drift event', async () => {
+    const spy = vi.spyOn(ops, 'recordOpsEvent').mockResolvedValue(undefined)
+    await savePlanForUser('u1', generateRulePlan(BASE, 'paid'), stubSupabase())
+    expect(spy.mock.calls.filter(c => c[0] === 'plan_schema_drift')).toHaveLength(0)
+  })
+
+  it('7. a NON-conforming plan records plan_schema_drift — and still saves', async () => {
+    // ⚠️ THIS IS THE LIVENESS PROOF FOR A CHECK THAT DELIBERATELY NEVER THROWS.
+    // Without it the wiring would be indistinguishable from an unwired import:
+    // silent in both cases. Break the shape the way PHASE-EMPTY-01 did — a
+    // structural field the schema declares and the engine got wrong.
+    const spy = vi.spyOn(ops, 'recordOpsEvent').mockResolvedValue(undefined)
+    const plan = JSON.parse(JSON.stringify(generateRulePlan(BASE, 'paid')))
+    delete (plan.meta as Record<string, unknown>).generator_input  // skip the validatePlan arm
+    plan.weeks[0].sessions.tue = { type: 'not_a_session_type', label: 7, detail: null }
+    await expect(savePlanForUser('u1', plan, stubSupabase())).resolves.toBeUndefined()
+    const drift = spy.mock.calls.filter(c => c[0] === 'plan_schema_drift')
+    expect(drift).toHaveLength(1)
+    expect((drift[0][1] as { issues: number }).issues).toBeGreaterThan(0)
   })
 })

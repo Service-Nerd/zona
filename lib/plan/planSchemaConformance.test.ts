@@ -117,4 +117,40 @@ describe('PLAN-SCHEMA-CONFORMANCE-01', () => {
     walk(plan, 'plan')
     expect(nonFinite).toEqual([])
   })
+
+  // SCHEMA-LIVE-01 — A SCHEMA THAT ACCEPTS EVERYTHING IS THE SAME AS NO SCHEMA.
+  //
+  // The four cases above all assert that real plans PASS. None of them can tell
+  // a working schema from one that has been loosened into a rubber stamp — and
+  // this file's whole reason for existing is that `PlanSchema` had never once
+  // been run against engine output, so nobody would have noticed. These assert
+  // the other direction: the shapes it must refuse.
+  it('rejects the shapes it exists to catch — the liveness half', () => {
+    const good = generateRulePlan(mk({
+      race_distance_km: 21.1, race_date: '2027-04-18', goal: 'finish',
+      current_weekly_km: 35, longest_recent_run_km: 16,
+      fitness_level: 'intermediate', training_age: '2-5yr', days_available: 4, age: 34,
+    }), 'paid', '2026-11-02')
+    const broken = (mutate: (p: Record<string, never>) => void) => {
+      const p = JSON.parse(JSON.stringify(good))
+      mutate(p)
+      return PlanSchema.safeParse(p).success
+    }
+    // an unknown session type
+    expect(broken(p => { (p as never as { weeks: { sessions: Record<string, unknown> }[] })
+      .weeks[0].sessions.tue = { type: 'jetpack', label: 'x', detail: null } })).toBe(false)
+    // a label that is not a string
+    expect(broken(p => { (p as never as { weeks: { sessions: Record<string, { label: unknown }> }[] })
+      .weeks[0].sessions.tue = { type: 'easy', label: 7, detail: null } as never })).toBe(false)
+    // a negative distance
+    expect(broken(p => { (p as never as { weeks: { sessions: Record<string, { distance_km: number }> }[] })
+      .weeks[0].sessions.tue = { type: 'easy', label: 'x', detail: null, distance_km: -4 } as never })).toBe(false)
+    // an RPE outside 1-10
+    expect(broken(p => { (p as never as { weeks: { sessions: Record<string, unknown> }[] })
+      .weeks[0].sessions.tue = { type: 'easy', label: 'x', detail: null, rpe_target: 42 } })).toBe(false)
+    // weeks missing altogether
+    expect(broken(p => { delete (p as never as { weeks?: unknown }).weeks })).toBe(false)
+    // and the control: untouched, it still passes
+    expect(PlanSchema.safeParse(good).success).toBe(true)
+  })
 })
