@@ -34,9 +34,9 @@
   },
   {
    "file": "lib/plan/useCaseEnvelope.test.ts",
-   "title": "a weighted majority of real marathon entrants get a plan we would hand over",
-   "ms": 2100,
-   "reason": "USE-CASE-ENVELOPE-01 \u2014 the only harness that answers \"are 90-95% of use cases fit for purpose?\", which is the founder's standing question and the one the other five cannot answer: they are all UNIFORM corpora, counting a 10 km/week marathoner as heavily as a 30 km/week one. Measured the same day: 32% refusal uniform vs 18.3% weighted. It generates real plans across a weighted population and judges each on six fit-for-purpose criteria, so the cost IS the population. \u26a0\ufe0f ALREADY SAMPLED HARD AND THE SAMPLE WAS VALIDATED, not assumed: a coprime stride of 29 over 9,216 cases, giving 75.5% against 75.4% for the full run (stride 13 -> 76.0%, stride 19 -> 75.8%). The full version was ~7 s and this gate correctly refused it. Sampling further would start to move the number it exists to defend. ALLOWED at ~2 s under contention; if it needs to grow, share a corpus rather than widen the stride."
+   "title": "42.2 km \u2014 a weighted majority of entrants get a plan we would hand over (floor 0.62)",
+   "ms": 1800,
+   "reason": "USE-CASE-ENVELOPE-01, marathon arm. The only harness answering \"are 90-95% of use cases fit for purpose?\" -- the other five are UNIFORM corpora and count a 10 km/week marathoner as heavily as a 30 km/week one (32% refusal uniform vs 18.3% weighted, measured the same day). \u26a0\ufe0f THE MARATHON ARM IS THE SLOWEST BY DESIGN: its envelope is 9,216 cases against 4,608 for every other distance (six volume bands and four runway bands, because the entry population is genuinely wider), and marathon plans are the longest to generate. It is also the FOUNDER'S PRIORITY DISTANCE, so under-sampling it to buy a second of budget is the wrong trade. Already at a coprime stride of 29, validated against the full population (75.5% vs 75.4%). The five other distance arms each run well under the reporting threshold. A previous marathon-only case in this same file was DELETED rather than baselined alongside it, because the per-distance suite measures the same population."
   }
  ]
 }

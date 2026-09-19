@@ -94,6 +94,81 @@ export const RUNWAY_BANDS: EnvelopeBand<number>[] = [
   { value: 30, weight: 0.28, why: 'A London place in April accepted the previous autumn.' },
 ]
 
+/**
+ * WHICH RACE OUR RUNNERS ARE TRAINING FOR.
+ *
+ * The 90–95% fit-for-purpose target applies to EVERY distance (founder,
+ * 2026-09-19), with the marathon as priority. So the envelope cannot be
+ * marathon-only: a distance we serve badly is a distance we serve badly
+ * whatever its share.
+ */
+export const DISTANCE_BANDS: EnvelopeBand<number>[] = [
+  { value: 5,    weight: 0.12, why: 'Shortest supported race; over-represented among true beginners, under-represented in our funnel.' },
+  { value: 10,   weight: 0.18, why: 'The step-up race, and the commonest first "I have a time goal" distance.' },
+  { value: 21.1, weight: 0.30, why: 'The most popular road race distance in the UK, and the one most day-job runners repeat.' },
+  { value: 42.2, weight: 0.32, why: 'The founder priority and the charity channel; also the distance with the most ways to go wrong.' },
+  { value: 50,   weight: 0.06, why: 'First ultra, usually an experienced road runner moving across.' },
+  { value: 100,  weight: 0.02, why: 'Rare in this product; retained because the engine claims to support it.' },
+]
+
+/**
+ * Weekly volume at sign-up, BY DISTANCE. A 5K entrant and a marathon entrant do
+ * not present with the same mileage, and a single shared band set would model
+ * neither. Marathon keeps the bands argued above; the rest are scaled to the
+ * distance's real entry population.
+ */
+export const VOLUME_BANDS_BY_DISTANCE: Record<number, EnvelopeBand<number>[]> = {
+  5: [
+    { value: 5,  weight: 0.22, why: 'Genuinely new to running; a 5K is the first goal a couch-start runner sets.' },
+    { value: 12, weight: 0.38, why: 'Runs occasionally, wants structure. The modal 5K entrant.' },
+    { value: 25, weight: 0.28, why: 'Regular runner chasing a 5K time rather than a first finish.' },
+    { value: 45, weight: 0.12, why: 'Club-adjacent runner sharpening; high volume for a short race.' },
+  ],
+  10: [
+    { value: 8,  weight: 0.18, why: 'Has done a 5K, stepping up, still low base.' },
+    { value: 18, weight: 0.36, why: 'The modal 10K entrant: running a few times a week already.' },
+    { value: 30, weight: 0.30, why: 'Established recreational runner with a time in mind.' },
+    { value: 50, weight: 0.16, why: 'Experienced amateur using the 10K as a sharpening race.' },
+  ],
+  21.1: [
+    { value: 10, weight: 0.12, why: 'Half marathon as a first big goal from a low base; a real and risky cell.' },
+    { value: 20, weight: 0.30, why: 'The modal half entrant.' },
+    { value: 32, weight: 0.33, why: 'Established runner; the half is their repeat distance.' },
+    { value: 50, weight: 0.25, why: 'Experienced amateur, often marathon-trained, racing a half.' },
+  ],
+  50: [
+    { value: 30, weight: 0.24, why: 'Road marathoner moving to trail ultra on modest volume; the risky entry cell.' },
+    { value: 45, weight: 0.34, why: 'The modal first-50K runner.' },
+    { value: 60, weight: 0.27, why: 'Consolidated ultra base.' },
+    { value: 85, weight: 0.15, why: 'Experienced ultra runner.' },
+  ],
+  100: [
+    { value: 45, weight: 0.22, why: 'Under-prepared but committed; the cell where a refusal is most likely correct.' },
+    { value: 65, weight: 0.38, why: 'The modal 100K entrant.' },
+    { value: 90, weight: 0.27, why: 'Serious ultra base.' },
+    { value: 120, weight: 0.13, why: 'High-volume ultra specialist.' },
+  ],
+}
+
+/** Runway by distance — nobody takes thirty weeks to prepare a 5K. */
+export const RUNWAY_BANDS_BY_DISTANCE: Record<number, EnvelopeBand<number>[]> = {
+  5:    [{ value: 8, weight: 0.38, why: 'A short sharp block, the usual 5K commitment.' },
+         { value: 12, weight: 0.42, why: 'A full 5K build with a base phase.' },
+         { value: 16, weight: 0.20, why: 'Long runway for a short race; usually a returning runner.' }],
+  10:   [{ value: 10, weight: 0.34, why: 'Typical 10K block.' },
+         { value: 14, weight: 0.42, why: 'A full 10K build.' },
+         { value: 20, weight: 0.24, why: 'Building a base first.' }],
+  21.1: [{ value: 12, weight: 0.32, why: 'Tight but common half-marathon block.' },
+         { value: 16, weight: 0.40, why: 'The standard half build.' },
+         { value: 24, weight: 0.28, why: 'Booked early, building from a low base.' }],
+  50:   [{ value: 16, weight: 0.28, why: 'Short for an ultra; a real entry pattern.' },
+         { value: 22, weight: 0.44, why: 'The standard 50K block.' },
+         { value: 30, weight: 0.28, why: 'A full ultra build.' }],
+  100:  [{ value: 20, weight: 0.30, why: 'Short for 100K.' },
+         { value: 28, weight: 0.45, why: 'The standard 100K block.' },
+         { value: 36, weight: 0.25, why: 'A long, properly periodised ultra build.' }],
+}
+
 export interface WeightedCase { input: GeneratorInput; weight: number; label: string }
 
 /**
@@ -102,39 +177,59 @@ export interface WeightedCase { input: GeneratorInput; weight: number; label: st
  * not share of grid cells, which is the whole point.
  */
 export function marathonEnvelope(planStart = '2026-11-02'): WeightedCase[] {
+  return distanceEnvelope(42.2, planStart)
+}
+
+/**
+ * The weighted population for ONE distance. Weights are shares of that
+ * distance's entrants, so they sum to 1 within the distance — the distance's
+ * own share of the whole product is applied by `fullEnvelope`.
+ */
+export function distanceEnvelope(distanceKm: number, planStart = '2026-11-02'): WeightedCase[] {
+  const volumes = VOLUME_BANDS_BY_DISTANCE[distanceKm] ?? MARATHON_VOLUME_BANDS
+  const runways = RUNWAY_BANDS_BY_DISTANCE[distanceKm] ?? RUNWAY_BANDS
   const out: WeightedCase[] = []
-  for (const v of MARATHON_VOLUME_BANDS)
+  for (const v of volumes)
   for (const d of DAYS_BANDS)
   for (const l of LEVEL_BANDS)
   for (const inj of INJURY_BANDS)
   for (const a of AGE_BANDS)
   for (const g of GOAL_BANDS)
-  for (const r of RUNWAY_BANDS) {
+  for (const r of runways) {
     const weight = v.weight * d.weight * l.weight * inj.weight * a.weight * g.weight * r.weight
     const start = new Date(planStart + 'T00:00:00Z')
     const race = new Date(start.getTime() + r.value * 7 * 86_400_000)
-    // Training age follows structural level: an "experienced" runner with six
-    // months of running is a contradiction, and a grid that generates one
-    // measures nothing real. This is the coherence the uniform grids lack.
     const training_age = l.value === 'beginner' ? '6-18mo'
       : l.value === 'intermediate' ? '2-5yr' : '5yr+'
+    // A time target only means something with a plausible number for the
+    // distance. A single '4:15:00' across all six would make a 4h15 5K, whose
+    // goal pace is slower than easy pace -- a fixture artefact, not a runner.
+    const TARGETS: Record<number, string> = {
+      5: '0:26:00', 10: '0:54:00', 21.1: '2:00:00', 42.2: '4:15:00', 50: '6:30:00', 100: '14:00:00',
+    }
     out.push({
       weight,
-      label: `${v.value}km/wk ${l.value} ${d.value}d age${a.value} ${g.value} ${r.value}wk ${inj.value.join('+') || 'healthy'}`,
+      label: `${distanceKm}km ${v.value}km/wk ${l.value} ${d.value}d age${a.value} ${g.value} ${r.value}wk ${inj.value.join('+') || 'healthy'}`,
       input: {
         athlete_name: 'Envelope', age: a.value, race_name: 'Target race',
-        primary_metric: 'distance', race_distance_km: 42.2,
+        primary_metric: 'distance', race_distance_km: distanceKm,
         race_date: race.toISOString().slice(0, 10), plan_start: planStart,
         goal: g.value, fitness_level: l.value, training_age,
         resting_hr: 55, max_hr: 185,
         current_weekly_km: v.value,
-        // A plausible long run for that weekly volume, capped at marathon sense.
-        longest_recent_run_km: Math.round(Math.min(v.value * 0.45, 32)),
+        longest_recent_run_km: Math.round(Math.min(v.value * 0.45, distanceKm * 0.75)),
         days_available: d.value, injury_history: [...inj.value],
         hard_session_relationship: 'neutral', recent_quality_training: 'occasional',
-        ...(g.value === 'time_target' ? { target_time: '4:15:00' } : {}),
+        ...(g.value === 'time_target' ? { target_time: TARGETS[distanceKm] ?? '4:15:00' } : {}),
       } as unknown as GeneratorInput,
     })
   }
   return out
+}
+
+/** Every distance, each case weighted by BOTH its within-distance share and the
+ *  distance's share of the product. Sums to 1 across the whole population. */
+export function fullEnvelope(planStart = '2026-11-02'): WeightedCase[] {
+  return DISTANCE_BANDS.flatMap(d =>
+    distanceEnvelope(d.value, planStart).map(c => ({ ...c, weight: c.weight * d.weight })))
 }

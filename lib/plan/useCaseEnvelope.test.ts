@@ -3,7 +3,9 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
 import { sessionKmSelfPaced } from './sessionDistance'
-import { marathonEnvelope, MARATHON_VOLUME_BANDS, DAYS_BANDS, LEVEL_BANDS } from './useCaseEnvelope'
+import { auditPlanQuality } from './planQuality'
+import { distanceEnvelope, DISTANCE_BANDS, MARATHON_VOLUME_BANDS, DAYS_BANDS, LEVEL_BANDS,
+  VOLUME_BANDS_BY_DISTANCE } from './useCaseEnvelope'
 
 /**
  * USE-CASE-ENVELOPE-01 — "are 90–95% of use cases fit for purpose?", made
@@ -33,7 +35,6 @@ const STRIDE = 29                    // coprime with the 9,216 layout
 // been checked against the whole would be a guess wearing a number.
 
 describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
-  const cases = marathonEnvelope().filter((_, i) => i % STRIDE === 0)
 
   it('the envelope weights sum to 1 on every axis — an unnormalised band silently re-weights everything', () => {
     for (const [name, bands] of [
@@ -50,48 +51,76 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
     }
   })
 
-  it('a weighted majority of real marathon entrants get a plan we would hand over', () => {
-    let total = 0, fit = 0, refused = 0
-    for (const c of cases) {
-      total += c.weight
-      let plan
-      try { plan = generateRulePlan(c.input, 'paid') }
-      catch (e) { if (isDesignedRefusal(e)) { refused += c.weight; continue } throw e }
+  // ⚠️ The marathon-only case that used to sit here was DELETED, not baselined.
+  // The per-distance suite below covers 42.2 km with the same criteria, so
+  // keeping both measured the same population twice and cost ~1.6 s of the
+  // duration budget to do it. A duplicate check is not extra safety.
 
-      const errs = validatePlan(c.input ? plan : plan, c.input).filter(v => v.severity === 'error')
-      const km = plan.weeks.map(w => w.weekly_km ?? 0)
-      const peak = Math.max(...km.slice(0, -1)), w1 = km[0] || 1
-      let lrKm = 0, lrMins = 0, fuel = false, worstShare = 0
-      for (const w of plan.weeks) {
-        const wk = w.weekly_km ?? 0
-        for (const s of Object.values(w.sessions ?? {})) {
-          if (s?.role !== 'long_run') continue
-          const d = sessionKmSelfPaced(s) ?? 0
-          if (wk > 0) worstShare = Math.max(worstShare, d / wk)
-          if (d > lrKm) { lrKm = d; lrMins = s.duration_mins ?? 0 }
-          if ((s.coach_notes ?? []).some(n => /fuelling matters|Fuel every/.test(String(n)))) fuel = true
+  // ── ALL DISTANCES ─────────────────────────────────────────────────────────
+  // The 90–95% target applies to EVERY distance (founder, 2026-09-19), with the
+  // marathon as priority. Measured 2026-09-19, reconciled:
+  //   5K 50.6% · 10K 59.3% · HM 70.3% · marathon 67.4% · 50K 91.6% · 100K 89.9%
+  //   whole product 66.7%
+  // ⚠️ THE SHORT RACES ARE THE WORST AND NOBODY HAD LOOKED. Every sitting so far
+  // has been about the marathon; 5K is the distance furthest from the bar.
+  //
+  // ⚠️ TWO RECONCILIATIONS, BOTH JUSTIFIED, NEITHER TO FLATTER THE NUMBER:
+  //  · LONG-RUN-SHORT is excluded above 42.2 km. Its bar is 55% of race
+  //    distance, which for 100K demands a 55 km TRAINING long run. No coach
+  //    prescribes that and §24e prescribes back-to-backs instead. Measured: it
+  //    fired on 46 of 48 sampled 100K plans whose median long run was 36 km.
+  //    That is a criterion defect in `planQuality`, filed, not a plan defect.
+  //  · NEVER-BUILDS is excluded where the plan is DECLARED maintenance with a
+  //    note — §23 licenses exactly that, and an earlier audit already
+  //    reconciled 15,236 such findings to zero in breach.
+  const FLOORS: Record<number, number> = {
+    5: 0.45, 10: 0.54, 21.1: 0.65, 42.2: 0.62, 50: 0.86, 100: 0.84,
+  }
+
+  it.each(DISTANCE_BANDS.map(d => [d.value, FLOORS[d.value]] as const))(
+    '%s km — a weighted majority of entrants get a plan we would hand over (floor %s)',
+    (distanceKm, floor) => {
+      let total = 0, fit = 0, refused = 0
+      const codes: Record<string, number> = {}
+      for (const c of distanceEnvelope(distanceKm).filter((_, i) => i % STRIDE === 0)) {
+        total += c.weight
+        let plan
+        try { plan = generateRulePlan(c.input, 'paid') }
+        catch (e) {
+          if (isDesignedRefusal(e)) { refused += c.weight; continue }
+          // ⚠️ NOT a crash — an INVALID PLAN, counted as unfit.
+          // `enforceViolations` throws on error-severity violations under
+          // NODE_ENV=test and merely logs in production, so a throw here is a
+          // plan a real runner WOULD RECEIVE, carrying a violation of the
+          // engine's own constitution. Rethrowing would make this harness
+          // fall over on exactly the defect it exists to find.
+          codes['THREW-INVALID'] = (codes['THREW-INVALID'] ?? 0) + c.weight
+          continue
         }
+        const m = plan.meta as unknown as Record<string, unknown>
+        const maintDeclared = m.volume_profile === 'maintenance' && !!m.volume_constraint_note
+        const errs = validatePlan(plan, c.input).filter(v => v.severity === 'error')
+        const objs = auditPlanQuality(plan, c.input).filter(o =>
+          !(o.code === 'LONG-RUN-SHORT' && distanceKm > 42.2)
+          && !(o.code === 'NEVER-BUILDS' && maintDeclared))
+        for (const o of objs) codes[o.code] = (codes[o.code] ?? 0) + c.weight
+        if (!errs.length && !objs.length) fit += c.weight
       }
-      const m = plan.meta as unknown as Record<string, unknown>
-      // §23's maintenance note counts as declaring a shortfall — omitting it
-      // reported 2.1% of plans "silent" that were not.
-      const declares = !!(m.long_run_shortfall_note || m.peak_shortfall_note
-        || m.volume_shortfall_note || m.volume_constraint_note)
-      // §80 — distance OR time on feet. A beginner's 208-minute long run is the
-      // prescription; judging it on kilometres alone would fail a correct plan.
-      const farEnough = lrKm >= 26 || lrMins >= 180
-      const builds = peak > w1 * 1.10
-        || (m.volume_profile === 'maintenance' && !!m.volume_constraint_note)
-      if (errs.length === 0 && builds && farEnough && (lrMins < 120 || fuel)
-          && worstShare <= 0.70 && (declares || farEnough)) fit += c.weight
+      const rate = fit / total
+      const top = Object.entries(codes).sort((a, b) => b[1] - a[1]).slice(0, 3)
+        .map(([k, v]) => `${k} ${(v / total * 100).toFixed(0)}%`).join(', ')
+      expect(
+        rate,
+        `${distanceKm} km: fit-for-purpose ${(rate * 100).toFixed(1)}% (refused ` +
+        `${(refused / total * 100).toFixed(1)}%). Floor ${(floor * 100).toFixed(0)}%. Top objections: ${top}\n` +
+        `  A DROP is a coaching regression. A RISE is good — raise the floor in a commit that says by how much.`,
+      ).toBeGreaterThanOrEqual(floor)
+    })
+
+  it('every distance has a floor — a distance with no floor is a distance nobody is watching', () => {
+    for (const d of DISTANCE_BANDS) {
+      expect(FLOORS[d.value], `no fit-for-purpose floor for ${d.value} km`).toBeGreaterThan(0)
+      expect(VOLUME_BANDS_BY_DISTANCE[d.value] ?? MARATHON_VOLUME_BANDS).toBeTruthy()
     }
-    const rate = fit / total
-    expect(
-      rate,
-      `Fit-for-purpose ${(rate * 100).toFixed(1)}% of weighted marathon entrants ` +
-      `(refused ${(refused / total * 100).toFixed(1)}%). Floor ${FIT_FOR_PURPOSE_FLOOR * 100}%.\n` +
-      `  A DROP is a coaching regression, not a test failure — find what stopped serving whom.\n` +
-      `  A RISE is good and the floor should be raised deliberately, in a commit that says by how much.`,
-    ).toBeGreaterThanOrEqual(FIT_FOR_PURPOSE_FLOOR)
   })
 })

@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — ENVELOPE-ALL-DISTANCES-01 · we had been watching one distance and it was not the worst one
+**Shipped:** the 90-95% target measured and gated for every distance. 5K 50.6%, 10K 59.3%, half 70.3%, marathon 67.4%, 50K 91.6%, 100K 89.9%. Whole product 66.7%.
+
+**Dev learning:** Every board sitting this month has been about the marathon, because the marathon is the priority and the charity cohort is real. The moment the same measurement was pointed at the other five distances, the 5K came back as the worst thing we make. Nobody had looked, not because anyone decided not to, but because the measurement only existed for one distance and a measurement that only covers one thing quietly becomes the definition of the thing that matters.
+
+**The two dominant faults are not marathon faults at all.** Nearly one plan in five tells the runner they can train six days and then prescribes three, with no note explaining why. One in seven starts week one more than thirty percent above the volume the runner actually said they were running. Both cut across every distance and neither had a name until today.
+
+**The honest bit:** my first all-distance number was 52.4% and a chunk of it was my own criteria being wrong. The long-run check demanded a fifty-five kilometre training run for a hundred-kilometre race, which no coach on earth prescribes, and it fired on forty-six of forty-eight ultra plans. I had actually written that risk into the file header an hour earlier and then reported the contaminated number anyway. The reconciled figure is 66.7%. Separately, the harness found eight hundred-kilometre plans that violate the engine's own constitution and ship anyway in production, because the validator only throws in development. The property sweep has been green on those for as long as they have existed, because its grid cannot build that runner.
+
+---
+
 ## 2026-09-19 — USE-CASE-ENVELOPE-01 · we had been judging the engine on the wrong denominator
 **Shipped:** a weighted definition of who our runners actually are, and the first real answer to "are 90-95% of use cases fit for purpose". It is 75.4%.
 
