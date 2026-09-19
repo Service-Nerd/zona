@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-09-19 — the coaching board reviewed 17 real plans, and killed my best finding
+## 2026-09-19 — REENTRY-CAUSE-01 + DIFFICULTY-SHORTFALL-01 · the board reviewed 17 real plans, and killed my best finding
 **Shipped:** two board rulings. The engine stops telling ready runners they are coming back, and stops calling a plan "comfortable" while telling the runner it falls short.
 
 **Dev learning:** I took three findings to the board and the mandatory conflict scan killed the one I was most confident about before a single seat spoke. I had measured that the difficulty label never looks at the training load: plans labelled comfortable have longer sessions than plans labelled demanding, and two hundred and seventy-nine of them hand someone with under six months of running a session over two and a half hours. All true, all irrelevant, because the principle says in writing that the label is deliberately blind to the produced plan, and the person who insisted on that is the same injury specialist I was about to quote at it. What survived was narrower and better: the principle defines "comfortable" as "the plan reaches its target", and seven hundred and fifty-one plans said comfortable in one field and "this does not reach your target" in another. Fixing the real contradiction took one line.
