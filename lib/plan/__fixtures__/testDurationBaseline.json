@@ -1,30 +1,36 @@
 {
-  "measuredAt": "2026-09-19",
-  "testTimeoutMs": 30000,
-  "tests": [
-    {
-      "file": "lib/plan/targetedGrid.test.ts",
-      "title": "every input generates or refuses by design — no hard failures",
-      "ms": 15267,
-      "reason": "⚠️ THE ONE TO WATCH — 50.1% of the 30,000 ms budget and 39% of the whole suite's test time on its own. It generates thousands of plans across an exhaustive grid, which is the point: a sampled version could not make the claim in its title. It is the test that caused CI-TIMEOUT-01 (red on the old 5,000 ms default, at +1.4% on the day, having been over the line for weeks). ALLOWED, because exhaustiveness is doctrine here and the grid is the asset — but it has roughly one doubling of headroom left before the hard wall, and widening the grid again is a decision to make deliberately, not a diff to wave through."
-    },
-    {
-      "file": "lib/plan/emittedCopyGlyphs.test.ts",
-      "title": "no runner-facing string contains a section symbol (§)",
-      "ms": 3224,
-      "reason": "Generates a plan corpus and walks every emitted string. The cost is the corpus, not the scan; sharing one corpus across this file's cases is the obvious saving if it ever needs one."
-    },
-    {
-      "file": "lib/plan/emittedCopyGlyphs.test.ts",
-      "title": "the em-dash debt does not grow while BRAND-EMDASH-01 is open",
-      "ms": 2568,
-      "reason": "Same corpus as the case above, generated a second time. Genuinely reducible — it is here as a baselined number rather than a fix because BRAND-EMDASH-01 closing removes the case entirely."
-    },
-    {
-      "file": "lib/plan/noteDurationFormat.test.ts",
-      "title": "generated notes read in hours past the hour, and still exist",
-      "ms": 1284,
-      "reason": "TODO — state why this test is allowed to be slow."
-    }
-  ]
+ "measuredAt": "2026-09-19",
+ "testTimeoutMs": 30000,
+ "tests": [
+  {
+   "file": "lib/plan/targetedGrid.test.ts",
+   "title": "every input generates or refuses by design — no hard failures",
+   "ms": 15267,
+   "reason": "⚠️ THE ONE TO WATCH — 50.1% of the 30,000 ms budget and 39% of the whole suite's test time on its own. It generates thousands of plans across an exhaustive grid, which is the point: a sampled version could not make the claim in its title. It is the test that caused CI-TIMEOUT-01 (red on the old 5,000 ms default, at +1.4% on the day, having been over the line for weeks). ALLOWED, because exhaustiveness is doctrine here and the grid is the asset — but it has roughly one doubling of headroom left before the hard wall, and widening the grid again is a decision to make deliberately, not a diff to wave through."
+  },
+  {
+   "file": "lib/plan/emittedCopyGlyphs.test.ts",
+   "title": "no runner-facing string contains a section symbol (§)",
+   "ms": 3224,
+   "reason": "Generates a plan corpus and walks every emitted string. The cost is the corpus, not the scan; sharing one corpus across this file's cases is the obvious saving if it ever needs one."
+  },
+  {
+   "file": "lib/plan/emittedCopyGlyphs.test.ts",
+   "title": "the em-dash debt does not grow while BRAND-EMDASH-01 is open",
+   "ms": 2568,
+   "reason": "Same corpus as the case above, generated a second time. Genuinely reducible — it is here as a baselined number rather than a fix because BRAND-EMDASH-01 closing removes the case entirely."
+  },
+  {
+   "file": "lib/plan/noteDurationFormat.test.ts",
+   "title": "generated notes read in hours past the hour, and still exist",
+   "ms": 1284,
+   "reason": "TODO — state why this test is allowed to be slow."
+  },
+  {
+   "file": "lib/plan/qualityAeroFallback.test.ts",
+   "title": "NO quality session anywhere in the corpus is an aerobic row",
+   "ms": 4802,
+   "reason": "QUALITY-AERO-FALLBACK-01, 2026-09-19. A CORPUS assertion: a quality slot must never be filled by an aerobic row. The traced single case is asserted separately and is fast; this one exists because the fallback is reachable from ANY thin pool, so one plan cannot make the claim in its title. Already SAMPLED with a coprime stride of 31 (a prefix would over-sample whichever axis the grid varies slowest — the bias the liveness work hit three times), which took it from 67s unsampled to 16.8s at stride 7 to 4.8s here. Going faster means sampling below ~500 quality sessions, at which point it can pass while the defect is live in a cohort it happened to miss."
+  }
+ ]
 }

@@ -1571,7 +1571,32 @@ export function selectCatalogueSession(args: CatalogueSelectorArgs): SessionCata
   const candidates = preferredCategory
     ? (() => {
         const filtered = baseEligible.filter(r => r.category === preferredCategory)
-        return filtered.length > 0 ? filtered : baseEligible
+        if (filtered.length > 0) return filtered
+        // ⚠️ A QUALITY SLOT MUST NOT FALL BACK TO AN AEROBIC ROW
+        // (QUALITY-AERO-FALLBACK-01, 2026-09-19).
+        //
+        // The fallback was `baseEligible` — every eligible row regardless of
+        // category — so when no row of the preferred category existed the slot
+        // could be filled by `aerobic_steady`, a Z2 continuous run. The engine
+        // then relabels a time-goal session by distance, and the runner was
+        // shown **"5K-pace sustained"** over a Z2 easy run.
+        //
+        // MEASURED: 144 quality sessions across the corpus were `aerobic_steady`,
+        // and **144 of 144 carried a tempo/threshold/pace label**. All of them
+        // beginner time-target at 5K and 10K.
+        //
+        // ⚠️ I CAUSED THIS TODAY. Before §110 Am.2 a beginner had no quality
+        // slot, so this fallback was unreachable for them. Opening the slot
+        // exposed a latent hole in the fallback the same morning — the cost of
+        // making a dormant path live, which this repo has recorded before.
+        //
+        // Aerobic is the only category that is NOT a quality stimulus, so it is
+        // the only one excluded; a threshold slot may still fall back to
+        // race_specific or vo2max, which are real quality. If nothing non-aerobic
+        // is eligible the original fallback stands rather than returning empty —
+        // a plan with a slightly wrong session beats a plan that fails to build.
+        const nonAerobic = baseEligible.filter(r => r.category !== 'aerobic')
+        return nonAerobic.length > 0 ? nonAerobic : baseEligible
       })()
     : baseEligible
 

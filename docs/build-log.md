@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — QUALITY-AERO-FALLBACK-01 · I broke this at 9am and found it at 5pm
+**Shipped:** a quality session can no longer be an easy run wearing a tempo's name.
+
+**Dev learning:** Opening a dormant code path is a change to every rule that path touches. This morning I gave beginners with a time goal their first quality session. Beginners have a thin catalogue, so when no threshold row was eligible the selector fell back to *any* eligible row — and picked the Z2 aerobic filler. The label is generated from the race distance, so the runner saw "5K-pace sustained" over an easy run. The fallback had been wrong for as long as it existed; it was simply unreachable until I made it reachable.
+
+**Product/creator learning:** 144 sessions out of 290,000 is 0.05%, and every single one of them was in the cohort we care most about — beginners chasing a first time goal at 5K and 10K. A rate that rounds to zero can still be concentrated entirely on your priority-one runner. I nearly reported it as negligible on the percentage alone.
+
+**AI-building learning:** I found it while chasing something else, and only because I printed an actual plan instead of reading a counter. The variety fix I was testing "worked" — breaches went to zero — and when I printed what it prescribed, it had put the same aerobic filler in the slot and called it a tempo. The fix and the defect were the same mistake, one deliberate and one accidental. Counters told me it was better; the plan told me it was worse.
+
+**The honest bit:** the fix I was building got abandoned and the bug I wasn't looking for got shipped. That is the right trade, but it is not what I set out to do, and I would not have found it if I had trusted the green number.
+
+**Hook material:** We told beginner runners they were doing a 5K-pace session and gave them an easy jog. 144 times. I introduced it that morning.
+
+---
+
 ## 2026-09-19 — CB-PLAN-REVIEW-01 · EFFSESS-COLLISION-01 · S9-DURATION-FLOOR-01 — Phase 2, and what a big number was hiding
 **Shipped:** the plan now tells the runner the truth about itself, plus a session-deleting bug nobody had ever tested for.
 
