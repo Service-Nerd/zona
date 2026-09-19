@@ -1,6 +1,6 @@
 # Backlog — Zonna
 
-**State at end of 2026-09-19 (last ship `5bcffb7`):** `npm run verify` exit 0 — **2,348 tests / 263 files** · **121 invariants** · sweep **14,483 plans, 0 hard failures, no NEW violations above baseline** · `audit:plans` 7,601 findings, no regression against the committed baseline · `measure:fitness` at baseline exactly.
+**State at end of 2026-09-19 (last ship `782945e`):** `npm run verify` exit 0 — **2,365 tests / 264 files** · **122 invariants** · sweep **14,486 plans, 0 hard failures, no NEW violations above baseline** · `audit:plans` **7,569 findings, no regression** · `cohort:shape` and `measure:fitness` **re-baselined with declared reasons** (plans with NO quality **33.3% → 17.4%**; never-builds **improved** 18.8→17.2 masters, 15.6→13.6 standard) · `invariant:liveness` **119/122** · `audit-docs.sh` ALL CLEAN.
 
 **The engine day, in one line each.** Three items CLOSED as **withdrawn or negative results** (§23 already legislated `PEAK-VS-DELIVERED-BUILD-01` and the engine complies 15,464/15,464; §114 took §111's 93% hazard to **0.00%**; §52's share is a **fixed point** and cannot be driven down by shortening the long run). Two defect fixes SHIPPED (`V4-ANCHOR-01`, `QUALITY-ZERO-SCOPE-01`). One board ruling **CORRECT and DELIBERATELY NOT SHIPPED** (§110 Am.2 — blocked by the catalogue, **1 of 29 rows is beginner-eligible**).
 
