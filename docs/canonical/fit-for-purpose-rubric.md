@@ -56,6 +56,17 @@ violation** and **no coach objection**.
 | "the difficulty band should read training load" | **VETOED** — §44 point 3, Willy's own constraint. Do not re-propose. |
 | "the plan does not warn a knee-history marathoner they will walk" | It does: *"take the walk breaks early rather than late."* |
 
+## 3b. Build of 2026-09-19 — what was fixed, and what dissolved
+
+| item | outcome |
+|---|---|
+| 1. 100K plans shipping invalid | **FIXED** — `COPY-STALE-GEN-01`. 96 → 0. The repair existed and had one caller. |
+| 2. `DAYS-SHORT` silence | **FIXED** — `FREQ-SILENCE-01`. 5K 50.6% → 91.8%. |
+| 3. `WEEK1-LEAP` | **HALF-FIXED** — `WEEK1-LEAP-ABS-01` removed the ≤2 km artefact (17% of flags). The engine half **dissolved**: four caps were built and every one made `BINGE-WEEK` 8–12× worse, because a smaller week 1 with a correctly-sized long run is arithmetically lopsided. Residual filed as `WEEK1-FLOOR-SHORT-DIST-01`. |
+| 4. §111 cap-instead-of-refuse | **DISSOLVED ON MEASUREMENT.** For **100%** of §111-refused marathon cases the capped peak lands below the credible floor — median **22.4 km against 52.8 km**. Capping would hand every one of them a degenerate plan. **§111's door at ~12 km/week is arithmetically exactly right: 52.8 ÷ 4 = 13.2.** The board's earlier CORRECT-WITH-AMENDMENT ruling was made on a premise this measurement falsifies. |
+| 5. Ultra long-run bar | **FIXED** — `ULTRA-LR-BAR-01`, scoped at source. |
+| 6. High-volume beginner zero quality | **DISSOLVED TWICE.** The conflict scan found §110 Am. 2 ruled it *"CORRECT AS IS, unanimously"* this morning, with Hutchinson's evidence explicitly about **time-goal** races. And the cell Seiler worried about was **13.6% envelope incoherence** (`ENVELOPE-COHERENCE-01`), now 1.1%. Measured anyway: opening the slot takes zero-quality 16.4% → 4.2% with no error violations, at a cost of +0.57 warns/plan on the injury cohort — all of them §7's already-accepted "lumpy week on limited days" class. **Recorded so the option is not re-derived; not shipped, because the board ruled it today.** |
+
 ## 4. NOT MEASURED — the honest negative space
 
 - **`daysShortSilent` was declared as a metric and never implemented.** It
@@ -72,6 +83,12 @@ violation** and **no coach objection**.
   the single longest run with back-to-backs, so the right unit is different and
   picking a number without a board ruling would be an invented one. **Honest
   gap, filed, not papered over.**
+- **`WEEK1-FLOOR-SHORT-DIST-01` is open.** The week-1 floor is 35% of the
+  *curve* peak, which is level-derived — so a runner at 7 km/week effective
+  gets an 18 km week 1 (2.6×). §111 refuses that tail at the marathon and its
+  own closing line says *"short distances (5K/10K/HM) are outside §111
+  entirely"*. That is exactly where the leaps concentrate: **30% at 10K, 19% at
+  HM, 5% at marathon.** Every cap tested traded it for a lopsided week.
 - **Nothing has run on a device.**
 
 ## 5. The envelope weights are assumptions
