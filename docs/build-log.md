@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — LONG-SESSION-FUEL-01 · the rule already existed, gated on the wrong thing
+**Shipped:** a long run long enough to need fuel now says so at every distance, not just for ultras. Two other review items closed by measurement.
+
+**Dev learning:** I went looking for a missing principle and found a present one pointed at the wrong population. The fuelling cue had been written six days earlier, by the same board member, for the same hazard — and gated on the race being a 50K or 100K. A three-and-a-half-hour run is a three-and-a-half-hour run whether it is training for an ultra or a first marathon. My conflict scan missed it because I grepped section headings and it lives as a sub-section, so I was one step from adding a second, parallel fuelling note to a codebase whose whole doctrine is single ownership. The check that saved me was reading the code around the place I was about to edit.
+
+**AI-building learning:** the first version of the fix read the session's duration at the point the session is placed in the week. That number is wrong. At placement one runner's peak long run is 116 minutes; by the time she sees it, it is 124, because something downstream lengthens it. So the cue silently skipped every session sitting just under the threshold, which is the worst possible failure for a safety note — it works for the obvious cases and vanishes for the marginal ones. The invariant caught it on the first run, which is the entire argument for writing the rule and its check in the same commit rather than promising the check later.
+
+**The honest bit:** three items came out of the board review and I reported all three as "referred on". The founder asked why I was not just doing them. Fair. One dissolved the moment I read the note the plan already produces — it says "take the walk breaks early rather than late", which is exactly the thing I had told the board was missing, and no board member checked it either. One was already closed by a measurement I had run that morning. Only the third was real work. I had turned "I have not checked" into "this needs someone else", which is a much more comfortable sentence and not a true one.
+
+---
+
 ## 2026-09-19 — REENTRY-CAUSE-01 + DIFFICULTY-SHORTFALL-01 · the board reviewed 17 real plans, and killed my best finding
 **Shipped:** two board rulings. The engine stops telling ready runners they are coming back, and stops calling a plan "comfortable" while telling the runner it falls short.
 

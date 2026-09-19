@@ -14,6 +14,7 @@ import { strideCarrierDay, hasHillRestrictingInjury } from './neuromuscular'
 import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
 import { qualityCeilingFor } from './qualityCeiling'
+import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG } from './generationConfig'
 import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
@@ -110,6 +111,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-DIFFICULTY-ANNOTATED',
   'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
   'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE',
+  'INV-PLAN-LONG-SESSION-FUELLING-NOTE',
   'INV-PLAN-INTENSITY-ORDERING',
   'INV-PLAN-PHASE-FOCUS-REACHABLE',
   'INV-PLAN-PHASE-STRUCTURE',
@@ -2793,6 +2795,79 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         actual: 'comfortable',
         expected: "'demanding' | 'very_demanding'",
       })
+    }
+  }
+
+  // INV-PLAN-LONG-SESSION-FUELLING-NOTE (§24e Amendment, Coaching Board
+  // 2026-09-19, LONG-SESSION-FUEL-01) — a peak-phase long run long enough to
+  // need fuel must say so.
+  //
+  // MEASURED before the ruling: of 88 plans containing a session of two hours
+  // or more, only 27 carried any fuelling guidance ON that session. The
+  // never-run beginner marathoner was prescribed SEVEN sessions over two
+  // hours, up to 3h28, with no mention of fuelling anywhere in the plan —
+  // because §24e's cue was gated on the race being a 50K/100K rather than on
+  // the session's duration.
+  //
+  // ⚠️ SCOPE IS PEAK-PHASE, NON-DELOAD, AND THAT IS DELIBERATE, NOT A GAP.
+  // §24c/§96's reasoning holds: a cue on every long run is wallpaper. This
+  // checks the session where the duration makes fuelling necessary.
+  //
+  // ⚠️ MATCHES THE EXPORTED CONSTANTS, NOT PROSE. The copy is runner-facing
+  // and gets edited for tone; a prose matcher would break on a comma. The
+  // ultra arm interpolates a cadence, so it is prefix-matched on a shared
+  // exported constant rather than a literal typed out here.
+  // ⚠️ CHECKS THE PEAK LONG RUN — THE LONGEST ONE — NOT EVERY PEAK LONG RUN,
+  // AND THE REASON IS A REAL LIMITATION WORTH STATING.
+  //
+  // The producer adds the cue to every non-deload peak long run. The checker
+  // cannot match that scope, because A STEP-BACK WEEK IS INVISIBLE IN THE
+  // PLAN'S STRUCTURED DATA: week 15 of a marathon build is a step-back inside
+  // the peak phase, and it carries `type: 'normal'`, no `badge`, and
+  // `phase: 'peak'` — identical to the loading week beside it. The only thing
+  // that says "step-back" is the prose in its coach note. Scoping on
+  // `badge === 'deload'` therefore demanded a fuelling cue on a recovery week
+  // and failed the build, which is how this was found.
+  //
+  // Rather than teach the checker the producer's deload predicate — a checker
+  // sharing the producer's logic is blind to the producer being wrong, which
+  // is why `invariants.ts` is exempt from `deloadCadence` — this checks the one
+  // session the board actually ruled on: the longest long run of the peak
+  // phase, where duration makes fuelling necessary.
+  //
+  // WHAT THIS DOES NOT PROVE: that every other long session carries the cue.
+  // Measured coverage is 76 of 88 plans containing a 2h+ session (was 27).
+  // 🔎 FILED, NOT FIXED: a step-back week has no structured marker. That is a
+  // gap in the plan schema, not in this rule, and it will bite the next rule
+  // that needs to tell loading from recovery.
+  {
+    let peakLongRun: Session | null = null
+    let peakWeekN = 0
+    for (const w of plan.weeks) {
+      if (w.phase !== 'peak') continue
+      for (const sn of Object.values(w.sessions ?? {})) {
+        if (!sn || sn.role !== 'long_run') continue
+        if ((sn.duration_mins ?? 0) > (peakLongRun?.duration_mins ?? 0)) {
+          peakLongRun = sn; peakWeekN = w.n
+        }
+      }
+    }
+    const mins = peakLongRun?.duration_mins ?? 0
+    if (peakLongRun && mins >= GENERATION_CONFIG.FUELLING_PRACTICE_MIN_SESSION_MINS) {
+      const notes = (peakLongRun.coach_notes ?? []).filter(Boolean) as string[]
+      const fuelled = notes.some(n =>
+        n === FUELLING_PRACTICE_NOTE || n.startsWith(ULTRA_FUELLING_PREFIX))
+      if (!fuelled) {
+        violations.push({
+          code: 'INV-PLAN-LONG-SESSION-FUELLING-NOTE',
+          principle_ref: 'CoachingPrinciples §24e Amendment',
+          severity: 'error',
+          week: peakWeekN,
+          message: `Peak long run of ${mins} min carries no fuelling guidance (threshold ${GENERATION_CONFIG.FUELLING_PRACTICE_MIN_SESSION_MINS} min)`,
+          actual: `${notes.length} note(s), none about fuelling`,
+          expected: 'a fuelling practice or cadence cue',
+        })
+      }
     }
   }
 

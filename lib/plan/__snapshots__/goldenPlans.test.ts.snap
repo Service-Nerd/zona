@@ -901,6 +901,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         "sat": {
           "coach_notes": [
             "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
           "distance_km": 17,
@@ -993,6 +994,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         "sat": {
           "coach_notes": [
             "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
           "distance_km": 16.5,
@@ -1184,6 +1186,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         "sat": {
           "coach_notes": [
             "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
           "distance_km": 16.5,
@@ -6321,6 +6324,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "sun": {
           "coach_notes": [
             "Step-back week. Easy aerobic — let the legs absorb last week's peak before the next push.",
+            "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
           "distance_km": 24,
@@ -6441,6 +6445,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "coach_notes": [
             "Easy first. Hit goal pace on tired legs.",
             "Final 40% at MP: 4:37 /km.",
+            "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
           "distance_km": 29,
@@ -9608,6 +9613,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         "sun": {
           "coach_notes": [
             "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
           "distance_km": 29.5,
@@ -9726,6 +9732,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         "sun": {
           "coach_notes": [
             "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it.",
           ],
           "detail": null,
           "distance_km": 29.5,

@@ -46,14 +46,43 @@ target". 751 → 0. Cohort grid `difficultyComfortablePct` **54.5% → 22.7%**.
 **F3 — not a correctness finding.** All-easy for the beginner marathoner was
 ruled CORRECT AS IS earlier the same day and is not reopened.
 
-## Open, referred on
+## The three "open" items, resolved
 
-- **Sims — fuelling guidance on any session over ~2 hours.** No principle covers
-  it; no seat contradicted her. New scope, needs its own sitting. Hutchinson carries.
+**M3 — WITHDRAWN. My premise was false, and no seat checked it either.**
+I told the board *"the plan knows the runner will not have run past 20 km and
+does not say so"*. It does say so. `long_run_shortfall_note` reads: *"Your
+longest run tops out at 2h 20. For a race you'll likely be moving for around
+4h 55 … Expect the last stretch of race day to be new territory; go out slower
+than feels right and **take the walk breaks early rather than late**."* Willy's
+reservation on the LOAD stands; the honesty complaint does not.
+
+**E5 — CORRECT AS IS, McMillan's dissent recorded. CLOSED.**
+Measured: only **5% of plans** contain a week where the long run exceeds 70% of
+that week, worst case **74.1%**; §114 already took weeks above 90% to **0.00%**.
+Both available levers are closed: capping the share was built, measured and
+reverted **the same day** (`S52-LOPSIDED-BOUND-01` — shortening the long run
+also shortens the week, so the share is a **fixed point**), and refusing the
+runner is a dropout where the plan already names the binding constraint and the
+lever (*"running 4 days instead of 3 is the lever"*). At three days a week with
+a 30-minute weekday cap the long run is arithmetically most of the week; that is
+the shape of the constraint, not a defect in the engine. **McMillan's "I would
+not hand this over" stands as a recorded dissent, not a veto.**
+
+**Sims's fuelling point — CORRECT, SHIPPED.** §24e Amendment, below.
+
+## Also referred on
+
+- ⚠️ **My conflict scan MISSED §24e.** I told the board "no fuelling principle
+  exists". One did — `CAT-ULTRA-FUELLING-01`, Sims-led, 2026-09-13 — scoped to
+  the **ultra** long run. I was one step from adding a second, parallel fuelling
+  note. The real finding was better than the one I brought: **same hazard, same
+  board member, same mechanism, excluded by a distance bucket.**
 - **McMillan — non-intensity variety** in the beginner block (terrain, named
   strides focus). Seiler will object to anything that costs Z3 time.
-- **E5** — the long run is 69% of the week behind a 30-minute weekday cap.
-- **M3** — the plan knows the runner will not have run past 20 km and does not say so.
+- 🔎 **A step-back week has no structured marker** (`type: 'normal'`, no badge,
+  `phase: 'peak'` — identical to the loading week beside it). Found because
+  scoping the fuelling invariant on `badge === 'deload'` demanded a cue on a
+  recovery week and failed the build. Filed, not fixed.
 
 ## What this review does not prove
 

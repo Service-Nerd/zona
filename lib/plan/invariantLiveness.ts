@@ -1,3 +1,4 @@
+import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
@@ -600,6 +601,22 @@ export const MUTATIONS: Mutation[] = [
 
   // …and the other arm: the note present with no cause stamped at all, which is
   // what a future caller writing the note by a second path would produce.
+  // §24e Am. / INV-PLAN-LONG-SESSION-FUELLING-NOTE — strip the fuelling cue
+  // from the peak long run. The generic 'drop every meta note' mutation cannot
+  // reach it: this note lives on the SESSION, not in meta.
+  { name: 'strip the fuelling cue from the peak long run', apply: p => {
+    for (const w of p.weeks) {
+      if ((w as unknown as { phase?: string }).phase !== 'peak') continue
+      for (const sn of Object.values(w.sessions ?? {})) {
+        const s2 = sn as unknown as { role?: string; coach_notes?: string[] }
+        if (!s2 || s2.role !== 'long_run' || !s2.coach_notes) continue
+        s2.coach_notes = s2.coach_notes.filter(
+          n => !(n === FUELLING_PRACTICE_NOTE || n.startsWith(ULTRA_FUELLING_PREFIX)),
+        ) as string[]
+      }
+    }
+  } },
+
   { name: 'reentry note with no stamped cause', apply: p => {
     const meta = p.meta as unknown as Poke
     delete meta.intensity_reentry_cause

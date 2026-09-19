@@ -1485,6 +1485,66 @@ into the copy. `verify:parity`: 864 of 5,832 cases changed, **432/972 at 50K and
 
 ---
 
+### §24e Amendment — the fuelling cue is gated on DURATION, not on the race being an ultra (Coaching Board 2026-09-19, LONG-SESSION-FUEL-01)
+
+**Principle.** The peak-phase long run carries fuelling guidance whenever its
+duration reaches `FUELLING_PRACTICE_MIN_SESSION_MINS`, at **every** race
+distance. Where the catalogue supplies an ultra cadence it is used verbatim;
+otherwise the runner gets **practice** guidance carrying no cadence.
+
+**Why — the hazard Sims named is a DURATION hazard, and the gate named a race.**
+§24e's cue (CAT-ULTRA-FUELLING-01, 2026-09-13) was scoped
+`distKey === '50K' || '100K'`. A long run of three and a half hours is a
+low-energy-availability event whatever race it is training toward.
+
+**Measured.** Of 88 plans containing a session of two hours or more, only **27
+carried any fuelling guidance on that session — 69% silent**. The flagship case
+is worse: the **never-run beginner marathoner is prescribed SEVEN sessions over
+two hours, topping out at 3h28, with no mention of fuelling anywhere in the
+plan.** After: **76 of 88**.
+
+**Sims, recorded.** The under-fuelled first-time marathoner is disproportionately
+a woman in her twenties or a peri-menopausal returner. The runner who bonks at
+2h30 unfuelled does not conclude *"I needed to eat"*, she concludes she cannot
+do this — so this is an **adherence** failure as much as a health one, which is
+the founder's own question.
+
+**⚠️ PRACTICE, NEVER A NUTRITION PRESCRIPTION.** No grams, no calories, no
+schedule. Zonna holds no dietary data (ADR-011) and must not imply
+individualised nutrition advice. The note tells the runner to rehearse what they
+already intend to use.
+
+**⚠️ `distance_km` (or its bucket) standing in for a coaching classification is
+now the FIFTH instance** — LR-CAP-BLIND-01, SESSION-KM-01/02, V4-ANCHOR-01,
+QUALITY-ZERO-SCOPE-01. It is a grep, not a discovery.
+
+**⚠️ PEAK-ONLY AND NON-DELOAD ARE PRESERVED, deliberately.** §24c/§96's
+reasoning holds at every distance: a cue on every long run is wallpaper. E1
+would otherwise take it seven times.
+
+**⚠️ IT RUNS AS A POST-PASS, AND THE PLACEMENT IS THE FIX.** The first version
+sat at the placement boundary and read the long run's duration there. Measured:
+at placement H1's peak long run is **116 minutes**; the runner receives **124**.
+Something downstream lengthens it, so a duration read at placement is STALE and
+the cue silently missed every session sitting just under the threshold. The
+invariant caught it on the first run — the argument for shipping a rule and its
+check in one commit.
+
+**Config.** `GENERATION_CONFIG.FUELLING_PRACTICE_MIN_SESSION_MINS = 120`.
+**120 is the defensible part:** carbohydrate intake during exercise has strong
+support beyond roughly two hours and thin support below it, so a lower
+threshold would be Zonna overclaiming — the failure mode Hutchinson's seat
+exists to catch.
+
+**Enforced by** `INV-PLAN-LONG-SESSION-FUELLING-NOTE`, **error** severity.
+⚠️ It checks the **longest** peak long run, not every one, because **a step-back
+week is invisible in the plan's structured data** (`type: 'normal'`, no badge,
+`phase: 'peak'` — identical to the loading week beside it; only its prose says
+otherwise). 🔎 **Filed, not fixed:** that missing marker will bite the next rule
+that needs to tell loading from recovery.
+
+---
+
 ## 25. Race-specific long run (HM and marathon, time-targeted)
 
 **Principle.** Peak phase of a time-targeted HM or marathon plan MUST contain at least one long run with an embedded race-pace segment. The segment is the final 25–40% of the long run (the runner is already aerobically tired when they hit goal pace, simulating the late-race state). Naming convention: "Long run with HM-pace finish" for HM, "Marathon-pace long run" for marathon. Distances ≤10K do not require this — their long run remains aerobic.

@@ -34,7 +34,18 @@ describe('plan notes never print raw minutes (ADR-015)', () => {
       // A RANGE in the sub-hour band reads naturally and is not a duration of a
       // run: "Fuel every 20–25 minutes". formatDuration would give
       // "20 min–25 min", which is worse. Deliberate, and narrow.
+      // ⚠️ The word "every" may now come from a SHARED CONSTANT rather than a
+      // literal. §24e's cadence note was `Fuel every ${min}–${max} minutes`;
+      // LONG-SESSION-FUEL-01 moved the "Fuel every " prefix into
+      // `fuellingNotes.ts` so the producer and `INV-PLAN-LONG-SESSION-FUELLING-NOTE`
+      // share one definition instead of two copies of a prose fragment.
+      // The exemption is WIDENED HERE, in the open, rather than by moving the
+      // template out of the one file this guard scans — which would have made
+      // it pass by becoming invisible, and that is not the same as passing.
+      // Intent is unchanged: a sub-hour cadence RANGE reads naturally, and
+      // formatDuration would render "20 min–25 min", which is worse.
       if (/every \$\{[^}]*\}[–-]\$\{[^}]*\} minutes/.test(lit)) continue
+      if (/^`\$\{[A-Z_]*FUEL[A-Z_]*\}\$\{[^}]*\}[–-]\$\{[^}]*\} minutes/.test(lit)) continue
       offenders.push(`${src.slice(0, m.index).split('\n').length}: ${lit.slice(0, 90)}`)
     }
     expect(

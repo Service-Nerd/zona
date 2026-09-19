@@ -14,6 +14,7 @@ import {
   formatDate, addDays, parseDateLocal,
 } from './length'
 import { qualityCeilingFor } from './qualityCeiling'
+import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 // ADR-015 / INV-FMT-001 — `lib/format.ts` is the SOLE owner of every duration a
 // runner reads, and the rule is locked: under 60 minutes reads "45 min", at or
@@ -934,6 +935,11 @@ function qualitySession(
 // the method") — controlled-threshold execution cue. One sentence, dry, echoes
 // BRAND.voiceAnchor "Hold the zone". Placed on the FIRST genuine threshold session
 // of the plan only (taught once, then trusted — repetition turns it to wallpaper).
+/**
+ * §115 — fuelling PRACTICE, not a nutrition prescription (Sims; ADR-011 has no
+ * dietary data and individualised nutrition advice is out of scope). Names the
+ * rehearsal, not the quantity.
+ */
 const CONTROLLED_THRESHOLD_CUE = 'Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone.'
 
 
@@ -1865,6 +1871,7 @@ function makeQualitySession(args: {
     : notes.length === 2 ? [notes[0], notes[1]] as [string, string]
     : [notes[0], notes[1], notes[2]] as [string, string, string]
 
+
   // SC-08 vo2max, generalised 2026-09-03 — a scaled paced-rep session is
   // STRUCTURE-DRIVEN: its size is the rep structure's own length (work +
   // recovery), converted to distance via the WORK STEP'S OWN pace — NOT
@@ -1942,6 +1949,7 @@ function makeQualitySession(args: {
           ? segmentPricedKm(fixedShape.mainMins, fixedShape.workPaceMinPerKm)
           : distKm
   const rounded = roundDistance(effectiveDistKm)
+
   // CLASSIFY-STIMULUS-01 — stamp the stimulus from the trusted generator label
   // now, while it is canonical, so the AI enricher rewriting the name later can
   // never reclassify this session. `label`/`zone` here already reflect every
@@ -3360,18 +3368,6 @@ function buildWeekSessions(
   // (§24c/§96's own reasoning: one cue on the session where it matters, not a
   // note on everything). Peak is where the durations reach the 3–4 h at which
   // fuelling stops being optional.
-  const isUltra = distKey === '50K' || distKey === '100K'
-  if (isUltra && phase === 'peak' && !isDeload && sessions[longDay]) {
-    const fuel = ultraFuellingCadenceMins(catalogue)
-    if (fuel) {
-      appendCoachNote(
-        sessions[longDay]!,
-        `Fuel every ${fuel.min}–${fuel.max} minutes, starting in the first hour. ` +
-        'Race day is not the day to find out what your stomach tolerates.',
-      )
-    }
-  }
-
   used.push(longDay)
 
   // ── 2. Quality session(s) ─────────────────────────────────────────────────
@@ -6957,6 +6953,53 @@ function buildRulePlanOnce(
   // pass sized was not the week the runner receives. Same lesson §6 Am.1's own
   // comment records: anchor on the number no later pass will move.
   applyTaperDeliveredDepth(weeks, pace, peakKm, input.race_distance_km, sessionFloorsFor(input.longest_recent_run_km))
+
+  // §24e AMENDMENT (Coaching Board 2026-09-19, LONG-SESSION-FUEL-01) — a long
+  // run long enough to need fuel says so. THE GATE IS DURATION, NOT THE RACE'S
+  // DISTANCE BUCKET.
+  //
+  // ⚠️ MEASURED: of 88 plans containing a session of two hours or more, only 27
+  // carried any fuelling guidance ON that session — 69% silent — and the
+  // never-run beginner MARATHONER is prescribed SEVEN sessions over two hours,
+  // up to 3h28, with no mention of fuelling anywhere in the plan. §24e's cue
+  // was gated `distKey === '50K' || '100K'`, so the identical hazard at the
+  // identical duration was excluded by the race's name. Sims led the original
+  // ruling and the hazard she named is a DURATION hazard.
+  //
+  // ⚠️ `distance_km` (or its bucket) standing in for a coaching classification
+  // is the FIFTH instance in this repo — LR-CAP-BLIND-01, SESSION-KM-01/02,
+  // V4-ANCHOR-01, QUALITY-ZERO-SCOPE-01. It is a grep, not a discovery.
+  //
+  // ⚠️ IT RUNS HERE, AS A POST-PASS, AND THAT PLACEMENT IS THE WHOLE FIX.
+  // The first version sat at the placement boundary beside §80 and read the
+  // long run's `duration_mins` there. Measured: at placement H1's peak long run
+  // is 116 minutes; by the time the runner sees it, it is 124. Something
+  // downstream lengthens it, so a duration read at placement is STALE and the
+  // cue silently missed every session sitting just under the threshold. Caught
+  // by the invariant on the first run, which is the argument for shipping the
+  // rule and its check together.
+  //
+  // PEAK-ONLY AND NON-DELOAD PRESERVED (§24c/§96): a cue on every long run is
+  // wallpaper. Ultra behaviour is unchanged — where the catalogue supplies a
+  // cadence it is used verbatim; other distances get PRACTICE guidance with no
+  // cadence, because inventing one would be a nutrition prescription Zonna has
+  // no data to support (ADR-011).
+  {
+    const raceKey = raceDistanceKey(input.race_distance_km)
+    const isUltraRace = raceKey === '50K' || raceKey === '100K'
+    const cadence = isUltraRace ? ultraFuellingCadenceMins(catalogue) : null
+    for (const w of weeks) {
+      if (w.phase !== 'peak') continue
+      for (const sn of Object.values(w.sessions ?? {})) {
+        if (!sn || sn.role !== 'long_run') continue
+        if ((sn.duration_mins ?? 0) < GENERATION_CONFIG.FUELLING_PRACTICE_MIN_SESSION_MINS) continue
+        appendCoachNote(sn, cadence
+          ? `${ULTRA_FUELLING_PREFIX}${cadence.min}–${cadence.max} minutes, starting in the first hour. ` +
+            'Race day is not the day to find out what your stomach tolerates.'
+          : FUELLING_PRACTICE_NOTE)
+      }
+    }
+  }
 
   // V8 / CD-20 (SC-01) — record the withheld second quality session.
   //

@@ -1071,6 +1071,22 @@ export const GENERATION_CONFIG = {
   // threshold the body has obvious headroom for the 15% allowance window.
   RETURNING_RUNNER_VOLUME_THRESHOLD_PCT: 50,  // % of peakKm
 
+  // ── §115 fuelling practice threshold ────────────────────────────────────────
+  // A session at or above this duration carries fuelling PRACTICE guidance
+  // (Coaching Board 2026-09-19, LONG-SESSION-FUEL-01).
+  //
+  // 120 minutes, and the number is the defensible part: carbohydrate intake
+  // during exercise has strong support beyond roughly two hours and thin
+  // support below it, so a lower threshold would be Zonna overclaiming — the
+  // failure mode Hutchinson's seat exists to catch. Measured before the
+  // ruling: 69% of plans containing a 2h+ session said nothing about fuelling
+  // on that session, and the never-run beginner marathoner gets SEVEN such
+  // sessions (up to 3h28) with no mention anywhere in the plan.
+  //
+  // It governs a NOTE, never a quantity. Zonna holds no dietary data (ADR-011)
+  // and prescribes no grams, calories or schedule.
+  FUELLING_PRACTICE_MIN_SESSION_MINS: 120,
+
   // ── Compressed-plan detection threshold ─────────────────────────────────────
   // After buildVolumeSequence applies the 10% post-process cap, a plan is
   // considered "compressed" if peak-phase weeks never reach this fraction of
