@@ -549,7 +549,12 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 - 🔴 **`FOUNDATION-DECIDE-LATER-01` (filed below).** The foundation-block sheet is touchpoint 5 for nearly every one of these 500 runners, and **"Decide later" never comes** — the modal has exactly one trigger, at generation.
 - 🔴 **`FOUNDATION-ADD-FAIL-01` (filed below).** The founder could not add a foundation block at all, and the error path records nothing.
 - 🟡 **`ONBOARD-SKIP-LABEL-01` (filed below).** Touchpoints 1–2: tapping "Connect later" tells the runner it is connecting.
-- 🟡 **§44's `block` tier** (open sub-question under the resolved `PREP-ACK-UNLOCKS-MARATHON-01`). Marathon on **fewer than 3 days a week is a hard refusal with no acknowledgement path**. A charity first-timer who can genuinely only run twice a week is refused outright. **Willy's structural argument is the thing that would be overruled — Coaching Board, not a docs edit.**
+- ✅ ~~**§44's `block` tier**~~ **CLOSED 2026-09-18 — Coaching Board ruled CORRECT AS IS, no artifacts required.** *(Stale until 2026-09-19; the sitting is
+  in this file under § GOVERNANCE TRIAGE and this bullet still called it open.)* Willy's arithmetic carried: at 3 days/week the long run is **already
+  50% of the week** with ten points under §52's 60% ceiling, so removing a day pushes the same run through it. Hutchinson drew the distinction the
+  founder's ruling turns on — a `warn` acknowledgement says *"I accept a worse outcome"*, which is the runner's call; **an acknowledgement cannot
+  ratify a plan that violates a ceiling**. ⚠️ **What it does NOT license:** the refusal is correct, its PRESENTATION was not — that was
+  `REFUSAL-SCREEN-01`, and §52 computes alternatives the UI used to discard.
 - 🟡 **`GTM-CHARITY-09`** — support is one inbox, and this cohort arrives together with the same few questions.
 - 🟡 **Minimum iOS 16.6**, no Android, no mobile-web dashboard — a handful of 500 cannot install at all.
 - ⚪ **`CAT-DEPTH-01`** — personalisation has no inventory; a beginner's plan is thin by construction. Four measured attempts have failed; **do not retry blind**.
@@ -1274,7 +1279,13 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 >
 > ⚠️ **§52 was misread in the enforcing code.** It justified the arm on the long run being "§52-exempt, not permitted to trim". §52 is a 60% **ceiling** whose FIRST named lever is *"(a) reduce the long run"*, and below 60% it grants no protection at all — only 25 of the 202 were near it.
 >
-> ⚠️ **The root mechanism is §45, not §94** — all 202 jumps are legal ONLY via §45's `+5km absolute` allowance. Filed as `LR-ABS-ALLOWANCE-01` below.
+> ⚠️ **The root mechanism is §45, not §94** — all 202 jumps are legal ONLY via §45's `+5km absolute` allowance.
+> ⚠️ **DANGLING REFERENCE FIXED 2026-09-19 (`XREF-DANGLE-01`).** This line promised an entry for `LR-ABS-ALLOWANCE-01` further down and there was none.
+> That ID was a duplicate, removed the same day by `da96f3c`, which repointed **five** files — CoachingPrinciples §94 Am.1, `plan-invariants.md`,
+> `feature-registry.md`, the decision record and `invariants.ts` — and **missed this one back-reference in the backlog it was editing**.
+> The real item is **`LR-ABS-CAP-LOWVOL-01`, SHIPPED 2026-09-17 as §45 Amendment 2** (`LONG_RUN_ABS_STEP_MAX_PCT_OF_LR = 50`, so the absolute
+> arm is `min(5 km, 50% of prior LR)`; worst in-plan jump 83% → 57%). **Its residual is `S45-ABS-STEP-01`** — the 50% bound only bites below a
+> 10 km prior long run, so +5 km on a 10.5 km long run is still +48%.
 >
 > Live result: **764 violations / 651 plans (23.3%)**, matching prediction; sweep firing rate **6.3%**. Record: `docs/decisions/coaching-board-2026-09-17-ramp-guard.md`.
 >
@@ -2119,7 +2130,7 @@ never firing in production for months). If the answer to *"what makes this run?"
   - 🔴 **THE REAL DEFECT, and it is sharper than the framing above: §79's intensity re-entry window is SYSTEMATICALLY INERT.** §79 says *"withhold VO2max/hills for the opening `RETURNING_RUNNER_INTENSITY_REENTRY_WEEKS` so quality leads with tempo/threshold"* — an ORDERING claim. It is encoded as *"no VO2max-category session in weeks 1–`intensity_reentry_weeks`"*: **CALENDAR** weeks. Weeks 1–4 are the all-easy BASE phase, where there is no quality to withhold, so the window closes the week before quality begins.
   - 📐 **MEASURED (`scripts/measure-reentry-reach.ts`, 72-plan grid): of 48 plans with re-entry ACTIVE, the first quality session falls inside the protective window in 0 of 48 (0.0%), and is Zone 4–5 anyway in 32 of 48 (66.7%).**
   - ⚠️ **`INV-PLAN-RETURNING-INTENSITY-REENTRY` is a DECORATIVE invariant.** It encodes the same calendar reading, so it is trivially true on every plan and **cannot fail** — which is exactly why it sits in the liveness baseline as never-woken. The check and the defect share a premise.
-  - 🔴 **Why no harness caught it: the cohort grid never sets `training_age`, so §79's intensity lift never fires anywhere in the primary verification surface.** `verify`, `verify:parity` and `cohort:shape` are all green on a mechanism they cannot reach. Filed as GRID-COVERAGE-TRAINING-AGE-01 below.
+  - 🔴 **Why no harness caught it: the cohort grid never sets `training_age`, so §79's intensity lift never fires anywhere in the primary verification surface.** `verify`, `verify:parity` and `cohort:shape` are all green on a mechanism they cannot reach. ✅ **RESOLVED by `GRID-COVERAGE-01`, shipped 2026-09-14** — `cohortGrid.ts:76` now carries `TRAINING_AGES = [undefined, '2-5yr', '5yr+']` as a real axis, so §79's lift fires in the grid. ⚠️ **This line promised an entry for `GRID-COVERAGE-TRAINING-AGE-01` further down and there was none** — second instance of the same defect as the `LR-ABS-ALLOWANCE-01` reference, found by `XREF-DANGLE-01`'s guard rather than by reading.
   - ❌ **THREE fixes attempted, all reverted, recorded so they are not retried blind:**
     1. Adding a `structuralBeginner` arm to `intensityReentryActive` — **no-op** (window still calendar-anchored), and it would have stamped `intensity_reentry_active: true` on every beginner, a false claim.
     2. Re-anchoring the window to quality onset — real progress, 66.7% → 33.3%, but incomplete.

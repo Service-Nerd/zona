@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — XREF-DANGLE-01 · the doc fix that missed the file it was editing
+**Shipped:** a test that fails the build when a backlog line says "filed as X below" and there is no X below.
+
+**Dev learning:** The origin is almost funny. A commit two days ago removed a duplicate item id and carefully repointed five files — the constitution, the invariant registry, the feature registry, the decision record, the code. It missed a back-reference in the backlog, which is the file it was editing. That line has read "Filed as `LR-ABS-ALLOWANCE-01` below" ever since, with nothing below, through every doc audit. The audit script reported ALL CLEAN every single time, correctly, because an unkept forward reference is in none of the five categories it checks. An audit is only ever as wide as its list — we already had that written down, and the list still did not grow.
+
+**Product/creator learning:** I built the obvious version first: every item id mentioned anywhere must resolve to a definition. 156 hits. Almost all of them historical references to finished work, plus capitalised English that looks like an id — DROP-OUT, NO-OP, JSON-LD. Shipping that would have been worse than shipping nothing, because this codebase has three separate incidents recorded where a noisy check got switched off and the switching-off was indistinguishable from never having built it. So I narrowed it to sentences that assert the entry is *here* — "filed as X **below**". Five promises in the whole repo. Two unkept. No false positives.
+
+**AI-building learning:** The narrow version found the second defect by itself. I had read the file, reported one dangling reference to the founder, and felt reasonably thorough. The regex found `GRID-COVERAGE-TRAINING-AGE-01` — same shape, same "filed as … below", also nothing below — in a section I had skimmed past. My hit rate reading was 1 of 2. The check's was 2 of 2, in 80 milliseconds, and it will keep being 100% forever.
+
+**The honest bit:** neither unkept promise was abandoned work. Both were actually delivered, under a different id — `LR-ABS-CAP-LOWVOL-01` and `GRID-COVERAGE-01`. So nothing was lost except the bookkeeping, and I want to resist the instinct to call that harmless. The open list is the thing we plan from. An item that reads open and is done costs a re-investigation; an item that reads filed and does not exist costs the work. Both are the list lying, and I only went looking because someone asked me to categorise it.
+
+**Hook material:** A commit fixed a stale reference in five files and missed the sixth. The sixth was the file it was editing.
+
 ## 2026-09-18 — S106-RACE-PEAK-01 · the gate was counting the marathon as training
 **Shipped:** §111's peak-over-base ratio no longer counts the race week, so a beginner with a long runway is admitted from 12 km/week instead of 16.
 
