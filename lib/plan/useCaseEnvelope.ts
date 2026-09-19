@@ -60,11 +60,10 @@ export const DAYS_BANDS: EnvelopeBand<number>[] = [
 ]
 
 /** Structural fitness level. */
-export const LEVEL_BANDS: EnvelopeBand<'beginner' | 'intermediate' | 'experienced'>[] = [
-  { value: 'beginner',     weight: 0.45, why: 'Priority one per the founder: first-timers, minimise dropouts.' },
-  { value: 'intermediate', weight: 0.40, why: 'Has run before but has never followed structured training; the biggest single group.' },
-  { value: 'experienced',  weight: 0.15, why: 'Smallest group; also the loudest if the coaching is wrong.' },
-]
+// LEVEL_BANDS (flat, volume-independent) was DELETED 2026-09-19, not left in
+// place "in case". It was superseded by `levelBandsFor`, nothing read it, and
+// an exported table nothing reads is decorative config — the class
+// `configConsumer.test.ts` exists to catch. Deleting beats deprecating.
 
 /** Injury history. Roughly half of recreational runners report something. */
 export const INJURY_BANDS: EnvelopeBand<string[]>[] = [
@@ -169,6 +168,50 @@ export const RUNWAY_BANDS_BY_DISTANCE: Record<number, EnvelopeBand<number>[]> = 
          { value: 36, weight: 0.25, why: 'A long, properly periodised ultra build.' }],
 }
 
+/**
+ * LEVEL IS CONDITIONAL ON VOLUME, AND IT HAS TO BE (ENVELOPE-COHERENCE-01).
+ *
+ * ⚠️ MEASURED FLAW IN THIS FILE'S FIRST VERSION: level and volume were
+ * independent bands, so the envelope constructed a "beginner" running 50 km a
+ * week — **7.1% of the entire population weight on its own, 13.6% across all
+ * implausible pairings.** §79 defines `fitness_level` as the STRUCTURAL axis,
+ * derived from volume, so that runner contradicts the engine's own model. The
+ * headline fit-for-purpose number was being computed over people who cannot
+ * exist. This is the same independence artefact the file's header criticises
+ * `cohortGrid` for, reproduced here within a day of writing that criticism.
+ *
+ * ⚠️ A LOW-VOLUME "EXPERIENCED" RUNNER IS **NOT** IMPLAUSIBLE and is kept: a
+ * returning runner with five years behind them and 8 km this week is real, and
+ * §29's fresh-return scaling exists precisely for them. Only the high-volume
+ * beginner is removed, because that one contradicts a definition rather than
+ * being merely uncommon.
+ *
+ * Weights are shares WITHIN each volume band and sum to 1, so the volume
+ * distribution above is unchanged by this conditioning.
+ */
+export function levelBandsFor(weeklyKm: number): EnvelopeBand<'beginner' | 'intermediate' | 'experienced'>[] {
+  if (weeklyKm <= 12) return [
+    { value: 'beginner',     weight: 0.70, why: 'At this volume most runners are structurally beginners, and this is the founder priority cell.' },
+    { value: 'intermediate', weight: 0.25, why: 'Has run before and is currently ticking over at low volume.' },
+    { value: 'experienced',  weight: 0.05, why: 'A genuinely experienced runner at 12 km/week is returning from a layoff — §29 territory, real but uncommon.' },
+  ]
+  if (weeklyKm <= 25) return [
+    { value: 'beginner',     weight: 0.45, why: 'The modal charity entrant sits here and is still structurally a beginner.' },
+    { value: 'intermediate', weight: 0.45, why: 'Runs regularly without structured training; the biggest single group overall.' },
+    { value: 'experienced',  weight: 0.10, why: 'Rebuilding after time off.' },
+  ]
+  if (weeklyKm <= 40) return [
+    { value: 'beginner',     weight: 0.15, why: 'Possible but unusual: high mileage with no training history at all.' },
+    { value: 'intermediate', weight: 0.55, why: 'The centre of gravity for a day-job runner at this volume.' },
+    { value: 'experienced',  weight: 0.30, why: 'Consolidated base, races regularly.' },
+  ]
+  return [
+    { value: 'beginner',     weight: 0.02, why: 'Near-impossible by §79, which derives the structural level from volume. Kept non-zero so the cell is exercised, not so it is weighted.' },
+    { value: 'intermediate', weight: 0.38, why: 'A committed amateur who has never followed a structured block.' },
+    { value: 'experienced',  weight: 0.60, why: 'At 40+ km/week sustained, the runner is experienced by any reading of §79.' },
+  ]
+}
+
 export interface WeightedCase { input: GeneratorInput; weight: number; label: string }
 
 /**
@@ -191,7 +234,7 @@ export function distanceEnvelope(distanceKm: number, planStart = '2026-11-02'): 
   const out: WeightedCase[] = []
   for (const v of volumes)
   for (const d of DAYS_BANDS)
-  for (const l of LEVEL_BANDS)
+  for (const l of levelBandsFor(v.value))
   for (const inj of INJURY_BANDS)
   for (const a of AGE_BANDS)
   for (const g of GOAL_BANDS)

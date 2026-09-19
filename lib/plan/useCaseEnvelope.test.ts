@@ -4,7 +4,7 @@ import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
 import { sessionKmSelfPaced } from './sessionDistance'
 import { auditPlanQuality } from './planQuality'
-import { distanceEnvelope, DISTANCE_BANDS, MARATHON_VOLUME_BANDS, DAYS_BANDS, LEVEL_BANDS,
+import { distanceEnvelope, DISTANCE_BANDS, MARATHON_VOLUME_BANDS, DAYS_BANDS, levelBandsFor,
   VOLUME_BANDS_BY_DISTANCE } from './useCaseEnvelope'
 
 /**
@@ -37,8 +37,14 @@ const STRIDE = 29                    // coprime with the 9,216 layout
 describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
 
   it('the envelope weights sum to 1 on every axis — an unnormalised band silently re-weights everything', () => {
+    // ⚠️ `levelBandsFor` REPLACED the flat LEVEL_BANDS when level became
+    // conditional on volume (ENVELOPE-COHERENCE-01). Asserting the old flat
+    // table here would check a constant the builder no longer reads — a
+    // decorative assertion. Every conditional band set is checked instead.
     for (const [name, bands] of [
-      ['volume', MARATHON_VOLUME_BANDS], ['days', DAYS_BANDS], ['level', LEVEL_BANDS],
+      ['volume', MARATHON_VOLUME_BANDS], ['days', DAYS_BANDS],
+      ['level@10', levelBandsFor(10)], ['level@20', levelBandsFor(20)],
+      ['level@35', levelBandsFor(35)], ['level@60', levelBandsFor(60)],
     ] as const) {
       const sum = bands.reduce((s, b) => s + b.weight, 0)
       expect(Math.abs(sum - 1), `${name} bands sum to ${sum}`).toBeLessThan(0.001)
@@ -46,7 +52,7 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   })
 
   it('every band carries a stated reason — a weight with no argument is a guess in disguise', () => {
-    for (const b of [...MARATHON_VOLUME_BANDS, ...DAYS_BANDS, ...LEVEL_BANDS]) {
+    for (const b of [...MARATHON_VOLUME_BANDS, ...DAYS_BANDS, ...levelBandsFor(10), ...levelBandsFor(60)]) {
       expect(b.why.length, `band ${String(b.value)} has no why`).toBeGreaterThan(20)
     }
   })
@@ -85,8 +91,15 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   //   whole product 66.7 -> 78.0
   // Floors sit a little under measured so ordinary noise does not fail a build;
   // a real regression still does.
+  // Floors after ENVELOPE-COHERENCE-01 made level conditional on volume.
+  // Measured: 5K 100% · 10K 78.3% · HM 85.4% · marathon 73.9% · 50K 94.3% ·
+  // 100K 93.5%; whole product 85.3% (was 66.7% at the start of the build).
+  // The marathon is now the weakest and its gap is 17.3% REFUSALS, which
+  // measurement showed are correct (a capped peak would be below the credible
+  // floor for 100% of them). Excluding designed refusals, 89.4% of the
+  // marathon plans we actually generate are fit to hand over.
   const FLOORS: Record<number, number> = {
-    5: 0.97, 10: 0.70, 21.1: 0.81, 42.2: 0.69, 50: 0.90, 100: 0.90,
+    5: 0.97, 10: 0.74, 21.1: 0.82, 42.2: 0.70, 50: 0.91, 100: 0.90,
   }
   // WEEK1-LEAP-ABS-01 raised 5K again, 91.8% -> 100%: the ≤2km week-1
   // "leap" artefact was almost entirely a 5K phenomenon, because that is where

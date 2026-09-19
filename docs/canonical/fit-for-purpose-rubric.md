@@ -6,10 +6,16 @@ the submissions were not. Each sitting measured a different population with a
 different set of criteria and called the result the same thing. **This file
 fixes the criteria space so a sitting is comparable to the one before it.**
 
-Measured 2026-09-19. **Whole product: 78.0%** (was 66.7% before COPY-STALE-GEN-01 and FREQ-SILENCE-01)
-against a 90–95% target. Per distance: 5K **91.8%** · 10K 73.0% · HM 84.0% ·
-marathon **72.8%** · 50K 93.3% · 100K 93.4%. The marathon now lags because its
-remaining gap is **18.5% refusals**, not silence.
+Measured 2026-09-19. **Whole product: 85.3%**, up from **66.7%** at the start of the 2026-09-19
+build, against a 90–95% target. Per distance: **5K 100%** · 10K 78.3% ·
+HM 85.4% · **marathon 73.9%** · 50K 94.3% · 100K 93.5%.
+
+The marathon is now the weakest, and its gap is **17.3% designed refusals**,
+not silence. Measurement showed those refusals are **correct**: for 100% of the
+§111-refused cases a capped peak would land below the credible marathon peak
+floor (median 22.4 km against 52.8 km), so capping would hand every one of them
+a degenerate plan. **Excluding designed refusals, 89.4% of the marathon plans
+we actually generate are fit to hand over.**
 
 ---
 
