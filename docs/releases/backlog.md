@@ -1412,7 +1412,23 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 >
 > *Verify still open:* `grep -c "resumeFloorKm" lib/plan/ruleEngine.ts` → **0 = still open**.
 
-> 🔲 **S52-LOPSIDED-BOUND-01 — bounding §52 on ONE week does not stop lopsidedness in the weeks after it, and that has now failed TWICE.** *(P1, filed 2026-09-17. Coaching Board question — Willy's amendment, twice.)*
+> 🔴 **S52-LOPSIDED-BOUND-01 — REOPENED AND RE-DIAGNOSED 2026-09-19. THE FILED QUESTION WAS THE WRONG ONE, AND THE REAL DEFECT IS FAR MORE SERIOUS.** *(was P1; **P0 for the injury × fresh-return cohort**. Coaching Board sat 2026-09-19: **CORRECT WITH AMENDMENT** on the finding, instrument deferred. Record: `docs/decisions/coaching-board-2026-09-19-s52-composition.md`; §90 carries a *Recorded finding*.)*
+>
+> 🔴 **11.4% of injury × fresh-return runners who declare ≥4 days get SEVEN CONSECUTIVE BUILD/PEAK WEEKS containing TWO RUNS.** Every one of the 41 affected plans loses at least HALF its build phase. **Three other cells measured at exactly 0.0%** (healthy × established n=2,722, healthy × fresh-return n=873, injury × established n=374) — an interaction, not a gradient; removing either factor alone fixes it, verified factorially.
+>
+> **Worst case, printed not summarised.** Knee history, fresh return, beginner, 30 km/wk, longest 12 km, **four days declared**, marathon finish. Base weeks 1–6: 4 runs, 31–38% share. **Build/peak 7–14: 2 runs, share 71 → 87%.** Taper recovers. The peak week is **26.0 km of a 30 km week in one session**, against §9's own sizing of **9.6 km** — **2.7× the engine's own rule**.
+>
+> **Mechanism, exact.** `ruleEngine.ts:3550` — the ADR-022 injury easy-run trim floors at `Math.max(1, …)` **one** easy run, while the producer computed `daysVolumeCanFill = Math.max(3, …)` at `:2847` and the trim never consults it. **A floor computed and discarded downstream — the same shape as §113 Am.1, third instance in two days.**
+>
+> ⚠️ **§24 does NOT bind this case** — it governs `time_target` only and this is a `finish` goal. **No principle actually requires 26 km in a 30 km week**, and §9 already forbids it at 28–40%. The collision is **§80's specificity ramp vs §90's injury ceiling**, and nobody wrote down which wins.
+>
+> ⚠️ **ROUTE (c) FROM THE ORIGINAL FILING IS ALREADY SHIPPED** — `lopsidedNote` already says *"the lever is the other days"*. **Do not re-propose it.** McMillan: we are advising the runner to do the thing the engine just removed.
+>
+> ⚠️ **INSTRUMENT DEFERRED, and the reason is honest: every candidate reachable without a NEW NUMBER is blocked.** More easy runs at the configured 4 km easy floor pushes the week above the injury ceiling, which Willy's binding condition forbids; a sub-floor easy run needs a new constant the board declined to pick on argument alone. **Binding on any fix:** must not raise the injury ceiling · must not re-open `LR-DELOAD-RESUME-01` · measured on the **property sweep**, not a hand-rolled grid · `measure:fitness` before and after. **The standing "do not add a third per-week §52 bound" instruction SURVIVES — a floor on composition is a different object.**
+>
+> 🔴 **NO INVARIANT EXISTS AND ONE SHOULD.** §64 floors **rest** days; there is **no converse anywhere in the constitution**, so nothing checks that a week delivers the running days the runner declared. 17.2% of ALL plans deliver at least one week short of `days_available`.
+>
+> **Baseline §52 state for reference:** 2,531 breaches / 597 plans (15.5%), **100% warn, 0 error** (all maintenance-classified), distribution continuous and unimodal at 65–69%, worst 87%.
 >
 > Two separate fixes this session were amended by Willy with the same bound — *"resume/cut to the target, but never above §52's 60% of that week"* — specifically to stop §52 breaches rising. **Measured both times, apples to apples: it does not work.**
 >

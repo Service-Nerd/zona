@@ -4710,6 +4710,48 @@ falsification test instead (`lib/plan/injuryIntensityYield.test.ts`).
 
 ---
 
+### §90 — RECORDED FINDING: the easy-run trim has no floor, and for one cohort the build phase collapses (Coaching Board 2026-09-19, S52-LOPSIDED-BOUND-01)
+
+**Ruled CORRECT by the board, including by the seat that authored ADR-022. The instrument is NOT yet chosen and nothing has shipped — §90 is unchanged.**
+
+§90 states *"Easy runs trim/drop to the ceiling; the long run never does."* **It does not say how far they may drop.** `ruleEngine.ts:3550` resolves that silence as `Math.max(1, …)` — one easy run — while the producer computed a running-day floor of `Math.max(3, …)` seven hundred lines earlier (`:2847`) and the trim never consults it. **A floor is computed and a later pass discards it: the same shape as §113 Amendment 1, for the third time in two days.**
+
+**Perfect cohort isolation** (cohortGrid + targetedGrid, coprime stride, runners declaring ≥4 days; a *collapsed week* is a build/peak week delivering ≤2 running sessions):
+
+| cell | plans | any collapsed week | **≥ HALF the build/peak phase collapsed** | longest consecutive run |
+|---|---|---|---|---|
+| healthy × established | 2,722 | 0.0% | 0.0% | 0 |
+| healthy × fresh-return | 873 | 0.0% | 0.0% | 0 |
+| injury × established | 374 | 0.0% | 0.0% | 0 |
+| **injury × fresh-return** | **361** | **11.4%** | **11.4% (41 of 41 affected)** | **max 7, p95 7** |
+
+**Three cells at exactly zero and one at 11.4% is an interaction, not a gradient** — removing either factor alone fixes it, verified factorially. And every affected plan loses at least half its build phase: **seven consecutive two-run weeks** is the typical case, not the worst one.
+
+**The worst case in full, printed rather than summarised.** Knee history, fresh return (`weeks_at_current_volume: 4`), beginner, 30 km/week, longest 12 km, **four days declared**, marathon finish, 18 weeks:
+
+| wk | 1–6 (base) | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 (peak) | 15–17 (taper) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| runs | 4 | **2** | **2** | **2** | 4 | **2** | **2** | **2** | **2** | 3–4 |
+| long-run share | 31–38% | 71% | 78% | 83% | 46% | 79% | 83% | 86% | **87%** | 37–48% |
+
+Six sensible base weeks, then the build and peak phases become **a long run with a jog attached**, then a taper. §9's own sizing for week 14 is **9.6 km** (`LONG_RUN_PCT_OF_WEEKLY_VOLUME.peak` = 32% of 30 km); the engine prescribes **26.0 km — 2.7× its own rule.**
+
+**Willy, who wrote ADR-022:** *"I wrote it to stop the delivered week exceeding the ceiling. I did not specify how the week should be composed once it fits, and the engine resolved that ambiguity by deleting the easy runs. Thirty kilometres over four days is a materially safer week than thirty kilometres over two, and the cap treats them as identical. The ceiling is correct; what is wrong is that 'trim the easy runs' has no floor, and I should have given it one."*
+
+**Hutchinson:** the collision is **§80's specificity ramp against §90's injury ceiling**, and nobody wrote down which wins. ⚠️ **§24 does NOT bind here** — it governs `time_target` only and this is a `finish` goal, so no principle actually requires 26 km in a 30 km week. **§9 already forbids it at 28–40% and nothing enforces §9's share.**
+
+**Seiler:** a two-run week halves §1's session-count denominator. No quality is placed in these weeks so nothing fires today — but one quality session in a two-run week is a 50% share against an 18% ceiling. **The engine has two independent routes to a week too small to hold a distribution, and neither is guarded.**
+
+**McMillan:** the runner declared four days, received two, and the note shown to them says *"the lever is the other days: more running across the week"* — **advising them to do the thing the engine just removed.**
+
+**Sims:** 26 km off a 12 km longest run is over two and a half hours for most of this cohort, and the plan has removed the shorter runs where fuelling would be practised. `weeks_at_current_volume: 4` is frequently post-injury, post-illness or post-partum in this population.
+
+**Binding conditions on any fix (board):** (1) must not raise the injury ceiling; (2) must not re-open `LR-DELOAD-RESUME-01`'s reverted failure (low-base beginner 7.3 → 18.5 km); (3) must be measured on the **property sweep**, not a hand-rolled grid; (4) `measure:fitness` before and after. **Do not add a third per-week §52 bound** — that instruction survives; a floor on composition is a different object.
+
+⚠️ **Instrument deferred, and the reason is honest: every candidate reachable without a new number is blocked.** More easy runs at the configured `MIN_SESSION_DISTANCE_KM.easy` (4 km) would push the week above the ceiling, which condition (1) forbids; a sub-floor easy run needs a new constant, which is the ruling the board declined to make on argument alone.
+
+**No invariant exists for this and one should.** §64 floors **rest** days; there is no converse anywhere in the constitution, so nothing checks that a week delivers the running days the runner declared.
+
 ## 91. The on-ramp is counted in weeks the runner runs, not weeks in an array
 
 **Principle.** The all-easy on-ramp that must precede a runner's first quality
