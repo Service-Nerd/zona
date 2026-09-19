@@ -7248,9 +7248,36 @@ function buildRulePlanOnce(
           // it is kept and the earlier, softer clauses are what drop. Taking
           // the LAST two rather than the first preserves that.
           const shown = reasons.slice(-2)
-          const diagnosis = 'This plan is built to get you round, not to chase a time. '
-            + shown.join(' ')
-            + ' You will still get fitter: starting from where you are, you could hardly not.'
+          // ⚠️ TWO CAUSES WORE ONE SENTENCE, AND FOR THE COMMONER ONE IT WAS
+          // FALSE (CB-PLAN-REVIEW-01, Coaching Board 2026-09-19).
+          //
+          // "built to get you round, not to chase a time" is §114's finish-goal
+          // language. It is TRUE when the engine cannot build the runner far
+          // enough for the time they asked for — `volumeFails` or `lrFails`.
+          // It is FALSE when the ONLY failing check is the ramp ratio, because
+          // that is §23's "nowhere to ramp to": the runner's volume is already
+          // adequate and the block sharpens rather than builds. Telling them we
+          // are getting them round misdescribes their own plan.
+          //
+          // MEASURED across 45,888 plans: of time-goal maintenance plans,
+          // **8,852 are at their ceiling against 2,396 genuinely under-built —
+          // the sentence was wrong 78.7% of the times it fired.** The sharp
+          // case the board would not hand over: an experienced runner on
+          // 55 km/week chasing a 45:00 10K, told their plan is to get them
+          // round.
+          //
+          // Sims, on why the wording is not cosmetic: to a runner who entered a
+          // time goal, "get you round" reads as being quietly reassigned to a
+          // lesser category. The CLASSIFICATION is correct either way (§23
+          // licenses maintenance) — only the description was wrong.
+          const atCeiling = ratioFails && !volumeFails && !lrFails
+          const opening = atCeiling
+            ? 'Your weekly volume is already where this distance wants it, so this plan sharpens rather than builds. '
+            : 'This plan is built to get you round, not to chase a time. '
+          const closing = atCeiling
+            ? ' The gains here come from the quality sessions, not from more miles.'
+            : ' You will still get fitter: starting from where you are, you could hardly not.'
+          const diagnosis = opening + shown.join(' ') + closing
 
           const suggestions: string[] = []
           if (input.days_available < 6) {
@@ -8458,14 +8485,44 @@ function buildRulePlanOnce(
     // The preference is still acknowledged in the all-easy case rather than
     // dropped — the runner told us something and silence reads as ignoring it —
     // but the plan is attributed to the base, which is what actually shaped it.
-    ...(input.hard_session_relationship === 'avoid'
-      ? {
-          hard_pref_note: weeks.some(w => w.n >= 1 && Object.values(w.sessions ?? {})
-            .some(sn => sn?.type === 'quality'))
+    // §40c — A SUPPRESSED TARGET IS STATED, NEVER ABSORBED, AND THAT APPLIES
+    // TO EVERY RUNNER AND NOT ONLY THE ONE WHO SAID `avoid`
+    // (CB-PLAN-REVIEW-01, Coaching Board 2026-09-19).
+    //
+    // This branch opened on `hard_session_relationship === 'avoid'`, so a plan
+    // with no quality explained itself ONLY to the runner who had asked for
+    // that. Everyone else — a beginner on a finish goal, which the board ruled
+    // CORRECT AS IS the same day — got an all-easy plan and **no sentence at
+    // all**. Measured: **1,752 plans (17.5% of the 9,984 carrying zero
+    // quality) shipped with no explanatory note of any kind.**
+    //
+    // McMillan brought it on the sample: a knee-history beginner got sixteen
+    // weeks, no quality, and nothing saying why, while the very similar P1 and
+    // P3 both explained themselves. "Silence reads as an oversight, and this
+    // runner is the most likely to wonder whether the app noticed their injury
+    // at all."
+    //
+    // The plan is not wrong — the board ruled all-easy correct for this cohort
+    // — so this changes nothing the runner DOES. It changes whether they know
+    // why, which is §40c's whole point and the same reasoning that put the
+    // `avoid` sentence here in the first place.
+    ...((() => {
+      const hasQuality = weeks.some(w => w.n >= 1 && Object.values(w.sessions ?? {})
+        .some(sn => sn?.type === 'quality'))
+      if (input.hard_session_relationship === 'avoid') {
+        return {
+          hard_pref_note: hasQuality
             ? 'You said you avoid hard sessions. The plan keeps one a week at most and starts them later than usual. One is enough to prepare for the race; two is what you were trying to avoid.'
             : 'You said you avoid hard sessions. This plan has none to avoid: at your current base, easy running is what builds the most, so there was nothing to hold back.',
         }
-      : {}),
+      }
+      if (!hasQuality) {
+        return {
+          hard_pref_note: 'This plan has no hard sessions in it. At your current base, easy running and the long run are what build the most, and the strides on your midweek run keep your legs quick. Adding intensity now would cost more than it returns.',
+        }
+      }
+      return {}
+    })()),
 
     // VDOT / zone model fields (CoachingPrinciples §10, §20).
     // `vdot` is raw (benchmark-derived) — what users compare against Daniels' tables.
