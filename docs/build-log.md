@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — QUALITY-ZERO-SCOPE-01 · the check was fine, it just could not reach anyone
+**Shipped:** the zero-quality floor now applies to ultra runners, who were never meant to be exempt.
+
+**Dev learning:** Fourth time in one day I found the same shape: a field that describes how something is DISPLAYED being used to decide who a safety rule applies to. The rule's own error message said "a runner the engine does not classify beginner" and the code tested whether the plan shows minutes instead of kilometres. Those happen to overlap for beginners and also happen to catch every ultra runner, who are the opposite of beginners. The message and the condition had disagreed since the day it was written, and the message is the bit a human reads.
+
+**Product/creator learning:** Nothing was broken. Ultra runners get ten to fifteen hard sessions and always have, and fixing this changed zero plans. That made it very tempting to leave alone. The reason not to is written in the principle it enforces: a value nothing can falsify is not governed. Six weeks ago the same class of hole let two thousand plans ship with every hard session silently removed, and the check that should have caught it was equally green the whole time.
+
+**AI-building learning:** I took three questions to the coaching board today and two of them evaporated during the conflict scan, before a single board member spoke — the principle already answered one, and a fix from that morning had already removed the other. The scan is the cheapest part of the process and it keeps saving the expensive part. Worth saying plainly: the value was in reading the constitution, not in the opinions.
+
+**The honest bit:** I only found this because I was checking something else and read the invariant's gate line by line to make sure I was not about to repeat a mistake. Nothing flagged it. No test failed. It would still be there tomorrow.
+
+**Hook material:** The safety check was green for a group of users it could not see. Not disabled — it read a field that meant something else.
+
+---
+
 ## 2026-09-19 — V4-ANCHOR-01 · a rule that had never run on the people it was written for
 **Shipped:** the long-run repeat ceiling now reaches beginners and ultra runners.
 

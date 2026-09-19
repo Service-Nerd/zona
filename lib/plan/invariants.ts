@@ -2260,7 +2260,28 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       .filter(sn => sn.type === 'quality').length
     const hasBuildOrPeak = plan.weeks.some(w => w.phase === 'build' || w.phase === 'peak')
     const longEnough = plan.weeks.filter(w => w.n >= 1).length >= GENERATION_CONFIG.QUALITY_FLOOR_MIN_PLAN_WEEKS
-    if (plan.meta.primary_metric !== 'duration' && hasBuildOrPeak && longEnough && qualityCount === 0) {
+    // ⚠️ SCOPED ON THE LEVEL, NOT ON THE METRIC (QUALITY-ZERO-SCOPE-01,
+    // 2026-09-19). This gate read `plan.meta.primary_metric !== 'duration'`
+    // while the message below says "a runner the engine does not classify
+    // beginner" — and those are DIFFERENT SETS. `primary_metric` is duration
+    // when the runner is a beginner **or the race is 50 km or longer** (§79/§80,
+    // time on feet), so every ultra runner was exempted from §110's floor too,
+    // and no ultra runner is a beginner.
+    //
+    // ⚠️ NOTHING IS WRONG TODAY AND THAT IS THE POINT. Measured across 50K and
+    // 100K at intermediate and experienced, cwk 50 and 70: every plan receives
+    // 10-15 quality sessions, so the floor has nothing to catch. What was
+    // missing is the ABILITY to catch it — §110's own text: "a value nothing
+    // can falsify is not governed." If a future change zeroes ultra quality the
+    // way `suppressQuality` zeroed it for 2,197 plans, this check would have
+    // stayed silent again.
+    //
+    // Sims's standing objection from §45, restated here by her at the sitting:
+    // a PRESENTATION field must not stand in for a coaching classification.
+    // Fourth instance of that shape today (LR-CAP-BLIND-01, SESSION-KM-01/02,
+    // V4-ANCHOR-01).
+    const isBeginner = (plan.meta.fitness_intensity_level ?? plan.meta.fitness_level) === 'beginner'
+    if (!isBeginner && hasBuildOrPeak && longEnough && qualityCount === 0) {
       violations.push({
         code: 'INV-PLAN-QUALITY-NOT-ZERO',
         principle_ref: 'CoachingPrinciples §110 (§1)',
