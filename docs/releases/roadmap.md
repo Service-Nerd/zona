@@ -198,18 +198,26 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > (LIVENESS-DEBT-01 · COVERAGE-BITE-01 · TEST-BITE-01). A principle can no longer
 > be marked "checked" by an invariant or a test that nothing has ever made fail.
 >
-> **OPEN — the full engine/coaching list, detail in `backlog.md`. Nothing urgent.**
+> ⚠️ **THIS TABLE WAS WRITTEN 2026-09-17 AND WENT STALE ON 2026-09-19. Corrected below.**
+>
+> **Four of its rows shipped that day** (`MAINT-LIVENESS-01`, `GRID-MARATHON-CAPABLE-01`, `STEPBACK-STALE-PEAK-01`, `INV-MSG-ROUNDING-01`), two were ruled and sequenced (`S52-LOPSIDED-BOUND-01`, `S24-FLOOR-REACHABILITY-01`) and one was superseded (`LR-CONSEC-01`). ⚠️ **`audit-docs.sh` reported ALL CLEAN throughout** — an OPEN table is in none of its five categories, which is the same width problem that let `coaching-rules.md` carry two stale refusal rows on 2026-09-18. **An audit is only ever as wide as its list.**
+>
+> **OPEN — the engine/coaching list as at 2026-09-19.**
 >
 > | Item | What it is |
 > |---|---|
-> | `S52-LOPSIDED-BOUND-01` | P1. A board amendment passed its stated condition and missed its stated purpose, twice. **Do not add a third per-week bound.** |
-> | `S24-FLOOR-REACHABILITY-01` | §9's 210-min cap vs §24's 31.65 km — marathon time goals land 1.2 km short. Two ratified principles in conflict. |
+> | `S52-LOPSIDED-BOUND-01` | **Ruled 2026-09-19, open, SUBORDINATE to the §9 architectural fix.** Do not add a third per-week bound. |
+> | `S24-FLOOR-REACHABILITY-01` | **Ruled 2026-09-19, open, SUBORDINATE to the §9 architectural fix.** |
 > | `TT-FREE-BENCHMARK-01` | **SLT question, not a defect.** A free runner is prescribed a 5K benchmark whose result only a paid tier can apply. Three options written up. |
-> | `MAINT-LIVENESS-01` | 9 maintenance invariants have no liveness corpus; §67 and §75 rest on two of them. |
-> | `LR-CONSEC-01` | §45 is blind to compounding week-on-week long-run rises. |
-> | `GRID-MARATHON-CAPABLE-01` | The cohort grid cannot express a marathon-capable runner. |
-> | `STEPBACK-STALE-PEAK-01` | Peak step-back reads a stale peak. |
-> | `INV-MSG-ROUNDING-01` | P3. Invariant messages round inconsistently. |
+> | ~~`MAINT-LIVENESS-01`~~ | ✅ **SHIPPED 2026-09-19.** It was **8**, not 9 — and not a corpus gap at all: the harness was calling `validatePlan` when these are checked by `validateMaintenanceBlock`. Liveness 107 → **118/121**; §67/§75 debt discharged. |
+> | ~~`LR-CONSEC-01`~~ | ✅ **SUPERSEDED 2026-09-19** by §9's Recorded structural finding — §45 is blind to compounding because nothing bounds the long run against its week. |
+> | ~~`GRID-MARATHON-CAPABLE-01`~~ | ✅ **SHIPPED 2026-09-19.** `VOLUMES` gains 70; §24 now reached by 68 rows against 0. It surfaced `PEAK-VS-DELIVERED-BUILD-01`. |
+> | ~~`STEPBACK-STALE-PEAK-01`~~ | ✅ **SHIPPED 2026-09-19.** Re-clamped against the peak that survives; §45 re-runs after it. |
+> | ~~`INV-MSG-ROUNDING-01`~~ | ✅ **SHIPPED 2026-09-19.** |
+> | 🥇 **the §9 architectural fix** | **HIGHEST-VALUE OPEN ENGINE ITEM.** Size the long run and the week TOGETHER in `buildWeekSessions`. Ten instruments measured 2026-09-19, all ten traded one defect for another. |
+> | 🔴 `PEAK-VS-DELIVERED-BUILD-01` | **NEW 2026-09-19.** 47.8% of experienced 70 km/wk marathoners get a DELIVERED peak under §23's 110%. The curve satisfies §23 by construction, so it is the curve-vs-delivered gap again. |
+> | 🔴 `S111-SUBFLOOR-VOLUME-01` · `S111-DENOMINATOR-01` | Ruled 2026-09-19; both SUBORDINATE to the §9 fix. |
+> | ⚪ `CAT-DEPTH-01` | **Older, untouched 2026-09-19.** Personalisation has no inventory; four measured attempts failed. **Do not retry blind.** |
 > | `PLAN-NOTE-PLACEMENT-01` | **Founder call.** Does the plan rationale belong at the TOP of the Plan screen at all? Wood says a runner asks in week 3, not day one. Held until the shortened version is seen on device. |
 > | `BRAND-EMDASH-01` | **Founder call.** Mechanism half CLOSED by COPY-GLYPH-01; what remains is the decision. Em dashes are in **100% of plans**, 26,727 session labels alone, so removing them renames every session. |
 > | `TT-PRICING-CLAIM-01` | **SLT, escalated by the Coaching Board.** `/pricing` sells the race projection as "from your real running"; 58% of plans have none. `pricing.test.ts` checks a row EXISTS, never that it is true. |
