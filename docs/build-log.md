@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — V4-ANCHOR-01 · a rule that had never run on the people it was written for
+**Shipped:** the long-run repeat ceiling now reaches beginners and ultra runners.
+
+**Dev learning:** Same bug, third time, same shape. A session is anchored either by distance or by duration, beginners get duration, and any code that reads `distance_km` to ask "how far is this?" silently skips them. §45's safety cap had it. Two sibling functions had it. This one had it too, and both of its neighbours in the same file already carry a comment explaining the hazard — I was reading those comments while writing the fix. Grepping for the pattern beats finding it three times by accident.
+
+**Product/creator learning:** I measured the exit counter and found the duration-anchored branch was 81% of everywhere the rule bailed out, and I nearly wrote that number up as the impact. It is not the impact. Plans with three or more identical long runs in a row were 30.3% for the cohort the rule skipped and 30.4% for the cohort it covered — the same. The rule was barely working where it *did* run, so extending it bought 2.5 points, not 81. A big number about a mechanism is not a number about an outcome.
+
+**AI-building learning:** The honest write-up is the artifact. My first draft of the code comment said the fix "does NOT measurably reduce repeated long runs", which was a guess I made before measuring; it actually moves 30.3% to 27.8%. I corrected the comment to the real figure. A confident sentence in a comment outlives the session that wrote it, and the next person has no way to know which sentences were measured and which were assumed.
+
+**The honest bit:** I found this while looking for something else entirely, and the thing I was originally chasing — a long-run jump of 51% that looked like a safety breach — turned out to be the cap working exactly as designed. Two of the three "findings" I reported to myself that hour dissolved under measurement. The one that survived was the least dramatic.
+
+**Hook material:** A rule in our training engine had never once run on beginners. Not disabled, not broken — it read one field, and beginners do not have that field.
+
+---
+
 ## 2026-09-19 — S114-GET-YOU-ROUND-01 · the long run finally fits the week
 **Shipped:** where the week cannot hold the long run the race asks for, the long run yields and the plan says so.
 

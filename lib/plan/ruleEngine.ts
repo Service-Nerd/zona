@@ -5558,12 +5558,42 @@ function applyV4LongRunRepeatCeiling(
       continue
     }
     const lr = longRunOfWeek(w)
-    if (!lr || lr.session.distance_km == null) {
+    // ⚠️ READS THE SESSION'S SIZE, NOT ITS `distance_km` FIELD (V4-ANCHOR-01,
+    // 2026-09-19). This gate was `lr.session.distance_km == null`, and a
+    // session is anchored EITHER by distance OR by duration — beginners and
+    // ultra runners get duration-anchored long runs (§79/§80, time on feet),
+    // so `distance_km` is null and V4 reset the streak and moved on. The rule
+    // it enforces is written "LR_MAX_CONSECUTIVE_REPEATS non-deload weeks",
+    // not "distance-anchored weeks", and it had never once run on the cohort
+    // the founder ranks first.
+    //
+    // Measured before the fix: the duration-anchored exit was **81% of every
+    // exit V4 took** — 17,268 skips against 380 fires on a 1-in-7 sample of
+    // the cohort grid.
+    //
+    // ⚠️ AND THE OBVIOUS CONCLUSION FROM THAT NUMBER IS WRONG, so it is
+    // recorded here rather than left for someone to re-derive. 81% of exits
+    // sounds like most of the repeats; it is not. Plans carrying 3+ identical
+    // consecutive long runs measured **30.3% duration-anchored against 30.4%
+    // distance-anchored before the fix — indistinguishable** — because where
+    // V4 already ran it was being blocked by the §40/§9 time cap and the
+    // long-run ceiling anyway. After the fix the duration-anchored rate moves
+    // **30.3% -> 27.8%**, distance-anchored unchanged at 30.4%.
+    //
+    // So this is a CORRECTNESS fix — a rule now applies to the cohort it
+    // always claimed to cover — and buys 2.5pp, not the 81% the exit counter
+    // suggests. **The residual 27.8% is V4 being weak everywhere, which is a
+    // separate coaching-level question and is NOT fixed here.**
+    //
+    // Third occurrence of this exact class: LR-CAP-BLIND-01 (§45's cap) and
+    // SESSION-KM-01/02 are the same `distance_km`-shaped hole.
+    const lrKm = lr ? sessionKmSelfPaced(lr.session) : null
+    if (!lr || lrKm == null) {
       streakDist = null
       streakCount = 0
       continue
     }
-    const dist = lr.session.distance_km
+    const dist = lrKm
     if (streakDist != null && Math.abs(dist - streakDist) < 0.05) {
       streakCount++
       if (streakCount > maxRepeats) {
@@ -5584,7 +5614,14 @@ function applyV4LongRunRepeatCeiling(
         if (newLrMins > timeCapMins) continue                      // §40/§9 absolute time cap
         if (newKm / newWeekly > lrMaxPctOfWeekly + 0.005) continue // §52 LR/weekly cap (0.005 tolerance for rounding)
 
-        lr.session.distance_km = newKm
+        // WRITE BACK TO THE ANCHOR THE SESSION ACTUALLY USES — the same
+        // correction, and the same wording, as §45's cap at
+        // `applyLongRunProgressionCap`. Setting `distance_km` on a
+        // duration-anchored session would flip a beginner's card from minutes
+        // to kilometres and break §79/§80's metric contract.
+        if (lr.session.distance_km != null) {
+          lr.session.distance_km = newKm
+        }
         lr.session.duration_mins = dur(newKm, pace.minPerKmEasy)
         w.weekly_km = sumWeeklyKm(w.sessions, pace)
         w.long_run_hrs = computeLongRunHrs(w.sessions, pace)
