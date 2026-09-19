@@ -68,8 +68,22 @@ say "── state blocks name the last SHIP ──"
 last=$(git log --pretty=format:'%h %s' | grep -E '^[a-f0-9]+ (feat|fix)\(' | head -1 | cut -d' ' -f1)
 mem="$HOME/.claude/projects/$(pwd | tr '/' '-')/memory/MEMORY.md"
 sfail=0
+# ⚠️ EVERY state paragraph, not "does the file mention the SHA somewhere".
+# 2026-09-19: both files carried TWO "State at end of ..." paragraphs. One was
+# current and one was hours old, asserting a superseded SHA and stale counts --
+# and this check passed, because `grep -q "$last" "$f"` is satisfied by ANY
+# occurrence. A file with one fresh block and one rotten one read as clean.
+# The lowercase/uppercase split ("State at end" vs "State at END") is why the
+# duplicate went unnoticed by eye too, so the pattern matches both.
 for f in docs/releases/backlog.md docs/releases/roadmap.md; do
-  grep -q "$last" "$f" || { say "  STALE $f does not name last ship $last"; sfail=1; fail=1; }
+  blocks=$(grep -c '^\*\*State at \(end\|END\) of' "$f" || true)
+  if [ "$blocks" = "0" ]; then
+    say "  STALE $f has no state paragraph at all"; sfail=1; fail=1; continue
+  fi
+  stale=$(grep '^\*\*State at \(end\|END\) of' "$f" | grep -vc "$last" || true)
+  if [ "$stale" != "0" ]; then
+    say "  STALE $f: $stale of $blocks state paragraph(s) do not name last ship $last"; sfail=1; fail=1
+  fi
 done
 [ -f "$mem" ] && { grep -q "$last" "$mem" || { say "  STALE MEMORY.md does not name last ship $last"; sfail=1; fail=1; }; }
 [ "$sfail" = "0" ] && say "  ok"
