@@ -6883,6 +6883,70 @@ slots to absorb it against §9's own easy ceiling, so the week genuinely shrinks
 and the long run's share climbs past §52's 60% cap. **VOL-SHORTFALL-01's result
 holds where it was taken, and not below it.**
 
+### Amendment 2 — RULED CORRECT AND **NOT SHIPPED**: the catalogue cannot deliver it (Coaching Board CB-BEGINNER-TIMEGOAL-01, 2026-09-19)
+
+**Status: the ruling stands and the code is reverted.** This section records a
+ruling the engine cannot currently honour, with the number that blocks it, so
+the next person neither re-derives the finding nor re-ships the broken path.
+
+**What was ruled.** A beginner who set a **time target** receives quality capped
+at 1 per week at the existing onset; a beginner on a **finish** goal is
+unchanged at zero (that half was ruled CORRECT AS IS the same day).
+
+**Why the board ruled it. The gap was BINARY, not a lighter dose** — measured
+across 45,888 plans:
+
+| cohort | n | zero-quality | any goal-pace session |
+|---|---|---|---|
+| beginner · time_target | 6,336 | **100%** | **0%** |
+| intermediate · time_target | 6,336 | 0% | 100% |
+| experienced · time_target | 6,336 | 0% | 100% |
+
+Every cohort that sets a time target runs at that pace except one, which runs at
+it zero percent of the time. The contradiction was already inside §110: its own
+ratified rationale records Hutchinson — *"No evidence supports zero intensity as
+preparation for a time-goal race"* — and the floor built from that ruling
+exempted beginners **without separating the beginner who set a time goal from
+the one who did not.**
+
+**⚠️ WHY IT IS NOT SHIPPED — ONE NUMBER.** Of the **29 quality rows in the
+session catalogue, exactly ONE is `fitness_level_min: 'beginner'`** — 26 are
+`intermediate`, 2 are `experienced`. That single row is `aerobic_steady`
+("Steady aerobic", category `aerobic`), which is **not a goal-pace session at
+all.** So `selectCatalogueSession` returns `null` for a beginner
+(`baseEligible.length === 0`), the session is built with **no `catalogue_id`**,
+and `INV-PLAN-CATALOGUE-LINK` (ADR-018) fires — the rep structure is lost the
+moment the label changes, which is the exact 31%-of-quality-sessions defect
+ADR-018 was written to end. Built, measured, **31 test failures across 13 files**,
+reverted.
+
+**⚠️ AND THE MEASUREMENT THAT LOOKED LIKE SUCCESS WAS READING THE DEFECT.** The
+post-change table showed beginner time-target goal-pace exposure going 0% →
+**100%**, which is what a working fix looks like. Those labels
+("10K-pace intervals") came from the null-row fallback — sessions with no
+catalogue row, i.e. the broken path. **A label is not a prescription.** Recorded
+because the number was convincing and wrong, and the invariant caught it, not
+the measurement.
+
+**This is CAT-DEPTH-01's root cause, now named with a figure rather than a
+suspicion.** The backlog has said "root cause is catalogue thinness" and "four
+measured attempts have failed; do not retry blind" for weeks. The figure is
+**1 of 29**. §110 Am.2 is therefore blocked on catalogue depth, which is a
+`session-catalogue.md` change — a hard-trigger doctrine file and its own piece
+of work, not a numeric.
+
+**What unblocks it:** beginner-eligible quality rows that are goal-pace capable.
+That is a Coaching Board sitting on the catalogue (what may a beginner be
+prescribed), sequenced behind an SLT call on CAT-DEPTH-01, which is already
+escalated.
+
+**No config key and no invariant ship with this section**, deliberately:
+`BEGINNER_TIME_TARGET_QUALITY_PER_WEEK_MAX` and
+`INV-PLAN-TIME-TARGET-QUALITY-FLOOR` were both written and both reverted, since
+the floor would fire on every beginner time-target plan the moment the ceiling
+went back to 0. **A gate that ships red is worse than no gate.**
+
+
 ## 111. The base-build ceiling — a marathon plan may not build too far off the base the runner actually has
 
 *Added 2026-09-18 — Coaching Board (MARATHON-VOLUME-GATE-01), CORRECT WITH AMENDMENT. Ratifies the artifacts for a floor the board had already ruled correct in concept; the amendment set the metric, the cap, and error severity.*
