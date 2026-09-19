@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-09-19 — the engine audit · a label told the truth and a safety bug fell out
+## 2026-09-19 — CB-HILL-INJURY-01 · a label told the truth and a safety bug fell out
 
 **Shipped:** `npm run audit:plans` (the fifth question — would we be proud to hand this plan over?), stride labels that say "strides", a §21 gate on hill strides that was missing, and the taper's floors routed through the resolver everything else already uses.
 
@@ -19,6 +19,26 @@ it specific, no polish. The content system adds the voice.
 **The honest bit:** I was wrong a lot today and the pattern is consistent. I compared a raw floor against a delivered value and called a gate non-monotonic on the strength of it. I blamed 30-minute weekday caps for a collapsed week and removing them changed nothing. I reconstructed a failing case by hand from printed fields and it did not reproduce, because I had missed two inputs. I measured long-run steps between non-adjacent weeks and reported a 62% jump that does not exist. Every one was caught by running the measurement again rather than by thinking harder, and one of them had already reached a board sitting before I caught it. The fix for the six failed instruments is not that I should have been cleverer — it is that six honest negative results, written down with their numbers, are worth more than one plausible change shipped on a hunch.
 
 **Hook material:** We labelled a running session more accurately. The test suite went red and told us we had been prescribing hill sprints to people with knee injuries.
+
+## 2026-09-19 — PLAN-QUALITY-AUDIT-01 · the fifth question
+**Shipped:** `npm run audit:plans` — would we be proud to hand this plan over?
+
+**Dev learning:** We had four harnesses and each answered a different question: are plans valid, are they unchanged, did the population shift, does the plan build the runner. None of them asks whether the plan is any *good*. A plan can pass all four and still be seven consecutive weeks of two runs. So the fifth carries its own beginner-marathon corpus — 6,480 inputs reaching down to a runner doing 0 km a week — because neither existing grid can express "never run before, wants to run London".
+
+**The honest bit:** it is baselined rather than gated, and this codebase's own history says an ungated check is a check that does not run. Gating it means failing the build on debt that predates it, so it is a follow-up I owe rather than one I can skip quietly.
+
+**Hook material:** Four test harnesses, and not one of them asked whether the training plan was any good.
+
+---
+
+## 2026-09-19 — INV-MSG-ROUNDING-01 · the error message that argued with itself
+**Shipped:** one decimal place in two invariant messages.
+
+**Dev learning:** A real breach was rendering as "Got 18 min, expected ≤ 18 min". Both sides rounded to integers, so the message asserted the check had fired on a value that satisfies it. Nobody is harmed by the number. The harm is that the next person to read it concludes the invariant is broken and spends an afternoon looking for a bug that does not exist.
+
+**Hook material:** Our error message said the value was 18, and the limit was 18, and then failed it.
+
+---
 
 ## 2026-09-19 — XREF-DANGLE-01 · the doc fix that missed the file it was editing
 **Shipped:** a test that fails the build when a backlog line says "filed as X below" and there is no X below.
