@@ -2651,6 +2651,45 @@ those plans. Zero errors — no build plan breaches.
 > CONVENIENT (not). §52's was convenient.
 
 ---
+### RECORDED FINDING — the long run is not the lever, and the share cannot be driven to 60% by shortening it (2026-09-19, S52-LOPSIDED-BOUND-01)
+
+**No prescription change. This records a measurement and closes an open item, so
+the next person does not attempt an eleventh instrument.**
+
+§114 sizes the long run against the week at construction. The obvious follow-up
+was a post-pass re-applying the same bound against the FINISHED week, because the
+week keeps shrinking after construction (V1 scales non-quality sessions, V4
+mutates long-run distances, the weekday cap trims easy runs). It was built, placed
+correctly on the third attempt (after V1/V4/§47 Am.2/§6 Am.2, the ordering both
+neighbouring passes already document), measured, and **reverted**.
+
+**Why it cannot work, in one line of arithmetic.** Shortening the long run also
+shortens the week, so the share is a fixed point, not a target. For a three-day
+runner with a 30-minute weekday cap the week is `lr + 7.2 km`, so
+
+    share = lr / (lr + 7.2)  ≤  0.60   ⟺   lr ≤ 10.8 km
+
+A marathon long run of 10.8 km is not a plan. The bound converged where it was
+harmless and stalled where it mattered: worst share 78% → 72%, affected plans
+287 → 280 of 899 — while the **injury cohort's median marathon peak long run fell
+from 61.6% to 52.1% of race distance**, roughly 4 km off the longest run a
+knee-history runner ever does before the start line. That is the exact regression
+`measure:fitness` was built to catch on 2026-09-17, bought for a 6-plan
+improvement on a proxy.
+
+**So the remedy list in the principle above is ordered correctly and (a) is last
+for a reason.** At three days with a 30-minute cap, (b) is unavailable (the cap is
+the runner's own constraint) and (a) destroys the race. (c) is what fires, §52
+warns, and `lopsidedNote` already tells the runner the truth: *the lever is the
+other days: more running across the week, not a longer long run.*
+
+⚠️ **Do not re-propose a share-based post-pass.** Ten instruments have now been
+tried against this number; this is the eleventh and the first whose failure is
+arithmetic rather than ordering. The residual is declared under §34 and is
+honest: a runner who gives the plan three days and thirty minutes gets a lopsided
+week, and the plan says so.
+
+
 
 ## 53. Quality session variety across the full plan
 
