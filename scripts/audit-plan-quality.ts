@@ -16,6 +16,11 @@
  * still be a plan no coach would hand over — seven consecutive two-run weeks
  * (S52-LOPSIDED-BOUND-01) passed all four.
  *
+ * ⚠️ GATED — it runs inside `npm run verify` (2026-09-19). It shipped baselined
+ * but ungated earlier the same day, which this repo's own history says is a
+ * check that does not run: `measure:fitness` shipped ungated and that was
+ * recorded as the mistake. 18 s against the chain's existing cost.
+ *
  * ⚠️ IT CARRIES ITS OWN BEGINNER-MARATHON GRID ON PURPOSE. `cohortGrid` derives
  * `longest_recent_run_km` from volume and never varies injury; `targetedGrid`
  * pins age 40. Neither can express "never run before, wants to run London".

@@ -16,7 +16,7 @@
     "verify:hooks": "eslint --no-eslintrc --config ./.eslintrc.hooks.json --ext .ts,.tsx --quiet app components lib",
     "verify:rules": "NODE_ENV=production tsx scripts/plan-rules-report.ts",
     "verify:coaching": "NODE_ENV=production tsx scripts/coaching-deviation-scan.ts",
-    "verify": "npm run typecheck && npm run verify:hooks && npm run test && npm run check:slow && npm run verify:invariants && npm run verify:matrix && npm run verify:sweep && npm run verify:rules && npm run verify:coaching",
+    "verify": "npm run typecheck && npm run verify:hooks && npm run test && npm run check:slow && npm run verify:invariants && npm run verify:matrix && npm run verify:sweep && npm run verify:rules && npm run verify:coaching && npm run audit:plans",
     "sync:ios": "npx cap sync ios && node scripts/fix-cap-config.mjs && node scripts/verify-cap-config.mjs",
     "verify:ios-plugins": "node scripts/verify-cap-config.mjs",
     "icons:pwa": "node scripts/generate-pwa-icons.mjs",
