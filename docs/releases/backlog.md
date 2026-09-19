@@ -8,7 +8,7 @@
 
 ⚠️ **`distance_km` as a proxy for a coaching classification appeared FOUR TIMES in one day** — LR-CAP-BLIND-01, SESSION-KM-01/02, `V4-ANCHOR-01`, `QUALITY-ZERO-SCOPE-01`. It is a grep, not a discovery.
 
-🔴 **Still open:** `CAT-DEPTH-01` (root cause now a number: **1 of 29**; ESCALATED TO SLT; blocks §110 Am.2) · `DEVICE-VERIFY-01` (founder's phone — nothing shipped today has run on a device).
+🔴 **Still open:** `CAT-DEPTH-01` (root cause now a number: **1 of 29**; ESCALATED TO SLT; blocks §110 Am.2). *(Device verification is the founder's own task and is no longer tracked here, at his instruction 2026-09-19.)*
 
 
 **Job:** The detailed item store — full specs, scope notes, SLC framing for everything left to ship (product *and* go-to-market).
@@ -29,7 +29,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 🟢 **Also shipped today:** `CB-HILL-INJURY-01` (**a live safety defect — knee-history beginners were prescribed hill strides; §21's invariant matches the LABEL and the label lied. Found by making a label honest, not by measuring**) · `MAINT-LIVENESS-01` (**the harness was calling the wrong validator**, 107→118/121) · `GRID-MARATHON-CAPABLE-01` (**the grid could not contain a §24-capable marathoner**) · `STRIDE-VISIBILITY-01` · `TAPER-FLOOR-FLAT-01` · `STEPBACK-STALE-PEAK-01` · `PLAN-QUALITY-AUDIT-01` · `PLAN-NOTE-LENGTH-01` · `INV-MSG-ROUNDING-01` · `XREF-DANGLE-01`.
 
-🟢 **ENGINE OPEN LIST, end of 2026-09-19:** ~~`PEAK-VS-DELIVERED-BUILD-01`~~ CLOSED (withdrawn — §23 legislates it, 100% compliance) · ~~`S111` metric anti-correlation~~ CLOSED (§114 took the hazard to 0.00%) · ~~`S52-LOPSIDED-BOUND-01`~~ CLOSED (negative result) · `CAT-DEPTH-01` **root cause named — 1 of 29 catalogue rows is beginner-eligible — ESCALATED TO SLT, and it now blocks a CORRECT board ruling (§110 Am.2)** · `DEVICE-VERIFY-01` (founder's phone, cannot be done here).
+🟢 **ENGINE OPEN LIST, end of 2026-09-19:** ~~`PEAK-VS-DELIVERED-BUILD-01`~~ CLOSED (withdrawn — §23 legislates it, 100% compliance) · ~~`S111` metric anti-correlation~~ CLOSED (§114 took the hazard to 0.00%) · ~~`S52-LOPSIDED-BOUND-01`~~ CLOSED (negative result) · `CAT-DEPTH-01` **root cause named — 1 of 29 catalogue rows is beginner-eligible — ESCALATED TO SLT, and it now blocks a CORRECT board ruling (§110 Am.2)**. *(Device verification is founder-owned, untracked.)*
 
 ## 🥇 2026-09-19 — THE ENGINE AUDIT. Batched board + SLT, every open coaching item ruled.
 
@@ -100,7 +100,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 > | ~~`S80-MATERIALITY-EVIDENCE-01`~~ | ✅ **DISCHARGED 2026-09-19 — 5% is CORRECT** | Board ruled **INSUFFICIENT EVIDENCE** on tightening §80 Am.1's 5% shortfall materiality. Needs the shortfall-magnitude DISTRIBUTION, not an opinion |
 > | ~~`PREF-SWEEP-01`~~ | ✅ | **SHIPPED 2026-09-18.** Real runner-facing scope was **~24 sites, not 90** (58 of the original count were developer-facing `invariants.ts` messages). 5 live sites fixed — the wizard's phase strip and plan header, `PlanCalendar`'s Strava distance, `SessionSteps`' race-pace segment, and the **weekly-report prompt**, which built its session labels in km *before* fetching the reader's units and handed them to a model it had just told to speak miles. Gate: `lib/hardcodedUnits.test.ts`, 6 baselined with reasons |
 > | ~~`LONGEST-RUN-GATE-01`~~ | ✅ | **SHIPPED as §113, 2026-09-18.** Board ruled the threshold **RIGHT** (monotonic, unlike §111) and everything around it wrong. The route now holds **no coaching number at all**. Spawned `GRID-SUBFLOOR-01` |
-> | `DEVICE-VERIFY-01` | ⏸️ **P1** | **Nothing shipped today has run on iOS.** ⏸️ **PARKED — needs the founder's device**, not a code change |
+> | ~~`DEVICE-VERIFY-01`~~ | ✅ **REMOVED 2026-09-19** | **Founder-owned, at his instruction.** Device verification is his task and is no longer tracked as a backlog item. Historical references below are left as written. |
 > | ~~`REFUSAL-COPY-02`~~ | ✅ | **SHIPPED 2026-09-18.** Messages voiced, `'MARATHON'` no longer shouted at a refused runner (`lib/plan/raceLabel.ts` owns the noun), and the days refusal now says the runway. ⚠️ **It exposed that the refusal COPY WAS A WIRE FORMAT** — eight prose matchers across five files broke; all now match the error TYPE via `isDesignedRefusal` |
 > | ~~`OPS-DBCHECK-NOISE-01`~~ | ✅ | **SHIPPED 2026-09-18.** One read-only `schema_columns_named()` RPC replaces 21 deliberately-failing selects. ⚠️ **The noise was the smaller half** — probing "each known table" built the candidate set from the three arrays the check audits, so a new `week_n` table in none of them was invisible to the check written to find it. Now schema-sourced and bidirectional |
 > | ~~`CI-SLOW-DRIFT-01`~~ | ✅ | **SHIPPED 2026-09-18** as `npm run check:slow`, inside `npm run verify`. Measured under contention: `targetedGrid` is **15,017 ms — 50.1% of budget and 39% of the whole suite's test time**. ⚠️ **Report-only in CI on purpose** — a CI duration against a dev-machine baseline is two different measurements |
@@ -180,7 +180,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > - 🔽 **`GTM-CHARITY-09` got cheaper** — SLT chose a partner FAQ, so it is writing, not a support surface.
 > - 🆕 **`FIRSTRUN-MOMENTS-01a–f`** and **`FIRSTRUN-MISSED-01`** are new, specced, and five of the six moments are S-sized.
 
-> 🔴 **DEVICE-VERIFY-01 — NOTHING shipped on 2026-09-18 has run on iOS.** *(P1, and it gates the TestFlight build, not a code change.)*
+> ~~**DEVICE-VERIFY-01**~~ — **REMOVED from the backlog 2026-09-19 at the founder's instruction; he owns device verification.** *(Original filing: nothing shipped on 2026-09-18 had run on iOS.)*
 >
 > Fourteen items shipped today. **Every one was verified by `npm run verify`, by a markup test, or at 375px in `/onboarding-preview` — a dev-only harness in a desktop browser.** That is honest verification of code and pixels and it is not the same claim as "it works on a phone", which is the only claim that matters before 500 runners install it.
 >
@@ -619,6 +619,20 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 - 🟡 **`GTM-CHARITY-09`** — support is one inbox, and this cohort arrives together with the same few questions.
 - 🟡 **Minimum iOS 16.6**, no Android, no mobile-web dashboard — a handful of 500 cannot install at all.
 - 🟡 **`CAT-DEPTH-01`** — 🟡 **ROOT CAUSE NAMED WITH A NUMBER, 2026-09-19 — and it blocks a board ruling. ESCALATED TO SLT.** The backlog has said "root cause is catalogue thinness" for weeks. **The figure is 1 of 29: exactly ONE quality catalogue row is `fitness_level_min: 'beginner'`** (26 intermediate, 2 experienced), and it is `aerobic_steady` — category `aerobic`, **not a goal-pace session**. Consequence: `selectCatalogueSession` returns null for a beginner, the session is built with **no `catalogue_id`**, and `INV-PLAN-CATALOGUE-LINK` (ADR-018) fires — the exact rep-structure-lost defect ADR-018 exists to prevent. **Coaching Board 2026-09-19 (CB-BEGINNER-TIMEGOAL-01) ruled CORRECT WITH AMENDMENT** that a beginner with a TIME TARGET must get 1 quality/week (measured: beginner·time_target n=6,336 is **100% zero-quality and 0% goal-pace exposure**, against 0%/100% for every other level on the same goal — binary, not a lighter dose). **BUILT, MEASURED, 31 test failures across 13 files, REVERTED** — see §110 Amendment 2, which records the ruling as correct-and-unshippable. ⚠️ **The measurement that looked like success was reading the defect:** goal-pace exposure showed 0% → 100%, but those labels came from the null-row fallback. **A label is not a prescription.** The invariant caught it; the measurement did not. ⚠️ **Beginner FINISH-goal plans were ruled CORRECT AS IS** (unanimous) — 20 weeks of easy running plus §28 strides is right for a first marathon; the thinness there is an EXPERIENCE problem and belongs to the SLT, not the board. **Unblocking needs beginner-eligible goal-pace catalogue rows = a `session-catalogue.md` sitting.**
+
+> **WHAT COMPLETING IT ACTUALLY REQUIRES (scoped 2026-09-19, from the catalogue itself).**
+>
+> **The state, precisely.** The catalogue has 29 quality rows. **One** is `fitness_level_min: 'beginner'`: `aerobic_steady` — category `aerobic`, `intensity_zones: ['Z2']`, `phase_eligibility: ['base','build']`. So a beginner has **zero** eligible `threshold` or `race_specific` rows at any phase, and in **peak** they have no eligible row at all — which is why `selectCatalogueSession` returns null, the session is built with no `catalogue_id`, and `INV-PLAN-CATALOGUE-LINK` (ADR-018) fires. The one row they do have is a **Z2 aerobic run**, which is not a quality stimulus.
+>
+> **Four things, in order:**
+> 1. **A Coaching Board sitting on `session-catalogue.md`** (hard trigger) — the doctrine question is *what may a beginner be prescribed*: which stimulus, at what dose, in which phases. This is the blocker; everything else is execution. Willy's standing condition from 2026-09-19 applies — he blocked adding intensity to beginners who did **not** ask, so the scope is the time-target beginner first.
+> 2. **Author the rows.** Each needs `id`, `name`, `category`, `purpose`, `phase_eligibility` (must include **peak**, which the existing beginner row lacks), `distance_eligibility`, `fitness_level_min: 'beginner'`, `difficulty_tier`, `main_set_structure`, `intensity_zones`, typical durations, `coach_voice_notes`. At least one must be **goal-pace capable**, or the time-target case is not solved.
+> 3. **Un-revert §110 Amendment 2** — the ruling is already CORRECT and the code is written and recorded: `BEGINNER_TIME_TARGET_QUALITY_PER_WEEK_MAX = 1`, the `qualityCeilingFor()` shared owner, and `INV-PLAN-TIME-TARGET-QUALITY-FLOOR`.
+> 4. **Re-measure** `verify` · `verify:parity` · `cohort:shape` · `measure:fitness` · `audit:plans`. The first attempt produced **31 failures across 13 files**; expect real blast radius on the beginner cohort.
+>
+> ⚠️ **§53 will NOT block a thin pool and must not be mistaken for the gate.** Its cap is `max(fraction, pigeonhole)`, and the pigeonhole arm means one row picked k times is *permitted*. So adding a single row makes the invariants pass while leaving the runner doing the same session ten times. **The reason to author more than one row is coaching, not the checker** — which is exactly the trap D-21 was written about, in reverse.
+>
+> ⚠️ **SEPARATE AND NOT THIS:** the beginner **finish-goal** plan (61 identical "Easy run — Zone 2" labels over 20 weeks) was ruled **CORRECT AS IS** by the board, unanimously. That thinness is an EXPERIENCE problem for the SLT and must not be fixed by adding intensity to runners who did not ask for it.
 
 **What is NOT in scope, and why.** Not a new coaching model: the engine was measured fit-for-purpose for first-time marathoners on 2026-09-16 (11/11 charity personas) and again after PLAN-FITNESS-01. **The gap is experience, not prescription.** Anything here that would change what the engine prescribes goes to the Coaching Board first.
 

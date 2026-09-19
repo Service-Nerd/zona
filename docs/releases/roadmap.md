@@ -8,7 +8,7 @@
 
 ⚠️ **`distance_km` as a proxy for a coaching classification appeared FOUR TIMES in one day** — LR-CAP-BLIND-01, SESSION-KM-01/02, `V4-ANCHOR-01`, `QUALITY-ZERO-SCOPE-01`. It is a grep, not a discovery.
 
-🔴 **Still open:** `CAT-DEPTH-01` (root cause now a number: **1 of 29**; ESCALATED TO SLT; blocks §110 Am.2) · `DEVICE-VERIFY-01` (founder's phone — nothing shipped today has run on a device).
+🔴 **Still open:** `CAT-DEPTH-01` (root cause now a number: **1 of 29**; ESCALATED TO SLT; blocks §110 Am.2). *(Device verification is the founder's own task and is no longer tracked here, at his instruction 2026-09-19.)*
 
 
 **State at END of 2026-09-19 (last ship `031ecfa`):** ✅ tree clean. **2,341 tests / 261 files** · tsc clean · 121 invariants · matrix 65/0 · sweep **14,484 plans, no new violations** · coaching scan **HIGH 0** · liveness **118/121** · `audit:plans` GATED and clean · `audit-docs.sh` ALL CLEAN. **18 commits.**
@@ -21,7 +21,7 @@
 
 🟢 **Also shipped today:** `CB-HILL-INJURY-01` (**a live safety defect — knee-history beginners were prescribed hill strides; §21's invariant matches the LABEL and the label lied. Found by making a label honest, not by measuring**) · `MAINT-LIVENESS-01` (**the harness was calling the wrong validator**, 107→118/121) · `GRID-MARATHON-CAPABLE-01` (**the grid could not contain a §24-capable marathoner**) · `STRIDE-VISIBILITY-01` · `TAPER-FLOOR-FLAT-01` · `STEPBACK-STALE-PEAK-01` · `PLAN-QUALITY-AUDIT-01` · `PLAN-NOTE-LENGTH-01` · `INV-MSG-ROUNDING-01` · `XREF-DANGLE-01`.
 
-🟢 **ENGINE OPEN LIST, end of 2026-09-19:** ~~`PEAK-VS-DELIVERED-BUILD-01`~~ CLOSED (withdrawn — §23 legislates it; 15,464 of 15,464 correctly classified maintenance + note) · ~~`S111` metric anti-correlation~~ CLOSED (§114 took the 93% hazard to 0.00%) · ~~`S52-LOPSIDED-BOUND-01`~~ CLOSED (negative result — the share is a fixed point) · `CAT-DEPTH-01` **root cause named: 1 of 29 catalogue rows is beginner-eligible; ESCALATED TO SLT and now blocking a CORRECT board ruling (§110 Am.2)** · `DEVICE-VERIFY-01` (founder's phone).
+🟢 **ENGINE OPEN LIST, end of 2026-09-19:** ~~`PEAK-VS-DELIVERED-BUILD-01`~~ CLOSED (withdrawn — §23 legislates it; 15,464 of 15,464 correctly classified maintenance + note) · ~~`S111` metric anti-correlation~~ CLOSED (§114 took the 93% hazard to 0.00%) · ~~`S52-LOPSIDED-BOUND-01`~~ CLOSED (negative result — the share is a fixed point) · `CAT-DEPTH-01` **root cause named: 1 of 29 catalogue rows is beginner-eligible; ESCALATED TO SLT and now blocking a CORRECT board ruling (§110 Am.2)**. *(Device verification is founder-owned, untracked.)*
 
 > 🟢 **LR-SHORTFALL-CAUSE-01 + NOTE-DURATION-FMT-01 (§80 Am.1).** Founder read the long-run tile on his own London Marathon plan: raw minutes everywhere (**48.2% of 42,444 values were ≥60**, largest 338) and one number with **no unit at all** on 5,264 of 5,264 firings. Underneath it: the note named the time cap **0 times in 5,264** while **71.0% sat 2–3 min beneath that cap** — because the cap is applied on the kilometre axis and the distance is then rounded. Now `LONG_RUN_AT_CAP_TOLERANCE_MINS` (3, chosen from an empty 4–5 band) and `LONG_RUN_SHORTFALL_MATERIAL_PCT` (5). ⚠️ **My "the branch is structurally dead" framing was TOO STRONG and an existing test disproved it** — zero in the corpus is not "cannot fire".
 
@@ -84,7 +84,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 ## 🔴 NOW — CRITICAL PATH: Make-A-Wish handover (SLT-sequenced 2026-09-11)
 
 > 📌 **2026-09-18 — the SLT queue is SHIPPED (13 of 15; #12 and #15 parked by the founder). Ten items carried out of it, indexed in `backlog.md`.**
-> **P1:** `PREF-SWEEP-01` (km↔miles does not reach the app — 90 hardcoded `km`) · `LONGEST-RUN-GATE-01` (the **third** ungoverned refusal in the same function §111 fixed; refuses a charity first-timer whose longest run is under 5 km — **Coaching Board**) · `DEVICE-VERIFY-01` (**nothing shipped today has run on iOS**).
+> **P1:** `PREF-SWEEP-01` (km↔miles does not reach the app — 90 hardcoded `km`) · `LONGEST-RUN-GATE-01` (the **third** ungoverned refusal in the same function §111 fixed; refuses a charity first-timer whose longest run is under 5 km — **Coaching Board**).
 > **P2:** `REFUSAL-COPY-02` · `OPS-DBCHECK-NOISE-01` · `CI-SLOW-DRIFT-01`.
 > **P3:** `FATIGUE-ARRAY-DRY-01` · `S112-HAZARD-01` · `FIRSTRUN-GATE-CALL-01` · `SIGNOUT-TOKEN-RESIDUAL-01`.
 > ⚠️ **Two of these hid in prose and a code comment until asked for** — the index exists so that cannot happen again.
