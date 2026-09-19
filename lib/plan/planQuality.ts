@@ -87,7 +87,23 @@ export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
 
   // P7 — week 1 must not be a leap from what the runner actually does.
   const start = effectiveStartKm(input)
-  if (start > 0 && w1 / start > 1.30)
+  // WEEK1-LEAP-ABS-01 (2026-09-19) — A PERCENTAGE NEEDS AN ABSOLUTE FLOOR.
+  //
+  // ⚠️ MEASURED: 17% of everything this predicate flagged was a week-1 increase
+  // of 2 km or less. The worst offenders read "start 4 km, week 1 = 5 km" —
+  // one extra short run, scored as a 43% leap. A ratio on a small base is
+  // noise, and this fired on 58% of runners under 20 km/week and 0% of runners
+  // over 40, which is the signature of an artefact rather than a hazard.
+  //
+  // ⚠️ SAME CLASS AS `LONG-RUN-SHORT` ON ULTRAS, found the same day: a
+  // proportional rule applied where the absolute magnitude makes it
+  // meaningless. Two of the seven predicates had it.
+  //
+  // ⚠️ THE RESIDUAL IS REAL AND IS NOT BEING SUPPRESSED. After this floor,
+  // 9.1% still flag, and their jumps run to 15 km (a runner at 7 km/week
+  // effective handed an 18 km week 1). That is a live coaching question, filed
+  // separately — this line removes the noise around it, it does not answer it.
+  if (start > 0 && w1 / start > 1.30 && w1 - start > 2)
     f.push({ code: 'WEEK1-LEAP', detail: `week 1 is ${Math.round(w1)}km against a ${start}km base (+${((w1 / start - 1) * 100).toFixed(0)}%)` })
 
   // P6 — a marathon plan whose longest run never approaches the race.

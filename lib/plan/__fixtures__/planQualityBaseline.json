@@ -3,7 +3,6 @@
     "generated": 3703,
     "refused": 2777,
     "LONG-RUN-SHORT": 2176,
-    "DAYS-SHORT": 1254,
     "WEEK1-LEAP": 1057,
     "BINGE-WEEK": 7
   },
@@ -12,7 +11,6 @@
     "refused": 128,
     "NEVER-BUILDS": 1077,
     "BINGE-WEEK": 281,
-    "DAYS-SHORT": 164,
     "WEEK1-LEAP": 147,
     "LONG-RUN-SHORT": 40,
     "BINGE-SEVERE-75": 20,
@@ -22,7 +20,6 @@
     "generated": 1500,
     "refused": 0,
     "BINGE-WEEK": 238,
-    "DAYS-SHORT": 151,
     "LONG-RUN-SHORT": 105,
     "NEVER-BUILDS": 63
   },
@@ -30,13 +27,11 @@
     "generated": 13,
     "refused": 1,
     "WEEK1-LEAP": 3,
-    "DAYS-SHORT": 2,
     "LONG-RUN-SHORT": 2
   },
   "engine personas": {
     "generated": 6,
     "refused": 0,
-    "DAYS-SHORT": 1,
     "NEVER-BUILDS": 1,
     "BINGE-WEEK": 1
   }

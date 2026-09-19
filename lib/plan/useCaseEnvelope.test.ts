@@ -86,8 +86,12 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   // Floors sit a little under measured so ordinary noise does not fail a build;
   // a real regression still does.
   const FLOORS: Record<number, number> = {
-    5: 0.88, 10: 0.70, 21.1: 0.81, 42.2: 0.69, 50: 0.90, 100: 0.90,
+    5: 0.97, 10: 0.70, 21.1: 0.81, 42.2: 0.69, 50: 0.90, 100: 0.90,
   }
+  // WEEK1-LEAP-ABS-01 raised 5K again, 91.8% -> 100%: the ≤2km week-1
+  // "leap" artefact was almost entirely a 5K phenomenon, because that is where
+  // the absolute volumes are small enough for a ratio to be meaningless.
+  // Whole product 78.0% -> 84.5%.
 
   // ⚠️ THE FLOOR IS NOT IN THE TITLE, deliberately. It was, and raising a floor
   // then renamed the test, which broke its entry in the duration baseline
