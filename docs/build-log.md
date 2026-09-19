@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — USE-CASE-ENVELOPE-01 · we had been judging the engine on the wrong denominator
+**Shipped:** a weighted definition of who our runners actually are, and the first real answer to "are 90-95% of use cases fit for purpose". It is 75.4%.
+
+**Dev learning:** The founder asked why the answers keep changing. The honest reason is that I kept measuring different populations and calling them the same thing. Every corpus we own is uniform — it treats a ten-kilometre-a-week marathoner as exactly as likely as a thirty-kilometre-a-week one. That is the right design for hunting defects and the wrong one for answering "are we serving our runners", and nobody had written down which question was being asked. The same engine, measured the same day, refuses 32% of marathon inputs on a uniform grid and 18.3% of a weighted population. Both numbers are correct. Only one of them is about people.
+
+**Product learning:** writing the weights down was uncomfortable, because we have no data to justify them. One analytics event exists in the entire product and no charity code has ever been redeemed. But the alternative was not "no assumption" — it was the assumption already buried in a uniform grid, which is that every combination of inputs is equally likely, and that one is definitely wrong. A named, argued, reviewable guess beats an unnamed one you cannot argue with.
+
+**The honest bit:** my first run reported 66.2%, and two of the gaps were my own measurement being wrong. I counted plans that never build as failures when most were correctly classified as maintenance with a note explaining it — a reconciliation an earlier review had already done and written up, which I then repeated the error of. And I reported 2.1% of plans "falling short in silence" because my check looked for three note fields and missed a fourth that was saying exactly the thing I claimed was missing. Corrected, the number is 75.4%. I have now made the denominator mistake enough times this month that it should be the first thing I check, not the third.
+
+---
+
 ## 2026-09-19 — LONG-SESSION-FUEL-01 · the rule already existed, gated on the wrong thing
 **Shipped:** a long run long enough to need fuel now says so at every distance, not just for ultras. Two other review items closed by measurement.
 
