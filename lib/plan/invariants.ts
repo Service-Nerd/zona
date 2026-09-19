@@ -109,6 +109,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-PREP-TIME-STATUS-ANNOTATED',
   'INV-PLAN-DIFFICULTY-ANNOTATED',
   'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
+  'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE',
   'INV-PLAN-INTENSITY-ORDERING',
   'INV-PLAN-PHASE-FOCUS-REACHABLE',
   'INV-PLAN-PHASE-STRUCTURE',
@@ -2762,6 +2763,74 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         message: "Input-constrained plan (constrained_by_inputs) must not read 'comfortable'",
         actual: 'comfortable',
         expected: "'demanding' | 'very_demanding'",
+      })
+    }
+    //   (3) a DECLARED SHORTFALL → band MUST NOT be 'comfortable'
+    //       (§44 Amendment, Coaching Board 2026-09-19, DIFFICULTY-SHORTFALL-01)
+    //
+    // §44's own definition of the bottom rung is "adequate timeline, plan
+    // REACHES ITS TARGET". 751 plans read 'comfortable' while carrying a note
+    // saying it does not — 26% of comfortable plans, and 721 of the 751 were
+    // classified `optimal`, so `appropriate_for_persona` excused only 30.
+    //
+    // ⚠️ This reads the shortfall FLAGS, never the sessions. §44 point 3
+    // (Willy) forbids the band consulting plan-quality signals, and the
+    // proposal that it should read load was ruled INCORRECT in the same
+    // sitting. A shortfall flag states whether the plan met the target it was
+    // given — the same class of fact as prep-time margin.
+    const shortfallNotes = [
+      plan.meta.long_run_shortfall_note,
+      plan.meta.peak_shortfall_note,
+      plan.meta.volume_shortfall_note,
+    ].filter(Boolean)
+    if (shortfallNotes.length && plan.meta.difficulty_band === 'comfortable') {
+      violations.push({
+        code: 'INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE',
+        principle_ref: 'CoachingPrinciples §44 Amendment (DIFFICULTY-SHORTFALL-01)',
+        severity: 'error',
+        week: 0,
+        message: `Plan declares a shortfall (${shortfallNotes.length} note(s)) yet reads 'comfortable' — §44 defines comfortable as "plan reaches its target"`,
+        actual: 'comfortable',
+        expected: "'demanding' | 'very_demanding'",
+      })
+    }
+  }
+
+  // INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE (§79 Amendment 5, Coaching Board
+  // 2026-09-19, REENTRY-CAUSE-01) — the re-entry omission note must name the
+  // reason the window actually opened.
+  //
+  // MEASURED: "You are coming back" reached 21% of experienced-runner plans,
+  // and 80% of those had `early_quality_onset` — ADR-021 §89's cohort, which
+  // REQUIRES the runner is not returning and not fresh. The engine told its
+  // most demonstrably-ready runners their legs needed to re-adapt.
+  //
+  // ⚠️ READS THE STAMPED CAUSE, NEVER RECOMPUTES IT. The producer decides why
+  // the window opened; this checks the rendered copy agrees. Recomputing the
+  // predicate here would share the producer's logic and be blind to the
+  // producer being wrong — the deloadCadence/tierResolution failure class.
+  if (plan.meta.intensity_reentry_omission_note) {
+    const note = plan.meta.intensity_reentry_omission_note
+    const cause = plan.meta.intensity_reentry_cause
+    if (!cause) {
+      violations.push({
+        code: 'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE',
+        principle_ref: 'CoachingPrinciples §79 Amendment 5',
+        severity: 'error',
+        week: 0,
+        message: 'Re-entry omission note present with no stamped cause — the copy cannot be checked against a reason that was never recorded',
+        actual: 'no intensity_reentry_cause',
+        expected: "'returning' | 'user_raised' | 'early_onset'",
+      })
+    } else if (cause !== 'returning' && /coming back/i.test(note)) {
+      violations.push({
+        code: 'INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE',
+        principle_ref: 'CoachingPrinciples §79 Amendment 5',
+        severity: 'error',
+        week: 0,
+        message: `Re-entry note tells a '${cause}' runner they are "coming back" — they are not returning from anything`,
+        actual: cause,
+        expected: "note without 'coming back' copy",
       })
     }
   }

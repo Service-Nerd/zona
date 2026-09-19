@@ -2196,6 +2196,58 @@ The refusal tier — *"not achievable in this window"* — **is** the §44 `bloc
 
 ---
 
+### §44 Amendment — a plan that admits it falls short may not read `comfortable` (Coaching Board 2026-09-19, DIFFICULTY-SHORTFALL-01)
+
+**Principle.** Where a plan carries a declared shortfall — `long_run_shortfall_note`,
+`peak_shortfall_note` or `volume_shortfall_note` — the difficulty band MUST NOT
+read `comfortable`.
+
+**Why — §44 was contradicting its own definition of its own bottom rung.** The
+ladder above defines it plainly: *"`comfortable` — adequate timeline, plan
+**reaches its target** (or is `appropriate_for_persona`)."* Measured across
+4,536 plans, **751 read `comfortable` while carrying a note telling the runner
+the plan does not reach the target** — 26% of every comfortable plan
+(607 `peak_shortfall_note`, 150 `long_run_shortfall_note`). The escape clause
+did not cover them: **721 of the 751 were classified `optimal`**, and only 30
+were `appropriate_for_persona`. The runner met both statements on one screen —
+a reassuring label beside a sentence explaining the plan falls short.
+
+**⚠️ WHAT THE BOARD REJECTED, RECORDED BECAUSE IT IS THE MORE TEMPTING FIX.**
+The finding was submitted as *"the band never reads the training load — it is
+silent on session duration and acute weekly spikes"*, with real numbers behind
+it: `comfortable` plans have a longer median longest session than `demanding`
+ones (132 min vs 97), 94% of them contain a week jumping more than 40%, and 279
+give a runner with under six months of running a session over 150 minutes.
+**That framing was ruled INCORRECT.** §44 point 3 — *"A friendly band may never
+front a constrained or warned plan (Willy). The band is derived only from
+pre-generation feasibility signals, never from plan-quality signals"* — is
+Willy's own constraint, and reading the produced plan back into the band is
+precisely what it forbids. The band does not read `duration_mins`, ramp rate or
+age, and must not start.
+
+**Why a shortfall flag is not the same thing.** A shortfall states whether the
+plan met the target it was given. That is the same class of fact as prep-time
+margin, which the band already reads, and it is decided by the target rather
+than by the sessions. The band still never inspects a session.
+
+**Note copy.** The shortfall arm is evaluated **last** in the ladder, so a plan
+already demanding for a louder reason keeps that reason's note. The arm moves
+only plans that would otherwise have read `comfortable`.
+
+**Measured effect.** On the canonical cohort grid, `difficultyComfortablePct`
+**54.5% → 22.7% (−31.8pp)**; `comfortable`-with-a-shortfall **751 → 0**. With
+`difficulty_band`, `difficulty_note` and the two re-entry fields stripped,
+`verify:parity` is **IDENTICAL across 5,940 cases** — no session, no volume and
+no prescription changed. This is a labelling fix and nothing else.
+
+**Config.** No new numeric. The arm reads existing shortfall flags; inventing a
+constant to satisfy the three-artifact rule would be decorative config, which
+this repo already gates against (`configConsumer.test.ts`).
+
+**Enforced by** `INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE` arm (3), **error** severity.
+
+---
+
 ## 45. Long-run progression cap (universal, no phase exemption)
 
 **Principle.** Long-run distance MUST NOT increase by more than +20% week-on-week OR +5km absolute, whichever is greater. The cap applies in ALL phases — base, build, peak, taper. There is no "specificity allows it" exemption.
@@ -3867,6 +3919,54 @@ ruling (REENTRY-VO2MAX-BASELINE-01).
 
 **Invariant.** `INV-PLAN-REENTRY-OMISSION-DECLARED` (error), derived from the
 PLACED SESSIONS so the producer cannot satisfy it by asserting it behaved.
+
+### Amendment 5 — the re-entry note must name the reason the window actually opened (Coaching Board 2026-09-19, REENTRY-CAUSE-01)
+
+**Principle.** A plan carrying the intensity re-entry omission note MUST stamp
+`meta.intensity_reentry_cause` as one of `returning` | `user_raised` |
+`early_onset`, and only `returning` may render *"you are coming back"* copy.
+
+**Why.** Measured on 576 plans of intermediate and experienced runners with
+plausible long runs, the *"You are coming back, so the quality work leads with
+tempo and threshold while your legs re-adapt"* copy appeared on **120 plans
+(21%) — and 96 of those had `early_quality_onset` set.** That is ADR-021 §89's
+cohort, which *requires* experienced intensity, a deep training age, regular
+recent quality, no injury history, and explicitly **not returning and not
+fresh**. **84 of the 120 were not returning by any arm at all.** The engine was
+telling the runners it had itself certified as demonstrably ready that their
+legs needed to re-adapt. A runner at 40 km/week with a 16 km long run reads
+that, knows it is false about them, and discounts everything else the plan says.
+
+**⚠️ The mechanism was not the obvious one, and naming it wrongly would have
+produced a wrong fix.** It is not the fresh-return heuristic (25 km/wk **and**
+10 km longest — nowhere near these runners) and not `isReturningRunner`
+(current volume below 50% of peak). `oneWeekOnRamp = earlyQualityOnset` sits in
+`reentryIsUserRaisedOnly`'s exclusion list, so an early-onset runner failed that
+test and fell through a **binary** to the returning copy. Three causes needed
+three branches.
+
+**⚠️ This board already fixed this copy class once, in the arm next door.**
+Amendment 3's closing line records *"copy that does **not** tell a first-timer
+they are 'coming back', which was a real defect introduced and fixed inside this
+change"*. One arm was fixed; this one survived, because the fix was a second
+branch rather than a cause.
+
+**The cause is STAMPED, not re-derived.** `INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE`
+reads the stamped field and the rendered note. A checker that recomputed the
+predicate would share the producer's logic and be blind to the producer being
+wrong — the `deloadCadence` / `tierResolution` failure class.
+
+**Measured effect.** "Coming back" copy **120 → 24 plans**, and **0 of the 24
+are non-returning** (was 96). Prescription unchanged: scoped `verify:parity` is
+IDENTICAL across 5,940 cases with the note and cause fields stripped.
+
+**Config.** No new numeric — the copy variant is selected from flags that
+already exist. A constant here would be decorative.
+
+**Enforced by** `INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE`, **error** severity,
+proven wakeable by two mutations in `invariantLiveness.ts`.
+
+---
 
 ## 80. Finish-goal long run — time on feet, not distance
 

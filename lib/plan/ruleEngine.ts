@@ -6392,6 +6392,43 @@ function buildRulePlanOnce(
     reentry.active
     && !assessed.intensityLiftedForReturn && !returningRunner && !isFreshReturn && !oneWeekOnRamp
 
+  /**
+   * §79 Amendment 5 (Coaching Board 2026-09-19, REENTRY-CAUSE-01) — THE NOTE
+   * MUST NAME THE REASON THE WINDOW ACTUALLY OPENED.
+   *
+   * ⚠️ MEASURED: the "You are coming back" copy reached 21% of experienced-runner
+   * plans (120/576), and 96 of those 120 had `early_quality_onset` set — 84 were
+   * not returning by ANY arm. ADR-021 §89 certifies that cohort as experienced
+   * intensity, deep training age, regular recent quality, explicitly NOT
+   * returning or fresh, and no injury history. The engine was telling its most
+   * demonstrably-READY runners that their legs needed to re-adapt.
+   *
+   * ⚠️ THE MECHANISM WAS NOT THE ONE I FIRST NAMED, AND TRACING IT MATTERED.
+   * Not the fresh-return heuristic (25 km/wk AND 10 km longest — nowhere near
+   * these runners) and not `isReturningRunner` (50% of peak). It is
+   * `oneWeekOnRamp = earlyQualityOnset` sitting in the exclusion list above:
+   * an early-onset runner fails `reentryIsUserRaisedOnly`, so the binary fell
+   * through to the returning copy. A third cause needed a third branch.
+   *
+   * §79 Amendment 3 already fixed this exact copy class in the adjacent arm —
+   * its closing line records "copy that does not tell a first-timer they are
+   * 'coming back', which was a real defect introduced and fixed inside this
+   * change". One arm was fixed; this one survived.
+   *
+   * THE CAUSE IS STAMPED, NOT RE-DERIVED. `INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE`
+   * reads this field and the rendered note. A checker that recomputed the
+   * predicate would share the producer's logic and be blind to the producer
+   * being wrong — the deloadCadence / tierResolution class this repo has paid
+   * for repeatedly.
+   */
+  const reentryCause: 'returning' | 'user_raised' | 'early_onset' | null =
+    !reentry.active ? null
+    : reentryIsUserRaisedOnly ? 'user_raised'
+    // Only the early-onset flag is set: this runner is READY, not returning.
+    : (oneWeekOnRamp && !assessed.intensityLiftedForReturn && !returningRunner && !isFreshReturn)
+      ? 'early_onset'
+    : 'returning'
+
   // §89 Lever B — earlier quality onset via a SHORTER (still all-easy) base. Only
   // for a demonstrably-ready runner with a real CURRENT base: experienced
   // intensity, intermediate+ structure (volume floor), deep training age,
@@ -8280,11 +8317,37 @@ function buildRulePlanOnce(
   const goalBeyondMeasuredFitness = goalPaceMins != null
     && goalPaceMins < pace.minPerKmInterval * (1 - GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT / 100)
 
+  /**
+   * §44 Amendment (Coaching Board 2026-09-19, DIFFICULTY-SHORTFALL-01) — A PLAN
+   * THAT TELLS THE RUNNER IT DOES NOT REACH ITS TARGET MAY NOT READ
+   * 'COMFORTABLE'.
+   *
+   * §44 defines the bottom rung itself: "`comfortable` — adequate timeline,
+   * plan REACHES ITS TARGET (or is `appropriate_for_persona`)". Measured on
+   * 4,536 plans, 751 read `comfortable` while carrying a note saying the plan
+   * falls short — 26% of all comfortable plans. The escape clause does not
+   * cover them: 721 of the 751 were classified `optimal`, only 30 were
+   * `appropriate_for_persona`. The runner met both statements on one screen.
+   *
+   * ⚠️ THIS IS NOT THE BAND READING THE TRAINING LOAD, WHICH THE BOARD VETOED.
+   * §44 point 3 (Willy's own constraint) holds: the band is derived only from
+   * PRE-GENERATION feasibility, never from plan-quality signals. It does not
+   * read `duration_mins`, ramp rate or age, and the proposal that it should was
+   * ruled INCORRECT in the same sitting. A shortfall FLAG is a statement about
+   * whether the plan met the target it was given — the same class of fact as
+   * prep-time margin, which the band already reads.
+   */
+  const declaresShortfall = !!(finishGoalLrShortfallNote || peakShortfallNote || volumeShortfallNote)
+
   const difficultyBand: 'comfortable' | 'demanding' | 'very_demanding' =
     prepTime.status === 'warn' ? 'very_demanding'
     : compressionClassification === 'constrained_by_inputs' ? 'demanding'
     : goalBeyondMeasuredFitness ? 'demanding'
     : (input.goal === 'time_target' && prepMargin < GENERATION_CONFIG.DIFFICULTY_COMFORTABLE_MARGIN_WEEKS) ? 'demanding'
+    // Placed LAST deliberately: a plan already demanding for a louder reason
+    // keeps that reason's note. This arm only ever moves a plan that would
+    // otherwise have read 'comfortable', which is the 751 and nothing else.
+    : declaresShortfall ? 'demanding'
     : 'comfortable'
 
   // One-line honest "why" for the demanding tiers only (mirrors
@@ -8302,7 +8365,11 @@ function buildRulePlanOnce(
       // the runner would otherwise discover mid-plan — that their race-pace
       // sessions feel harder than their interval sessions — and why.
       ? `Demanding — the pace you're targeting is quicker than your benchmark currently supports, so race-pace sessions will bite harder than the interval work. That gap is the plan's job.`
-      : `Demanding on ${prepTime.weeks_available} weeks — a tight but workable timeline for the time you're chasing. Hold the easy days and it stays honest.`
+    : (input.goal === 'time_target' && prepMargin < GENERATION_CONFIG.DIFFICULTY_COMFORTABLE_MARGIN_WEEKS)
+      ? `Demanding on ${prepTime.weeks_available} weeks — a tight but workable timeline for the time you're chasing. Hold the easy days and it stays honest.`
+    // §44 Amendment (DIFFICULTY-SHORTFALL-01) — the only remaining cause. The
+    // shortfall note itself names WHICH part and why, so this does not repeat it.
+      : `Demanding — this plan does not fully reach what this distance usually asks for. The shortfall note says which part, and what would lift it.`
 
   const meta: Plan['meta'] = {
     // F6 — empty, not invented. Every consumer already falls back gracefully
@@ -8466,13 +8533,20 @@ function buildRulePlanOnce(
     ...(intensityReentryActive
       && !weeks.some(w => (w.n ?? 0) >= 1 && Object.values(w.sessions).some(
         sn => sn && sn.type === 'quality' && isVo2maxSession(sn, V1_SESSION_CATALOGUE)))
-      ? { intensity_reentry_omission_note: reentryIsUserRaisedOnly
+      ? { intensity_reentry_cause: reentryCause ?? undefined,
+          intensity_reentry_omission_note: reentryIsUserRaisedOnly
             // §79 Amendment 3 — this runner is NOT coming back from anything;
             // they told the wizard they are further along than the data says.
             // Saying "you are coming back" to a couch-to-10K first-timer is the
             // copy equivalent of a wrong prescription, and it was live for the
             // length of one measurement before this branch existed.
             ? 'No interval or hill sessions this block. You told us you are further on than your recent running shows, so the plan takes you at your word on effort and starts with tempo and threshold. The sharp stuff earns its place once there is a base under it.'
+            // §79 Amendment 5 — the runner qualified for EARLY quality onset
+            // (ADR-021 §89), which requires they are NOT returning and NOT
+            // fresh. Telling them they are coming back is false about the one
+            // cohort the engine has certified as ready.
+            : reentryCause === 'early_onset'
+            ? 'No interval or hill sessions this block. Your base is solid enough that quality starts earlier than standard, so it opens with tempo and threshold and works toward the sharper sessions rather than starting there.'
             : 'No interval or hill sessions this block. You are coming back, so the quality work leads with tempo and threshold while your legs re-adapt — sharper work earns its place in the next cycle, not this one.' }
       : {}),
     // §96 / HSR-INERT-01 (brand-routed honesty, CB-HSR-01) — a `love` runner below the

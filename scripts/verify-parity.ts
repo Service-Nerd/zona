@@ -50,7 +50,7 @@ import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, rmSync, copyFileSync, symlinkSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join, resolve , basename } from 'node:path'
 
 // ── The grid ────────────────────────────────────────────────────────────────
 // Deliberately spans the axes most likely to hide a regression: every distance
@@ -274,7 +274,16 @@ async function main(): Promise<void> {
   console.log(`  current  : ${headLabel}`)
   console.log(`  cases    : ${EXPECTED_ROWS}\n`)
 
-  const self = join(repo, 'scripts', 'verify-parity.ts')
+  // ⚠️ DERIVED FROM argv, NOT HARDCODED — 2026-09-19. This was
+  // `join(repo,'scripts','verify-parity.ts')`, so a COPY of this script (made
+  // to strip extra fields and prove a change is confined to them) copied the
+  // ORIGINAL into the worktree: the baseline side ran a different strip list
+  // from the current side and the diff was meaningless, while looking exactly
+  // like a real prescription change. Caught only because the result was
+  // implausible. A self-reference that names one file cannot survive being
+  // copied, and copying it is the natural way to scope a parity run.
+  const selfName = basename(process.argv[1] ?? 'verify-parity.ts')
+  const self = join(repo, 'scripts', selfName)
   const wt = mkdtempSync(join(tmpdir(), 'zonna-parity-'))
   let created = false
 
@@ -290,11 +299,11 @@ async function main(): Promise<void> {
     // contain this script — so bring both in from HEAD.
     const nm = join(wt, 'node_modules')
     if (!existsSync(nm)) symlinkSync(join(repo, 'node_modules'), nm, 'dir')
-    copyFileSync(self, join(wt, 'scripts', 'verify-parity.ts'))
+    copyFileSync(self, join(wt, 'scripts', selfName))
 
     console.log(`→ generating at ${baseSha}\n`)
     const baseOut = run('npx', ['tsx', '--tsconfig', 'tsconfig.json',
-      join(wt, 'scripts', 'verify-parity.ts'), '--probe'], wt)
+      join(wt, 'scripts', selfName), '--probe'], wt)
 
     const head = parse(headOut, 'HEAD')
     const base = parse(baseOut, baseSha)

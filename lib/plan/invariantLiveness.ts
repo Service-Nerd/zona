@@ -581,6 +581,32 @@ export const MUTATIONS: Mutation[] = [
     delete (p.meta as unknown as Poke).difficulty_band
   } },
 
+  // §79 Am. 5 / INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE — the note tells a runner
+  // who is NOT returning that they are "coming back".
+  //
+  // ⚠️ THE MUTATION WRITES BOTH FIELDS ON PURPOSE. The generic 'drop every meta
+  // note' mutation deletes `intensity_reentry_omission_note`, which makes the
+  // rule go SILENT rather than fire — the rule is gated on the note existing.
+  // And a corpus plan that already carries the note is an early-onset plan,
+  // which now carries the CORRECT copy, so nothing in the corpus can be nudged
+  // into the defect either. Reconstructing the live defect exactly is the only
+  // way to prove the rule can wake: this is the string that shipped.
+  { name: 'reentry note says "coming back" to a non-returner', apply: p => {
+    const meta = p.meta as unknown as Poke
+    meta.intensity_reentry_cause = 'early_onset'
+    meta.intensity_reentry_omission_note =
+      'No interval or hill sessions this block. You are coming back, so the quality work leads with tempo and threshold while your legs re-adapt.'
+  } },
+
+  // …and the other arm: the note present with no cause stamped at all, which is
+  // what a future caller writing the note by a second path would produce.
+  { name: 'reentry note with no stamped cause', apply: p => {
+    const meta = p.meta as unknown as Poke
+    delete meta.intensity_reentry_cause
+    meta.intensity_reentry_omission_note =
+      'No interval or hill sessions this block. Your base is solid enough that quality starts earlier than standard.'
+  } },
+
   // §83 / INV-PLAN-INTENSITY-ORDERING — threshold work prescribed FASTER than
   // VO2max work. Needs a matched pair in two different zone bands, which the
   // engine never produces, and the escape hatch closed (a surfaced goal-beyond-

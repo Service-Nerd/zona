@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — the coaching board reviewed 17 real plans, and killed my best finding
+**Shipped:** two board rulings. The engine stops telling ready runners they are coming back, and stops calling a plan "comfortable" while telling the runner it falls short.
+
+**Dev learning:** I took three findings to the board and the mandatory conflict scan killed the one I was most confident about before a single seat spoke. I had measured that the difficulty label never looks at the training load: plans labelled comfortable have longer sessions than plans labelled demanding, and two hundred and seventy-nine of them hand someone with under six months of running a session over two and a half hours. All true, all irrelevant, because the principle says in writing that the label is deliberately blind to the produced plan, and the person who insisted on that is the same injury specialist I was about to quote at it. What survived was narrower and better: the principle defines "comfortable" as "the plan reaches its target", and seven hundred and fifty-one plans said comfortable in one field and "this does not reach your target" in another. Fixing the real contradiction took one line.
+
+**AI-building learning:** the second finding nearly went in with the wrong cause attached. The copy tells runners they are coming back from a layoff; I assumed the layoff detector was misfiring. It was not — it was nowhere near firing. The actual trigger was that the code asks "is this an early-onset runner" as part of deciding *which of two* messages to show, and an early-onset runner is neither, so they fell through to the wrong one. Same visible defect, completely different fix. If I had trusted the first explanation I would have loosened a threshold and changed nothing.
+
+**The honest bit:** three separate checks in this one piece of work were green because they were not actually looking. The parity script copies itself into a worktree by a hardcoded filename, so my scoped copy compared itself against the unscoped original and reported a prescription change that did not exist. The population harness missed a thirty-one point swing in a runner-facing label because the label was not in its list. And when I added it to the list, the test still passed, because the test had its own hand-written list of seven fields. Three layers, each one checking something slightly narrower than what it appeared to check. All three are now derived rather than typed.
+
+---
+
 ## 2026-09-19 — SCHEMA-LIVE-01 · the check that must never throw, and how you prove it works
 **Shipped:** the canonical plan schema now runs on every save as an observation, and the four untested modules with production callers have tests.
 

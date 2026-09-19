@@ -68,17 +68,46 @@ describe('cohort shape — the population must not change silently', () => {
     expect(actual.generated).toBeGreaterThan(100)
   })
 
-  it.each([
-    ['maintenancePct',          'plans downgraded to maintenance'],
-    ['constrainedByInputsPct',  'plans classified constrained_by_inputs'],
-    ['volumeConstrainedPct',    'plans whose ramp never reached target peak'],
-    ['timeCompressedPct',       'plans short of calendar weeks'],
-    ['constraintNotePct',       'plans carrying a runner-facing constraint note'],
-    ['plansWithNoQualityPct',   'plans with no quality session at all'],
-    ['earlyQualityOnsetPct',    'plans granted §89 early quality onset'],
-  ] as const)('%s is unchanged (%s)', (key, human) => {
-    const a = actual[key] as number
-    const b = base[key] as number
+  // ⚠️ THE COMPARED FIELDS ARE DERIVED FROM THE BASELINE, NOT TYPED OUT.
+  //
+  // This was a hand-written array of seven keys, and on 2026-09-19 a new rate
+  // (`difficultyComfortablePct`) was added to the summariser, moved 16pp in the
+  // same commit, and this test stayed green — because the new field was simply
+  // not in the list. A checker carrying its own copy of what to check is blind
+  // to exactly what the copy omits, which is the failure class this repo has
+  // already recorded for the deload cadence and the tier ladder.
+  //
+  // Every `*Pct` key the summariser emits is now compared automatically. The
+  // map below supplies readable prose where it has some; a new key with no
+  // entry is still compared, just with a plainer message. Adding a rate can no
+  // longer silently opt it out of the gate.
+  const HUMAN: Record<string, string> = {
+    maintenancePct:           'plans downgraded to maintenance',
+    constrainedByInputsPct:   'plans classified constrained_by_inputs',
+    volumeConstrainedPct:     'plans whose ramp never reached target peak',
+    timeCompressedPct:        'plans short of calendar weeks',
+    constraintNotePct:        'plans carrying a runner-facing constraint note',
+    plansWithNoQualityPct:    'plans with no quality session at all',
+    earlyQualityOnsetPct:     'plans granted §89 early quality onset',
+    difficultyComfortablePct: "plans whose §44 demand band reads 'comfortable'",
+  }
+  const PCT_FIELDS = (Object.keys(base as unknown as Record<string, unknown>) as string[])
+    .filter(k => k.endsWith('Pct') && typeof (base as unknown as Record<string, unknown>)[k] === 'number')
+    .sort()
+
+  it('every percentage rate the summariser emits is actually compared', () => {
+    // Guards the derivation itself: if the filter ever matches nothing, every
+    // rate test below would vanish and the suite would still be green.
+    expect(PCT_FIELDS.length).toBeGreaterThanOrEqual(8)
+    for (const k of Object.keys(actual as unknown as Record<string, unknown>)) {
+      if (k.endsWith('Pct')) expect(PCT_FIELDS, `${k} is emitted but not baselined`).toContain(k)
+    }
+  })
+
+  it.each(PCT_FIELDS.map(k => [k, HUMAN[k] ?? 'classification rate'] as const))(
+    '%s is unchanged (%s)', (key, human) => {
+    const a = (actual as unknown as Record<string, number>)[key]
+    const b = (base as unknown as Record<string, number>)[key]
     expect(
       Math.abs(a - b),
       `${key} moved ${(a - b).toFixed(1)}pp — ${human}: baseline ${b}%, now ${a}%.\n` +

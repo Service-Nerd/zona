@@ -46,6 +46,16 @@ export interface CohortShape {
   meanDeliveredPeakKm: number
   meanPlanWeeks: number
   earlyQualityOnsetPct: number
+  /** §44's runner-facing demand label.
+   *
+   *  ⚠️ ADDED 2026-09-19 BECAUSE A 16pp SWING IN IT WENT UNSEEN. The §44
+   *  Amendment (DIFFICULTY-SHORTFALL-01) moved 751 plans off `comfortable`
+   *  — 64% -> 48% of the corpus — and `cohort:shape` reported no change,
+   *  because the band was not one of the rates it tracked. That is precisely
+   *  the failure this harness exists to prevent, one field short of catching
+   *  it. The band is the first thing a runner reads about their plan; a
+   *  population-level move in it is a change of product, not of wording. */
+  difficultyComfortablePct: number
 
   /** Per-distance maintenance rate — an aggregate can hold steady while one
    *  distance swings hard, which is how a marathon-only regression hides. */
@@ -79,7 +89,8 @@ export function summariseCohort(cases: CohortCase[]): CohortShape {
   const g = plans.length
 
   let maint = 0, constrained = 0, volConstrained = 0, timeCompressed = 0, note = 0
-  let noQuality = 0, earlyOnset = 0
+  let noQuality = 0
+  let comfortableBand = 0, earlyOnset = 0
   const qualityPerWeek: number[] = []
   const peaks: number[] = []
   const weeks: number[] = []
@@ -109,6 +120,7 @@ export function summariseCohort(cases: CohortCase[]): CohortShape {
     if (qCount.length) qualityPerWeek.push(mean(qCount))
 
     if (real.every(w => Object.values(w.sessions).every(s => s?.type !== 'quality'))) noQuality++
+    if (plan.meta?.difficulty_band === 'comfortable') comfortableBand++
 
     const nonTaper = real.filter(w => w.phase !== 'taper')
     if (nonTaper.length) peaks.push(Math.max(...nonTaper.map(deliveredKm)))
@@ -134,6 +146,7 @@ export function summariseCohort(cases: CohortCase[]): CohortShape {
     meanDeliveredPeakKm: mean(peaks),
     meanPlanWeeks: mean(weeks),
     earlyQualityOnsetPct: pct(earlyOnset, g),
+    difficultyComfortablePct: pct(comfortableBand, g),
     maintenanceByDistance,
   }
 }

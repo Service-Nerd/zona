@@ -699,6 +699,11 @@ export interface PlanMeta {
   // SHORTER (still all-easy) base so quality starts ~2 weeks sooner. Asserted by
   // INV-PLAN-EARLY-ONSET-GATED.
   early_quality_onset?: boolean
+  /** §79 Amendment 5 — WHY the intensity re-entry window opened. Stamped by the
+   *  producer so `INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE` can check the rendered
+   *  copy against the cause without recomputing the predicate (a checker that
+   *  shares the producer's logic cannot catch the producer being wrong). */
+  intensity_reentry_cause?: 'returning' | 'user_raised' | 'early_onset'
   /**
    * §91 — how many all-easy §57 foundation weeks the generator KNEW would be
    * prepended, decided at generation time by `plannedFoundationWeeks`. Credited
