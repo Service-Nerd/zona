@@ -79,75 +79,52 @@ export function assessBaseBuild(plan: Plan, input: GeneratorInput): BaseBuildAss
   // scored 1.2x, actual build 1.8x. Wrong in BOTH directions and most wrong
   // where §10's cap bites hardest. Shared owner, so producer and gate cannot
   // drift (`lib/plan/startVolume.ts`).
-  // ⚠️ STILL THE RAW DECLARED VOLUME, AND THAT IS A KNOWN DEFECT — held, not
-  // fixed, deliberately. See S111-DENOMINATOR-01.
+  // §111 Amendment 2 — THE DENOMINATOR IS THE VOLUME THE ENGINE STARTS FROM.
+  // SHIPPED 2026-09-19 after BOTH boards ruled.
   //
-  // The Coaching Board ruled on 2026-09-18 that this must become
-  // `effectiveStartKm(input)` — the volume the engine actually builds from,
-  // after §29's fresh-return scaling and §10's <6mo cap. That ruling is
-  // correct and the fix was built and MEASURED:
+  // This read `input.current_weekly_km`, the raw wizard figure, while §29
+  // scales a fresh returner down and §10 caps a `<6mo` runner. So the gate
+  // scored a build no runner performs: declared 50 km/wk starts at 30 and
+  // scored 1.2x against a real 1.8x; a fresh returner declaring 20 starts at
+  // 14, scored 3.0x against a real 4.2x. Wrong in BOTH directions and most
+  // wrong where §10's cap bites hardest. Shared owner with the producer
+  // (`lib/plan/startVolume.ts`) so gate and engine cannot drift.
   //
-  //   refused 1,296 -> 1,920 (+624, +48%)
-  //   healthy masters never-builds 10.1% -> 10.3%, standard 8.1% -> 8.3%
+  // ⚠️ THE COST, MEASURED AND ACCEPTED: +456 beginner-marathon refusals
+  // (2,321 -> 2,777 of 6,480, +19.6% for the cohort the founder ranks FIRST).
+  // Held for most of 2026-09-19 for exactly that reason, then ruled by both
+  // boards on evidence about what those runners were getting instead:
   //
-  // Every one of those 624 is a runner whose REAL build exceeds 4.0x and who
-  // was passing on a mismeasurement, so refusing them is correct in isolation.
-  // But the founder's standing P0 is that the charity cohort cannot be refused,
-  // the board's second step (a runway-aware ceiling) was withdrawn when its
-  // premise failed measurement, and S106-FLAT-PEAK-01 would remove most of
-  // these refusals by scaling the peak instead. Shipping this alone delivers a
-  // 48% refusal INCREASE against a P0 that says the opposite.
+  //     median TRUE build ratio (peak / real start)   5.57x   (cap 4.0)
+  //     median WEEK-1 LEAP above their real start     +114%
+  //     median peak long run                          62% of race
+  //     genuine plan defects                          ZERO
+  //     typical profile   12 km/week, LONGEST RUN EVER 0 km, marathon in 29 wks
   //
-  // ⚠️ RE-MEASURED AND RE-HELD 2026-09-19, AND THE RE-MEASUREMENT WAS WRONG
-  // FIRST — recorded because the mistake is the transferable part.
+  // **The zero matters as much as the 5.57**: these plans pass every check the
+  // engine owns and still double a never-run beginner's weekly volume in week
+  // one. That is the check measuring the wrong thing, which is what this fixes.
+  // Willy: "the clearest bone-stress setup in this whole engine." Sims: this
+  // cohort pays for an over-ambitious week one in stress fractures, and skews
+  // female. Hutchinson: "declining to apply a correction because the truth is
+  // expensive is not a coaching position." SLT unanimous to ship; Traynor:
+  // waiting on the charity's numbers buys nothing, because they would tell us
+  // HOW MANY are affected and not WHETHER the plan is safe.
   //
-  // The hold above cites "+624, +48%". On 2026-09-19 I re-measured after
-  // S106-RACE-PEAK-01 and §114 shipped, on `cohortGrid + targetedGrid`, and got
-  // **§111 refuses 0 today, 112 with the fix — 0.24%, not 48%**. I concluded the
-  // blocker had evaporated and shipped it.
+  // ⚠️ RUNWAY DOES NOT RESCUE THEM, measured: <=16 weeks is WORSE (+157%
+  // week-1 leap, peak long run 50% of race). The hazard is the week-1 floor
+  // (35% of peak), which does not scale down with the runner, so more time
+  // cannot fix it. §2's ramp cap governs week-on-week and NOT week 1.
   //
-  // `audit:plans` then failed on its OWN corpus:
-  //
-  //     BEGINNER MARATHON (priority one)  generated 4,159 -> 3,703
-  //                                       refused   2,321 -> 2,777  (+456, +19.6%)
-  //
-  // **The 6,480-input beginner-marathon corpus is not in `cohortGrid` or
-  // `targetedGrid`.** I measured the cohort the fix is safe for and missed the
-  // cohort it endangers — the founder's priority one. Reverted.
-  //
-  // THE HOLD STANDS, now with the right number and the right corpus. A held
-  // item's cost must be re-measured on the corpus that contains the cohort the
-  // hold PROTECTS, not on whichever grid is nearest to hand.
-  //
-  // What would release it: a change that lifts low-base beginners' delivered
-  // peak (so the real ratio falls below the cap) BEFORE the denominator is
-  // corrected — not a re-measurement of this fix in isolation.
-  //
-  // ⚠️ THE CAP CANNOT ABSORB THE CORRECTION, AND THIS WAS MEASURED RATHER THAN
-  // ASSUMED (2026-09-19, second attempt). The obvious escape is to correct the
-  // denominator AND raise `MAX_BASE_BUILD_RATIO` so the admission boundary
-  // holds. On the beginner-marathon corpus that looks like it works:
-  //
-  //     corrected denominator, cap 4.0  ->  1,457 BaseVolume refusals
-  //     corrected denominator, cap 4.5  ->  1,318
-  //     corrected denominator, cap 5.0  ->  1,004   (today: 1,001)
-  //
-  // **A FLAT TOTAL HID A CHANGED COMPOSITION.** `effectiveStartKm` differs from
-  // the raw figure ONLY for fresh-return (§29) and `<6mo` (§10) runners. For
-  // everyone else the denominator is UNCHANGED, so raising the cap is a pure
-  // loosening. The two levers act on different populations: the correction
-  // tightens one group, the cap loosens all of them, and the counts happen to
-  // cancel.
-  //
-  // Caught by `racePeakExclusion.test.ts` — at cap 5.0 a **10 km/week beginner
-  // marathoner is ADMITTED at ratio 4.70**, and §111's own ratified text says
-  // "the reckless ceiling: <= 10 km/week beginner marathon (>= 4.7x) must be
-  // refused." The escape breaks the board decision §111 exists to enforce.
-  //
-  // So there is no cap that buys this. The denominator correction costs
-  // +456 beginner-marathon refusals or it costs nothing because it is not
-  // applied. That is a founder decision, not an engineering one.
-  const currentKm = input.current_weekly_km ?? 0
+  // ⚠️ THE CAP CANNOT ABSORB THE CORRECTION — do not retry it. Raising
+  // MAX_BASE_BUILD_RATIO to hold refusals flat looks clean (cap 5.0 -> 1,004
+  // vs today's 1,001) and is wrong: `effectiveStartKm` differs from raw ONLY
+  // for fresh-return and `<6mo` runners, so the cap raise is a pure loosening
+  // for everyone else. A FLAT TOTAL HID A CHANGED COMPOSITION, and at cap 5.0
+  // a 10 km/week beginner marathoner is admitted at 4.70 — the exact runner
+  // §111's ratified text says must be refused. Caught by
+  // `racePeakExclusion.test.ts`.
+  const currentKm = effectiveStartKm(input)
   const cap = GENERATION_CONFIG.MAX_BASE_BUILD_RATIO
   const applies = baseBuildRatioApplies(input.race_distance_km)
   const minBaseKm = Math.ceil(peakKm / cap)
@@ -177,12 +154,36 @@ export interface BaseVolumeResult {
 export function baseVolumeRefusal(a: BaseBuildAssessment, input: GeneratorInput): BaseVolumeResult {
   const distKey = raceDistanceKey(input.race_distance_km)
   const label = distKey === 'MARATHON' ? 'marathon' : distKey === '50K' ? '50K' : distKey === '100K' ? '100K' : 'this distance'
+  // §111 Am.2 — THE RETURN TRIGGER (Wood's condition, SLT 2026-09-19).
+  //
+  // The refusal named a TARGET and said come back. Wood: "a number plus 'come
+  // back' is a goal, and goals do not change behaviour" — she had already
+  // called that a pure motivation intervention earlier the same day. What
+  // makes it an intervention is a DATE: a context cue the runner can act on,
+  // rather than a wish they have to hold.
+  //
+  // Derived, not guessed: §2 caps weekly volume growth at
+  // MAX_WEEKLY_VOLUME_INCREASE_PCT, so the weeks needed to grow from where
+  // they are to the base they need is ceil(log(need/have) / log(1 + rate)).
+  // The runner is told the number of weeks the engine's OWN ramp rule implies,
+  // which is the same arithmetic their plan would have used.
+  const rate = 1 + GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT / 100
+  const weeksToBase = a.currentKm > 0
+    ? Math.max(1, Math.ceil(Math.log(a.minBaseKm / a.currentKm) / Math.log(rate)))
+    : null
+  // Sutherland: the refusal should read as the beginning of the relationship,
+  // not a verdict. Same information, different object.
+  const when = weeksToBase != null
+    ? ` Give it about ${weeksToBase} week${weeksToBase === 1 ? '' : 's'} of steady easy running and come back: we will build the plan then.`
+    : ' Come back when you have a few weeks of steady easy running behind you and we will build the plan then.'
   const message =
     `${a.currentKm} km a week is too low to build safely to a ${label} yet. ` +
-    `Get to about ${a.minBaseKm} km a week first, then this plan is ready for you.`
+    `Get to about ${a.minBaseKm} km a week first.${when}`
   const alternatives = [
     `Build your weekly volume to around ${a.minBaseKm} km, then generate this plan.`,
-    `Spend the next few weeks running easy to raise your base before the ${label} block begins.`,
+    weeksToBase != null
+      ? `Run easy ${weeksToBase > 8 ? 'three or four' : 'three'} times a week and check back in ${weeksToBase} weeks.`
+      : `Spend the next few weeks running easy to raise your base before the ${label} block begins.`,
   ]
   return {
     message,

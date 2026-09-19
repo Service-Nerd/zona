@@ -7115,6 +7115,92 @@ The `fitness_level_max` scope is covered by `lib/plan/beginnerCatalogue.test.ts`
 
 **Out of scope, flagged not fixed.** The route's `longest_recent_run_km < 5` gate for half-plus is the same ungoverned-number smell but a distinct coaching question (long-run readiness, not weekly ramp) — a separate sitting, untouched here.
 
+### Amendment 2 — the denominator is the volume the engine STARTS FROM (Coaching Board + SLT, 2026-09-19, S111-DENOMINATOR-01)
+
+**Principle.** §111's ratio is `delivered peak ÷ effectiveStartKm` — the volume
+the engine actually builds from, after §29's fresh-return scaling and §10's
+`<6mo` cap — **not** the raw `current_weekly_km` the runner typed. Owner:
+`lib/plan/startVolume.ts`, shared with the producer so gate and engine cannot
+drift.
+
+**Why.** The gate scored a build no runner performs. Declared 50 km/week starts
+at 30 and scored 1.2× against a real 1.8×; a fresh returner declaring 20 starts
+at 14, scored 3.0× against a real 4.2×. **Wrong in both directions, and most
+wrong where §10's cap bites hardest.**
+
+**⚠️ THE COST, MEASURED AND ACCEPTED: +456 beginner-marathon refusals**
+(2,321 → 2,777 of 6,480, **+19.6% for the cohort ranked first**). Held for most
+of 2026-09-19 for exactly that reason. Both boards then ruled on evidence about
+what those runners were being given instead:
+
+| the newly-refused plans, as they shipped | |
+|---|---|
+| median TRUE build ratio (peak / real start) | **5.57×** against a cap of 4.0 |
+| median week-1 leap above their real start | **+114%** |
+| median peak long run | 62% of race |
+| **genuine plan defects** | **ZERO** |
+| typical profile | 12 km/week, **longest run ever 0 km**, marathon in 29 weeks |
+
+**The zero matters as much as the 5.57.** These plans passed every check the
+engine owns and still doubled a never-run beginner's weekly volume in week one.
+That is a check measuring the wrong thing.
+
+- **Willy:** *"a +114% week-one jump in a runner with no long-run history is the
+  clearest bone-stress setup in this whole engine."*
+- **Sims:** this cohort pays for an over-ambitious week one in **stress
+  fractures**, and the under-fuelled first-time marathoner skews female.
+- **Hutchinson:** *"declining to apply a correction because the truth is
+  expensive is not a coaching position."*
+- **McMillan** voted to apply it and dissented on emphasis: a runner with a
+  London place refused at the door is someone we have failed — **recorded, and
+  the reason the return trigger below is a condition rather than a nicety.**
+- **SLT unanimous to ship.** Traynor: waiting for the charity's numbers buys
+  nothing, because they say HOW MANY are affected, not WHETHER the plan is safe.
+
+**⚠️ RUNWAY DOES NOT RESCUE THEM, measured.** ≤16 weeks is **worse** (+157%
+week-1 leap, peak long run 50% of race). The hazard is the week-1 floor (35% of
+peak), which does not scale down with the runner, so more time cannot fix it.
+§2's ramp cap governs week-on-week and **not week 1** — the gap §111's own text
+already names.
+
+**⚠️ THE CAP MUST NOT BE RAISED TO ABSORB THIS — do not retry it.** Raising
+`MAX_BASE_BUILD_RATIO` to hold refusals flat looks clean (cap 5.0 → 1,004
+refusals against today's 1,001) and is wrong. `effectiveStartKm` differs from
+raw **only** for fresh-return and `<6mo` runners, so a cap raise is a pure
+loosening for everyone else: **a flat total hid a changed composition.** At cap
+5.0 a 10 km/week beginner marathoner is admitted at 4.70, the exact runner this
+section says must be refused. Caught by `racePeakExclusion.test.ts`.
+
+**⚠️ THE DOOR IS UNMOVED for a runner whose start equals their declaration** —
+10 km/week still refused, 12 km/week still generates. The correction bites only
+where §29 or §10 change the start.
+
+### Amendment 2a — the refusal names WHEN to come back (Wood's condition, SLT)
+
+**Principle.** A §111 refusal states the base to reach **and the number of weeks
+of easy running it implies**.
+
+**Why.** Wood: *"a number plus 'come back' is a goal, and goals do not change
+behaviour"* — she had called the same shape a pure motivation intervention
+earlier the same day. A date is a context cue the runner can act on. Sutherland:
+the refusal should read as the beginning of the relationship, not a verdict —
+same information, different object.
+
+**Derived, not guessed.** §2 caps weekly growth at
+`MAX_WEEKLY_VOLUME_INCREASE_PCT`, so
+`weeks = ceil(log(minBase / current) / log(1 + rate))` — the same arithmetic the
+runner's own plan would have used. Measured: 5 km/week → 10 weeks, 8 → 5,
+10 → 2.
+
+**Config.** No new numeric. The ratio and cap are unchanged
+(`MAX_BASE_BUILD_RATIO = 4.0`); only the value feeding the denominator changed,
+and the return trigger reuses §2's existing ramp constant.
+
+**Enforcement.** `INV-PLAN-BASE-BUILD-RATIO` reads `assessBaseBuild` and so
+inherits the correction with no change — producer and checker share one owner
+by construction. Gated by `lib/plan/baseVolumeDenominator.test.ts` (6
+assertions, including that the door is unmoved and the cap is still 4.0).
+
 ### §111 — RECORDED LIMITATION, not yet remedied (Coaching Board 2026-09-19, S111-SUBFLOOR-VOLUME-01)
 
 **The board ruled INSUFFICIENT EVIDENCE on admitting the sub-12 km/week cohort, and ruled CORRECT on the finding below. §111 stands unchanged. This is a limitation written down so the next reader does not rediscover it.**

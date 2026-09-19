@@ -1,19 +1,19 @@
 {
   "BEGINNER MARATHON (priority one)": {
-    "generated": 4159,
-    "refused": 2321,
-    "LONG-RUN-SHORT": 2464,
-    "DAYS-SHORT": 1403,
-    "WEEK1-LEAP": 1389,
+    "generated": 3703,
+    "refused": 2777,
+    "LONG-RUN-SHORT": 2176,
+    "DAYS-SHORT": 1254,
+    "WEEK1-LEAP": 1057,
     "BINGE-WEEK": 7
   },
   "cohortGrid": {
-    "generated": 2882,
-    "refused": 118,
-    "NEVER-BUILDS": 1100,
-    "BINGE-WEEK": 290,
+    "generated": 2872,
+    "refused": 128,
+    "NEVER-BUILDS": 1077,
+    "BINGE-WEEK": 281,
     "DAYS-SHORT": 164,
-    "WEEK1-LEAP": 157,
+    "WEEK1-LEAP": 147,
     "LONG-RUN-SHORT": 40,
     "BINGE-SEVERE-75": 20,
     "FLAT-CURVE": 3

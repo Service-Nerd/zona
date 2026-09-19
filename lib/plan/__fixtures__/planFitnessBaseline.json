@@ -15,13 +15,13 @@
     "healthy masters ": {
       "n": 674,
       "medianBuildPct": 17.4,
-      "neverBuildsPct": 18.8,
+      "neverBuildsPct": 17.2,
       "medianMarathonLrPctOfRace": 62.7
     },
     "healthy standard": {
-      "n": 971,
+      "n": 965,
       "medianBuildPct": 28.6,
-      "neverBuildsPct": 15.6,
+      "neverBuildsPct": 13.7,
       "medianMarathonLrPctOfRace": 61.6
     }
   },

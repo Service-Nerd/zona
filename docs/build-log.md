@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — S111-DENOMINATOR-01 · shipping the expensive truth
+**Shipped:** the safety gate now measures the volume runners actually start from, and refuses 456 more first-time marathoners.
+
+**Dev learning:** The gate divided by what people typed into the wizard, not what the engine starts them at — and those differ by design, because we scale returners down and cap over-claimers. So it scored a build nobody performs. The fix is four characters. The consequence is 456 beginners turned away, which is why it sat unapplied all day.
+
+**Product/creator learning:** What made the decision was not the 5.57x build ratio. It was the zero next to it. Those plans had **no invariant violations at all** — they passed every check the engine owns while doubling a never-run beginner's weekly mileage in week one. A clean bill of health from a check that is measuring the wrong quantity is worse than no check, because it buys false confidence. That is the whole case for applying it, and it is the case I could not make until I printed what those runners were actually getting.
+
+**AI-building learning:** I tried to escape the trade. Correct the denominator, raise the cap, hold refusals flat — and the numbers agreed: 1,004 against 1,001. It was wrong. The correction tightens one subgroup and the cap loosens everybody, so the totals cancelled while the composition changed, and a 10 km/week beginner marathoner walked through a door our own doctrine says must be shut. A test caught it, not me. **A flat total is not a flat outcome, and I have now made the same denominator mistake four times today in four different shapes.**
+
+**The honest bit:** McMillan's dissent is in the principle verbatim, because he is right and shipping anyway: a person with a London place and seven months, refused at the door, is someone we failed. The refusal now tells them how many weeks of easy running to do and to come back. That is not the base-building plan they deserve. It is what we could honestly give them today.
+
+**Hook material:** Our safety check gave 456 first-time marathoners a clean bill of health on plans that doubled their mileage in week one. It was dividing by the wrong number.
+
+---
+
 ## 2026-09-19 — QUALITY-AERO-FALLBACK-01 · I broke this at 9am and found it at 5pm
 **Shipped:** a quality session can no longer be an easy run wearing a tempo's name.
 
