@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — CB-PLAN-REVIEW-01 · EFFSESS-COLLISION-01 · S9-DURATION-FLOOR-01 — Phase 2, and what a big number was hiding
+**Shipped:** the plan now tells the runner the truth about itself, plus a session-deleting bug nobody had ever tested for.
+
+**Dev learning:** Our plan-quality harness reported 7,569 findings and I nearly took that to the board as a defect count. Reconciling it first: the two biggest categories contain zero genuine breaches. Fifteen thousand "never builds" are all correctly classified maintenance carrying a note, which is exactly what the principle prescribes for that case, and twenty thousand "long run short" are measured against a bar the constitution only applies to a third of them. The harness was measuring a stricter rule than the one we actually hold plans to. A finding count is only meaningful next to the rule it is counting against.
+
+**Product/creator learning:** The defect the board refused to hand over was one sentence. An experienced runner on 55 km a week chasing a 45-minute 10K was told "this plan is built to get you round, not to chase a time". The classification behind it was right — they are at their volume ceiling — but the sentence describes a different cause, and it was wrong on 79% of the plans it appeared on. Nothing about the training changed. What changed is whether the runner recognises their own plan in the description of it.
+
+**AI-building learning:** I brought two findings and one dissolved because I had counted the wrong unit. I measured plans where every quality session is a different catalogue row and called it a variety defect. Measured properly, no plan in the corpus ever fails to repeat a *stimulus* — the median is four or five exposures per category, and only the flavour of the session varies. The objection I was quoting is about stimulus, not session names. Five of my premises have now failed measurement today, and every one failed the same way: I picked a unit that was easy to count instead of the one that carries the meaning.
+
+**The honest bit:** the worst thing found all day was not in the engine. `effectiveSessions` had six callers and no tests, and writing the tests showed that moving a session onto a day you had already trained deleted the session that was there. Not flagged, not logged — the week just had one fewer run in it. It would still be doing that if I had only looked where the failures were.
+
+**Hook material:** Our quality report said 7,569 problems. Two of the three biggest categories were the system working exactly as designed.
+
+---
+
 ## 2026-09-19 — CAT-DEPTH-01 · the catalogue was the second of three gates
 **Shipped:** a beginner who sets a time target now gets one quality session a week, from rows they are actually eligible for.
 
