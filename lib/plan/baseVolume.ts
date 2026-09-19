@@ -122,6 +122,31 @@ export function assessBaseBuild(plan: Plan, input: GeneratorInput): BaseBuildAss
   // What would release it: a change that lifts low-base beginners' delivered
   // peak (so the real ratio falls below the cap) BEFORE the denominator is
   // corrected — not a re-measurement of this fix in isolation.
+  //
+  // ⚠️ THE CAP CANNOT ABSORB THE CORRECTION, AND THIS WAS MEASURED RATHER THAN
+  // ASSUMED (2026-09-19, second attempt). The obvious escape is to correct the
+  // denominator AND raise `MAX_BASE_BUILD_RATIO` so the admission boundary
+  // holds. On the beginner-marathon corpus that looks like it works:
+  //
+  //     corrected denominator, cap 4.0  ->  1,457 BaseVolume refusals
+  //     corrected denominator, cap 4.5  ->  1,318
+  //     corrected denominator, cap 5.0  ->  1,004   (today: 1,001)
+  //
+  // **A FLAT TOTAL HID A CHANGED COMPOSITION.** `effectiveStartKm` differs from
+  // the raw figure ONLY for fresh-return (§29) and `<6mo` (§10) runners. For
+  // everyone else the denominator is UNCHANGED, so raising the cap is a pure
+  // loosening. The two levers act on different populations: the correction
+  // tightens one group, the cap loosens all of them, and the counts happen to
+  // cancel.
+  //
+  // Caught by `racePeakExclusion.test.ts` — at cap 5.0 a **10 km/week beginner
+  // marathoner is ADMITTED at ratio 4.70**, and §111's own ratified text says
+  // "the reckless ceiling: <= 10 km/week beginner marathon (>= 4.7x) must be
+  // refused." The escape breaks the board decision §111 exists to enforce.
+  //
+  // So there is no cap that buys this. The denominator correction costs
+  // +456 beginner-marathon refusals or it costs nothing because it is not
+  // applied. That is a founder decision, not an engineering one.
   const currentKm = input.current_weekly_km ?? 0
   const cap = GENERATION_CONFIG.MAX_BASE_BUILD_RATIO
   const applies = baseBuildRatioApplies(input.race_distance_km)
