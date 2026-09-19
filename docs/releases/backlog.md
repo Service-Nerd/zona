@@ -19,7 +19,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-19 (last ship `031ecfa`):** ✅ tree clean. **2,341 tests / 261 files** · tsc clean · 121 invariants · matrix 65/0 · sweep **14,484 plans, no new violations** · coaching scan **HIGH 0** · liveness **118/121** · `audit:plans` GATED and clean · `audit-docs.sh` ALL CLEAN. **18 commits.**
+**State at END of 2026-09-19 (last ship `9b126c1`):** ✅ tree clean. **2,440 tests / 275 files** · tsc clean · 122 invariants · matrix 65/0 · sweep **14,189 plans, no new violations** · liveness **119/122 woken, 3 unproven** · `verify:parity` IDENTICAL 5,940 cases · `cohort:shape` + `measure:fitness` at baseline · `audit:plans` no regression · `audit-docs.sh` ship records + invariants + contracts CLEAN. **All four regression-pass recommendations built: A `SAVE-VALIDATE-01`, B `SCHEMA-LIVE-01`, C `PERSONA-CORPUS-01`, D coverage.** Two live defects found while building them: `RACE-DIST-UNVALIDATED-01` (a missing race distance silently built a 100 km ultra) and `EFFSESS-COLLISION-01`. ⚠️ **Only E remains and it is founder-owned: nothing shipped today has run on a device.**
 
 🥇 **THE ENGINE'S PRIORITY-ONE DEFECT IS FIXED. `S114-GET-YOU-ROUND-01` — founder decision.** Where the week cannot hold the long run the race asks for, **the long run yields and the plan says so.** Measured on 6,480 beginner-marathon inputs: a week with one session ≥75% of it **45.2% → 0%** · loading weeks with ≤2 runs **40.5% → 0%** · any week over §52's 60% **37.9% → 0.2%** · fewer days than asked **49.4% → 33.7%** · **refused 2,358 → 2,321, FEWER**.
 
