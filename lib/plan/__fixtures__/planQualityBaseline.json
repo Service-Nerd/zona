@@ -32,5 +32,12 @@
     "WEEK1-LEAP": 3,
     "DAYS-SHORT": 2,
     "LONG-RUN-SHORT": 2
+  },
+  "engine personas": {
+    "generated": 6,
+    "refused": 0,
+    "DAYS-SHORT": 1,
+    "NEVER-BUILDS": 1,
+    "BINGE-WEEK": 1
   }
 }

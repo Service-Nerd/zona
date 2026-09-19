@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-19 — PERSONA-CORPUS-01 · the grid cannot describe a person
+**Shipped:** six realistic runners join the permanent test corpus, and the grids stop being the only witness.
+
+**Dev learning:** A grid multiplies axes. It will happily give you "experienced" and it will give you "twelve weeks", but it will never give you "experienced, back running regularly, and only twelve weeks out", because in a grid those choices are independent and in a person they are not. That combination is where today's defect lived, and forty-five thousand grid plans could not construct it.
+
+**Product/creator learning:** Three times this month the answer to "why did nothing catch this" has been that the corpus could not reach the cell. That is not a testing problem you fix by generating more combinations — more combinations of independent axes gives you more of the same blind spot. You fix it by writing down people.
+
+**AI-building learning:** The temptation was to build a new persona harness. There was already one, with a single owner and four consumers, called charityCohort. So the change is a tag on the existing interface and two derived filters — every previous consumer sees exactly what it saw before, and not one charity baseline moved. Adding a second array would have created the two-registers-with-a-human-between-them problem the file exists to avoid.
+
+**The honest bit:** the rule I attached matters more than the six personas. Add one every time a defect is found from a real shape. A corpus assembled from imagination goes stale; one assembled from actual failures stays ahead of the grids, because it is made of the things that already got past them.
+
+**Hook material:** Our test suite ran 45,000 training plans and found nothing. Six made-up runners found a bug in ten minutes. The 45,000 could not describe a person.
+
+---
+
 ## 2026-09-19 — PHASE-EMPTY-01 · the validator that had never seen the thing it validates
 **Shipped:** the engine's own output is now checked against the engine's own schema.
 

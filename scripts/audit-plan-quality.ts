@@ -28,7 +28,7 @@
  * corpus is the suspect before the rule — so priority one gets a corpus.
  */
 import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '../lib/plan/cohortGrid'
-import { CHARITY_PERSONAS, CHARITY_PLAN_START, charityRaceDate } from '../lib/plan/charityCohort'
+import { CHARITY_PERSONAS, ENGINE_PERSONAS, CHARITY_PLAN_START, charityRaceDate } from '../lib/plan/charityCohort'
 import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { sessionKmSelfPaced } from '../lib/plan/sessionDistance'
@@ -141,6 +141,13 @@ const cohorts: Cohort[] = [
   { name: 'targetedGrid', inputs: stride(targetedGrid(), 1500), planStart: COHORT_PLAN_START },
   { name: 'charity personas', planStart: CHARITY_PLAN_START,
     inputs: CHARITY_PERSONAS.map(p => ({ ...p.input, race_date: charityRaceDate(p.weeks, CHARITY_PLAN_START, p.raceDay ?? 'sun') } as GeneratorInput)) },
+  // PERSONA-CORPUS-01 (2026-09-19) — realistic runners the GRIDS CANNOT REACH.
+  // A grid is an axis product and cannot express "experienced AND back running
+  // regularly AND only 12 weeks", because its axes are independent and a real
+  // runner's are not. E4 in this set produced an inverted `base 1..0` phase
+  // that 0 of 45,764 grid plans reached.
+  { name: 'engine personas', planStart: CHARITY_PLAN_START,
+    inputs: ENGINE_PERSONAS.map(p => ({ ...p.input, race_date: charityRaceDate(p.weeks, CHARITY_PLAN_START, p.raceDay ?? 'sun') } as GeneratorInput)) },
 ]
 
 const WRITE = process.argv.includes('--write')

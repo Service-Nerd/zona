@@ -22,6 +22,21 @@ const DAY_MS = 86_400_000
 
 export interface CharityPersona {
   id: string
+  /**
+   * PERSONA-CORPUS-01 (2026-09-19) — which corpus this persona belongs to.
+   *
+   * `'charity'` (the default, and every persona that predates this field) is
+   * the referred-first-timer set this file was built for. `'engine'` is the
+   * wider realistic-runner set added after the end-to-end regression pass,
+   * where SIX hand-built runners found a defect that **0 of 45,764 grid plans
+   * could reach** (`PHASE-EMPTY-01` / `GRID-EARLY-ONSET-01`).
+   *
+   * Tagged rather than split into a second array, because two registers of the
+   * same objects with a human in between is how they drift. `CHARITY_PERSONAS`
+   * stays a derived filter, so every existing consumer sees exactly what it
+   * saw before.
+   */
+  cohort?: 'charity' | 'engine'
   /** Which coaching doctrine this scenario stresses. */
   note: string
   /** Weeks from plan start to race day. */
@@ -73,7 +88,25 @@ export function charityInput(p: CharityPersona, planStart = CHARITY_PLAN_START):
   return { ...p.input, race_date: charityRaceDate(p.weeks, planStart, p.raceDay ?? 'sun') } as GeneratorInput
 }
 
-export const CHARITY_PERSONAS: CharityPersona[] = [
+/**
+ * THE PERSONA CORPUS — realistic people, not grid axes.
+ *
+ * ⚠️ WHY THIS EXISTS ALONGSIDE THE GRIDS, and it is the most useful thing in
+ * this file. A grid is an axis product: it can express "experienced" and it can
+ * express "12 weeks", but it cannot express "experienced AND back running
+ * regularly AND only 12 weeks", because the grid's axes are independent and a
+ * real runner's are not. Measured three times in one month:
+ *
+ *   injury x masters          the cell existed in NEITHER grid
+ *   CB-SUBFLOOR-ADMIT-01      the corpus could not reach it
+ *   GRID-EARLY-ONSET-01       0 of 45,764 grid plans; 6 hand-built runners hit
+ *                             it on the first attempt
+ *
+ * **Add a persona whenever a defect is found from a real shape** — the corpus
+ * then grows from actual failures rather than from imagination, which is the
+ * only way it stays ahead of the grids.
+ */
+export const PLAN_PERSONAS: CharityPersona[] = [
   // ---- MARATHON (the thin, high-risk distance) ----
   {
     id: 'M1 first-timer marathon, low base, long runway',
@@ -212,5 +245,76 @@ export const CHARITY_PERSONAS: CharityPersona[] = [
     input: { race_distance_km: 42.2, goal: 'finish', current_weekly_km: 15, longest_recent_run_km: 8,
       days_available: 4, age: 38, training_age: '<6mo', recent_quality_training: 'none',
       user_declared_level: 'experienced' },
-  }
+  },
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // ENGINE PERSONAS — PERSONA-CORPUS-01 (2026-09-19)
+  //
+  // The six runners built by hand for the end-to-end regression pass. They are
+  // here because they FOUND something: E4 produced `{ base 1..0 }`, an inverted
+  // phase the canonical schema rejects, which 45,764 grid plans never reached.
+  // Deliberately NOT charity shapes — the point is coverage the charity set and
+  // the grids both miss.
+  // ──────────────────────────────────────────────────────────────────────────
+  {
+    id: 'E1 never-run beginner, marathon, long runway',
+    note: 'the flagship first-timer: §111 admission, §2/§3 ramp off nothing, §80 time-on-feet',
+    weeks: 28, cohort: 'engine',
+    input: { race_distance_km: 42.2, goal: 'finish', current_weekly_km: 15, longest_recent_run_km: 5,
+      days_available: 4, age: 35, training_age: '<6mo', recent_quality_training: 'none' },
+  },
+  {
+    id: 'E2 beginner, marathon, TIME goal',
+    note: '§110 Am.2 — the only beginner cohort that gets quality; §22 goal-pace exposure',
+    weeks: 28, cohort: 'engine',
+    input: { race_distance_km: 42.2, goal: 'time_target', target_time: '4:30:00',
+      current_weekly_km: 30, longest_recent_run_km: 14, days_available: 5, age: 35,
+      training_age: '6-18mo', recent_quality_training: 'occasional' },
+  },
+  {
+    id: 'E3 masters 58, HM, knee history',
+    note: '§3 masters cadence x §21 injury substitution x §110 zero-quality honesty',
+    weeks: 16, cohort: 'engine',
+    input: { race_distance_km: 21.1, goal: 'finish', current_weekly_km: 20, longest_recent_run_km: 10,
+      days_available: 4, age: 58, training_age: '2-5yr', recent_quality_training: 'none',
+      injury_history: ['knee'] },
+  },
+  {
+    id: 'E4 experienced, 10K, TIME goal, SHORT runway',
+    note: '⚠️ THE ONE THAT FOUND PHASE-EMPTY-01. ADR-021 early onset on a 12-week plan collapses '
+        + 'the base phase to zero weeks. NEITHER grid pairs experienced + regular quality + short runway.',
+    weeks: 12, cohort: 'engine',
+    input: { race_distance_km: 10, goal: 'time_target', target_time: '0:45:00',
+      current_weekly_km: 55, longest_recent_run_km: 22, days_available: 5, age: 35,
+      training_age: '5yr+', recent_quality_training: 'regular' },
+  },
+  {
+    id: 'E5 intermediate, marathon, 3 days + 30-min weekday cap',
+    note: 'the constrained week: §52 lopsidedness, §114 long-run share, weekday-cap honesty note',
+    weeks: 28, cohort: 'engine',
+    input: { race_distance_km: 42.2, goal: 'finish', current_weekly_km: 30, longest_recent_run_km: 16,
+      days_available: 3, max_weekday_mins: 30, age: 40, training_age: '2-5yr',
+      recent_quality_training: 'occasional' },
+  },
+  {
+    id: 'E6 experienced, 50K ultra, finish',
+    note: 'ultra shapes: §80 duration anchoring, back-to-back longs, §110 floor scoping',
+    weeks: 30, cohort: 'engine',
+    input: { race_distance_km: 50, goal: 'finish', current_weekly_km: 55, longest_recent_run_km: 30,
+      days_available: 5, age: 42, training_age: '5yr+', recent_quality_training: 'regular' },
+  },
 ]
+
+/**
+ * The charity subset — every persona that predates PERSONA-CORPUS-01 plus any
+ * later one explicitly tagged `'charity'`.
+ *
+ * DERIVED, not a second list: existing consumers (`charity-scenarios.ts`,
+ * `charityCohort.test.ts`, the `charity personas` cohort in `audit:plans`, and
+ * the marathon review personas in `measure:fitness`) see exactly what they saw
+ * before, so no charity baseline moves.
+ */
+export const CHARITY_PERSONAS: CharityPersona[] = PLAN_PERSONAS.filter(p => p.cohort !== 'engine')
+
+/** The wider realistic-runner set. See PLAN_PERSONAS for why it exists. */
+export const ENGINE_PERSONAS: CharityPersona[] = PLAN_PERSONAS.filter(p => p.cohort === 'engine')
