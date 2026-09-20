@@ -46,7 +46,12 @@ done
 say "── backlog status: shipped items still marked open ──"
 bfail=0
 for id in $ids; do
-  if grep -qE "^> (🔲|🔴|🟡|🔵|⏸️) \*\*${id}[ —]" docs/releases/backlog.md; then
+  # 🟡 is DELIBERATELY excluded. It means "code shipped, item still open" —
+  # P-16 ships §116 behind a flag with four halves explicitly unbuilt, which is
+  # a legitimate state and not staleness. Flagging it would make this check
+  # fire on correct work, and a guard that fires on correct work gets switched
+  # off, which this repo has recorded as equivalent to having no guard.
+  if grep -qE "^> (🔲|🔴|🔵|⏸️) \*\*${id}[ —]" docs/releases/backlog.md; then
     say "  STILL OPEN $id (shipped today, backlog says otherwise)"; bfail=1; fail=1
   fi
 done

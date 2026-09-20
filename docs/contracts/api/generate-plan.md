@@ -462,3 +462,31 @@ This route no longer calls Anthropic directly. It goes through
   route previously could not tell those apart.
 - `noRawAnthropicCalls.test.ts` fails the build if this file names
   `api.anthropic.com` again. Full contract: `docs/contracts/api/ops-ai-spend.md`.
+
+## §116 — the `onramp` field on a `base_volume` refusal (P-16, 2026-09-20)
+
+A **422** with `reason: 'base_volume'` may now carry an additional `onramp` object:
+
+```jsonc
+{
+  "error":  "…",
+  "reason": "base_volume",
+  "base":   { "...": "unchanged" },
+  "onramp": {                    // OPTIONAL — absent unless the flag is on AND a ramp is offered
+    "weeks": 6,
+    "remaining_weeks": 23,
+    "start_km": 10,
+    "target_km": 18
+  }
+}
+```
+
+- **Absent by default.** `ENABLE_BASE_BUILD_ONRAMP` is off, so this payload is byte-identical to
+  what it was before §116 existed. **Clients must treat `onramp` as optional, forever** — it is
+  also absent when the runner is below the start floor or the ramp would leave under 16 weeks.
+- ⚠️ **AN OFFER, NEVER A SUBSTITUTION.** The engine does not hand a runner who asked for a marathon
+  plan a base block instead; ADR-012's model is that a structural change surfaces for confirmation.
+- ⚠️ **§111 IS NOT CREDITED IN ADVANCE.** The offer changes nothing about the gate. The runner
+  performs the block, re-declares volume, and is re-gated on **observed** data
+  (§116 amendment 7; `S111-FOUNDATION-CREDIT-01` — crediting unperformed training — was VETOED).
+- **Nothing renders this yet.** That is `P-15`.
