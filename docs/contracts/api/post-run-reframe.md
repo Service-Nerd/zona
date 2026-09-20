@@ -105,3 +105,38 @@ on their first plan is byte-identical to before.
 caller believe none exists and the follow-up insert would violate the constraint.
 
 Enforced by `lib/plan/supersedeCoverage.test.ts`.
+
+---
+
+## 2026-09-20 — ENRICH-PII-MINIMISE-01: the runner's name is not in the prompt
+
+**Request and response shapes are unchanged.** What changed is what leaves our servers.
+
+The prompt no longer interpolates the runner's first name. `buildVoiceHeader` emits the literal
+token `{{RUNNER}}` (`lib/coaching/nameToken.ts`, the single owner) and the route substitutes the
+real name with `resolveRunnerName` **immediately after the model replies and before anything is
+persisted or returned**.
+
+⚠️ **Callers must not resolve the token themselves.** Resolution happens at this boundary
+precisely so no downstream surface can miss it and render a literal `{{RUNNER}}`.
+
+⚠️ **No name means the token is removed with its surrounding punctuation**, never replaced with
+`"Athlete"` — that is the `PROFILE-NAME-01` defect.
+
+Guarded by `lib/coaching/nameToken.test.ts`, which reads every prompt builder and fails if any
+interpolates `${firstName}` or `${athlete_name}` into a template.
+
+## 2026-09-20 — REFRAME-NOTE-LOSS-01: the reflection is persisted on EVERY path
+
+`persistReflection` is now the single owner of the `session_reflections` upsert and runs on all
+three outcomes. **The response shape is unchanged**, but the stored state gained a third case:
+
+| `reframe_text` | `reframe_silenced` | means |
+|---|---|---|
+| set | `false` | success |
+| `null` | `true` | risk gate silenced it (reason in `reframe_silenced_reason`) |
+| **`null`** | **`false`** | **the AI call failed; the runner's note is kept** |
+
+The third row previously could not exist: the route returned `{reframe: null, fallback: true}`
+**above** the only upsert, so the runner's writing was discarded. Clients hydrating a row with a
+note and no reframe should render a "saved" state, not an empty input.

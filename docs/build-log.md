@@ -11,7 +11,7 @@ it specific, no polish. The content system adds the voice.
 
 
 
-## 2026-09-20 — the guards caught me three times in one afternoon, and that is the story
+## 2026-09-20 — ENRICH-PII-MINIMISE-01, LEGAL-PRIVACY-01, CONSENT-DISCLOSURE-01: the guards caught me three times in one afternoon
 
 **Dev.** Legal and privacy, in the order the SLT set: stop sending the name, then rewrite the
 policy, then add the line at the Health-connect moment. The order was the point. Rewriting the
@@ -39,7 +39,7 @@ The uncomfortable read: every one of those was a rule someone wrote down earlier
 on me. The rules I wrote today will do the same to someone else, which is the only reason to
 write them.
 
-## 2026-09-20 — we built the best idea in the category and put it on one screen
+## 2026-09-20 — P-03 and P-01: we built the best idea in the category and put it on one screen
 
 **Dev.** `easyPaceAsCeiling` turns "7:11–8:32 /km" into "7:11 /km or slower". It has existed
 since CD-11, has ten unit tests, and carries its own reasoning: an 81-second window reads as a
@@ -62,7 +62,7 @@ correctness**, so the test asserts reach and I falsified it by deleting the call
 It isn't — the preview shows phase summaries and never renders a per-session pace. Corrected in
 the registry rather than quietly dropped.
 
-## 2026-09-20 — the guard had a hole the width of a colour channel
+## 2026-09-20 — P-13b: the guard had a hole the width of a colour channel
 
 **Dev.** The pre-commit hook blocks hardcoded hex colours and has done for months. It does not
 look at `rgba()`. So the same value, written differently, walks past it — and 26 of them had.
@@ -85,7 +85,7 @@ only matches a non-greyscale triple. I falsified it 7/7 in both directions befor
 move was to reword the comment, not weaken the guard — the hook cannot tell a comment from code,
 and a banned colour should not be greppable in that file at all.
 
-## 2026-09-20 — the principle was written down, then broken by the branch next to it
+## 2026-09-20 — REFRAME-NOTE-LOSS-01: the principle was written down, then broken by the branch next to it
 
 **Dev.** `REFRAME-NOTE-LOSS-01`: a runner writes a reflection, the AI call fails, and the route
 returns before the line that saves it. Their words are gone. The client then puts them back at an
@@ -111,7 +111,7 @@ not know whether the server ran. Claiming "saved" there would be the same class 
 opposite direction. And the new state's copy is pattern-setting, so it ships flagged for sign-off
 rather than quietly.
 
-## 2026-09-20 — the note pointed an injury-history runner at the one lever they must not pull
+## 2026-09-20 — MARA-LR-LOWBASE-01: the note pointed an injury-history runner at the one lever they must not pull
 
 The founder asked for every open coaching-engine item analysed and taken to the board, with one
 hard constraint: we are at 95.9% fit-for-purpose and he does not want it spent.
