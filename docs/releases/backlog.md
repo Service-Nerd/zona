@@ -1031,6 +1031,34 @@ across the seven months combined.
 > one now: the raw stream is what would let a zone recalibration re-bucket historic runs, which ADR-011
 > §263 records as a live defect.
 
+> 🟡 **CONSENT-DISCLOSURE-01 — one honest line at the Health-connect moment, not a consent screen.** *(P1, SLT-ruled 2026-09-20. Blocks nothing; ships with LEGAL-PRIVACY-01.)*
+>
+> The founder saw a competitor's granular "Your privacy preferences" screen (GPS routes / Health data / Usage analytics toggles, reasons per toggle, legal docs at the decision point, a full-weight "Continue without allowing"). **SLT ruled: take the disclosure pattern, not the screen.**
+>
+> **What ships:** one sentence at the point we ask to connect Apple Health, saying health data informs the AI coaching, with the policy linked. **Wood:** a consent screen at onboarding is ceremony — clicked through in two seconds, changes no behaviour, and teaches the runner the first thing this app does is ask them to read something. **The Health-connect moment is a real decision point with a consequence the user can feel**, which is the only place consent language does anything but decorate. **Sutherland agrees on placement** and adds the positioning angle: our screen would be conspicuously SHORTER than the competitor's because **we cannot collect GPS routes at all** (ADR-011) — "we ask for less because we use less" is a credibility signal, not a compliance page.
+>
+> ⚠️ **Deliberately NOT copied from the screenshot:** the dark theme (ADR-008, single light theme); a **GPS-routes toggle** (we cannot collect it — a toggle for data we cannot get is a lie on a privacy screen); a **usage-analytics toggle** (one analytics event exists in the whole product, so it would be consent theatre AND would throttle the instrumentation `GTM-CHARITY-06` needs before October).
+>
+> ⚠️ **iOS's HealthKit sheet does NOT cover this.** That permission is device→app. The app→Anthropic transfer is the undisclosed leg and no OS prompt covers it.
+
+> 🟡 **ENRICH-PII-MINIMISE-01 — stop sending the runner's first name to Anthropic.** *(P1, SLT-ruled 2026-09-20. Fried's amendment — nobody asked for this option and it is better than the three that were tabled.)*
+>
+> `lib/plan/enrich.ts → buildUserMessage` sends `- Name: ${input.athlete_name}` purely for voice personalisation, and `voiceRules.ts` interpolates `firstName` into the system header. **Resolve the name client-side after the model responds instead, and never send it.** That removes a direct identifier from a third-party transfer **at no product cost** — the voice is unchanged because the substitution happens after generation.
+>
+> **Fried:** *"That's better than any consent screen."* Reducing the problem beats documenting it.
+>
+> ⚠️ **Touches `PROFILE-NAME-01`'s voice path.** Needs proof that only the prompt changed and the rendered copy is identical — the plan itself must be byte-equal.
+>
+> ⚠️ **Injury history STAYS and Hutchinson defended it:** the enricher's voice changes materially when it knows a runner is returning from shin splints. It is also `knee` / `shin_splints` — **our enum values, a training constraint, not a medical record** — which changes how we describe it and **does not change its legal category.**
+
+> 🔴 **LEGAL-COUNSEL-01 — book two hours of legal advice before the October codes.** *(P1, FOUNDER ACTION, SLT-ruled 2026-09-20. The SLT explicitly did NOT rule on this and is not competent to.)*
+>
+> **The question for counsel:** does UK GDPR require explicit **consent** rather than **disclosure** for (a) special-category health data — injury history is the field — and (b) transfer to a US sub-processor (Anthropic)? Also whether Resend's handling needs naming.
+>
+> **Why it is P1 and dated:** ~500 identifiable Make-A-Wish runners arrive in October. **Traynor:** *"One ICO complaint from a Make-A-Wish runner about undisclosed health data ends the partnership"* — £27,965 of donated retail value and the first referral channel, against a two-hour review. **If counsel says consent is required, the granular screen (Option B) lands BEFORE the codes go out and Traynor's funnel objection is overruled by law.**
+>
+> ⚠️ **Traynor's objection to a consent wall NOW, recorded:** no code has ever been redeemed and there is no funnel instrumentation, so adding an unmeasurable step to an invisible funnel is the worst-timed thing we could ship. That is a commercial argument and **it does not survive a legal requirement** — which is why 4 gates 5.
+
 > 🔴 **LEGAL-PRIVACY-01 — the privacy policy understates what goes to Anthropic, and omits Resend entirely.** *(P1, founder + me, filed 2026-09-18. Must land before codes go out; a charity will read this page.)*
 >
 > **What the page says:** *"When you use the AI coaching features, session data is sent to Anthropic's API
@@ -1057,6 +1085,28 @@ across the seven months combined.
 > Strava access token is stored" and a cookies line about a Strava session token, while the Strava screen is
 > admin-URL-only and the application is Inactive (`STRAVA-APP-INACTIVE-01`). Accurate *if* a runner ever
 > connects; unreachable in practice. One clause settles it.
+>
+> **SLT ruling, 2026-09-20 (`/slt-review CONSENT-UI-01`).** The founder brought a competitor's granular
+> privacy-consent screen and asked whether to copy it. The board split the question in two and this item
+> got the harder half of the verdict: **Fried — "the policy being wrong is not a design question, it's a
+> defect. Fix the defect."** It is not Option A as a compromise between a screen and nothing; it is the
+> work. **This item is now the blocking one of the three** — `CONSENT-DISCLOSURE-01` links to this page, so
+> the disclosure line is worthless until the page it links to is true.
+>
+> ⚠️ **Scope reduced by `ENRICH-PII-MINIMISE-01`.** If we stop sending the first name (Fried's amendment,
+> ruled in the same sitting), this page has one less thing to disclose. **Sequence: PII-minimise first,
+> then write the policy against what the code does afterwards** — otherwise we publish an accurate
+> description of a transfer we are about to stop making, and immediately make the page wrong again in the
+> other direction.
+>
+> ⚠️ **Injury history is NOT in scope for removal.** Hutchinson defended it at the same sitting: the
+> enricher's voice changes materially when it knows a runner is returning from shin splints. It gets
+> disclosed, not deleted.
+>
+> ⚠️ **This page is not the legal ruling.** Whether UK GDPR needs **consent** rather than **disclosure**
+> for special-category data and a US sub-processor is `LEGAL-COUNSEL-01`, and the SLT stated explicitly
+> that it did not and could not rule on it. If counsel says consent, this page is necessary but not
+> sufficient.
 
 > 🔲 **GTM-CHARITY-05 — `admin_user_tiers` does not know charity grants exist, so 500 comped runners will read as free.** *(P1, me, filed 2026-09-18.)*
 >
