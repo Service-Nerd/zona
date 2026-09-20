@@ -9037,7 +9037,7 @@ function SaveImageButton({ weekN, sessionDay }: { weekN: number; sessionDay: str
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
         color: 'var(--moss)',
-        background: 'rgba(107,142,107,0.12)',
+        background: 'var(--moss-soft)',
         border: 'none',
         borderRadius: '22px',
         padding: '0 18px',
@@ -9693,7 +9693,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           {consolidatedRead.isLoading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
               {[85, 100, 70].map((w, i) => (
-                <div key={i} style={{ height: '13px', background: 'rgba(107,142,107,0.12)', borderRadius: '4px', width: `${w}%` }} />
+                <div key={i} style={{ height: '13px', background: 'var(--moss-soft)', borderRadius: '4px', width: `${w}%` }} />
               ))}
             </div>
           ) : (
@@ -9769,7 +9769,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                   fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
                   color: 'var(--moss)',
-                  background: 'rgba(107,142,107,0.10)',
+                  background: 'var(--moss-soft)',
                   border: 'none',
                   borderRadius: '22px',
                   padding: '0 18px',
@@ -10531,7 +10531,7 @@ function StravaConnectionRow() {
     <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(252,76,2,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--strava-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--strava)' }} />
           </div>
           <div>
@@ -10802,7 +10802,7 @@ function AppleHealthConnectionRow({ onHRFound }: {
     <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(107,142,107,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--moss-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--moss)' }} />
           </div>
           <div>
@@ -11089,7 +11089,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
           style={{
             width: '100%', padding: '11px',
             background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)',
-            border: `0.5px solid ${saved ? 'rgba(74,154,90,0.4)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`,
+            border: `0.5px solid ${saved ? 'var(--moss-mid)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`,
             borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed',
             fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.08em',
             textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted)',
@@ -11990,7 +11990,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '12px 16px', borderBottom: '1px solid var(--line)',
-                    background: 'rgba(107,142,107,0.08)', border: 'none', cursor: 'pointer', textAlign: 'left',
+                    background: 'var(--moss-soft)', border: 'none', cursor: 'pointer', textAlign: 'left',
                   }}
                 >
                   <div>
@@ -12572,8 +12572,8 @@ export function RunFeedbackCard({
   // new coaching numeric enters through a colour decision.
   const zoneHeld = zoneSignal != null && zoneSignal >= 80
   const pal = zoneHeld
-    ? { bg: 'var(--moss-soft)', ink: 'var(--ink)', label: 'var(--moss)', track: 'rgba(26,26,26,0.10)', rule: 'rgba(26,26,26,0.10)' }
-    : { bg: 'var(--warn-bg)',   ink: 'var(--coach-ink)', label: 'var(--warn)', track: 'rgba(61,38,0,0.12)', rule: 'rgba(61,38,0,0.10)' }
+    ? { bg: 'var(--moss-soft)', ink: 'var(--ink)', label: 'var(--moss)', track: 'var(--line-strong)', rule: 'var(--line-strong)' }
+    : { bg: 'var(--warn-bg)',   ink: 'var(--coach-ink)', label: 'var(--warn)', track: 'var(--coach-line)', rule: 'var(--coach-line)' }
 
   return (
     <>

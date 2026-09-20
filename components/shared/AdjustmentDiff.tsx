@@ -49,7 +49,7 @@ export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 
         gap:          '4px',
         marginTop:    '12px',
         paddingTop:   '12px',
-        borderTop:    '1px solid rgba(61,38,0,0.12)',
+        borderTop:    '1px solid var(--coach-line)',
       }}
     >
       {changes.map(entry => {
@@ -86,7 +86,7 @@ export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 
               style={{
                 color:           'var(--mute)',
                 textDecoration:  'line-through',
-                textDecorationColor: 'rgba(61,38,0,0.35)',
+                textDecorationColor: 'var(--coach-line-faint)',
                 flex:             '0 0 auto',
               }}
             >

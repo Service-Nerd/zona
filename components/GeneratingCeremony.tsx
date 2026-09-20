@@ -262,8 +262,13 @@ export default function GeneratingCeremony({
           to   { opacity: 1; transform: translateY(0); }
         }
         .gc-shimmer {
-          /* rgba(91,192,190) = --color-teal */
-          background: linear-gradient(90deg, var(--border-col) 25%, rgba(91,192,190,0.14) 50%, var(--border-col) 75%);
+          /* P-13b (2026-09-20) — this shimmer used to render the RETIRED System-B
+             teal, written in rgba form so the hex-only pre-commit rule never saw
+             it. A banned colour, live on the one screen every runner sees. Now a
+             token, and the rule now covers rgba. The old value is deliberately
+             NOT repeated here: the guard cannot tell a comment from code, and a
+             banned colour should not be greppable in this file at all. */
+          background: linear-gradient(90deg, var(--border-col) 25%, var(--moss-soft) 50%, var(--border-col) 75%);
           background-size: 200% 100%;
           animation: gc-shimmer 1.6s ease-in-out infinite;
         }

@@ -139,7 +139,7 @@ export default function PendingAdjustmentBanner({
             flex:         1,
             padding:      '10px 0',
             background:   'transparent',
-            border:       '1px solid rgba(61,38,0,0.2)',
+            border:       '1px solid var(--coach-line-strong)',
             borderRadius: '100px',
             fontFamily:   'var(--font-ui)',
             fontSize:     '13px',

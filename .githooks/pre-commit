@@ -31,6 +31,42 @@ if [ -n "$HEX_HITS" ]; then
   FAIL=1
 fi
 
+# ── Hardcoded rgba() PALETTE values (P-13b, GAP-08) ──────────────────────────
+#
+# WHY THIS EXISTS. The hex rule above has protected this repo for months and has
+# a hole the width of a colour channel: writing the same value as rgba() walks
+# straight past it. Measured 2026-09-20 — 26 live rgba instances in app/ and
+# components/, 17 of them palette colours at alpha, and one of them is
+# rgba(91,192,190) = #5BC0BE, the RETIRED SYSTEM-B TEAL that this very hook
+# blocks in hex form. It renders in the generating-ceremony shimmer, which every
+# runner sees.
+#
+# ⚠️ DELIBERATELY QUIET, because a guard that fires on ordinary work gets
+# switched off and this repo has recorded that twice as equivalent to no guard.
+# Pure white and pure black at alpha are SCRIMS and overlays — there is no token
+# for a scrim and there should not be one. Only a NON-greyscale triple is a
+# palette colour wearing an alpha channel, and that is all this matches.
+RGBA_RE='rgba?\(\s*[0-9]{1,3}\s*,\s*[0-9]{1,3}\s*,\s*[0-9]{1,3}'
+RGBA_SCRIM='rgba?\(\s*(0\s*,\s*0\s*,\s*0|255\s*,\s*255\s*,\s*255)\s*[,)]'
+RGBA_HITS=""
+for f in $STAGED; do
+  [ -f "$f" ] || continue
+  if grep -nE "$RGBA_RE" "$f" 2>/dev/null | grep -vE "$RGBA_SCRIM" | grep -q .; then
+    RGBA_HITS="$RGBA_HITS$f
+"
+  fi
+done
+if [ -n "$RGBA_HITS" ]; then
+  echo ""
+  echo "✗  Hardcoded rgba() palette colour detected. Use a CSS custom property from globals.css."
+  echo "   (Pure white / pure black at alpha are allowed — those are scrims, not palette.)"
+  echo "$RGBA_HITS" | while read -r f; do
+    [ -n "$f" ] || continue
+    grep -nE "$RGBA_RE" "$f" | grep -vE "$RGBA_SCRIM" | head -3 | sed "s|^|   $f:|"
+  done
+  FAIL=1
+fi
+
 # ── Banned fonts ──────────────────────────────────────────────────────────────
 FONT_HITS=$(echo "$STAGED" | xargs grep -lnE 'DM Mono|DM Sans|Space Grotesk|Bebas Neue' 2>/dev/null || true)
 if [ -n "$FONT_HITS" ]; then
@@ -54,12 +90,12 @@ if [ -n "$SETP_HITS" ]; then
 fi
 
 # ── Specifically banned values ────────────────────────────────────────────────
-BANNED_HITS=$(echo "$STAGED" | xargs grep -lnE '#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE' 2>/dev/null || true)
+BANNED_HITS=$(echo "$STAGED" | xargs grep -lnE '#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE|rgba?\(212, ?80, ?26|rgba?\(11, ?19, ?43|rgba?\(91, ?192, ?190' 2>/dev/null || true)
 if [ -n "$BANNED_HITS" ]; then
   echo ""
   echo "✗  Banned palette value detected (ember orange / warm beige / System B colours)."
   echo "$BANNED_HITS" | while read -r f; do
-    grep -nE '#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE' "$f" | head -3 | sed "s|^|   $f:|"
+    grep -nE '#D4501A|#f5f2ee|#F5F2EE|#0B132B|#5BC0BE|rgba?\(212, ?80, ?26|rgba?\(11, ?19, ?43|rgba?\(91, ?192, ?190' "$f" | head -3 | sed "s|^|   $f:|"
   done
   FAIL=1
 fi

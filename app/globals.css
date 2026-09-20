@@ -110,6 +110,16 @@
 
   /* ── Coach voice ─────────────────────────────────────────────────── */
   --coach-ink:       #3D2600;   /* warm dark brown — coach copy on --warn-bg only */
+  /* P-13b (2026-09-20) — DERIVED ALPHA TOKENS, not new colours. Every one is an
+     already-approved palette value with an alpha channel, added because the
+     pre-commit rgba rule now blocks writing them inline and there was nowhere
+     for them to resolve from. No hue is introduced here. */
+  --coach-line:        rgba(61,38,0,0.12);  /* hairline on --warn-bg surfaces */
+  --coach-line-strong: rgba(61,38,0,0.20);  /* card border on --warn-bg */
+  --coach-line-faint:  rgba(61,38,0,0.35);  /* strike-through on coach copy */
+  --scrim:             rgba(26,26,26,0.40); /* modal/sheet backdrop — --ink at alpha */
+  --bg-fade-0:         rgba(243,240,235,0);  /* --bg at zero alpha — gradient fades only */
+  --shadow-device:     0 1px 2px rgba(26,26,26,.06), 0 24px 60px -20px rgba(26,26,26,.28); /* marketing phone frame — deeper than --shadow-lifted by design */
 
   /* ── Fixed colours ───────────────────────────────────────────────── */
   --strava:          #FC4C02;

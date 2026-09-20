@@ -160,7 +160,7 @@ export function PhoneFrame() {
         borderRadius: '46px',
         padding: '10px',
         position: 'relative',
-        boxShadow: '0 1px 2px rgba(26,26,26,.06), 0 24px 60px -20px rgba(26,26,26,.28)',
+        boxShadow: 'var(--shadow-device)',
         flexShrink: 0,
       }}
     >
@@ -391,7 +391,7 @@ export function PhoneFrame() {
           {/* Bottom fade — 32px, sits in the gap BELOW the CTA, never over it */}
           <div style={{
             position: 'absolute', left: 0, right: 0, bottom: 0, height: '32px',
-            background: 'linear-gradient(to bottom, rgba(243,240,235,0) 0%, var(--bg) 100%)',
+            background: 'linear-gradient(to bottom, var(--bg-fade-0) 0%, var(--bg) 100%)',
           }} />
         </div>
 

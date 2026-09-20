@@ -1303,7 +1303,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > **Still true and NOT closed by this:** foundation weeks contain no `long` session at low volume (four equal easy runs), so `INV-PLAN-WEEK-1-2-LONG-CAP` — guarded on `long?.session.distance_km` — does not evaluate them. That is correct as written (there is no long run to cap) but means the foundation block's session sizing is bounded by its own floors rather than by §45. Not a defect on any coherent input measured; recorded so the next person does not re-derive it.
 
 
-> 🟡 **BRAND-MAINT-LABEL-01 — four of five marathon charity personas are labelled `maintenance`, and the word may be read as a verdict.** *(P2 — **SLT**, escalated by the Coaching Board 2026-09-18. Not a coaching question: the classification is CORRECT and drives real safety behaviour.)*
+> ✅ ~~**BRAND-MAINT-LABEL-01**~~ — **CLOSED 2026-09-19, SLT: no action, the string is already right.** ⚠️ **This entry carried a 🟡 open marker until 2026-09-20 while the summary table two hundred lines above recorded it closed** — the same stale-prose-bench class as `S9-DURATION-FLOOR-01` and `PERSONA-CORPUS-01`. Original scoping retained below. *(P2 — SLT, escalated by the Coaching Board 2026-09-18. Not a coaching question: the classification is CORRECT and drives real safety behaviour.)*
 >
 > **Measured at the sitting.** M1, M2, M3 and M1d all come out `volume_profile: 'maintenance'`; only M5 is `build`. Those plans carry peak weeks of **50–59 km**, which Seiler noted is not maintenance in any ordinary sense of the word — it is the label the engine applies when §52's 60%-of-week bound binds.
 >

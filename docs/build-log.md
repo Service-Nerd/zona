@@ -8,6 +8,30 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## 2026-09-20 — the guard had a hole the width of a colour channel
+
+**Dev.** The pre-commit hook blocks hardcoded hex colours and has done for months. It does not
+look at `rgba()`. So the same value, written differently, walks past it — and 26 of them had.
+
+**The one that matters.** `GeneratingCeremony.tsx` was rendering `rgba(91,192,190, 0.14)`. That is
+`#5BC0BE`, the retired System-B teal, which this very hook blocks in hex form and which CLAUDE.md
+lists as banned. It renders in the shimmer on the generating screen — **the one screen every
+single runner sees.** The comment directly above it named the colour. Nobody was hiding anything.
+Nobody had looked, because nothing looks.
+
+**Product.** Triaging all 26 by hand mattered more than sweeping them: 17 were palette colours at
+alpha and are now tokens, **6 were pure white or black scrims and are legitimate** — there is no
+token for a scrim and there should not be one.
+
+**AI-building.** The rule is deliberately quiet for a reason this repo has written down twice: a
+guard that fires on ordinary work gets switched off, which is the same as having no guard. It
+only matches a non-greyscale triple. I falsified it 7/7 in both directions before trusting it.
+
+**The honest bit.** My own comment explaining the banned colour tripped the new rule. The right
+move was to reword the comment, not weaken the guard — the hook cannot tell a comment from code,
+and a banned colour should not be greppable in that file at all.
+
 ## 2026-09-20 — the principle was written down, then broken by the branch next to it
 
 **Dev.** `REFRAME-NOTE-LOSS-01`: a runner writes a reflection, the AI call fails, and the route

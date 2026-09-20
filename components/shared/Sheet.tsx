@@ -148,7 +148,7 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
       aria-label={ariaLabel}
       style={{
         position: 'fixed', inset: 0, zIndex: Z_LAYERS.sheet,
-        background: 'rgba(26,26,26,0.4)',
+        background: 'var(--scrim)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         // Rest on the nav's top edge: reserve the measured nav height so the
         // flex-end panel bottom lands exactly on the nav, never under it.

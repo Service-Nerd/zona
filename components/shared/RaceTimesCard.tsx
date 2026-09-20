@@ -144,7 +144,7 @@ export function RaceTimesCard({
       fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 600 as const,
       color:      isHigh ? 'var(--moss)' : 'var(--mute)',
       textTransform: 'uppercase' as const, letterSpacing: '0.06em',
-      background: isHigh ? 'rgba(107,142,107,0.12)' : 'rgba(138,133,125,0.10)',
+      background: isHigh ? 'var(--moss-soft)' : 'var(--line)',
       borderRadius: '10px', padding: '2px 8px',
     }
   }
@@ -274,7 +274,7 @@ export function RaceTimesCard({
                   onClick={onOpenBenchmark}
                   style={{
                     fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                    color: 'var(--moss)', background: 'rgba(107,142,107,0.10)',
+                    color: 'var(--moss)', background: 'var(--moss-soft)',
                     border: 'none', borderRadius: '20px', padding: '7px 14px',
                     minHeight: '36px', cursor: 'pointer',
                   }}
@@ -389,7 +389,7 @@ export function RaceTimesCard({
                   onClick={onOpenBenchmark}
                   style={{
                     fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                    color: 'var(--moss)', background: 'rgba(107,142,107,0.10)',
+                    color: 'var(--moss)', background: 'var(--moss-soft)',
                     border: 'none', borderRadius: '20px', padding: '7px 14px',
                     cursor: 'pointer',
                   }}
