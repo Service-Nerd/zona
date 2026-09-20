@@ -48,7 +48,34 @@ export interface CoverageReport {
   exempt: string[]
   /** Exemptions naming a field that no longer exists — the exemption list rotting. */
   staleExemptions: string[]
+  /**
+   * SWEEP-AGE-01 (2026-09-20) — NUMERIC AXES THAT NEVER CROSS A THRESHOLD THE
+   * ENGINE BRANCHES ON.
+   *
+   * ⚠️ THE GATE ABOVE PASSED FOR A YEAR WHILE THE MASTERS COHORT WAS ENTIRELY
+   * UNSWEPT. `age` took 35 and 43 — two distinct values, so "covered" — and
+   * both are under `MASTERS_AGE_THRESHOLD` (45). **Counting distinct values
+   * cannot see that none of them crosses a boundary the engine branches on**,
+   * and §3's masters deload cadence had therefore never run in the sweep.
+   * It hid 47 violations across five invariants, 25 of them ERROR severity.
+   *
+   * "Covered" must mean *both sides of every branch*, not *more than one value*.
+   */
+  uncrossedThresholds: { field: string; threshold: number; label: string; side: 'all below' | 'all at or above' }[]
 }
+
+/**
+ * Numeric inputs the engine BRANCHES on, and the value it branches at. A sweep
+ * that never puts values on both sides of one of these has not swept it.
+ *
+ * ⚠️ Keep this list honest rather than long: a threshold belongs here only if
+ * the engine's behaviour genuinely changes across it. A cosmetic cut-off would
+ * make the gate noisy, and a noisy gate gets switched off — which this repo has
+ * recorded twice as equivalent to having no gate.
+ */
+export const BRANCHING_THRESHOLDS: readonly { field: string; threshold: number; label: string }[] = [
+  { field: 'age', threshold: 45, label: 'MASTERS_AGE_THRESHOLD (§3 — masters get a 3-week deload cadence)' },
+]
 
 /**
  * Field names of the `GeneratorInput` interface, read out of the TypeScript source.
@@ -129,10 +156,30 @@ export function inputCoverage(
     }
   }
 
+  // SWEEP-AGE-01 — both sides of every branch, not just more than one value.
+  const uncrossedThresholds: CoverageReport['uncrossedThresholds'] = []
+  for (const { field, threshold, label } of BRANCHING_THRESHOLDS) {
+    if (!declaredFields.includes(field)) continue
+    let below = false, atOrAbove = false
+    for (const input of inputs) {
+      const v = input[field]
+      if (typeof v !== 'number' || !Number.isFinite(v)) continue
+      if (v < threshold) below = true
+      else atOrAbove = true
+      if (below && atOrAbove) break
+    }
+    // Neither side seen at all means the field is absent everywhere, which the
+    // distinct-value check above already reports. Only a ONE-SIDED axis is new.
+    if (below !== atOrAbove) {
+      uncrossedThresholds.push({ field, threshold, label, side: below ? 'all below' : 'all at or above' })
+    }
+  }
+
   return {
     covered,
     uncovered,
     exempt: Object.keys(exemptions).filter(f => declaredFields.includes(f)),
     staleExemptions: Object.keys(exemptions).filter(f => !declaredFields.includes(f)),
+    uncrossedThresholds,
   }
 }

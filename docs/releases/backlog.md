@@ -2848,7 +2848,16 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 >   ⚠️ Re-scoping `lopsidedWeek` backfired on 2026-09-15 (stripped 24 plans of maintenance, turned
 >   an absorbed warn into a hard failure, reverted). Needs its own measurement, not a ride-along.
 >   *Verify still open:* `BASELINE['INV-PLAN-LR-MAX-WEEKLY-PCT']` in the sweep → **2 = still open**.
-> - 🔴 **SWEEP-AGE-01** — the sweep pins `age: 35` (corners 43), so `MASTERS_AGE_THRESHOLD` (45) is
+> - ✅ ~~**SWEEP-AGE-01**~~ — **SHIPPED 2026-09-20.** Age axis added (`22, 35, 44, 46, 55, 62`), and the
+>   input-coverage gate now checks **threshold CROSSING**, not just distinct values. **It surfaced 47
+>   violations across FIVE invariants, 45 of them at age ≥ 46, 25 of them ERROR severity** — baselined
+>   as declared debt and filed as `MASTERS-COMPRESSED-BUILD-01` for the Coaching Board, because every
+>   candidate fix changes prescription. ⚠️ **The mechanism was traced, not guessed:** varying ONLY age
+>   on a real failing input, the boundary is exact at 45 — a second deload appears, a build week is
+>   lost, and the week-indexed tempo progression stops outgrowing the ABSOLUTE-dose VO2max session.
+>   ⚠️ **My first hypothesis — that this was a re-rolled seeded sample, not a masters finding — was
+>   WRONG and I measured it rather than asserting it.**
+> - ✅ ~~*(original)*~~ **SWEEP-AGE-01** — the sweep pins `age: 35` (corners 43), so `MASTERS_AGE_THRESHOLD` (45) is
 >   NEVER crossed and §3's masters 3-week deload cadence has never been swept. That is where the
 >   deload ratchet was worst (81.7% detraining vs 67.2%), so every masters figure in §2 Am.2 is
 >   instrumented arithmetic, not sweep measurement. **Widening it revealed a second unrelated
@@ -2856,6 +2865,30 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 >   Also: the input-coverage gate passed because `age` took two distinct values; it does not check
 >   whether variation crosses a threshold the engine BRANCHES on. That gate is worth strengthening.
 >   *Verify still open:* `grep -c "age: pick(ages)" scripts/property-validate-plans.ts` → **0 = open**.
+> - 🔴 **`MASTERS-COMPRESSED-BUILD-01` — §3's masters deload cadence costs a build week, and five invariants object.** *(P1, filed 2026-09-20 out of SWEEP-AGE-01. **Coaching Board — every candidate fix changes prescription.**)*
+>   **Measured, varying ONLY age on a real failing input (5K time goal, 3 days, cwk 60, experienced, Achilles):**
+>
+>   | age | 30 | 40 | 43 | 44 | **45** | **46** | **50** | **62** |
+>   |---|---|---|---|---|---|---|---|---|
+>   | deloads in an 11-week plan | 1 | 1 | 1 | 1 | **2** | **2** | **2** | **2** |
+>   | `INV-PLAN-MAIN-SET-ORDERING` | 0 | 0 | 0 | 0 | **1** | **1** | **1** | **1** |
+>
+>   **The boundary is exactly `MASTERS_AGE_THRESHOLD` (45).** A second deload enters the same plan
+>   length, which costs a build week. The **tempo progression is week-indexed**; the **VO2max dose is
+>   ABSOLUTE** (SC-08 v2 rows — rep length is the stimulus identity, fixed). Compress the build and
+>   tempo stops outgrowing VO2max, so §8's invariant correctly fires: *"VO2max work is the least
+>   sustainable per minute and must not be the plan's longest quality session."*
+>
+>   **Swept totals (14,267 plans):** `INV-PLAN-MAIN-SET-ORDERING` 25 · `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` 17 ·
+>   `INV-PLAN-LR-MAX-WEEKLY-PCT` +1 · `INV-PLAN-PEAK-OVER-BASE` 1 · `INV-PLAN-WEEK-1-2-LONG-CAP` 1.
+>
+>   ⚠️ **These are NOT new defects.** They were always reachable and the corpus could not reach them —
+>   the same class as the liveness debt and the S111 sitting's *"the debt was the SAMPLE, not the rules."*
+>   ⚠️ **Candidate fixes, all prescription changes, none chosen:** scale the VO2max dose with build
+>   length · exempt compressed plans from §8's ordering · protect a build week for masters against §3.
+>   ⚠️ **`INV-PLAN-MAIN-SET-ORDERING` is ERROR severity**, so these THROW in dev and test. They are
+>   baselined so `verify` stays green while the board sits — **baselining makes debt visible and stops
+>   it growing; it does not make it shrink.**
 > - 🔲 **SWEEP-INJURY-01** — `'Plantar fasciitis'` is still unswept. The injury axis was held at 6
 >   entries during INJURY-MATCH-01 so the seeded sample would not re-roll and rates stayed
 >   comparable. Add it (and re-baseline the rates, declaring the move) as its own change.

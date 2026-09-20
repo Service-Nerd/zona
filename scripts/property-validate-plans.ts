@@ -11,7 +11,7 @@ import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { validatePlan, type Violation } from '../lib/plan/invariants'
 import { composePlanWithFoundation } from '../lib/plan/foundationCompose'
 import {
-  generatorInputFields, assertParsedShape, inputCoverage,
+  generatorInputFields, assertParsedShape, inputCoverage, BRANCHING_THRESHOLDS,
 } from '../lib/plan/sweepInputCoverage'
 import { GENERATION_CONFIG } from '../lib/plan/generationConfig'
 import { readFileSync } from 'node:fs'
@@ -262,6 +262,9 @@ const tiers: Array<'free' | 'paid'> = ['free', 'paid']
 // reproducible; SWEEP_N tunes depth (raise it for a release gate, leave it for
 // everyday use).
 const SWEEP_N = Number(process.env.SWEEP_N ?? 20000)
+// SWEEP-AGE-01 — 5 samples cannot tell you the SHAPE of a regression, only that
+// one exists. Raise it with SAMPLE_CAP when diagnosing.
+const SAMPLE_CAP = Number(process.env.SAMPLE_CAP ?? 5)
 const SEED = Number(process.env.SWEEP_SEED ?? 20260820)
 
 function mulberry32(a: number) {
@@ -274,6 +277,29 @@ function mulberry32(a: number) {
 }
 const rand = mulberry32(SEED)
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(rand() * arr.length)]
+
+// SWEEP-AGE-01 — THE AGE AXIS, WHICH DID NOT EXIST.
+//
+// `baseInput` pinned `age: 35` and the hand-written corner cases used 40–43, so
+// **`MASTERS_AGE_THRESHOLD` (45) was never crossed and §3's masters 3-week
+// deload cadence had never been swept at all.** That is precisely where the
+// deload ratchet was worst (81.7% detraining against 67.2%), so every masters
+// figure in §2 Amendment 2 was instrumented arithmetic rather than sweep
+// measurement.
+//
+// ⚠️ THE INPUT-COVERAGE GATE PASSED THROUGHOUT, and that is the lesson worth
+// more than the fix. `inputCoverage` checks that a field takes more than one
+// distinct value. `age` took 35 and 43. Both are under 45. **A gate that counts
+// distinct values cannot see that none of them crosses a threshold the engine
+// BRANCHES on.**
+//
+// Chosen to straddle the threshold in both directions and to cover the day-job
+// demographic, inside `validateInputFields`'s 13–90 range:
+//   22, 35  — well under
+//   44      — one year under, the boundary
+//   46      — one year over, the boundary
+//   55, 62  — masters proper
+const ages = [22, 35, 44, 46, 55, 62] as const
 
 // Corner cases that must ALWAYS run, whatever the sample draws. Each earned its
 // place by being a profile that actually broke something.
@@ -400,6 +426,8 @@ function randomInput(): any {
   const bm = pick(benchmarkSets)
   return {
     ...baseInput, ...d,
+    // SWEEP-AGE-01 — overrides baseInput's pinned 35.
+    age: pick(ages),
     target_time: TARGET_TIME_BY_DISTANCE[d.race_distance_km],
     current_weekly_km: cwk,
     longest_recent_run_km: Math.max(3, Math.round(cwk * pick(lrrFractions))),
@@ -656,7 +684,31 @@ const COVERAGE_EXEMPTIONS: Record<string, string> = {
   a reason explaining why varying it would test nothing.\n`)
     process.exit(1)
   }
-  console.log(`Input coverage:    ${cov.covered.length} fields varied, ${cov.exempt.length} exempt (${fields.length} declared)`)
+
+  // SWEEP-AGE-01 — "covered" must mean BOTH SIDES OF EVERY BRANCH, not "more
+  // than one value". `age` took 35 and 43 for a year: two distinct values, both
+  // under MASTERS_AGE_THRESHOLD, so the gate said covered while §3's masters
+  // deload cadence had never run once.
+  if (cov.uncrossedThresholds.length > 0) {
+    console.error(`\n✗ SWEEP INPUT COVERAGE — ${cov.uncrossedThresholds.length} numeric axis/axes never cross a threshold the engine BRANCHES on:\n`)
+    for (const t of cov.uncrossedThresholds) {
+      console.error(`    ${t.field.padEnd(12)} ${t.side} ${t.threshold}  — ${t.label}`)
+    }
+    console.error(`
+  The distinct-value check above passes on a one-sided axis, so this is the
+  gap it cannot see. Every value on one side of a branch means the OTHER side
+  has never been generated, and the sweep still reports "0 violations".
+
+  Measured when this gate was written: adding the age axis surfaced 47
+  violations across five invariants, 45 of them at age >= 46, 25 of them ERROR
+  severity. They were not new. They were unreachable.
+
+  Widen the axis in randomInput(), or remove the entry from
+  BRANCHING_THRESHOLDS in lib/plan/sweepInputCoverage.ts if the engine no
+  longer branches there.\n`)
+    process.exit(1)
+  }
+  console.log(`Input coverage:    ${cov.covered.length} fields varied, ${cov.exempt.length} exempt (${fields.length} declared), ${BRANCHING_THRESHOLDS.length} branch threshold(s) crossed`)
 }
 
 for (const input of inputs) {
@@ -1116,7 +1168,7 @@ for (const input of inputs) {
     }
     for (const v of errors) {
       violationsByCode.set(v.code, (violationsByCode.get(v.code) ?? 0) + 1)
-      if (samples.length < 5) samples.push({ input, violation: v })
+      if (samples.length < SAMPLE_CAP) samples.push({ input, violation: v })
     }
   }
   // NOISE-GATE-01 — count PLANS where each warn fires (once per plan, not once
@@ -1168,6 +1220,41 @@ if (hardFailures > 0) {
 // A baseline is a debt register, not an amnesty. Tracked in backlog.md as
 // SWEEP-BASELINE-01.
 const BASELINE: Record<string, number> = {
+  // ── SWEEP-AGE-01 (2026-09-20) — THE MASTERS COHORT HAD NEVER BEEN SWEPT ──
+  //
+  // `baseInput` pinned `age: 35` and the hand-written corners used 40–43, so
+  // **`MASTERS_AGE_THRESHOLD` (45) was never crossed.** Adding the age axis
+  // surfaced **47 violations across five invariants, 45 of them at age >= 46.**
+  // Not a re-rolled sample: measured by age, and the boundary is exact.
+  //
+  // ⚠️ MECHANISM, TRACED ON A REAL FAILING INPUT WITH ONLY AGE VARIED:
+  //
+  //     age  30  40  43  44 | 45  46  50  62
+  //     deloads  1   1   1   1 |  2   2   2   2
+  //     MAIN-SET-ORDERING  0   0   0   0 |  1   1   1   1
+  //
+  // §3's masters 3-week deload cadence puts a SECOND deload into the same
+  // 11-week plan. That costs a build week. The tempo progression is
+  // week-indexed and the VO2max dose is ABSOLUTE (SC-08 v2 rows: rep length is
+  // the stimulus identity, fixed), so compressing the build stops tempo
+  // outgrowing VO2max — and §8's invariant correctly objects that *"VO2max work
+  // is the least sustainable per minute and must not be the plan's longest
+  // quality session."*
+  //
+  // 🔴 **BASELINED, NOT FIXED, AND THE FIX IS NOT MINE.** Every candidate
+  // remedy — scale the VO2max dose with build length, exempt compressed plans,
+  // protect a build week for masters — changes what the engine PRESCRIBES.
+  // Coaching Board. Filed as `MASTERS-COMPRESSED-BUILD-01`.
+  //
+  // ⚠️ These are NOT new defects. They are defects that were always there and
+  // the corpus could not reach — the same class as the liveness debt and the
+  // S111 sitting's "the debt was the SAMPLE, not the rules". Making them
+  // visible is the point; baselining stops them growing while the board sits.
+  'INV-PLAN-MAIN-SET-ORDERING': 25,
+  'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': 17,
+  'INV-PLAN-PEAK-OVER-BASE': 1,
+  'INV-PLAN-WEEK-1-2-LONG-CAP': 1,
+
   // ── §53 variety, ROTATION SPENDS A SHARED ROW (CB-BEGINNER-CATALOGUE-01, 2026-09-19) ──
   //
   // 2 plans in 14,486, both `5km / beginner / days=3 / cwk=40`.
@@ -1348,7 +1435,7 @@ const BASELINE: Record<string, number> = {
   // made honester-but-quieter, because distinct labels no longer hint at the
   // row repetition underneath. The row-count flip is still gated on the Coaching
   // Board's §53 cap ruling; both halves ship together or neither does.
-  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':    2,  // S53-ROTATION-SCARCITY-01, 2026-09-19 — see the note at the top of this object
+  'INV-PLAN-QUALITY-VARIETY-FULL-PLAN':    0,  // S53-ROTATION-SCARCITY-01, 2026-09-19 — see the note at the top of this object
   // 54 -> 98 -> 0 (2026-08-20). Cleared by identifying a taper session by its
   // catalogue ROW rather than its display label: §22's goal-pace rename made two
   // genuinely different sessions read as a repeat. The row check is also
@@ -1380,7 +1467,7 @@ const BASELINE: Record<string, number> = {
   // NOT fixed here on purpose — re-scoping `lopsidedWeek` backfired on 2026-09-15
   // (stripped 24 plans of maintenance, turned an absorbed warn into a hard
   // failure, reverted). Filed LOPSIDED-ORDER-01.
-  'INV-PLAN-LR-MAX-WEEKLY-PCT':          2,
+  'INV-PLAN-LR-MAX-WEEKLY-PCT':          3,
   // 0 -> 1 (2026-09-10, INTENSITY-FOUNDATION-BLIND-02). NOT a regression from
   // this change and NOT a false positive: it is the first DELIVERED-plan §1
   // breach this sweep has ever been able to see.
@@ -1445,7 +1532,8 @@ if (regressions.length > 0) {
   regressions.forEach(l => console.error(l))
   console.error()
   for (const { input, violation } of samples) {
-    console.error(`  ${violation.code} on ${input.race_distance_km}km/${input.fitness_level}/days=${input.days_available}/cwk=${input.current_weekly_km}: ${violation.message}`)
+    console.error(`  ${violation.code} on ${input.race_distance_km}km/${input.fitness_level}/days=${input.days_available}/cwk=${input.current_weekly_km}/age=${(input as {age?:number}).age}: ${violation.message}`)
+    if (process.env.SWEEP_DUMP_INPUT) console.error(`    INPUT ${JSON.stringify(input)}`)
   }
   process.exit(1)
 }

@@ -12,6 +12,34 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## 2026-09-20 — SWEEP-AGE-01: the gate said "covered" because the field took two values, and both were wrong
+
+**Dev.** The property sweep pinned `age: 35`. The hand-written corner cases used 40 to 43. The
+masters threshold is 45. So **§3's masters deload cadence had never run in the sweep, once, ever** —
+and the input-coverage gate reported the field as covered the whole time, because it counts
+distinct values and there were two.
+
+**Product.** Adding the axis surfaced 47 violations across five invariants, 45 of them masters, 25
+of them ERROR severity. Not new defects. Defects that were always reachable and the corpus could
+not reach.
+
+**AI-building — and this is the bit I nearly got wrong.** My first read was that the sweep is
+seeded, so adding a `pick()` re-rolls every subsequent draw, and these were just plans the old
+sample never happened to draw. Plausible, tidy, and **wrong.** I printed the ages instead of
+asserting: 46, 55 and 62 accounted for 45 of 47. Then I varied only age on a real failing input
+and the boundary landed exactly on 45. **The difference between those two stories is a coaching
+defect in a real cohort versus a shrug, and only measurement tells you which.**
+
+**The durable half.** The coverage gate now checks that numeric axes cross the thresholds the
+engine branches on. *"Covered" has to mean both sides of every branch, not more than one value.*
+I falsified it by narrowing the axis back to where it was — it goes red and names the exact
+condition that had existed for a year.
+
+**The honest bit.** I baselined 45 violations rather than fixing them, because every candidate fix
+changes what the engine prescribes and that is not mine to decide. Baselining makes debt visible
+and stops it growing. **It does not make it shrink, and nothing in this repo schedules it.**
+
 ## 2026-09-20 — P-01, REFRAME-NOTE-LOSS-01, CONSENT-DISCLOSURE-01: I shipped three strings and two were wrong
 
 **Dev.** Three pieces of copy went out today flagged for sign-off rather than left blank. The

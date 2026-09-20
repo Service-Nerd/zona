@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  generatorInputFields, assertParsedShape, inputCoverage, MIN_DISTINCT_VALUES,
+  generatorInputFields, assertParsedShape, inputCoverage, MIN_DISTINCT_VALUES, BRANCHING_THRESHOLDS,
 } from './sweepInputCoverage'
 
 /**
@@ -101,5 +101,57 @@ describe('inputCoverage', () => {
 
   it('MIN_DISTINCT_VALUES is 2 — one value is not variation', () => {
     expect(MIN_DISTINCT_VALUES).toBe(2)
+  })
+})
+
+// ── SWEEP-AGE-01 (2026-09-20) — both sides of every branch ───────────────────
+//
+// The distinct-value gate above passed for a year while the masters cohort was
+// entirely unswept: `age` took 35 and 43, which is two values and therefore
+// "covered", and both are under MASTERS_AGE_THRESHOLD (45). It hid 47
+// violations across five invariants, 25 of them ERROR severity.
+
+describe('SWEEP-AGE-01 — a one-sided numeric axis is not coverage', () => {
+  const fields = ['age'] as const
+  const mk = (ages: number[]) => ages.map(age => ({ age }))
+
+  it('THE REGRESSION: all values below the threshold is flagged', () => {
+    const r = inputCoverage(mk([35, 43]), fields, {})
+    expect(r.uncrossedThresholds).toHaveLength(1)
+    expect(r.uncrossedThresholds[0]).toMatchObject({ field: 'age', threshold: 45, side: 'all below' })
+    // ⚠️ And the OLD gate is happy — which is the whole point.
+    expect(r.uncovered).toHaveLength(0)
+  })
+
+  it('all values at or above the threshold is flagged too', () => {
+    const r = inputCoverage(mk([46, 62]), fields, {})
+    expect(r.uncrossedThresholds[0]).toMatchObject({ side: 'all at or above' })
+  })
+
+  it('crossing it passes, and the boundary is inclusive-above', () => {
+    expect(inputCoverage(mk([44, 45]), fields, {}).uncrossedThresholds).toHaveLength(0)
+    expect(inputCoverage(mk([22, 35, 44, 46, 55, 62]), fields, {}).uncrossedThresholds).toHaveLength(0)
+  })
+
+  it('an absent field is left to the distinct-value gate, not double-reported', () => {
+    const r = inputCoverage([{}, {}], fields, {})
+    expect(r.uncrossedThresholds).toHaveLength(0)
+    expect(r.uncovered).toHaveLength(1)
+  })
+
+  it('a field not declared by the grid is skipped', () => {
+    expect(inputCoverage(mk([35]), [] as unknown as readonly string[], {}).uncrossedThresholds).toHaveLength(0)
+  })
+
+  it('non-numeric values are ignored rather than crashing', () => {
+    const r = inputCoverage([{ age: 'x' }, { age: null }, { age: 50 }] as never, fields, {})
+    expect(r.uncrossedThresholds[0]).toMatchObject({ side: 'all at or above' })
+  })
+
+  it('every declared threshold names the principle it guards', () => {
+    for (const t of BRANCHING_THRESHOLDS) {
+      expect(t.label).toMatch(/§|\(/)
+      expect(t.threshold).toBeGreaterThan(0)
+    }
   })
 })
