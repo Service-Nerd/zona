@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   const { data: row } = await supabase
     .from('charity_codes')
-    .select('id, claimed_by, batch_id, charity_batches ( revoked_at )')
+    .select('id, claimed_by, claimed_at, batch_id, charity_batches ( revoked_at )')
     .eq('code', code)
     .maybeSingle()
 
@@ -73,7 +73,25 @@ export async function POST(req: NextRequest) {
       { status: 404 },
     )
   }
-  if (row.claimed_by) {
+  // GTM-CHARITY-07 (2026-09-20) — THE SEAT IS SPENT WHEN IT WAS CLAIMED, NOT
+  // WHILE THE CLAIMANT STILL EXISTS.
+  //
+  // This gated on `claimed_by`, and `charity_codes.claimed_by` is
+  // `ON DELETE SET NULL` (verified against production `pg_constraint`).
+  // Deleting an account therefore nulled it while leaving `claimed_at` and
+  // `expires_at` populated — so the code returned to the unclaimed pool and
+  // became redeemable again by anyone holding it. A small abuse path (redeem,
+  // delete, re-redeem) and, more likely to bite, a batch redemption count that
+  // silently drifts DOWN over a season.
+  //
+  // ⚠️ NO MIGRATION, AND THAT IS THE POINT. The filing proposed a `released_at`
+  // or `claim_state` column. Neither is needed: `claimed_at` already records
+  // exactly this fact and already survives the deletion, because the FK is on
+  // `claimed_by` alone. A new column would be a second answer to a question the
+  // schema could already answer, which is the duplication doctrine this repo
+  // keeps paying for. CASCADE was also rejected — deleting the code row would
+  // destroy the batch's own record that a seat was used.
+  if (row.claimed_at) {
     return NextResponse.json(
       { error: 'That code has already been used.' },
       { status: 409 },
@@ -93,10 +111,17 @@ export async function POST(req: NextRequest) {
   const now = new Date()
   const expiresAt = initialGrantExpiry(now)
 
-  // Claim it. The `.is('claimed_by', null)` predicate makes this the atomic
+  // Claim it. The `.is('claimed_at', null)` predicate makes this the atomic
   // step: two runners racing the same code produce one winner, because the
   // second update matches zero rows. Without it, both could read "unclaimed"
   // and both write.
+  //
+  // ⚠️ GTM-CHARITY-07 — this predicate moved from `claimed_by` to `claimed_at`
+  // WITH the read gate above, and both had to move together. Leaving the
+  // atomic predicate on `claimed_by` would have let a deleted-user row be
+  // re-claimed by the update even though the read gate now refuses it, which
+  // is a worse bug than the one being fixed: the refusal would depend on which
+  // of the two paths a request happened to take.
   const { data: claimed, error } = await supabase
     .from('charity_codes')
     .update({
@@ -105,7 +130,7 @@ export async function POST(req: NextRequest) {
       expires_at: expiresAt.toISOString(),
     })
     .eq('id', row.id)
-    .is('claimed_by', null)
+    .is('claimed_at', null)
     .select('expires_at')
     .maybeSingle()
 

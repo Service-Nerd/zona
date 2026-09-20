@@ -2632,7 +2632,9 @@ across the seven months combined.
 > that it did not and could not rule on it. If counsel says consent, this page is necessary but not
 > sufficient.
 
-> 🔲 **GTM-CHARITY-05 — `admin_user_tiers` does not know charity grants exist, so 500 comped runners will read as free.** *(P1, me, filed 2026-09-18.)*
+> 🟡 **GTM-CHARITY-05 — `admin_user_tiers` does not know charity grants exist, so 500 comped runners will read as free.** *(P1, me, filed 2026-09-18.)*
+>
+> 🟡 **PENDING ONE MIGRATION APPLY — code and SQL done 2026-09-20, and the defect is CONFIRMED LIVE.** The grant arm is added to `admin_user_tiers`, between subscription and trial, matching `resolveTier` exactly; the view also exposes `grant_expires` and `grant_partner` so a comped runner is legible as comped rather than as a lapsed trial. **Measured against production before the fix, not predicted: 2 live users read `trial` who hold an active grant**; 18 free, 13 trial, 1 admin all unchanged. Two today, **500 in October**. ⚠️ **D-16 answered mechanically, not with a comment.** SQL cannot import `resolveTier`, so the duplicate is unavoidable and is now NAMED: `adminViewTierParity.test.ts` reads the migration and fails if an arm is dropped or reordered, and asserts the grant arm tests EXPIRY (`> now()`) rather than mere presence, since a lapsed grant reported as current is the same error reversed. The previous mitigation was a comment asking the next person to remember, and that comment is what produced this defect. Falsified: deleting the grant arm reddens it. 🔻 **YOURS: `supabase/migrations/20260920_charity_tier_and_partner_cohort.sql` must be applied** — I am not permitted to deploy to production. Both view bodies were validated read-only against production first, so the SQL is known to run. **Do not add it to `.claude/state/applied-migrations.txt` until it is actually applied.**
 >
 > `lib/trial.ts → resolveTier` is documented as **the single owner** of
 > `admin → subscription → grant → trial → free`, and its header comment exists precisely because that order
@@ -2649,7 +2651,9 @@ across the seven months combined.
 > restate a rule the codebase says has one owner — either it reads a shared source, or it carries a comment
 > naming `resolveTier` as the thing it must track.
 
-> 🔲 **GTM-CHARITY-06 — there is no per-partner reporting, and only one analytics event exists in the whole app.** *(P1, me, filed 2026-09-18.)*
+> 🟡 **GTM-CHARITY-06 — there is no per-partner reporting, and only one analytics event exists in the whole app.** *(P1, me, filed 2026-09-18.)*
+>
+> 🟡 **PENDING THE SAME MIGRATION — `v_partner_cohort` written and validated 2026-09-20.** One view, all six metrics, per batch: `codes_minted`, `codes_redeemed`, `grants_active`, `runners_with_a_plan`, `runners_logging_sessions`, plus the cap and `revoked_at`. **Validated read-only against production and it returns real rows** (TEST batch: cap 3, 3 minted, 2 redeemed, 2 active, 2 with a plan). ⚠️ **BOTH HONESTY CAVEATS SHIP AS COLUMN NAMES, not as a covering note somebody forgets to read:** `signed_in_last_7d` (a SIGN-IN, not an app open — `coach_open` is still the only analytics event in the product, so nothing counts a live session) and `healthkit_accepted_upper_bound` (the permission SHEET was accepted; iOS does not let the app distinguish that from a silent denial). A partner cannot be shown either number without its caveat because the caveat is in the name. Also adds `seats_claimed_user_deleted`, which only became a meaningful column once `GTM-CHARITY-07` made a deleted claimant's seat stay spent.
 >
 > The partnership will be asked "how did it go". Today nothing can answer it.
 >
@@ -2671,7 +2675,9 @@ across the seven months combined.
 >
 > **Depends on `GTM-CHARITY-05`** if the view is to carry a tier column.
 
-> 🔲 **GTM-CHARITY-07 — deleting an account returns a claimed code to the unclaimed pool.** *(P2, me, filed 2026-09-18.)*
+> ✅ **GTM-CHARITY-07 — deleting an account returns a claimed code to the unclaimed pool.** *(P2, me, filed 2026-09-18.)*
+>
+> ✅ **SHIPPED 2026-09-20, WITH NO MIGRATION — and that is the design.** The route now gates on `claimed_at`, not `claimed_by`. `claimed_by` is `ON DELETE SET NULL`, so deleting an account nulled it while leaving `claimed_at` and `expires_at` populated and the code returned to the unclaimed pool. ⚠️ **The filing proposed a `released_at` or `claim_state` column; neither is needed.** `claimed_at` already records exactly this fact and already survives deletion, because the FK is on `claimed_by` alone — a new column would be a second answer to a question the schema could already answer. `ON DELETE CASCADE` was rejected separately: deleting the code row destroys the batch's own record that a seat was used, which is the number the charity will ask about. ⚠️ **BOTH PREDICATES MOVED TOGETHER** — the read gate AND the `.is(...)` predicate that makes the claim atomic against two runners racing one code. Moving only the read gate would be **worse than the original bug**, because the refusal would then depend on which path a request took. `redeemClaimSemantics.test.ts` falsified against exactly that half-fix.
 >
 > `charity_codes.claimed_by` is `ON DELETE SET NULL` (verified against production `pg_constraint`). Deleting
 > an account nulls it while leaving `claimed_at` and `expires_at` populated. `/api/charity/redeem` gates

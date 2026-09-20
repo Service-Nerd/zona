@@ -9,6 +9,50 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — GTM-CHARITY-05/06/07: the tier rule had a fourth copy, and it was in SQL
+
+**Dev.** `resolveTier` carries a header comment explaining that the order
+admin → subscription → grant → trial → free once lived in three places and drifted, so it now lives
+in one. There was a fourth. `admin_user_tiers`, a Supabase view, restated the same order in a SQL
+`CASE` and stopped one arm short: it never read `charity_codes` at all.
+
+**I measured it against production rather than predicting it.** Two live users read `trial` today
+who hold an active grant. Eighteen free, thirteen trial, one admin, all unchanged. Two is not a
+crisis. Five hundred in October is, and the specific damage is not the admin screen — it is
+`v_trial_conversion`, a LEFT JOIN over anyone with a `trial_started_at`, which would count every
+comped charity runner as an unconverted trial and make trial→paid look worse than it is for a
+whole season.
+
+**The part I had to think about: a view cannot import a function.** SQL genuinely cannot call
+`resolveTier`, so this duplicate is unavoidable — D-16 says no parallel semantics, and here there
+is no choice. What is avoidable is leaving it unnamed. The previous mitigation was a comment
+asking the next person to keep the two in step, and that comment is what produced the defect. So
+the duplicate is now held by a test that reads the migration file and fails if an arm is dropped
+or reordered — including that the grant arm tests **expiry**, not merely the presence of a claimed
+code, because a lapsed grant reported as current is the same error in reverse.
+
+**The best outcome of the three needed no migration at all.** Deleting an account returned a
+claimed code to the unclaimed pool, because the gate read `claimed_by` and the foreign key is
+`ON DELETE SET NULL`. The filing proposed adding a `released_at` or `claim_state` column.
+Neither is needed: `claimed_at` already records exactly that fact and already survives the
+deletion, because the key is on `claimed_by` alone. A new column would have been a second answer
+to a question the schema could already answer.
+
+⚠️ **Both predicates had to move together**, and this is the bit I would have got wrong if I had
+been quicker. The route gates twice — a read gate, and the `.is(...)` predicate that makes the
+claim atomic when two runners race the same code. Moving only the read gate would have been
+**worse than the original bug**: the refusal would then depend on which path a request happened to
+take. The test is falsified against precisely that half-fix rather than against no fix.
+
+**Product.** For the partner view, the two caveats ship as **column names** rather than as a note
+under the table: `signed_in_last_7d` and `healthkit_accepted_upper_bound`. A sign-in is not an app
+open, and iOS does not let us distinguish an accepted permission sheet from a silent denial. If
+the number is going to be read out to a charity, the caveat has to be attached to the number, not
+to a document beside it.
+
+**Open and not mine:** the migration cannot be applied from here — deploying to production is
+blocked, correctly. Both view bodies were validated read-only against production first, so the SQL
+is known to run.
 
 ## 2026-09-20 — S24-FLOOR-REACHABILITY-01 and FITNESS-BUCKET-SAMPLE-01: I filed the wrong diagnosis, and widening the sample proved it
 
