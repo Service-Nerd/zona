@@ -15,7 +15,7 @@ import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
 import { qualityCeilingFor } from './qualityCeiling'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
-import { GENERATION_CONFIG } from './generationConfig'
+import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
 import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
@@ -648,14 +648,33 @@ function parseBlockedDays(input: GeneratorInput): Set<Day> {
 // for legacy plans — so a plan whose labels the enricher rewrote still classifies
 // correctly (D-17). Imported above.
 
-function raceDistanceKey(km: number): keyof typeof GENERATION_CONFIG.LONG_RUN_CAP_MINUTES {
-  if (km <= 5)  return '5K'
-  if (km <= 10) return '10K'
-  if (km <= 21.2) return 'HM'
-  if (km <= 42.5) return 'MARATHON'
-  if (km <= 50.5) return '50K'
-  return '100K'
-}
+// RACE-KEY-TWO-OWNERS-01 (2026-09-20) — THIS FUNCTION IS GONE. `raceDistanceKey`
+// is imported from `generationConfig`, which is its single owner.
+//
+// ⚠️ THERE WERE THREE COPIES, NOT TWO, AND TWO OF THEM WERE IN THIS FILE.
+//   producer   generationConfig.ts   <=6  / <=12 / <=22   / <=43   / <=55
+//   checker A  invariants.ts (here)  <=5  / <=10 / <=21.2 / <=42.5 / <=50.5
+//   checker B  invariants.ts (§49)   <=6  / <=12 / <=22   / <=43   / <=55
+// So this file disagreed with the producer AND with itself.
+//
+// MEASURED: 88 diverging values at 0.1 km steps from 1–120 km, in five bands —
+// 5.1–6, 10.1–12, 21.3–22, 42.6–43, 50.6–55. In those bands the engine builds
+// one distance's plan and the validator judges it as another.
+//
+// ⚠️ ALL SIX WIZARD VALUES (5, 10, 21.1, 42.2, 50, 100) AGREE, so this is
+// LATENT and the fix is behaviour-neutral **today**. It goes live the moment a
+// custom distance is offered or a seventh preset lands inside a band — which is
+// exactly why it is worth fixing now, while it costs nothing.
+//
+// ⚠️ WHY THIS IS *NOT* THE `deloadCadence` MISTAKE, because the rule there says
+// the opposite and the distinction matters. `deloadCadence.test.ts` forbids a
+// checker sharing the PRODUCER'S PREDICATE, because a checker that re-uses the
+// decision cannot catch the decision being wrong. **But `raceDistanceKey` is not
+// a decision — it is a VOCABULARY MAPPING.** "What do we call 42.2 km?" has one
+// right answer, and a checker that independently re-derives the NAME is not
+// verifying anything; it is only an opportunity to disagree about a label. The
+// coaching judgements keyed BY that name (cap minutes, taper weeks, phase
+// lengths) remain independently checked, which is where the verification lives.
 
 /** Weekday order, for the adjacency rules §28 states as absolute. */
 const DAY_ORDER: Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
@@ -5394,15 +5413,8 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // not exceed MAX_TAPER_PHASE_WEEKS for the race distance.
   // (CoachingPrinciples §49)
   {
-    const distCfgKey = (() => {
-      const km = input.race_distance_km
-      if (km <= 6)  return '5K'
-      if (km <= 12) return '10K'
-      if (km <= 22) return 'HM'
-      if (km <= 43) return 'MARATHON'
-      if (km <= 55) return '50K'
-      return '100K'
-    })() as keyof typeof GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS
+    // RACE-KEY-TWO-OWNERS-01 — was a third inline copy of the ladder.
+    const distCfgKey = raceDistanceKey(input.race_distance_km) as keyof typeof GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS
     const cap = GENERATION_CONFIG.MAX_TAPER_PHASE_WEEKS[distCfgKey]
     const taperWeeks = plan.weeks.filter(w => w.phase === 'taper').length
     if (taperWeeks > cap) {

@@ -14,6 +14,30 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## 2026-09-20 — RACE-KEY-TWO-OWNERS-01: it was filed as two copies and it was three
+
+**Dev.** `raceDistanceKey` answers "what do we call 42.2 km". It existed three times. The producer
+in `generationConfig`, and **two different ladders inside `invariants.ts`** — one disagreeing with
+the producer, one agreeing with it. So the validator disagreed with the engine *and with itself*,
+in the same file, and nobody had noticed because nobody had grepped for the third.
+
+**Product.** 88 distances between 1 and 120 km where the engine builds one race's plan and the
+validator judges it as another. Zero of them reachable: the wizard offers six fixed values and all
+six agree.
+
+**AI-building.** That last fact is the whole argument for doing it today rather than filing it
+again. It goes live the moment someone adds a custom distance or a seventh preset that lands in a
+band, and **right now the fix is provably free** — parity identical across 5,940 cases.
+
+**The honest bit.** This repo has a rule that says the opposite of what I just did:
+`deloadCadence.test.ts` forbids a checker sharing the producer's predicate, because a checker
+re-using a decision cannot catch the decision being wrong. I had to work out why that rule does
+not apply here rather than assume it doesn't. **A distance key is not a decision — it is a
+vocabulary mapping with one right answer.** A checker that independently re-derives a *name*
+verifies nothing; it only creates an opportunity to disagree about a label. The judgements keyed
+by that name stay independently checked, which is where the verification actually lives.
+
 ## 2026-09-20 — SWEEP-INJURY-01: a freeze that outlived its reason
 
 **Dev.** The sweep's injury axis had six entries and the product offers six values, but they were
