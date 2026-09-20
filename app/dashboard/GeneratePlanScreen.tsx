@@ -3,6 +3,7 @@
 // One decision per screen. Slide transitions between steps.
 'use client'
 
+import PlanHeroMetrics from '@/components/shared/PlanHeroMetrics'
 import RefusalView from '@/components/shared/RefusalView'
 import { useState, useEffect, useRef } from 'react'
 import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
@@ -1391,8 +1392,15 @@ export default function GeneratePlanScreen({
               {meta.race_name || 'Your plan'}
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginTop: '4px' }}>
-              {weeks.length} weeks · starts {meta.plan_start} · {formatDistance(meta.race_distance_km, preferredUnits, { exact: true })}
+              starts {meta.plan_start} · {formatDistance(meta.race_distance_km, preferredUnits, { exact: true })}
             </div>
+          </div>
+          {/* P-06(c) — the shape of the block, led by its numbers. The week
+              count moves INTO the panel rather than being said twice: it was
+              in the subtitle above, and two renderings of one figure is how
+              they drift. */}
+          <div style={{ marginTop: '14px' }}>
+            <PlanHeroMetrics plan={plan} units={preferredUnits} canReshape={!!hasPaidAccess} />
           </div>
         </div>
 

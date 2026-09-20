@@ -525,7 +525,45 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-06 — PLAN REVEAL SEQUENCE: narration → annotated card stack → preview.** *(T-09, T-10, T-11.)*
+> 🟡 **P-06 — PLAN REVEAL SEQUENCE: narration → annotated card stack → preview.** *(T-09, T-10, T-11.)*
+>
+> 🟡 **(c) SHIPPED 2026-09-20. (a) AND (b) ARE FOUNDER-GATED, not unfinished.**
+>
+> **(c) The hero metric panel.** The preview gave a week count, a start date and a race distance
+> and said nothing about the **shape** of the block. The two numbers that answer *"what am I
+> actually signing up for"* — the biggest week and the total — were computable from the plan in
+> front of the runner and never shown. ⚠️ **Derived at render, never stored:** a total written at
+> generation goes stale the moment a plan is reshaped, which is this repo's recorded
+> stale-mid-pipeline class. The week count **moved into** the panel rather than being rendered
+> twice.
+>
+> ⚠️ **THE ADAPTATION PROMISE IS GATED, AND VERIFIED BEFORE BEING WRITTEN.** `dynamic_reshape_r20`
+> is **false for free**, true for trial and paid — so a free runner is not promised adaptation they
+> do not get (hard rule 7, and the same class as the "full access" claim that was live and false
+> for weeks). **The sentence IS the `/pricing` row's own**, not a second string making the same
+> claim: that row is already covered by `pricing.test.ts` and `pricingRowTruth.test.ts`, and a
+> restatement would be a second owner of one promise. Falsified: promising it to a free runner
+> reddens the guard.
+>
+> ⚠️ **The brief's *"No make-up runs."* is NOT said.** It is flagged in this item as a coaching
+> claim needing verification against the missed-session path, and it has not been verified. Hard
+> rule 7: not checked, not claimed.
+>
+> ⚠️ **WHAT WAS DELIBERATELY NOT TAKEN.** The proposed deep-ink hero with a tonal wave and a
+> ticket-notch divider. **The Dark Ground pattern is scoped in `ui-patterns.md` to MARKETING pages**
+> (*"exactly one near-black section per marketing page… a punctuation mark, not a theme"*), and the
+> design principles bar chrome outright: *"No chrome. No stacked box-shadows. No gradient on
+> gradient. No decorative dividers."* Took the idea, left the styling — as with the rest of this
+> teardown. Our own hierarchy (value large, label small underneath) was already specified.
+>
+> 🔻 **(a) the ceremony illustration is gated on `P-13(c)`** — a commission, your signature, not my
+> code. 🔻 **(b) the annotated card stack needs a SECOND TYPEFACE, an explicit exception to the one
+> brand rule that says Inter only.** That is yours to grant and I will not assume it. ⚠️ **When it
+> is built, the engineering constraint is already settled:** every annotation must trace to a plan
+> field via `isDeloadWeek()` / `computeDeloadWeeks()` (DELOAD-OWNER-01), **never to a position in
+> the array** — *"easier on purpose"* over a week that is not a deload is a false claim about the
+> plan. I did **not** pre-build that derivation: a derivation nothing renders is decorative code,
+> which is the class I have been deleting today.
 >
 > **Problem.** Our reveal has better substance and worse craft than theirs, and both halves are
 > measurable.

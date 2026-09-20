@@ -5,6 +5,42 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-09-20 — P-06(c): took the idea, left the chrome, and checked the promise before making it
+
+**Dev.** Our plan preview told a runner the week count, the start date and the race distance. It
+said nothing about the shape of the thing they had just committed to — how big the biggest week
+gets, how far the whole block runs. Both were computable from the plan already on screen.
+
+They are computed at render, not stored. A total written at generation is correct until the first
+reshape, and "a value read mid-pipeline was stale by the time the runner saw it" is a failure this
+repo has recorded twice under its own names.
+
+**The promise needed checking before it could be made.** The panel closes with the adaptation
+line, and adaptation is `dynamic_reshape_r20`, which is **false for free**. So a free runner would
+have been promised something they do not have — the same shape as the "full access" claim that sat
+live and false on the marketing site for weeks. It is gated, and the guard is falsified by
+promising it to a free runner.
+
+The sentence itself is the `/pricing` row's, not a new one. There is exactly one claim about
+reshaping in the product and it already has an owner and two guards; writing a second sentence
+that means the same thing is how two surfaces start disagreeing.
+
+**What I did not take, and why that is the work.** The brief proposed a deep-ink hero panel with a
+tonal wave and a ticket-notch divider. `ui-patterns.md` scopes the Dark Ground to **marketing
+pages** — "a punctuation mark, not a theme" — and the design principles bar decorative chrome in
+so many words. Our own hierarchy, value large and label small underneath, was already specified.
+So the panel takes the idea and none of the styling, which is how this whole teardown has been
+handled: the competitor's instinct was right and their execution is theirs.
+
+I also did not say "No make-up runs." It is a good line and the filing flags it as a coaching
+claim requiring verification against the missed-session path. I did not verify it, so I did not
+say it.
+
+**And two halves I left alone on purpose.** The ceremony illustration is a commission. The
+annotated card stack needs a **second typeface** — an explicit exception to the one typographic
+rule this brand has — which is the founder's to grant, not mine to assume. I deliberately did not
+pre-build the annotation derivation either: a derivation nothing renders is decorative code, and I
+have spent today deleting that class rather than adding to it.
 
 ## 2026-09-20 — P-05: one half shipped, the other half was already built and nobody had checked
 
