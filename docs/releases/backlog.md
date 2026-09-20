@@ -999,7 +999,37 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > **may be answerable from data we already hold**, which is the first thing to check before
 > proposing any new capture.
 >
-> **Size.** TBD — the scoping question comes first. **Free/Pro.** **FREE. Safety is never gated.**
+> ### ✅ SCOPED 2026-09-20. It needs NO new data capture. It needs a board sitting.
+>
+> **1. We cannot DETECT RED-S, and never will from what we hold.** `health_daily_samples` carries
+> `rhr_bpm`, `hrv_ms`, `sleep_hours`, `vo2_max`. **No intake. No body mass** (`weight` is in no
+> migration). `calories_kcal` is on the ACTIVITY row: energy *expended* on a run, not eaten. Low
+> energy availability is intake minus expenditure, and we hold **zero of the diagnostic inputs**.
+> A detector would need new capture, which is a founder decision, and it is **not what was asked**.
+>
+> **2. Sims asked for a PRESCRIPTION, not a detector.** Her words in this filing: P-16's ramp
+> raises total load 125% *"slowly enough for intake to track it **only if the block says so**."*
+> That is copy on a plan, and it needs no data at all.
+>
+> **3. ⚠️ MY FIRST READ WAS WRONG AND I MEASURED IT.** I was about to report that fuelling
+> guidance is ultra-only. Measured across 35 generated plans: **marathon 12/12, HM 10/12, 50K
+> 11/11 carry a fuelling cue.** Retracted before it reached you.
+>
+> **4. The real gap, located precisely.** Every existing cue is about **IN-SESSION** fuelling:
+> *"Practise what you plan to use on race day"* · *"Fuel every N minutes"* · *"your fuelling goes
+> untested past the point your longest run reaches"*. **Nothing anywhere says total daily intake
+> should rise as weekly load rises.** Eating gels on a long run is not energy availability across
+> an eleven-week 125% ramp. **That is the RED-S vector and it is uncovered** — for the exact cohort
+> Sims named twice: first-time, predominantly female, 20–29.
+>
+> **5. Buildable now.** A note keyed to load increase, in the existing `fuellingNotes.ts` mechanism.
+> **Board sitting needed on scope only** — which cohorts, which weeks, what wording. No founder
+> input required. ⚠️ **It must not become wallpaper**: §24c/§96's reasoning killed a
+> note-on-everything once already.
+>
+> **Size.** S, once the board rules.
+
+> **Size.** ~~TBD — the scoping question comes first.~~ **Free/Pro.** **FREE. Safety is never gated.**
 > **Backlog.** **NEW.** Cross-references `INPUT-SEX-01` (parked) and ENGINE-03/CA-05 (blocked) as
 > *distinct* items, not siblings.
 
