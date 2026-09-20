@@ -15,6 +15,29 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## 2026-09-20 — GRID-EARLY-ONSET-01: the item was stale, and checking it found a stale number underneath
+
+**Dev.** Filed as "zero of 45,776 corpus plans reach ADR-021's early-onset cell". I went to widen
+the grid and measured first. The cell holds 3,456 inputs and the gate fires on 47% of them.
+`GRID-COVERAGE-02` had closed it weeks ago by adding the `recent_quality_training` axis, and
+nobody updated the filing.
+
+**Product.** Nothing changes. That is the outcome: an hour of measurement instead of doubling the
+runtime of two harnesses to fix something already fixed.
+
+**AI-building.** The thing worth keeping is what the check found *underneath*. The grid's own doc
+comment says it produces 31,104 inputs. It produces 41,472. CLAUDE.md warns that the grid "has
+been widened five times and the count moves, so read it from the file, not from here" — **and the
+file was wrong too.** A stale number in the place you are told to trust is worse than no number.
+
+It is a gate now, not a comment: the test asserts the produced size, and that the comment states
+the same number. Widen an axis and it fails, so the doc has to move with the code.
+
+**The honest bit.** I nearly widened the grid on the strength of the filing. Two of the last three
+governance items I picked up were already closed or already wrong. **The backlog's prose decays
+faster than its records, and the only defence is measuring before building.**
+
 ## 2026-09-20 — RACE-KEY-TWO-OWNERS-01: it was filed as two copies and it was three
 
 **Dev.** `raceDistanceKey` answers "what do we call 42.2 km". It existed three times. The producer

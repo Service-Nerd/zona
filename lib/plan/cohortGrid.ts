@@ -120,7 +120,16 @@ const GOALS = ['finish', 'time_target'] as const
  */
 const RECENT_QUALITY = ['occasional', 'regular'] as const
 
-/** 4x3x3x3x3x2 x 3x2x2x2x2 = 31,104 inputs. Exhaustive and ordered. */
+/**
+ * **41,472 inputs. Exhaustive and ordered.**
+ *
+ * ⚠️ THIS COMMENT SAID 31,104 UNTIL 2026-09-20, and CLAUDE.md already warns
+ * "read it from the file, not from here" because the grid has been widened
+ * repeatedly. It had been widened again since. **A stale count in the file that
+ * is cited as the authority is worse than no count** — the number is now
+ * asserted by `cohortGridSize.test.ts`, which fails when the product of the
+ * axes moves, so the next widening cannot land silently.
+ */
 export function cohortGrid(): GeneratorInput[] {
   const out: GeneratorInput[] = []
   for (const d of DISTANCES)
