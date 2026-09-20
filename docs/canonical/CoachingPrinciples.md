@@ -7628,6 +7628,30 @@ These principles are the constitution. Every numeric the generator uses points b
 
 If you are reviewing a plan that feels wrong, this is the document to read first. Find the principle that is failing. The fix lives in the config, never inline.
 
+### §111 Amendment 3 — the reckless ceiling is a RATIO, and §117 does not breach it (Coaching Board 2026-09-20)
+
+**§117 admits a runner §111's ratified text appears to refuse, and this records why that is not a contradiction.**
+
+§111's *"Why 4.0"* fixes the reckless ceiling as: *"**≤ 10 km/week beginner marathon (≥ 4.7×) must be refused.**"*
+The parenthesis is the principle. **10 km/week was reckless because it implied 4.7× at a 47–52 km peak**, not because
+of the raw number.
+
+Under §117 that same runner is built to a **32 km peak**, so their ratio is **3.2×** — below the 4.0 cap, and inside a
+band this board **explicitly ratified as admissible**: the same paragraph rules that M1 at **3.13×** must generate.
+**3.2× sits between a case the board said must pass and the cap it set.** §111 is satisfied on its own metric.
+
+⚠️ **WHAT MOVED IS THE PEAK, AND THE DOOR IS DOWNSTREAM OF IT.** `MAX_BASE_BUILD_RATIO` is untouched at 4.0;
+`assessBaseBuild` is untouched; §2's ramp and §3's cadence are untouched. A reader who remembers "the door is 12
+km/week" is remembering a *consequence* of the 52 km peak, not a rule.
+
+⚠️ **AND THE CONFLICT SCAN DID NOT CATCH THIS — the test suite did.** `baseVolumeDenominator.test.ts` asserts
+*"THE DOOR IS UNMOVED"* at 10 and 12 km/week, and it went red. The scan read §111's principle statement and its
+config, both of which are ratio-expressed, and missed that the *rationale paragraph* pins two raw volumes. **A
+principle's worked examples are load-bearing too, and a scan that reads only the rule misses them.**
+
+**The test now asserts the RATIO reasoning** rather than the two raw volumes, so it cannot go stale the next time a
+peak moves — and it gains a case pinning that a §117 runner's delivered ratio stays under the cap.
+
 ## 112. Consecutive self-reported cost softens the long run — and a skip is part of the evidence
 
 *Added 2026-09-18 — Coaching Board (FIRSTRUN-MISSED-01 part 2). Willy and Sims carried; McMillan's dissent recorded below and not taken.*
@@ -7858,3 +7882,46 @@ weeks under a `curve` policy. **Enforced by** `INV-PLAN-ONRAMP-CURVE-CLIMBS`.
 
 ⚠️ **The 0% acute step is NOT mechanically checkable** — it compares a plan to an input outside it.
 Recorded as a known enforcement gap rather than left to be discovered.
+
+---
+
+## 117. The finish-goal run-walk marathon — a lower target, not a looser rule
+
+*(Coaching Board 2026-09-20, ZERO-REJECTION-01. CORRECT WITH AMENDMENT, four binding amendments. Founder directive: "we cannot be rejecting nearly 50% of beginner runners" and "we just need to help them get to the end.")*
+
+**Principle.** A first-time marathoner on a finish goal whose base sits below §111's standard door is prepared to **complete** the distance with **prescribed** walk intervals, at a reduced peak, rather than refused.
+
+**The mechanism, and it loosens nothing.** §111's door is `ceil(peak / MAX_BASE_BUILD_RATIO)`. A beginner marathon peak of 52 km/wk puts it at 13. But 52 is the tonnage to **run** 42.2 km, not to **finish** it:
+
+| peak km/wk | §111 door | weeks from 4 km/wk (budget 13) |
+|---|---|---|
+| **52 (standard)** | 13 | **14 — refused** |
+| **32 (§117)** | **8** | **9 — admitted** |
+
+⚠️ **§2's ramp rate, §3's cadence and §111's ratio are all untouched.** The door moves as a *consequence* of a lower target. Willy, recorded: *"walk breaks reduce cumulative impact per session; they do not accelerate bone remodelling, which runs on its own clock. §2's 10% stays. Do not come back and ask me to raise it because the runner is walking some of it."*
+
+⚠️ **NOT NEW DOCTRINE, AND THAT IS WHY IT IS NOT §9's FORBIDDEN ELEVENTH INSTRUMENT.** §80 (2026-08-06) already anchors finish-goal peak long runs on race **duration** and states that *"run-walk counts"* and *"every finish-goal peak long run carries explicit permission to walk."* What never existed was the engine **prescribing** it. A principle-to-behaviour gap, which §9's Recorded structural finding does not cover. Chair's ruling, on the conflict scan rather than on the submission's own argument.
+
+### The four binding amendments
+
+| # | Amendment | Seat |
+|---|---|---|
+| 1 | **Peak 30–34 km/wk.** Completing 42.2 km run-walking needs repeated exposure to 3+ hours on feet, not weekly tonnage. **Below 26 the last 10 km is genuinely unrehearsed.** | Willy |
+| 2 | **§2's ramp rate is UNCHANGED.** Run-walk lowers the target, not the rate. | Willy |
+| 3 | **The walk break is PRESCRIBED, not permitted** — a named interval from week one. | Willy **and** McMillan, independently |
+| 4 | **§24e's fuelling cue is scoped to this shape from the start.** | Sims |
+
+⚠️ **Amendment 3 is the entire safety argument.** §117 lowers the peak, which lowers the door, and that trade is honest **only if the runner is actually doing the thing the lower peak prepares them for.** McMillan's objection was the strongest in the sitting: *"'run 40 minutes, walk if you need to' is a dare. '6 minutes running, 1 minute walking, ten times' is a session."* An unstamped session is the door opened with nothing behind it. Enforced by `INV-PLAN-RUNWALK-PRESCRIBED`.
+
+⚠️ **DERIVED, NEVER ASKED.** There is no wizard input and there must not be. A runner who has told their friends they are running a marathon will not tick a box saying they will walk some of it, and asking would filter out the exact cohort this serves.
+
+⚠️ **§117 PLANS DO NOT TAKE `PEAK_FLOOR_VS_START_RATIO`.** That floor raises the peak to at least the runner's current volume, which is right for a normal plan and self-defeating here — this runner's problem *is* their low base, and floating the peak back up would re-close the door the lower peak just opened.
+
+### Recorded, because it is a real trade and not a free win
+
+**Sims:** a lower-peak run-walk build is a **better** bone-stress profile than the 13 km/wk plan we would otherwise have given them — *and* **total exposure rises, because we are admitting runners we previously refused. Some will now be injured who would have been told no and done nothing.** That is a judgement the founder has made and is entitled to make; the board declines to pretend it is free.
+
+**It does not reach zero rejection.** At a 32 km peak the door is 8 km/wk. **A runner at 2–5 km/wk is still outside it.** For them the honest answer is a plan that is not a marathon plan, and that is a product decision, not a coaching one.
+
+**Config.** `FINISH_GOAL_RUNWALK_PEAK_KM` (32), `FINISH_GOAL_RUNWALK_RUN_MINS` (6), `FINISH_GOAL_RUNWALK_WALK_MINS` (1).
+**Owner.** `lib/plan/runWalkPlan.ts`. **Enforced by** `INV-PLAN-RUNWALK-PRESCRIBED`.

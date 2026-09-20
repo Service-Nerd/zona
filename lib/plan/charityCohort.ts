@@ -164,7 +164,7 @@ export const PLAN_PERSONAS: CharityPersona[] = [
       training_age: '2-5yr', recent_quality_training: 'regular' },
   },
   {
-    id: 'M6 marathon off an 8 km/week base — a GENUINE refusal',
+    id: 'M7 marathon off a 4 km/week base — the refusal §117 does NOT reach',
     // ⚠️ ADDED 2026-09-20 BECAUSE CORRECTING M4 LEFT NO REFUSAL COVERAGE AT ALL.
     // M4 was labelled `expectRefusal` for months and was actually a
     // confirmation prompt; fixing it removed the only persona the round
@@ -176,12 +176,25 @@ export const PLAN_PERSONAS: CharityPersona[] = [
     // marathon floor for 100% of cases (median 22.4 km against 52.8), so the
     // refusal is the correct outcome and not a gap. It must also name a next
     // step (§44's "not yet"), which the round asserts.
-    note: 'sub-floor base for a marathon — §111 block, the refusal path the corpus would otherwise never exercise',
+    // ⚠️ RE-POINTED 2026-09-20 FROM 8 km/week TO 4, BECAUSE §117 ADMITS 8.
+    // The finish-goal run-walk shape drops the beginner marathon peak to 32,
+    // and §111's door with it: ceil(32/4) = 8. So the persona that existed to
+    // exercise the refusal path stopped being refused the day §117 shipped —
+    // which is the intended outcome and would ALSO have silently deleted the
+    // corpus's only genuine block if the id had simply been left to pass.
+    //
+    // ⚠️ THIS IS THE SECOND TIME THE REFUSAL PERSONA HAS HAD TO BE REBUILT.
+    // M4 carried `expectRefusal` for months while actually being a
+    // confirmation prompt; M6 replaced it and lasted one day. A corpus's
+    // refusal coverage is only as durable as the door it points at, and the
+    // door moves. 4 km/week is below §117's 8 AND below §116's on-ramp floor
+    // of 6, so it exercises the one cohort nothing currently reaches.
+    note: 'sub-floor base BELOW §117 — §111 block, the refusal path the corpus would otherwise never exercise',
     raceDay: 'sun',
     weeks: 20,
     expectRefusal: true,
-    input: { race_distance_km: 42.2, goal: 'finish', current_weekly_km: 8,
-      longest_recent_run_km: 4, days_available: 4, age: 34,
+    input: { race_distance_km: 42.2, goal: 'finish', current_weekly_km: 4,
+      longest_recent_run_km: 2, days_available: 4, age: 34,
       fitness_level: 'beginner', training_age: '6-18mo',
       recent_quality_training: 'none', hard_session_relationship: 'neutral',
       injury_history: [], max_hr: 186,

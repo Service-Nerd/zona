@@ -145,6 +145,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR',
   'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
   'INV-PLAN-FOUNDATION-BLOCK',
+  'INV-PLAN-RUNWALK-PRESCRIBED',
   'INV-PLAN-ONRAMP-CURVE-CLIMBS',
   'INV-PLAN-ONRAMP-ALL-EASY',
   'INV-PLAN-ONRAMP-PER-RUN-STEP',
@@ -5688,6 +5689,46 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
               message: `Foundation block W${curr.n} (${curr.weekly_km}km) increases by more than +10% from W${prev.n} (${prev.weekly_km}km)`,
               actual: `${curr.weekly_km}km`,
               expected: `≤ ${(prev.weekly_km * 1.10).toFixed(1)}km`,
+            })
+          }
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-RUNWALK-PRESCRIBED — §117 amendment 3.
+  //
+  // A finish-goal run-walk plan whose sessions carry no `run_walk_strategy` is
+  // a plan that only PERMITS walking, which is what §80 already did and is
+  // precisely what the board refused to ship again.
+  //
+  // ⚠️ WILLY AND McMILLAN ARRIVED AT THIS INDEPENDENTLY, which is the strongest
+  // signal the sitting produced. McMillan: *"'run 40 minutes, walk if you need
+  // to' is a dare. '6 minutes running, 1 minute walking, ten times' is a
+  // session. One is a target you beat; the other is an instruction you
+  // follow."* Willy, from the load side: a runner permitted to walk and never
+  // told how will run until they cannot, and arrive at the same injury by a
+  // longer route.
+  //
+  // ⚠️ THIS IS THE WHOLE SAFETY ARGUMENT FOR ADMITTING THIS RUNNER. §117 lowers
+  // the peak, which lowers §111's door — and that trade is only honest if the
+  // runner is actually doing the thing the lower peak prepares them for. An
+  // unstamped session is the door opened with nothing behind it.
+  {
+    if (plan.meta.finish_goal_run_walk) {
+      for (const w of plan.weeks) {
+        for (const [day, s] of Object.entries(w.sessions)) {
+          if (!s) continue
+          if (s.type === 'rest' || s.type === 'cross-train' || s.type === 'strength') continue
+          if (!s.run_walk_strategy) {
+            violations.push({
+              code: 'INV-PLAN-RUNWALK-PRESCRIBED',
+              principle_ref: 'CoachingPrinciples §117',
+              severity: 'error',
+              week: w.n,
+              message: `Finish-goal run-walk plan: W${w.n} ${day} ("${s.label ?? s.type}") carries no run_walk_strategy. §117 amendment 3 — the walk break is PRESCRIBED, not permitted; a plan that only permits walking is what §80 already did and is what the board refused to ship again.`,
+              actual: 'no run_walk_strategy',
+              expected: 'a named interval on every running session',
             })
           }
         }

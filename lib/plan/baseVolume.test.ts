@@ -70,7 +70,29 @@ describe('§111 base-build ceiling — the refusal', () => {
     // No permitted base below a refused one (the non-monotonicity §111 fixes).
     expect(results).toEqual([true, true, true, true, true])
     // And a base below the floor is refused, so the boundary is real.
-    expect(gen(marathon({ current_weekly_km: 8, longest_recent_run_km: 6 })).plan).toBeNull()
+    // ⚠️ 8 -> 3 on 2026-09-20. §117 ADMITS 8 km/week: the finish-goal run-walk
+    // shape drops the beginner marathon peak to 32, so ceil(32/4) = 8 is now
+    // the door, not 13. The boundary is still real, it moved — and §111's
+    // ratio cap is untouched at 4.0 (see §111 Amendment 3).
+    expect(gen(marathon({ current_weekly_km: 3, longest_recent_run_km: 2 })).plan).toBeNull()
+    // ⚠️ MONOTONICITY IS RE-ASSERTED ACROSS THE BOUNDARY WHEREVER IT SITS,
+    // because a moved boundary is exactly where non-monotonicity hides — that
+    // was the old route gate's second defect (refused 15, permitted 20).
+    //
+    // ⚠️ THE BOUNDARY IS DERIVED, NOT HARDCODED. §117 moves it from 13 to 8
+    // when its flag is on, and a hardcoded volume here would be a second copy
+    // of a number the engine computes — so this test would pass in one flag
+    // state and fail in the other, which is how a flag becomes a liability.
+    // Find the door by probing, then assert nothing above it is refused.
+    const probe = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 20, 30].map(v => ({
+      v, ok: gen(marathon({ current_weekly_km: v, longest_recent_run_km: Math.min(v, 6) })).plan !== null,
+    }))
+    const firstOk = probe.findIndex(x => x.ok)
+    expect(firstOk, 'no volume in the probe generates at all').toBeGreaterThan(-1)
+    expect(
+      probe.slice(firstOk).every(x => x.ok),
+      `non-monotonic: ${probe.map(x => `${x.v}:${x.ok ? 'y' : 'n'}`).join(' ')}`,
+    ).toBe(true)
   })
 
   it('a current volume of 0 is refused (cannot build a marathon off no base)', () => {

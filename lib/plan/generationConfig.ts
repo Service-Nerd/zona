@@ -1109,6 +1109,44 @@ export const GENERATION_CONFIG = {
   // shipping the jump. 4.0 admits the charity cohort (M1 first-timer 15 km/wk →
   // peak 47 = 3.13x) and refuses the reckless case (5 km/wk → 9.4x); any cap
   // ≤ 3.13 would refuse M1. (Coaching Board MARATHON-VOLUME-GATE-01, 2026-09-18.)
+  // ── §117 — the finish-goal run-walk marathon (Coaching Board 2026-09-20) ───
+  //
+  // §111's door is a function of the PEAK, and the peak is a function of what
+  // we are preparing the runner FOR. `minBase = ceil(peak / 4.0)`, and a
+  // beginner marathon peak of 52 km/wk puts the door at 13 km/wk — but 52 is
+  // the tonnage to RUN 42.2 km, not to FINISH it with walk breaks.
+  //
+  //     peak  ->  §111 door  ->  weeks needed from 4 km/wk (budget is 13)
+  //       52         13                    14   REFUSED
+  //       34          9                    10   admitted
+  //       30          8                     9   admitted
+  //
+  // ⚠️ NOTHING IS LOOSENED. §2's ramp rate, §3's cadence and §111's ratio are
+  // all untouched. The runner is prepared for a different, honestly-stated
+  // outcome, and the door moves as a CONSEQUENCE of the lower target.
+  //
+  // ⚠️ AND THIS IS NOT NEW DOCTRINE. §80 (2026-08-06) already ratified that for
+  // finish-goal marathons the peak long run is anchored on race DURATION and
+  // that "run-walk counts" — "every finish-goal peak long run carries explicit
+  // permission to walk". What never existed is the engine PRESCRIBING it. That
+  // is a principle-to-behaviour gap, which is why the chair ruled it is not
+  // §9's forbidden eleventh instrument.
+
+  /** Willy, at the sitting: completing 42.2 km run-walking needs repeated
+   *  exposure to 3+ hours on feet, not weekly tonnage. He named 30-34 and
+   *  warned that below 26 the last 10 km is genuinely unrehearsed. */
+  FINISH_GOAL_RUNWALK_PEAK_KM: 32,
+
+  /** The prescribed interval, in minutes. ⚠️ PRESCRIBED, NOT PERMITTED —
+   *  Willy and McMillan arrived at this independently, which is the strongest
+   *  signal the sitting produced. McMillan: *"'run 40 minutes, walk if you need
+   *  to' is a dare. '6 minutes running, 1 minute walking, ten times' is a
+   *  session. One is a target you beat; the other is an instruction you
+   *  follow."* A runner who is permitted to walk and never told how will run
+   *  until they cannot, and arrive at the same injury by a longer route. */
+  FINISH_GOAL_RUNWALK_RUN_MINS: 6,
+  FINISH_GOAL_RUNWALK_WALK_MINS: 1,
+
   // ── §116 — the base-build on-ramp (P-16, Coaching Board 2026-09-20) ────────
   //
   // §111 refuses the sub-12 km/week marathoner and NAMES a base-building plan

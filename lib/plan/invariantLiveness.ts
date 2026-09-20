@@ -501,6 +501,18 @@ export const MUTATIONS: Mutation[] = [
     }
   } },
 
+  // §117 / INV-PLAN-RUNWALK-PRESCRIBED — no corpus plan is a finish-goal
+  // run-walk (the shape needs a sub-door beginner marathoner, which neither
+  // grid builds), but the marker and the sessions are both mutable.
+  //
+  // ⚠️ The mutation is the defect the board named: a plan that PERMITS walking
+  // without prescribing it. That is what §80 already did, and shipping it
+  // again under §117's lower door is the door opened with nothing behind it.
+  { name: 'claim a run-walk plan with no prescribed interval', apply: p => {
+    ;(p.meta as unknown as Poke).finish_goal_run_walk = true
+    for (const s of sessionsOf(p)) delete (s as unknown as Poke).run_walk_strategy
+  } },
+
   // §116's three invariants are NOT probed here. They belong to
   // `validateBaseBuildBlock`, not `validatePlan`, and a base-build plan's weeks
   // are skipped by the main validator by design. They get their own probe

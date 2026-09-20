@@ -66,7 +66,13 @@ describe('S106-RACE-PEAK-01 — the race week is not a training peak', () => {
   })
 
   it('and a genuinely under-based runner is still refused', () => {
-    // §111 is not neutered: 52 / 4.0 = 13, so 10 km/week still fails.
-    expect(() => generateRulePlan(beginner(10), 'paid', START)).toThrow()
+    // ⚠️ 10 -> 3 on 2026-09-20. §117 admits 10: the finish-goal run-walk shape
+    // builds to a 32 km peak, so 32 / 4.0 = 8 is the door for that cohort and
+    // the runner's delivered ratio is 3.2x — inside the band §111's own
+    // rationale ratifies (M1 passes at 3.13x). See §111 Amendment 3.
+    //
+    // §111 is still not neutered, and this is what that now means: the CAP is
+    // untouched at 4.0, and a runner far enough below any peak still fails.
+    expect(() => generateRulePlan(beginner(3), 'paid', START)).toThrow()
   })
 })

@@ -933,6 +933,62 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 >
 > **Size.** **S.** **Free/Pro.** FREE — it is the door. **Backlog.** **NEW**, splits from the on-ramp.
 
+> 🔴 **S117-PEAK-VS-TIME-01 — the board's own amendment 1 contains a contradiction, and it only appeared when the plans were measured.** *(P1, Coaching Board, filed 2026-09-20. **BLOCKS §117's flag.**)*
+>
+> Willy's amendment 1 specified **both** a peak of **30–34 km/wk** and *"repeated exposure to
+> **3+ hours on feet**"*. Measured on generated §117 plans, **they do not reconcile:**
+>
+> | cwk | peak week | peak long run | mins | % of projected race duration | §80's bar |
+> |---|---|---|---|---|---|
+> | 8 | 29 | 16.5 km | 132 | **39%** | 70% |
+> | 10 | 29 | 16.5 km | 132 | **39%** | 70% |
+> | 12 | 31 | 18.5 km | 148 | **44%** | 70% |
+>
+> At a 32 km peak, §52's 60% cap tops the long run at ~16.5–18.5 km — **2h12 against a projected
+> 5h38 race.** Three hours at easy pace is ~21–22 km, which under §52 needs a **~36 km week**,
+> above the range Willy named. **One of the two numbers has to move and only the board can say which.**
+>
+> 🔴 **SO §117 SHIPPED DARK, and the measurement says why that was right.** Both flag states:
+>
+> | | fit | refused | LONG-RUN-SHORT |
+> |---|---|---|---|
+> | flag OFF | **77.6%** | 12.2% | 7.2% |
+> | flag ON | **77.6%** | 10.9% | 8.5% |
+>
+> **Identical fit. The refusals became inadequate plans, one for one.** §117 as ruled does not
+> improve fit-for-purpose — it converts a rejection into a plan that does not prepare the runner.
+> That may still be better for the human, and it is **not** the 90% bar and **not** what the board
+> ruled it would do.
+>
+> ⚠️ **AND A SEPARATE PRE-EXISTING GAP THE SAME MEASUREMENT FOUND:** the **standard** beginner plan
+> misses §80's bar too — **62% of race duration at 15 km/wk, against 70%.** That is not evidence
+> §117 is fine; it is its own finding and it is filed here rather than folded in.
+>
+> **Everything is built, tested and gated.** `ENABLE_FINISH_GOAL_RUNWALK=1` flips it the moment the
+> board resolves the peak-versus-time-on-feet contradiction.
+
+> 🟡 **S111-LEVEL-INVERSION-01 — a beginner is admitted where an intermediate is refused.** *(P2, Coaching Board, filed 2026-09-20. Found while regression-testing §117; PRE-EXISTS it.)*
+>
+> Measured, marathon, finish goal, same runway:
+>
+> | cwk | beginner | intermediate | experienced |
+> |---|---|---|---|
+> | 15 | plan | **REFUSED** | **REFUSED** |
+> | 18 | plan | plan | **REFUSED** |
+>
+> §111's door is `ceil(peak / 4.0)` and the peak is level-scaled (52 / 65 / 80), so the door rises
+> with declared level: **13 / 17 / 20**. A runner who declares *intermediate* at 15 km/week is
+> refused where the same volume declared *beginner* generates.
+>
+> ⚠️ **This PRE-DATES §117** — the 17-vs-20 inversion is visible with the flag off. §117 widens the
+> bottom of it (beginner's door 13 → 8 when flagged on).
+> ⚠️ **Volume monotonicity is intact within every level** — re-asserted by a derived-boundary probe
+> in `baseVolume.test.ts` rather than a hardcoded volume, so it cannot go stale the next time a
+> peak moves.
+> ⚠️ **It may be defensible:** declaring a level is declaring what plan you want, and an
+> intermediate plan needs a bigger base. **But it is the same shape as the injury-cap inversion
+> §111 already carries as a recorded limitation, and it is not written down anywhere.**
+
 > 🔴🔴 **ZERO-REJECTION-01 — nobody who asks for a plan gets told no. FOUNDER'S NUMBER ONE PRIORITY, stated repeatedly.** *(P0, filed 2026-09-20. Supersedes the framing of `S111-SUBFLOOR-VOLUME-01`, `ONRAMP-FLOOR-INVERSION-01` and the run-walk question — they are now sub-parts of this.)*
 >
 > **The founder's standard, verbatim:** *"If someone comes to our platform and asks for a run, we

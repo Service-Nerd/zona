@@ -15,6 +15,7 @@ import {
 } from './length'
 import { qualityCeilingFor } from './qualityCeiling'
 import { LR_SHORTFALL_UNREHEARSED_FUELLING, FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
+import { runWalkApplies, runWalkPeakKm, applyRunWalk } from './runWalkPlan'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 // ADR-015 / INV-FMT-001 — `lib/format.ts` is the SOLE owner of every duration a
 // runner reads, and the rule is locked: under 60 minutes reads "45 min", at or
@@ -6287,10 +6288,30 @@ function buildRulePlanOnce(
   // reduced plan — and it is VISIBLE rather than silent:
   // `INV-PLAN-PEAK-NOT-BELOW-START` warns on it. The two principles compose;
   // neither was weakened to fit the other.
-  const levelPeakKm = config.peakKmByLevel[fitness]
+  const standardLevelPeakKm = config.peakKmByLevel[fitness]
+
+  // §117 — THE FINISH-GOAL RUN-WALK MARATHON.
+  //
+  // §111's door is `ceil(peak / MAX_BASE_BUILD_RATIO)`, so a plan built to
+  // COMPLETE the distance rather than run it has a lower peak and therefore a
+  // lower door: 32 km/wk puts it at 8 rather than 13. That is how a runner we
+  // currently refuse is admitted **without loosening anything** — §2's ramp,
+  // §3's cadence and §111's ratio are all untouched.
+  //
+  // ⚠️ Derived, never asked. A runner who has told their friends they are
+  // running a marathon will not tick a box marked "I will walk some of it",
+  // and asking would filter out the exact cohort this serves.
+  const isRunWalk = runWalkApplies(input, standardLevelPeakKm)
+  const levelPeakKm = isRunWalk ? runWalkPeakKm() : standardLevelPeakKm
+
   const declaredUpward = declaredLevel !== undefined
     && FITNESS_RANK[declaredLevel] > FITNESS_RANK[assessedStructural]
-  const peakKm = declaredUpward
+  // ⚠️ §117 PLANS DO NOT TAKE THE START-VOLUME FLOOR. `PEAK_FLOOR_VS_START_RATIO`
+  // raises the peak to at least the runner's current volume, which is right for
+  // a normal plan and self-defeating here: this runner's whole problem is that
+  // their base is low, and floating the peak back up would re-close the door
+  // the lower peak just opened.
+  const peakKm = (declaredUpward || isRunWalk)
     ? levelPeakKm
     : Math.max(levelPeakKm, startKm * GENERATION_CONFIG.PEAK_FLOOR_VS_START_RATIO)
 
@@ -8912,6 +8933,26 @@ function buildRulePlanOnce(
     phases,
     weeks,
     ...(prePlan ? { pre_plan: prePlan } : {}),
+  }
+
+  // §117 — stamp the prescribed run-walk interval on every running session.
+  //
+  // ⚠️ ONE PASS HERE, NOT AT EVERY SESSION-CONSTRUCTION SITE. Sessions are
+  // built in a dozen places (easy, long, deload, taper, race week, foundation
+  // compose) and touching each is the D-08 shape that produced SESSION-KM-01,
+  // the deload cadence in five places, and `raceDistanceKey` in three. One
+  // pass over the finished plan cannot miss a site, and a site added tomorrow
+  // is covered for free.
+  //
+  // ⚠️ PRESCRIBED, NOT PERMITTED (board amendment 3). §80 already lets a
+  // finish-goal runner walk; this is what tells them how.
+  if (runWalkApplies(input, config.peakKmByLevel[fitness])) {
+    ;(plan.meta as unknown as Record<string, unknown>).finish_goal_run_walk = true
+    for (const w of plan.weeks) {
+      for (const [day, session] of Object.entries(w.sessions)) {
+        if (session) (w.sessions as Record<string, unknown>)[day] = applyRunWalk(session)
+      }
+    }
   }
 
   // Constitutional review — verify the plan honours its own coaching principles.

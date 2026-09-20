@@ -721,6 +721,14 @@ export interface PlanMeta {
    * to a race plan. Same week SHAPE, different object, different validator.
    */
   base_build_onramp?: boolean
+  /**
+   * §117 — this marathon plan prepares the runner to FINISH with prescribed
+   * walk breaks, not to run it continuously. Set by the engine, never asked:
+   * a runner who has told their friends they are running a marathon will not
+   * tick a box saying otherwise, and asking would filter out the cohort it
+   * exists for. Read by `INV-PLAN-RUNWALK-PRESCRIBED`.
+   */
+  finish_goal_run_walk?: boolean
   /** §79 Amendment 5 — WHY the intensity re-entry window opened. Stamped by the
    *  producer so `INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE` can check the rendered
    *  copy against the cause without recomputing the predicate (a checker that

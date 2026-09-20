@@ -17,6 +17,52 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — ZERO-REJECTION-01 / §117: I built it, measured it, and it didn't work
+
+**Dev.** We reject 45.5% of people who ask for a first marathon. The founder's line was blunt and
+right: that isn't happening. So: why do we reject them, and what would it take not to?
+
+The mechanism turned out to be elegant. §111 refuses when the plan's peak is more than 4× the
+runner's current volume. A beginner marathon peaks at 52 km/week, so the door sits at 13. **But 52
+is the tonnage to *run* 42.2 km, not to *finish* it.** Build to 32 instead and the door drops to 8,
+and nothing is loosened — the ramp rate, the deload cadence and the ratio are all untouched. The
+door is downstream of the target.
+
+Rejection fell 45.5% → 29.3%.
+
+**AI-building.** Then I measured whether the plans were any good, and they aren't.
+
+§80 says a finish-goal peak long run should reach 70% of projected race duration. §117's plans
+reach **39–44%**. At a 32 km peak, §52's 60% cap tops the long run at 16.5 km — 2h12 against a 5h38
+race.
+
+The board's own amendment contains the contradiction: Willy specified a 30–34 km peak **and**
+"repeated exposure to 3+ hours on feet". Three hours is ~21 km, which needs a 36 km week. **Both
+numbers came out of the same sentence and they don't reconcile.** Only the board can say which
+moves.
+
+So it shipped dark. And the flag comparison is the honest bit: **77.6% fit either way.** With the
+flag on, 1.3 points of rejection became 1.3 points of long-run-short. **I converted a rejection
+into an inadequate plan and the scoreboard didn't move.**
+
+**The honest bit — two, and both are about what caught what.**
+
+The mandatory conflict scan **missed** the thing that mattered. §111's principle and its config are
+both expressed as a ratio, and the scan read those. The *rationale* paragraph pins two raw volumes
+— "≤10 km/week must be refused" — and §117 admits 10. **The test suite caught it, not the scan.** A
+principle's worked examples are load-bearing, and reading only the rule misses them.
+
+It turned out fine: the parenthesis in that sentence says "(≥ 4.7×)", so the ceiling was always a
+ratio and a §117 runner at 10 km/week is 3.2× — inside a band the same paragraph explicitly
+ratifies. But I only know that because a test went red.
+
+And the second: I rewrote four tests to match the new door, then flagged the feature off, and two
+of them broke again — because I'd hardcoded the *new* boundary in place of the old one. A test that
+passes in one flag state and fails in the other is a record of which flag was set when someone
+wrote it. They derive the boundary now.
+
+---
+
 ## 2026-09-20 — P-16 / §116: two principles in deadlock, and neither sitting could see it
 
 **Dev.** §111 refuses the sub-12 km/week marathoner and **names a base-building plan as the
