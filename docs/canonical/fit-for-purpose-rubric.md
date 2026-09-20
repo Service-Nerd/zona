@@ -6,18 +6,31 @@ the submissions were not. Each sitting measured a different population with a
 different set of criteria and called the result the same thing. **This file
 fixes the criteria space so a sitting is comparable to the one before it.**
 
-Measured 2026-09-19. **Whole product: 85.3%**, up from **66.7%** at the start of the 2026-09-19
+Measured 2026-09-19. **Whole product: 87.0%**, up from **66.7%** at the start of the 2026-09-19
 build, against a 90–95% target. Per distance: **5K 100%** · 10K 78.3% ·
-HM 85.4% · **marathon 73.9%** · 50K 94.3% · 100K 93.5%.
+HM 85.4% · **marathon 90.1%** · 50K 100% · 100K 100%.
 
-The marathon is now the weakest, and its gap is **17.3% designed refusals**,
-not silence. Measurement showed those refusals are **correct**: for 100% of the
-§111-refused cases a capped peak would land below the credible marathon peak
-floor (median 22.4 km against 52.8 km), so capping would hand every one of them
-a degenerate plan. **Excluding designed refusals, 89.4% of the marathon plans
-we actually generate are fit to hand over.**
+**A CORRECT REFUSAL COUNTS AS FIT FOR PURPOSE** (founder, 2026-09-20).
+Refusing an 8 km/week runner a marathon is the right outcome, not a failure:
+measured, for 100% of §111-refused cases a capped peak would land below the
+credible floor (median 22.4 km against 52.8), so the only alternative is a
+degenerate plan. ⚠️ **A refusal only counts when it earns it** — §44's standard
+is *"not yet"*, never *"no"*, so it must name what to do next. Measured and
+**gated**: 100% of `BaseVolumeError` refusals do ("get to about 11 km a week
+first… come back"). A refusal with no route back is a dropout and still counts
+against us.
 
----
+⚠️ **`DaysAvailableError` was never a refusal at all.** It carries two reasons,
+and `warn_unacknowledged` is a *confirmation prompt* the runner ticks before
+generation proceeds. The envelope was not acknowledging, so **2,304
+confirmation prompts were being counted as refusals** — modelling a runner who
+never clicks "yes, I understand", which is modelling nobody. Genuine `block`
+refusals are unaffected.
+
+**The marathon is now in target at 90.1%. The short distances are the whole
+remaining gap** — 10K 78.3%, HM 85.4% — and their dominant objection is
+`WEEK1-LEAP` at 11.4% product-wide, which is the single open engine item
+`WEEK1-FLOOR-SHORT-DIST-01`.
 
 ## 1. What "fit for purpose" is tested against
 

@@ -98,8 +98,17 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   // measurement showed are correct (a capped peak would be below the credible
   // floor for 100% of them). Excluding designed refusals, 89.4% of the
   // marathon plans we actually generate are fit to hand over.
+  // Floors after REFUSAL-IS-AN-OUTCOME-01 (2026-09-20), which counts a correct
+  // refusal as a fit-for-purpose OUTCOME rather than a failure. Measured:
+  //   5K 100% · 10K 78.3% · HM 85.4% · marathon 90.1% · 50K 100% · 100K 100%
+  //   whole product 87.0%  (was 66.7% at the start of the 2026-09-19 build)
+  // ⚠️ THE MARATHON IS NOW IN TARGET at 90.1%, and 10.9pp of that is correct
+  // refusals — every one of which names a next step, asserted below.
+  // ⚠️ THE SHORT DISTANCES ARE NOW THE WHOLE GAP: 10K 78.3% and HM 85.4%,
+  // and their dominant objection is WEEK1-LEAP (11.4% product-wide), which is
+  // `WEEK1-FLOOR-SHORT-DIST-01` — the one open engine item.
   const FLOORS: Record<number, number> = {
-    5: 0.97, 10: 0.74, 21.1: 0.82, 42.2: 0.70, 50: 0.91, 100: 0.90,
+    5: 0.97, 10: 0.74, 21.1: 0.81, 42.2: 0.86, 50: 0.97, 100: 0.95,
   }
   // WEEK1-LEAP-ABS-01 raised 5K again, 91.8% -> 100%: the ≤2km week-1
   // "leap" artefact was almost entirely a 5K phenomenon, because that is where
@@ -113,7 +122,7 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   it.each(DISTANCE_BANDS.map(d => [d.value, FLOORS[d.value]] as const))(
     '%s km — a weighted majority of entrants get a plan we would hand over',
     (distanceKm, floor) => {
-      let total = 0, fit = 0, refused = 0
+      let total = 0, fit = 0, refused = 0, refusedWithoutNextStep = 0
       // COPY-STALE-GEN-01 — no generated plan may carry an error-severity
       // violation. Asserted HERE because this suite already generates the
       // corpus; a second walk elsewhere cost 3.6s and proved the same thing.
@@ -124,7 +133,24 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
         let plan
         try { plan = generateRulePlan(c.input, 'paid') }
         catch (e) {
-          if (isDesignedRefusal(e)) { refused += c.weight; continue }
+          // ⚠️ A CORRECT REFUSAL IS A FIT-FOR-PURPOSE OUTCOME, NOT A FAILURE
+          // (founder, 2026-09-20). Refusing an 8 km/week runner a marathon is
+          // the right answer: measured, for 100% of §111-refused cases a
+          // capped peak lands below the credible floor (median 22.4 km against
+          // 52.8), so the only alternative is a degenerate plan.
+          //
+          // ⚠️ BUT A REFUSAL HAS TO EARN IT, WHICH IS WHY IT IS CHECKED.
+          // §44's standard is "not yet", never "no" — the refusal must name
+          // what to do next. One that just says no is a dropout and still
+          // counts against us. Measured: BaseVolumeError names a next step in
+          // 100% of cases ("get to about 11 km a week first... come back").
+          if (isDesignedRefusal(e)) {
+            refused += c.weight
+            const msg = e instanceof Error ? e.message : String(e)
+            if (/get to|come back|build to|at least|first|instead|about \d/i.test(msg)) fit += c.weight
+            else refusedWithoutNextStep += c.weight
+            continue
+          }
           // ⚠️ NOT a crash — an INVALID PLAN, counted as unfit.
           // `enforceViolations` throws on error-severity violations under
           // NODE_ENV=test and merely logs in production, so a throw here is a
@@ -149,6 +175,11 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
         if (!errs.length && !objs.length) fit += c.weight
       }
       expect(invalid, `${distanceKm} km: plans failing the engine's own constitution`).toEqual([])
+      expect(
+        refusedWithoutNextStep / total,
+        `${distanceKm} km: ${(refusedWithoutNextStep / total * 100).toFixed(1)}% refused WITHOUT naming a next ` +
+        `step. §44's standard is "not yet", never "no" — a refusal with no route back is a dropout.`,
+      ).toBe(0)
       const rate = fit / total
       const top = Object.entries(codes).sort((a, b) => b[1] - a[1]).slice(0, 3)
         .map(([k, v]) => `${k} ${(v / total * 100).toFixed(0)}%`).join(', ')

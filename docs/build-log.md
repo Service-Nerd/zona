@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-20 — REFUSAL-IS-AN-OUTCOME-01 · we were counting our best behaviour as a failure
+**Shipped:** a correct refusal now counts as fit for purpose. Whole product 85.3% to 87.0%; the marathon goes 73.9% to 90.1% and is in target.
+
+**Dev learning:** The founder pointed out that refusing someone for the right reasons is a good outcome, not a bad one, and the rubric had been scoring every refusal against us. That is true, and I could have just added the number to the numerator. Instead I checked whether each refusal deserves it, because "count all refusals as wins" is exactly how a metric stops meaning anything. The standard already exists in our own doctrine: a refusal has to say "not yet" and name what to do next, never just "no". One class passes that test in every single case. The gate now fails if any distance ever refuses someone without giving them a route back.
+
+**The bigger find was that one of our two refusal types was not a refusal.** It carries two reasons, and the common one is a confirmation prompt: the runner sees a warning, ticks a box, and gets their plan. My population model never ticked the box, so two and a half thousand people who would have received a plan were counted as turned away. I had built a model of a runner who never clicks "yes, I understand", which is a model of nobody.
+
+**The honest bit:** I nearly reported the wrong number. Three text replacements went into the test file, and one of them silently matched nothing because an earlier fix had already rewritten that block. So the test said 79.3% and a script I wrote separately said 90.0%, and only the fact that I had two measurements stopped me publishing the first one. Every replacement in this session now asserts how many times it matched. A silent no-op is worse than an error, because an error tells you.
+
+---
+
 ## 2026-09-19 — WEEK1-LEAP-ABS-01 + ULTRA-LR-BAR-01 + ENVELOPE-COHERENCE-01 · three times the measuring stick was the broken thing
 **Shipped:** three criterion fixes, no prescription change between them. 5K reaches 100% fit for purpose; whole product 66.7% to 85.3%.
 

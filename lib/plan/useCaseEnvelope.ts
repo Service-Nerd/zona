@@ -263,6 +263,17 @@ export function distanceEnvelope(distanceKm: number, planStart = '2026-11-02'): 
         longest_recent_run_km: Math.round(Math.min(v.value * 0.45, distanceKm * 0.75)),
         days_available: d.value, injury_history: [...inj.value],
         hard_session_relationship: 'neutral', recent_quality_training: 'occasional',
+        // ⚠️ THE RUNNER ACKNOWLEDGES THE WARNINGS, BECAUSE A REAL ONE DOES.
+        // `PrepTimeError`/`DaysAvailableError` carry TWO reasons: 'block' (a
+        // real refusal) and 'warn_unacknowledged' (a confirmation prompt the
+        // client shows, the runner ticks, and generation proceeds). An
+        // envelope that never acknowledges counts every confirmation prompt as
+        // a refusal — measured, 2,304 cases, all of them people who would in
+        // fact have received a plan. Modelling the runner as someone who never
+        // clicks "yes, I understand" is modelling nobody.
+        // Genuine 'block' refusals are unaffected and still refuse.
+        acknowledged_days_warning: true,
+        acknowledged_prep_warning: true,
         ...(g.value === 'time_target' ? { target_time: TARGETS[distanceKm] ?? '4:15:00' } : {}),
       } as unknown as GeneratorInput,
     })
