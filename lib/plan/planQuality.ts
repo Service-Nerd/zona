@@ -24,7 +24,26 @@ import { GENERATION_CONFIG as G } from './generationConfig'
 import type { GeneratorInput, Plan, Week, Session } from '@/types/plan'
 
 // ── The predicates. Each one is "a coach would object to this". ─────────────
-export interface Finding { code: string; detail: string }
+export interface Finding {
+  code: string
+  detail: string
+  /**
+   * RUBRIC-GAPS-01(a) — a WATCHED quantity, not a coach objection.
+   *
+   * Some rules are deliberately exempted (§18 Am. silences `DAYS-SHORT` when
+   * the plan declares the shortfall). An exemption with no counter is
+   * indistinguishable from a goalpost that moved, so the exempted case is
+   * still emitted — flagged — and every consumer that scores plans must
+   * EXCLUDE it while every consumer that reports must SHOW it.
+   */
+  watched?: true
+}
+
+/** Findings a coach would object to. Excludes watched quantities. */
+export const objectionsOnly = (f: readonly Finding[]): Finding[] => f.filter(x => !x.watched)
+
+/** Exempted-but-counted quantities. A rising rate means an exemption is carrying more than it was measured carrying. */
+export const watchedOnly = (f: readonly Finding[]): Finding[] => f.filter(x => x.watched)
 
 const isTrainingWeek = (w: Week) =>
   w.n > 0 && w.type !== 'race' && w.phase !== 'foundation'
@@ -78,6 +97,20 @@ export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
     // profile in the commit that added this line.
     if (!plan.meta?.frequency_constraint_note) {
       f.push({ code: 'DAYS-SHORT', detail: `${shortWeeks.length} loading week(s) under ${declared} days, fewest ${worst}` })
+    } else {
+      // RUBRIC-GAPS-01(a) (2026-09-20) — COUNT THE SILENCE.
+      //
+      // The exemption above raises the fit-for-purpose rate by ~18.7pp. The
+      // only thing separating that from moving the goalposts is knowing how
+      // often it fires — and the metric meant to know, `daysShortSilent`, was
+      // **declared in the rubric and never implemented.** It reported 0%
+      // because nothing called it, which is the decorative-config defect in a
+      // measurement.
+      //
+      // ⚠️ NOT an objection, on purpose: §18 Am. ruled the declared shortfall
+      // coaching-correct. This is a WATCHED quantity — a rate that climbs means
+      // the exemption is carrying more than it was measured carrying.
+      f.push({ code: 'DAYS-SHORT-SILENCED', detail: `${shortWeeks.length} loading week(s) under ${declared} days, fewest ${worst} — declared by the frequency note`, watched: true })
     }
   }
 

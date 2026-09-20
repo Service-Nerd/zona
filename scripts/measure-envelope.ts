@@ -23,6 +23,23 @@ for (const [d, m] of Object.entries(now.byDistance)) {
 }
 console.log(`\n  WHOLE PRODUCT  ${now.productFitPct}%   (target 90-95%)`)
 
+// RUBRIC-GAPS-01(a) — PRINT THE SILENCE NEXT TO THE SCORE.
+//
+// `DAYS-SHORT-SILENCED` is §18 Am.'s exemption, and it raises the
+// fit-for-purpose rate by ~18.7pp. The metric meant to watch it was declared in
+// the rubric and NEVER IMPLEMENTED — it reported 0% because nothing called it.
+//
+// ⚠️ It is printed here, beside the number it inflates, on purpose. An
+// exemption reported somewhere else is an exemption nobody reads.
+const watchedRows = Object.entries(now.byDistance)
+  .flatMap(([d, m]) => Object.entries(m.watched).map(([k, v]) => ({ d, k, v })))
+  .filter(r => r.v > 0)
+if (watchedRows.length) {
+  console.log(`\n  WATCHED — exempted rules, counted but NOT scored:`)
+  for (const r of watchedRows) console.log(`    ${r.d.padStart(5)}km  ${r.k} ${r.v}%`)
+  console.log(`    (a rate that CLIMBS means an exemption is carrying more than it was measured carrying)`)
+}
+
 if (WRITE) {
   writeFileSync(BASELINE, JSON.stringify(now, null, 1) + '\n')
   console.log(`\nbaseline written: ${BASELINE}`)
@@ -42,6 +59,17 @@ const cmp = (label: string, a: number, b: number) => {
   console.log(`   ${label.padEnd(22)} ${b}% -> ${a}%  (${d > 0 ? '+' : ''}${d}pp)`)
 }
 cmp('WHOLE PRODUCT', now.productFitPct, base.productFitPct)
+// RUBRIC-GAPS-01(a) — the WATCHED rates are diffed too, both directions.
+// A fit rate that holds while an exemption's rate climbs is the exemption
+// absorbing a regression, which is precisely the failure this metric exists
+// to catch and precisely the one a fit-rate-only diff cannot see.
+for (const d of Object.keys(now.byDistance)) {
+  const nw = now.byDistance[d].watched ?? {}
+  const bw = base.byDistance[d]?.watched ?? {}
+  for (const k of new Set([...Object.keys(nw), ...Object.keys(bw)])) {
+    cmp(`${d}km ${k}`, nw[k] ?? 0, bw[k] ?? 0)
+  }
+}
 for (const d of Object.keys(now.byDistance)) {
   cmp(`${d}km`, now.byDistance[d].fitPct, base.byDistance[d]?.fitPct ?? 0)
 }

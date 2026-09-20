@@ -16,6 +16,31 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## 2026-09-20 — RUBRIC-GAPS-01: the metric watching our biggest exemption had never been written
+
+**Dev.** §18 Am. silences a coach objection when the plan declares the shortfall. That exemption
+raises the fit-for-purpose rate by about 18.7 percentage points — its own comment says so, and
+says it is legitimate only because the prescription was measured correct first.
+
+The metric meant to keep watch on it was declared in the rubric and never implemented. **It
+reported 0% because nothing called it.** That is the decorative-config defect, living inside a
+measurement rather than a config file.
+
+**Product.** Written, it says: `DAYS-SHORT-SILENCED` fires on **49.4% of 5K plans**, 29% of 10K,
+21.5% of half marathons, 11.7% of marathons. Nearly half of 5K runners are getting fewer days than
+they asked for. That is correct, it is declared to them, and the board ruled it right. **What was
+wrong is that nobody knew the size of it.**
+
+**AI-building.** The mechanism is a `watched` flag on a finding: exempted-but-counted is neither
+scored nor hidden. Scorers exclude it, reporters show it, and it is printed **beside the number it
+inflates** rather than somewhere else — an exemption reported on another screen is an exemption
+nobody reads. It is diffed in both directions and I falsified the diff before trusting it.
+
+**The honest bit.** The failure this now catches is the subtle one: **a fit rate that holds while
+an exemption's rate climbs.** The exemption absorbs the regression and the headline number never
+moves. A fit-rate-only diff cannot see that, and until today we only had a fit-rate-only diff.
+
 ## 2026-09-20 — GRID-EARLY-ONSET-01: the item was stale, and checking it found a stale number underneath
 
 **Dev.** Filed as "zero of 45,776 corpus plans reach ADR-021's early-onset cell". I went to widen

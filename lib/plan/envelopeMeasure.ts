@@ -18,7 +18,7 @@
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
-import { auditPlanQuality } from './planQuality'
+import { auditPlanQuality, objectionsOnly, watchedOnly } from './planQuality'
 import { distanceEnvelope, DISTANCE_BANDS } from './useCaseEnvelope'
 
 /** §44's standard: a refusal must say what to do NEXT, never just "no". */
@@ -30,6 +30,15 @@ export interface DistanceMeasure {
   refusedWithoutNextStepPct: number
   invalidPlans: number
   objections: Record<string, number>
+  /**
+   * RUBRIC-GAPS-01(a) — exempted rules, counted but NOT scored.
+   *
+   * `DAYS-SHORT-SILENCED` is the §18 Am. exemption that raises the
+   * fit-for-purpose rate by ~18.7pp. **A rate that climbs means the exemption
+   * is carrying more than it was measured carrying.** It is reported beside
+   * the fit rate so the two can never drift apart unobserved.
+   */
+  watched: Record<string, number>
 }
 export interface EnvelopeMeasure {
   stride: number
@@ -51,6 +60,7 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
   for (const band of DISTANCE_BANDS) {
     let total = 0, fit = 0, refused = 0, noNextStep = 0, invalid = 0
     const objections: Record<string, number> = {}
+    const watched: Record<string, number> = {}
 
     for (const c of distanceEnvelope(band.value).filter((_, i) => i % stride === 0)) {
       total += c.weight
@@ -71,9 +81,15 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
       if (errs.length) invalid++
       // §23 licenses a declared maintenance plan that does not build — the
       // reconciliation an earlier audit made for 15,236 findings.
-      const objs = auditPlanQuality(plan, c.input)
+      const all = auditPlanQuality(plan, c.input)
         .filter(o => !(o.code === 'NEVER-BUILDS' && maintDeclared))
+      // RUBRIC-GAPS-01(a) — WATCHED quantities are exempted rules, counted and
+      // reported but never scored. Scoring them would re-impose a rule the
+      // board deliberately relaxed; hiding them would make the relaxation
+      // invisible, which is how an exemption becomes a moved goalpost.
+      const objs = objectionsOnly(all)
       for (const o of objs) objections[o.code] = +(((objections[o.code] ?? 0) + c.weight)).toFixed(6)
+      for (const w of watchedOnly(all)) watched[w.code] = +(((watched[w.code] ?? 0) + c.weight)).toFixed(6)
       if (!errs.length && !objs.length) fit += c.weight
     }
 
@@ -84,6 +100,8 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
       invalidPlans: invalid,
       objections: Object.fromEntries(
         Object.entries(objections).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, pc(v, total)])),
+      watched: Object.fromEntries(
+        Object.entries(watched).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, pc(v, total)])),
     }
     prodFit += fit * band.weight
     prodTot += total * band.weight

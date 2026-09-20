@@ -7,28 +7,36 @@
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
-   "objections": {}
+   "objections": {},
+   "watched": {
+    "DAYS-SHORT-SILENCED": 49.4
+   }
   },
   "10": {
    "fitPct": 100,
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
-   "objections": {}
+   "objections": {},
+   "watched": {
+    "DAYS-SHORT-SILENCED": 29
+   }
   },
   "50": {
    "fitPct": 100,
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
-   "objections": {}
+   "objections": {},
+   "watched": {}
   },
   "100": {
    "fitPct": 100,
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
-   "objections": {}
+   "objections": {},
+   "watched": {}
   },
   "21.1": {
    "fitPct": 96.2,
@@ -38,6 +46,9 @@
    "objections": {
     "DEGENERATE-WEEK": 2.3,
     "WEEK1-LEAP": 1.5
+   },
+   "watched": {
+    "DAYS-SHORT-SILENCED": 21.5
    }
   },
   "42.2": {
@@ -49,6 +60,9 @@
     "LONG-RUN-SHORT": 7.8,
     "WEEK1-LEAP": 4.5,
     "BINGE-WEEK": 0.4
+   },
+   "watched": {
+    "DAYS-SHORT-SILENCED": 11.7
    }
   }
  }
