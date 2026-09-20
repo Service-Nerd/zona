@@ -17,7 +17,7 @@ it specific, no polish. The content system adds the voice.
 
 
 
-## 2026-09-20 — the commercial batch: four items, one question
+## 2026-09-20 — TIER-TRIAL-CONFIDENCE-01 and the commercial batch: four items, one question
 
 **Dev.** Six open commercial items went to the SLT. Four turned out to be the same question —
 *is the thing we say about the product true of the product?* — and the answers split cleanly into
