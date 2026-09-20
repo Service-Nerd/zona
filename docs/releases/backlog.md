@@ -513,7 +513,14 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-07 — COACH REGISTER: Straight / Blunt.** *(T-17. GATE. Decision note: `docs/decisions/2026-09-20-p07-coach-register.md`.)*
+> ⛔ **P-07 — CLOSED 2026-09-20. SLT: DON'T BUILD.** *(T-17. Decision note: `docs/decisions/2026-09-20-p07-coach-register.md`.)*
+>
+> A register dimension would **double every copy decision in the product** — every string in the
+> voice table, every coach note, every prompt, forever — to give the runner a choice between two
+> flavours of a voice that is already the product's strongest asset. **`R19` stays parked and is
+> NOT unblocked by this.**
+> *(original below.)*
+> 🔲 ~~**P-07 — COACH REGISTER: Straight / Blunt.**~~ *(T-17. GATE.)*
 >
 > **Problem.** Miles ships *"Coach Personality — how Miles talks about your training — Supportive"*
 > (`IMG_7186`) and the brief is right that it is underexploited in a beginner app where every option
@@ -793,7 +800,18 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-13 — VISUAL DEPTH AND IMAGERY SYSTEM.** *(GATE. Cross-cutting. Decision note: `docs/decisions/2026-09-20-p13-depth-and-imagery.md`. Depends on P-01.)*
+> 🟡 **P-13 — (a) AND (b) SHIPPED 2026-09-20. Only (c) remains, and it is a commission, not code.** *(Cross-cutting. Decision note: `docs/decisions/2026-09-20-p13-depth-and-imagery.md`.)*
+>
+> **(a)+(b) shipped:** the 26 hardcoded `rgba()` values are gone, derived alpha tokens
+> (`--coach-line`, `--scrim`, `--bg-fade-0`, `--shadow-device`) are in `globals.css`, and the
+> pre-commit hook now blocks raw `rgba()` in `app/` and `components/` — it had only ever checked
+> hex. Falsified 7/7.
+> 🔻 **(c) illustration style is YOURS:** the SLT said commission ONE piece, after P-01. **P-01 has
+> shipped, so it is unblocked and waiting on you.**
+> ⚠️ **Half the brief's premise was wrong and the audit corrected it** — elevation tokens already
+> exist and are already warm-tinted. We were not shipping flat rectangles on beige.
+> *(original below.)*
+> 🔲 ~~**P-13 — VISUAL DEPTH AND IMAGERY SYSTEM.**~~ *(GATE, lifted.)*
 >
 > **Problem.** The brief's worry is that Zonna ships flat rectangles on beige. **Half of that is
 > already wrong and the audit should correct it:** elevation tokens exist, are already warm-tinted,
