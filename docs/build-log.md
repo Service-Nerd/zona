@@ -7,6 +7,33 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+
+## 2026-09-20 — the principle was written down, then broken by the branch next to it
+
+**Dev.** `REFRAME-NOTE-LOSS-01`: a runner writes a reflection, the AI call fails, and the route
+returns before the line that saves it. Their words are gone. The client then puts them back at an
+empty box and says nothing.
+
+**The bit that stings.** Three hundred lines earlier in the *same route*, the risk-gated path
+persists the note with the comment *"the runner's note is sacred even when we don't reframe."*
+Same route, same table, same field, opposite behaviour. **The principle was written down and then
+broken by the branch next to it** — which is a better argument for single-owner functions than any
+architecture diagram.
+
+**Product.** Only two of the three failure modes are outages. The third is our own quality filter
+rejecting a cheerleading answer we had already paid for — the model replied, we binned it, and we
+binned the runner's reflection with it.
+
+**AI-building.** I fixed it by extracting one `persistReflection` rather than adding a third
+upsert, and by pulling the client's view decision into a `.logic.ts` file. That second one was not
+tidiness: a test asserting on the *shape of the route source* would pass on a comma change and
+fail on a refactor. The view decision is the half the runner actually experiences and it is pure.
+
+**The honest bit.** A thrown fetch still returns to `input`, not `saved`, because we genuinely do
+not know whether the server ran. Claiming "saved" there would be the same class of lie in the
+opposite direction. And the new state's copy is pattern-setting, so it ships flagged for sign-off
+rather than quietly.
+
 ## 2026-09-20 — the note pointed an injury-history runner at the one lever they must not pull
 
 The founder asked for every open coaching-engine item analysed and taken to the board, with one

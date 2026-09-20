@@ -36,6 +36,57 @@ import { COHORT_SIMILARITY, REFRAME_RISK, REFRAME_TIER, FATIGUE_HIGH_TAGS } from
 import { inferLimiter } from '@/lib/coaching/limiter'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
+
+/**
+ * REFRAME-NOTE-LOSS-01 — THE SINGLE OWNER OF "write the runner's reflection down".
+ *
+ * ⚠️ WHY THIS EXISTS AND WHY IT IS NOT THREE UPSERTS. This route wrote the SAME
+ * row shape from two places and forgot it entirely in a third. The silenced path
+ * carried the principle in a comment — *"the runner's note is sacred even when we
+ * don't reframe"* — and the branch a few hundred lines below returned before
+ * reaching its upsert, so on any AI failure the runner's own writing was thrown
+ * away. Same route, same table, same field, opposite behaviour.
+ *
+ * Adding a third copy to fix it would be D-16. One owner, three callers.
+ *
+ * ⚠️ `reframe_text: null` + `reframe_silenced: false` is the FAILED state and is
+ * distinguishable from the SILENCED state (`reframe_silenced: true`) and the
+ * SUCCESS state (`reframe_text` set). No migration: the columns already carry it.
+ */
+async function persistReflection(
+  service: { from: (t: string) => { upsert: (v: Record<string, unknown>, o: { onConflict: string }) => Promise<{ error: unknown }> } },
+  row: {
+    userId: string
+    weekN: number
+    sessionDay: string
+    userNote: string
+    dataTier: string
+    reframeText: string | null
+    silenced: boolean
+    silencedReason?: string | null
+  },
+): Promise<void> {
+  const { error } = await service
+    .from('session_reflections')
+    .upsert({
+      user_id:                 row.userId,
+      week_n:                  row.weekN,
+      session_day:             row.sessionDay,
+      note_text:               row.userNote,
+      note_source:             'text',
+      reframe_text:            row.reframeText,
+      reframe_data_tier:       row.dataTier,
+      reframe_model:           ANTHROPIC_MODEL_DEEP,
+      reframe_prompt_version:  REFRAME_PROMPT_VERSION,
+      reframe_silenced:        row.silenced,
+      ...(row.silencedReason != null ? { reframe_silenced_reason: row.silencedReason } : {}),
+      reframe_generated_at:    new Date().toISOString(),
+      updated_at:              new Date().toISOString(),
+    }, { onConflict: 'user_id,week_n,session_day' })
+  // Persist failure is logged, never thrown: the runner already has their words
+  // on screen and a 500 here would lose them a second time.
+  if (error) console.warn('[post-run-reframe] persist failed', error)
+}
 import { sessionHRBand } from '@/lib/coaching/zoneRules'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
 import {
@@ -390,24 +441,10 @@ export async function POST(req: NextRequest) {
   if (riskOutcome.silenced) {
     // Persist a silenced row — the runner's note is sacred even when we
     // don't reframe. The warning message is what the UI shows.
-    const { error: silencedErr } = await service
-      .from('session_reflections')
-      .upsert({
-        user_id: userId,
-        week_n: weekN,
-        session_day: sessionDay,
-        note_text: userNote,
-        note_source: 'text',
-        reframe_text: null,
-        reframe_data_tier: dataTier,
-        reframe_model: ANTHROPIC_MODEL_DEEP,
-        reframe_prompt_version: REFRAME_PROMPT_VERSION,
-        reframe_silenced: true,
-        reframe_silenced_reason: riskOutcome.reason,
-        reframe_generated_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,week_n,session_day' })
-    if (silencedErr) console.warn('[post-run-reframe] silenced persist failed', silencedErr)
+    await persistReflection(service as never, {
+      userId, weekN, sessionDay, userNote, dataTier,
+      reframeText: null, silenced: true, silencedReason: riskOutcome.reason,
+    })
 
     return NextResponse.json({
       reframe: null,
@@ -511,31 +548,28 @@ export async function POST(req: NextRequest) {
     console.warn('[post-run-reframe] AI call failed', err)
   }
 
+  // REFRAME-NOTE-LOSS-01 — PERSIST BEFORE RETURNING. This early return used to
+  // sit above the only upsert in the function, so every path that left
+  // `reframeText` null discarded what the runner had written.
+  //
+  // ⚠️ THREE WAYS IT GOES NULL AND ONLY TWO ARE OUTAGES: `!aiRes.ok` (credit,
+  // rate limit, API error), `fetch` throwing (network), and — the one that is
+  // not an outage — `BAD_OUTPUT_RE` rejecting a cheerleading answer we were
+  // billed for. In that third case the model replied, we paid, we binned it, and
+  // we also binned the runner's reflection.
   if (!reframeText) {
+    await persistReflection(service as never, {
+      userId, weekN, sessionDay, userNote, dataTier,
+      reframeText: null, silenced: false,
+    })
     return NextResponse.json({ reframe: null, tier: dataTier, fallback: true }, { status: 200 })
   }
 
   // Persist
-  const { error: upsertErr } = await service
-    .from('session_reflections')
-    .upsert({
-      user_id: userId,
-      week_n: weekN,
-      session_day: sessionDay,
-      note_text: userNote,
-      note_source: 'text',
-      reframe_text: reframeText,
-      reframe_data_tier: dataTier,
-      reframe_model: ANTHROPIC_MODEL_DEEP,
-      reframe_prompt_version: REFRAME_PROMPT_VERSION,
-      reframe_silenced: false,
-      reframe_generated_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,week_n,session_day' })
-
-  if (upsertErr) {
-    console.warn('[post-run-reframe] persist failed', upsertErr)
-  }
+  await persistReflection(service as never, {
+    userId, weekN, sessionDay, userNote, dataTier,
+    reframeText, silenced: false,
+  })
 
   return NextResponse.json({ reframe: reframeText, tier: dataTier, fallback: false }, { status: 200 })
 }

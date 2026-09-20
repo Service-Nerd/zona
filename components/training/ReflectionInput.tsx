@@ -19,13 +19,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { viewForReframeResponse, viewForStoredReflection, type ReflectionView } from './ReflectionInput.logic'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import AIMark from '@/components/shared/AIMark'
 import { REFRAME_TIER } from '@/lib/coaching/constants'
 import { messageForReframeRiskReason, type ReframeRiskReason } from '@/lib/coaching/reframeRiskGate'
 
-type ViewState = 'input' | 'submitting' | 'reframe' | 'silenced'
+// REFRAME-NOTE-LOSS-01 — the view decision lives in `ReflectionInput.logic.ts`
+// so it can be tested. 'saved' is the state that was missing: the note was
+// written down but no reframe came back. Distinct from 'silenced' (we CHOSE
+// not to reframe, and say why) and from 'input' (nothing submitted yet).
+type ViewState = ReflectionView
 
 export interface ReflectionInputProps {
   weekN: number
@@ -57,15 +62,15 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
           .eq('session_day', sessionDay)
           .maybeSingle()
         if (cancelled) return
-        if (data?.reframe_silenced && data.reframe_silenced_reason) {
-          setNoteText((data.note_text as string) ?? '')
-          setSilencedMessage(messageForReframeRiskReason(data.reframe_silenced_reason as ReframeRiskReason))
-          setView('silenced')
-        } else if (data?.reframe_text) {
-          setNoteText((data.note_text as string) ?? '')
-          setReframeText(data.reframe_text as string)
-          setView('reframe')
+        // REFRAME-NOTE-LOSS-01 — one owner for the decision (see .logic.ts).
+        const stored = viewForStoredReflection(data as never)
+        if (stored !== 'input') setNoteText((data?.note_text as string) ?? '')
+        if (stored === 'silenced') {
+          setSilencedMessage(messageForReframeRiskReason(data!.reframe_silenced_reason as ReframeRiskReason))
+        } else if (stored === 'reframe') {
+          setReframeText(data!.reframe_text as string)
         }
+        if (stored !== 'input') setView(stored)
       } catch {
         // Silent — fall through to input state
       } finally {
@@ -98,16 +103,16 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
       }
       if (json.silenced && json.silencedMessage) {
         setSilencedMessage(json.silencedMessage)
-        setView('silenced')
       } else if (json.reframe) {
         setReframeText(json.reframe)
-        setView('reframe')
-      } else {
-        // Silent fallback — back to input
-        setView('input')
       }
+      // REFRAME-NOTE-LOSS-01 — one owner for the decision (see .logic.ts). The
+      // last branch used to be `setView('input')`: a blank box, no message,
+      // immediately after a server that had discarded what they wrote.
+      setView(viewForReframeResponse(json))
     } catch {
-      // Silent fallback
+      // A thrown fetch is different: we do not know whether the server ran, so
+      // we cannot claim it was saved. The text stays in the box either way.
       setView('input')
     }
   }
@@ -160,6 +165,43 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
   // ── Silenced state — risk gate fired, reframe suppressed ─────────────
   // Brand voice: calm guidance, not alerts. No AIMark — this is rule-engine
   // output (the risk gate), not model output.
+  // ── Saved, no reframe (REFRAME-NOTE-LOSS-01) ──────────────────────────
+  // ⚠️ COPY IS PATTERN-SETTING (§4A) AND NEEDS SIGN-OFF. Written in voice and
+  // shipped because the defect fix is incomplete without a state that tells the
+  // runner what happened; flagged in the backlog rather than left blank.
+  if (view === 'saved') {
+    return (
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{
+          fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)',
+          textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px',
+        }}>
+          Saved
+        </div>
+        <div style={{
+          background: 'var(--card)', borderRadius: '12px',
+          border: '0.5px solid var(--border-col)',
+          padding: '14px 16px',
+          fontFamily: 'var(--font-brand)', fontSize: '14px',
+          fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.55,
+          letterSpacing: '-0.1px',
+        }}>
+          Your note is kept. No coach response this time.
+        </div>
+        {noteText && (
+          <div style={{
+            marginTop: '10px',
+            fontFamily: 'var(--font-ui)', fontSize: '11px',
+            color: 'var(--mute)', lineHeight: 1.5,
+            fontStyle: 'italic',
+          }}>
+            You wrote: &ldquo;{noteText}&rdquo;
+          </div>
+        )}
+      </div>
+    )
+  }
+
   if (view === 'silenced' && silencedMessage) {
     return (
       <div style={{ marginBottom: '20px' }}>
