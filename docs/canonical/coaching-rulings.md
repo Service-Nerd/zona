@@ -21,6 +21,24 @@ memory.
 
 ---
 
+## Standing rulings — 2026-09-20, Miles teardown batch
+
+Record: `docs/decisions/coaching-board-2026-09-20-miles-teardown-batch.md` ·
+`docs/decisions/slt-2026-09-20-miles-teardown-batch.md`
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **A runner-set intensity ratio (80/20 → 90/10)** | 🔴 **VETOED — Coaching Board** | Seiler's arithmetic is dispositive: **§1 counts SESSIONS**, so at 3 days the only ratios are 100/0, 67/33, 33/67 and at 4 days 75/25. **There is no 80/20 to select**, and our cohort is 3–4 days. ⚠️ **Do not re-propose this from the Miles screenshot.** What WOULD be correct is a different feature: *"this feels too easy"* / *"I'm knackered"* as a signal into the **existing reshape machinery**, never a new authority over §1. |
+| **Cross-training capture, five chips** | 🔴 **INCORRECT as scoped** | The board wants **two different features from one input** — Willy needs modality + intensity + timing for load; Sims needs volume + frequency for energy availability. One chip serves neither and is the `motivation_type` outcome. Return with **one** feature and a stated engine consumer. |
+| **Run-walk modality for the sub-floor marathoner** | 🔴 **NOT SCOPED** | Willy: at 8 km/wk over 4 days the runner is already running 2 km at a time; run-walk is for someone who cannot, which is **below the lower bound anyway**. **Do not build it to match a competitor.** |
+| **Base-build on-ramp, as a SHAPE** | 🟢 **CORRECT WITH AMENDMENT — not approved to ship** | Six binding amendments (§2's rate not §57's · per-run step under §2 Am.2 · ≥16 weeks remaining · fuelling note · labelled pre-plan · all easy). **Chair's gate: build behind a flag, `measure:fitness` + property sweep, return.** Filed as **P-16**. |
+| **§111 names a remedy §57 makes impossible** | 🟢 **FINDING, CORRECT** | `foundationBlock.ts:357` — every foundation week is `baseline × 1.10`, **flat from week 2 at any length**. §111's Recorded Limitation gains a cross-reference when P-16's artifacts land. **Do not "fix" this by raising `FOUNDATION_MAX_WEEKS`** — vetoed, and the on-ramp is a different shape. |
+| **The paid DHTB coach register** | 🔴 **RULED OUT — SLT (Traynor)** | It makes the personal brand a **purchasable component**, a dependency on a person written into the revenue line. `brand.md`: the app must outlive the personal brand. **Recorded so it is not re-proposed as easy revenue.** |
+| **Straight / Blunt coach register** | 🔴 **DON'T BUILD — SLT (Wood's kill mandate)** | Changes no context, no friction, no decision. Illusion-of-progress class. ⚠️ **`R19` is therefore NOT unblocked and stays parked** — *"finding a trigger is not the same as the trigger being worth pulling"* (Fried, undefended). |
+| **Three "Sims asks" as one pattern** | ⚠️ **SPLIT — the bundling was an analytical error** | Cycle periodisation: contested science *and* missing data → stays blocked. `INPUT-SEX-01`: no formula reads it → **an honest null is not a gap**. **RED-S: not contested, and a real uncovered harm** → filed as **P-17**, a safety item. **Bundling let the real one hide inside the two that are fine.** |
+
+---
+
 ## The protocol, from 2026-09-20
 
 1. **Read this register before the sitting.** Not the plans first — the register.

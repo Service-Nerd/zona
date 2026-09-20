@@ -39,6 +39,36 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
 — not merely approved — until the Coaching Board rules.
 
+### ⚖️ RULED 2026-09-20 — READ THIS BEFORE THE PROPOSALS BELOW
+
+**Both boards sat after these proposals were written. Where a proposal below and this
+block disagree, THIS BLOCK WINS.** Records: `docs/decisions/coaching-board-2026-09-20-miles-teardown-batch.md`
+· `docs/decisions/slt-2026-09-20-miles-teardown-batch.md`
+
+| Item | Ruling | What changed |
+|---|---|---|
+| **P-01** colour | ✅ **BUILD.** Resolution A, **before October.** Unanimous. | +3 binding conditions: the **sweep** is the item (one predicate, not four copies) · the **"held the zone" threshold goes to the Coaching Board** before the design system encodes it (else it is the `MARATHON-VOLUME-GATE-01` defect class) · the **free-tier state is a named deliverable**. |
+| **P-02** modify sheet | ✅ **Ships — WITHOUT the intensity row.** | 🔴 **Q3 VETOED by the Coaching Board.** §1 counts SESSIONS: at 3–4 days the only ratios are 100/0, 67/33, 33/67 — **there is no 80/20 to select.** The other six rows are confirmed **scheduling, not prescription**, and lose nothing. |
+| **P-03** ceiling | ✅ unchanged | Wood: **P-01 is the vocabulary, P-03 is the intervention.** Retrospective colour changes nothing; the ceiling at the moment of decision does. |
+| **P-04** compliance | ✅ unchanged, +1 deliverable | The **free-tier state is designed, not blank.** ⚠️ **Its PAID tier is flagged for founder confirmation** — the SLT reads scoring as richness and the ceiling as access, but it sits close to *"gate richness, never access"*. |
+| **P-05c** cross-training | 🔴 **DON'T BUILD as scoped.** | Board wants **two different features from one input** (Willy: fatigue/tissue, modality-dependent · Sims: energy availability, needs volume+frequency). One chip serves neither and is the `motivation_type` outcome. **Unanimous steer: Sims's framing is the valuable half** → now its own safety item. |
+| **P-07** register | 🔴 **DON'T BUILD.** | Wood's **kill mandate** — illusion-of-progress. Fried dismantled the R19 argument undefended: *"finding a trigger is not the same as the trigger being worth pulling."* ⚠️ **`R19` STAYS PARKED — the proposal below says it is unblocked and that is now WRONG.** Traynor **ruled out the paid DHTB register permanently**: it makes the personal brand a purchasable component, a dependency on a person in the revenue line. |
+| **P-13** depth | ✅ **SPLIT.** | (a) sweep + (b) gate → **approve as engineering, not a founder decision**; make the rgba rule **quiet** or the hook gets disabled. (c) illustration → **commission ONE piece, after P-01**, judge it, then decide on a style. |
+| **Copy patterns** | ✅ **Approved at pattern level.** | **Zero case, SLT shape (founder writes the words):** when nothing held, the sentence **carries a cause or a next action, never a bare count.** *"None held the zone this week"* alone is a scold, and shame suppresses the behaviour. Both rejections and the trial-timeline block upheld. |
+| **The door** (item ⓿) | ⚠️ **STATUS WAS WRONG IN PHASES 1–2.** | `MARATHON-VOLUME-GATE-01`, `LONGEST-RUN-GATE-01` (§113) and `REFUSAL-SCREEN-01` are all **SHIPPED**. What is open is `S111-SUBFLOOR-VOLUME-01`, and it is now **P-15 / P-16** below. |
+
+🔴 **THE BIGGEST OUTCOME, and it is not a P-item.** The Coaching Board found that **§111
+names a base-building plan as its remedy and §57 makes that remedy structurally
+impossible** — `foundationBlock.ts:357`, every foundation week is `baseline × 1.10`, flat
+from week 2, at any length. Two principles in deadlock; neither prior sitting saw it
+because each was convened on its own question. **Measured: an 8 km/wk runner with 29
+weeks reaches 18 km/wk in 11 weeks at §2's own rate, leaving 18 weeks of marathon plan,
+§111 ratio 2.61, and the acute step into week 1 goes +50% → 0%.** Board: **CORRECT WITH
+AMENDMENT as a shape, not approved to ship.** SLT: **build it, but not for October.**
+Split into **P-15** (October) and **P-16** (measured) below.
+
+---
+
 ### Recommended sequence, and where it deviates from the brief
 
 The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
@@ -178,7 +208,13 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > **PAID:** the **AI re-enrichment** of changed weeks (`ai_coach_notes_new`, already a paid gate).
 > Regeneration itself is `rule_engine_regeneration`, **FREE_ALWAYS** under the R23-D6 lenient reading.
 > So: everyone can change their plan; only paid users get the new coaching voice on it.
-> **Intensity is unresolved and belongs to the board before it belongs to a tier.**
+> 🔴 **Intensity is RESOLVED: VETOED by the Coaching Board 2026-09-20.** Seiler's arithmetic is
+> dispositive — §1 counts **sessions**, so at 3 days the only ratios are 100/0, 67/33, 33/67 and at
+> 4 days 75/25. **There is no 80/20 to select**, and the charity cohort is 3–4 days. A continuous-
+> looking control over a discrete, coarse quantity is a claim the engine cannot honour.
+> **P-02 ships without the intensity row and loses nothing the board would defend.**
+> ⚠️ What would make it correct is a different feature: McMillan's *"this feels too easy"* /
+> *"I'm knackered"* as a signal into the **existing reshape machinery**, never a new authority over §1.
 >
 > **Backlog reconciliation — explicit, per the brief's instruction.**
 > - **SUPERSEDES `R22` (Blockout days, PAID, M).** Its own note says *"bundle with R20 parked
@@ -472,8 +508,11 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > **Free/Pro.** Straight and Blunt **FREE** — it is tone, not intelligence, and gating tone reads as
 > mean. DHTB register **PAID**, later, if at all.
 >
-> **Backlog.** **UPDATE `R19`.** Add the register dimension and record that the product trigger has
-> arrived. Do not file a new item — `R19` is the item.
+> **Backlog.** 🔴 **SUPERSEDED BY THE 2026-09-20 SLT: DON'T BUILD, and `R19` STAYS PARKED.**
+> The paragraph above argued the register is R19's missing product trigger. Fried's answer, undefended
+> at the table: *"finding a trigger is not the same as the trigger being worth pulling."* Since the
+> register is not being built, R19 is **not** unblocked. ⚠️ **The paid DHTB register is ruled out
+> permanently** (Traynor) — recorded here so it is not re-proposed as easy revenue.
 
 ---
 
@@ -782,6 +821,118 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > **Free/Pro.** Both free. Asking for a review is not a feature.
 >
 > **Backlog.** **NEW.**
+
+---
+
+> 🔴 **P-15 — THE REFUSAL GAINS AN ACTION. October deliverable.** *(SLT 2026-09-20, track 1 of the on-ramp split. No engine change, no board, no measurement gate.)*
+>
+> **Problem.** `REFUSAL-SCREEN-01` shipped, so a §111 refusal is now presented calmly rather than as
+> a crash. **But it still offers nothing.** A first-time marathoner below 12 km/week is told no and
+> handed no route forward.
+>
+> **Why this is the October item and the on-ramp is not.** **Wood:** a runner told no with nothing
+> attached either gives up or **trains anyway with no plan — and the second is worse than admitting
+> them**, and more likely for someone who has a London place and has told their friends.
+> **Traynor:** a refused runner is a **redeemed code that produced no product**, and `GTM-CHARITY-06`
+> means we cannot count them. **Sutherland:** *"We won't sell you a marathon plan you can't safely
+> do"* is the most on-brand sentence this company could say to a charity cohort, and the opposite of
+> what every competitor does. **The problem was never the refusal. It is that we refuse and offer
+> nothing.**
+>
+> **Proposed behaviour.** The refusal names what to do next and offers the concrete alternative §44's
+> `alternativesFor()` already computes. For a charity marathoner who cannot switch race, the honest
+> alternative is the base-build — which is P-16 and does not exist yet, so **for October the action
+> is a stated route, not a generated plan.**
+>
+> **Data and engine impact.** **None.** Copy plus the existing alternatives mechanism.
+>
+> **Brand constraints.** ⚠️ **Must not be a modal** (no popups) and must not claim anything the
+> engine does not enforce (hard rule 7). Pattern-setting copy → **RUSS**.
+>
+> **Acceptance criteria.** No refusal path terminates without a named next action · walked on device
+> before the codes go out · the alternative offered is one the engine can actually produce today.
+>
+> **Size.** **S.** **Free/Pro.** FREE — it is the door. **Backlog.** **NEW**, splits from the on-ramp.
+
+> 🔲 **P-16 — BASE-BUILD ON-RAMP. Build behind a flag, measure, return to the board.** *(Coaching Board 2026-09-20: CORRECT WITH AMENDMENT as a SHAPE, **not approved to ship**. SLT: build, **not for October**.)*
+>
+> **The finding.** §111 refuses the sub-12 km/week marathoner and **names a base-building plan as
+> the remedy**. §57 makes that remedy structurally impossible: `foundationBlock.ts:357` is
+> `Math.min(baseline × 1.1^i, baseline × 1.10)` — **every foundation week is `baseline × 1.10`, flat
+> from week 2, at any length.** Two principles in deadlock, unseen because each sitting was convened
+> on its own question.
+>
+> **Measured.** Ramping at §2's own rate with §3's deload cadence: cwk 8 → 18 km/wk in **11 weeks**,
+> leaving **18 weeks** of marathon plan (above §44's warn=16), **§111 ratio 2.61** against 4.0, and
+> the **acute step into week 1 goes +50% → 0%**.
+>
+> **Why the §52 blocking chain does NOT apply.** Candidate A's 884 violations came from shrinking
+> **main-plan** weeks. A pre-plan block does not — verified at four sites in `invariants.ts` (§2's
+> ramp skips foundation `:3393`; week 1 is the first non-foundation week `:2511–2513`; delivered peak
+> excludes it `:2660`; §1's denominator excludes it, CB-FOUNDATION-DENOM-01). And
+> `FOUNDATION_LONG_RUN_MAX_PCT = 35` is **already tighter than §52's 60% bound.**
+>
+> **Six binding amendments.** §2's rate not §57's *(Willy)* · **per-run step governed under §2
+> Amendment 2** *(Willy — at 8 km/wk over 4 days that is 2 km a run, at 18 it is 4.5; the per-run
+> doubling is the load event)* · lower bound where the ramp leaves **≥16 weeks** *(McMillan, §44's
+> ratified threshold)* · **carries the fuelling note** *(Sims — "a silent ramp is not a fuelled
+> ramp")* · **labelled pre-plan**, with the missed-weeks degradation path specified before build
+> *(McMillan)* · **all easy, no quality** *(Seiler)*.
+>
+> **Run-walk is NOT scoped.** Willy: a runner at 8 km/wk over 4 days is already running 2 km at a
+> time, and run-walk is for someone who cannot — **below the lower bound anyway. Do not build it to
+> copy a competitor.**
+>
+> 🔴 **Chair's gate.** Build behind a flag, generate the cohort, run **`measure:fitness` and the
+> property sweep**, bring the numbers back. The 09-19 record is the standing reminder that a
+> hand-rolled grid showed 0 violations where the sweep showed 884.
+>
+> 🔴 **SLT: not for October.** Traynor's asymmetry — the downside is not churn, it is **shipping
+> unmeasured prescription to ~500 first-time marathoners from a charity partner**, where one injury
+> story ends a £27,965 relationship and the first referral channel, against a few weeks of earlier
+> plans. ⚠️ **Set a date on this or it becomes another item §111 names and nobody builds.**
+>
+> **Artifacts when the gate clears.** New principle § (distinct from §57) · `BASE_BUILD_ONRAMP_*` in
+> `GENERATION_CONFIG` ⚠️ **not in `foundationBlock.ts`, not in a route** — §106 and
+> `MARATHON-VOLUME-GATE-01` are both on record as the same defect · invariants for the per-week and
+> per-run steps. ⚠️ **The 0% acute step is NOT mechanically checkable** — it compares a plan to an
+> input outside it.
+>
+> ⚠️ **Risk, knowingly taken:** `invariants.ts:820–825` records that the foundation block has broken
+> server-side invariants **three times**. A fourth block class walks into that history.
+>
+> **Size.** **L.** **Free/Pro.** **FREE** — it is the door.
+> **Backlog.** **NEW.** Closes the remedy `S111-SUBFLOOR-VOLUME-01` escalated and §111 named.
+
+> 🔴 **P-17 — RED-S / ENERGY AVAILABILITY IS AN UNCOVERED HARM. Filed as a SAFETY item, not a feature.** *(SLT 2026-09-20, splitting the Coaching Board's "Sims pattern" escalation.)*
+>
+> **The board escalated a pattern: three Sims asks have died this year on data we do not collect.
+> The SLT split it, and the split is the finding.** Hutchinson, wearing the SLT hat: *"They did not
+> die of the same cause, and bundling them is an analytical error."*
+>
+> | Ask | Status | Why |
+> |---|---|---|
+> | Cycle periodisation (ENGINE-03 / CA-05) | **stays blocked** | **Contested science** *and* missing data. Hutchinson's scepticism recorded alongside Sims's position, unsynthesised, per ADR-017. |
+> | `INPUT-SEX-01` | **stays parked** | No formula we hold reads it. **An honest null is not a gap.** |
+> | **RED-S / energy availability** | 🔴 **REAL** | **Not contested at all.** Low energy availability in young female endurance athletes is as settled as this field gets, and **we cannot see it.** |
+>
+> **Treating them as one pattern let the real one hide inside the two that are fine.**
+>
+> **Why it matters here.** Sims, twice in two sittings: our cohort is predominantly female, 20–29,
+> first-time, and **under-fuelling is its failure mode — it arrives before the bone does.** P-16's
+> 11-week ramp raises total load 125%, slowly enough for intake to track it **only if the block says
+> so.**
+>
+> **What this is NOT.** Not cross-training capture (`P-05c`, vetoed). Not a load-damping feature.
+> **Wood: it does not belong in a backlog next to comparison pages.**
+>
+> **The data question, routed properly.** It needs **volume and frequency**, not modality — and
+> **may be answerable from data we already hold**, which is the first thing to check before
+> proposing any new capture.
+>
+> **Size.** TBD — the scoping question comes first. **Free/Pro.** **FREE. Safety is never gated.**
+> **Backlog.** **NEW.** Cross-references `INPUT-SEX-01` (parked) and ENGINE-03/CA-05 (blocked) as
+> *distinct* items, not siblings.
 
 ---
 

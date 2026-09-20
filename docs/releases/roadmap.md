@@ -475,8 +475,14 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 > called once**) → **P-04** zone compliance → **P-08a** charity-code placement → **P-02** modify-plan
 > sheet (**L, absorbs R20/R21/R22**) → the rest.
 >
-> ⚠️ **Three cannot be SCOPED — not merely approved — until the Coaching Board sits:** the run-walk
-> on-ramp (⓿), cross-training as load (P-05c), intensity as a user control (P-02).
+> ✅ **BOTH BOARDS HAVE NOW SAT (2026-09-20).** Coaching Board: the base-build on-ramp is **CORRECT
+> WITH AMENDMENT as a shape, not approved to ship** (6 amendments, measurement gate) · cross-training
+> capture **INCORRECT as scoped** · a runner-set intensity ratio **VETOED** (§1 counts sessions; at
+> 3–4 days there is no 80/20 to select). SLT: **P-01 BUILD before October** · **P-07 DON'T BUILD**,
+> and `R19` stays parked · **P-13 SPLIT** · copy approved at pattern level · the on-ramp **built but
+> NOT for October**, split into **P-15** (the refusal gains an action — the October deliverable) and
+> **P-16** (flagged and measured) · the Sims "pattern" **split**, with **P-17 RED-S filed as a
+> safety item**. Records in `docs/decisions/`; standing rulings in `docs/canonical/coaching-rulings.md`.
 > ⚠️ **Headline finding:** the screenshots show **Miles's palette is ours** — warm off-white ground,
 > one muted green accent, white cards with a warm shadow. Warm-neutral-plus-green is the category
 > default, not our differentiator. That is the argument for P-01, and it is evidence rather than taste.
