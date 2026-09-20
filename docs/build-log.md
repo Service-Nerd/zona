@@ -11,6 +11,10 @@ it specific, no polish. The content system adds the voice.
 
 ## 2026-09-20 — GTM-CHARITY-07 (with 05/06): the tier rule had a fourth copy, and it was in SQL
 
+*(Covers `GTM-CHARITY-05`, `GTM-CHARITY-06` and `GTM-CHARITY-07`. The first two are code-complete
+and await a production migration apply, so they deliberately carry NO feature-registry row yet —
+see the note at the end.)*
+
 **Dev.** `resolveTier` carries a header comment explaining that the order
 admin → subscription → grant → trial → free once lived in three places and drifted, so it now lives
 in one. There was a fourth. `admin_user_tiers`, a Supabase view, restated the same order in a SQL
@@ -53,6 +57,13 @@ to a document beside it.
 **Open and not mine:** the migration cannot be applied from here — deploying to production is
 blocked, correctly. Both view bodies were validated read-only against production first, so the SQL
 is known to run.
+
+⚠️ **`GTM-CHARITY-05` and `GTM-CHARITY-06` get NO feature-registry row until that apply happens,
+and that is deliberate.** The registry answers "does this exist?" — a row for a view that is not
+in the database would answer it wrongly, and `ship-record-check.py` would then read the item as
+recorded and stop asking. They sit 🟡 in the backlog with the apply named as the remaining step,
+and the unapplied migration also trips the session-start warning every session until it lands.
+Two reminders, no false record. `GTM-CHARITY-07` shipped in code alone and has its row.
 
 ## 2026-09-20 — S24-FLOOR-REACHABILITY-01 and FITNESS-BUCKET-SAMPLE-01: I filed the wrong diagnosis, and widening the sample proved it
 
