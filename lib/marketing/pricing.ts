@@ -14,12 +14,48 @@
 
 import type { GatedFeature } from '@/lib/plan/featureGates'
 
+/**
+ * PRICING-ROW-TRUTH-01 (Traynor, SLT 2026-09-20) — HOW A ROW'S CLAIM IS BACKED.
+ *
+ * `pricing.test.ts` proves every paid gate has a ROW. It cannot prove the row
+ * DESCRIBES WHAT THE PRODUCT DOES, and it passed throughout the period
+ * `TT-PRICING-CLAIM-01`'s claim was false on 58% of plans. **The guard held
+ * while the claim rotted.** Traynor: *"We found this one by accident. There
+ * are others."* There were: building this turned up `rule_engine_regeneration`
+ * claiming *"No limit."* against a live ten-per-hour cap on every tier.
+ *
+ * ⚠️ "IS THIS SENTENCE TRUE OF THE PRODUCT" IS NOT DECIDABLE BY A TEST, and
+ * pretending otherwise would be worse than nothing here — a green tick with
+ * nothing behind it is this repo's most repeated failure, and in this exact
+ * place a green tick is what allowed the rot. So this does not claim to
+ * evaluate truth. It does three smaller things that are real:
+ *
+ *   1. every row must DECLARE which kind of claim it is, so a new row cannot
+ *      be added without someone deciding;
+ *   2. `mechanical` rows are actually EXECUTED against the product in
+ *      `pricingRowTruth.test.ts`;
+ *   3. `reviewed` rows are PINNED TO THEIR TEXT — change the sentence without
+ *      changing the review date and the build fails.
+ *
+ * ⚠️ Deliberately NOT an expiry date on reviews. A check that fires on correct
+ * work every ninety days gets switched off, which this repo has recorded as
+ * equivalent to having no check. It fires on an EDIT, which is the moment a
+ * claim actually changes.
+ */
+export type RowEvidence =
+  /** A claim the product can be asked about directly. Predicate lives in the test. */
+  | { kind: 'mechanical' }
+  /** A claim only a human can judge. Pinned to `detail` as written on `on`. */
+  | { kind: 'reviewed'; on: string; by: string }
+
 export interface TierFeature {
   /** The gate this row describes, where one exists. Used by the drift test. */
   gate?: GatedFeature
   name: string
   /** One sentence on what it does FOR THE RUNNER. Not a feature name repeated. */
   detail: string
+  /** How this row's claim is backed. Required — see RowEvidence. */
+  evidence: RowEvidence
 }
 
 /** Free forever, no account age limit. */
@@ -28,26 +64,41 @@ export const FREE_FEATURES: TierFeature[] = [
     gate: 'generic_plan_templates',
     name: '5K, 10K and half marathon plans',
     detail: 'Built by the same engine, for your race date and the days you can actually run.',
+    evidence: { kind: 'mechanical' },
   },
   {
     gate: 'plan_view',
     name: 'The whole plan, every week',
     detail: 'Nothing is hidden behind a blur or a teaser. You can read the lot.',
+    evidence: { kind: 'reviewed', on: '2026-09-20', by: 'architect' },
   },
   {
     gate: 'rule_engine_regeneration',
     name: 'Rebuild it whenever you like',
-    detail: 'Change your race or your week and generate again. No limit.',
+    // PRICING-ROW-TRUTH-01 (2026-09-20) — this read "No limit." and that was
+    // FALSE on every tier. `app/api/generate-plan/route.ts` calls
+    // `guardAiRequest(req, user.id, 'generate-plan')` before the tier branch,
+    // and `AI_ROUTE_LIMITS['generate-plan']` is `HEAVY_LIMIT` — ten per hour.
+    // No real runner regenerates eleven plans in an hour, which is exactly why
+    // nobody noticed: the claim is harmless in practice and absolute in words,
+    // and an absolute claim that is false is the same defect as
+    // TT-PRICING-CLAIM-01. Found on the FIRST row checked when building the
+    // row-truth guard. The limiter is a security control and stays; the
+    // sentence changes.
+    detail: 'Change your race or your week and generate again, as often as you need.',
+    evidence: { kind: 'mechanical' },
   },
   {
     gate: 'manual_session_completion',
     name: 'Log sessions by hand',
     detail: 'No watch and no Strava needed to tick a run off.',
+    evidence: { kind: 'reviewed', on: '2026-09-20', by: 'architect' },
   },
   {
     gate: 'plan_difficulty_band',
     name: 'An honest read on the ask',
     detail: 'How demanding the plan is for you, said plainly before you start it.',
+    evidence: { kind: 'reviewed', on: '2026-09-20', by: 'architect' },
   },
 ]
 
@@ -57,26 +108,31 @@ export const PAID_FEATURES: TierFeature[] = [
     gate: 'activity_intelligence',
     name: 'Every run read back to you',
     detail: 'Whether you actually held the zone, what your heart rate did, and the weekly score for how disciplined the week was.',
+    evidence: { kind: 'reviewed', on: '2026-09-20', by: 'architect' },
   },
   {
     gate: 'dynamic_reshape_r20',
     name: 'A plan that moves when life does',
     detail: 'Miss a week and it reshapes around what you did, instead of leaving you to catch up on a week that has gone.',
+    evidence: { kind: 'reviewed', on: '2026-09-20', by: 'architect' },
   },
   {
     gate: 'ai_coach_notes_new',
     name: 'Coaching in your own context',
     detail: 'Notes written for the session in front of you, not a library article about tempo runs.',
+    evidence: { kind: 'reviewed', on: '2026-09-20', by: 'architect' },
   },
   {
     gate: 'ultra_plan_generation',
     name: 'Marathon and ultra plans',
     detail: 'Marathon, 50K and 100K. The distances where getting the build wrong costs you the start line.',
+    evidence: { kind: 'mechanical' },
   },
   {
     gate: 'post_run_reframe',
     name: 'A second read on a bad run',
     detail: 'Tell it how the run felt and get an honest reframe, or a warning if the pattern says back off.',
+    evidence: { kind: 'reviewed', on: '2026-09-20', by: 'architect' },
   },
   {
     gate: 'race_time_estimates',
@@ -99,16 +155,19 @@ export const PAID_FEATURES: TierFeature[] = [
     // estimate. Filed separately. Do not pre-announce it in this string.
     name: 'What you are actually on for',
     detail: 'A projected finish time. No vanity numbers.',
+    evidence: { kind: 'reviewed', on: '2026-09-20', by: 'SLT' },
   },
   {
     gate: 'confidence_score',
     name: 'How much to trust the plan',
     detail: 'The engine tells you how confident it is, and why, rather than pretending it is certain.',
+    evidence: { kind: 'reviewed', on: '2026-09-20', by: 'SLT' },
   },
   {
     gate: 'maintenance_coaching',
     name: 'What to do after the race',
     detail: 'A maintenance block so the fitness you built does not quietly leak away.',
+    evidence: { kind: 'mechanical' },
   },
 ]
 

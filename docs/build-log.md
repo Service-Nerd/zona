@@ -11,6 +11,44 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — PRICING-ROW-TRUTH-01: the first row I checked was lying
+
+**Dev.** We had a test proving every paid feature has a row on the pricing page. It passed for the
+entire period one of those rows was false on 58% of plans. The guard held while the claim rotted,
+which is a specific and nasty failure: the green tick is *why* nobody looked.
+
+Traynor at the SLT: *"We found this one by accident. There are others."* There were. Writing the
+first predicate, against the row that says **"No limit."**, took about four minutes to disprove:
+`app/api/generate-plan/route.ts` calls `guardAiRequest` *before* the tier branch, and
+`generate-plan` is capped at ten per hour — on every tier, free included.
+
+**Why nobody noticed, and why it still matters.** No runner regenerates eleven plans in an hour, so
+the claim is harmless in practice. It is also absolute, and absolutes read as confidence. That is
+the whole class: the words most likely to be false are the ones least likely to be questioned,
+because they sound like someone checked.
+
+**AI-building — the interesting constraint.** The filing explicitly said *do not ship a check that
+merely looks like one*, and it was right: "is this sentence true of the product" is not decidable
+by a test, and faking it here would have recreated the exact failure, a green tick with nothing
+behind it. So the guard does three smaller honest things instead of one dishonest big one. Every
+row must **declare** whether its claim is mechanical or human-judged. Mechanical rows are actually
+**executed** against `PLAN_SIGNATURES`, `AI_ROUTE_LIMITS` and `FEATURE_GATES`. Human-judged rows
+are **pinned to their exact sentence**, so editing a claim without moving the review date fails.
+
+I deliberately did not add a review expiry. A check that fires on correct work every ninety days
+gets switched off, and this repo has recorded that as equivalent to having no check at all. It
+fires on an edit — the moment the claim actually changes.
+
+**The honest bit.** Nine of the thirteen rows are `reviewed`, which means a human judged them once
+and the machine only guarantees nobody quietly edits them. That is a real limit and I would rather
+write it down than let the new green tick do what the old one did.
+
+**Also closed today: `TT-PROJECTION-PROVENANCE-01`, which was already built.** The route already
+returns a `source` field, the card already renders it, the wizard state already says *"Estimated
+from your wizard answers, not your running"*, and the figures on that state are already coarse
+because — in the route's own comment — *"an unmeasured estimate cannot support seconds."* It was
+filed off the back of an SLT discussion without anyone opening the file, me included. Third stale
+item today, and the second I filed myself.
 
 ## 2026-09-20 — SEC-15: the filing said eleven of twelve, and it was ten of twelve
 

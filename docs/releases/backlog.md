@@ -3186,7 +3186,9 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > **Traynor blocked the cheap fix** and the block should be recorded: do NOT quietly soften the copy so the derivation qualifies. That is writing the marketing down to meet the product. Either the majority path delivers something closer to the claim, or the claim names the states it applies to.
 
 
-> 🔴 **TT-PROJECTION-PROVENANCE-01 — the projection does not say where it came from, and that is the real defect `TT-PRICING-CLAIM-01` was a symptom of.** *(P1, Hutchinson at the 2026-09-20 SLT, filed 2026-09-20.)*
+> ✅ **TT-PROJECTION-PROVENANCE-01 — the projection does not say where it came from, and that is the real defect `TT-PRICING-CLAIM-01` was a symptom of.** *(P1, Hutchinson at the 2026-09-20 SLT, filed 2026-09-20.)*
+>
+> ✅ **CLOSED 2026-09-20 — ALREADY BUILT. Filed from the SLT discussion without anyone reading the code, including me.** `/api/race-times` already returns a `source` field (`benchmark | strava | wizard | none`) and `RaceTimesCard` already renders it. Every element Hutchinson asked for exists: the wizard state's label is **"Estimated from your wizard answers, not your running"**; the confidence chip is visually differentiated (moss for high, muted grey for low); and the figures are deliberately **coarse** on that state, with the route's own comment saying *"an unmeasured estimate cannot support seconds"* — so the *"finish time to the minute"* the filing objected to cannot be rendered. There is also a CTA to replace the guess with a measurement (`RACE-PROJ-LEAD-01`). ⚠️ **`projectRaceTimes` has exactly ONE consumer**, traced rather than assumed, so there is no second surface showing a projection without provenance. ⚠️ **This is the documented "check provenance before filing" failure** — three of three "new" items on 2026-09-15 were already in the backlog, and this is the same mistake with a board member's name attached to it.
 >
 > We render a finish-time projection derived from **two wizard answers** in the same typeface, with
 > the same apparent confidence, as one derived from a **measured benchmark**. On the live database
@@ -3205,7 +3207,11 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > can't show improvement"*), so "updated as you train" cannot become true for it by adding
 > provenance. The two halves are separable and the provenance half is the one worth building.
 
-> 🔲 **PRICING-ROW-TRUTH-01 — nothing checks whether any row on `/pricing` is TRUE.** *(P2, Traynor at the 2026-09-20 SLT, filed 2026-09-20. **The generalisation, and the more valuable half of `TT-PRICING-CLAIM-01`.**)*
+> ✅ **PRICING-ROW-TRUTH-01 — nothing checks whether any row on `/pricing` is TRUE.** *(P2, Traynor at the 2026-09-20 SLT, filed 2026-09-20. **The generalisation, and the more valuable half of `TT-PRICING-CLAIM-01`.**)*
+>
+> ✅ **SHIPPED 2026-09-20 — and it found a live false claim on the FIRST row checked.** ⚠️ **`rule_engine_regeneration` said "No limit." and that was FALSE on every tier including free:** `app/api/generate-plan/route.ts` calls `guardAiRequest` *before* the tier branch and `AI_ROUTE_LIMITS['generate-plan']` is `HEAVY_LIMIT`, **ten per hour**. Harmless in practice (no runner regenerates eleven plans in an hour, which is exactly why nobody noticed), absolute in words, and false. The limiter is a security control and stays; the sentence changed.
+>
+> **The guard honours the filing's warning and does NOT pretend to evaluate truth.** Each row now declares `evidence`: `mechanical` rows are **executed against the product** (`pricingRowTruth.test.ts` — free distances against `PLAN_SIGNATURES.free_tier_available`, the absolute-claim check against `AI_ROUTE_LIMITS`, the ultra distances existing AND being paid, `maintenance_coaching` really being in `PAID_ONLY_ONGOING`); `reviewed` rows are **pinned to their exact sentence**, so editing a claim without moving the review date fails the build. A fifth check bans absolutes outright, because the defect that prompted this was a WORD, not a wrong feature. ⚠️ **Deliberately NOT an expiry date on reviews** — a check that fires on correct work every ninety days gets switched off. It fires on an EDIT, which is when a claim actually changes. ⚠️ **What it still cannot do:** decide whether a sentence is true. Nine of the thirteen rows are `reviewed`, which means a human judged them once. **Falsified against the real historical defect** — reinstating "No limit." reddens two assertions.
 >
 > `pricing.test.ts` proves every `PAID_ONLY_ONGOING` gate has a **row** on the pricing page, or an
 > argued omission. It cannot check that the row **describes what the product does**, and it passed
