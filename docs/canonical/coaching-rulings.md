@@ -1,0 +1,72 @@
+# Coaching ruling register — what has been decided, and what may not be re-raised
+
+**Why this file exists.** The founder asked, repeatedly and with cause, why the
+board gives different answers to the same question. The answer is not that the
+board is inconsistent. It is that **each sitting was convened from the plans
+rather than from the prior rulings**, so items the board had already closed came
+back as new findings.
+
+Measured on 2026-09-20, across one day of sittings:
+
+| item | ruled | what happened next |
+|---|---|---|
+| **M3** (knee marathon, "the plan doesn't warn them") | **WITHDRAWN 2026-09-19** — the premise was false, the note says it | **re-presented 2026-09-20 as "the one real finding"** |
+| **E5** (3 days + 30-min cap) | **CLOSED 2026-09-19** — CORRECT AS IS, McMillan's dissent recorded | **re-presented 2026-09-20 as "would not hand over"** |
+| the 2026-09-20 round's `review.md` | — | **still read "REVIEW PENDING"**: the sitting's ruling was never written back, so the next sitting had nothing to read |
+
+**The third row is the cause of the first two.** `coaching-review-round.ts`
+writes a stub and says *"fill this file with the ruling"*. Nobody filled it. A
+process whose memory depends on someone remembering to write it down has no
+memory.
+
+---
+
+## The protocol, from 2026-09-20
+
+1. **Read this register before the sitting.** Not the plans first — the register.
+2. **Any finding is checked against it before presentation.** A finding matching
+   a CLOSED or WITHDRAWN row is either not raised, or raised *explicitly as a
+   re-open with new evidence*, naming what is new.
+3. **The sitting's ruling is written back** into the round's `review.md` and
+   into this register, in the same session. Enforced by `audit-docs.sh`.
+4. **A plan's verdict is mechanical first.** "Proud to hand over" =
+   zero error-severity invariant violations **and** zero unreconciled coach
+   objections (`planQuality`) **and** every constraint declared. The board rules
+   on what that test cannot see, not on re-scoring what it can.
+
+---
+
+## CLOSED — do not re-raise without new evidence, and say what is new
+
+| ref | ruling | date | the number behind it |
+|---|---|---|---|
+| **M3 honesty** | **WITHDRAWN** — premise false | 09-19 | `long_run_shortfall_note` already says *"take the walk breaks early rather than late"* |
+| **E5** (3 days + 30-min cap) | **CORRECT AS IS**, McMillan dissent recorded | 09-19 | 5% of plans exceed a 70% long-run week, worst 74.1%; §114 took >90% to 0.00%; capping is a measured fixed point |
+| **§111 cap-instead-of-refuse** | **NEGATIVE RESULT** | 09-19 | 100% of refused cases would peak below the credible floor (median 22.4 km vs 52.8). Door at 13.2 km/wk is arithmetically exact |
+| **beginner finish-goal quality** | **CORRECT AS IS**, unanimous | 09-19 | §110 Am. 2. Hutchinson's evidence is explicitly about *time-goal* races |
+| **load-aware difficulty band** | **INCORRECT — VETOED** | 09-19 | §44 point 3; Willy authored the constraint |
+| **`S53` quality repetition** | **DISSOLVED** | 09-19 | the unit was rows; the coaching unit is the category, median 4.5 exposures |
+| **week-1 engine caps** | **SIX built and rejected** | 09-19/20 | four made `BINGE-WEEK` 8–12× worse; two took the marathon out of target. Willy: *"stop proposing caps"* |
+| **`WEEK1-LEAP` thresholds** | **FROZEN** | 09-20 | relaxed three times in one day; any further change needs adherence or injury data, not another corpus measurement |
+
+## OPEN — with the measurement, ready for a sitting
+
+| ref | question | the number |
+|---|---|---|
+| `MARA-LR-LOWBASE-01` | should the very-low-volume marathoner be refused rather than given a short-long-run plan? | `LONG-RUN-SHORT` 8 km/wk **100%**, 15 km/wk 70%, 0% above 35. An 8 km/wk knee-history runner gets a 16.5 km peak long run for 42.2 km. ⚠️ They are admitted *because* the injury cap lowers their peak, which makes §111's ratio pass |
+| `ULTRA-LR-ADEQUACY-01` | what is the right long-run bar for 50K/100K? | none exists since `ULTRA-LR-BAR-01`; §24e's back-to-backs make a single longest run the wrong unit |
+| `S111-SUBFLOOR-VOLUME-01` | build a base-building plan type? | blocked on the charity's answer; runbook drafted, unsent |
+| `RACE-KEY-TWO-OWNERS-01` | collapse two `raceDistanceKey` ladders? | 88 diverging values, currently unreachable (the wizard's six distances all agree) |
+
+## Standing reservations — recorded, not findings
+
+- **Willy on M5** (masters 58, +94% build): compliant, top of his range, first cell he would look at if injury reports arrive. Recorded three times.
+- **Sims on M5 and M1**: bone health and low energy availability for peri-menopausal and young female runners on long slow blocks. Recorded three times.
+- **Seiler on beginner monotony**: correct distribution, no objection, but the stimulus varies little. Not a defect.
+
+## What no sitting can answer
+
+**There is no adherence or dropout data.** One analytics event exists in the
+product; no charity code has ever been redeemed. Every "proud to hand over" is a
+coaching judgement with a number attached, never an outcome. **And nothing has
+run on a device.**

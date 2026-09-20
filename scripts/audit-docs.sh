@@ -64,6 +64,21 @@ for c in docs/contracts/components/*.md; do
 done
 [ "$kfail" = 0 ] && say "  ok"
 
+say "── coaching rounds: ruling written back ──"
+# A round whose review.md still says REVIEW PENDING is a sitting whose outcome
+# was never recorded -- which is exactly how the board came to re-litigate two
+# items it had already closed (see docs/canonical/coaching-rulings.md).
+pending=0
+for f in coaching-review/*/review.md; do
+  [ -e "$f" ] || continue
+  # Anchored to the STUB MARKER at line start, not any mention of the phrase:
+  # the first cut matched a round whose write-up explains the phrase, which is
+  # a guard reading prose instead of a marker.
+  if grep -qE '^\*\*REVIEW PENDING\*\*' "$f"; then say "  PENDING $f -- sitting outcome never written back"; pending=1; fail=1; fi
+done
+[ "$pending" = "0" ] && say "  ok"
+
+say ""
 say "── state blocks name the last SHIP ──"
 last=$(git log --pretty=format:'%h %s' | grep -E '^[a-f0-9]+ (feat|fix)\(' | head -1 | cut -d' ' -f1)
 mem="$HOME/.claude/projects/$(pwd | tr '/' '-')/memory/MEMORY.md"

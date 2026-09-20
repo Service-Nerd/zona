@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-20 — COACHING-RULINGS-REGISTER-01 · the board was not changing its mind
+**Shipped:** a standing register of coaching rulings, a four-step sitting protocol, and a gate that fails the build when a review round's outcome is never written down.
+
+**Dev learning:** The founder asked several times, with increasing patience, why the coaching board gave a different answer every time it was shown the same plans. I had been explaining it as different samples and a changing engine, both of which were true and neither of which was the cause. The cause is that the script which generates a review round writes a stub saying "fill this file with the ruling", and nobody ever filled it. So every sitting was convened by looking at the plans, with no record of what had already been decided about them. Two items came back inside twenty-four hours: one the board had explicitly withdrawn because my premise was false, and one it had explicitly closed. I presented both as new findings.
+
+**A process whose memory depends on someone remembering to write it down has no memory.** The fix is a register read before the plans, a rule that any finding is checked against it before it is spoken, and a build failure if a round's ruling is never recorded. The gate found a second round that had been sitting unrecorded for five days, whose ruling existed in another folder and which simply never pointed at it.
+
+**The honest bit:** the first version of the gate searched for the phrase "REVIEW PENDING" anywhere in the file, so it flagged the document I had just written explaining what that phrase meant. A guard reading prose instead of a marker, which is the thing I keep catching in the engine and had just done myself. Anchored it to the line.
+
+**And the point of all of it:** the first sitting run under the protocol produced twenty-four of twenty-seven proud to hand over and, for the first time today, no new issues. Every live objection resolved to something already ruled or already filed. That is not because the plans improved in the last hour. It is because the sitting could finally see what the previous sittings had decided.
+
+---
+
 ## 2026-09-20 — HM-WEEK1-PERRUN-01 · choosing the worse number on purpose
 **Shipped:** the weekly ratio becomes a screen and the per-run step the confirmation. Half marathon 88.2% to 96.2%; every distance now at or above 90%.
 
