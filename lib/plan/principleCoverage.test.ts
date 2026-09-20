@@ -225,7 +225,21 @@ describe('principle coverage — every rule is enforced, tested, exempt, or open
     // push sites, the other still cited §92, the test stayed green, and for a
     // minute the check looked dead. It was the probe that was wrong. Falsify a
     // set-valued check by removing EVERY contributor, not the first one.
-    const invSrc = readFileSync(join(process.cwd(), 'lib', 'plan', 'invariants.ts'), 'utf8')
+    // ⚠️ EVERY FILE THAT DECLARES AN INVARIANT, not just `invariants.ts`.
+    //
+    // §116's three codes live in `baseBuildValidate.ts` — a separate validator,
+    // on the `validateMaintenanceBlock` precedent, because a base-build plan is
+    // a different plan kind. Reading only `invariants.ts` made them invisible
+    // to this check the moment the file split happened, and a principle
+    // claiming enforcement by an invariant this parser cannot see is **exactly
+    // the §92 failure** this test was written for: it read as enforced for
+    // eight days while checking nothing.
+    //
+    // Add the file here when a new validator gets its own module.
+    const INVARIANT_SOURCES = ['invariants.ts', 'baseBuildValidate.ts']
+    const invSrc = INVARIANT_SOURCES
+      .map(f => readFileSync(join(process.cwd(), 'lib', 'plan', f), 'utf8'))
+      .join('\n')
     const backRefs = new Map<string, Set<string>>()
     // `Array.from` around every matchAll: this file's tsc target does not allow
     // iterating a RegExpStringIterator directly, and `npx tsc --noEmit` at the

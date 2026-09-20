@@ -1,6 +1,8 @@
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { validatePlan, validateMaintenanceBlock, INVARIANT_CODES, type Violation } from '@/lib/plan/invariants'
+import { validateBaseBuildBlock } from '@/lib/plan/baseBuildValidate'
+import { assessOnRamp, generateBaseBuildPlan } from '@/lib/plan/baseBuildOnRamp'
 import { generateMaintenanceBlock } from '@/lib/plan/maintenance'
 import { cohortGrid, targetedGrid, COHORT_PLAN_START } from '@/lib/plan/cohortGrid'
 import { isLongRun } from '@/lib/plan/sessionRole'
@@ -499,49 +501,11 @@ export const MUTATIONS: Mutation[] = [
     }
   } },
 
-  // §116 / INV-PLAN-ONRAMP-CURVE-CLIMBS — the corpus contains NO foundation
-  // weeks at all, so both arms SYNTHESISE the block, exactly as
-  // `foundation block in front of a plan below its cap` above already does.
-  //
-  // ⚠️ The first cut of these read `p.weeks.filter(phase === 'foundation')` and
-  // bailed on an empty result, so they were inert and the liveness gate said
-  // so. **A mutation that cannot build the shape it breaks is not a mutation** —
-  // which is the same lesson the corpus-vs-rules debt keeps teaching.
-  //
-  // ⚠️ ARM 1 IS THE ORIGINAL DEFECT, REPRODUCED ON PURPOSE. §57 sized every
-  // foundation week as `min(baseline x 1.1^i, baseline x 1.10)` — FLAT from
-  // week 2 at any length — while §111 named a base-building plan as its
-  // remedy. Flattening a block and labelling it a ramp IS that state.
-  { name: 'label a FLAT foundation block as a base-build on-ramp', apply: p => {
-    const weeks = p.weeks as unknown as Array<Record<string, unknown>>
-    const first = weeks[0]
-    if (!first) return
-    const tmpl = JSON.parse(JSON.stringify(first))
-    for (let i = 0; i < 3; i++) {
-      weeks.unshift({ ...JSON.parse(JSON.stringify(tmpl)), n: -i, phase: 'foundation', type: 'normal', weekly_km: 12 })
-    }
-    ;(p.meta as unknown as Poke).base_build_onramp = true
-  } },
-
-  // Arm 2: a ramp that climbs correctly but hands over MID-DIP. §111 re-gates
-  // on the volume the runner finishes at, so this gates them on a number they
-  // never built to.
-  { name: 'end a base-build on-ramp on a deload', apply: p => {
-    const weeks = p.weeks as unknown as Array<Record<string, unknown>>
-    const first = weeks[0]
-    if (!first) return
-    const tmpl = JSON.parse(JSON.stringify(first))
-    const vols = [10, 11, 12, 8]
-    for (let i = vols.length - 1; i >= 0; i--) {
-      weeks.unshift({
-        ...JSON.parse(JSON.stringify(tmpl)),
-        n: -(vols.length - 1 - i), phase: 'foundation',
-        type: i === vols.length - 1 ? 'deload' : 'normal',
-        weekly_km: vols[i],
-      })
-    }
-    ;(p.meta as unknown as Poke).base_build_onramp = true
-  } },
+  // §116's three invariants are NOT probed here. They belong to
+  // `validateBaseBuildBlock`, not `validatePlan`, and a base-build plan's weeks
+  // are skipped by the main validator by design. They get their own probe
+  // below, exactly as `validateMaintenanceBlock`'s do (MAINT-LIVENESS-01 — the
+  // harness was calling the wrong validator, and that took months to notice).
 
   // §40b / INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED — neither grid ever sets
   // `terrain`, but the rule reads `plan.meta.terrain`, which IS mutable. The
@@ -991,6 +955,53 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
         const w = JSON.parse(JSON.stringify(weeks)) as Week[]
         try { m.apply(w) } catch { continue }
         check(w, m.name)
+      }
+    }
+  }
+
+  // ── §116 base-build on-ramp ────────────────────────────────────────────────
+  //
+  // Its own validator, so its own probe. The corpus cannot contain one of these
+  // plans (the flag is off and the shape only exists behind it), so the block is
+  // constructed here and then deliberately broken — one mutation per amendment
+  // the validator claims to enforce.
+  {
+    const input = {
+      race_distance_km: 42.195, race_date: '2027-04-25', days_available: 4,
+      goal: 'finish', fitness_level: 'beginner', current_weekly_km: 8,
+      longest_recent_run_km: 3, age: 32, injuries: [], recent_quality_training: 'none',
+      training_age: '<6mo',
+    } as unknown as GeneratorInput
+    const a = assessOnRamp(input, 18, 29)
+    if (a.outcome === 'offered') {
+      const base = generateBaseBuildPlan(input, '2026-10-05', a).weeks
+      const checkBB = (ws: Week[], why: string) => {
+        for (const v of validateBaseBuildBlock(ws, a.startKm)) {
+          if (!woken.has(v.code)) woken.set(v.code, why)
+        }
+      }
+      const BB_MUTATIONS: { name: string; apply: (w: Week[]) => void }[] = [
+        { name: 'bb: flatten the ramp', apply: ws => {
+            for (const w of ws) (w as unknown as Poke).weekly_km = ws[0].weekly_km
+          } },
+        { name: 'bb: end on a deload', apply: ws => {
+            (ws[ws.length - 1] as unknown as Poke).type = 'deload'
+          } },
+        { name: 'bb: prescribe a tempo', apply: ws => {
+            (ws[1].sessions as Record<string, unknown>).thu =
+              { type: 'tempo', label: 'Tempo', distance_km: 6, duration_mins: 30 }
+          } },
+        { name: 'bb: double a single run', apply: ws => {
+            for (const s of Object.values(ws[2].sessions)) {
+              if (s && s.type !== 'rest') { (s as unknown as Poke).distance_km = 40; break }
+            }
+          } },
+      ]
+      checkBB(base, 'fires on a valid base-build block')
+      for (const m of BB_MUTATIONS) {
+        const w = JSON.parse(JSON.stringify(base)) as Week[]
+        try { m.apply(w) } catch { continue }
+        checkBB(w, m.name)
       }
     }
   }

@@ -1,4 +1,5 @@
-import type { GeneratorInput } from '@/types/plan'
+import type { GeneratorInput, Plan, Week } from '@/types/plan'
+import { generateFoundationBlock } from './foundationBlock'
 import { GENERATION_CONFIG } from './generationConfig'
 import { effectiveStartKm } from './startVolume'
 
@@ -187,4 +188,71 @@ export function onRampOfferFor(
     start_km: a.startKm,
     target_km: a.targetKm,
   }
+}
+
+
+// ─── The plan itself ──────────────────────────────────────────────────────────
+
+/**
+ * Build the on-ramp as a STANDALONE plan the runner follows to completion.
+ *
+ * ⚠️ BOARD AMENDMENT 8: *"if they never return it must still be a good eleven
+ * weeks."* So this is a plan object in its own right — positive week numbers,
+ * its own `plan_kind`, renderable by every screen — and **not** a block
+ * prepended to a marathon plan that does not exist yet.
+ *
+ * ⚠️ BOARD AMENDMENT 7: it does NOT generate the race plan and does not credit
+ * §111 in advance. The runner finishes this, re-declares their volume, and is
+ * gated on OBSERVED data.
+ *
+ * ⚠️ Week CONSTRUCTION is `generateFoundationBlock`'s under a `ramp` curve —
+ * one owner of "build an easy-only week with a capped long run", two volume
+ * policies. The phase is then restamped `base_build`, because sharing §57's
+ * PHASE would inherit §57's whole invariant surface (see `types/plan.ts`).
+ */
+export function generateBaseBuildPlan(
+  input: GeneratorInput,
+  planStart: string,
+  assessment: OnRampAssessment,
+): Plan {
+  const weeklyKm = onRampCurve(assessment.startKm, assessment.rampWeeks)
+
+  const { weeks: built } = generateFoundationBlock({
+    input,
+    // The block generator dates weeks BACKWARDS from a plan start, so handing
+    // it the start of the race plan would date the ramp into the past. The
+    // ramp's own end is its reference point.
+    planStartDate: addWeeks(planStart, assessment.rampWeeks),
+    today: planStart,
+    curve: 'ramp',
+    rampWeeklyKm: weeklyKm,
+  })
+
+  // Restamp: a standalone plan counts from week 1, and carries its own phase.
+  const weeks: Week[] = built.map((w, i) => ({ ...w, n: i + 1, phase: 'base_build' }))
+
+  return {
+    meta: {
+      ...(input as unknown as Record<string, unknown>),
+      plan_kind: 'base_build',
+      base_build_onramp: true,
+      race_name: 'Base building',
+      // No race date: this plan has no start line, and a countdown against one
+      // would be the plan claiming something it does not deliver.
+      race_date: '',
+      race_distance_km: input.race_distance_km,
+      plan_start: planStart,
+      // What it is FOR, so the handover is legible to the runner and to us.
+      base_build_target_km: assessment.targetKm,
+      base_build_start_km: assessment.startKm,
+      last_updated: new Date().toISOString(),
+    } as unknown as Plan['meta'],
+    weeks,
+  }
+}
+
+function addWeeks(iso: string, n: number): string {
+  const d = new Date(`${iso}T00:00:00Z`)
+  d.setUTCDate(d.getUTCDate() + n * 7)
+  return d.toISOString().split('T')[0]
 }

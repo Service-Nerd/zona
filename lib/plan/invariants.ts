@@ -146,6 +146,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
   'INV-PLAN-FOUNDATION-BLOCK',
   'INV-PLAN-ONRAMP-CURVE-CLIMBS',
+  'INV-PLAN-ONRAMP-ALL-EASY',
+  'INV-PLAN-ONRAMP-PER-RUN-STEP',
   'INV-PLAN-5K10K-LR-PACE-CAP',
   'INV-PLAN-LR-SEGMENT-RECORDED',
   'INV-PLAN-BUILD-LR-SEGMENT-CAP',
@@ -878,6 +880,9 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     // Maintenance weeks are produced by generateMaintenanceBlock (not generateRulePlan)
     // and validated separately by validateMaintenanceBlock. Skip them here.
     if (w.phase === 'maintenance_restoration' || w.phase === 'maintenance_base') continue
+    // §116 — base-build on-ramp weeks are produced by generateBaseBuildPlan and
+    // validated by validateBaseBuildBlock. Same reasoning, same precedent.
+    if (w.phase === 'base_build') continue
     const isRaceWeek = w.type === 'race'
     const sessions = Object.entries(w.sessions) as [Day, Session | undefined][]
     const placedRunning = sessions
@@ -5690,58 +5695,15 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     }
   }
 
-  // INV-PLAN-ONRAMP-CURVE-CLIMBS — a §116 base-build on-ramp must actually BUILD.
+  // INV-PLAN-ONRAMP-CURVE-CLIMBS / -ALL-EASY / -PER-RUN-STEP live in
+  // `baseBuildValidate.ts`, NOT here.
   //
-  // WHY THIS EXISTS AND WHY IT IS NOT §57's CHECK. §111 refuses the sub-12
-  // km/week marathoner and NAMES a base-building plan as the remedy. §57 made
-  // that remedy structurally impossible for a year: every foundation week is
-  // `min(baseline x 1.1^i, baseline x 1.10)`, so from the second week onward
-  // every week is `baseline x 1.10` — FLAT, at any length. Nothing caught it,
-  // because §57's own invariant checks a CEILING (+10%) and a flat block never
-  // breaches a ceiling. **The failure mode of a ramp is the opposite of the
-  // failure mode of a gap-filler, so it needs the opposite bound.**
-  //
-  // Gated on `plan.meta.base_build_onramp` — a §57 block is flat BY DESIGN and
-  // must not be dragged into this.
-  {
-    if (plan.meta.base_build_onramp) {
-      const fw = plan.weeks.filter(w => w.phase === 'foundation')
-      // A deload dips on purpose; the CLIMB is measured between the non-deload
-      // weeks, exactly as the main-plan ramp check treats a bounceback.
-      const build = fw.filter(w => !(w.type === 'deload' || w.badge === 'deload'))
-      if (build.length >= 2) {
-        for (let i = 1; i < build.length; i++) {
-          const prev = build[i - 1], curr = build[i]
-          if (curr.weekly_km <= prev.weekly_km) {
-            violations.push({
-              code: 'INV-PLAN-ONRAMP-CURVE-CLIMBS',
-              principle_ref: 'CoachingPrinciples §116',
-              severity: 'error',
-              week: curr.n,
-              message: `Base-build on-ramp W${curr.n} (${curr.weekly_km}km) does not build on W${prev.n} (${prev.weekly_km}km). A ramp that does not climb is §57's flat block wearing §116's label, which is the exact defect §116 exists to close.`,
-              actual: `${curr.weekly_km}km`,
-              expected: `> ${prev.weekly_km}km`,
-            })
-          }
-        }
-      }
-      // ⚠️ THE HANDOVER MUST NOT BE A DIP. §111 re-gates on the volume the
-      // runner finishes at; handing over mid-deload gates them on a number
-      // they did not build to.
-      const last = fw[fw.length - 1]
-      if (last && (last.type === 'deload' || last.badge === 'deload')) {
-        violations.push({
-          code: 'INV-PLAN-ONRAMP-CURVE-CLIMBS',
-          principle_ref: 'CoachingPrinciples §116',
-          severity: 'error',
-          week: last.n,
-          message: `Base-build on-ramp ends on a DELOAD week (W${last.n}). §111 re-gates on the volume the runner hands over at, so the last week must sit on the build line.`,
-          actual: 'deload',
-          expected: 'a build week',
-        })
-      }
-    }
-  }
+  // ⚠️ I wrote the curve check here first and it was a D-08 duplication within
+  // the hour: a §116 ramp is a STANDALONE plan whose weeks carry
+  // `phase: 'base_build'`, and the loop above skips those by design — so the
+  // copy here was dead the moment the phase was introduced. Same precedent as
+  // `validateMaintenanceBlock`: a different plan kind gets its own validator,
+  // not a branch inside this one.
 
   // INV-PLAN-LR-SEGMENT-RECORDED — a §24b segmented long run must RECORD the
   // pace it prescribes.

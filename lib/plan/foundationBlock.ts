@@ -373,6 +373,16 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
   const maxLongRunByHistory = input.longest_recent_run_km ?? (baseline * 0.5)
 
   const weeks: Week[] = []
+  // §116 — carries the previous ramp week's LONGEST RUN OF ANY KIND, not its
+  // long run, so §45's progression cap binds across the week a long run first
+  // APPEARS.
+  //
+  // ⚠️ Tracking the previous LONG RUN was the first fix and it left two cases
+  // breaching: below `FOUNDATION_MIN_SESSIONS_FOR_LONG_RUN` (4) a week has no
+  // long run at all, so `prevLongRun` was null exactly when the cliff happened
+  // (3.2 km even-split -> 5.4 km long run, +69%). Amendment 2 measures the
+  // per-RUN step, and the runner does not care which session is labelled long.
+  let prevLongestRunKm: number | null = null
   for (let i = 0; i < weekCount; i++) {
     const position = i + 1
     // Volume: W1 = effective baseline, each subsequent week may grow by ≤ +10%.
@@ -401,8 +411,29 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
     // `FOUNDATION_LONG_RUN_MAX_PCT` (35%, already tighter than §52's 60%).
     // Pinning it to `longest_recent_run_km` for eleven weeks would reproduce
     // §57's flatness on the single session that matters most.
-    const longRunKm = curve === 'ramp'
-      ? floor1dp(longRunCap)
+    //
+    // ⚠️ AND IT IS ALSO BOUNDED BY §45's WEEK-ON-WEEK PROGRESSION CAP, which
+    // is the fix for a defect the first end-to-end ramp plan exposed.
+    //
+    // MEASURED: the longest run jumped **4.3 -> 6.7 km in one week (+56%)** on
+    // 4 of 36 generatable ramps. The cause is structural, not arithmetic — a
+    // week below `FOUNDATION_MIN_SESSIONS_FOR_LONG_RUN` (4) has NO long run and
+    // splits evenly, so the week it crosses that threshold a long run appears
+    // at 35% and the per-run step is a cliff. The WEEKLY volume rose its lawful
+    // 10% throughout; the single hardest session rose 56%.
+    //
+    // That is precisely Willy's amendment 2 — *"the per-run doubling is the
+    // load event"*, not the weekly total — and it would have shipped invisibly,
+    // because the weekly cap cannot see a session-count change. Caught only by
+    // generating a plan end to end and validating it, which nobody had done.
+    //
+    // §45's `LONG_RUN_PROGRESSION_CAP_PCT` is EXISTING doctrine, applied here
+    // rather than a new number invented for the ramp.
+    const lrCapByProgression: number = prevLongestRunKm != null
+      ? prevLongestRunKm * (1 + GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100)
+      : Infinity
+    const longRunKm: number = curve === 'ramp'
+      ? floor1dp(Math.min(longRunCap, lrCapByProgression))
       : floor1dp(Math.min(maxLongRunByHistory, longRunCap))
 
     // Week index: count down from -(weekCount-1) to 0
@@ -456,6 +487,17 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
         ? sessionFloorsFor(input.longest_recent_run_km).easy
         : weeklyKm,
     })
+
+    // §116 — what the NEXT week's §45 cap measures against. Read off the built
+    // sessions rather than the intended long run, because a week below the
+    // long-run session threshold has no long run and still has a longest run.
+    if (curve === 'ramp') {
+      const kms = Object.values(sessions)
+        .filter(x => x && x.type !== 'rest' && x.type !== 'cross-train')
+        .map(x => (x as { distance_km?: number | null }).distance_km ?? 0)
+      const longest = kms.length ? Math.max(...kms) : 0
+      if (longest > 0) prevLongestRunKm = longest
+    }
   }
 
   return { weeks, freshReturnActive, effectiveBaselineKm: baseline }

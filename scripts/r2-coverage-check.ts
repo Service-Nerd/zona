@@ -121,8 +121,23 @@ const cases: Case[] = [
 
 function checkRegistryVsSource(): string[] {
   const errors: string[] = []
-  const sourcePath = path.join(__dirname, '..', 'lib', 'plan', 'invariants.ts')
-  const source = fs.readFileSync(sourcePath, 'utf8')
+  // ⚠️ EVERY FILE THAT EMITS AN INVARIANT, not just `invariants.ts`.
+  //
+  // §116's three codes live in `baseBuildValidate.ts` — a separate validator on
+  // the `validateMaintenanceBlock` precedent, because a base-build plan is a
+  // different plan kind and the main validator skips its weeks by design.
+  // Reading one file made them read as "registered but never emitted", which
+  // is the opposite of the truth and would have pushed someone to delete a
+  // working check to get the build green.
+  //
+  // ⚠️ THIS IS THE THIRD PLACE THE FILE SPLIT HAD TO BE TAUGHT (after the
+  // liveness probe and principleCoverage's back-ref parser). Add the file here
+  // when a new validator gets its own module — and note that three separate
+  // greps over `invariants.ts` is itself the duplication to watch.
+  const INVARIANT_SOURCES = ['invariants.ts', 'baseBuildValidate.ts']
+  const source = INVARIANT_SOURCES
+    .map(f => fs.readFileSync(path.join(__dirname, '..', 'lib', 'plan', f), 'utf8'))
+    .join('\n')
   const sourceCodes = new Set<string>()
   const literalRegex = /code:\s*'(INV-[A-Z0-9-]+)'/g
   let m: RegExpExecArray | null

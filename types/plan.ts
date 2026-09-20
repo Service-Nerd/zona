@@ -309,7 +309,20 @@ export interface Week {
   label: string
   theme: string
   type: WeekType
-  phase?: 'base' | 'build' | 'peak' | 'taper' | 'foundation' | 'maintenance_restoration' | 'maintenance_base'
+  // §116 — `base_build` is the STANDALONE on-ramp, and it is deliberately NOT
+  // `foundation`. A §57 foundation block is a gap-filler PREPENDED to a race
+  // plan (n <= 0, validated by the main validator). A §116 ramp is **its own
+  // plan** the runner follows to completion (n >= 1), after which §111 is asked
+  // again on re-declared volume.
+  //
+  // ⚠️ REUSING `foundation` WAS THE OBVIOUS MOVE AND IT IS WRONG. It would
+  // inherit §57's whole invariant surface — the flat +10% cap, the
+  // baseline ceiling, "week 1 is the first non-foundation week" — none of which
+  // describes a ramp. `invariants.ts:820-825` records that the foundation block
+  // has broken server-side invariants THREE times; a fourth block class sharing
+  // its phase would be the fourth. Maintenance already set the precedent: a
+  // different plan kind gets its own phase and its own validator.
+  phase?: 'base' | 'build' | 'peak' | 'taper' | 'foundation' | 'base_build' | 'maintenance_restoration' | 'maintenance_base'
   badge?: 'deload' | 'holiday' | 'race'
   sessions: Partial<Record<'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun', Session>>
   long_run_hrs: number | null
@@ -700,11 +713,12 @@ export interface PlanMeta {
   // INV-PLAN-EARLY-ONSET-GATED.
   early_quality_onset?: boolean
   /**
-   * §116 (P-16) — this plan's `phase: 'foundation'` weeks are a BASE-BUILD
-   * ON-RAMP, not a §57 gap-filler. The two are the same week SHAPE under two
-   * volume policies, and `INV-PLAN-ONRAMP-CURVE-CLIMBS` needs to know which:
-   * §57's block is flat by design and a ramp that stays flat is the defect
-   * §116 exists to close.
+   * §116 (P-16) — this plan IS a base-build on-ramp: a standalone plan whose
+   * weeks carry `phase: 'base_build'`, which the runner follows to completion
+   * before §111 is asked again on re-declared volume.
+   *
+   * ⚠️ Distinct from a §57 foundation block, which is a gap-filler prepended
+   * to a race plan. Same week SHAPE, different object, different validator.
    */
   base_build_onramp?: boolean
   /** §79 Amendment 5 — WHY the intensity re-entry window opened. Stamped by the
