@@ -20,7 +20,7 @@ import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/i
 import { isDesignedRefusal } from '@/lib/plan/designedRefusal'
 import { effectiveStartKm } from '@/lib/plan/startVolume'
 import { BaseVolumeError } from '@/lib/plan/baseVolume'
-import { onRampOfferFor } from '@/lib/plan/baseBuildOnRamp'
+import { onRampOfferFor, assessOnRamp } from '@/lib/plan/baseBuildOnRamp'
 import { weeksBetweenLocal } from '@/lib/plan/length'
 import { LongRunReadinessError } from '@/lib/plan/longRunReadiness'
 
@@ -171,6 +171,23 @@ export async function POST(req: NextRequest) {
           weeks_to_race: input.race_date
             ? Math.round((new Date(input.race_date).getTime() - Date.now()) / 6048e5)
             : null,
+          // §116 — WOULD an on-ramp have been offered, and how long?
+          //
+          // ⚠️ RECORDED EVEN WHEN THE FLAG IS OFF, deliberately. This is the
+          // only way the 76%-offered figure gets checked against real runners
+          // instead of a synthetic grid, and it has to accrue BEFORE the flag
+          // is flipped or there is nothing to compare the flip against.
+          //
+          // It calls `assessOnRamp` directly rather than `onRampOfferFor`,
+          // because the latter is flag-gated by design — the flag governs what
+          // the RUNNER sees, never what we can measure.
+          ...(err instanceof BaseVolumeError ? {
+            onramp: assessOnRamp(
+              input,
+              err.base.min_base_km,
+              weeksBetweenLocal(planStart, input.race_date),
+            ),
+          } : {}),
         }, user.id)
       }
       if (err instanceof PrepTimeError) {
