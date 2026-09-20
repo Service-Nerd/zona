@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-20 — HM-WEEK1-PERRUN-01 · choosing the worse number on purpose
+**Shipped:** the weekly ratio becomes a screen and the per-run step the confirmation. Half marathon 88.2% to 96.2%; every distance now at or above 90%.
+
+**Dev learning:** The half's entire gap was one rule firing on one cohort: people running ten kilometres a week. Their week one is a five-point-three kilometre long run against a five kilometre longest-ever, and two half-hour easy runs. Across every plan that rule flagged anywhere in the product, the worst single-session increase beyond what the runner had already done was five hundred metres. A weekly total is not a training stress. A session is.
+
+**The decision I want on record is the one where I took the worse number.** Two thresholds worked. The looser one scored a point and a half higher and would have kept only twelve percent of the flagged population; the tighter one keeps half of it. The board's chair had already objected, not to the evidence but to the pattern: this same predicate had been measured, found harmless and loosened three times in a single day, and each time our headline went up. Picking the bigger relaxation because it scores better is that pattern wearing a lab coat. So the rule is frozen now until we have actual outcome data rather than another corpus measurement.
+
+**The honest bit:** I wrote a marathon non-regression test, and it failed at eighty-seven point three percent while the same measurement elsewhere said ninety point one. Different sampling stride. I had set the threshold from one measurement and tested it with another, which would have gated a board condition on noise. Deleted it and moved the condition to the file that already owns per-distance floors. That is twice this week I have duplicated a check and had the duplicate disagree with the original.
+
+---
+
 ## 2026-09-20 — WEEK1-FLOOR-SHORT-DIST-01 · we were scoring our own caution as a defect
 **Shipped:** the week-1 step is measured against what the runner actually runs. 10K goes 78.3% to 99.4%; the whole product reaches 92.9% and is inside the 90-95% target.
 

@@ -1187,6 +1187,26 @@ export const GENERATION_CONFIG = {
   // step that is proportionally real.
   WEEK1_ABSOLUTE_STEP_MIN_RATIO:          1.15,
 
+  // §2 Amendment 2 (Coaching Board 2026-09-20, HM-WEEK1-PERRUN-01) — the ratio
+  // arm is a SCREEN; the per-run step is the confirmation.
+  //
+  // A weekly total is not a training stress: a session is. Measured across all
+  // 309 ratio-flagged plans product-wide, the worst per-run increase is
+  // +2.40 km and no session anywhere exceeds the runner's longest-ever run by
+  // more than +0.50 km. The arm was flagging no load hazard at all.
+  //
+  // ⚠️ 1.5 km WAS CHOSEN OVER 2.0 km DELIBERATELY, AND AGAINST THE SCOREBOARD.
+  // 2.0 scored better (product 96.5% vs 95.3%, HM 97.9% vs 95.1%) and retained
+  // only 12% of the flagged population; 1.5 retains 51%, so the arm keeps its
+  // teeth. Hutchinson's standing objection at that sitting was the PATTERN of
+  // repeated relaxation, and taking the larger relaxation because it scores
+  // higher is that pattern. The smaller one that solves the problem wins.
+  //
+  // ⚠️ THE BACKSTOPS ARE UNTOUCHED: arm 2 (>=10 km AND >1.15x) still catches a
+  // large weekly step assembled from many small runs, and arm 3 still catches
+  // a single session beyond the runner's demonstrated range.
+  WEEK1_PER_RUN_STEP_MAX_KM:              1.5,
+
   // §45 Amendment 2 (LR-ABS-CAP-LOWVOL-01, Coaching Board 2026-09-17).
   //
   // The +5km ABSOLUTE arm above is tapered on a small week:

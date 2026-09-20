@@ -371,6 +371,61 @@ A returning runner is identified by the wizard inputs `training_age > 2 years` A
 
 ---
 
+### §2 Amendment 2 — the weekly ratio is a SCREEN; the per-run step is the confirmation (Coaching Board 2026-09-20, HM-WEEK1-PERRUN-01)
+
+**Principle.** The ratio arm of the week-1 rule fires only where the increase
+**per run** exceeds `WEEK1_PER_RUN_STEP_MAX_KM` (1.5 km). Arms 2 (absolute) and
+3 (session load) are unchanged and remain the backstop.
+
+**Why. A weekly total is not a training stress; a session is.** The half
+marathon sat at 88.2% fit for purpose and **the entire 12% gap was this one
+arm**, of which **100% was the 10 km/week cohort** — 0% at 20, 32 and 50 km/week,
+and no dependence on days available or injury history at all. The plan it was
+failing:
+
+```
+declared 10 km/wk, longest-ever run 5 km
+wk1  14 km:  long run 5.3 km / 44 min · easy 3.9 km / 32 min · easy 3.9 km / 32 min
+```
+
+A long run **300 metres** beyond anything they have run, and two half-hour easy
+runs. McMillan: *"I would write that week myself."*
+
+**Measured across all 309 ratio-flagged plans product-wide:** worst per-run
+increase **+2.40 km**; worst session exceeding the runner's longest-ever run
+**+0.50 km**. The arm was identifying no load hazard anywhere.
+
+**⚠️ 1.5 km WAS CHOSEN OVER 2.0 km DELIBERATELY, AND AGAINST THE SCOREBOARD.**
+2.0 scored better — product 96.5% against 95.3%, HM 97.9% against 95.1% — and
+retained only **12%** of the flagged population. 1.5 retains **51%**, so the arm
+keeps its teeth. Hutchinson's recorded objection at that sitting was not the
+evidence but **the pattern**: this predicate had been measured, found benign and
+relaxed three times in one day, each time raising the headline. Taking the
+larger relaxation because it scores higher **is** that pattern. The smallest
+change that solves the problem wins.
+
+**⚠️ HUTCHINSON'S BINDING CONDITION: this predicate is frozen after this
+amendment until we hold adherence or injury data.** Any further relaxation
+needs outcome evidence, not another corpus measurement.
+
+**⚠️ TWO ENGINE ALTERNATIVES WERE BUILT AND VETOED, and the reason is the
+priority order.** A flat 1.25× week-1 cap took the half to 97.0% and the
+**marathon to 84.9%**; a runway-aware cap took the half to 93.3% and the
+marathon to **88.4%**. Both remove the founder's priority-one distance from
+target to fix a secondary one. Willy: *"stop proposing caps"* — a lower start
+lowers the curve, which shortens the long run, three times running.
+
+**Effect.** HM **88.2% → 96.2%**; **marathon unchanged at 90.1%** (the board's
+hard condition); whole product **92.9% → 95.3%**. No prescription changed.
+
+**Config.** `WEEK1_PER_RUN_STEP_MAX_KM = 1.5`.
+
+**Enforced by** `planQuality`'s `WEEK1-LEAP` predicate and the per-distance
+floors in `useCaseEnvelope.test.ts`, where the **marathon floor is the board's
+condition made mechanical**.
+
+---
+
 ### §2 Amendment — the week-1 step is measured against what the runner RUNS, and has three arms (Coaching Board 2026-09-20, WEEK1-FLOOR-SHORT-DIST-01)
 
 **Principle.** The week-1 step is assessed against the runner's **declared

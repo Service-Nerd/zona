@@ -33,6 +33,22 @@ const runsIn = (w: Week) =>
     (s): s is Session => !!s && s.type !== 'rest' && s.type !== 'strength' && s.type !== 'cross-train')
 const kmsIn = (w: Week) => runsIn(w).map(s => sessionKmSelfPaced(s) ?? 0)
 
+/**
+ * §2 Amendment 2 — how much bigger is each of week 1's runs than the runner's
+ * current average run? The ratio arm screens; this confirms.
+ *
+ * A weekly total is not a training stress. 10 km/week becoming 14 km/week reads
+ * as "+40%" and is three runs of about half an hour where there were three runs
+ * of twenty-seven minutes. Measured across every ratio-flagged plan: worst
+ * per-run increase +2.40 km, worst session beyond the runner's longest-ever run
+ * +0.50 km.
+ */
+function week1PerRunStep(weeks: Week[], startKm: number, week1Km: number): number {
+  const w1 = weeks.find(w => w.n === 1)
+  const runs = w1 ? runsIn(w1).length : 0
+  return runs > 0 ? (week1Km - startKm) / runs : Number.POSITIVE_INFINITY
+}
+
 export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
   const f: Finding[] = []
   const weeks = plan.weeks.filter(isTrainingWeek)
@@ -148,7 +164,8 @@ export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
     // only 47 of 75 weekly jumps >= 10 km, because at 40 km/week a +10 km step
     // is just 1.25x. A condition the board made binding, verified by test.
     f.push({ code: 'WEEK1-LEAP', detail: `week 1 adds ${(w1 - start).toFixed(1)}km over a declared ${start}km base` })
-  } else if (start > 0 && w1 / start > 1.30 && w1 - start > 2)
+  } else if (start > 0 && w1 / start > 1.30 && w1 - start > 2
+             && week1PerRunStep(weeks, start, w1) > G.WEEK1_PER_RUN_STEP_MAX_KM)
     f.push({ code: 'WEEK1-LEAP', detail: `week 1 is ${Math.round(w1)}km against a ${start}km base (+${((w1 / start - 1) * 100).toFixed(0)}%)` })
 
   // P6 — a marathon plan whose longest run never approaches the race.

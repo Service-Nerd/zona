@@ -6,16 +6,22 @@ the submissions were not. Each sitting measured a different population with a
 different set of criteria and called the result the same thing. **This file
 fixes the criteria space so a sitting is comparable to the one before it.**
 
-Measured 2026-09-19. **Whole product: 92.9% — inside the 90–95% target**, up from **66.7%** at the
-start of the 2026-09-19 build. Per distance: **5K 100%** · **10K 99.4%** ·
-HM 88.2% · **marathon 90.1%** · 50K 100% · 100K 100%.
+Measured 2026-09-19. **Whole product: 95.3%**, up from **66.7%** at the start of the 2026-09-19
+build. Per distance: **5K 100%** · **10K 100%** · **HM 96.2%** ·
+**marathon 90.1%** · 50K 100% · 100K 100%. **Every distance is at or above the
+90% target.**
 
 **A correct refusal counts as fit for purpose**, and must earn it: §44's
-standard is *"not yet"*, never *"no"*, so it must name what to do next. Gated —
-100% of `BaseVolumeError` refusals do.
+standard is *"not yet"*, never *"no"*. Gated — 100% of `BaseVolumeError`
+refusals name a next step.
 
-**The half marathon is now the weakest at 88.2%**, and its dominant remaining
-objection is `LONG-RUN-SHORT`.
+**The marathon is now the weakest at 90.1%**, and its remaining objection is
+`LONG-RUN-SHORT` (7.5%). ⚠️ **Its floor is the Coaching Board's hard
+condition:** two engine caps were vetoed for taking it out of target.
+
+⚠️ **`WEEK1-LEAP` is FROZEN** (Hutchinson, 2026-09-20) — measured, found benign
+and relaxed three times in one day. Any further change needs adherence or
+injury data, not another corpus measurement.
 
 ## 1. What "fit for purpose" is tested against
 
