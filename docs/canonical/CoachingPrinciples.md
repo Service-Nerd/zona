@@ -7990,3 +7990,47 @@ discovered by a runner.
 
 **Config.** `FINISH_GOAL_RUNWALK_PEAK_KM` (32), `FINISH_GOAL_RUNWALK_RUN_MINS` (6), `FINISH_GOAL_RUNWALK_WALK_MINS` (1).
 **Owner.** `lib/plan/runWalkPlan.ts`. **Enforced by** `INV-PLAN-RUNWALK-PRESCRIBED`.
+
+---
+
+## 118. The get-running plan — what we offer the runner no race plan can serve
+
+*(Coaching Board 2026-09-20, CORRECT WITH AMENDMENT, three amendments. Founder directive after the board twice ruled zero rejection unreachable by coaching.)*
+
+**Principle.** A runner whose base no race plan can safely build from is given a **get-running plan**: §116's ramp, standalone, with **no race and no promise of one**. It builds for the weeks available at §2's rate under §3's cadence and stops.
+
+**Why it can exist when `S116-FLOOR-VS-TARGET-01` was vetoed.** That proposal failed because a 3 km/week runner cannot be built to a **marathon** in 29 weeks — every ramp target left a 13.5–15 km peak long run against the 17 km ruled adequate. **A plan with no start line cannot miss it.** Remove the marathon promise and the runway constraint disappears with it.
+
+**No new prescription machinery.** §116's ramp was already ruled correct **as a standalone plan** (§116 amendment 8: *"if they never return it must still be a good eleven weeks"*). Same generator, same curve owner, same validator.
+
+**⚠️ The target is DERIVED FROM THE RUNWAY, not fixed.** Imposing one would invent a deadline the runner does not have and then refuse them a second time for missing it — the exact failure this exists to end.
+
+### Generated, at 15 weeks
+
+| start | ends at | longest run W1 → end | total build |
+|---|---|---|---|
+| 2 km/wk | 7.5 | 2.0 → 2.5 km | 3.75× |
+| 3 km/wk | 11.3 | 1.5 → 2.8 km | 3.77× |
+| 5 km/wk | 18.9 | 1.6 → 4.7 km | 3.78× |
+| 7 km/wk | 26.5 | 2.3 → 6.6 km | 3.79× |
+
+**Most of them finish above §117's door of 9 km/wk with 13 weeks to spare.** For most of this cohort the get-running plan is not a consolation — **it is the route back in.** ⚠️ **A 2 km/week runner does not clear it, and must not be told a marathon follows.** Two outcomes under one plan name is how a promise gets made by implication (McMillan).
+
+### The three amendments
+
+| # | Amendment | Seat |
+|---|---|---|
+| 1 | **`GET_RUNNING_MAX_WEEKS` 16 → 15**, so the total build stays inside §111's 4.0. Reuse the ceiling; do not create a second one | Willy |
+| 2 | **The total build is enforced mechanically** (`INV-PLAN-GET-RUNNING-BUILD-RATIO`) | Willy |
+| 3 | **§24e's fuelling cue scopes here** — a rising-load block does not stop being one because there is no race | Sims |
+
+🔴 **Amendment 1 exists because a bound chosen for LEGIBILITY was doing physiological work nobody had checked.** `GET_RUNNING_MAX_WEEKS` was 16 on the reasoning *"a plan nobody can see the end of is not a plan"*. Sixteen weeks of §2's lawful 10% under §3's four deloads compounds to **4.17×** — above §111's ceiling. **Every week legal, the sum not.**
+
+⚠️ **And the ratio is a property of the CURVE, not the runner.** 2→8.3, 3→12.5, 5→20.8 and 7→29.2 are all ~4.17×. It was first reported as *"a 7 km/week runner ends at 4.2×"*, which would have sent someone hunting for a per-runner cap. **It was the sixteenth week.**
+
+⚠️ **§2 CHECKS WEEK-ON-WEEK AND CANNOT SEE THE ENDPOINT.** That blind spot is general, and this is the first place it has been closed.
+
+⚠️ **NO HARNESS WATCHES THIS PLAN KIND.** `measure:fitness` and `measure:envelope` are both shaped around a race. Inventing a way to score a raceless plan would be the decorative-check failure, so it is **filed as a known gap, not papered over** (chair).
+
+**Config.** `GET_RUNNING_MIN_WEEKS = 8`, `GET_RUNNING_MAX_WEEKS = 15`.
+**Owner.** `lib/plan/getRunningPlan.ts`. **Enforced by** `INV-PLAN-GET-RUNNING-BUILD-RATIO`.

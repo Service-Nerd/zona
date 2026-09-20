@@ -118,5 +118,40 @@ export function validateBaseBuildBlock(weeks: Week[], startKm: number): Violatio
     prevLongest = longest
   }
 
+  // ── §118 amendment 2 — THE TOTAL BUILD IS BOUNDED ────────────────────────
+  //
+  // 🔴 §2 CHECKS WEEK-ON-WEEK AND CANNOT SEE THE ENDPOINT. Sixteen weeks of a
+  // lawful 10% under §3's deloads compounds to a **4.17x total build**, above
+  // §111's `MAX_BASE_BUILD_RATIO` of 4.0 — every week legal, the sum not.
+  //
+  // ⚠️ THE RATIO IS A PROPERTY OF THE CURVE, NOT THE RUNNER: 2→8.3, 3→12.5,
+  // 5→20.8 and 7→29.2 are all ~4.17x. Reported as "a 7 km/week runner ends at
+  // 4.2x", it would have sent someone hunting for a per-runner cap.
+  //
+  // ⚠️ §111's 4.0 is REUSED, not re-chosen. Willy: *"I will not have two
+  // total-build ceilings in one constitution differing by 0.17 because one of
+  // them was measured off a 16-week curve."*
+  //
+  // ⚠️ This is the CHECKER, and `GET_RUNNING_MAX_WEEKS = 15` is the producer's
+  // side. They are deliberately independent: the week count is one way to stay
+  // inside the ratio, and a future change to the ramp rate or deload cadence
+  // would breach it at 15 weeks without anyone touching this file.
+  if (startKm > 0 && ramp.length > 0) {
+    const endKm = ramp[ramp.length - 1].weekly_km ?? 0
+    const ratio = endKm / startKm
+    const cap = GENERATION_CONFIG.MAX_BASE_BUILD_RATIO
+    if (ratio > cap + 0.01) {
+      v.push({
+        code: 'INV-PLAN-GET-RUNNING-BUILD-RATIO',
+        principle_ref: 'CoachingPrinciples §118, §111',
+        severity: 'error',
+        week: ramp[ramp.length - 1].n,
+        message: `Base-build block ends at ${endKm.toFixed(1)}km from a ${startKm.toFixed(1)}km start — a ${ratio.toFixed(2)}x total build, above §111's ${cap}x ceiling. Every week is §2-compliant; the SUM is not, and §2 cannot see the endpoint.`,
+        actual: `${ratio.toFixed(2)}x`,
+        expected: `<= ${cap}x`,
+      })
+    }
+  }
+
   return v
 }

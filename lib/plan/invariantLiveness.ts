@@ -1003,6 +1003,11 @@ export function probeLiveness(sampleSize = 64): LivenessReport {
             (ws[1].sessions as Record<string, unknown>).thu =
               { type: 'tempo', label: 'Tempo', distance_km: 6, duration_mins: 30 }
           } },
+        { name: 'bb: build far past the ratio ceiling', apply: ws => {
+            // §118 amendment 2 — every week lawful, the SUM not. The mutation
+            // inflates only the LAST week, so no week-on-week rule can see it.
+            ;(ws[ws.length - 1] as unknown as Poke).weekly_km = 999
+          } },
         { name: 'bb: double a single run', apply: ws => {
             for (const s of Object.values(ws[2].sessions)) {
               if (s && s.type !== 'rest') { (s as unknown as Poke).distance_km = 40; break }

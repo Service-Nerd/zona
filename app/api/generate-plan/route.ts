@@ -22,6 +22,7 @@ import { effectiveStartKm } from '@/lib/plan/startVolume'
 import { BaseVolumeError } from '@/lib/plan/baseVolume'
 import { onRampOfferFor, assessOnRamp } from '@/lib/plan/baseBuildOnRamp'
 import { weeksBetweenLocal } from '@/lib/plan/length'
+import { generateGetRunningPlan, getRunningApplies } from '@/lib/plan/getRunningPlan'
 import { LongRunReadinessError } from '@/lib/plan/longRunReadiness'
 
 // ─── Guard rails ──────────────────────────────────────────────────────────────
@@ -244,13 +245,43 @@ export async function POST(req: NextRequest) {
         // ⚠️ §111 IS NOT CREDITED IN ADVANCE (board amendment 7). The offer
         // changes nothing about the gate; the runner performs the block,
         // re-declares, and is gated on OBSERVED volume.
-        const onramp = onRampOfferFor(input, err.base.min_base_km, weeksBetweenLocal(planStart, input.race_date))
+        const runway = weeksBetweenLocal(planStart, input.race_date)
+        const onramp = onRampOfferFor(input, err.base.min_base_km, runway)
+
+        // §118 / P-15 — NO REFUSAL LEAVES WITHOUT SOMETHING TO DO.
+        //
+        // The founder's directive, after the board twice ruled zero rejection
+        // unreachable by coaching: *"we can't just say no, go away."* A
+        // get-running plan is what the runner no race plan can serve gets
+        // instead — §116's ramp, standalone, with no race and no promise of
+        // one.
+        //
+        // ⚠️ IT IS AN OFFER, NOT A SUBSTITUTION, exactly as the on-ramp is.
+        // The runner asked for a marathon; we do not quietly hand them
+        // something else. ADR-012's model is that a structural change surfaces
+        // for confirmation, and rendering that choice is the client's job.
+        //
+        // ⚠️ AND IT MUST NOT IMPLY A MARATHON FOLLOWS. Most of this cohort
+        // finish above §117's door with weeks to spare and genuinely can come
+        // back; a 2 km/week runner will not. `reaches_race_door` says which,
+        // so the copy can tell the truth per runner rather than in general.
+        let getRunning: Record<string, unknown> | null = null
+        if (!onramp && getRunningApplies(input)) {
+          const { endsAtKm, weeks } = generateGetRunningPlan(input, planStart, runway)
+          getRunning = {
+            weeks,
+            ends_at_km: Math.round(endsAtKm * 10) / 10,
+            reaches_race_door: endsAtKm >= err.base.min_base_km,
+          }
+        }
+
         return NextResponse.json(
           {
             error: err.message,
             reason: 'base_volume',
             base: err.base,
             ...(onramp ? { onramp } : {}),
+            ...(getRunning ? { get_running: getRunning } : {}),
           },
           { status: 422 },
         )

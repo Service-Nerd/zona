@@ -933,6 +933,48 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 >
 > **Size.** **S.** **Free/Pro.** FREE — it is the door. **Backlog.** **NEW**, splits from the on-ramp.
 
+> ✅ **§118 GET-RUNNING PLAN — SHIPPED 2026-09-20. Nobody who asks for a plan is now told only no.** *(Founder directive; Coaching Board CORRECT WITH AMENDMENT, three amendments.)*
+>
+> **What the board escalated twice as a product question, the founder answered:** *"we can't just
+> say no, go away"* and *"the 12%, I need them to have a get-running plan."*
+>
+> **No new prescription machinery.** It is §116's ramp — already ruled correct **as a standalone
+> plan** (amendment 8) — with the marathon handover removed. ⚠️ **Removing the promise is what makes
+> it possible:** `S116-FLOOR-VS-TARGET-01` was vetoed because a 3 km/wk runner cannot be built to a
+> *marathon* in 29 weeks. **A plan with no start line cannot miss it.**
+>
+> | start | ends at (15 wks) | longest run W1 → end | total build |
+> |---|---|---|---|
+> | 2 km/wk | 7.5 | 2.0 → 2.5 km | 3.75× |
+> | 3 km/wk | 11.3 | 1.5 → 2.8 km | 3.77× |
+> | 5 km/wk | 18.9 | 1.6 → 4.7 km | 3.78× |
+> | 7 km/wk | 26.5 | 2.3 → 6.6 km | 3.79× |
+>
+> **Most finish ABOVE §117's door of 9 with 13 weeks to spare — for most of this cohort it is the
+> route back in, not a consolation.** ⚠️ **A 2 km/wk runner does not clear it and must not be told a
+> marathon follows** (McMillan). The refusal payload carries `reaches_race_door` so the copy can
+> tell the truth **per runner** rather than in general.
+>
+> 🔴 **THE FINDING, AND IT IS GENERAL:** `GET_RUNNING_MAX_WEEKS` was 16, chosen for LEGIBILITY —
+> *"a plan nobody can see the end of is not a plan"* — and **16 weeks of §2's lawful 10% under §3's
+> four deloads compounds to a 4.17× total build, above §111's 4.0 ceiling. Every week legal, the
+> sum not.** ⚠️ **§2 checks week-on-week and cannot see the endpoint**, and this is the first place
+> that blind spot has been closed.
+>
+> ⚠️ **The ratio is a property of the CURVE, not the runner** — 2→8.3, 3→12.5, 5→20.8, 7→29.2 are
+> all ~4.17×. **I reported it as "a 7 km/week runner ends at 4.2×", which would have sent someone
+> hunting for a per-runner cap.** The conflict scan caught the framing. It was the sixteenth week;
+> 15 gives 3.79×.
+>
+> ⚠️ **A BOUND CHOSEN FOR READABILITY WAS DOING PHYSIOLOGICAL WORK NOBODY HAD CHECKED.**
+>
+> 🔻 **FILED, NOT PAPERED OVER: no harness watches this plan kind.** `measure:fitness` and
+> `measure:envelope` are both shaped around a race; a raceless plan cannot be scored by either, and
+> inventing a way would be the decorative-check failure (chair).
+>
+> 🔻 **YOURS: the copy.** It must not read as a demotion and must not imply a marathon is coming
+> for the runners who will not reach it.
+
 > ⛔ **S116-FLOOR-VS-TARGET-01 — VETOED 2026-09-20. The floor stays at 6, and closing my own evidence gap is what killed the proposal.** *(Coaching Board, unanimous. Sims reversed her own earlier position within the day.)*
 >
 > I flagged that I had never generated a runner across the **join** and did it before the sitting.

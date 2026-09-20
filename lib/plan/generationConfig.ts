@@ -1109,6 +1109,38 @@ export const GENERATION_CONFIG = {
   // shipping the jump. 4.0 admits the charity cohort (M1 first-timer 15 km/wk →
   // peak 47 = 3.13x) and refuses the reckless case (5 km/wk → 9.4x); any cap
   // ≤ 3.13 would refuse M1. (Coaching Board MARATHON-VOLUME-GATE-01, 2026-09-18.)
+  // ── GET-RUNNING PLAN (founder directive 2026-09-20) ────────────────────────
+  //
+  // What we offer the runner no marathon plan can serve. The board twice ruled
+  // zero rejection unreachable by coaching and escalated "what do they get
+  // instead" as a product decision; the founder made it.
+  //
+  // ⚠️ THESE ARE BOUNDS, NOT TARGETS, and the distinction is the design. A
+  // marathon plan must reach a base by a date. This has no start line, so
+  // imposing a target would invent a deadline the runner does not have and
+  // then refuse them a second time for missing it — the exact failure this
+  // plan exists to end. It builds for the weeks available and stops.
+
+  /** Below this a "plan" is a gesture. Two §3 deload cycles. */
+  GET_RUNNING_MIN_WEEKS: 8,
+
+  /** 15, and the number is PHYSIOLOGICAL, not editorial (§118, amendment 1).
+   *
+   *  ⚠️ IT WAS 16, CHOSEN FOR LEGIBILITY — "a plan nobody can see the end of is
+   *  not a plan" — AND IT WAS DOING LOAD-BEARING WORK NOBODY HAD CHECKED.
+   *  16 weeks of §2's 10% under §3's four deloads compounds to a **4.17x total
+   *  build**, above §111's `MAX_BASE_BUILD_RATIO` of 4.0.
+   *
+   *  ⚠️ AND THE RATIO IS A PROPERTY OF THE CURVE, NOT THE RUNNER. Every start
+   *  lands on the same number — 2→8.3, 3→12.5, 5→20.8, 7→29.2 are all ~4.17x.
+   *  The submission reported it as "a 7 km/week runner ends at 4.2x", which
+   *  would have sent someone hunting for a per-runner cap. **It is the
+   *  sixteenth week.** 15 weeks gives ~3.75x, inside 4.0 with room.
+   *
+   *  Willy: *"I will not have two total-build ceilings in one constitution
+   *  differing by 0.17 because one of them was measured off a 16-week curve."* */
+  GET_RUNNING_MAX_WEEKS: 15,
+
   // ── §117 — the finish-goal run-walk marathon (Coaching Board 2026-09-20) ───
   //
   // §111's door is a function of the PEAK, and the peak is a function of what

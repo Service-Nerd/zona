@@ -17,6 +17,50 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — §118: a bound I chose for readability was doing physiological work
+
+**Dev.** The board twice ruled that zero rejection is unreachable by coaching, and twice escalated
+the same question: what does a runner get *instead* of the marathon plan we cannot safely give
+them? The founder answered it — a get-running plan.
+
+The build was almost nothing. §116's ramp already existed and the board had already ruled it
+correct **as a standalone plan**. Removing the marathon handover is what made it possible: the
+proposal to drop the on-ramp floor was vetoed because a 3 km/week runner cannot be built to a
+*marathon* in 29 weeks, and **a plan with no start line cannot miss it.**
+
+**AI-building.** I set `GET_RUNNING_MAX_WEEKS = 16` and wrote the reason in the config: *"a plan
+nobody can see the end of is not a plan."* That is a fine sentence about legibility.
+
+Sixteen weeks of a lawful 10% weekly increase, under the standard deload cadence, compounds to a
+**4.17× total build** — above the 4.0 ceiling the constitution already sets for exactly this
+hazard. **Every individual week legal. The sum not.**
+
+The week-on-week rule cannot see an endpoint. Nothing in the engine could. **A number I picked for
+readability turned out to be setting a physiological limit, and I only found it because I went
+looking for something else.**
+
+**The honest bit.** I found the 4.2× myself and reported it to the board as *"a 7 km/week runner
+ends at 4.2×"* — framed as a problem with one runner at the top of the range. The conflict scan
+corrected me: every start lands on the same ratio. 2→8.3, 3→12.5, 5→20.8, 7→29.2 are all ~4.17×.
+
+**It is a property of the curve, not the runner.** My framing would have sent someone hunting for a
+per-runner cap when the fix was one number: fifteen weeks instead of sixteen, 3.79×, done.
+
+That is twice today the scan has caught not an error of fact but an error of *framing* — earlier it
+was a principle's worked example I had not read, now a per-runner claim about a per-curve property.
+**Both would have produced correct-looking work aimed at the wrong thing.**
+
+**Product.** Most of this cohort finish the fifteen weeks *above* the door for a real marathon
+plan, with thirteen weeks to spare. So for most of them it is not a consolation prize, it is the
+route back in. A 2 km/week runner does not clear it, and the refusal payload now carries a flag
+saying which — so the copy can tell the truth per runner rather than in general.
+
+And one thing filed rather than papered over: **no harness watches this plan kind.** Both our
+measurement rigs are shaped around a race, and a raceless plan cannot be scored by either.
+Inventing a bar so the column has a number in it is how decorative checks are born.
+
+---
+
 ## 2026-09-20 — S117-PEAK-VS-TIME-01: the board contradicted itself, and the table settled it
 
 **Dev.** §117 shipped dark yesterday because amendment 1 gave two numbers that don't reconcile: a
