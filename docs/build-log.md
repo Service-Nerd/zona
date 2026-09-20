@@ -17,6 +17,50 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — the commercial batch: four items, one question
+
+**Dev.** Six open commercial items went to the SLT. Four turned out to be the same question —
+*is the thing we say about the product true of the product?* — and the answers split cleanly into
+"fix the code" and "delete the claim".
+
+The trial one is the embarrassing one. `featureGates.ts` has always said a trial user may have the
+confidence score. `enrich.ts` asked `tier === 'paid'`. **Two files, one rule, disagreeing, and the
+engine won** — so a trial runner got no confidence score while the homepage said *"Two weeks, full
+access"* and the signup line said *"14 days, no limits."*
+
+I filed it as blocking some unbuilt paywall copy. It was a false claim on the live homepage.
+
+**AI-building.** The fix is one expression and I nearly wrote the wrong one. `tier !== 'free'`
+matches every other gate and would have been correct today, and it is still **a second copy of a
+rule another file owns**, which is the exact shape that caused the defect. It now asks
+`isFeatureAllowed`. Same behaviour, one owner.
+
+Then the test. I wrote four assertions and **three of them cannot catch the original defect**,
+because they drive `buildUserMessage` directly and it takes a boolean. The only one that goes red
+on a revert is the ugly one that reads the source file and demands the string `isFeatureAllowed`.
+I nearly didn't write it, on the grounds that reading your own source in a test is inelegant.
+Elegance would have shipped a green suite over the same bug.
+
+**Product.** The pricing sentence said *"a projected finish from your real running, updated as you
+train."* On 58% of plans there is no benchmark, so it comes from two wizard answers. We deleted the
+two false clauses. Nothing rewritten: Traynor had already blocked softening the words until the
+derivation qualifies, and Sutherland's framing is that **deleting a claim is the opposite of
+softening**.
+
+Hutchinson's note is the one worth keeping, though. The pricing page is the symptom. We render a
+guess and a measurement in the same typeface with the same confidence. *"An experienced runner who
+told us 'about 25k a week' and got back a finish time to the minute will conclude, correctly, that
+we made it up."*
+
+**The honest bit.** `pricing.test.ts` passed the entire time the claim was false. It proves every
+paid gate has a row on the pricing page. It cannot prove the row is true, and nobody had noticed
+those are different properties. **The guard held while the claim rotted** — and there are a dozen
+more rows on that page with the same exposure and the same non-guarantee. Filed, and filed with
+the warning that a check which merely *looks* like it tests truth would be worse than none, because
+the existing green tick is what allowed this in the first place.
+
+---
+
 ## 2026-09-20 — OPS-AI-OWNER-01: the scope reduction was priced against a duplication
 
 **Dev.** Two open ops items: what does the AI cost, and is it failing. Both had been filed with the

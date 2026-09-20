@@ -9,6 +9,7 @@ import type { Plan, GeneratorInput } from '@/types/plan'
 import { isTimeTrial } from './sessionRole'
 import { EnrichedPlanSchema } from './schema'
 import type { Tier } from './ruleEngine'
+import { isFeatureAllowed } from './canUseFeature'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { BRAND } from '@/lib/brand'
@@ -230,7 +231,30 @@ export async function enrich(
     return { plan, outcome: { status: 'failed', reason: 'no_api_key' } }
   }
 
-  const wantPaidFields = tier === 'paid'
+  // TIER-TRIAL-CONFIDENCE-01 (2026-09-20) — `tier !== 'free'`, not `=== 'paid'`.
+  //
+  // This one file disagreed with `featureGates.ts`, which has always listed
+  // `confidence_score` as allowed on trial, and the engine won: a trial runner
+  // never received `confidence_score`, `confidence_risks` or `coach_intro`.
+  //
+  // It was a live false claim, not a future copy problem. `app/page.tsx` says
+  // "Two weeks, full access" and `BRAND.signupSub` says "14 days, no limits",
+  // both on the marketing site. The SLT was unanimous that this is a defect
+  // rather than a decision — every other paid gate in the codebase asks
+  // `tier !== 'free'`, and you do not convene anyone to make two files agree.
+  //
+  // ⚠️ Charity grants resolve to 'paid' already (`resolveTier`), so the 500
+  // comped runners were never affected. This is the 14-day reverse trial only.
+  //
+  // ⚠️ It adds `meta` fields only and cannot touch a numeric (ENRICH-ATTRIB-01),
+  // so it changes no prescription and no Coaching Board sitting is required.
+  //
+  // ⚠️ AND IT READS THE GATE RATHER THAN RESTATING IT. `tier !== 'free'` would
+  // have been correct today and is still a second copy of a rule `featureGates`
+  // owns — the D-16 shape that produced this defect in the first place. Asking
+  // `isFeatureAllowed` means the next change to the gate cannot leave this file
+  // behind. `enrichTierGate.test.ts` asserts the two agree on every tier.
+  const wantPaidFields = isFeatureAllowed('confidence_score', tier)
 
   let rawText: string
   try {

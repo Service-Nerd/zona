@@ -2305,7 +2305,25 @@ across the seven months combined.
 > goal at 10–15 weeks generates with no friction. `PLAN_SIGNATURES.min_weeks` is 14 and is **not** the
 > refusal threshold — it governs construction length. Nobody meets 14.
 
-> 🔲 **TIER-TRIAL-CONFIDENCE-01 — the 14-day reverse trial is not literally full access.** *(P2, me, filed 2026-09-18. **Does not affect Make-A-Wish**; filed because the marketing claim is repo-wide.)*
+> ✅ **TIER-TRIAL-CONFIDENCE-01 — SHIPPED 2026-09-20. SLT unanimous: a defect, not a decision.** *(was P2 "blocking"; re-read as a **P1 live false claim** at the sitting.)*
+>
+> ⚠️ **I under-stated this when I filed it.** I said it blocked `P-09`'s unbuilt timeline copy.
+> `app/page.tsx:237` says **"Two weeks, full access"** and `BRAND.signupSub` says **"14 days, no
+> limits"**, both live on the marketing site. It was a present false claim, not a future one.
+>
+> **Fixed at the root, not the symptom.** `tier !== 'free'` would have been correct today and would
+> still be a second copy of a rule `featureGates` owns — the D-16 shape that caused the defect.
+> `enrich` now asks `isFeatureAllowed('confidence_score', tier)`, so the next gate change cannot
+> leave it behind.
+>
+> ⚠️ **Only the STRUCTURAL test catches the original defect.** The behavioural assertions drive
+> `buildUserMessage` directly, so they pass either way; the one that reads the source and demands
+> `isFeatureAllowed` is the one that goes red on a revert. Falsified.
+>
+> ⚠️ No prescription change (meta fields only, ENRICH-ATTRIB-01), so no Coaching Board. Charity
+> grants already resolved to `'paid'`, so the 500 comped runners were never affected.
+> *(original below.)*
+> 🔲 ~~**TIER-TRIAL-CONFIDENCE-01 — the 14-day reverse trial is not literally full access.**~~ *(P2, me, filed 2026-09-18.)*
 >
 > `canUseFeature('confidence_score', 'trial')` returns **allowed**. `lib/plan/enrich.ts:226` sets
 > `wantPaidFields = tier === 'paid'`, and a trial resolves to `'trial'`. So **a trial user never receives
@@ -2472,7 +2490,25 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > the spend alert in `OPS-AI-SPEND-01`. A balance that *can* reach zero is the only version of this problem
 > that exists; auto-reload deletes it.
 
-> 🔲 **FIN-APPLE-COMMISSION-01 — Apple's cut is modelled nowhere, so every unit-economics number in the repo is 15% optimistic.** *(P2, founder + me, filed 2026-09-18.)*
+> 🟡 **FIN-APPLE-COMMISSION-01 — THE MODEL IS CORRECTED 2026-09-20. The conclusions are the founder's.** *(P2, founder + me, filed 2026-09-18.)*
+>
+> `monetisation-strategy.md` § *What we actually receive* now carries the net table.
+> `BRAND.PRICING` stays **gross** — that is what the runner is charged and what the App Store
+> displays — and the doc is where the business reasons about what arrives.
+>
+> **Traynor named the three decisions that move**, rather than leaving "does it change anything" as
+> a shrug: the ~90-day kill threshold (break-even moves out ~15%, **the kill date should not**),
+> `GTM-11`'s £7.99-vs-£9.99 (net £6.79 vs £8.49, and the gap that argued for the higher price
+> narrows), and Apple Search Ads viability at a given CPI.
+>
+> 🔴 **And a fourth I had missed and he raised: web purchases pay Apple nothing.** The two channels
+> are different businesses and nothing in the repo distinguishes them, so **any blended figure is
+> wrong in both directions at once.** Now stated in the doc.
+>
+> 🔻 **FOR THE FOUNDER:** whether to reprice, whether to push web purchase, and whether the kill
+> threshold still holds are all yours. None of it is decided.
+> *(original below.)*
+> 🔲 ~~**FIN-APPLE-COMMISSION-01**~~ *(P2, founder + me, filed 2026-09-18.)*
 >
 > `lib/brand.ts → BRAND.PRICING` carries £7.99/month and £59.99/year **gross**. Grepped
 > `monetisation-strategy.md` and `brand.ts`: **zero** mentions of commission, 15%, or 30%.
@@ -2493,7 +2529,27 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > ⚠️ **Also unmodelled: the annual plan.** At £59.99 the net is £50.99, or **£4.25/month** — cheaper than
 > the monthly net and a 37% headline discount that is closer to **46%** against monthly net revenue.
 
-> 🔲 **GTM-FREE-HOOK-01 — the free tier's only AI touchpoint is unreachable by the users it is meant to convert.** *(P2, SLT question, filed 2026-09-18.)*
+> ✅ **GTM-FREE-HOOK-01 — CLOSED 2026-09-20, DON'T BUILD. Two independent reasons, and both are recorded because either alone would permit a different build.** *(P2, SLT question, filed 2026-09-18.)*
+>
+> **Fried:** the framing is wrong. *"It only reaches people who are already engaged"* is a complaint
+> about a re-engagement tool. **The free tier's retention mechanism was never a weekly insight — it
+> is the plan.** Someone holding a 16-week plan has a reason to open the app in 16 weeks. Do not
+> build a second hook.
+>
+> **Wood, using the kill mandate, and not where I expected:** the insight is **not** the
+> illusion-of-progress class — it is genuine feedback that reaches few people. **What she killed is
+> the FIX.** A push to a lapsed free user is a motivational prompt aimed at someone whose context
+> has not changed. It does not make zone discipline easier to perform or harder to violate; it
+> makes the phone buzz, and that is the thing this product exists in opposition to.
+>
+> ⚠️ **Her structural note, which outranks both:** *"a lapsed free runner has usually not lapsed
+> from Zonna, they have lapsed from running. A notification cannot fix that, and pretending
+> otherwise is the illusion."*
+>
+> **So: no push to free users. Gate unchanged. Cost was never the question** (~$0.003/free
+> user/week) and the SLT said so explicitly — this is doctrine, not economics.
+> *(original below.)*
+> 🔲 ~~**GTM-FREE-HOOK-01**~~ *(P2, SLT question, filed 2026-09-18.)*
 >
 > Traced while costing the free tier. A free user can reach **exactly one** AI surface: the weekly free
 > insight. To see it they must satisfy all three of:
@@ -2520,7 +2576,23 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > ⚠️ **Does not affect Make-A-Wish** — comped runners resolve to `paid` and never see this path. Filed
 > because it is a live conversion question for everyone else.
 
-> 🔲 **TT-PRICING-CLAIM-01 — `/pricing` sells the race projection as coming from "your real running". On 58% of plans there is none.** *(P2, filed 2026-09-17. **SLT escalation from the Coaching Board** — Hutchinson carried it up: the board rules on correctness and cannot rule on a marketing claim.)*
+> 🟡 **TT-PRICING-CLAIM-01 — THE FALSE CLAUSES ARE DELETED 2026-09-20. The replacement wording is the founder's, and the real fix is a separate item.** *(SLT-ruled: fix before the cohort, by deletion.)*
+>
+> `detail` is now **"A projected finish time. No vanity numbers."** — the original minus
+> *"from your real running"* and *"updated as you train"*. **Pure deletion: nothing rewritten and
+> nothing added.** Traynor's block on softening the words until the derivation qualifies stands;
+> Sutherland's point is that removing a claim is the opposite of softening.
+>
+> 🔻 **Two things remain open and neither is mine.**
+> **(1)** Whether that thin sentence is the right one is a §4A wording call — **the founder's.**
+> **(2) Hutchinson's ruling, which is the real defect and is NOT here:** the pricing page is a
+> symptom. We render a projection derived from two wizard answers in the same typeface, with the
+> same confidence, as one derived from a measured benchmark. *"An experienced runner who gave us
+> 'about 25k a week' and got back a finish time to the minute will conclude, correctly, that we
+> made it up."* Filed as `TT-PROJECTION-PROVENANCE-01`. **Do not pre-announce it in the pricing
+> string.**
+> *(original below.)*
+> 🔲 ~~**TT-PRICING-CLAIM-01 — `/pricing` sells the race projection as coming from "your real running". On 58% of plans there is none.**~~ *(P2, filed 2026-09-17. **SLT escalation from the Coaching Board** — Hutchinson carried it up: the board rules on correctness and cannot rule on a marketing claim.)*
 >
 > **The claim**, `lib/marketing/pricing.ts`: *"What you are actually on for — a projected finish from your real running, updated as you train. No vanity numbers."*
 >
@@ -2531,6 +2603,43 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > **Traynor blocked the cheap fix** and the block should be recorded: do NOT quietly soften the copy so the derivation qualifies. That is writing the marketing down to meet the product. Either the majority path delivers something closer to the claim, or the claim names the states it applies to.
 
 
+> 🔴 **TT-PROJECTION-PROVENANCE-01 — the projection does not say where it came from, and that is the real defect `TT-PRICING-CLAIM-01` was a symptom of.** *(P1, Hutchinson at the 2026-09-20 SLT, filed 2026-09-20.)*
+>
+> We render a finish-time projection derived from **two wizard answers** in the same typeface, with
+> the same apparent confidence, as one derived from a **measured benchmark**. On the live database
+> 58% of plans are the former.
+>
+> **Hutchinson:** *"An experienced runner who gave us 'I run about 25k a week' and 'intermediate'
+> and got back a finish time to the minute will conclude, correctly, that we made it up."* That is
+> a credibility failure in the cohort whose trust is hardest to win and the positioning commitment
+> is *credibility over cleverness*.
+>
+> **Not a pricing-copy fix and must not be solved there.** The pricing string has already been cut
+> back to what is true on every path; pre-announcing this behaviour before it exists would be the
+> same defect again.
+>
+> ⚠️ **State 4 is static by design** (the route says so itself: *"no R31/R32 — static estimate,
+> can't show improvement"*), so "updated as you train" cannot become true for it by adding
+> provenance. The two halves are separable and the provenance half is the one worth building.
+
+> 🔲 **PRICING-ROW-TRUTH-01 — nothing checks whether any row on `/pricing` is TRUE.** *(P2, Traynor at the 2026-09-20 SLT, filed 2026-09-20. **The generalisation, and the more valuable half of `TT-PRICING-CLAIM-01`.**)*
+>
+> `pricing.test.ts` proves every `PAID_ONLY_ONGOING` gate has a **row** on the pricing page, or an
+> argued omission. It cannot check that the row **describes what the product does**, and it passed
+> throughout the period `TT-PRICING-CLAIM-01`'s claim was false on 58% of plans. **The guard held
+> while the claim rotted.**
+>
+> **Traynor:** *"We found this one by accident. There are others."* Every row carries the same
+> exposure and there are a dozen of them.
+>
+> ⚠️ **No mechanical check is obvious, and saying so is part of the filing.** "Is this sentence true
+> of the product" is not a property a test can evaluate in general. The realistic shapes are a
+> dated review obligation attached to the file, or per-row assertions where the claim happens to be
+> mechanically checkable (*"a maintenance block"* is; *"no vanity numbers"* is not). **Do not ship a
+> check that merely looks like one** — a green tick with nothing behind it is this repo's most
+> repeated failure, and it would be especially bad here, where the existing green tick is precisely
+> what allowed the rot.
+
 > 🔲 **PLAN-NOTE-PLACEMENT-01 — does the plan rationale belong at the TOP of the Plan screen at all?** *(P2, filed 2026-09-17 by the SLT. Deliberately NOT bundled with PLAN-NOTE-VOICE-01.)*
 >
 > **Wood's argument:** a runner asks *"why is my long run short?"* in week 3, when the long run feels short. Not on day one. Putting the answer at the top of the plan on day one hands someone who has just committed a list of things their life prevents, in our warning colour. Context beats motivation, and that context says "here is what you cannot do".
@@ -2540,7 +2649,29 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > **What would settle it:** evidence that runners act on the lever early (keep it on day one) versus go looking for the explanation later (move it behind the question).
 
 
-> 🔲 **TT-FREE-BENCHMARK-01 — a free runner is prescribed a benchmark whose result they cannot apply.** *(P2, filed 2026-09-17 out of the TT-STRUCTURE-01 investigation. **SLT question, not a defect** — the copy half is already fixed.)*
+> 🟡 **TT-FREE-BENCHMARK-01 — SLT DEADLOCKED 2026-09-20, and the deadlock is the honest output. (c) REFUSED.** *(P2, filed 2026-09-17. **SLT question, not a defect.**)*
+>
+> **(c) stop placing the trial on free plans — REFUSED.** Hutchinson will not carry it to the
+> Coaching Board: §78 exists because a stale VDOT propagates for a whole plan, and a beginner is
+> the runner most likely to have one. **Do not re-propose it as tidying.**
+>
+> **(a) vs (b) is a genuine split and was not synthesised away:**
+> - **Fried, (a):** the tile is already honest and already the upgrade moment. A one-time grant
+>   creates a "once" the runner must understand and a state to track. One-time grants are a whole
+>   category of support email.
+> - **Wood, (b), with the argument nobody had made:** a free runner who runs a maximal 5K and
+>   watches nothing happen learns **the app does not respond to me.** That is a learned association
+>   and it is expensive.
+>
+> **Hutchinson on correctness:** (b) is coaching-correct — the same pure function already ruled
+> correct for paid, applied once, still prompted and confirmed under ADR-014. **So (b) is a tier
+> decision, not a correctness one.**
+>
+> 🔻 **Unblocks on one thing: somebody looking at `RecalibrationTile` on a device.** Wood would not
+> accept (a) on the strength of the tile being honest in the source. Nothing here has run on a
+> device.
+> *(original below.)*
+> 🔲 ~~**TT-FREE-BENCHMARK-01**~~ *(P2, filed 2026-09-17.)*
 >
 > **Measured:** the §78 recalibration time trial is placed on **both** tiers — `free → recalibration_weeks: [8]`, `paid → [8]` on identical input. Applying the result is PAID (`dynamic_reshape_r20`, ADR-014), so a free runner runs a maximal 5K measurement and the paces it exists to refresh never move.
 >

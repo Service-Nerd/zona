@@ -85,6 +85,42 @@ Available regardless of trial status.
 
 > **TODO (product owner)**: Confirm exact pricing point and billing frequency. Monthly pricing also TBD. Confirm payment provider (e.g. Stripe, RevenueCat) before trial infrastructure build begins.
 
+### What we actually receive — FIN-APPLE-COMMISSION-01
+
+⚠️ **Every unit-economics number written before 2026-09-20 is GROSS, and therefore ~15% optimistic.**
+`lib/brand.ts → BRAND.PRICING` carries the **gross** price and **must keep carrying it** — that is
+what the runner is charged and what the App Store displays. This section is where the business
+reasons about what arrives.
+
+| Channel | Gross | Apple's cut | **Net to us** |
+|---|---|---|---|
+| App Store, monthly | `PRICING.monthly` | 15% (Small Business Program, under $1M/yr) | **£6.79** |
+| App Store, annual | `PRICING.annual` | 15% | **£50.99** |
+| App Store, monthly, **above $1M/yr** | `PRICING.monthly` | 30% | **£5.59** |
+| **Web purchase** | `PRICING.monthly` | **none** | **£7.99** |
+
+⚠️ **The two channels are NOT the same business and nothing in the repo distinguishes them.** Any
+blended figure is wrong in both directions at once. When a model needs one number, say which
+channel it assumes.
+
+**What the correction moves** (named by Traynor at the 2026-09-20 SLT rather than left as
+"does it change anything?"):
+
+1. **The kill threshold.** *"Kill in ~90 days if trial rate is ~0"* was judged against gross.
+   Break-even moves out by roughly the same 15%; **the kill date should not move with it.**
+2. **`GTM-11`'s £7.99-vs-£9.99 review.** That compared two gross prices against a gross cost base.
+   Net it is £6.79 vs £8.49, and the gap that argued for the higher price narrows.
+3. **Apple Search Ads.** The roadmap gates paid acquisition on trial→paid economics. A 15% haircut
+   on lifetime revenue against an unchanged CAC is the difference between viable and not at a
+   given CPI.
+
+⚠️ **This is a modelling correction, not a decision.** What the corrected numbers MEAN — whether
+to reprice, whether to push web purchase, whether the kill threshold still holds — is the
+founder's, and none of it is decided here.
+
+⚠️ **No revenue exists.** No code has been redeemed and no subscription has been sold. Every figure
+above is arithmetic on a list price, not a measurement.
+
 ---
 
 ## Tier Definitions

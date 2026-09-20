@@ -80,8 +80,25 @@ export const PAID_FEATURES: TierFeature[] = [
   },
   {
     gate: 'race_time_estimates',
+    // TT-PRICING-CLAIM-01 (2026-09-20) — FIXED BY DELETION, NOT BY SOFTENING.
+    //
+    // Was: "A projected finish from your real running, updated as you train.
+    // No vanity numbers." Measured on the live database, 11 of 19 plans (58%)
+    // carry no benchmark, so the projection comes from two wizard answers and a
+    // derivation. State 4 is static by design (the route says so itself). On
+    // the majority path all three clauses failed.
+    //
+    // Two false clauses removed. Nothing rewritten, nothing added: Traynor
+    // blocked the cheap fix of softening the words until the derivation
+    // qualifies, and Sutherland's point is that deleting a claim is the
+    // opposite of that. What remains is true on every path.
+    //
+    // ⚠️ The replacement wording is the founder's (§4A) and the deeper fix is
+    // NOT here: Hutchinson's ruling is that the pricing page is the symptom and
+    // the projection itself should state whether it came from a benchmark or an
+    // estimate. Filed separately. Do not pre-announce it in this string.
     name: 'What you are actually on for',
-    detail: 'A projected finish from your real running, updated as you train. No vanity numbers.',
+    detail: 'A projected finish time. No vanity numbers.',
   },
   {
     gate: 'confidence_score',

@@ -92,3 +92,18 @@ on their first plan is byte-identical to before.
 caller believe none exists and the follow-up insert would violate the constraint.
 
 Enforced by `lib/plan/supersedeCoverage.test.ts`.
+
+## The Anthropic call — OPS-AI-OWNER-01 (2026-09-20)
+
+This route no longer calls Anthropic directly. It goes through
+**`lib/ai/callAnthropic.ts`**, the single owner, as surface **`analyse-run`**.
+
+- **Behaviour is unchanged.** Same URL, same headers, same body, same silent
+  fallback (ADR-006 — the deterministic path always succeeds, AI is enrichment).
+- **Every call is now recorded**: `ai_call` with real token counts and an
+  estimated cost, or `ai_call_failed` with the reason, status and a truncated
+  body. Read them at `GET /api/ops/ai-spend`.
+- **A 2xx whose body is not JSON is now a failure**, not an empty answer. This
+  route previously could not tell those apart.
+- `noRawAnthropicCalls.test.ts` fails the build if this file names
+  `api.anthropic.com` again. Full contract: `docs/contracts/api/ops-ai-spend.md`.
