@@ -1161,7 +1161,9 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > intermediate plan needs a bigger base. **But it is the same shape as the injury-cap inversion
 > §111 already carries as a recorded limitation, and it is not written down anywhere.**
 
-> 🔴🔴 **ZERO-REJECTION-01 — nobody who asks for a plan gets told no. FOUNDER'S NUMBER ONE PRIORITY, stated repeatedly.** *(P0, filed 2026-09-20. Supersedes the framing of `S111-SUBFLOOR-VOLUME-01`, `ONRAMP-FLOOR-INVERSION-01` and the run-walk question — they are now sub-parts of this.)*
+> ✅ **ZERO-REJECTION-01 — nobody who asks for a plan gets told no. FOUNDER'S NUMBER ONE PRIORITY, stated repeatedly.** *(P0, filed 2026-09-20. Supersedes the framing of `S111-SUBFLOOR-VOLUME-01`, `ONRAMP-FLOOR-INVERSION-01` and the run-walk question — they are now sub-parts of this.)*
+>
+> ✅ **SHIPPED 2026-09-20**, in two principles and two corrections to the measurement itself. §117 (finish-goal run-walk) took charity-profile refusal 45.5% to 29.3%; §118 (Base Building) covers everyone still below the door, so a runner who cannot safely be given a marathon receives a plan in the same response rather than a refusal. **Zero rejection is NOT reachable by coaching and this item does not claim it** -- confirmed twice by independent routes (the arithmetic: 17 weeks needed from 4 km/wk against a 13-week budget; and the two-stage measurement: every ramp target leaves a 13.5-15 km peak long run against the 17 km the board ruled adequate). What shipped is the guarantee of an OFFER. Registry rows: `ZERO-REJECTION-01 / §117`, `§118`.
 >
 > **The founder's standard, verbatim:** *"If someone comes to our platform and asks for a run, we
 > can't just say no, go away. We have to give them some other guidance."* And for the beginner
@@ -1238,7 +1240,9 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > ⚠️ **`cohortGrid` cannot express the sub-floor runner** (`GRID-MARATHON-CAPABLE-01`), so **part 3
 > cannot currently be measured** — that is a blocker on the work, not a footnote.
 
-> 🔴 **ONRAMP-FLOOR-INVERSION-01 — the runners who need the ramp MOST are the ones the floor excludes.** *(P1, Coaching Board, filed 2026-09-20. **Founder: real beginner marathoners arrive in ~2 weeks and it has to be a positive experience.**)*
+> ✅ **ONRAMP-FLOOR-INVERSION-01 — the runners who need the ramp MOST are the ones the floor excludes.** *(P1, Coaching Board, filed 2026-09-20. **Founder: real beginner marathoners arrive in ~2 weeks and it has to be a positive experience.**)*
+>
+> ✅ **CLOSED 2026-09-20 -- resolved by a different remedy than the one filed.** The proposal was to lower `BASE_BUILD_ONRAMP_MIN_START_KM` from 6; the Coaching Board **VETOED** that (`S116-FLOOR-VS-TARGET-01`, above) and the floor stays at 6. The inversion itself is gone because §118 now serves the sub-floor cohort with a Base Building plan instead of an on-ramp offer they were excluded from. **The runners who need it most are no longer the ones who get nothing** -- which was the finding, independent of which mechanism fixed it.
 >
 > **Measured on the real charity profile** — first-time marathoner, London 2027-04-25, 29-week
 > runway, 198 plausible beginner profiles:
@@ -1769,7 +1773,9 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 >
 > **Accepted, not fixed.** Revisit only if a retry-on-reconnect becomes cheap; do not bolt one on for its own sake.
 
-> 🔴 **LONGEST-RUN-GATE-01 — the third ungoverned refusal in the same function §111 was convened to fix.** *(P1, filed 2026-09-18. ⚠️ Flagged in a code comment on the day and NOT filed until the founder asked why it was not on the list — the same "flagged but unfiled" failure as `WIZARD-TIME-CHIPS-01` earlier the same day.)*
+> ✅ **LONGEST-RUN-GATE-01 — the third ungoverned refusal in the same function §111 was convened to fix.** *(P1, filed 2026-09-18. ⚠️ Flagged in a code comment on the day and NOT filed until the founder asked why it was not on the list — the same "flagged but unfiled" failure as `WIZARD-TIME-CHIPS-01` earlier the same day.)*
+>
+> ✅ **SHIPPED 2026-09-18** as §113 long-run readiness. Registry row: `LONGEST-RUN-GATE-01`.
 >
 > `app/api/generate-plan/route.ts → validate()` held **three** hardcoded refusals. §111 replaced the second. This is the third, still live:
 >
@@ -2227,7 +2233,9 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 
 #### 🐞 Four observations from the founder's device — filed 2026-09-18
 
-> 🔴🔴 **MARATHON-VOLUME-GATE-01 — an UNGOVERNED refusal sits in an API route and will refuse a large share of the Make-A-Wish cohort.** *(P0. Supersedes GTM-DECK-CORRECT-01, which is withdrawn. Coaching Board ruling below.)*
+> ✅ **MARATHON-VOLUME-GATE-01 — an UNGOVERNED refusal sits in an API route and will refuse a large share of the Make-A-Wish cohort.** *(P0. Supersedes GTM-DECK-CORRECT-01, which is withdrawn. Coaching Board ruling below.)*
+>
+> ✅ **SHIPPED 2026-09-18** as §111. The ungoverned `current_weekly_km < 20` literal is gone from `app/api/generate-plan/route.ts`; the gate is now the governed base-build ceiling on the DELIVERED PEAK vs the runner's real base, thrown as `BaseVolumeError` with alternatives. Registry row: `MARATHON-VOLUME-GATE-01 / §111`.
 >
 > `app/api/generate-plan/route.ts:28` — a `validate()` wrapper called at `:92`, **before** `generateRulePlan` at `:128`:
 >
@@ -2312,7 +2320,9 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 >
 > **⚠️ Risk to existing features.** Part 2 touches `foundationCompose` / `FOUNDATION_MAX_WEEKS` (§92) and the §91 on-ramp credit; `foundationResize.test.ts` pins onset parity and must stay green.
 
-> 🔴 **REFUSAL-SCREEN-01 — a deliberate coaching decision is presented as a crash.** *(P1. The actionable half of REFUSAL-THRESHOLDS-01 below. Belongs to FIRSTRUN-MARATHON-01 touchpoint 2.)*
+> ✅ **REFUSAL-SCREEN-01 — a deliberate coaching decision is presented as a crash.** *(P1. The actionable half of REFUSAL-THRESHOLDS-01 below. Belongs to FIRSTRUN-MARATHON-01 touchpoint 2.)*
+>
+> ✅ **SHIPPED 2026-09-18.** Registry row: `REFUSAL-SCREEN-01`.
 >
 > `GeneratePlanScreen.tsx:1176`. When the engine declines to build a plan, the runner gets:
 > 1. **An amber headline: *"Something went wrong building the plan."*** Nothing went wrong. **Change this first** — it is one string, it is false, and it is the sentence that makes a considered refusal feel like a broken app.
@@ -2351,7 +2361,9 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 >
 > ⚠️ **The wider lesson, worth more than the correction:** this claim came from a previous session, went into a partner-facing deck unverified, and was ~10 minutes of code-reading away from being caught. **An engine claim in a customer-facing document gets checked against the engine.**
 
-> 🟡 **WIZARD-TIME-CHIPS-01 — the wizard's own time chips break the rule the notes now follow, and relabelling them silently breaks a saved draft.** *(P2. Found while fixing NOTE-DURATION-FMT-01; recorded in the feature registry and NOT filed here until now.)*
+> ✅ **WIZARD-TIME-CHIPS-01 — the wizard's own time chips break the rule the notes now follow, and relabelling them silently breaks a saved draft.** *(P2. Found while fixing NOTE-DURATION-FMT-01; recorded in the feature registry and NOT filed here until now.)*
+>
+> ✅ **SHIPPED 2026-09-18** -- both halves: the chips read in hours, and the saved draft no longer matches on the chip LABEL. Registry row: `WIZARD-TIME-CHIPS-01`.
 >
 > ADR-015 locks the duration rule: under 60 reads `45 min`, at or above it reads in hours. `MAX_WEEKDAY_CHIPS` (`GeneratePlanScreen.tsx:116`) reads **`30 min · 45 min · 60 min · 90 min · 2 hrs · 3 hrs`** — a third convention: minutes past the hour for two values, then hours, and `hrs` rather than `h`. The plan notes were fixed on 2026-09-18; the input screen the runner meets *first* was not.
 >
@@ -2361,7 +2373,9 @@ Then the answer is written to `session_completions.fatigue_tag` and **read by no
 
 > 🟢 **COPY-DAYS-PLURAL-01 — "1 days/week".** *(P3, one line.)* The days-gate message does not singularise: a runner who says they can run one day a week is told *"1 days/week is not enough"*. Fix while in REFUSAL-SCREEN-01.
 
-> ⚠️ **REFUSAL-THRESHOLDS-01 — the claim that shaped the marketing deck is WRONG about the trigger and RIGHT about the consequence.** *(Checked in code 2026-09-18. Correct the deck before it goes further.)*
+> ✅ **REFUSAL-THRESHOLDS-01 — the claim that shaped the marketing deck is WRONG about the trigger and RIGHT about the consequence.** *(Checked in code 2026-09-18. Correct the deck before it goes further.)*
+>
+> ✅ **CLOSED 2026-09-20 -- the doc it named is now corrected.** The stale claim survived in `docs/partners/make-a-wish-readiness-2026-09.md` (*"marathon with current weekly volume under 20 km, and half or longer with a longest recent run under 5 km"*) for two days after the code changed under it, in the one document that goes to the charity. **Both numbers had been wrong TWICE over by then** -- superseded by §111 on 2026-09-18 and again by §117/§118 on 2026-09-20 -- so the correction replaces the numbers with the governed gates AND with the fact that neither gate ends the conversation any more. **The lesson is the location:** the actionable half (`REFUSAL-SCREEN-01`) shipped and was recorded, and the documentation half sat open with no mechanical check able to see it, because `audit-docs.sh` watches contracts and registries, not partner-facing prose.
 >
 > **The claim** (from a previous session, carried into the Make-A-Wish deck): *"The engine refuses a marathon plan if someone's running under 20 km a week, or their longest recent run is under 5 km."*
 >
@@ -2448,7 +2462,7 @@ across the seven months combined.
 > is already recorded as set at item 5 of the Make-A-Wish critical path. None of those are re-filed below;
 > `OPS-VERCEL-PLAN-01` is a **different argument** for the same decision and says so.
 
-> 🔴 **OPS-VERCEL-PLAN-01 — Vercel Hobby is contractually non-commercial, and Zonna sells a subscription.** *(P0 BLOCKER, founder, filed 2026-09-18.)*
+> 🔻 **OPS-VERCEL-PLAN-01 — Vercel Hobby is contractually non-commercial, and Zonna sells a subscription.** *(P0 BLOCKER, founder, filed 2026-09-18.)*
 >
 > Live check: `list_teams` returns `service-nerd's projects`, **`plan: "hobby"`**.
 >
@@ -2474,7 +2488,7 @@ across the seven months combined.
 > **Fix:** Vercel Pro, $20/month. Also frees the 2-cron cap that forced six crons onto GitHub Actions.
 > **Closes the open half of `DEPLOY-QUOTA-01`.**
 
-> 🔴 **OPS-SUPABASE-PLAN-01 — Supabase Free breaks at ~250–320 active runners, and has no backups at all.** *(P0 BLOCKER, founder, filed 2026-09-18.)*
+> 🔻 **OPS-SUPABASE-PLAN-01 — Supabase Free breaks at ~250–320 active runners, and has no backups at all.** *(P0 BLOCKER, founder, filed 2026-09-18.)*
 >
 > Live check: organisation `zqxxahbsnzyouuwaugjv`, **`plan: "free"`**. Project `Zonna Run`
 > (`wkppmpsvqkaxbekdgzdm`), `eu-west-1`, **15 MB used**, 26 auth users.
@@ -2538,7 +2552,7 @@ across the seven months combined.
 
 > 🟢 **LEGAL-COUNSEL-01 — FOUNDER ACCEPTED 2026-09-20: he is booking it.** Remains open until the advice is back, because the answer gates whether `CONSENT-DISCLOSURE-01`'s line is sufficient or a granular consent screen must land before the codes go out.
 >
-> 🔴 **LEGAL-COUNSEL-01 — book two hours of legal advice before the October codes.** *(P1, FOUNDER ACTION, SLT-ruled 2026-09-20. The SLT explicitly did NOT rule on this and is not competent to.)*
+> 🔻 **LEGAL-COUNSEL-01 — book two hours of legal advice before the October codes.** *(P1, FOUNDER ACTION, SLT-ruled 2026-09-20. The SLT explicitly did NOT rule on this and is not competent to.)*
 >
 > **The question for counsel:** does UK GDPR require explicit **consent** rather than **disclosure** for (a) special-category health data — injury history is the field — and (b) transfer to a US sub-processor (Anthropic)? Also whether Resend's handling needs naming.
 >
@@ -2546,7 +2560,9 @@ across the seven months combined.
 >
 > ⚠️ **Traynor's objection to a consent wall NOW, recorded:** no code has ever been redeemed and there is no funnel instrumentation, so adding an unmeasurable step to an invisible funnel is the worst-timed thing we could ship. That is a commercial argument and **it does not survive a legal requirement** — which is why 4 gates 5.
 
-> 🔴 **LEGAL-PRIVACY-01 — the privacy policy understates what goes to Anthropic, and omits Resend entirely.** *(P1, founder + me, filed 2026-09-18. Must land before codes go out; a charity will read this page.)*
+> ✅ **LEGAL-PRIVACY-01 — the privacy policy understates what goes to Anthropic, and omits Resend entirely.** *(P1, founder + me, filed 2026-09-18. Must land before codes go out; a charity will read this page.)*
+>
+> ✅ **SHIPPED 2026-09-20.** Registry row: `LEGAL-PRIVACY-01` -- the policy now names Anthropic accurately and names Resend, which it omitted entirely. **Found by the new all-time backlog check, not by me:** I closed eleven items by hand in the same pass and missed this one, because it shipped under another commit's scope and my manual reconciliation was keyed on ship scopes. The gate reads the registry instead.
 >
 > **What the page says:** *"When you use the AI coaching features, session data is sent to Anthropic's API
 > to generate a coaching response."*
@@ -3266,7 +3282,9 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > insurance gate that holds ENGINE-03. Hutchinson carries it.
 > *Verify still open:* `grep -c "sex\|gender" types/plan.ts` → **0 = still open**.
 
-> 🔲 **MAINT-LIVENESS-01 — the maintenance generator has NO liveness corpus, so NINE of its invariants have never been proven able to fire.** *(P2, filed 2026-09-17 out of LIVENESS-DEBT-01. Infra, no board.)*
+> ✅ **MAINT-LIVENESS-01 — the maintenance generator has NO liveness corpus, so NINE of its invariants have never been proven able to fire.** *(P2, filed 2026-09-17 out of LIVENESS-DEBT-01. Infra, no board.)*
+>
+> ✅ **SHIPPED 2026-09-19.** Registry row: `MAINT-LIVENESS-01`.
 >
 > `INV-MAINT-PHASE1-SESSION-TYPES`, `-QUALITY-CAP`, `-VOLUME-CEILING`, `-REST-DAY`,
 > `-NO-RACE-SPECIFIC`, `-CADENCE`, `-INJURY-EASY-ONLY`, `-REENGAGEMENT-WINDOW` and
@@ -3384,7 +3402,9 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 >
 > *Verify still open:* `grep -c "LONG_RUN_MAX_PCT_OF_WEEKLY" lib/plan/ruleEngine.ts` → the per-week bound is still the only mechanism.
 
-> 🔲 **INV-MSG-ROUNDING-01 — a violation message can read as self-contradictory because both numbers are rounded to integers.** *(P3, filed 2026-09-17. Cosmetic but corrosive.)*
+> ✅ **INV-MSG-ROUNDING-01 — a violation message can read as self-contradictory because both numbers are rounded to integers.** *(P3, filed 2026-09-17. Cosmetic but corrosive.)*
+>
+> ✅ **SHIPPED 2026-09-19.** Registry row: `INV-MSG-ROUNDING-01`.
 >
 > Observed on `INV-PLAN-MAIN-SET-ORDERING` during the PLAN-FITNESS-01 investigation: *"Got 18 min, expected ≤ 18 min (tempo + 3 min rounding tolerance)"*. **18 ≤ 18 is true, so the message says the check fired on a value that satisfies it.**
 >
@@ -3392,7 +3412,9 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 >
 > ⚠️ **Why it is worth fixing:** the next person to hit this will conclude the invariant is broken and go looking for a bug that is not there — exactly the cost this repo keeps paying for misleading output. One decimal place in the message fixes it. Check the other invariants that format with `.toFixed(0)` at the same time.
 
-> 🔲 **STEPBACK-STALE-PEAK-01 — §47's step-back is measured against a peak that a later pass then trims.** *(P2, filed 2026-09-17 out of PLAN-FITNESS-01. Infra/ordering, no board — restores documented intent.)*
+> ✅ **STEPBACK-STALE-PEAK-01 — §47's step-back is measured against a peak that a later pass then trims.** *(P2, filed 2026-09-17 out of PLAN-FITNESS-01. Infra/ordering, no board — restores documented intent.)*
+>
+> ✅ **SHIPPED 2026-09-19.** Registry row: `STEPBACK-STALE-PEAK-01`.
 >
 > `applyPeakLongRunAlternation` sizes the step-back as a ratio of the peak long run **it can see**. `applyLongRunProgressionCap` runs **afterwards** and can trim that peak, so the ratio ends up measured against a number that no longer exists. Measured: a **166-minute step-back against a final peak of 206 — 80.6% against §47's 80% ceiling.**
 >
@@ -3440,7 +3462,9 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 >
 > *Verify still open:* `grep -c "LONG_RUN_TWO_WEEK_MAX_RISE_PCT" lib/plan/generationConfig.ts` → **0 = still open**.
 
-> 🔲 **GRID-MARATHON-CAPABLE-01 — `cohortGrid` cannot express a marathon runner capable of §24, so every marathon measurement taken on it is scoped to runners who were never eligible.** *(P1, filed 2026-09-17 out of the LR-CONSEC-01 sitting. Infra, no board.)*
+> ✅ **GRID-MARATHON-CAPABLE-01 — `cohortGrid` cannot express a marathon runner capable of §24, so every marathon measurement taken on it is scoped to runners who were never eligible.** *(P1, filed 2026-09-17 out of the LR-CONSEC-01 sitting. Infra, no board.)*
+>
+> ✅ **SHIPPED 2026-09-19.** Registry row: `GRID-MARATHON-CAPABLE-01`.
 >
 > §24 requires a marathon time-goal peak long run ≥ **31.65 km** (75% of race distance). §52 caps the long run at 60% of the week, so reaching that needs a week of **~52.8 km**. `cohortGrid`'s marathon `current_weekly_km` values are **20 / 35 / 50**. **Zero of its 7,776 marathon inputs can satisfy §24 by construction.**
 >

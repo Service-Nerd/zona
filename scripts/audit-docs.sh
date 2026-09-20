@@ -57,6 +57,38 @@ for id in $ids; do
 done
 [ "$bfail" = "0" ] && say "  ok"
 
+# ── backlog status: ALL-TIME, not just today ────────────────────────────────
+#
+# ⚠️ THE CHECK ABOVE IS SCOPED TO TODAY'S SHIP SCOPES, AND THAT IS WHY IT SAID
+# ALL CLEAN WHILE ELEVEN SHIPPED ITEMS SAT OPEN. Measured 2026-09-20: the
+# founder said *"I'm sure you keep showing me things we have answered today or
+# closed off"*, and he was right — `MARATHON-VOLUME-GATE-01`, `REFUSAL-SCREEN-01`,
+# `LONGEST-RUN-GATE-01` and `WIZARD-TIME-CHIPS-01` shipped on 2026-09-18 and
+# `MAINT-LIVENESS-01`, `INV-MSG-ROUNDING-01`, `STEPBACK-STALE-PEAK-01` and
+# `GRID-MARATHON-CAPABLE-01` on 2026-09-19. Every one had a ship commit AND a
+# feature-registry row, and every one still read open two days later, because
+# the only check that could see them expired at midnight.
+#
+# An audit is only ever as wide as its list, and "since midnight" is a list.
+# This one reads every open header against the WHOLE git history.
+say "── backlog status: shipped ANY day, still marked open ──"
+afail=0
+# Registry FIRST CELL only — an ID inside another row's prose is not a shipped
+# row. Same rule `ship-record-check.py` encodes, and the same mistake a plain
+# grep has already made twice in this repo (GTM-CHARITY-02, and again on
+# 2026-09-20 when 27 false positives read as closed).
+grep -oE '^\| *`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`? *[—/]' docs/canonical/feature-registry.md \
+  | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u > /tmp/_reg
+# Open headers carry a *(provenance)* block; in-item emphasis bullets do not.
+# Without that discriminator this fires on narrative text, which is how four
+# separate parses of this file produced four different counts.
+grep -oE '^> (🔲|🔴|🔴🔴|🔵|⏸️|⚠️) \*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?[ —–-].*\*\(' docs/releases/backlog.md \
+  | grep -oE '\*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u > /tmp/_open
+for id in $(comm -12 /tmp/_reg /tmp/_open); do
+  say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
+done
+[ "$afail" = "0" ] && say "  ok"
+
 say "── invariants: code vs plan-invariants.md ──"
 grep -oE "'INV-[A-Z0-9-]+'" lib/plan/invariants.ts | tr -d "'" | sort -u > /tmp/_a
 grep -oE '^\| `INV-[A-Z0-9-]+`' docs/canonical/plan-invariants.md | grep -oE 'INV-[A-Z0-9-]+' | sort -u > /tmp/_b

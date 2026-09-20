@@ -409,11 +409,36 @@ note about the gap. A gap over 28 days (`FOUNDATION_GAP_AUTO_DAYS`) routes throu
 foundation decision rather than auto-generating. **This is the single path worth testing end to end
 before launch** (checklist item 14) because it is the exact shape every Make-A-Wish runner will hit.
 
-Two more refusals they could meet, from `/api/generate-plan`'s own guard:
-- marathon with current weekly volume under 20 km, and
-- half or longer with a longest recent run under 5 km.
+**⚠️ Corrected 2026-09-20 (`REFUSAL-THRESHOLDS-01`).** This section used to read *"marathon with
+current weekly volume under 20 km, and half or longer with a longest recent run under 5 km"*, from
+`/api/generate-plan`'s own hardcoded guard. **Both of those numbers are gone**, and the behaviour
+they described has changed twice since. Neither was governed: they were literals in an API route,
+outside `GENERATION_CONFIG`, outside `CoachingPrinciples.md` and outside `validatePlan()`.
 
-Both return 422 with an explanatory message rather than generating something unsafe.
+Two volume-and-readiness gates remain, and both are now governed principles:
+
+| Gate | What it actually checks | Principle |
+|---|---|---|
+| Base-build ceiling | The **delivered peak week** against the runner's real current base, capped at `MAX_BASE_BUILD_RATIO` (4.0). Not a stated-volume floor: a runner is judged on the climb the plan would ask of them, not on a round number. | §111 |
+| Long-run readiness | Half marathon or longer, against the long-run floor in `MIN_SESSION_DISTANCE_KM`. Reads the floor rather than holding a second copy of it. | §113 |
+
+**The important change for Make-A-Wish: neither gate ends the conversation any more.**
+
+- §117 (finish-goal run-walk) lowers the marathon door for a runner whose goal is to finish rather
+  than to hit a time. Measured on the charity profile, it took refusal from **45.5% to 29.3%**.
+- §118 (Base Building) covers everyone still below it. A runner who asks for a marathon and cannot
+  safely be given one now receives **a Base Building plan** in the same response: 8 to 15 weeks of
+  getting running, most of which ends above the marathon door with weeks to spare.
+
+So the honest summary for the charity is **not** *"we refuse runners below X"*. It is: **every
+runner who asks for a plan gets a plan.** Some get the marathon block they asked for, some get a
+run-walk marathon, and the lowest-volume runners get a Base Building block first. The founder's
+standard, and the one the engine is now measured against, is that nobody is told only "no".
+
+⚠️ **What this does not claim.** Zero rejection is not reachable by coaching alone, and the
+Coaching Board confirmed that twice by independent routes: from 4 km/week it takes about 17 weeks
+to reach a marathon base and a 29-week runway does not leave 17 spare after the block itself. What
+§118 guarantees is an *offer*, not a marathon in April.
 
 ### 4. The wizard, step by step
 

@@ -16,6 +16,42 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — BACKLOG-STALE-ALLTIME-01: the audit said ALL CLEAN because its list stopped at midnight
+
+**Dev.** The founder said *"I'm sure you keep showing me things we have answered today or closed
+off."* He was right, and `./scripts/audit-docs.sh` had reported **ALL CLEAN** minutes earlier.
+
+Both were true. The backlog-staleness check reconciles open items against *today's ship scopes*.
+Eleven items had shipped on 2026-09-18 and 2026-09-19, every one with a ship commit and a
+feature-registry row, and every one still read open — because the only check that could see them
+expired at midnight. `MARATHON-VOLUME-GATE-01`, a P0, had been closed for two days.
+
+**Product.** The cost was not tidiness. It was that every list I put in front of the founder
+carried a dozen items he had already settled, which makes the whole list untrustworthy — he cannot
+tell which entries are real work without re-checking each one himself, which is the job the
+document exists to do for him.
+
+**The honest bit.** I closed eleven by hand, then wrote the gate, and the gate immediately found a
+**twelfth** I had missed (`LEGAL-PRIVACY-01` — it shipped under another commit's scope, and my
+manual pass was keyed on scopes). One hand-audit, one miss, on a population of twelve. That is the
+same result this repo has recorded four times now: a manual audit is scoped to what you remember
+working on, and the gate reads the register.
+
+**The second finding, and the worse one.** `REFUSAL-THRESHOLDS-01` was open against a claim in
+`docs/partners/make-a-wish-readiness-2026-09.md` — *"marathon with current weekly volume under 20
+km, and half or longer with a longest recent run under 5 km."* Those numbers had been wrong
+**twice over**: superseded by §111 on 2026-09-18 and again by §117/§118 today. It is the one
+document that goes to the charity, and nothing mechanical could see it, because `audit-docs.sh`
+watches contracts, registries and invariants — not partner-facing prose. **An audit is only ever
+as wide as its list**, and that is now the third time this file has recorded that sentence about a
+different list.
+
+**AI-building.** The parse is the part worth keeping. `backlog.md` uses the same 🔴 glyph for item
+STATUS and for in-item emphasis, which is why four attempts to count it produced four different
+numbers. The discriminator turned out to be structural, not semantic: a real item header carries a
+`*(provenance)*` block and an emphasis bullet does not. Registry reconciliation reads the row's
+FIRST CELL, which is the rule `ship-record-check.py` already encodes and which a plain grep has
+now got wrong twice in this repo.
 
 ## 2026-09-20 — §118: a bound I chose for readability was doing physiological work
 
