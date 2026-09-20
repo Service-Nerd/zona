@@ -4,7 +4,40 @@ Raw learning notes, one entry per ship. Newest first. Dev / product / AI-buildin
 angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, keep
 it specific, no polish. The content system adds the voice.
 
----
+---## 2026-09-20 — P-05: one half shipped, the other half was already built and nobody had checked
+
+**Dev.** P-05 arrived already trimmed: three of its four proposals were dismissed in the filing
+itself, with code, which is the right way to receive an item. Of the two that survived, one was
+real and one turned out not to be.
+
+**The real one.** Our distance tiles said nothing about plan length. We offer six distances to the
+competitor's four, including 50K and 100K which they cannot offer at all, and told the runner
+nothing about any of them. They now read "42.2 km · 14–20 week plan".
+
+The care is in where the numbers come from. A range typed into the component is prose about a
+rule, and prose about a rule drifts from the rule — this site once claimed "four answers" on the
+homepage against a fifteen-question wizard and survived five wizard changes. So it reads
+`PLAN_SIGNATURES`, and a test fails if any range is hardcoded. It is also deliberately a range and
+not a promise: §97 lets a long runway earn a longer plan and §44 refuses below a minimum, so
+before a race date exists the only honest claim is what the signature permits.
+
+I also checked all six resolve. A tile silently rendering no range would have been the way this
+shipped broken, and it is exactly the kind of thing that passes review by looking fine on the
+distance you happen to test.
+
+**The half that was already done.** P-05(b) said a runner with no name from Apple or Google is
+"silently nameless", with the ceremony lines and reveal heading degrading with no indication. Not
+true any more: `ceremonyLines.ts` never uses the name at all — its lines are about the runner's
+own answers — the "Athlete" placeholder PROFILE-NAME-01 removed survives only in test grids, and
+`nameToken.ts` deliberately drops the name token and tidies the punctuation so a nameless runner
+reads a sentence with no name in it rather than one addressed to a placeholder. Its header says
+so explicitly.
+
+**And building it would have been actively wrong.** A name-capture screen would ask for a value we
+stopped sending to Anthropic that same morning, to repair a degradation that was designed. That is
+the second item today whose premise dissolved on reading the code, after P-08's claim that the
+charity code link sits on wizard step 1.
+
 ## 2026-09-20 — P-08(a): the item was a decision, and the answer was no
 
 **Dev.** P-08 proposed moving charity-code redemption to the last wizard step, at peak intent,

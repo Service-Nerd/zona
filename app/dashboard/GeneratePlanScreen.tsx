@@ -87,6 +87,35 @@ const DISTANCES = [
   { label: '100K',     value: 100,  paid: isPaidDistance(100)  },
 ]
 
+/**
+ * P-05(a) — the plan-length range on each distance tile.
+ *
+ * The tiles said nothing about length. We offer SIX distances to the
+ * competitor's four — including 50K and 100K, which they cannot offer at all —
+ * and told the runner nothing about any of them.
+ *
+ * ⚠️ READ FROM `PLAN_SIGNATURES`, NEVER TYPED HERE (INV-CFG-001). A range
+ * written into this component is prose about a rule, and prose about a rule
+ * drifts from the rule — the homepage once claimed "four answers" against a
+ * ~15-question wizard and survived five wizard changes.
+ *
+ * ⚠️ IT IS A RANGE, NOT A PROMISE, AND THAT IS HARD RULE 7. The length the
+ * runner actually gets is runner-dependent: §97 lets a long runway earn a
+ * longer plan and §44 refuses below a minimum. So this shows what the
+ * signature PERMITS, before a race date exists to compute against — which is
+ * why it reads "16-20 week plan" and never "your 18 week plan".
+ *
+ * En dash in the range, deliberately: BRAND-EMDASH-01 bans em dashes and
+ * explicitly keeps en dashes in ranges.
+ */
+function planLengthRange(distanceKm: number): string | null {
+  const sig = PLAN_SIGNATURES[raceDistanceKey(distanceKm)]
+  if (!sig) return null
+  return sig.min_weeks === sig.max_weeks
+    ? `${sig.min_weeks} week plan`
+    : `${sig.min_weeks}\u2013${sig.max_weeks} week plan`
+}
+
 const BENCHMARK_DISTANCES = [
   { label: '5K',   value: 5    },
   { label: '10K',  value: 10   },
@@ -1685,7 +1714,10 @@ export default function GeneratePlanScreen({
                   key={d.value}
                   layout="tile"
                   label={d.label}
-                  sub={formatDistance(d.value, preferredUnits, { exact: true }) ?? ''}
+                  // P-05(a) — the distance AND how long that plan runs. The
+                  // range comes from PLAN_SIGNATURES; see `planLengthRange`.
+                  sub={[formatDistance(d.value, preferredUnits, { exact: true }), planLengthRange(d.value)]
+                    .filter(Boolean).join(' \u00b7 ')}
                   active={distanceKm === d.value}
                   locked={locked}
                   lockLabel="PAID"

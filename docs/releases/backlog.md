@@ -427,7 +427,33 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-05 — ONBOARDING: the three changes that survived the audit.** *(T-02, T-03, T-07. **Split and demoted** — see below.)*
+> ✅ **P-05 — ONBOARDING: the three changes that survived the audit.** *(T-02, T-03, T-07. **Split and demoted** — see below.)*
+>
+> ✅ **CLOSED 2026-09-20. (a) SHIPPED; (b)'s premise is STALE and it needs no build.**
+>
+> **(a) Plan length on the distance tiles — shipped.** Every tile now reads e.g. *"42.2 km · 14–20
+> week plan"*. ⚠️ **Read from `PLAN_SIGNATURES`, never typed** (INV-CFG-001) — a range written into
+> the component is prose about a rule, and prose about a rule drifts from it. A test asserts no
+> range is hardcoded and **is falsified by hardcoding one**. ⚠️ **It is a RANGE, not a promise**
+> (hard rule 7): §97 lets a long runway earn a longer plan and §44 refuses below a minimum, so
+> before a race date exists the honest claim is what the signature PERMITS. Verified all six
+> distances resolve, ultras included — a tile silently rendering no range was the failure mode.
+>
+> ⚠️ **(b) THE NAMELESS RUNNER IS ALREADY HANDLED, and the filing predates the fix.** It says the
+> runner "is silently nameless, and both the ceremony's personalised lines and the reveal heading
+> degrade with no indication." Checked in code today: **`ceremonyLines.ts` does not use the name at
+> all** — its lines are about the runner's ANSWERS (days available, long-run day) — and the
+> `'Athlete'` placeholder `PROFILE-NAME-01` removed survives only in test grids.
+> `lib/coaching/nameToken.ts` handles it deliberately: with no name it **drops the token and tidies
+> the punctuation**, so the runner reads a sentence with no name in it rather than one addressed to
+> a placeholder, and its own header says that is the point. `profileInitials` falls back to the
+> email initial, then `?`.
+>
+> **So there is nothing silently broken, and a capture screen would be the wrong fix** — it would
+> ask for a value we deliberately stopped sending to Anthropic this morning
+> (`ENRICH-PII-MINIMISE-01`), to repair a degradation that was already designed. **The three items
+> the filing had already dismissed (Strava-first, the interim payoff, "Step 3 of 7") stay
+> dismissed.**
 >
 > **Problem, and what is NOT the problem.** The brief scopes P-05 as "onboarding rework: Strava-first,
 > collapse steps, add an interim payoff, add Step 3 of 7 labelling." **Three of those four are already
@@ -3462,6 +3488,19 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > **Why it was held, not actioned:** the 254-word version is what made the argument feel obvious, and it no longer exists (mean is now 67 words, one tile). Sutherland and Fried both wanted one tile kept where it is. **See the shortened version on device before deciding** — this is a placement question and it deserves its own decision, not a bundled one.
 >
 > **What would settle it:** evidence that runners act on the lever early (keep it on day one) versus go looking for the explanation later (move it behind the question).
+>
+> 🔻 **REVIEWED 2026-09-20 AND LEFT OPEN, DELIBERATELY.** Both things this item names as deciding it
+> are unavailable to me: a device look is yours, and the behavioural evidence does not exist —
+> `coach_open` is still the only analytics event in the product (`GTM-CHARITY-06`). Inventing a
+> verdict here would be a taste call dressed as a finding, on a screen two SLT members explicitly
+> wanted left alone pending the shortened version being seen.
+>
+> ⚠️ **BUT THE SCREEN IT IS ABOUT CHANGED TODAY, so the question is no longer the same one.** P-04
+> put the zone-compliance block **above** the rationale: the top of Plan now opens with *"3 of 4 runs
+> held the zone"* rather than with the constraint note. That is a partial answer by construction —
+> the first thing a runner reads on day one is no longer a list of what their life prevents. **P-04
+> deliberately did not settle this** (bundling would have answered an SLT question by accident), but
+> whoever decides it should look at the screen as it is now, not as it was on 2026-09-17.
 
 
 > 🟡 **TT-FREE-BENCHMARK-01 — SLT DEADLOCKED 2026-09-20, and the deadlock is the honest output. (c) REFUSED.** *(P2, filed 2026-09-17. **SLT question, not a defect.**)*
