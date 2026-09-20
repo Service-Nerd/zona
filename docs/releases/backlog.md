@@ -2850,6 +2850,41 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 
 > 🔲 **FLEET-INVALID-DEBT-02 — opt-in "refresh my plan" for a REAL active runner on a stale-but-valid... invalid plan.** *(P3, filed 2026-09-17, deferred until there are real runners.)* The safe way to bring a live, in-progress plan up to current rules WITHOUT the silent-rewrite the live-plan policy forbids. Mechanism already exists in pieces: regenerate anchored to the runner's original `plan_start` (keeps `week.n`/dates stable so `session_completions`/`run_analysis`/reflections stay keyed), graft the runner's enriched copy back onto structurally-unchanged weeks (`foundationResize.ts` / `enrichPartialRevert.ts`, ENRICH-PARTIAL-01), archive the prior via `plan_archive`, and surface the change through ADR-012 magnitude → confirmation tile rather than applying it silently. Only worth building once a real runner holds a plan that breaches a SAFETY-relevant invariant (load/cap/empty-session), not a cosmetic annotation one. `81e4b792` is the current stand-in case.
 
+
+> 🔲 **FLEET-TRIGGER-SEVERITY-01 — `FLEET-INVALID-DEBT-02`'s trigger is a human judgement, and with 500 runners that stops being a control.** *(P2, Coaching Board, filed 2026-09-20 while analysing the item above.)*
+>
+> **`FLEET-INVALID-DEBT-02` is correctly P3 and stays P3.** Its own precondition — a real runner on a
+> live plan breaching a **safety-relevant** invariant — is not met at 26 users, and `81e4b792` is a
+> test-adjacent stand-in. Nothing here proposes building the refresh path.
+>
+> **The finding is the trigger, not the item.** "Only worth building once a real runner holds a plan
+> that breaches a SAFETY-relevant invariant (load/cap/empty-session), not a cosmetic annotation one"
+> is a good rule with nothing computing it. `/api/ops/plan-audit` records every stored plan's
+> violation CODES daily; it does not classify them, so the escalation depends on someone reading the
+> audit and judging. That is the same class as `plan_week_collision`, whose own comment says
+> *"with 500 charity runners arriving, 'someone happens to look' stops being a control."*
+>
+> **Measured:** `validatePlan()` carries **136 invariant codes**. Its existing `severity` field is
+> `error` vs `warn`, which encodes *how confident the check is*, **not** *whether a breach hurts the
+> runner* — so it cannot answer this question and must not be reused for it.
+>
+> **Proposed design (not built — the classification is the board's):** one owner mapping each code to
+> `prescription` (the runner does something their body will feel) or `declaration` (the prescription
+> is right; the plan fails to SAY something). **Default `prescription`, so a new invariant triggers
+> until someone rules otherwise** — the fail-safe direction, and the same default-to-loud pattern as
+> the debt registers. The audit then reports a severity-classified count and the trigger fires itself.
+>
+> ⚠️ **This needs a Coaching Board sitting and should not be done as a side task.** It is 136 coaching
+> judgements, and several are genuinely contested rather than obvious: `LABEL-MATCHES-PACE` and
+> `DISPLAY-ZONE-MATCHES-WORK` look like copy defects but a session labelled tempo that is paced easy
+> makes the runner do the wrong effort, which is prescription. Getting those wrong in the *cosmetic*
+> direction is exactly the silent miss this item exists to prevent.
+>
+> ⚠️ **What this does not prove:** I could not re-measure the live fleet from here (the audit needs
+> `CRON_SECRET` and production access). The severity picture is `FLEET-INVALID-DEBT-01`'s 2026-09-17
+> reading — `CATALOGUE-LINK`, `DIFFICULTY-ANNOTATED`, foundation warm-up, `PEAK-STEPBACK-VOLUME` —
+> of which only the last is load-shaped. **If that has changed since, this filing's priority is wrong.**
+
 > ✅ ~~**STRAVA-APP-INACTIVE-01**~~ — **CLOSED 2026-09-20 BY FOUNDER DECISION: WE ARE NOT USING STRAVA.**
 > Not "reactivate it later" and not "blocked on Strava" — a product decision. The application stays Inactive.
 >
