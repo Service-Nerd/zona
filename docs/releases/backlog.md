@@ -720,7 +720,17 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-11 — LAUNCH SCREEN.** *(T-01. GATE via P-13. **Demoted to last** — gated on asset licensing and changes nothing for a runner already inside.)*
+> ⛔ **P-11 — CLOSED 2026-09-20. It was never a licensing problem.** *(T-01. Research: `docs/decisions/2026-09-20-p13c-p11-illustration-research.md`.)*
+>
+> **Free, commercially usable stock video exists** — Pexels, Pixabay, Coverr. The block was never
+> money or a licence. ⚠️ §6's non-identifiable rule would still apply to anyone in frame.
+>
+> **It is closed because a launch screen with stock running footage is the most generic thing a
+> running app can do**, and we do not have a launch-screen problem: the Capacitor splash holds and
+> hands off to the web mount. It changes nothing for a runner already inside — which the original
+> filing already said, and which is a better reason to close it than to defer it.
+>
+> ⚠️ **Re-open only with a specific reason to have one**, not with a budget.
 >
 > **Problem.** Our login is wordmark-led on a flat `--bg` — legible, safe, and it says nothing.
 > Theirs (`IMG_7172`) is full-bleed and arresting, and **fails at the thing it is for**: observed,
