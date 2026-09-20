@@ -1166,6 +1166,27 @@ export const GENERATION_CONFIG = {
   LONG_RUN_PROGRESSION_CAP_PCT:           20,
   LONG_RUN_PROGRESSION_CAP_ABS_KM:         5,
 
+  // ── Week-1 absolute step ────────────────────────────────────────────────────
+  // WEEK1-FLOOR-SHORT-DIST-01 (Coaching Board 2026-09-20). Week 1 has no prior
+  // week, so §2's week-on-week ramp cap does not govern it — the gap §111's own
+  // text names ("a 3.6x acute jump in week one that §2's ramp cap does not
+  // govern"). The ratio arm alone missed it at higher volumes: a runner on
+  // 40 km/week handed 50 is +10 km but only 1.25x, under the ratio.
+  //
+  // 10 km is Willy's binding condition made numeric, and its prevalence was
+  // measured before it was set: 3.1% of plans with any positive week-1 step,
+  // mean per-run increase +2.1 km at that threshold. Chosen from the data, not
+  // from the round number it happens to be.
+  WEEK1_ABSOLUTE_STEP_MAX_KM:             10,
+  // ⚠️ AND A PROPORTIONAL GUARD, because the absolute arm alone over-fired.
+  // Measured immediately after adding it: a runner declaring 90 km/week handed
+  // a 100 km week 1 — a 1.11x step, ten kilometres spread over six runs — was
+  // flagged as a week-1 leap, and 100K fit-for-purpose fell 95.8% -> 88.5% on
+  // that alone. A flat kilometre threshold means something different at 10
+  // km/week and at 90. The arm now needs BOTH: a large absolute step AND a
+  // step that is proportionally real.
+  WEEK1_ABSOLUTE_STEP_MIN_RATIO:          1.15,
+
   // §45 Amendment 2 (LR-ABS-CAP-LOWVOL-01, Coaching Board 2026-09-17).
   //
   // The +5km ABSOLUTE arm above is tapered on a small week:

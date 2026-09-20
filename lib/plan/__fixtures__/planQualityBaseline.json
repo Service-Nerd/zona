@@ -3,7 +3,7 @@
     "generated": 3703,
     "refused": 2777,
     "LONG-RUN-SHORT": 2176,
-    "WEEK1-LEAP": 1057,
+    "WEEK1-LEAP": 745,
     "BINGE-WEEK": 7
   },
   "cohortGrid": {
@@ -11,8 +11,8 @@
     "refused": 128,
     "NEVER-BUILDS": 1077,
     "BINGE-WEEK": 281,
-    "WEEK1-LEAP": 147,
     "LONG-RUN-SHORT": 40,
+    "WEEK1-LEAP": 22,
     "BINGE-SEVERE-75": 20,
     "FLAT-CURVE": 3
   },
@@ -26,8 +26,8 @@
   "charity personas": {
     "generated": 13,
     "refused": 1,
-    "WEEK1-LEAP": 3,
-    "LONG-RUN-SHORT": 2
+    "LONG-RUN-SHORT": 2,
+    "WEEK1-LEAP": 2
   },
   "engine personas": {
     "generated": 6,

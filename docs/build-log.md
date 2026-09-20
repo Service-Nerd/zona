@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-20 — WEEK1-FLOOR-SHORT-DIST-01 · we were scoring our own caution as a defect
+**Shipped:** the week-1 step is measured against what the runner actually runs. 10K goes 78.3% to 99.4%; the whole product reaches 92.9% and is inside the 90-95% target.
+
+**Dev learning:** The 10K was our worst distance and every point of the gap was one rule. That rule compared week one against a figure we had deliberately reduced: when an experienced runner turns up on low mileage we assume they are coming back from a layoff and scale their starting volume down for their own protection. Then we measured the plan against the reduced number and recorded the difference as a defect. Beginners scored a perfect hundred percent because beginners are not scaled. That inversion was the tell, and it took four hours of building engine fixes before I looked at it.
+
+**The precedent nearly read as a blocker and was actually the argument.** The board had moved a sibling rule the opposite way the day before, onto the scaled figure. The reason both changes share is one sentence in that ruling: the gate scored a ratio no runner experienced. For the sibling rule, the experienced quantity is what the engine builds from. For week one it is the step from the mileage you actually run to the week you are handed, and the scaled figure is overridden by a floor before the plan exists. The runner never sees it.
+
+**The honest bit:** I encoded a board member's binding condition literally and it made the engine worse. He said the fifteen-kilometre weekly jumps must stay visible. I wrote "flag anything over ten kilometres", which also caught a runner on ninety kilometres a week being given a hundred: a eleven percent step, ten kilometres spread over six runs, and it knocked seven points off our hundred-kilometre score. He had said a step that is big for the runner, and I heard a big number. The fix is a proportional guard, and the test now asserts both halves so the next person cannot make the same substitution.
+
+---
+
 ## 2026-09-20 — REFUSAL-IS-AN-OUTCOME-01 · we were counting our best behaviour as a failure
 **Shipped:** a correct refusal now counts as fit for purpose. Whole product 85.3% to 87.0%; the marathon goes 73.9% to 90.1% and is in target.
 

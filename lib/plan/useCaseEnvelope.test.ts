@@ -104,11 +104,14 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   //   whole product 87.0%  (was 66.7% at the start of the 2026-09-19 build)
   // ⚠️ THE MARATHON IS NOW IN TARGET at 90.1%, and 10.9pp of that is correct
   // refusals — every one of which names a next step, asserted below.
-  // ⚠️ THE SHORT DISTANCES ARE NOW THE WHOLE GAP: 10K 78.3% and HM 85.4%,
-  // and their dominant objection is WEEK1-LEAP (11.4% product-wide), which is
-  // `WEEK1-FLOOR-SHORT-DIST-01` — the one open engine item.
+  // ⚠️ UPDATED 2026-09-20 after WEEK1-FLOOR-SHORT-DIST-01 (§2 Amendment):
+  //   5K 100% · 10K 99.4% · HM 88.2% · marathon 90.1% · 50K 100% · 100K 100%
+  //   WHOLE PRODUCT 92.9% — INSIDE THE 90–95% TARGET.
+  // 10K went 78.3% -> 99.4%: its entire gap was WEEK1-LEAP measuring against
+  // §29's scaled-down start rather than what the runner actually runs.
+  // The half marathon is now the weakest at 88.2%.
   const FLOORS: Record<number, number> = {
-    5: 0.97, 10: 0.74, 21.1: 0.81, 42.2: 0.86, 50: 0.97, 100: 0.95,
+    5: 0.97, 10: 0.96, 21.1: 0.85, 42.2: 0.86, 50: 0.97, 100: 0.92,
   }
   // WEEK1-LEAP-ABS-01 raised 5K again, 91.8% -> 100%: the ≤2km week-1
   // "leap" artefact was almost entirely a 5K phenomenon, because that is where

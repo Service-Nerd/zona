@@ -371,6 +371,70 @@ A returning runner is identified by the wizard inputs `training_age > 2 years` A
 
 ---
 
+### §2 Amendment — the week-1 step is measured against what the runner RUNS, and has three arms (Coaching Board 2026-09-20, WEEK1-FLOOR-SHORT-DIST-01)
+
+**Principle.** The week-1 step is assessed against the runner's **declared
+current weekly volume**, not `effectiveStartKm`. It is excessive when any of:
+
+1. **ratio** — week 1 > 1.30× declared **and** more than 2 km absolute;
+2. **absolute** — week 1 exceeds declared by ≥ `WEEK1_ABSOLUTE_STEP_MAX_KM`
+   (10) **and** by more than `WEEK1_ABSOLUTE_STEP_MIN_RATIO` (1.15×);
+3. **session load** — week 1's longest run exceeds the runner's longest recent
+   run by more than `LONG_RUN_PROGRESSION_CAP_ABS_KM` (§45's step, reused).
+
+**Why the denominator moved, when §111 moved the opposite way one day earlier.**
+§111 Amendment 1 switched that gate **onto** `effectiveStartKm`; this switches
+week 1 **off** it. Both follow the same sentence: *"the gate scored a ratio no
+runner experienced."* For §111 the experienced quantity is the volume the
+engine builds **from**. For week 1 it is the step from the mileage the runner
+**actually runs** to the week they are handed — and `effectiveStartKm` is an
+internal intermediate the **week-1 floor overrides** before a plan exists. The
+runner never sees it.
+
+**Measured.** 79% of everything the old rule flagged were §29 fresh-return
+runners: scaled down for their own protection, then scored against the
+reduction. **Beginners, who are not scaled, were 0% unfit while intermediates
+were 48%** — that inversion was the tell. Against declared volume the median
+flagged ratio is **1.33×**, not 1.79×.
+
+**⚠️ THE LOAD EVIDENCE, WHICH IS WHY THIS IS NOT A LOOSENING.** Across all
+3,880 flagged plans — the tail, not the median — the worst per-run increase is
+**+2.4 km**, and the worst case of a week-1 session exceeding the runner's
+longest-ever run is **+0.5 km**. The engine never asks a flagged runner to run
+materially further in one session than they already have. Willy withdrew the
+load objection on that evidence.
+
+**⚠️ WILLY'S BINDING CONDITION WAS MIS-ENCODED FIRST AND THE MISTAKE MATTERED.**
+He said the 15 km weekly jumps must stay visible. Encoded literally as ">= 10 km
+absolute" it also swept up a runner declaring **90 km/week handed 100** — a
+1.11× step, ten kilometres across six runs — and dropped 100K fit-for-purpose
+**95.8% → 88.5%** on that alone. He named a step that is big **for the runner**,
+not a big number. Hence arm 2's proportional guard. Verified both ways:
+**47/47 hazardous steps flag, 0/28 benign ones do.**
+
+**⚠️ ARM 3 IS INERT ON TODAY'S CORPUS AND THAT IS RECORDED, NOT HIDDEN.** It
+fires on nothing (worst excess +0.5 km against a 5 km margin). It is kept
+because it is the only arm describing the actual **hazard** — tissue load per
+session — rather than an accounting ratio, and its liveness comes from mutation
+rather than from the corpus.
+
+**Effect.** 10K **78.3% → 99.3%**; whole product **87.0% → 92.9%, inside the
+90–95% target.** No prescription changed: this is a measurement rule.
+
+**Config.** `WEEK1_ABSOLUTE_STEP_MAX_KM = 10` (prevalence measured at 3.1% of
+plans with any positive week-1 step before it was set),
+`WEEK1_ABSOLUTE_STEP_MIN_RATIO = 1.15`, and §45's
+`LONG_RUN_PROGRESSION_CAP_ABS_KM` reused rather than a second constant for the
+same idea.
+
+**Enforced by** `planQuality`'s `WEEK1-LEAP` predicate and the per-distance
+floors in `useCaseEnvelope.test.ts`. **Not a `validatePlan` invariant, and that
+is deliberate:** this governs whether we judge a plan defective, not whether the
+plan is constitutional. Recorded so the missing invariant is not read as an
+oversight.
+
+---
+
 ## 3. Recovery weeks — adaptation happens in rest
 
 **Principle.** Every fourth week is a recovery week — volume drops to 70% of the prior build week. Masters athletes (age ≥ 45) recover every third week instead.
