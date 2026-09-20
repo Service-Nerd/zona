@@ -30,6 +30,785 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 🟢 **ENGINE OPEN LIST, end of 2026-09-19:** ~~`PEAK-VS-DELIVERED-BUILD-01`~~ CLOSED (withdrawn — §23 legislates it, 100% compliance) · ~~`S111` metric anti-correlation~~ CLOSED (§114 took the hazard to 0.00%) · ~~`S52-LOPSIDED-BOUND-01`~~ CLOSED (negative result) · ~~`CAT-DEPTH-01`~~ **CLOSED — shipped 2026-09-19**. *(Device verification is founder-owned, untracked.)*
 
+## 🎯 2026-09-20 — MILES TEARDOWN, PHASE 2: proposals P-01 to P-14
+
+**Source:** `docs/competitor/miles-teardown-brief.md` §4 · **Assessed in:** `docs/MILES-GAP-ANALYSIS.md`
+(all 20 items, full impact blocks) · **Audit:** `docs/ONBOARDING-AUDIT.md`
+
+⚠️ **NOTHING HERE IS APPROVED AND NOTHING IS BUILT.** These are proposals. Four carry an automatic
+approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
+— not merely approved — until the Coaching Board rules.
+
+### Recommended sequence, and where it deviates from the brief
+
+The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
+
+| # | Item | Gate | Deviation from §5 |
+|---|---|---|---|
+| **0** | **The door** — `S111-SUBFLOOR-VOLUME-01` · `MARATHON-VOLUME-GATE-01` · `REFUSAL-SCREEN-01` | Coaching Board | **Not a P-item.** Already filed, already P0. Outranks everything below. |
+| 1 | **P-01** semantic colour | **RUSS** | As §5. |
+| 2 | **P-03** pace ceiling | none | **Moved ahead of P-01's dependency.** §5 and §4 both say P-03 depends on P-01. It does not: the ceiling is a text string (`"7:11 /km or slower"`), not a colour. Only **P-04** and **P-13** need the token decision. P-03 can ship while P-01 is still being decided. |
+| 3 | **P-04** zone compliance | needs P-01 | As §5. |
+| 4 | **P-08a** charity-code placement | **RUSS** | **Pulled forward from "whatever order fits".** October-dated, ~500 runners, and the brief's proposal *conflicts* with a filed P1 (see P-08). |
+| 5 | **P-02** modify-plan sheet | Coaching Board | As §5. |
+| 6 | **P-06** plan reveal | **RUSS** | As §5. |
+| 7 | **P-05** onboarding | mixed | **Split, and demoted.** Its T-04 half is item 0 above and is engine work, not onboarding polish. What remains (T-02, T-03, T-07) is P2/P3. |
+| 8 | **P-09** paywall + exit offer | **RUSS** | Blocked on `TIER-TRIAL-CONFIDENCE-01`. |
+| 9 | **P-12** profile · **P-14** review prompt · **P-07** register · **P-10** cold start | mixed | As §5. |
+| 10 | **P-13** visual depth · **P-11** launch screen | **RUSS** | **P-11 demoted to last.** Gated on stock-footage licensing and changes nothing for a runner already inside. |
+
+> **P-14 is an addition.** §4 has thirteen slots and **T-19 (review prompt) maps to none of them.**
+> Rather than drop a finding, it is proposed as P-14 and flagged here so the addition is visible.
+
+---
+
+> 🔲 **P-01 — SEMANTIC COLOUR PAIR: moss = held the zone, amber = cooked it.** *(GATE. Design system. Decision note: `docs/decisions/2026-09-20-p01-semantic-colour.md`. **Nothing that depends on this proceeds until signed off.**)*
+>
+> **Problem.** Moss currently means "done" and amber means "warning". Both are category-generic. And
+> the teardown produced evidence, not opinion: **Miles's palette is ours.** Their ground is a warm
+> off-white within a shade of `--bg` `#F3F0EB`, their accent a muted green within a shade of
+> `--moss` `#6B8E6B`, their cards white with a soft warm shadow (`IMG_7173`, `7174`, `7185`). Side by
+> side the two products are hard to tell apart. **Warm-neutral-plus-single-green is the category
+> default, not our differentiator.**
+>
+> **Proposed behaviour.** Re-point the pair at zone discipline. **Moss = completion where intensity
+> was correct. Amber = completion where intensity drifted above target.** The colour stops meaning
+> "finished / careful" and starts meaning the one thing the product is about.
+>
+> **UX and UI.** No new screens. Every completion state changes meaning, not shape: session cards,
+> the Plan calendar, `ZoneBar`, `ZoneRings`, the Me state dots, P-04's new block. A runner learns the
+> pair once and reads it everywhere.
+>
+> **Data and engine impact.** **None on the engine.** The signal already exists —
+> `run_analysis.hr_above_ceiling_pct` and `hr_in_zone_pct` are already computed and already fetched
+> into `runAnalysisMap` (`DashboardClient.tsx:1195`). This is a render-layer reinterpretation of data
+> we hold. No migration, no new field, no prescription change.
+>
+> **Brand constraints.** Tokens only, in `globals.css` — no component may hardcode either value
+> (hard rules 5 and 6). ⚠️ **One real collision to resolve, and it is the reason this needs a
+> decision rather than a ticket:** amber is already spoken for twice. `--warn` `#B8853A` is the
+> coaching/warning colour, and `--s-race` `#C86A2A` is the race session accent — **and Miles uses
+> amber for the race week too** (`IMG_7181`, the W8 bar). If amber starts meaning "you went too
+> hard", a race week drawn in amber reads as a reprimand. The decision note carries three resolutions.
+>
+> **Acceptance criteria.**
+> - Both meanings resolve from `globals.css` custom properties; `grep -rE "rgba?\(|#[0-9A-Fa-f]{3}" app components` finds no new hardcoded instance.
+> - A completed session with `hr_above_ceiling_pct` above the §12 threshold renders amber; below it, moss. One owner for that predicate — not a copy in each component (D-16).
+> - The race-week collision is resolved explicitly, not left to chance.
+> - Documented in `ui-patterns.md` so the next component inherits the meaning.
+>
+> **Dependencies.** None upstream. **Blocks P-04 and P-13.** Does **not** block P-03.
+>
+> **Size.** S for the tokens. M once every completion surface is swept.
+>
+> **Free/Pro.** Neither — it is the design system. ⚠️ But note the consequence: the amber meaning is
+> only ever *visible* to users who have run analysis, which is **PAID** (`activity_intelligence`).
+> A free runner sees moss-for-done and never sees amber. That is not a blocker; it is a fact the
+> decision note states.
+>
+> **Backlog.** **NEW.** Nothing existing covers it. Cross-references the `BRAND-*` tech-debt family
+> only insofar as both touch tokens.
+
+---
+
+> 🔲 **P-02 — MODIFY-PLAN SHEET: batched edits, grouped by consequence, diff before apply.** *(T-15. Highest-leverage item in the teardown, widest blast radius in this document. **Coaching Board required before scoping**, not merely before approval.)*
+>
+> **Problem.** **There is no surface on which a runner can change a plan parameter.** Phase 0 Q13:
+> `ReshapeScreen` is not an editor (it renders whatever `/api/adjust-plan` proposes); `MeScreen →
+> "Your training"` is four rows, two of which are display preferences. **The only way to change days
+> available, weekday cap, race date, long-run day, injuries or terrain is to re-run the wizard — 14
+> screens — which archives the existing plan.** A runner whose life changes either starts over or
+> carries a plan that is now wrong. The second is the churn path.
+>
+> **Proposed behaviour.** A slide-up sheet from the Plan screen. Parameters grouped **by
+> consequence**, every row showing its current value on the right and a one-line statement of what
+> changing it does. Edits **batch**, then apply together — one regeneration, one diff, one accept.
+>
+> **UX and UI.** `Sheet` exists. Row pattern exists. `AdjustmentDiff` **already exists and already
+> does diff-before-apply** — the brief's "always show the diff" is half-built, with two live call
+> sites (`PendingAdjustmentBanner.tsx:104`, `DashboardClient.tsx:12037`). ⚠️ **Two of our own rules
+> bite and a straight copy would breach both.** (1) Miles puts *Cancel* top-right; our principle is
+> *"slide-up sheets: mirrored nav bar at bottom, not top"* — ours must differ. (2) Their quarantined
+> amber "Start a new plan" card is the pattern we already call **"Careful Now"** on MeScreen — reuse
+> it, do not invent a second destructive treatment. Per-row Pro locks are one new small component.
+>
+> **Data and engine impact.** **No new plan fields** — every parameter already exists on
+> `GeneratorInput`. What is new is a **persisted, not-yet-applied edit set**. It must not become a
+> second copy of `GeneratorInput` (D-16); the natural shape is a sparse overlay onto the stored
+> `meta.generator_input`, which already exists for byte-exact replay (PV2-A). Migration required.
+>
+> 🔴 **`PLAN-WEEK-COLLISION-01` IS THIS FEATURE'S FAILURE MODE, ALREADY OBSERVED.** A new plan
+> arrived **94% pre-completed** because `week_n` is a within-plan coordinate that seven tables used
+> as a cross-plan key. Modify-and-regenerate does exactly that operation for a living. **Read that
+> item before designing this one.** It is the single most important dependency on this page.
+>
+> **ADR-012 already defines the thresholds** for which changes need confirmation — day-of-week moves,
+> session-type swaps, >15% trims, >15% week-volume changes. This is the user-initiated twin of that
+> path and must reuse them rather than invent new ones. ⚠️ And SESSION-KM-01/02 records that the >15%
+> threshold was **unreachable for beginners** because their sessions are duration-anchored; fixed, but
+> the magnitude path must be exercised for duration-anchored plans here too.
+>
+> ⚠️ **Intensity as a free primary control is a Coaching Board question, not a product one.**
+> Expressing it as 80/20 → 90/10 with a stated consequence touches §1 (`INTENSITY_DISTRIBUTION`,
+> measured in **sessions**, plan-wide — CD-19) and §110 (where `hard_session_relationship: 'avoid'`
+> is a floor, not an off switch). Letting a runner set the ratio directly is new authority over a
+> constitutional numeric. **Do not scope it without the board.**
+>
+> **Brand constraints.** Every row needs a consequence subtitle — that is the pattern worth taking,
+> and it is a lot of new copy → **RUSS** (pattern-setting).
+>
+> **Acceptance criteria.**
+> - Edits batch; nothing regenerates until Apply.
+> - Apply always shows `AdjustmentDiff` and requires accept. No silent structural change.
+> - Completions survive a parameter edit — asserted by a test that would have caught `PLAN-WEEK-COLLISION-01`.
+> - ADR-012 thresholds reused, not restated (one owner).
+> - A duration-anchored (beginner) plan exercises the same magnitude path as a distance-anchored one.
+> - `verify:parity` proves an untouched plan is byte-identical.
+>
+> **Dependencies.** `PLAN-WEEK-COLLISION-01` understood · ADR-012 · Coaching Board on intensity ·
+> P-04 or the Plan screen for an entry point.
+>
+> **Size.** **L.** The largest build in the set.
+>
+> **Free/Pro — sharper than the brief's framing, which is itself sharper than Miles's.**
+> Miles gates Intensity and Runs-per-week behind Pro; the brief rightly calls runs-per-week their
+> weakest link, because a free user whose life changes cannot keep the plan accurate and therefore
+> churns. Applying our own default — *accuracy free, intelligence paid*:
+> **FREE:** race date, running days, long-run day, runs per week, blockout days, weekday caps.
+> **PAID:** the **AI re-enrichment** of changed weeks (`ai_coach_notes_new`, already a paid gate).
+> Regeneration itself is `rule_engine_regeneration`, **FREE_ALWAYS** under the R23-D6 lenient reading.
+> So: everyone can change their plan; only paid users get the new coaching voice on it.
+> **Intensity is unresolved and belongs to the board before it belongs to a tier.**
+>
+> **Backlog reconciliation — explicit, per the brief's instruction.**
+> - **SUPERSEDES `R22` (Blockout days, PAID, M).** Its own note says *"bundle with R20 parked
+>   triggers — uses same reshape engine"*. It becomes **one row in this sheet**, and its PAID tag is
+>   **overturned**: blockout days keep a plan accurate, so FREE. `R22` should be closed into this item,
+>   not left as a parallel entry.
+> - **ABSORBS part of `R21` (Strength sessions, FREE display / PAID dynamic, M).** The *row* that
+>   turns strength on and places it belongs here. The *session content* does not — that stays `R21`,
+>   and it also overlaps the "Supplementary session slots" entry in *Scoped but unscheduled*, which
+>   already carries a full schema + engine + UI model. **Three entries currently describe parts of
+>   one feature.** `R21` stays open for content; this item claims the control.
+> - **ABSORBS part of `R20` (Dynamic reshape).** `R20` shipped the engine and the auto path. Its
+>   **user-initiated** half is this sheet. `R20`'s parked triggers stay with `R20`.
+> - ⚠️ **After this item is approved, `R22` must be closed and `R21`/`R20` annotated in the same
+>   commit**, or the backlog carries four descriptions of one feature — which is how CA-08 once
+>   looked like it had dropped out.
+
+---
+
+> 🔲 **P-03 — PACE CEILING AS A FIRST-CLASS CONCEPT.** *(T-11 + T-14b. **Cheapest real win in the teardown.** Does NOT depend on P-01.)*
+>
+> **Problem.** We already built the most Zonna-shaped idea in the category and it renders on **one
+> screen**. `lib/plan/easyPaceCeiling.ts → easyPaceAsCeiling` turns an easy band into
+> `"7:11 /km or slower"`, with the reasoning in the file — *"an 81-second window reads as a target a
+> runner can fill the whole of; the point is the cap"* — and 10 unit tests. **Its only call site is
+> `DashboardClient.tsx:7881`, inside Session Detail.** It is absent from Today, Plan, the week card
+> and the plan preview.
+>
+> Miles has the same idea and buries it worse: `IMG_7182` shows *"Not faster than 13:12/mi"* as a
+> **grey subtitle under the session name, behind a paywall.** The brief calls it the most
+> Zonna-shaped idea in their app. It is ours, it is better placed where it appears, and it appears
+> almost nowhere.
+>
+> **Proposed behaviour.** Call `easyPaceAsCeiling` on every surface that shows an easy session's
+> pace: Today's session card, the Plan calendar row, the week card, and the plan preview.
+>
+> **UX and UI.** No new component. A string replacement at each render site. The ceiling is stated at
+> full strength — not a grey subtitle.
+>
+> **Data and engine impact.** **None.** It is a pure display transform over `session.pace_target`,
+> already written, already tested. ⚠️ **INV-PLAN-007 constrains the shape and the audit checked it:**
+> `zone`, `hr_target` and `pace_target` are always **strings** (`lib/plan/schema.ts:38–41`), and
+> `PlanSchema` now runs on the save path (SAVE-VALIDATE-01), so a ceiling stored as a **number** would
+> be rejected at save. Keep it derived at display — which is what the existing function already does,
+> and is why this is cheap.
+>
+> **Brand constraints.** The string is already written and already in voice. **No new copy, therefore
+> no approval gate.** ⚠️ Never render "≤" — the module's own comment explains why: a smaller min/km is
+> *faster*, so the symbol reads backwards for pace.
+>
+> **Acceptance criteria.**
+> - Easy and recovery sessions show the ceiling on Today, Plan, week card and preview.
+> - Quality, long and race sessions keep their band — there the range *is* the target.
+> - One owner: every surface calls `easyPaceAsCeiling`; no component re-implements the transform.
+> - A snapshot or markup test per surface, so a future refactor cannot silently drop it again.
+>
+> **Dependencies.** **None.** This is the item to move first while P-01 is being decided.
+>
+> **Size.** **XS.**
+>
+> **Free/Pro.** **FREE.** It is on the plan the free user already has, and it is the product thesis.
+> Gating it would be gating access, not richness.
+>
+> **Backlog.** **NEW, single item covering both T-11 and T-14b** — one function call, two surfaces;
+> two items would mean two owners for one change.
+
+---
+
+> 🔲 **P-04 — ZONE-COMPLIANCE BLOCK ON THE PLAN SCREEN.** *(T-14a. Highest differentiation in the teardown. Depends on P-01.)*
+>
+> **Problem.** Miles's Plan screen (`IMG_7187`) shows distance covered, total distance, current pace,
+> race-day pace and projected finish. **Every metric is volume or speed. There is no intensity metric
+> anywhere** — in an app whose own marketing argues runners go too fast. Ours does not have one
+> either: the Plan screen is arc → intro → why → voice → calendar (Phase 0 Q12). The question *"am I
+> actually holding the zone?"* is answerable only on Coach.
+>
+> **Proposed behaviour.** A block on Plan: **"This week — 3 of 4 runs held the zone. One drifted."**
+> Glanceable, moss and amber, no number to read.
+>
+> **UX and UI.** No new component — `ZoneBar` and `ZoneRings` exist and already carry this meaning on
+> Coach. Placement interacts with `PLAN-NOTE-PLACEMENT-01` (P2, filed by the SLT 2026-09-17), which
+> asks whether the rationale belongs at the top of Plan at all. **The teardown independently reached
+> the same doubt** — that item should be updated with this corroboration rather than answered here.
+>
+> **Data and engine impact.** **None on the engine.** It reads `run_analysis.hr_in_zone_pct` and
+> `hr_above_ceiling_pct`, which are already computed and already in `runAnalysisMap` on this client
+> (`DashboardClient.tsx:1195`). No new field, no migration. ⚠️ **Read from source, not measured** —
+> the select list contains the columns; I have not rendered the block to prove sufficiency.
+>
+> **Brand constraints.** This is the brand thesis as a metric. The copy is pattern-setting → **RUSS**.
+> The limiter sentence the brief proposes (*"the limiter is your easy runs averaging Zone 3, so
+> aerobic base isn't building"*) is a **diagnosis**, and hard rule 8 applies: state what it derives
+> from. `disciplineLedger` and the limiter concept already exist on Coach; reuse, do not re-derive.
+>
+> **Acceptance criteria.**
+> - Counts runs analysed this week and states how many held the zone. Never a percentage on its own.
+> - Uses P-01's pair, from tokens.
+> - **The free-tier state is designed, not left blank** (see below).
+> - No AIMark — this is rule-engine output, not model output.
+>
+> **Dependencies.** **P-01** (the pair must mean this before the block can use it) ·
+> `PLAN-NOTE-PLACEMENT-01` for placement.
+>
+> **Size.** **S**, given the data and components exist.
+>
+> **Free/Pro — and this one deserves the SLT's attention rather than my ruling.**
+> The block needs run analysis, which is **`activity_intelligence` — PAID**. So: **a free runner can
+> see the ceiling (P-03) and never learn whether they held it.** That is defensible under *gate
+> richness, never access* — the plan, the session and the rule are all free; only the measurement is
+> paid. But it means **the free tier states the thesis and never scores it**, and that is a
+> commercial and brand judgement, not an architectural one. **Flagged for the SLT explicitly.**
+>
+> **Backlog.** **NEW.** T-16's discipline metrics (*weeks on plan*, *easy runs held*, *longest
+> zone-clean streak*) fold into this item — same data, same derivation, and two items would mean two
+> owners for one calculation.
+
+---
+
+> 🔲 **P-05 — ONBOARDING: the three changes that survived the audit.** *(T-02, T-03, T-07. **Split and demoted** — see below.)*
+>
+> **Problem, and what is NOT the problem.** The brief scopes P-05 as "onboarding rework: Strava-first,
+> collapse steps, add an interim payoff, add Step 3 of 7 labelling." **Three of those four are already
+> done or are wrong for us**, and the audit says so with code:
+> - **"Strava-first: confirm rather than ask" is shipped.** CI-4 (2026-08-30). The wizard calls
+>   `/api/wizard-benchmark-estimate` and renders *"Looks like a 10K in about 55:52"* with confirm /
+>   adjust / manual fallback. Source is HealthKit, HR-qualified, and **never a dead end**.
+> - **The interim payoff exists.** That estimate *is* a mid-wizard diagnosis, and the two teaching
+>   interstitials (CI-7) are the other half.
+> - **"Step 3 of 7" would reverse a documented decision AND diverge from the competitor.**
+>   `ProgressLine` carries the reasoning in code (CI-1): *"'Step 7 of 12' turns setup into a chore and
+>   invites drop-off."* And **Miles does not number either** — a thin green fill with no count, on all
+>   six wizard screenshots. **Not proposed.**
+>
+> **What is left, and it is worth doing.**
+>
+> **(a) Plan length on the distance tiles (T-03).** `DISTANCES` (`GeneratePlanScreen.tsx:80`) carries
+> label, value and a paid flag. No length. Miles shows "8–12 week plan" on every tile. We offer **six**
+> distances to their four — including **50K and 100K, which they cannot offer at all** — and say
+> nothing about any of them. ⚠️ **The range must be read from `PLAN_SIGNATURES` / `lib/plan/length.ts`,
+> never typed into the component** (INV-CFG-001), or it becomes the homepage "four answers" defect
+> again: prose about a rule drifting from the rule. ⚠️ And the honest range is runner-dependent — §97
+> lets a long runway earn a longer plan and §44 refuses below a minimum — so a fixed range shown
+> before the race date is a claim the engine may not honour (**hard rule 7**). Show the range, then
+> the computed length once the date is known.
+>
+> **(b) The nameless-runner fallback (T-02).** The wizard never asks for a name (`grep` → 0) and does
+> not need to: Apple and Google both return it on first authorization and `PROFILE-NAME-01` shipped
+> the plumbing. **The gap is the runner where they don't** — Apple "Hide My Email" with name sharing
+> declined, or a reset-password arrival. That runner is silently nameless, and both the ceremony's
+> personalised lines and the reveal heading degrade with no indication. ⚠️ **Sequence with
+> `ENRICH-PII-MINIMISE-01`** (SLT 2026-09-20), which proposes we stop sending the name to Anthropic at
+> all: adding a capture screen for a value we are about to stop transmitting would be incoherent.
+>
+> **(c) Cross-training capture (T-07).** Our `WeekGrid` beats theirs on days — it derives
+> `days_available`, `days_cannot_train`, `preferred_long_run_day` **and** per-day time budgets, where
+> theirs captures availability and a count. **But we capture no cross-training at all**, and their
+> toggle reveals five activity chips. The brief's argument is the strong one: *cross-training days are
+> days the runner is not recovering*, which is a direct input to a zone-discipline engine.
+> ⚠️ **Coaching Board question, and there is no safe halfway house.** If declared cross-training
+> reaches the load model it touches the same chronic-side calculation `R26` was filed for — and
+> declared activity is **better data than R26's step count**, which cannot tell an active job from a
+> recovery walk. If it does **not** reach the model, it is a collected-and-unread field, which is
+> exactly what `motivation_type` looks like three years on (GAP-02). ⚠️ The brief also requires it be
+> **re-editable in-app**, and today there is nowhere for that to live — it needs **P-02**.
+>
+> **Data and engine impact.** (a) none — display of existing config. (b) none — `user_settings.first_name`
+> already exists and `athlete_name` reaches only `meta` and the enricher prompt. (c) **potentially
+> significant, board-gated**; new optional field + migration if it is to be re-editable.
+>
+> **Brand constraints.** (a) bare range, en dash, no framing sentence → **NONE** if it stays bare,
+> **RUSS** if framed. (b) and (c) are new copy → **RUSS**.
+>
+> **Acceptance criteria.**
+> - (a) tile ranges derive from config; a test fails if a signature changes and the tile does not.
+> - (b) a runner with no name from the provider is asked once, and the ceremony/reveal no longer degrade silently.
+> - (c) either the load model consumes it, or it is not built. **No capture-now-use-later.**
+>
+> **Dependencies.** (b) ← `ENRICH-PII-MINIMISE-01`. (c) ← Coaching Board, then **P-02**.
+>
+> **Size.** (a) **XS** · (b) **S** · (c) **M**, plus a board sitting.
+>
+> **Free/Pro.** All FREE. Inputs are never gated.
+>
+> **Backlog.** (a) **NEW** · (b) **NEW**, filed as *the nameless-runner fallback*, not *add a name
+> screen* · (c) **UPDATE `R21`** and the *Supplementary session slots* entry, which already specifies
+> the wizard question *"Do you do strength or cross-training? We'll fit it around your runs"* —
+> **this is not new scope**; cross-reference `R26`.
+
+---
+
+> 🔲 **P-06 — PLAN REVEAL SEQUENCE: narration → annotated card stack → preview.** *(T-09, T-10, T-11.)*
+>
+> **Problem.** Our reveal has better substance and worse craft than theirs, and both halves are
+> measurable.
+> **Substance, ours:** `ceremonyLines.ts` (FIRSTRUN-MOMENTS-01c) builds **personalised** lines from
+> the runner's own answers and puts them first — *"the app proving it listened"*. Theirs shows the
+> same four steps to everyone (`IMG_7180`).
+> **Craft, theirs:** a line-art illustration of stick figures running a rising-and-falling curve —
+> *which is the volume curve* — with steps that tick and fade. We show a skeleton, which is functional
+> and cold. Then `IMG_7181`: a swipeable card stack, a "3 / 5" counter, a volume bar chart with
+> desaturated deload weeks and an amber race week, and **handwritten annotations** — *"easier on
+> purpose"* over the down weeks, *"10K week"* under W8. It pre-empts *"why is week 4 lighter"* before
+> it reads as a bug.
+>
+> **Proposed behaviour.** (a) an illustration in the ceremony; (b) a paced, swipeable card stack with
+> a position counter and annotations, between the ceremony and the preview; (c) the hero metric panel
+> and the adaptation promise from `IMG_7182`.
+>
+> **UX and UI.** (a) new asset class — see **P-13**. (b) new pattern: horizontally-paged stack with
+> depth, page dots, counter. ⚠️ **the annotations need a second typeface, which is an explicit
+> exception to the one type rule the brand has** (*Inter only, 300–900*) → gated. (c) hero panel in
+> deep ink rather than green, tonal wave, ticket-notch divider; big numbers per our rule — **value
+> first and large, label small underneath** (note theirs puts the label *above* on `IMG_7182` and
+> *below* on `IMG_7185`; ours is consistent and already specified).
+>
+> **Data and engine impact.** **None.** Everything shown derives from the generated plan, and the
+> hero totals must be **derived, not stored**, or they go stale — the repo's recorded
+> stale-mid-pipeline class. ⚠️ **Every annotation is a claim** (hard rule 7, and the brief's own
+> CAUTION): *"easier on purpose"* is only true if that week is genuinely a deload, which
+> `isDeloadWeek()` / `computeDeloadWeeks()` can answer authoritatively — **single owner,
+> DELOAD-OWNER-01**. Drive each annotation from a plan field, never from position in the array.
+>
+> **Brand constraints.** Typography exception → **RUSS**. Annotation copy is pattern-setting →
+> **RUSS**. ⚠️ **Two specific copy traps found in the brief:**
+> (1) Its proposed ceremony step *"reading your last 12 weeks"* **would be false for most runners** —
+> we read HealthKit only on native, only if connected, and the aerobic estimate uses a **6-week**
+> window (`WINDOW_WEEKS = 6`). A named step must be one that actually ran.
+> (2) *"No make-up runs."* is excellent and is a **coaching claim** — verify it against
+> `lib/plan/effectiveSessions.ts` and the missed-session path **before** saying it.
+>
+> **Acceptance criteria.**
+> - Every annotation traces to a plan field; a test asserts none is positional.
+> - `ceremonyLines.ts`'s standing constraint holds: *no line may claim anything the plan does not do.*
+> - The stack does not displace `FIRSTRUN-MOMENTS-01a/b` — the runway line and the first-run card sit at SLT-approved points and must be **re-sequenced deliberately, not overwritten**.
+>
+> **Dependencies.** **P-13** (illustration style) · **P-01** (the bar colours are semantic) ·
+> a typography exception.
+>
+> **Size.** **M.**
+>
+> **Free/Pro.** **FREE.** Both tiers see the reveal.
+>
+> **Backlog.** **UPDATE `FIRSTRUN-MOMENTS-01`** — that item owns this moment and already has four
+> shipped sub-items. A new item would duplicate it.
+
+---
+
+> 🔲 **P-07 — COACH REGISTER: Straight / Blunt.** *(T-17. GATE. Decision note: `docs/decisions/2026-09-20-p07-coach-register.md`.)*
+>
+> **Problem.** Miles ships *"Coach Personality — how Miles talks about your training — Supportive"*
+> (`IMG_7186`) and the brief is right that it is underexploited in a beginner app where every option
+> is presumably some flavour of nice. **We have no register dimension at all** — `grep` for
+> `coach_personality` / tone settings returns nothing. Voice is fixed in
+> `lib/coaching/prompts/*`, `voiceRules.ts` and `brand.md`.
+>
+> **Proposed behaviour.** A setting: **Straight** (plain, factual, no framing — default) and
+> **Blunt** (says the thing: *"You cooked Tuesday. Again."*). The DHTB register as a later paid
+> option, if ever.
+>
+> **UX and UI.** One row in MeScreen → "Your training", one picker screen. Existing patterns, no new
+> component.
+>
+> **Data and engine impact.** **None on prescription — and the separation must be enforced, not
+> assumed.** The structural guarantee already exists: `EnrichedWeekSchema` exposes only `label` and
+> `coach_notes`, so the enricher **cannot touch a numeric** (ADR-006, `ENRICH-ATTRIB-01`). A register
+> riding on top of that inherits the protection. **That is the argument for building it this way
+> rather than by swapping prompts wholesale**, which would put the guarantee back in play.
+> New: `user_settings.coach_register`, migration, default `'straight'`.
+>
+> **Brand constraints — the most brand-loaded item in the teardown.** It borrows DHTB's personality
+> as an opt-in tone **without putting the founder into the product**, which is the exact line
+> `brand.md` and the launch-scope note draw: *Zonna is the product, DHTB is the person; the app must
+> outlive the personal brand.* Two registers means **every coaching string needs two versions**, and
+> the reframe golden-case suite (`docs/canonical/reframe-golden-cases.md`, cases A–D) gains a register
+> axis. → **RUSS**, and §4A names this explicitly.
+>
+> **Acceptance criteria.**
+> - A register change alters no numeric on any plan — asserted, not assumed.
+> - The golden-case suite passes on **both** registers before either ships.
+> - Every one of the twelve AI routes either honours the register or is explicitly out of scope.
+>
+> **Dependencies.** ⚠️ **`R19` — and this is the most useful sentence in the analysis for backlog
+> purposes.** `R19` (coaching tips in Supabase) is filed as *"don't pick up without a product
+> trigger"*, because migrating copy to a table unlocks nothing while there is no segmentation.
+> **A register IS that trigger** — the first real second axis on coaching copy. The teardown has
+> supplied what `R19` has been waiting for.
+>
+> **Size.** **S** as a setting. **L** to honour across twelve AI surfaces and a golden-case matrix.
+> The setting is cheap; the copy is a long tail, and the founder is the only possible author of Blunt.
+>
+> **Free/Pro.** Straight and Blunt **FREE** — it is tone, not intelligence, and gating tone reads as
+> mean. DHTB register **PAID**, later, if at all.
+>
+> **Backlog.** **UPDATE `R19`.** Add the register dimension and record that the product trigger has
+> arrived. Do not file a new item — `R19` is the item.
+
+---
+
+> 🔲 **P-08 — CODE ENTRY: one field, two behaviours — and a placement conflict to resolve first.** *(T-08. **Split: (a) is P1 and October-dated; (b) is P3.**)*
+>
+> **Problem.** We have the screen and the redemption path — `RedeemCodeScreen.tsx` (GTM-CHARITY-04),
+> `/api/charity/redeem`, reachable from the wizard (`GeneratePlanScreen.tsx:1686` when
+> `isOnboarding || !hasPaidAccess`). Two differences from Miles.
+> **(a) Position.** Theirs is the **last wizard step** — progress bar full, after every question,
+> before generation (`IMG_7179`). Ours is an entry point within the wizard chrome, not a step at peak
+> intent. **(b) One behaviour.** Ours handles charity grants only; there is no referral concept.
+>
+> 🔴 **The brief's proposal conflicts with a filed P1, and this must be resolved before October.**
+> `GTM-CHARITY-08` states the charity's instructions must tell runners to **redeem BEFORE choosing a
+> distance**, or a comped marathon runner meets a paywall as the first thing they see. **Moving
+> redemption to the END of the wizard makes that worse, not better.** Both cannot be right.
+> **This is the decision, and it is the item — not the referral feature.**
+>
+> **Proposed behaviour.** Resolve the placement question explicitly for the Make-A-Wish cohort, then
+> (separately, later) make one field accept two kinds of code: a charity grant (full access) or a
+> referral (extended trial), with a clear "I don't have a code".
+>
+> **UX and UI.** `TextField` + the existing screen. Their disabled-CTA-plus-text-link pattern is
+> already ours. No new component.
+>
+> **Data and engine impact.** **None on the engine** — tier affects gating, not prescription.
+> For (b): no referral concept exists — new table or a `kind` column on `charity_codes`, plus a
+> trial-extension path. ⚠️ **It must route through `resolveTier`**, the documented single owner of
+> `admin → subscription → grant → trial → free`, which already returns `{tier, reason}`. A referral
+> extension changes the **trial arm**, not a new arm. Anything else makes it the fourth copy of the
+> ladder — and `GTM-CHARITY-05` is already filed to fix the third.
+>
+> **Brand constraints.** The screen's copy is written and SLT-ruled: *this is a gift from a charity,
+> not a transaction*, and **we never name the charity back to the runner**
+> (`RedeemCodeScreen.tsx:13–15`). Any referral copy is new → **RUSS**.
+>
+> **Acceptance criteria.**
+> - (a) A comped marathon runner never meets a paywall before redeeming. Walked end-to-end, on device.
+> - (b) Both code kinds resolve through `resolveTier`; `reason` distinguishes them, because a lapsed grant and a lapsed trial say different things at the end.
+>
+> **Dependencies.** (a) ← `GTM-CHARITY-08`. (b) ← a referral programme, which does not exist.
+>
+> **Size.** (a) **XS** (a decision plus copy) · (b) **M**.
+>
+> **Free/Pro.** **FREE.** It is the door.
+>
+> **Backlog.** **(a) UPDATE `GTM-CHARITY-08`** with the placement conflict — do not file separately.
+> **(b) NEW**, low priority.
+
+---
+
+> 🔲 **P-09 — PAYWALL AND EXIT OFFER: per-week framing, a real trial timeline, and the free tier as the save.** *(T-12, T-13. Blocked on `TIER-TRIAL-CONFIDENCE-01`.)*
+>
+> **Problem.** `UpgradeScreen.tsx` shows monthly, annual, a 37% saving label and a **per-month**
+> equivalent. **No per-week figure and no trial timeline** (`grep` → 0). And when a runner dismisses
+> the paywall, `onBack` fires and they are simply gone — there is no offer in that slot at all.
+>
+> **Proposed behaviour.** (a) a per-week line under each price; (b) a three-row trial timeline;
+> (c) intercept the dismiss **once** and offer the **free tier**, not a discount.
+>
+> **UX and UI.** (a) and (b) need no new components. (c) must be a **full screen, not a modal** — our
+> principle is *no popups; all interactions navigate to full screens.* Two actions of equal weight.
+>
+> **Data and engine impact.** **None on the engine.** (a) is a derived display value and **belongs in
+> `lib/brand.ts` beside `perMonthEquiv` / `perMonthDisplay`, never computed in the component**
+> (ADR-015 / INV-CFG-001). (c) needs one flag so it fires once per user — `user_settings` column,
+> migration, and **the migration must be appended to `.claude/state/applied-migrations.txt`** or every
+> session warns.
+>
+> ⚠️ **Our real numbers, because the brief's are wrong.** It suggests "~80p per week", which implies
+> £41.60/year. `BRAND.PRICING`: annual £59.99 → **£1.15 / week**; monthly £7.99 → **£1.84 / week**.
+> **Our annual is already cheaper per week than theirs (£1.54) with no price change** — a fact worth
+> using. Our trial is **14 days**, so the rows are Day 1 / Day 11 / Day 14, not their Day 5.
+>
+> 🔴 **Blocked, and the block is an honesty one.** `TIER-TRIAL-CONFIDENCE-01` (P2, filed) records that
+> **the 14-day reverse trial is not literally full access.** Writing *"Today — full access to
+> everything"* would be our own version of their "4.9 avg rating". **Resolve that item first or we
+> ship the defect we are criticising.**
+>
+> **Brand constraints.** ⚠️ **DO NOT TAKE, and these are hard rules, not preferences.**
+> **Hard rule 1:** no "4.9 avg rating", no "Join 1,000+ runners" — their App Store listing states it
+> has not received enough ratings to display an overview. A real review count or none.
+> **Hard rule 2:** nothing from `IMG_7184` — no serif display type, no struck-through £155.88, no
+> "SAVE 64%", no *"It expires when you leave this screen."* ⚠️ **And note for the record: their exit
+> price (£55.99) undercuts their own "SAVE 49%" headline (£79.99) by £24**, which teaches the user
+> the first two prices were theatre. That is the mechanism, not just the styling.
+> All copy here is pattern-setting → **RUSS**.
+>
+> **Acceptance criteria.**
+> - Per-week values come from `BRAND.PRICING`; no arithmetic in a component.
+> - The timeline describes what the trial **actually** grants, post-`TIER-TRIAL-CONFIDENCE-01`.
+> - The exit offer fires once, is a full screen, and contains no countdown, strike-through or second typeface.
+> - Both claims in the exit copy verified before shipping: *"full weeks"* (true — free is a real rule-engine plan) and *"ceilings on every easy run"* (⚠️ `vdot_pace_zones` is granted-at-trial-and-retained, so a **never-trialled** free user may hold population-estimate paces — **verify before asserting**).
+> - `/pricing` matches; `lib/marketing/pricing.test.ts` passes; any new marketing surface is added to `noEmDash.test.ts`'s `SURFACES` list.
+>
+> **Dependencies.** `TIER-TRIAL-CONFIDENCE-01` (blocking) · `GTM-FREE-HOOK-01` (what the free tier is
+> actually worth — answer it or the exit offer is hollow) · cross-ref `GTM-11` (our 37% annual
+> discount against a category norm of 44–49%, which their 49% confirms).
+>
+> **Size.** (a)+(b) **S** · (c) **M**.
+>
+> **Free/Pro.** The paywall itself; (c) **is** the free tier.
+>
+> **Backlog.** **NEW** for per-week + timeline + exit offer. **UPDATE `TIER-TRIAL-CONFIDENCE-01`** as
+> the blocking prerequisite. Cross-reference `GTM-FREE-HOOK-01` and `GTM-11`.
+
+---
+
+> 🔲 **P-10 — COLD-START SWEEP.** *(T-20. We are already ahead of them; three specific holes.)*
+>
+> **Problem.** Miles renders zeroes on three screens — `IMG_7185` "0 WEEK STREAK / 0.0 mi / 0 RUNS",
+> `IMG_7187` "0 / 22.4 km", "0 km", **"0%"** and an empty bar. **We are substantially better by
+> construction:** a user with no plan is **routed into the wizard** (`DashboardClient.tsx:931`), nav
+> hidden; Coach has a deliberate four-branch state machine naming the one blocking action;
+> `PreRunBandCard` renders **nothing** rather than an empty shell; session-detail pace shows `'—'` to
+> reserve the slot. Three holes remain:
+> 1. **Dead code, not a live defect.** `PlanProgressBar` renders `"0 of N sessions complete · 0%"` and
+>    guards `totalSessions === 0` but not `doneSessions === 0` — **and has zero render sites**
+>    (`grep -rn "<PlanProgressBar"` → 0). `RestraintCard` likewise. **Delete, do not fix.** Stated this
+>    way deliberately: the opposite reading would put a non-existent bug into a build.
+> 2. **Web users see no connect prompt, ever** (GAP-04). `CONNECT-FIRST` returns early off-native and
+>    the post-plan CONNECT-01 path is also native-gated. A web runner has no route to connect a source
+>    and nothing tells them why.
+> 3. **Day-one Today/Plan has not been observed.** The audit read the JSX; nothing was run. Whether a
+>    bare zero renders anywhere on day one is **not established**.
+>
+> **Proposed behaviour.** Delete the dead components. Give web users a prompt, or an honest line that
+> the source connection needs iOS. Then **actually look at day one** on a device before closing.
+>
+> **UX and UI.** No new patterns.
+>
+> **Data and engine impact.** **None.**
+>
+> **Brand constraints.** One line for the web case → **RUSS** if it makes a platform claim.
+>
+> **Acceptance criteria.** Dead components removed and `docs/alignment/` checked for references
+> before deletion · a web runner is told what they can and cannot connect · day one walked on a
+> device, not read.
+>
+> **Dependencies.** None.
+>
+> **Size.** **S.**
+>
+> **Free/Pro.** FREE.
+>
+> **Backlog.** **NEW**, small — dead-code removal (GAP-12) plus the web connect gap (GAP-04).
+
+---
+
+> 🔲 **P-11 — LAUNCH SCREEN.** *(T-01. GATE via P-13. **Demoted to last** — gated on asset licensing and changes nothing for a runner already inside.)*
+>
+> **Problem.** Our login is wordmark-led on a flat `--bg` — legible, safe, and it says nothing.
+> Theirs (`IMG_7172`) is full-bleed and arresting, and **fails at the thing it is for**: observed,
+> "PLAN" and "IMPROVE" sit at low opacity over dappled foliage and are close to unreadable; only
+> "RUN." carries. The model is face-on and mid-shot — precisely the model-release case §6 flags.
+>
+> **Proposed behaviour.** A looping 3–4s desaturated clip, a three-word stack with a moss full stop
+> on the lit word, a bottom scrim, Apple sign-in full width.
+>
+> **UX and UI.** New pattern: full-bleed media with a scrim. **The scrim is the load-bearing part** —
+> without it we reproduce their legibility failure. Tokens: `--ink` for the scrim terminus, `--moss`
+> for the accent and button, `--font-brand` 800 / −0.02em. ⚠️ **The scrim must be tokenised, not
+> inlined** (GAP-08 — 26 hardcoded `rgba()` are live precisely because nothing checks for them).
+>
+> **Data and engine impact.** **None.** This renders before authentication; the engine is not
+> reachable from it.
+>
+> **Brand constraints.** Three words plus a line, all pattern-setting → **RUSS**. The brief proposes
+> **EASY. HARD. EASY.** ⚠️ §6 risk, restated because it is a legal one: clips with identifiable people
+> may need a model release and Pexels does not guarantee one. **Use non-identifiable footage** — rear
+> view, silhouette, feet and legs — which removes the problem and reads as *any runner*, which is the
+> point.
+>
+> **Acceptance criteria.** Every word legible at the worst frame of the loop · licence page for the
+> clip stored under `/docs/licences/` · a poster frame and a size ceiling, because a heavy clip in
+> front of the sign-in button on a `server.url` Capacitor app is worse than a wordmark · no
+> identifiable face.
+>
+> **Dependencies.** **P-13** · footage sourced and licensed.
+>
+> **Size.** **M**, most of it sourcing.
+>
+> **Free/Pro.** Pre-auth. Neither.
+>
+> **Backlog.** **NEW.**
+
+---
+
+> 🔲 **P-12 — PROFILE: the plan card.** *(T-16. The LEAVE is already satisfied; the TAKE is not.)*
+>
+> **Problem.** Miles leads Profile with **"0 WEEK STREAK · 0.0 mi · 0 RUNS"** (`IMG_7185`). We have
+> **no streak anywhere** — `grep` finds only marketing copy asserting its absence, one comment
+> *"Counter, not a streak"*, and internal §45 locals. Hard rule 4 is already satisfied and the
+> homepage already sells it.
+> **What they do better is the plan card:** *Free Plan / Basic access* → what's included → *MILES PRO
+> ADDS* (three items) → upgrade → per-week price → Restore Purchase. **Stating what you already have
+> before listing what you don't** is a genuinely non-manipulative upsell, and our Subscription section
+> is a row, not a value statement.
+>
+> **Proposed behaviour.** A plan card on Me in that structure.
+>
+> **UX and UI.** Card + section patterns exist. Big numbers per our rule — value large first, label
+> small underneath (which theirs does correctly on this screen).
+>
+> **Data and engine impact.** **None.** Tier comes from `resolveTier`; the feature lists come from
+> `FEATURE_GATES`. ⚠️ **Read the gate constants, do not retype the lists** — a hand-written feature
+> list is the homepage "four answers" defect waiting to happen, and `lib/marketing/pricing.test.ts`
+> already fails the build when a `PAID_ONLY_ONGOING` gate has no pricing-page row.
+>
+> **Brand constraints.** ⚠️ **The brief's third metric, *"longest zone-clean streak"*, is a streak.**
+> It rewards restraint rather than running, so it does not breach hard rule 4 — which bans a streak
+> that *rewards running on a rest day*. But it sits in direct tension with a homepage that says flatly
+> **"No streaks."** **That is a brand call, not mine** → **RUSS**, and worth the SLT's eye precisely
+> because Wood's kill mandate exists for things that feel like progress.
+>
+> **Acceptance criteria.** Card states current tier from `resolveTier` and lists features from
+> `FEATURE_GATES` · price from `BRAND.PRICING` · it does not duplicate the Subscription section —
+> one of the two goes, or they drift.
+>
+> **Dependencies.** None for the card. The discipline metrics fold into **P-04**.
+>
+> **Size.** **S.**
+>
+> **Free/Pro.** FREE — it *is* the upsell.
+>
+> **Backlog.** **NEW** for the card. Metrics **fold into P-04**, not a separate item.
+
+---
+
+> 🔲 **P-13 — VISUAL DEPTH AND IMAGERY SYSTEM.** *(GATE. Cross-cutting. Decision note: `docs/decisions/2026-09-20-p13-depth-and-imagery.md`. Depends on P-01.)*
+>
+> **Problem.** The brief's worry is that Zonna ships flat rectangles on beige. **Half of that is
+> already wrong and the audit should correct it:** elevation tokens exist, are already warm-tinted,
+> and are already close to what the brief proposes —
+> `--shadow-card: 0 1px 2px rgba(26,26,26,.04), 0 10px 28px -10px rgba(26,26,26,.10)` and
+> `--shadow-lifted`, with `--radius-sm|md|lg|xl` at 10/14/18/22px (`globals.css:61–75`). **Start from
+> these; do not introduce new ones.**
+> **What is genuinely missing is illustration.** Their ceremony carries line art (`IMG_7180`); ours
+> carries a skeleton. Our empty states are text-only. There is no illustration style at all.
+> **And the enforcement gap is real:** GAP-08 — **26 hardcoded `rgba()` and 3 hex values are live in
+> `app/` and `components/`**, several of them the palette at alpha, because `.githooks/pre-commit`
+> checks **hex only** — no rgba rule, no shadow rule, no radius rule — and CI explicitly defers style
+> to the hook. **Nothing will ever flag them.**
+>
+> **Proposed behaviour.** Three parts. (a) Confirm the existing elevation tokens as the system and
+> sweep the hardcoded values onto them. (b) **Close the enforcement gap**: extend the hook to rgba,
+> shadows and radii. (c) Commission a line-art illustration style, used consistently across
+> transitional and empty states.
+>
+> **UX and UI.** (c) is the new asset class. A hero-panel treatment with tonal depth (used by P-06).
+> Photography rules per §6 (used by P-11).
+>
+> **Data and engine impact.** **None.**
+>
+> **Brand constraints.** Elevation, illustration style and photography are all design-system changes
+> → **RUSS**, named explicitly in §4A.
+>
+> **Acceptance criteria.**
+> - The 26 rgba and 3 hex instances resolve to tokens, **or** each survivor carries a stated reason.
+> - **The hook fails on a new hardcoded `rgba()`, shadow or radius — and that is proven by making it go red before trusting it green.** (This repo has shipped a green tick with nothing behind it more than once.)
+> - The illustration style is documented in `ui-patterns.md` and used in at least two places, so it is a system and not a one-off.
+> - ⚠️ The stale unused hook at `.git/hooks/pre-commit` is removed (GAP-09) — it differs from the versioned one and misleads anyone who reads it.
+>
+> **Dependencies.** **P-01** (the semantic pair must be settled before the palette is swept).
+>
+> **Size.** (a)+(b) **M** · (c) **M**, mostly commissioning.
+>
+> **Free/Pro.** Neither.
+>
+> **Backlog.** **NEW.** GAP-08 and GAP-09 fold in here — they are the mechanical half of the same
+> problem, and shipping the sweep without the gate means doing it again in six months.
+
+---
+
+> 🔲 **P-14 — REVIEW PROMPT.** *(T-19. **Added — §4 has no slot for T-19**, and dropping a finding to fit the numbering would be worse.)*
+>
+> **Problem.** We have **neither half** of this. `grep -rn -i "leave a review\|requestReview\|SKStoreReview"`
+> across `app`, `components`, `lib` and `ios/App` → **0 hits.** No passive row, no native prompt, no
+> plugin. Miles has a passive row in Support (`IMG_7186`) — *"Enjoying Miles? Leave a review"* — and
+> the brief notes their App Store still shows no ratings overview, so a passive prompt alone clearly
+> underperforms. **That makes it insufficient, not worthless**, and we are starting from nothing.
+>
+> **Proposed behaviour.** (a) a passive row in MeScreen → Support, beside Help and Contact.
+> (b) a native `SKStoreReviewController` prompt after a genuine win.
+>
+> **UX and UI.** (a) is an existing row pattern — **zero new UI**. (b) is an OS-owned sheet;
+> ⚠️ our *no popups* principle does **not** apply, because it is Apple's sheet, not ours.
+>
+> **Data and engine impact.** **None.** (b) needs one flag so it fires once; Apple already
+> rate-limits to three per year, but our own trigger state still needs storing.
+>
+> **Brand constraints.** (a) is one row label → **NONE** unless it acquires framing.
+>
+> **Acceptance criteria.** (a) ships without a new claim · (b) fires only on a defined win, and the
+> definition is written down.
+>
+> **Dependencies.** (b) needs a Capacitor plugin — **a new native dependency**, which means
+> `npm run sync:ios`, a `scripts/local-ios-plugins.mjs` entry if it is a local bridge, and the
+> `verify:ios-plugins` gate. Not free.
+> ⚠️ **And the ideal trigger is paid-only.** The brief proposes *"first week where every easy run held
+> the zone"* — perfect for the brand, and it requires `activity_intelligence` (**PAID**). A free-tier
+> trigger has to be weaker: first completed week, or first plan generated.
+>
+> **Size.** (a) **XS** · (b) **S** plus a native dependency.
+>
+> **Free/Pro.** Both free. Asking for a review is not a feature.
+>
+> **Backlog.** **NEW.**
+
+---
+
+### Not proposed, and why
+
+| Teardown item | Why nothing is proposed |
+|---|---|
+| **T-05** benchmark | **Already done.** CI-4 is the brief's own BEAT, and better: theirs is unskippable and leaks *"replaces the old hardcoded defaults"* into the UI. |
+| **T-18** zones buried | **Already beaten.** Zones surface in seven places against their settings row. Usable as founder-written comparison-page copy (`GTM-SEO-COMPARE-01`) — **founder-written by standing decision; I should not draft it.** |
+| **"Step 3 of 7"** (inside P-05) | Reverses CI-1's documented decision **and** Miles does not number either. |
+| **T-06** sex | `INPUT-SEX-01`, P2, **founder-parked 2026-09-16**. Nothing in the teardown moves it; the blockers are legal and scientific, not design. ⚠️ And its proposed copy would be hard rule 7. |
+| Every mechanic on **`IMG_7184`** | Hard rules 1 and 2. |
+
+### What this set does not prove
+
+- **No code was run.** Sizes are judgements; nothing is measured.
+- **No board has seen any of it.** Priorities are mine. Three items — the run-walk on-ramp (item 0),
+  cross-training as load (P-05c), intensity as a user control (P-02) — **cannot be scoped** until the
+  Coaching Board rules, and that board has not sat.
+- **Four items carry a §4A gate** and are written as decision notes, not as work: **P-01, P-07, P-13**,
+  plus every pattern-setting string flagged inline.
+- **Two engine claims are read from source, not measured:** that P-03 is display-only, and that P-04
+  needs no new data.
+
+
+---
+
 ## 🔬 2026-09-19 — REGRESSION-PASS OUTCOMES: architect's verdict on the five recommendations
 
 *Source: the end-to-end regression pass over six hand-built runners, plus the

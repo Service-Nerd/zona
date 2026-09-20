@@ -462,6 +462,26 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 
 ### 🏃 Product — SLT priority order (reviewed 2026-06-06; **re-topped 2026-08-06**)
 
+> 🎯 **MILES TEARDOWN — 14 PROPOSALS, 2026-09-20. AWAITING SIGN-OFF; NOT SCHEDULED.**
+> A competitor teardown (Miles, v1.0.18) was assessed in three phases: `docs/ONBOARDING-AUDIT.md`
+> (what we already do, 17 questions, read-only) → `docs/MILES-GAP-ANALYSIS.md` (all 20 items, full
+> impact blocks) → proposals **P-01…P-14**, written up in `backlog.md § 2026-09-20`.
+> **Nothing is built and nothing is approved.** Four carry a §4A gate and have decision notes in
+> `docs/decisions/` (P-01 colour, P-07 register, P-13 depth, plus a copy-patterns note).
+>
+> **Recommended order:** ⓿ the door (`S111-SUBFLOOR-VOLUME-01` · `MARATHON-VOLUME-GATE-01` ·
+> `REFUSAL-SCREEN-01` — **not P-items, already filed, already P0, October-dated**) → **P-01** colour
+> (gate) → **P-03** pace ceiling (**XS, no dependency, cheapest real win — the function exists and is
+> called once**) → **P-04** zone compliance → **P-08a** charity-code placement → **P-02** modify-plan
+> sheet (**L, absorbs R20/R21/R22**) → the rest.
+>
+> ⚠️ **Three cannot be SCOPED — not merely approved — until the Coaching Board sits:** the run-walk
+> on-ramp (⓿), cross-training as load (P-05c), intensity as a user control (P-02).
+> ⚠️ **Headline finding:** the screenshots show **Miles's palette is ours** — warm off-white ground,
+> one muted green accent, white cards with a warm shadow. Warm-neutral-plus-green is the category
+> default, not our differentiator. That is the argument for P-01, and it is evidence rather than taste.
+
+
 > ✅ **Wave 1b + 1c — plan generator remediation — SHIPPED 2026-08-06.** The first organic user's plan carried three P0 defects (ended 11 days before race day; HR zones 28 bpm low; beginner copy promising quality the engine couldn't produce). All engine fixes (GEN-FIX-02…12) + all 13 signed coaching decisions (PV2-A…I / CD-1…CD-13) are live and verified (411 tests + tsc + 414,720-plan property sweep → 0 violations). User A's plan regenerated live + push delivered. **Acquisition hold (GEN-FIX-00) struck** — founder confirmed no live acquisition; revisit when paid spend is first turned on. Two rows in feature-registry; full record in `docs/incidents/2026-08-06-plan-defects/analysis.md`. Three input-gated follow-ups remain (see below). The Product queue resumes at Priority 1.
 
 | Priority | Item | Status | Effort | Notes |
