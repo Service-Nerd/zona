@@ -26,6 +26,32 @@ for id in $ids; do
 done
 [ "${rfail:-0}" = "0" ] && say "  ok"
 
+# ── BACKLOG STATUS vs what actually shipped ─────────────────────────────────
+#
+# Added 2026-09-20 because this script reported ALL CLEAN while FOUR items
+# shipped that same day still carried an open marker in backlog.md:
+# ENRICH-PII-MINIMISE-01, P-01, P-03, REFRAME-NOTE-LOSS-01.
+#
+# The ship-records check above proves an ID gained a registry row and a
+# build-log entry. It says nothing about the BENCH — and the bench is the
+# document a human reads to decide what to work on next, so a shipped item
+# still marked open is the one staleness that actually misleads someone.
+#
+# This is the script's own stated weakness a second time: "an audit is only
+# ever as wide as its list." The contracts check was added for exactly this
+# reason on 2026-09-18, and backlog STATUS was still not on the list.
+#
+# An ID absent from backlog.md is NOT a gap — filed-and-shipped-same-day items
+# never reach the bench, and demanding a row for them would cry wolf.
+say "── backlog status: shipped items still marked open ──"
+bfail=0
+for id in $ids; do
+  if grep -qE "^> (🔲|🔴|🟡|🔵|⏸️) \*\*${id}[ —]" docs/releases/backlog.md; then
+    say "  STILL OPEN $id (shipped today, backlog says otherwise)"; bfail=1; fail=1
+  fi
+done
+[ "$bfail" = "0" ] && say "  ok"
+
 say "── invariants: code vs plan-invariants.md ──"
 grep -oE "'INV-[A-Z0-9-]+'" lib/plan/invariants.ts | tr -d "'" | sort -u > /tmp/_a
 grep -oE '^\| `INV-[A-Z0-9-]+`' docs/canonical/plan-invariants.md | grep -oE 'INV-[A-Z0-9-]+' | sort -u > /tmp/_b

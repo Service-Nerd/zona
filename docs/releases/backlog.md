@@ -116,7 +116,16 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-01 — SEMANTIC COLOUR PAIR: moss = held the zone, amber = cooked it.** *(GATE. Design system. Decision note: `docs/decisions/2026-09-20-p01-semantic-colour.md`. **Nothing that depends on this proceeds until signed off.**)*
+> ✅ **P-01 — SHIPPED 2026-09-20. The gate is lifted; `P-04` and `P-13(c)` are unblocked.** *(Design system. Decision note: `docs/decisions/2026-09-20-p01-semantic-colour.md`.)*
+>
+> `--zone-held` / `--zone-drifted` / `--zone-unknown` in `globals.css`; `lib/coaching/zoneVerdict.ts`
+> is the single owner of the verdict and its colour.
+> ⚠️ **The SLT then CUT the words.** The pill reads **"Done"** in all three states and the colour
+> carries the meaning — Sutherland: *"a glossary entry is what you write when you don't trust the
+> thing you made."* `zoneVerdictLabel` returns `null` in every state, and its test was **amended to
+> assert the new contract rather than deleted**, because the obvious instinct is to put a word back.
+> *(original below.)*
+> 🔲 ~~**P-01 — SEMANTIC COLOUR PAIR**~~ *(GATE, now lifted.)*
 >
 > **Problem.** Moss currently means "done" and amber means "warning". Both are category-generic. And
 > the teardown produced evidence, not opinion: **Miles's palette is ours.** Their ground is a warm
@@ -258,7 +267,14 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-03 — PACE CEILING AS A FIRST-CLASS CONCEPT.** *(T-11 + T-14b. **Cheapest real win in the teardown.** Does NOT depend on P-01.)*
+> ✅ **P-03 — SHIPPED 2026-09-20. The cheapest real win in the teardown, and it was.** *(T-11 + T-14b.)*
+>
+> `paceBracket` in `DashboardClient` now routes through `easyPaceAsCeiling`, so the easy run states
+> a ceiling (*"7:11 /km or slower"*) rather than a bracket the runner reads as a target.
+> ⚠️ **One rule inside the pattern, from the module's own comment: never render "≤".** A smaller
+> min/km is *faster*, so the symbol reads backwards for pace.
+> *(original below.)*
+> 🔲 ~~**P-03 — PACE CEILING AS A FIRST-CLASS CONCEPT**~~ *(T-11 + T-14b.)*
 >
 > **Problem.** We already built the most Zonna-shaped idea in the category and it renders on **one
 > screen**. `lib/plan/easyPaceCeiling.ts → easyPaceAsCeiling` turns an easy band into
@@ -2017,7 +2033,16 @@ across the seven months combined.
 >
 > ⚠️ **iOS's HealthKit sheet does NOT cover this.** That permission is device→app. The app→Anthropic transfer is the undisclosed leg and no OS prompt covers it.
 
-> 🟡 **ENRICH-PII-MINIMISE-01 — stop sending the runner's first name to Anthropic.** *(P1, SLT-ruled 2026-09-20. Fried's amendment — nobody asked for this option and it is better than the three that were tabled.)*
+> ✅ **ENRICH-PII-MINIMISE-01 — SHIPPED 2026-09-20.** *(P1, SLT-ruled. Fried's amendment — nobody asked for this option and it is better than the three that were tabled.)*
+>
+> `lib/coaching/nameToken.ts` is the single owner: the model receives `{{RUNNER}}` and the name is
+> substituted server-side, at the enricher's boundary rather than at each render site, so no
+> surface can miss it and show a literal token. **Sequenced BEFORE `LEGAL-PRIVACY-01` deliberately**,
+> so the policy could say *"we do not send your name"* and have it be true when written.
+> ⚠️ `freeIntro.test.ts` had to be amended — it asserted the prompt carried the first name. It now
+> asserts the stronger property: **token present, name absent.**
+> *(original below.)*
+> 🟡 ~~**ENRICH-PII-MINIMISE-01 — stop sending the runner's first name to Anthropic.**~~ *(P1, SLT-ruled 2026-09-20.)*
 >
 > `lib/plan/enrich.ts → buildUserMessage` sends `- Name: ${input.athlete_name}` purely for voice personalisation, and `voiceRules.ts` interpolates `firstName` into the system header. **Resolve the name client-side after the model responds instead, and never send it.** That removes a direct identifier from a third-party transfer **at no product cost** — the voice is unchanged because the substitution happens after generation.
 >
@@ -2400,7 +2425,17 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > below is a re-file. `OPS-AI-SPEND-01` is adjacent to `OPS-AI-FAILURE-ALERT-01` and the two are
 > deliberately separate — one is *what did it cost*, the other is *did it work*.
 
-> 🔴 **REFRAME-NOTE-LOSS-01 — the runner writes a reflection, the AI call fails, and their words are thrown away.** *(P1 DEFECT, me, filed 2026-09-18.)*
+> ✅ **REFRAME-NOTE-LOSS-01 — SHIPPED 2026-09-20. The only item all day where a real user lost something they had created.** *(P1 DEFECT, filed 2026-09-18.)*
+>
+> `persistReflection()` is now the single owner and is called on **all three** paths; the fallback
+> return persists first. `ReflectionInput` gains a `'saved'` view.
+> ⚠️ **The SLT rewrote the copy and rated it the best string on the list.** *"Your note is kept. The
+> coach didn't answer."* Sutherland: *"'Your note is kept' is a sentence almost no software says,
+> because almost no software keeps anything it didn't have to. The failure is a better advert than
+> the success."* It deliberately does **not** apologise: three ways the AI fails and only two are
+> outages, the third being our own quality filter rejecting an answer we were billed for.
+> *(original below.)*
+> 🔴 ~~**REFRAME-NOTE-LOSS-01**~~ *(P1 DEFECT, filed 2026-09-18.)*
 >
 > `app/api/post-run-reframe/route.ts:505`:
 >
