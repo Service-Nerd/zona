@@ -53,7 +53,12 @@ export interface CharityPersona {
   /** True when a by-design refusal (prep-time / days-minimum) is the correct
    *  outcome — the plan is honest that it cannot promise the ask. */
   expectRefusal?: boolean
+  /** ⚠️ Includes the two TRANSIENT acknowledgement fields, which live on
+   *  `PrepTimeAwareInput` rather than `GeneratorInput` and so could not be
+   *  expressed here before. A persona that cannot acknowledge a warning models
+   *  a runner who never clicks "yes, I understand" — see M4. */
   input: Omit<GeneratorInput, 'race_date'>
+    & { acknowledged_days_warning?: boolean; acknowledged_prep_warning?: boolean }
 }
 
 /**
@@ -134,13 +139,53 @@ export const PLAN_PERSONAS: CharityPersona[] = [
   },
   {
     id: 'M4 sub-4:00 marathon, busy 3-day, weekday cap 45',
-    note: 'time_target under a weekday cap on 3 days — by-design refusal (§44 days-minimum)',
+    // ⚠️ THIS PERSONA WAS LABELLED A REFUSAL FOR MONTHS AND IT IS NOT ONE
+    // (2026-09-20). Its note read "by-design refusal (§44 days-minimum)" and
+    // `expectRefusal: true`, so every review round reported "⛔ refused by
+    // design" and the board reasoned about a runner we turn away.
+    //
+    // `DaysAvailableError` carries TWO reasons. This one is
+    // `warn_unacknowledged` — a CONFIRMATION PROMPT. The runner is told "3
+    // days is under the 4 a time goal needs; expect to finish rather than hit
+    // the time", ticks the box, and receives a plan: 16 weeks, 30 -> 44 km,
+    // classified maintenance with an honest note. Only `block` is a refusal.
+    //
+    // The persona now models a runner who clicks "yes, I understand", because
+    // one who never clicks it is a model of nobody. Same defect as the
+    // use-case envelope had (2,304 prompts counted as refusals) — I fixed it
+    // there and not here, so it survived in the corpus the BOARD reads.
+    // Genuine `block` coverage is carried by M6 below.
+    note: 'time_target under a weekday cap on 3 days — CONFIRMATION PROMPT then a maintenance plan, not a refusal',
     raceDay: 'sat',
     weeks: 16,
-    expectRefusal: true,
-    input: { race_distance_km: 42.2, goal: 'time_target', target_time: '4:00:00', current_weekly_km: 40,
+    input: { acknowledged_days_warning: true, acknowledged_prep_warning: true,
+      race_distance_km: 42.2, goal: 'time_target', target_time: '4:00:00', current_weekly_km: 40,
       longest_recent_run_km: 20, days_available: 3, age: 36, max_weekday_mins: 45,
       training_age: '2-5yr', recent_quality_training: 'regular' },
+  },
+  {
+    id: 'M6 marathon off an 8 km/week base — a GENUINE refusal',
+    // ⚠️ ADDED 2026-09-20 BECAUSE CORRECTING M4 LEFT NO REFUSAL COVERAGE AT ALL.
+    // M4 was labelled `expectRefusal` for months and was actually a
+    // confirmation prompt; fixing it removed the only persona the round
+    // believed was refused. This is a real one: §111 blocks a marathon whose
+    // delivered peak would exceed MAX_BASE_BUILD_RATIO x the runner's start,
+    // and it is a `block`, not a prompt — no acknowledgement clears it.
+    //
+    // Measured: a capped peak for this cohort lands below the credible
+    // marathon floor for 100% of cases (median 22.4 km against 52.8), so the
+    // refusal is the correct outcome and not a gap. It must also name a next
+    // step (§44's "not yet"), which the round asserts.
+    note: 'sub-floor base for a marathon — §111 block, the refusal path the corpus would otherwise never exercise',
+    raceDay: 'sun',
+    weeks: 20,
+    expectRefusal: true,
+    input: { race_distance_km: 42.2, goal: 'finish', current_weekly_km: 8,
+      longest_recent_run_km: 4, days_available: 4, age: 34,
+      fitness_level: 'beginner', training_age: '6-18mo',
+      recent_quality_training: 'none', hard_session_relationship: 'neutral',
+      injury_history: [], max_hr: 186,
+      acknowledged_days_warning: true, acknowledged_prep_warning: true } as never,
   },
   {
     id: 'M5 masters charity marathon (age 58)',

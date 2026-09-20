@@ -49,6 +49,13 @@
     },
     {
       "id": "M4 sub-4:00 marathon, busy 3-day, weekday cap 45",
+      "peakLr": 29.5,
+      "pctOfRace": 69.90521327014217,
+      "netBuildPct": 46.66666666666666,
+      "refused": false
+    },
+    {
+      "id": "M6 marathon off an 8 km/week base — a GENUINE refusal",
       "peakLr": 0,
       "pctOfRace": 0,
       "netBuildPct": 0,

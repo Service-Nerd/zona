@@ -24,9 +24,10 @@
     "NEVER-BUILDS": 63
   },
   "charity personas": {
-    "generated": 13,
+    "generated": 14,
     "refused": 1,
-    "LONG-RUN-SHORT": 2
+    "LONG-RUN-SHORT": 2,
+    "BINGE-WEEK": 1
   },
   "engine personas": {
     "generated": 6,

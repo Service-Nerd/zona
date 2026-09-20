@@ -40,9 +40,34 @@ coach objections **and** every constraint declared. Applied to all 27:
 or already filed. That is the first sitting today of which that is true, and it
 is the point of the register rather than a coincidence.
 
+## ⚠️ CORRECTION TO THIS SITTING — M4 WAS NEVER A REFUSAL
+
+Re-checked after the founder asked why M4 is an exception, expecting that
+profile to be common. **It is not an exception and it is not refused.**
+
+`DaysAvailableError` carries two reasons; M4's is **`warn_unacknowledged`** — a
+**confirmation prompt**. The runner is told *"3 days is under the 4 a time goal
+needs; expect to finish rather than hit the time"*, ticks the box, and receives
+a plan: **16 weeks, 30 → 44 km, maintenance**, with the weekday cap's cost
+spelled out. The persona carried `expectRefusal: true` and a note reading
+*"by-design refusal"* for months, so **every round reported "⛔ refused by
+design" and this board reasoned about a runner we turn away.**
+
+**Corrected:** M4 acknowledges, as a real runner does. **`M6` added** (marathon
+off an 8 km/week base) so the genuine §111 *block* path is still covered —
+correcting M4 had left the corpus with no refusal at all.
+
+**And the mislabel was hiding a real finding:** M4's plan carries `BINGE-WEEK`
+(worst session 69% of its week), the same 3-days-plus-weekday-cap shape as E5,
+and therefore covered by E5's existing ruling rather than being new.
+
+**Measured product-wide:** 3.3% of runners see a confirmation prompt (8.4% at
+marathon and longer); **3.0% are genuinely blocked.**
+
 ## Ruling
 
-**24 of 27 proud to hand over.** M4's refusal is correct and §44-compliant.
+**25 of 28 proud to hand over** (the round is now 28 with M6). M4 generates a
+plan and it is an honest one. M6's refusal is correct and §44-compliant.
 **E5 stands as previously ruled** — CORRECT AS IS with McMillan's dissent, not
 a fresh refusal. **M3 is `MARA-LR-LOWBASE-01`**, open, and the board's question
 there is unchanged: should the very-low-volume marathoner be refused rather

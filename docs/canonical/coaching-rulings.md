@@ -41,13 +41,40 @@ memory.
 | ref | ruling | date | the number behind it |
 |---|---|---|---|
 | **M3 honesty** | **WITHDRAWN** — premise false | 09-19 | `long_run_shortfall_note` already says *"take the walk breaks early rather than late"* |
-| **E5** (3 days + 30-min cap) | **CORRECT AS IS**, McMillan dissent recorded | 09-19 | 5% of plans exceed a 70% long-run week, worst 74.1%; §114 took >90% to 0.00%; capping is a measured fixed point |
+| **E5 and M4** (3 days + weekday cap) | **CORRECT AS IS**, McMillan dissent recorded | 09-19 | 5% of plans exceed a 70% long-run week, worst 74.1%; §114 took >90% to 0.00%; capping is a measured fixed point |
 | **§111 cap-instead-of-refuse** | **NEGATIVE RESULT** | 09-19 | 100% of refused cases would peak below the credible floor (median 22.4 km vs 52.8). Door at 13.2 km/wk is arithmetically exact |
 | **beginner finish-goal quality** | **CORRECT AS IS**, unanimous | 09-19 | §110 Am. 2. Hutchinson's evidence is explicitly about *time-goal* races |
 | **load-aware difficulty band** | **INCORRECT — VETOED** | 09-19 | §44 point 3; Willy authored the constraint |
 | **`S53` quality repetition** | **DISSOLVED** | 09-19 | the unit was rows; the coaching unit is the category, median 4.5 exposures |
 | **week-1 engine caps** | **SIX built and rejected** | 09-19/20 | four made `BINGE-WEEK` 8–12× worse; two took the marathon out of target. Willy: *"stop proposing caps"* |
 | **`WEEK1-LEAP` thresholds** | **FROZEN** | 09-20 | relaxed three times in one day; any further change needs adherence or injury data, not another corpus measurement |
+
+### Added 2026-09-20 — **M4 was never a refusal**
+
+`M4 sub-4:00 marathon, busy 3-day, weekday cap 45` carried
+`expectRefusal: true` and a note reading *"by-design refusal (§44
+days-minimum)"* **for months**. It is not a refusal. `DaysAvailableError`
+carries two reasons and this one is **`warn_unacknowledged`** — a confirmation
+prompt. The runner is told *"3 days is under the 4 a time goal needs; expect to
+finish rather than hit the time"*, ticks the box, and receives a plan:
+**16 weeks, 30 → 44 km, classified maintenance**, with the weekday cap's cost
+spelled out (*"peak week reaches 44 km where it would otherwise have gone to
+65 km"*).
+
+⚠️ **Every review round reported "⛔ refused by design" and the board reasoned
+about a runner we turn away.** Same defect as the use-case envelope had — 2,304
+prompts counted as refusals — which I fixed there and **not here**, so it
+survived in the corpus the board actually reads.
+
+⚠️ **Correcting it removed the only refusal in the corpus**, so `M6` was added:
+a marathon off an 8 km/week base, a genuine §111 **block** that no
+acknowledgement clears.
+
+⚠️ **And it revealed a real finding the mislabel had hidden:** M4's plan carries
+`BINGE-WEEK` (worst session 69% of its week) — the same 3-days-plus-cap shape
+as E5, and covered by E5's ruling above. **Measured product-wide: 3.3% of
+runners see a confirmation prompt (8.4% at marathon+), 3.0% are genuinely
+blocked.**
 
 ## OPEN — with the measurement, ready for a sitting
 
