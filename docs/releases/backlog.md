@@ -41,6 +41,30 @@ approval gate (§4A) and are written as decision notes in `docs/decisions/`. Thr
 
 ### ⚖️ RULED 2026-09-20 — READ THIS BEFORE THE PROPOSALS BELOW
 
+✅ **FOUNDER ACCEPTED ALL SLT RECOMMENDATIONS, 2026-09-20.** P-01 build · P-07 don't build ·
+P-13 split · copy approved at pattern level · on-ramp built but not for October · Sims pattern split.
+
+🔬 **AND THE "NOT PROVEN" LIST WAS CLOSED WITHOUT TOUCHING PRODUCT CODE — `docs/MILES-PROOFS.md`.
+9 of 12 proven, 1 FALSIFIED (mine), 2 unprovable for structural reasons.** What changed:
+
+| Was | Now |
+|---|---|
+| *"Miles's palette is ours — side by side the difference is the wordmark"* | 🔴 **FALSIFIED, withdrawn.** Sampled: their ground **#FAF8F5** vs `--bg` #F3F0EB (Δ21.6), accent **#617C62** vs `--moss` #6B8E6B (**Δ41.8 — visibly different**). **The palette STRATEGY converged; the values did not.** P-01's case now rests on the measured half. |
+| P-03 "display-only, read from source" | ✅ **PROVEN.** 12 free plans, 748 sessions: 656 easy transformed, **0 non-easy altered.** ⚠️ The first run of this returned a clean table of zeroes because every plan threw — the `SWEEP-VACUOUS-01` class, caught. |
+| *"ceilings on every easy run"* — verify | ✅ **PROVEN TRUE. 656/656 = 100%** on free-tier plans. Caveat withdrawn. |
+| *"No make-up runs."* — verify | 🔴 **PROVEN FALSE. Do not adopt.** `planAdjustment.ts:542–578` inserts a `Make-up {type} run` within the week on "Life got busy"/"Bad weather". ✅ Our marketing already says the true version (nothing carries over across a **week**). |
+| Hutchinson's P-01 threshold condition | ✅ **ALREADY SATISFIED — no new board sitting.** `ZONE_DRIFT_ABOVE_CEILING_PCT = 20` is ratified with a measured derivation. 🔴 **But bind to it, NOT to `ZONE_DISCIPLINE_BANDS`** (85/70/50) — that is read only by `classifyZoneDiscipline`, which has **no call sites**. |
+| P-05a tile ranges | ✅ **UNBLOCKED.** `PLAN_SIGNATURES` already carries `min_weeks`/`max_weeks`. ⚠️ Our marathon range (14–20) is **shorter** than theirs (16–24) — a coaching position the tile will make visible. |
+| P-13(b) "hygiene" | 🔴 **NOW A DEMONSTRATED GUARD FAILURE.** A **BANNED** colour is live: `GeneratingCeremony.tsx:265` renders `rgba(91,192,190,0.14)` = **`#5BC0BE`**, retired teal, in the shimmer every runner sees. The hook checks the hex form only. 17 of 26 rgba are palette-at-alpha; 6 are legitimate scrims. |
+
+⚠️ **Still unprovable, and the reasons are structural, not effort:** **P-16** — `measure:fitness`
+runs on generated plans and the cohort is refused, so **the only way to get the evidence is to
+build behind a flag**. **P-04's data density** — needs real runners; we have ~3. **Day-one
+screens** — needs a device, founder-owned.
+
+📂 **Categorised view of all 73 open items: `docs/BACKLOG-BY-CATEGORY.md`.**
+
+
 **Both boards sat after these proposals were written. Where a proposal below and this
 block disagree, THIS BLOCK WINS.** Records: `docs/decisions/coaching-board-2026-09-20-miles-teardown-batch.md`
 · `docs/decisions/slt-2026-09-20-miles-teardown-batch.md`

@@ -25,11 +25,17 @@ inferred from the brief's prose.
 
 ### Four findings that change how the brief should be read
 
-**1. Their palette is ours.** Miles's background is a warm off-white within a shade of `--bg`
-`#F3F0EB`, their accent a muted green within a shade of `--moss` `#6B8E6B`, their cards white with
-a soft warm shadow. **Warm-neutral-plus-single-green is not our differentiator — it is the category
-default**, and the screenshots prove it rather than suggest it. This is the strongest available
-argument for P-01, and it is an argument from evidence rather than taste.
+**1. Their palette STRATEGY is ours — but the values are not. ⚠️ CORRECTED 2026-09-20 after
+measurement; see `docs/MILES-PROOFS.md` §1.** I first wrote that their colours sit "within a shade"
+of ours and that side by side the difference is the wordmark. **Sampled from the pixels, that is too
+strong and is withdrawn.** Their ground is **#FAF8F5** against our `--bg` **#F3F0EB** (Δ 21.6 —
+theirs lighter, less warm); their accent **#617C62** against `--moss` **#6B8E6B** (Δ 41.8 — theirs a
+visibly darker, greyer forest green). Cards are identical at #FFFFFF.
+
+**What survives is the argument that matters:** the *shape* is the same — warm near-white ground,
+white cards, **one** muted green, small-caps grey eyebrows — and two teams reached it independently.
+**That is what "category default" means, and it is measured.** What does not survive is value
+identity. P-01's case rests on the first, not the second.
 
 **2. Their progress indicator is also a line with no number.** `IMG_7174`, `7175`, `7176`, `7177`,
 `7178`, `7179` all show a thin green fill with no step count. P-05's "add Step 3 of 7" would

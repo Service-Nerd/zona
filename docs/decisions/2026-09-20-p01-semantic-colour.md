@@ -21,13 +21,22 @@ No new tokens. No new screens. The values do not change; their **meaning** does.
 
 The teardown screenshots settle a question that was previously an opinion.
 
-**Miles's palette is ours.** Their ground is a warm off-white within a shade of `--bg` `#F3F0EB`.
-Their accent is a muted green within a shade of `--moss` `#6B8E6B`. Their cards are white with a
-soft warm shadow. Their eyebrow labels are small-caps letterspaced grey. Put `IMG_7174` next to our
-wizard and the difference is the wordmark.
+**Miles's palette STRATEGY is ours. ⚠️ Measured 2026-09-20 — and the first version of this note
+overstated it.** I wrote that their colours sit "within a shade" of ours. Sampled from the pixels:
 
-So: **warm-neutral-plus-single-green is the category default, not our differentiator.** We did not
-choose a distinctive palette; we chose the same one as everyone else, slightly earlier.
+| | Miles | Zonna | Δ |
+|---|---|---|---|
+| ground | **#FAF8F5** | `--bg` #F3F0EB | 21.6 — theirs lighter |
+| accent | **#617C62** | `--moss` #6B8E6B | **41.8 — visibly different** |
+| card | #FFFFFF | #FFFFFF | 0.0 |
+
+**Side by side you would tell them apart.** The claim of value identity is withdrawn.
+
+**What survives is the argument this decision actually rests on:** the *shape* is the same — warm
+near-white ground, white cards, **one** muted green accent, small-caps grey eyebrows — and two
+teams arrived there independently. **That is what "category default" means.** We did not choose a
+distinctive palette strategy; we chose the same one as everyone else. Full measurement:
+`docs/MILES-PROOFS.md` §1.
 
 What *is* structurally unavailable to a beginner-first competitor is a colour that means
 **"you ran too hard."** Miles cannot ship it — their whole proposition is encouragement, and their
@@ -90,6 +99,13 @@ racing. Three ways out:
 1. Both meanings resolve from `globals.css`. No component hardcodes either value.
 2. **One owner** for "did this session hold the zone" — a single predicate, not a copy per component
    (D-16). This repo has paid for parallel classifiers repeatedly.
+   ✅ **The threshold exists and is ratified: `ZONE_DRIFT_ABOVE_CEILING_PCT = 20`**, with a principle
+   and a measured derivation (the production distribution separates with no overlap; the cut sits
+   inside the gap). **Hutchinson's condition is therefore already satisfied and this needs no new
+   board sitting.** ⚠️ n = 42 rows — thin, and the principle itself says re-measure as the cohort grows.
+   🔴 **A SECOND, DEAD THRESHOLD EXISTS and is the trap:** `ZONE_DISCIPLINE_BANDS` (85/70/50) is read
+   only by `classifyZoneDiscipline`, which has **no call sites**. It is the obvious thing to reach
+   for. **Bind to `ZONE_DRIFT_ABOVE_CEILING_PCT`.**
 3. The race-week collision resolved explicitly by one of A / B / C, written down.
 4. Documented in `ui-patterns.md`, so the next component inherits the meaning instead of guessing.
 
