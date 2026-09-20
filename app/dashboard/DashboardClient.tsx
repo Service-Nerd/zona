@@ -1,12 +1,15 @@
 'use client'
 
+import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
+import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
+import { canModifyPlan } from '@/lib/plan/modifyPlan'
 import MePlanCard from '@/components/shared/MePlanCard'
 import { useIsNative } from '@/lib/useIsNative'
 import ZoneWeekBlock from '@/components/shared/ZoneWeekBlock'
 import { classifyRun, type RunZoneOutcome } from '@/lib/coaching/zoneWeekStatement'
 import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Plan, Week, Session } from '@/types/plan'
+import type { Plan, Week, Session, GeneratorInput } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import PlanChart from '@/components/training/PlanChart'
 import PlanCalendar from '@/components/training/PlanCalendar'
@@ -263,6 +266,77 @@ export default function DashboardClient() {
   // Capacitor's external-navigation handler, which on iOS opens Safari.
   const router = useRouter()
   const [plan, setPlan] = useState<Plan | null>(null)
+
+  // ── P-02 — MODIFY-PLAN SHEET ORCHESTRATION ──────────────────────────────
+  //
+  // Lives here rather than in PlanScreen because this component owns the plan
+  // state and the save path, and the save path is not negotiable:
+  // `savePlanForUser` is the single writer (SAVE-VALIDATE-01 — nine routes
+  // once bypassed it and persisted unvalidated plans), and it is also what
+  // supersedes week-keyed rows on a race-identity change. Writing `plan_json`
+  // from the sheet would skip BOTH.
+  const [modifyOpen, setModifyOpen] = useState(false)
+  /** The regenerated plan awaiting the runner's accept. Never auto-applied. */
+  const [modifyPreview, setModifyPreview] = useState<{ next: Plan; resets: boolean } | null>(null)
+  const [modifyBusy, setModifyBusy] = useState(false)
+  const [modifyError, setModifyError] = useState<string | null>(null)
+
+  /** Regenerate from the overlaid input. Nothing is saved at this point. */
+  async function runModifyPreview(nextInput: GeneratorInput, resets: boolean) {
+    setModifyBusy(true); setModifyError(null)
+    try {
+      const res = await authedFetch('/api/generate-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(nextInput),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        // A 422 here is a DESIGNED refusal: the runner's edit produced inputs
+        // the engine will not build (too few weeks, below the base door). It
+        // is not an error and must not read as one.
+        setModifyError(data.error ?? 'That change could not be built into a plan.')
+        return
+      }
+      // The free-tier path returns plain JSON; the enriched path streams NDJSON
+      // and its FIRST message is the complete rule plan (ADR-006 — the runner
+      // always holds a full plan before enrichment). Taking that first message
+      // is correct and avoids holding the sheet open for the model.
+      const ct = res.headers.get('content-type') ?? ''
+      let next: Plan | null = null
+      if (ct.includes('ndjson')) {
+        const text = await res.text()
+        const first = text.split('\n').find(Boolean)
+        next = first ? (JSON.parse(first).plan as Plan) : null
+      } else {
+        next = ((await res.json()).plan as Plan) ?? null
+      }
+      if (!next) { setModifyError('That change could not be built into a plan.'); return }
+      setModifyOpen(false)
+      setModifyPreview({ next, resets })
+    } catch {
+      setModifyError('Could not reach the server. Check your connection.')
+    } finally {
+      setModifyBusy(false)
+    }
+  }
+
+  /** Accept. ⚠️ Saves through `savePlanForUser`, never a direct write. */
+  async function acceptModify() {
+    if (!modifyPreview) return
+    setModifyBusy(true); setModifyError(null)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setModifyError('You are signed out. Sign in and try again.'); return }
+      await savePlanForUser(user.id, modifyPreview.next, supabase)
+      setPlan(modifyPreview.next)
+      setModifyPreview(null)
+    } catch {
+      setModifyError('Could not save that change. Try again.')
+    } finally {
+      setModifyBusy(false)
+    }
+  }
   const [showWelcome, setShowWelcome] = useState(false)
   const [screen, setScreen] = useState<Screen>('today')
   const [showMe, setShowMe] = useState(false)
@@ -2258,7 +2332,38 @@ export default function DashboardClient() {
                   setPendingReshape(null)
                   setReshapeDismissedAt(new Date().toISOString())
                 }} />}
-        {screen === 'plan'     && <PlanScreen plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} />}
+        {/* P-02 — the confirm step REPLACES the plan view while it is open.
+            Not a modal over it: "no popups; all interactions navigate to full
+            screens", and a diff the runner is deciding on is the screen's one
+            job while it is up. */}
+        {screen === 'plan' && modifyPreview && plan && (
+          <div style={{ padding: '16px 0 0' }}>
+            <ModifyPlanConfirm
+              before={plan}
+              after={modifyPreview.next}
+              weekIndex={getCurrentWeekIndex(plan.weeks)}
+              units={preferredUnits}
+              resetsLoggedWeeks={modifyPreview.resets}
+              applying={modifyBusy}
+              onAccept={() => void acceptModify()}
+              onCancel={() => { setModifyPreview(null); setModifyError(null) }}
+            />
+            {modifyError && (
+              <div style={{ padding: '0 20px 20px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', lineHeight: 1.55 }}>
+                {modifyError}
+              </div>
+            )}
+          </div>
+        )}
+        {screen === 'plan' && modifyOpen && plan && (
+          <ModifyPlanSheet
+            plan={plan}
+            hasPaidAccess={!!hasPaidAccess}
+            onClose={() => { setModifyOpen(false); setModifyError(null) }}
+            onApply={(next, resets) => void runModifyPreview(next, resets)}
+          />
+        )}
+        {screen === 'plan' && !modifyPreview && <PlanScreen plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => setModifyOpen(true) : undefined} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
               // ADR-013 §22-27: allCompletions and runAnalysisMap are keyed by
@@ -8232,7 +8337,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 // matters is in the two live holes (the web connect prompt, and actually
 // looking at day one), not in reviving this.
 
-function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach }: {
+function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, onOpenModify, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach }: {
   plan: Plan; stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, any>>
@@ -8244,6 +8349,11 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   sessionMetricOverrides?: Record<string, 'distance' | 'duration'>
   hasPaidAccess?: boolean
   onOpenCoach?: () => void
+  /** P-02 — opens the modify sheet. `undefined` when the plan predates
+   *  `meta.generator_input` (45% of live plans on 2026-09-20): the entry point
+   *  is withheld rather than offering an edit the engine cannot honour from
+   *  guessed inputs. */
+  onOpenModify?: () => void
   /** P-04 — nested runAnalysisMap[week_n][session_day]. Already fetched on this
    *  client for the Coach screen; the Plan screen never received it, which is
    *  why the one question this product is built on was answerable only there. */
@@ -8428,6 +8538,38 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
       <div style={{ padding: '0 16px', marginBottom: '16px' }}>
         <ZoneWeekBlock outcomes={zoneOutcomesThisWeek} locked={!hasPaidAccess} />
       </div>
+
+      {/* ── P-02 — the way in. ─────────────────────────────────────────────
+          Before this there was NO surface on which a runner could change a
+          plan parameter: the only route was re-running the fourteen-screen
+          wizard, which archives the existing plan.
+
+          ⚠️ Withheld entirely when `onOpenModify` is undefined, which is a
+          plan with no stored `generator_input` (45% of live plans on
+          2026-09-20). Offering an edit we would have to regenerate from
+          GUESSED inputs would silently change things the runner never asked
+          to change. A row that cannot work is worse than no row. */}
+      {onOpenModify && (
+        <div style={{ padding: '0 16px', marginBottom: '16px' }}>
+          <button
+            onClick={onOpenModify}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 16px', background: 'var(--card)', borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left',
+            }}
+          >
+            <div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4 }}>
+                Change your plan
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
+                Days, time limits, injuries or the race date. Without starting again.
+              </div>
+            </div>
+          </button>
+        </div>
+      )}
 
 
       {/* ── PLAN INTRO — CA-01 free first-plan "why this plan" (Kit's voice) ──

@@ -4,7 +4,47 @@ Raw learning notes, one entry per ship. Newest first. Dev / product / AI-buildin
 angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, keep
 it specific, no polish. The content system adds the voice.
 
----
+---## 2026-09-20 — P-02: the biggest item on the board, and the risky part was already solved
+
+**Dev.** P-02 was described as the highest-leverage item in the teardown and the widest blast
+radius in the document, and its own filing said the Coaching Board had to sit before **scoping**,
+not just before approval. The gap was real: there was no surface on which a runner could change a
+plan parameter. Days available, weekday cap, race date, long-run day, injuries, terrain — all of
+them meant re-running a fourteen-screen wizard that archives the existing plan.
+
+**The board vetoed the one control that would have been a mistake.** The brief wanted intensity as
+a primary control, 80/20 → 90/10. Seiler's objection settled it in one line: 80/20 is a
+session-count observation, so at four running days the two settings are 0.8 and 0.4 quality
+sessions. **The control does not quantise.** It would be illusory at the volumes most of our
+runners train at and consequential only at the top. Willy added that dialling *up* is the injury
+vector and self-selects for the runner least likely to stop. What shipped instead is
+`hard_session_relationship`, which expresses the same preference and is already governed by §110.
+
+**And the part I expected to be dangerous turned out to be already solved.** This feature's named
+failure mode is `PLAN-WEEK-COLLISION-01` — a plan that arrived 94% pre-completed because `week_n`
+is a within-plan coordinate that seven tables used as a cross-plan key. Modify-and-regenerate does
+exactly that operation for a living. But `savePlanForUser` already supersedes week-keyed rows,
+gated on `isRaceIdentityChange`, and that gate turns out to be exactly the right semantic for
+this: change your days and your logged weeks are yours to keep; move the race and they stop
+counting, because that is a different block.
+
+So the sheet does not decide it. It **asks the same function**, which means the warning the runner
+reads and the behaviour they get cannot disagree. That is the whole design, and it is one line.
+
+**The limitation I could not design away.** Regeneration needs the input the plan was built from,
+and `meta.generator_input` is stamped only on plans generated since it was added. Measured against
+production: **10 of 22 live plans have none.** Those runners get no entry point at all. The
+alternative was regenerating from guessed answers, which silently changes things nobody asked to
+change — and a row that cannot work is worse than no row. It shrinks on its own, and the October
+charity cohort is unaffected because their plans will all be new.
+
+**AI-building.** Nearly every piece of this was composition. Every control already existed
+(`Sheet`, `DayGridSelector`, `SegmentedControl`), the diff already existed with two live call
+sites, the thresholds already existed in ADR-012, the save path already existed and was already
+the single writer. The genuinely new code is one logic module and two presentational components.
+The temptation in a "widest blast radius" item is to build widely; almost all of the work was
+finding what not to write.
+
 ## 2026-09-20 — P-06(c): took the idea, left the chrome, and checked the promise before making it
 
 **Dev.** Our plan preview told a runner the week count, the start date and the race distance. It

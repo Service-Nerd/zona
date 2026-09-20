@@ -174,7 +174,7 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🟡 **P-02 — MODIFY-PLAN SHEET: batched edits, grouped by consequence, diff before apply.** *(T-15. Highest-leverage item in the teardown, widest blast radius in this document. **Coaching Board required before scoping**, not merely before approval.)*
+> ✅ **P-02 — MODIFY-PLAN SHEET: batched edits, grouped by consequence, diff before apply.** *(T-15. Highest-leverage item in the teardown, widest blast radius in this document. **Coaching Board required before scoping**, not merely before approval.)*
 >
 > 🟡 **SCOPED 2026-09-20, BOARD RULING LANDED. Build is the next unit of work and deliberately
 > not started.** This item's own filing says *"Coaching Board required before SCOPING, not merely
@@ -207,9 +207,45 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > migration awaiting a production apply. Batching in state satisfies *"nothing regenerates until
 > Apply"*.
 >
-> 🔻 **Not built, and not half-built on purpose.** Seven parameter controls, batching, apply →
-> regenerate → diff → accept, Pro locks and the collision test is a substantial build, and this
-> repo's standing rule is **ship only complete, regression-tested work**.
+> 🟢 **BUILT AND SHIPPED 2026-09-20, same day as the scoping.**
+> `lib/plan/modifyPlan.ts` (the owner: rows, consequence subtitles, the sparse overlay, the
+> collision question) · `ModifyPlanSheet` · `ModifyPlanConfirm` · orchestration in
+> `DashboardClient` · entry point on Plan.
+>
+> ⚠️ **THE COLLISION SEMANTIC IS ASKED OF ITS OWNER, NOT RE-DECIDED.**
+> `editsResetLoggedWeeks` calls `isRaceIdentityChange` — the same predicate `savePlanForUser`
+> uses — so **the warning the runner sees and the behaviour they get cannot disagree.** Tested in
+> both directions, including that re-selecting the SAME race date resets nothing (opening a picker
+> and closing it is the commonest interaction there is). Falsified against a modify path that
+> never supersedes.
+>
+> ⚠️ **SAVED THROUGH `savePlanForUser`, NEVER A DIRECT WRITE**, and falsified against the
+> SAVE-VALIDATE-01 shape: swapping in a `plan_json` upsert reddens the guard. That single writer
+> is *also* what supersedes week-keyed rows, so a direct write would skip both the validation and
+> the collision guard.
+>
+> ⚠️ **GATED ON THE STORED INPUT, AND THAT EXCLUDES 45% OF LIVE PLANS TODAY.** Measured against
+> production: **10 of 22 plans have no `meta.generator_input`.** Those runners get **no entry
+> point** rather than an edit regenerated from guessed answers, which would silently change what
+> they never asked to change. Every plan generated from today carries the stamp and the October
+> cohort is unaffected.
+>
+> **Every control is an EXISTING shared component** (`Sheet`, `DayGridSelector`,
+> `SegmentedControl`) — a second day-picker is a second thing to keep in step. Presentation is
+> `Sheet`'s (SHEET-PRESENT-01), so nothing re-invents a bottom sheet or its z-index. Bottom bar,
+> **no Cancel top-right**, and **no disabled primary at rest**. Pending edits read in **moss**, not
+> amber, because amber is coaching-warning voice. A 422 from an edit surfaces the engine's own
+> refusal message rather than an error.
+>
+> ✅ **Acceptance criteria met:** edits batch · Apply always shows the diff · completions survive a
+> non-race edit (tested) · ADR-012's owner reused, not restated · **`verify:parity` IDENTICAL
+> across 5,940 cases**, which is the "untouched plan is byte-identical" criterion.
+>
+> 🔻 **Two deliberate omissions.** The **persisted** not-yet-applied edit set is not built: it
+> would be a third migration awaiting a production apply, and batching in state already satisfies
+> *"nothing regenerates until Apply"*. And **the duration-anchored magnitude path is exercised by
+> the engine's own ADR-012 owner rather than by a new test here** — SESSION-KM-01/02's fix lives in
+> `sessionKm`, and re-asserting it at this layer would be a second checker of someone else's rule.
 >
 > **Problem.** **There is no surface on which a runner can change a plan parameter.** Phase 0 Q13:
 > `ReshapeScreen` is not an editor (it renders whatever `/api/adjust-plan` proposes); `MeScreen →
