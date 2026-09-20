@@ -36,6 +36,49 @@ memory.
 
 ---
 
+## How to re-run the review and compare like with like
+
+Four commands. Run them in this order; each answers a different question.
+
+```bash
+npx tsx scripts/coaching-review-round.ts   # 1. generate today's 28 plans
+npm run measure:envelope                   # 2. fit-for-purpose, DIFFED vs baseline
+npm run audit:plans                        # 3. coach objections, diffed vs baseline
+npm run verify                             # 4. everything else, incl. both gates
+```
+
+**What makes it apples-to-apples**, and every one of these is versioned in git:
+
+| held fixed | where |
+|---|---|
+| the runners | `lib/plan/charityCohort.ts` — 20 personas, + 7 canonical cases |
+| the weighted population | `lib/plan/useCaseEnvelope.ts` — bands and weights, each with a written reason |
+| what "a coach would object to" | `lib/plan/planQuality.ts` — 7 predicates, one owner |
+| what "fit for purpose" means | `lib/plan/envelopeMeasure.ts` — one owner, shared by the script and the gate |
+| **last round's numbers** | `lib/plan/__fixtures__/envelopeBaseline.json` |
+| what the board already decided | this file |
+
+**Step 2 is the one that was missing until 2026-09-20.** The rates existed only
+as FLOORS in test code, which is a **one-sided** gate: a drop failed the build
+and **a rise was silent**. So "is this better or worse than last time, and
+where?" had to be re-derived by hand every round — the same shape as the defect
+that made the board appear to change its mind. `measure:envelope` now prints
+the per-distance delta and the test fails on a move **in either direction**.
+
+**Re-baselining is a declared act.** `npm run measure:envelope -- --write`,
+and say in the commit which number moved and why. **Never to turn a test
+green.**
+
+### What is still NOT comparable between rounds
+
+- **`generated-plans.md` is gitignored** (size), so the plan TEXT of an old
+  round cannot be diffed. Plan-level change detection is `verify:parity`
+  instead, which hashes 5,940 cases — use that, not the round files.
+- **The envelope weights are assumptions.** If they change, every historical
+  number becomes incomparable. That is why they are one reviewable object with
+  a written reason per band, and why the charity's answer to the volume
+  question will force a deliberate re-baseline.
+
 ## CLOSED — do not re-raise without new evidence, and say what is new
 
 | ref | ruling | date | the number behind it |

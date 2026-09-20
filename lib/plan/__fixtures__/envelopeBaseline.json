@@ -1,0 +1,55 @@
+{
+ "stride": 29,
+ "productFitPct": 95.9,
+ "byDistance": {
+  "5": {
+   "fitPct": 100,
+   "refusedPct": 0,
+   "refusedWithoutNextStepPct": 0,
+   "invalidPlans": 0,
+   "objections": {}
+  },
+  "10": {
+   "fitPct": 100,
+   "refusedPct": 0,
+   "refusedWithoutNextStepPct": 0,
+   "invalidPlans": 0,
+   "objections": {}
+  },
+  "50": {
+   "fitPct": 100,
+   "refusedPct": 0,
+   "refusedWithoutNextStepPct": 0,
+   "invalidPlans": 0,
+   "objections": {}
+  },
+  "100": {
+   "fitPct": 100,
+   "refusedPct": 0,
+   "refusedWithoutNextStepPct": 0,
+   "invalidPlans": 0,
+   "objections": {}
+  },
+  "21.1": {
+   "fitPct": 96.2,
+   "refusedPct": 0,
+   "refusedWithoutNextStepPct": 0,
+   "invalidPlans": 0,
+   "objections": {
+    "DEGENERATE-WEEK": 2.3,
+    "WEEK1-LEAP": 1.5
+   }
+  },
+  "42.2": {
+   "fitPct": 90.1,
+   "refusedPct": 10.9,
+   "refusedWithoutNextStepPct": 0,
+   "invalidPlans": 0,
+   "objections": {
+    "LONG-RUN-SHORT": 7.8,
+    "WEEK1-LEAP": 4.5,
+    "BINGE-WEEK": 0.4
+   }
+  }
+ }
+}

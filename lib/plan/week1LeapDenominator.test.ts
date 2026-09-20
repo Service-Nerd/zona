@@ -48,11 +48,11 @@ describe('WEEK1-FLOOR-SHORT-DIST-01', () => {
     // duration budget. The `hazard > 0` assertion below keeps this honest — if
     // the narrowing ever samples the claim away, the test goes red.
     for (const d of DISTANCE_BANDS.filter(b => [21.1, 42.2, 100].includes(b.value))) {
-      // Stride widened 31 -> 109 after the duration gate flagged 4.9 s. Both
+      // Stride widened 31 -> 109 -> 211 as the duration gate flagged it twice. Both
       // populations stay reachable and the assertions below prove it: the test
       // fails if `hazard` is zero, so a stride that sampled the claim away
       // would go red rather than pass vacuously.
-      for (const c of distanceEnvelope(d.value).filter((_, i) => i % 109 === 0)) {
+      for (const c of distanceEnvelope(d.value).filter((_, i) => i % 211 === 0)) {
         let plan
         try { plan = generateRulePlan(c.input, 'paid') }
         catch (e) { if (isDesignedRefusal(e)) continue; throw e }

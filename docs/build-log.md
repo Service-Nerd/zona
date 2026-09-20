@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-20 - ENVELOPE-BASELINE-01 - a gate that only fails downwards is half a gate
+**Shipped:** the fit-for-purpose rate is now a recorded, diffable baseline instead of a floor, so two review rounds can actually be compared.
+
+**Dev learning:** The founder asked whether we had captured enough to run the same coach review again and compare like with like. The honest answer was no, and the reason is a nice one. We had floors: each distance must not fall below a number. That catches a regression and is completely silent about an improvement, so after any change the only way to answer "is this better, and where?" was to re-derive the numbers by hand. Which is exactly the failure that made the board look inconsistent: a measurement nobody wrote down.
+
+**A gate that only fails in one direction is half a gate.** The baseline now fails on movement either way and names the distance and the delta, because an undeclared rise is still an unexplained change in what runners receive. Re-baselining stays a deliberate act with a reason in the commit.
+
+**Worth noting what is still not comparable,** because writing that down is the other half of the answer. The generated plan text is gitignored for size, so old rounds cannot be diffed as documents; plan-level change detection is the parity harness, which hashes nearly six thousand cases. And the population weights are assumptions, so if they move, every historical number becomes incomparable. That is why they live in one reviewable object with a written argument per band.
+
+**The pleasing part:** making the test and the script share one computation collapsed six separate walks over the corpus into one, which freed more duration budget than the new check costs.
+
+---
+
 ## 2026-09-20 - M4-NOT-A-REFUSAL-01 - the plan we told everyone we refused
 **Shipped:** a test persona labelled a refusal for months turns out to receive a perfectly good plan.
 

@@ -3,7 +3,12 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
 import { sessionKmSelfPaced } from './sessionDistance'
-import { auditPlanQuality } from './planQuality'
+import { measureEnvelope } from './envelopeMeasure'
+import baselineJson from './__fixtures__/envelopeBaseline.json'
+import type { EnvelopeMeasure } from './envelopeMeasure'
+// The JSON's inferred literal type has no index signature; the measure's
+// own type is the right one to read it through.
+const baseline = baselineJson as unknown as EnvelopeMeasure
 import { distanceEnvelope, DISTANCE_BANDS, MARATHON_VOLUME_BANDS, DAYS_BANDS, levelBandsFor,
   VOLUME_BANDS_BY_DISTANCE } from './useCaseEnvelope'
 
@@ -124,77 +129,60 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   // then renamed the test, which broke its entry in the duration baseline
   // (matched on file + title). A test name that embeds a number churns every
   // time the number moves; the floor belongs in the failure message.
+  // ⚠️ ONE CORPUS WALK, TWO CHECKS, AND THE SECOND ONE IS NEW.
+  // The floors are a ONE-SIDED gate: a drop fails, a rise is silent. So the
+  // question asked between board sittings -- "is this better or worse than
+  // last time, and where?" -- had no mechanical answer and the numbers were
+  // re-derived by hand each round. That is the same shape as the defect that
+  // made the board appear to change its mind: a measurement nobody wrote down.
+  //
+  // `measureEnvelope` is the single owner, shared with
+  // `scripts/measure-envelope.ts --write`. A second copy of the computation
+  // would drift, which this repo has paid for three times.
+  const measured = measureEnvelope()
+
   it.each(DISTANCE_BANDS.map(d => [d.value, FLOORS[d.value]] as const))(
     '%s km — a weighted majority of entrants get a plan we would hand over',
     (distanceKm, floor) => {
-      let total = 0, fit = 0, refused = 0, refusedWithoutNextStep = 0
-      // COPY-STALE-GEN-01 — no generated plan may carry an error-severity
-      // violation. Asserted HERE because this suite already generates the
-      // corpus; a second walk elsewhere cost 3.6s and proved the same thing.
-      const invalid: string[] = []
-      const codes: Record<string, number> = {}
-      for (const c of distanceEnvelope(distanceKm).filter((_, i) => i % STRIDE === 0)) {
-        total += c.weight
-        let plan
-        try { plan = generateRulePlan(c.input, 'paid') }
-        catch (e) {
-          // ⚠️ A CORRECT REFUSAL IS A FIT-FOR-PURPOSE OUTCOME, NOT A FAILURE
-          // (founder, 2026-09-20). Refusing an 8 km/week runner a marathon is
-          // the right answer: measured, for 100% of §111-refused cases a
-          // capped peak lands below the credible floor (median 22.4 km against
-          // 52.8), so the only alternative is a degenerate plan.
-          //
-          // ⚠️ BUT A REFUSAL HAS TO EARN IT, WHICH IS WHY IT IS CHECKED.
-          // §44's standard is "not yet", never "no" — the refusal must name
-          // what to do next. One that just says no is a dropout and still
-          // counts against us. Measured: BaseVolumeError names a next step in
-          // 100% of cases ("get to about 11 km a week first... come back").
-          if (isDesignedRefusal(e)) {
-            refused += c.weight
-            const msg = e instanceof Error ? e.message : String(e)
-            if (/get to|come back|build to|at least|first|instead|about \d/i.test(msg)) fit += c.weight
-            else refusedWithoutNextStep += c.weight
-            continue
-          }
-          // ⚠️ NOT a crash — an INVALID PLAN, counted as unfit.
-          // `enforceViolations` throws on error-severity violations under
-          // NODE_ENV=test and merely logs in production, so a throw here is a
-          // plan a real runner WOULD RECEIVE, carrying a violation of the
-          // engine's own constitution. Rethrowing would make this harness
-          // fall over on exactly the defect it exists to find.
-          codes['THREW-INVALID'] = (codes['THREW-INVALID'] ?? 0) + c.weight
-          continue
-        }
-        const m = plan.meta as unknown as Record<string, unknown>
-        const maintDeclared = m.volume_profile === 'maintenance' && !!m.volume_constraint_note
-        const errs = validatePlan(plan, c.input).filter(v => v.severity === 'error')
-        if (errs.length) invalid.push(`${c.label} :: ${errs.map(e => e.code).join(',')}`)
-        // ⚠️ The LONG-RUN-SHORT ultra exclusion USED TO BE HERE and has moved
-        // into `planQuality` itself (ULTRA-LR-BAR-01). Knowledge about what
-        // counts as a defect belongs to the owner of the predicates, not to
-        // one of its consumers — while it lived here, `audit:plans` and this
-        // harness disagreed about whether an ultra plan was defective.
-        const objs = auditPlanQuality(plan, c.input).filter(o =>
-          !(o.code === 'NEVER-BUILDS' && maintDeclared))
-        for (const o of objs) codes[o.code] = (codes[o.code] ?? 0) + c.weight
-        if (!errs.length && !objs.length) fit += c.weight
-      }
-      expect(invalid, `${distanceKm} km: plans failing the engine's own constitution`).toEqual([])
+      const m = measured.byDistance[String(distanceKm)]
+      expect(m, `no measurement for ${distanceKm} km`).toBeTruthy()
       expect(
-        refusedWithoutNextStep / total,
-        `${distanceKm} km: ${(refusedWithoutNextStep / total * 100).toFixed(1)}% refused WITHOUT naming a next ` +
-        `step. §44's standard is "not yet", never "no" — a refusal with no route back is a dropout.`,
+        m.invalidPlans,
+        `${distanceKm} km: ${m.invalidPlans} plan(s) fail the engine's own constitution`,
       ).toBe(0)
-      const rate = fit / total
-      const top = Object.entries(codes).sort((a, b) => b[1] - a[1]).slice(0, 3)
-        .map(([k, v]) => `${k} ${(v / total * 100).toFixed(0)}%`).join(', ')
       expect(
-        rate,
-        `${distanceKm} km: fit-for-purpose ${(rate * 100).toFixed(1)}% (refused ` +
-        `${(refused / total * 100).toFixed(1)}%). Floor ${(floor * 100).toFixed(0)}%. Top objections: ${top}\n` +
-        `  A DROP is a coaching regression. A RISE is good — raise the floor in a commit that says by how much.`,
+        m.refusedWithoutNextStepPct,
+        `${distanceKm} km: ${m.refusedWithoutNextStepPct}% refused WITHOUT naming a next step. ` +
+        `§44's standard is "not yet", never "no" — a refusal with no route back is a dropout.`,
+      ).toBe(0)
+      const top = Object.entries(m.objections).slice(0, 3)
+        .map(([k, v]) => `${k} ${v}%`).join(', ')
+      expect(
+        m.fitPct / 100,
+        `${distanceKm} km: fit-for-purpose ${m.fitPct}% (refused ${m.refusedPct}%). ` +
+        `Floor ${(floor * 100).toFixed(0)}%. Top objections: ${top}`,
       ).toBeGreaterThanOrEqual(floor)
     })
+
+  it('no distance has MOVED against the recorded baseline, in either direction', () => {
+    // The two-sided half. A RISE is good and still has to be declared, because
+    // an undeclared rise is an unexplained change in what runners receive.
+    const moves: string[] = []
+    const check = (label: string, now: number, was: number) => {
+      if (Math.abs(now - was) > 0.6) moves.push(`${label}: ${was}% -> ${now}% (${(now - was).toFixed(1)}pp)`)
+    }
+    check('WHOLE PRODUCT', measured.productFitPct, baseline.productFitPct)
+    for (const d of Object.keys(measured.byDistance)) {
+      check(`${d}km`, measured.byDistance[d].fitPct, baseline.byDistance[d]?.fitPct ?? -1)
+    }
+    expect(
+      moves,
+      `Fit-for-purpose moved:\n  ${moves.join('\n  ')}\n` +
+      `  A MOVE IS NOT AUTOMATICALLY WRONG — it is automatically something to DECLARE.\n` +
+      `  Re-baseline with \`npm run measure:envelope -- --write\` and say in the commit\n` +
+      `  which number moved and why. Never to turn a test green.`,
+    ).toEqual([])
+  })
 
   it('every distance has a floor — a distance with no floor is a distance nobody is watching', () => {
     for (const d of DISTANCE_BANDS) {
