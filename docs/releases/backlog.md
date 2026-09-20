@@ -933,6 +933,39 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 >
 > **Size.** **S.** **Free/Pro.** FREE — it is the door. **Backlog.** **NEW**, splits from the on-ramp.
 
+> 🔴 **ONRAMP-FLOOR-INVERSION-01 — the runners who need the ramp MOST are the ones the floor excludes.** *(P1, Coaching Board, filed 2026-09-20. **Founder: real beginner marathoners arrive in ~2 weeks and it has to be a positive experience.**)*
+>
+> **Measured on the real charity profile** — first-time marathoner, London 2027-04-25, 29-week
+> runway, 198 plausible beginner profiles:
+>
+> | | n | |
+> |---|---|---|
+> | gets a plan | 108 | 54.5% |
+> | **REFUSED (§111)** | **90** | **45.5%** |
+> | …of which an on-ramp **would be offered** | 36 | 40% of refusals |
+> | …of which **below the floor, still nothing** | **54** | **60% of refusals** |
+>
+> 🔴 **THE INVERSION.** A runner at **10 km/week** is told *"about 2 weeks of steady easy running"*
+> — a trivial wait — **and would get a ramp.** A runner at **4 km/week** is told *"about 12 weeks"*
+> — the one who actually needs a structured build — **and is below
+> `BASE_BUILD_ONRAMP_MIN_START_KM` so gets nothing.** The shorter the wait, the more help we offer.
+>
+> ⚠️ **This is not an oversight, which is why it needs the board and not a patch.** Willy set the
+> floor deliberately: below it the right tool is **run-walk**, and §116 explicitly does not scope
+> run-walk (*"do not build it to copy a competitor"*). So the honest statement is **not** "the floor
+> is wrong" — it is **"we have no tool for the sub-6 km/week runner, and they are 60% of our
+> refusals."**
+>
+> ⚠️ **The refusal copy is already good and should not be blamed:** *"4 km a week is too low to
+> build safely to a marathon yet. Get to about 12 km a week first. Give it about 12 weeks of steady
+> easy running and come back: we will build the plan then."* Specific, honest, invites them back.
+> **What is missing is something to DO** — which is `P-15`, needs no engine change and no board.
+>
+> 🔻 **THE QUESTION THE BOARD CANNOT ANSWER AND THE FOUNDER CAN:** how many of the incoming cohort
+> actually run under 6 km/week. That is `docs/runbooks/charity-volume-question.md`, **drafted and
+> still UNSENT.** It has just become the highest-value unsent message we hold: it decides whether
+> this is 60% of a handful or 60% of hundreds.
+
 > 🟡 **P-16 — BUILT BEHIND A FLAG 2026-09-20. The chair's gate is DISCHARGED; the numbers are below and the flag is OFF.**
 >
 > **§116 shipped dark.** `ENABLE_BASE_BUILD_ONRAMP` is read in exactly one place
