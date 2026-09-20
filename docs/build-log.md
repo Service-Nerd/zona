@@ -10,7 +10,7 @@ it specific, no polish. The content system adds the voice.
 
 
 
-## 2026-09-20 — FITNESS-BUCKET-SAMPLE-01: I filed the wrong diagnosis, and widening the sample proved it
+## 2026-09-20 — S24-FLOOR-REACHABILITY-01 and FITNESS-BUCKET-SAMPLE-01: I filed the wrong diagnosis, and widening the sample proved it
 
 **Dev.** Three engine-governance items. The one worth writing up is the one where my own filing,
 written four hours earlier, was wrong about the cause.
