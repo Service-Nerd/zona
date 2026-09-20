@@ -5,6 +5,7 @@ import Sheet from './Sheet'
 import { DayGridSelector } from './DayGridSelector'
 import { SegmentedControl } from './SegmentedControl'
 import type { GeneratorInput, Plan } from '@/types/plan'
+import { formatDuration } from '@/lib/format'
 import {
   MODIFIABLE_ROWS, MODIFY_GROUP_LABELS, applyEdits, pendingKeys, editsResetLoggedWeeks,
   type ModifyGroup, type PlanEdits, type ModifiableKey,
@@ -233,7 +234,13 @@ function RowControl({ rowKey, value, onChange }: {
       return (
         <SegmentedControl
           ariaLabel="Weekday time limit"
-          options={[30, 45, 60, 90].map(n => ({ value: String(n), label: `${n} min` }))}
+          // ⚠️ `formatDuration`, not `${n} min`. PREF-SWEEP-01 caught the first
+          // cut welding the glyph to the value, and it was not merely a style
+          // violation: ADR-015 locks the ≥60 rule to hours, so the hand-written
+          // version would have shown "60 min" and "90 min" where the rest of
+          // the product says "1h" and "1h 30". A unit string assembled at the
+          // render site is how two surfaces start disagreeing.
+          options={[30, 45, 60, 90].map(n => ({ value: String(n), label: formatDuration(n) ?? String(n) }))}
           value={String(value ?? 60)}
           onChange={(v) => onChange(Number(v))}
         />
