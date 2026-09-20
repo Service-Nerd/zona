@@ -25,6 +25,7 @@ import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { ZONE_DRIFT_ABOVE_CEILING_PCT } from '@/lib/coaching/constants'
+import { zoneVerdict, zoneVerdictColour, zoneVerdictLabel } from '@/lib/coaching/zoneVerdict'
 import { driftContextFor } from '@/lib/coaching/loadCalc'
 import { BRAND, PRICING } from '@/lib/brand'
 import { profileInitials } from '@/lib/profileInitials'
@@ -3769,7 +3770,11 @@ function getSkipResponse(reason: string): string {
 
 // ── SESSION POPUP ─────────────────────────────────────────────────────────
 
-function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatch }: {
+function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, onClose, onSaved, preferredUnits, zone2Ceiling, preferredMetric, onSessionMetricChange, savedMetricOverride = null, restingHR, maxHR, aerobicPace, stravaLoading, hasPaidAccess, onUpgrade, goalPace, guidance, onLinkedComplete, autoMatch, runAnalysis = null }: {
+  /** P-01 — the completion pill's verdict comes from here. `null` is the honest
+   *  majority case (no HR, or a free-tier runner without `activity_intelligence`)
+   *  and resolves to `unknown`, never to `held`. */
+  runAnalysis?: { hr_above_ceiling_pct?: number | null } | null
   session: any; weekTheme: string; weekN: number; preloadedRuns: any[]
   /** AI-PROVENANCE-01 — did a MODEL write this session's coach notes? Resolved by
    *  `sessionNotesAreAiAuthored` where the plan is in scope; never re-derived here,
@@ -4493,7 +4498,24 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', letterSpacing: '0.02em' }}>
             {session.day} · {session.date}
           </span>
-          {isComplete && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'var(--moss-soft)', color: 'var(--moss)', border: '1px solid var(--moss-mid)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Done</span>}
+          {/* P-01 — THE SEMANTIC PAIR, on the one state it is scoped to.
+              Moss no longer means "done"; it means the intensity was right.
+              Amber means it drifted above the ceiling. Mute means we cannot say,
+              which is the honest majority case — no HR, or a free-tier runner
+              without `activity_intelligence`.
+              ⚠️ Verdict resolved through `zoneVerdict`, the single owner. The
+              pill NEVER computes it. ⚠️ The two verdict labels are new copy and
+              are pattern-setting (§4A) — flagged for sign-off; "Done" is
+              retained unchanged for the unknown case so nothing is claimed. */}
+          {isComplete && (() => {
+            const verdict = zoneVerdict(runAnalysis?.hr_above_ceiling_pct)
+            const tint = verdict === 'held' ? 'var(--moss-soft)' : verdict === 'drifted' ? 'var(--warn-bg)' : 'var(--bg-soft)'
+            return (
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: tint, color: zoneVerdictColour(verdict), border: `1px solid ${zoneVerdictColour(verdict)}`, borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {zoneVerdictLabel(verdict) ?? 'Done'}
+              </span>
+            )
+          })()}
           {isSkipped && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', background: 'var(--bg-soft)', color: 'var(--mute)', border: '1px solid var(--line)', borderRadius: '20px', padding: '3px 10px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Skipped</span>}
         </div>
         {/* ── ZONE PRESCRIPTION CARD ──────────────────────────────────
@@ -13151,6 +13173,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
           )}
           {briefOpen && (
             <SessionPopupInner
+              runAnalysis={runAnalysis}
               session={session}
               weekTheme={session.weekTheme ?? ''}
               weekN={session.weekN ?? 1}

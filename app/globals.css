@@ -119,6 +119,28 @@
   --coach-line-faint:  rgba(61,38,0,0.35);  /* strike-through on coach copy */
   --scrim:             rgba(26,26,26,0.40); /* modal/sheet backdrop — --ink at alpha */
   --bg-fade-0:         rgba(243,240,235,0);  /* --bg at zero alpha — gradient fades only */
+
+  /* ── P-01 · THE SEMANTIC PAIR (SLT 2026-09-20, resolution A) ──────────────
+     Moss and amber mean ZONE DISCIPLINE on completion states. Not "done" and
+     "warning" — those are category-generic and, measured against a competitor's
+     shipped app, so is the palette they sit in.
+
+     A colour that tells you you went too hard is costly to ship: it loses the
+     beginner market and cannot be A/B-tested into existence. That cost is what
+     makes it credible, and it is structurally unavailable to any app whose
+     proposition is encouragement.
+
+     ⚠️ SCOPE IS COMPLETION STATES ONLY (resolution A). `--s-race` and `--warn`
+     keep today's meanings; a race week drawn in amber must not read as a
+     reprimand for racing. Resolve every completion colour through
+     `lib/coaching/zoneVerdict.ts` — one predicate, never a copy per component.
+
+     ⚠️ `--zone-unknown` is the honest majority case, not a placeholder: no HR,
+     no analysis, or a free-tier runner without `activity_intelligence`. It must
+     never be styled as a soft "held". */
+  --zone-held:         var(--moss);
+  --zone-drifted:      var(--warn);
+  --zone-unknown:      var(--mute);
   --shadow-device:     0 1px 2px rgba(26,26,26,.06), 0 24px 60px -20px rgba(26,26,26,.28); /* marketing phone frame — deeper than --shadow-lifted by design */
 
   /* ── Fixed colours ───────────────────────────────────────────────── */

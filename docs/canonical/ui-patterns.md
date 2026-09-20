@@ -7,6 +7,43 @@
 
 ---
 
+
+## The semantic colour pair — moss = held the zone, amber = cooked it (P-01)
+
+**SLT-approved 2026-09-20, resolution A.** Owner: `lib/coaching/zoneVerdict.ts`.
+
+| Verdict | Token | Means |
+|---|---|---|
+| `held` | `--zone-held` (→ `--moss`) | Completed, and the intensity was right |
+| `drifted` | `--zone-drifted` (→ `--warn`) | Completed, but more than the ratified share sat above the Z2 ceiling |
+| `unknown` | `--zone-unknown` (→ `--mute`) | We cannot say — **the honest majority case** |
+
+**Why.** Moss meaning "done" and amber meaning "warning" is category-generic — and measured
+against a competitor's shipped app, so is the palette they sit in (their ground `#FAF8F5` against
+our `#F3F0EB`, their accent `#617C62` against our `#6B8E6B`: the same *strategy*, arrived at
+independently). A colour that tells you you went too hard is costly to ship — it loses the
+beginner market — and that cost is what makes it credible. It is structurally unavailable to any
+app whose proposition is encouragement.
+
+**Rules.**
+1. **Resolve every completion colour through `zoneVerdict()`.** Never compute the verdict in a
+   component. One predicate (D-16).
+2. **Scope is COMPLETION STATES ONLY** (resolution A). `--s-race` and `--warn` keep today's
+   meanings. ⚠️ A race week drawn in amber must not read as a reprimand for racing.
+3. **`unknown` is never styled as a soft `held`.** No HR, or a free-tier runner without
+   `activity_intelligence`, means we say nothing — `zoneVerdictLabel('unknown')` returns `null`
+   and the surface falls back to a neutral word.
+4. 🔴 **Bind to `ZONE_DRIFT_ABOVE_CEILING_PCT` (20), never `ZONE_DISCIPLINE_BANDS`.** The latter
+   is the obvious thing to reach for and is **dead** — its only reader has no call sites.
+5. **Compliance COPY is not this pattern.** The sentence ("3 of 4 runs held the zone") belongs to
+   P-04 and is pattern-setting under §4A.
+
+⚠️ **The consequence, accepted knowingly:** amber is only ever *visible* to runners with run
+analysis, which is PAID. A free runner sees the ceiling (P-03) and never learns whether they held
+it. The SLT reads scoring as richness and the ceiling as access; it is flagged for founder
+confirmation rather than settled.
+
+
 ## Core Aesthetic
 
 Warm, grounded, athletic. No decoration for decoration's sake. Every element earns its place.
