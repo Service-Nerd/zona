@@ -33,7 +33,7 @@ import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { sessionKmSelfPaced } from '../lib/plan/sessionDistance'
 import { effectiveStartKm } from '../lib/plan/startVolume'
-import { auditPlanQuality as audit, type Finding } from '../lib/plan/planQuality'
+import { auditPlanQuality as audit, objectionsOnly, type Finding } from '../lib/plan/planQuality'
 import type { GeneratorInput, Plan, Week, Session } from '../types/plan'
 
 // ── The beginner-marathon corpus — priority one ─────────────────────────────
@@ -104,7 +104,16 @@ for (const c of cohorts) {
       continue
     }
     built++
-    for (const fi of audit(plan, input)) {
+    // RUBRIC-GAPS-01(a) — WATCHED findings are exempted rules, counted by
+    // `measure:envelope` and reported beside the fit rate. They must NOT be
+    // scored here: this harness gates on "no regression against baseline", and
+    // an exempted rule appearing as a regression would fail the build for a
+    // rule the board deliberately relaxed.
+    //
+    // ⚠️ FOUND BY CHECKING THE EXIT CODE, NOT THE OUTPUT. `npm run verify`
+    // printed a passing test line and exited 1; this was the third consumer of
+    // `auditPlanQuality` and the only one I had not updated.
+    for (const fi of objectionsOnly(audit(plan, input))) {
       tally[fi.code] = (tally[fi.code] ?? 0) + 1
       examples[fi.code] ??= `${input.race_distance_km}km cwk=${input.current_weekly_km} longest=${input.longest_recent_run_km} `
         + `days=${input.days_available} age=${input.age}${(input.injury_history ?? []).length ? ' +injury' : ''}`

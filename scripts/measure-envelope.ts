@@ -66,7 +66,8 @@ cmp('WHOLE PRODUCT', now.productFitPct, base.productFitPct)
 for (const d of Object.keys(now.byDistance)) {
   const nw = now.byDistance[d].watched ?? {}
   const bw = base.byDistance[d]?.watched ?? {}
-  for (const k of new Set([...Object.keys(nw), ...Object.keys(bw)])) {
+  // ⚠️ Array.from, not spread — iterating a Set fails this tsconfig (CLAUDE.md).
+  for (const k of Array.from(new Set(Object.keys(nw).concat(Object.keys(bw))))) {
     cmp(`${d}km ${k}`, nw[k] ?? 0, bw[k] ?? 0)
   }
 }
