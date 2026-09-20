@@ -69,10 +69,27 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
       catch (e) {
         if (!isDesignedRefusal(e)) { invalid++; continue }
         refused += c.weight
-        // A CORRECT refusal is a fit-for-purpose outcome — but only when it
-        // names a next step. One that just says "no" is a dropout.
-        if (REFUSAL_NAMES_NEXT_STEP.test(e instanceof Error ? e.message : String(e))) fit += c.weight
-        else noNextStep += c.weight
+        // ⚠️ THE BAR MOVED ON 2026-09-20 AND THIS IS THE LINE THAT MOVED.
+        //
+        // This used to read: "a CORRECT refusal is a fit-for-purpose outcome —
+        // but only when it names a next step", and it counted such a refusal as
+        // FIT. That was §44's standard, and under it the marathon scored 90.1%.
+        //
+        // The founder's standard is now explicit and different: **"if someone
+        // comes to our platform and asks for a run, we can't just say no, go
+        // away"** — a refusal must lead to a PLAN, not to advice, however well
+        // the advice is worded. Under that bar a refusal is a DROPOUT.
+        //
+        // Measured the day the bar moved: marathon **90.1% -> 79.3%**, and the
+        // whole 10.8-point gap is refusals that were being scored as successes.
+        // Every other distance is unchanged, because no other distance refuses
+        // anyone: 5K 100%, 10K 100%, HM 96.2%, 50K 100%, 100K 100%.
+        //
+        // ⚠️ `refusedWithoutNextStepPct` IS KEPT AND STILL MEASURED. §44's
+        // obligation did not go away — a refusal that says nothing is still
+        // worse than one that names a next step, and losing that distinction
+        // would hide a regression inside a number that is already failing.
+        if (!REFUSAL_NAMES_NEXT_STEP.test(e instanceof Error ? e.message : String(e))) noNextStep += c.weight
         continue
       }
       const m = plan.meta as unknown as Record<string, unknown>

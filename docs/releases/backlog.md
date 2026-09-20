@@ -933,6 +933,69 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 >
 > **Size.** **S.** **Free/Pro.** FREE — it is the door. **Backlog.** **NEW**, splits from the on-ramp.
 
+> 🔴🔴 **ZERO-REJECTION-01 — nobody who asks for a plan gets told no. FOUNDER'S NUMBER ONE PRIORITY, stated repeatedly.** *(P0, filed 2026-09-20. Supersedes the framing of `S111-SUBFLOOR-VOLUME-01`, `ONRAMP-FLOOR-INVERSION-01` and the run-walk question — they are now sub-parts of this.)*
+>
+> **The founder's standard, verbatim:** *"If someone comes to our platform and asks for a run, we
+> can't just say no, go away. We have to give them some other guidance."* And for the beginner
+> marathoner specifically: **"we just need to help them get to the end."** Not to run it. To finish.
+>
+> 🔴 **THE BENCHMARK WAS COUNTING REJECTIONS AS SUCCESSES, AND THAT IS THE FIRST FINDING.**
+> `envelopeMeasure.ts` scored a designed refusal as **fit-for-purpose** whenever its message named
+> a next step (§44's standard). Re-scored under the founder's bar — same engine, same corpus:
+>
+> | distance | refusal = pass (old) | **refusal = FAIL (new)** | refused |
+> |---|---|---|---|
+> | 5 km | 100.0% | **100.0%** | 0.0% |
+> | 10 km | 100.0% | **100.0%** | 0.0% |
+> | 21.1 km | 96.2% | **96.2%** | 0.0% |
+> | **42.2 km** | 90.1% | **79.3%** | **10.9%** |
+> | 50 km | 100.0% | **100.0%** | 0.0% |
+> | 100 km | 100.0% | **100.0%** | 0.0% |
+> | **whole product** | 95.9% | **92.7%** | |
+>
+> 🔴 **EVERY OTHER DISTANCE ALREADY CLEARS 90–95%. THE MARATHON IS THE ONLY FAILURE AND THE ENTIRE
+> GAP IS REJECTION.** That is the whole job, stated as a number.
+>
+> ✅ **Rubric changed and re-baselined 2026-09-20 with the reason declared** (never to turn a test
+> green — the number got WORSE). Marathon's gate floor ratcheted 0.88 → **0.78 as a DEBT FLOOR**,
+> same pattern as `SWEEP-BASELINE-01`: it makes the gap visible and stops it growing. **The target
+> is unchanged at 0.90 and 0.78 is not permission to sit there.**
+>
+> 🔴 **AND THE ARITHMETIC WALL, measured, which decides the shape of the fix.** Weeks needed to
+> reach a marathon-capable base (18 km/wk) at §2's safe rate with §3's deloads, against a 29-week
+> runway that must leave §44's 16-week block — so the ramp budget is **13 weeks**:
+>
+> | start | weeks to 18 km/wk | fits? |
+> |---|---|---|
+> | 1 km/wk | 26 | **no — 42 weeks total** |
+> | 2 | 25 | no — 41 |
+> | 4 | 17 | no — 33 |
+> | 5 | 15 | no — 31 |
+> | **6** | **13** | **YES, exactly at the edge** |
+> | 10 | 8 | yes |
+>
+> ⚠️ **`BASE_BUILD_ONRAMP_MIN_START_KM = 6` is NOT an arbitrary floor — it is precisely the
+> arithmetic boundary** at which a runner reaches a marathon-capable base inside the runway at a
+> safe rate. Willy chose it on run-walk reasoning and it lands exactly where the maths demands.
+>
+> **THE CONSEQUENCE, AND IT IS THE WHOLE DESIGN:** a runner at 4 km/week **cannot be built up to
+> RUN a marathon in 29 weeks.** No tool fixes that; ramping faster is the bone-stress setup the
+> board has vetoed ten times. **But they can be prepared to FINISH one, run-walking it** — which is
+> what most charity first-timers actually do, and what the founder has now explicitly asked for.
+> **That is a different prescription, not a watered-down one**, and it is why run-walk is back on
+> the table with a new premise.
+>
+> **THE PLAN — four parts, marathon first, all distances held at 90–95%:**
+> 1. **`P-15`** — no refusal path terminates without a plan or a named route. S, no board.
+> 2. **§116 on-ramp** — flip on once its four halves are finished. Covers 6 km/wk and up, **40% of refusals.**
+> 3. **Run-walk / finish-goal prescription** — the sub-6 cohort, **60% of refusals.** Coaching Board,
+>    new premise. `run_walk_strategy` already exists on `Session` and the engine has never filled it.
+> 4. **Re-measure all six distances** against the new rubric. **The bar is the board being willing to
+>    hand every plan to every runner, at 90–95%, not just the marathon.**
+>
+> ⚠️ **`cohortGrid` cannot express the sub-floor runner** (`GRID-MARATHON-CAPABLE-01`), so **part 3
+> cannot currently be measured** — that is a blocker on the work, not a footnote.
+
 > 🔴 **ONRAMP-FLOOR-INVERSION-01 — the runners who need the ramp MOST are the ones the floor excludes.** *(P1, Coaching Board, filed 2026-09-20. **Founder: real beginner marathoners arrive in ~2 weeks and it has to be a positive experience.**)*
 >
 > **Measured on the real charity profile** — first-time marathoner, London 2027-04-25, 29-week

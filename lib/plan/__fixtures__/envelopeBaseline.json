@@ -1,6 +1,6 @@
 {
  "stride": 29,
- "productFitPct": 95.9,
+ "productFitPct": 92.7,
  "byDistance": {
   "5": {
    "fitPct": 100,
@@ -52,7 +52,7 @@
    }
   },
   "42.2": {
-   "fitPct": 90.1,
+   "fitPct": 79.3,
    "refusedPct": 10.9,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
