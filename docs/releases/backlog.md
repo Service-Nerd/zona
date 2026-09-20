@@ -174,7 +174,42 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-02 — MODIFY-PLAN SHEET: batched edits, grouped by consequence, diff before apply.** *(T-15. Highest-leverage item in the teardown, widest blast radius in this document. **Coaching Board required before scoping**, not merely before approval.)*
+> 🟡 **P-02 — MODIFY-PLAN SHEET: batched edits, grouped by consequence, diff before apply.** *(T-15. Highest-leverage item in the teardown, widest blast radius in this document. **Coaching Board required before scoping**, not merely before approval.)*
+>
+> 🟡 **SCOPED 2026-09-20, BOARD RULING LANDED. Build is the next unit of work and deliberately
+> not started.** This item's own filing says *"Coaching Board required before SCOPING, not merely
+> before approval"* — so scoping is the deliverable stage, and it is done:
+> `docs/decisions/2026-09-20-p02-modify-sheet-scope.md`.
+>
+> ⚠️ **COACHING BOARD: INCORRECT for a raw intensity ratio. A veto.** Seiler: 80/20 is a
+> **session-count** observation (CD-19), so at four running days 80/20 vs 90/10 is **0.8 vs 0.4
+> quality sessions — the control does not quantise.** Illusory at the volumes most of our runners
+> train at, consequential only at the top. Willy: dialling intensity **up** is the injury vector
+> and self-selects for the runner least likely to stop. Hutchinson: it inverts the product's own
+> thesis. **CORRECT, constructively:** `hard_session_relationship` already expresses that
+> preference, is already a `GeneratorInput` field and is already governed by §110 — **the sheet
+> exposes that instead. No new numeric, no new authority, no new invariant.**
+>
+> 🟢 **THE FEATURE'S NAMED FAILURE MODE IS ALREADY HANDLED, which is the finding that makes this
+> tractable.** `supersedeWeekKeyedRows` is gated on `isRaceIdentityChange` (`race_name|race_date`),
+> so editing days / cap / long-run day / injuries / terrain **preserves** completions and editing
+> the **race date** supersedes them. That semantic is correct and **inherited, not
+> re-implemented** — provided apply goes through `savePlanForUser` (SAVE-VALIDATE-01).
+>
+> **Design decisions recorded** (via `frontend-design`): grouping by CONSEQUENCE, `SectionLabel`
+> headings, the `Sheet` primitive owning presentation (SHEET-PRESENT-01), two bottom-bar states
+> with **no disabled primary at rest**, pending edits in **moss** with the value moving mute → ink
+> (not amber — that is coaching-warning voice), and the Pro lock **extending the wizard's existing
+> lock language** rather than inventing a settings variant.
+>
+> ⚠️ **v1 batches in MEMORY, no migration.** The filing proposes a persisted not-yet-applied edit
+> set; that is an enhancement (surviving app close), not the value, and it would be a **third**
+> migration awaiting a production apply. Batching in state satisfies *"nothing regenerates until
+> Apply"*.
+>
+> 🔻 **Not built, and not half-built on purpose.** Seven parameter controls, batching, apply →
+> regenerate → diff → accept, Pro locks and the collision test is a substantial build, and this
+> repo's standing rule is **ship only complete, regression-tested work**.
 >
 > **Problem.** **There is no surface on which a runner can change a plan parameter.** Phase 0 Q13:
 > `ReshapeScreen` is not an editor (it renders whatever `/api/adjust-plan` proposes); `MeScreen →

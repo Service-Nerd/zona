@@ -101,6 +101,7 @@ green.**
 
 | ref | ruling | date | the number behind it |
 |---|---|---|---|
+| **P-02 intensity as a runner control** | **INCORRECT — VETOED** | 09-20 | 80/20 is a SESSION-COUNT observation (CD-19). At 4 running days, 80/20 vs 90/10 is **0.8 vs 0.4 quality sessions — it does not quantise**, so the control is illusory at the volumes most runners train at and consequential only at the top. Willy: dialling up is the injury vector and self-selects. **Do not re-propose a ratio dial.** `hard_session_relationship` already expresses the preference and is already governed by §110 — expose that instead. |
 | **§80 vs §90 priority** | **CORRECT WITH AMENDMENT — §90 WINS** | 09-20 | §80 already yields to `LONG_RUN_CAP_MINUTES` and says so; §90's ceiling joins it. ⚠️ The 09-19 sitting's premises were BOTH false: §9 SIZES and does not cap, and §80 (not §24) is what requires the 26 km — measured 208 min against the 210 min cap |
 | **S52 injury-cohort urgency** | **PREMISE WITHDRAWN** | 09-20 | the 11.4% injury × fresh-return cell: **1,224 plans, ZERO firings** on today's engine. All 129 sweep firings have **no injury history**; **116 of 129 sit at 12 km/week**. Residual is low-volume day-fitting |
 | **S111 level inversion** | **NOT A DEFECT — §79 working** | 09-20 | door `ceil(peak/4.0)` on a level-scaled peak = 13/17/20. Declaring intermediate declares a bigger plan needing a bigger base. §118 removed the harm: every refused cell now receives a Base Building plan |
