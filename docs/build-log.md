@@ -40,6 +40,15 @@ constitution never stated the consequence, so a reader concluded the engine was 
 it was obeying a different one. **That filing's numbers were withdrawn too** ("0 of 108 reach it"
 is now 33.3%, and the best plan exceeds the floor rather than missing by 0.15 km).
 
+**And the third: `COMPLIANCE-PROGRAMME` closed.** Every sub-item inside it was already ticked; the
+umbrella was the only thing holding it open, which is its own small lesson about how a programme
+outlives its work. Verified rather than assumed — `verify:coaching` reports HIGH 0 · MED 25 · LOW 0,
+no high-severity deviation on any test plan, which is the programme's own success condition. ⚠️ Its
+header still quotes "fit-for-purpose 97.7%" and that must **not** be read against today's
+`measure:envelope` 92.3%: different instruments, and the envelope fell today because the *ruler* was
+corrected twice, not because the engine regressed. Four standing gauges now carry the residual, so
+there is nothing left for an umbrella to do.
+
 **The honest bit.** Three items, three filings, and **two of the three had a wrong premise written
 by me.** The pattern is consistent enough now to name: I file from a measurement taken in one
 context and the context moves, or I file a cause I inferred rather than isolated. The fix that
