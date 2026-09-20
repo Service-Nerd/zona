@@ -43,10 +43,30 @@ export interface EnvelopeBand<T> {
  * THESE NUMBERS CHANGE and the file records who changed them.
  */
 export const MARATHON_VOLUME_BANDS: EnvelopeBand<number>[] = [
-  { value: 8,  weight: 0.06, why: 'Barely running. Real, and the cohort §111 refuses. Small but not zero.' },
-  { value: 15, weight: 0.14, why: 'Couch-to-charity-place. The flagship persona M1/E1 sits here.' },
-  { value: 25, weight: 0.28, why: 'Runs a few times a week already. The modal charity entrant.' },
-  { value: 35, weight: 0.27, why: 'Established recreational runner stepping up to the distance.' },
+  // ⚠️ ADDED 2026-09-20 (ZERO-REJECTION-01). THE POPULATION EXCLUDED THE RUNNERS
+  // WE FAIL HARDEST, SO THE SCORE COULD NOT SEE THEM.
+  //
+  // The lowest band was 8 km/week, which sits ABOVE `BASE_BUILD_ONRAMP_MIN_START_KM`
+  // (6) — the arithmetic boundary at which a runner can still reach a
+  // marathon-capable base inside the runway. So every runner the §116 on-ramp
+  // CANNOT help was outside the measured population, and the marathon
+  // fit-for-purpose figure was computed on a cohort that excluded them.
+  //
+  // Measured: 60% of real §111 refusals on the charity profile start below 6
+  // km/week. They were scoring nothing at all, in either direction.
+  //
+  // ⚠️ THE WEIGHT IS AN ESTIMATE AND I AM SAYING SO. Nobody knows what share of
+  // charity entrants start here — no code has been redeemed, and the founder
+  // has explicitly decided NOT to ask the charity (the answer would not change
+  // what we build). 0.04 is deliberately conservative: it is smaller than the
+  // 8 km/week band it sits beside, so it cannot dominate the score, and it is
+  // not zero, because these runners exist and are the priority-one cohort.
+  // **Revise it the moment real redemption data lands** (`GTM-CHARITY-06`).
+  { value: 4,  weight: 0.04, why: 'Below the on-ramp floor: cannot reach a marathon base in the runway at a safe rate. The cohort ZERO-REJECTION-01 exists for. Weight is an ESTIMATE — see the note above.' },
+  { value: 8,  weight: 0.05, why: 'Barely running. Real, and the cohort §111 refuses. The §116 on-ramp CAN reach this runner.' },
+  { value: 15, weight: 0.13, why: 'Couch-to-charity-place. The flagship persona M1/E1 sits here.' },
+  { value: 25, weight: 0.27, why: 'Runs a few times a week already. The modal charity entrant.' },
+  { value: 35, weight: 0.26, why: 'Established recreational runner stepping up to the distance.' },
   { value: 50, weight: 0.17, why: 'Experienced amateur, has raced shorter, wants a time.' },
   { value: 70, weight: 0.08, why: 'Serious club amateur. Rare in this product, not absent.' },
 ]

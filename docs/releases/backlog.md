@@ -953,6 +953,20 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > | 100 km | 100.0% | **100.0%** | 0.0% |
 > | **whole product** | 95.9% | **92.7%** | |
 >
+> 🔴 **AND THEN A SECOND CORRECTION THE SAME DAY: THE POPULATION WAS ALSO WRONG.**
+> `MARATHON_VOLUME_BANDS`' lowest entry was **8 km/week** — which sits ABOVE the 6 km/week
+> arithmetic floor. **So every runner the on-ramp cannot help was outside the measured population
+> entirely.** 60% of real §111 refusals start below 6 km/week and were scoring nothing, in either
+> direction. A 4 km/week band now exists (weight **0.04, an ESTIMATE, declared as one** — nobody
+> knows the real share and the founder has decided not to ask).
+>
+> **Marathon 79.3% → 77.6%** (refused 10.9% → 12.2%). **Whole product 92.7% → 92.2%.**
+>
+> ⚠️ **Two corrections in one day, both of which made the number worse, and neither of which
+> changed a single line of the engine.** The score was wrong about **what counts as success** and
+> wrong about **who was being counted**. Gate floor ratcheted 0.88 → 0.78 → **0.77**, target
+> unchanged at **0.90**. **Gap: 12.4 points, and the whole of it is rejection.**
+>
 > 🔴 **EVERY OTHER DISTANCE ALREADY CLEARS 90–95%. THE MARATHON IS THE ONLY FAILURE AND THE ENTIRE
 > GAP IS REJECTION.** That is the whole job, stated as a number.
 >

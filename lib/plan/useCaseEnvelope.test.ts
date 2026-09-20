@@ -145,9 +145,21 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   // SWEEP-BASELINE-01 and the liveness baseline: it makes the gap visible and
   // stops it growing. **It is not permission to sit at 79%.** Raise it as the
   // marathon rejection rate falls, and never lower it again.
-  const MARATHON_TARGET = 0.90   // the founder's bar; currently 0.793. Gap: 10.7pp of rejection.
+  // ⚠️ AND IT DROPPED AGAIN, 0.78 -> 0.77, ON THE SAME DAY AND FOR THE SAME
+  // REASON: the POPULATION was also wrong. The lowest marathon volume band was
+  // 8 km/week, which sits ABOVE the 6 km/week arithmetic floor — so every
+  // runner the on-ramp cannot help was outside the measured population
+  // entirely. 60% of real §111 refusals start below 6 km/week and were scoring
+  // nothing, in either direction. A 4 km/week band now exists.
+  //
+  //     79.3%  ->  77.6%   (refused 10.9% -> 12.2%)
+  //
+  // **Two corrections in one day, both of which made the number worse, and
+  // neither of which changed a single line of the engine.** The score was
+  // wrong about what counts as success AND wrong about who was being counted.
+  const MARATHON_TARGET = 0.90   // the founder's bar; currently 0.776. Gap: 12.4pp, and the whole of it is rejection.
   const FLOORS: Record<number, number> = {
-    5: 0.97, 10: 0.97, 21.1: 0.93, 42.2: 0.78, 50: 0.97, 100: 0.92,
+    5: 0.97, 10: 0.97, 21.1: 0.93, 42.2: 0.77, 50: 0.97, 100: 0.92,
   }
   void MARATHON_TARGET
   // WEEK1-LEAP-ABS-01 raised 5K again, 91.8% -> 100%: the ≤2km week-1
