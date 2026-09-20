@@ -4,7 +4,9 @@ Raw learning notes, one entry per ship. Newest first. Dev / product / AI-buildin
 angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, keep
 it specific, no polish. The content system adds the voice.
 
----## 2026-09-20 — P-12 (with P-14(a)): the upsell that reads its own feature list
+---
+
+## 2026-09-20 — P-12 (with P-14(a)): the upsell that reads its own feature list
 
 **Dev.** Our Me screen's Subscription section was one row saying "View plans". The competitor's
 equivalent is better, and the reason is order: it states what you already have, then what Pro
