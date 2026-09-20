@@ -933,7 +933,42 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 >
 > **Size.** **S.** **Free/Pro.** FREE — it is the door. **Backlog.** **NEW**, splits from the on-ramp.
 
-> 🔴 **S117-PEAK-VS-TIME-01 — the board's own amendment 1 contains a contradiction, and it only appeared when the plans were measured.** *(P1, Coaching Board, filed 2026-09-20. **BLOCKS §117's flag.**)*
+> ✅ **S117-PEAK-VS-TIME-01 — RESOLVED 2026-09-20. Peak 34, flag deleted, §117 is LIVE.** *(Coaching Board, unanimous.)*
+>
+> **Willy ruled on his own amendment: *"the range was the number I priced."*** The three hours
+> described the SHAPE of the demand, not a costed floor. Buying it costs **7 points of admission
+> for 36 minutes.** ⚠️ **32 was strictly dominated** — 32 and 34 refuse identically, so 34 buys 16
+> minutes and 2 km for free. ⚠️ **§9's own record settled adequacy** (McMillan: *"a 17 km longest
+> run and run-walk the last stretch finishes"*; 34 delivers **18.5**). ⚠️ **Sims contradicted the
+> framing that 42 was cautious** — a higher peak is more load for a 20–29 female first-timer, so 42
+> is the riskier choice.
+>
+> **The flag was DELETED, not defaulted on** — a gate that only ever takes one branch is
+> indistinguishable from a dead one (§97 Am.'s `allowMaxWeeks` precedent).
+>
+> 🔴 **TWO OF MY OWN FINDINGS WITHDRAWN BEFORE THE BOARD RULED.** Both measured §117 against §80's
+> 70%-of-race-duration bar. **That bar is unreachable at any peak and §80 says so itself:**
+> `LONG_RUN_CAP_MINUTES.MARATHON` (210) against a ~338-min projected race is **62%**, and the
+> standard plan scores exactly 62% **because it is sitting on the cap**. A floor that yields to a
+> cap is not a bar you can fail. The "standard plan misses §80" finding goes with it.
+>
+> **Result: marathon 77.6% → 79.2%, refused 12.2% → 11.3%, whole product 92.6%.** Gate floor
+> ratcheted **0.77 → 0.79 — the first UPWARD move of the day and the only one that came from the
+> engine rather than the ruler.**
+>
+> ⚠️ **`LONG-RUN-SHORT` is now WATCHED, not scored, on §117 plans** — 55% of race distance is the
+> bar for a plan built to RUN the race, and a §117 plan tops out at 18.5 km so it would score
+> unfit on **every single plan** for doing exactly what the board ruled. Same defect as
+> `ULTRA-LR-BAR-01` one shape later. **The rate is PRINTED (`LONG-RUN-SHORT-RUNWALK 1.5%`), not
+> deleted** — an exemption you cannot see is a moved goalpost. **No replacement bar was invented;**
+> whether §117 needs its own is a board question, filed not answered.
+>
+> 🔴 **ZERO REJECTION IS NOT REACHABLE BY COACHING, and the chair said so plainly.** At peak 34 the
+> door is 9 km/wk; a runner at 2 km/wk is 15× below the delivered peak and needs 25 weeks of base
+> building first. **45.5% → 29.3% on the charity grid is what coaching can do. The remainder is a
+> product decision** and is the SLT residual below.
+> *(original below.)*
+> 🔴 ~~**S117-PEAK-VS-TIME-01**~~ *(resolved.)*
 >
 > Willy's amendment 1 specified **both** a peak of **30–34 km/wk** and *"repeated exposure to
 > **3+ hours on feet**"*. Measured on generated §117 plans, **they do not reconcile:**

@@ -7917,6 +7917,44 @@ Recorded as a known enforcement gap rather than left to be discovered.
 
 ⚠️ **§117 PLANS DO NOT TAKE `PEAK_FLOOR_VS_START_RATIO`.** That floor raises the peak to at least the runner's current volume, which is right for a normal plan and self-defeating here — this runner's problem *is* their low base, and floating the peak back up would re-close the door the lower peak just opened.
 
+### §117 Amendment 1 — REVISED 2026-09-20 (S117-PEAK-VS-TIME-01): the range is the number, the three hours is withdrawn as a floor
+
+**Amendment 1 gave two numbers and they do not reconcile.** Measured on generated plans:
+
+| peak | §111 door | longest run | time on feet | ≥3h? | refusal (198-profile grid) |
+|---|---|---|---|---|---|
+| 32 | 8 | 16.5 km | 2h12 | ✗ | 29.3% |
+| **34** | **9** | **18.5 km** | **2h28** | ✗ | **29.3%** ← ruled |
+| 36 | 9 | 20.0 km | 2h40 | ✗ | 36.4% |
+| 42 | 11 | 23.0 km | 3h04 | ✓ | 36.4% |
+| 52 | 13 | 26.0 km | 3h28 | ✓ | 45.5% (standard) |
+
+**Willy, ruling on his own amendment:** *"the range was the number I priced."* The three hours
+described the **shape** of the demand — duration, not tonnage — and was never a floor he had
+costed. Buying it costs **seven points of admission for 36 minutes**, which he would not trade for
+a runner who is otherwise refused outright.
+
+⚠️ **32 is STRICTLY DOMINATED.** 32 and 34 refuse identically, so 34 buys 16 minutes and 2 km for
+nothing.
+
+⚠️ **§9's own record settles the adequacy, and the conflict scan found it rather than a seat
+recalling it.** McMillan, the position the founder took: *"a runner who does a 17 km longest run
+and run-walks the last stretch finishes."* **34 delivers 18.5.**
+
+⚠️ **Sims contradicted the framing that 42 was the cautious option.** A higher peak is more weekly
+running volume for a 20–29 female first-timer over 29 weeks, so on bone health and energy
+availability **42 is the riskier choice, not the safer one.**
+
+⚠️ **Two of the submission's own findings were WITHDRAWN before the board ruled.** Both measured
+§117 against §80's 70%-of-race-duration bar. That bar is unreachable for this runner at any peak
+and §80 says so itself — `LONG_RUN_CAP_MINUTES.MARATHON` (210) against a ~338-minute projected
+race is **62%**, and the standard plan scores exactly 62% because it is sitting on the cap.
+**A floor that yields to a cap is not a bar you can fail.**
+
+🔴 **ZERO REJECTION IS NOT REACHABLE BY COACHING.** At peak 34 the door is 9 km/week; a runner at
+2 km/week is 15× below the delivered peak and needs 25 weeks of base building before a block can
+start. **45.5% → 29.3% is what coaching can do. The remainder is a product decision.**
+
 ### Recorded, because it is a real trade and not a free win
 
 **Sims:** a lower-peak run-walk build is a **better** bone-stress profile than the 13 km/wk plan we would otherwise have given them — *and* **total exposure rises, because we are admitting runners we previously refused. Some will now be injured who would have been told no and done nothing.** That is a judgement the founder has made and is entitled to make; the board declines to pretend it is free.

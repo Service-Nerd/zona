@@ -1132,10 +1132,35 @@ export const GENERATION_CONFIG = {
   // is a principle-to-behaviour gap, which is why the chair ruled it is not
   // §9's forbidden eleventh instrument.
 
-  /** Willy, at the sitting: completing 42.2 km run-walking needs repeated
-   *  exposure to 3+ hours on feet, not weekly tonnage. He named 30-34 and
-   *  warned that below 26 the last 10 km is genuinely unrehearsed. */
-  FINISH_GOAL_RUNWALK_PEAK_KM: 32,
+  /** 34 — the TOP of the range Willy priced (S117-PEAK-VS-TIME-01, 2026-09-20).
+   *
+   *  ⚠️ HIS TWO NUMBERS CONTRADICTED AND THE RANGE WON. Amendment 1 gave both
+   *  30-34 km/wk AND "repeated exposure to 3+ hours on feet". Measured on
+   *  generated plans they trade directly against each other:
+   *
+   *      peak  door  longest run  time on feet  refusal (198-profile grid)
+   *        32     8       16.5km         2h12       29.3%
+   *        34     9       18.5km         2h28       29.3%   <- here
+   *        36     9       20.0km         2h40       36.4%
+   *        42    11       23.0km         3h04       36.4%
+   *        52    13       26.0km         3h28       45.5%   (standard)
+   *
+   *  Buying the three hours costs SEVEN POINTS of admission for 36 minutes.
+   *  Willy, ruling: *"the range was the number I priced"* — the three hours
+   *  described the SHAPE of the demand (duration, not tonnage) and was never
+   *  a floor he had costed.
+   *
+   *  ⚠️ 32 IS STRICTLY DOMINATED. 32 and 34 refuse identically, so 34 buys 16
+   *  minutes and 2 km for nothing. There is no argument for 32.
+   *
+   *  ⚠️ AND §9's OWN RECORD SETTLES THE ADEQUACY. McMillan, whose position the
+   *  founder took: *"a runner who does a 17 km longest run and run-walks the
+   *  last stretch finishes."* 34 delivers 18.5.
+   *
+   *  ⚠️ Sims contradicted the framing that 42 was the cautious option: a higher
+   *  peak is MORE weekly running volume for a 20-29 female first-timer over 29
+   *  weeks, so on bone health and energy availability 42 is the riskier one. */
+  FINISH_GOAL_RUNWALK_PEAK_KM: 34,
 
   /** The prescribed interval, in minutes. ⚠️ PRESCRIBED, NOT PERMITTED —
    *  Willy and McMillan arrived at this independently, which is the strongest

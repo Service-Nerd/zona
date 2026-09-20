@@ -50,33 +50,19 @@ export function runWalkDistanceApplies(distanceKm: number): boolean {
  * the number the door is derived from.
  */
 export function runWalkApplies(input: GeneratorInput, standardPeakKm: number): boolean {
-  // 🔴 SHIPPED DARK, AND THE REASON IS A CONTRADICTION IN THE BOARD'S OWN
-  // AMENDMENT 1 THAT ONLY APPEARED WHEN THE PLANS WERE MEASURED.
+  // ⚠️ LIVE since S117-PEAK-VS-TIME-01 (2026-09-20). It shipped DARK for
+  // exactly as long as the board's own amendment 1 contradicted itself —
+  // peak 30-34 AND "3+ hours on feet" do not reconcile under §52's 60% cap,
+  // and measuring generated plans is what surfaced it. The board ruled the
+  // RANGE operative and withdrew the three hours as a floor; the peak settled
+  // at 34, the top of the range, which costs nothing against 32 and delivers
+  // 18.5 km against the 17 km §9 already ratifies as enough to finish.
   //
-  // Willy specified BOTH a peak of 30-34 km/wk AND "repeated exposure to 3+
-  // hours on feet". Measured, they do not reconcile: at a 32 km peak, §52's
-  // 60% cap tops the long run out at ~16.5-18.5 km, which is **2h12 against a
-  // projected 5h38 race — 39-44% of race DURATION against §80's ratified
-  // finish-goal bar of 70%.**
-  //
-  //     cwk   peak wk   peak LR   % race duration   §80 bar
-  //       8        29      16.5              39%       70%   NO
-  //      10        29      16.5              39%       70%   NO
-  //      12        31      18.5              44%       70%   NO
-  //
-  // 3 hours at an easy pace is ~21-22 km, which under §52 needs a ~36 km week —
-  // above the range Willy named. **So §117 as ruled admits a runner to a plan
-  // that does not meet the board's own stated preparation requirement**, and
-  // shipping it would be the door opened with nothing behind it, which is the
-  // exact failure amendment 3 exists to prevent.
-  //
-  // ⚠️ The measurement also found that the STANDARD plan misses §80's bar too
-  // (62% at 15 km/wk). That is a pre-existing gap, filed separately, and it is
-  // not evidence that §117 is fine.
-  //
-  // Everything is built, tested and gated. Flip this when the board resolves
-  // the peak-versus-time-on-feet contradiction — `S117-PEAK-VS-TIME-01`.
-  if (process.env.ENABLE_FINISH_GOAL_RUNWALK !== '1') return false
+  // ⚠️ THE FLAG IS GONE RATHER THAN DEFAULTED ON. A flag left behind after the
+  // decision it was protecting has been made is a second code path nobody
+  // exercises — `allowMaxWeeks` was DELETED not defaulted for the same reason
+  // (§97 Am.), and this repo's own record says a gate that only ever takes one
+  // branch is indistinguishable from a dead one.
   if (!runWalkDistanceApplies(input.race_distance_km)) return false
   // §117 is for the runner who CANNOT be prepared to run it. A time goal is an
   // explicit statement that finishing is not the point.

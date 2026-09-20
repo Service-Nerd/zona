@@ -222,9 +222,38 @@ export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
   // filtered this code out for `distanceKm > 42.2`. That put the knowledge in
   // the consumer instead of the owner, so `audit:plans` and the envelope
   // disagreed about what a defect was. Fixed here, once.
+  //
+  // ⚠️ AND §117 PLANS ARE **WATCHED**, NOT SCORED (S117-PEAK-VS-TIME-01, 2026-09-20).
+  //
+  // SAME DEFECT AS THE ULTRA ONE ABOVE, ONE SHAPE LATER. 55% of race distance
+  // is the bar for a plan built to RUN 42.2 km. A §117 finish-goal run-walk
+  // plan is built to COMPLETE it, peaks at 34 km/wk by board ruling, and tops
+  // out at an 18.5 km long run — so it can never clear 23.2 km and would score
+  // unfit **on every single plan**, for doing exactly what the board ruled it
+  // should do.
+  //
+  // ⚠️ THE BOARD RULED THE ADEQUACY EXPLICITLY, so this is not me moving a
+  // goalpost to flatter a change I built. §9's Recorded structural finding,
+  // McMillan, the position the founder took: *"a runner who does a 17 km
+  // longest run and run-walks the last stretch finishes."* 18.5 > 17.
+  //
+  // ⚠️ AND IT IS **WATCHED**, NOT DELETED — deliberately, and unlike the ultra
+  // carve-out above which simply stopped firing. The rate is counted and
+  // printed beside the fit figure, so the exemption cannot quietly grow. Same
+  // mechanism and the same reason as `DAYS-SHORT-SILENCED`: hiding a
+  // relaxation is how an exemption becomes a moved goalpost.
+  //
+  // ⚠️ NO REPLACEMENT NUMBER IS INVENTED. The comment above warns that
+  // "inventing a number here to keep a column populated is how a decorative
+  // check is born", and 17 km is a quoted illustration in a ruling, not a
+  // ratified bound. If §117 plans need their own adequacy bar, that is a board
+  // question and it is filed, not answered here.
   if (input.race_distance_km >= 42 && input.race_distance_km <= 43) {
+    const runWalk = !!(plan.meta as unknown as { finish_goal_run_walk?: boolean }).finish_goal_run_walk
     const peakLR = Math.max(0, ...weeks.filter(w => w.type !== 'deload').flatMap(kmsIn))
-    if (peakLR < input.race_distance_km * 0.55)
+    if (runWalk && peakLR < input.race_distance_km * 0.55)
+      f.push({ code: 'LONG-RUN-SHORT-RUNWALK', watched: true, detail: `peak long run ${peakLR.toFixed(1)}km = ${(peakLR / input.race_distance_km * 100).toFixed(0)}% of race — §117 finish-goal shape, adequacy ruled by the board, NOT scored` })
+    else if (!runWalk && peakLR < input.race_distance_km * 0.55)
       f.push({ code: 'LONG-RUN-SHORT', detail: `peak long run ${peakLR.toFixed(1)}km = ${(peakLR / input.race_distance_km * 100).toFixed(0)}% of race` })
   }
 

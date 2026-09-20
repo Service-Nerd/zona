@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { runWalkApplies, runWalkPeakKm, runWalkStrategy, applyRunWalk, runWalkDistanceApplies } from './runWalkPlan'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import { generateRulePlan } from './ruleEngine'
@@ -13,24 +13,19 @@ const mk = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
   ...over,
 } as unknown as GeneratorInput)
 
-const ON = () => { process.env.ENABLE_FINISH_GOAL_RUNWALK = '1' }
-const OFF = () => { delete process.env.ENABLE_FINISH_GOAL_RUNWALK }
-beforeEach(OFF); afterEach(OFF)
-
-describe('§117 — the flag', () => {
-  // ⚠️ IT SHIPPED DARK AND STAYS DARK until S117-PEAK-VS-TIME-01 resolves:
-  // §117 plans reach 39-44% of projected race duration against §80's 70% bar,
-  // because amendment 1 specified a 30-34 km peak AND "3+ hours on feet" and
-  // those do not reconcile under §52's 60% cap.
-  it('is OFF by default, and off means the door is unmoved', () => {
-    expect(runWalkApplies(mk(), 52)).toBe(false)
-    expect(() => generateRulePlan(mk({ current_weekly_km: 10 }), 'paid', '2026-10-05')).toThrow()
-  })
-
-  it('on, it admits the runner §111 refuses at the standard peak', () => {
-    ON()
+const ON = () => {}   // §117 is live; the flag was deleted, not defaulted.
+describe('§117 — it is LIVE and it admits the runner §111 refused', () => {
+  it('admits a 10 km/week beginner finish-goal marathoner', () => {
     expect(runWalkApplies(mk({ current_weekly_km: 10 }), 52)).toBe(true)
     expect(() => generateRulePlan(mk({ current_weekly_km: 10 }), 'paid', '2026-10-05')).not.toThrow()
+  })
+
+  // ⚠️ THE PEAK IS 34, NOT 32, AND 32 WAS STRICTLY DOMINATED. Both refuse
+  // identically on the charity grid (29.3%), so 34 buys 16 minutes on feet and
+  // 2 km of longest run for nothing. Pinned because the obvious "tidy" edit is
+  // to round it back down.
+  it('peaks at the TOP of the range the board priced', () => {
+    expect(G.FINISH_GOAL_RUNWALK_PEAK_KM).toBe(34)
   })
 })
 
