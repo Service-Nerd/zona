@@ -79,13 +79,22 @@ export function generateGetRunningPlan(
   }
   const plan = generateBaseBuildPlan(input, planStart, assessment)
   const meta = plan.meta as unknown as Record<string, unknown>
-  meta.plan_kind = 'get_running'
+  // ⚠️ `base_build`, NOT `get_running`. SLT 2026-09-20, Sutherland, and it is a
+  // decision rather than a tweak: *"'Getting running' is what you say to a
+  // person who does not run. They DO run — badly, not enough, but they run.
+  // The name argues with them on the one point they are most sensitive about."*
+  // Base building is what every serious runner already calls this, and it moves
+  // the runner from "beginner" to "athlete doing a recognised thing" for free.
+  //
+  // ⚠️ DECIDED BEFORE ANYTHING PERSISTED IT. `plan_kind` is stored on every
+  // plan row, so changing it later would have meant a migration.
+  meta.plan_kind = 'base_build'
   // ⚠️ The §116 marker is REMOVED. This plan is not an on-ramp to anything, and
   // leaving the flag on would let a downstream reader infer a marathon handover
   // that does not exist. A plan that claims a destination it has not got is the
   // failure mode this whole day has been about.
   delete meta.base_build_onramp
-  meta.race_name = 'Getting running'
+  meta.race_name = 'Base building'
 
   return { plan, endsAtKm, weeks }
 }

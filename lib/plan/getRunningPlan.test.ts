@@ -15,7 +15,9 @@ const mk = (over: Partial<GeneratorInput> = {}): GeneratorInput => ({
 describe('§118 — the get-running plan', () => {
   it('is a plan with NO RACE, and says so in its own metadata', () => {
     const { plan } = generateGetRunningPlan(mk(), '2026-10-05', 29)
-    expect((plan.meta as any).plan_kind).toBe('get_running')
+    // ⚠️ `base_build`, not `get_running` — SLT decision, and `plan_kind` is
+    // PERSISTED so it had to be settled before any plan stored it.
+    expect((plan.meta as any).plan_kind).toBe('base_build')
     expect((plan.meta as any).race_date).toBe('')
     // ⚠️ The §116 marker must be GONE. Leaving it would let a downstream reader
     // infer a marathon handover that does not exist — a plan claiming a

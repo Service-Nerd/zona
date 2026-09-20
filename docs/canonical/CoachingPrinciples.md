@@ -8032,5 +8032,30 @@ discovered by a runner.
 
 ⚠️ **NO HARNESS WATCHES THIS PLAN KIND.** `measure:fitness` and `measure:envelope` are both shaped around a race. Inventing a way to score a raceless plan would be the decorative-check failure, so it is **filed as a known gap, not papered over** (chair).
 
+### §118 — the name and the copy (SLT 2026-09-20)
+
+**It is called BASE BUILDING, not "getting running", and that is a decision rather than a tweak.**
+Sutherland: *"'Getting running' is what you say to a person who does not run. They DO run — badly,
+not enough, but they run. The name argues with them on the one point they are most sensitive
+about."* Base building is what every serious runner already calls this, and it moves the runner
+from *beginner* to *athlete doing a recognised thing* for nothing.
+
+⚠️ **Settled before anything persisted it.** `plan_kind` is stored on every plan row; deciding
+later would have meant a migration.
+
+**TWO COPY VARIANTS, keyed on `reaches_race_door`** — because *"two outcomes wearing one plan name
+is how a promise gets made by implication"* (McMillan).
+
+🔴 **The non-clearing variant says NOTHING about a race.** Hard rule 7 applies to claims about
+future plans too. The old refusal promised *"we will build the plan then"* to a runner who may
+never qualify; Sutherland: *"when it does not happen, the runner concludes you lied, and they will
+be right."*
+
+**The clearing variant names the number**, because the engine computed it and Traynor will
+underwrite a commitment we can keep.
+
+**Lead with the plan, never the refusal.** The old string was *"a door with an apology taped to
+it."* Owner: `lib/plan/baseBuildCopy.ts`, single owner, 8 tests including the rule above.
+
 **Config.** `GET_RUNNING_MIN_WEEKS = 8`, `GET_RUNNING_MAX_WEEKS = 15`.
 **Owner.** `lib/plan/getRunningPlan.ts`. **Enforced by** `INV-PLAN-GET-RUNNING-BUILD-RATIO`.

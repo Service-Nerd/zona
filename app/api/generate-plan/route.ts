@@ -23,6 +23,9 @@ import { BaseVolumeError } from '@/lib/plan/baseVolume'
 import { onRampOfferFor, assessOnRamp } from '@/lib/plan/baseBuildOnRamp'
 import { weeksBetweenLocal } from '@/lib/plan/length'
 import { generateGetRunningPlan, getRunningApplies } from '@/lib/plan/getRunningPlan'
+import { baseBuildOfferLine, baseBuildOfferTitle, baseBuildOfferWhy } from '@/lib/plan/baseBuildCopy'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
+import { formatDistance } from '@/lib/format'
 import { LongRunReadinessError } from '@/lib/plan/longRunReadiness'
 
 // ─── Guard rails ──────────────────────────────────────────────────────────────
@@ -268,10 +271,45 @@ export async function POST(req: NextRequest) {
         let getRunning: Record<string, unknown> | null = null
         if (!onramp && getRunningApplies(input)) {
           const { endsAtKm, weeks } = generateGetRunningPlan(input, planStart, runway)
-          getRunning = {
+          const reachesRaceDoor = endsAtKm >= err.base.min_base_km
+          // ⚠️ ADR-015: the SERVER reads the runner's units. A distance string
+          // assembled without them is the units defect ADR-015 exists to
+          // prevent. The scoped client is created here because the one at the
+          // top of the file is inside a helper and not in this scope; a
+          // failed read falls back to km rather than blocking the offer,
+          // because a refused runner getting NOTHING is the worse outcome and
+          // is the whole point of §118.
+          const prefsClient = createUserScopedClient(req)
+          const prefs = prefsClient
+            ? await getUserDisplayPrefs(prefsClient, user.id)
+            : { units: 'km' as const }
+          const label = formatDistance(endsAtKm, prefs.units)
+          if (label) getRunning = {
             weeks,
             ends_at_km: Math.round(endsAtKm * 10) / 10,
-            reaches_race_door: endsAtKm >= err.base.min_base_km,
+            reaches_race_door: reachesRaceDoor,
+            // ⚠️ THE COPY SHIPS WITH THE OFFER, from its single owner, rather
+            // than being assembled client-side. Two variants keyed on
+            // `reaches_race_door` (SLT 2026-09-20) — and the non-clearing one
+            // must say NOTHING about a race, which is a rule a client-side
+            // template would be free to break.
+            title: baseBuildOfferTitle(),
+            line: baseBuildOfferLine({
+              weeks,
+              endsAtKm,
+              reachesRaceDoor,
+              // ADR-015 owns every distance string; this module never formats.
+              // ⚠️ NO FALLBACK STRING. The first cut wrote
+              // `?? \`${Math.round(endsAtKm)} km\`` and PREF-SWEEP-01's guard
+              // caught it immediately: a unit glyph welded to an interpolated
+              // value is the defect ADR-015 exists to prevent, and writing one
+              // as a "safe default" is how it gets in. `formatDistance` returns
+              // null only on a non-finite input, and the offer is not built
+              // unless endsAtKm > 0, so the branch below is the honest way to
+              // say that rather than inventing a string for it.
+              distanceLabel: label,
+            }),
+            why: baseBuildOfferWhy(),
           }
         }
 
