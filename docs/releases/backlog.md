@@ -2889,9 +2889,14 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 >   ⚠️ **`INV-PLAN-MAIN-SET-ORDERING` is ERROR severity**, so these THROW in dev and test. They are
 >   baselined so `verify` stays green while the board sits — **baselining makes debt visible and stops
 >   it growing; it does not make it shrink.**
-> - 🔲 **SWEEP-INJURY-01** — `'Plantar fasciitis'` is still unswept. The injury axis was held at 6
->   entries during INJURY-MATCH-01 so the seeded sample would not re-roll and rates stayed
->   comparable. Add it (and re-baseline the rates, declaring the move) as its own change.
+> - ✅ ~~**SWEEP-INJURY-01**~~ — **SHIPPED 2026-09-20.** `'Plantar fasciitis'` added; **all six injury
+>   values the wizard can emit are now swept.** The axis was held at 6 during INJURY-MATCH-01 so the
+>   seeded sample would not re-roll while the spelling fix was measured; that comparison is long
+>   finished. ⚠️ **The re-roll moved two baselines and the move is DECLARED, not absorbed** —
+>   `INV-PLAN-MAIN-SET-ORDERING` 25 → 26, `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` 17 → 13. **The
+>   population did not change; the sample did.** ⚠️ §12's volume cap covers knee and shin splints
+>   only, so plantar widens the flagged-but-not-volume-capped population, which §21's content filter
+>   is what acts on. `measure:envelope` unchanged.
 > - 🔲 **The 0.7% detraining residual** — `INV-PLAN-NOT-DETRAINING` fell 15.1% → 0.7% but is not
 >   zero, and the remaining cause is NOT traced. Do not present detraining as solved.
 > - 🔲 **Promote `INV-PLAN-NOT-DETRAINING` to `error`** — shipped at `warn` only because

@@ -13,6 +13,26 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## 2026-09-20 — SWEEP-INJURY-01: a freeze that outlived its reason
+
+**Dev.** The sweep's injury axis had six entries and the product offers six values, but they were
+not the same six. `'Plantar fasciitis'` was missing, and the comment explaining why was honest:
+the axis had been frozen during an earlier fix so the seeded sample would not re-roll and rates
+stayed comparable.
+
+**That comparison finished weeks ago.** The freeze did not.
+
+**Product.** Adding it re-rolls the sample, so two baselines moved — one up, one down. Neither is
+a regression and neither is an improvement: **the population did not change, the sample did.** I
+declared both in the baseline rather than quietly writing the new numbers, because a number that
+moves without a stated reason is indistinguishable from a number someone nudged.
+
+**The honest bit.** This is a small item and the interesting part is the shape of it: a temporary
+measure with a good reason, left in place after the reason expired, with a comment that read as
+current. **The comment was true when written and false by the time I read it** — which is the
+same failure as a stale state paragraph, in a file nobody thinks of as documentation.
+
 ## 2026-09-20 — SWEEP-AGE-01: the gate said "covered" because the field took two values, and both were wrong
 
 **Dev.** The property sweep pinned `age: 35`. The hand-written corner cases used 40 to 43. The

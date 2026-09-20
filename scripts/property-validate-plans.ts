@@ -160,9 +160,22 @@ const recentQualitySets = [undefined, 'none', 'occasional', 'regular']
 // injury types had their coaching rules silently disabled in production. The
 // sweep could not see it because it tested the code's spelling against the
 // code's spelling. Fixture values must be what the PRODUCT emits.
-// Count held at 6 so the seeded sample does not re-roll and rates stay
-// comparable; 'Plantar fasciitis' is therefore still unswept (SWEEP-INJURY-01).
-const injurySets = [[], ['Knee'], ['Achilles'], ['Shin splints'], ['Hip'], ['Back']]
+// SWEEP-INJURY-01 (2026-09-20) — 'Plantar fasciitis' ADDED. The count was held
+// at 6 during INJURY-MATCH-01 so the seeded sample would not re-roll while the
+// spelling fix was measured; that comparison is long finished. **All six injury
+// values the wizard can actually emit are now swept.**
+//
+// ⚠️ THE AXIS RE-ROLLS, AND THAT IS EXPECTED, NOT A REGRESSION. Adding a `pick`
+// value shifts every subsequent seeded draw, so rates move a little across the
+// board. Declared here rather than absorbed: this is the same re-baseline
+// obligation `cohort:shape` and `measure:envelope` carry, and **never
+// re-baseline to turn a test green.**
+//
+// ⚠️ §12's volume cap covers KNEE and SHIN SPLINTS only (`hasVolumeCappedInjury`).
+// Plantar fasciitis is a real history that is NOT governed by that cap, so this
+// widens the "flagged but not volume-capped" population, which §21's content
+// filter is what actually acts on.
+const injurySets = [[], ['Knee'], ['Achilles'], ['Shin splints'], ['Hip'], ['Back'], ['Plantar fasciitis']]
 // ADR-020 (2026-09-03) — 30 ADDED. The grid tested 45/60/90 while BOTH real
 // users had chosen 30, and three separate INV-PLAN-MAX-WEEKDAY-MINS defects
 // shipped behind a green sweep because the tightest realistic cap was never
@@ -1250,8 +1263,12 @@ const BASELINE: Record<string, number> = {
   // the corpus could not reach — the same class as the liveness debt and the
   // S111 sitting's "the debt was the SAMPLE, not the rules". Making them
   // visible is the point; baselining stops them growing while the board sits.
-  'INV-PLAN-MAIN-SET-ORDERING': 25,
-  'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': 17,
+  // ⚠️ RE-BASELINED 2026-09-20 by SWEEP-INJURY-01 adding 'Plantar fasciitis'.
+  // The axis re-rolls the seeded sample, so counts move: MAIN-SET-ORDERING
+  // 25 -> 26, TIME-TARGET-QUALITY-FLOOR 17 -> 13. **Declared, not absorbed.**
+  // The population did not change; the sample did. Never re-baseline to go green.
+  'INV-PLAN-MAIN-SET-ORDERING': 26,
+  'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': 13,
   'INV-PLAN-PEAK-OVER-BASE': 1,
   'INV-PLAN-WEEK-1-2-LONG-CAP': 1,
 
