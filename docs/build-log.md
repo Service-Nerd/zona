@@ -12,6 +12,41 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — SEC-15: the filing said eleven of twelve, and it was ten of twelve
+
+**Dev.** One AI route had no per-user rate limit. I could have added two lines to that route and
+closed the ticket. Instead I wrote the coverage sweep — every route under `app/api` that calls the
+Anthropic owner must also call a guard — and it immediately found a **second** unguarded route the
+filing never named. The "eleven of twelve" in the ticket was wrong for exactly the reason the gap
+existed in the first place: **nothing was counting.**
+
+**The honest bit, twice over, and both came from falsifying rather than re-reading.**
+
+First, the sweep reported `ops/ai-spend` as an unguarded AI route. It is not — it only *mentions*
+`callAnthropic` in a comment explaining where spend data comes from. Second comment-read-as-code
+trap in one day; the other nearly blocked a correct fix by making a deleted gate look live.
+
+Second, and worse: I deleted a guard to prove the test would go red, **and it stayed green.**
+`src.includes('enforceAiRateLimit')` was matching the surviving `import` line. A route that
+imported a guard and never called it would have passed the gate — the "declared but inert" class
+this repo keeps paying for: decorative config, an eslint rule installed but never configured, two
+§97 gates that could never fire. **A guard that cannot go red is not a guard**, and I would have
+shipped one if the falsification step were optional.
+
+**Product.** Nothing a runner sees. Both routes are authenticated and tier-gated, so neither was an
+open door — what changes is that a client loop can no longer drive Sonnet without a ceiling, three
+weeks before 500 comped runners arrive on an Anthropic balance nobody is watching in real time.
+
+**The limit I chose, and why it is not the default.** `weekly-report` is Sonnet but only 300 max
+tokens, so it is "expensive model, cheap call" and does not match HEAVY's stated case. I listed it
+as HEAVY anyway: the DEFAULT is 30/hour, and 30 regenerations an hour of a *weekly* report is not a
+ceiling, it is a rounding error. The actual loop vector is `?force=true`.
+
+**What this does not fix.** `checkAiRateLimit` fails open — an RPC error or unreachable database
+allows the request, because a false denial breaks the product while a brief limiter outage has
+bounded exposure. That trade is documented and correct. So this declares a ceiling; it does not
+enforce one under failure. And `analyse-run` reads a body with no size cap, which I left alone
+rather than guess a number for.
 
 ## 2026-09-20 — S80-VS-S90-PRIORITY-01: Coaching Board batch, and four premises died under measurement
 

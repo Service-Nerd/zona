@@ -1,4 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -49,6 +50,26 @@ export async function POST(req: NextRequest) {
     if (!isFeatureAllowed('activity_intelligence', tier)) {
       return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
     }
+
+    // SEC-15 (2026-09-20) — found by the SWEEP, not by the filing.
+    // `SEC-15` was written as "eleven of the twelve AI routes are guarded" and
+    // named only `/api/weekly-report`. Writing the coverage test instead of the
+    // single assertion turned up this one too: it calls the Anthropic owner and
+    // called neither guard. The ratio in the filing was wrong because nothing
+    // was counting, which is the same reason the gap existed at all.
+    //
+    // ⚠️ INSIDE THE `else`, for the same reason as weekly-report: the internal
+    // caller is the post-run ingest pipeline (`x-service-key` + `x-user-id`),
+    // and rate-limiting it would mean a finished run silently fails to analyse.
+    //
+    // ⚠️ RATE LIMIT ONLY, NOT `guardAiRequest`. This route DOES read a body, so
+    // the body-size arm would also apply — but it is deliberately out of scope
+    // here: SEC-15 is about a per-user ceiling, and adding a byte cap in the
+    // same change would risk rejecting a legitimate large payload with no
+    // measurement of what real ones weigh. Recorded as a known gap rather than
+    // guessed at.
+    const limited = await enforceAiRateLimit(userId, 'analyse-run')
+    if (limited) return limited
   }
 
   const body = await req.json()

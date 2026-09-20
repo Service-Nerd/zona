@@ -54,6 +54,7 @@ All three fields required. Returns 422 if any are missing.
 | 403 | Free tier |
 | 404 | Activity or plan not found |
 | 422 | Missing required fields |
+| **429** | **Per-user AI rate limit exceeded (SEC-15, 2026-09-20).** Interactive callers only — the internal post-run ingest path is NOT limited, because a finished run must still analyse. ⚠️ Rate limit only, no body-size cap: this route reads a body, so `guardAiRequest`'s byte arm would also apply, but it is deliberately out of scope until real payload sizes are measured. ⚠️ Fails open by design. |
 
 ## Notes
 

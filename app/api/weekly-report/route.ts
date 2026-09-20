@@ -1,4 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
@@ -43,6 +44,28 @@ export async function POST(req: NextRequest) {
     if (!isFeatureAllowed('activity_intelligence', tier)) {
       return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
     }
+
+    // SEC-15 (2026-09-20) — this was the ONE AI route with no per-user ceiling.
+    // Eleven of the twelve call `guardAiRequest` or `enforceAiRateLimit`; this
+    // one called neither, and it is a Sonnet route.
+    //
+    // ⚠️ INSIDE THE `else`, DELIBERATELY. The route has two callers (see the
+    // internal-cron bypass above). The cron passes a service key and an
+    // `x-user-id` header, and rate-limiting it would mean the scheduled report
+    // silently stops for a runner who had opened the app a few times that hour
+    // — a limiter that breaks the product it protects. The interactive caller
+    // is the only one a client loop can drive.
+    //
+    // The rate-limit-only guard is the right one: this route reads no request
+    // body, deriving everything from the DB by user id. Same shape as
+    // `daily-coach-note`.
+    //
+    // ⚠️ NOT A HARD CAP, and that is documented and correct. `checkAiRateLimit`
+    // FAILS OPEN — an RPC error or unreachable DB allows the request, because a
+    // false denial breaks the product while a brief limiter outage has bounded
+    // exposure. `OPS-AI-SPEND-01` is what makes the spend visible regardless.
+    const limited = await enforceAiRateLimit(userId, 'weekly-report')
+    if (limited) return limited
   }
 
   const force = req.nextUrl.searchParams.get('force') === 'true'

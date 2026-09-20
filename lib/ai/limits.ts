@@ -31,4 +31,11 @@ export const AI_ROUTE_LIMITS: Record<string, { limit: number; windowSeconds: num
   'post-race-reshape': { limit: AI_LIMITS.HEAVY_LIMIT, windowSeconds: AI_LIMITS.HEAVY_WINDOW_SECONDS },
   'adjust-plan':       { limit: AI_LIMITS.HEAVY_LIMIT, windowSeconds: AI_LIMITS.HEAVY_WINDOW_SECONDS },
   'post-run-reframe':  { limit: AI_LIMITS.HEAVY_LIMIT, windowSeconds: AI_LIMITS.HEAVY_WINDOW_SECONDS },
+  // SEC-15 (2026-09-20) — Sonnet, but only 300 max_tokens, so it is "expensive
+  // model, cheap call" and does not match HEAVY's stated case exactly.
+  // It is listed anyway because the DEFAULT of 30/hour is nonsense for a WEEKLY
+  // artefact: the interactive caller can pass `?force=true` to regenerate, which
+  // is the actual loop vector, and no runner legitimately regenerates their week
+  // ten times in an hour, let alone thirty.
+  'weekly-report':     { limit: AI_LIMITS.HEAVY_LIMIT, windowSeconds: AI_LIMITS.HEAVY_WINDOW_SECONDS },
 }

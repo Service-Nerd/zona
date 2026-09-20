@@ -2523,7 +2523,26 @@ across the seven months combined.
 > one now: the raw stream is what would let a zone recalibration re-bucket historic runs, which ADR-011
 > §263 records as a live defect.
 
-> 🟡 **CONSENT-DISCLOSURE-01 — one honest line at the Health-connect moment, not a consent screen.** *(P1, SLT-ruled 2026-09-20. Blocks nothing; ships with LEGAL-PRIVACY-01.)*
+> ✅ **CONSENT-DISCLOSURE-01 — one honest line at the Health-connect moment, not a consent screen.** *(P1, SLT-ruled 2026-09-20. Blocks nothing; ships with LEGAL-PRIVACY-01.)*
+>
+> ✅ **ALREADY SHIPPED — the backlog entry was STALE, and this closes it.** The disclosure is live in
+> `DashboardClient.tsx` at the connect CTA and has a feature-registry row dated 2026-09-20. ⚠️ **The
+> entry above records the FIRST ruling; a second SLT sitting CUT the sentence** and left only the
+> linked *"What we share"*. Sutherland: standing at a door marked *Health data* and volunteering
+> "we never send your name to the AI" introduces two concepts nobody asked about at the moment they
+> are deciding to hand over their heart rate.
+>
+> ⚠️ **Why my all-time backlog check did not catch this:** it excludes 🟡 by design, because
+> "code shipped, item still open" is a legitimate state (`P-16`). A 🟡 that should be ✅ therefore
+> hides. Left as-is rather than broadened — a check that fires on correct work gets switched off.
+>
+> **What was genuinely missing was a GATE**, now shipped as
+> `lib/privacy/healthConnectDisclosure.test.ts`: the survivor is a single link in a large component
+> with no visible product function, nothing broke if it went, and the next person tidying that
+> block had no way to know four board seats argued about it. It is also **the only place the
+> app→Anthropic transfer is disclosed at a decision point** — iOS's HealthKit sheet is device→app
+> and does not cover it. Also asserts the rejected GPS-routes and usage-analytics toggles have not
+> crept back. Falsified: renaming the link reddens three of the five assertions.
 >
 > The founder saw a competitor's granular "Your privacy preferences" screen (GPS routes / Health data / Usage analytics toggles, reasons per toggle, legal docs at the decision point, a full-weight "Continue without allowing"). **SLT ruled: take the disclosure pattern, not the screen.**
 >
@@ -2719,7 +2738,34 @@ across the seven months combined.
 > **Not necessarily a build.** The cheapest version is a short partner-facing FAQ the charity can send with
 > the codes, covering exactly the questions this audit predicts. Decide which.
 
-> 🔲 **SEC-15 — `/api/weekly-report` is the only AI route with no rate limiter.** *(P2, me, filed 2026-09-18.)*
+> ✅ **SEC-15 — `/api/weekly-report` is the only AI route with no rate limiter.** *(P2, me, filed 2026-09-18.)*
+>
+> ✅ **SHIPPED 2026-09-20 — and the filing undercounted.** `enforceAiRateLimit` added to
+> `/api/weekly-report`, plus the route limit (`HEAVY`, 10/hr: Sonnet, and the DEFAULT of 30/hr is
+> nonsense for a WEEKLY artefact when `?force=true` makes regeneration a first-class parameter).
+>
+> ⚠️ **THE SWEEP FOUND A SECOND UNGUARDED ROUTE THE FILING DID NOT NAME.** "Eleven of the twelve"
+> was wrong: `/api/analyse-run` also calls the Anthropic owner and called neither guard. The ratio
+> in the filing was wrong **because nothing was counting, which is the same reason the gap
+> existed**. Guarded on the interactive branch only — the internal post-run ingest path must still
+> analyse a finished run.
+>
+> **The gate is `lib/ai/everyAiRouteIsLimited.test.ts`, deliberately a SWEEP and not an assertion
+> about `weekly-report`.** A single assertion would have gone green the moment I edited one file
+> and said nothing about the thirteenth route added next month.
+>
+> ⚠️ **Two false results caught on the way, both by falsifying rather than reading.** (1) The
+> matcher reported `ops/ai-spend` as unguarded — it only NAMES `callAnthropic` in a comment;
+> comments are now stripped, the second comment-vs-code trap in one day. (2) **Deleting a guard
+> left the test GREEN**, because `includes('enforceAiRateLimit')` matched the surviving `import`.
+> A route that imports a guard and never calls it would have passed — the "declared but inert"
+> class this repo has paid for repeatedly. Import lines are now stripped and a call is required;
+> re-falsified, it goes red and back to green.
+>
+> ⚠️ **Known gap, stated not guessed:** `analyse-run` reads a body, so `guardAiRequest`'s byte cap
+> would also apply. Out of scope until real payload sizes are measured — a cap guessed at now could
+> reject a legitimate large request. ⚠️ **And the limiter is not a hard cap:** `checkAiRateLimit`
+> fails open by design, which is correct and is why `OPS-AI-SPEND-01` exists.
 >
 > Eleven of the twelve AI routes call `guardAiRequest` or `enforceAiRateLimit`. `/api/weekly-report` calls
 > neither, and it is a **Sonnet** route. It is authenticated and tier-gated on `activity_intelligence`, so

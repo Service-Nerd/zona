@@ -45,6 +45,7 @@ Empty body accepted.
 | 401 | No valid session |
 | 403 | Free tier |
 | 404 | No plan or no current week |
+| **429** | **Per-user AI rate limit exceeded (SEC-15, 2026-09-20).** Interactive callers only — the internal cron path (`x-service-key` + `x-user-id`) is deliberately NOT limited, because rate-limiting it would silently stop a runner's scheduled report. ⚠️ Not a hard cap: `checkAiRateLimit` FAILS OPEN on an RPC error or unreachable DB, by design. |
 
 ## Notes
 
