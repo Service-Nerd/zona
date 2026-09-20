@@ -109,6 +109,41 @@ green.**
 | **`S53` quality repetition** | **DISSOLVED** | 09-19 | the unit was rows; the coaching unit is the category, median 4.5 exposures |
 | **week-1 engine caps** | **SIX built and rejected** | 09-19/20 | four made `BINGE-WEEK` 8–12× worse; two took the marathon out of target. Willy: *"stop proposing caps"* |
 | **`WEEK1-LEAP` thresholds** | **FROZEN** | 09-20 | relaxed three times in one day; any further change needs adherence or injury data, not another corpus measurement |
+| **P-17 intake messaging (RED-S)** | **INCORRECT — VETOED, unanimous** | 09-20 | §24e Am. already rules *practice, never a nutrition prescription*. **Sims — the seat that RAISED RED-S — killed it:** 20–29 female is also the disordered-eating-risk cohort, and `INPUT-SEX-01` is parked so it cannot be targeted. Her actual ask SHIPPED 09-19: 27/88 → 76/88 |
+
+### Added 2026-09-20 — **P-17 RED-S: the conflict scan found the answer, and found me out**
+
+**VETOED, unanimously, on four independent grounds.** Do not re-propose intake
+messaging on a plan. **More data does not unblock it** — a body-mass trend would
+enable a *detector*, and a detector telling a young woman her weight is falling
+is a larger version of the same harm.
+
+🔴 **The submission's central claim was FALSE and the scan caught it.** I wrote
+that the cohort Sims named "gets nothing". **§24e Amendment, five days earlier,
+was ruled on that exact cohort with her reasoning recorded verbatim** — the
+never-run beginner marathoner with seven 2h+ sessions and no fuelling mention
+anywhere, measured **27 of 88 → 76 of 88**. Her ask was already delivered.
+
+⚠️ **I convened this sitting from the plans and the code, not from the register.**
+That is the standing failure, and it recurred inside five days. **Read this file
+first.**
+
+**Sims, recorded, because it is the whole ruling:** *"I raised RED-S. I am now
+going to argue against the thing built from it."* First-time, predominantly
+female, 20–29 is not only the RED-S cohort, it is the disordered-eating cohort,
+and they overlap heavily. *"I would not put that sentence in front of ten
+thousand young women to reach the fraction who are genuinely under-fuelling."*
+
+**Hutchinson:** the mechanism is real, the *intervention* has no evidence behind
+it. Nobody has shown a sentence in a running app changes what anyone eats.
+**McMillan:** in person it is a conversation; on a plan it is a leaflet, and it
+competes with the §24e cue that actually names an action on a specific day.
+**Willy:** the honest lever for a runner under-fuelling a ramp is **the ramp**,
+not a note — and that has not come to him.
+
+**↗️ Escalated to the SLT, and it is not a coaching question:** signposting. When
+a runner is in difficulty the correct move is to point at a professional, not to
+advise. Sits beside `LEGAL-COUNSEL-01`.
 
 ### Added 2026-09-20 — **M4 was never a refusal**
 

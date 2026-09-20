@@ -973,7 +973,47 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > **Size.** **L.** **Free/Pro.** **FREE** — it is the door.
 > **Backlog.** **NEW.** Closes the remedy `S111-SUBFLOOR-VOLUME-01` escalated and §111 named.
 
-> 🔴 **P-17 — RED-S / ENERGY AVAILABILITY IS AN UNCOVERED HARM. Filed as a SAFETY item, not a feature.** *(SLT 2026-09-20, splitting the Coaching Board's "Sims pattern" escalation.)*
+> 🔲 **SIGNPOST-HARM-01 — when a runner is in difficulty, we advise. We never point at a professional.** *(P2, SLT + legal, filed 2026-09-20, escalated from the P-17 board sitting by Hutchinson.)*
+>
+> **Sims's residual, and the only part of P-17 that survived the veto.** The board refused
+> intake messaging on harm grounds. It also observed that an app's correct move when a runner
+> is in real trouble — under-fuelling, disordered eating, an injury they are running through —
+> **is not to advise. It is to signpost.** We have no such surface anywhere.
+>
+> ⚠️ **Explicitly NOT a coaching change.** The board ruled it out of its own remit. Product,
+> legal and duty-of-care, and it **sits beside `LEGAL-COUNSEL-01`** rather than in front of it:
+> what an app may and must say here is a question for a lawyer before it is one for a designer.
+>
+> ⚠️ **Do not solve this with a coach note.** That is the thing that was just vetoed.
+
+> ⛔ **P-17 — ANSWERED AND CLOSED 2026-09-20. Coaching Board: INCORRECT, unanimous veto.** *(Not "done" — answered. The coaching half shipped 2026-09-19; the rest is not a coaching change.)*
+>
+> **Do not re-propose intake messaging on a plan.** Four independent grounds:
+> §24e Am. already rules *practice, never a nutrition prescription* · no evidence a
+> sentence in an app changes what anyone eats (Hutchinson) · it dilutes the §24e cue that
+> names a real action on a real day (McMillan) · **harm** (Sims).
+>
+> 🔴 **THE SEAT THAT RAISED RED-S IS THE SEAT THAT KILLED IT.** Sims: first-time,
+> predominantly female, 20–29 is not only the RED-S cohort, it is the **disordered-eating**
+> cohort, and they overlap heavily. *"I would not put that sentence in front of ten thousand
+> young women to reach the fraction who are genuinely under-fuelling."* And
+> **`INPUT-SEX-01` is parked, so it could not be targeted** — it would go to everyone.
+>
+> 🔴 **MY SUBMISSION'S CENTRAL CLAIM WAS FALSE and the conflict scan caught it.** I wrote
+> that Sims's cohort "gets nothing". **§24e Amendment (2026-09-19) was ruled on that exact
+> cohort with her reasoning verbatim** — the never-run beginner marathoner, seven 2h+
+> sessions, no fuelling mention anywhere: **27 of 88 → 76 of 88.** Her ask was already
+> delivered. I convened from the plans, not the ruling register. Again.
+>
+> ⚠️ **MORE DATA DOES NOT UNBLOCK IT.** A body-mass trend would enable a *detector*, and a
+> detector telling a young woman her weight is falling is a larger version of the same harm.
+> **The SLT cannot overrule this commercially** (INV-COACH-003).
+>
+> 🔻 **One residual, escalated, and NOT a coaching question:** **signposting** — when a runner
+> is in difficulty the correct move is to point at a professional, not to advise. Product,
+> legal and duty-of-care. **Sits beside `LEGAL-COUNSEL-01`.** Filed as `SIGNPOST-HARM-01`.
+> *(original below.)*
+> 🔴 ~~**P-17 — RED-S / ENERGY AVAILABILITY IS AN UNCOVERED HARM.**~~ *(SLT 2026-09-20, splitting the Coaching Board's "Sims pattern" escalation.)*
 >
 > **The board escalated a pattern: three Sims asks have died this year on data we do not collect.
 > The SLT split it, and the split is the finding.** Hutchinson, wearing the SLT hat: *"They did not
