@@ -731,7 +731,20 @@ The original "permanent slot on Today / never silently hidden" doctrine is **sup
 
 Tier prop travels from `DashboardClient` → `TodayScreen` → the wrapper around `RestraintCard`. RestraintCard itself is data-driven by `state` — no tier logic inside the component.
 
-Reference: `components/shared/RestraintCard.tsx`. Integration: `DashboardClient.tsx` → `TodayScreen` (ZONE-VIS-01 block).
+⚠️ **THE COMPONENT IS DELETED (P-10, 2026-09-20). THE PATTERN IS NOT.**
+The component file had **zero render sites** — ZONE-VIS-02 superseded its
+"permanent slot on Today" doctrine in May 2026 and the Coach 2×2 took over the number, so the file
+sat unreachable for months while this section still pointed at it. Deleted rather than revived: a
+documented component nobody renders is a pattern reference that silently becomes a lie, and the
+cold-start defect it carried (`0 of N sessions complete · 0%`) was a bug in code no runner could
+reach.
+
+**The anatomy is still canonical and still in use** — the live / pending / locked triad is reused
+by the Coach 2×2 and by `ZoneWeekBlock` (P-04), whose locked state follows this section's locked
+copy shape deliberately rather than inventing one.
+
+Reference: the pattern lives here; implementations are `DashboardClient.tsx` → Coach 2×2 stat grid
+and `components/shared/ZoneWeekBlock.tsx` (ZONE-VIS-01 block).
 
 ---
 
@@ -995,7 +1008,7 @@ CAREFUL NOW                     ← uppercase, muted, 10px, 0.08em tracking
   Delete account
 ```
 
-Reference: `components/shared/SectionLabel.tsx` (if extracted) or inline in `DashboardClient.tsx`
+Reference: `DashboardClient.tsx` → `SectionLabel` (defined inline; there is no `components/shared` file, and this line said there was) (if extracted) or inline in `DashboardClient.tsx`
 
 ---
 

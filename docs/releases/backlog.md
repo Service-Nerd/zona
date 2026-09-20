@@ -758,7 +758,45 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-10 — COLD-START SWEEP.** *(T-20. We are already ahead of them; three specific holes.)*
+> 🟡 **P-10 — COLD-START SWEEP.** *(T-20. We are already ahead of them; three specific holes.)*
+>
+> 🟡 **HOLES 1 AND 2 CLOSED 2026-09-20. HOLE 3 IS A DEVICE WALK AND REMAINS YOURS.**
+>
+> **1 · Dead code DELETED, not fixed.** Verified first: `PlanProgressBar` and `RestraintCard` both
+> at **0 render sites**. `PlanProgressBar` was 45 lines defined inline in `DashboardClient`;
+> `RestraintCard.tsx` had been unreachable since ZONE-VIS-02 superseded its Today slot in May 2026.
+> Fixing the `doneSessions === 0` guard would have put a **non-existent bug into a build** and left
+> unreachable code carrying a test and a changelog entry, exactly as the filing warned.
+>
+> ⚠️ **DELETING IT EXPOSED DOC ROT, AND A GUARD NOW HOLDS IT.** `ui-patterns.md` still said
+> *"Reference: `components/shared/RestraintCard.tsx`"*. The section stays — **the ANATOMY is still
+> canonical and still in use**, by the Coach 2×2 and by P-04's `ZoneWeekBlock` locked state, which
+> follows it deliberately — but it now records that the component is gone and where the pattern
+> lives. New guard `uiPatternReferences.test.ts` resolves every `Reference:` in the design system,
+> and **found a second, pre-existing break I was not looking for**: `SectionLabel` was documented at
+> `components/shared/SectionLabel.tsx` and is defined inline in `DashboardClient`. ⚠️ **This matters
+> more than it looks** — `ui-patterns.md` is what the `frontend-design` skill reads before any UI
+> work, and this repo already records a design handoff whose component list was **44% fiction**.
+>
+> **2 · The web runner was told to do something with no route to doing it.** Coach's `no-source`
+> state said *"Connect Apple Health or Strava"* to **every** user and offered a "Connect a source"
+> button, while `CONNECT-FIRST` and `CONNECT-01` both `return` early off-native. Now platform-aware:
+> the web sentence names the constraint honestly and **the CTA is withheld, not relabelled** — a
+> button that cannot work is worse than no button. ⚠️ **It deliberately does not name Strava**: the
+> application is Inactive at Strava's end (`STRAVA-APP-INACTIVE-01`, yours), so naming it as a web
+> route would be the second false instruction on the same screen. Falsified against the original
+> copy.
+>
+> **`useIsNative` extracted** — two components already carried their own copy and this needed a
+> third. ⚠️ **The claim is narrowed to what is true:** it owns the RENDER-TIME flag, not every
+> platform check. `AppleHealthConnectionRow` keeps its own, because there the check is an early exit
+> inside a Supabase-reading effect — a platform-gated FETCH, not a flag — and routing it through the
+> hook would change behaviour to satisfy a tidiness claim. Single owner of the flag is not single
+> owner of the sequence.
+>
+> 🔻 **3 · Day one has still not been observed, and that is the acceptance criterion.** The audit read
+> the JSX; nothing was run. Whether a bare zero renders anywhere on day one is **not established**,
+> and I cannot establish it.
 >
 > **Problem.** Miles renders zeroes on three screens — `IMG_7185` "0 WEEK STREAK / 0.0 mi / 0 RUNS",
 > `IMG_7187` "0 / 22.4 km", "0 km", **"0%"** and an empty bar. **We are substantially better by

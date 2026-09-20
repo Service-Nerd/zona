@@ -5,6 +5,45 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-09-20 — P-10: deleting dead code found live doc rot, which found more doc rot
+
+**Dev.** Three cold-start holes. The first was to delete two components rather than fix them, and
+the filing was emphatic about the distinction: `PlanProgressBar` rendered "0 of N sessions complete
+· 0%" because it guarded the total but not the completed count, **and it had zero render sites.**
+Fixing it would have put a non-existent bug into a build and left 45 lines of unreachable code
+behind, now carrying a test and a changelog entry implying someone depends on it.
+
+**Deleting is where it got interesting.** `RestraintCard` had been unreachable since May, when
+ZONE-VIS-02 moved the discipline number to Coach's 2×2 — but `ui-patterns.md` still said
+*"Reference: components/shared/RestraintCard.tsx"*. That document is what the `frontend-design`
+skill reads before any UI work, so a reference pointing at a deleted file sends the next build
+looking for a precedent that is not there, or recreating one. I had cited that exact pattern an
+hour earlier for P-04's locked state.
+
+So the section stays and the component goes: the anatomy is live, the file is not, and the section
+now says both. Then I wrote a guard that resolves every `Reference:` in the design system — and it
+immediately found **a second break I was not looking for**. `SectionLabel` is documented at
+`components/shared/SectionLabel.tsx` and is defined inline in `DashboardClient`. This repo has
+already shipped a design handoff whose component list was 44% fiction; that is the same failure
+with a smaller blast radius.
+
+**The live defect was the second hole.** Coach's empty state told every runner to "Connect Apple
+Health or Strava" and offered a Connect button — while both connect paths `return` early off
+native. A web runner was instructed to do something with no route to doing it and no button
+rendered. It now names the constraint honestly, and the CTA is **withheld rather than relabelled**:
+a button that cannot work is worse than no button. It deliberately does not mention Strava, because
+that application is currently Inactive at Strava's end, and naming it would have been the second
+false instruction on one screen.
+
+**The bit I want to keep.** Extracting `useIsNative` was right — two components already had their
+own copy and I was about to write a third. But one site keeps its own check, and I nearly
+"tidied" it: `AppleHealthConnectionRow` uses the platform test as an early exit inside a
+Supabase-reading effect. That is a platform-gated FETCH, not a flag. Routing it through the hook
+would have changed behaviour to satisfy a claim in a comment. **Single owner of the flag is not
+single owner of the sequence**, and the hook's own docstring now says which one it is.
+
+**What is not done.** Hole three was "actually look at day one on a device", and it is still not
+done, because I cannot do it. The audit read the JSX; nothing was run.
 
 ## 2026-09-20 — P-09(a)(b): the blocker was resolved by making the claim true, not by softening it
 

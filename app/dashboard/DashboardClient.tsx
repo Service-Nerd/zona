@@ -1,5 +1,6 @@
 'use client'
 
+import { useIsNative } from '@/lib/useIsNative'
 import ZoneWeekBlock from '@/components/shared/ZoneWeekBlock'
 import { classifyRun, type RunZoneOutcome } from '@/lib/coaching/zoneWeekStatement'
 import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react'
@@ -8216,51 +8217,19 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
 
 // ── PLAN PROGRESS BAR ─────────────────────────────────────────────────────
 
-function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions: Record<number, Record<string, any>> }) {
-  const SESSION_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun',
-    'mon2', 'tue2', 'wed2', 'thu2', 'fri2', 'sat2', 'sun2']
-
-  let totalSessions = 0
-  let doneSessions = 0
-
-  plan.weeks.forEach((week, wi) => {
-    const weekN = (week as any).n ?? (wi + 1)   // week.n-keyed (MAINT-06)
-    const weekAny = week as any
-    const sessions = weekAny.sessions ?? weekAny
-    const weekCompletions = allCompletions[weekN] ?? {}
-    SESSION_KEYS.forEach(k => {
-      if (sessions[k] && typeof sessions[k] === 'object' && sessions[k].type !== 'rest') {
-        totalSessions++
-        const c = weekCompletions[k]
-        if (c?.status === 'complete' || c?.status === 'skipped') doneSessions++
-      }
-    })
-  })
-
-  const pct = totalSessions > 0 ? Math.round((doneSessions / totalSessions) * 100) : 0
-
-  if (totalSessions === 0) return null
-
-  return (
-    <div style={{ padding: '10px 16px 14px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          {doneSessions} of {totalSessions} sessions complete
-        </div>
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '13px', color: 'var(--teal)', fontWeight: 600 }}>{pct}%</div>
-      </div>
-      <div style={{ height: '4px', borderRadius: '2px', background: 'var(--border-col)', overflow: 'hidden' }}>
-        <div style={{
-          height: '100%',
-          width: `${pct}%`,
-          borderRadius: '2px',
-          background: 'var(--teal)',
-          transition: 'width 0.5s ease',
-        }} />
-      </div>
-    </div>
-  )
-}
+// P-10 (2026-09-20) — `PlanProgressBar` DELETED, not fixed.
+//
+// It rendered "0 of N sessions complete · 0%" on a cold start: it guarded
+// `totalSessions === 0` but not `doneSessions === 0`, which is the zero-state
+// defect the teardown found on a competitor's screens. It also had **zero
+// render sites**, and had for its whole life.
+//
+// ⚠️ DELETED RATHER THAN CORRECTED, and the distinction was called in the
+// filing for a reason: fixing it would have put a NON-EXISTENT BUG into a
+// build and left 45 lines of unreachable code behind, now carrying a test and
+// a changelog entry implying someone relies on it. The zero-state work that
+// matters is in the two live holes (the web connect prompt, and actually
+// looking at day one), not in reviving this.
 
 function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach }: {
   plan: Plan; stravaRuns: any[]
@@ -9286,6 +9255,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   maxHR?: number | null
   healthkitConnectedAt?: string | null
 }) {
+  // P-10 / GAP-04 — platform drives the no-source copy: on web there is no
+  // route to Apple Health at all, so telling the runner to connect one is an
+  // instruction with no button behind it.
+  const isNative = useIsNative()
   const [loading, setLoading]           = useState(false)
   const [error, setError]               = useState<string | null>(null)
   const [refreshBlocked, setRefreshBlocked] = useState(false)
@@ -9708,9 +9681,33 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
       emptyHeadline = "Last week's report is below."
       emptyBody     = 'Generate a report to see how this week is tracking.'
     } else if (!hasAnySource) {
+      // ── P-10 / GAP-04 (2026-09-20) — THE WEB RUNNER HAD NO ROUTE ─────────
+      //
+      // This told EVERY user to "Connect Apple Health or Strava" and offered a
+      // "Connect a source" button. On web both halves are false: Apple Health
+      // is an iOS-only Capacitor plugin, and `CONNECT-FIRST` plus `CONNECT-01`
+      // both `return` early off-native, so a web runner was instructed to do
+      // something with no route to doing it.
+      //
+      // ⚠️ THE HONEST LINE, NOT A PROMPT. The filing offered both options; a
+      // prompt is only correct if the action exists, and for a web runner it
+      // does not. Naming the constraint is the option that does not send
+      // someone looking for a button that was never rendered.
+      //
+      // ⚠️ IT DOES NOT MENTION STRAVA. The Strava application is currently
+      // Inactive at Strava's end (`STRAVA-APP-INACTIVE-01`, founder action),
+      // so naming it as a web route would be the second false instruction on
+      // the same screen.
+      //
+      // ⚠️ THE FLASH RULE (see useIsNative). `useIsNative` starts `false`, so native renders as
+      // web for one frame. The web sentence is therefore the SAFE default: an
+      // iOS runner may briefly see the app mentioned, which is harmless, where
+      // the reverse would hide the only route from the person who has it.
       emptyHeadline = "Nothing to coach from yet."
-      emptyBody     = 'Connect Apple Health or Strava so I can see your runs. I keep quiet until I have something honest to say.'
-      emptyCta      = onConnect ? { label: 'Connect a source', onClick: onConnect } : null
+      emptyBody     = isNative
+        ? 'Connect Apple Health so I can see your runs. I keep quiet until I have something honest to say.'
+        : 'Your runs come from Apple Health, which needs the iOS app. I keep quiet until I have something honest to say.'
+      emptyCta      = isNative && onConnect ? { label: 'Connect a source', onClick: onConnect } : null
     } else if (!hasRuns) {
       emptyHeadline = "Waiting on your first run."
       emptyBody     = "Go log a session — even an easy one. Once I see a run with heart rate, I can say something useful."
@@ -11020,20 +11017,13 @@ function calculateZones(restingHR: number, maxHR: number) {
  * silently and the button is a no-op — no broken behaviour on PWA, no crash.
  */
 function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | null, mhr: number | null) => void }) {
-  const [isNative, setIsNative] = useState(false)
+  // P-10 — was a third hand-written copy of the platform check. `useIsNative`
+  // is the single owner now; three copies of one predicate is the D-08 shape
+  // this repo keeps paying for, and here the failure mode is a screen offering
+  // a CTA the platform cannot honour.
+  const isNative = useIsNative()
   const [busy, setBusy] = useState(false)
   const [err,  setErr]  = useState<string | null>(null)
-
-  useEffect(() => {
-    void (async () => {
-      try {
-        const { Capacitor } = await import('@capacitor/core')
-        if (Capacitor.isNativePlatform()) setIsNative(true)
-      } catch {
-        // not running in Capacitor — leave hidden
-      }
-    })()
-  }, [])
 
   if (!isNative) return null
 
