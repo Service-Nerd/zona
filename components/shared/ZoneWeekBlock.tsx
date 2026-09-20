@@ -60,7 +60,7 @@ export default function ZoneWeekBlock({
     }}>
       <span aria-hidden style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: rail }} />
       <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em',
+        fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
         textTransform: 'uppercase', color: 'var(--mute)', marginBottom: '8px',
       }}>
         This week

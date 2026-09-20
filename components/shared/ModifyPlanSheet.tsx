@@ -63,7 +63,7 @@ export default function ModifyPlanSheet({
 
   const label = (t: string) => (
     <div style={{
-      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em',
+      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
       textTransform: 'uppercase', color: 'var(--mute)', margin: '22px 0 8px',
     }}>{t}</div>
   )

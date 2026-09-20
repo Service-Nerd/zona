@@ -100,7 +100,7 @@ export default function RefusalView({
           marginBottom: '16px', overflow: 'hidden',
         }}>
           <span aria-hidden style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'var(--moss)' }} />
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--moss)', marginBottom: '8px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', marginBottom: '8px' }}>
             {offer!.title}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.55, marginBottom: '10px' }}>

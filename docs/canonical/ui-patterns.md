@@ -2563,3 +2563,63 @@ behind auth, a plan and a tab, which is exactly how a hardcoded placeholder
 survived to production.
 
 Reference: `components/shared/IdentityCard.tsx`, `components/shared/ProfileSection.tsx`.
+
+---
+
+### 37. Patterns added 2026-09-20 (the Miles-teardown build)
+
+Six components shipped that day. **None was added here at the time**, which is the same drift that
+left this document pointing at a deleted `RestraintCard` and at a `SectionLabel` file that never
+existed (both fixed under P-10, and the `Reference:` lines are now guarded by
+`lib/marketing/uiPatternReferences.test.ts`). Recorded together rather than backfilled silently.
+
+**A shared eyebrow convention, measured rather than assumed.** The scale above says section labels
+track at `0.08em`, and the codebase agrees **64 times against 17**. The `0.14em` minority belongs
+to the `CoachNoteBlock` amber family (pattern 9) and should stay there. Four of the components
+below were written by copying their nearest neighbour and picked up `0.14em`; they were corrected
+to `0.08em` on the same day. **Copy the scale, not the adjacent component.**
+
+#### 37a. `RefusalView` — a coaching refusal, and the route out of it
+A 422 from plan generation is a **deliberate coaching decision**, not a fault, and reads as a calm
+"not yet" in the amber `CoachNoteBlock` palette (the one place `0.14em` is correct here). Below it,
+on a **separate `--card` surface with a 3px `--moss` left rail**, sits the §118 Base Building
+offer: an offer rendered inside the amber block reads as more bad news. Accepting is the primary
+CTA and "Adjust my answers" demotes to the muted secondary, never hidden.
+Reference: `components/shared/RefusalView.tsx` · fixture `/refusal-preview` (five states).
+
+#### 37b. `ZoneWeekBlock` — the weekly zone statement
+The brand thesis as a sentence: *"3 of 4 runs held the zone. One drifted."* Count, never a
+percentage. A 3px left rail carries P-01's semantic pair (moss held / amber drifted) and the card
+stays `--card`; **accent, never a coloured fill.** The free-tier state follows the locked treatment
+in pattern 11. All copy belongs to `lib/coaching/zoneWeekStatement.ts`, never the component.
+Reference: `components/shared/ZoneWeekBlock.tsx` · fixture `/zone-block-preview` (eight states).
+
+#### 37c. `MePlanCard` — what you have, then what you lack
+The non-manipulative upsell shape. Feature rows are **read from `lib/marketing/pricing.ts`**, the
+same gate-linked rows `/pricing` renders, so the card inherits both guards on those rows; a test
+fails if any feature name is retyped here. A subscriber sees the card with no upsell.
+Reference: `components/shared/MePlanCard.tsx`.
+
+#### 37d. `PlanHeroMetrics` — the three-up metric row
+⚠️ **A NEW TYPOGRAPHIC ROLE, declared rather than smuggled.** The scale has Metric large (44px)
+and Metric medium (17px). **Three metrics side by side cannot be 44px at 375px wide**, so this
+uses **`--font-ui` 800 / 22px** with an 11px `--mute` label beneath. Value still dominates and the
+label is still underneath; only the size is new. Use 22px wherever three metrics share a row.
+Reference: `components/shared/PlanHeroMetrics.tsx`.
+
+#### 37e. `ModifyPlanSheet` — batched edits, grouped by consequence
+Arrives through the `Sheet` primitive (SHEET-PRESENT-01), so nothing here touches z-index or the
+nav inset. Rows group by **consequence** ("Your week" / "Your body" / "The race"), each carrying
+the SLT-approved consequence subtitle from `lib/plan/modifyPlan.ts`.
+- **No Cancel top-right.** The bar is at the bottom, per `ux-principles.md`.
+- **Two bar states, and neither is a disabled primary at rest**: `Close` when nothing has changed,
+  `Apply N changes` + `Discard changes` when something has.
+- **A pending edit reads in `--moss`** (a 6px dot, and the label moves `--ink-2` → `--ink`).
+  **Not amber**: amber is coaching-warning voice and an unapplied edit is not a warning.
+Reference: `components/shared/ModifyPlanSheet.tsx`.
+
+#### 37f. `ModifyPlanConfirm` — diff before apply
+Two scales, because one is not enough: plan-level before → after rows (**only those that moved**),
+above the existing `AdjustmentDiff` for the week the runner is actually in. Everything is derived
+at render; nothing is stored, because a total written once goes stale at the next reshape.
+Reference: `components/shared/ModifyPlanConfirm.tsx`.

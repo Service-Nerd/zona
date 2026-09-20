@@ -53,7 +53,7 @@ export default function MePlanCard({
 
   const label = (text: string) => (
     <div style={{
-      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em',
+      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em',
       textTransform: 'uppercase', color: 'var(--mute)', margin: '16px 0 8px',
     }}>{text}</div>
   )
