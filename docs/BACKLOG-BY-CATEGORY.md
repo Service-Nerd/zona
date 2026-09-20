@@ -1,233 +1,167 @@
 # The backlog, by category
 
-> ⚠️ **SUPERSEDED IN PART, 2026-09-20 (later the same day).** Nine items shipped after this was
-> written. Current state and what moved: see the ⚖️ RULED block in `docs/releases/backlog.md` and
-> the feature registry. **Shipped since:** `MARA-LR-LOWBASE-01` (§80 Am.2) · `REFRAME-NOTE-LOSS-01`
-> · `P-13a/b` · `P-03` · `P-01` · `ENRICH-PII-MINIMISE-01` · `LEGAL-PRIVACY-01` ·
-> `CONSENT-DISCLOSURE-01`. **Closed as no-action:** `BRAND-MAINT-LABEL-01` (stale entry),
-> `P-07` (SLT: don't build). **73 open → 64.**
+**Regenerated 2026-09-20, after the day's nine ships.** Sources: `docs/releases/backlog.md`
+**and** `docs/releases/roadmap.md`, cross-checked against `docs/canonical/feature-registry.md`.
 
-**Date:** 2026-09-20 · **Source:** `docs/releases/backlog.md`, cross-checked against
-`docs/canonical/feature-registry.md`
+**57 open items.**
 
-**73 open items.** Derived mechanically: every ID declared with an open marker, then
-each checked for a feature-registry row. ⚠️ **18 items that read as open by their marker
-are actually SHIPPED** — they appear in prose as cross-references, in 🔴 sentences, inside
-other items' bodies. A marker-only parse would have over-counted by a quarter.
-
-> `PLAN-WEEK-COLLISION-01` · `CB-HILL-INJURY-01` · `MARATHON-VOLUME-GATE-01` ·
-> `LONGEST-RUN-GATE-01` · `FOUNDATION-DECIDE-LATER-01` · `FOUNDATION-ADD-FAIL-01` ·
-> `ONBOARD-SKIP-LABEL-01` · `REFUSAL-SCREEN-01` · `WIZARD-TIME-CHIPS-01` ·
-> `MAINT-LIVENESS-01` · `INV-MSG-ROUNDING-01` · `STEPBACK-STALE-PEAK-01` ·
-> `GRID-MARATHON-CAPABLE-01` · `GRID-COVERAGE-02` · `MAINT-EXEMPT-SCOPE-01` ·
-> `RACE-PACE-OVERLAY-REACH-01` · `S9-DURATION-FLOOR-01` · `GTM-SEO-COMPARE-01` (page 1)
+> ⚠️ **Derivation, because the number moved and the reason matters.** The first version of this
+> document said **73**, parsed from `backlog.md` alone. That was wrong in two directions.
+> **`roadmap.md` is the live register for engine work** and holds items with detail that never
+> reached the backlog. And **eight stale rows across both files** were marked open while a
+> feature-registry row already existed — including three of today's own ships. Every ID here was
+> re-checked against the registry, and **nine more were excluded as not-work** (vetoed, parked,
+> superseded, or record-only). Both files have been corrected.
 
 ---
 
-## On the categories
+## The categories
 
-You proposed **coaching engine · user experience · user interface**. Those are the right
-three to start from and they cover **28 of 73**. Seven more are needed, and each earns its
-place because the work, the owner and the decision-maker all differ:
+You proposed **coaching engine · user experience · user interface**. They cover 27 of 57. Seven
+more earn their place because the work, the owner and the decision-maker all differ.
 
-| Category | Why it is not one of your three |
-|---|---|
-| **Engine governance & verification** | Not prescription — it is the harness that proves prescription. Different skill, no board, and it is **a fifth of the engine work**. Folding it into "coaching engine" hides that. |
-| **Brand, voice & copy** | Every item needs **your** sign-off (§4A). UX and UI items mostly do not. |
-| **Commercial & monetisation** | SLT-owned. Tier, price, paywall, trial honesty. |
-| **GTM & charity launch** | **October-dated.** A deadline is a category. |
-| **Legal, privacy & data** | Founder + counsel. Not ours to decide. |
-| **Infrastructure & ops** | Mostly **founder actions on external accounts** — no code at all. |
-| **Live defects** | Runners are hitting these now. Everything else is potential. |
+| Category | Open | Why it is separate |
+|---|---|---|
+| 🧭 UX & flows | 15 | |
+| 🏃 Coaching engine — prescription | 8 | Board owns correctness |
+| 🔧 Infrastructure & ops | 7 | **Mostly founder actions on external accounts. No code at all.** |
+| 💰 Commercial & monetisation | 6 | SLT-owned |
+| ⚖️ Legal, privacy & data | 2 | Founder + counsel. Not ours to decide |
+| 📣 GTM & charity launch | 5 | **October-dated. A deadline is a category** |
+| 🔬 Engine governance & verification | 6 | Not prescription — the harness that proves it. No board |
+| 🎨 UI & design system | 4 | |
+| ✍️ Brand, voice & copy | 3 | **Every item needs your sign-off (§4A)** |
+| 🐛 Live defects | **0** | ✅ **The one that existed shipped today** |
 
-**UX vs UI, kept separate deliberately.** UX is what happens; UI is what it looks like.
-They have different reviewers and different failure modes — a beautiful screen in the
-wrong flow position fails at UX, not UI.
+**UX and UI stay separate.** UX is what happens; UI is what it looks like. Different reviewers,
+different failure modes.
 
 ---
 
-## 🏃 Coaching engine — prescription · **16 items**
+## 🏃 Coaching engine — prescription · 8
 
-*What the plan actually tells a runner to do. Coaching Board owns correctness.*
+*Board owns correctness. ⚠️ Every item here is measured against the 95.9% before it ships.*
 
 | Item | State | Note |
 |---|---|---|
-| **P-16** base-build on-ramp | 🟢 **Board: CORRECT as a shape.** SLT: **build, not for October** | 6 binding amendments. §111 names this remedy and §57 makes it impossible |
-| **P-17** RED-S / energy availability | 🔴 **Filed as a SAFETY item** | The one third of the "Sims pattern" that is real. Data question first |
-| `S111-SUBFLOOR-VOLUME-01` | 🔴 P0, INSUFFICIENT EVIDENCE, escalated | **Now answered by P-16.** The door is exactly 12 km/wk |
-| `LR-CONSEC-01` | 🔲 P1 | §45 cannot see compounding; closing it collides with §38 and §47 |
-| `S52-LOPSIDED-BOUND-01` | 🔴 reopened | **Failed twice. Standing instruction: do not add a third per-week bound** |
-| `LOPSIDED-ORDER-01` | 🔴 | §52's third remedy evaluates in the wrong order |
-| `S24-FLOOR-REACHABILITY-01` | 🔲 P2 | §24's marathon floor is unreachable for most runners |
-| `MARA-LR-LOWBASE-01` | 🔲 P1 | |
-| `ULTRA-LR-ADEQUACY-01` | 🔲 | |
-| `COHERENCE-SELECT-01` | ⛔ build attempt 5 | Attempt-4 diagnosis disproved; a measured no-op |
-| `LR-DELOAD-RESUME-01` | 🔴 **record of what NOT to retry** | Board-approved, built, **reverted as unsafe** — sent a beginner 7.3 → 18.5 km |
-| `S112-HAZARD-01` | ⏸️ P3 | Unmeasurable today — §112 has never fired |
-| `INPUT-SEX-01` | 🔲 P2, **founder-parked** | **An honest null** — no formula we hold reads it |
-| `ZONE-BAND-01` | ⏸️ blocked on data | Re-open trigger: ≥20 users × ≥10 HR-bearing analyses |
-| `R26` background load | 🔲 W5 | ⚠️ P-05c's cross-training veto touched this — declared data beats step-count inference |
-| `R27` / ENGINE-03 cycle | ⛔ **blocked** | No menstrual type in `@capgo/capacitor-health`. **Contested science *and* missing data** |
+| **P-16** base-build on-ramp | 🟢 Board: CORRECT as a two-stage shape · **SLT: not for October** | 8 amendments. ⚠️ **Needs a date or it becomes another item §111 names and nobody builds** |
+| **P-17** RED-S / energy availability | 🔴 **Safety item, not a feature** | The one third of the "Sims pattern" that is real. Data question first |
+| `S111-SUBFLOOR-VOLUME-01` | 🔴 P0 | **Blocked only on the founder sending `docs/runbooks/charity-volume-question.md`.** My half is done |
+| `ULTRA-LR-ADEQUACY-01` | 🟡 | Ultras have **no long-run adequacy check at all**. ⚠️ 50K/100K read 100% fit-for-purpose, which may mean the measurement cannot see it |
+| `LOPSIDED-ORDER-01` | 🔴 | §52's third remedy evaluates in the wrong order. **Board confirmed exempt — a defect fix, no sitting needed** |
+| `S112-HAZARD-01` | ⏸️ | Unmeasurable — §112 has never fired |
+| `INPUT-SEX-01` | 🔲 founder-parked | **An honest null.** No formula we hold reads it |
+| `ZONE-BAND-01` · `R27`/ENGINE-03 | ⏸️/⛔ | Blocked on data. R27 additionally on **contested science** |
 
-🔴 **The category's headline:** §111 names a base-building plan as its remedy and §57
-makes it structurally impossible. Measured — an 8 km/wk runner reaches 18 in 11 weeks and
-the acute step into week 1 goes **+50% → 0%**.
+🔴 **Open and unresolved:** the injury cap is functioning as an **admission mechanism** — a healthy
+8 km/wk runner is refused while their knee-history twin is admitted. §111's *second* recorded
+inversion, recorded in §80 Am.2, and it needs §111.
+⚠️ **Ten instruments that would change prescription are on record as built, measured and rejected.
+An eleventh is forbidden without adherence or injury data.**
 
----
-
-## 🔬 Engine governance & verification · **6 items**
-
-*Proving the engine does what the constitution says. No board; this is mine.*
+## 🔬 Engine governance & verification · 6
 
 | Item | State | Note |
 |---|---|---|
 | `SWEEP-AGE-01` | 🔴 | Sweep pins `age: 35`, so `MASTERS_AGE_THRESHOLD` (45) is never crossed |
 | `SWEEP-INJURY-01` | 🔲 | `'Plantar fasciitis'` still unswept |
-| `GRID-EARLY-ONSET-01` | 🔲 | |
-| `RUBRIC-GAPS-01` | 🔲 | The fit-for-purpose rubric's own blind spots |
-| `RACE-KEY-TWO-OWNERS-01` | 🟡 P3, **founder decision** | Two `raceDistanceKey` functions, different bucket boundaries |
-| `FLEET-INVALID-DEBT-02` | 🔲 P3 | Opt-in refresh for a real runner on an invalid plan |
+| `GRID-EARLY-ONSET-01` | 🔵 | ADR-021's early-onset cell — **0 of 45,776 corpus plans reach it** |
+| `RUBRIC-GAPS-01` | 🔵 | Our own measurement's negative space. ⚠️ **No adherence or dropout data exists at all** |
+| `RACE-KEY-TWO-OWNERS-01` | 🟡 founder decision | Two `raceDistanceKey` functions, different boundaries. Latent, not live |
+| `FLEET-INVALID-DEBT-02` | 🔲 | Opt-in refresh for a real runner on an invalid plan |
 
-⚠️ **This category is where green ticks have hidden holes before** — a sweep that generated
-zero plans, a grid that could not express the cohort it measured. It is not optional work.
-
----
-
-## 🧭 UX & flows · **18 items**
-
-*What happens, in what order. SLT owns build/don't-build; no coaching board unless prescription changes.*
+## 🧭 UX & flows · 15
 
 | Item | State | Note |
 |---|---|---|
-| **P-02** modify-plan sheet | 🔲 **L — biggest build in the set** | ⚠️ Ships **without** the intensity row (vetoed). Supersedes `R22`, absorbs parts of `R21`/`R20` |
-| **P-15** the refusal gains an action | 🔴 **October deliverable** | No engine change, no board. Today we refuse and offer nothing |
-| **P-05** onboarding (3 surviving parts) | 🔲 | (a) plan-length on tiles ✅ unblocked · (b) nameless-runner fallback · (c) cross-training ❌ **vetoed** |
+| **P-15** the refusal gains an action | 🔴 **October deliverable** | No engine change, no board. **Today we refuse and offer nothing** |
+| **P-02** modify-plan sheet | 🔲 **L, biggest build** | Ships **without** the intensity row (vetoed). Supersedes `R22`, absorbs parts of `R21`/`R20` |
+| **P-04** zone-compliance block | 🔲 | **Now unblocked — P-01 shipped.** ⚠️ Its PAID tier needs your confirmation |
+| **P-05** onboarding (2 parts left) | 🔲 | (a) plan-length on tiles, **unblocked and XS** · (b) nameless-runner fallback · (c) cross-training **vetoed** |
 | **P-06** plan reveal sequence | 🔲 | Card stack + annotations. Updates `FIRSTRUN-MOMENTS-01` |
-| **P-08** code entry | 🔲 **split** | (a) placement conflict with `GTM-CHARITY-08` is P1 · (b) referral codes P3 |
-| **P-10** cold-start sweep | 🔲 | Dead code to delete + the **web-user connect gap** |
+| **P-08** code entry | 🔲 **split** | (a) placement conflicts with `GTM-CHARITY-08` — **P1, October** · (b) referral codes P3 |
+| **P-10** cold-start sweep | 🔲 | Dead code + the **web-user connect gap** |
 | **P-12** profile plan card | 🔲 | State what you have before what you don't |
 | **P-14** review prompt | 🔲 | We have **neither** half. (a) is one row |
-| `FIRSTRUN-MARATHON-01` | 🔴 sat 2026-09-18 | The first-time marathoner is the product |
-| `PLAN-NOTE-PLACEMENT-01` | 🔲 P2 | Does the rationale belong at the top of Plan? **The teardown independently agreed it might not** |
-| `PLAN-CONCURRENCY-01` | 🔲 P3, founder-parked | Plans are archive-and-overwrite |
-| `POSTRUN-PLAN-FEEDBACK-01` | 🔲 parked | SLT: "don't build; decide, then audit, then say it" |
-| `POST-RUN-03` | 🔲 W4 | Rich-media zone preview on the push |
-| `POST-RUN-REFRAME-02` | 🔲 W3 | Voice memo input |
-| `AI-DEPTH-09` | 🔲 deferred indefinitely | Coach chat |
-| `R21` strength sessions | 🔲 | ⚠️ **Three entries describe parts of one feature** — this, P-02's row, and "Supplementary session slots" |
-| `R22` blockout days | 🔲 → **superseded by P-02** | And its **PAID tag is overturned** — accuracy is free |
-| `R24` multi-race | 🔲 L | Additive `meta.races[]` |
+| `FIRSTRUN-MARATHON-01` | 🔴 | The first-time marathoner is the product |
+| `PLAN-NOTE-PLACEMENT-01` | 🔲 SLT-parked | Does the rationale belong at the top of Plan? The teardown independently agreed it might not |
+| `MAINT-LABEL-UTILITY-01` | 🔲 SLT-gated | 100% of time-target marathons read `maintenance`; correct, and tells the runner nothing |
+| `PLAN-CONCURRENCY-01` · `POSTRUN-PLAN-FEEDBACK-01` | 🔲 parked | Founder-parked / SLT "decide, then audit" |
+| `POST-RUN-03` · `POST-RUN-REFRAME-02` · `AI-DEPTH-09` | 🔲 | Gated on APNs / a voice vendor / deferred indefinitely |
+| `R18` · `R21` · `R22` · `R24` · `R26` | 🔲 LATER | ⚠️ **`R21`, P-02's strength row and "Supplementary session slots" are three descriptions of ONE feature** |
 
----
-
-## 🎨 UI & design system · **5 items**
+## 🎨 UI & design system · 4
 
 | Item | State | Note |
 |---|---|---|
-| **P-01** semantic colour | ✅ **SLT: BUILD, resolution A, before October** | ⚠️ Threshold is ratified (`ZONE_DRIFT_ABOVE_CEILING_PCT = 20`) — **no new board sitting needed** |
-| **P-03** pace ceiling | 🔲 **XS — cheapest real win** | ✅ **Proven display-only**: 656 sessions transformed, **0 non-easy altered** |
-| **P-04** zone-compliance block | 🔲 **highest differentiation** | Needs P-01. ⚠️ Its **PAID tier is flagged for your confirmation** |
-| **P-13** depth + gate + illustration | ✅ **SLT: SPLIT** | (a)+(b) engineering; (c) one piece, after P-01 |
+| **P-13(c)** illustration style | 🔲 **your call** | SLT: commission ONE piece, after P-01. **P-01 has shipped, so this is unblocked** |
 | **P-11** launch screen | 🔲 P3 | Gated on footage licensing |
+| **P-04**'s render | — | Counted under UX; the data and tokens now exist |
+| Verdict labels + `saved` state + disclosure line | ⚠️ **awaiting your sign-off** | Three strings shipped in voice and flagged (§4A) |
 
-🔴 **A BANNED COLOUR IS LIVE IN THE PRODUCT.** `GeneratingCeremony.tsx:265` renders
-`rgba(91,192,190, 0.14)` = **`#5BC0BE`**, the retired teal, in the shimmer every runner
-sees. The pre-commit hook blocks the **hex** form and has no rgba rule, so it walked
-straight past. **That is P-13(b)'s evidence, and it moves it from hygiene to a
-demonstrated guard failure.** 17 of the 26 rgba instances are the palette at alpha; 6 are
-legitimate scrims.
-
----
-
-## ✍️ Brand, voice & copy · **3 items**
-
-*Every one needs your sign-off.*
+## ✍️ Brand, voice & copy · 3
 
 | Item | State | Note |
 |---|---|---|
-| **Copy patterns** (7) | ✅ **SLT: approve at pattern level** | ⚠️ **The zero case needs your words** — must carry a cause or an action, never a bare count |
-| **P-07** coach register | 🔴 **DON'T BUILD** | Wood's kill mandate. **Paid DHTB register ruled out permanently** |
-| `R19` coaching tips → Supabase | 🔲 **STAYS PARKED** | ⚠️ I claimed P-07 unblocked it. **It does not, because P-07 is not being built** |
-| `BRAND-MAINT-LABEL-01` | 🟡 P2 | 4 of 5 marathon charity personas read `maintenance` |
+| **The zero case** (P-04) | ⚠️ **needs your words** | *"None held the zone this week"* alone is a scold. SLT shape: **carry a cause or an action, never a bare count** |
+| Three flagged strings | ⚠️ **needs sign-off** | The two verdict labels, the `saved` state, the Health-connect line |
+| ~~`P-07`~~ · ~~`R19`~~ | 🔴 **closed** | SLT: don't build. **R19 stays parked — it is NOT unblocked** |
 
----
-
-## 💰 Commercial & monetisation · **6 items**
+## 💰 Commercial & monetisation · 6
 
 | Item | State | Note |
 |---|---|---|
-| **P-09** paywall + exit offer | 🔲 **BLOCKED** | ⚠️ Blocked on `TIER-TRIAL-CONFIDENCE-01`. Our annual is **£1.15/wk vs their £1.54** — cheaper already |
-| `TIER-TRIAL-CONFIDENCE-01` | 🔲 P2 → **now blocking** | The 14-day trial is **not literally full access** |
-| `GTM-FREE-HOOK-01` | 🔲 P2 | The free tier's only AI touchpoint is unreachable by those meant to convert |
-| `TT-PRICING-CLAIM-01` | 🔲 P2 | `/pricing` sells a projection absent on **58%** of plans |
-| `TT-FREE-BENCHMARK-01` | 🔲 P2 | A free runner is prescribed a benchmark they cannot apply |
-| `FIN-APPLE-COMMISSION-01` | 🔲 P2 | Apple's cut modelled nowhere — every unit-economics number is 15% optimistic |
+| `TIER-TRIAL-CONFIDENCE-01` | 🔲 **blocking** | The 14-day trial is **not literally full access**. Blocks P-09's timeline copy |
+| **P-09** paywall + exit offer | 🔲 | Our annual is **£1.15/wk against their £1.54** — cheaper already, and we don't say so |
+| `GTM-FREE-HOOK-01` | 🔲 | The free tier's only AI touchpoint is unreachable by those meant to convert |
+| `TT-PRICING-CLAIM-01` | 🔲 | `/pricing` sells a projection absent on **58%** of plans |
+| `TT-FREE-BENCHMARK-01` | 🔲 | A free runner is prescribed a benchmark they cannot apply |
+| `FIN-APPLE-COMMISSION-01` | 🔲 | Apple's cut modelled nowhere — every unit-economics number is 15% optimistic |
 
-⚠️ **A live tension across this category and UI:** P-04 being PAID means **the free tier
-states the thesis and never scores it.** The SLT reads scoring as richness; it is close
-enough to *"gate richness, never access"* that you should confirm rather than inherit it.
+## 📣 GTM & charity launch · 5 — October-dated
 
----
+`GTM-CHARITY-08` (mint + field-test 500 codes; **conflicts with P-08's placement**) ·
+`GTM-CHARITY-05` (admin views cannot see grants — 500 comped runners read as free) ·
+`GTM-CHARITY-06` (no per-partner reporting; **one** analytics event exists) ·
+`GTM-CHARITY-07` (deletion returns a claimed code to the pool) · `GTM-CHARITY-09` (parked)
 
-## 📣 GTM & charity launch · **5 items — October-dated**
-
-| Item | State | Note |
-|---|---|---|
-| `GTM-CHARITY-08` | 🔲 P1 | Mint + field-test 500 codes. ⚠️ **Conflicts with P-08's placement proposal** |
-| `GTM-CHARITY-05` | 🔲 P1 | `admin_user_tiers` cannot see grants — 500 comped runners read as free |
-| `GTM-CHARITY-06` | 🔲 P1 | No per-partner reporting; **one** analytics event exists |
-| `GTM-CHARITY-07` | 🔲 P2 | Account deletion returns a claimed code to the pool |
-| `GTM-CHARITY-09` | ⏸️ **founder-parked** | Partner FAQ |
-
----
-
-## ⚖️ Legal, privacy & data · **5 items**
+## ⚖️ Legal, privacy & data · 2
 
 | Item | State | Note |
 |---|---|---|
-| `LEGAL-COUNSEL-01` | 🔴 P1 **FOUNDER** | Two hours before October. **The SLT stated it could not rule on this** |
-| `LEGAL-PRIVACY-01` | 🔴 P1 | Policy understates what goes to Anthropic; omits Resend. **Blocking of the three** |
-| `ENRICH-PII-MINIMISE-01` | 🟡 P1 | Stop sending the name. ⚠️ **Sequence BEFORE the policy rewrite** |
-| `CONSENT-DISCLOSURE-01` | 🟡 P1 | One line at Health-connect, **not** a consent screen |
-| `SIGNOUT-TOKEN-RESIDUAL-01` | ⏸️ P3 accepted | No action |
-
----
-
-## 🔧 Infrastructure & ops · **7 items — mostly founder actions, no code**
-
-| Item | State | Note |
-|---|---|---|
-| `OPS-VERCEL-PLAN-01` | 🔴 **P0 BLOCKER** | Hobby is non-commercial and we sell a subscription — **already out of compliance** |
-| `OPS-SUPABASE-PLAN-01` | 🔴 **P0 BLOCKER** | Breaks at ~250–320 runners; **no backups at all** |
-| `OPS-ANTHROPIC-CREDIT-01` | 🔲 P1 | At zero balance every AI surface silently degrades for all 500 at once |
-| `OPS-AI-SPEND-01` | 🔲 P2 | No call site reads `response.usage` |
-| `OPS-AI-FAILURE-ALERT-01` | 🔲 P2 | Eleven of twelve AI routes fail silently to the operator too |
-| `DEPLOY-QUOTA-01` | 🔴 founder | 100 deploys/day, **hit** |
+| `LEGAL-COUNSEL-01` | 🔴 **P1 FOUNDER** | Two hours before October. **The SLT stated it could not rule on this** |
 | `STRAVA-APP-INACTIVE-01` | 🔲 external | Founder action at Strava |
 
+✅ **Three of five shipped today** — `ENRICH-PII-MINIMISE-01`, `LEGAL-PRIVACY-01`,
+`CONSENT-DISCLOSURE-01`, in that order because the order was load-bearing.
+
+## 🔧 Infrastructure & ops · 7 — mostly founder actions, no code
+
+`OPS-VERCEL-PLAN-01` 🔴 **P0 — Hobby is non-commercial and we sell a subscription** ·
+`OPS-SUPABASE-PLAN-01` 🔴 **P0 — breaks at ~250–320 runners, no backups at all** ·
+`OPS-ANTHROPIC-CREDIT-01` (at zero, every AI surface degrades for all 500 at once) ·
+`OPS-AI-SPEND-01` · `OPS-AI-FAILURE-ALERT-01` · `DEPLOY-QUOTA-01` · `COHERENCE-SELECT-01` ⛔
+
+## 🐛 Live defects · 0
+
+✅ **`REFRAME-NOTE-LOSS-01` shipped today.** It was the only item where a real user lost something
+they had created. **Nothing in this category is open.**
+
 ---
 
-## 🐛 Live defects · **1 item**
+## What the shape says now
 
-| Item | State | Note |
-|---|---|---|
-| `REFRAME-NOTE-LOSS-01` | 🔴 **P1** | **A runner writes a reflection, the AI call fails, and their words are thrown away.** The only item here where a real user loses something they created |
+1. **Both P0s are infrastructure, and neither is a line of code.** Vercel and Supabase. Compliance
+   and capacity failures that arrive with the cohort.
+2. **17 of 57 are October-dated and founder-owned** — GTM, legal, ops. The teardown added nothing
+   to the nearest deadline.
+3. **The whole UI category is now either unblocked or awaiting your signature.** P-01 shipped, so
+   P-04 and P-13(c) are free to move; the only thing standing between them and a build is four
+   copy decisions.
+4. **P-16 still has no date.** The SLT warned explicitly that without one it becomes another item
+   §111 names and nobody builds.
 
----
-
-## What the categories say when you stand back
-
-**Three numbers worth noticing.**
-
-1. **Two P0 blockers are infrastructure, not product** — Vercel and Supabase. Neither is a
-   line of code. Both are compliance or capacity failures that arrive with the cohort.
-2. **Legal + GTM + Ops = 17 of 73 and almost all of it is October-dated and founder-owned.**
-   The teardown added 17 proposals to a backlog whose nearest deadline is untouched by any
-   of them.
-3. **Engine + governance = 22 of 73**, and the single most consequential item in the whole
-   backlog (P-16) **cannot be measured until it is built.**
-
-**One thing the categorisation makes visible that the flat list did not:** ⚠️ **`R21`,
-P-02's strength row, and "Supplementary session slots" are three descriptions of one
-feature**, filed at three different times, and they sit in the same category. That is how
-`CA-08` once looked like it had dropped out.
+⚠️ **What this count does not prove.** It is a marker parse plus a registry check, corrected by
+hand where I recognised a cross-reference. A row marked open that never carried a status glyph
+would still be missed — `R18`/`R21`/`R22`/`R24`/`R26` were found only because I knew they existed.
+And **nothing here has run on a device.**

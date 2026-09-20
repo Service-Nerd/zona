@@ -1393,7 +1393,7 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 | `MARATHON-VOLUME-GATE-01` | **Done** | Coaching Board sat today — CORRECT WITH AMENDMENT |
 | `FIRSTRUN-MARATHON-01` | **🔴 SAT 2026-09-18** (challenged by the founder — my deferral was wrong) | The batch review re-scoped it (killed the "wow" framing, set touchpoint 7 as the priority). ⚠️ **Touchpoint 7's actual intervention needs its own sitting when scoped** — it is #7 in the queue, not immediate, and a sitting now would be ruling on a brief that does not exist yet |
 | **§44/§52 `block` tier** | **🔴 SAT BELOW** | Date-critical, Hutchinson required it before October |
-| **`FOUNDATION-DECIDE-LATER-01`** | **🔴 SAT BELOW** | The fix has two forms and choosing between them is a product call |
+| ~~**`FOUNDATION-DECIDE-LATER-01`**~~ | ✅ **SHIPPED** — registry row exists; this row was stale | The fix had two forms and choosing between them was a product call. Fix A shipped: the button is gone. |
 | **`GTM-CHARITY-09`** | **🔴 SAT BELOW** | *"Not necessarily a build"* — somebody has to decide which |
 
 > ⚠️ **I DEFERRED `FIRSTRUN-MARATHON-01` AND THE FOUNDER OVERRULED ME, CORRECTLY.** My reason — *"it is #7 in the queue"* — confused the **shipping order** with the **priority**. It is the P0. The real obstacle was that no brief existed, and **writing the brief was my job, not a blocker**. Research done, sitting below.
