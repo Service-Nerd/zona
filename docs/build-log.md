@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-20 - M4-NOT-A-REFUSAL-01 - the plan we told everyone we refused
+**Shipped:** a test persona labelled a refusal for months turns out to receive a perfectly good plan.
+
+**Dev learning:** The founder asked why one plan in the review was an exception, saying he expected that profile to be our most common user: a busy person, three days a week, wanting a time. I went to check and the answer was that we do not refuse them at all. Our refusal error carries two modes and only one of them is a refusal. The other is a confirmation prompt: the runner is told the honest thing, clicks that they understand, and gets their plan. The persona had been written on the belief that it was a hard refusal, with a comment saying so, so every review round printed a red mark and every board sitting reasoned about someone we turn away who we do not turn away.
+
+**The part that stings is that I had already found this exact bug that morning,** in the population model, where two and a half thousand confirmation prompts were being counted as refusals. I fixed it there and did not go looking for the same pattern anywhere else. It was sitting in the corpus the board actually reads.
+
+**Fixing it took the corpus to zero refusal coverage,** because that persona was the only one anyone believed was refused. So a real one went in: a marathon off an eight kilometre a week base, a genuine block that no amount of clicking will clear.
+
+**And the mislabel had been hiding something.** The moment the plan started generating, the quality audit flagged a lopsided week in it and the fitness harness flagged that the refusal had flipped. Both caught it within seconds. Neither could ever have seen it while the corpus insisted the plan did not exist.
+
+---
+
 ## 2026-09-20 — COACHING-RULINGS-REGISTER-01 · the board was not changing its mind
 **Shipped:** a standing register of coaching rulings, a four-step sitting protocol, and a gate that fails the build when a review round's outcome is never written down.
 
