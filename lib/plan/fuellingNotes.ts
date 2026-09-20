@@ -26,3 +26,25 @@ export const FUELLING_PRACTICE_NOTE =
 /** §24e — the ultra cadence note interpolates a number, so the invariant
  *  matches this PREFIX rather than a whole string. */
 export const ULTRA_FUELLING_PREFIX = 'Fuel every '
+
+/**
+ * §80 Amendment 2 (Coaching Board 2026-09-20) — the unrehearsed-fuelling tail on
+ * the long-run shortfall note.
+ *
+ * ⚠️ WHY A SECOND FUELLING STRING AND NOT `FUELLING_PRACTICE_NOTE`. That one is a
+ * SESSION note: "this run is long enough that fuelling matters, practise it."
+ * This one is a PLAN-level consequence: the race is materially longer than
+ * anything the plan will rehearse, so the fuelling itself is untested. Different
+ * claim, different surface, and collapsing them would make one of the two lie.
+ *
+ * Sims at the sitting: *"Three and a half hours beyond your longest run is a
+ * different problem from being tired, and this cohort's failure mode is
+ * under-fuelling."* The existing tail says the DISTANCE will be new territory and
+ * says nothing about the fuelling.
+ *
+ * ⚠️ PRACTICE, NEVER A NUTRITION PRESCRIPTION — same constraint as
+ * `FUELLING_PRACTICE_NOTE`. No grams, no schedule (ADR-011: we hold no dietary
+ * data).
+ */
+export const LR_SHORTFALL_UNREHEARSED_FUELLING =
+  'That also means your fuelling goes untested past the point your longest run reaches, so practise it on the long runs you do have.'

@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+
+## 2026-09-20 — the note pointed an injury-history runner at the one lever they must not pull
+
+The founder asked for every open coaching-engine item analysed and taken to the board, with one
+hard constraint: we are at 95.9% fit-for-purpose and he does not want it spent.
+
+**Dev.** My list of 16 open engine items was wrong in both directions — five were closed and one I
+had missed. The reason matters: the backlog is not the live engine register, `roadmap.md` is, and
+nothing says so. Checking every ID against the feature registry took ten minutes and removed a
+third of the list.
+
+**Product.** The P1 item was `MARA-LR-LOWBASE-01`. Measuring the interaction it told me to examine
+first produced the thing I did not expect: at the same weekly volume, a knee-history beginner gets
+a 17 km peak long run where a healthy runner gets 26. Same volume. Different long run. So when the
+note told the injury runner *"your weekly volume is what limits it"*, it was not just vague — it
+was **pointing them at the one lever their history says not to pull.**
+
+**AI-building.** The board did not let me fix the plan, and it was right not to. §9's structural
+finding lists ten instruments built and measured, every one trading one defect for another. Willy:
+*"17 km is the correct ceiling and I am not moving it."* The plan was already correct. What was
+wrong was a sentence.
+
+**The honest bit.** Two things I got wrong today. I took the base-build on-ramp to the board this
+morning without an SLT record from the day before that made it unworkable — the refusal throws 94
+lines before the block is composed, so a pre-plan block can never rescue a refused runner. And my
+falsification test failed on its first run, correctly: two arms share one invariant code, so
+asserting on the code cannot tell them apart. Both were caught by reading rather than by a check,
+which is the uncomfortable part.
+
+⚠️ And the thing I could not fix: a healthy 8 km/week runner is refused while their knee-history
+twin is admitted, because the injury cap lowers the peak, which lowers the ratio, which passes.
+**The injury protection is functioning as an admission mechanism.** That stays open.
+
 ## 2026-09-20 - ENVELOPE-BASELINE-01 - a gate that only fails downwards is half a gate
 **Shipped:** the fit-for-purpose rate is now a recorded, diffable baseline instead of a floor, so two review rounds can actually be compared.
 

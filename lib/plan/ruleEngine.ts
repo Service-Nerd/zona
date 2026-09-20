@@ -14,7 +14,7 @@ import {
   formatDate, addDays, parseDateLocal,
 } from './length'
 import { qualityCeilingFor } from './qualityCeiling'
-import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
+import { LR_SHORTFALL_UNREHEARSED_FUELLING, FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './generationConfig'
 // ADR-015 / INV-FMT-001 — `lib/format.ts` is the SOLE owner of every duration a
 // runner reads, and the rule is locked: under 60 minutes reads "45 min", at or
@@ -7682,10 +7682,53 @@ function buildRulePlanOnce(
     // isn't one, and §40 already settled that "the caps do not move". Implying
     // the runner could train their way past it would be the same defect in the
     // opposite direction.
+    // §80 Amendment 2 (Coaching Board 2026-09-20, MARA-LR-LOWBASE-01) — A THIRD
+    // ARM, because the note had two and this cohort falls through both.
+    //
+    // MEASURED at the sitting. Marathon, finish goal, 3 days, `<6mo`, beginner,
+    // 29-week runway. A KNEE-HISTORY runner and a HEALTHY runner at the SAME
+    // weekly volume get different long runs:
+    //
+    //   cwk 12 / 15 / 20 — healthy 26 / 26 / 26 km (62% of race)
+    //                    — knee    17 / 17 / 19 km (40 / 40 / 45%)
+    //
+    // Same volume, different long run. So weekly volume is DEMONSTRABLY not what
+    // limits the injury cohort — the §12 volume cap is — and the note was telling
+    // them otherwise. McMillan: "a runner told 'your weekly volume is what limits
+    // it' will go and add volume, which is precisely what their knee history says
+    // not to do." Willy, on the identical defect at §80 Am.1: "an injury vector
+    // served as advice."
+    //
+    // ⚠️ THE ARM NAMES NO LEVER, ON PURPOSE — same construction as the cap branch
+    // above (§80 Am.1, McMillan). §40c says name the lever that would change it;
+    // a runner cannot train past their own injury history inside one build, so
+    // implying they could would be the same defect in the opposite direction.
+    //
+    // ⚠️ PREDICATE REUSED, NOT RESTATED (D-08/D-16). `hasVolumeCappedInjury` is
+    // the documented single owner of "does §12's volume cap apply", and
+    // `volume_constraint_note` already branches on it a few hundred lines below
+    // with the sibling sentence. A second predicate here would be the parallel-
+    // semantics defect this repo keeps paying for.
+    const injuryCapped = hasVolumeCappedInjury(input)
     const why = atTimeCap
       ? 'and this is as far as we take it: the long-run ceiling for this distance is deliberate, not a gap in the plan'
+      : injuryCapped
+      ? 'and your injury history is what limits it: the cap on how fast weekly volume may rise holds the long run down with it, which is the trade we are making on purpose'
       : 'but your weekly volume is what limits it: the long run is sized as a share of the week, and this week cannot carry more'
-    return `Your longest run tops out at ${durationText(peakLrMins)}. For a race you'll likely be moving for around ${durationText(projectedRaceMins)}, and we'd normally want it nearer ${durationText(floorMins)}, ${why}. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.`
+    // §80 Am.2, second half (Sims) — the existing tail is about DISTANCE. Where
+    // the race runs materially longer than the longest rehearsal, the FUELLING is
+    // untested too, and for a first-time, predominantly-female cohort that is the
+    // failure mode that arrives first.
+    //
+    // ⚠️ THRESHOLD DERIVED, NOT CHOSEN. `FUELLING_PRACTICE_MIN_SESSION_MINS` (120)
+    // is §24e's own bar for "long enough that fuelling matters". A gap wider than
+    // that is more than a whole fuelling-relevant session spent in untested
+    // territory. Reusing §24e's constant rather than inventing a second one.
+    const fuellingGapMins = projectedRaceMins - peakLrMins
+    const fuellingTail = fuellingGapMins > GENERATION_CONFIG.FUELLING_PRACTICE_MIN_SESSION_MINS
+      ? ` ${LR_SHORTFALL_UNREHEARSED_FUELLING}`
+      : ''
+    return `Your longest run tops out at ${durationText(peakLrMins)}. For a race you'll likely be moving for around ${durationText(projectedRaceMins)}, and we'd normally want it nearer ${durationText(floorMins)}, ${why}. Expect the last stretch of race day to be new territory; go out slower than feels right and take the walk breaks early rather than late.${fuellingTail}`
   })()
 
   // Compose final values. §23's note wins (more specific) when both trigger.

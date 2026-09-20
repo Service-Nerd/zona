@@ -6683,6 +6683,36 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       }
       const blamesVolume = note.includes('your weekly volume is what limits it')
       const tol = GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS
+
+      // §80 Amendment 2 (Coaching Board 2026-09-20, MARA-LR-LOWBASE-01) — SECOND
+      // ARM OF THE SAME CHECK. The first arm catches the note blaming volume when
+      // the TIME CAP is binding. This catches it blaming volume when the §12
+      // INJURY cap is binding, which was the live case.
+      //
+      // MEASURED: at cwk 12/15/20 a knee-history beginner gets a 17/17/19 km peak
+      // long run where their HEALTHY twin at the same weekly volume gets 26 km.
+      // Same volume, different long run — so volume is not the binding lever, and
+      // the note said it was. §40c requires the note to name what actually binds.
+      //
+      // ⚠️ The predicate matches the PRODUCER's single owner by value, not by a
+      // second copy of the logic: `hasVolumeCappedInjury` is knee || shin_splints
+      // (§12), and `meta.injury_history` carries the runner's raw values. Matching
+      // here is a substring test on the same two keywords because the checker
+      // cannot import the producer (circular — see fuellingNotes.ts's header).
+      const injuries = (plan.meta.injury_history ?? []).map(i => String(i).toLowerCase())
+      const volumeCappedInjury = injuries.some(i => i.includes('knee') || i.includes('shin'))
+      if (blamesVolume && volumeCappedInjury) {
+        violations.push({
+          code: 'INV-PLAN-LR-SHORTFALL-CAUSE',
+          principle_ref: 'CoachingPrinciples §80 Am.2, §40c',
+          severity: 'error',
+          week: 0,
+          message: `Long-run shortfall note blames weekly volume, but the runner has a volume-capped injury history (${injuries.join(', ')}) and §12's cap is what holds the long run down. Telling them volume is the lever points at the one thing their history says not to add.`,
+          actual: `note blames weekly volume; injury_history = ${injuries.join(', ')}`,
+          expected: 'note names the injury cap when a knee or shin-splint history is present',
+        })
+      }
+
       if (blamesVolume && capMins > 0 && peakLrMins > 0 && peakLrMins + tol >= capMins) {
         violations.push({
           code: 'INV-PLAN-LR-SHORTFALL-CAUSE',

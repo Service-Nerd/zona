@@ -4380,6 +4380,66 @@ So the incoherence is not "two ladders disagree with each other" — it is **one
 
 ---
 
+### §80 Amendment 2 — a third arm: the injury cap, and the fuelling nobody rehearsed (Coaching Board 2026-09-20, MARA-LR-LOWBASE-01)
+
+**Ruling: CORRECT WITH AMENDMENT. The PLAN is right; the NOTE was wrong.**
+Record: `docs/decisions/coaching-board-2026-09-20-engine-backlog-review.md`.
+
+**The measurement.** Marathon, finish goal, 3 days, `<6mo`, beginner, 29-week runway, race
+weeks and race sessions excluded:
+
+| `current_weekly_km` | healthy | knee history |
+|---|---|---|
+| **8** | **REFUSED** (§111) | **ADMITTED** — peak 29 km, LR 17 km = **40% of race** |
+| **10** | **REFUSED** | **ADMITTED** — LR 17 km = **40%** |
+| 12 / 15 / 20 | LR 26 / 26 / 26 km = **62%** | LR 17 / 17 / 19 km = **40 / 40 / 45%** |
+| 25 / 35 | 62% | 62% |
+
+**Same weekly volume, different long run.** §12's injury cap is what holds the injury cohort's
+long run down — **not weekly volume.** The note said weekly volume, because it had only two arms.
+
+**The principle.** The long-run shortfall note gains a **third arm**. When the runner has a
+volume-capped injury history (§12: knee or shin splints) and the long-run time ceiling is not
+binding, the note names **the injury cap**, and — like the cap branch of Amendment 1 — **it names
+no lever.** A runner cannot train past their own injury history inside one build, and §40c's
+"name the lever" becomes a harm when there is none: McMillan, *"a runner told 'your weekly volume
+is what limits it' will go and add volume, which is precisely what their knee history says not to
+do."* Willy, on the identical defect one amendment earlier: *"an injury vector served as advice."*
+
+**Second half (Sims).** The existing tail warns about **distance**. Where the projected race
+duration exceeds the peak long run by more than `FUELLING_PRACTICE_MIN_SESSION_MINS`, the note
+also says the **fuelling** is untested. The measured case is 2h 16 of rehearsal against 5h 38 of
+racing — **three and a half hours of unrehearsed fuelling** for a first-time, predominantly
+female, 20–29 cohort whose documented failure mode is under-fuelling. ⚠️ Practice, never a
+nutrition prescription (ADR-011).
+
+⚠️ **THE THRESHOLD IS DERIVED, NOT CHOSEN, AND NO NEW NUMERIC WAS ADDED.**
+`FUELLING_PRACTICE_MIN_SESSION_MINS` (120) is §24e's own bar for *"long enough that fuelling
+matters"*. A gap wider than that is more than one whole fuelling-relevant session spent in
+untested territory. Inventing a second constant for the same idea would be D-16.
+
+🔴 **WHAT THIS AMENDMENT DELIBERATELY DOES NOT DO.** It changes **no prescription**. The injury
+cap, §24's bar, §111's ratio and the long-run sizing are all untouched, and that is a ruling, not
+an omission: §9's Recorded structural finding lists **ten instruments built and measured, every
+one trading one defect for another** (§114 at 45% took LONG-RUN-SHORT from 0 → 88.7%; §45's
+absolute arm at 30% took M2's net build 68% → 44%). **An eleventh is forbidden without adherence
+or injury data.** Willy: *"17 km is the correct ceiling and I am not moving it."*
+
+⚠️ **AND THE ADMISSION INCONSISTENCY STAYS OPEN, RECORDED HERE BECAUSE IT HAS NOWHERE ELSE TO
+LIVE.** A healthy 8 km/week runner is **refused** while their knee-history twin is **admitted** —
+because the injury cap lowers the peak, which lowers §111's ratio, which passes. **The injury
+protection is functioning as an admission mechanism.** This is §111's *second* recorded inversion
+(the first is in its own Recorded Limitation). The board cannot close it without touching §111,
+which is `S111-SUBFLOOR-VOLUME-01`, which the SLT has parked behind asking the charity what their
+runners actually run.
+
+**Enforcement.** `INV-PLAN-LR-SHORTFALL-CAUSE` gains a second arm: a note blaming weekly volume
+while a knee or shin-splint history is present is an `error`. Falsification-tested —
+`lib/plan/lrShortfallCause.test.ts` proves it goes RED on the pre-amendment note and stays green
+on the live one.
+
+---
+
 ## 81. Structured sessions are exempt from the weekday cap — and the plan says when they don't fit
 
 **Coaching Board MWM-02, 2026-09-03.**
