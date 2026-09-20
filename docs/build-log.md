@@ -9,7 +9,7 @@ it specific, no polish. The content system adds the voice.
 
 
 
-## 2026-09-20 — GTM-CHARITY-05/06/07: the tier rule had a fourth copy, and it was in SQL
+## 2026-09-20 — GTM-CHARITY-07 (with 05/06): the tier rule had a fourth copy, and it was in SQL
 
 **Dev.** `resolveTier` carries a header comment explaining that the order
 admin → subscription → grant → trial → free once lived in three places and drifted, so it now lives
