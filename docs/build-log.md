@@ -13,7 +13,7 @@ it specific, no polish. The content system adds the voice.
 
 
 
-## 2026-09-20 — Coaching Board batch: four items, and four premises died under measurement
+## 2026-09-20 — S80-VS-S90-PRIORITY-01: Coaching Board batch, and four premises died under measurement
 
 **Dev.** The founder asked why board items were being filed rather than done. The answer was
 embarrassing: I had been treating the Coaching Board as an external body waiting on someone else.
