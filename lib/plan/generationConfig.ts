@@ -1031,6 +1031,28 @@ export const GENERATION_CONFIG = {
   // INTERACTION, which is why it was invisible to both axes for months.
   MIN_KM_PER_TRAINING_DAY: 5,
 
+  // MIN_TRAINING_DAYS_VOLUME_FLOOR — the floor under `daysVolumeCanFill`.
+  //
+  // ⚠️ NOT A NEW COACHING DECISION. This value has been live since R23 as the
+  // literal `3` in `Math.max(3, Math.floor(dayCountKm / MIN_KM_PER_TRAINING_DAY))`
+  // (`ruleEngine.ts`), with its reasoning written directly above it: "never
+  // below 3 days: at or under that, §52's low-day rule already owns the shape
+  // and downgrades the plan to maintenance with its own note". Extracted here
+  // under the Configuration Singularity — a coaching numeric living inline in
+  // `lib/plan/*` is the `peakKmByLevel` failure this repo has already paid for,
+  // where 18 numerics sat outside GENERATION_CONFIG and so had no principle,
+  // no `configPrincipleSync` coverage and no coaching-guard hook on edits.
+  //
+  // It is named now because `INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS` needs to
+  // check against it. ⚠️ A CHECKER READING THE PRODUCER'S OWN CONSTANT IS
+  // CORRECT HERE AND WOULD NOT BE IF IT SHARED THE PRODUCER'S PREDICATE:
+  // DELOAD-OWNER-01's lesson is that a checker recomputing `weekN % freq === 0`
+  // cannot catch the producer's copy being wrong. This shares the BOUND, not
+  // the derivation — the defect being caught is a downstream pass ignoring a
+  // floor that was correctly computed, so the floor is exactly the right thing
+  // for both sides to agree on.
+  MIN_TRAINING_DAYS_VOLUME_FLOOR: 3,
+
   // §113 (LONGEST-RUN-GATE-01, Coaching Board 2026-09-18) — the distances whose
   // long run cannot be improvised, and so where a readiness floor applies.
   // 21 km: a half is the shortest race whose long run the engine builds FROM the

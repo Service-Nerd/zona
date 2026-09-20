@@ -1356,8 +1356,55 @@ quotes the real low and high rather than one number wrong for most of the block.
 `verify:parity` IDENTICAL with the note stripped: 654 plans gained a sentence
 and no plan changed a session.
 
-**Config.** No new numeric — it reads `days_available` and
-`MIN_KM_PER_TRAINING_DAY`.
+**Config.** `days_available`, `MIN_KM_PER_TRAINING_DAY` and
+`MIN_TRAINING_DAYS_VOLUME_FLOOR`.
+
+### §18 Amendment 1 — the floor under the cap is named, and the converse of §64 exists *(2026-09-20, S52-LOPSIDED-BOUND-01 artifact 3)*
+
+**No value changes here.** The `3` in `max(3, floor(weeklyKm / MIN_KM_PER_TRAINING_DAY))`
+has been live since R23 with its reasoning recorded beside it: *"never below 3
+days: at or under that, §52's low-day rule already owns the shape and downgrades
+the plan to maintenance with its own note."* It is now
+`GENERATION_CONFIG.MIN_TRAINING_DAYS_VOLUME_FLOOR`, because a coaching numeric
+living inline in `lib/plan/*` is the `peakKmByLevel` failure this repo has
+already paid for — 18 numerics outside the config, so no principle explained
+them, `configPrincipleSync` could not see them and the coaching-guard hook did
+not fire on edits to the file that held them.
+
+**Why it is named now.** The Coaching Board sat on 2026-09-19
+(`S52-LOPSIDED-BOUND-01`, CORRECT WITH AMENDMENT) and recorded that **no
+invariant existed for the converse of §64 and one should**: §64 floors *rest*
+days, and nothing anywhere floored *running* days. Measured: **11.4% of
+injury × fresh-return runners who declare ≥ 4 days get seven consecutive
+build/peak weeks containing two runs**, worst case a knee-history beginner whose
+peak week is 26.0 km of a 30 km week in one session — against §9's own sizing of
+9.6 km, **2.7× the engine's own rule**. Three other cells measured at exactly
+0.0%, so it is an interaction, not a gradient.
+
+**The rule.** A non-race, non-deload, non-foundation week must deliver at least
+`min(days_available, MIN_TRAINING_DAYS_VOLUME_FLOOR)` running days.
+
+**⚠️ It checks the PRODUCER'S FLOOR, not `days_available`, and the first cut of
+this got it wrong.** Checking the declared count directly fired on **45.1% of
+the sweep (6,435 of 14,253 plans)**, because falling below `days_available` is
+*designed* — that is this section's own subject, it is stated to the runner by
+the frequency note, and a warn at 45% would be noise sitting on top of correct
+work. What is a defect is falling below the floor the producer computed **for
+itself** and a later pass then ignored: the ADR-022 injury trim floors at
+`max(1, …)` and never consults `daysVolumeCanFill`. A floor computed upstream
+and discarded downstream, the same shape as §113 Amendment 1.
+
+**⚠️ Severity is `warn` and must stay there until the instrument lands.** The
+board built and measured the candidate fix after the sitting and it **failed**
+Willy's binding condition — week 14 rose 30 → 34 km, over the ADR-022 injury
+ceiling. The remaining volume cannot support more runs without either more
+volume (forbidden) or a smaller long run (**§80's specificity ramp vs §90's
+injury ceiling, still unruled**). An error would refuse to generate for exactly
+the cohort the product is least able to turn away. §34's honest-residual
+pattern: **visible, counted and declared beats silent.** Measured at
+**0.9% (129 of 14,253 plans)** on the property sweep the day it shipped.
+
+**Enforced by** `INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS`.
 
 **Enforced by** `planQuality`'s `DAYS-SHORT` predicate, which now fires only on
 an **undeclared** shortfall. ⚠️ That relaxation raises the measured rate by

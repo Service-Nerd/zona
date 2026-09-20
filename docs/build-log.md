@@ -14,6 +14,48 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — S52-COMPOSITION-INV-01: my first version of the check fired on 45% of plans, and it was the check that was wrong
+
+**Dev.** §64 says every week needs a rest day. Nothing anywhere said a week needs
+*running* days. So a runner who told us four days could get two, for seven consecutive
+build weeks, and every layer passed: §64 is satisfied (five rest days is not "no rest
+day"), §52 is satisfied once the plan classifies maintenance, and §1's session-count
+denominator just shrinks along with it. The Coaching Board found this on 2026-09-19 and
+recorded the missing invariant as owed. This is it.
+
+**The honest bit.** I wrote it to check `days_available` — the obvious reading, and the
+one the board's own note uses — and it fired on **45.1% of the sweep, 6,435 of 14,253
+plans**. Not a defect count. §18 *deliberately* declines to spread thin volume across
+days it cannot fill, on the reasoning that "a runner on 12 km a week who selects seven
+days gets seven ~1.7 km jogs, and no session in the week does anything". §18 says in
+its own text that the prescription is correct. I had written a warn that fires on half
+of all plans for doing the right thing, which in this repo is a guard with a shelf life
+measured in days before someone switches it off.
+
+The real defect is narrower and better: the producer computes its own floor,
+`max(3, …)`, and the ADR-022 injury trim then floors at `max(1, …)` and never consults
+it. **A floor computed upstream and discarded downstream** — the third instance of that
+exact shape in a week. Checking against the producer's floor instead: **0.9%, 129
+plans.**
+
+**AI-building.** The re-scoped version needed a named constant, which looked like it
+would breach the one condition the board could not meet — they deferred the instrument
+precisely because every candidate needed a new number. It does not: the `3` has been
+live since R23 as a literal, with its reasoning written beside it. Naming it is the
+Configuration Singularity, not a new decision, and `verify:parity` came back **IDENTICAL
+across 5,940 cases**, which is the proof rather than the claim. **Two hours ago I flagged
+an IDENTICAL parity run as blind. Here it is load-bearing.** The difference is whether
+the change could have altered output at all: a value-preserving extraction and a
+non-mutating validator could not, so identical is confirmation. Same result, opposite
+evidential weight, and the distinction is the grid — not the word.
+
+**Product.** Nothing changes for any runner today. What changes is that the residual is
+**counted**: 129 plans where the engine drops below its own floor, visible on every
+sweep instead of being rediscovered by someone reading a plan. The fix that would
+actually remove them is still deferred, and honestly so — the board built it, measured
+it, and it pushed week 14 from 30 km to 34 km, straight through the injury ceiling
+ADR-022 exists to hold. The open question underneath is **§80's specificity ramp versus
+§90's injury ceiling, which nobody has ever ruled on.**
 
 ## 2026-09-20 — LOPSIDED-ORDER-01: I filed the wrong site, the wrong count, and the reason was a comment
 

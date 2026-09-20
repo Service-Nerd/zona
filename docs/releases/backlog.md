@@ -3381,7 +3381,29 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 >
 > ⚠️ **INSTRUMENT DEFERRED, and the reason is honest: every candidate reachable without a NEW NUMBER is blocked.** More easy runs at the configured 4 km easy floor pushes the week above the injury ceiling, which Willy's binding condition forbids; a sub-floor easy run needs a new constant the board declined to pick on argument alone. **Binding on any fix:** must not raise the injury ceiling · must not re-open `LR-DELOAD-RESUME-01` · measured on the **property sweep**, not a hand-rolled grid · `measure:fitness` before and after. **The standing "do not add a third per-week §52 bound" instruction SURVIVES — a floor on composition is a different object.**
 >
-> 🔴 **NO INVARIANT EXISTS AND ONE SHOULD.** §64 floors **rest** days; there is **no converse anywhere in the constitution**, so nothing checks that a week delivers the running days the runner declared. 17.2% of ALL plans deliver at least one week short of `days_available`.
+> ✅ **THE MISSING INVARIANT IS SHIPPED 2026-09-20** — artifact 3 of the 2026-09-19 ruling.
+> `INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS` (§18 Amendment 1), `warn`, **0.9% (129/14,253)**.
+> ⚠️ **THE FIRST CUT CHECKED `days_available` AND FIRED ON 45.1% (6,435/14,253)** — because
+> falling below the declared count is **designed**: §18's `daysVolumeCanFill` declines to spread
+> thin volume across days it cannot fill, never fires above 40 km/week, fires on 65% of runners
+> under 20, and is already stated to the runner by the frequency note. **The board's own 17.2%
+> figure was measuring that same designed behaviour**, not the defect. Re-scoped to the
+> **producer's own floor** (`max(3, …)`, which the ADR-022 trim ignores by flooring at
+> `max(1, …)`). ⚠️ **It needed no new constant after all** — the `3` has been live since R23 as a
+> literal and is now `MIN_TRAINING_DAYS_VOLUME_FLOOR`; `verify:parity` IDENTICAL across 5,940
+> cases proves the extraction is value-preserving. Liveness: proven wakeable (128/131).
+> ⚠️ **THE P0 ITSELF IS NOT FIXED — IT IS NOW COUNTED.** This observes the residual; it does not
+> remove it. The item stays open on the instrument.
+
+> 🔴 **S80-VS-S90-PRIORITY-01 — the actual blocker, and it has never been ruled.** *(P1, Coaching
+> Board, filed 2026-09-20.)* The board's own words: *"the remaining volume genuinely cannot
+> support more runs without either more volume (forbidden) or a smaller long run."* The second
+> option is a collision between **§80's specificity ramp** (the long run must grow toward race
+> demand) and **§90's injury ceiling** (the delivered week must not exceed the cap), and **nobody
+> has written down which wins.** Every deferred instrument on this item routes through that
+> question. ⚠️ **Do not attempt another composition fix before it is answered** — the board
+> already built and measured the one candidate that avoids it and it breached the ceiling
+> (wk14 30 → 34 km).
 >
 > **Baseline §52 state for reference:** 2,531 breaches / 597 plans (15.5%), **100% warn, 0 error** (all maintenance-classified), distribution continuous and unimodal at 65–69%, worst 87%.
 >

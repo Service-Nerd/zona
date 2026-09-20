@@ -158,6 +158,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-LR-FLOOR-NOT-ROUNDING',
   'INV-PLAN-ULTRA-NO-PACE-SEGMENTS',
   'INV-PLAN-WEEK-HAS-REST-DAY',
+  'INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS',
   'INV-PLAN-COVERS-RACE-DATE',
   'INV-PLAN-RACE-ON-RACE-DAY',
   'INV-PLAN-RECALIBRATION-HAS-SESSION',
@@ -907,6 +908,95 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         actual: 0,
         expected: '>= 1 rest day per week',
       })
+    }
+
+    // INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS — the converse of §64, and until
+    // now the constitution had only one side of it.
+    //
+    // §64 floors REST days: no week may be seven-on. Nothing anywhere floored
+    // RUNNING days, so a week could deliver two runs to a runner who told us
+    // they had four, and every layer passed: §64 is satisfied (five rest days
+    // is not "no rest day"), §52 is satisfied once the plan is classified
+    // maintenance, and §1's session-count denominator simply shrinks with it.
+    //
+    // WHY IT MATTERS, measured (Coaching Board 2026-09-19, S52-LOPSIDED-BOUND-01,
+    // record in docs/decisions/): 11.4% of injury x fresh-return runners who
+    // declare >= 4 days get SEVEN CONSECUTIVE build/peak weeks containing TWO
+    // runs. The worst case is a knee-history beginner on 30 km/week whose peak
+    // week is 26.0 km in a single session — 87% of the week, against §9's own
+    // sizing of 9.6 km, which is 2.7x the engine's own rule. Three other cells
+    // measured at exactly 0.0%, so this is an interaction and not a gradient.
+    //
+    // ⚠️ THIS IS AN OBSERVATION, NOT THE FIX, AND THE DISTINCTION IS THE POINT.
+    // The board built and measured the candidate instrument after the sitting
+    // (two easy runs, easy floor yielding to MIN_SESSION_DISTANCE_ABSOLUTE_KM)
+    // and it FAILED Willy's binding condition: week 14 rose 30 -> 34 km, over
+    // the injury ceiling ADR-022 exists to hold. The remaining volume genuinely
+    // cannot support more runs without either more volume (forbidden) or a
+    // smaller long run (§80's specificity ramp vs §90's injury ceiling, which
+    // nobody has ruled on). So the instrument is deferred on measurement, not
+    // on caution — and this invariant makes the residual COUNTED rather than
+    // discovered again by someone reading a plan.
+    //
+    // ⚠️ SEVERITY IS `warn` AND MUST STAY THERE UNTIL THE INSTRUMENT LANDS.
+    // An error would refuse to generate for exactly the cohort the product is
+    // least able to turn away — a first-time charity marathoner with a knee
+    // history — for a shape the engine has no ratified way to avoid. §34's
+    // honest-residual pattern: visible, counted and declared beats silent.
+    //
+    // ⚠️ IT CHECKS THE PRODUCER'S OWN FLOOR, NOT `days_available`, AND THE
+    // FIRST CUT GOT THIS WRONG. Checking the declared day count directly fired
+    // on **45.1% of the sweep (6,435 of 14,253 plans)** — because dropping
+    // below `days_available` is DESIGNED behaviour, not a defect.
+    // `daysVolumeCanFill` (ruleEngine `:2882`) caps frequency at
+    // `weeklyKm / MIN_KM_PER_TRAINING_DAY`, on the sound reasoning that "a
+    // runner on 12 km a week who selects seven days gets seven ~1.7km jogs,
+    // and no session in the week does anything". It never fires above
+    // 40 km/week and fires on 65% of runners under 20. The runner is told, by
+    // the frequency note. A warn at 45% would have been noise sitting on top
+    // of correct work, and this repo has already recorded that a guard which
+    // fires on correct work gets switched off.
+    //
+    // What IS a defect is falling below the floor the producer computed for
+    // itself: `Math.max(3, …)`. That 3 is the engine's own number — "never
+    // below 3 days: at or under that, §52's low-day rule already owns the
+    // shape" — so this introduces NO new constant, which is precisely the
+    // condition the board could not meet for the instrument. The trim at
+    // `:3550` floors at `Math.max(1, …)` and never consults it: a floor
+    // computed upstream and discarded downstream, the same shape as §113
+    // Amendment 1.
+    //
+    // `Math.min` with the declared count so a runner who genuinely asked for
+    // two days is not reported as short-changed.
+    //
+    // Scope. Race week is prescribed structure. Deload weeks legitimately drop
+    // volume (§3) and may drop a day with it. Foundation weeks are a ramp and
+    // are day-fitted by §52b, which already has its own floor. What is left is
+    // the build and peak weeks the runner actually trains through, which is
+    // where the finding was measured.
+    if (!isRaceWeek && w.type !== 'deload' && w.badge !== 'deload' && w.phase !== 'foundation') {
+      const declared = Math.min(
+        input.days_available ?? GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
+        GENERATION_CONFIG.MAX_TRAINING_DAYS_PER_WEEK,
+        GENERATION_CONFIG.MIN_TRAINING_DAYS_VOLUME_FLOOR,
+      )
+      // Running days only. A strength or cross-train session occupies a day in
+      // the runner's week but is not what `days_available` was asked for in the
+      // wizard, and counting it would let a week satisfy this rule while still
+      // delivering the two-run shape the finding is about.
+      if (placedRunning.length < declared) {
+        violations.push({
+          code: 'INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS',
+          principle_ref: 'CoachingPrinciples §64 (converse), §18 Am.1, §90 Recorded finding',
+          severity: 'warn',
+          week: w.n,
+          message: `Week ${w.n} delivers ${placedRunning.length} running day(s), below the `
+            + `engine's own floor of ${declared}. §64 floors rest days; this is its converse — `
+            + `nothing else checks that a week keeps the running days the producer sized it for.`,
+          actual: placedRunning.length,
+          expected: `>= ${declared} running days (producer floor, min with declared)`,
+        })
+      }
     }
 
     // INV-PLAN-NO-SESSIONS-ON-BLOCKED-DAYS — every placed session lands on an

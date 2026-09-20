@@ -2880,7 +2880,7 @@ function buildWeekSessions(
   // different depths the gross-up recovers a volume that was never cut.
   const dayCountKm = isDeload ? weeklyKm / deloadVolumeFraction(hasVolumeCappedInjury(input)) : weeklyKm
   const daysVolumeCanFill = weeklyKm > 0
-    ? Math.max(3, Math.floor(dayCountKm / GENERATION_CONFIG.MIN_KM_PER_TRAINING_DAY))
+    ? Math.max(GENERATION_CONFIG.MIN_TRAINING_DAYS_VOLUME_FLOOR, Math.floor(dayCountKm / GENERATION_CONFIG.MIN_KM_PER_TRAINING_DAY))
     : input.days_available
 
   const daysAvailable = Math.min(
