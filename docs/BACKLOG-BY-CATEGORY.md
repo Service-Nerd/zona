@@ -1,44 +1,37 @@
 # The backlog, by category
 
-**Regenerated 2026-09-20, after the day's nine ships.** Sources: `docs/releases/backlog.md`
-**and** `docs/releases/roadmap.md`, cross-checked against `docs/canonical/feature-registry.md`.
+**Regenerated 2026-09-20, end of day.** Sources: `docs/releases/backlog.md` **and**
+`docs/releases/roadmap.md`, cross-checked against `docs/canonical/feature-registry.md`.
 
-**57 open items.**
+# 58 open
 
-> ⚠️ **Derivation, because the number moved and the reason matters.** The first version of this
-> document said **73**, parsed from `backlog.md` alone. That was wrong in two directions.
-> **`roadmap.md` is the live register for engine work** and holds items with detail that never
-> reached the backlog. And **eight stale rows across both files** were marked open while a
-> feature-registry row already existed — including three of today's own ships. Every ID here was
-> re-checked against the registry, and **nine more were excluded as not-work** (vetoed, parked,
-> superseded, or record-only). Both files have been corrected.
+> ⚠️ **Two corrections to the previous version of this document, both mine.**
+> **(1)** It headlined **57** while its own category table summed to **56**. Neither was right.
+> **(2)** The parser's open-marker list was missing **🔵**, which silently dropped
+> `GRID-EARLY-ONSET-01` and `RUBRIC-GAPS-01`. They had survived only because I added them by hand.
+> **A parse is only as good as its marker list, and mine was incomplete twice in one day.**
+> The count below is mechanical, the categories sum to it, and both are stated so the next
+> discrepancy is visible.
+>
+> ✅ **Closed today:** nine ships plus `STRAVA-APP-INACTIVE-01` (founder: we are not using Strava)
+> and the three flagged copy strings (SLT-ruled; two were wrong and are fixed).
+> **Excluded as not-work (10):** vetoed, parked, superseded, record-only, or already shipped.
 
----
+| Category | Open |
+|---|---|
+| 🧭 UX & flows | **22** |
+| 🏃 Coaching engine — prescription | **10** |
+| 🔬 Engine governance & verification | **6** |
+| 💰 Commercial & monetisation | **6** |
+| 🔧 Infrastructure & ops | **6** |
+| 📣 GTM & charity launch | **5** |
+| 🎨 UI & design system | **2** |
+| ⚖️ Legal, privacy & data | **1** |
+| ✍️ Brand, voice & copy | **0** ✅ |
+| 🐛 Live defects | **0** ✅ |
+| | **58** |
 
-## The categories
-
-You proposed **coaching engine · user experience · user interface**. They cover 27 of 57. Seven
-more earn their place because the work, the owner and the decision-maker all differ.
-
-| Category | Open | Why it is separate |
-|---|---|---|
-| 🧭 UX & flows | 15 | |
-| 🏃 Coaching engine — prescription | 8 | Board owns correctness |
-| 🔧 Infrastructure & ops | 7 | **Mostly founder actions on external accounts. No code at all.** |
-| 💰 Commercial & monetisation | 6 | SLT-owned |
-| ⚖️ Legal, privacy & data | 2 | Founder + counsel. Not ours to decide |
-| 📣 GTM & charity launch | 5 | **October-dated. A deadline is a category** |
-| 🔬 Engine governance & verification | 6 | Not prescription — the harness that proves it. No board |
-| 🎨 UI & design system | 4 | |
-| ✍️ Brand, voice & copy | 3 | **Every item needs your sign-off (§4A)** |
-| 🐛 Live defects | **0** | ✅ **The one that existed shipped today** |
-
-**UX and UI stay separate.** UX is what happens; UI is what it looks like. Different reviewers,
-different failure modes.
-
----
-
-## 🏃 Coaching engine — prescription · 8
+## 🏃 Coaching engine — prescription · 10
 
 *Board owns correctness. ⚠️ Every item here is measured against the 95.9% before it ships.*
 
@@ -70,7 +63,7 @@ An eleventh is forbidden without adherence or injury data.**
 | `RACE-KEY-TWO-OWNERS-01` | 🟡 founder decision | Two `raceDistanceKey` functions, different boundaries. Latent, not live |
 | `FLEET-INVALID-DEBT-02` | 🔲 | Opt-in refresh for a real runner on an invalid plan |
 
-## 🧭 UX & flows · 15
+## 🧭 UX & flows · 22
 
 | Item | State | Note |
 |---|---|---|
@@ -90,22 +83,28 @@ An eleventh is forbidden without adherence or injury data.**
 | `POST-RUN-03` · `POST-RUN-REFRAME-02` · `AI-DEPTH-09` | 🔲 | Gated on APNs / a voice vendor / deferred indefinitely |
 | `R18` · `R21` · `R22` · `R24` · `R26` | 🔲 LATER | ⚠️ **`R21`, P-02's strength row and "Supplementary session slots" are three descriptions of ONE feature** |
 
-## 🎨 UI & design system · 4
+## 🎨 UI & design system · 2
 
 | Item | State | Note |
 |---|---|---|
 | **P-13(c)** illustration style | 🔲 **your call** | SLT: commission ONE piece, after P-01. **P-01 has shipped, so this is unblocked** |
 | **P-11** launch screen | 🔲 P3 | Gated on footage licensing |
-| **P-04**'s render | — | Counted under UX; the data and tokens now exist |
-| Verdict labels + `saved` state + disclosure line | ⚠️ **awaiting your sign-off** | Three strings shipped in voice and flagged (§4A) |
 
-## ✍️ Brand, voice & copy · 3
+✅ **Shipped today:** `P-01` semantic pair · `P-03` pace ceiling · `P-13a/b` colour sweep + guard.
+**P-04's render is counted under UX**; its data and tokens now exist.
 
-| Item | State | Note |
-|---|---|---|
-| **The zero case** (P-04) | ⚠️ **needs your words** | *"None held the zone this week"* alone is a scold. SLT shape: **carry a cause or an action, never a bare count** |
-| Three flagged strings | ⚠️ **needs sign-off** | The two verdict labels, the `saved` state, the Health-connect line |
-| ~~`P-07`~~ · ~~`R19`~~ | 🔴 **closed** | SLT: don't build. **R19 stays parked — it is NOT unblocked** |
+## ✍️ Brand, voice & copy · 0 ✅ ALL RESOLVED TODAY
+
+| Was | Outcome |
+|---|---|
+| The two verdict labels | ✅ **CUT** — the pill reads "Done"; the colour carries the meaning |
+| The reflection saved-state | ✅ **KEPT**, one edit — *"Your note is kept. The coach didn't answer."* |
+| The Health-connect line | ✅ **CUT** — only *"What we share →"* remains |
+| `P-07` coach register · `R19` | 🔴 **Closed.** SLT: don't build. **R19 stays parked — it is NOT unblocked** |
+
+⚠️ **One copy obligation survives and is counted under UX, inside P-04:** the **zero case**.
+The SLT gave the shape (*point at the next easy run; no cause, no action, narrow the window*);
+**the words are yours**, and two coaching questions must be answered by the board first.
 
 ## 💰 Commercial & monetisation · 6
 
@@ -125,7 +124,7 @@ An eleventh is forbidden without adherence or injury data.**
 `GTM-CHARITY-06` (no per-partner reporting; **one** analytics event exists) ·
 `GTM-CHARITY-07` (deletion returns a claimed code to the pool) · `GTM-CHARITY-09` (parked)
 
-## ⚖️ Legal, privacy & data · 2
+## ⚖️ Legal, privacy & data · 1
 
 | Item | State | Note |
 |---|---|---|
@@ -135,7 +134,7 @@ An eleventh is forbidden without adherence or injury data.**
 ✅ **Three of five shipped today** — `ENRICH-PII-MINIMISE-01`, `LEGAL-PRIVACY-01`,
 `CONSENT-DISCLOSURE-01`, in that order because the order was load-bearing.
 
-## 🔧 Infrastructure & ops · 7 — mostly founder actions, no code
+## 🔧 Infrastructure & ops · 6 — mostly founder actions, no code
 
 `OPS-VERCEL-PLAN-01` 🔴 **P0 — Hobby is non-commercial and we sell a subscription** ·
 `OPS-SUPABASE-PLAN-01` 🔴 **P0 — breaks at ~250–320 runners, no backups at all** ·
