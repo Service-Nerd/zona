@@ -5,6 +5,39 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-09-20 — P-08(a): the item was a decision, and the answer was no
+
+**Dev.** P-08 proposed moving charity-code redemption to the last wizard step, at peak intent,
+because that is where the competitor puts it. The filing itself flagged that this collides with a
+live P1 and said the collision *is* the item. It does collide, and the proposal loses.
+
+Marathon is PAID-locked. `GTM-CHARITY-08` exists because a comped runner who picks their race
+before redeeming meets a paywall as the first thing this product says to them. Redemption at the
+END of the wizard is not neutral on that, it is strictly worse: the runner cannot have selected
+marathon to reach the step that would have unlocked it. So the answer is no, and the value of the
+item was reaching that conclusion rather than building anything.
+
+**Reading the code also corrected the filing.** It said the code link "sits on step 1 of the
+wizard". There is exactly one redeem door in the wizard and it is inside `case 'distance'` — the
+same screen as the lock. The placement is defensible rather than merely inherited, which is the
+opposite of what the item assumed, and the description is now corrected where it was written.
+
+**What survived was smaller and real.** Tapping the locked tile calls `onUpgrade` and navigates
+away, past the code link two lines below it. So the sentence a runner reads *before* the tap now
+names both routes out of the lock.
+
+**The two things I deliberately did not do.** I did not add a second redeem button next to the
+gate: the door is directly beneath, and a second control would be a third phrasing of one action —
+which is exactly why the existing door reuses the other two doors' string. And I did not make the
+locked tile inert. For nearly every user, Upgrade *is* the remedy; breaking the majority case to
+serve 500 runners in October would be the wrong trade, and putting both routes in the sentence
+serves both groups at once.
+
+**AI-building.** The test needed the distance step's markup, and there are two `case 'distance':`
+sites — the first is a one-line validation guard 780 lines earlier. Anchoring on it sliced 49
+characters and reported the redeem door missing from its own screen. Fourth mis-anchored source
+slice today; the durable fix remains extracting components, and where that is not proportionate,
+anchoring on something structurally unique.
 
 ## 2026-09-20 — P-12 (with P-14(a)): the upsell that reads its own feature list
 

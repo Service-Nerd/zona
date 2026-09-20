@@ -617,7 +617,32 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-08 — CODE ENTRY: one field, two behaviours — and a placement conflict to resolve first.** *(T-08. **Split: (a) is P1 and October-dated; (b) is P3.**)*
+> 🟡 **P-08 — CODE ENTRY: one field, two behaviours — and a placement conflict to resolve first.** *(T-08. **Split: (a) is P1 and October-dated; (b) is P3.**)*
+>
+> 🟡 **(a) RESOLVED AND SHIPPED 2026-09-20 — the brief's proposal is REJECTED. (b) not built.**
+>
+> ⚠️ **THE PROPOSED MOVE WOULD HAVE MADE A LIVE P1 WORSE.** Putting redemption at the LAST wizard
+> step, copying the competitor, is incompatible with `GTM-CHARITY-08`: Marathon is PAID-locked, so a
+> comped runner who picks their race first meets a paywall as the first thing the product says to
+> them. **Redemption at the end is strictly worse, because they cannot have selected marathon to
+> reach the step that would have unlocked it.** Decided on the code, not the brief.
+>
+> ⚠️ **AND THE FILED DESCRIPTION WAS STALE — better than filed.** It said the code link *"sits on
+> step 1 of the wizard (`GeneratePlanScreen.tsx:1527`)"*. There is **exactly one** `onOpenRedeem`
+> door in the wizard and it is inside `case 'distance'` — **the same screen as the lock**. That is
+> why the current placement is defensible rather than merely inherited, and it is corrected above.
+>
+> **What was real, and is fixed:** tapping the locked tile calls `onUpgrade` and navigates **away**,
+> past the code link. So the gate sentence now names both routes before the tap: *"Marathon and
+> longer need full access, which a charity code also gives you."* ⚠️ **A wording fix, not a second
+> button** — the redeem door is two lines below, and a second control would be a third phrasing of
+> one action, which is how surfaces drift apart. ⚠️ **The navigation is left alone deliberately:**
+> for the ~all of users with no code, Upgrade IS the remedy, and making the tile inert would break
+> the majority case to serve 500 runners in October.
+>
+> 🔻 **(b) the referral behaviour is not built** (P3, and correctly so). When it is: it must route
+> through `resolveTier` and change the **trial arm**, never add a new one, or it becomes the fourth
+> copy of an order that has already drifted three times.
 >
 > **Problem.** We have the screen and the redemption path — `RedeemCodeScreen.tsx` (GTM-CHARITY-04),
 > `/api/charity/redeem`, reachable from the wizard (`GeneratePlanScreen.tsx:1686` when
@@ -2895,8 +2920,14 @@ across the seven months combined.
 > anything. (This is the same shape as the RevenueCat webhook defect that acknowledged events and wrote
 > nothing.)
 >
-> 🔴 **The ordering problem, which is a wording fix not a code fix.** "Have a charity code?" sits on step 1
-> of the wizard (`GeneratePlanScreen.tsx:1527`). A runner who taps **Marathon** first meets a PAID lock and
+> ✅ **The ordering problem — FIXED 2026-09-20 (P-08a), and the description below was STALE.**
+> ⚠️ It said the code link "sits on step 1". It does not: there is exactly ONE `onOpenRedeem` door in
+> the wizard and it is inside `case 'distance'`, **the same screen as the lock**. The real defect was
+> that tapping the locked tile navigates AWAY past it, so the gate sentence now names both routes
+> before the tap. Runner wording for the charity's instructions is still worth sending, but the app
+> no longer depends on it. *(original below.)*
+> 🔴 ~~**The ordering problem, which is a wording fix not a code fix.** "Have a charity code?" sits on step 1
+> of the wizard (`GeneratePlanScreen.tsx:1527`).~~ A runner who taps **Marathon** first meets a PAID lock and
 > is routed to Upgrade. The redeem link is on that screen too so the path recovers, but **the first thing a
 > Make-A-Wish runner would see is a paywall.** The charity's instructions must say to tap the code link
 > *before* choosing a distance. Three-step runner wording is drafted in the brief, section I.

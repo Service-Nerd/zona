@@ -1696,7 +1696,23 @@ export default function GeneratePlanScreen({
             })}
             {!hasPaidAccess && (
               <div style={{ gridColumn: '1/-1', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '4px' }}>
-                Marathon and longer require a paid plan.{' '}
+                {/* P-08(a) / GTM-CHARITY-08 (2026-09-20) — NAMES BOTH ROUTES,
+                    because tapping the locked tile navigates AWAY to Upgrade
+                    and a charity runner's correct action is the code link two
+                    lines below, on the screen they just left.
+
+                    ⚠️ A WORDING FIX, NOT A SECOND BUTTON. The redeem door is
+                    directly beneath this; adding another here would be two
+                    controls for one action and a third phrasing of the same
+                    string, which is how surfaces drift apart (the reason the
+                    existing door reuses the other two doors' wording).
+
+                    ⚠️ The NAVIGATION IS LEFT ALONE deliberately. For the ~all
+                    of users with no code, Upgrade IS the remedy, so making the
+                    tile inert would break the majority case to serve 500
+                    runners in October. Putting both routes in the sentence
+                    read BEFORE the tap serves both. */}
+                Marathon and longer need full access, which a charity code also gives you.{' '}
                 <button onClick={onUpgrade} style={{ background: 'none', border: 'none', color: 'var(--moss)', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer', padding: 0 }}>
                   Start free trial →
                 </button>
