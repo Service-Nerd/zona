@@ -101,6 +101,7 @@ import { TREND_SERIES } from '@/lib/coaching/constants'
 import { computeHrStreamSummary } from '@/lib/coaching/streamAnalysis'
 import { computePaceFadeSummary, type StravaSplitMetric } from '@/lib/coaching/paceAnalysis'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan, Session } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
@@ -524,22 +525,15 @@ export async function POST(req: NextRequest) {
 
   let reframeText: string | null = null
   try {
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL_DEEP,
-        max_tokens: 300,
-        messages: [{ role: 'user', content: prompt }],
-      }),
+    const aiRes = await callAnthropic({
+      surface:   'post-run-reframe',
+      model:     ANTHROPIC_MODEL_DEEP,
+      maxTokens: 300,
+      messages:  [{ role: 'user', content: prompt }],
+      userId:    userId,
     })
     if (aiRes.ok) {
-      const aiData = await aiRes.json()
-      const raw = (aiData.content?.[0]?.text ?? '').trim()
+      const raw = aiRes.text.trim()
       const cleaned = raw.replace(/^["']|["']$/g, '').trim()
       if (cleaned && !BAD_OUTPUT_RE.test(cleaned)) {
         // ENRICH-PII-MINIMISE-01 — the model wrote a token, not the name.

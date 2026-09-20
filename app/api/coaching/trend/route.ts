@@ -31,6 +31,7 @@ import { buildHrTrendSeries, fetchRunHistory } from '@/lib/coaching/runHistory'
 import { COHORT_SIMILARITY, TREND_SERIES } from '@/lib/coaching/constants'
 import { buildAerobicTrendPrompt } from '@/lib/coaching/prompts/aerobicTrend'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 export async function GET(req: NextRequest) {
@@ -98,22 +99,15 @@ export async function GET(req: NextRequest) {
     })
 
     try {
-      const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-        method:  'POST',
-        headers: {
-          'x-api-key':         process.env.ANTHROPIC_API_KEY!,
-          'anthropic-version': '2023-06-01',
-          'content-type':      'application/json',
-        },
-        body: JSON.stringify({
-          model:      ANTHROPIC_MODEL,
-          max_tokens: 120,
-          messages:   [{ role: 'user', content: prompt }],
-        }),
+      const aiRes = await callAnthropic({
+        surface:   'trend',
+        model:     ANTHROPIC_MODEL,
+        maxTokens: 120,
+        messages:  [{ role: 'user', content: prompt }],
+        userId:    user.id,
       })
       if (aiRes.ok) {
-        const aiData = await aiRes.json()
-        gloss = (aiData.content?.[0]?.text ?? '').trim() || undefined
+        gloss = aiRes.text.trim() || undefined
       }
     } catch {
       // Silent fallback per ADR-006 — return trend without gloss

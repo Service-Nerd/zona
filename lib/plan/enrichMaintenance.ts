@@ -13,6 +13,7 @@
 import { z } from 'zod'
 import type { Week, RaceResult } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { BRAND } from '@/lib/brand'
 
 // ─── Output schema — only voice fields may change ──────────────────────────────
@@ -101,34 +102,26 @@ export async function enrichMaintenanceBlock(
   weeks: Week[],
   ctx: MaintenanceEnrichContext,
   apiKey: string | undefined = process.env.ANTHROPIC_API_KEY,
+  userId: string | null = null,
 ): Promise<Week[]> {
   if (!apiKey || weeks.length === 0) return weeks
 
   let rawText: string
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'prompt-caching-2024-07-31',
-      },
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 3000,
-        system: [{ type: 'text', text: MAINT_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
-        messages: [{ role: 'user', content: buildUserMessage(weeks, ctx) }],
-      }),
+    const response = await callAnthropic({
+      surface:   'enrich-maintenance',
+      model:     ANTHROPIC_MODEL,
+      maxTokens: 3000,
+      apiKey,
+      beta:      'prompt-caching-2024-07-31',
+      system:    [{ type: 'text', text: MAINT_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+      messages:  [{ role: 'user', content: buildUserMessage(weeks, ctx) }],
+      userId,
     })
 
-    if (!response.ok) {
-      console.error('[enrichMaintenance] Anthropic error', response.status, await response.text().catch(() => ''))
-      return weeks
-    }
-
-    const data = await response.json()
-    rawText = data.content?.[0]?.text ?? ''
+    // The owner already logged and recorded the failure.
+    if (!response.ok) return weeks
+    rawText = response.text
   } catch (e) {
     console.error('[enrichMaintenance] fetch failed', e)
     return weeks

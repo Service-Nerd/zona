@@ -2207,7 +2207,50 @@ across the seven months combined.
 > has bounded exposure. That trade is documented and correct. It does mean the limiter is not a hard cap,
 > which is why `OPS-AI-SPEND-01` exists.
 
-> 🔲 **OPS-AI-SPEND-01 — nothing in the app records token usage, so there is no spend visibility at all.** *(P2, founder + me, filed 2026-09-18.)*
+> ✅ **OPS-AI-OWNER-01 — fourteen hand-written copies of the Anthropic call, now one.** *(Architectural, me, filed AND shipped 2026-09-20.)*
+>
+> Found while scoping the two ops items above, and it turned out to be their actual cause. Fourteen
+> files each wrote out the same POST by hand: same URL, same `anthropic-version`, same
+> `content?.[0]?.text` extraction, same `if (res.ok)` / silent-catch shape. They agreed only by
+> accident. That is a D-08 duplicate-ownership violation of the class this repo keeps recording
+> (`deloadCadence` in five places, `raceDistanceKey` in three, `resolveTier` in three).
+>
+> `lib/ai/callAnthropic.ts` is the single owner. `lib/ai/surfaces.ts` is the single vocabulary — the
+> rate limiter and the telemetry had two overlapping name sets and neither was authoritative.
+>
+> **Behaviour-preserving by construction and proved so:** a test asserts the exact URL, headers and
+> JSON body the old sites sent. The failure vocabulary is `enrich.ts`'s existing `api_error` /
+> `fetch_failed`, not a second set of names.
+>
+> ⚠️ **One deliberate behaviour change, stated rather than hidden.** `analyse-run` used
+> `text?.trim() ?? null`, which returns `''` for an empty completion — `??` does not catch an empty
+> string. `feedback_text` is typed `string | null` and the surrounding code reasons about `null`, so
+> it now stores `null`. That was the intent all along; the old code was the `??`-versus-empty-string
+> defect this repo has recorded four times.
+>
+> **Gated:** `noRawAnthropicCalls.test.ts` fails the build if any file outside the owner names
+> `api.anthropic.com`. Falsified both directions. Without it the owner is a convention, and the
+> fifteenth call site would be invisible to spend accounting and failure alerting at once.
+
+> ✅ **OPS-AI-SPEND-01 — SHIPPED 2026-09-20, and NOT as the "smallest useful version" below.** *(P2, founder + me, filed 2026-09-18.)*
+>
+> **The reason the cheap version was wrong is the reason the item existed.** "Instrument the two
+> Sonnet paths, do not instrument all twelve" assumes instrumenting twelve costs twelve times as
+> much. It only does if there are twelve call sites — and there were **fourteen**, each a hand-written
+> copy of the same `fetch`, agreeing by accident. Deleting the duplication (`OPS-AI-OWNER-01`) made
+> the choice disappear: all fourteen are instrumented, and so is the fifteenth.
+>
+> Every call now records an `ai_call` ops event with real `input_tokens` / `output_tokens` /
+> cache-read / cache-write counts and a `user_id`. `GET /api/ops/ai-spend?days=7` returns cost by
+> surface, failure rate, and **cost per distinct user** — the figure the charity brief had to guess.
+>
+> ⚠️ **The tokens are measured; the dollars are an estimate and the code says so.** `lib/ai/pricing.ts`
+> is a hand-copied price list that nothing here can reconcile against Anthropic's billing. A model
+> with no price entry reports `null`, never `0`, and poisons its surface's total on purpose — a
+> plausible number missing a whole model is worse than no number (four measured `?? 0` defects).
+>
+> ⚠️ **Still founder-owned and still worth doing: the Console spend alert.** This answers "what did
+> it cost"; it cannot page you when the balance hits zero. That is `OPS-ANTHROPIC-CREDIT-01`.
 >
 > Grepped every AI call site: **not one reads `response.usage`.** No `input_tokens`, no `output_tokens`, no
 > per-user or per-route accounting anywhere. The Anthropic Console is the only source of truth, and nothing
@@ -2376,7 +2419,23 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > ⚠️ **`fix-test-check.py` will ask for a regression test and it should** — this is precisely the silent
 > class where there is no symptom to notice next time.
 
-> 🔲 **OPS-AI-FAILURE-ALERT-01 — every AI failure is silent to the OPERATOR as well as the runner.** *(P2, me, filed 2026-09-18.)*
+> ✅ **OPS-AI-FAILURE-ALERT-01 — SHIPPED 2026-09-20. All fourteen, not the "two or three" below.** *(P2, me, filed 2026-09-18.)*
+>
+> Same correction as `OPS-AI-SPEND-01`: the scope reduction was priced against fourteen copies of a
+> fetch, and there is now one. Every failure records `ai_call_failed` with the surface, the model,
+> `api_error` vs `fetch_failed`, the HTTP status and a truncated body.
+>
+> **Silent degradation is unchanged and deliberate** (ADR-006). What changed is that it leaves a
+> trace. `GET /api/ops/ai-spend` returns `failuresByReason` and a failure rate beside the spend,
+> because a run of `api_error` is the earliest signal the credit balance is gone.
+>
+> ⚠️ **One class it also closed that was not in the filing:** a 2xx whose body is not JSON. Every one
+> of the fourteen sites read that as an empty answer and fell through to the silent fallback
+> indistinguishably from a successful empty response. The owner records it as a failure.
+>
+> ⚠️ **What this does NOT do: alert.** It records. Nothing pages anyone, and nothing polls the route
+> yet — reading it is still a deliberate act. Wiring it into the daily digest is the remaining half
+> and is a cloud-routine change, not a repo change (see `project_daily_digest_routine`).
 >
 > Every one of the twelve AI routes uses the same shape: `if (aiRes.ok) { use it } catch { silent
 > fallback }`. That is correct design (ADR-006 — the deterministic engine always succeeds, AI is

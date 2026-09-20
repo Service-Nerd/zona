@@ -251,7 +251,7 @@ export async function POST(req: NextRequest) {
           .eq('user_id', user.id)
 
         if ((count ?? 0) === 0) {
-          const intro = await generateFreeIntro(rulePlan, input)
+          const intro = await generateFreeIntro(rulePlan, input, user.id)
           if (intro) rulePlan.meta.plan_intro = intro
         }
       } catch (e) {
@@ -331,7 +331,7 @@ export async function POST(req: NextRequest) {
           // the AI must never see or touch foundation-week copy (§57;
           // ADR-020's own blast-radius table confirms this is correct by
           // design, not an oversight).
-          const result = await enrich(rulePlan, input, tier)
+          const result = await enrich(rulePlan, input, tier, user.id)
           // Re-attach foundation weeks the enricher never saw. Mirrors,
           // almost verbatim, what GeneratePlanScreen used to do client-side
           // at the final_plan merge point — now server-side, ahead of the

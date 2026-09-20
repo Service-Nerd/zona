@@ -17,6 +17,48 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — OPS-AI-OWNER-01: the scope reduction was priced against a duplication
+
+**Dev.** Two open ops items: what does the AI cost, and is it failing. Both had been filed with the
+same sensible-sounding caveat — *"instrument the two or three highest-traffic routes, do not
+instrument all twelve."*
+
+That caveat assumes instrumenting twelve costs twelve times as much. It only does if there are
+twelve places to edit. There were **fourteen**, each a hand-written copy of the same `fetch` to the
+same URL with the same headers, the same `content?.[0]?.text` extraction and the same silent catch.
+They agreed by accident.
+
+Delete the duplication and the choice evaporates. One owner, fourteen surfaces instrumented, and
+the fifteenth instrumented on the day someone writes it.
+
+**AI-building.** The thing I keep relearning: **a scope reduction is a measurement, and it inherits
+whatever the codebase happens to look like.** "Don't do all twelve" was good judgement about the
+wrong number. Nobody was wrong to write it — I wrote one of them. It just encoded a structural
+defect as a cost, and then the cost argued for leaving the defect in place.
+
+**The honest bit.** Two things I'd rather not write down.
+
+First, `git checkout` on a file I had edited but not committed reverted my conversion, not just the
+one-line probe I had appended to falsify a gate. I only caught it because a *different* test — the
+surface-vocabulary one, which asserts every declared surface has a call site — went red and named
+`adjust-plan`. A test I wrote twenty minutes earlier for an unrelated reason is the only thing
+standing between me and silently shipping thirteen conversions out of fourteen.
+
+Second, writing the falsification test made me look properly at `await recordOpsEvent(...)` sitting
+unguarded in the owner. `recordOpsEvent` documents itself as never throwing, and it's careful about
+it. But awaiting it unguarded makes that promise load-bearing for **every AI call in the product** —
+one unhandled rejection in telemetry takes down the coaching surface the telemetry exists to watch.
+I had written the test asserting the *current* behaviour, which is to say I'd written a test that
+locked in a fragility. Changed the code instead. A monitor must not be able to break what it
+monitors, and "the function promises not to" is not a mechanism.
+
+**Product.** The dollars are still an estimate — a price list copied by hand that nothing here can
+reconcile against Anthropic's billing. The **tokens** are real. The distinction is in the contract,
+the code and the response payload, because the failure mode is a plausible-looking total that
+quietly omits a model. Unpriced calls return `null`, never `0`.
+
+---
+
 ## 2026-09-20 — RUBRIC-GAPS-01: the metric watching our biggest exemption had never been written
 
 **Dev.** §18 Am. silences a coach objection when the plan declares the shortfall. That exemption

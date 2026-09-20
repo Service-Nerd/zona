@@ -16,6 +16,7 @@
 
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { buildVoiceHeader } from '@/lib/coaching/prompts/voiceRules'
 import { BRAND } from '@/lib/brand'
 
@@ -34,7 +35,11 @@ function distanceLabel(km: number): string {
  * Returns the trimmed sentence(s), or null on any failure (no key, API error,
  * empty output). Never throws — the caller treats null as "no intro".
  */
-export async function generateFreeIntro(plan: Plan, input: GeneratorInput): Promise<string | null> {
+export async function generateFreeIntro(
+  plan: Plan,
+  input: GeneratorInput,
+  userId: string | null = null,
+): Promise<string | null> {
   if (!process.env.ANTHROPIC_API_KEY) return null
 
   const firstName = (input.athlete_name ?? '').trim().split(/\s+/)[0] || null
@@ -69,28 +74,18 @@ export async function generateFreeIntro(plan: Plan, input: GeneratorInput): Prom
 
   let rawText: string
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 120,
-        system,
-        messages: [{ role: 'user', content: userMsg }],
-      }),
+    const response = await callAnthropic({
+      surface:   'free-intro',
+      model:     ANTHROPIC_MODEL,
+      maxTokens: 120,
+      system,
+      messages:  [{ role: 'user', content: userMsg }],
+      userId,
     })
 
-    if (!response.ok) {
-      console.error('[freeIntro] Anthropic error', response.status, await response.text().catch(() => ''))
-      return null
-    }
-
-    const data = await response.json()
-    rawText = data.content?.[0]?.text ?? ''
+    // The owner already logged and recorded the failure.
+    if (!response.ok) return null
+    rawText = response.text
   } catch (e) {
     console.error('[freeIntro] fetch failed', e)
     return null

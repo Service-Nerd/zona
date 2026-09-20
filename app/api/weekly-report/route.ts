@@ -14,6 +14,7 @@ import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { getCurrentWeekIndex, isDateWithinWeek, isDateBeforePlan } from '@/lib/plan'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
@@ -397,23 +398,16 @@ export async function POST(req: NextRequest) {
       displayUnits,
     )
 
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'x-api-key':       process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model:      ANTHROPIC_MODEL_DEEP,
-        max_tokens: 300,
-        messages:   [{ role: 'user', content: prompt }],
-      }),
+    const aiRes = await callAnthropic({
+      surface:   'weekly-report',
+      model:     ANTHROPIC_MODEL_DEEP,
+      maxTokens: 300,
+      messages:  [{ role: 'user', content: prompt }],
+      userId:    userId,
     })
 
     if (aiRes.ok) {
-      const aiData  = await aiRes.json()
-      const rawText = aiData.content?.[0]?.text?.trim() ?? ''
+      const rawText = aiRes.text.trim()
       const parsed  = parseReportFields(rawText)
       headline = parsed.headline
       body     = parsed.body

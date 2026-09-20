@@ -11,6 +11,7 @@ import {
 } from '@/lib/coaching/prompts/planWeeklyNote'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
@@ -181,22 +182,15 @@ export async function POST(req: NextRequest) {
 
   let rawContent: string | null = null
   try {
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method:  'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model:      ANTHROPIC_MODEL,
-        max_tokens: 220,
-        messages:   [{ role: 'user', content: prompt }],
-      }),
+    const aiRes = await callAnthropic({
+      surface:   'plan-weekly-note',
+      model:     ANTHROPIC_MODEL,
+      maxTokens: 220,
+      messages:  [{ role: 'user', content: prompt }],
+      userId:    user.id,
     })
     if (aiRes.ok) {
-      const aiData = await aiRes.json()
-      rawContent = aiData.content?.[0]?.text?.trim() ?? null
+      rawContent = aiRes.text.trim() || null
     }
   } catch {
     // silent — client will fall back to rule-engine voice

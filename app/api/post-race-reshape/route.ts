@@ -22,11 +22,11 @@ import {
   type PostRaceReshapeAIOutput,
 } from '@/lib/coaching/prompts/postRaceReshape'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan, RaceResult, Session, Week } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 const AI_PROMPT_VERSION = '1.0'
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages'
 
 export async function POST(req: NextRequest) {
   const serviceClient = createServiceClient(
@@ -122,22 +122,18 @@ export async function POST(req: NextRequest) {
       reshapedWeeks: reshapedPlan.weeks,
     })
 
-    const aiRes = await fetch(ANTHROPIC_API_URL, {
-      method:  'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model:      ANTHROPIC_MODEL_DEEP,
-        max_tokens: 2048,
-        messages:   [{ role: 'user', content: prompt }],
-      }),
+    const aiRes = await callAnthropic({
+      surface:   'post-race-reshape',
+      model:     ANTHROPIC_MODEL_DEEP,
+      maxTokens: 2048,
+      messages:  [{ role: 'user', content: prompt }],
+      userId:    user.id,
     })
 
-    const aiData = await aiRes.json()
-    const raw = (aiData.content?.[0]?.text ?? '').trim()
+    // Behaviour-preserving. This route never checked `.ok`: a non-2xx produced
+    // an error body, an empty `raw`, and a JSON.parse throw into the silent
+    // fallback below. Identical outcome, except the failure now leaves a trace.
+    const raw = aiRes.ok ? aiRes.text.trim() : ''
     const aiOutput: PostRaceReshapeAIOutput = JSON.parse(raw)
 
     if (typeof aiOutput?.summary === 'string') {

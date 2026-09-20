@@ -6,6 +6,7 @@ import { buildFreeInsightPrompt } from '@/lib/coaching/prompts/freeInsight'
 import { assessReframeRiskGate, type CoachingFlag, type FatigueTag } from '@/lib/coaching/reframeRiskGate'
 import { isFatigueTag } from '@/lib/coaching/completionVocab'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
@@ -204,24 +205,16 @@ export async function GET(req: NextRequest) {
       firstName,
     })
 
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model:      ANTHROPIC_MODEL,
-        max_tokens: 200,
-        messages:   [{ role: 'user', content: prompt }],
-      }),
+    const aiRes = await callAnthropic({
+      surface:   'weekly-free-insight',
+      model:     ANTHROPIC_MODEL,
+      maxTokens: 200,
+      messages:  [{ role: 'user', content: prompt }],
+      userId:    user.id,
     })
 
     if (!aiRes.ok) return NextResponse.json<RouteState>({ state: 'unavailable' })
-
-    const aiData = await aiRes.json()
-    const raw    = (aiData.content?.[0]?.text ?? '').trim()
+    const raw    = aiRes.text.trim()
 
     // Strip code fences if the model added them despite the instruction.
     const stripped = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '').trim()

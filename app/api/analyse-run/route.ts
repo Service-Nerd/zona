@@ -19,6 +19,7 @@ import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
 import { FATIGUE_HIGH_TAGS } from '@/lib/coaching/constants'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan, Session } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
@@ -388,23 +389,16 @@ export async function POST(req: NextRequest) {
       raceResult,
     })
 
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'x-api-key':       process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model:      ANTHROPIC_MODEL,
-        max_tokens: 200,
-        messages:   [{ role: 'user', content: prompt }],
-      }),
+    const aiRes = await callAnthropic({
+      surface:   'analyse-run',
+      model:     ANTHROPIC_MODEL,
+      maxTokens: 200,
+      messages:  [{ role: 'user', content: prompt }],
+      userId:    userId,
     })
 
     if (aiRes.ok) {
-      const aiData = await aiRes.json()
-      feedbackText = aiData.content?.[0]?.text?.trim() ?? null
+      feedbackText = aiRes.text.trim() || null
     }
   } catch {
     // silent fallback — scoring row still written below

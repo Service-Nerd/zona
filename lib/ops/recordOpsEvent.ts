@@ -137,6 +137,25 @@ export type OpsEventKind =
   | 'strava_webhook_received'
   | 'strava_subscription_missing'   // no subscription, or one pointing at a stale/redirecting URL
   | 'strava_webhook_silent'         // subscription exists but has stopped delivering
+  // OPS-AI-OWNER-01 (2026-09-20) — every Anthropic call, through the single
+  // owner `lib/ai/callAnthropic.ts`.
+  //
+  // `ai_call` is the SUCCESS case and carries the token counts. It is recorded
+  // on every call deliberately: `OPS-AI-SPEND-01` exists because not one of the
+  // fourteen call sites read `response.usage`, so the only cost figure anybody
+  // had was derived from prompt-file sizes and `max_tokens` literals. A total
+  // assembled from failures alone would be the same guess with extra steps.
+  //
+  // `ai_call_failed` is `OPS-AI-FAILURE-ALERT-01`. Silent degradation is
+  // CORRECT behaviour (ADR-006) and does not change; what changes is that it
+  // leaves a trace. A run of these is also the earliest signal that the
+  // Anthropic credit balance is gone, which matters more than usual with 500
+  // comped runners arriving at once.
+  //
+  // ⚠️ Behavioural only, no PII: surface, model, token counts, an estimated
+  // cost and a truncated error string. Never prompt text, never a name.
+  | 'ai_call'
+  | 'ai_call_failed'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

@@ -14,6 +14,7 @@ import { getCurrentWeekIndex, isDateWithinWeek, isPlanComplete, parseLocalDate }
 import { resolveEffectiveSessions, slotForOriginalDay, type SessionOverride } from '@/lib/plan/effectiveSessions'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
@@ -306,23 +307,16 @@ export async function GET(req: NextRequest) {
   let content: string | null = null
   try {
     const prompt = buildDailyCoachNotePrompt(promptInput)
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'x-api-key':       process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model:      ANTHROPIC_MODEL,
-        max_tokens: 80,
-        messages:   [{ role: 'user', content: prompt }],
-      }),
+    const aiRes = await callAnthropic({
+      surface:   'daily-coach-note',
+      model:     ANTHROPIC_MODEL,
+      maxTokens: 80,
+      messages:  [{ role: 'user', content: prompt }],
+      userId:    user.id,
     })
 
     if (aiRes.ok) {
-      const aiData = await aiRes.json()
-      const raw    = (aiData.content?.[0]?.text ?? '').trim()
+      const raw    = aiRes.text.trim()
       // Strip surrounding quotes if the model added them despite instructions
       // ENRICH-PII-MINIMISE-01 — the model wrote a token, not the name.
       content = resolveRunnerName(raw.replace(/^["']|["']$/g, '').trim(), settingsRes.data?.first_name ?? null) || null

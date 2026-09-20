@@ -10,6 +10,7 @@ import { isTimeTrial } from './sessionRole'
 import { EnrichedPlanSchema } from './schema'
 import type { Tier } from './ruleEngine'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { BRAND } from '@/lib/brand'
 import { RUNNER_NAME_TOKEN, RUNNER_NAME_TOKEN_INSTRUCTION, resolveRunnerNameDeep } from '@/lib/coaching/nameToken'
 import { weekIntensityFlags } from './weekIntensityFlags'
@@ -219,7 +220,12 @@ export interface EnrichResult {
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Promise<EnrichResult> {
+export async function enrich(
+  plan: Plan,
+  input: GeneratorInput,
+  tier: Tier,
+  userId: string | null = null,
+): Promise<EnrichResult> {
   if (!process.env.ANTHROPIC_API_KEY) {
     return { plan, outcome: { status: 'failed', reason: 'no_api_key' } }
   }
@@ -228,39 +234,37 @@ export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Pro
 
   let rawText: string
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'prompt-caching-2024-07-31',
-      },
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: plan.weeks.length <= 12 ? 6000 : plan.weeks.length <= 20 ? 10000 : 14000,
-        system: [
-          {
-            type: 'text',
-            text: ENRICH_SYSTEM_PROMPT,
-            cache_control: { type: 'ephemeral' },
-          },
-        ],
-        messages: [{ role: 'user', content: buildUserMessage(plan, input, wantPaidFields) }],
-      }),
+    const response = await callAnthropic({
+      surface:   'enrich-plan',
+      model:     ANTHROPIC_MODEL,
+      maxTokens: plan.weeks.length <= 12 ? 6000 : plan.weeks.length <= 20 ? 10000 : 14000,
+      beta:      'prompt-caching-2024-07-31',
+      system: [
+        {
+          type: 'text',
+          text: ENRICH_SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      messages: [{ role: 'user', content: buildUserMessage(plan, input, wantPaidFields) }],
+      userId,
     })
 
+    // The owner already logged and recorded the failure. `api_error` and
+    // `fetch_failed` are ITS vocabulary too, so the reason passes straight
+    // through rather than being re-derived here.
     if (!response.ok) {
-      const body = await response.text().catch(() => '')
-      console.error('[enrich] Anthropic error', response.status, body)
       return {
         plan,
-        outcome: { status: 'failed', reason: 'api_error', detail: `${response.status} ${body.slice(0, 200)}` },
+        outcome: {
+          status: 'failed',
+          reason: response.reason,
+          detail: `${response.status ?? ''} ${response.detail.slice(0, 200)}`.trim(),
+        },
       }
     }
 
-    const data = await response.json()
-    rawText = data.content?.[0]?.text ?? ''
+    rawText = response.text
   } catch (e) {
     console.error('[enrich] fetch failed', e)
     return {

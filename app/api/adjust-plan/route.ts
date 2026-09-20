@@ -21,6 +21,7 @@ import { refreshWeekCopyIfStale } from '@/lib/plan/ruleEngine'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import type { Plan } from '@/types/plan'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { BRAND } from '@/lib/brand'
 import { notifyUser } from '@/lib/webpush'
 import { recordNotification } from '@/lib/notifications'
@@ -359,22 +360,15 @@ export async function POST(req: NextRequest) {
         }
       : null
     const prompt  = buildAdjustmentExplanationPrompt(proposed, buildAthleteContext({ plan }), previousAdjustment)
-    const aiRes   = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'x-api-key':       process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model:      ANTHROPIC_MODEL_DEEP,
-        max_tokens: 150,
-        messages:   [{ role: 'user', content: prompt }],
-      }),
+    const aiRes   = await callAnthropic({
+      surface:    'adjust-plan',
+      model:      ANTHROPIC_MODEL_DEEP,
+      maxTokens:  150,
+      messages:   [{ role: 'user', content: prompt }],
+      userId:     user.id,
     })
     if (aiRes.ok) {
-      const aiData = await aiRes.json()
-      const text   = aiData.content?.[0]?.text?.trim()
+      const text = aiRes.text.trim()
       if (text) {
         // RESHAPE-FIX-WAVE2A — Validate AI prose against the structural
         // diff before publishing. The 2026-06-26 incident shipped an AI

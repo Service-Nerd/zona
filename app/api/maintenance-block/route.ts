@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
       raceResult,
       raceName:       plan.meta.race_name,
       raceDistanceKm: plan.meta.race_distance_km,
-    })
+    }, undefined, user.id)
   }
 
   // ── 6. Build maintenance as its OWN plan object and hand off (§75, MAINT-06) ──

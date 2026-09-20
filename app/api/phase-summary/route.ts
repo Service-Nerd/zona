@@ -7,6 +7,7 @@ import { buildPhaseSummaryPrompt } from '@/lib/coaching/prompts/phaseSummary'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
+import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan } from '@/types/plan'
 import { getUserDisplayPrefs } from '@/lib/userPrefs'
 import { createUserScopedClient } from '@/lib/supabase/userScopedClient'
@@ -169,22 +170,15 @@ export async function POST(req: NextRequest) {
 
   let content: string | null = null
   try {
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         process.env.ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model:      ANTHROPIC_MODEL_DEEP,
-        max_tokens: 150,
-        messages:   [{ role: 'user', content: prompt }],
-      }),
+    const aiRes = await callAnthropic({
+      surface:   'phase-summary',
+      model:     ANTHROPIC_MODEL_DEEP,
+      maxTokens: 150,
+      messages:  [{ role: 'user', content: prompt }],
+      userId:    user.id,
     })
     if (aiRes.ok) {
-      const aiData = await aiRes.json()
-      content = aiData.content?.[0]?.text?.trim() ?? null
+      content = aiRes.text.trim() || null
     }
   } catch {
     // silent — no row written, client will not retry until next Coach screen open
