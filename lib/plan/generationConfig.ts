@@ -1109,6 +1109,41 @@ export const GENERATION_CONFIG = {
   // shipping the jump. 4.0 admits the charity cohort (M1 first-timer 15 km/wk →
   // peak 47 = 3.13x) and refuses the reckless case (5 km/wk → 9.4x); any cap
   // ≤ 3.13 would refuse M1. (Coaching Board MARATHON-VOLUME-GATE-01, 2026-09-18.)
+  // ── §116 — the base-build on-ramp (P-16, Coaching Board 2026-09-20) ────────
+  //
+  // §111 refuses the sub-12 km/week marathoner and NAMES a base-building plan
+  // as the remedy. §57 made that remedy structurally impossible — every
+  // foundation week is `baseline x 1.10`, flat from week 2, at any length.
+  // These are the numerics for the ramp that closes it.
+  //
+  // ⚠️ THEY LIVE HERE AND NOT IN `foundationBlock.ts` OR A ROUTE. §106
+  // (`peakKmByLevel` in `length.ts`) and MARATHON-VOLUME-GATE-01 (the volume
+  // gate hardcoded in the API route) are both on record as the same defect:
+  // a coaching numeric outside the singularity is invisible to
+  // `configPrincipleSync`, to `configConsumer`, and to the coaching-guard hook.
+
+  /** Ceiling on ramp length. Not a coaching bound — a termination bound for
+   *  `onRampWeeksNeeded`'s search, set well above any real requirement. */
+  BASE_BUILD_ONRAMP_MAX_WEEKS: 26,
+
+  /** §3's standard cadence, named separately so the ramp's deload rhythm is a
+   *  stated choice rather than an incidental read of the main-plan constant.
+   *  Masters cadence is deliberately NOT applied: the ramp is all easy and
+   *  below the volume at which the masters shortening was ratified. */
+  BASE_BUILD_ONRAMP_DELOAD_FREQUENCY: 4,
+
+  /** Below this the runner is not someone a RUNNING ramp serves. Willy at the
+   *  sitting: a runner at 8 km/week over 4 days is already running 2 km at a
+   *  time; run-walk is for someone who cannot, and that runner is below this
+   *  floor. ⚠️ RUN-WALK IS EXPLICITLY NOT SCOPED — do not build it to copy a
+   *  competitor. */
+  BASE_BUILD_ONRAMP_MIN_START_KM: 6,
+
+  /** §44's ratified 16-week threshold, reused rather than re-chosen. McMillan:
+   *  a ramp that leaves less than this has bought base at the cost of the
+   *  specific preparation the race actually needs. */
+  BASE_BUILD_ONRAMP_MIN_REMAINING_WEEKS: 16,
+
   MAX_BASE_BUILD_RATIO: 4.0,              // delivered peak weekly_km / current_weekly_km
   BASE_BUILD_RATIO_MIN_DISTANCE_KM: 42,  // §111 governs marathon and ultra only
 

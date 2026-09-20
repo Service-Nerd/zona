@@ -499,6 +499,50 @@ export const MUTATIONS: Mutation[] = [
     }
   } },
 
+  // §116 / INV-PLAN-ONRAMP-CURVE-CLIMBS — the corpus contains NO foundation
+  // weeks at all, so both arms SYNTHESISE the block, exactly as
+  // `foundation block in front of a plan below its cap` above already does.
+  //
+  // ⚠️ The first cut of these read `p.weeks.filter(phase === 'foundation')` and
+  // bailed on an empty result, so they were inert and the liveness gate said
+  // so. **A mutation that cannot build the shape it breaks is not a mutation** —
+  // which is the same lesson the corpus-vs-rules debt keeps teaching.
+  //
+  // ⚠️ ARM 1 IS THE ORIGINAL DEFECT, REPRODUCED ON PURPOSE. §57 sized every
+  // foundation week as `min(baseline x 1.1^i, baseline x 1.10)` — FLAT from
+  // week 2 at any length — while §111 named a base-building plan as its
+  // remedy. Flattening a block and labelling it a ramp IS that state.
+  { name: 'label a FLAT foundation block as a base-build on-ramp', apply: p => {
+    const weeks = p.weeks as unknown as Array<Record<string, unknown>>
+    const first = weeks[0]
+    if (!first) return
+    const tmpl = JSON.parse(JSON.stringify(first))
+    for (let i = 0; i < 3; i++) {
+      weeks.unshift({ ...JSON.parse(JSON.stringify(tmpl)), n: -i, phase: 'foundation', type: 'normal', weekly_km: 12 })
+    }
+    ;(p.meta as unknown as Poke).base_build_onramp = true
+  } },
+
+  // Arm 2: a ramp that climbs correctly but hands over MID-DIP. §111 re-gates
+  // on the volume the runner finishes at, so this gates them on a number they
+  // never built to.
+  { name: 'end a base-build on-ramp on a deload', apply: p => {
+    const weeks = p.weeks as unknown as Array<Record<string, unknown>>
+    const first = weeks[0]
+    if (!first) return
+    const tmpl = JSON.parse(JSON.stringify(first))
+    const vols = [10, 11, 12, 8]
+    for (let i = vols.length - 1; i >= 0; i--) {
+      weeks.unshift({
+        ...JSON.parse(JSON.stringify(tmpl)),
+        n: -(vols.length - 1 - i), phase: 'foundation',
+        type: i === vols.length - 1 ? 'deload' : 'normal',
+        weekly_km: vols[i],
+      })
+    }
+    ;(p.meta as unknown as Poke).base_build_onramp = true
+  } },
+
   // §40b / INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED — neither grid ever sets
   // `terrain`, but the rule reads `plan.meta.terrain`, which IS mutable. The
   // shape is an effort-governed terrain carrying no effort-lead note.

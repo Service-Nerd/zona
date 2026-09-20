@@ -699,6 +699,14 @@ export interface PlanMeta {
   // SHORTER (still all-easy) base so quality starts ~2 weeks sooner. Asserted by
   // INV-PLAN-EARLY-ONSET-GATED.
   early_quality_onset?: boolean
+  /**
+   * §116 (P-16) — this plan's `phase: 'foundation'` weeks are a BASE-BUILD
+   * ON-RAMP, not a §57 gap-filler. The two are the same week SHAPE under two
+   * volume policies, and `INV-PLAN-ONRAMP-CURVE-CLIMBS` needs to know which:
+   * §57's block is flat by design and a ramp that stays flat is the defect
+   * §116 exists to close.
+   */
+  base_build_onramp?: boolean
   /** §79 Amendment 5 — WHY the intensity re-entry window opened. Stamped by the
    *  producer so `INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE` can check the rendered
    *  copy against the cause without recomputing the predicate (a checker that

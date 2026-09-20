@@ -17,6 +17,48 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — P-16 / §116: two principles in deadlock, and neither sitting could see it
+
+**Dev.** §111 refuses the sub-12 km/week marathoner and **names a base-building plan as the
+remedy**. §57 builds base blocks. So the remedy existed — except §57 sizes every week as
+`min(baseline × 1.1^i, baseline × 1.10)`, which means **from week two onward every week is
+`baseline × 1.10`. Flat. At any length.**
+
+§111's named remedy has been structurally impossible for as long as both have existed.
+
+**AI-building.** The reason nobody caught it is the interesting part, and it is not carelessness.
+**§57's own invariant checks a CEILING** — no foundation week may rise more than +10%. A flat block
+never breaches a ceiling. So §57 passed its own check perfectly, every time, while failing to do
+the one thing §111 was relying on it for.
+
+**The failure mode of a ramp is the inverse of the failure mode of a gap-filler.** A gap-filler
+fails by climbing too fast; a ramp fails by not climbing at all. One bound cannot catch both, and
+the new invariant checks the opposite one.
+
+**The honest bit — three, and they are all the same shape.**
+
+My test fixture took an `over` argument and never spread it. **Eleven tests passed against the
+default input**, testing nothing they claimed. Caught only because two of the thirteen failed. A
+fixture that silently ignores its own argument is worse than no fixture: it manufactures green.
+
+Then the second fixture used `fresh_return: true`. Not a field. The real one is
+`weeks_at_current_volume`. The assertion read `expect(20).toBeLessThan(20)`.
+
+Then the liveness gate rejected my first two mutations because they filtered for foundation weeks
+and the corpus has none, so they bailed silently. **A mutation that cannot build the shape it
+breaks is not a mutation.** Same lesson, third time in one build: the fixture, the field name, and
+the corpus. Each time the thing was *shaped* right and reached nothing.
+
+**Product.** 810-input grid, 362 §111 refusals: **76% would be offered a ramp** instead of a closed
+door. Median six weeks. It ships **dark** — the SLT's "not for October" stands and the flag is how
+that is honoured.
+
+⚠️ And the caveat I nearly let slide: the property sweep comes back clean, and that is a
+**construction** argument rather than a measurement. The flag gates a function the sweep never
+calls. A clean sweep here is evidence the ramp is *inert*, not that it is safe.
+
+---
+
 ## 2026-09-20 — TIER-TRIAL-CONFIDENCE-01 and the commercial batch: four items, one question
 
 **Dev.** Six open commercial items went to the SLT. Four turned out to be the same question —

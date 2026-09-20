@@ -145,6 +145,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-MAX-HR-NOT-BELOW-ESTIMATE-FLOOR',
   'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
   'INV-PLAN-FOUNDATION-BLOCK',
+  'INV-PLAN-ONRAMP-CURVE-CLIMBS',
   'INV-PLAN-5K10K-LR-PACE-CAP',
   'INV-PLAN-LR-SEGMENT-RECORDED',
   'INV-PLAN-BUILD-LR-SEGMENT-CAP',
@@ -5657,6 +5658,20 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       for (let i = 1; i < foundationWeeks.length; i++) {
         const prev = foundationWeeks[i - 1]
         const curr = foundationWeeks[i]
+        // §116 — A RAMP DELOADS, AND §57 WAS WRITTEN FOR A BLOCK THAT DOES NOT.
+        //
+        // §57's block is flat by construction, so a flat +10% cap was complete
+        // for it. A §116 ramp dips to RECOVERY_WEEK_VOLUME_PCT and then resumes
+        // from the build line, which is a ~57% rise off the dip and trips this
+        // check every cadence. That is §3 working, not a spike.
+        //
+        // ⚠️ THE SAME PREDICATE THE MAIN-PLAN RAMP CHECK ALREADY USES
+        // (`invariants.ts` §2 delivered-ramp: `if (isDeload || prevIsDeload)
+        // continue`). Reused rather than re-expressed — one concept, one
+        // semantics, or the two drift and only one of them is right.
+        const isDeload     = curr.type === 'deload' || curr.badge === 'deload'
+        const prevIsDeload = prev.type === 'deload' || prev.badge === 'deload'
+        if (isDeload || prevIsDeload) continue
         if (prev.weekly_km > 0) {
           const maxAllowed = prev.weekly_km * 1.10 + 0.01
           if (curr.weekly_km > maxAllowed) {
@@ -5671,6 +5686,59 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             })
           }
         }
+      }
+    }
+  }
+
+  // INV-PLAN-ONRAMP-CURVE-CLIMBS — a §116 base-build on-ramp must actually BUILD.
+  //
+  // WHY THIS EXISTS AND WHY IT IS NOT §57's CHECK. §111 refuses the sub-12
+  // km/week marathoner and NAMES a base-building plan as the remedy. §57 made
+  // that remedy structurally impossible for a year: every foundation week is
+  // `min(baseline x 1.1^i, baseline x 1.10)`, so from the second week onward
+  // every week is `baseline x 1.10` — FLAT, at any length. Nothing caught it,
+  // because §57's own invariant checks a CEILING (+10%) and a flat block never
+  // breaches a ceiling. **The failure mode of a ramp is the opposite of the
+  // failure mode of a gap-filler, so it needs the opposite bound.**
+  //
+  // Gated on `plan.meta.base_build_onramp` — a §57 block is flat BY DESIGN and
+  // must not be dragged into this.
+  {
+    if (plan.meta.base_build_onramp) {
+      const fw = plan.weeks.filter(w => w.phase === 'foundation')
+      // A deload dips on purpose; the CLIMB is measured between the non-deload
+      // weeks, exactly as the main-plan ramp check treats a bounceback.
+      const build = fw.filter(w => !(w.type === 'deload' || w.badge === 'deload'))
+      if (build.length >= 2) {
+        for (let i = 1; i < build.length; i++) {
+          const prev = build[i - 1], curr = build[i]
+          if (curr.weekly_km <= prev.weekly_km) {
+            violations.push({
+              code: 'INV-PLAN-ONRAMP-CURVE-CLIMBS',
+              principle_ref: 'CoachingPrinciples §116',
+              severity: 'error',
+              week: curr.n,
+              message: `Base-build on-ramp W${curr.n} (${curr.weekly_km}km) does not build on W${prev.n} (${prev.weekly_km}km). A ramp that does not climb is §57's flat block wearing §116's label, which is the exact defect §116 exists to close.`,
+              actual: `${curr.weekly_km}km`,
+              expected: `> ${prev.weekly_km}km`,
+            })
+          }
+        }
+      }
+      // ⚠️ THE HANDOVER MUST NOT BE A DIP. §111 re-gates on the volume the
+      // runner finishes at; handing over mid-deload gates them on a number
+      // they did not build to.
+      const last = fw[fw.length - 1]
+      if (last && (last.type === 'deload' || last.badge === 'deload')) {
+        violations.push({
+          code: 'INV-PLAN-ONRAMP-CURVE-CLIMBS',
+          principle_ref: 'CoachingPrinciples §116',
+          severity: 'error',
+          week: last.n,
+          message: `Base-build on-ramp ends on a DELOAD week (W${last.n}). §111 re-gates on the volume the runner hands over at, so the last week must sit on the build line.`,
+          actual: 'deload',
+          expected: 'a build week',
+        })
       }
     }
   }

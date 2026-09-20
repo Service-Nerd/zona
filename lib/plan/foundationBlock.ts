@@ -329,6 +329,25 @@ export interface FoundationBlockOptions {
    * the gate has exactly one owner and a second evaluation would drift.
    */
   earlyOnset?: boolean
+  /**
+   * §116 (P-16) — which volume policy sizes the weeks.
+   *
+   * `'flat'` is §57 and the DEFAULT: `min(baseline x 1.1^i, baseline x 1.10)`,
+   * which means every week from the second is `baseline x 1.10`. That is
+   * correct for a gap-filler, which is what §57 was ratified as, and it is why
+   * §111's named remedy was structurally impossible.
+   *
+   * `'ramp'` is §116: §2's rate with §3's deload cadence, climbing to a target.
+   * Used only by the base-build on-ramp and only behind its flag.
+   *
+   * ⚠️ TWO POLICIES, ONE WEEK-BUILDER, deliberately. A second week
+   * construction is the D-08 duplicate-ownership shape this repo keeps
+   * recording, and `buildFoundationSessions` is where the long-run cap, the
+   * session floors and the day-fitting all live.
+   */
+  curve?: 'flat' | 'ramp'
+  /** `'ramp'` only — the pre-computed weekly volumes from `onRampCurve`. */
+  rampWeeklyKm?: number[]
 }
 
 export interface FoundationBlockResult {
@@ -339,10 +358,13 @@ export interface FoundationBlockResult {
 }
 
 export function generateFoundationBlock(opts: FoundationBlockOptions): FoundationBlockResult {
-  const { input, planStartDate, today, forceWeeks, earlyOnset = false } = opts
+  const { input, planStartDate, today, forceWeeks, earlyOnset = false, curve = 'flat', rampWeeklyKm } = opts
 
   const gap = gapDays(today, planStartDate)
-  const weekCount = forceWeeks ?? foundationWeekCount(gap)
+  // §116 — a ramp's length is decided by `onRampWeeksNeeded`, not by the gap.
+  const weekCount = curve === 'ramp'
+    ? (rampWeeklyKm?.length ?? 0)
+    : (forceWeeks ?? foundationWeekCount(gap))
 
   const baseline = effectiveBaseline(input)
   const freshReturnActive = baseline < input.current_weekly_km
@@ -361,19 +383,27 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
     // INV-PLAN-FOUNDATION-BLOCK correctly flagged the generator for exceeding a
     // bound the generator itself had computed ("got 6.2km, expected <= 6.2km",
     // 3,573 occurrences). Rounding must never carry a value past a cap.
-    const weeklyKm = floor1dp(
-      Math.min(
-        baseline * Math.pow(1 + GENERATION_CONFIG.FOUNDATION_WEEKLY_INCREASE_PCT / 100, i),
-        maxCeiling,
-      ),
-    )
+    const weeklyKm = curve === 'ramp'
+      ? (rampWeeklyKm as number[])[i]
+      : floor1dp(
+          Math.min(
+            baseline * Math.pow(1 + GENERATION_CONFIG.FOUNDATION_WEEKLY_INCREASE_PCT / 100, i),
+            maxCeiling,
+          ),
+        )
 
     const longRunCap = weeklyKm * (GENERATION_CONFIG.FOUNDATION_LONG_RUN_MAX_PCT / 100)
     // FLOOR, never round — same reason as weeklyKm above. A 23.1 km week caps
     // the long run at 8.085 km; `toFixed(1)` rounded that to 8.1, carrying it
     // past its own cap and tripping INV-PLAN-FOUNDATION-BLOCK ("got 8.1km,
     // expected <= 8.1km", 1,728 occurrences). Rounding must never cross a bound.
-    const longRunKm = floor1dp(Math.min(maxLongRunByHistory, longRunCap))
+    // §116 — on a RAMP the long run tracks the week, bounded by
+    // `FOUNDATION_LONG_RUN_MAX_PCT` (35%, already tighter than §52's 60%).
+    // Pinning it to `longest_recent_run_km` for eleven weeks would reproduce
+    // §57's flatness on the single session that matters most.
+    const longRunKm = curve === 'ramp'
+      ? floor1dp(longRunCap)
+      : floor1dp(Math.min(maxLongRunByHistory, longRunCap))
 
     // Week index: count down from -(weekCount-1) to 0
     const weekN = i - weekCount  // e.g. for 3 weeks: -3, -2, -1 → but spec says ≤ 0
@@ -395,9 +425,15 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
     weeks.push({
       n: weekN,
       date: weekStartDate.toISOString().split('T')[0],
-      label: `Foundation ${position}`,
+      label: curve === 'ramp' ? `Base ${position}` : `Foundation ${position}`,
       theme: themeForPosition(position, weekCount),
-      type: 'normal',
+      // §116 — a ramp DELOADS, and it marks them exactly as the main plan does
+      // (`type: 'deload'`), so every checker that already exempts a deload
+      // bounceback exempts this one too. A second marker would be a second
+      // semantics for one concept — D-16.
+      type: curve === 'ramp' && i > 0 && weeklyKm < (rampWeeklyKm as number[])[i - 1]
+        ? 'deload'
+        : 'normal',
       phase: 'foundation',
       sessions,
       long_run_hrs: longRunKm > 0 ? parseFloat((longRunKm / (input.current_weekly_km > 0 ? 8 : 6)).toFixed(2)) : null,

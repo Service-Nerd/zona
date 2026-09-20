@@ -20,6 +20,8 @@ import { PrepTimeError, DaysAvailableError, InputFieldError } from '@/lib/plan/i
 import { isDesignedRefusal } from '@/lib/plan/designedRefusal'
 import { effectiveStartKm } from '@/lib/plan/startVolume'
 import { BaseVolumeError } from '@/lib/plan/baseVolume'
+import { onRampOfferFor } from '@/lib/plan/baseBuildOnRamp'
+import { weeksBetweenLocal } from '@/lib/plan/length'
 import { LongRunReadinessError } from '@/lib/plan/longRunReadiness'
 
 // ─── Guard rails ──────────────────────────────────────────────────────────────
@@ -209,11 +211,29 @@ export async function POST(req: NextRequest) {
         )
       }
       if (err instanceof BaseVolumeError) {
+        // §116 (P-16) — the refusal may now carry an OFFER instead of only a
+        // door. §111 names a base-building plan as the remedy and §57 made that
+        // remedy structurally impossible; `onRampOfferFor` is the remedy.
+        //
+        // ⚠️ AN OFFER, NEVER A SUBSTITUTION. We do not hand a runner who asked
+        // for a marathon plan an eleven-week base block instead — ADR-012's
+        // model is that a structural change surfaces for confirmation.
+        // Rendering the choice is P-15's job.
+        //
+        // ⚠️ BEHIND A FLAG AND DARK BY DEFAULT. `onRampOfferFor` returns null
+        // unless ENABLE_BASE_BUILD_ONRAMP=1, so with the flag off this payload
+        // is byte-identical to what it was before §116 existed.
+        //
+        // ⚠️ §111 IS NOT CREDITED IN ADVANCE (board amendment 7). The offer
+        // changes nothing about the gate; the runner performs the block,
+        // re-declares, and is gated on OBSERVED volume.
+        const onramp = onRampOfferFor(input, err.base.min_base_km, weeksBetweenLocal(planStart, input.race_date))
         return NextResponse.json(
           {
             error: err.message,
             reason: 'base_volume',
             base: err.base,
+            ...(onramp ? { onramp } : {}),
           },
           { status: 422 },
         )

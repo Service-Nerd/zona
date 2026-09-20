@@ -7792,3 +7792,69 @@ asserting the same rule is duplication, not coverage.
 
 **Config.** `GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_DELIVERED_WEEK = 60`.
 **Enforced by** `INV-PLAN-LR-MAX-WEEKLY-PCT` — deliberately the same invariant as §52, because §114's number is §52's number and its observable consequence is exactly what that invariant already asserts. A second invariant on the same threshold would be duplication, not coverage.
+
+---
+
+## 116. The base-build on-ramp — §111's named remedy, made possible
+
+*(Coaching Board 2026-09-20, P-16. CORRECT WITH AMENDMENT as a two-stage shape, eight amendments. Built behind a flag at the founder's authorisation; the chair's measurement gate stands.)*
+
+**Principle.** A runner whom §111 refuses may be offered a **standalone base-building plan** that
+climbs at §2's rate under §3's deload cadence, after which §111 is asked again against the volume
+they have actually **performed and re-declared**.
+
+**The deadlock this resolves.** §111 refuses the sub-12 km/week marathoner and **names a
+base-building plan as the remedy**. §57 made that remedy structurally impossible:
+`foundationBlock.ts` sized every week as `min(baseline × 1.1^i, baseline × 1.10)`, so **from the
+second week onward every week is `baseline × 1.10` — flat, at any length.** Two principles in
+deadlock, each unseen by the other because **each sitting was convened on its own question**. §57
+is not wrong; it was ratified as a gap-filler and a gap-filler has no reason to climb.
+
+**Measured at the sitting.** Ramping at §2's own rate with §3's cadence: cwk 8 → 18 km/wk in
+**11 weeks**, leaving **18 weeks** of marathon plan (above §44's warn threshold of 16),
+**§111 ratio 2.61** against a cap of 4.0, and the **acute step into week 1 goes from +50% to 0%**.
+
+### The eight binding amendments
+
+| # | Amendment | Seat |
+|---|---|---|
+| 1 | **§2's rate, not §57's.** A pre-plan block that builds is governed by the same ramp rule as any other building block | Willy |
+| 2 | **The per-run step is governed under §2 Am. 2.** At 8 km/wk over 4 days that is 2 km a run; at 18 it is 4.5. **The per-run doubling is the load event**, not the weekly total | Willy |
+| 3 | **Lower bound where the ramp leaves ≥16 weeks** — §44's ratified threshold, reused rather than re-chosen | McMillan |
+| 4 | **It carries the fuelling note.** *"A silent ramp is not a fuelled ramp"* | Sims |
+| 5 | **Labelled pre-plan**, with the missed-weeks degradation path specified before build | McMillan |
+| 6 | **All easy, no quality** | Seiler |
+| 7 | **§111 is evaluated at the END of the ramp, on re-declared volume — never credited in advance** | Chair |
+| 8 | **The ramp is a plan the runner can follow standalone.** If they never return it must still be a good eleven weeks | Chair |
+
+⚠️ **Amendment 7 is what distinguishes this from `S111-FOUNDATION-CREDIT-01`, which was VETOED.**
+Credit means §111 divides by a volume the runner has not run. Here §111 is simply **not asked
+yet**: the runner performs the block, reports real volume, and is gated on **observed** data. It is
+the same self-report we already accept at the wizard, taken later, after eleven weeks of evidence.
+
+⚠️ **RUN-WALK IS EXPLICITLY NOT SCOPED.** Willy: a runner at 8 km/week over four days is already
+running 2 km at a time, and run-walk is for someone who cannot — who is below
+`BASE_BUILD_ONRAMP_MIN_START_KM` anyway. **Do not build it to copy a competitor.**
+
+⚠️ **Why the §52 blocking chain does not apply.** Candidate A's 884 violations came from shrinking
+**main-plan** weeks. A pre-plan block does not — verified at four sites in `invariants.ts`: §2's
+ramp skips foundation (`:3393`), week 1 is the first non-foundation week (`:2511–2513`), delivered
+peak excludes it (`:2660`), and §1's denominator excludes it (CB-FOUNDATION-DENOM-01). And
+`FOUNDATION_LONG_RUN_MAX_PCT = 35` is **already tighter than §52's 60% bound**.
+
+⚠️ **Risk, knowingly taken.** `invariants.ts:820–825` records that the foundation block has broken
+server-side invariants **three times**. A fourth block class walks into that history, which is why
+**one week-builder serves both curves** rather than a second construction path existing.
+
+**Config.** `BASE_BUILD_ONRAMP_MAX_WEEKS`, `BASE_BUILD_ONRAMP_DELOAD_FREQUENCY`,
+`BASE_BUILD_ONRAMP_MIN_START_KM`, `BASE_BUILD_ONRAMP_MIN_REMAINING_WEEKS` — in `GENERATION_CONFIG`.
+⚠️ **Not in `foundationBlock.ts` and not in a route.** §106 (`peakKmByLevel` in `length.ts`) and
+`MARATHON-VOLUME-GATE-01` (the volume gate hardcoded in the API route) are both on record as the
+same defect: a coaching numeric outside the singularity is invisible to `configPrincipleSync`, to
+`configConsumer`, and to the coaching-guard hook.
+
+**Owner.** `lib/plan/baseBuildOnRamp.ts` decides and sizes; `generateFoundationBlock` builds the
+weeks under a `curve` policy. **Enforced by** `INV-PLAN-ONRAMP-CURVE-CLIMBS`.
+
+⚠️ **The 0% acute step is NOT mechanically checkable** — it compares a plan to an input outside it.
+Recorded as a known enforcement gap rather than left to be discovered.

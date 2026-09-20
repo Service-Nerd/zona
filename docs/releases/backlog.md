@@ -933,7 +933,55 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 >
 > **Size.** **S.** **Free/Pro.** FREE — it is the door. **Backlog.** **NEW**, splits from the on-ramp.
 
-> 🔲 **P-16 — BASE-BUILD ON-RAMP. Build behind a flag, measure, return to the board.** *(Coaching Board 2026-09-20: CORRECT WITH AMENDMENT as a SHAPE, **not approved to ship**. SLT: build, **not for October**.)*
+> 🟡 **P-16 — BUILT BEHIND A FLAG 2026-09-20. The chair's gate is DISCHARGED; the numbers are below and the flag is OFF.**
+>
+> **§116 shipped dark.** `ENABLE_BASE_BUILD_ONRAMP` is read in exactly one place
+> (`baseBuildOnRamp.ts:156`) and `generateRulePlan` reaches none of it, so with the flag off the
+> refusal payload is byte-identical to before. **`measure:envelope` unchanged on every distance —
+> 95.9% held.**
+>
+> **THE CHAIR'S GATE, DISCHARGED — 810-input grid (3 distances × 10 volumes × 3 levels × 3 day
+> counts × 3 race dates), 362 §111 refusals:**
+>
+> | outcome | n | share of refusals |
+> |---|---|---|
+> | **offered a ramp** | **275** | **76.0%** |
+> | below floor (`< BASE_BUILD_ONRAMP_MIN_START_KM`) | 54 | 14.9% |
+> | insufficient runway (< §44's 16 weeks) | 33 | 9.1% |
+>
+> **Ramp length: min 2, median 6, max 18 weeks.**
+>
+> ⚠️ **The property sweep cannot move and that is a CONSTRUCTION argument, not a measurement.**
+> The flag gates `onRampOfferFor`, which is called only from the route's catch block; the sweep
+> calls `generateRulePlan`, which never reaches it. Stated as construction so nobody quotes a clean
+> sweep as evidence the ramp is safe — it is evidence the ramp is *inert*.
+>
+> **Artifacts, all three, one commit:** §116 in `CoachingPrinciples.md` with all eight amendments ·
+> `BASE_BUILD_ONRAMP_*` in `GENERATION_CONFIG` (⚠️ **not** in `foundationBlock.ts`, not in a route —
+> §106 and `MARATHON-VOLUME-GATE-01` are both on record as that defect) ·
+> `INV-PLAN-ONRAMP-CURVE-CLIMBS` + registry row + **two liveness mutations, so it is PROVEN wakeable
+> rather than baselined as debt.**
+>
+> 🔴 **A COLLISION FOUND DURING THE BUILD, not in the filing.** A ramp **deloads**, and §57's
+> invariant caps every foundation week at +10%. The post-deload resumption is a ~57% rise off the
+> dip and would have tripped §57 every cadence. Fixed by reusing the main-plan ramp check's own
+> `isDeload || prevIsDeload` predicate — one concept, one semantics.
+>
+> 🔴 **§57's OWN INVARIANT COULD NEVER HAVE CAUGHT §57's DEFECT.** It checks a CEILING, and a flat
+> block never breaches a ceiling. That is why `INV-PLAN-ONRAMP-CURVE-CLIMBS` checks the opposite
+> bound. **The failure mode of a ramp is the inverse of the failure mode of a gap-filler.**
+>
+> 🔻 **STILL CLOSED, AND THESE ARE THE REMAINING HALVES:**
+> **(1)** The offer is only in the **refusal payload**. Nothing renders it — that is **`P-15`**.
+> **(2)** Amendment 5's **missed-weeks degradation path** is specified in §116 and **not built.**
+> **(3)** Amendment 7's **re-gate at the end of the ramp** needs a return journey that does not
+> exist: the runner re-declares volume and is re-assessed. **Not built.**
+> **(4)** ⚠️ **Nobody has generated a ramp plan end to end.** The curve, the decision and the
+> invariant are tested; the composed plan object is not, because nothing composes one yet.
+>
+> **SLT's "not for October" is untouched** and the flag is how that is honoured.
+> *(original below.)*
+> 🔲 ~~**P-16 — BASE-BUILD ON-RAMP. Build behind a flag, measure, return to the board.**~~ *(Coaching Board 2026-09-20: CORRECT WITH AMENDMENT as a SHAPE, **not approved to ship**. SLT: build, **not for October**.)*
 >
 > **The finding.** §111 refuses the sub-12 km/week marathoner and **names a base-building plan as
 > the remedy**. §57 makes that remedy structurally impossible: `foundationBlock.ts:357` is
