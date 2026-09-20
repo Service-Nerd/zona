@@ -4,7 +4,9 @@ Raw learning notes, one entry per ship. Newest first. Dev / product / AI-buildin
 angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, keep
 it specific, no polish. The content system adds the voice.
 
----## 2026-09-20 — P-05: one half shipped, the other half was already built and nobody had checked
+---
+
+## 2026-09-20 — P-05: one half shipped, the other half was already built and nobody had checked
 
 **Dev.** P-05 arrived already trimmed: three of its four proposals were dismissed in the filing
 itself, with code, which is the right way to receive an item. Of the two that survived, one was
