@@ -10,6 +10,35 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## 2026-09-20 — the guards caught me three times in one afternoon, and that is the story
+
+**Dev.** Legal and privacy, in the order the SLT set: stop sending the name, then rewrite the
+policy, then add the line at the Health-connect moment. The order was the point. Rewriting the
+policy first would have produced an accurate description of a transfer we were about to stop
+making.
+
+**Product.** The strongest line on the privacy page is now **"we do not send your name"**, and we
+can only write it because the code change came first. The model gets a `{{RUNNER}}` token and we
+put the name back on our own servers before anything is stored.
+
+**AI-building.** I nearly resolved the token at render time instead. That would have been wrong:
+coach notes persist in the plan JSON and are read by a long tail of surfaces, so one missed read
+site shows a runner a literal `{{RUNNER}}`. Substituting at the boundary means the token cannot
+leak by omission.
+
+**The honest bit — three guards caught me, and none of them was mine today.**
+1. The **em-dash rule** flagged my own privacy copy. Twice. Including inside a code comment.
+2. **`externalLink.test.ts`** caught a bare `<a href="/privacy">` in the app shell. Inside the
+   Capacitor webview that replaces the whole app with the marketing site and the runner has no way
+   back. I would not have found that by reading.
+3. **`freeIntro.test.ts`** failed because it asserted the prompt carried the runner's first name.
+   It was right to fail — and the fix was to assert the stronger property, not to delete the test.
+
+The uncomfortable read: every one of those was a rule someone wrote down earlier, doing its job
+on me. The rules I wrote today will do the same to someone else, which is the only reason to
+write them.
+
 ## 2026-09-20 — we built the best idea in the category and put it on one screen
 
 **Dev.** `easyPaceAsCeiling` turns "7:11–8:32 /km" into "7:11 /km or slower". It has existed

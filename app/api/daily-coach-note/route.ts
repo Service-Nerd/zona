@@ -1,4 +1,5 @@
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { resolveRunnerName } from '@/lib/coaching/nameToken'
 import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
@@ -323,7 +324,8 @@ export async function GET(req: NextRequest) {
       const aiData = await aiRes.json()
       const raw    = (aiData.content?.[0]?.text ?? '').trim()
       // Strip surrounding quotes if the model added them despite instructions
-      content = raw.replace(/^["']|["']$/g, '').trim() || null
+      // ENRICH-PII-MINIMISE-01 — the model wrote a token, not the name.
+      content = resolveRunnerName(raw.replace(/^["']|["']$/g, '').trim(), settingsRes.data?.first_name ?? null) || null
       // Reject cheerleader words — silent fallback
       if (content && /\b(amazing|crushing|smash|beast mode|you've got this|crushed)\b/i.test(content)) {
         content = null

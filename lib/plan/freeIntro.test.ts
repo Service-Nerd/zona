@@ -60,7 +60,12 @@ describe('generateFreeIntro — failure is silent (ADR-006)', () => {
     expect(await generateFreeIntro(PLAN, INPUT)).toBe('The work is the long run.')
   })
 
-  it('5. the prompt carries real plan facts and the runner FIRST name only', async () => {
+  // ⚠️ AMENDED 2026-09-20 (ENRICH-PII-MINIMISE-01). This used to assert the
+  // prompt carried the FIRST name and not the surname — the protection at the
+  // time. The protection is now stronger: NO part of the name reaches the model
+  // at all. The test asserts the new property, and would fail if the name came
+  // back.
+  it('5. the prompt carries real plan facts and NO part of the runner\'s name', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
     let body: Record<string, unknown> = {}
     vi.spyOn(globalThis, 'fetch').mockImplementation(((_u: string, init: { body: string }) => {
@@ -71,7 +76,9 @@ describe('generateFreeIntro — failure is silent (ADR-006)', () => {
     const sent = JSON.stringify(body)
     expect(sent).toContain(`${PLAN.weeks.length} weeks`)
     expect(sent).toContain('half marathon')
-    expect(sent).toContain('Sam')
+    // The model is told to write a token; the name is substituted server-side.
+    expect(sent).toContain('{{RUNNER}}')
+    expect(sent).not.toContain('Sam')
     expect(sent).not.toContain('Rivera')
   })
 })

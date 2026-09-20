@@ -12,6 +12,7 @@ import StravaPanel from '@/components/strava/StravaPanel'
 import { createClient } from '@/lib/supabase/client'
 import { trackEvent } from '@/lib/analytics'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
+import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
@@ -3100,6 +3101,34 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             {error}
           </div>
         )}
+
+        {/* CONSENT-DISCLOSURE-01 (SLT 2026-09-20) — ONE HONEST LINE, AT THE
+            DECISION POINT. Not a consent screen: Wood used the kill mandate on
+            that version, because a granular screen at onboarding is ceremony,
+            clicked through in two seconds. This is the moment with a real
+            consequence the runner can feel.
+
+            ⚠️ iOS's own HealthKit sheet does NOT cover this. That permission is
+            device-to-app; the app-to-Anthropic transfer is the undisclosed leg
+            and no OS prompt mentions it.
+
+            ⚠️ Deliberately NOT here: a GPS-routes toggle (ADR-011 — we cannot
+            collect routes at all, and a toggle for data we cannot get is a lie
+            on a privacy surface) and a usage-analytics toggle (one analytics
+            event exists in the product, and gating it would throttle the
+            instrumentation GTM-CHARITY-06 needs).
+
+            ⚠️ Copy is pattern-setting (§4A) and flagged for sign-off. */}
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.55, marginTop: '16px', maxWidth: '340px' }}>
+          Your health data stays on our servers and shapes the coaching you get. We never send your name to the AI.{' '}
+          {/* ⚠️ ExternalLink, not <a>. Caught by `externalLink.test.ts`: inside
+              the Capacitor webview a bare href to a marketing page REPLACES the
+              app and the runner has no way back. SFSafariViewController has its
+              own Done button. */}
+          <ExternalLink href="/privacy" style={{ color: 'var(--mute)', textDecoration: 'underline' }}>
+            What we share
+          </ExternalLink>
+        </div>
 
         {/* D5: always-visible exit. Design system requires a visible "no thanks"
             path (a CTA without one is a dark pattern) and ux-principles bars dead

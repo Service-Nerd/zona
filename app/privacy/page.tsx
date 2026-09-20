@@ -121,7 +121,15 @@ export default function PrivacyPage() {
           <SubHead>Supabase</SubHead>
           <P>Our database and authentication are provided by Supabase, Inc. Your data is stored on Supabase infrastructure (AWS, EU region). Supabase is GDPR-compliant. <A href="https://supabase.com/privacy">Supabase privacy policy →</A></P>
           <SubHead>Anthropic (Claude AI)</SubHead>
-          <P>When you use the AI coaching features, session data is sent to Anthropic's API to generate a coaching response. Anthropic does not use API inputs to train their models by default. <A href="https://www.anthropic.com/privacy">Anthropic privacy policy →</A></P>
+          {/* LEGAL-PRIVACY-01: this said "session data", which did not cover what
+              was actually sent. Named in full rather than softened: the same trap
+              as TT-PRICING-CLAIM-01. Written AFTER ENRICH-PII-MINIMISE-01 landed,
+              so it describes what the code does now, not what it did this morning. */}
+          <P>When you use the AI coaching features, we send Anthropic&rsquo;s API the information it needs to write your coaching: your <strong>training plan and sessions</strong>, your <strong>race, its date and distance</strong>, your <strong>current weekly volume and days available</strong>, your <strong>fitness level</strong>, and, where you have given it, your <strong>injury history</strong>. Injury history is health information, and we send it because the coaching is materially worse without it.</P>
+          <P><strong>We do not send your name.</strong> The model is given a placeholder and your name is put back on our own servers before you ever see the text. We also never send your email address, your surname, your date of birth, your account identifier, your payment details, or your raw heart-rate recordings: only the derived summaries and zone percentages the coaching needs.</P>
+          <P>Anthropic does not use API inputs to train their models by default. <A href="https://www.anthropic.com/privacy">Anthropic privacy policy →</A></P>
+          <SubHead>Resend</SubHead>
+          <P>Our transactional email (trial reminders and account mail) is sent through Resend, which receives your <strong>email address</strong> and the content of that message. It is not used for marketing. <A href="https://resend.com/legal/privacy-policy">Resend privacy policy →</A></P>
           <SubHead>Strava</SubHead>
           <P>If connected, Strava activity data is fetched via the Strava API and stored in your {BRAND.name} account. <A href="https://www.strava.com/legal/privacy">Strava privacy policy →</A></P>
           <SubHead>Vercel</SubHead>

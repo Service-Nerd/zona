@@ -11,6 +11,7 @@ import { EnrichedPlanSchema } from './schema'
 import type { Tier } from './ruleEngine'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { BRAND } from '@/lib/brand'
+import { RUNNER_NAME_TOKEN, RUNNER_NAME_TOKEN_INSTRUCTION, resolveRunnerNameDeep } from '@/lib/coaching/nameToken'
 import { weekIntensityFlags } from './weekIntensityFlags'
 import { planRationaleNotes } from './planRationale'
 
@@ -272,7 +273,11 @@ export async function enrich(plan: Plan, input: GeneratorInput, tier: Tier): Pro
   let parsed: unknown
   try {
     const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
-    parsed = JSON.parse(cleaned)
+    // ENRICH-PII-MINIMISE-01 — put the runner's name back BEFORE the payload is
+    // validated or persisted. Resolving here rather than at each render site
+    // means no surface can miss it and show a literal token; the plan JSON is
+    // read by a long tail of consumers and one omission would be visible.
+    parsed = resolveRunnerNameDeep(JSON.parse(cleaned), input.athlete_name)
   } catch {
     console.error('[enrich] JSON parse failed', rawText.slice(0, 300))
     return {
@@ -377,7 +382,7 @@ export function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFiel
   return `Add coaching voice to this ${plan.weeks.length}-week training plan.
 
 ATHLETE:
-- Name: ${input.athlete_name ?? 'Athlete'}
+- Name: ${RUNNER_NAME_TOKEN}   (ENRICH-PII-MINIMISE-01 — the real name is substituted after you reply and never reaches this prompt)
 - Fitness level: ${plan.meta.fitness_level ?? input.fitness_level ?? 'intermediate'}
 - Goal: ${input.goal === 'time_target' ? `Finish in ${input.target_time}` : 'Finish the race'}
 - Race: ${plan.meta.race_name} — ${plan.meta.race_date} (${input.race_distance_km} km)

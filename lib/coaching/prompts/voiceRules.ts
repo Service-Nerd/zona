@@ -9,6 +9,7 @@
  */
 
 import { BRAND } from '@/lib/brand'
+import { RUNNER_NAME_TOKEN, RUNNER_NAME_TOKEN_INSTRUCTION } from '../nameToken'
 
 // ---------------------------------------------------------------------------
 // Voice constants — positive/negative models and banned phrases
@@ -142,7 +143,11 @@ export function buildVoiceHeader({
   )
 
   if (firstName) {
-    lines.push(`- You may address ${firstName} once if it lands naturally — don't force it.`)
+    // ENRICH-PII-MINIMISE-01 — the NAME never reaches the model. It is told to
+    // write a literal token, and `resolveRunnerName` puts the real name back
+    // server-side before anything is persisted or returned.
+    lines.push(`- You may address the runner as ${RUNNER_NAME_TOKEN} once if it lands naturally — don't force it.`)
+    lines.push(RUNNER_NAME_TOKEN_INSTRUCTION)
   }
 
   return lines.join('\n')

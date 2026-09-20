@@ -36,6 +36,7 @@ import { COHORT_SIMILARITY, REFRAME_RISK, REFRAME_TIER, FATIGUE_HIGH_TAGS } from
 import { inferLimiter } from '@/lib/coaching/limiter'
 import { coachingSessionType } from '@/lib/plan/sessionRole'
 import { raceInjuryFlagged } from '@/lib/coaching/raceNarrative'
+import { resolveRunnerName } from '@/lib/coaching/nameToken'
 
 /**
  * REFRAME-NOTE-LOSS-01 — THE SINGLE OWNER OF "write the runner's reflection down".
@@ -541,7 +542,8 @@ export async function POST(req: NextRequest) {
       const raw = (aiData.content?.[0]?.text ?? '').trim()
       const cleaned = raw.replace(/^["']|["']$/g, '').trim()
       if (cleaned && !BAD_OUTPUT_RE.test(cleaned)) {
-        reframeText = cleaned
+        // ENRICH-PII-MINIMISE-01 — the model wrote a token, not the name.
+        reframeText = resolveRunnerName(cleaned, settingsRes.data?.first_name ?? null)
       }
     }
   } catch (err) {
