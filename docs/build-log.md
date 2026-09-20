@@ -4,7 +4,9 @@ Raw learning notes, one entry per ship. Newest first. Dev / product / AI-buildin
 angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, keep
 it specific, no polish. The content system adds the voice.
 
----## 2026-09-20 — P-02: the biggest item on the board, and the risky part was already solved
+---
+
+## 2026-09-20 — P-02: the biggest item on the board, and the risky part was already solved
 
 **Dev.** P-02 was described as the highest-leverage item in the teardown and the widest blast
 radius in the document, and its own filing said the Coaching Board had to sit before **scoping**,
