@@ -118,11 +118,31 @@ export function assessOnRamp(
 
   if (minBaseKm <= startKm) return none('not_needed')
 
-  // ⚠️ THE FLOOR IS WHERE A RUNNING RAMP STOPS BEING THE RIGHT TOOL.
-  // Willy, at the sitting: a runner at 8 km/week over 4 days is already running
-  // 2 km at a time; run-walk is for someone who cannot, and that runner is
-  // below this floor anyway. **Run-walk is explicitly NOT scoped. Do not build
-  // it to copy a competitor.**
+  // ⚠️ TWO FLOORS, AND ONLY ONE OF THEM IS A NUMBER.
+  //
+  // **The COACHING floor** is Willy's: below it a running ramp is not the right
+  // tool, because run-walk is for someone who cannot already run 2 km at a
+  // time. It is a judgement and it is `BASE_BUILD_ONRAMP_MIN_START_KM`.
+  //
+  // **The ARITHMETIC floor is DERIVED, NOT STORED** — the lowest start from
+  // which the ramp actually reaches the target inside the runway. It falls out
+  // of `onRampWeeksNeeded` and the remaining-weeks bound below, so there is
+  // nothing to keep in sync.
+  //
+  // 🔴 WHY THIS IS DERIVED NOW AND WAS NOT BEFORE. The 6 was chosen when the
+  // target was 18 km/wk (peak 52 / §111's 4.0) and 6 was exactly where 13 weeks
+  // of ramping got you. **§117 dropped the beginner finish-goal peak to 34, so
+  // the target is 9 and the arithmetic floor moved to 3** — from 3 km/wk the
+  // ramp reaches 9 in 13 weeks, exactly inside the budget.
+  //
+  //     start   weeks to 18 (old target)   weeks to 9 (§117)
+  //         3                        20                  13  <- fits now
+  //         4                        17                  10
+  //         5                        15                   8
+  //         6                        13                   6
+  //
+  // A derived number written out by hand goes stale the moment the thing it
+  // was derived from moves, and it did, within hours. **Now it cannot.**
   if (startKm < GENERATION_CONFIG.BASE_BUILD_ONRAMP_MIN_START_KM) return none('below_floor')
 
   const rampWeeks = onRampWeeksNeeded(startKm, minBaseKm)

@@ -933,6 +933,45 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 >
 > **Size.** **S.** **Free/Pro.** FREE — it is the door. **Backlog.** **NEW**, splits from the on-ramp.
 
+> 🔴 **S116-FLOOR-VS-TARGET-01 — §116's floor of 6 was derived against a target §117 has since moved, and it is now the single biggest thing standing between us and the founder's bar.** *(P0, Coaching Board, filed 2026-09-20.)*
+>
+> **Measured, 198-profile charity grid, §117 live:**
+>
+> | | n | |
+> |---|---|---|
+> | gets a marathon plan | 140 | **70.7%** |
+> | **below §116's on-ramp floor (6 km/wk) — nothing reaches them** | **54** | **27.3%** |
+> | would be offered an on-ramp | 4 | 2.0% |
+>
+> **§116 now adds only 2 points**, because §117 already took the 8–12 band. **The entire remaining
+> refusal is runners at 0, 3 and 5 km/week.**
+>
+> 🔴 **AND THE FLOOR THAT EXCLUDES THEM IS STALE.** `BASE_BUILD_ONRAMP_MIN_START_KM = 6` was
+> chosen when the ramp's target was **18 km/wk** (peak 52 ÷ §111's 4.0), and 6 was exactly where
+> 13 weeks of ramping reached it. **§117 dropped the peak to 34, so the target is 9 and the
+> arithmetic floor is now 3:**
+>
+> | start | weeks to 18 (old target) | weeks to 9 (§117) | fits the 13-week budget? |
+> |---|---|---|---|
+> | 2 | 25 | 17 | no |
+> | **3** | 20 | **13** | **YES, exactly** |
+> | 4 | 17 | 10 | yes |
+> | 5 | 15 | 8 | yes |
+>
+> **If the floor drops to 3, refusal falls from 29.3% to roughly 9%** — only the 0–2 km/week
+> runners remain.
+>
+> 🔻 **BUT THE 6 IS NOT ONLY ARITHMETIC AND THAT IS WHY THIS IS THE BOARD'S.** Willy's reason was
+> a coaching one: *"a runner at 8 km/wk over 4 days is already running 2 km at a time, and
+> run-walk is for someone who cannot."* **The question for him is whether a 3 km/week runner is
+> someone a RUNNING ramp serves, or whether that runner needs something we have not built.**
+> The arithmetic says 3 works; only Willy can say whether it should.
+>
+> ✅ **The architectural half is done and shipped:** the two floors are now named and separated in
+> `assessOnRamp` — the **coaching** floor is a config numeric, the **arithmetic** floor is DERIVED
+> from `onRampWeeksNeeded` and the runway bound, so it can never go stale again. **It went stale
+> within hours of being written, which is the argument.**
+
 > ✅ **S117-PEAK-VS-TIME-01 — RESOLVED 2026-09-20. Peak 34, flag deleted, §117 is LIVE.** *(Coaching Board, unanimous.)*
 >
 > **Willy ruled on his own amendment: *"the range was the number I priced."*** The three hours

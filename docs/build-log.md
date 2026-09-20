@@ -17,6 +17,55 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — S117-PEAK-VS-TIME-01: the board contradicted itself, and the table settled it
+
+**Dev.** §117 shipped dark yesterday because amendment 1 gave two numbers that don't reconcile: a
+peak of 30–34 km/week **and** "repeated exposure to 3+ hours on feet". Under the 60% long-run cap
+those are different plans.
+
+So I priced both and put the table in front of them:
+
+```
+peak  door  longest run  time on feet  refusal rate
+  32     8       16.5km         2h12       29.3%
+  34     9       18.5km         2h28       29.3%   <- ruled
+  42    11       23.0km         3h04       36.4%
+  52    13       26.0km         3h28       45.5%   (today)
+```
+
+Buying the three hours costs **seven points of admission for thirty-six minutes**. Willy ruled on
+his own words: *"the range was the number I priced."*
+
+**AI-building.** Two things the sitting found that I hadn't.
+
+**32 was strictly dominated.** 32 and 34 refuse identically — so 34 buys sixteen minutes on feet
+and two kilometres of long run **for free**. I'd built it at 32 and never compared adjacent rows of
+my own table.
+
+**And the board's own archive answered the adequacy question.** McMillan, already on file from a
+previous sitting: *"a runner who does a 17 km longest run and run-walks the last stretch
+finishes."* 34 delivers 18.5. The conflict scan surfaced it; nobody had to remember it. That is the
+second time this week the scan has been worth more than the discussion.
+
+**The honest bit.** I went into that sitting with two findings and withdrew both before anyone
+spoke.
+
+I'd reported that §117's plans fail §80's bar of 70% of projected race duration. **That bar is
+unreachable at any peak, and §80 says so in its own text** — the long-run cap is 210 minutes
+against a 338-minute projected race, which is 62%. The standard plan scores exactly 62% *because it
+is sitting on the cap*. I had measured against a floor that explicitly yields, then filed a second
+finding saying the standard plan missed it too. Both wrong, same mistake, twice.
+
+**Product.** Marathon 77.6% → 79.2%. The gate floor ratcheted **up** for the first time today —
+every other move has been me correcting the ruler downward.
+
+And the chair said the thing I needed to hear and pass on: **zero rejection is not reachable by
+coaching.** At a 9 km/week door, someone running 2 km a week is fifteen times below the peak the
+plan builds to. 45.5% → 29.3% is the ceiling. What the rest are offered instead is a product
+decision, not a coaching one.
+
+---
+
 ## 2026-09-20 — ZERO-REJECTION-01 / §117: I built it, measured it, and it didn't work
 
 **Dev.** We reject 45.5% of people who ask for a first marathon. The founder's line was blunt and
