@@ -96,6 +96,14 @@ violation** and **no coach objection**.
   the single longest run with back-to-backs, so the right unit is different and
   picking a number without a board ruling would be an invented one. **Honest
   gap, filed, not papered over.**
+- **Why 10K is the worst distance (78.3%), measured 2026-09-20:** the gap is
+  **100% `WEEK1-LEAP`** and nothing else. **Zero beginners fail it** —
+  intermediate 48%, experienced 19% — because §29 scales *their* start down and
+  the predicate measures against the scaled figure. **79% of flags are §29
+  fresh-return runners.** The load evidence says it is largely not a hazard:
+  per-run increase median **+1.9 km**, and the longest week-1 session exceeds
+  the runner's longest-EVER run by a median of **0.0 km**. Residual: 55% are
+  still above 1.30× of their **declared** volume.
 - **`WEEK1-FLOOR-SHORT-DIST-01` is open.** The week-1 floor is 35% of the
   *curve* peak, which is level-derived — so a runner at 7 km/week effective
   gets an 18 km week 1 (2.6×). §111 refuses that tail at the marathon and its
