@@ -1,5 +1,12 @@
 # The backlog, by category
 
+> ⚠️ **SUPERSEDED IN PART, 2026-09-20 (later the same day).** Nine items shipped after this was
+> written. Current state and what moved: see the ⚖️ RULED block in `docs/releases/backlog.md` and
+> the feature registry. **Shipped since:** `MARA-LR-LOWBASE-01` (§80 Am.2) · `REFRAME-NOTE-LOSS-01`
+> · `P-13a/b` · `P-03` · `P-01` · `ENRICH-PII-MINIMISE-01` · `LEGAL-PRIVACY-01` ·
+> `CONSENT-DISCLOSURE-01`. **Closed as no-action:** `BRAND-MAINT-LABEL-01` (stale entry),
+> `P-07` (SLT: don't build). **73 open → 64.**
+
 **Date:** 2026-09-20 · **Source:** `docs/releases/backlog.md`, cross-checked against
 `docs/canonical/feature-registry.md`
 
