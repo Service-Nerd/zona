@@ -1139,7 +1139,9 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > **Everything is built, tested and gated.** `ENABLE_FINISH_GOAL_RUNWALK=1` flips it the moment the
 > board resolves the peak-versus-time-on-feet contradiction.
 
-> 🟡 **S111-LEVEL-INVERSION-01 — a beginner is admitted where an intermediate is refused.** *(P2, Coaching Board, filed 2026-09-20. Found while regression-testing §117; PRE-EXISTS it.)*
+> ✅ **S111-LEVEL-INVERSION-01 — a beginner is admitted where an intermediate is refused.** *(P2, Coaching Board, filed 2026-09-20. Found while regression-testing §117; PRE-EXISTS it.)*
+>
+> ✅ **CLOSED 2026-09-20 — NOT A DEFECT. Coaching Board: §79 working as designed.** The door is `ceil(peak / MAX_BASE_BUILD_RATIO)` on a level-scaled peak (52/65/80), so 13/17/20. Declaring *intermediate* declares the plan you want, and that plan needs a bigger base. ⚠️ **The premise had also moved since filing:** §118 shipped, so every refused cell now receives a Base Building plan — re-measured, this is "race plan vs base-build first", not "admitted vs turned away". Nobody is refused. Register: `docs/canonical/coaching-rulings.md`.
 >
 > Measured, marathon, finish goal, same runway:
 >
@@ -3395,7 +3397,28 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 > ⚠️ **THE P0 ITSELF IS NOT FIXED — IT IS NOW COUNTED.** This observes the residual; it does not
 > remove it. The item stays open on the instrument.
 
-> 🔴 **S80-VS-S90-PRIORITY-01 — the actual blocker, and it has never been ruled.** *(P1, Coaching
+> ✅ **S80-VS-S90-PRIORITY-01 — the actual blocker, and it has never been ruled.** *(P1, Coaching
+>
+> ✅ **RULED 2026-09-20 — §90's INJURY CEILING WINS. §80 Amendment 2.** Where §80's peak-long-run
+> floor and §90's delivered-week cap cannot both hold, the long run yields. Willy: *"tissue tolerance
+> does not negotiate with a specificity target. A first-timer who arrives having done 24 km instead
+> of 26 km finishes; one who arrives injured does not start."* **Not a new hierarchy** — §80 is
+> already written as subordinate (*"subject to `LONG_RUN_CAP_MINUTES`, which still wins"*, and *"when
+> the cap prevents reaching the floor, the plan says so"*), so this names a second constraint it
+> yields to and reuses the same declaration path. **No new numeric.**
+>
+> ⚠️ **THE 2026-09-19 SITTING RAN ON TWO FALSE PREMISES, both found by the conflict scan.**
+> (1) *"§9 already forbids it at 28–40%"* — **§9 SIZES the long run and does not cap it**;
+> `generationConfig.ts` says so in its own words, and the §45/§47/§80 floors override that sizing.
+> (2) *"nothing requires 26 km"* — **§80 requires it**: measured on that sitting's own worst case,
+> the peak long run is **208 minutes against the 210-minute cap**. §24 was never the binding
+> principle, so the sitting removed the wrong horn and then reasoned from the gap it had made.
+>
+> ⚠️ **ENFORCEMENT IS DECLARATIVE AND SAYS SO.** A priority between two principles has no observable
+> in a single plan, and today **no plan reaches the collision**. An invariant asserting "§80 yielded"
+> would be unwakeable by construction — a failure class this repo already tracks. The obligation
+> passes to whoever builds the next instrument: it must show the delivered week stays under §90's
+> ceiling, measured against the **low-volume** population, not the withdrawn injury one.
 > Board, filed 2026-09-20.)* The board's own words: *"the remaining volume genuinely cannot
 > support more runs without either more volume (forbidden) or a smaller long run."* The second
 > option is a collision between **§80's specificity ramp** (the long run must grow toward race
@@ -3547,7 +3570,40 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 > 🔲 **FLEET-INVALID-DEBT-02 — opt-in "refresh my plan" for a REAL active runner on a stale-but-valid... invalid plan.** *(P3, filed 2026-09-17, deferred until there are real runners.)* The safe way to bring a live, in-progress plan up to current rules WITHOUT the silent-rewrite the live-plan policy forbids. Mechanism already exists in pieces: regenerate anchored to the runner's original `plan_start` (keeps `week.n`/dates stable so `session_completions`/`run_analysis`/reflections stay keyed), graft the runner's enriched copy back onto structurally-unchanged weeks (`foundationResize.ts` / `enrichPartialRevert.ts`, ENRICH-PARTIAL-01), archive the prior via `plan_archive`, and surface the change through ADR-012 magnitude → confirmation tile rather than applying it silently. Only worth building once a real runner holds a plan that breaches a SAFETY-relevant invariant (load/cap/empty-session), not a cosmetic annotation one. `81e4b792` is the current stand-in case.
 
 
-> 🔲 **FLEET-TRIGGER-SEVERITY-01 — `FLEET-INVALID-DEBT-02`'s trigger is a human judgement, and with 500 runners that stops being a control.** *(P2, Coaching Board, filed 2026-09-20 while analysing the item above.)*
+> ✅ **FLEET-TRIGGER-SEVERITY-01 — `FLEET-INVALID-DEBT-02`'s trigger is a human judgement, and with 500 runners that stops being a control.** *(P2, Coaching Board, filed 2026-09-20 while analysing the item above.)*
+>
+> ✅ **RETURNED BY THE COACHING BOARD 2026-09-20 — NOT THEIRS, and the chair was explicit.**
+> Classifying invariants by safety-relevance is a property of the invariant REGISTRY, not a coaching
+> decision: no seat is being asked what is correct for a runner. Taken as the application architect.
+>
+> ⚠️ **ARCHITECT'S DISPOSITION: DO NOT BUILD THE CLASSIFIER YET, and the reason is the parent.**
+> `FLEET-INVALID-DEBT-02` is correctly P3 and is not being built. A classifier exists to fire an
+> escalation; building one for an escalation nobody will act on is the illusion-of-progress class
+> Wood has kill authority over, and it would add a 131-row judgement table that rots silently
+> because nothing reads it — decorative config in a new costume, which this repo has already paid
+> for twice (`ZONE_DISCIPLINE_BANDS`, the §97 inert gates).
+>
+> **What IS worth doing, and it is small:** safety-relevance belongs on the invariant at its
+> declaration site, not in a second list beside it — the same single-owner reasoning that made
+> `MIN_TRAINING_DAYS_VOLUME_FLOOR` a constant rather than a copy. When `FLEET-INVALID-DEBT-02` is
+> picked up, add the field to the registry row, not a parallel table. **Filed against that item as
+> a design constraint rather than kept open here as work.**
+
+> 🔲 **FITNESS-BUCKET-SAMPLE-01 — `measure:fitness` reports per-bucket figures from a 3.4% sample, and they moved 11pp under full enumeration.** *(P2, architect, filed 2026-09-20 out of the MASTERS-COMPRESSED-BUILD-01 ruling.)*
+>
+> `measure()` builds its pool from `spread(cohortGrid()).slice(0, 1400)` + `spread(targetedGrid()).slice(0, 600)`
+> — **1,400 of 41,472 rows**. The coprime stride is right and fixes the prefix-bias problem it was
+> written for, but it does not fix SIZE. Measured 2026-09-20: healthy-masters median build reads
+> **17.4%** on the sample and **19.2%** on the full grid; healthy-standard reads **28.6%** and
+> **20.0%**. **An 11pp gap became 0.8pp**, and that sampled gap was enough to open a P1 and send an
+> item to the Coaching Board.
+>
+> ⚠️ **The gated thresholds are NOT affected and this is not urgent.** `planFitness.test.ts` gates
+> `neverBuildsPct` rising above zero and build/specificity regressions at 5pp/3pp — those compare
+> the SAME sample against a committed baseline, so they are self-consistent. The defect is in
+> reading a bucket figure as a population estimate, which is what a human does with a printed table.
+> **Cheapest honest fix: print n and a caveat per bucket**, or widen the slice and re-baseline with a
+> declared reason. Do not quote a bucket figure in a board submission until this is done.
 >
 > **`FLEET-INVALID-DEBT-02` is correctly P3 and stays P3.** Its own precondition — a real runner on a
 > live plan breaching a **safety-relevant** invariant — is not met at 26 users, and `81e4b792` is a
@@ -3680,7 +3736,19 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 >   Also: the input-coverage gate passed because `age` took two distinct values; it does not check
 >   whether variation crosses a threshold the engine BRANCHES on. That gate is worth strengthening.
 >   *Verify still open:* `grep -c "age: pick(ages)" scripts/property-validate-plans.ts` → **0 = open**.
-> - 🔴 **`MASTERS-COMPRESSED-BUILD-01` — §3's masters deload cadence costs a build week, and five invariants object.** *(P1, filed 2026-09-20 out of SWEEP-AGE-01. **Coaching Board — every candidate fix changes prescription.**)*
+> - ✅ ~~**`MASTERS-COMPRESSED-BUILD-01`~~ ** — §3's masters deload cadence costs a build week, and five invariants object.** *(P1, filed 2026-09-20 out of SWEEP-AGE-01. **Coaching Board — every candidate fix changes prescription.**)*
+> - ✅ **CLOSED 2026-09-20 — PREMISE WITHDRAWN. The 11pp gap was a SAMPLING ARTEFACT.** Re-measured on
+>   the **full `cohortGrid()` — 39,632 generated plans** rather than `measure:fitness`'s 1,400-row
+>   slice (3.4% of 41,472): masters never-builds **18.1%** against standard **18.4%**, median build
+>   **19.2%** against **20.0%**. Masters is marginally BETTER on never-builds. ⚠️ **The mechanism is
+>   real and is NOT being changed** — median build-weeks **9 → 8**, confirming §3's masters cadence
+>   costs a build week — but it costs **0.8pp of median build, not 11pp**. Coaching Board: do not
+>   touch the three-week cadence. Willy — *"that is the recovery interval, not the problem"*; Sims —
+>   *"loading stimulus matters MORE after 45; extend the calendar, never thin the recovery"*, and
+>   they arrive at the same remedy from opposite directions, which is what constrains it to one.
+>   ⚠️ **A finding for the HARNESS, not this item:** `measure:fitness` reports per-bucket figures
+>   from a 3.4% coprime-strided sample, and those figures moved **11pp** under full enumeration.
+>   Filed as `FITNESS-BUCKET-SAMPLE-01`. Register: `docs/canonical/coaching-rulings.md`.
 >   **Measured, varying ONLY age on a real failing input (5K time goal, 3 days, cwk 60, experienced, Achilles):**
 >
 >   | age | 30 | 40 | 43 | 44 | **45** | **46** | **50** | **62** |

@@ -4365,6 +4365,138 @@ defect, same shape. Record: `docs/decisions/coaching-board-2026-09-17-plan-fitne
 
 **Config.** `GENERATION_CONFIG.LONG_RUN_AT_CAP_TOLERANCE_MINS` (3) and `LONG_RUN_SHORTFALL_MATERIAL_PCT` (5). Enforced by `INV-PLAN-LR-SHORTFALL-CAUSE` in `lib/plan/invariants.ts`.
 
+
+### §80 Amendment 2 — a third arm: the injury cap, and the fuelling nobody rehearsed (Coaching Board 2026-09-20, MARA-LR-LOWBASE-01)
+
+**Ruling: CORRECT WITH AMENDMENT. The PLAN is right; the NOTE was wrong.**
+Record: `docs/decisions/coaching-board-2026-09-20-engine-backlog-review.md`.
+
+**The measurement.** Marathon, finish goal, 3 days, `<6mo`, beginner, 29-week runway, race
+weeks and race sessions excluded:
+
+| `current_weekly_km` | healthy | knee history |
+|---|---|---|
+| **8** | **REFUSED** (§111) | **ADMITTED** — peak 29 km, LR 17 km = **40% of race** |
+| **10** | **REFUSED** | **ADMITTED** — LR 17 km = **40%** |
+| 12 / 15 / 20 | LR 26 / 26 / 26 km = **62%** | LR 17 / 17 / 19 km = **40 / 40 / 45%** |
+| 25 / 35 | 62% | 62% |
+
+**Same weekly volume, different long run.** §12's injury cap is what holds the injury cohort's
+long run down — **not weekly volume.** The note said weekly volume, because it had only two arms.
+
+**The principle.** The long-run shortfall note gains a **third arm**. When the runner has a
+volume-capped injury history (§12: knee or shin splints) and the long-run time ceiling is not
+binding, the note names **the injury cap**, and — like the cap branch of Amendment 1 — **it names
+no lever.** A runner cannot train past their own injury history inside one build, and §40c's
+"name the lever" becomes a harm when there is none: McMillan, *"a runner told 'your weekly volume
+is what limits it' will go and add volume, which is precisely what their knee history says not to
+do."* Willy, on the identical defect one amendment earlier: *"an injury vector served as advice."*
+
+**Second half (Sims).** The existing tail warns about **distance**. Where the projected race
+duration exceeds the peak long run by more than `FUELLING_PRACTICE_MIN_SESSION_MINS`, the note
+also says the **fuelling** is untested. The measured case is 2h 16 of rehearsal against 5h 38 of
+racing — **three and a half hours of unrehearsed fuelling** for a first-time, predominantly
+female, 20–29 cohort whose documented failure mode is under-fuelling. ⚠️ Practice, never a
+nutrition prescription (ADR-011).
+
+⚠️ **THE THRESHOLD IS DERIVED, NOT CHOSEN, AND NO NEW NUMERIC WAS ADDED.**
+`FUELLING_PRACTICE_MIN_SESSION_MINS` (120) is §24e's own bar for *"long enough that fuelling
+matters"*. A gap wider than that is more than one whole fuelling-relevant session spent in
+untested territory. Inventing a second constant for the same idea would be D-16.
+
+🔴 **WHAT THIS AMENDMENT DELIBERATELY DOES NOT DO.** It changes **no prescription**. The injury
+cap, §24's bar, §111's ratio and the long-run sizing are all untouched, and that is a ruling, not
+an omission: §9's Recorded structural finding lists **ten instruments built and measured, every
+one trading one defect for another** (§114 at 45% took LONG-RUN-SHORT from 0 → 88.7%; §45's
+absolute arm at 30% took M2's net build 68% → 44%). **An eleventh is forbidden without adherence
+or injury data.** Willy: *"17 km is the correct ceiling and I am not moving it."*
+
+⚠️ **AND THE ADMISSION INCONSISTENCY STAYS OPEN, RECORDED HERE BECAUSE IT HAS NOWHERE ELSE TO
+LIVE.** A healthy 8 km/week runner is **refused** while their knee-history twin is **admitted** —
+because the injury cap lowers the peak, which lowers §111's ratio, which passes. **The injury
+protection is functioning as an admission mechanism.** This is §111's *second* recorded inversion
+(the first is in its own Recorded Limitation). The board cannot close it without touching §111,
+which is `S111-SUBFLOOR-VOLUME-01`, which the SLT has parked behind asking the charity what their
+runners actually run.
+
+**Enforcement.** `INV-PLAN-LR-SHORTFALL-CAUSE` gains a second arm: a note blaming weekly volume
+while a knee or shin-splint history is present is an `error`. Falsification-tested —
+`lib/plan/lrShortfallCause.test.ts` proves it goes RED on the pre-amendment note and stays green
+on the live one.
+
+
+### §80 Amendment 2 — the floor yields to §90's injury ceiling, and says so *(Coaching Board 2026-09-20, S80-VS-S90-PRIORITY-01)*
+
+**Ruling: §90's injury ceiling WINS.** Where §80's peak-long-run floor and §90's
+delivered-week injury cap cannot both hold, **the long run yields.** Willy, who
+authored ADR-022: *"tissue tolerance does not negotiate with a specificity target.
+A first-timer who arrives at the start line having done 24 km instead of 26 km
+finishes; one who arrives injured does not start."*
+
+**This is not a new hierarchy.** §80 is already written as a subordinate rule: its
+own text says the floor is *"subject to `LONG_RUN_CAP_MINUTES`, which still wins"*
+and *"when the cap prevents reaching the floor, the plan says so."* This names a
+**second** constraint it yields to and reuses the same declaration path. No new
+numeric.
+
+**⚠️ TWO PREMISES OF THE 2026-09-19 SITTING WERE FALSE, and they are recorded
+because the same misreading cost two sittings.**
+
+1. *"§9 already forbids it at 28-40%."* **§9 SIZES the long run; it does not cap
+   it** — `generationConfig.ts` says so in its own words. The §45/§47/§80 floors
+   override that sizing, and §52's 60% is the only cap.
+2. *"With §24 removed the trilemma loses a horn: nothing requires 26 km."*
+   **§80 requires it.** Measured on that sitting's own worst-case input: peak long
+   run **208 minutes against the 210-minute `LONG_RUN_CAP_MINUTES.MARATHON`**. §24
+   was never the binding principle. The sitting removed the wrong horn and then
+   reasoned from the gap it had made.
+
+**⚠️ THE URGENCY PREMISE IS WITHDRAWN.** The item carried *"11.4% of injury x
+fresh-return runners declaring >= 4 days get seven consecutive build/peak weeks
+containing two runs."* Re-measured 2026-09-20 on today's engine: that cell,
+constructed directly, is **1,224 plans and ZERO firings**.
+
+> ⚠️ **The first run of that measurement was void and nearly became the ruling.**
+> It set `injuries: ['knee_pain']` — **`injuries` is not a field** (the real one is
+> `injury_history`) and `knee_pain` is not a value (the engine substring-matches
+> `HILL_RESTRICTING_INJURIES`: `knee`, `itb`, `achilles`, `shin`, `calf`,
+> `plantar`). So it measured 1,188 *healthy* runners and reported them as the
+> injury cohort. Exactly the fixture failure this repo has recorded before, where
+> three of six injury types were dead in production because every fixture tested
+> the code's spelling against itself. Re-run with the real field, and falsified:
+> `injury_history: ['knee']` moves peak volume 52 → 34 km and hill sessions 6 → 0,
+> so the flag demonstrably bites and the zero is real. Dumping all **129**
+plans that fire `INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS` across the 14,253-plan
+sweep: **zero have an injury history**, **116 of 129 (90%) sit at 12 km/week**,
+60% are short in week 1, and the worst plan is short for 6 weeks, not 7. §114,
+§117, §118 and CAT-DEPTH all landed after the original measurement.
+
+**So the residual is LOW-VOLUME DAY-FITTING, not injury trimming** — McMillan:
+*"three runs of four kilometres is a training week; two runs is a habit, not a
+plan. That is the whole population here and it has nothing to do with knees."*
+Any instrument proposed under `S52-LOPSIDED-BOUND-01` must be measured against
+**that** population. The injury framing is closed until new evidence.
+
+**Enforcement: NOT MECHANICALLY CHECKABLE, and that is stated rather than papered
+over.** A priority between two principles has no observable in a single plan — the
+collision only exists where both floors bind at once, and **today no plan reaches
+it** (0 of 1,188 in the constructed injury cell, 0 of the 129 sweep firings). An
+invariant asserting "§80 yielded" would be unwakeable by construction, which this
+repo already tracks as a failure class of its own (`invariant:liveness`,
+`UNPROVEN`). So this amendment governs the NEXT instrument rather than the current
+corpus, and the obligation lands on whoever builds it: **an instrument proposed
+under `S52-LOPSIDED-BOUND-01` must show the delivered week stays under §90's
+ceiling, and must be measured against the low-volume population named above, not
+the withdrawn injury one.**
+
+Two related invariants already observe the *consequences* from their own sections
+and are deliberately NOT claimed here — `INV-PLAN-WEEK-DELIVERS-DECLARED-DAYS`
+enforces §18 Am.1 and `INV-PLAN-LR-MAX-WEEKLY-PCT` enforces §52/§114. Citing them
+as enforcement of §80 is exactly the §92 failure (a principle naming an enforcer
+that does not name it back), and the coverage gate caught this sentence in its
+first draft. No third per-week bound — that instruction stands and has been
+measured twice.
+
 ---
 
 ## 101. `compressed` means two different things, so it is two fields
@@ -4426,65 +4558,6 @@ So the incoherence is not "two ladders disagree with each other" — it is **one
 **Config.** `GENERATION_CONFIG.INTENSITY_ORDERING_TOLERANCE_PCT` (0.5% — two independent derivations landing within a rounding width of each other is noise, not an inversion). Enforced by `INV-PLAN-INTENSITY-ORDERING` in `lib/plan/invariants.ts`. Surfaced via §44's difficulty band.
 
 ---
-
-### §80 Amendment 2 — a third arm: the injury cap, and the fuelling nobody rehearsed (Coaching Board 2026-09-20, MARA-LR-LOWBASE-01)
-
-**Ruling: CORRECT WITH AMENDMENT. The PLAN is right; the NOTE was wrong.**
-Record: `docs/decisions/coaching-board-2026-09-20-engine-backlog-review.md`.
-
-**The measurement.** Marathon, finish goal, 3 days, `<6mo`, beginner, 29-week runway, race
-weeks and race sessions excluded:
-
-| `current_weekly_km` | healthy | knee history |
-|---|---|---|
-| **8** | **REFUSED** (§111) | **ADMITTED** — peak 29 km, LR 17 km = **40% of race** |
-| **10** | **REFUSED** | **ADMITTED** — LR 17 km = **40%** |
-| 12 / 15 / 20 | LR 26 / 26 / 26 km = **62%** | LR 17 / 17 / 19 km = **40 / 40 / 45%** |
-| 25 / 35 | 62% | 62% |
-
-**Same weekly volume, different long run.** §12's injury cap is what holds the injury cohort's
-long run down — **not weekly volume.** The note said weekly volume, because it had only two arms.
-
-**The principle.** The long-run shortfall note gains a **third arm**. When the runner has a
-volume-capped injury history (§12: knee or shin splints) and the long-run time ceiling is not
-binding, the note names **the injury cap**, and — like the cap branch of Amendment 1 — **it names
-no lever.** A runner cannot train past their own injury history inside one build, and §40c's
-"name the lever" becomes a harm when there is none: McMillan, *"a runner told 'your weekly volume
-is what limits it' will go and add volume, which is precisely what their knee history says not to
-do."* Willy, on the identical defect one amendment earlier: *"an injury vector served as advice."*
-
-**Second half (Sims).** The existing tail warns about **distance**. Where the projected race
-duration exceeds the peak long run by more than `FUELLING_PRACTICE_MIN_SESSION_MINS`, the note
-also says the **fuelling** is untested. The measured case is 2h 16 of rehearsal against 5h 38 of
-racing — **three and a half hours of unrehearsed fuelling** for a first-time, predominantly
-female, 20–29 cohort whose documented failure mode is under-fuelling. ⚠️ Practice, never a
-nutrition prescription (ADR-011).
-
-⚠️ **THE THRESHOLD IS DERIVED, NOT CHOSEN, AND NO NEW NUMERIC WAS ADDED.**
-`FUELLING_PRACTICE_MIN_SESSION_MINS` (120) is §24e's own bar for *"long enough that fuelling
-matters"*. A gap wider than that is more than one whole fuelling-relevant session spent in
-untested territory. Inventing a second constant for the same idea would be D-16.
-
-🔴 **WHAT THIS AMENDMENT DELIBERATELY DOES NOT DO.** It changes **no prescription**. The injury
-cap, §24's bar, §111's ratio and the long-run sizing are all untouched, and that is a ruling, not
-an omission: §9's Recorded structural finding lists **ten instruments built and measured, every
-one trading one defect for another** (§114 at 45% took LONG-RUN-SHORT from 0 → 88.7%; §45's
-absolute arm at 30% took M2's net build 68% → 44%). **An eleventh is forbidden without adherence
-or injury data.** Willy: *"17 km is the correct ceiling and I am not moving it."*
-
-⚠️ **AND THE ADMISSION INCONSISTENCY STAYS OPEN, RECORDED HERE BECAUSE IT HAS NOWHERE ELSE TO
-LIVE.** A healthy 8 km/week runner is **refused** while their knee-history twin is **admitted** —
-because the injury cap lowers the peak, which lowers §111's ratio, which passes. **The injury
-protection is functioning as an admission mechanism.** This is §111's *second* recorded inversion
-(the first is in its own Recorded Limitation). The board cannot close it without touching §111,
-which is `S111-SUBFLOOR-VOLUME-01`, which the SLT has parked behind asking the charity what their
-runners actually run.
-
-**Enforcement.** `INV-PLAN-LR-SHORTFALL-CAUSE` gains a second arm: a note blaming weekly volume
-while a knee or shin-splint history is present is an `error`. Falsification-tested —
-`lib/plan/lrShortfallCause.test.ts` proves it goes RED on the pre-amendment note and stays green
-on the live one.
-
 ---
 
 ## 81. Structured sessions are exempt from the weekday cap — and the plan says when they don't fit

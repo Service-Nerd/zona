@@ -13,6 +13,50 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — Coaching Board batch: four items, and four premises died under measurement
+
+**Dev.** The founder asked why board items were being filed rather than done. The answer was
+embarrassing: I had been treating the Coaching Board as an external body waiting on someone else.
+I convene it. "Needs a board sitting" is a task, not a blocker. Four items went in; two came out
+as rulings, two came out withdrawn.
+
+**The honest bit, and it is the whole entry.** I went in to rule on a priority. The mandatory
+conflict scan found that **both load-bearing premises of the previous sitting were false**:
+
+- *"§9 already forbids it at 28-40%"* — §9 **sizes** the long run, it does not cap it. The config
+  says so in its own words, one line above the value.
+- *"Nothing requires 26 km"* — **§80 requires it.** Measured on that sitting's own worst case, the
+  peak long run is 208 minutes against a 210-minute cap. §24 was never the binding principle. The
+  sitting removed the wrong horn from its own trilemma and then reasoned from the gap.
+
+Then the urgency claim went too. The item's headline was *"11.4% of injury × fresh-return runners
+get seven consecutive two-run weeks."* Constructed directly on today's engine: **1,224 plans,
+zero firings.** Dumping all 129 plans that actually fire: **none has an injury history**, and
+**116 of 129 sit at 12 km/week**. It is low-volume day-fitting, not injury trimming.
+
+**And I nearly published that with a dead fixture.** The first run set `injuries: ['knee_pain']`.
+There is no `injuries` field — it is `injury_history` — and `knee_pain` is not a value; the engine
+substring-matches `knee`, `itb`, `achilles`, `shin`, `calf`, `plantar`. So it measured 1,188
+healthy runners and called them the injury cohort. My own notes warn about this exact failure,
+with the exact example. I caught it only because the fitness harness's cohort code used the right
+field three lines from where I was reading. Re-run properly, and falsified: `['knee']` moves peak
+volume 52 → 34 km and hill sessions 6 → 0. **The zero is real. The first zero was not.**
+
+**Then the masters item died the same way, for a different reason.** `MASTERS-COMPRESSED-BUILD-01`
+reported masters median build 17.4% against 28.6% for standard — an 11pp deficit, P1, sent to the
+board. On the **full 39,632-plan grid** it is 19.2% against 20.0%, and masters is marginally
+*better* on never-builds. `measure:fitness` samples **1,400 of 41,472 rows**. The stride is
+coprime, which fixes prefix bias and does nothing about size. **An 11pp finding was 0.8pp.** The
+mechanism it described is real — masters lose a build week, 9 → 8 — and costs almost nothing.
+
+**AI-building.** Three of my four reproduction attempts failed, and one printed a confident table
+from **zero generated plans** because every row threw and the catch was silent. I only noticed
+because I printed `n` alongside the percentages. A measurement script is a check, and a check that
+can return a clean-looking answer from an empty set is worse than no check.
+
+**Product.** Nothing changed for a runner today. Two principles are now written down that were
+being argued from memory, and two P1/P2 items are closed as measured non-problems rather than
+sitting on the board's docket implying work.
 
 ## 2026-09-20 — S52-COMPOSITION-INV-01: my first version of the check fired on 45% of plans, and it was the check that was wrong
 
