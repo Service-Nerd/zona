@@ -4121,8 +4121,20 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
 
 
   // Pace from session structured field → Strava aerobic pace → null (no hardcoded fallback)
-  const paceBracket = session.pace_target
-    ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null)
+  //
+  // P-03 (2026-09-20) — CD-11 / §12: for an EASY or RECOVERY run the only number
+  // that matters is the Zone 2 ceiling, so the band renders as "7:11 /km or
+  // slower". `easyPaceAsCeiling` has done this since CD-11 and was called from
+  // exactly ONE place — Session Detail — so the idea the whole product is built
+  // around appeared on one screen and not on the card the runner actually looks
+  // at. Quality, long and race sessions keep their band: there the range IS the
+  // target, and the function leaves them alone (proven: 748 sessions, 656
+  // transformed, 0 non-easy altered).
+  const paceBracket = easyPaceAsCeiling(
+    session.pace_target
+      ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null),
+    session.type,
+  )
   // Tile label tells the user where the value came from. Plan-prescribed
   // ranges aren't HR-derived; only aerobicPace is.
   const paceSource: 'plan' | 'aerobic' | null = session.pace_target

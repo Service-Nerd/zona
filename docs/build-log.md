@@ -9,6 +9,30 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## 2026-09-20 — we built the best idea in the category and put it on one screen
+
+**Dev.** `easyPaceAsCeiling` turns "7:11–8:32 /km" into "7:11 /km or slower". It has existed
+since CD-11, has ten unit tests, and carries its own reasoning: an 81-second window reads as a
+target a runner can fill the whole of; the point is the cap.
+
+It was called from one place. Session Detail. Not Today. Not Plan.
+
+**Product.** The competitor teardown that started this week called the pace ceiling *"the most
+Zonna-shaped idea in their entire app"* — and they had buried it as a grey subtitle behind a
+paywall. We had it at full strength, tested, in voice, and on a screen you have to tap twice to
+reach.
+
+**AI-building.** The fix is one function call. What took the time was proving it changes nothing
+else: 12 plans, 748 sessions, 656 easy runs transformed, zero quality or long or race sessions
+touched. And writing a test that fails for the right reason — a unit test on the function would
+have passed throughout, because the function was never broken. **Reach was the defect, not
+correctness**, so the test asserts reach and I falsified it by deleting the call.
+
+**The honest bit.** I listed the wizard preview as a third missing surface in the gap analysis.
+It isn't — the preview shows phase summaries and never renders a per-session pace. Corrected in
+the registry rather than quietly dropped.
+
 ## 2026-09-20 — the guard had a hole the width of a colour channel
 
 **Dev.** The pre-commit hook blocks hardcoded hex colours and has done for months. It does not
