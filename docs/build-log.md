@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-20 — P-09(a)(b): the blocker was resolved by making the claim true, not by softening it
+
+**Dev.** The paywall showed a price and nothing else: no per-week figure, and no account of what
+the trial actually does. P-09 had been blocked for two days on `TIER-TRIAL-CONFIDENCE-01`, which
+recorded that our 14-day trial was not literally full access while the marketing site said it was.
+
+That item shipped earlier today, and how it shipped is the point. The cheap fix was to soften the
+sentence. What actually happened was the root fix: `enrich` now asks
+`isFeatureAllowed('confidence_score', tier)` instead of carrying its own copy of the rule, so the
+trial genuinely receives it and **the claim became true**. I re-verified before writing a word of
+the timeline: **0 of 21 gated features are denied to `trial`.**
+
+**The guard is the interesting part.** A test that reads the sentence proves nothing. This one
+re-derives the fact the sentence asserts: it enumerates every gate, checks each against `trial`,
+and fails if the copy claims full access while any is closed. Falsified by simulating exactly the
+original defect — deny `confidence_score` to trial and it goes red. That is the thing that did not
+exist the first time, which is why a false claim sat on the marketing site for weeks.
+
+Day 11 got the same treatment. It is not a marketing choice: `trialEmailWindow` nudges three days
+before expiry, so the test derives the row from `trialDays - 3` rather than trusting the string.
+Change the trial length and the timeline fails rather than lying.
+
+**The numbers were worth checking too.** The teardown proposed "~80p per week", which implies
+£41.60 a year and is not our price. Ours is **£1.15/week** on annual, and the competitor we were
+being compared against is £1.54 — **we already win on the metric the brief wanted us to discount
+toward.** A fact to state, not a discount to invent.
+
+**What I did not do, and why.** Part (c) is the exit offer: intercept the dismiss once and offer
+the free tier rather than a discount. It needs a full screen and a once-per-user flag, and the
+migration cannot be applied from here. A screen no runner can reach is not an increment, so it is
+named with its design already settled (`user_settings` already carries `orientation_seen`,
+`connect_runs_seen`, `push_permission_seen` — it is `exit_offer_seen`, nothing new invented)
+rather than half-built to make a ship look complete.
 
 ## 2026-09-20 — P-04: the measurement reversed the ruling, and two copy bugs said the opposite of the truth
 

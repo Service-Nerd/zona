@@ -294,6 +294,41 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
 
         <div style={{ height: '1px', background: 'var(--border-col)', margin: '24px 0' }} />
 
+        {/* ── P-09: THE TRIAL TIMELINE ────────────────────────────────────────
+            The paywall said nothing about what the trial actually does. Three
+            rows, above the prices, because the question "what happens to me
+            and when" comes before "how much".
+
+            ⚠️ EVERY ROW IS VERIFIED, NOT WRITTEN. `TIER-TRIAL-CONFIDENCE-01`
+            was a live false claim of exactly this kind — the marketing site
+            said "Two weeks, full access" while the trial silently did not
+            receive `confidence_score`. It was fixed at the root, and the claim
+            was re-checked before being written here: 0 of 21 gated features
+            are denied to `trial`. Day 11 is not a marketing choice either;
+            `trialEmailWindow` sends the nudge three days before expiry.
+
+            ⚠️ NO COUNTDOWN, NO URGENCY, NO STRIKE-THROUGH. The competitor's
+            exit price undercuts its own headline by £24, which teaches the
+            runner the first two prices were theatre. A timeline states what
+            happens. Copy lives in BRAND.PRICING, never here. */}
+        <div style={{ marginBottom: '24px' }}>
+          {PRICING.trialTimeline.map((row, i) => (
+            <div key={row.day} style={{
+              display: 'flex', gap: '12px', alignItems: 'baseline',
+              marginBottom: i < PRICING.trialTimeline.length - 1 ? '10px' : 0,
+            }}>
+              <span style={{
+                fontFamily: 'var(--font-ui)', fontWeight: 600, fontSize: '0.75rem',
+                color: 'var(--moss)', minWidth: '52px', flexShrink: 0,
+              }}>{row.label}</span>
+              <span style={{
+                fontFamily: 'var(--font-ui)', fontWeight: 400, fontSize: '0.8125rem',
+                color: 'var(--text-muted)', lineHeight: 1.5,
+              }}>{row.detail}</span>
+            </div>
+          ))}
+        </div>
+
         {/* Pricing — metric pair pattern */}
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
@@ -317,6 +352,17 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
               fontSize: '0.75rem', color: 'var(--text-muted)',
               marginTop: '4px',
             }}>per month</div>
+            {/* P-09 — the per-WEEK figure. A subscription to a running app is
+                bought against a weekly habit, and neither £7.99 nor £59.99 is
+                a number anyone feels. ⚠️ From `BRAND.PRICING`, never computed
+                here: a price derived at the render site is a second source of
+                truth for a number that has exactly one (ADR-015/INV-CFG-001),
+                and `pricing.test.ts` cannot see it in a component. */}
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontWeight: 400,
+              fontSize: '0.6875rem', color: 'var(--text-muted)',
+              marginTop: '2px',
+            }}>{PRICING.monthly.perWeekDisplay}</div>
           </button>
 
           <button
@@ -352,6 +398,11 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
               fontSize: '0.75rem', color: 'var(--text-muted)',
               marginTop: '4px',
             }}>per year · {PRICING.annual.perMonthDisplay}</div>
+            <div style={{
+              fontFamily: 'var(--font-ui)', fontWeight: 400,
+              fontSize: '0.6875rem', color: 'var(--text-muted)',
+              marginTop: '2px',
+            }}>{PRICING.annual.perWeekDisplay}</div>
           </button>
         </div>
 

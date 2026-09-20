@@ -665,7 +665,43 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-09 — PAYWALL AND EXIT OFFER: per-week framing, a real trial timeline, and the free tier as the save.** *(T-12, T-13. Blocked on `TIER-TRIAL-CONFIDENCE-01`.)*
+> 🟡 **P-09 — PAYWALL AND EXIT OFFER: per-week framing, a real trial timeline, and the free tier as the save.** *(T-12, T-13. Blocked on `TIER-TRIAL-CONFIDENCE-01`.)*
+>
+> 🟡 **(a) AND (b) SHIPPED 2026-09-20. (c) THE EXIT OFFER REMAINS, and is deliberately not
+> half-built.**
+>
+> **UNBLOCKED, and the blocker resolved the right way.** `TIER-TRIAL-CONFIDENCE-01` was fixed **at
+> the root**: `enrich` now asks `isFeatureAllowed('confidence_score', tier)`, so the claim became
+> TRUE rather than being softened. Re-verified before writing a word of the timeline: **0 of 21
+> gated features are denied to `trial`.**
+>
+> **(a) Per-week pricing.** `BRAND.PRICING.{monthly,annual}.perWeekDisplay`, rendered under each
+> price. ⚠️ **The teardown's numbers were wrong and ours are better:** it proposed *"~80p per
+> week"*, implying £41.60/year, which is not our price. Annual **£1.15/week**, monthly
+> **£1.84/week** — so **our annual already beats the competitor's £1.54 with no price change.** A
+> fact to state, not a discount to invent. Constants, never arithmetic in the component
+> (ADR-015/INV-CFG-001); a test re-derives both from `amount` and fails if they drift.
+>
+> **(b) The trial timeline.** Three rows above the prices, because *"what happens to me and when"*
+> comes before *"how much"*. ⚠️ **Every row is verified, not written.** Day 11 is not a marketing
+> choice: `trialEmailWindow` nudges three days before expiry, and the test derives the row from
+> `trialDays - 3` rather than trusting the string. **The full-access guard is falsified against the
+> original defect** — simulating `confidence_score` denied to trial reddens it, which is exactly
+> what silently did not happen the first time.
+>
+> **No countdown, no strike-through, no second typeface.** Hard rule 2 held. Recorded for the file:
+> the competitor's exit price undercuts its own headline by £24, which teaches the runner the first
+> two prices were theatre; that is the mechanism, not the styling.
+>
+> 🔻 **(c) remains, and here is the decision already made for it.** It needs a full screen (never a
+> modal) plus once-per-user state. The schema pattern is settled — `user_settings` already carries
+> `orientation_seen`, `connect_runs_seen`, `push_permission_seen`, so it is `exit_offer_seen
+> boolean` and nothing new is being invented. **It was NOT half-built on purpose:** the migration
+> cannot be applied from here, and a screen no runner can reach is not an increment. The two claims
+> in its copy still need verifying before it is written (*"full weeks"* is true; *"ceilings on every
+> easy run"* needs checking against what a **never-trialled** free user actually holds —
+> `vdot_pace_zones` is open to free, but whether the VALUE is a benchmark or a population estimate
+> is the separate provenance question).
 >
 > **Problem.** `UpgradeScreen.tsx` shows monthly, annual, a 37% saving label and a **per-month**
 > equivalent. **No per-week figure and no trial timeline** (`grep` → 0). And when a runner dismisses

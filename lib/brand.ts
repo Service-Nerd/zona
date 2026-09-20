@@ -205,6 +205,8 @@ export const PRICING = {
     amount: 7.99,
     display: '£7.99',
     label: '£7.99 / month',
+    /** P-09 — see the note on `annual.perWeekDisplay`. */
+    perWeekDisplay: '£1.84 / week',
   },
 
   annual: {
@@ -216,7 +218,49 @@ export const PRICING = {
     savingPercent: 37,
     /** Honest saving copy — replaces "BEST VALUE" which is banned. */
     savingLabel: 'Save 37% / year',
+    /**
+     * P-09 — the per-WEEK figure, because a subscription to a running app is
+     * bought against a weekly habit and £59.99 is not a number anyone feels.
+     *
+     * ⚠️ A CONSTANT, NOT ARITHMETIC IN A COMPONENT. ADR-015 / INV-CFG-001: a
+     * price derived at the render site is a second source of truth for a
+     * number that has exactly one, and `lib/marketing/pricing.test.ts` cannot
+     * see it there.
+     *
+     * ⚠️ THE TEARDOWN'S FIGURES WERE WRONG AND THE REAL ONES ARE BETTER. The
+     * brief suggested "~80p per week", which implies £41.60/year and is not
+     * our price. 59.99 / 52 = £1.15; 7.99 × 12 / 52 = £1.84. **Our annual is
+     * already cheaper per week than the competitor's £1.54, with no price
+     * change** — a fact worth stating rather than a discount worth inventing.
+     */
+    perWeekDisplay: '£1.15 / week',
   },
 
   trialDays: 14,
+
+  /**
+   * P-09 — the trial timeline. Three rows, on the paywall.
+   *
+   * ⚠️ EVERY ROW IS VERIFIED AGAINST WHAT THE SYSTEM ACTUALLY DOES, because
+   * `TIER-TRIAL-CONFIDENCE-01` was a live false claim of exactly this kind:
+   * the marketing site said "Two weeks, full access" while the trial silently
+   * did not receive `confidence_score`. It was fixed at the root rather than
+   * softened, so the claim is now true — and it was checked again here before
+   * being written down: **0 of 21 gated features are denied to `trial`.**
+   *
+   * Day 11 is not a marketing choice either: `trialEmailWindow` sends the
+   * "3 days left." nudge three days before expiry, so on a 14-day trial that
+   * IS day 11. If `trialDays` changes, these day numbers are wrong — which is
+   * why `brandPricing.test.ts` derives them rather than trusting the strings.
+   *
+   * ⚠️ NO COUNTDOWN AND NO URGENCY. The teardown's competitor shows an exit
+   * price that undercuts its own headline by £24, which teaches the runner the
+   * first two prices were theatre. A timeline states what happens; it does not
+   * pressure.
+   */
+  trialTimeline: [
+    { day: 1,  label: 'Today',        detail: 'Full access. Every paid feature, nothing held back.' },
+    { day: 11, label: 'Day 11',       detail: 'We email you three days before it ends. No surprise charge.' },
+    { day: 14, label: 'Day 14',       detail: 'It ends. You keep your plan and drop to the free tier.' },
+  ],
 } as const
