@@ -49,15 +49,38 @@ const spread = <T,>(c: readonly T[]): T[] => {
   return Array.from({ length: n }, (_, k) => c[(k * step) % n] as T)
 }
 
-interface Row { n: number; gains: number[]; flat: number; peakLrPct: number[] }
-const blank = (): Row => ({ n: 0, gains: [], flat: 0, peakLrPct: [] })
+interface Row { n: number; gains: number[]; flat: number; peakLrPct: number[]; grids: Record<string, number> }
+const blank = (): Row => ({ n: 0, gains: [], flat: 0, peakLrPct: [], grids: {} })
 const med = (a: number[]) => (a.length ? [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)]! : 0)
 
 export function measure() {
-  const pool = [
-    ...spread(cohortGrid()).slice(0, 1400),
-    ...spread(targetedGrid()).slice(0, 600),
-  ] as GeneratorInput[]
+  // FITNESS-BUCKET-SAMPLE-01 (2026-09-20) — TWO DEFECTS, and the second is the
+  // one that actually misled a board sitting.
+  //
+  // (1) SIZE. The pool was 1,400 of cohortGrid's 41,472 rows plus 600 of
+  //     targetedGrid's 6,144 — about 3.4%. The coprime `spread` fixes prefix
+  //     bias and does nothing about size. Widened 10x below; the whole run
+  //     takes ~35s, which is affordable for a harness that gates the build.
+  //
+  // (2) ⚠️ COMPOSITION, AND THIS IS THE SERIOUS ONE. `cohortGrid` varies age
+  //     over {35, 52}; `targetedGrid` is **entirely age 40**. So every
+  //     targetedGrid row lands in `healthy standard` and NONE can land in
+  //     `healthy masters` — the two buckets are drawn from DIFFERENT GRIDS and
+  //     were never comparable. Measured: the harness reported masters median
+  //     build 17.4% against standard 28.6%, an 11pp "masters deficit" that
+  //     opened a P1 and reached the Coaching Board. Within cohortGrid alone,
+  //     apples to apples, it is **19.2% against 20.0% — 0.8pp**.
+  //
+  //     Widening the sample does NOT fix this: at 10x it still reads 19.1% vs
+  //     28.6%, because the gap was never noise. **A bigger sample of a
+  //     mis-composed comparison is a more confident wrong answer.** So each
+  //     bucket now reports which grids fed it, and the printed table says so.
+  const cohortRows   = spread(cohortGrid()).slice(0, 14000) as GeneratorInput[]
+  const targetedRows = spread(targetedGrid()).slice(0, 6000) as GeneratorInput[]
+  const pool: GeneratorInput[] = [...cohortRows, ...targetedRows]
+  const gridOf = new Map<GeneratorInput, 'cohort' | 'targeted'>()
+  for (const r of cohortRows)   gridOf.set(r, 'cohort')
+  for (const r of targetedRows) gridOf.set(r, 'targeted')
 
   const buckets = new Map<string, Row>()
   // ⚠️ The injury x masters cell exists in NEITHER grid (cohortGrid does not vary
@@ -88,6 +111,8 @@ export function measure() {
     const masters = (input.age ?? 0) >= GENERATION_CONFIG_MASTERS
     const key = `${injured ? 'INJURY ' : 'healthy'} ${masters ? 'masters ' : 'standard'}`
     const row = buckets.get(key) ?? blank()
+    const g = gridOf.get(input) ?? 'constructed'
+    row.grids[g] = (row.grids[g] ?? 0) + 1
     const first = ws[0]!.weekly_km
     const peak = Math.max(...ws.map(w => w.weekly_km))
     row.n++
@@ -118,6 +143,10 @@ export function measure() {
     medianBuildPct: +((med(r.gains) - 1) * 100).toFixed(1),
     neverBuildsPct: +(r.flat / r.n * 100).toFixed(1),
     medianMarathonLrPctOfRace: r.peakLrPct.length ? +med(r.peakLrPct).toFixed(1) : null,
+    // FITNESS-BUCKET-SAMPLE-01 — which grids fed this bucket. Two buckets with
+    // different composition are not comparable, and the 11pp "masters deficit"
+    // that reached the Coaching Board was exactly that mistake.
+    grids: r.grids,
   }])), personas }
 }
 
@@ -135,11 +164,17 @@ if (process.argv[1]?.includes('measure-plan-fitness')) {
   } else if (process.argv.includes('--json')) { console.log(JSON.stringify(r, null, 2)); }
   else {
     console.log('NET BUILD — peak building week vs week 1 (deloads/taper/race excluded)\n')
-    console.log('cohort               n      median build   never builds   marathon peak LR (% of race)')
+    console.log('cohort               n      median build   never builds   marathon peak LR (% of race)   grids')
     for (const [k, v] of Object.entries(r.buckets) as [string, { n: number; medianBuildPct: number; neverBuildsPct: number; medianMarathonLrPctOfRace: number | null }][]) {
       console.log(`  ${k.padEnd(18)}${String(v.n).padStart(5)}${String(v.medianBuildPct + '%').padStart(14)}` +
-        `${String(v.neverBuildsPct + '%').padStart(15)}${String(v.medianMarathonLrPctOfRace ?? '-').padStart(22)}`)
+        `${String(v.neverBuildsPct + '%').padStart(15)}${String(v.medianMarathonLrPctOfRace ?? '-').padStart(22)}` +
+        `   ${Object.entries((v as unknown as { grids: Record<string, number> }).grids ?? {}).map(([g, c]) => `${g}:${c}`).join(' ')}`)
     }
+    console.log('\n⚠️  BUCKETS WITH DIFFERENT `grids` ARE NOT COMPARABLE. `targetedGrid` is entirely age 40,')
+    console.log('   so it can only ever feed a `standard` bucket. Comparing a masters median against a')
+    console.log('   standard median across different grids reads a COMPOSITION difference as an age effect,')
+    console.log('   which is how an 11pp "masters deficit" reached the Coaching Board (it is 0.8pp within')
+    console.log('   cohortGrid alone). Compare like with like, or say which grids you compared.')
     console.log('\nMARATHON REVIEW PERSONAS — peak long run vs the 30-32km first-marathon norm\n')
     for (const p of r.personas) {
       console.log(p.refused ? `  ${p.id.padEnd(52)} refused by design`

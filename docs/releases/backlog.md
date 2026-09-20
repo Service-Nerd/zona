@@ -3571,7 +3571,9 @@ the Anthropic credit runs out mid-block?* Tracing the failure path found one rea
 >
 > *Verify still open:* `npx tsx -e "import {cohortGrid} from './lib/plan/cohortGrid'; console.log(Math.max(...cohortGrid().filter(i=>i.race_distance_km>40).map(i=>i.current_weekly_km)))"` → **< 53 = still open**.
 
-> 🔲 **S24-FLOOR-REACHABILITY-01 — §24's marathon floor is unreachable for most runners, and the constitution does not say so.** *(P2, filed 2026-09-17 out of the LR-CONSEC-01 sitting. **Coaching Board question — a principle's own reachability.**)*
+> ✅ **S24-FLOOR-REACHABILITY-01 — §24's marathon floor is unreachable for most runners, and the constitution does not say so.** *(P2, filed 2026-09-17 out of the LR-CONSEC-01 sitting. **Coaching Board question — a principle's own reachability.**)*
+>
+> ✅ **RULED AND SHIPPED 2026-09-20 — Coaching Board, option (a). §24 Amendment 2.** The floor is **pace-conditional** and the constitution now says so: 210 min ÷ 31.65 km = **6.64 min/km**, so a runner slower than ~6:38/km cannot reach it in any plan, ever. **No numeric change, no prescription change** — the engine already behaves correctly because §24 already concedes the time cap wins; what was missing was the arithmetic consequence. Re-measured, 180 marathon plans from runners who can genuinely build: **≤6:38/km → 66.7% reach it; >6:38/km → 0.0%.** ⚠️ **THE FILING'S NUMBERS ARE WITHDRAWN** — it said *"0 of 108 reach it, best misses by 0.15 km"*; today 33.3% reach it and the best exceeds it at 33.5 km. The shape survives, the figures do not. Rejected (b) scaling the floor with the cap: it would change prescription for faster runners to fix a documentation problem. §9's 210 min untouched (Willy: past ~3.5h a session buys recovery debt, not fitness). ⚠️ **Adjacent, NOT closed, and NOT attributed:** 83.3% of that same cohort classify `volume_profile: 'maintenance'`. The filing blamed this floor; `volume_profile` has **six** triggers and nothing isolates which fired, so it is filed as `MAINT-LABEL-TOPEND-01` rather than asserted.
 >
 > Measured on 108 marathon plans built from runners who genuinely can build (55–75 km/wk, longest 24–32 km, 5–6 days, 16–20 weeks, intermediate/experienced): **peak long run median 29.0 km, MAX 31.5 km, against §24's 31.65 km floor. 0 of 108 reach it.** The best plan misses by **0.15 km — less than the 0.5 km rounding step.**
 >
@@ -3641,7 +3643,9 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 > picked up, add the field to the registry row, not a parallel table. **Filed against that item as
 > a design constraint rather than kept open here as work.**
 
-> 🔲 **FITNESS-BUCKET-SAMPLE-01 — `measure:fitness` reports per-bucket figures from a 3.4% sample, and they moved 11pp under full enumeration.** *(P2, architect, filed 2026-09-20 out of the MASTERS-COMPRESSED-BUILD-01 ruling.)*
+> ✅ **FITNESS-BUCKET-SAMPLE-01 — `measure:fitness` reports per-bucket figures from a 3.4% sample, and they moved 11pp under full enumeration.** *(P2, architect, filed 2026-09-20 out of the MASTERS-COMPRESSED-BUILD-01 ruling.)*
+>
+> ✅ **SHIPPED 2026-09-20 — and the diagnosis in the filing was the LESSER of two defects.** I filed this as a sample-SIZE problem (1,400 of 41,472 rows, 3.4%). Widening it 10x did **not** close the gap: masters still read 19.1% against standard 28.6%. ⚠️ **THE REAL DEFECT IS COMPOSITION.** `cohortGrid` varies age over {35, 52}; **`targetedGrid` is entirely age 40**, so every targeted row lands in a `standard` bucket and **none can ever land in `masters`**. The two buckets were drawn from different grids and were never comparable — `healthy masters` is 100% cohortGrid, `healthy standard` is 31% targetedGrid, and `INJURY masters` is **3 constructed rows against `INJURY standard`'s 3,000 targeted ones**. **A bigger sample of a mis-composed comparison is just a more confident wrong answer.** Fixed both: pool widened 10x (~35s, affordable for a build gate) AND every bucket now reports which grids fed it, with the printed table stating outright that buckets of differing composition are not comparable. Baseline re-written with the reason declared: n ~10x throughout, healthy masters medBuild 17.4→19.1 and neverBuilds 17.2→18.1, healthy standard medBuild **28.6→28.6 (stable)** and neverBuilds 13.7→12.7; **injury never-builds stay 0, so the no-tolerance gate holds.**
 >
 > `measure()` builds its pool from `spread(cohortGrid()).slice(0, 1400)` + `spread(targetedGrid()).slice(0, 600)`
 > — **1,400 of 41,472 rows**. The coprime stride is right and fixes the prefix-bias problem it was
@@ -3705,7 +3709,9 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 
 ---
 
-> 🔲 **COMPLIANCE-PROGRAMME — the open half.** *(opened 2026-09-16; **gauge 97.7%, fit-for-purpose 97.7%, both past the 95% target** — what remains below is the residual, not the programme)*
+> ✅ **COMPLIANCE-PROGRAMME — the open half.** *(opened 2026-09-16; **gauge 97.7%, fit-for-purpose 97.7%, both past the 95% target** — what remains below is the residual, not the programme)*
+>
+> ✅ **CLOSED 2026-09-20 — every sub-item inside this block is already ✅ and the umbrella was the only thing still open.** Verified rather than asserted: `npm run verify:coaching` reports **HIGH 0 · MED 25 · LOW 0** — no high-severity coaching deviation on any test plan, which is the programme's own success condition. ⚠️ **Do not read the header's "fit-for-purpose 97.7%" against today's `measure:envelope` 92.3%** — they are different instruments, and the envelope fell today because the RULER was corrected twice (a refusal had been scoring as fit; the population excluded everyone under 6 km/week), not because the engine regressed. The standing harnesses now carry the residual: `verify:coaching` for deviations, `measure:envelope` for fit-for-purpose, `measure:fitness` for build, `cohort:shape` for classification. **A programme whose work is done and whose residual has four permanent gauges does not need an umbrella item to hold it open.**
 >
 > ✅ **CLOSED 2026-09-16 — CB-HSR-AVOID-01 (§110 + §110 Am.1 + the §21 defect).** `avoid` and an
 > Achilles history set `plannedQuality = 0` for every week of every plan: 2,953 non-beginner plans,

@@ -1756,6 +1756,69 @@ week is invisible in the plan's structured data** (`type: 'normal'`, no badge,
 otherwise). 🔎 **Filed, not fixed:** that missing marker will bite the next rule
 that needs to tell loading from recovery.
 
+
+### Amendment 2 — the floor is PACE-CONDITIONAL, and the constitution now says so *(Coaching Board 2026-09-20, S24-FLOOR-REACHABILITY-01)*
+
+**No numeric changes and no prescription changes. This is a documentation
+defect: the engine already behaves correctly and the constitution did not say
+why.**
+
+§24 sets a marathon peak-long-run floor of 75% of race distance — **31.65 km** —
+and already concedes that §9's `LONG_RUN_CAP_MINUTES` wins (*"the engine never
+prescribes a long run that exceeds the time cap, even if doing so would satisfy
+this floor"*). What was never written down is the **arithmetic consequence**:
+
+> 210 minutes ÷ 31.65 km = **6.64 min/km**. A runner whose easy pace is slower
+> than about **6:38/km cannot reach this floor**, in any plan, ever. Not because
+> the engine failed, but because the two numbers cannot both hold.
+
+**Measured 2026-09-20** across 180 marathon plans from runners who genuinely can
+build (55-75 km/wk, longest 24-32 km, 5-6 days, 16-20 weeks, intermediate and
+experienced, time goal):
+
+| easy-pace band | n | reach the floor |
+|---|---|---|
+| ≤ 6:38 /km | 90 | **66.7%** |
+| > 6:38 /km | 90 | **0.0%** |
+
+**The rule.** §24's floor is a target for runners whose easy pace permits it
+within `LONG_RUN_CAP_MINUTES`. Below that pace the cap governs and the floor is
+inert **by construction**. A plan that does not reach the floor because the time
+cap bound first is CONFORMING, not deficient, and must not be read as a miss.
+
+**Why (a) and not the alternatives.** Scaling the floor with the cap was
+considered and rejected: it would change prescription for faster runners too,
+and re-opening a ratified number to solve a documentation problem is the wrong
+trade. Willy on the cap itself: beyond roughly three and a half hours a single
+session stops buying fitness and starts buying recovery debt, whatever a
+specificity target wants. **§9's 210 minutes is not in scope.**
+
+**This mirrors §80, one principle away.** §80 expresses the finish-goal peak
+long run in DURATION precisely because "a first-timer is time-on-feet limited,
+not aerobically limited" and "the constraint that actually binds is already
+expressed in minutes." §24 is the same shape with a distance floor and a
+minutes cap. McMillan: a five-hour marathoner's specificity IS time on feet, and
+the only reason we had not said so here is that §24 was written for the runner
+who can reach it.
+
+⚠️ **THE FILING'S NUMBERS ARE WITHDRAWN.** It recorded *"0 of 108 reach it, and
+the best plan misses by 0.15 km, less than the rounding step."* Re-measured on
+today's engine: **33.3% reach it overall and the best exceeds it at 33.5 km.**
+The shape of the finding survives; "nobody reaches it" does not.
+
+⚠️ **ADJACENT AND NOT CLOSED BY THIS.** In the same 180-plan measurement,
+**83.3% classify `volume_profile: 'maintenance'`** — runners on 55-75 km/week
+being described by a label §23 defines as "maintains current fitness rather than
+building it". The filing attributed that to this floor. **That attribution is
+NOT established**: `volume_profile` has six independent triggers and nothing
+here isolates which fired. Filed separately as `MAINT-LABEL-TOPEND-01` rather
+than asserted, because a cause assumed from a correlation is how the last two
+premises on this page came to be wrong.
+
+**Enforcement.** Nothing new is mechanically checkable here: the rule is that an
+existing behaviour is CONFORMING, and a check for "did not fire" is unwakeable
+by construction. §9's cap and §24's floor are each already enforced.
+
 ---
 
 ## 25. Race-specific long run (HM and marathon, time-targeted)

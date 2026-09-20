@@ -4,25 +4,41 @@
       "n": 3,
       "medianBuildPct": 41.2,
       "neverBuildsPct": 0,
-      "medianMarathonLrPctOfRace": 66.4
+      "medianMarathonLrPctOfRace": 66.4,
+      "grids": {
+        "constructed": 3
+      }
     },
     "INJURY  standard": {
-      "n": 304,
+      "n": 3003,
       "medianBuildPct": 36.4,
       "neverBuildsPct": 0,
-      "medianMarathonLrPctOfRace": 61.6
+      "medianMarathonLrPctOfRace": 61.6,
+      "grids": {
+        "targeted": 3000,
+        "constructed": 3
+      }
     },
     "healthy masters ": {
-      "n": 674,
-      "medianBuildPct": 17.4,
-      "neverBuildsPct": 17.2,
-      "medianMarathonLrPctOfRace": 62.7
+      "n": 6712,
+      "medianBuildPct": 19.1,
+      "neverBuildsPct": 18.1,
+      "medianMarathonLrPctOfRace": 62.8,
+      "grids": {
+        "cohort": 6709,
+        "constructed": 3
+      }
     },
     "healthy standard": {
-      "n": 965,
+      "n": 9671,
       "medianBuildPct": 28.6,
-      "neverBuildsPct": 13.7,
-      "medianMarathonLrPctOfRace": 61.6
+      "neverBuildsPct": 12.7,
+      "medianMarathonLrPctOfRace": 61.6,
+      "grids": {
+        "cohort": 6668,
+        "targeted": 3000,
+        "constructed": 3
+      }
     }
   },
   "personas": [
@@ -55,7 +71,7 @@
       "refused": false
     },
     {
-      "id": "M6 marathon off an 8 km/week base — a GENUINE refusal",
+      "id": "M7 marathon off a 4 km/week base — the refusal §117 does NOT reach",
       "peakLr": 0,
       "pctOfRace": 0,
       "netBuildPct": 0,

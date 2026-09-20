@@ -10,6 +10,41 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — FITNESS-BUCKET-SAMPLE-01: I filed the wrong diagnosis, and widening the sample proved it
+
+**Dev.** Three engine-governance items. The one worth writing up is the one where my own filing,
+written four hours earlier, was wrong about the cause.
+
+`measure:fitness` had reported an 11pp "masters build deficit" that opened a P1 and reached the
+Coaching Board. I traced it to sample size — the pool was 1,400 rows of a 41,472-row grid, 3.4% —
+filed it as such, and moved on. Today I widened the pool tenfold to fix it. **The gap did not
+move.** Masters still read 19.1% against standard 28.6%.
+
+**Because the defect was never size.** `cohortGrid` varies age over {35, 52}. `targetedGrid` is
+**entirely age 40**. So every targeted row lands in a `standard` bucket and *none can ever land in
+a masters one*. `healthy masters` is 100% cohortGrid; `healthy standard` is 31% targetedGrid. The
+injury pair is worse still: three constructed rows against three thousand targeted ones. **The two
+buckets were never comparable, and the table put them side by side with aligned decimal points.**
+
+**The line I want to keep:** a bigger sample of a mis-composed comparison is just a more confident
+wrong answer. I would have shipped exactly that, and the numbers would have looked better.
+
+**Product.** Nothing a runner sees. What changes is that a board sitting can no longer be opened by
+reading two columns that describe different populations — every bucket now prints which grids fed
+it, and the table says in plain words that buckets of differing composition are not comparable.
+
+**Also today.** §24's marathon long-run floor is now documented as pace-conditional: 210 minutes
+over 31.65 km needs 6.64 min/km, so below about 6:38/km it is unreachable *by arithmetic*, in every
+plan, forever. The engine was already right — §24 already concedes the time cap wins — but the
+constitution never stated the consequence, so a reader concluded the engine was failing a rule when
+it was obeying a different one. **That filing's numbers were withdrawn too** ("0 of 108 reach it"
+is now 33.3%, and the best plan exceeds the floor rather than missing by 0.15 km).
+
+**The honest bit.** Three items, three filings, and **two of the three had a wrong premise written
+by me.** The pattern is consistent enough now to name: I file from a measurement taken in one
+context and the context moves, or I file a cause I inferred rather than isolated. The fix that
+keeps working is boring — re-measure the premise before building the remedy, and check the
+denominator is the population you think it is.
 
 ## 2026-09-20 — PRICING-ROW-TRUTH-01: the first row I checked was lying
 
