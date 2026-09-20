@@ -4,7 +4,44 @@ Raw learning notes, one entry per ship. Newest first. Dev / product / AI-buildin
 angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, keep
 it specific, no polish. The content system adds the voice.
 
----
+---## 2026-09-20 — P-12 and P-14(a): the upsell that reads its own feature list
+
+**Dev.** Our Me screen's Subscription section was one row saying "View plans". The competitor's
+equivalent is better, and the reason is order: it states what you already have, then what Pro
+adds. That is the only shape an upsell takes that does not feel like a shakedown, and it was worth
+taking even though almost nothing else on that screen was.
+
+**The part that mattered technically was refusing to type the feature list.** `/pricing` already
+holds gate-linked rows, each naming the `FEATURE_GATES` entry it describes, and those rows are
+already covered by two guards — one proving every paid gate has a row, and today's one proving the
+mechanical claims are true of the product. A hand-written list on Me would have been a third copy
+of the same prose sitting outside both. It reads them instead, and a test fails if a single
+feature name is retyped in the component. Falsified by retyping a real one.
+
+**A subscriber sees the card too.** No upsell in it, just what their subscription covers. Hiding it
+would make the section appear only when we want something, which is the behaviour the card exists
+to avoid.
+
+**P-14 was a smaller job with one real decision in it.** We had neither half of the review prompt:
+no passive row, no native prompt, no plugin, zero hits across the codebase. The row is one line
+with no framing — the moment it says "help other runners find us" it becomes marketing copy on a
+support screen and needs a brand decision, so a test asserts the absence of persuasion.
+
+The URL is derived from the App Store URL rather than hardcoded again, and the row is gated on
+that URL being non-empty, because the constant's own note says it is blank until approval and a
+review link to a page that does not exist is worse than no link.
+
+**What I did not build, and why it is the interesting half.** The native
+`SKStoreReviewController` prompt fires after "a genuine win". Apple rate-limits it to three a year,
+so firing it on anything less than a real win spends a scarce resource on nothing — and what
+counts as a win has to be written down before it is coded, which is P-14's own acceptance
+criterion. Guessing the trigger would have been the easy half and the wrong one.
+
+**AI-building.** Fourth time today a "must not contain" assertion matched a comment rather than
+code: the comment explaining that the native prompt is deliberately absent contains the words
+`SKStoreReview` and `requestReview`. Also caught myself asserting the card contains no "14" — which
+matches `fontSize: '14px'`. A test that fails on a stylesheet value teaches people to delete it.
+
 ## 2026-09-20 — P-10: deleting dead code found live doc rot, which found more doc rot
 
 **Dev.** Three cold-start holes. The first was to delete two components rather than fix them, and

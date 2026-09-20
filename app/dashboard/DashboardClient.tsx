@@ -1,5 +1,6 @@
 'use client'
 
+import MePlanCard from '@/components/shared/MePlanCard'
 import { useIsNative } from '@/lib/useIsNative'
 import ZoneWeekBlock from '@/components/shared/ZoneWeekBlock'
 import { classifyRun, type RunZoneOutcome } from '@/lib/coaching/zoneWeekStatement'
@@ -12231,34 +12232,26 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </>
         )}
 
-        {/* ── Subscription — UPGRADE-ENTRY-01 ─────────────────────
-            Visible to free / trial / expired users. Hidden for active
-            paid subscribers (hasPaidAccess=true AND no trial days left).
-            Satisfies §3.1.2 reviewer-reachability: any non-Pro user can
-            reach the paywall from Me at any time. */}
-        {(!hasPaidAccess || trialDaysLeft != null) && onUpgrade && (
-          <>
-            <SectionLabel>Subscription</SectionLabel>
-            <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-              <button
-                onClick={onUpgrade}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-              >
-                <div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '2px' }}>
-                    View plans
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-                    {trialDaysLeft != null
-                      ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left in your trial.`
-                      : `From ${PRICING.monthly.label}.`}
-                  </div>
-                </div>
-                <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
-              </button>
-            </div>
-          </>
-        )}
+        {/* ── P-12: THE PLAN CARD (was a single "View plans" row) ─────────
+            UPGRADE-ENTRY-01's §3.1.2 requirement is unchanged and still met:
+            any non-Pro user can reach the paywall from Me at any time. What
+            changed is that the row became a value statement.
+
+            The teardown's one genuinely copyable idea: state what the runner
+            ALREADY HAS before listing what they do not. Ours was a link.
+
+            ⚠️ Rendered for subscribers too, without an upsell — a paid runner
+            seeing what their subscription covers is the honest half of the
+            same card, and hiding it would make the section appear only when
+            we want something. */}
+        <SectionLabel>Plan</SectionLabel>
+        {onUpgrade
+          ? <MePlanCard
+              hasPaidAccess={!!hasPaidAccess}
+              trialDaysLeft={trialDaysLeft ?? null}
+              onUpgrade={onUpgrade}
+            />
+          : null}
 
         {/* ── Support — in-app contact (FREE; SUPPORT-01) ──────── */}
         <SectionLabel>Support</SectionLabel>
@@ -12275,6 +12268,42 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             </div>
             <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
           </button>
+          {/* ── P-14(a): THE PASSIVE REVIEW ROW ──────────────────────────
+              We had NEITHER half of this: no passive row, no native prompt, no
+              plugin — `requestReview` / `SKStoreReview` returned zero hits
+              across the whole codebase. This is the half that needs no plugin,
+              no flag and no migration.
+
+              ⚠️ ONE ROW, NO FRAMING, NO CLAIM. The moment it acquires a reason
+              ("help other runners find us") it becomes marketing copy on a
+              support screen and needs a brand decision. It asks; it does not
+              persuade.
+
+              ⚠️ (b), the native SKStoreReviewController prompt after a defined
+              win, is NOT here. Apple rate-limits to three a year, so firing it
+              on anything less than a real win wastes a scarce resource — and
+              "a defined win" has to be written down before it is coded, which
+              is P-14's own acceptance criterion. Deliberately left rather than
+              guessed.
+
+              ⚠️ ExternalLink, not <a>: inside the Capacitor webview a bare
+              href REPLACES the app and the runner has no way back
+              (`externalLink.test.ts`). */}
+          {/* Gated on the store URL existing: BRAND.appStore declares that
+              `url` is blank until the app is approved, and a review link to a
+              page that does not exist is worse than no link. */}
+          {BRAND.appStore.url && <>
+          <div style={{ height: '1px', background: 'var(--line)' }} />
+          <ExternalLink
+            href={BRAND.appStore.reviewUrl}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', textDecoration: 'none' }}
+          >
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4 }}>
+              Leave a review
+            </div>
+            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
+          </ExternalLink>
+          </>}
         </div>
 
         {/* ── Careful Now — destructive account actions ───────── */}

@@ -110,6 +110,20 @@ export const BRAND = {
     url: 'https://apps.apple.com/app/id6767516424',
     comingSoonLabel: 'Coming soon to the App Store',
     liveLabel: 'Download on the App Store',
+    /**
+     * P-14(a) — the passive "Leave a review" row on Me → Support.
+     *
+     * ⚠️ MUST TRACK `url`. It is the same product page with Apple's
+     * write-review action appended; a second hardcoded App Store ID is a
+     * second thing to get wrong on the day the ID changes, and this block
+     * already declares itself the single source of truth. `brandAppStore
+     * .test.ts` re-derives it and fails if the two drift.
+     *
+     * ⚠️ THE ROW MUST NOT RENDER WHEN `url` IS EMPTY. This block's own note
+     * says `url` is blank until the app is approved; a review link to a page
+     * that does not exist is worse than no link, so the caller gates on it.
+     */
+    reviewUrl: 'https://apps.apple.com/app/id6767516424?action=write-review',
   },
 
   /**

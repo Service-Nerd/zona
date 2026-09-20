@@ -886,7 +886,24 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-12 — PROFILE: the plan card.** *(T-16. The LEAVE is already satisfied; the TAKE is not.)*
+> ✅ **P-12 — PROFILE: the plan card.** *(T-16. The LEAVE is already satisfied; the TAKE is not.)*
+>
+> ✅ **SHIPPED 2026-09-20.** The Subscription section was a single "View plans" row: a link, not a
+> value statement. It is now a plan card in the order the teardown got right — **what you already
+> have, then what full access adds.** That order is the whole point and the only genuinely
+> non-manipulative shape an upsell has.
+>
+> ⚠️ **THE LISTS ARE READ, NEVER RETYPED.** `FREE_FEATURES` / `PAID_FEATURES` from
+> `lib/marketing/pricing.ts` — the same gate-linked rows `/pricing` renders. A hand-written list
+> here would be the homepage "four answers" defect waiting to happen, and it would sit **outside
+> both guards that already cover those rows** (`pricing.test.ts` and today's
+> `pricingRowTruth.test.ts`). Reading them means the card inherits both. Falsified: retyping one
+> real feature name reddens the test.
+>
+> **A subscriber sees the card too, with no upsell** — hiding it would make the section appear only
+> when we want something. The trial line **states the end, not a countdown** (P-09's hard rule 2).
+> Price from the same constant the paywall uses; §3.1.2 reviewer-reachability unchanged.
+> **T-16's discipline metrics were already folded into P-04**, as its filing directed.
 >
 > **Problem.** Miles leads Profile with **"0 WEEK STREAK · 0.0 mi · 0 RUNS"** (`IMG_7185`). We have
 > **no streak anywhere** — `grep` finds only marketing copy asserting its absence, one comment
@@ -983,7 +1000,26 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔲 **P-14 — REVIEW PROMPT.** *(T-19. **Added — §4 has no slot for T-19**, and dropping a finding to fit the numbering would be worse.)*
+> 🟡 **P-14 — REVIEW PROMPT.** *(T-19. **Added — §4 has no slot for T-19**, and dropping a finding to fit the numbering would be worse.)*
+>
+> 🟡 **(a) SHIPPED 2026-09-20. (b) DELIBERATELY NOT BUILT.**
+>
+> We had **neither half** — `requestReview` / `SKStoreReview` returned zero hits across the whole
+> codebase. (a) is one row in Me → Support, beside Help and Contact: **no framing, no claim.** The
+> moment it acquires a reason ("help other runners find us") it becomes marketing copy on a support
+> screen and needs a brand decision; it asks, it does not persuade, and a test asserts that.
+>
+> ⚠️ **The URL is DERIVED, not a second hardcoded App Store ID.** `BRAND.appStore.reviewUrl` is the
+> product URL plus Apple's write-review action, and a test re-derives it from `url` so the two
+> cannot drift — that block already declares itself the single source of truth. **The row is gated
+> on `url` being non-empty**, because the block's own note says it is blank until approval and a
+> review link to a page that does not exist is worse than no link.
+>
+> 🔻 **(b) the native `SKStoreReviewController` prompt is not here, on purpose.** Apple rate-limits
+> to three a year, so firing it on anything less than a real win **wastes a scarce resource** — and
+> "a defined win" has to be written down before it is coded, which is P-14's own acceptance
+> criterion. It also needs a plugin and a flag (migration). Guessing the trigger would have been
+> the easy half and the wrong one.
 >
 > **Problem.** We have **neither half** of this. `grep -rn -i "leave a review\|requestReview\|SKStoreReview"`
 > across `app`, `components`, `lib` and `ios/App` → **0 hits.** No passive row, no native prompt, no
