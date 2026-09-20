@@ -7,6 +7,44 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-20 — P-04: the measurement reversed the ruling, and two copy bugs said the opposite of the truth
+
+**Dev.** The Plan screen had no intensity metric. Neither does the competitor's, which is the
+finding: their screen shows distance covered, total distance, current pace, race-day pace and
+projected finish, in an app whose own marketing argues runners go too fast. The question this
+whole product is built on was answerable only on Coach.
+
+**The board had not sat, and the SLT had said it must.** Two questions were routed down and no
+ruling was on record. I convened with the data rather than the argument, and the data reversed the
+shape of the answer. Hutchinson had asked for a minimum of three analysed runs before the block
+says anything, on good grounds: three runs with no control for terrain, heat or a badly-seated
+strap is not a pattern. But across 42 runner-weeks, a three-run minimum would have **hidden the
+block on 57.1% of weeks.** A block that is absent more often than present is not a block.
+
+The resolution came from Hutchinson narrowing his own objection: he never objected to *stating what
+happened*, only to *inferring a pattern* from it. Those are different claims, and the question as
+routed down had conflated them. So the threshold gates the register, not the visibility: three runs
+buys you a verdict, fewer buys you a count, none buys you an honest "no heart rate yet".
+
+**The honest bit, and it is the worst near-miss of the day.** The zero case is the sentence a
+struggling runner reads. Mine interpolated the measured count into the leading slot, so a week in
+which **four runs drifted** rendered as *"Four of this week's runs stayed in the zone."* The exact
+opposite of the truth, in the one sentence that most needs to be true. I found it by printing every
+variant rather than reading the code — the same pass caught a capitaliser that only ever uppercased
+the word "none", shipping *"two runs had no heart rate."* mid-sentence.
+
+Both are now pinned, and the zero-case test is falsified against the real bug rather than a
+synthetic one.
+
+**AI-building.** Third time today a substring assertion read a **comment** as code: the test banned
+"AIMark" and "drifted" in the component, and both appear in the comments explaining why they must
+not appear in output. Stripping comments is now reflexive. The subtler version was banning the bare
+word "drifted" at all, when it is the tone discriminant in `s.tone === 'drifted'` — legitimate code.
+A guard with a false positive gets loosened, and a loosened guard is how the real thing gets in.
+
+**Product.** The free tier states the thesis and never scores it, because run analysis is paid.
+That is defensible under gate-richness-never-access, and rather than invent a treatment I followed
+`RestraintCard`'s locked state, which was already ruled for exactly this data on Coach.
 
 ## 2026-09-20 — P-15: the item scoped a promise, and the thing it promised had shipped that morning
 

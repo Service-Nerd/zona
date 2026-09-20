@@ -334,7 +334,50 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 > ⚠️ **The Coaching Board must sit on 1 and 2 BEFORE this is built.**
 >
 > *(original scoping below.)*
-> 🔲 **P-04 — ZONE-COMPLIANCE BLOCK ON THE PLAN SCREEN.** *(T-14a. Highest differentiation in the teardown. Depends on P-01.)*
+> ✅ **P-04 — ZONE-COMPLIANCE BLOCK ON THE PLAN SCREEN.** *(T-14a. Highest differentiation in the teardown. Depends on P-01.)*
+>
+> ✅ **SHIPPED 2026-09-20 — the Plan screen now carries an intensity metric.**
+> The teardown's finding was that a competitor's plan screen shows distance covered, total
+> distance, current pace, race-day pace and projected finish: **every metric is volume or speed**,
+> in an app whose own marketing argues runners go too fast. Ours had none either, so the one
+> question this product is built on was answerable only on Coach.
+>
+> **🔻 THE BOARD HAD NOT SAT, AND THE SLT SAID IT MUST BEFORE THIS WAS BUILT.** No P-04 ruling was
+> on record. Convened 2026-09-20 with the data, and the measurement reversed the shape of the
+> answer: across **42 runner-weeks from 8 runners**, a minimum of three analysed runs would have
+> **hidden the block on 57.1% of weeks** (0 analysed 4.8% · one 21.4% · two 31.0% · three-plus
+> 42.9%). ⚠️ **n = 8. Thin, and declared as such**, with the same caveat as
+> `ZONE_DRIFT_ABOVE_CEILING_PCT`'s own n=42: re-measure once the cohort grows.
+>
+> **Ruling — CORRECT WITH AMENDMENT. The threshold gates the REGISTER, not the visibility.**
+> Hutchinson narrowed his own objection: it was never to stating what happened, it was to inferring
+> a PATTERN from three runs with no control for terrain, heat or a badly-seated strap. Those are
+> different claims. So at n≥3 the exception is named; at n=1–2 the count stands alone with no
+> verdict; at n=0 the block reports the missing data. **It never hides**, which is what Wood's
+> standing note required once the 57% was on the table. `unknown` runs **leave the denominator** and
+> the gap is named on its own line: *"none of 4 held"* when two had no heart rate is a **false
+> statement**, and it is the one a free-tier runner sees most.
+>
+> **Artifacts:** `ZONE_BLOCK_VERDICT_MIN_RUNS` (numeric) · `lib/coaching/zoneWeekStatement.ts`
+> (the single owner of every sentence, 17 unit tests) · `ZoneWeekBlock` + the wiring guard.
+>
+> ⚠️ **TWO COPY BUGS CAUGHT BEFORE SHIPPING, both in the sentence that matters most.** The zero
+> case interpolated the measured count into the leading slot, so a week in which **four runs
+> drifted read *"Four of this week's runs stayed in the zone"*** — the exact opposite of the truth,
+> in the one sentence a struggling runner reads. And the capitaliser was `.replace(/^n/, 'N')`,
+> which only ever uppercased "none", shipping *"two runs had no heart rate."* and *"...  two
+> drifted."* Both are pinned by tests; the zero case is falsified against the real bug.
+>
+> **Free tier is designed, not blank** — follows `RestraintCard`'s locked state, already ruled for
+> this same data. Gate richness, never access: the plan, the session and the rule stay free and only
+> the measurement is paid. **T-16's discipline metrics fold in here** as the filing directed.
+>
+> ⚠️ **Placement deliberately does NOT settle `PLAN-NOTE-PLACEMENT-01`.** The block sits under the
+> arc, above the rationale, because it is meant to be glanceable; whether the rationale belongs at
+> the top at all is a separate SLT question and bundling it would answer it by accident.
+>
+> 🔻 **Not walked on a device.** `/zone-block-preview` renders the real component in all eight
+> states, including the three a healthy test account never produces.
 >
 > **Problem.** Miles's Plan screen (`IMG_7187`) shows distance covered, total distance, current pace,
 > race-day pace and projected finish. **Every metric is volume or speed. There is no intensity metric

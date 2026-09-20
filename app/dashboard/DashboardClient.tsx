@@ -1,5 +1,7 @@
 'use client'
 
+import ZoneWeekBlock from '@/components/shared/ZoneWeekBlock'
+import { classifyRun, type RunZoneOutcome } from '@/lib/coaching/zoneWeekStatement'
 import { useState, useEffect, useCallback, useRef, useMemo, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Plan, Week, Session } from '@/types/plan'
@@ -2254,7 +2256,7 @@ export default function DashboardClient() {
                   setPendingReshape(null)
                   setReshapeDismissedAt(new Date().toISOString())
                 }} />}
-        {screen === 'plan'     && <PlanScreen plan={plan} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} />}
+        {screen === 'plan'     && <PlanScreen plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} />}
         {screen === 'coach'    && (hasPaidAccess
           ? (() => {
               // ADR-013 §22-27: allCompletions and runAnalysisMap are keyed by
@@ -8260,7 +8262,7 @@ function PlanProgressBar({ plan, allCompletions }: { plan: Plan; allCompletions:
   )
 }
 
-function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach }: {
+function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverrideChange, onOpenSession, overridesReady, runAnalysisMap = {}, preferredUnits = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, hasPaidAccess = false, onOpenCoach }: {
   plan: Plan; stravaRuns: any[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
   allCompletions: Record<number, Record<string, any>>
@@ -8272,6 +8274,10 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   sessionMetricOverrides?: Record<string, 'distance' | 'duration'>
   hasPaidAccess?: boolean
   onOpenCoach?: () => void
+  /** P-04 — nested runAnalysisMap[week_n][session_day]. Already fetched on this
+   *  client for the Coach screen; the Plan screen never received it, which is
+   *  why the one question this product is built on was answerable only there. */
+  runAnalysisMap?: Record<number, Record<string, { hr_above_ceiling_pct?: number | null }>>
 }) {
   const currentWeekIndex = getCurrentWeekIndex(plan.weeks)
   // ADR-013: two distinct week numbers. `weekNum` is the canonical week.n KEY
@@ -8282,6 +8288,27 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   const weekNum = (plan.weeks[currentWeekIndex] as any)?.n ?? (currentWeekIndex + 1)
   const weekOrdinal = currentWeekIndex + 1
   const totalWeeks = plan.weeks.length
+
+  // ── P-04 — this week's zone outcomes, one entry per COMPLETED run ────────
+  //
+  // ⚠️ Keyed by `weekNum` (week.n), never by array position. ADR-013: on a
+  // standalone maintenance plan the array restarts at 0 while week.n continues
+  // at 26+, and `allCompletions` / `runAnalysisMap` are both keyed by week.n.
+  // Using the ordinal here would read another plan's week, which is the
+  // PLAN-WEEK-COLLISION-01 shape.
+  //
+  // ⚠️ A completed run with no analysis row is `unknown`, NOT a failure. That
+  // is the Coaching Board's second ruling and the reason the denominator is
+  // measured runs rather than completed ones: "none of 4 held the zone" when
+  // two had no heart rate is a false statement, and it is the one a free-tier
+  // runner would see most.
+  const zoneOutcomesThisWeek = useMemo<RunZoneOutcome[]>(() => {
+    const comps    = allCompletions[weekNum] ?? {}
+    const analysed = runAnalysisMap[weekNum] ?? {}
+    return Object.entries(comps)
+      .filter(([, c]: [string, any]) => c?.status === 'complete')
+      .map(([day]) => classifyRun(analysed[day]?.hr_above_ceiling_pct))
+  }, [allCompletions, runAnalysisMap, weekNum])
   const raceName = (plan as any)?.meta?.race_name ?? ''
   const raceDate = (plan as any)?.meta?.race_date ? new Date((plan as any).meta.race_date) : null
   const raceDateStr = raceDate ? raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null
@@ -8414,6 +8441,24 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           {raceName ? `${raceName} · ` : ''}{daysToRace === 0 ? 'Race day' : daysToRace === 1 ? '1 day to go' : `${daysToRace} days to go`}
         </div>
       )}
+
+      {/* ── P-04: ZONE COMPLIANCE, THE ONE INTENSITY METRIC ON THIS SCREEN ──
+          The teardown's finding: a competitor's plan screen shows distance
+          covered, total distance, current pace, race-day pace and projected
+          finish. Every metric is volume or speed and there is no intensity
+          metric anywhere, in an app whose own marketing argues runners go too
+          fast. Ours had none either, so "am I actually holding the zone?" was
+          answerable only on Coach.
+
+          Placed directly under the arc, above the rationale: it is meant to be
+          glanceable. ⚠️ It deliberately does NOT settle
+          `PLAN-NOTE-PLACEMENT-01` (whether the rationale belongs at the top at
+          all) — that is a separate SLT question and bundling it would answer it
+          by accident. */}
+      <div style={{ padding: '0 16px', marginBottom: '16px' }}>
+        <ZoneWeekBlock outcomes={zoneOutcomesThisWeek} locked={!hasPaidAccess} />
+      </div>
+
 
       {/* ── PLAN INTRO — CA-01 free first-plan "why this plan" (Kit's voice) ──
           Plan-level intro generated once on a free user's first plan. The one

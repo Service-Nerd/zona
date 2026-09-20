@@ -47,6 +47,35 @@ export const VERDICT_BANDS = {
  */
 export const ZONE_DRIFT_ABOVE_CEILING_PCT = 20
 
+/**
+ * P-04 — the run count at which the weekly zone-compliance block is allowed to
+ * pass a VERDICT rather than only report a count.
+ *
+ * Coaching Board 2026-09-20, CORRECT WITH AMENDMENT. Hutchinson raised the
+ * threshold and then narrowed his own objection: it was never to stating what
+ * happened, it was to inferring a PATTERN from three runs with no control for
+ * terrain, heat, illness or a badly-seated strap. We hold
+ * `hr_above_ceiling_pct` and nothing else, so we cannot tell "ran too hard"
+ * from "ran up a hill in August". Those are different claims, and the question
+ * as routed down conflated them.
+ *
+ * ⚠️ IT GATES THE REGISTER, NOT THE VISIBILITY, and the measurement is why.
+ * Across 42 runner-weeks from 8 runners, a minimum of three analysed runs
+ * would have hidden the block on **57.1% of weeks** (0 analysed 4.8%, one
+ * 21.4%, two 31.0%, three-plus 42.9%). That is not a block that appears when
+ * there is something to say; it is not a fixture at all. Wood's standing note
+ * — "if this block only ever appears when there's something to say, it becomes
+ * a thing people dread opening" — decides it at that rate.
+ *
+ * So: below this count the block states the count and passes no judgement;
+ * at or above it, the exception is named.
+ *
+ * ⚠️ THIN, and declared as such. n = 8 runners. Same caveat, and the same
+ * words, as `ZONE_DRIFT_ABOVE_CEILING_PCT` above: re-measure once the cohort
+ * grows. The October charity intake is the first chance.
+ */
+export const ZONE_BLOCK_VERDICT_MIN_RUNS = 3
+
 export const ZONE_DISCIPLINE_BANDS = {
   disciplined: 85,
   decent:      70,
