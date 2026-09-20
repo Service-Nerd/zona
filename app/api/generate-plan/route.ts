@@ -103,6 +103,15 @@ export async function POST(req: NextRequest) {
       : guard.body
     const planStart = formatDate(nextMonday())
 
+    // P-15 (2026-09-20) — the runner ACCEPTING the §118 base-build offer.
+    //
+    // Read off the raw body rather than added to `GeneratorInput`, deliberately:
+    // it is a client intent about which plan to build, not an attribute of the
+    // runner, and `lib/plan/*` is pure functions of the runner plus a tier
+    // (ADR-003). Putting it on GeneratorInput would leak a UI decision into the
+    // engine's input type and into every grid that sweeps those fields.
+    const acceptBaseBuild = (guard.body as { accept_base_build?: unknown }).accept_base_build === true
+
     const guardError = validate(input)
     if (guardError) {
       return NextResponse.json({ error: guardError }, { status: 422 })
@@ -268,6 +277,26 @@ export async function POST(req: NextRequest) {
         // finish above §117's door with weeks to spare and genuinely can come
         // back; a 2 km/week runner will not. `reaches_race_door` says which,
         // so the copy can tell the truth per runner rather than in general.
+        // P-15 — THE OFFER IS ACCEPTED: build the plan rather than describe it.
+        //
+        // ⚠️ P-15's filing says the base-build "does not exist yet, so for
+        // October the action is a stated route, not a generated plan." §118
+        // shipped the same day and that premise is now STALE IN OUR FAVOUR:
+        // `generateGetRunningPlan` already returns a full, validated Plan and
+        // this route was throwing it away, keeping only `endsAtKm` and `weeks`
+        // for the offer copy. So the acceptance path is three lines, not a
+        // second generator.
+        //
+        // Returned through the SAME `{ plan }` JSON shape as the free-tier
+        // success path, so the client saves and previews it by the route it
+        // already has. No enrichment and no foundation composition: §118 sets
+        // `plan_kind: 'base_build'`, which is its own plan object, and both of
+        // those passes are shaped for a race block.
+        if (acceptBaseBuild && getRunningApplies(input)) {
+          const { plan: baseBuildPlan } = generateGetRunningPlan(input, planStart, runway)
+          return NextResponse.json({ plan: baseBuildPlan })
+        }
+
         let getRunning: Record<string, unknown> | null = null
         if (!onramp && getRunningApplies(input)) {
           const { endsAtKm, weeks } = generateGetRunningPlan(input, planStart, runway)

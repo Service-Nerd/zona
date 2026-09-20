@@ -8,6 +8,42 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — P-15: the item scoped a promise, and the thing it promised had shipped that morning
+
+**Dev.** P-15 says the refusal should name a next action, and that for October that action has to
+be "a stated route, not a generated plan", because the base-build does not exist yet. §118 shipped
+the same day. `generateGetRunningPlan()` already returned a complete, validated plan — and the
+refusal route was calling it, taking two numbers off it for the offer copy, and **throwing the
+plan away.** So the acceptance path is three lines and the runner gets the real thing.
+
+**The design question that mattered.** The refusal card is amber, which in this product is
+coach-warning voice. Putting the offer inside it would have been the fast option and it would have
+read as more bad news on a screen that has just said no. The offer is a separate white card with a
+moss rail: the same left-accent language session cards use, in the token that means "this is the
+good half".
+
+The other one was CTA hierarchy. Two primaries now compete, and the canonical answer already
+existed in the upgrade-screen pattern: moss button for the offer, muted text link for adjusting
+your answers. Not hidden, because a CTA with no visible alternative is a dark pattern and the UX
+principles bar dead ends outright.
+
+**AI-building — three false greens in one test file, all the same shape.** The first version of
+the test lived next to the component in `app/dashboard/`. **vitest collects `lib/**` and
+`components/**` only**, so it did not run: it reported "No test files found" and exited, which in
+a hurry reads like success. Then, twice, the test sliced the 1,400-line screen to find the markup
+and anchored on the wrong thing — once producing an empty string, once matching a one-line early
+return 450 lines away. Both times "no hardcoded hex" passed while inspecting code that had no
+markup in it.
+
+**The fix for all three was structural, not more care.** Extracting `RefusalView` into its own
+component meant there was nothing to slice and nowhere to mis-anchor. It also gave
+`/refusal-preview` a real component to render instead of a copy that would drift — which matters
+because this screen sits behind auth AND a completed wizard AND a refusal, so the only other way
+to see it is to be the runner it is failing.
+
+**The honest bit.** Nothing here has run on a device, and P-15's own acceptance criteria say it
+must be before the codes go out. The fixture page is what makes that a minute's work rather than
+minting a code and faking a base volume, but it is not a substitute for doing it.
 
 ## 2026-09-20 — GTM-CHARITY-07 (with 05/06): the tier rule had a fourth copy, and it was in SQL
 

@@ -3,6 +3,7 @@
 // One decision per screen. Slide transitions between steps.
 'use client'
 
+import RefusalView from '@/components/shared/RefusalView'
 import { useState, useEffect, useRef } from 'react'
 import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
@@ -549,6 +550,26 @@ export default function GeneratePlanScreen({
   // levers the route returns in base/prep/days.
   const [errorIsRefusal, setErrorIsRefusal] = useState(false)
   const [errorAlternatives, setErrorAlternatives] = useState<string[]>([])
+  /**
+   * P-15 — the §118 base-build offer attached to a base-volume refusal.
+   *
+   * ⚠️ The COPY comes from the server, not from here. Two variants are keyed
+   * on `reaches_race_door`, and the non-clearing one must say nothing at all
+   * about a race — a client-side template would be free to break that, and the
+   * runner it would mislead is the one we can least afford to mislead.
+   * `lib/plan/baseBuildCopy.ts` is the single owner; this only renders.
+   */
+  const [errorOffer, setErrorOffer] = useState<
+    { title: string; line: string; why: string } | null
+  >(null)
+  /**
+   * ⚠️ There is deliberately NO `offerPending` state. `handleGenerate` sets
+   * `appStep = 'generating'` on its first line, so the button is unmounted
+   * before any pending style could render and the GeneratingCeremony IS the
+   * pending state. A flag nothing can display is the "declared but inert"
+   * class this repo keeps finding.
+   */
+  const [offerFailed, setOfferFailed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   // N8b — the preview is reachable as soon as the RULE plan is ready + the reveal
   // has played (fast). Waiting for the full enricher stream stranded the user on
@@ -908,12 +929,27 @@ export default function GeneratePlanScreen({
 
   // ── Plan generation ───────────────────────────────────────────────────────
 
-  async function handleGenerate() {
+  /**
+   * P-15 — `acceptBaseBuild` is the runner taking the §118 offer on the
+   * refusal screen. Threaded through THIS function rather than given its own
+   * fetch, because the success path it needs (save, foundation check, preview)
+   * is forty lines long and a second copy would drift from it — the
+   * duplication class this repo keeps paying for.
+   *
+   * ⚠️ Not wired to an onClick directly anywhere: a bare `onClick={handleGenerate}`
+   * would pass a MouseEvent as `opts`. Both call sites pass explicitly.
+   */
+  async function handleGenerate(opts?: { acceptBaseBuild?: boolean }) {
     setRevealComplete(false)
     setRulePlanReady(false)
     setAppStep('generating')
     setError(null)
     setPlan(null)
+    setOfferFailed(false)
+    // P-15 — a FRESH generate clears the offer; ACCEPTING one keeps it, so a
+    // transport failure mid-acceptance returns the runner to a screen that
+    // still has the card they just tapped rather than a bare refusal.
+    if (!opts?.acceptBaseBuild) setErrorOffer(null)
 
     const ageYears      = birthYear !== null ? new Date().getFullYear() - birthYear : 30
     const weeklyKmVal   = weeklyKm   ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR
@@ -1041,7 +1077,10 @@ export default function GeneratePlanScreen({
       const res = await authedFetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(input),
+        // P-15 — the accept flag rides the same payload. The server reads it
+        // off the raw body and never puts it on GeneratorInput (ADR-003: the
+        // engine takes a runner and a tier, not a UI intent).
+        body: JSON.stringify(opts?.acceptBaseBuild ? { ...input, accept_base_build: true } : input),
       })
 
       if (!res.ok) {
@@ -1055,6 +1094,16 @@ export default function GeneratePlanScreen({
         setError(data.error ?? (isRefusal ? 'This plan is not ready for you yet.' : 'Something went wrong building the plan.'))
         setErrorIsRefusal(isRefusal)
         setErrorAlternatives(Array.isArray(payload.alternatives) ? payload.alternatives : [])
+        // P-15 — the §118 offer, when the route attached one. It only rides a
+        // BASE-VOLUME refusal: a prep-time or days refusal gets no offer and
+        // must render none, which is why this reads `data.get_running` rather
+        // than inferring an offer from the refusal itself.
+        const offer = (data as { get_running?: { title?: unknown; line?: unknown; why?: unknown } }).get_running
+        setErrorOffer(
+          offer && typeof offer.title === 'string' && typeof offer.line === 'string' && typeof offer.why === 'string'
+            ? { title: offer.title, line: offer.line, why: offer.why }
+            : null,
+        )
         setAppStep('error')
         return
       }
@@ -1156,6 +1205,11 @@ export default function GeneratePlanScreen({
       setError('Could not reach the server. Check your connection.')
       setErrorIsRefusal(false)
       setErrorAlternatives([])
+      // P-15 — a transport failure while ACCEPTING must not wipe the offer:
+      // the runner said yes and the network dropped, so keep the card and let
+      // them retry. It is cleared only on a fresh generate (below) and on a
+      // refusal that carries no offer (above).
+      if (opts?.acceptBaseBuild) setOfferFailed(true)
       setAppStep('error')
     }
   }
@@ -1270,47 +1324,32 @@ export default function GeneratePlanScreen({
   }
 
   if (appStep === 'error') {
-    // REFUSAL-SCREEN-01 — a coaching refusal (422) reads as a calm "not yet" with
-    // the lever, in the CoachNoteBlock amber palette (this IS coach voice). A real
-    // fault (500 / network) keeps the honest "something went wrong". No popup, no
-    // alarm colour, no raw diagnostic string: the message is already brand-voiced.
+    // REFUSAL-SCREEN-01 + P-15 — the whole view is `RefusalView`, extracted to
+    // `components/shared/` rather than left inline. It sits behind auth AND a
+    // completed wizard AND a refusal, so the only way to see it for real is to
+    // be the runner it is failing; `/refusal-preview` renders THIS component in
+    // every state. A fixture rendering a second copy of the markup would drift
+    // and prove nothing.
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
         <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
           {!isOnboarding && <BackBtn onClick={goBack} />}
         </div>
         <div style={{ flex: 1, padding: '0 20px 24px' }}>
-          <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '20px', marginBottom: '16px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', marginBottom: '8px' }}>
-              {errorIsRefusal ? 'Not yet' : 'Something went wrong'}
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>
-              {errorIsRefusal ? error : (error ?? 'Something went wrong building the plan.')}
-            </div>
-            {errorIsRefusal && errorAlternatives.length > 0 && (
-              <div style={{ marginTop: '16px', borderTop: '1px solid var(--line)', paddingTop: '14px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', opacity: 0.75, marginBottom: '10px' }}>
-                  What would get you there
-                </div>
-                {errorAlternatives.map((alt, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: i < errorAlternatives.length - 1 ? '8px' : 0 }}>
-                    <span aria-hidden style={{ color: 'var(--warn)', fontWeight: 700, lineHeight: 1.55 }}>·</span>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>{alt}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <button
-            onClick={() => navigateTo(getLastWizardStep(), 'back')}
-            style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)' }}
-          >
-            {errorIsRefusal ? 'Adjust my answers' : 'Try again'}
-          </button>
+          <RefusalView
+            isRefusal={errorIsRefusal}
+            message={error}
+            alternatives={errorAlternatives}
+            offer={errorOffer}
+            offerFailed={offerFailed}
+            onAccept={() => void handleGenerate({ acceptBaseBuild: true })}
+            onAdjust={() => navigateTo(getLastWizardStep(), 'back')}
+          />
         </div>
       </div>
     )
   }
+
 
   if (appStep === 'preview' && plan) {
     const { meta, weeks } = plan

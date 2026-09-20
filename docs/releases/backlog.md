@@ -903,7 +903,43 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
-> 🔴 **P-15 — THE REFUSAL GAINS AN ACTION. October deliverable.** *(SLT 2026-09-20, track 1 of the on-ramp split. No engine change, no board, no measurement gate.)*
+> ✅ **P-15 — THE REFUSAL GAINS AN ACTION. October deliverable.** *(SLT 2026-09-20, track 1 of the on-ramp split. No engine change, no board, no measurement gate.)*
+>
+> ✅ **SHIPPED 2026-09-20 — and it is a REAL PLAN, not the stated route the filing scoped.**
+> ⚠️ **P-15's own premise was stale in our favour.** It says the base-build *"is P-16 and does not
+> exist yet, so for October the action is a stated route, not a generated plan."* **§118 shipped the
+> same day.** `generateGetRunningPlan()` already returned a full validated `Plan` and the route was
+> **throwing it away**, keeping only `endsAtKm` and `weeks` for the offer copy. So the acceptance
+> path is three lines, not a second generator, and the runner gets the plan rather than a promise.
+>
+> **Server:** `accept_base_build` on the existing POST, read off the raw body and deliberately NOT
+> added to `GeneratorInput` (ADR-003: the engine takes a runner and a tier, not a UI intent).
+> Returns through the same `{ plan }` shape as the free-tier success path, so the client saves and
+> previews it by the route it already has. No enrichment, no foundation composition: `plan_kind:
+> 'base_build'` is its own object and both passes are shaped for a race block.
+>
+> **Client:** the offer renders on a `--card` surface with a 3px moss left rail, **not** inside the
+> amber block, because amber is coach-WARNING voice and an offer inside it reads as more bad news.
+> Every string comes from the server (`title`/`line`/`why`) — the non-clearing variant must say
+> nothing about a race, and a client-side template would be free to break that. Accepting is the
+> primary CTA; **"Adjust my answers" stays visible** as the canonical muted secondary, because a CTA
+> with no alternative is a dark pattern and `ux-principles` bars dead ends.
+>
+> ⚠️ **`RefusalView` was EXTRACTED, not copied**, so `/refusal-preview` renders the real component in
+> all five states (offer reaching the door · offer not reaching it · refusal with no offer ·
+> acceptance failed · a genuine fault). The screen sits behind auth AND a wizard AND a refusal, so
+> the only way to see it otherwise is to be the runner it is failing.
+>
+> ⚠️ **THREE FALSE GREENS CAUGHT WHILE WRITING THE TEST, all the same shape.** The first version
+> lived in `app/dashboard/` — **vitest collects `lib/**` and `components/**` only, so it never ran
+> and reported "No test files found" rather than failing.** Then two source-slice anchors addressed
+> the wrong region (one produced an EMPTY slice; one matched a one-line early return 450 lines
+> away), so "no hardcoded hex" passed on markup it never saw. Extracting the component removed the
+> class. Falsified three ways: removing the offer content, gating the card off, and suppressing the
+> guard each redden it.
+>
+> 🔻 **Still yours: walk it on a device.** That is P-15's own acceptance criterion and nothing here
+> has run on one. `/refusal-preview` exists so it takes a minute rather than a minted code.
 >
 > **Problem.** `REFUSAL-SCREEN-01` shipped, so a §111 refusal is now presented calmly rather than as
 > a crash. **But it still offers nothing.** A first-time marathoner below 12 km/week is told no and
