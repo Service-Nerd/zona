@@ -15,6 +15,39 @@ it specific, no polish. The content system adds the voice.
 
 
 
+## 2026-09-20 — LOPSIDED-ORDER-01: I filed the wrong site, the wrong count, and the reason was a comment
+
+**Dev.** §52 says a week whose long run exceeds 60% of its volume should be downgraded to
+maintenance. The engine detected that ~450 lines before §90 Amendment 1's injury-quality yield
+pass, which trims easy runs and then recomputes `weekly_km`. It never trims the long run. So the
+share can only rise, and the producer had already committed to "not lopsided" — the invariant then
+reported the runner's plan as defective for a shape the engine itself chose. **3 errors → 0.**
+
+**The honest bit, three times over.** My own filing said the culprit was `applyWeekdayMinsCap`.
+It is not: that pass trims sessions but never recomputes `weekly_km`, so it cannot move the ratio
+the checker measures. The filing also said 2 plans; it was 3. And it warned that re-scoping this
+had backfired on 2026-09-15 — true, but that attempt changed the PREDICATE and this one changes
+only WHEN it runs, which is a different operation with a different blast radius. **The warning
+was right to be there and would have been the wrong reason not to do this.**
+
+**The one worth remembering.** The yield pass carries a comment: *"RUNS AFTER
+`finalVolumeProfile`, deliberately."* Read literally, that made the fix circular — the thing I
+needed to move down was the thing the pass depended on. It took reading the next twelve lines to
+find that COMPLIANCE-FIX-3 had **deleted** the gate that justified it four days earlier, leaving
+the explanation behind. A comment that outlives its code does not just mislead; it argues, in
+good faith, against the correct change.
+
+**AI-building.** `verify:parity` came back **IDENTICAL across 5,940 cases** on a change the sweep
+proves altered three plans. That is not reassurance, it is the grid not containing the case —
+exactly the FOUNDATION-LONG-RUNWAY-01 shape, where a clean parity run was quoted as evidence for a
+change the grid was structurally blind to. I have now been on both sides of that sentence in one
+week. The rule that actually holds: a harness reporting "unchanged" is making a claim about its
+corpus, never about your change.
+
+**Product.** The three plans are not gone, they are relabelled. They now carry `maintenance` and
+fire §52 Amendment 1's declared warn — the plan is described honestly instead of being reported as
+broken. That distinction is the whole reason §52 lists "downgrade to maintenance" as a remedy
+rather than a failure mode.
 
 ## 2026-09-20 — BACKLOG-STALE-ALLTIME-01: the audit said ALL CLEAN because its list stopped at midnight
 

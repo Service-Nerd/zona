@@ -3620,13 +3620,27 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 > purpose. Never re-baseline to go green.
 >
 > **Still open, in rough priority:**
-> - 🔴 **LOPSIDED-ORDER-01** — `lopsidedWeek` (§52's third remedy, `ruleEngine`) evaluates BEFORE
->   the weekday-cap pass trims easy runs. Traced on the exact input: at `max_weekday_mins: 30` the
->   week falls 58 → 39 km while the long run is race-anchored and §52-exempt, so its share crosses
->   60% after the producer has already decided the week is fine. 2 plans in the sweep baseline.
->   ⚠️ Re-scoping `lopsidedWeek` backfired on 2026-09-15 (stripped 24 plans of maintenance, turned
->   an absorbed warn into a hard failure, reverted). Needs its own measurement, not a ride-along.
->   *Verify still open:* `BASELINE['INV-PLAN-LR-MAX-WEEKLY-PCT']` in the sweep → **2 = still open**.
+> - ✅ ~~**LOPSIDED-ORDER-01**~~ — **SHIPPED 2026-09-20. 3 error-severity violations → 0.**
+>   ⚠️ **THE FILING NAMED THE WRONG SITE.** It blamed `applyWeekdayMinsCap`, which trims sessions
+>   but never recomputes `weekly_km` — so it cannot move the ratio the checker measures. The real
+>   producer is **§90 Amendment 1's injury-quality yield pass**, which calls that same cap and then
+>   DOES recompute `w.weekly_km` from the surviving sessions. It trims easy runs and never the long
+>   run, so the long run's share can only rise, and `lopsidedWeek` sat ~450 lines above it.
+>   **Also wrong in the filing: 2 plans, not 3.**
+>   ⚠️ **THE REASON THE CODE SAT THERE WAS VESTIGIAL.** The yield pass still comments "RUNS AFTER
+>   `finalVolumeProfile`, deliberately" — but COMPLIANCE-FIX-3 (Coaching Board 2026-09-16) deleted
+>   the `&& finalVolumeProfile !== 'maintenance'` gate that justified it. On inspection this read as
+>   a circular dependency and was not one; a comment outliving its code nearly blocked the fix.
+>   **Measured:** sweep errors **3 → 0**; warns **1024 → 1027**, i.e. the same three plans now
+>   correctly classified `maintenance` and reporting §52 Amendment 1's declared residual instead of
+>   reading as defective. `cohort:shape` unmoved, `measure:fitness` no regression, `verify` exit 0.
+>   ⚠️ **`verify:parity` returned IDENTICAL across 5,940 cases and that is a BLIND result, not a
+>   clean one** — the sweep proves 3 plans changed, so the parity grid contains none of them. Same
+>   class as FOUNDATION-LONG-RUNWAY-01: check the grid varies what you changed before quoting it.
+>   **The 2026-09-15 backfire did not recur:** that attempt RE-SCOPED the predicate (stripping 24
+>   plans of maintenance); this one moves WHEN it runs and leaves the predicate untouched.
+>   Baseline pinned at **0**, so a reintroduction fails the sweep. Ordering guard:
+>   `lib/plan/lopsidedOrder.test.ts`, falsified against the pre-fix source (both assertions red).
 > - ✅ ~~**SWEEP-AGE-01**~~ — **SHIPPED 2026-09-20.** Age axis added (`22, 35, 44, 46, 55, 62`), and the
 >   input-coverage gate now checks **threshold CROSSING**, not just distinct values. **It surfaced 47
 >   violations across FIVE invariants, 45 of them at age ≥ 46, 25 of them ERROR severity** — baselined

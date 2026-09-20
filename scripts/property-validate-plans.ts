@@ -1484,7 +1484,15 @@ const BASELINE: Record<string, number> = {
   // NOT fixed here on purpose — re-scoping `lopsidedWeek` backfired on 2026-09-15
   // (stripped 24 plans of maintenance, turned an absorbed warn into a hard
   // failure, reverted). Filed LOPSIDED-ORDER-01.
-  'INV-PLAN-LR-MAX-WEEKLY-PCT':          3,
+  // LOPSIDED-ORDER-01 (2026-09-20) — 3 → 0. §52's detection ran BEFORE §90
+  // Am.1's yield pass shrank the week, so the producer committed to
+  // "not lopsided" and the invariant fired on the shortened week. Moving the
+  // detection below the yield pass took the ERROR count to zero; the WARN
+  // count rose by exactly 3 (1024 → 1027), which is the same three plans now
+  // correctly classified maintenance and reporting §52 Amendment 1's declared
+  // residual instead of reading as defective. Held at 0 deliberately: this
+  // class is now ordered correctly and a new one is a regression, not debt.
+  'INV-PLAN-LR-MAX-WEEKLY-PCT':          0,
   // 0 -> 1 (2026-09-10, INTENSITY-FOUNDATION-BLIND-02). NOT a regression from
   // this change and NOT a false positive: it is the first DELIVERED-plan §1
   // breach this sweep has ever been able to see.

@@ -7804,44 +7804,6 @@ function buildRulePlanOnce(
     ? `This plan holds your fitness rather than growing it. ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} leaves no room to add: ${whyItCannotGrow}, so a harder session takes volume out of the week instead of adding to it. The lever is days, not effort: ${input.days_available + 1} running days would let the same volume climb.`
     : null
 
-  // §52 (2026-09-02) — LOPSIDED-WEEK maintenance trigger. §52 itself names the
-  // three remedies for a week whose long run exceeds LONG_RUN_MAX_PCT_OF_WEEKLY:
-  // "reduce the long run, raise weekly volume, or downgrade to maintenance". The
-  // engine did none of them — it built the lopsided week and let the invariant
-  // fire, which reports the runner's plan as defective for a constraint the
-  // engine chose.
-  //
-  // It happens when the long run is race-anchored (§45/§47 floors) while the week
-  // is runner-anchored (§2 ramp off current volume). At very low volume those two
-  // anchors diverge until the week is lopsided BY CONSTRUCTION: a 5 km/week runner
-  // building to a half marathon reaches a 14.5 km long run against a 24 km week —
-  // 60.4%. Nothing is drifting; the plan is simply more race than the runner's
-  // base can carry, which is exactly what `maintenance` exists to say.
-  //
-  // Reducing the long run instead would collide with §45/§47's floors, so of §52's
-  // three remedies this is the one that does not need a new doctrine ruling — and
-  // maintenance is already exempt from this cap, so the plan stops being reported
-  // as defective and starts being described honestly.
-  const lrCapPct = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100
-  const lopsidedWeek = weeks.find(w => {
-    if (w.type === 'race' || w.type === 'deload' || w.badge === 'deload') return false
-    if (!w.weekly_km || w.weekly_km <= 0) return false
-    let longest = 0
-    for (const sn of Object.values(w.sessions)) {
-      if (!sn || sn.type === 'strength' || sn.type === 'rest') continue
-      const km = sessionKmOrZero(sn, pace.minPerKmEasy)
-      if (km > longest) longest = km
-    }
-    return longest / w.weekly_km > lrCapPct
-  })
-  // SLT 2026-09-17 — 123 words, the longest note the engine emitted, on 37 plans
-  // in a 563-plan sample. It made the same point four times: the long run is big
-  // relative to the week, the race sets it, your volume sets the rest, and the
-  // lever is volume. Now: the consequence, the cause, the lever. The 60% figure
-  // went with it — it is our threshold, not a number the runner can act on.
-  const lopsidedNote: string | null = lopsidedWeek
-    ? `This plan is built to get you round, not to chase a time. The long run this race needs is big next to the ${input.current_weekly_km}km a week you run now, so by week ${lopsidedWeek.n} it takes up most of the week on its own. You will still get fitter: starting from where you are, you could hardly not. The lever is the other days: more running across the week, not a longer long run.`
-    : null
 
   // ── MAINT-LABEL-01 (2026-09-11) — WHAT THESE NOTES CALL THE PLAN ──────────
   //
@@ -7994,10 +7956,6 @@ function buildRulePlanOnce(
     ? `This plan is shaped by the time you have — your easy runs don't fit it on ${floorProtectedWeekCount} of this plan's weeks.${input.max_weekday_mins != null ? ` You've capped weekdays at ${durationText(input.max_weekday_mins)}, and at that limit some` : ' Some'} easy runs would shrink to a distance too short to train anything, so they stay a few minutes over${input.max_weekday_mins != null ? ' your cap' : ' the budget those days allow'} instead. The lever is day count — fewer, fuller sessions fit your time better than more, thinner ones.`
     : null
 
-  const finalVolumeProfile: 'build' | 'maintenance' | undefined =
-    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun || easyFloorProtectionOverrun)
-      ? 'maintenance'
-      : peakOverloadResult?.volume_profile  // 'build' or undefined
   // ── §90 Amendment 1 — WHEN THE INJURY TRIM REMOVES EASY RUNS, QUALITY YIELDS ──
   //
   // Coaching Board S1-INJURY-DENOMINATOR-01, 2026-09-15. CORRECT WITH AMENDMENT.
@@ -8262,6 +8220,79 @@ function buildRulePlanOnce(
       }
     }
   }
+  // ── LOPSIDED-ORDER-01 (2026-09-20) — WHY §52's DETECTION LIVES DOWN HERE ────
+  //
+  // This block, and `finalVolumeProfile` with it, used to sit ~450 lines above,
+  // before §90 Amendment 1's injury-quality yield pass. That pass calls
+  // `applyWeekdayMinsCap` on the weeks it touches and then RECOMPUTES
+  // `w.weekly_km` from the surviving sessions. It trims easy runs; it never
+  // trims the long run. So a week that read fine when §52 looked at it could
+  // cross the 60% cap afterwards, with the producer already committed to
+  // "not lopsided" and the invariant firing on the shrunken week.
+  //
+  // MEASURED on the 14,253-plan property sweep: three ERROR-severity
+  // `INV-PLAN-LR-MAX-WEEKLY-PCT` violations, all three a Sunday long run at
+  // 61-62% of a week the yield pass had shortened (21.0km/34km twice, 19.0km/
+  // 31km once). Distance-anchored on both sides, so this is an ORDERING defect
+  // and not the self-paced-vs-real-pace divergence between producer and checker.
+  //
+  // ⚠️ THE ORDERING CONSTRAINT THAT PUT IT ABOVE IS VESTIGIAL. The comment on
+  // the yield pass still says it "RUNS AFTER `finalVolumeProfile`, deliberately"
+  // because the invariant exempts maintenance — but COMPLIANCE-FIX-3 (Coaching
+  // Board 2026-09-16) DELETED that `&& finalVolumeProfile !== 'maintenance'`
+  // gate, and nothing between the two sites reads the variable any more. The
+  // reason outlived the code it was protecting, which is why this read as a
+  // circular dependency on inspection and was not one.
+  //
+  // This is a DEFECT FIX restoring documented intent — §52 already names
+  // "downgrade to maintenance" as the remedy and the engine simply looked too
+  // early — so it is exempt from a Coaching Board sitting (ADR-017 exemption
+  // path). It is not exempt from measurement: see the cohort:shape delta in the
+  // commit, because reclassifying plans is exactly what that harness watches.
+
+  // §52 (2026-09-02) — LOPSIDED-WEEK maintenance trigger. §52 itself names the
+  // three remedies for a week whose long run exceeds LONG_RUN_MAX_PCT_OF_WEEKLY:
+  // "reduce the long run, raise weekly volume, or downgrade to maintenance". The
+  // engine did none of them — it built the lopsided week and let the invariant
+  // fire, which reports the runner's plan as defective for a constraint the
+  // engine chose.
+  //
+  // It happens when the long run is race-anchored (§45/§47 floors) while the week
+  // is runner-anchored (§2 ramp off current volume). At very low volume those two
+  // anchors diverge until the week is lopsided BY CONSTRUCTION: a 5 km/week runner
+  // building to a half marathon reaches a 14.5 km long run against a 24 km week —
+  // 60.4%. Nothing is drifting; the plan is simply more race than the runner's
+  // base can carry, which is exactly what `maintenance` exists to say.
+  //
+  // Reducing the long run instead would collide with §45/§47's floors, so of §52's
+  // three remedies this is the one that does not need a new doctrine ruling — and
+  // maintenance is already exempt from this cap, so the plan stops being reported
+  // as defective and starts being described honestly.
+  const lrCapPct = GENERATION_CONFIG.LONG_RUN_MAX_PCT_OF_WEEKLY / 100
+  const lopsidedWeek = weeks.find(w => {
+    if (w.type === 'race' || w.type === 'deload' || w.badge === 'deload') return false
+    if (!w.weekly_km || w.weekly_km <= 0) return false
+    let longest = 0
+    for (const sn of Object.values(w.sessions)) {
+      if (!sn || sn.type === 'strength' || sn.type === 'rest') continue
+      const km = sessionKmOrZero(sn, pace.minPerKmEasy)
+      if (km > longest) longest = km
+    }
+    return longest / w.weekly_km > lrCapPct
+  })
+  // SLT 2026-09-17 — 123 words, the longest note the engine emitted, on 37 plans
+  // in a 563-plan sample. It made the same point four times: the long run is big
+  // relative to the week, the race sets it, your volume sets the rest, and the
+  // lever is volume. Now: the consequence, the cause, the lever. The 60% figure
+  // went with it — it is our threshold, not a number the runner can act on.
+  const lopsidedNote: string | null = lopsidedWeek
+    ? `This plan is built to get you round, not to chase a time. The long run this race needs is big next to the ${input.current_weekly_km}km a week you run now, so by week ${lopsidedWeek.n} it takes up most of the week on its own. You will still get fitter: starting from where you are, you could hardly not. The lever is the other days: more running across the week, not a longer long run.`
+    : null
+
+  const finalVolumeProfile: 'build' | 'maintenance' | undefined =
+    (peakOverloadResult?.volume_profile === 'maintenance' || daysLowMaintenance || structuralPeakInversion || lopsidedWeek || longRunOverrun || easyFloorProtectionOverrun)
+      ? 'maintenance'
+      : peakOverloadResult?.volume_profile  // 'build' or undefined
 
   // Order matters: the more specific diagnosis wins. A structural inversion
   // explains WHY the volume will not fit, where the day-count note only says
