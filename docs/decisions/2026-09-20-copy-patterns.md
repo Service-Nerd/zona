@@ -1,5 +1,15 @@
 # Decision note — pattern-setting copy across P-01 to P-14
 
+> ✅ **RESOLVED 2026-09-20 by the SLT. Full record: `docs/decisions/slt-2026-09-20-copy-decisions.md`.**
+> **Pill words CUT** (colour keeps the meaning) · **reflection saved-state KEPT** with one edit
+> (*"Your note is kept. The coach didn't answer."*) · **Health-connect sentence CUT**, link only ·
+> **zero case SHAPE given**, with two coaching questions routed down to the board before P-04 is
+> built. Two of the three live strings were wrong and both are now fixed.
+> This note is retained as the record of what was ASKED.
+
+---
+
+
 **Date:** 2026-09-20 · **Owner:** Russ · **Status:** PROPOSED, awaiting sign-off
 **Gate:** §4A — *"Any new copy that establishes a pattern… Individual strings within an approved
 pattern do not need re-approval."*

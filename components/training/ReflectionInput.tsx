@@ -166,9 +166,11 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
   // Brand voice: calm guidance, not alerts. No AIMark — this is rule-engine
   // output (the risk gate), not model output.
   // ── Saved, no reframe (REFRAME-NOTE-LOSS-01) ──────────────────────────
-  // ⚠️ COPY IS PATTERN-SETTING (§4A) AND NEEDS SIGN-OFF. Written in voice and
-  // shipped because the defect fix is incomplete without a state that tells the
-  // runner what happened; flagged in the backlog rather than left blank.
+  // ✅ COPY APPROVED — SLT 2026-09-20, with one edit applied here.
+  // Sutherland: *"'Your note is kept' is a sentence almost no software says,
+  // because almost no software keeps anything it didn't have to. The failure is
+  // a better advert than the success."* So it leads. Fried cut "this time",
+  // which implied a pattern where there is one event.
   if (view === 'saved') {
     return (
       <div style={{ marginBottom: '20px' }}>
@@ -186,7 +188,7 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
           fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.55,
           letterSpacing: '-0.1px',
         }}>
-          Your note is kept. No coach response this time.
+          Your note is kept. The coach didn&rsquo;t answer.
         </div>
         {noteText && (
           <div style={{

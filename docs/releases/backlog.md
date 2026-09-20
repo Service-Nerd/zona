@@ -307,6 +307,17 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 
 ---
 
+> ✅ **P-04 — COPY SHAPE RULED (SLT 2026-09-20), AND TWO COACHING QUESTIONS ROUTED DOWN. Unblocked by P-01 shipping.**
+> **The zero case has a SHAPE, not words** — the founder writes those:
+> 1. 🔻 **A threshold, below which the block says NOTHING — Coaching Board, and it outranks the copy.** Hutchinson: one week of all-drifted runs is **not reliably a coaching signal.** On three runs it is n=3 with no control for terrain, heat, illness or a badly-seated strap. We hold `hr_above_ceiling_pct` and nothing else, so we cannot tell *"ran too hard"* from *"ran up a hill in August."* ⚠️ **The precedent is our own:** `ZONE_DRIFT_ABOVE_CEILING_PCT` came from **n = 42** and its principle says *"thin, re-measure once the cohort grows"*; `RUBRIC-GAPS-01` froze `WEEK1-LEAP` on the same reasoning.
+> 2. 🔻 **`unknown` runs LEAVE the denominator — Coaching Board.** *"None of 4 held the zone"* when two had no HR is **a false statement**, and it is the one a free-tier runner sees most.
+> 3. **The zero case points at the NEXT EASY RUN, not at the week** (Wood). Its failure mode is not harshness, it is being **global** — it reads as a verdict on the runner rather than on four runs. **No cause** (we do not have one — hard rule 8). **No action** (the plan does not change for one week's drift; inventing one manufactures work). **Narrow the window.**
+>
+> ⚠️ **Wood's structural note, which outranks the wording:** *"if this block only ever appears when there's something to say, it becomes a thing people dread opening."*
+> ⚠️ **Its PAID tier is still flagged for founder confirmation**, and Traynor's dissent on the pill lands here: **a free runner sees "Done" forever and learns nothing about what they are missing.** That is P-04's free-state question, not the pill's.
+> ⚠️ **The Coaching Board must sit on 1 and 2 BEFORE this is built.**
+>
+> *(original scoping below.)*
 > 🔲 **P-04 — ZONE-COMPLIANCE BLOCK ON THE PLAN SCREEN.** *(T-14a. Highest differentiation in the teardown. Depends on P-01.)*
 >
 > **Problem.** Miles's Plan screen (`IMG_7187`) shows distance covered, total distance, current pace,
@@ -2005,6 +2016,8 @@ across the seven months combined.
 >
 > ⚠️ **Injury history STAYS and Hutchinson defended it:** the enricher's voice changes materially when it knows a runner is returning from shin splints. It is also `knee` / `shin_splints` — **our enum values, a training constraint, not a medical record** — which changes how we describe it and **does not change its legal category.**
 
+> 🟢 **LEGAL-COUNSEL-01 — FOUNDER ACCEPTED 2026-09-20: he is booking it.** Remains open until the advice is back, because the answer gates whether `CONSENT-DISCLOSURE-01`'s line is sufficient or a granular consent screen must land before the codes go out.
+>
 > 🔴 **LEGAL-COUNSEL-01 — book two hours of legal advice before the October codes.** *(P1, FOUNDER ACTION, SLT-ruled 2026-09-20. The SLT explicitly did NOT rule on this and is not competent to.)*
 >
 > **The question for counsel:** does UK GDPR require explicit **consent** rather than **disclosure** for (a) special-category health data — injury history is the field — and (b) transfer to a US sub-processor (Anthropic)? Also whether Resend's handling needs naming.
@@ -2767,7 +2780,19 @@ The 2026-09-17 08:30 digest surfaced three issues. Verified against the live pla
 
 > 🔲 **FLEET-INVALID-DEBT-02 — opt-in "refresh my plan" for a REAL active runner on a stale-but-valid... invalid plan.** *(P3, filed 2026-09-17, deferred until there are real runners.)* The safe way to bring a live, in-progress plan up to current rules WITHOUT the silent-rewrite the live-plan policy forbids. Mechanism already exists in pieces: regenerate anchored to the runner's original `plan_start` (keeps `week.n`/dates stable so `session_completions`/`run_analysis`/reflections stay keyed), graft the runner's enriched copy back onto structurally-unchanged weeks (`foundationResize.ts` / `enrichPartialRevert.ts`, ENRICH-PARTIAL-01), archive the prior via `plan_archive`, and surface the change through ADR-012 magnitude → confirmation tile rather than applying it silently. Only worth building once a real runner holds a plan that breaches a SAFETY-relevant invariant (load/cap/empty-session), not a cosmetic annotation one. `81e4b792` is the current stand-in case.
 
-> 🔲 **STRAVA-APP-INACTIVE-01 — the Strava APPLICATION is Inactive at Strava's end. EXTERNAL, no repo change applies.** *(filed 2026-09-17.)* `ops_events` logged `strava_subscription_missing (reason: app_inactive)` at 2026-09-16 13:28 UTC (403 "Inactive"). This is the whole application, not a missing subscription — **re-registering the push subscription will not help** (`scripts/strava-webhook-subscription.ts register` is a no-op while the app is inactive). Last `strava_webhook_received` was 2026-09-15 18:47 UTC; nothing since, consistent with a dead app. Same failure as the 2026-09-13 incident (`docs/incidents/2026-09-13-strava-webhook-no-app-link.md`). **Remedy is Russ's, in Strava developer settings (client ID 219980): reactivate the application.** The code already detects and reports it correctly (`lib/ops/stravaWebhookHealth.ts`); `INV`/health path unchanged.
+> ✅ ~~**STRAVA-APP-INACTIVE-01**~~ — **CLOSED 2026-09-20 BY FOUNDER DECISION: WE ARE NOT USING STRAVA.**
+> Not "reactivate it later" and not "blocked on Strava" — a product decision. The application stays Inactive.
+>
+> ⚠️ **THE CLOSURE IS BIGGER THAN THE ITEM AND THE RESIDUALS ARE FILED, NOT ASSUMED AWAY:**
+> 1. **`/privacy` and `/terms` still carry full Strava sections** — *"your Strava access token is stored"*, a cookies line about a Strava session token. Now describing something that will never happen. **Folded into `LEGAL-PRIVACY-01`'s already-noted "decide the Strava sections at the same time".**
+> 2. 🔴 **THE KILLED-APP AUTO-LINK DIES WITH IT, AND THAT IS A REAL USER-VISIBLE LOSS.** Per `STRAVA-WEBHOOK-OBS-01` and CLAUDE.md: a **fully-killed app cannot background-ingest from HealthKit** (the `HKObserverQuery` callback fires with no JS runtime). **The Strava webhook was the ONLY device-independent auto-link.** Without it, a run done with the app killed links on next app-open, never before. Pull-to-refresh and app-open remain the catch-all. **This is now permanent, not pending.**
+> 3. **`strava_activities` keeps its name and its role.** It is the source-agnostic activity log (ADR-011 — the name is a v1 misnomer). **Do not rename it and do not filter by `source`.**
+> 4. **`FEATURE_GATES` and the registry still reference Strava** in ~60 places, mostly historical ship records that are correct as history. **No sweep. Do not rewrite the past.**
+> 5. **`CA-08` (Garmin) is unaffected** and arguably rises in value: it was the other route to a non-Apple runner.
+>
+> **Not filed as new work.** Residual 1 attaches to an existing P1; residual 2 is a consequence to state, not a defect to fix.
+> *(original below.)*
+> 🔲 ~~**STRAVA-APP-INACTIVE-01 — the Strava APPLICATION is Inactive at Strava's end. EXTERNAL, no repo change applies.**~~ *(filed 2026-09-17.)* `ops_events` logged `strava_subscription_missing (reason: app_inactive)` at 2026-09-16 13:28 UTC (403 "Inactive"). This is the whole application, not a missing subscription — **re-registering the push subscription will not help** (`scripts/strava-webhook-subscription.ts register` is a no-op while the app is inactive). Last `strava_webhook_received` was 2026-09-15 18:47 UTC; nothing since, consistent with a dead app. Same failure as the 2026-09-13 incident (`docs/incidents/2026-09-13-strava-webhook-no-app-link.md`). **Remedy is Russ's, in Strava developer settings (client ID 219980): reactivate the application.** The code already detects and reports it correctly (`lib/ops/stravaWebhookHealth.ts`); `INV`/health path unchanged.
 
 ---
 

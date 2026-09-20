@@ -11,6 +11,40 @@ it specific, no polish. The content system adds the voice.
 
 
 
+
+## 2026-09-20 — P-01, REFRAME-NOTE-LOSS-01, CONSENT-DISCLOSURE-01: I shipped three strings and two were wrong
+
+**Dev.** Three pieces of copy went out today flagged for sign-off rather than left blank. The
+founder sent them to the SLT. Two came back wrong.
+
+**Product.** The pill that said **"Held the zone"** and **"Drifted above"** now says **"Done"** in
+every state, with the colour carrying the meaning. Sutherland: *"you've built a language and then
+written a subtitle explaining it — a glossary entry is what you write when you don't trust the
+thing you made."* And the disclosure line at the Health-connect moment is gone entirely; only the
+link remains. *"You are standing at a door marked Health data and volunteering 'we never send your
+name to the AI'. Nobody asked."*
+
+**The one that survived got better.** *"Your note is kept"* now leads the sentence instead of
+trailing it, because the failure state is a better advert than the success state: almost no
+software keeps anything it didn't have to.
+
+**AI-building.** Wood did something worth recording. She has used the kill mandate twice this
+week and did **not** use it here, and the distinction was precise: an after-the-fact verdict is
+not the illusion-of-progress class, because it isn't pretending to be an intervention. The
+intervention is the ceiling, shown **before** the run. The verdict is what teaches the ceiling to
+mean something. *"The colour is the code. The word is instruction, and instruction is the thing
+you stop needing."*
+
+**The honest bit.** I wrote *"I am not confident in it"* about "Drifted above" in my own
+submission. That was the finding, and I'd shipped it anyway rather than leave a surface blank.
+Shipping flagged is better than shipping silently — but two of three flags turning out to be real
+is not a good ratio, and the right read is that **"flag it and move on" is a weaker habit than it
+feels like.**
+
+Also recorded: Traynor's dissent on the pill lost on *mechanism*, not taste. He argued the word
+made the paid tier legible; it can't, because it only renders for someone who already has run
+analysis. Worth keeping, because it is the best case for the other side and it will be made again.
+
 ## 2026-09-20 — ENRICH-PII-MINIMISE-01, LEGAL-PRIVACY-01, CONSENT-DISCLOSURE-01: the guards caught me three times in one afternoon
 
 **Dev.** Legal and privacy, in the order the SLT set: stop sending the name, then rewrite the

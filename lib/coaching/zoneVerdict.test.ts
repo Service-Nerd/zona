@@ -44,6 +44,23 @@ describe('P-01 — a missing measurement is NEVER a good one', () => {
   })
 })
 
+describe('P-01 — the pill carries the COLOUR, not a word (SLT 2026-09-20)', () => {
+  // ⚠️ AMENDED the day it shipped. The pill briefly read "Held the zone" /
+  // "Drifted above"; the SLT cut the words and kept the colour. This asserts the
+  // NEW contract rather than deleting the old test, because the obvious instinct
+  // is to put a word back and this is where that gets caught.
+  it('returns null for EVERY verdict — the colour is the code', () => {
+    for (const v of ['held', 'drifted', 'unknown'] as const) {
+      expect(zoneVerdictLabel(v)).toBeNull()
+    }
+  })
+
+  it('but the colours still differ, so the meaning survives the cut', () => {
+    const c = (['held', 'drifted', 'unknown'] as const).map(zoneVerdictColour)
+    expect(new Set(c).size).toBe(3)
+  })
+})
+
 describe('P-01 — colours resolve from tokens, never literals', () => {
   it('every verdict returns a var()', () => {
     for (const v of ['held', 'drifted', 'unknown'] as const) {

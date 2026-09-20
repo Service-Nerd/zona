@@ -3118,9 +3118,18 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             event exists in the product, and gating it would throttle the
             instrumentation GTM-CHARITY-06 needs).
 
-            ⚠️ Copy is pattern-setting (§4A) and flagged for sign-off. */}
+            ✅ SLT 2026-09-20 — THE SENTENCE WAS CUT AND ONLY THE LINK REMAINS.
+            Four seats, three independent reasons. Sutherland: standing at a door
+            marked *Health data* and volunteering "we never send your name to the
+            AI" introduces two concepts nobody asked about at the moment they are
+            deciding to hand over their heart rate. Fried: the policy is one tap
+            away and says all of it properly; a line at the decision point should
+            describe the decision, not pre-empt the FAQ. Traynor: he cannot cost
+            it — no code redeemed, no analytics event on this screen — and the
+            cheaper mistake is the shorter screen.
+            ⚠️ **Do NOT swap it for a line naming injury history.** Explicitly
+            rejected: same conversation, more alarming words. */}
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.55, marginTop: '16px', maxWidth: '340px' }}>
-          Your health data stays on our servers and shapes the coaching you get. We never send your name to the AI.{' '}
           {/* ⚠️ ExternalLink, not <a>. Caught by `externalLink.test.ts`: inside
               the Capacitor webview a bare href to a marketing page REPLACES the
               app and the runner has no way back. SFSafariViewController has its

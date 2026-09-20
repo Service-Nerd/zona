@@ -61,14 +61,35 @@ export function zoneVerdictColour(v: ZoneVerdict): string {
 }
 
 /**
- * One-word label. Deliberately not a sentence: the compliance COPY is
- * pattern-setting (§4A) and belongs to P-04, which is a separate item and needs
- * sign-off. This is the glanceable atom only.
+ * ⚠️ RETURNS NULL IN EVERY STATE, DELIBERATELY. SLT 2026-09-20.
+ *
+ * The pill briefly read "Held the zone" / "Drifted above". The SLT cut the
+ * words and kept the colour, and the reasoning is worth keeping because the
+ * obvious instinct is to put the word back:
+ *
+ * **Sutherland:** *"You've built a language and then written a subtitle
+ * explaining it. A glossary entry is what you write when you don't trust the
+ * thing you made."* The colour either teaches itself in three sessions or it
+ * does not, and the word removes the one thing that makes a learned code feel
+ * like insider knowledge.
+ *
+ * **Wood:** the colour is the code; the word is instruction, and instruction is
+ * the thing you stop needing. She explicitly did NOT kill the verdict itself —
+ * an after-the-fact signal is feedback, not the illusion-of-progress class, and
+ * feedback is how the ceiling (P-03, shown BEFORE the run) becomes automatic.
+ *
+ * **Fried:** three states, one of which is the majority and says "Done" anyway,
+ * means most runners see no change and a minority see jargon. Surface area.
+ *
+ * ⚠️ **Traynor dissented and lost on mechanism, not taste** — he argued the word
+ * makes the paid tier legible. It cannot: the verdict word only ever renders for
+ * someone who already HAS run analysis, so it sells nothing to the runner who
+ * does not. That argument belongs to P-04's free-tier state, which is open.
+ *
+ * The function is kept rather than deleted: the caller's `?? 'Done'` fallback is
+ * the single place the pill's word is decided, and a future decision to label
+ * one state lands here rather than in a component.
  */
-export function zoneVerdictLabel(v: ZoneVerdict): string | null {
-  switch (v) {
-    case 'held':    return 'Held the zone'
-    case 'drifted': return 'Drifted above'
-    default:        return null   // say nothing rather than guess
-  }
+export function zoneVerdictLabel(_v: ZoneVerdict): string | null {
+  return null
 }
