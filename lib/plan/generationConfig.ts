@@ -1169,6 +1169,27 @@ export const GENERATION_CONFIG = {
    *  session. One is a target you beat; the other is an instruction you
    *  follow."* A runner who is permitted to walk and never told how will run
    *  until they cannot, and arrive at the same injury by a longer route. */
+  /** §117's ADEQUACY FLOOR — the peak long run below which a finish-goal
+   *  run-walk plan is not a plan, it is a door with nothing behind it.
+   *
+   *  ⚠️ MANDATED BY THE CHAIR AT S116-FLOOR-VS-TARGET-01 (2026-09-20), and the
+   *  reason is the most dangerous configuration this engine was in all day.
+   *  `LONG-RUN-SHORT` is WATCHED rather than scored on §117 plans, because the
+   *  board ruled 18.5 km adequate at peak 34. **Nothing distinguished 18.5 from
+   *  13.5.** Had the on-ramp floor dropped to 3, a runner would have arrived at
+   *  a marathon off a 13.5 km longest run and the rubric would have scored it
+   *  FIT — the marathon would have cleared 90% for the first time by admitting
+   *  people to plans that do not work.
+   *
+   *  **An exemption granted for a good reason at one peak, silently covering a
+   *  much worse plan at another.** The exemption was correct; its bound was
+   *  missing.
+   *
+   *  17 is not invented here: it is §9's Recorded structural finding, McMillan,
+   *  the position the founder took — *"a runner who does a 17 km longest run
+   *  and run-walks the last stretch finishes."* */
+  FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM: 17,
+
   FINISH_GOAL_RUNWALK_RUN_MINS: 6,
   FINISH_GOAL_RUNWALK_WALK_MINS: 1,
 

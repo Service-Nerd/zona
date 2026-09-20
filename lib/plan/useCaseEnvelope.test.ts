@@ -157,8 +157,20 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   // **Two corrections in one day, both of which made the number worse, and
   // neither of which changed a single line of the engine.** The score was
   // wrong about what counts as success AND wrong about who was being counted.
-  // ⚠️ RATCHETED UP 0.77 -> 0.79 on 2026-09-20 — the FIRST upward move of the
-  // day, and the only one that came from the engine rather than the ruler.
+  // ⚠️ 0.77 -> 0.79 -> 0.78, AND THE STEP BACK IS ME CORRECTING MY OWN ERROR,
+  // NOT A RELAXATION.
+  //
+  // I ratcheted to 0.79 on a 79.2% reading that was INFLATED. `LONG-RUN-SHORT`
+  // had just been made WATCHED on §117 plans, and the exemption was unbounded —
+  // so plans with 11-13 km peak long runs were scoring FIT. The chair mandated
+  // the bound (§117 Am.2 / INV-PLAN-RUNWALK-ADEQUATE) and it found them
+  // immediately. §117 now REFUSES rather than hand over an inadequate plan, and
+  // the honest figure is 78.1%.
+  //
+  // ⚠️ AND THE FIRST "0 plans below the floor" RUN WAS VACUOUS — nothing was
+  // setting `finish_goal_run_walk` at that moment, so the invariant could not
+  // fire. Third vacuous measurement of the day. **A clean result from a check
+  // that cannot reach its subject is not a clean result.**
   // §117 went live at peak 34 and LONG-RUN-SHORT became WATCHED on those plans
   // (the board ruled their adequacy; the 55%-of-race bar is the run-it bar).
   // 77.6% -> 79.2%, refused 12.2% -> 11.3%.
@@ -166,9 +178,9 @@ describe('USE-CASE-ENVELOPE-01 — the marathon population, weighted', () => {
   // ⚠️ THE EXEMPTION IS PRINTED, NOT HIDDEN: `LONG-RUN-SHORT-RUNWALK 1.5%`
   // appears in the WATCHED block on every run. An exemption you cannot see is
   // a moved goalpost.
-  const MARATHON_TARGET = 0.90   // the founder's bar; currently 0.792. Gap: 10.8pp — 11.3 of it refusals, which the board ruled coaching cannot reach.
+  const MARATHON_TARGET = 0.90   // the founder's bar; currently 0.781. Gap: 11.9pp — 12.4 of it refusals, which the board has now twice ruled coaching cannot reach.
   const FLOORS: Record<number, number> = {
-    5: 0.97, 10: 0.97, 21.1: 0.93, 42.2: 0.79, 50: 0.97, 100: 0.92,
+    5: 0.97, 10: 0.97, 21.1: 0.93, 42.2: 0.78, 50: 0.97, 100: 0.92,
   }
   void MARATHON_TARGET
   // WEEK1-LEAP-ABS-01 raised 5K again, 91.8% -> 100%: the ≤2km week-1

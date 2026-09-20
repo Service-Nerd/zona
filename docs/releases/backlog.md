@@ -933,7 +933,63 @@ The brief's §5 order is P-01 → P-03/P-04 → P-02 → P-05/P-06 → the rest.
 >
 > **Size.** **S.** **Free/Pro.** FREE — it is the door. **Backlog.** **NEW**, splits from the on-ramp.
 
-> 🔴 **S116-FLOOR-VS-TARGET-01 — §116's floor of 6 was derived against a target §117 has since moved, and it is now the single biggest thing standing between us and the founder's bar.** *(P0, Coaching Board, filed 2026-09-20.)*
+> ⛔ **S116-FLOOR-VS-TARGET-01 — VETOED 2026-09-20. The floor stays at 6, and closing my own evidence gap is what killed the proposal.** *(Coaching Board, unanimous. Sims reversed her own earlier position within the day.)*
+>
+> I flagged that I had never generated a runner across the **join** and did it before the sitting.
+> **The join is fine** — ramp ends 9.4 km/wk with a 3.1 km longest run; the block opens at 7 km/wk
+> with 2.9 km, a **26% reduction.** No cliff.
+>
+> 🔴 **What is not fine is what is left afterwards.** From 3 km/week, every ramp target:
+>
+> | ramp target | ramp wks | block wks | block peak | **peak long run** | ≥17 km? |
+> |---|---|---|---|---|---|
+> | 7 | 10 | 18 | 25 | **15.0 km** | ✗ |
+> | 8 | 12 | 16 | 25 | **15.0 km** | ✗ |
+> | 9 | 13 | 15 | 24 | **13.5 km** | ✗ |
+>
+> **None reach the 17 km the board ruled adequate.** The ramp eats 9–13 weeks and §2's 10% from a
+> 7–9 km restart cannot build past ~25 km/wk in what remains. **Shortening the ramp does not help —
+> the block simply peaks lower. The runway is binding, not the split.**
+>
+> **Willy: the floor holds at 6, and he now has a better reason than the one he gave.** He set it on
+> a run-walk argument; **6 is also where the runway stops working.** Two floors, same number,
+> independent reasons — so it survives even if someone later builds run-walk for the ramp.
+>
+> ⚠️ **I made the `distance_km ?? 0` mistake measuring this — FIFTH recorded instance**, and my own
+> memory calls it "a grep, not a discovery". Beginner plans are duration-anchored; the first run
+> reported a 0.0 km long run.
+>
+> 🔴 **ZERO REJECTION IS NOT REACHABLE BY COACHING — confirmed twice now, by two independent
+> routes.** Settled; report it as such.
+
+> ✅ **§117 Am.2 / `INV-PLAN-RUNWALK-ADEQUATE` — the chair's mandated bound, and it immediately found a live defect.** *(Chair-mandated at the sitting above. SHIPPED.)*
+>
+> 🔴 **The most dangerous configuration this engine was in all day.** `LONG-RUN-SHORT` was made
+> **watched** on §117 plans because the board ruled 18.5 km adequate at peak 34 — **and nothing
+> distinguished 18.5 from 13.5.** Chair: had the floor dropped to 3, the marathon would have
+> cleared 90% for the first time **by admitting people to plans that do not work.**
+>
+> **Built the bound, and it fired on real plans immediately:** 11–13 km peak long runs at cwk 8
+> with 19–20 week runways. §111's door check asks whether the ratio is lawful; **it never asks
+> whether there is time to build to the peak the ratio was computed from.**
+>
+> **Two fixes, because one was not enough:**
+> 1. A **runway gate** in `runWalkApplies` — reuses `onRampWeeksNeeded` rather than re-deriving
+>    §2's ramp. ⚠️ **My first cut invented a fudge factor** (`MIN_REMAINING_WEEKS / 4`, "for the
+>    taper") — a number made up by dividing an unrelated constant. Removed.
+> 2. **The finished plan is checked and REFUSES if inadequate.** ⚠️ **An invariant was not enough:**
+>    in production `validatePlan` only LOGS an error, so the runner still gets the plan. **Refusing
+>    is worse for the metric and better for the runner**, which is the trade the board made.
+>
+> ⚠️ **AND THE FIRST "0 plans below the floor" WAS VACUOUS** — I had removed the setter while
+> deduplicating two `runWalkApplies` calls, so nothing stamped the flag and the invariant could not
+> fire. **Third vacuous measurement of the day.**
+>
+> **Honest result: marathon 77.6% → 78.1%, refused 12.2% → 12.4%, whole product 92.3%.** Gate floor
+> 0.77 → 0.79 → **0.78** — ⚠️ **the step back is me correcting my own error: I ratcheted to 0.79 on
+> a reading inflated by exactly the plans this bound now catches.**
+> *(original below.)*
+> 🔴 ~~**S116-FLOOR-VS-TARGET-01**~~ *(vetoed.)*
 >
 > **Measured, 198-profile charity grid, §117 live:**
 >

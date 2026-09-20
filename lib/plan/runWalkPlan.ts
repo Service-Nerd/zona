@@ -2,6 +2,10 @@ import type { GeneratorInput, Session } from '@/types/plan'
 import { GENERATION_CONFIG } from './generationConfig'
 import { effectiveStartKm } from './startVolume'
 import { raceDistanceKey } from './generationConfig'
+// ⚠️ REUSED, not re-derived. It already answers 'how many 10%-capped weeks,
+// with §3's deloads, to climb from A to B' — a second copy of §2's ramp
+// arithmetic is the DELOAD-OWNER-01 shape.
+import { onRampWeeksNeeded } from './baseBuildOnRamp'
 
 /**
  * §117 — the finish-goal run-walk marathon.
@@ -49,7 +53,7 @@ export function runWalkDistanceApplies(distanceKm: number): boolean {
  * rather than recomputed, so the producer and this gate cannot disagree about
  * the number the door is derived from.
  */
-export function runWalkApplies(input: GeneratorInput, standardPeakKm: number): boolean {
+export function runWalkApplies(input: GeneratorInput, standardPeakKm: number, planWeeks?: number): boolean {
   // ⚠️ LIVE since S117-PEAK-VS-TIME-01 (2026-09-20). It shipped DARK for
   // exactly as long as the board's own amendment 1 contradicted itself —
   // peak 30-34 AND "3+ hours on feet" do not reconcile under §52's 60% cap,
@@ -74,7 +78,37 @@ export function runWalkApplies(input: GeneratorInput, standardPeakKm: number): b
   // §111 Amendment 2 exists because they did.
   const cap = GENERATION_CONFIG.MAX_BASE_BUILD_RATIO
   const standardDoorKm = Math.ceil(standardPeakKm / cap)
-  return effectiveStartKm(input) < standardDoorKm
+  const startKm = effectiveStartKm(input)
+  if (startKm >= standardDoorKm) return false
+
+  // 🔴 THE RUNWAY MUST BE ABLE TO REACH §117's OWN PEAK, and this gate was
+  // missing until `INV-PLAN-RUNWALK-ADEQUATE` found it on SEVEN LIVE PLANS.
+  //
+  // §117's promise is a LOWER PEAK THAT STILL PREPARES THE RUNNER. §111's door
+  // check asks whether the ratio is lawful; it never asks whether there is
+  // enough time to build to the peak the ratio was computed from. Measured, at
+  // cwk 8 with a 19-20 week runway the delivered peak is 22-29 km and the peak
+  // long run is **13.0-16.5 km** — below the 17 km the board ruled adequate.
+  //
+  // **That is the door opened with nothing behind it**, which is the exact
+  // failure §117's amendment 3 and §117 Am.2's bound exist to prevent, and it
+  // was LIVE in this repo for the time between the two sittings.
+  //
+  // ⚠️ `onRampWeeksNeeded` is reused rather than re-deriving §2's ramp
+  // arithmetic a second time. It answers precisely this question — how many
+  // 10%-capped weeks, with §3's deloads, to climb from A to B — and a second
+  // copy of it is the DELOAD-OWNER-01 shape (five copies agreeing by accident).
+  //
+  // ⚠️ NO FUDGE FACTOR. The first cut of this gate subtracted
+  // `BASE_BUILD_ONRAMP_MIN_REMAINING_WEEKS / 4` to "allow for the taper" — a
+  // number invented on the spot by dividing an unrelated constant, which is
+  // precisely the decorative-numeric failure this repo keeps recording. The
+  // honest question is simply whether the ramp arithmetic fits the runway.
+  if (planWeeks != null
+      && onRampWeeksNeeded(startKm, GENERATION_CONFIG.FINISH_GOAL_RUNWALK_PEAK_KM) > planWeeks) {
+    return false
+  }
+  return true
 }
 
 /** The peak a §117 plan builds to. */

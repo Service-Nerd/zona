@@ -6301,7 +6301,18 @@ function buildRulePlanOnce(
   // ⚠️ Derived, never asked. A runner who has told their friends they are
   // running a marathon will not tick a box marked "I will walk some of it",
   // and asking would filter out the exact cohort this serves.
-  const isRunWalk = runWalkApplies(input, standardLevelPeakKm)
+  // ⚠️ EVALUATED EXACTLY ONCE. The stamping pass later in this file used to
+  // call `runWalkApplies` a SECOND time with a different argument shape — two
+  // evaluations of one predicate, which is the DELOAD-OWNER-01 fault (five
+  // copies of a cadence that agreed only by accident of control flow). The
+  // second site now reads `plan.meta.finish_goal_run_walk`.
+  // ⚠️ THE RUNWAY IS COMPUTED FROM THE DATES, NOT FROM `calcPlanLength`, which
+  // runs 70 lines below this point. It has to: the peak depends on `isRunWalk`
+  // and the plan length would depend on the peak, so reading the length here
+  // would be circular. `weeksBetweenLocal` is peak-independent and is the
+  // single owner of "how many weeks between these two dates".
+  const runwayWeeks = weeksBetweenLocal(planStartIso, input.race_date)
+  const isRunWalk = runWalkApplies(input, standardLevelPeakKm, runwayWeeks)
   const levelPeakKm = isRunWalk ? runWalkPeakKm() : standardLevelPeakKm
 
   const declaredUpward = declaredLevel !== undefined
@@ -8646,6 +8657,10 @@ function buildRulePlanOnce(
     // §89 — experience-gated quality onset surfaced for honesty + the
     // INV-PLAN-EARLY-ONSET-GATED invariant. Stamped only when it actually fired.
     ...(earlyQualityOnset ? { early_quality_onset: true } : {}),
+    // §117 — stamped from the SINGLE evaluation of `runWalkApplies` above. The
+    // session-stamping pass later in this file reads this flag rather than
+    // re-deriving the predicate, so the two can never disagree.
+    ...(isRunWalk ? { finish_goal_run_walk: true } : {}),
     // §91 — the on-ramp credit, stamped because the INVARIANT cannot otherwise
     // see it. validatePlan runs twice on different objects: once here on the
     // bare plan (no foundation weeks exist yet) and again in
@@ -8946,8 +8961,37 @@ function buildRulePlanOnce(
   //
   // ⚠️ PRESCRIBED, NOT PERMITTED (board amendment 3). §80 already lets a
   // finish-goal runner walk; this is what tells them how.
-  if (runWalkApplies(input, config.peakKmByLevel[fitness])) {
-    ;(plan.meta as unknown as Record<string, unknown>).finish_goal_run_walk = true
+  if ((plan.meta as unknown as Record<string, unknown>).finish_goal_run_walk) {
+    // 🔴 §117 Am.2 — ADEQUACY IS CHECKED ON THE FINISHED PLAN, AND FAILING IT
+    // REFUSES RATHER THAN HANDS OVER.
+    //
+    // The gate in `runWalkApplies` asks whether §2's ramp arithmetic can reach
+    // the peak in the runway. That is necessary and NOT sufficient: the
+    // delivered peak also depends on days available, the weekday cap, §52's
+    // share bound and the taper. Measured, plans slipped through at **11-12 km**
+    // peak long runs against the 17 km the board ruled adequate.
+    //
+    // ⚠️ AN INVARIANT IS NOT ENOUGH HERE. In production `validatePlan` only
+    // LOGS an error-severity violation — the runner still receives the plan.
+    // So a plan that fails §117's own promise must not be produced at all; it
+    // must fall back to the refusal §117 was trying to avoid. **Refusing is
+    // worse for the metric and better for the runner, which is the trade the
+    // board made explicitly.**
+    const peakLr = plan.weeks
+      .filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+      .flatMap(w => Object.values(w.sessions))
+      // SESSION-KM-02 — beginner plans are duration-anchored; `distance_km ?? 0`
+      // reads a real long run as zero, and that error was made twice today.
+      .reduce((mx, sn) => Math.max(mx, sessionKmSelfPaced(sn as Session) ?? 0), 0)
+
+    if (peakLr > 0 && peakLr < GENERATION_CONFIG.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM) {
+      // Reuses the SAME refusal builder as §111's own throw at :5957, so the
+      // runner sees one consistent message and `isDesignedRefusal` classifies
+      // it identically. A second refusal shape for the same outcome is the
+      // never-match-a-refusal-by-its-message trap.
+      throw new BaseVolumeError(baseVolumeRefusal(assessBaseBuild(plan, input), input))
+    }
+
     for (const w of plan.weeks) {
       for (const [day, session] of Object.entries(w.sessions)) {
         if (session) (w.sessions as Record<string, unknown>)[day] = applyRunWalk(session)

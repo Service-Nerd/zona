@@ -146,6 +146,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
   'INV-PLAN-FOUNDATION-BLOCK',
   'INV-PLAN-RUNWALK-PRESCRIBED',
+  'INV-PLAN-RUNWALK-ADEQUATE',
   'INV-PLAN-ONRAMP-CURVE-CLIMBS',
   'INV-PLAN-ONRAMP-ALL-EASY',
   'INV-PLAN-ONRAMP-PER-RUN-STEP',
@@ -5692,6 +5693,54 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             })
           }
         }
+      }
+    }
+  }
+
+  // INV-PLAN-RUNWALK-ADEQUATE — §117's exemption is BOUNDED.
+  //
+  // 🔴 THE CHAIR MANDATED THIS AFTER THE CLOSEST CALL OF THE DAY. `LONG-RUN-SHORT`
+  // is WATCHED rather than scored on §117 plans, because the board ruled 18.5 km
+  // adequate at peak 34. **Nothing distinguished 18.5 from 13.5.**
+  //
+  // Had `BASE_BUILD_ONRAMP_MIN_START_KM` dropped 6 -> 3 as proposed, a 3 km/week
+  // runner would have spent 13 weeks ramping, entered a 15-week block, and
+  // arrived at a marathon off a **13.5 km** longest run — and the rubric would
+  // have scored that plan FIT, because the exemption does not look at the
+  // number. The marathon would have cleared the founder's 90% bar for the first
+  // time **by admitting people to plans that do not work.**
+  //
+  // The exemption was correct. Its BOUND was missing. An exemption without a
+  // bound is not a relaxation, it is a hole.
+  //
+  // ⚠️ The floor is §9's, not invented here: McMillan, the position the founder
+  // took, *"a runner who does a 17 km longest run and run-walks the last
+  // stretch finishes."*
+  {
+    if (plan.meta.finish_goal_run_walk) {
+      const main = plan.weeks.filter(w => w.n > 0 && w.type !== 'race' && w.type !== 'deload')
+      let peakLr = 0
+      for (const w of main) {
+        for (const s of Object.values(w.sessions)) {
+          // SESSION-KM-02 — beginner plans are duration-anchored, so
+          // `distance_km ?? 0` reads a real long run as zero. That mistake was
+          // made AGAIN while measuring this very finding: the fifth recorded
+          // instance in this repo.
+          const km = sessionKmForCheck(s) ?? 0
+          if (km > peakLr) peakLr = km
+        }
+      }
+      const floor = GENERATION_CONFIG.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM
+      if (peakLr > 0 && peakLr < floor) {
+        violations.push({
+          code: 'INV-PLAN-RUNWALK-ADEQUATE',
+          principle_ref: 'CoachingPrinciples §117',
+          severity: 'error',
+          week: 0,
+          message: `Finish-goal run-walk plan peaks at a ${peakLr.toFixed(1)}km long run, below the ${floor}km the board ruled adequate to finish. §117 lowers §111's door on the promise that the lower peak still prepares the runner; below this floor it does not, and the LONG-RUN-SHORT exemption must not cover it.`,
+          actual: `${peakLr.toFixed(1)}km`,
+          expected: `>= ${floor}km`,
+        })
       }
     }
   }

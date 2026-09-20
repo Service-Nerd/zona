@@ -7955,6 +7955,33 @@ race is **62%**, and the standard plan scores exactly 62% because it is sitting 
 2 km/week is 15× below the delivered peak and needs 25 weeks of base building before a block can
 start. **45.5% → 29.3% is what coaching can do. The remainder is a product decision.**
 
+### §117 Amendment 2 — the `LONG-RUN-SHORT` exemption is BOUNDED (Coaching Board 2026-09-20, chair-mandated at S116-FLOOR-VS-TARGET-01)
+
+**Principle.** A finish-goal run-walk plan whose peak long run falls below
+`FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM` (**17 km**) is **not exempt** from the long-run adequacy
+check. It is broken.
+
+🔴 **WHY — and it is the closest call of the day.** `LONG-RUN-SHORT` was made **watched rather
+than scored** on §117 plans, correctly: 55% of race distance is the bar for a plan built to RUN the
+race, and the board had ruled 18.5 km adequate at peak 34. **But nothing distinguished 18.5 from
+13.5.**
+
+Had the on-ramp floor dropped 6 → 3 as proposed at the same sitting, a 3 km/week runner would have
+spent 13 weeks ramping, entered a 15-week block, and arrived at a marathon off a **13.5 km**
+longest run — **and the rubric would have scored that plan FIT.** The marathon would have cleared
+the founder's 90% bar for the first time **by admitting people to plans that do not work.**
+
+**The exemption was correct. Its bound was missing. An exemption without a bound is not a
+relaxation, it is a hole.**
+
+⚠️ **The floor is not invented here.** It is §9's Recorded structural finding — McMillan, the
+position the founder took: *"a runner who does a 17 km longest run and run-walks the last stretch
+finishes."* §117 at peak 34 delivers 18.5, so the bound binds on nothing today and is a **guard
+against a future peak or runway change**, which is exactly when it would otherwise have been
+discovered by a runner.
+
+**Config.** `FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM = 17`. **Enforced by** `INV-PLAN-RUNWALK-ADEQUATE`.
+
 ### Recorded, because it is a real trade and not a free win
 
 **Sims:** a lower-peak run-walk build is a **better** bone-stress profile than the 13 km/wk plan we would otherwise have given them — *and* **total exposure rises, because we are admitting runners we previously refused. Some will now be injured who would have been told no and done nothing.** That is a judgement the founder has made and is entitled to make; the board declines to pretend it is free.

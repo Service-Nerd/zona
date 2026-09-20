@@ -1,6 +1,6 @@
 {
  "stride": 29,
- "productFitPct": 92.6,
+ "productFitPct": 92.3,
  "byDistance": {
   "5": {
    "fitPct": 100,
@@ -52,8 +52,8 @@
    }
   },
   "42.2": {
-   "fitPct": 79.2,
-   "refusedPct": 11.3,
+   "fitPct": 78.1,
+   "refusedPct": 12.4,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
    "objections": {
@@ -62,8 +62,8 @@
     "BINGE-WEEK": 1.3
    },
    "watched": {
-    "DAYS-SHORT-SILENCED": 11.5,
-    "LONG-RUN-SHORT-RUNWALK": 1.5
+    "DAYS-SHORT-SILENCED": 10.6,
+    "LONG-RUN-SHORT-RUNWALK": 0.5
    }
   }
  }
