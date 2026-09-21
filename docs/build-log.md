@@ -6,7 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-09-21 — DATE-DST-01 / MKT-PLAN-PHASE-NOTE-01 / FIXTURE-CLOCK-01: a quarter of our plans were a week short, every spring, for as long as the engine has existed
+## 2026-09-21 — GTM-SEO-COMPARE-01 page 2: the template held, and adding one block kind quietly turned two checks off
+
+**Dev.** Comparison page 2 went in as designed: one entry in the catalogue, a four-line route shim,
+and the hub, the sitemap, the canonical, the Open Graph card and the Article JSON-LD all picked it up
+with nothing else touched. That is what the template was for and it is nice when it works.
+
+The one thing it did not have was a table, and a three-way price comparison is a table. So I added a
+`table` block kind, which the type's own comment warns against: *adding block kinds is how an article
+template quietly becomes a page builder.* I think it earns it. The SEO brief is explicit that a plain
+in-page HTML table beats a graphic, because the cells are readable text rather than pixels, and the
+alternative is seven paragraphs saying what a grid says at a glance.
+
+**The honest bit.** The house-style tests on these articles, no em dashes and never a literal brand
+name, run over a helper called `copyOf(block)` that turns a block into a string. It handled two kinds.
+The moment a third existed, every cell in every table was invisible to both rules. Not failing:
+invisible. The compiler caught it this time only because widening a union breaks the ternary that
+assumed two branches, and a future kind might slip in without that. It is now an exhaustive switch
+with a comment saying so.
+
+That is the same shape as three other things I have hit this month: a checker that shares the
+producer's list of what exists is blind to that list being wrong.
+
+**Product.** Page 1 says Coopah costs £9.99 a month. Page 2, verified against the App Store's own
+in-app-purchase listing and two independent reviews, says £14.99. Page 1 now links to page 2 three
+sentences after quoting £9.99. I have not rewritten it: correcting a competitor's price is not a
+silent edit, and there may be a promo I cannot see. But the fix when it comes is not editing two
+strings. Six more pages are planned and every one will quote these numbers, so the competitor facts
+need one owner, with the source and the verification date beside each figure, exactly as the coaching
+numerics do.
+
+---
+
+## 2026-09-21 — DATE-DST-01 / PARITY-DST-01 / MKT-PLAN-PHASE-NOTE-01 / FIXTURE-CLOCK-01: a quarter of our plans were a week short, every spring, for as long as the engine has existed
 
 **Dev.** I was asked to review the nine training plans published on the marketing site and make sure
 they were fit to hand out. They generate live from the engine on a 24-hour cache, so I measured them

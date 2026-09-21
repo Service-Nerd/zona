@@ -9,10 +9,17 @@ import { describe, it, expect } from 'vitest'
 import { COMPARISON_ARTICLES, COMPARISON_HUB, comparisonArticleJsonLd, type ArticleBlock } from './comparisons'
 import { BRAND } from '@/lib/brand'
 
-const copyOf = (block: ArticleBlock): string =>
-  block.kind === 'h2'
-    ? block.text
-    : block.spans.map(s => (typeof s === 'string' ? s : s.text)).join('')
+// ⚠️ Every block kind must be reachable from here. These checks (em dashes,
+// brand literals) run over what `copyOf` returns, so a kind this function does
+// not handle is copy the house-style rules silently stop covering. When `table`
+// was added the compiler caught it; the next kind may not be a union widening.
+const copyOf = (block: ArticleBlock): string => {
+  switch (block.kind) {
+    case 'h2': return block.text
+    case 'table': return [block.caption, ...block.head, ...block.rows.flat()].join(' ')
+    case 'p': return block.spans.map(s => (typeof s === 'string' ? s : s.text)).join(' ')
+  }
+}
 
 const allCopy = (): string[] =>
   COMPARISON_ARTICLES.flatMap(a => [
@@ -36,6 +43,19 @@ describe('comparison articles — SEO limits', () => {
     const slugs = COMPARISON_ARTICLES.map(a => a.slug)
     expect(new Set(slugs).size).toBe(slugs.length)
     for (const s of slugs) expect(s).toMatch(/^[a-z0-9-]+$/)
+  })
+
+  it('every table row is as wide as its header, and carries a caption', () => {
+    // A short row renders a silently missing cell, which on a price comparison
+    // is a competitor's price vanishing rather than a visible break.
+    for (const a of COMPARISON_ARTICLES)
+      for (const b of a.body) {
+        if (b.kind !== 'table') continue
+        expect(b.caption.length, `${a.slug}: table caption is required for screen readers`).toBeGreaterThan(0)
+        expect(b.head.length, `${a.slug}: a table needs at least two columns`).toBeGreaterThan(1)
+        b.rows.forEach((row, i) =>
+          expect(row.length, `${a.slug}: table row ${i} has ${row.length} cells against ${b.head.length} columns`).toBe(b.head.length))
+      }
   })
 
   it('every article carries a machine-readable last-updated date', () => {

@@ -17,7 +17,7 @@ import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
-import { comparisonArticleJsonLd, type ComparisonArticle, type ArticleSpan } from '@/lib/marketing/comparisons'
+import { comparisonArticleJsonLd, type ComparisonArticle, type ArticleSpan, type ArticleBlock } from '@/lib/marketing/comparisons'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
@@ -89,15 +89,15 @@ export function ComparisonPage({ article }: { article: ComparisonArticle }) {
           Last updated: <time dateTime={article.lastUpdatedISO}>{article.lastUpdated}</time>
         </p>
 
-        {article.body.map((block, i) =>
-          block.kind === 'h2' ? (
+        {article.body.map((block, i) => {
+          if (block.kind === 'h2') return (
             <h2 key={i} style={{ fontFamily: 'var(--font-brand)', fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em', color: 'var(--ink)', margin: '32px 0 12px' }}>
               {block.text}
             </h2>
-          ) : (
-            <p key={i} style={BODY_STYLE}>{renderSpans(block.spans)}</p>
-          ),
-        )}
+          )
+          if (block.kind === 'table') return <ArticleTable key={i} block={block} />
+          return <p key={i} style={BODY_STYLE}>{renderSpans(block.spans)}</p>
+        })}
 
         <p style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--mute)', margin: '32px 0 20px', maxWidth: 640 }}>
           {article.signature}
@@ -110,6 +110,68 @@ export function ComparisonPage({ article }: { article: ComparisonArticle }) {
 
       <SiteFooter />
     </main>
+  )
+}
+
+/** A plain comparison table. No card, no shadow, no new colour: the SEO brief
+ *  calls readable in-page cells better than a graphic, and a bordered grid in
+ *  the existing tokens is the whole design.
+ *
+ *  The `overflow-x: auto` wrapper is not optional. A four-column table of
+ *  prices does not fit 400px, and CLAUDE.md's responsive rule is that a table
+ *  scrolls inside its own container rather than making the page body scroll. */
+function ArticleTable({ block }: { block: Extract<ArticleBlock, { kind: 'table' }> }) {
+  const cell = {
+    padding: '10px 12px',
+    borderBottom: '1px solid var(--line)',
+    fontSize: 14.5,
+    lineHeight: 1.45,
+    textAlign: 'left' as const,
+    verticalAlign: 'top' as const,
+  }
+  return (
+    <div style={{ overflowX: 'auto', margin: '0 0 24px', maxWidth: '100%' }}>
+      {/* `table-layout: fixed` so the three product columns are equal and the
+          row-label column cannot eat the width. `min-width` is the point at
+          which it starts scrolling instead of crushing: below about 500px the
+          cells stop being readable. */}
+      <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: 500, width: '100%' }}>
+        <colgroup>
+          <col style={{ width: '25%' }} />
+          {block.head.slice(1).map((_, i) => <col key={i} style={{ width: `${75 / (block.head.length - 1)}%` }} />)}
+        </colgroup>
+        {/* Named for screen readers and search, not shown: the h2 above already
+            titles this block, so a visible caption would just repeat it. */}
+        <caption style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' }}>
+          {block.caption}
+        </caption>
+        <thead>
+          <tr>
+            {block.head.map((h, i) => (
+              <th key={i} scope="col" style={{
+                ...cell,
+                borderBottom: '1px solid var(--ink)',
+                fontFamily: 'var(--font-brand)',
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--mute)',
+              }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {block.rows.map((row, r) => (
+            <tr key={r}>
+              {row.map((c, i) => i === 0
+                ? <th key={i} scope="row" style={{ ...cell, fontWeight: 600, color: 'var(--ink)' }}>{c}</th>
+                : <td key={i} style={{ ...cell, color: 'var(--ink-2)' }}>{c}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 

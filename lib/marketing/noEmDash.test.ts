@@ -35,6 +35,7 @@ const SURFACES = [
   'app/plans/[slug]/page.tsx',
   'app/comparisons/page.tsx',
   'app/runna-alternatives/page.tsx',
+  'app/coopah-vs-runna/page.tsx',
   'app/charity-runners/page.tsx',
   'app/support/page.tsx',
   'app/privacy/page.tsx',
@@ -53,6 +54,7 @@ const SURFACES = [
   'components/marketing/WaitlistForm.tsx',
   'lib/marketing/comparisons.ts',
   'lib/marketing/demoSurfaces.ts',
+  'lib/marketing/planNotes.ts',
   'lib/marketing/plans.ts',
   'lib/marketing/pricing.ts',
 ]
