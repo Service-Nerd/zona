@@ -28,7 +28,7 @@ export function AppStoreBadge() {
         background: 'var(--ink)',
         color: 'white',
         borderRadius: 'var(--radius-md, 8px)',
-        fontSize: '14px',
+        fontSize: 'var(--fs-body)',
         fontWeight: 600,
         lineHeight: 1,
         opacity: live ? 1 : 0.85,

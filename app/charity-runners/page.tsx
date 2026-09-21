@@ -97,7 +97,7 @@ const DISTANCES = [
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: '12px', fontWeight: 700, color: 'var(--moss)',
+      fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
       textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
     }}>{children}</div>
   )
@@ -106,7 +106,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 function H2({ children }: { children: React.ReactNode }) {
   return (
     <h2 style={{
-      fontFamily: 'var(--font-brand)', fontSize: 'clamp(23px, 3.6vw, 30px)',
+      fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h3)',
       fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em',
       lineHeight: 1.15, margin: '0 0 16px',
     }}>{children}</h2>
@@ -115,7 +115,7 @@ function H2({ children }: { children: React.ReactNode }) {
 
 function P({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{ fontSize: '16px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 14px' }}>
+    <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 14px' }}>
       {children}
     </p>
   )
@@ -185,16 +185,16 @@ export default function CharityRunnersPage() {
       <SiteHeader />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '56px 24px 40px' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
         <Eyebrow>For charity runners</Eyebrow>
         <h1 style={{
-          fontFamily: 'var(--font-brand)', fontSize: 'clamp(30px, 5.5vw, 46px)',
+          fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)',
           fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1,
           margin: '0 0 18px', color: 'var(--ink)',
         }}>
           You got the place. Your charity may have covered the coaching.
         </h1>
-        <p style={{ fontSize: '17px', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 26px' }}>
+        <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 26px' }}>
           Some charities give their runners a code for the full {BRAND.name} app, free for
           the whole training block. If yours did, it takes about a minute to use. If it
           did not, everything below still applies and the plans are free to read anyway.
@@ -213,7 +213,7 @@ export default function CharityRunnersPage() {
             // 18px Apple icon, so matching font size alone still left this 4px
             // shorter (34 vs 38). Matching the CONTENT height is what makes the
             // two boxes agree.
-            fontSize: '14px', fontWeight: 600, lineHeight: '18px',
+            fontSize: 'var(--fs-body)', fontWeight: 600, lineHeight: '18px',
             textDecoration: 'none',
             padding: '10px 18px', borderRadius: 'var(--radius-md, 8px)',
           }}>
@@ -235,7 +235,7 @@ export default function CharityRunnersPage() {
       <section style={{ padding: '8px 24px 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
         <div className="phone-fit"><PhoneFrame /></div>
         <p style={{
-          fontSize: '14px', lineHeight: 1.55, color: 'var(--mute)',
+          fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--mute)',
           margin: 0, maxWidth: '420px', textAlign: 'center',
         }}>
           One screen, one job: the run you are doing today and the zone to hold it in.
@@ -269,7 +269,7 @@ export default function CharityRunnersPage() {
 
       {/* ── How to use the code. The founder's note: nothing on this page
             told a runner that codes existed or what to do with one. ───── */}
-      <section id="code" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '64px 24px 0', scrollMarginTop: '80px' }}>
+      <section id="code" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0', scrollMarginTop: '80px' }}>
         <Eyebrow>If you have a code</Eyebrow>
         <H2>Three steps, about a minute.</H2>
 
@@ -289,18 +289,18 @@ export default function CharityRunnersPage() {
                 flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%',
                 background: 'var(--moss)', color: 'var(--card)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '13px', fontWeight: 800,
+                fontSize: 'var(--fs-sm)', fontWeight: 800,
               }}>{i + 1}</span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)', marginBottom: '4px' }}>{title}</div>
-                <div style={{ fontSize: '14.5px', lineHeight: 1.55, color: 'var(--ink-2)' }}>{body}</div>
+                <div style={{ fontSize: 'var(--fs-lead)', fontWeight: 700, color: 'var(--ink)', marginBottom: '4px' }}>{title}</div>
+                <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--ink-2)' }}>{body}</div>
               </div>
             </div>
           ))}
         </div>
 
         <p style={{
-          fontSize: '14px', lineHeight: 1.6, color: 'var(--mute)',
+          fontSize: 'var(--fs-body)', lineHeight: 1.6, color: 'var(--mute)',
           margin: '16px 0 0', borderLeft: '2px solid var(--line-strong)', paddingLeft: '14px',
         }}>
           Codes come from your charity, not from us, and each one works once. If you think
@@ -342,8 +342,8 @@ export default function CharityRunnersPage() {
                   background: 'var(--moss)', flexShrink: 0,
                 }} />
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--ink)', marginBottom: '3px' }}>{title}</div>
-                  <div style={{ fontSize: '14.5px', lineHeight: 1.55, color: 'var(--ink-2)' }}>{body}</div>
+                  <div style={{ fontSize: 'var(--fs-lead)', fontWeight: 700, color: 'var(--ink)', marginBottom: '3px' }}>{title}</div>
+                  <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--ink-2)' }}>{body}</div>
                 </div>
               </div>
             ))}
@@ -352,10 +352,10 @@ export default function CharityRunnersPage() {
       </section>
 
       {/* ── No code. The honest fallback, deliberately AFTER the offer. ── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '56px 24px 0' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <Eyebrow>No code?</Eyebrow>
         <H2>Then start with a free plan.</H2>
-        <p style={{ fontSize: '16px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 22px' }}>
+        <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 22px' }}>
           Every plan below is the real thing the engine builds, laid out week by week and
           free to read in full. No email, no signup. And every new account gets two weeks
           of the full app regardless, so you can see what the coaching adds.
@@ -369,15 +369,15 @@ export default function CharityRunnersPage() {
               background: 'var(--card)', border: '1px solid var(--line)',
               borderRadius: '100px', padding: '10px 18px',
             }}>
-              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)' }}>{d.label}</span>
-              <span style={{ fontSize: '12px', color: 'var(--mute)' }}>{d.weeks}</span>
+              <span style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 700, color: 'var(--ink)' }}>{d.label}</span>
+              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--mute)' }}>{d.weeks}</span>
             </Link>
           ))}
         </div>
       </section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '56px 24px 0' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <Eyebrow>Questions</Eyebrow>
         <H2>The ones charity runners actually ask.</H2>
         <div style={{
@@ -389,11 +389,11 @@ export default function CharityRunnersPage() {
             <details key={f.q} style={{ borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}>
               <summary style={{
                 listStyle: 'none', cursor: 'pointer', padding: '17px 20px',
-                fontFamily: 'var(--font-brand)', fontSize: '15.5px', fontWeight: 600,
+                fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-body-lg)', fontWeight: 600,
                 color: 'var(--ink)',
               }}>{f.q}</summary>
               <div style={{
-                padding: '0 20px 17px', fontSize: '15px', lineHeight: 1.6,
+                padding: '0 20px 17px', fontSize: 'var(--fs-body-lg)', lineHeight: 1.6,
                 color: 'var(--ink-2)',
               }}>{f.a}</div>
             </details>
@@ -402,16 +402,16 @@ export default function CharityRunnersPage() {
       </section>
 
       {/* ── Close ───────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '48px 24px 72px' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
           padding: '28px 24px',
         }}>
-          <h2 style={{ fontSize: '21px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', letterSpacing: '-0.01em' }}>
+          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', letterSpacing: '-0.01em' }}>
             Get to the start line in one piece.
           </h2>
-          <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>
             That is the job, and it is a harder one than going fast. Download the app,
             put your code in, and let it tell you to slow down.
           </p>

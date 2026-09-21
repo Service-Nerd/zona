@@ -49,7 +49,7 @@ export function WaitlistForm() {
           border: '1px solid var(--line)',
           borderLeft: '3px solid var(--moss)',
           borderRadius: 'var(--radius-md, 8px)',
-          fontSize: '15px',
+          fontSize: 'var(--fs-body-lg)',
           lineHeight: 1.5,
           color: 'var(--ink)',
           textAlign: 'left',
@@ -89,7 +89,7 @@ export function WaitlistForm() {
           flex: '1 1 220px',
           minWidth: 0,
           padding: '13px 16px',
-          fontSize: '15px',
+          fontSize: 'var(--fs-body-lg)',
           fontFamily: 'var(--font-ui)',
           color: 'var(--ink)',
           background: 'var(--bg-soft)',
@@ -104,7 +104,7 @@ export function WaitlistForm() {
         style={{
           flex: '0 0 auto',
           padding: '13px 24px',
-          fontSize: '15px',
+          fontSize: 'var(--fs-body-lg)',
           fontWeight: 600,
           fontFamily: 'var(--font-ui)',
           color: 'white',
@@ -123,7 +123,7 @@ export function WaitlistForm() {
           role="alert"
           style={{
             flexBasis: '100%',
-            fontSize: '13px',
+            fontSize: 'var(--fs-sm)',
             color: 'var(--warn)',
             textAlign: 'center',
             marginTop: '2px',

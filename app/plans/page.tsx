@@ -48,13 +48,13 @@ export default function PlansHubPage() {
       <SiteHeader current="plans" />
 
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
-        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 13, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: '0 0 14px' }}>
+        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: '0 0 14px' }}>
           Free training plans
         </p>
-        <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'clamp(28px, 5.5vw, 44px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 18px' }}>
+        <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 18px' }}>
           Running plans that stop you overtraining.
         </h1>
-        <p style={{ fontSize: 18, lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 8px', maxWidth: 600 }}>
+        <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 8px', maxWidth: 600 }}>
           5K to marathon. Mostly easy running, one quality session a week, every run zoned.
           Read any of them free. No signup, no wall.
         </p>
@@ -68,16 +68,16 @@ export default function PlansHubPage() {
         if (items.length === 0) return null
         return (
           <section key={group.key} style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
-            <h2 style={{ fontFamily: 'var(--font-brand)', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: '0 0 12px' }}>{group.label}</h2>
+            <h2 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-caption)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: '0 0 12px' }}>{group.label}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {items.map(p => (
                 <Link key={p.slug} href={`/plans/${p.slug}`} style={{ textDecoration: 'none' }}>
                   <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
                     <div>
-                      <div style={{ fontFamily: 'var(--font-brand)', fontSize: 18, fontWeight: 800, color: 'var(--ink)' }}>{planCardTitle(p)}</div>
-                      <div style={{ fontSize: 13.5, color: 'var(--mute)', marginTop: 3, maxWidth: 520 }}>{p.whoFor}</div>
+                      <div style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)' }}>{planCardTitle(p)}</div>
+                      <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 3, maxWidth: 520 }}>{p.whoFor}</div>
                     </div>
-                    <span style={{ fontSize: 18, color: 'var(--moss)', flexShrink: 0 }} aria-hidden>→</span>
+                    <span style={{ fontSize: 'var(--fs-lead-lg)', color: 'var(--moss)', flexShrink: 0 }} aria-hidden>→</span>
                   </div>
                 </Link>
               ))}
@@ -88,7 +88,7 @@ export default function PlansHubPage() {
 
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
         <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18 }}>
-          <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
             Every plan here is the flat version. The app takes the same plan and adapts it:
             your real heart-rate zones, your week, your race, and moves the sessions when life
             gets in the way. <a href={BRAND.appStore.url} style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>Start free in the app →</a>
@@ -101,7 +101,7 @@ export default function PlansHubPage() {
           items by SLT ruling, and this is a referral landing page rather than a
           content section people browse to. */}
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '18px 24px 8px' }}>
-        <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
+        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
           Running on a charity place? The risk is not the distance, it is getting hurt
           before race day.{' '}
           <Link href="/charity-runners" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
@@ -111,7 +111,7 @@ export default function PlansHubPage() {
       </section>
 
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '18px 24px 8px' }}>
-        <p style={{ fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
+        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
           Weighing up apps rather than plans? The comparisons are honest about where {BRAND.name} is
           the wrong answer.{' '}
           <Link href="/comparisons" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>

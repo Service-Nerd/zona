@@ -206,7 +206,7 @@ export default async function Home() {
           // FULL-WIDTH hero; this column is about half that, where 68px
           // reads cramped rather than confident. A considered revision of
           // that decision, not an accident.
-          fontSize: 'clamp(34px, 3.6vw, 52px)',
+          fontSize: 'var(--fs-hero)',
           fontWeight: 700, lineHeight: 1.03, letterSpacing: '-0.025em',
           color: 'var(--ink)',
           margin: '0 0 24px',
@@ -218,7 +218,7 @@ export default async function Home() {
         </h1>
 
         <p style={{
-          fontSize: '18px', lineHeight: 1.55, color: 'var(--ink-2)',
+          fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)',
           maxWidth: '540px', margin: '0 0 28px',
         }}>
           You&apos;re trying hard. That&apos;s the problem. Most amateur runners go medium-hard on
@@ -234,7 +234,7 @@ export default async function Home() {
         {/* Trial + pricing in owned voice — honest numbers, brand tone. */}
         <p style={{
           marginTop: '22px',
-          fontSize: '14px', lineHeight: 1.5, color: 'var(--ink-2)',
+          fontSize: 'var(--fs-body)', lineHeight: 1.5, color: 'var(--ink-2)',
         }}>
           Two weeks, full access. After that, keep the plan you built on the free tier, or
           stay on all of it for {PRICING.monthly.display}/month or {PRICING.annual.display}/year.
@@ -248,7 +248,7 @@ export default async function Home() {
             in-app UpgradeScreen). */}
         <p style={{
           marginTop: '8px',
-          fontSize: '13px', color: 'var(--mute)',
+          fontSize: 'var(--fs-sm)', color: 'var(--mute)',
         }}>
           {BRAND.hrRecommendation}
         </p>
@@ -269,7 +269,7 @@ export default async function Home() {
         <div style={{
           display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-start',
           gap: '10px 22px',
-          fontSize: '13px', fontWeight: 600, color: 'var(--ink-2)',
+          fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-2)',
           letterSpacing: '0.01em',
         }}>
           {/* CONTENT-ACCURACY (2026-09-11): this read "1 notification a day",
@@ -415,7 +415,7 @@ export default async function Home() {
             <AnswersCard />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
               <div style={{
-                fontSize: '10px', fontWeight: 700, color: 'var(--moss)',
+                fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--moss)',
                 textTransform: 'uppercase', letterSpacing: '0.1em',
               }}>
                 → Generates
@@ -497,7 +497,7 @@ export default async function Home() {
                 <span
                   aria-hidden
                   style={{
-                    fontFamily: 'var(--font-brand)', fontSize: '13px', fontWeight: 700,
+                    fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700,
                     color: 'var(--moss)', lineHeight: '24px', flexShrink: 0,
                     fontVariantNumeric: 'tabular-nums',
                   }}
@@ -506,12 +506,12 @@ export default async function Home() {
                 </span>
                 <div style={{ minWidth: 0 }}>
                   <h3 style={{
-                    fontSize: '16px', fontWeight: 600, color: 'var(--ink)',
+                    fontSize: 'var(--fs-lead)', fontWeight: 600, color: 'var(--ink)',
                     margin: '0 0 6px', lineHeight: 1.35,
                   }}>
                     {step.h}
                   </h3>
-                  <p style={{ fontSize: '14.5px', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
+                  <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
                     {step.p}
                   </p>
                 </div>
@@ -554,7 +554,7 @@ export default async function Home() {
               padding: '18px 20px',
               borderTop: '1px solid var(--line)',
               borderLeft: '1px solid var(--line)',
-              fontSize: '15px', lineHeight: 1.4, color: 'var(--ink-2)',
+              fontSize: 'var(--fs-body-lg)', lineHeight: 1.4, color: 'var(--ink-2)',
               fontWeight: 500,
             }}>
               {item}
@@ -580,7 +580,7 @@ export default async function Home() {
           <Eyebrow>Honestly</Eyebrow>
           <h2 style={{
             fontFamily: 'var(--font-brand)',
-            fontSize: 'clamp(26px, 4vw, 34px)',
+            fontSize: 'var(--fs-h2)',
             fontWeight: 600, lineHeight: 1.2,
             color: 'var(--ink)', margin: '0 0 28px',
           }}>
@@ -595,7 +595,7 @@ export default async function Home() {
             ].map((line) => (
               <li key={line} style={{
                 display: 'flex', gap: '12px', alignItems: 'baseline',
-                fontSize: '17px', lineHeight: 1.45, color: 'var(--ink)',
+                fontSize: 'var(--fs-lead-lg)', lineHeight: 1.45, color: 'var(--ink)',
               }}>
                 <span aria-hidden style={{ color: 'var(--moss)', fontWeight: 700, flexShrink: 0 }}>·</span>
                 <span>{line}</span>
@@ -604,7 +604,7 @@ export default async function Home() {
           </ul>
 
           <p style={{
-            fontSize: '16px', lineHeight: 1.5, color: 'var(--ink-2)',
+            fontSize: 'var(--fs-lead)', lineHeight: 1.5, color: 'var(--ink-2)',
             margin: 0,
           }}>
             Plenty of excellent apps will. This one won&apos;t.
@@ -646,7 +646,7 @@ export default async function Home() {
               <summary style={{
                 listStyle: 'none', cursor: 'pointer',
                 padding: '18px 20px',
-                fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600,
+                fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead)', fontWeight: 600,
                 color: 'var(--ink)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px',
               }}>
@@ -655,7 +655,7 @@ export default async function Home() {
               </summary>
               <p style={{
                 margin: 0, padding: '0 20px 18px',
-                fontSize: '15px', lineHeight: 1.6, color: 'var(--ink-2)', maxWidth: '620px',
+                fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', maxWidth: '620px',
               }}>
                 {a}
               </p>
@@ -710,18 +710,18 @@ export default async function Home() {
                 background: 'var(--moss)', flexShrink: 0,
               }} />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{f.name}</div>
-                <div style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--mute)', marginTop: 3 }}>{f.detail}</div>
+                <div style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--ink)' }}>{f.name}</div>
+                <div style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.5, color: 'var(--mute)', marginTop: 3 }}>{f.detail}</div>
               </div>
             </li>
           ))}
         </ul>
 
         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'baseline' }}>
-          <Link href="/plans" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
+          <Link href="/plans" style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
             Read the free plans &rarr;
           </Link>
-          <p style={{ fontSize: '13px', color: 'var(--mute)', margin: 0 }}>
+          <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', margin: 0 }}>
             Paid adds the coaching that reads your actual runs: {PRICING.monthly.label} or{' '}
             {PRICING.annual.label}.{' '}
             <Link href="/pricing" style={{ color: 'var(--mute)', textDecoration: 'underline' }}>
@@ -735,7 +735,7 @@ export default async function Home() {
           site says who built it. Moved ABOVE the shared footer rather than
           deleted, so the footer itself can be identical on every page. */}
       <section style={{ padding: '40px 24px 0', maxWidth: '1100px', margin: '0 auto' }}>
-        <p style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--ink-2)', margin: 0 }}>
+        <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.5, color: 'var(--ink-2)', margin: 0 }}>
           Built by Russell. Runs medium-hard on everything. That&apos;s how I know.
         </p>
       </section>
@@ -753,7 +753,7 @@ export default async function Home() {
       }}>
         <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{
-            fontSize: '12px', fontWeight: 700, color: 'var(--moss-on-ground)',
+            fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-on-ground)',
             textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
           }}>
             The receipt
@@ -761,7 +761,7 @@ export default async function Home() {
 
           <p style={{
             fontFamily: 'var(--font-brand)',
-            fontSize: 'clamp(32px, 5vw, 48px)',
+            fontSize: 'var(--fs-hero)',
             fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.015em',
             color: 'var(--on-ground)',
             fontStyle: 'italic',
@@ -771,7 +771,7 @@ export default async function Home() {
           </p>
 
           <p style={{
-            fontSize: '17px', lineHeight: 1.6, color: 'var(--on-ground-2)',
+            fontSize: 'var(--fs-lead-lg)', lineHeight: 1.6, color: 'var(--on-ground-2)',
             maxWidth: '520px', margin: '0 auto 36px',
           }}>
             Every week, {BRAND.coachName} tells you one true thing about how you actually
@@ -785,7 +785,7 @@ export default async function Home() {
             href={BRAND.appStore.url || '/plans'}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px',
-              fontSize: '15px', fontWeight: 600,
+              fontSize: 'var(--fs-body-lg)', fontWeight: 600,
               color: 'var(--ground)', background: 'var(--on-ground)',
               padding: '13px 22px', borderRadius: 'var(--radius-md)',
               textDecoration: 'none',
@@ -816,7 +816,7 @@ export default async function Home() {
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: '12px', fontWeight: 700, color: 'var(--moss)',
+      fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
       textTransform: 'uppercase', letterSpacing: '0.08em',
       marginBottom: '12px',
     }}>
@@ -842,7 +842,7 @@ function SectionTitle({ children, accent, sub }: { children: React.ReactNode; ac
     <div style={{ marginBottom: '48px' }}>
       <h2 style={{
         fontFamily: 'var(--font-brand)',
-        fontSize: 'clamp(28px, 4vw, 36px)',
+        fontSize: 'var(--fs-h2)',
         fontWeight: 600, lineHeight: 1.2,
         color: 'var(--ink)', margin: 0,
         maxWidth: '720px',
@@ -857,7 +857,7 @@ function SectionTitle({ children, accent, sub }: { children: React.ReactNode; ac
       </h2>
       {sub && (
         <p style={{
-          fontSize: '16px', lineHeight: 1.55, color: 'var(--ink-2)',
+          fontSize: 'var(--fs-lead)', lineHeight: 1.55, color: 'var(--ink-2)',
           maxWidth: '600px', margin: '14px 0 0',
         }}>
           {sub}
@@ -877,14 +877,14 @@ function ThesisCard({ label, line }: { label: string; line: string }) {
       padding: '24px',
     }}>
       <div style={{
-        fontSize: '11px', fontWeight: 700, color: 'var(--mute)',
+        fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--mute)',
         textTransform: 'uppercase', letterSpacing: '0.08em',
         marginBottom: '12px',
       }}>
         {label}
       </div>
       <div style={{
-        fontSize: '17px', lineHeight: 1.4, color: 'var(--ink)',
+        fontSize: 'var(--fs-lead-lg)', lineHeight: 1.4, color: 'var(--ink)',
         fontWeight: 500,
       }}>
         {line}
@@ -920,13 +920,13 @@ function Pillar({ title, body, children }: { title: string; body: string; childr
     }}>
       <h3 style={{
         fontFamily: 'var(--font-brand)',
-        fontSize: '20px', fontWeight: 600, lineHeight: 1.3,
+        fontSize: 'var(--fs-h4)', fontWeight: 600, lineHeight: 1.3,
         color: 'var(--ink)', margin: 0,
       }}>
         {title}
       </h3>
       <p style={{
-        fontSize: '14px', lineHeight: 1.6, color: 'var(--ink-2)',
+        fontSize: 'var(--fs-body)', lineHeight: 1.6, color: 'var(--ink-2)',
         margin: 0, alignSelf: 'start',
       }}>
         {body}
@@ -975,7 +975,7 @@ function AnswersCard() {
       display: 'flex', flexDirection: 'column',
     }}>
       <div style={{
-        fontSize: '10px', fontWeight: 700, color: 'var(--mute)',
+        fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--mute)',
         textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px',
       }}>
         Your answers
@@ -988,10 +988,10 @@ function AnswersCard() {
             padding: '12px 0',
             borderTop: i === 0 ? 'none' : '1px solid var(--line)',
           }}>
-            <span style={{ fontSize: '13px', color: 'var(--mute)' }}>{q}</span>
+            <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)' }}>{q}</span>
             <span style={{
               fontFamily: 'var(--font-brand)',
-              fontSize: '15px', fontWeight: 600, color: 'var(--ink)',
+              fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--ink)',
               textAlign: 'right',
             }}>
               {a}
@@ -999,7 +999,7 @@ function AnswersCard() {
           </div>
         ))}
       </div>
-      <p style={{ fontSize: '12px', lineHeight: 1.45, color: 'var(--mute)', margin: '14px 0 0' }}>
+      <p style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.45, color: 'var(--mute)', margin: '14px 0 0' }}>
         Plus injury history, terrain, your weekday time cap and a recent race result if you have one.
       </p>
     </div>

@@ -58,7 +58,7 @@ export const metadata: Metadata = {
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: '12px', fontWeight: 700, color: 'var(--moss)',
+      fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
       textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
     }}>{children}</div>
   )
@@ -75,10 +75,10 @@ function Feature({ f, accent }: { f: TierFeature; accent: string }) {
         background: accent, flexShrink: 0,
       }} />
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)', marginBottom: '3px' }}>
+        <div style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 700, color: 'var(--ink)', marginBottom: '3px' }}>
           {f.name}
         </div>
-        <div style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--ink-2)' }}>
+        <div style={{ fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--ink-2)' }}>
           {f.detail}
         </div>
       </div>
@@ -102,16 +102,16 @@ export default function PricingPage() {
       <SiteHeader current="pricing" />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '56px 24px 36px' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
         <Eyebrow>Pricing</Eyebrow>
         <h1 style={{
-          fontFamily: 'var(--font-brand)', fontSize: 'clamp(30px, 5.5vw, 44px)',
+          fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)',
           fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1,
           margin: '0 0 18px', color: 'var(--ink)',
         }}>
           Two weeks of everything. Then you decide.
         </h1>
-        <p style={{ fontSize: '17px', lineHeight: 1.55, color: 'var(--ink-2)', margin: 0 }}>
+        <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: 0 }}>
           Every new account gets the full app for two weeks. After that you keep the plan
           you built and drop to the free tier, or you keep the coaching. Nothing is
           deleted and nothing nags you.
@@ -119,10 +119,16 @@ export default function PricingPage() {
       </section>
 
       {/* ── The two tiers ───────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '0 24px' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))',
           gap: '16px',
+          // Each card takes its own height. A grid row stretches by default,
+          // which left the FREE card carrying ~350px of empty white to match
+          // the paid column. The note below is right that free must not look
+          // pitiful, but a void does not read as equal weight, it reads as
+          // unfinished. A card sized to its content reads deliberate.
+          alignItems: 'start',
         }}>
 
           {/* Free. Given equal weight on purpose: "Free Users Are Never
@@ -133,15 +139,15 @@ export default function PricingPage() {
             borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
             padding: '24px 22px',
           }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
               Free
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
-              <span style={{ fontFamily: 'var(--font-brand)', fontSize: '38px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-1.5px', lineHeight: 1 }}>
+              <span style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-metric-lg)', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-1.5px', lineHeight: 1 }}>
                 {PRICING.symbol}0
               </span>
             </div>
-            <p style={{ fontSize: '13.5px', lineHeight: 1.5, color: 'var(--mute)', margin: '0 0 8px' }}>
+            <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.5, color: 'var(--mute)', margin: '0 0 8px' }}>
               Forever. No card, no countdown.
             </p>
             <div style={{ borderTop: '1px solid var(--line)', marginTop: '14px', paddingTop: '6px' }}>
@@ -157,21 +163,21 @@ export default function PricingPage() {
             borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
             padding: '24px 22px',
           }}>
-            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
               Full access
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontFamily: 'var(--font-brand)', fontSize: '38px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-1.5px', lineHeight: 1 }}>
+              <span style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-metric-lg)', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-1.5px', lineHeight: 1 }}>
                 {PRICING.monthly.display}
               </span>
-              <span style={{ fontSize: '14px', color: 'var(--mute)' }}>/ month</span>
+              <span style={{ fontSize: 'var(--fs-body)', color: 'var(--mute)' }}>/ month</span>
             </div>
-            <p style={{ fontSize: '13.5px', lineHeight: 1.5, color: 'var(--mute)', margin: '0 0 8px' }}>
+            <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.5, color: 'var(--mute)', margin: '0 0 8px' }}>
               Or {PRICING.annual.display} a year, which works out at about{' '}
               {PRICING.symbol}{PRICING.annual.perMonthEquiv.toFixed(2)} a month. Cancel any time.
             </p>
             <div style={{ borderTop: '1px solid var(--line)', marginTop: '14px', paddingTop: '6px' }}>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--ink-2)', padding: '8px 0 2px' }}>
+              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-2)', padding: '8px 0 2px' }}>
                 Everything in free, plus:
               </div>
               {PAID_FEATURES.map(f => <Feature key={f.name} f={f} accent="var(--moss)" />)}
@@ -181,22 +187,22 @@ export default function PricingPage() {
       </section>
 
       {/* ── The honest bit about what "free" means after the trial ──────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '40px 24px 0' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderLeft: '3px solid var(--warn)',
           borderRadius: 'var(--radius-lg)', padding: '22px 20px',
         }}>
-          <h2 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>
+          <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>
             What happens on day fifteen
           </h2>
-          <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 12px' }}>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 12px' }}>
             You keep the plan you built during the trial. Your zones, your paces, the
             coach notes already on your sessions: all of it stays. What stops is the
             ongoing part, the reading of new runs and the reshaping when a week goes
             sideways.
           </p>
-          <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
             We do not delete your training to make a point. If the free tier is enough
             for you, use the free tier.
           </p>
@@ -204,8 +210,8 @@ export default function PricingPage() {
       </section>
 
       {/* ── Charity runners. The page that makes the code make sense. ───── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px 0' }}>
-        <p style={{ fontSize: '15.5px', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
           Running on a charity place? Some charities cover the full app for their
           runners.{' '}
           <Link href="/charity-runners" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
@@ -215,22 +221,22 @@ export default function PricingPage() {
       </section>
 
       {/* ── Close ───────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '40px 24px 72px' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
           padding: '26px 22px',
         }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', letterSpacing: '-0.01em' }}>
+          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 10px', letterSpacing: '-0.01em' }}>
             Start with the two weeks.
           </h2>
-          <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>
             Build a plan, run a fortnight of it, and see whether being told to slow down
             is what you were missing.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
             <AppStoreBadge />
-            <Link href="/plans" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
+            <Link href="/plans" style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
               Or read a free plan first &rarr;
             </Link>
           </div>

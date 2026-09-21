@@ -64,7 +64,7 @@ export const metadata: Metadata = {
 
 function P({ children }: { children: React.ReactNode }) {
   return (
-    <p style={{ fontSize: '17px', lineHeight: 1.65, color: 'var(--ink-2)', margin: '0 0 16px' }}>
+    <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.65, color: 'var(--ink-2)', margin: '0 0 16px' }}>
       {children}
     </p>
   )
@@ -95,16 +95,16 @@ export default function AboutPage() {
       <SiteHeader />
 
       {/* ── The story ───────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '56px 24px 0' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
         <div style={{
-          fontSize: '12px', fontWeight: 700, color: 'var(--moss)',
+          fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
           textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px',
         }}>
           Why {BRAND.name} exists
         </div>
 
         <h1 style={{
-          fontFamily: 'var(--font-brand)', fontSize: 'clamp(30px, 5vw, 44px)',
+          fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)',
           fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1,
           margin: '0 0 24px', color: 'var(--ink)',
         }}>
@@ -135,7 +135,7 @@ export default function AboutPage() {
             width: '3px', borderRadius: '2px', background: 'var(--moss)',
           }} />
           <p style={{
-            fontFamily: 'var(--font-brand)', fontSize: '21px', fontWeight: 700,
+            fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h4)', fontWeight: 700,
             lineHeight: 1.35, color: 'var(--ink)', margin: 0, letterSpacing: '-0.01em',
           }}>
             {BRAND.coreTruth}
@@ -158,13 +158,13 @@ export default function AboutPage() {
       }}>
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
           <div style={{
-            fontSize: '12px', fontWeight: 700, color: 'var(--moss)',
+            fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
             textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px',
           }}>
             Who you are dealing with
           </div>
           <h2 style={{
-            fontFamily: 'var(--font-brand)', fontSize: 'clamp(23px, 3.6vw, 30px)',
+            fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h3)',
             fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.02em',
             lineHeight: 1.15, margin: '0 0 16px',
           }}>
@@ -185,23 +185,23 @@ export default function AboutPage() {
       </section>
 
       {/* ── Close ───────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '48px 24px 72px' }}>
+      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{ height: '1px', background: 'var(--line)', margin: '0 0 20px' }} />
-        <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
+        <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
           Russ Shear &middot; Founder
         </div>
         <a
           href="mailto:russ@zonna.run"
           style={{
             display: 'inline-flex', alignItems: 'center', minHeight: '44px',
-            fontSize: '14px', color: 'var(--moss)', fontWeight: 600,
+            fontSize: 'var(--fs-body)', color: 'var(--moss)', fontWeight: 600,
             textDecoration: 'underline', textUnderlineOffset: '3px',
           }}
         >
           russ@zonna.run
         </a>
 
-        <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '20px 0 0' }}>
+        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '20px 0 0' }}>
           Running on a charity place?{' '}
           <Link href="/charity-runners" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
             Start here &rarr;

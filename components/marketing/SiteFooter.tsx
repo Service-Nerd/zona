@@ -112,7 +112,7 @@ export function SiteFooter() {
             <nav key={g.heading} aria-label={g.heading}>
               <h2 style={{
                 fontFamily: 'var(--font-brand)',
-                fontSize: 11, fontWeight: 700,
+                fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
                 letterSpacing: '0.08em', textTransform: 'uppercase',
                 color: 'var(--mute)', margin: '0 0 12px',
               }}>
@@ -121,7 +121,7 @@ export function SiteFooter() {
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 9 }}>
                 {g.links.map(l => (
                   <li key={l.href}>
-                    <Link href={l.href} style={{ fontSize: 14, color: 'var(--ink-2)', textDecoration: 'none' }}>
+                    <Link href={l.href} style={{ fontSize: 'var(--fs-body)', color: 'var(--ink-2)', textDecoration: 'none' }}>
                       {l.label}
                     </Link>
                   </li>
@@ -136,7 +136,7 @@ export function SiteFooter() {
           <div>
             <h2 style={{
               fontFamily: 'var(--font-brand)',
-              fontSize: 11, fontWeight: 700,
+              fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
               letterSpacing: '0.08em', textTransform: 'uppercase',
               color: 'var(--mute)', margin: '0 0 12px',
             }}>
@@ -147,7 +147,7 @@ export function SiteFooter() {
         </div>
 
         <p style={{
-          fontSize: 12, color: 'var(--mute)',
+          fontSize: 'var(--fs-caption)', color: 'var(--mute)',
           margin: '36px 0 0', paddingTop: 20, borderTop: '1px solid var(--line)',
         }}>
           © {new Date().getFullYear()} {BRAND.name}

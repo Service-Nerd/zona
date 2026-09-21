@@ -31,7 +31,7 @@ export default function TermsPage() {
         <div style={{ marginBottom: '48px' }}>
           <div style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '10px',
+            fontSize: 'var(--fs-micro)',
             color: 'var(--accent)',
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
@@ -41,7 +41,7 @@ export default function TermsPage() {
           </div>
           <h1 style={{
             fontFamily: 'var(--font-brand)',
-            fontSize: '32px',
+            fontSize: 'var(--fs-h1-doc)',
             fontWeight: 500,
             color: 'var(--text-primary)',
             letterSpacing: '-0.5px',
@@ -52,7 +52,7 @@ export default function TermsPage() {
           </h1>
           <p style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '14px',
+            fontSize: 'var(--fs-body)',
             color: 'var(--text-secondary)',
             lineHeight: 1.7,
             margin: '0 0 8px',
@@ -61,7 +61,7 @@ export default function TermsPage() {
           </p>
           <div style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '11px',
+            fontSize: 'var(--fs-eyebrow)',
             color: 'var(--text-muted)',
             letterSpacing: '0.04em',
           }}>
@@ -131,7 +131,7 @@ export default function TermsPage() {
             ].map((item, i) => (
               <li key={i} style={{
                 fontFamily: 'var(--font-ui)',
-                fontSize: '14px',
+                fontSize: 'var(--fs-body)',
                 color: 'var(--text-secondary)',
                 lineHeight: 1.7,
                 marginBottom: '6px',
@@ -196,7 +196,7 @@ export default function TermsPage() {
             padding: '20px',
             marginTop: '16px',
           }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-sm)', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
                        <A href="mailto:support@zonna.run">support@zonna.run</A>
           </div>
         </Section>
@@ -212,14 +212,14 @@ export default function TermsPage() {
         }}>
           <span style={{
             fontFamily: 'var(--font-brand)',
-            fontSize: '16px',
+            fontSize: 'var(--fs-lead)',
             fontWeight: 500,
             letterSpacing: '0.08em',
             color: 'var(--accent)',
           }}>{BRAND.name}</span>
           <span style={{
             fontFamily: 'var(--font-ui)',
-            fontSize: '10px',
+            fontSize: 'var(--fs-micro)',
             color: 'var(--text-muted)',
             opacity: 0.5,
           }}>
@@ -249,7 +249,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
         <div style={{ width: '3px', height: '16px', background: 'var(--accent)', borderRadius: '2px', flexShrink: 0 }} />
         <h2 style={{
           fontFamily: 'var(--font-brand)',
-          fontSize: '16px',
+          fontSize: 'var(--fs-lead)',
           fontWeight: 500,
           color: 'var(--text-primary)',
           letterSpacing: '-0.2px',
@@ -267,7 +267,7 @@ function SubHead({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       fontFamily: 'var(--font-ui)',
-      fontSize: '11px',
+      fontSize: 'var(--fs-eyebrow)',
       fontWeight: 500,
       color: 'var(--text-primary)',
       letterSpacing: '0.06em',
@@ -284,7 +284,7 @@ function P({ children }: { children: React.ReactNode }) {
   return (
     <p style={{
       fontFamily: 'var(--font-ui)',
-      fontSize: '14px',
+      fontSize: 'var(--fs-body)',
       color: 'var(--text-secondary)',
       lineHeight: 1.75,
       margin: '0 0 14px',
@@ -303,7 +303,7 @@ function A({ href, children }: { href: string; children: React.ReactNode }) {
         textDecoration: 'underline',
         textUnderlineOffset: '2px',
         fontFamily: 'var(--font-ui)',
-        fontSize: '14px',
+        fontSize: 'var(--fs-body)',
       }}
     >
       {children}

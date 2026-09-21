@@ -120,7 +120,7 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 style={{
-                  fontSize: 14,
+                  fontSize: 'var(--fs-body)',
                   fontWeight: active ? 700 : 600,
                   color: active ? 'var(--moss)' : 'var(--ink-2)',
                   textDecoration: 'none',
@@ -136,7 +136,7 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
           <a
             href={BRAND.appStore.url}
             style={{
-              fontSize: 13.5,
+              fontSize: 'var(--fs-sm)',
               fontWeight: 700,
               color: 'var(--card)',
               background: 'var(--moss)',

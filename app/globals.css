@@ -54,6 +54,61 @@
   --font-ui:         'Inter', sans-serif;
   --font-brand:      'Inter', sans-serif;   /* Space Grotesk retired — see ADR-007 */
 
+  /* ── Type scale (SITE-TYPE-01, 2026-09-21) ───────────────────────────
+     Measured before it was written: the marketing site had NO type scale at
+     all. 170 font sizes were hand-typed inline across 16 files in NINETEEN
+     distinct values, and the tell is the half-pixels: 12.5, 13.5, 14.5 and
+     15.5 account for 30 of them. Nobody chooses 14.5px. They are what a value
+     becomes when each component nudges a number it copied from a neighbour.
+     Nine separate hero clamps existed too, three of them within 2px of each
+     other: clamp(28,5.5vw,44), clamp(30,5.5vw,44), clamp(30,5.5vw,46).
+
+     Eleven steps. Inter, ~1.08 apart through the body range where a site with
+     dense plan tables genuinely needs the gradation, widening at the top.
+     The half-pixels round DOWN onto the step below: the change is sub-pixel,
+     it can only ever shrink a box, and it never reflows a line that fitted.
+
+     ⚠️ FOUR DELIBERATE MOVES, not roundings, listed because a consolidation
+     that hides its own deltas is how the half-pixels got here:
+       · 17px joins 18px (8 places). A five-step run of 14/15/16/17/18 is not
+         a scale, it is a list. All eight are lead paragraphs, where +1px is
+         the intended direction anyway.
+       · 20px and 22px join 21px (7 places, ±1px). Three sizes of small
+         heading was two too many.
+       · The page h1 lands on clamp(28px, 5.5vw, 44px), so /pricing, /about
+         and /charity-runners lose 2px at the mobile floor and
+         /charity-runners loses 2px at the desktop cap.
+       · The closing band's statement joins the hero token: 48px to 46.08px
+         at 1280, and 32px to 34px at 375. They are the same role.
+
+     ⚠️ THE DEVICE MOCKUPS ARE EXEMPT AND MUST STAY EXEMPT. PhoneFrame.tsx and
+     ProductStill.tsx draw a simulated iPhone running the app: their 9px tab
+     labels and 56px metric are a PICTURE of iOS chrome at mockup scale, not
+     this website's typography. Forcing them onto the site scale would make
+     the drawing wrong to make a grep clean. `lib/marketing/typeScale.test.ts`
+     encodes that exemption by path so the next person inherits the reasoning
+     rather than the exception. */
+  --fs-micro:        10px;   /* legal micro, badge superscript */
+  --fs-eyebrow:      11px;   /* tracked uppercase eyebrow (tracking stays 0.08em) */
+  --fs-caption:      12px;   /* captions, table cells, meta */
+  --fs-sm:           13px;   /* dense supporting text */
+  --fs-body:         14px;   /* default body */
+  --fs-body-lg:      15px;   /* comfortable body, article prose */
+  --fs-lead:         16px;   /* lead paragraph */
+  --fs-lead-lg:      18px;   /* section standfirst */
+  --fs-h4:           21px;   /* smallest real heading */
+  --fs-metric:       26px;   /* inline metric */
+  --fs-metric-lg:    38px;   /* price, hero metric */
+
+  /* Responsive headings. One clamp each, replacing nine bespoke ones. The
+     min is sized for 375px and the max for 1280px; nothing between them is
+     hand-tuned, which is the point. */
+  --fs-hero:         clamp(34px, 3.6vw, 52px);  /* the oversized statement: home h1, closing band */
+  --fs-h1:           clamp(28px, 5.5vw, 44px);  /* every other page h1 */
+  --fs-h1-doc:       32px;                      /* legal/support: fixed, dense */
+  --fs-h2:           clamp(26px, 4vw, 34px);
+  --fs-h3:           clamp(23px, 3.6vw, 30px);
+
   /* ── Border radius ───────────────────────────────────────────────── */
   /* v2 modernisation (design_handoff_v2, 2026-09-10): each step raised once.
      12px on a card reads 2019; 14–18px is where premium products sit now.
@@ -126,6 +181,13 @@
   --on-ground:       #F3F0EB;                    /* body text on ground */
   --on-ground-2:     rgba(243,240,235,0.72);
   --on-ground-mute:  rgba(243,240,235,0.50);
+  /* The wordmark's light/moss lockups sit on dark at PURE white (--card), not
+     on the warm --on-ground. Their accent dot needs the matching pure-white
+     mute; --on-ground-mute is warm-tinted and reads slightly green beside a
+     white mark. One value, tokenised rather than inlined, because the
+     pre-commit hook blocks hardcoded hex in components but has no rule for
+     rgba, which is how this one survived. */
+  --on-card-mute:    rgba(255,255,255,0.55);
   /* Brand moss (#6B8E6B) goes muddy below ~20% background luminance; this is
      the same hue lifted to hold identity and clear 3:1 on #1A1A1A. Use for
      ANY moss on a dark ground; never --moss there. */

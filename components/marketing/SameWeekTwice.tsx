@@ -77,8 +77,8 @@ export function SameWeekTwice() {
       padding: '20px 20px 18px', display: 'flex', flexDirection: 'column', gap: 14,
     }}>
       <div>
-        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>{title}</div>
-        <div style={{ fontSize: 13, color: 'var(--mute)', marginTop: 3 }}>{note}</div>
+        <div style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--ink)' }}>{title}</div>
+        <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 3 }}>{note}</div>
       </div>
 
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 9 }}>
@@ -86,7 +86,7 @@ export function SameWeekTwice() {
           const above = pcts[i]
           const drifted = classifyRun(above) === 'drifted'
           return (
-            <li key={x.day} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 13.5 }}>
+            <li key={x.day} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 'var(--fs-sm)' }}>
               <span style={{ width: 30, flexShrink: 0, color: 'var(--mute)', fontWeight: 600 }}>{DAY_LABEL[x.day]}</span>
               <span
                 aria-hidden
@@ -105,7 +105,7 @@ export function SameWeekTwice() {
 
       {/* The product's own sentence, not marketing copy. */}
       <p style={{
-        fontSize: 14, lineHeight: 1.5, margin: 0, paddingTop: 12,
+        fontSize: 'var(--fs-body)', lineHeight: 1.5, margin: 0, paddingTop: 12,
         borderTop: '1px solid var(--line)',
         color: tone === 'grey' ? 'var(--warn)' : 'var(--moss)', fontWeight: 600,
       }}>
@@ -118,19 +118,19 @@ export function SameWeekTwice() {
     <section style={{ padding: 'var(--sect-y) 24px' }}>
       <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
         <div style={{
-          fontSize: '12px', fontWeight: 700, color: 'var(--moss)',
+          fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
           textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
         }}>
           The same week, twice
         </div>
         <h2 style={{
-          fontFamily: 'var(--font-brand)', fontSize: 'clamp(28px, 4vw, 36px)',
+          fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h2)',
           fontWeight: 600, lineHeight: 1.2, color: 'var(--ink)', margin: 0, maxWidth: '720px',
         }}>
           One week, run two ways.<br />
           <span style={{ color: 'var(--moss)' }}>The app can tell.</span>
         </h2>
-        <p style={{ fontSize: '16px', lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: '620px', margin: '14px 0 0' }}>
+        <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: '620px', margin: '14px 0 0' }}>
           These four sessions are week {SOURCE_WEEK} of{' '}
           <Link href={`/plans/${SOURCE_SLUG}`} style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
             our free 12-week half marathon plan
@@ -145,14 +145,14 @@ export function SameWeekTwice() {
           borderRadius: 'var(--radius-lg)', padding: '16px 18px', margin: '28px 0 16px',
         }}>
           <div style={{
-            fontSize: 11, fontWeight: 700, color: 'var(--mute)',
+            fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--mute)',
             textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10,
           }}>
             What the plan asks for
           </div>
           <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 8 }}>
             {sessions.map(x => (
-              <li key={x.day} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 13.5, flexWrap: 'wrap' }}>
+              <li key={x.day} style={{ display: 'flex', gap: 10, alignItems: 'baseline', fontSize: 'var(--fs-sm)', flexWrap: 'wrap' }}>
                 <span style={{ width: 30, flexShrink: 0, color: 'var(--mute)', fontWeight: 600 }}>{DAY_LABEL[x.day]}</span>
                 <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{x.s.label}</span>
                 <span style={{ color: 'var(--mute)' }}>
@@ -184,14 +184,14 @@ export function SameWeekTwice() {
             approved (Fried), so it needs a link that is genuinely useful
             rather than a directory entry. A reader who has just seen a week
             drift above its ceiling is the exact reader with this question. */}
-        <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '20px 0 0', maxWidth: '620px' }}>
+        <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '20px 0 0', maxWidth: '620px' }}>
           Wondering whether your easy runs are supposed to feel this slow?{' '}
           <Link href="/guides/should-easy-runs-feel-this-slow" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
             That is the whole question, and it has an answer &rarr;
           </Link>
         </p>
 
-        <p style={{ fontSize: '12.5px', lineHeight: 1.5, color: 'var(--mute)', margin: '14px 0 0', maxWidth: '620px' }}>
+        <p style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.5, color: 'var(--mute)', margin: '14px 0 0', maxWidth: '620px' }}>
           The sessions and their ceilings come from the plan itself. The two sets of heart-rate
           readings are an illustration of two ways to run the week, not a measurement of anyone.
         </p>

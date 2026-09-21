@@ -26,7 +26,7 @@ const SECTION_MAX = 760
 const LINK_STYLE = { color: 'var(--moss)', fontWeight: 600, textDecoration: 'underline' } as const
 
 const BODY_STYLE = {
-  fontSize: 17,
+  fontSize: 'var(--fs-lead-lg)',
   lineHeight: 1.65,
   color: 'var(--ink-2)',
   margin: '0 0 20px',
@@ -83,7 +83,7 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
           articles did not, so a reader arriving from search had no sense of
           where the page sat. Same markup and same type scale as PlanPage. */}
       <nav aria-label="Breadcrumb" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px 0' }}>
-        <ol style={{ display: 'flex', gap: 8, listStyle: 'none', padding: 0, margin: 0, fontSize: 13, color: 'var(--mute)', flexWrap: 'wrap' }}>
+        <ol style={{ display: 'flex', gap: 8, listStyle: 'none', padding: 0, margin: 0, fontSize: 'var(--fs-sm)', color: 'var(--mute)', flexWrap: 'wrap' }}>
           <li><Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link></li>
           <li aria-hidden>›</li>
           {/* ⚠️ NOT A LINK WHEN THE HUB IS NOT PUBLISHED. The guides hub 404s
@@ -103,17 +103,17 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
       </nav>
 
       <article style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
-        <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'clamp(28px, 5.5vw, 44px)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 12px' }}>
+        <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 12px' }}>
           {article.h1}
         </h1>
 
-        <p style={{ fontSize: 13.5, color: 'var(--mute)', margin: '0 0 28px' }}>
+        <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', margin: '0 0 28px' }}>
           Last updated: <time dateTime={article.lastUpdatedISO}>{article.lastUpdated}</time>
         </p>
 
         {article.body.map((block, i) => {
           if (block.kind === 'h2') return (
-            <h2 key={i} style={{ fontFamily: 'var(--font-brand)', fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em', color: 'var(--ink)', margin: '32px 0 12px' }}>
+            <h2 key={i} style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h4)', fontWeight: 800, letterSpacing: '-0.01em', color: 'var(--ink)', margin: '32px 0 12px' }}>
               {block.text}
             </h2>
           )
@@ -121,11 +121,11 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
           return <p key={i} style={BODY_STYLE}>{renderSpans(block.spans)}</p>
         })}
 
-        <p style={{ fontSize: 13.5, lineHeight: 1.6, color: 'var(--mute)', margin: '32px 0 20px', maxWidth: 640 }}>
+        <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.6, color: 'var(--mute)', margin: '32px 0 20px', maxWidth: 640 }}>
           {article.signature}
         </p>
 
-        <p style={{ fontSize: 15.5, margin: '0 0 8px' }}>
+        <p style={{ fontSize: 'var(--fs-body-lg)', margin: '0 0 8px' }}>
           <a href={BRAND.appStore.url} style={LINK_STYLE}>{article.appStoreLinkText}</a>
         </p>
       </article>
@@ -146,7 +146,7 @@ function ArticleTable({ block }: { block: Extract<ArticleBlock, { kind: 'table' 
   const cell = {
     padding: '10px 12px',
     borderBottom: '1px solid var(--line)',
-    fontSize: 14.5,
+    fontSize: 'var(--fs-body)',
     lineHeight: 1.45,
     textAlign: 'left' as const,
     verticalAlign: 'top' as const,
@@ -174,7 +174,7 @@ function ArticleTable({ block }: { block: Extract<ArticleBlock, { kind: 'table' 
                 ...cell,
                 borderBottom: '1px solid var(--ink)',
                 fontFamily: 'var(--font-brand)',
-                fontSize: 12,
+                fontSize: 'var(--fs-caption)',
                 fontWeight: 700,
                 letterSpacing: '0.08em',
                 textTransform: 'uppercase',

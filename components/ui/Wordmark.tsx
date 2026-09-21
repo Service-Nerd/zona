@@ -77,7 +77,7 @@ export function Wordmark({
     case 'light':
     case 'moss':
       baseColor = 'var(--card)'
-      accentColor = 'rgba(255, 255, 255, 0.55)'
+      accentColor = 'var(--on-card-mute)'
       break
     case 'default':
     default:
