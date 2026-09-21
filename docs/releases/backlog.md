@@ -2234,7 +2234,26 @@ prove the thing we actually sell.
 *"Probably not for you if…"*. Anti-qualification is rare, it builds trust fast, and there is nothing
 like it anywhere on their site.
 
-### 🟡 `W-06` — our H1 is 37px and our H2 is 36px, so the page has almost no hierarchy *(S, brand)*
+### 🔴 `W-06` — **WITHDRAWN 2026-09-21, same day.** The headline number was measured at the wrong viewport
+
+I reported H1 **36.9px** and an H1:H2 step of **1.02× ("no hierarchy")**. That was read at a ~527px
+pane, before a `clamp()` reached its desktop value. **At a real 1280px: H1 is 46.08px and the step
+is 1.28×.** And relative to its own measure, which is the only comparison that means anything, our
+H1 is **9.0% of its column against their 10.2%** — theirs looks bigger because their hero column is
+**667px against our 510px**, 31% wider.
+
+⚠️ The current size is a **recorded decision** (`app/page.tsx:202`): reduced from `clamp(40,7vw,68)`
+because this hero is two-column, *"where 68px reads cramped rather than confident. A considered
+revision of that decision, not an accident."* By the board's own deliberate-or-accident test, this
+is deliberate.
+
+**Residual, filed as `W-06a` (S, not this week):** our hero TEXT COLUMN is narrower than theirs. A
+grid question, not a type question.
+
+⚠️ **Second Miles claim withdrawn in two days after measuring properly** (first: the app palette,
+Δ41.8). Same direction both times. **State the viewport in the claim.**
+
+### ~~`W-06` original filing~~ *(superseded by the above)*
 
 **Measured, both sites, computed CSS:**
 
@@ -2299,7 +2318,12 @@ the CTA band is near-black or a deep moss is a brand call for the SLT, and **a d
 colour value** (`--moss` itself is too light for a full-bleed band), which makes it an ADR-007
 question, not a free choice.
 
-### 🟢 `W-10` — the footer is 143px of undifferentiated links *(XS)*
+### 🟢 `W-10` — the footer is 143px of undifferentiated links *(XS)* — ⚠️ **SCOPE CORRECTED**
+
+🔴 **It cannot be a dark footer, and the board was not told this when it ruled.**
+`ui-patterns.md` § *Dark Ground*: **"Exactly one near-black section per marketing page… A second
+dark section would make it a dark theme; don't"** (ADR-008). Miles closes on TWO dark bands; **we
+may not.** Weight here means structure, grouping and presence, not darkness.
 
 One row of nine links on the page background, no grouping, no sign-off, 143px tall against their
 470px. It is the last thing every visitor sees and it currently says nothing. Group it (Product ·

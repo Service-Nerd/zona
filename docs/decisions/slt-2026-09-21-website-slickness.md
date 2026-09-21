@@ -151,3 +151,80 @@ otherwise.** Ranked on asymmetry and durability instead.
 - ⚠️ **No engine code is touched, which also means `verify`, parity, `cohort:shape` and
   `measure:fitness` CANNOT CATCH A MISTAKE HERE.** The guards that apply are `noEmDash`, `pricing`,
   `uiPatternsIntegrity`, `externalLink` and `comparisons`.
+
+---
+
+## 🔴 CORRECTION, same day — W-06's headline number was measured at the wrong viewport
+
+**The board ranked W-06 on a number that was an artefact of my browser pane's width.**
+
+I reported *"H1 36.9px vs their 61.4px, H1:H2 step 1.02×, effectively no hierarchy."* That reading
+was taken at a **~527px** viewport, where a `clamp()` had not reached its desktop value. Re-measured
+at a real **1280px**:
+
+| | reported to the board | **actual at 1280** |
+|---|---|---|
+| Zonna H1 | 36.9px | **46.08px** |
+| Miles H1 | 61.4px | **68px** |
+| **H1:H2 step** | **1.02× ("no hierarchy")** | **1.28×** |
+
+**And the comparison that actually decides it — type relative to its own measure:**
+
+| | hero text column | H1 | **H1 as % of column** | chars/line |
+|---|---|---|---|---|
+| Miles | **667px** | 68px | **10.2%** | 20 |
+| Zonna | **510px** | 46.08px | **9.0%** | 22 |
+
+**We are within 1.2 percentage points of them.** Their headline looks bigger because their hero
+column is **31% wider**, not because they set type more confidently.
+
+⚠️ **And the current size is already a recorded decision.** `app/page.tsx:202` carries the reasoning
+in full: reduced from `clamp(40,7vw,68)` *because* this hero is a two-column grid whose text column
+is about half the page, *"where 68px reads cramped rather than confident. **A considered revision of
+that decision, not an accident.**"*
+
+**By the board's own test — deliberate absence or accident? — this is deliberate, and the reasoning
+is written down.** W-06 would have overturned a considered call, on a bad number, to resemble a
+competitor whose hero column is 157px wider than ours.
+
+### ⚖️ W-06 WITHDRAWN
+
+Not demoted. Withdrawn. The residual finding is smaller and different: **our hero TEXT COLUMN is
+narrower than theirs (510 vs 667)**, which is a grid question, not a type question. Filed as
+**`W-06a`**, S, and it is not this week's work.
+
+⚠️ **Second time in two days a claim about Miles has been withdrawn after measuring properly** (the
+first was the app palette, Δ41.8). Both times the direction of error was the same: the competitor
+looked further ahead than they are. **Measure at a stated viewport, on the named element, and put
+the viewport in the claim.**
+
+### What SURVIVES, all re-confirmed at 1280
+
+- **W-07 rhythm** — `48/56 · 0/56 · 72/72 · 80/80 · 80/80 · 80/80 · 72/72 · 80/80 · 112/112 ·
+  56/48 · 40/0`. Confirmed. ⚠️ **None of 72, 80 or 112 is in `ui-patterns.md`'s canonical spacing
+  rhythm**, which tops out at 56. The marketing site invented its own scale.
+- **W-07 measure** — `1100 · 1100 · 900 · 1100 · 900 · 900 · 640 · 760 · 760 · 780 · 1100`.
+  **Eight distinct values, worse than the board was told.**
+- **W-08 bands** — `--bg` alternating with `#EDE9E1`. Confirmed.
+- **W-09 the close** — the receipt band sits at **section 9 of 11**, then two light sections.
+  Confirmed.
+- **W-05** — ⚠️ **reframed.** The free-tier case is not missing: it EXISTS as a 780px card
+  (`app/page.tsx:641`) placed **after** the dark band, which is the weakest slot on the page. The
+  work is promotion and rewrite, not creation.
+
+### 🔴 A DOCUMENTED PATTERN BLOCKS PART OF W-09/W-10, AND THE BOARD WAS NOT TOLD
+
+`ui-patterns.md` § *Dark Ground — "The receipt" band*: **"Exactly one near-black section per
+marketing page. It is a punctuation mark, not a theme — ADR-008 stands. A second dark section would
+make it a dark theme; don't."**
+
+Miles closes on **two** dark bands (deep green CTA then near-black footer, 470px). **We cannot copy
+that shape.** A weighted dark footer plus the receipt is two dark grounds, which is precisely what
+this pattern and ADR-008 forbid.
+
+**So W-10's "give the footer weight" cannot mean "make the footer dark."** Revised below.
+
+⚠️ **Both trailing sections are also deliberate, with the reasoning in the source:** the free-plans
+teaser's 56px top padding is justified against a collision with the band's hard edge, and the
+founder note is *"moved ABOVE the shared footer rather than deleted, so the footer itself can be
+identical on every page."* **Neither is a leftover spacer. Both survive; they move.**
