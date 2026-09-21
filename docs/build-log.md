@@ -65,6 +65,45 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — DOC-AUDIT-ROADMAP-01: I shipped the check, and then the check caught me, three times running
+
+**Dev.** The doc audit verifies that a shipped item has a registry row, a build-log entry, a
+matching invariant, a fresh contract and a state block naming the right commit. CLAUDE.md also says
+an open item lives in the roadmap as a line and the backlog as detail. **The audit never checked the
+roadmap half.** A peer session filed three items this morning, put them in the backlog only, and the
+script reported ALL CLEAN.
+
+That is the third time in two days the same shape has bitten: the ship-record window that emptied at
+midnight, the backlog check that only read today's commits, and now this. It is tempting to call it
+carelessness. It is not. Each check was written to answer the question somebody had just asked, and
+each time **the next question was outside the list**. An audit inherits the boundaries of the
+incident that caused it.
+
+Adding the check took ten minutes. On its first run it found three pre-existing gaps, none of them
+the peer's. I checked all three by hand against their headers before letting it land, because I had
+just finished writing a comment in that same file saying a noisy check gets switched off — and a
+check that cries wolf on two of its first three findings would have earned that. Zero false
+positives, as it turned out.
+
+**The honest bit, and it is the same mistake three times.** Three consecutive commits of mine landed
+without their registry rows and build-log entries. The hook that catches exactly this fired every
+time. I never saw it, because I had been piping every commit through `tail -3` so I could see the
+push result, and the hook writes to stdout.
+
+I diagnosed that after the first one and then did it twice more. Knowing the cause did not change
+the habit, which is the part worth writing down: I "fixed" it by understanding it, which is not
+fixing it. The peer had to tell me each time, and on the third told me to stop piping until the
+habit reset. That is the correct instruction and I should have given it to myself.
+
+They had the mirror-image version an hour earlier: `npm run verify 2>&1 | tail -6; echo "exit=$?"`
+reports **`tail`'s** exit code, not `verify`'s. They published a green run they had not measured. It
+turned out to be genuinely green on a re-run, which is luck, not process.
+
+**So: two sessions, one working tree, both filtering our own instrumentation.** The tooling in this
+repo is unusually good at catching things. It is no use at all through a pipe.
+
+---
+
 ## 2026-09-21 — INV-DELOAD-ROWS-01 / MKT-PLAN-EXPORT-01: a defect worth fixing precisely because it cost nothing
 
 **Dev.** Another Claude session was working in this same repo today, found a real engine defect, and
