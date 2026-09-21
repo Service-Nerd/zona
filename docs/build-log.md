@@ -6,6 +6,56 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — OPS-DEPLOY-FILTER-01: we used all 100 of the day's deploys by lunchtime, and over half shipped an identical site
+
+**Dev.** Vercel stopped deploying mid-session: *"Resource is limited, try again in 1 day (more than 100)."*
+Hobby plan, 100 deployments a day. Work pushed, nothing live, founder unable to look at anything
+until tomorrow.
+
+The instinct is to call that carelessness. I counted it instead, from git rather than from memory,
+because a number is the only thing you can act on. **53 commits today. 23 changed code. 30 changed
+only `docs/` or `.claude/`.** Thirty builds that compiled the site, deployed it, and served exactly
+the same bytes.
+
+Eleven of those thirty were literally one commit repeated: `docs: state blocks name <sha>`.
+
+**The honest bit.** That is a structural loop I built, not a lapse I can resolve away. `audit-docs.sh`
+requires the dated "state at end of day" paragraphs in three files to name the last ship's SHA. A
+commit cannot name its own SHA. So every feature commit **necessarily** produces a second, docs-only
+commit naming it, and I pushed after each one. The check that keeps this project's documentation
+honest — a check that exists because those paragraphs kept going stale, and which I have been right
+to keep — was generating half the deploys. My own memory note from 2026-09-11 says *batch commits
+before pushing*, and I read it and ignored it all day.
+
+Which is the useful lesson: a rule that competes with a mechanical check loses to the check every
+time. If two disciplines collide, automate the one you keep breaking rather than promising harder.
+
+**The fix.** `vercel.json → ignoreCommand`, running `scripts/vercel-should-build.sh`. Exit 0 skips
+the build; exit 1 builds it.
+
+The interesting part is the direction it fails in. A missed skip costs one deployment out of a
+hundred. **A wrong skip ships nothing and looks exactly like a successful deploy** — the green tick
+with nothing behind it, which is the single most recorded failure shape in this codebase. So every
+uncertain case builds: not production, no reachable base commit, git erroring for any reason at all.
+Previews are never skipped either, because a preview is a person waiting to look at something.
+
+**AI-building.** I nearly shipped this having only run it once, in the direction that says BUILD. A
+filter that only ever says BUILD saves nothing and is indistinguishable from having no filter — and
+I would not have known, because the deploy would have succeeded and I would have called that
+working. Six cases now, both directions, against **real commits from this repo's history**: today's
+docs-only commit must skip, today's nav commit must build, a mixed docs+code commit must build,
+unreachable refs must build, previews must build. Then I ran the finished filter over all 53 of the
+day's commits and got 23/30, which matched the hand count exactly.
+
+That last step is the one I keep having to relearn. The test proves the logic; running it over the
+real population proves the logic was aimed at the right thing.
+
+**Product.** It buys headroom, it does not raise the ceiling. `OPS-VERCEL-PLAN-01` is still the
+actual fix and it is the founder's to make. Capping the symptom is worth doing and worth not
+mistaking for the cure.
+
+---
+
 ## 2026-09-21 — MKT-PLAN-SHAPE-01: the published plans peaked in week 3, and every check said they were fine
 
 **Dev.** The founder sent a coaching-logic audit of the nine training plans we publish, because
