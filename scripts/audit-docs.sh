@@ -87,7 +87,17 @@ for id in $ids; do
   # a legitimate state and not staleness. Flagging it would make this check
   # fire on correct work, and a guard that fires on correct work gets switched
   # off, which this repo has recorded as equivalent to having no guard.
-  if grep -qE "^> (🔲|🔴|🔵|⏸️) \*\*${id}[ —]" docs/releases/backlog.md; then
+  # ⚠️ The `.*\*\(` provenance requirement is NOT optional, and this check was
+  # missing it while its sibling below already had it. An open item header
+  # carries a *(P2, filed …)* block; an in-item EMPHASIS BULLET inside a quoted
+  # ruling does not. Without the discriminator this fired on
+  #   > 🔴 **W-03 and W-04 are effectively ONE item.** …
+  # which is narrative inside an SLT ruling, and reported a killed item as open.
+  # CLAUDE.md already records that exact failure for the sibling check ("this
+  # fires on narrative text, which is how four separate parses of this file
+  # produced four different counts") — the note was there and only half the
+  # script obeyed it.
+  if grep -qE "^> (🔲|🔴|🔵|⏸️) \*\*${id}[ —].*\*\(" docs/releases/backlog.md; then
     say "  STILL OPEN $id (shipped today, backlog says otherwise)"; bfail=1; fail=1
   fi
 done
