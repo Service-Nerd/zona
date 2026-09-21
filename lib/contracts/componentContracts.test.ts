@@ -88,23 +88,47 @@ describe('COMPONENT-CONTRACT-GATE-01 — component contracts match their compone
   for (const file of contracts) {
     describe(file, () => {
       const md = readFileSync(join(DIR, file), 'utf8')
-      const declared = md.match(/^\*\*Component:\*\*\s*`([^`]+)`/m)?.[1]
+      // ⚠️ `**Component:**` OR `**Components:**` WITH A LIST, and the second
+      // shape is not a convenience. `marketing-device.md` governs PhoneShell,
+      // PhoneFrame and TabbedPhone, which are one object: the device. Forcing
+      // it to name a single file would have made it name PhoneShell and stay
+      // silent about the other two, or split into three contracts that each
+      // restate the same two rules — the duplication contracts exist to stop.
+      // A gate that only understands one shape quietly declines to check the
+      // other, which is this file's own recorded failure with named exports
+      // and the same "only as wide as its list" shape as the audit checks.
+      const single = md.match(/^\*\*Component:\*\*\s*`([^`]+)`/m)?.[1]
+      const listed = single
+        ? [single]
+        : (md.match(/^\*\*Components:\*\*\n((?:- .*\n)+)/m)?.[1] ?? '')
+            .split('\n')
+            .map(l => (l.match(/`([^`]+\.tsx?)`/) || [])[1])
+            .filter(Boolean) as string[]
+      const declared = single ?? (listed.length ? listed[0] : undefined)
 
       it('🔴 declares the component it governs', () => {
         // Without this the test needs its own map, and a checker holding the
         // producer's list is blind to that list.
         expect(
-          declared,
-          `${file} needs a line: **Component:** \`path/to/Component.tsx\` — or ` +
-            '`**Component:** none` with the reason on the same line.',
-        ).toBeTruthy()
+          listed.length,
+          `${file} needs a line: **Component:** \`path/to/Component.tsx\` (or ` +
+            '`**Component:** none` with the reason), or a `**Components:**` bullet list.',
+        ).toBeGreaterThan(0)
       })
 
       if (!declared || declared === 'none') return
 
-      it('the declared component exists', () => {
-        expect(existsSync(join(process.cwd(), declared)), `${declared} not found`).toBe(true)
+      it('every declared component exists', () => {
+        for (const d of listed) {
+          expect(existsSync(join(process.cwd(), d)), `${d} not found`).toBe(true)
+        }
       })
+
+      // A multi-component contract documents the device's shape in prose and
+      // several prop blocks; pinning it to ONE component's props would be a
+      // false comparison. The prop-for-prop check is for single-component
+      // contracts, which is all of the others.
+      if (listed.length > 1) return
 
       it('🔴 documents exactly the props the component takes', () => {
         const actual = componentProps(readFileSync(join(process.cwd(), declared), 'utf8'))

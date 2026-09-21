@@ -5,6 +5,27 @@ Read before adding any feature to a screen. If a feature doesn't match a screen'
 
 Cross-reference: `docs/canonical/ux-principles.md` (design principles), `docs/canonical/ui-patterns.md` (component patterns).
 
+> 🔴 **THIS DOCUMENT SAYS WHAT BELONGS ON A SCREEN. IT DOES NOT SAY WHAT THE SCREEN IS.**
+> Added 2026-09-21 after it was used as one, at real cost.
+>
+> Rebuilding the marketing device's Plan and Coach stills from this file produced a Plan screen
+> with an arc and three loose session cards and **no weeks on it** — while the real `PlanScreen`
+> is, in its second half, `PlanCalendar`: the Past / Now / Next / Later week cards. Everything the
+> rebuild rendered *belongs* on Plan. It still was not the Plan screen. The founder caught it in
+> one sentence: *"the plan screen shows the Weeks and a Kit card."*
+>
+> The distinction is structural, not a gap to be filled in. This doc is a **rule about what may be
+> admitted** — one job per screen, and what to refuse. A screen is a **composition**: which
+> components, in what order, at what weight. A doc that listed the composition would be a second
+> copy of the component and would drift from it, which is why this one correctly does not.
+>
+> **So: to decide whether something BELONGS, read this. To know what a screen IS, read the
+> component** — `PlanScreen`, `CoachScreen`, `TodayScreen` et al in `app/dashboard/DashboardClient.tsx`.
+> Anything that must MATCH a screen (a marketing still, a fixture page, a design review) reads the
+> component, and its test reads the component too. `lib/marketing/realComponents.test.ts` does
+> exactly that: it slices the real screen function out of `DashboardClient` rather than pinning a
+> list anyone chose.
+
 ---
 
 ## The rule

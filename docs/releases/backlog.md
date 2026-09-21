@@ -55,11 +55,20 @@ exactly as they are on the app — we cannot be showing stuff that just isn't re
 
 🔴 **That inverted three of the four items.** Plan and Coach had been built from the handoff's
 description and were **fiction** — zone bars where the product plots rings, an invented
-"Target is 80%. Last week: 62%.", no Kit read, no Plan Arc. **They have been rebuilt from
-`screen-architecture.md` using the real `SessionCard`, `ZoneRings`, `CoachNoteBlock` and `PlanArc`,
-fed by `demoSurfaces`.** The old item #3 ("Today does not match Plan and Coach") is **withdrawn**:
-Today was the only screen that was right, because it was reused rather than drawn, and matching the
-other two to it would have spread the fiction.
+"Target is 80%. Last week: 62%.", no Kit read, no Plan Arc. The old item #3 ("Today does not match
+Plan and Coach") is **withdrawn**: Today was the only screen that was right, because it was reused
+rather than drawn, and matching the other two to it would have spread the fiction.
+
+🔴 **AND THE REBUILD THIS PARAGRAPH USED TO DESCRIBE WAS ALSO WRONG.** It said the screens had been
+rebuilt *"from `screen-architecture.md` using the real `SessionCard`, `ZoneRings`, `CoachNoteBlock`
+and `PlanArc`"*. That was cut 2, and the founder rejected it too: *"the plan screen shows the Weeks
+and a Kit card... coach is a Kit card and how it went."* **`screen-architecture.md` says what
+BELONGS on a screen, not what the screen IS** — a Plan tab with three loose session cards and no
+weeks satisfies the doc and is not the screen. Cut 3 read `PlanScreen` and `CoachScreen` in
+`DashboardClient` and took one look. **CLOSED** by `93dfe76`: Plan renders the real `PlanCalendar`
+week cards over a generated plan, Coach renders one Kit read with `ZoneRings chromeless` inside it.
+`realComponents.test.ts` now slices the real screen function out of `DashboardClient` and checks
+both directions, rather than pinning a component list I chose.
 
 **What genuinely remains, all cosmetic and none conflicting with anything:**
 
