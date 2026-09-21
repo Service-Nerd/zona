@@ -15,7 +15,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ArticleHub, hubMetadata } from '@/components/marketing/ArticleHub'
-import { guideArticles, guidesArePublished, guidesSectionIsMature, GUIDE_HUB } from '@/lib/marketing/articles'
+import { guideArticles, guidesArePublished, guidesSectionIsMature, GUIDE_HUB, COMPARISON_HUB } from '@/lib/marketing/articles'
 
 export const revalidate = 86400
 
@@ -27,11 +27,12 @@ export default function GuideHubPage() {
     <ArticleHub
       hub={GUIDE_HUB}
       articles={guideArticles()}
-      section={null}
+      section="guides"
       breadcrumbLabel="Guides"
       youngNote={guidesSectionIsMature()
         ? undefined
         : 'One at a time, and only when there is something worth saying. The list is short on purpose.'}
+      siblingHub={{ href: `/${COMPARISON_HUB.slug}`, label: 'Compare the apps' }}
     />
   )
 }

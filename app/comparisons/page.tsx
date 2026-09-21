@@ -10,7 +10,7 @@
 
 import type { Metadata } from 'next'
 import { ArticleHub, hubMetadata } from '@/components/marketing/ArticleHub'
-import { comparisonArticles, COMPARISON_HUB } from '@/lib/marketing/articles'
+import { comparisonArticles, COMPARISON_HUB, GUIDE_HUB } from '@/lib/marketing/articles'
 
 export const revalidate = 86400
 
@@ -23,6 +23,7 @@ export default function ComparisonHubPage() {
       articles={comparisonArticles()}
       section="comparisons"
       breadcrumbLabel="Comparisons"
+      siblingHub={{ href: `/${GUIDE_HUB.slug}`, label: 'Read the guides' }}
     />
   )
 }

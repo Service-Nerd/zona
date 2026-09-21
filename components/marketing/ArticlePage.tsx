@@ -48,7 +48,7 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
   const url = `${APP_URL}${articlePath(article)}`
 
   const hub = article.kind === 'guide'
-    ? { slug: GUIDE_HUB.slug, label: 'Guides', section: null as SiteSection, published: guidesArePublished() }
+    ? { slug: GUIDE_HUB.slug, label: 'Guides', section: 'guides' as SiteSection, published: guidesArePublished() }
     : { slug: COMPARISON_HUB.slug, label: 'Comparisons', section: 'comparisons' as SiteSection, published: true }
 
   const breadcrumbLd = {

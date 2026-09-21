@@ -45,7 +45,7 @@ import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 
-export type SiteSection = 'plans' | 'pricing' | 'comparisons' | null
+export type SiteSection = 'plans' | 'pricing' | 'comparisons' | 'guides' | null
 
 /** The site frame. One value for header and footer, on every page. */
 export const SITE_WIDTH = 1100
@@ -62,6 +62,26 @@ const NAV: Array<{ href: string; label: string; section: SiteSection }> = [
   // commercial defect: a charity partner could not evaluate the offer at all.
   { href: '/pricing', label: 'Pricing', section: 'pricing' },
   { href: '/comparisons', label: 'Comparisons', section: 'comparisons' },
+  // W-01b — FOURTH item, 2026-09-21, and the doc demanded a measurement before
+  // one was proposed. Measured at both widths on the live site:
+  //
+  //   1280px  header 64px -> 64px. Free. No overflow.
+  //    375px  header 100px -> 141px. A THIRD wrapped row, +41px of sticky
+  //           chrome on every screen, permanently. No horizontal overflow.
+  //
+  // Shortening "Comparisons" to "Compare" was measured too and saves NOTHING:
+  // still 141px. So the row is the cost and there is no clever way around it.
+  //
+  // Taken anyway, on the doc's own test — "the menu exists for sections people
+  // cannot otherwise find". Guides was reachable only from the footer, while
+  // Comparisons, the same class of section with two articles, sat in the nav.
+  // That was an inconsistency rather than a decision, and the founder asked how
+  // people were supposed to find them, which is the answer arriving from
+  // outside.
+  //
+  // ⚠️ IF A FIFTH IS EVER PROPOSED, MEASURE AGAIN — and note that the cost is
+  // no longer a wrap, it is a fourth row.
+  { href: '/guides', label: 'Guides', section: 'guides' },
 ]
 
 export function SiteHeader({ current = null }: { current?: SiteSection }) {

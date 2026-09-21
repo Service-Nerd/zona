@@ -483,6 +483,25 @@ Small pill label. Used in session detail eyebrow.
 >
 > **If a fourth nav item is ever proposed, measure first.** `/about` was deliberately put in the footer only for this reason.
 
+> **Amended 2026-09-21 (W-01b) — the fourth item was proposed, measured and TAKEN. Nav is now Plans · Pricing · Comparisons · Guides.**
+>
+> Measured on the live site at both widths, which is what this rule demanded:
+>
+> | | header height | overflow |
+> |---|---|---|
+> | 1280px, 3 items | 64px | none |
+> | 1280px, **4 items** | **64px — free** | none |
+> | 375px, 3 items | 100px (2 rows) | none |
+> | 375px, **4 items** | **141px (3 rows), +41px** | none |
+>
+> ⚠️ **Shortening "Comparisons" to "Compare" was measured too and saves NOTHING** — still 141px. The row is the cost and there is no clever way around it.
+>
+> **Taken on this section's own test:** *"the menu exists for sections people cannot otherwise find."* Guides was reachable only from the footer while Comparisons, the same class of section with two articles, sat in the nav. That was an inconsistency rather than a decision, and it surfaced because the founder asked how anyone was supposed to find the guides.
+>
+> ⚠️ **A FIFTH costs a FOURTH ROW, not a wrap.** Measure again, and treat 375px as the binding width.
+>
+> **Also added: the two content hubs cross-link.** Each was a dead end — a reader finishing the guides had no route to the comparisons and vice versa, with only the footer joining them.
+
 **Scope: the public marketing site only** (`/`, `/plans`, plan spokes, `/comparisons`, comparison articles, `/support`, `/privacy`, `/terms`). The authenticated app keeps its own chrome (§7 bottom nav); these two never appear inside the app.
 
 **One component each. No page hand-writes site chrome.** Before this there were five hand-written headers and four footers, plus three pages with neither:

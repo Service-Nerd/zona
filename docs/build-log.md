@@ -65,6 +65,34 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — W-01b: "how do people actually find these?"
+
+**Dev.** The founder asked how anyone reaches the guides. I checked instead of answering, and the
+honest answer was: the footer. That is it. Meanwhile Comparisons, the same class of section with
+two articles in it, has been sitting in the header nav the whole time.
+
+So it was not a decision, it was an inconsistency I had rationalised. I had written a reasonable-
+sounding justification at the time about the nav being deliberately short and `/about` living in
+the footer for the same reason. That is true of `/about`. It is not true of a content section we
+had just decided to invest eight articles in.
+
+**The pattern doc made me measure before proposing, which is the right rule and it paid.** At
+1280px a fourth item is free: the header stays 64px. At 375px it costs 41px, taking the header
+from two wrapped rows to three, permanently, on a sticky element. I also measured shortening
+"Comparisons" to "Compare" hoping to buy the row back. It saves nothing. The row is the cost.
+
+I took it. Forty-one pixels of chrome against a section being findable at all is not a close call,
+and the doc's own test is whether the menu covers sections people cannot otherwise find. But the
+number is written into the pattern rather than left to be rediscovered, along with the note that a
+fifth item costs a fourth row rather than a wrap.
+
+**And one thing I only noticed while in there.** The two content hubs were dead ends. A reader who
+finished the guides had no route to the comparisons, and vice versa, with only the footer joining
+them. They cross-link now. That is the sort of thing that is invisible until you ask the question
+the founder asked, which is why the question was worth more than the answer.
+
+---
+
 ## 2026-09-21 — GUIDES-INDEX-01: overruled, and the right response was not just to change the number
 
 **Dev.** The founder overruled the board's gate: put the index up now with one guide, add the rest

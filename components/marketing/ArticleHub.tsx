@@ -28,12 +28,16 @@ export interface HubCopy {
 }
 
 export function ArticleHub({
-  hub, articles, section, breadcrumbLabel, youngNote,
+  hub, articles, section, breadcrumbLabel, youngNote, siblingHub,
 }: {
   hub: HubCopy
   articles: MarketingArticle[]
   section: SiteSection
   breadcrumbLabel: string
+  /** The other content hub. Each section is a dead end without it: a reader
+   *  who finishes the guides has no route to the comparisons and vice versa,
+   *  and the footer is the only thing joining them today. */
+  siblingHub?: { href: string; label: string }
   /** Shown above the cards while the section is still small. Answers the
    *  failure the publish gate used to prevent: a one-card index reads as
    *  abandoned unless it tells you it is deliberate. Omit once the section
@@ -100,6 +104,13 @@ export function ArticleHub({
             Every plan {BRAND.name} publishes is free to read before you pay anyone for anything.{' '}
             <Link href="/plans" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>See the plans &rarr;</Link>
           </p>
+          {siblingHub && (
+            <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--ink-2)', margin: '10px 0 0', maxWidth: 620 }}>
+              <Link href={siblingHub.href} style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+                {siblingHub.label} &rarr;
+              </Link>
+            </p>
+          )}
         </div>
       </section>
 
