@@ -17,8 +17,8 @@
 -- ⚠️ D-16 (no parallel semantics) — WHY A VIEW IS ALLOWED TO RESTATE THE RULE.
 -- It is not, strictly. SQL cannot import `resolveTier`, so this is a knowing
 -- duplicate that must be kept in step by hand. The mitigation is that the
--- duplicate is now NAMED: `tierResolutionParity.test.ts` reads this file and
--- fails if the arms here drift from `lib/trial.ts`. A comment asking the next
+-- duplicate is now NAMED: `lib/charity/adminViewTierParity.test.ts` reads this
+-- file and fails if the arms drift from `lib/trial.ts`. A comment asking the next
 -- person to remember was the previous mitigation, and it is what produced this
 -- defect.
 --
@@ -54,14 +54,31 @@ SELECT
   sub.provider            AS sub_provider,
   sub.status              AS sub_status,
   sub.current_period_end  AS sub_renews,
-  -- GTM-CHARITY-05: the grant, so a comped runner is legible as comped rather
-  -- than as a lapsed trial. `reason` in resolveTier exists for the same reason.
-  g.expires_at            AS grant_expires,
-  b.partner_name          AS grant_partner,
   s.trial_started_at,
   s.is_admin,
   u.created_at            AS signed_up,
-  u.last_sign_in_at
+  u.last_sign_in_at,
+  -- GTM-CHARITY-05: the grant, so a comped runner is legible as comped rather
+  -- than as a lapsed trial. `reason` in resolveTier exists for the same reason.
+  --
+  -- ⚠️ THESE TWO COLUMNS ARE APPENDED AT THE END, AND MUST STAY THERE.
+  -- `CREATE OR REPLACE VIEW` can only ADD columns to the end of the list: it
+  -- cannot insert, reorder or rename. Read first, this version placed them
+  -- next to the subscription columns, which Postgres interprets as renaming
+  -- column 10 and refuses:
+  --
+  --     ERROR: 42P16: cannot change name of view column
+  --            "trial_started_at" to "grant_expires"
+  --
+  -- The whole script runs in one transaction in the Supabase SQL editor, so
+  -- that first statement failing rolled BOTH views back and nothing applied.
+  -- Moving them to the end is the fix that needs no DROP. A DROP is the
+  -- alternative and it is the worse one here: `v_paying_users` depends on this
+  -- view, so a plain DROP fails and `DROP ... CASCADE` would silently take
+  -- `v_paying_users` with it. Column order carries no meaning to any reader;
+  -- every consumer selects by name.
+  g.expires_at            AS grant_expires,
+  b.partner_name          AS grant_partner
 FROM auth.users u
 LEFT JOIN public.user_settings s   ON s.id = u.id
 LEFT JOIN public.subscriptions sub ON sub.user_id = u.id

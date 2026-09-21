@@ -64,3 +64,4 @@
 20260918_supersede_week_keyed_rows.sql
 20260918_skip_reason.sql
 20260918_schema_columns_rpc.sql
+20260920_charity_tier_and_partner_cohort.sql

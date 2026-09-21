@@ -6,6 +6,45 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — GTM-CHARITY-05 / GTM-CHARITY-06: the migration everyone thought was live, and why one failing statement hid two
+
+**Dev.** The founder told me he had run the charity migration and asked me to tick it off. I checked
+the live schema instead of the ledger, and it was not there: the view had its old thirteen columns,
+the second view did not exist at all, and nothing referenced `charity_codes`.
+
+He ran it again and got the real reason:
+
+```
+ERROR: 42P16: cannot change name of view column "trial_started_at" to "grant_expires"
+```
+
+`CREATE OR REPLACE VIEW` can only APPEND columns. It cannot insert one in the middle, reorder, or
+rename. The migration put the two new grant columns next to the subscription columns, where they
+read best, and Postgres interpreted that as renaming column ten.
+
+**The part worth writing down is what the failure hid.** The Supabase SQL editor runs a script in a
+single transaction, so the first statement failing rolled the second one back too. The migration
+contains two independent views, only one of which had the problem, and the visible error mentioned
+neither the second view nor the fact that nothing at all had been applied. Someone reading that
+error could reasonably conclude one column name needed attention. What actually happened is that a
+whole migration silently did not exist, in a database two people believed it was in.
+
+**The fix is boring and the alternative was not.** Appending the columns at the end needs no DROP.
+I checked what depended on the view before choosing, and `v_paying_users` does: a plain DROP would
+have failed, and `DROP ... CASCADE` would have silently taken `v_paying_users` with it. That is the
+version of this fix that looks cleaner in the file and quietly deletes a view. Column order means
+nothing to any consumer here, so appending costs exactly nothing except that the columns sit
+somewhere slightly less tidy.
+
+**AI-building.** I verified the apply by querying the schema rather than trusting the tool's
+`{"success": true}`, and then verified the *effect* rather than the schema: two users who read
+`trial` now read `grant`, which is precisely what the migration's own header predicted before it was
+written. A schema check proves the DDL ran. Only the data check proves it did the thing.
+
+**And a correction.** One of my own notes said no charity code had ever been redeemed. Two have.
+
+---
+
 ## 2026-09-21 — GTM-SEO-COMPARE-PRICE-01: a competitor's price is config, and I had it typed into prose twice
 
 **Dev.** I shipped comparison page 2 in the morning and flagged that it disagreed with page 1 about
