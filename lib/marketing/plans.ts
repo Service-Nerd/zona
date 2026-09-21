@@ -233,7 +233,7 @@ export function faqsFor(plan: MarketingPlan): { q: string; a: string }[] {
     },
     {
       q: `Can I move the sessions around?`,
-      a: `Carefully, yes. Keep the two hardest days apart. The static plan below can’t move itself. The app does that for you when your week changes, and keeps the easy/hard rhythm intact.`,
+      a: `Carefully, yes. Keep the two hardest days apart. The static plan above can’t move itself. Reshaping around the week you actually had is part of the paid tier, and it keeps the easy/hard rhythm intact while it does it.`,
     },
     {
       q: `Why is so much of the plan easy running?`,

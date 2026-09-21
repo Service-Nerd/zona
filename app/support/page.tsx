@@ -60,13 +60,13 @@ export default function SupportPage() {
             lineHeight: 1.7,
             margin: '0 0 8px',
           }}>
-            Something not working, or a question about your account? Email us. A real person reads it.
+            Something not working, or a question about your account? Email me. I read them myself.
           </p>
         </div>
 
         {/* Contact card — primary, above the fold */}
-        <Section title="Contact us">
-          <P>The fastest way to reach us is email. We aim to reply within two working days.</P>
+        <Section title="Contact me">
+          <P>The fastest way to reach me is email. I aim to reply within two working days.</P>
           <div style={{
             background: 'var(--card-bg)',
             border: '0.5px solid var(--border-col)',
@@ -85,14 +85,14 @@ export default function SupportPage() {
           <SubHead>Free trial</SubHead>
           <P>New accounts include a free trial of the paid tier. You will not be charged during the trial, and it downgrades automatically to the free tier if you do not subscribe. Full terms are in the <A href="/terms">Terms of Service</A>.</P>
           <SubHead>Refunds</SubHead>
-          <P>App Store purchases are handled by Apple, so request refunds through your Apple account. For anything that looks like a billing error, email <A href="mailto:support@zonna.run">support@zonna.run</A> and we will look into it.</P>
+          <P>App Store purchases are handled by Apple, so request refunds through your Apple account. For anything that looks like a billing error, email <A href="mailto:support@zonna.run">support@zonna.run</A> and I will look into it.</P>
         </Section>
 
         <Section title="Your account & data">
           <SubHead>Export or delete your data</SubHead>
-          <P>You can delete your account and all associated data from the Profile screen in the app. If you would like a copy of your data first, email us and we will send it.</P>
+          <P>You can delete your account and all associated data from the Profile screen in the app. If you would like a copy of your data first, email me and I will send it.</P>
           <SubHead>Sign-in trouble</SubHead>
-          <P>{BRAND.name} signs you in with Apple or Google. If you cannot get in, email <A href="mailto:support@zonna.run">support@zonna.run</A> from the address linked to your account and we will help you recover access.</P>
+          <P>{BRAND.name} signs you in with Apple or Google. If you cannot get in, email <A href="mailto:support@zonna.run">support@zonna.run</A> from the address linked to your account and I will help you recover access.</P>
         </Section>
 
         <Section title="Health & safety">

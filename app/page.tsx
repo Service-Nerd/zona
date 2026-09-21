@@ -261,7 +261,7 @@ export default async function Home() {
         }}>
           Two weeks, full access. After that, keep the plan you built on the free tier, or
           stay on all of it for {PRICING.monthly.display}/month or {PRICING.annual.display}/year.
-          We won&apos;t email you to come back.
+          I won&apos;t email you to come back.
         </p>
 
         {/* HR-SYNC-04 — device expectation-setter. Replaces the older, weaker
@@ -549,7 +549,7 @@ export default async function Home() {
       {/* ── What's not in the app — the restraint, made explicit ───────── */}
       <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
         <Eyebrow>The restraint</Eyebrow>
-        <SectionTitle sub="What we left out, on purpose.">
+        <SectionTitle sub="What I left out, on purpose.">
           What&apos;s not in the app.
         </SectionTitle>
 
@@ -649,7 +649,7 @@ export default async function Home() {
             ['Do I need an Apple Watch?',
              `It works best with a heart-rate source: an Apple Watch, or a chest strap that writes to Apple Health. Without one you still get the plan, the paces and the structure. You just don't get heart-rate coaching.`],
             ['Is it free?',
-             `Two weeks of everything, then a free tier that keeps the plan you built. ${PRICING.monthly.display}/month or ${PRICING.annual.display}/year if you want the coaching and the reshaping. We won't email you to come back.`],
+             `Two weeks of everything, then a free tier that keeps the plan you built. ${PRICING.monthly.display}/month or ${PRICING.annual.display}/year if you want the coaching and the reshaping. I won't email you to come back.`],
             ['What distances?',
              `5K, 10K, half and full marathon, and ultra. Every plan is mostly easy running, with each session set to a zone and held there.`],
             ['Will it make me faster?',

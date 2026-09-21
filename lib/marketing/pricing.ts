@@ -107,7 +107,14 @@ export const PAID_FEATURES: TierFeature[] = [
   {
     gate: 'activity_intelligence',
     name: 'Every run read back to you',
-    detail: 'Whether you actually held the zone, what your heart rate did, and the weekly score for how disciplined the week was.',
+    // COPY-SCORE-01 — "the weekly SCORE" is gone, and the word is the point.
+    // The homepage sells this product as "no dashboard to read, no score to
+    // chase" and the pricing page was selling a score to chase, three clicks
+    // apart. Zonna does not do gamification (brand.md, and the SLT has killed
+    // streak mechanics twice), so the one surface where someone is deciding to
+    // pay must not describe the flagship paid feature as a number to beat.
+    // The feature is unchanged; what it is CALLED is not.
+    detail: 'Whether you actually held the zone, what your heart rate did, and how disciplined the week was.',
     evidence: { kind: 'reviewed', on: '2026-09-20', by: 'architect' },
   },
   {

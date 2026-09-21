@@ -87,7 +87,7 @@ const REVIEWED_TEXT: Record<string, string> = {
   plan_view: 'Nothing is hidden behind a blur or a teaser. You can read the lot.',
   manual_session_completion: 'No watch and no Strava needed to tick a run off.',
   plan_difficulty_band: 'How demanding the plan is for you, said plainly before you start it.',
-  activity_intelligence: 'Whether you actually held the zone, what your heart rate did, and the weekly score for how disciplined the week was.',
+  activity_intelligence: 'Whether you actually held the zone, what your heart rate did, and how disciplined the week was.',
   dynamic_reshape_r20: 'Miss a week and it reshapes around what you did, instead of leaving you to catch up on a week that has gone.',
   ai_coach_notes_new: 'Notes written for the session in front of you, not a library article about tempo runs.',
   post_run_reframe: 'Tell it how the run felt and get an honest reframe, or a warning if the pattern says back off.',

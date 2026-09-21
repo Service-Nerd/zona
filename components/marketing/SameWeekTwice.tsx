@@ -133,7 +133,7 @@ export function SameWeekTwice() {
         <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: '620px', margin: '14px 0 0' }}>
           These four sessions are week {SOURCE_WEEK} of{' '}
           <Link href={`/plans/${SOURCE_SLUG}`} style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
-            our free 12-week half marathon plan
+            my free 12-week half marathon plan
           </Link>
           , exactly as the engine builds them. Same prescription in both columns. The only
           difference is how hard the easy days get run.

@@ -198,7 +198,7 @@ export default function PricingPage() {
             sideways.
           </p>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
-            We do not delete your training to make a point. If the free tier is enough
+            I do not delete your training to make a point. If the free tier is enough
             for you, use the free tier.
           </p>
         </div>

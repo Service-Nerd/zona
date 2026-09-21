@@ -111,7 +111,7 @@ function P({ children }: { children: React.ReactNode }) {
 const FAQS: { q: string; a: string }[] = [
   {
     q: 'Where do I get a code?',
-    a: 'From the charity you are running for. They are given a set number for their runners, and they decide who gets one. We cannot issue codes directly, so if you think you should have one and do not, your charity is the place to ask.',
+    a: 'From the charity you are running for. They are given a set number for their runners, and they decide who gets one. I cannot issue codes directly, so if you think you should have one and do not, your charity is the place to ask.',
   },
   {
     q: 'What does the code actually give me?',
@@ -290,7 +290,7 @@ export default function CharityRunnersPage() {
           fontSize: 'var(--fs-body)', lineHeight: 1.6, color: 'var(--mute)',
           margin: '16px 0 0', borderLeft: '2px solid var(--line-strong)', paddingLeft: '14px',
         }}>
-          Codes come from your charity, not from us, and each one works once. If you think
+          Codes come from your charity, not from me, and each one works once. If you think
           you should have one and do not, ask whoever organises your place.
         </p>
       </section>

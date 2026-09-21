@@ -306,8 +306,8 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
         [
           ['Price', `${price('coopah').monthly}/month or ${price('coopah').annual}/year`, `${price('runna').monthly}/month or ${price('runna').annual}/year`, `${PRICING.monthly.display}/month or ${PRICING.annual.display}/year`],
           ['Platforms', 'iOS, Android', 'iOS, Android', 'iOS only'],
-          ['Plan adapts to your training', 'Yes', 'Yes', 'Yes (free tier rule-based, paid tier AI-enriched)'],
-          ['Watch sync', 'Apple Watch, Garmin, Coros, Polar', 'Apple Watch, Garmin, Fitbit, Coros', 'None. No Garmin workout export'],
+          ['Plan adapts to your training', 'Yes', 'Yes', 'Paid tier. Free rebuilds on demand, it does not reshape itself'],
+          ['Watch sync', 'Apple Watch, Garmin, Coros, Polar', 'Apple Watch, Garmin, Fitbit, Coros', 'Apple Health (Apple Watch HR). No Garmin export'],
           ['Streaks, badges, social feed', 'None advertised', `None in the app itself, but bundled into Strava's kudos and segments if you link the two`, 'None. No feed at all'],
           ['Who builds it', 'VC-backed team, roughly £1.5m raised', `Strava's engineering team, since the 2025 acquisition`, 'One person'],
           ['Free tier', 'One week trial, no ongoing free plan', 'Seven day trial, no ongoing free plan', 'Genuine free tier: a full plan, not a demo'],
@@ -380,7 +380,7 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       h2('The ceiling, and why it is a ceiling'),
       p(`${BRAND.name} caps every easy run at the top of Zone 2, which is roughly 60 to 70 percent of heart-rate reserve. The important word is cap. It is not a band you are supposed to sit inside and it is not a target to hit.`),
       p(
-        `Going slower than the cap breaks nothing. An easy run at the very bottom of your range is a perfectly good easy run, and any app that flags it as a problem is measuring the wrong thing. We know because ours did: a detector we shipped counted time OUTSIDE the zone in both directions, and on review 6 of 22 flagged runs were predominantly too easy, the worst at 17 percent in zone with 83 percent below and nothing at all above. That was our bug, not the runner's. `,
+        `Going slower than the cap breaks nothing. An easy run at the very bottom of your range is a perfectly good easy run, and any app that flags it as a problem is measuring the wrong thing. I know because mine did: a detector I shipped counted time OUTSIDE the zone in both directions, and on review 6 of 22 flagged runs were predominantly too easy, the worst at 17 percent in zone with 83 percent below and nothing at all above. That was my bug, not the runner's. `,
         { text: 'The rule is a ceiling now', href: '/plans' },
         `, and it only looks down.`,
       ),
@@ -399,7 +399,7 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       h2('Why this is most of your week'),
       p(
         `In a ${BRAND.name} plan the large majority of your sessions are easy, and that ratio is the plan rather than a gap in it. Intensity is counted in sessions across the whole block, not minutes within a run, so one genuinely hard session in a week of genuinely easy ones is a complete week of training. `,
-        { text: 'Every plan we publish is free to read', href: '/plans' },
+        { text: 'Every plan I publish is free to read', href: '/plans' },
         `, so you can count the easy days yourself before you believe anyone about this.`,
       ),
 

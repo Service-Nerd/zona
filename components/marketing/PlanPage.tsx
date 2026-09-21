@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
-import { WaitlistForm } from '@/components/marketing/WaitlistForm'
+import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { stepParts } from '@/lib/plan/resolveMainSet'
 import { type MarketingPlan, planAnchor, faqsFor, getPlan, planCardTitle } from '@/lib/marketing/plans'
@@ -74,6 +74,15 @@ function MainSet({ s }: { s: Session }) {
                         fontSize: 'var(--fs-sm)', fontWeight: isWork ? 600 : 400,
                         color: isWork ? 'var(--ink)' : 'var(--mute)',
                       }}>{action}</span>
+                      {/* COPY-REPTEXT-01 — a real space, not just the flex gap.
+                          `gap: 8` separates these visually and NOTHING separates
+                          them in the text, so `textContent` read
+                          "1600 mat 4:25-4:35 /km", and the next step ran on as
+                          "/kmjog 1:30at no faster than". That is what a copy-paste
+                          produces, what a text extractor indexes, and what some
+                          screen-reader modes announce. One character, no visual
+                          change: the gap still owns the spacing. */}
+                      {target && (' ')}
                       {target && (
                         <span style={{ fontSize: 'var(--fs-caption)', color: isWork ? 'var(--ink-2)' : 'var(--mute)' }}>
                           {target}
@@ -292,17 +301,23 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
         </div>
       </section>
 
-      {/* ── Soft CTA (email → adaptive version; NOT a wall) ─────────────── */}
+      {/* ── CTA ──────────────────────────────────────────────────────────
+          COPY-CTA-01 — this was a WAITLIST, and the app has been on the App
+          Store since launch. "Leave your email and I'll tell you when to
+          start" asked the most interested reader on the page to wait for
+          something that already exists, and put a form between them and a
+          download. The badge is the action now; the waitlist component stays
+          in the repo, unused, for the next pre-launch surface. */}
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: '26px 22px' }}>
           <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>The plan above is yours. No catch.</h2>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 18px', maxWidth: 520 }}>
-            Want the version that adapts to you, with your zones, your week and your race? Leave your
-            email and we&rsquo;ll tell you when to start.
+            This one is fixed. The app builds the same plan around your zones, your week and your
+            race date, and two weeks of it costs nothing.
           </p>
-          <WaitlistForm />
+          <AppStoreBadge />
           <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', margin: '16px 0 0' }}>
-            Already sold? <a href={BRAND.appStore.url} style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>Start free in the app →</a>
+            Or <Link href="/pricing" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>see what free covers first &rarr;</Link>
           </p>
         </div>
       </section>

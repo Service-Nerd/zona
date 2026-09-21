@@ -29,15 +29,34 @@
 //
 // This module is in that test's SURFACES list, so the rule keeps being enforced
 // now that the strings have moved out of the page.
+// COPY-VOICE-01 (2026-09-21) — FIRST PERSON, and the third paragraph is
+// current.
+//
+// ⚠️ Two problems, one root. The story was told in the THIRD person ("the
+// runner built a tool") while the homepage three sections away said "Built by
+// Russ. Runs medium-hard on everything. That's how I know." One person,
+// two grammatical people, on the two pages whose entire job is to say who is
+// behind this. The product is built and answered by one person; that is the
+// trust argument for a charity vetting a stranger, and the third person was
+// quietly working against it.
+//
+// ⚠️ And "Started training for a 100K" had expired. That race was Race to the
+// Stones in July 2026, which is now in the past, so the site was describing a
+// present-tense intention about something already run. It now names the race
+// and the date.
+//
+// ⚠️ NO RESULT IS CLAIMED, deliberately. "Used it to train for" is what is
+// known. A finish time is not mine to invent, and the one thing this page
+// cannot afford is a detail a reader could catch.
 export const FOUNDER_STORY = {
   /** Opening line. Both surfaces render it as their heading. */
-  opener: 'The runner had a problem.',
+  opener: 'I had a problem.',
 
   /** Body paragraphs, in order. Locked strings — reword in ONE place or not at all. */
   paragraphs: [
-    'Heart rate spiking before the warm-up was done. Every easy run creeping into Zone 3. A plateau that wouldn’t move, no matter how many sessions went in.',
+    'Heart rate spiking before the warm-up was done. Every easy run creeping into Zone 3. A plateau that wouldn’t move, no matter how many sessions I put in.',
     'The diagnosis took embarrassingly long: easy days weren’t easy. Hard days weren’t hard. Everything ended up in the same grey middle. Medium-hard on Monday, medium-hard on Saturday, medium-hard on race day.',
-    'So the runner built a tool. Ran a 52K with it. Started training for a 100K.',
+    'So I built a tool. I ran a 52K with it, then used it to train for Race to the Stones, 100 km, in July 2026.',
   ],
 
   /** Byline. The em dash here is a MIDDLE DOT in both surfaces, not copy punctuation. */

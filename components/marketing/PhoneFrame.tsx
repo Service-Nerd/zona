@@ -102,6 +102,13 @@ function KitByline({ role }: { role: string }) {
   const initial = BRAND.coachName.charAt(0).toUpperCase()
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+      {/* COPY-CEILING-01 — "under 145 bpm", not "132-145".
+          §12 makes an easy run a CEILING, not a band: going slower than the
+          cap breaks nothing, and the guide we publish says so in as many
+          words. A range tells the runner 132 is a floor they should reach,
+          which is the opposite instruction, on the most-seen pixel on the
+          site. The card directly below it already reads "< 145 bpm", so the
+          two halves of one mockup were disagreeing. */}
       <span style={{
         position: 'relative', width: '22px', height: '22px', borderRadius: '50%',
         background: 'var(--warn)',
@@ -338,7 +345,7 @@ export function PhoneFrame() {
             <span style={{
               fontSize: '11px', fontWeight: 700, color: 'var(--moss)',
               letterSpacing: '0.12em', textTransform: 'uppercase',
-            }}>Hold the zone · 132&ndash;145 bpm today</span>
+            }}>Hold the zone &middot; under 145 bpm today</span>
           </div>
 
           {/* Today's session — section label + session card + zone bar + CTA */}
