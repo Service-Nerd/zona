@@ -1,60 +1,74 @@
 # Backlog — Zonna
 
-## 🔴 START HERE TOMORROW (written 2026-09-21, end of day)
+## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
-### 1. It shipped. `main` is live and verified.
+### 1. Where things stand
 
-Everything below was written when `design-implementation` was 11 commits ahead and unpushed. It
-was merged fast-forward and pushed the same evening; `www.zonna.run` is verified serving the new
-build (hero card, tabbed phone, the rebuilt Plan arc, `/plan-arc-preview` correctly 404ing, no
-console errors). **Branch `design-implementation` still exists on the remote and can be deleted.**
+**Everything is shipped, pushed and live.** 90 commits today, tree clean, nothing unpushed.
+`www.zonna.run` verified serving the current build. `verify` exit 0 · **2,992 tests / 334 files** ·
+**132 invariants** (code=doc, 0 orphans) · `audit-docs.sh` **ALL CLEAN** · homepage First Load JS
+**117 kB**.
 
-> 🔴 **THE FIRST PUSH DID NOT DEPLOY, AND NOTHING SAID SO.** `OPS-DEPLOY-FILTER-01` — the build
-> filter written that same morning — used `HEAD^` as its base, so Vercel compared only the LAST
-> commit of an eleven-commit fast-forward. That commit was docs-only. **SKIP.** The push
-> succeeded, CI was green, nothing failed, and the site simply did not change.
->
-> ⚠️ **The script's own header warned about this failure mode in those words** ("a wrong skip
-> ships nothing and looks exactly like success"). The mechanism it guarded — a shallow clone
-> making `HEAD^` unreachable — was not the mechanism that bit: `HEAD^` was perfectly reachable
-> and was the wrong question.
->
-> ⚠️ **Its 14-case falsification suite could not have caught it.** Every case passed
-> `BUILD_FILTER_BASE` explicitly, so all fourteen exercised the COMPARISON and none exercised THE
-> CHOICE OF WHAT TO COMPARE. The defective line was unreachable from the tests by construction.
->
-> Fixed: base is `VERCEL_GIT_PREVIOUS_SHA`, **no `HEAD^` fallback** (for a multi-commit push
-> `HEAD^` is not a conservative guess, it is wrong), absent or unreachable → BUILD and say so.
-> 19 cases, five with the base unset. **Check a deploy landed; do not infer it from a green push.**
+All 47 of today's ship scopes have a feature-registry row and a build-log entry, checked by
+parsing git rather than from memory.
 
-⚠️ **Still true: nothing has run on a device.** Not the redesigned homepage, not the new arc.
+⚠️ **Branch `design-implementation` still exists on the remote** and is fully merged. Safe to
+delete.
 
-### 2. State of the tree
+⚠️ **Nothing built today has run on a device.** Not the redesigned homepage, not the new Plan arc,
+not the three real screens in the marketing phone.
 
-`verify` exit 0 · **2,988 tests / 334 files** · **132 invariants** (code=doc, 0 orphans) ·
-`audit-docs.sh` **ALL CLEAN** · homepage First Load JS **117 kB** · working tree clean.
+### 2. 🔴 THE THREE THINGS THAT NEED THE FOUNDER
 
-### 3. What is actually actionable, ranked
+Nothing else is blocked. These are, and two of them cannot be answered by anyone else.
+
+| | What | Why it needs him |
+|---|---|---|
+| 1 | **"On a phone things are aligned to the right"** | Could not reproduce. Measured live at 320 / 375 / 390: `scrollWidth === innerWidth`, zero elements outside the viewport, phone mockup centred, hero card on the 24px gutter. **A screenshot or a section name closes it in five minutes; guessing at it ships a change nobody asked for.** |
+| 2 | **Guide drafts** | SLT settled authorship: **Claude drafts, founder edits and reads end to end.** Seven still to write, all specced with search intent. ⚠️ **3 of the 8 are a COACHING SURFACE** (§12, §2/§3, §52) — a guide may only assert what a principle already asserts and must name it. His read is not optional on those. |
+| 3 | **The P0 ops items** | `OPS-VERCEL-PLAN-01`, `OPS-SUPABASE-PLAN-01`. His, stated once, not chased. |
+
+### 3. What is actionable without him, ranked
 
 | | Item | Why now | Size |
 |---|---|---|---|
-| 1 | **`DELOAD-PLAN-OPENING-01`** | 🔴 **Urgency raised today.** §119's week-2 deload is now a *visible notch* on 26–33% of plans, because the arc draws the real shape. Board ruling: the defect exists whether or not we draw it. **The fix is a SEARCH over legal placements, not a threshold** — 0 of 220 placements satisfy everything, and the greedy fix was built, measured and rejected. | L |
+| 1 | **`DELOAD-PLAN-OPENING-01`** | 🔴 **Urgency raised today and the reason is now visible to runners.** §119's week-2 deload draws as a notch in the second bar of the Plan arc, on 26–33% of plans. Board ruling on the record: the defect exists whether or not we draw it. ⚠️ **The fix is a SEARCH over legal placements, not a threshold** — 0 of 220 placements satisfy everything, and the greedy version was built, measured and rejected. Do not re-propose it. | L |
 | 2 | **`HM-ANCHOR-VS-GOAL-01` / §120** | Ratified by the Coaching Board, **not shipped**, blocked on ONE measurement: Willy's bound. Both obvious gates were rejected with reasons. ⚠️ **Anchor and header must ship TOGETHER** — fixing the header alone drops 555 plans below §22. | M |
-| 3 | **`DELOAD-BADGE-TRUTH-01`** | P1, Coaching Board. A week badged "Recovery" that is not a reduction. Sits next to #1 — consider taking them to one sitting. | M |
-| 4 | **`DESIGN-V3-FIDELITY`** | 3 cosmetic gaps, none conflicting. Only worth doing *after* the branch lands. ⚠️ A 4th item was **withdrawn**; do not reinstate "rebuild Today to match Plan and Coach". | S–M |
-| 5 | **`W-01a`** | 7 guides still to write. SLT settled authorship: **Claude drafts, founder edits and reads end to end.** 3 of the 8 are a coaching surface and must cite a principle. | M each |
-| 6 | `MKT-PLAN-SEGMENT-BASIS-01` | Small, self-contained: is §25's `race_pace_pct` a share of distance or time? | S |
-| 7 | B / D (test coverage) | `PlanSchema` on the live path; 4 untested modules. P2/P3. | M |
-| 8 | `CHECK-SLOW-NOISE-01`, `A11Y-MOCKUP-CONTRAST-01` | Known, low, both documented with their reasons. | S |
+| 3 | **`DELOAD-BADGE-TRUTH-01`** | P1, Coaching Board. A week badged "Recovery" that is not a reduction. Sits beside #1 — worth one sitting for both. | M |
+| 4 | **`MKT-PLAN-SEGMENT-BASIS-01`** | Small and self-contained: is §25's `race_pace_pct` a share of distance or time? | S |
+| 5 | **B / D** (test coverage) | `PlanSchema` on the live path; four untested modules. P2/P3. | M |
+| 6 | `CHECK-SLOW-NOISE-01`, `A11Y-MOCKUP-CONTRAST-01` | Known, low, both documented with their reasons. | S |
+
+✅ **`DESIGN-V3-FIDELITY` is CLOSED** (SLT, this evening: two shipped, one killed, one withdrawn
+earlier the same day). It is no longer on this list.
 
 ### 4. Founder-owned, stated once and not chased
 
-`OPS-VERCEL-PLAN-01` + `OPS-SUPABASE-PLAN-01` (both **P0**) · `LEGAL-COUNSEL-01` · the `/pricing`
+`OPS-VERCEL-PLAN-01` + `OPS-SUPABASE-PLAN-01` (**P0**) · `LEGAL-COUNSEL-01` · the `/pricing`
 wording · what the net-revenue numbers MEAN · `P-16`'s date · `P-04`'s zero-case words ·
 `TT-FREE-BENCHMARK-01` · the `P-13(c)` illustration commission · the **second-typeface** decision
 gating `P-06(b)` · **device verification**.
 
-### 5. Two traps set today, so they are not walked into
+### 5. 🔴 The one operational lesson from today, because it nearly lost a day's work
+
+**A GREEN PUSH IS NOT A DEPLOY. CHECK THE SITE.**
+
+Eleven commits were fast-forwarded onto main and pushed. Push succeeded, CI green, nothing failed,
+**and the site did not change.** `OPS-DEPLOY-FILTER-01` — written that same morning — used `HEAD^`
+as its base, so Vercel compared only the LAST commit of the push, and that commit was docs-only.
+SKIP.
+
+⚠️ **The script's own header warned about this failure mode in those words** ("a wrong skip ships
+nothing and looks exactly like success"). The mechanism it guarded against — a shallow clone making
+`HEAD^` unreachable — was not the one that bit. `HEAD^` was perfectly reachable and was **the wrong
+question.**
+
+⚠️ **Its 14-case falsification suite could not have caught it:** every case passed
+`BUILD_FILTER_BASE` explicitly, so all fourteen tested the COMPARISON and none tested THE CHOICE OF
+WHAT TO COMPARE. Fixed — base is `VERCEL_GIT_PREVIOUS_SHA` with no `HEAD^` fallback, 19 cases, five
+with the base unset.
+
+### 6. Traps that are documented but NOT mechanically guarded
 
 - ⚠️ **`docs/design_handoff_v3/.../_adherence.oxlintrc.json` pins `PlanArc`'s OLD props**
   (`deloadWeeks|phaseLabel`). It is a vendored artefact of the handoff as received and is wired
@@ -62,6 +76,13 @@ gating `P-06(b)` · **device verification**.
 - ⚠️ **13 of the 15 components under `components/marketing/` have no contract.** The contracts
   check walks *existing* contracts and asks whether they went stale — **it structurally cannot see
   a missing one**. Pre-existing, not from today.
+- ⚠️ **A screenshot is not a measurement.** Twice today a full-page headless capture showed the
+  mobile page clipped at the right edge; both times the live page measured `scrollWidth ===
+  innerWidth` with nothing outside the viewport. Trusting the picture would have meant "fixing" a
+  working layout. Measure, then look.
+- ⚠️ **`scrollWidth === innerWidth` does not mean the layout is fine.** The 320px page gutter was
+  squeezed to 5px against a 16px floor while that check stayed true the whole time. Overflow and
+  gutter are different questions.
 
 ---
 
@@ -84,7 +105,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-21 (last ship `64fde64`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,992 tests / 334 files** · 91 commits. 🟢 **`SITE-HERO-01`** — SLT ruled three open homepage decisions (`docs/decisions/slt-2026-09-21-homepage-three.md`). ⚠️ **I briefed the board WRONG and caught it before they ruled:** the hero was already two columns with the PHONE on the right, so 2a was a swap not a restructure. **The evidence card now sits in the hero**; the price is **out of the fact row** — three seats voted remove for different reasons and **Sutherland's governs because it generalises: TIMING, not repetition — never put a price adjacent to a proof moment.** 🔴 **TWO PERMANENT KILLS, both better value than what shipped:** the design's proof band (**all three claims measured FALSE**; "most runners manage half that" is a statistic about a population we have never observed) and the phone-geometry resize. **`DESIGN-V3-FIDELITY` CLOSED.** ⚠️ **Three defects introduced while building, all found by MEASURING not looking:** the 3s loop silently made the cross-fades **21.7% of the cycle** (and **I first dismissed the screenshot as a capture artefact**); the longer copy ate the 320px gutter to **5px while `scrollWidth === innerWidth` stayed true**, so it would have shipped unseen; and the fix did nothing because the facts were bare TEXT NODES, which flexbox merges once the element between them is hidden.
+**State at END of 2026-09-21 (last ship `64fde64`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,992 tests / 334 files** · 90 commits. 🟢 **`SITE-HERO-01`** — SLT ruled three open homepage decisions (`docs/decisions/slt-2026-09-21-homepage-three.md`). ⚠️ **I briefed the board WRONG and caught it before they ruled:** the hero was already two columns with the PHONE on the right, so 2a was a swap not a restructure. **The evidence card now sits in the hero**; the price is **out of the fact row** — three seats voted remove for different reasons and **Sutherland's governs because it generalises: TIMING, not repetition — never put a price adjacent to a proof moment.** 🔴 **TWO PERMANENT KILLS, both better value than what shipped:** the design's proof band (**all three claims measured FALSE**; "most runners manage half that" is a statistic about a population we have never observed) and the phone-geometry resize. **`DESIGN-V3-FIDELITY` CLOSED.** ⚠️ **Three defects introduced while building, all found by MEASURING not looking:** the 3s loop silently made the cross-fades **21.7% of the cycle** (and **I first dismissed the screenshot as a capture artefact**); the longer copy ate the 320px gutter to **5px while `scrollWidth === innerWidth` stayed true**, so it would have shipped unseen; and the fix did nothing because the facts were bare TEXT NODES, which flexbox merges once the element between them is hidden.
 
 **Earlier on 2026-09-21 (last ship `0262254`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,989 tests / 334 files** · `audit-docs.sh` clean · 89 commits. 🟢 **`SITE-MOBILE-02`** — the founder signature had `padding: '40px 24px 0'` with the near-black band as its next sibling, so **"That's how I know." physically touched the black**; it was also outside the rhythm system at a hardcoded width and set as body copy. Now a `Section` at the read measure. 🟢 **The fact row took FOUR cuts at one middot.** Leading dot → wrapped line began with it; trailing dot → wrapped line ended with it; independent dots + a centring media query → ⚠️ **the query never applied, because `justifyContent` was set INLINE and an inline style beats a media rule without `!important`** (and reaching for `!important` would have buried the real error: styling a responsive property inline). **All three left the break to the browser, which IS the defect** — a middot is a relationship between two things and CSS has no selector for "first or last on its line". The pairs are now DECLARED: below 560px the two pairs ARE the two lines. 🔻 **OPEN, founder's call: is the fact row the right MESSAGE?** My view — three-quarters right, the price is the odd one out (stated one screen above; a price between a feature count and a notification policy makes it a spec sheet). Proposed replacement carries W-05's free-tier point instead. **Not shipped: it touches a live SLT ruling, and a question is not an instruction.**
 
