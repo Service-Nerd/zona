@@ -28,6 +28,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND, PRICING } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
@@ -39,21 +40,15 @@ const SECTION_MAX = 760
 
 export const revalidate = 86400
 
-export const metadata: Metadata = {
-  title: `Pricing | ${BRAND.name}`,
-  description:
-    `What you get free and what a subscription adds. Two weeks of everything when you start, then a free tier that keeps the plan you built. ${PRICING.monthly.label}.`,
-  alternates: { canonical: PAGE_URL },
-  openGraph: {
-    title: `Pricing | ${BRAND.name}`,
-    description: 'Two weeks of everything, then a free tier that keeps the plan you built. No trial that deletes your work.',
-    url: PAGE_URL,
-    siteName: BRAND.name,
-    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630 }],
-    type: 'website',
-    locale: 'en_GB',
-  },
-}
+export const metadata: Metadata = pageMetadata({
+  title: `Pricing`,
+  description: 'Two weeks of everything, then a free tier that keeps the plan you built. No trial that deletes your work.',
+  path: '/pricing',
+  ogTitle: `Pricing | ${BRAND.name}`,
+  ogDescription: 'Two weeks of everything, then a free tier that keeps the plan you built. No trial that deletes your work.',
+  type: 'website',
+  ogImageTitle: 'Two weeks of everything. Then you decide.',
+})
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (

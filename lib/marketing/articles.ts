@@ -408,7 +408,7 @@ export function marketingArticleJsonLd(article: MarketingArticle) {
  */
 export const COMPARISON_HUB = {
   slug: 'comparisons',
-  metaTitle: `Running app comparisons | ${BRAND.name}`,
+  metaTitle: `Running app comparisons`,
   metaDescription:
     `Honest comparisons of the running apps people choose between, including where ${BRAND.name} is the wrong answer. No affiliate links, no scores out of ten.`,
   eyebrow: 'Comparisons',
@@ -507,7 +507,7 @@ export const guidesSectionIsMature = (): boolean =>
  *  a wording change touches one file, and hub and cards cannot drift apart. */
 export const GUIDE_HUB = {
   slug: 'guides',
-  metaTitle: `Running guides for people who go too hard | ${BRAND.name}`,
+  metaTitle: `Running guides for people who go too hard`,
   metaDescription:
     `Straight answers to what runners actually ask at 10pm: how slow easy should feel, and whether you are overtraining or just tired.`,
   eyebrow: 'Guides',

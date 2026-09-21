@@ -4,7 +4,7 @@
 
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { BRAND } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { MARKETING_PLANS, getPlan } from '@/lib/marketing/plans'
 import { PlanPage } from '@/components/marketing/PlanPage'
 
@@ -21,22 +21,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const plan = getPlan(slug)
   if (!plan) return {}
-  const url = `${APP_URL}/plans/${plan.slug}`
-  return {
+  return pageMetadata({
     title: plan.metaTitle,
     description: plan.metaDescription,
-    alternates: { canonical: url },
-    openGraph: {
-      title: plan.ogTitle,
-      description: plan.ogDescription,
-      url,
-      siteName: BRAND.name,
-      type: 'article',
-      // See /plans — a page-level `openGraph` replaces the parent's, so the
-      // site og:image has to be restated or these 9 pages share with no image.
-      images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: plan.ogTitle }],
-    },
-  }
+    path: `/plans/${plan.slug}`,
+    ogTitle: plan.ogTitle,
+    ogDescription: plan.ogDescription,
+    type: 'article',
+    // The OG card names the PLAN, not the og sentence: `ogTitle` is a full
+    // marketing line and renders as a wall of text at 1200x630.
+    ogImageTitle: plan.h1,
+  })
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {

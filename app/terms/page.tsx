@@ -1,13 +1,16 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND, PRICING } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 
-export const metadata: Metadata = {
-  title: `Terms of Service | ${BRAND.name}`,
+export const metadata: Metadata = pageMetadata({
+  title: `Terms of Service`,
   description: `The terms governing use of ${BRAND.name}.`,
-}
+  path: '/terms',
+  ogImageTitle: 'Terms of Service',
+})
 
 export default function TermsPage() {
   return (

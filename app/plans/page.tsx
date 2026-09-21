@@ -4,6 +4,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { MARKETING_PLANS, planCardTitle } from '@/lib/marketing/plans'
@@ -13,24 +14,15 @@ const SECTION_MAX = 760
 
 export const revalidate = 86400
 
-export const metadata: Metadata = {
-  title: `Free Running Training Plans | ${BRAND.name}`,
+export const metadata: Metadata = pageMetadata({
+  title: `Free Running Training Plans`,
   description:
     `Free 5K, 10K, half marathon and marathon training plans built to stop you overtraining. Mostly easy running, every run zoned. For the day-job runner.`,
-  alternates: { canonical: `${APP_URL}/plans` },
-  openGraph: {
-    title: `Free running training plans | ${BRAND.name}`,
-    description: `5K to marathon. Mostly easy running, every run zoned. Read them free, then get the version that adapts to you.`,
-    url: `${APP_URL}/plans`,
-    siteName: BRAND.name,
-    type: 'website',
-    // Next merges metadata SHALLOWLY: defining `openGraph` here REPLACES the
-    // root layout's object rather than merging into it, so the site-wide
-    // og:image was silently dropped. /plans and all 9 spokes shared this bug —
-    // the most-linked marketing pages were sharing with no image at all.
-    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: `${BRAND.name} free running training plans` }],
-  },
-}
+  path: '/plans',
+  ogTitle: `Free running training plans | ${BRAND.name}`,
+  ogDescription: `5K to marathon. Mostly easy running, every run zoned. Read them free, then get the version that adapts to you.`,
+  ogImageTitle: 'Free running training plans',
+})
 
 export default function PlansHubPage() {
   const ld = {

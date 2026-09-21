@@ -1,13 +1,16 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 
-export const metadata: Metadata = {
-  title: `Privacy Policy | ${BRAND.name}`,
+export const metadata: Metadata = pageMetadata({
+  title: `Privacy Policy`,
   description: `How ${BRAND.name} collects, uses, and protects your data.`,
-}
+  path: '/privacy',
+  ogImageTitle: 'Privacy Policy',
+})
 
 export default function PrivacyPage() {
   return (

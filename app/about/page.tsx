@@ -25,6 +25,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { FOUNDER_STORY } from '@/lib/marketing/founderStory'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
@@ -46,21 +47,15 @@ const FOUNDER_PHOTO: { src: string; alt: string } | null = null
 
 export const revalidate = 86400
 
-export const metadata: Metadata = {
-  title: `About | ${BRAND.name}`,
-  description:
-    `Who built ${BRAND.name} and why. A runner whose easy days were never easy, a plateau that would not move, and the tool that came out of it.`,
-  alternates: { canonical: PAGE_URL },
-  openGraph: {
-    title: `Why ${BRAND.name} exists`,
-    description: 'Built by a runner who went medium-hard on everything, and got tired of wondering why nothing improved.',
-    url: PAGE_URL,
-    siteName: BRAND.name,
-    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630 }],
-    type: 'article',
-    locale: 'en_GB',
-  },
-}
+export const metadata: Metadata = pageMetadata({
+  title: `About`,
+  description: 'Built by a runner who went medium-hard on everything, and got tired of wondering why nothing improved.',
+  path: '/about',
+  ogTitle: `Why ${BRAND.name} exists`,
+  ogDescription: 'Built by a runner who went medium-hard on everything, and got tired of wondering why nothing improved.',
+  type: 'article',
+  ogImageTitle: `Why ${BRAND.name} exists`,
+})
 
 function P({ children }: { children: React.ReactNode }) {
   return (

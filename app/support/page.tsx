@@ -1,13 +1,16 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 
-export const metadata: Metadata = {
-  title: `Support | ${BRAND.name}`,
+export const metadata: Metadata = pageMetadata({
+  title: `Support`,
   description: `Get help with ${BRAND.name}: contact, account, subscription, and data questions.`,
-}
+  path: '/support',
+  ogImageTitle: 'Support',
+})
 
 export default function SupportPage() {
   return (

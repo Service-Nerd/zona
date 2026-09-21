@@ -11,6 +11,7 @@
 
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader, type SiteSection } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { articlePath, type MarketingArticle } from '@/lib/marketing/articles'
@@ -123,20 +124,13 @@ export function ArticleHub({
  *  Mirrors `articleMetadata` in ArticlePage, including the restated og:image
  *  (Next replaces the root layout's `openGraph` rather than merging into it). */
 export function hubMetadata(hub: HubCopy) {
-  const url = `${APP_URL}/${hub.slug}`
-  return {
+  return pageMetadata({
     title: hub.metaTitle,
+    brandInTitle: hub.metaTitle.includes(BRAND.name),
     description: hub.metaDescription,
-    alternates: { canonical: url },
-    openGraph: {
-      title: hub.h1, description: hub.metaDescription, url,
-      siteName: BRAND.name, type: 'website' as const,
-      images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: hub.h1 }],
-    },
-    twitter: {
-      card: 'summary_large_image' as const,
-      title: hub.h1, description: hub.metaDescription,
-      images: [`${APP_URL}/api/og`],
-    },
-  }
+    path: `/${hub.slug}`,
+    ogTitle: hub.h1,
+    ogDescription: hub.metaDescription,
+    ogImageTitle: hub.h1,
+  })
 }

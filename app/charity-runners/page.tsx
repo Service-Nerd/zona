@@ -47,6 +47,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND, PRICING } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
@@ -60,29 +61,15 @@ const SECTION_MAX = 760
 
 export const revalidate = 86400
 
-export const metadata: Metadata = {
-  title: `Free Coaching for Charity Runners | ${BRAND.name}`,
-  description:
-    'Running for a charity? Your charity may have covered the full app for you, free. Mostly easy running, every session zoned, built so you reach the start line uninjured.',
-  alternates: { canonical: PAGE_URL },
-  openGraph: {
-    title: `Running for charity? Make the start line. | ${BRAND.name}`,
-    description:
-      'Most charity runners do not miss their race because they were slow. They miss it because they got injured in training. If your charity gave you a code, the whole app is yours.',
-    url: PAGE_URL,
-    siteName: BRAND.name,
-    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630 }],
-    type: 'article',
-    locale: 'en_GB',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: `Charity running, without breaking yourself | ${BRAND.name}`,
-    description:
-      'A coach that tells you to slow down, free for runners whose charity has covered it.',
-    images: [`${APP_URL}/api/og`],
-  },
-}
+export const metadata: Metadata = pageMetadata({
+  title: `Free Coaching for Charity Runners`,
+  description: 'Most charity runners do not miss their race because they were slow. They miss it because they got injured in training. If your charity gave you a code, the whole app is yours.',
+  path: '/charity-runners',
+  ogTitle: `Running for charity? Make the start line. | ${BRAND.name}`,
+  ogDescription: 'Most charity runners do not miss their race because they were slow. They miss it because they got injured in training. If your charity gave you a code, the whole app is yours.',
+  type: 'article',
+  ogImageTitle: 'Free coaching for charity runners',
+})
 
 /** The four free plans, by distance. Ultra is deliberately absent: 50K and 100K
  *  have no free static plan, and the page says so rather than linking somewhere

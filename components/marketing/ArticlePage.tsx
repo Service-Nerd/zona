@@ -15,6 +15,7 @@
 
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader, type SiteSection } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { articlePath, guidesArePublished, marketingArticleJsonLd, COMPARISON_HUB, GUIDE_HUB, type MarketingArticle, type ArticleSpan, type ArticleBlock } from '@/lib/marketing/articles'
@@ -200,31 +201,18 @@ function ArticleTable({ block }: { block: Extract<ArticleBlock, { kind: 'table' 
 /** Metadata builder shared by every comparison route, so the eight pages cannot
  *  drift in canonical/OG shape. Mirrors the /plans `generateMetadata` output. */
 export function articleMetadata(article: MarketingArticle) {
-  const url = `${APP_URL}${articlePath(article)}`
-  return {
+  return pageMetadata({
+    // ⚠️ A title that already names the brand must not have it appended
+    // again by the root layout's template. "Coopah vs Runna vs Zonna" is a
+    // three-app comparison: the brand belongs IN the sentence, and
+    // "… | Zonna" after it reads as a stutter. One rule in the one owner,
+    // rather than a flag on every catalogue row.
     title: article.metaTitle,
+    brandInTitle: article.metaTitle.includes(BRAND.name),
     description: article.metaDescription,
-    alternates: { canonical: url },
-    openGraph: {
-      title: article.ogTitle,
-      description: article.ogDescription,
-      url,
-      siteName: BRAND.name,
-      type: 'article' as const,
-      // Next merges metadata SHALLOWLY: a page that defines `openGraph` replaces
-      // the root layout's object outright rather than merging into it, so the
-      // site-wide og:image is dropped unless it is restated. Verified in the
-      // prerendered HTML — /plans has no og:image for exactly this reason.
-      images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: article.h1 }],
-    },
-    // Same shallow-merge rule, opposite symptom: without this block the page
-    // inherits the root layout's GENERIC twitter card, so every comparison page
-    // would share one title and description on social regardless of subject.
-    twitter: {
-      card: 'summary_large_image' as const,
-      title: article.ogTitle,
-      description: article.ogDescription,
-      images: [`${APP_URL}/api/og`],
-    },
-  }
+    path: articlePath(article),
+    ogTitle: article.ogTitle,
+    ogDescription: article.ogDescription,
+    type: 'article',
+  })
 }

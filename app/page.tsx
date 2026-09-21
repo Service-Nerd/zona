@@ -37,6 +37,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BRAND, PRICING } from '@/lib/brand'
+import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { FREE_FEATURES } from '@/lib/marketing/pricing'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
@@ -77,32 +78,21 @@ export const dynamic = 'force-dynamic'  // auth check must run per-request
 // and the value lives in the committed default below. See CLAUDE.md.
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
-export const metadata: Metadata = {
-  // SEO-01 — keyword-first, brand last. Deliberately NOT `${BRAND.appStoreSubtitle}`:
-  // the App Store subtitle is brand-first by design and still drives og:/twitter:
-  // below, which are social-share copy where brand-first is correct.
+export const metadata: Metadata = pageMetadata({
+  // ⚠️ THE SUFFIX IS EXPLICIT HERE AND ONLY HERE. Next's `title.template` does
+  // not apply to the page in the SAME segment that declares it, and app/page.tsx
+  // pairs with app/layout.tsx. So the homepage, alone on the site, would ship
+  // with no brand in its <title> while every other page gained one. Verified in
+  // the rendered HTML, which is the only place this is visible.
   title: `Running Plans to Stop You Overtraining | ${BRAND.name}`,
-  // SEO-01 — 149 chars, inside Google's ~155 snippet budget.
-  description: `Training plans for runners who go medium-hard on everything. ${BRAND.name} sets the zone for each session and holds you to it. Built for the day-job runner.`,
-  alternates: {
-    canonical: APP_URL,
-  },
-  openGraph: {
-    title: `${BRAND.name}: ${BRAND.appStoreSubtitle}`,
-    description: `Training plans for runners who overtrain. ${BRAND.name} prescribes the zone for each session: easy when it's easy, hard when it's hard.`,
-    url: APP_URL,
-    siteName: BRAND.name,
-    images: [{ url: `${APP_URL}/api/og`, width: 1200, height: 630, alt: `${BRAND.name}: ${BRAND.appStoreSubtitle}` }],
-    type: 'website',
-    locale: 'en_GB',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: `${BRAND.name}: ${BRAND.appStoreSubtitle}`,
-    description: `Training plans for runners who go medium-hard on everything. ${BRAND.name} holds you to your zones.`,
-    images: [`${APP_URL}/api/og`],
-  },
-}
+  brandInTitle: true,
+  description: `Training plans for runners who overtrain. ${BRAND.name} prescribes the zone for each session: easy when it's easy, hard when it's hard.`,
+  path: '/',
+  ogTitle: `${BRAND.name}: ${BRAND.appStoreSubtitle}`,
+  ogDescription: `Training plans for runners who overtrain. ${BRAND.name} prescribes the zone for each session: easy when it's easy, hard when it's hard.`,
+  type: 'website',
+  ogImageTitle: `${BRAND.name}: ${BRAND.appStoreSubtitle}`,
+})
 
 const MARKETING_LIVE = process.env.MARKETING_SITE_ENABLED === 'true'
 

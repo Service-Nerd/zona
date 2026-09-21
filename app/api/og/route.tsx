@@ -18,7 +18,19 @@ export const runtime = 'edge'
  *   wordmark falls back to plain rendering.
  */
 
-export async function GET() {
+export async function GET(req: Request) {
+  // SITE-META-01 — the image names the page it belongs to.
+  //
+  // Until now this route took no request at all, so a guide, a plan, the
+  // pricing page and the homepage all shared ONE card: wordmark plus tagline,
+  // indistinguishable in a shared link. `title` is the only parameter, on
+  // purpose. The value of a per-page card is that it names the page, and every
+  // extra knob is another way for the image to disagree with it.
+  //
+  // Clamped and trimmed here as well as at the call site: this is a public GET
+  // and the call site is not the only possible caller.
+  const title = (new URL(req.url).searchParams.get('title') ?? '').trim().slice(0, 120)
+
   const [interBlack, interRegular] = await Promise.all([
     loadFont('Inter', 800),
     loadFont('Inter', 400),
@@ -86,20 +98,40 @@ export async function GET() {
           {wordmark}
         </div>
 
-        {/* Bottom-left: tagline in --mute */}
-        <div
-          style={{
-            fontFamily: 'Inter',
-            fontSize: 24,
-            fontWeight: 400,
-            color: BRAND.og.mute,
-            letterSpacing: '-0.01em',
-            lineHeight: 1.25,
-            maxWidth: 760,
-            display: 'flex',
-          }}
-        >
-          {BRAND.tagline}
+        {/* Bottom-left: the page's own headline, with the tagline beneath it.
+            With no title the block collapses to the tagline alone, which is
+            the layout every page shared before this route read a request. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: title ? 18 : 0 }}>
+          {title ? (
+            <div
+              style={{
+                fontFamily: 'Inter',
+                fontSize: title.length > 64 ? 46 : 58,
+                fontWeight: 800,
+                color: BRAND.og.ink,
+                letterSpacing: '-0.03em',
+                lineHeight: 1.1,
+                maxWidth: 820,
+                display: 'flex',
+              }}
+            >
+              {title}
+            </div>
+          ) : null}
+          <div
+            style={{
+              fontFamily: 'Inter',
+              fontSize: 24,
+              fontWeight: 400,
+              color: BRAND.og.mute,
+              letterSpacing: '-0.01em',
+              lineHeight: 1.25,
+              maxWidth: 760,
+              display: 'flex',
+            }}
+          >
+            {BRAND.tagline}
+          </div>
         </div>
       </div>
     ),
