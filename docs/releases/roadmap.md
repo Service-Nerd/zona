@@ -1,5 +1,17 @@
 # Roadmap — Zonna
 
+> 🔴 **BEFORE READING ANY HORIZON BELOW: branch `design-implementation` is 10 commits ahead of
+> `main` and has NEVER been pushed.** No remote branch, no PR, no preview. `DESIGN-V3` (the
+> redesigned homepage) and `PLAN-ARC-V2` (**an app change — the Plan screen's progression strip**)
+> are entirely local. `main` is fully pushed and is what `www.zonna.run` serves.
+>
+> The founder's rule is *deploy only when I say deploy*, so review → push → merge → deploy is his
+> to start. **Nothing on this roadmap that touches the homepage or the Plan screen should be
+> sequenced until that lands**, because it would be built on an unmerged base.
+>
+> Detail, and the ranked pick-up list for tomorrow: **`backlog.md` § START HERE TOMORROW.**
+
+
 
 **The engine day, in one line each.** Three items CLOSED as **withdrawn or negative results** (§23 already legislated `PEAK-VS-DELIVERED-BUILD-01` and the engine complies 15,464/15,464; §114 took §111's 93% hazard to **0.00%**; §52's share is a **fixed point** and cannot be driven down by shortening the long run). Two defect fixes SHIPPED (`V4-ANCHOR-01`, `QUALITY-ZERO-SCOPE-01`). One board ruling **CORRECT and DELIBERATELY NOT SHIPPED** (§110 Am.2 — blocked by the catalogue, **1 of 29 rows is beginner-eligible**).
 

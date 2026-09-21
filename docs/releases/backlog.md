@@ -1,5 +1,68 @@
 # Backlog — Zonna
 
+## 🔴 START HERE TOMORROW (written 2026-09-21, end of day)
+
+### 1. Nothing from this afternoon is live, and that is the first decision
+
+**Branch `design-implementation` is 10 commits ahead of `main` and has NEVER been pushed.** No
+remote branch, no PR, no preview URL. `main` itself is fully pushed and is what
+`www.zonna.run` serves.
+
+Everything in those 10 commits is local only:
+
+| | |
+|---|---|
+| `DESIGN-V3` | the HR-trace hero, the tabbed phone, `PhoneShell`, the `Section` surface system, 10 tokens |
+| `DESIGN-V3` fidelity | Plan and Coach stills rebuilt **three times** until they were the app's real screens |
+| `PLAN-ARC-V2` | the Plan screen's progression strip — **an app change, not just marketing** |
+
+⚠️ **`PLAN-ARC-V2` touches the live Plan screen**, so this branch is not a marketing-only change
+and cannot be treated as low-risk cosmetics.
+
+**The founder's standing rule is "deploy only when I say deploy", so the sequence is his to start:**
+review the screenshots → push the branch (preview) → merge → deploy. ⚠️ Vercel Hobby caps at **100
+deploys/day** and that cap was hit once already today; `OPS-DEPLOY-FILTER-01` skips docs-only
+commits, but a merge of 10 commits is still one deploy.
+
+⚠️ **Nothing here has run on a device.** Not the redesigned homepage, not the new arc.
+
+### 2. State of the tree
+
+`verify` exit 0 · **2,988 tests / 334 files** · **132 invariants** (code=doc, 0 orphans) ·
+`audit-docs.sh` **ALL CLEAN** · homepage First Load JS **117 kB** · working tree clean.
+
+### 3. What is actually actionable, ranked
+
+| | Item | Why now | Size |
+|---|---|---|---|
+| 1 | **`DELOAD-PLAN-OPENING-01`** | 🔴 **Urgency raised today.** §119's week-2 deload is now a *visible notch* on 26–33% of plans, because the arc draws the real shape. Board ruling: the defect exists whether or not we draw it. **The fix is a SEARCH over legal placements, not a threshold** — 0 of 220 placements satisfy everything, and the greedy fix was built, measured and rejected. | L |
+| 2 | **`HM-ANCHOR-VS-GOAL-01` / §120** | Ratified by the Coaching Board, **not shipped**, blocked on ONE measurement: Willy's bound. Both obvious gates were rejected with reasons. ⚠️ **Anchor and header must ship TOGETHER** — fixing the header alone drops 555 plans below §22. | M |
+| 3 | **`DELOAD-BADGE-TRUTH-01`** | P1, Coaching Board. A week badged "Recovery" that is not a reduction. Sits next to #1 — consider taking them to one sitting. | M |
+| 4 | **`DESIGN-V3-FIDELITY`** | 3 cosmetic gaps, none conflicting. Only worth doing *after* the branch lands. ⚠️ A 4th item was **withdrawn**; do not reinstate "rebuild Today to match Plan and Coach". | S–M |
+| 5 | **`W-01a`** | 7 guides still to write. SLT settled authorship: **Claude drafts, founder edits and reads end to end.** 3 of the 8 are a coaching surface and must cite a principle. | M each |
+| 6 | `MKT-PLAN-SEGMENT-BASIS-01` | Small, self-contained: is §25's `race_pace_pct` a share of distance or time? | S |
+| 7 | B / D (test coverage) | `PlanSchema` on the live path; 4 untested modules. P2/P3. | M |
+| 8 | `CHECK-SLOW-NOISE-01`, `A11Y-MOCKUP-CONTRAST-01` | Known, low, both documented with their reasons. | S |
+
+### 4. Founder-owned, stated once and not chased
+
+`OPS-VERCEL-PLAN-01` + `OPS-SUPABASE-PLAN-01` (both **P0**) · `LEGAL-COUNSEL-01` · the `/pricing`
+wording · what the net-revenue numbers MEAN · `P-16`'s date · `P-04`'s zero-case words ·
+`TT-FREE-BENCHMARK-01` · the `P-13(c)` illustration commission · the **second-typeface** decision
+gating `P-06(b)` · **device verification**.
+
+### 5. Two traps set today, so they are not walked into
+
+- ⚠️ **`docs/design_handoff_v3/.../_adherence.oxlintrc.json` pins `PlanArc`'s OLD props**
+  (`deloadWeeks|phaseLabel`). It is a vendored artefact of the handoff as received and is wired
+  into nothing. It would reject `weekKm`/`weekPhase` if anyone switched it on.
+- ⚠️ **13 of the 15 components under `components/marketing/` have no contract.** The contracts
+  check walks *existing* contracts and asks whether they went stale — **it structurally cannot see
+  a missing one**. Pre-existing, not from today.
+
+---
+
+
 
 **The engine day, in one line each.** Three items CLOSED as **withdrawn or negative results** (§23 already legislated `PEAK-VS-DELIVERED-BUILD-01` and the engine complies 15,464/15,464; §114 took §111's 93% hazard to **0.00%**; §52's share is a **fixed point** and cannot be driven down by shortening the long run). Two defect fixes SHIPPED (`V4-ANCHOR-01`, `QUALITY-ZERO-SCOPE-01`). One board ruling **CORRECT and DELIBERATELY NOT SHIPPED** (§110 Am.2 — blocked by the catalogue, **1 of 29 rows is beginner-eligible**).
 
@@ -7,7 +70,7 @@
 
 ⚠️ **`distance_km` as a proxy for a coaching classification appeared FOUR TIMES in one day** — LR-CAP-BLIND-01, SESSION-KM-01/02, `V4-ANCHOR-01`, `QUALITY-ZERO-SCOPE-01`. It is a grep, not a discovery.
 
-🔴 **Still open:** `CAT-DEPTH-01` (root cause now a number: **1 of 29**; ESCALATED TO SLT; blocks §110 Am.2). *(Device verification is the founder's own task and is no longer tracked here, at his instruction 2026-09-19.)*
+✅ **`CAT-DEPTH-01` SHIPPED 2026-09-19** (registry row: three gates, not a thin catalogue; plans with no quality 33.3% → 17.4%). ⚠️ **This line said "still open" for two days.** It is a prose lede, not a status bullet or a table row, so `audit-docs.sh`'s backlog checks — which read item STATUS markers — could not see it. **Third category of stale prose found this week that no mechanical check watches.** *(Device verification is the founder's own task and is no longer tracked here, at his instruction 2026-09-19.)*
 
 
 **Job:** The detailed item store — full specs, scope notes, SLC framing for everything left to ship (product *and* go-to-market).
