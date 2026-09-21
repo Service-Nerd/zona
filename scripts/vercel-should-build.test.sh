@@ -40,6 +40,31 @@ check build HEAD       0000000000000000000000000000000000000000 production "unre
 # b250057 changed components/ AND docs/ in one commit.
 check build b250057~1 b250057 production "docs+code in one commit builds"
 
+# scripts/-only must SKIP. 4010006 and ac23deb each spent a deployment on an
+# audit-script edit that `next build` never reads.
+check skip  4010006~1 4010006 production "scripts/-only commit skips"
+check skip  ac23deb~1 ac23deb production "scripts/-only commit skips (2)"
+
+# ...unless the build command starts reading scripts/, which is checked live
+# against package.json rather than assumed.
+run_with_pkg() {
+  local want=$1 tmp; tmp=$(mktemp)
+  cp package.json "$tmp"
+  python3 - "$2" <<'PY2'
+import json, sys
+d = json.load(open('package.json'))
+d['scripts']['prebuild'] = sys.argv[1]
+json.dump(d, open('package.json', 'w'), indent=2)
+PY2
+  local out rc
+  out=$(VERCEL_ENV=production BUILD_FILTER_BASE=4010006~1 BUILD_FILTER_HEAD=4010006 bash "$F" 2>&1); rc=$?
+  cp "$tmp" package.json; rm -f "$tmp"
+  local got=build; [ $rc -eq 0 ] && got=skip
+  if [ "$got" = "$want" ]; then pass=$((pass+1)); printf '  ok    %-52s %s\n' "build reads scripts/ -> exclusion lifts" "$out"
+  else fail=$((fail+1)); printf '  FAIL  %-52s want=%s got=%s %s\n' "build reads scripts/ -> exclusion lifts" "$want" "$got" "$out"; fi
+}
+run_with_pkg build "node scripts/gen.mjs"
+
 # ⚠️ EVERY REF HERE IS A PINNED SHA, DELIBERATELY. The first cut found the
 # docs+code case with `git log --since=midnight`, which would have quietly
 # stopped testing anything from tomorrow onward. That is precisely

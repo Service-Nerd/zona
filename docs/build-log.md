@@ -260,6 +260,19 @@ gate was never exercised. Then I broke it three ways properly: a literal px, a b
 
 ## 2026-09-21 — OPS-DEPLOY-FILTER-01: we used all 100 of the day's deploys by lunchtime, and over half shipped an identical site
 
+> **Widened the same day, and the reason is a small embarrassment.** I shipped the filter excluding
+> `docs/`, `.claude/` and `README`, then immediately spent two deploys on edits to
+> `scripts/audit-docs.sh`. `npm run build` is a bare `next build` — nothing under `scripts/` is read
+> during a build — so those two were pure waste from a filter written specifically to stop waste. I
+> had picked the exclude list from what I happened to be editing at the time rather than from what
+> the build actually reads. The exclusion now defends itself: if the build command ever starts
+> referencing `scripts/`, it lifts automatically, and there is a test that writes such a build
+> command and asserts the filter changes its mind.
+>
+> **And the founder had to point out the cadence anyway:** *"you seem to be pushing a lot rather
+> than waiting for logical places."* The filter caps the cost of a bad habit; it does not fix the
+> habit, and I pushed six times in twenty minutes after building it.
+
 **Dev.** Vercel stopped deploying mid-session: *"Resource is limited, try again in 1 day (more than 100)."*
 Hobby plan, 100 deployments a day. Work pushed, nothing live, founder unable to look at anything
 until tomorrow.

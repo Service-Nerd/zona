@@ -45,7 +45,32 @@ git rev-parse --verify "$BASE^{commit}"    >/dev/null 2>&1 || build "base '$BASE
 git rev-parse --verify "$HEADREF^{commit}" >/dev/null 2>&1 || build "head '$HEADREF' not reachable"
 
 # Anything outside these paths is deployable and must build.
-if git diff --quiet "$BASE" "$HEADREF" -- \
+# ⚠️ `scripts/` IS EXCLUDED, AND THIS GUARD IS WHY THAT IS SAFE.
+# `npm run build` is a bare `next build`: nothing under scripts/ runs during a
+# build, so a change there cannot alter the deployed site. Measured 2026-09-21
+# after the first version shipped: two consecutive deploys were spent on
+# `scripts/audit-docs.sh` edits, which is exactly the waste this filter exists
+# to stop. The one file that DOES run in the build pipeline is this script
+# itself, as the ignoreCommand, and it is read from the clone at HEAD every
+# time, so it never needs a build to take effect.
+#
+# The guard: if the build command ever starts referencing scripts/, the
+# exclusion becomes wrong silently, so it stops applying. Fail toward BUILD.
+scripts_safe=1
+if grep -qE '"(pre|post)?build"[^,]*scripts/' package.json 2>/dev/null; then
+  scripts_safe=0
+  echo "note: build command references scripts/ — not excluding it"
+fi
+
+if [ "$scripts_safe" = "1" ]; then
+  if git diff --quiet "$BASE" "$HEADREF" -- \
+        ':(exclude)docs/**' \
+        ':(exclude).claude/**' \
+        ':(exclude)scripts/**' \
+        ':(exclude)README.md' 2>/dev/null; then
+    skip "only docs/, .claude/, scripts/ or README changed"
+  fi
+elif git diff --quiet "$BASE" "$HEADREF" -- \
       ':(exclude)docs/**' \
       ':(exclude).claude/**' \
       ':(exclude)README.md' 2>/dev/null; then

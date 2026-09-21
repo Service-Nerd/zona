@@ -27,6 +27,6 @@ describe('vercel build filter', () => {
     expect(out).not.toContain('FAIL')
     // The suite is worthless if it stops reaching cases. Assert the count too,
     // so a silently-skipped case fails rather than reading as a clean run.
-    expect(out).toMatch(/6 passed, 0 failed/)
+    expect(out).toMatch(/9 passed, 0 failed/)
   })
 })
