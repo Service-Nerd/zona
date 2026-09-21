@@ -5,6 +5,39 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+
+## 2026-09-21 — DOC-AUDIT-WINDOW-01: the check that reported ALL CLEAN while checking nothing
+
+**Dev.** The founder asked whether every document was up to date. `audit-docs.sh` said ALL CLEAN.
+I reconciled by hand anyway, and 38 of the previous day's 39 ship scopes were fully recorded —
+`§117 Am.2` had a feature-registry row and no build-log entry.
+
+**The check could not have found it, for two independent reasons.**
+
+Its window was `--since today`. At midnight the date rolled over and the list emptied, so an
+entire day's ships left scope while the script kept reporting ok. That is now the **third**
+date-scoped list in two days to expire and take its coverage with it — yesterday's backlog check
+did the same thing and eleven shipped items sat open behind a green tick. **A date-scoped list is
+a list that empties on its own**, and I have now written that sentence three times about three
+different checks.
+
+And its scope pattern was `[A-Z0-9-]+`, so `feat(§117 Am.2)` was invisible regardless of the date.
+Measured across all history: **270 of 508 scopes, 53%, could never be seen by it.** A check that
+silently skips half its population is worse than no check, because it answers the question.
+
+**The fix is a marker, not a date.** The window runs from a recorded commit that advances **only
+on a clean run**, so a gap stays in scope until someone fixes it, and nothing ages out because the
+clock moved.
+
+**The honest bit.** Falsifying the fix found a bug in the fix. With the build-log entry removed
+and the marker rewound, it reported `GAP Am.2` — because `for id in $ids` word-splits on
+whitespace, so `§117 Am.2` became two ids and it flagged a fragment that was never a scope. A
+line-wise read fixed it, and then it reported exactly the right thing. **I would have shipped a
+check that mangles any scope containing a space** if I had stopped at "it went red, good."
+
+**And the new check immediately caught its own ship** — it demanded a registry row and a build-log
+entry for `DOC-AUDIT-WINDOW-01`, which is this. That is the most reassuring thing about it.
+
 ## 2026-09-20 — §117 Am.2: an exemption without a bound is not a relaxation, it is a hole
 
 *(Backfilled 2026-09-21. This ship had a feature-registry row and no build-log entry — found by
