@@ -100,9 +100,51 @@ raw_check build "VERCEL_ENV unset"                   ""         "$BASE_COMMIT" H
 raw_check build "unreachable base"                   production 0000000000000000000000000000000000000000 HEAD
 raw_check build "unreachable head"                   production "$BASE_COMMIT" 0000000000000000000000000000000000000000
 
+# ── 🔴 THE DEFAULT BASE — the case this suite could not fail on ──────────
+#
+# Every case above passes BUILD_FILTER_BASE explicitly, so all fourteen tested
+# the COMPARISON and none tested the CHOICE OF WHAT TO COMPARE. The default was
+# `HEAD^`, and on 2026-09-21 an eleven-commit branch was fast-forwarded onto
+# main: Vercel diffed only the last commit, that commit was docs-only, and the
+# filter SKIPPED the production deploy of a whole day's work. Push succeeded,
+# CI green, nothing failed, site unchanged.
+#
+# These cases run with BUILD_FILTER_BASE UNSET, which is the only way to reach
+# the line that was wrong.
+default_check() { # want, label, previous_sha
+  local want=$1 label=$2 prev=$3
+  local out rc
+  out=$(VERCEL_ENV=production VERCEL_GIT_PREVIOUS_SHA="$prev" BUILD_FILTER_HEAD=HEAD bash "$F" 2>&1); rc=$?
+  local got=build; [ $rc -eq 0 ] && got=skip
+  ran=$((ran+1))
+  if [ "$got" = "$want" ]; then pass=$((pass+1)); printf '  ok    %-46s %s\n' "$label" "$out"
+  else fail=$((fail+1)); printf '  FAIL  %-46s want=%s got=%s  %s\n' "$label" "$want" "$got" "$out"; fi
+}
+
+# THE REGRESSION ITSELF: several commits since the last deploy, the last of
+# them docs-only. `HEAD^` says skip. The truth is build.
+git reset -q --hard "$BASE_COMMIT"
+echo x >> app/a.tsx;  git add -A && git commit -qm "code"
+echo x >> lib/a.ts;   git add -A && git commit -qm "more code"
+echo x >> docs/a.md;  git add -A && git commit -qm "docs naming the ship"
+default_check build "multi-commit push, LAST commit docs-only" "$BASE_COMMIT"
+# ...and prove HEAD^ really would have got it wrong, so the case is not vacuous.
+raw_check      skip  "  (HEAD^ on that same push says SKIP)"   production HEAD^ HEAD
+
+# The filter must still EARN its place: a single docs commit since the last
+# deployment is exactly what it exists to skip.
+git reset -q --hard "$BASE_COMMIT"
+echo x >> docs/a.md; git add -A && git commit -qm "docs only"
+default_check skip  "single docs commit since last deploy"     "$BASE_COMMIT"
+
+# Fail-safe on the new default: no previous SHA, or one we cannot see.
+default_check build "VERCEL_GIT_PREVIOUS_SHA unset"            ""
+default_check build "VERCEL_GIT_PREVIOUS_SHA unreachable"      0000000000000000000000000000000000000000
+git reset -q --hard "$BASE_COMMIT"
+
 # ⚠️ A suite that silently stops reaching its cases reads as a clean run. The
 # CI failure this file exists for had FOUR hollow passes; this is the guard
 # against that recurring.
 echo "  $pass passed, $fail failed ($ran cases ran)"
-[ "$ran" -eq 14 ] || { echo "  FAIL: expected 14 cases to run, got $ran"; exit 1; }
+[ "$ran" -eq 19 ] || { echo "  FAIL: expected 19 cases to run, got $ran"; exit 1; }
 [ "$fail" -eq 0 ]

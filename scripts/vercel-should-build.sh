@@ -34,12 +34,29 @@ skip()   { echo "SKIP: $1";   exit 0; }
 
 # BASE..HEAD. Overridable so this script can be FALSIFIED against real commits
 # without checking anything out — see scripts/vercel-should-build.test.sh. It is
-# not a test hook bolted on: `git diff --quiet HEAD^ HEAD` silently compares the
-# wrong pair if HEAD^ is unreachable, which is the shallow-clone case, and a
-# filter whose two directions were never both demonstrated is exactly the
-# "green tick with nothing behind it" this repo keeps recording.
-BASE="${BUILD_FILTER_BASE:-HEAD^}"
+# not a test hook bolted on: a filter whose two directions were never both
+# demonstrated is exactly the "green tick with nothing behind it" this repo
+# keeps recording.
+#
+# 🔴 THE BASE IS THE LAST DEPLOYED COMMIT, **NEVER `HEAD^`**, AND THIS COST A
+# REAL SHIP. `HEAD^` was the default for the first nine hours of this script's
+# life. On 2026-09-21 an eleven-commit branch was fast-forwarded onto main and
+# pushed; Vercel evaluated `HEAD^..HEAD`, which is only the LAST commit, and
+# that commit was docs-only. **The filter skipped the production deploy of a
+# whole day's work**, and a skipped deploy looks exactly like a successful one:
+# the push succeeded, CI was green, nothing failed, and the site simply did not
+# change. The script's own header warned about this failure mode in those
+# words. The mechanism it warned about was not the one that bit.
+#
+# `VERCEL_GIT_PREVIOUS_SHA` is the commit of the previous deployment, so the
+# diff spans everything that has not shipped, however many commits that is.
+# There is deliberately NO fallback to `HEAD^`: for a push of more than one
+# commit `HEAD^` is not a conservative guess, it is the wrong question, and a
+# wrong SKIP is unrecoverable-looking while a wrong BUILD costs one deploy.
+BASE="${BUILD_FILTER_BASE:-${VERCEL_GIT_PREVIOUS_SHA:-}}"
 HEADREF="${BUILD_FILTER_HEAD:-HEAD}"
+
+[ -n "$BASE" ] || build "no previous-deployment SHA (VERCEL_GIT_PREVIOUS_SHA unset) — cannot tell what changed"
 
 git rev-parse --verify "$BASE^{commit}"    >/dev/null 2>&1 || build "base '$BASE' not reachable (shallow clone or first build)"
 git rev-parse --verify "$HEADREF^{commit}" >/dev/null 2>&1 || build "head '$HEADREF' not reachable"
