@@ -11,6 +11,8 @@
 //
 // Centralising this stops the third surface inheriting the same bug.
 
+import { calendarDaysBetween } from '@/lib/dates'
+
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 export type DayKey = typeof DAYS[number]
 
@@ -40,9 +42,10 @@ export function daysDueByEndOfYesterday(
   // so calls made AFTER the plan-week ends (e.g. Monday morning reviewing
   // last week's report) return all 7 keys without special-casing.
   // CoachingPrinciples §65.
-  const dayIndex = Math.max(
-    Math.floor((todayMidnight.getTime() - weekStart.getTime()) / 86_400_000),
-    0,
-  )
+  // DATE-DST-01 — calendar days, not a millisecond quotient. Two local
+  // midnights across spring-forward are 23 hours apart, so the old
+  // `floor(ms / 86_400_000)` read the Sunday of the DST change as day 5 and
+  // silently dropped Saturday from the due list, once a year, with no error.
+  const dayIndex = Math.max(calendarDaysBetween(weekStart, todayMidnight), 0)
   return DAYS.slice(0, dayIndex)
 }

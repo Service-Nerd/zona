@@ -1,3 +1,4 @@
+import { calendarDaysBetween } from '@/lib/dates'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { enforceAiRateLimit } from '@/lib/ai/guardAiRequest'
 import { NextRequest, NextResponse } from 'next/server'
@@ -209,7 +210,8 @@ export async function POST(req: NextRequest) {
   const weekStart       = new Date(week.date)
   weekStart.setHours(0, 0, 0, 0)
   const todayMidnight   = new Date(); todayMidnight.setHours(0, 0, 0, 0)
-  const dayIndex        = Math.min(Math.max(Math.floor((todayMidnight.getTime() - weekStart.getTime()) / 86_400_000), 0), 6)
+  // DATE-DST-01 — calendar days, not milliseconds (see `lib/dates.ts`).
+  const dayIndex        = Math.min(Math.max(calendarDaysBetween(weekStart, todayMidnight), 0), 6)
   // getCurrentWeekIndex() pins to the last week once today is past the plan, so
   // dayIndex clamps to 6 ("Sunday") and the prompt would wrongly tell the model
   // "it is currently Sunday, day in flight". When today is outside this week's

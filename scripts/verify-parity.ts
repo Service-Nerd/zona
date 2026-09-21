@@ -76,6 +76,22 @@ const TARGET_TIMES: Record<number, string> = {
 }
 const GOALS = ['finish', 'time_target'] as const
 
+// PARITY-DST-01 (2026-09-21) — the grid could not see a change to PLAN LENGTH.
+//
+// ⚠️ TWO THINGS HAD TO BE TRUE AT ONCE and only one was. `PLAN_START` is
+// pinned to 2026-09-14 and all three `RACE_DATES` put the race WEEK's Monday
+// before the 2027-03-28 spring-forward, so no span in the grid crossed a DST
+// transition. And even a span that does cross only changes anything when
+// `weeksAvailable` is the BINDING constraint rather than the per-distance
+// week cap, which needs a TIGHT runway. DATE-DST-01 changed the length of 25%
+// of real Monday-to-Monday plan spans and this file reported IDENTICAL, twice
+// (5,940 cases, then 7,884 after naively adding a later race date).
+//
+// So: a focused block with its own GMT plan start and race dates on the far
+// side of the transition, each a realistic 12 to 17 week runway. 54 cases.
+const DST_PLAN_START = '2027-01-11'                 // Monday, GMT
+const DST_RACE_DATES = ['2027-04-04', '2027-04-18', '2027-05-09']   // Sundays, BST
+
 // PARITY-HSR-01 (2026-09-16) — `hard_session_relationship` was not varied AT
 // ALL (grepped: 0 occurrences), so every run reported on a single value of it.
 //
@@ -117,6 +133,7 @@ const EXPECTED_ROWS =
   DISTANCES.length * RACE_DATES.length * LEVELS.length *
   DAYS.length * INJURIES.length * VOLUMES.length * TIERS.length * GOALS.length
   + DISTANCES.length * LEVELS.length * GOALS.length * HSR_EXTRA.length
+  + DISTANCES.length * LEVELS.length * DST_RACE_DATES.length          // PARITY-DST-01
 
 /** Wall-clock / run-scoped fields. Present on both sides, different every run. */
 const STRIP_META = ['generated_at', 'created_at', 'updated_at']
@@ -196,6 +213,38 @@ async function probe(): Promise<void> {
             rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
           }
         }
+
+  // ── PARITY-DST-01 block — tight runways that cross spring-forward.
+  for (const race_distance_km of DISTANCES)
+    for (const fitness_level of LEVELS)
+      for (const race_date of DST_RACE_DATES) {
+        const days_available = 4
+        const current_weekly_km = 30
+        const tier = 'paid'
+        const input = {
+          goal: 'finish', age: 40, resting_hr: 55, max_hr: 180,
+          preferred_long_run_day: 'sun',
+          race_date, race_distance_km, current_weekly_km,
+          longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
+          days_available, fitness_level, injury_history: [],
+        }
+        // No 'dst' prefix: `KEY_FIELDS` is positional, and the race dates in
+        // this block appear nowhere else, so the key is already unique.
+        const key = [race_distance_km, race_date, fitness_level, days_available,
+          'none', current_weekly_km, tier, 'finish', 'unset'].join('|')
+        try {
+          const plan: any = generateRulePlan(input as any, tier as any, DST_PLAN_START)
+          const stable = JSON.parse(JSON.stringify(plan))
+          for (const f of STRIP_META) {
+            if (stable?.meta) delete stable.meta[f]
+            delete stable[f]
+          }
+          rows.push(`${key}\tOK\t${createHash('sha256')
+            .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
+        } catch (e: any) {
+          rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
+        }
+      }
 
   rows.sort()
   process.stdout.write(rows.join('\n') + '\n')

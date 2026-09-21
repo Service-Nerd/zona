@@ -2085,6 +2085,58 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ---
 
+## 🆕 FILED 2026-09-21 — from the published-plan review
+
+### 🔴 `DELOAD-BADGE-TRUTH-01` — a week badged "Recovery" that is not a reduction *(P1, Coaching Board)*
+
+**Measured 2026-09-21 on the 45,776-plan corpus: 9.6% of all recovery-badged weeks (10,664) carry
+volume at or above the week before them, and 18.9% of plans contain at least one.** The runner sees a
+week labelled *"recovery week"* or *"recovery + benchmark"* that is bigger than the week they just did.
+
+This is `INV-PLAN-DELOAD-IS-A-REDUCTION`'s declared delivered residual (§3 / §90 / ADR-022, `warn`).
+The board fixed the CURVE in DELOAD-INVERSION-01 (curve inversions 12.8% → 0%) and deliberately
+scoped DELIVERED reconciliation to injury runners only, leaving the healthy divergence to §52.
+Promotion of the invariant to `error` was already blocked on "a separate future ruling on healthy
+deload-week placement". **This is the filing for that ruling.**
+
+**What is new since that scoping, and why it is worth a sitting now:**
+- It is **volume-gated with a sharp threshold**, not diffuse. On the sub-4 marathon persona every one
+  of 53 publishing weeks lies at `current_weekly_km ≤ 42` and **none** at `≥ 44`. That points at the
+  session floors: below a certain weekly volume the 70%-of-prior target is unreachable because the
+  floors plus the §52-protected long run already exceed it.
+- So the honest question for the board is not only "re-size the week" but **"should a week we cannot
+  actually reduce still be BADGED and LABELLED as a recovery week?"** The sessions may be right and
+  the label wrong, which is a cheaper fix with a different blast radius.
+- It reached a **published page**: `/plans/sub-4-hour-marathon-plan` rendered it on every date. The
+  persona was moved above the threshold (40 → 44 km/week) so we stop printing it. **That is not a fix.**
+
+**Not to re-propose:** re-baselining the invariant, or dropping the badge when it is inconvenient.
+
+---
+
+### 🟠 `FIXTURE-CLOCK-SWEEP-01` — 30 plan-generating tests expire on a date *(P1, mechanical)*
+
+`npm run verify` went red on 2026-09-21 with nothing committed: `terrainEffortNote.test.ts` pins
+`race_date: '2026-12-06'`, calls `generateRulePlan` with no `planStart`, and its prep window shrank by
+a week every real week until it tipped under §44's 10-week minimum. Fixed by freezing that file's
+clock (FIXTURE-CLOCK-01).
+
+**It is not alone.** 30 `.test.ts` files under `lib/` generate plans from an absolute `race_date` with
+no `useFakeTimers`, no `setSystemTime` and no pinned `planStart`. **The nearest race dates are October
+and November 2026 — weeks away, not years.** Each will fail for a calendar reason, with an opaque
+`PrepTimeError`, on a day when nothing was committed.
+
+**The fix is mechanical and low-risk:** add `vi.setSystemTime(new Date('2026-09-21T09:00:00Z'))` to
+each file's `beforeAll`. Freezing to a date on which the file currently passes preserves today's
+behaviour exactly, so no assertion moves. **Ship a gate in the same commit:** any test that calls
+`generateRulePlan` with a literal `race_date` must freeze the clock or pass an explicit `planStart`,
+so the class cannot grow back.
+
+Worth doing properly rather than as a register: a suite that fails for calendar reasons teaches you to
+re-run it instead of reading it, which is how a real red gets waved through.
+
+---
+
 ## 📋 SLT-ORDERED WORK QUEUE — Make-A-Wish London 2027
 
 **RE-ORDERED 2026-09-18 (v2).** *Five things changed after v1 was set and three items left the queue entirely. Ordered against one measure: **did they still be running in week 8?***

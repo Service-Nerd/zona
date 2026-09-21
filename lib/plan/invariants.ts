@@ -27,6 +27,7 @@ import { hrBandForZoneString } from '@/lib/coaching/zoneRules'
 import { weekIntensityFlags, isOverloadWeek } from './weekIntensityFlags'
 import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 // Date helpers live in length.ts — the single owner of plan date arithmetic (D-08).
+import { calendarWeeksBetween } from '@/lib/dates'
 import { parseDateLocal, formatDate, getDistanceConfig, planWeekCap } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
 import { sessionKmSelfPaced } from './sessionDistance'
@@ -6606,8 +6607,11 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     const weeksFromStartToRace = (() => {
       const start = plan.meta.plan_start, race = input.race_date
       if (!start || !race) return null
-      const ms = parseDateLocal(race).getTime() - parseDateLocal(start).getTime()
-      return Math.floor(ms / (7 * 86_400_000)) + 1
+      // DATE-DST-01 — this was a hand-written copy of `weeksBetweenLocal`
+      // (D-08) and carried its DST bug: a Monday-to-Monday span crossing
+      // spring-forward measured one week short, so the checker disagreed with
+      // the producer for eleven weeks of every year. Read the owner.
+      return calendarWeeksBetween(start, race) + 1
     })()
     const calendarBound = weeksFromStartToRace != null && mainWeekCount >= weeksFromStartToRace
     const extensionExhausted =

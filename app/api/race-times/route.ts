@@ -9,6 +9,7 @@
 // Distances: 5K, 10K, HM, Marathon
 // Auth: Supabase session required. Feature gate: race_time_estimates (PAID_ONLY_ONGOING).
 
+import { calendarWeeksBetween } from '@/lib/dates'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
 import { estimateVdotRange } from '@/lib/plan/estimateVdot'
@@ -266,9 +267,8 @@ export async function GET(req: NextRequest) {
   const today = new Date()
 
   // Plan age in weeks — needed for R32 recalibration trigger (minimum 4 weeks)
-  const planAgeWeeks = meta.plan_start
-    ? Math.floor((today.getTime() - new Date(meta.plan_start).getTime()) / (7 * 24 * 60 * 60 * 1000))
-    : 0
+  // DATE-DST-01 — calendar weeks, not a millisecond quotient (see `lib/dates.ts`).
+  const planAgeWeeks = meta.plan_start ? Math.max(0, calendarWeeksBetween(meta.plan_start, today)) : 0
 
   // Baseline VDOT — the raw VDOT stored at plan generation time.
   // Used to compute the R31 improvement delta. May be absent on legacy plans

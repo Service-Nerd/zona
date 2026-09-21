@@ -6,6 +6,7 @@
 // Foundation weeks carry `phase: 'foundation'` and negative `n` values
 // (e.g. -2, -1, 0 for a 3-week block). Week 1 of the main plan is always n=1.
 
+import { calendarDaysBetween } from '@/lib/dates'
 import { GENERATION_CONFIG } from './generationConfig'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
 import { normaliseDays, DAY_ORDER, type Day } from './days'
@@ -26,9 +27,12 @@ export function classifyGap(gapDays: number): GapClass {
 }
 
 export function gapDays(today: string, planStart: string): number {
-  const t = new Date(today)
-  const s = new Date(planStart)
-  return Math.max(0, Math.floor((s.getTime() - t.getTime()) / 86_400_000))
+  // DATE-DST-01 — calendar days through the single owner. This was exact only
+  // by accident (`new Date('YYYY-MM-DD')` gives UTC midnight at both ends, so
+  // the DST hour cancelled); it would have broken the moment either argument
+  // carried a time. `classifyGap`'s 28-day boundary is not a place to rely on
+  // a coincidence.
+  return Math.max(0, calendarDaysBetween(today, planStart))
 }
 
 // ── Effective baseline ─────────────────────────────────────────────────────

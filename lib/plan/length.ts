@@ -2,6 +2,7 @@
 // Plan length calculator. All date arithmetic uses local-time parsing (INV-PLAN-007 note: never
 // new Date("YYYY-MM-DD") — that parses as UTC midnight and drifts near midnight in west timezones).
 
+import { calendarWeeksBetween } from '@/lib/dates'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { raceDistanceKey, GENERATION_CONFIG } from './generationConfig'
 
@@ -95,10 +96,16 @@ export function nextMonday(from: Date = new Date()): Date {
   return d
 }
 
+/**
+ * Whole weeks between two `YYYY-MM-DD` dates.
+ *
+ * Delegates to `calendarWeeksBetween` (DATE-DST-01). It used to difference two
+ * local midnights in milliseconds and floor the quotient, which loses a day
+ * across spring-forward and therefore a whole WEEK on the Monday-to-Monday
+ * spans this function is actually given. See `lib/dates.ts`.
+ */
 export function weeksBetweenLocal(startIso: string, endIso: string): number {
-  const start = parseDateLocal(startIso)
-  const end = parseDateLocal(endIso)
-  return Math.floor((end.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000))
+  return calendarWeeksBetween(startIso, endIso)
 }
 
 /**

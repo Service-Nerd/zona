@@ -88,3 +88,13 @@ This route no longer calls Anthropic directly. It goes through
   route previously could not tell those apart.
 - `noRawAnthropicCalls.test.ts` fails the build if this file names
   `api.anthropic.com` again. Full contract: `docs/contracts/api/ops-ai-spend.md`.
+
+## Date arithmetic (DATE-DST-01, 2026-09-21)
+
+`dayIndex` — which drives the user-facing "it is currently {dayOfWeek}" line and the split between
+sessions already due and sessions remaining — now comes from `calendarDaysBetween`
+(`lib/dates.ts`), not a millisecond quotient. Across a spring-forward two local midnights are 23
+hours apart, so on that one Sunday the index read 5 and the report silently described the week as
+one day earlier than it was. Same computation as `lib/coaching/dayBoundary.ts` (§65); the
+duplication predates this change and is not resolved by it. **Request and response shapes are
+unchanged.**

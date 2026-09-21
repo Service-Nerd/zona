@@ -157,3 +157,10 @@ they left it. **One measurement is one point.** Guarded by
 | 401 | `{ "error": "Unauthorized" }` |
 | 403 | `{ "error": "Subscription required" }` |
 | 404 | `{ "error": "No plan found" }` |
+
+## Date arithmetic (DATE-DST-01, 2026-09-21)
+
+`planAgeWeeks` — the R32 recalibration trigger's "minimum 4 weeks" gate — is computed with
+`calendarWeeksBetween` from `lib/dates.ts`, the single owner of whole-day and whole-week
+arithmetic. It was a millisecond quotient, which loses a day across a spring-forward and can read a
+plan as a week younger than it is. **Request and response shapes are unchanged.**

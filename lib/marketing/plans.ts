@@ -167,7 +167,19 @@ export const MARKETING_PLANS: MarketingPlan[] = [
     ogTitle: 'The free sub-4-hour marathon plan built on easy miles | Zonna',
     ogDescription: 'Sub-4 is won on the easy days. Read the plan free, then get the version that adapts to you.',
     whoFor: 'For the runner chasing four hours who knows the wall is built in training, not on race day.',
-    input: (raceDate) => ({ ...BASE, race_date: raceDate, goal: 'time_target', target_time: '3:59:00', race_distance_km: 42.2, current_weekly_km: 40, longest_recent_run_km: 20, days_available: 5, benchmark: { type: 'race', distance_km: 21.1, time: '1:52:00' } }),
+    // ⚠️ `current_weekly_km: 44`, not 40, and the reason is not cosmetic.
+    // Below 44 this persona generates a week BADGED "recovery" that carries
+    // MORE volume than the week before it (measured: every one of 53 start
+    // weeks at cwk <= 42, none at cwk >= 44). That is the known, declared
+    // §90/§52 delivered-deload residual (`INV-PLAN-DELOAD-IS-A-REDUCTION`,
+    // `warn`), whose fix for healthy runners the Coaching Board scoped out and
+    // has not yet ruled on: filed as DELOAD-BADGE-TRUTH-01 with the corpus
+    // rate (18.9% of plans carry at least one such badge). Moving the
+    // published persona above the threshold stops us PRINTING the
+    // contradiction; it does not fix it. 44 km/week for a sub-4 runner is if
+    // anything the more honest persona. `planNotes.test.ts` fails the build if
+    // any published plan regresses into it.
+    input: (raceDate) => ({ ...BASE, race_date: raceDate, goal: 'time_target', target_time: '3:59:00', race_distance_km: 42.2, current_weekly_km: 44, longest_recent_run_km: 20, days_available: 5, benchmark: { type: 'race', distance_km: 21.1, time: '1:52:00' } }),
     related: ['marathon-16-week', 'sub-2-hour-half-marathon-plan', 'sub-45-10k-plan'],
     extraFaqs: [{ q: 'What pace is a sub-4-hour marathon?', a: '5:41 per kilometre (about 9:09 per mile), held for the full 42.2 km. The hard part is holding it late, which is why this plan protects the easy weeks that build your durability.' }],
   },
@@ -203,7 +215,9 @@ export function faqsFor(plan: MarketingPlan): { q: string; a: string }[] {
     ...(plan.extraFaqs ?? []),
     {
       q: `How many days a week is this ${plan.distanceLabel} plan?`,
-      a: `${plan.daysPerWeek} days a week. Easy runs, and from the build phase one quality session a week. The rest is recovery, on purpose.`,
+      // "most weeks", not "a week": the recovery weeks inside the build block
+      // drop the quality session. Guarded by `planNotes.test.ts`.
+      a: `${plan.daysPerWeek} days a week. Easy runs, and from the build phase a quality session in most weeks. The rest is recovery, on purpose.`,
     },
     {
       q: `Is this ${plan.distanceLabel} plan good for beginners?`,

@@ -6,6 +6,59 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — DATE-DST-01 / MKT-PLAN-PHASE-NOTE-01 / FIXTURE-CLOCK-01: a quarter of our plans were a week short, every spring, for as long as the engine has existed
+
+**Dev.** I was asked to review the nine training plans published on the marketing site and make sure
+they were fit to hand out. They generate live from the engine on a 24-hour cache, so I measured them
+across a year of regeneration dates instead of the one date the existing test freezes. Eleven of the
+fifty-three weeks came back one week short: `/plans/5k-12-week`, which says "12 Weeks" in its title,
+its heading and its own URL, was rendering eleven.
+
+The cause is four lines long and reads as obviously correct:
+
+```ts
+const start = parseDateLocal(startIso)
+const end = parseDateLocal(endIso)
+return Math.floor((end.getTime() - start.getTime()) / (7 * 86_400_000))
+```
+
+The local parsing is the right call, and it is deliberate: there is a comment at the top of the file
+warning never to use `new Date("YYYY-MM-DD")` because it parses as UTC. But two local midnights
+across a spring-forward are 23 hours apart, not 24. Eighty-four days becomes 83.96, `Math.floor`
+takes the day away, and because the plan-length calculator differences Monday to Monday, the span is
+always an exact multiple of seven and a lost day is a lost week. Twenty-five percent of Monday-to-Monday
+spans over three years. Thirty-six percent for a twenty-week marathon block, which is the spring
+race season, which is the busiest window of the year.
+
+**The honest bit.** `verify:parity` said IDENTICAL. Twice. First on 5,940 cases, then on 7,884 after
+I added a later race date to try to reach the boundary. Both runs were true and both were worthless:
+every span in the grid sat inside one UTC offset, and even a crossing span only changes anything when
+the runway rather than the per-distance cap is what limits the plan. Two conditions had to be true at
+once and I only fixed one. The third attempt, a focused 54-case block with its own GMT start and tight
+runways on the far side of the transition, reported 30 changed. That is the difference between a check
+that is green and a check that is looking.
+
+**AI-building.** This repo's own rule is that IDENTICAL is not the same as VERIFIED, and I still had
+to get it wrong twice in a row before the axis worked. The lesson is narrower than "check your grid":
+it is that a grid can contain the right VALUE and still be blind, because the value only matters in
+combination with something else the grid holds constant.
+
+**Product.** Three other things were wrong on those pages and all three were copy claiming something
+the plan underneath contradicted. The Base note promised "no hard running yet" over a block containing
+a 5K time trial, on five of the nine plans, every single day. The plan was right: the benchmark goes in
+a base recovery week on purpose, because your legs are fresh. The sentence was just old. The phase notes
+are now computed from the weeks they sit above, with a test that fails the build if a claim stops being
+true, because prose about a rule always drifts from the rule and this codebase has a homepage that once
+claimed "four answers" against a fifteen-question wizard.
+
+**And one I did not fix.** The sub-4 marathon page rendered a week badged *Recovery* carrying more
+volume than the week before it. That is a known, declared engine residual: 18.9% of all plans in the
+corpus have at least one, and the Coaching Board scoped the healthy-runner fix out and has not ruled on
+it. I moved the published persona above the threshold where it stops happening and filed the real
+problem. That stops us printing the contradiction. It does not fix it, and the registry row says so.
+
+---
+
 ## 2026-09-21 — DOC-AUDIT-WINDOW-01: the check that reported ALL CLEAN while checking nothing
 
 **Dev.** The founder asked whether every document was up to date. `audit-docs.sh` said ALL CLEAN.

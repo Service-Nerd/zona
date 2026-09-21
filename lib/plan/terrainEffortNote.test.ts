@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
@@ -14,6 +14,14 @@ import type { GeneratorInput, Plan } from '@/types/plan'
  * effort-lead note instead: off-road, effort/HR leads and pace is a road reference.
  * `INV-PLAN-TERRAIN-EFFORT-NOTE-DECLARED` makes the wired effect un-droppable.
  */
+
+// FIXTURE-CLOCK-01 — this fixture pins an absolute `race_date` and calls
+// `generateRulePlan` with no `planStart`, so its prep window shrinks by a week
+// every week of real time. On 2026-09-21 it tipped under §44's 10-week
+// minimum for a 10K time goal and the suite went red overnight with nothing
+// committed. The test is about terrain, not the calendar: freeze the clock.
+beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(new Date('2026-09-01T09:00:00Z')) })
+afterAll(() => { vi.useRealTimers() })
 
 const base = (terrain: GeneratorInput['terrain']): GeneratorInput => ({
   race_date: '2026-12-06', race_distance_km: 10, goal: 'time_target', target_time: '0:45:00',

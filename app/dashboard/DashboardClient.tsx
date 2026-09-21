@@ -1,5 +1,6 @@
 'use client'
 
+import { calendarDaysBetween } from '@/lib/dates'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan } from '@/lib/plan/modifyPlan'
@@ -186,7 +187,8 @@ function formatRelativeTime(date: Date | null | undefined): string | null {
   const startOfDate = new Date(date)
   startOfDate.setHours(0, 0, 0, 0)
   if (startOfDate.getTime() === startOfYesterday.getTime()) return 'yesterday'
-  const days = Math.floor((startOfToday.getTime() - startOfDate.getTime()) / 86400000)
+  // DATE-DST-01 — calendar days, not milliseconds (see `lib/dates.ts`).
+  const days = calendarDaysBetween(startOfDate, startOfToday)
   if (days <= 6) return `${days}d ago`
   return null
 }

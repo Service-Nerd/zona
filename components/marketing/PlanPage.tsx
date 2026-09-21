@@ -13,6 +13,7 @@ import { WaitlistForm } from '@/components/marketing/WaitlistForm'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { stepParts } from '@/lib/plan/resolveMainSet'
 import { type MarketingPlan, planAnchor, faqsFor, getPlan, planCardTitle } from '@/lib/marketing/plans'
+import { PHASE_LABEL, phaseNote } from '@/lib/marketing/planNotes'
 import type { Session, Week } from '@/types/plan'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
@@ -113,16 +114,6 @@ function accentFor(s: Session): string {
   }
 }
 
-const PHASE_META: Record<string, { label: string; note: string }> = {
-  base: { label: 'Base', note: 'All easy. Building the engine, with no hard running yet, and that is the point.' },
-  build: { label: 'Build', note: 'Quality arrives. One hard session a week; the rest stays genuinely easy.' },
-  peak: { label: 'Peak', note: 'The sharpest weeks. Hold the zone on the hard days, protect the easy ones.' },
-  taper: { label: 'Taper', note: 'Less volume, same intensity. Arrive fresh, not flat.' },
-  foundation: { label: 'Foundation', note: 'Settling in before the plan proper begins.' },
-  maintenance_base: { label: 'Base', note: 'Steady aerobic work.' },
-  maintenance_restoration: { label: 'Recovery', note: 'Backing off on purpose.' },
-}
-
 const phaseKey = (w: Week): string => w.phase ?? 'base'
 
 export function PlanPage({ plan }: { plan: MarketingPlan }) {
@@ -220,7 +211,10 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
         <p style={{ fontSize: 14, color: 'var(--mute)', margin: '0 0 20px' }}>Free. Take it exactly as it is.</p>
 
         {groups.map((g, gi) => {
-          const meta = PHASE_META[g.key] ?? { label: g.key, note: '' }
+          // MKT-PLAN-PHASE-NOTE-01 — derived from the weeks below it, never a
+          // constant: the base note used to promise "no hard running yet" over
+          // a block containing the §78 time trial.
+          const meta = { label: PHASE_LABEL[g.key] ?? g.key, note: phaseNote(g.key, g.weeks) }
           return (
             <div key={gi} style={{ marginBottom: 28 }}>
               <div style={{ marginBottom: 12 }}>
