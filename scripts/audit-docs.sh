@@ -206,9 +206,16 @@ say ""
 # ⚠️ THE MARKER ADVANCES ONLY ON A CLEAN RUN. A gap therefore stays in scope
 # until it is actually fixed, rather than ageing out of the window the way the
 # old `--since today` bound let eleven backlog items and one build-log entry do.
+# ⚠️ WRITES ONLY WHEN THE VALUE CHANGES. Rewriting unconditionally meant every
+# run of a READ-ONLY check dirtied the working tree, so `git status` was never
+# clean during a session and a real change could hide behind the churn. A check
+# with a side effect on every invocation is a check people stop running.
 if [ "$fail" = "0" ] && [ -z "${1:-}" ]; then
-  mkdir -p "$(dirname "$MARKER_FILE")"
-  git rev-parse HEAD > "$MARKER_FILE"
+  head_sha="$(git rev-parse HEAD)"
+  if [ "$MARKER" != "$head_sha" ]; then
+    mkdir -p "$(dirname "$MARKER_FILE")"
+    printf '%s\n' "$head_sha" > "$MARKER_FILE"
+  fi
 fi
 [ "$fail" = "0" ] && say "ALL CLEAN" || say "GAPS FOUND (above)"
 exit $fail
