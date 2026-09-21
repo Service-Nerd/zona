@@ -46,8 +46,21 @@ type Props = {
   weekKm: number[]
   /** 1-indexed race week number */
   raceWeek?: number
-  /** Phase label string — e.g. "base → build → peak → taper" */
-  phaseLabel?: string
+  /**
+   * DISPLAY phase label per week, in plan order, aligned with `weekKm`.
+   * Runs of the same label become one rail segment at its true width.
+   *
+   * Pass it through `phaseDisplayLabel()` — the raw key is
+   * `maintenance_restoration`, and the runner should read "Restoration".
+   *
+   * ⚠️ THIS REPLACED A `phaseLabel` STRING, it did not join it. The old
+   * prop packed the whole chain into the label row, where it truncated to
+   * "16 WEEKS · BASE → BUILD → PEAK → …" in 5 of 5 plans measured at the
+   * Plan screen's 320px content width. The chain has never fitted. The rail
+   * is not an addition; it is the working version of a broken thing, and
+   * shipping both was ruled out (SLT 2026-09-21, Fried).
+   */
+  weekPhase: (string | null)[]
 }
 
 /** Plot height. Tall enough that a deload at ~60% of peak reads as a notch
@@ -66,54 +79,41 @@ export default function PlanArc({
   doneWeeks,
   weekKm,
   raceWeek,
-  phaseLabel,
+  weekPhase,
 }: Props) {
   const peak = Math.max(...weekKm, 1)
 
+  /** Consecutive weeks sharing a phase, so a segment spans its real width. */
+  const segments: { label: string | null; weeks: number; firstWeek: number }[] = []
+  weekPhase.forEach((label, i) => {
+    const last = segments[segments.length - 1]
+    if (last && last.label === label) last.weeks += 1
+    else segments.push({ label, weeks: 1, firstWeek: i + 1 })
+  })
+
   return (
     <div>
-      {/* Label row. The left label can be long (a foundation or maintenance
-          phase chain), so it truncates with an ellipsis and the "Wk X of Y"
-          counter is pinned and never shrinks — the row can't push content off
-          the edge. */}
+      {/* ⚠️ ONE LABEL, LEFT-ALIGNED, AND THE RAIL IS WHY.
+          This was a two-up row: "{n} weeks · base → build → peak → taper" on
+          the left, "Wk 6 of 16" pinned right. The chain moved to the rail,
+          and the moment it did, the left half was "16 weeks" sitting
+          opposite "Wk 6 of 16" — the same number twice, with the row's whole
+          space-between structure existing to separate a fact from its own
+          restatement. Removing the chain is what made that visible.
+          Left-aligned, because that is the rule for every other label on
+          these screens. */}
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '8px',
+          fontFamily: 'var(--font-ui)',
+          fontSize: '10px',
+          fontWeight: 700,
+          color: 'var(--mute)',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
           marginBottom: '6px',
         }}
       >
-        <span
-          style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '10px',
-            fontWeight: 700,
-            color: 'var(--mute)',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            flex: 1,
-            minWidth: 0,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {totalWeeks} weeks{phaseLabel ? ` · ${phaseLabel}` : ''}
-        </span>
-        <span
-          style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '10px',
-            fontWeight: 700,
-            color: 'var(--mute)',
-            letterSpacing: '0.04em',
-            flexShrink: 0,
-          }}
-        >
-          Wk {currentWeek} of {totalWeeks}
-        </span>
+        Wk {currentWeek} of {totalWeeks}
       </div>
 
       {/* The ridge. `flex-end` finally means something. */}
@@ -173,6 +173,49 @@ export default function PlanArc({
           />
         ))}
       </div>
+
+      {/* PHASE RAIL. The blocks the plan is made of, at the widths they
+          actually occupy — which is itself information the chain could never
+          carry: a reader can see that base is five weeks and taper is three.
+          Segments flex by week count, so they line up with the ridge above. */}
+      {segments.some(s => s.label) && (
+        <div style={{ display: 'flex', gap: '2px', marginTop: '6px' }}>
+          {segments.map(seg => {
+            const lastWeek = seg.firstWeek + seg.weeks - 1
+            const isPast = lastWeek < currentWeek
+            const isNow = currentWeek >= seg.firstWeek && currentWeek <= lastWeek
+            return (
+              <div key={seg.firstWeek} style={{ flex: seg.weeks, minWidth: 0 }}>
+                <div
+                  style={{
+                    height: '3px',
+                    borderRadius: '2px',
+                    background: isPast || isNow ? 'var(--moss)' : 'var(--line-strong)',
+                    opacity: isPast ? 0.45 : 1,
+                  }}
+                />
+                <div
+                  style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    // The phase you are IN is the one worth reading.
+                    color: isNow ? 'var(--moss)' : 'var(--mute)',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    marginTop: '4px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {seg.label ?? ''}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

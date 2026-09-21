@@ -13,6 +13,7 @@ import { buildRaceProgressArc } from '@/lib/coaching/raceProgressArc'
 import { RaceProgressArcRow } from '@/components/shared/RaceProgressArcRow'
 import { RACE_PROJECTIONS_COPY } from '@/components/shared/raceProjectionsCopy'
 import type { DemoPlanScreen } from '@/lib/marketing/demoPlanScreen'
+import { phaseDisplayLabel } from '@/lib/coaching/weekVoice'
 
 /**
  * DESIGN-V3 — one phone, three screens, switched by the bottom nav.
@@ -106,8 +107,8 @@ function PlanStill({ plan, block }: { plan: DemoPlanScreen; block: DemoBlockView
           currentWeek={block.weekN}
           doneWeeks={block.weekN - 1}
           weekKm={plan.arc.km}
+          weekPhase={plan.arc.phase.map(phaseDisplayLabel)}
           raceWeek={block.totalWeeks}
-          phaseLabel="base → build → peak → taper"
         />
       </div>
       {/* This week, in the product's own words. `weekVoice` is computed by

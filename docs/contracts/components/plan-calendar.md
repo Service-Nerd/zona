@@ -87,6 +87,24 @@ and so showed km to a miles runner.
 
 `PlanCalendar` writes session overrides directly to Supabase. Two flows:
 
+> 🔴 **SUPABASE IS DYNAMICALLY IMPORTED, ON FIRST MOVE OR SWAP (2026-09-21).** `createClient` and
+> `authedFetch` are loaded inside the handlers via `await import(...)`, not at module scope. Both
+> handlers are already async and already make network round-trips, so it costs them nothing.
+>
+> **Why:** the marketing homepage renders the real week cards in its phone still (DESIGN-V3 — a
+> marketing screen must be the app's screen), and a static import put `@supabase/supabase-js` in
+> that page's bundle. Inside the app the chunk is already in flight for other reasons, so this is
+> a marketing win and an app no-op. Do not restore the top-level import.
+>
+> ⚠️ **Supabase was NOT the main cost, and the measurement is the lesson.** Removing it saved
+> ~2 kB. The other **135 kB** was `getCurrentWeekIndex` and `parseLocalDate` being imported from
+> the `@/lib/plan` BARREL, which also exports `savePlanForUser` and therefore pulls the invariants
+> engine, the zod schema, the ops recorder and the charity re-anchor. Those two date helpers now
+> come from **`lib/plan/weekResolution.ts`**, a leaf module with no persistence imports; the
+> barrel re-exports it so every other call site is unchanged. **Import the leaf, never the
+> barrel, from a client component.** Guarded by `lib/marketing/clientBundleBoundary.test.ts`,
+> which walks the import graph from every marketing client component and fails on either edge.
+
 **Move** (drop into an empty slot):
 ```
 session_overrides.delete where user_id = userId AND week_n = weekN AND (original_day OR new_day match)
@@ -108,3 +126,4 @@ After writing, calls `onOverrideChange` to update parent state. The parent (`Das
 
 - `allCompletions` values are typed as `any` — should be `Completion`. Tech debt.
 - `TYPE_ACCENT` colour map in `PlanCalendar` is a local duplicate of `session-types.ts`. Violates D-16. Should be removed and replaced with a call to `session-types.ts`. Tech debt.
+- Rendered on the marketing homepage's phone still with no-op handlers (`onOverrideChange`, `onSessionTap`) and empty `allOverrides` / `allCompletions`. Move and swap sit behind a tap, so at rest the still shows exactly what a runner sees — no dead affordances on screen. If a future change surfaces a move/swap control *at rest*, that still becomes "a still pretending to be a demo", which the SLT has already cut once from `PhoneFrame`.

@@ -2649,9 +2649,29 @@ race-week display (D1), `MARATHON-pace` casing (D2), plus `lib/plan/planShapeInv
 
 ---
 
-### 🔴 `DELOAD-PLAN-OPENING-01` — OPEN. §119's producer change: deload placement needs a SEARCH.
+### 🔴 `DELOAD-PLAN-OPENING-01` — OPEN, and **URGENCY RAISED 2026-09-21**. §119's producer change: deload placement needs a SEARCH.
 
 **Filed 2026-09-21** by the Coaching Board, which ratified the principle and declined the greedy fix.
+
+> 🔴 **URGENCY RAISED THE SAME DAY BY `PLAN-ARC-V2`, AND THE REASON MATTERS MORE THAN THE FLAG.**
+> The Plan screen's progression strip now draws each week at its true training volume, so a
+> week-2 deload is **a visible notch in the second bar of the runner's own plan**. Measured on the
+> nine published plans, `sub-4-hour-marathon-plan` shows it. It was always there; nothing could
+> see it.
+>
+> The SLT shipped the arc knowing this, and **two seats voted ship for different reasons.**
+> Traynor: we have roughly three users, so exposing a known defect now costs nothing and exposing
+> it in six months costs something real. Hutchinson: the defect exists whether or not we draw it,
+> and the flat strip protected only our own inattention.
+>
+> **Hutchinson's reasoning governs, on the record** — "nobody is looking yet" is a schedule, not a
+> credibility answer. This item is therefore **not** parked until someone complains. Full ruling:
+> `docs/decisions/plan-arc-v2.md`.
+>
+> ⚠️ **What the arc does NOT do is explain the notch.** A runner who asks "why is week 2 easy?"
+> still has no answer, because §119 exists precisely because there is not a good one. If an
+> in-product answer is wanted before it is visible, that reverses the sequencing and this item
+> becomes a blocker on the arc rather than the other way round.
 
 `INV-PLAN-MIN-LOADING-BLOCK` fires on **30.8% of the property sweep** (4,389/14,253) and ~100% of
 those are the plan's **opening** block — a recovery week in week 2, after the runner's first week.

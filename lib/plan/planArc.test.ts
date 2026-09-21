@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { planArcSeries, trainingKm } from '@/lib/plan/weekVolume'
+import { phaseDisplayLabel } from '@/lib/coaching/weekVoice'
 import type { Plan } from '@/types/plan'
 
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
@@ -115,5 +116,67 @@ describe('PLAN-ARC-V2 — the component draws a shape', () => {
     // reads as "the progress runs off the page".
     expect(src).not.toMatch(/padding(Left|Right|Inline)/)
     expect(src).not.toMatch(/padding:\s*'[^']*\s+\d/)
+  })
+})
+
+
+describe('PLAN-ARC-V2 — the phase rail replaced the chain, it did not join it', () => {
+  const src = read(SRC)
+
+  it('the label row states the week count ONCE', () => {
+    // It was a two-up row: "{n} weeks · base → build → peak → taper" left,
+    // "Wk 6 of 16" pinned right. Dropping the chain left "16 weeks" facing
+    // "Wk 6 of 16" — the same number twice. Only removing the chain made
+    // that visible.
+    const occurrences = (src.match(/\{totalWeeks\}/g) ?? []).length
+    expect(occurrences, 'render totalWeeks once, in "Wk N of M"').toBe(1)
+  })
+
+  it('carries no joined phase chain', () => {
+    // Fried's condition: the rail is a REPLACEMENT. Shipping both is the
+    // outcome he said would be wrong.
+    // ⚠️ Strip comments first. The doc block EXPLAINS the removed
+    // `phaseLabel` prop, and a whole-file grep for a word the comment has to
+    // use fails on the explanation rather than on the code. Fourth time this
+    // exact slip has happened in this repo; do it centrally.
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    expect(code, 'the chain belongs to the rail now').not.toMatch(/phaseLabel/)
+    expect(code).not.toContain(' → ')
+  })
+
+  it('hides the rail entirely when no week carries a phase', () => {
+    // An empty rail with blank labels is worse than no rail.
+    expect(src).toMatch(/segments\.some\(s => s\.label\)/)
+  })
+
+  it('merges consecutive weeks into one segment sized by week count', () => {
+    // Segments must flex by their week count, or the rail stops lining up
+    // with the ridge above it and the widths stop being information.
+    expect(src).toMatch(/flex:\s*seg\.weeks/)
+    expect(src).toMatch(/last\.label === label/)
+  })
+})
+
+describe('PLAN-ARC-V2 — phaseDisplayLabel is the single owner of the label', () => {
+  it('maps ADR-013 maintenance keys rather than leaking them to CSS uppercase', () => {
+    // The rail renders `text-transform: uppercase`, so a raw key would read
+    // "MAINTENANCE_RESTORATION". This mapping used to live inside the joined
+    // chain's IIFE in DashboardClient; the chain is gone, so the owner had
+    // to outlive it.
+    expect(phaseDisplayLabel('maintenance_restoration')).toBe('Restoration')
+    expect(phaseDisplayLabel('maintenance_base')).toBe('Base')
+    expect(phaseDisplayLabel('foundation')).toBe('Foundation Block')
+  })
+
+  it('passes an unknown key through rather than dropping the week', () => {
+    expect(phaseDisplayLabel('some_new_phase')).toBe('some_new_phase')
+  })
+
+  it('returns null for no phase, never an empty string', () => {
+    // `??` does not catch '' — a documented defect class here. An empty
+    // string would make `segments.some(s => s.label)` false and silently
+    // hide a rail that should render.
+    expect(phaseDisplayLabel(null)).toBeNull()
+    expect(phaseDisplayLabel(undefined)).toBeNull()
   })
 })

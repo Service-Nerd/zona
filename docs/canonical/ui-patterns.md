@@ -838,42 +838,79 @@ and `components/shared/ZoneWeekBlock.tsx` (ZONE-VIS-01 block).
 
 ### 12. PlanArc
 
-Horizontal 32px strip showing plan weeks as bars. Compact plan progression visual.
+The plan's **shape**, one bar per week. Height is the week's training volume; colour is when that week falls; a rail beneath names the phases at the widths they actually occupy.
 
 ```
-16 weeks · base → build → peak      Wk 8 of 16
-[████████░░░░░░░░░░░░░░░░░░░░░░░░]
- done    current future             deload=lighter
+WK 6 OF 16
+      ▄▆█▄█▇█▅███▇▆▄▂▁          ← height = trainingKm; notches are deloads
+────────────────────────        ← 1px axis
+          ▀                     ← 2px moss tick = you are here
+▬▬▬▬▬ ▬▬▬▬▬▬ ▬▬▬ ▬▬▬            ← phase rail, flexed by week count
+BASE  BUILD  PEAK TAPER
 ```
+
+> 🔴 **IT USED TO DRAW A STRAIGHT LINE, AND THIS DOC DOCUMENTED THE CONTRADICTION (PLAN-ARC-V2, 2026-09-21).** Every bar rendered at `height: 100%`, so week 1, peak week and the deload were identical rectangles. The strip set `align-items: flex-end` — a property that can only matter if something is SHORTER than full height — and **this section listed both halves**, "bars `align-items: flex-end`" and "each bar: `100%` height", without noticing they cannot both be doing anything. The shape was intended and never wired: the same declared-but-inert class as `--s-long`, D9's `flexShrink` and the decorative-config family. Sixteen identical blocks is a picture of sixteen identical weeks of effort, which is the grey middle drawn in moss.
+
+> 🔴 **THE DOWN-WEEKS ARE THE MESSAGE** (SLT 2026-09-21, Sutherland). Nobody reads a sawtooth as a trend line; they read the teeth. Deload notches and the taper are the app visibly making the runner do less on a schedule they did not choose. **Any change that smooths, averages, or de-emphasises the dips is working against the reason the component exists.**
+
+> 🔴 **SHAPE, NEVER COMPLETION** (SLT 2026-09-21, Wood — binding, and she holds the kill mandate). **No cumulative total. No "N% through your plan". No emphasis on the peak week.** The moment a number aggregates this becomes a progress bar, which is the illusion-of-progress class. It was allowed on the strength of ANTICIPATION — a deload notch visible three weeks out is an advance commitment device, so taking the easy week costs no willpower on the day — and that mechanism dies the moment the object becomes a score. Enforced by `lib/plan/planArc.test.ts`, falsified against a full-height bar, a `reduce`, an `isPeak` branch and a hardcoded hex.
 
 **Structure:**
-- Label row: `10px 700 --mute uppercase 0.08em` left (total + phase label), `10px 700 --mute 0.04em` right ("Wk N of N"). The **left label truncates** (`flex:1; min-width:0; ellipsis`) and the **right counter is pinned** (`flex-shrink:0`) — a long phase chain (a foundation or maintenance plan; `PHASE_LABELS` has no maintenance keys so it falls back to raw keys like `maintenance_base → maintenance_restoration`) must never push the row off the edge.
-- Bar strip: `32px` height, flex with `2px` gap, bars `align-items: flex-end`
-- Each bar: `flex: 1`, `100%` height, `2px` radius
+- Label row: one left-aligned `10px 700 --mute uppercase 0.08em` line, `Wk N of M`. ⚠️ It used to be a two-up row with the phase chain on the left; removing the chain left `16 weeks` facing `Wk 6 of 16`, **the same number twice**, so the row collapsed to one label. Only removing the chain made the duplication visible.
+- Ridge: `36px`, flex, `2px` gap, `align-items: flex-end` (which now means something).
+- Each bar: `flex: 1`, `height = max(6px, km / peak × 36px)`, radius `2px 2px 0 0` — **top corners only**, because a ridge stands on its axis and rounding the bottom makes the bars float off it.
+- Axis: continuous `1px --line`.
+- Current-week tick: a `2px` row below the axis, `--moss` under the current week only, transparent elsewhere.
+- Phase rail: `3px` bars, radius `2px`, `2px` gap, `6px` above; each segment `flex: <week count>` so it lines up with the ridge. Labels `10px 700 uppercase 0.06em`, `4px` below, ellipsised.
 
-> **Presentation — PlanArc is a full-width component; the SCREEN owns the margin (2026-09-13).** It carries no horizontal padding of its own, so the caller must inset it to the screen's content margin (`padding: '0 16px'` on PlanScreen). Rendered flush it runs edge-to-edge — the bars and label sit past every other (16px-inset) block and read as "the progress runs off the page." Do not render PlanArc without the 16px wrap.
+**Why the floor is 6px and ABSOLUTE, not a percentage:** at a 2px radius a bar needs roughly that much height to read as a bar rather than a dash, and the strip doubles as a week counter — a bar that vanishes breaks the reader's ability to count along to "where am I".
 
-**Bar colour / opacity rules:**
+**Why race week is not special-cased:** it draws at its true TRAINING height in `--s-race`. A full-height "finish post" is Wood's prohibited peak-celebration in a different costume, and the honest fact is that you barely train that week.
+
+> **Presentation — PlanArc is a full-width component; the SCREEN owns the margin (2026-09-13).** It carries no horizontal padding of its own, so the caller must inset it to the screen's content margin (`padding: '0 16px'` on PlanScreen). Rendered flush it runs edge-to-edge and reads as "the progress runs off the page." Do not render PlanArc without the 16px wrap.
+
+> **Not tappable (2026-09-12, UX-COACH-01).** Race Projections moved to Coach. Do not re-attach a sheet to it.
+
+**Bar colour:**
 
 | State | Colour | Opacity |
 |---|---|---|
-| Done | `--moss` | 0.7 |
-| Done + deload | `--moss` | 0.2 |
+| Done | `--moss` | 0.55 |
 | Current | `--moss` | 1.0 |
-| Current | + `2px --moss-mid outline, 1px offset` | — |
-| Race week | `--s-race` | 0.9 |
-| Future | `--mute-2` | 0.35 |
-| Future + deload | `--mute-2` | 0.15 |
+| Race week | `--s-race` | 1.0 |
+| Future | `--mute-2` | 1.0 |
+
+⚠️ **There is no deload colour, and its absence is the design.** Height already says "less", which is what a deload IS; a second opacity encoding would make the notch fainter exactly where it matters most. `deloadWeeks` was **removed** rather than restyled, and `deloadWeekNumbers` in DashboardClient went with it rather than sitting unread. The explanation lives on the week card in `PlanCalendar`, which already renders the deload theme text. One job per component.
+
+⚠️ **Future bars are `--mute-2` at FULL opacity** (≈2.16:1 on white), up from 0.35 (≈1.3:1). They have to be visible: the shape of what is *coming* is the anticipation mechanism the component was approved on. The information is carried by height and position, not by colour alone, so this is not a 1.4.11 case — but do not dim them further.
+
+**Phase rail colour:**
+
+| Segment | Rail | Label |
+|---|---|---|
+| Past | `--moss` @ 0.45 | `--mute` |
+| Current | `--moss` | `--moss` |
+| Future | `--line-strong` | `--mute` |
+
+The rail hides entirely when no week carries a phase — an empty rail with blank labels is worse than no rail.
 
 **Props:**
 ```tsx
 totalWeeks: number
-currentWeek: number     // 1-indexed
-doneWeeks: number       // weeks before currentWeek that are done
-deloadWeeks?: number[]  // 1-indexed week numbers
-raceWeek?: number       // 1-indexed
-phaseLabel?: string     // e.g. "base → build → peak → taper"
+currentWeek: number          // 1-indexed
+doneWeeks: number            // weeks before currentWeek that are done
+weekKm: number[]             // REQUIRED. lib/plan/weekVolume.ts -> planArcSeries()
+weekPhase: (string | null)[] // REQUIRED. display labels, via phaseDisplayLabel()
+raceWeek?: number            // 1-indexed
 ```
+
+⚠️ **`weekKm` is required, and the bars map over IT rather than over `totalWeeks`.** With two callers an optional prop is a dead branch, and a silent flat fallback is how the component came to lie about its own name. Mapping over the array means a length mismatch is visible rather than padded away with `?? 0` — which would assert "this week covered no ground", the documented wrong answer for a duration-anchored session.
+
+⚠️ **`trainingKm`, not `weekly_km`.** `weekly_km` includes the race, so a height-encoded race week would draw as the tallest bar of the taper. `lib/plan/weekVolume.ts` exists for exactly this distinction.
+
+**Known limit:** a one-week phase inside a long plan gives its rail segment ~15px, and the label ellipsises to something like `P…`. It degrades without breaking; measuring text to hide the label instead was judged not worth a client-side measurement loop for a rare case. See the `/plan-arc-preview` fixture.
+
+**Fixture:** `/plan-arc-preview` renders every state — four real generated plans (12/14/16/18 weeks) plus week 1, race week, no phases, ADR-013 maintenance keys, a one-week phase and a flat plan. Production-gated with `notFound()`. It began as the four-candidate comparison the SLT judged; **phase-track-only (no per-week marks) was killed permanently** as reassurance furniture that restates the label row and discards the deloads, the taper and the shape.
 
 Reference: `components/shared/PlanArc.tsx`
 

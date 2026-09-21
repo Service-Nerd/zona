@@ -28,7 +28,7 @@ import { easyPaceAsCeiling } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
 import { isLongRun, coachingSessionType } from '@/lib/plan/sessionRole'
-import { buildWeekVoiceContext, getWeekVoiceHeadline, getWeekVoiceItems, PHASE_LABELS } from '@/lib/coaching/weekVoice'
+import { buildWeekVoiceContext, getWeekVoiceHeadline, getWeekVoiceItems, PHASE_LABELS, phaseDisplayLabel } from '@/lib/coaching/weekVoice'
 import { planArcSeries } from '@/lib/plan/weekVolume'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
@@ -8416,14 +8416,12 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
     return idx >= 0 ? idx + 1 : undefined
   })()
 
-  // Phase label: "base → build → peak → taper" or from plan phases
-  const phaseLabel = (() => {
-    const phases = Array.from(new Set(plan.weeks.map((wk) => (wk as any).phase).filter(Boolean)))
-    // Use the shared PHASE_LABELS map so maintenance phases (ADR-013) render as
-    // "Restoration"/"Base" — a local partial map leaked raw "maintenance_restoration"
-    // strings that CSS then uppercased on the Plan arc.
-    return phases.map(p => PHASE_LABELS[p as string] ?? p).join(' → ')
-  })()
+  // PLAN-ARC-V2: the arc names the phases on its own rail, at the widths
+  // they actually occupy, so the joined "base → build → peak → taper" chain
+  // is gone. It never fitted — measured, it truncated to
+  // "16 WEEKS · BASE → BUILD → PEAK → …" in 5 of 5 plans at 320px.
+  // `phaseDisplayLabel` keeps the ADR-013 maintenance mapping this chain
+  // used to own, so a raw "maintenance_restoration" still cannot leak.
 
   // Race Projections sheet — tapping the Plan Arc opens this (screen-architecture.md)
 
@@ -8516,8 +8514,8 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           currentWeek={weekOrdinal}
           doneWeeks={doneWeeksCount}
           weekKm={arcSeries.km}
+          weekPhase={arcSeries.phase.map(phaseDisplayLabel)}
           raceWeek={raceWeekNumber}
-          phaseLabel={phaseLabel || undefined}
         />
       </div>
       {raceDate && (

@@ -6,6 +6,55 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — the component was called an arc and it drew a straight line
+
+**Dev.** The founder said the plan progression strip "looks a bit dated… a bit flat". I went to
+restyle it and found it was flat in the literal sense: every week rendered at `height: 100%`, so
+week one, peak week and the deload were identical rectangles. The only thing that varied was
+colour.
+
+The tell was one line above. The strip set `align-items: flex-end` — a property that can only do
+anything if something is SHORTER than full height. It had never done anything. And our own pattern
+doc listed both facts, "bars `align-items: flex-end`" and "each bar: 100% height", in consecutive
+bullets, without anyone noticing they cannot both be true. The shape was intended by whoever wrote
+it and simply never wired up.
+
+That is the fourth or fifth time this codebase has produced the same shape: a thing declared,
+documented, and inert. A colour token nothing could reach. A `flexShrink` that could never fire.
+Config keys read by nobody. The pattern is always the same — the declaration and the wiring are
+written at different moments, and nothing checks that the second one happened.
+
+**Product.** What makes this more than a restyle is what the flat version was actually saying.
+Sixteen identical blocks is a picture of sixteen identical weeks of effort. That is the grey
+middle — the exact thing the product exists to break — drawn in our own accent colour on our own
+Plan screen.
+
+I took it to the board convinced the risk was the opposite: that a rising volume curve is a growth
+chart, and we would be teaching volume-chasing to people whose problem is doing too much. The
+behavioural seat turned that straight over. Nobody reads a sawtooth as a trend line; they read the
+teeth. What the ridge actually shows is an app making you go backwards, deliberately, four times,
+on a schedule you did not choose. It is the most on-brand object on the screen and it was
+invisible.
+
+I have written the answer down as answered, because I will otherwise re-raise it in a month.
+
+**AI-building.** The useful discipline was refusing to judge it from a description. I built all
+four candidates over real generated plans on a throwaway route and looked at them. Two things only
+showed up there: the phase chain in the label row truncates in every single plan we ship (so the
+new rail is a replacement, not an addition), and once the chain came out, the left label read
+"16 weeks" facing "Wk 6 of 16" — the same number twice. Removing one thing is what made the other
+visible.
+
+**The honest bit.** Drawing the true shape exposes a defect we have already decided not to fix
+yet: a quarter to a third of plans open with a deload in week two, and there is currently no legal
+deload placement that satisfies every rule, so the fix is a search rather than a threshold. The
+commercial argument in the room was "ship it while almost nobody is watching". That is a schedule,
+not an answer, and I recorded the other reasoning as the governing one: the defect exists whether
+or not we draw it, and the flat strip was only ever protecting our own inattention. It is now on
+the runner's screen, which makes fixing it urgent rather than optional.
+
+---
+
 ## 2026-09-21 — DESIGN-V3: the number said 14 and the drawing said 25
 
 **Dev.** A Claude design handoff: an animated post-run HR trace for the hero, a tabbed phone, and a
