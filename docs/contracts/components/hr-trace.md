@@ -48,6 +48,21 @@ type Props = { initial?: PhoneTab }
 type Props = { activeTab: PhoneTab; onTab?: (t: PhoneTab) => void; children: ReactNode }
 ```
 
+⚠️ **THE SCREENS ARE THE APP, NOT THE DESIGN'S DRAWING OF IT.** Plan and Coach were first built
+from the v3 handoff's description and both were fiction: Coach drew four horizontal zone **bars**
+where the product plots the week as **rings** (`ZoneRings`, Pattern 22 — the brand mark used as a
+data display), asserted *"Target is 80%. Last week: 62%."* which appears nowhere in the product, and
+omitted Kit's weekly read, which `screen-architecture.md` names as the reason the screen exists. It
+also hand-drew bars while `components/shared/ZoneBar.tsx` calls itself the canonical
+zone-visualisation primitive. Plan invented a summary row and left out the Plan Arc.
+
+**Every screen now renders real shared components** — `SessionCard`, `ZoneRings`, `CoachNoteBlock`,
+`PlanArc` — fed by `lib/marketing/demoSurfaces.ts`, the pattern `ProductStill` already uses. Layout
+follows `docs/canonical/screen-architecture.md`, which is the authority on what belongs on each
+screen. **The handoff supplied the frame and the idea of three screens; it did not supply their
+contents.** Guarded by the `DESIGN-V3 — marketing screens render the real app` block in
+`lib/marketing/realComponents.test.ts`.
+
 - **Tab switching is the bottom nav.** The handoff draws a segmented control above the frame and
   says in as many words not to ship it: in the product, the nav is how you change tabs.
 - `Me` is rendered and inert. The product has four tabs and a mockup that hides one is a mockup of a

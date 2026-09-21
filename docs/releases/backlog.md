@@ -45,27 +45,38 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
 — not merely approved — until the Coaching Board rules.
 
-### 🟡 `DESIGN-V3-FIDELITY` — four places the v3 build is not the v3 design
+### 🟡 `DESIGN-V3-FIDELITY` — what is still not the v3 design, after the premise was corrected
 
-Filed 2026-09-21, out of `DESIGN-V3`. **None of these conflict with anything** — they are simply
-not done, and three of the four were never flagged at the time.
+Filed 2026-09-21, **re-scoped the same day.** The original filing said the target was "match the
+handoff". The founder challenged that: *"whatever screens we're using on the website have to be
+exactly as they are on the app — we cannot be showing stuff that just isn't real."*
+
+🔴 **That inverted three of the four items.** Plan and Coach had been built from the handoff's
+description and were **fiction** — zone bars where the product plots rings, an invented
+"Target is 80%. Last week: 62%.", no Kit read, no Plan Arc. **They have been rebuilt from
+`screen-architecture.md` using the real `SessionCard`, `ZoneRings`, `CoachNoteBlock` and `PlanArc`,
+fed by `demoSurfaces`.** The old item #3 ("Today does not match Plan and Coach") is **withdrawn**:
+Today was the only screen that was right, because it was reused rather than drawn, and matching the
+other two to it would have spread the fiction.
+
+**What genuinely remains, all cosmetic and none conflicting with anything:**
 
 | # | Gap | Spec | Built |
 |---|---|---|---|
 | 1 | Hero composition | direction **2a**: two columns, evidence card in the right column | card full-width below the existing hero |
 | 2 | Phone geometry | 390×844, radius 52, 54px status bar, 104×30 dynamic island, 16px gutter | existing `PhoneShell`: 320 wide, radius 46, 30px bar, 86×22 notch |
-| 3 | Today screen | eyebrow `TUESDAY 22 SEPTEMBER`, 26/800 title, session chip, 34/800 hero, stat pair, `Start run` | existing `TodayStill` reused |
-| 4 | CTA hover | `#5A7C5A` → `#4C6B4C` | no hover state on the page |
+| 3 | CTA hover | `#5A7C5A` → `#4C6B4C` | no hover state on the page |
 
-🔴 **#3 is the one that shows.** Plan and Coach were built to spec and Today was not, so the tabbed
-phone presents three screens from two different designs. Fix #3 before #1, #2 or #4.
+⚠️ **#2 is not free.** `PhoneShell` is shared with `PhoneFrame` and `CONTENT_H` is load-bearing —
+the content box clips at a fixed height because anything past it paints over the nav. Resizing the
+frame means re-measuring every screen inside it.
 
-⚠️ **#2 is not a free change.** `PhoneShell` is shared with `PhoneFrame`, and `CONTENT_H` is
-load-bearing: the content box clips at a fixed height because anything spilling past it paints over
-the nav. Resizing the frame means re-measuring every screen inside it.
+⚠️ **Do NOT "fix" #1 or #2 by redrawing a screen.** The screens are the app; the frame is the
+design's. Those are separate questions and only the frame is open.
 
-**Estimate: half a day for all four.** Separate from the copy-driven omissions (the design's proof
-cards and CTA), which need a founder decision about claims, not build time.
+**Estimate: 2–3 hours.** Separate from the copy-driven omissions (the design's `80%`/`1`/`4` proof
+cards and CTA copy), which need a founder decision about claims rather than build time.
+
 
 ### ✅ `DESIGN-V3` — the Claude design handoff, implemented 2026-09-21 *(branch `design-implementation`, not deployed)*
 

@@ -3,32 +3,51 @@
 import { useState } from 'react'
 import { PhoneShell, type PhoneTab } from '@/components/marketing/PhoneShell'
 import { TodayStill } from '@/components/marketing/PhoneFrame'
-import { formatDistance, formatDuration } from '@/lib/format'
-import { BRAND } from '@/lib/brand'
+import SessionCard from '@/components/shared/SessionCard'
+import ZoneRings from '@/components/shared/ZoneRings'
+import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
+import PlanArc from '@/components/shared/PlanArc'
+import { DEMO_WEEK, DEMO_ZONE_WEEK, DEMO_COACH_NOTE } from '@/lib/marketing/demoSurfaces'
 
 /**
  * DESIGN-V3 — one phone, three screens, switched by the bottom nav.
  *
- * ⚠️ NO SEGMENTED CONTROL. The handoff draws a three-up segmented row above
- * the frame and says in as many words that it is "a prototype affordance for
- * reviewing all three screens in one frame — in the real app, tab switching
- * is the bottom nav. Don't ship the segmented row." So the nav does it, which
- * also means the marketing mockup demonstrates the real navigation instead of
- * a control that does not exist in the product.
+ * ⚠️ THESE SCREENS ARE THE APP, NOT THE DESIGN'S DRAWING OF IT. That
+ * distinction cost a rewrite and is the whole point of this file.
+ *
+ * The first cut built Plan and Coach from the v3 handoff's description, and
+ * both were fiction. Coach drew four horizontal zone BARS and a line reading
+ * "Target is 80%. Last week: 62%." — a sentence that appears nowhere in the
+ * product — while `screen-architecture.md` says the real Coach screen leads
+ * with Kit's weekly read and plots the week with ZONE RINGS, the brand mark
+ * used as a data display. It also hand-drew bars while `components/shared/
+ * ZoneBar.tsx` exists and calls itself "the canonical zone-visualisation
+ * primitive". Plan invented a summary row and a flat session list where the
+ * real screen leads with the Plan Arc.
+ *
+ * ⚠️ A DESIGNER WHO HAS NOT SEEN THE APP CANNOT DRAW IT, and a marketing
+ * mockup that shows a feature the product does not have is a promise the
+ * product then breaks. This codebase already learned that twice: the SLT cut
+ * a plan-adjustment card from `PhoneFrame` because it "drew Confirm/Revert
+ * buttons nobody can press — a still pretending to be a demo", and
+ * `realComponents.test.ts` exists because a still said "8 km" while the app
+ * said "8km".
+ *
+ * So every screen here renders REAL shared components — `SessionCard`,
+ * `ZoneRings`, `CoachNoteBlock`, `PlanArc` — fed by `demoSurfaces`, which is
+ * the established pattern `ProductStill` already uses on this page. The
+ * layout follows `docs/canonical/screen-architecture.md`, which is the
+ * authority on what belongs on each screen. The handoff supplied the FRAME
+ * and the idea of showing three screens; it did not supply their contents.
+ *
+ * ⚠️ NO SEGMENTED CONTROL. The handoff draws one above the frame and says in
+ * as many words not to ship it: in the product, the nav changes tabs.
  *
  * ⚠️ TODAY IS IMPORTED, NOT REDRAWN. `TodayStill` is the same screen the hero
- * renders. Drawing a second Today for the tabbed version is how the two would
- * drift, which is precisely the defect `realComponents.test.ts` exists for.
- *
- * ⚠️ EVERY DISTANCE AND DURATION GOES THROUGH lib/format (ADR-015). The
- * handoff writes "8 km" and "2 h 05"; the product renders "8km" and "2h 05".
- * A mockup that spells them differently from the app is the exact drift that
- * was caught on 2026-09-11 by putting a real component next to a drawn one.
+ * renders, and it was the one screen the first cut got right — because it was
+ * reused from `PhoneFrame` rather than drawn.
  */
 
-const EASY = 'var(--s-easy)'
-const QUALITY = 'var(--s-quality)'
-const LONG = 'var(--s-long)'
 
 function ScreenHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
@@ -44,157 +63,83 @@ function ScreenHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
   )
 }
 
-function CoachBlock({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      margin: '0 16px', background: 'var(--warn-bg)', borderRadius: 'var(--radius-md)',
-      padding: '12px 14px', display: 'flex', gap: 10,
-    }}>
-      <span aria-hidden="true" style={{ width: 3, borderRadius: 2, background: 'var(--warn-strong)', flexShrink: 0 }} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <span style={{
-          fontSize: 'var(--fs-micro)', fontWeight: 700, letterSpacing: '0.14em',
-          textTransform: 'uppercase', color: 'var(--warn-strong)',
-        }}>{BRAND.coachName} · your coach</span>
-        <span style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.5, color: 'var(--coach-ink)' }}>{children}</span>
-      </div>
-    </div>
-  )
-}
-
-const WEEK = [
-  { d: 'M', n: 15, state: 'done' }, { d: 'T', n: 16, state: 'today' },
-  { d: 'W', n: 17, state: 'rest' }, { d: 'T', n: 18, state: 'session' },
-  { d: 'F', n: 19, state: 'rest' }, { d: 'S', n: 20, state: 'future' },
-  { d: 'S', n: 21, state: 'future' },
-] as const
-
-const SESSIONS = [
-  { day: 'Tue', label: 'Easy run', accent: EASY, km: 8, mins: 55, note: 'Zone 2 · under 145 bpm', current: true },
-  { day: 'Thu', label: 'Threshold · 3 × 8 min', accent: QUALITY, km: null, mins: 50, note: 'Zone 3 · the one hard day', current: false },
-  { day: 'Sat', label: 'Easy run', accent: EASY, km: 6, mins: 40, note: 'Zone 2 · keep it dull', current: false },
-  { day: 'Sun', label: 'Long run', accent: LONG, km: 18, mins: 125, note: 'Zone 2 · time on feet', current: false },
-]
-
+/**
+ * PLAN — `screen-architecture.md`: "Own the training arc." What belongs here
+ * is the Plan Arc with its race countdown, the week-by-week session grid, and
+ * this week's framing (phase, theme, km target).
+ *
+ * ⚠️ What was here before: a 7-day dot strip, a flat list of four
+ * hand-drawn cards and an invented "4 sessions / 38km / 3 rest days" summary.
+ * The arc — the FIRST thing the real screen shows and the thing that makes it
+ * "own the training arc" — was missing entirely.
+ *
+ * Real components: `PlanArc`, `SessionCard`. Data: `DEMO_WEEK`.
+ */
 function PlanStill() {
   return (
     <>
       <ScreenHeader eyebrow="Week 6 of 16 · Base" title="This week" />
 
-      {/* Week strip */}
-      <div style={{ display: 'flex', gap: 6, padding: '0 16px 14px' }}>
-        {WEEK.map(d => {
-          const today = d.state === 'today'
-          const dot = d.state === 'done' ? 'var(--moss-strong)'
-            : d.state === 'session' ? QUALITY
-            : d.state === 'today' ? 'var(--card)' : 'transparent'
-          return (
-            <div key={d.n} style={{
-              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-              padding: '7px 0', borderRadius: 'var(--radius-sm)',
-              background: today ? 'var(--moss-strong)' : 'transparent',
-            }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: today ? 'var(--card)' : 'var(--mute)' }}>{d.d}</span>
-              <span style={{
-                fontSize: 'var(--fs-caption)', fontWeight: today ? 700 : 500,
-                color: today ? 'var(--card)' : 'var(--ink-2)', fontVariantNumeric: 'tabular-nums',
-              }}>{d.n}</span>
-              <span style={{ width: 4, height: 4, borderRadius: 2, background: dot }} />
-            </div>
-          )
-        })}
+      <div style={{ padding: '0 16px 16px' }}>
+        <PlanArc
+          totalWeeks={16}
+          currentWeek={6}
+          doneWeeks={5}
+          deloadWeeks={[4, 8, 12]}
+          raceWeek={16}
+          phaseLabel="base → build → peak → taper"
+        />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '0 16px' }}>
-        {SESSIONS.map(s => (
-          <div key={s.day} style={{
-            background: 'var(--card)', borderRadius: 'var(--radius-md)',
-            borderLeft: `3px solid ${s.accent}`, padding: '13px 14px',
-            boxShadow: s.current ? 'var(--shadow-card)' : 'none',
-            border: s.current ? undefined : '1px solid var(--line)',
-            borderLeftWidth: 3, borderLeftStyle: 'solid', borderLeftColor: s.accent,
-            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10,
-          }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-              <span style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--ink)' }}>
-                {s.km != null ? `${s.label} · ${formatDistance(s.km)}` : s.label}
-              </span>
-              <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--mute)' }}>{s.day} · {s.note}</span>
-            </div>
-            <span style={{
-              fontSize: 'var(--fs-caption)', color: 'var(--mute)',
-              fontVariantNumeric: 'tabular-nums', flexShrink: 0,
-            }}>{formatDuration(s.mins)}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Week summary */}
-      <div style={{
-        margin: '14px 16px 0', background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)',
-        padding: '14px', display: 'flex', justifyContent: 'space-between',
-      }}>
-        {[['4', 'sessions'], [formatDistance(38) ?? '', 'this week'], ['3', 'rest days']].map(([v, l]) => (
-          <div key={l} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{
-              fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)',
-              fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
-            }}>{v}</span>
-            <span style={{ fontSize: 'var(--fs-micro)', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700 }}>{l}</span>
-          </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px' }}>
+        {DEMO_WEEK.map(s => (
+          <SessionCard key={s.name} {...s} />
         ))}
       </div>
     </>
   )
 }
 
-/** §1 counts SESSIONS, and the target it states is 80%. These are the zone
- *  shares of a real-looking week, not a claim about any runner. */
-const ZONES = [
-  { z: 'Z1', pct: 9,  colour: 'var(--s-recov)' },
-  { z: 'Z2', pct: 71, colour: EASY },
-  { z: 'Z3', pct: 14, colour: QUALITY },
-  { z: 'Z4', pct: 6,  colour: 'var(--s-race)' },
-]
-
+/**
+ * COACH — `screen-architecture.md`: "Kit's synthesis — what your training
+ * data means and what to do next... The user opens Coach to hear from Kit."
+ * What belongs here is Kit's weekly read and the zone rings.
+ *
+ * ⚠️ What was here before was fiction in three ways: four horizontal bars
+ * where the product plots the week as RINGS (the brand mark used as a data
+ * display, Pattern 22); the sentence "Target is 80%. Last week: 62%.", which
+ * appears nowhere in the product; and no Kit read at all — the one thing the
+ * screen exists for. It also hand-drew bars while `components/shared/
+ * ZoneBar.tsx` calls itself the canonical zone-visualisation primitive.
+ *
+ * Real components: `ZoneRings`, `CoachNoteBlock aiGenerated` (which brings
+ * the real byline and the real AIMark sparkle, so the AI provenance on the
+ * marketing page is the product's own, not an impression of it).
+ * Data: `DEMO_ZONE_WEEK`, `DEMO_COACH_NOTE` — the same figures the homepage
+ * already shows, so the two surfaces cannot disagree.
+ */
 function CoachStill() {
   return (
     <>
-      <ScreenHeader eyebrow="15–21 September" title="This week in zones" />
+      {/* The eyebrow says THIS week because ZoneRings' own default label
+          does ("This week in zones"), and two timeframes on one screen is
+          the kind of small lie that makes a mockup feel drawn. */}
+      <ScreenHeader eyebrow="This week" title="How it is going" />
 
-      <div style={{
-        margin: '0 16px 14px', background: 'var(--card)', borderRadius: 'var(--radius-md)',
-        boxShadow: 'var(--shadow-card)', padding: '18px 16px',
-        display: 'flex', flexDirection: 'column', gap: 14,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
-          <span style={{
-            fontSize: 56, fontWeight: 800, lineHeight: 0.9, letterSpacing: '-0.04em',
-            color: 'var(--ink)', fontVariantNumeric: 'tabular-nums',
-          }}>71%</span>
-          <span style={{ fontSize: 'var(--fs-body-lg)', color: 'var(--ink-2)' }}>in Zone 2</span>
-        </div>
-        <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)' }}>Target is 80%. Last week: 62%.</span>
-
-        <div style={{ height: 1, background: 'var(--line)' }} />
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {ZONES.map(z => (
-            <div key={z.z} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--mute)', width: 20, flexShrink: 0 }}>{z.z}</span>
-              <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'var(--bg-soft)', overflow: 'hidden' }}>
-                <div style={{ width: `${z.pct}%`, height: '100%', borderRadius: 4, background: z.colour }} />
-              </div>
-              <span style={{
-                fontSize: 'var(--fs-caption)', color: 'var(--ink-2)',
-                fontVariantNumeric: 'tabular-nums', width: 32, textAlign: 'right', flexShrink: 0,
-              }}>{z.pct}%</span>
-            </div>
-          ))}
-        </div>
+      <div style={{ padding: '0 16px 14px' }}>
+        <ZoneRings pctByZone={DEMO_ZONE_WEEK.pct} meta={DEMO_ZONE_WEEK.meta} />
       </div>
 
-      <CoachBlock>Closer. The easy days are still creeping up at the end.</CoachBlock>
+      <div style={{ padding: '0 16px' }}>
+        <CoachNoteBlock aiGenerated timestamp={DEMO_COACH_NOTE.timestamp}>
+          <span style={{ display: 'block', marginBottom: '10px' }}>
+            {DEMO_COACH_NOTE.observation}
+          </span>
+          <span style={{ display: 'block', fontStyle: 'italic' }}>
+            {DEMO_COACH_NOTE.instruction}
+          </span>
+        </CoachNoteBlock>
+      </div>
     </>
   )
 }

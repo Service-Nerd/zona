@@ -122,3 +122,63 @@ describe('the demo data is coherent', () => {
     expect(new Set(DEMO_WEEK.map(s => s.type)).size).toBeGreaterThan(1)
   })
 })
+
+/**
+ * DESIGN-V3 — a marketing SCREEN must be the app's screen.
+ *
+ * ⚠️ THE GAP THIS CLOSES, and it is the one the checks above could not see.
+ * Everything before this pins the CONTENT of a mockup: the distance string,
+ * the zone percentages, the fact that a hand-written card has not come back.
+ * None of it can tell you that a screen shows a FEATURE THE APP DOES NOT
+ * HAVE.
+ *
+ * `TabbedPhone`'s first cut shipped exactly that. Built from the v3 design
+ * handoff's description rather than from the product, its Coach screen drew
+ * four horizontal zone bars, asserted "Target is 80%. Last week: 62%." — a
+ * sentence that appears nowhere in the app — and omitted Kit's weekly read,
+ * which `screen-architecture.md` names as the reason the screen exists. Its
+ * Plan screen invented a summary row and left out the Plan Arc. Every test
+ * passed, because none of them was looking at whether the screen was real.
+ *
+ * A designer who has not seen the app cannot draw it, and a marketing mockup
+ * that shows a feature the product lacks is a promise the product breaks.
+ * This is the check for that.
+ */
+describe('DESIGN-V3 — marketing screens render the real app', () => {
+  const tabbed = read('components/marketing/TabbedPhone.tsx')
+
+  it('renders real shared components, not redrawn ones', () => {
+    for (const c of ['SessionCard', 'ZoneRings', 'CoachNoteBlock', 'PlanArc']) {
+      expect(tabbed, `TabbedPhone should render the real ${c}`).toContain(`<${c}`)
+      expect(tabbed).toContain(`components/shared/${c}`)
+    }
+  })
+
+  it('takes its data from demoSurfaces, so the page cannot contradict itself', () => {
+    for (const d of ['DEMO_WEEK', 'DEMO_ZONE_WEEK', 'DEMO_COACH_NOTE']) {
+      expect(tabbed, `${d} is the shared figure; a local copy would drift`).toContain(d)
+    }
+  })
+
+  it('hand-draws no primitive that already exists as a component', () => {
+    // The first cut hand-drew zone bars while components/shared/ZoneBar.tsx
+    // calls itself "the canonical zone-visualisation primitive".
+    const code = tabbed.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    expect(code, 'a hand-drawn zone bar is a redrawn primitive').not.toMatch(/width:\s*`?\$\{?\s*z\.pct/)
+    expect(code, 'zone percentages belong to ZoneRings, not to a local array').not.toMatch(/const ZONES\b/)
+  })
+
+  it('asserts no metric the product does not state', () => {
+    const code = tabbed.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    // The exact fabrication that shipped. Kept as a literal because the
+    // failure was a specific invented sentence, not a category.
+    expect(code).not.toContain('Target is 80%')
+    expect(code).not.toContain('Last week: 62%')
+  })
+
+  it('Today is imported, never redrawn', () => {
+    // The one screen the first cut got right, because it was reused.
+    expect(tabbed).toContain('TodayStill')
+    expect(tabbed).not.toMatch(/function TodayStill\b/)
+  })
+})
