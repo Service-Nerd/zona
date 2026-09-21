@@ -125,6 +125,35 @@ for id in $(comm -12 /tmp/_reg /tmp/_open); do
 done
 [ "$afail" = "0" ] && say "  ok"
 
+say "── open backlog items with no roadmap line ──"
+# CLAUDE.md's doc system: "An open item lives in roadmap (as a line) + backlog
+# (as detail)." Nothing checked the roadmap half. Found 2026-09-21 by the peer
+# session working on MKT-PLAN-SHAPE-01: all three items it filed that morning
+# were in backlog only, and this script read ALL CLEAN over them.
+#
+# ⚠️ THIRD TIME IN TWO DAYS that "an audit is only ever as wide as its list"
+# has bitten here — after the ship-record window emptying at midnight
+# (DOC-AUDIT-WINDOW-01) and the backlog-status check that only looked at
+# today's scopes (BACKLOG-STALE-ALLTIME-01). The pattern is not that the checks
+# are wrong; it is that each was written to answer the question that had just
+# been asked, and the NEXT question was always outside it.
+#
+# Roadmap side is deliberately loose: an ID mentioned ANYWHERE in roadmap.md
+# counts. The roadmap is prose with tables and the item may be named in a
+# horizon bullet rather than a row, and a false positive here costs more than
+# a missed one (the whole point of the checks above is that a noisy check gets
+# ignored). This asks only "does the roadmap know this item exists at all".
+rfail2=0
+grep -oE '^> (🔲|🔴|🔴🔴|🔵|⏸️|⚠️) \*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?[ —–-].*\*\(' docs/releases/backlog.md \
+  | grep -oE '\*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u > /tmp/_openids
+while IFS= read -r id; do
+  [ -z "$id" ] && continue
+  # Shipped items are not open; the registry check above owns those.
+  grep -qxF "$id" /tmp/_reg && continue
+  grep -qF "$id" docs/releases/roadmap.md || { say "  NO ROADMAP LINE $id (open in backlog.md)"; rfail2=1; fail=1; }
+done < /tmp/_openids
+[ "$rfail2" = "0" ] && say "  ok"
+
 say "── invariants: code vs plan-invariants.md ──"
 grep -oE "'INV-[A-Z0-9-]+'" lib/plan/invariants.ts | tr -d "'" | sort -u > /tmp/_a
 grep -oE '^\| `INV-[A-Z0-9-]+`' docs/canonical/plan-invariants.md | grep -oE 'INV-[A-Z0-9-]+' | sort -u > /tmp/_b

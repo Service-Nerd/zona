@@ -65,6 +65,54 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — INV-DELOAD-ROWS-01 / MKT-PLAN-EXPORT-01: a defect worth fixing precisely because it cost nothing
+
+**Dev.** Another Claude session was working in this same repo today, found a real engine defect, and
+in passing flagged one it had decided not to touch: `INV-PLAN-DELOAD-PLACEMENT` is a plan-level
+check that somehow sits inside a loop over every week of the plan, about 760 lines below the loop
+header. One bad deload therefore emits one identical violation row per week. Sixteen rows for one
+offence on a sixteen-week plan.
+
+Their reason for leaving it was sound on its face: fixing it would move violation counts in the
+sweep's debt registers, and that is not something you do casually in someone else's item.
+
+So I measured it instead of arguing about it. **The check fires zero times across all 45,776 plans
+in the corpus.** No register moves. No baseline moves. Nothing counts it at all, which is precisely
+why nobody noticed the duplication in the first place.
+
+That turns the decision inside out. The fix is not "cheap enough to be worth it", it is **free, and
+only free right now**. The day that check first fires on a real plan, the duplication starts
+inflating every number it feeds, and then fixing it genuinely does move baselines and genuinely does
+need a declaration. The window for a free fix is the window where the thing is silent.
+
+**The honest bit.** I nearly shipped this without records, and the reason is embarrassing and
+mechanical. I committed with the command piped through `tail -3` so I could see the push result, and
+that discarded the ship-record hook's output. The hook did its job. **I threw away its warning to
+keep my terminal tidy**, and it took the other session reading a red `audit-docs.sh` to tell me.
+
+The lesson generalises past this repo: a check that writes to stdout is only a check if you read
+stdout. I have been filtering command output all day.
+
+**AI-building.** Two sessions on one working tree turned out to be genuinely productive rather than
+merely survivable, and the reason is worth naming: we kept finding each other's blind spots rather
+than each other's bugs. They found that the plans I had reviewed and declared fit for purpose peaked
+in their base phase, because my metric was peak-over-week-one and that is blind to *where* the peak
+falls. I found that the defect they had deferred was free to fix, because they had estimated its
+cost rather than measured it. Neither of us was careless. We were each reasoning from what we could
+see.
+
+It also cost a blocked push, a stash collision and two messages to work out whose uncommitted edits
+were whose. Worth it today; not obviously worth it as a habit.
+
+**Product.** I also gave the plan export provenance, which it should have had from the first line.
+The export goes out as carousel source material, it is gitignored so nothing diffs it, and the
+version I handed over this morning was generated before the shape fix — seven of nine plans still
+peaking in base, with nothing on the file to say so. It now stamps the commit it came from. That is
+not a gate and I am not calling it one; it just means a copy already sitting on someone's laptop can
+be checked against the repo instead of trusted.
+
+---
+
 ## 2026-09-21 — W-05 / W-07 / W-08 / W-09 / W-10 (and W-06 withdrawn, W-11 killed): the craft pass, and the number I gave the board that was wrong
 
 **Dev.** A competitor launched, the founder asked whether our site could be slicker, and I measured
