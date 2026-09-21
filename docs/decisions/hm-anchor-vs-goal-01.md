@@ -145,3 +145,16 @@ genuinely goal-paced and the ratio is satisfied by the prescription rather than 
 
 ⚠️ **The defect is LIVE in production and has been for as long as the HM anchor has existed.**
 Doing nothing is a decision too.
+
+---
+
+## 6. A separate, smaller question this uncovered — NOT part of the §120 ruling
+
+`minPerKm`, which sizes a session and therefore sets its prescribed **distance**, uses
+`pace.minPerKmQuality` for every non-VO2max quality session regardless of its work anchor. So a
+CV-anchored session's distance is computed at THRESHOLD pace, and an HM-anchored one likewise.
+
+This is the sizing twin of the header defect and was deliberately left alone while fixing the
+header: moving it changes prescribed distance, which is a prescription change on its own account.
+**The board has not ruled on it and it is not covered by §120.** Its magnitude has not been
+measured. Raise it as its own item when §120 ships, since both touch the same lines.

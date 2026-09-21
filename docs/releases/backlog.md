@@ -45,6 +45,31 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
 — not merely approved — until the Coaching Board rules.
 
+### 🟡 `A11Y-MOCKUP-CONTRAST-01` — the homepage scores 96, not 100, and the phone mockup is the whole reason
+
+Filed 2026-09-21 out of `A11Y-CONTRAST-01`. **Not a regression and not new** — surfaced by running
+Lighthouse mobile properly for the first time.
+
+Every marketing surface now clears WCAG AA and both content pages score **a11y 100**. The homepage
+scores **96** because of **nine contrast failures, all inside `PhoneFrame`**, which draws a
+simulated iPhone running the app at roughly 70% scale. Its text is therefore **9–11px**, and at that
+size no colour in the palette can reach 4.5:1. The offenders are `--moss`, `--warn` and `--mute-2`
+inside the drawing.
+
+⚠️ **`aria-hidden` does not fix it and should not be reached for.** The root already carries it, so
+a screen reader skips the mockup correctly. Contrast is a **sighted low-vision** concern and axe is
+right to keep flagging it.
+
+**Three real options, none free:**
+1. **Draw the mockup larger** so its type lands at real sizes. Costs hero layout.
+2. **Let the mockup use AA colours**, accepting that the picture then no longer matches the app.
+3. **Fix the app's own component colours**, which is the honest root cause and the largest change:
+   `--warn` on a warn-tinted card scores **2.74:1 in the product itself**, not just in the drawing.
+
+**Option 3 is the one that matters** and it is an ADR-007 question, not a marketing one. ⚠️ It cannot
+be verified today: no deploys and no device. **Do not pick an option without looking at the app on a
+phone first.**
+
 ### 🟡 `HM-ANCHOR-VS-GOAL-01` — RULED by the Coaching Board 2026-09-21, ratified as **§120**, NOT YET SHIPPED
 
 **Ruling + every measurement: `docs/decisions/hm-anchor-vs-goal-01.md`. Principle: §120.**

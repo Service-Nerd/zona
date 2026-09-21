@@ -228,8 +228,20 @@ say "── open backlog items with no roadmap line ──"
 # a missed one (the whole point of the checks above is that a noisy check gets
 # ignored). This asks only "does the roadmap know this item exists at all".
 rfail2=0
-grep -oE '^> (🔲|🔴|🔴🔴|🔵|⏸️|⚠️) \*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?[ —–-].*\*\(' docs/releases/backlog.md \
-  | grep -oE '\*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u > /tmp/_openids
+# ⚠️ FOURTH TIME, and the comment above predicted it while I was writing this
+# one. The blockquote-bullet pattern below is only ONE of the two shapes the
+# backlog actually uses. Measured 2026-09-21: it matched 19 items while TWENTY
+# more sat in `### <emoji> `ID` — ...` heading form, completely unseen — and
+# three of those were genuinely open with no roadmap line, two of them
+# pre-existing. Both shapes are collected now. Shipped items are filtered out
+# below by the registry list, so a heading left behind after a ship does not
+# become a false positive.
+{
+  grep -oE '^> (🔲|🔴|🔴🔴|🔵|⏸️|⚠️) \*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?[ —–-].*\*\(' docs/releases/backlog.md \
+    | grep -oE '\*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
+  grep -oE '^#{2,4} [^ ]* `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
+    | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
+} | sort -u > /tmp/_openids
 while IFS= read -r id; do
   [ -z "$id" ] && continue
   # Shipped items are not open; the registry check above owns those.
