@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — GTM-SEO-COMPARE-PRICE-01: a competitor's price is config, and I had it typed into prose twice
+
+**Dev.** I shipped comparison page 2 in the morning and flagged that it disagreed with page 1 about
+what Coopah costs: page 1 said £9.99 a month billed annually, page 2 said £14.99 a month or £79.99
+a year, and page 1's brand-new link to page 2 sat three sentences after its own number. I did not
+rewrite it, because correcting a competitor's price is not a silent edit.
+
+The founder came back with a third figure. £119.99 a year. Neither page had it.
+
+**The fix is not "edit the two strings."** This repo has a whole doctrine about coaching numerics
+living in named configuration rather than being typed where they are used, with a test that fails
+the build when a new one escapes. A competitor's price is the same kind of value and I had never
+applied the rule to it, because it lives in marketing copy and marketing copy feels like prose.
+It is not prose. It is a fact with a source and a shelf life, quoted in more than one place.
+
+So `COMPETITOR_FACTS` now holds each competitor's monthly and annual price alongside where the
+figure came from and the date it was last checked, both articles interpolate from it, and a test
+fails the build on any `£NN.NN` in any article that is not in that owner or in our own `PRICING`.
+The point is not the two pages that were wrong. It is the six that are not written yet: eight
+comparison pages are planned and every one of them will quote these numbers.
+
+**The honest bit.** I wrote in this morning's filing that the real fix was one owner, and then
+still had to be told the price before I did it. The owner should have gone in when I found the
+conflict, not when the value was settled, because the conflict was the evidence and the value was
+just an input.
+
+**One thing the change caught on its way through.** Page 2 called Runna "the most expensive of the
+three." At £15.99 a month against Coopah's £14.99 that was true; at £119.99 a year against Runna's
+£99.99 it is not. It now says "the most expensive per month." Changing a number in one place made
+a sentence somewhere else false, which is the entire argument for the owner, arriving on schedule.
+
+---
+
 ## 2026-09-21 — GTM-SEO-COMPARE-01 page 2: the template held, and adding one block kind quietly turned two checks off
 
 **Dev.** Comparison page 2 went in as designed: one entry in the catalogue, a four-line route shim,

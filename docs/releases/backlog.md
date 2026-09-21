@@ -2087,26 +2087,21 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ## 🆕 FILED 2026-09-21 — from the published-plan review
 
-### 🔴 `GTM-SEO-COMPARE-PRICE-01` — two comparison pages give Coopah two different prices *(P1, FOUNDER DECISION then a single owner)*
+### ✅ `GTM-SEO-COMPARE-PRICE-01` — CLOSED 2026-09-21, same day it was filed
 
-`/runna-alternatives` says Coopah is **£9.99 a month, billed annually**. `/coopah-vs-runna`, published
-today, says **£14.99 a month or £79.99 a year**, from the App Store's own in-app-purchase listing and
-corroborated by two independent 2026 reviews (Tom's Guide, Running.Reviews). The 17 September 2026
-verification could not reproduce £9.99 from any source.
+Founder confirmed Coopah's annual price as **£119.99**, superseding both figures that were live:
+page 1's **£9.99 a month billed annually** (since 10 Sep) and page 2's verified **£79.99 a year**.
+Monthly stays **£14.99** (App Store in-app-purchase listing, 17 Sep).
 
-**This is now visible in one click:** page 1's Coopah section links to page 2, three sentences after
-quoting £9.99.
+**Fixed at the owner, not the strings.** `COMPETITOR_FACTS` in `lib/marketing/comparisons.ts` now
+holds every competitor figure with its source and verification date, and both articles interpolate
+from it, as our own prices already did from `PRICING`. Guard: `comparisons.test.ts` fails on any
+`£NN.NN` in any article that is not in `COMPETITOR_FACTS` or `PRICING` (funding figures like £1.5m
+excluded by the pattern). Falsified.
 
-**Two steps, in order.**
-1. **Founder:** confirm which figure is right, in case Coopah runs a promo or regional pricing that
-   the verification did not see. Correcting a competitor's price is not a silent edit.
-2. **Then, and this is the actual fix:** a competitor's price must not be a string typed into two
-   articles. Move the verified figures into one owner in `lib/marketing/comparisons.ts`
-   (`COMPETITOR_FACTS`, with the source and the verification date beside each), interpolate every
-   article from it, and add the check: the same competitor cannot carry two prices across the
-   catalogue. Eight pages are planned and every one of them will quote these numbers. Fixing two
-   strings leaves the next six free to disagree again.
-
+One prose consequence, caught by the change: page 2 called Runna *"the most expensive of the
+three"*, which £119.99 makes false. It now says **"the most expensive per month"**, which is true
+(Runna £15.99/mo; Coopah is dearest annually).
 
 ### 🔴 `DELOAD-BADGE-TRUTH-01` — a week badged "Recovery" that is not a reduction *(P1, Coaching Board)*
 

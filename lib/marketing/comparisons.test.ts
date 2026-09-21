@@ -6,7 +6,8 @@
 // cover pages that do not exist yet.
 
 import { describe, it, expect } from 'vitest'
-import { COMPARISON_ARTICLES, COMPARISON_HUB, comparisonArticleJsonLd, type ArticleBlock } from './comparisons'
+import { COMPARISON_ARTICLES, COMPARISON_HUB, COMPETITOR_FACTS, comparisonArticleJsonLd, type ArticleBlock } from './comparisons'
+import { PRICING } from '@/lib/brand'
 import { BRAND } from '@/lib/brand'
 
 // ⚠️ Every block kind must be reachable from here. These checks (em dashes,
@@ -68,6 +69,42 @@ describe('comparison articles — house style', () => {
     // Deliberate for this content type; the source copy is written without them.
     const offenders = allCopy().filter(s => s.includes('—'))
     expect(offenders).toEqual([])
+  })
+
+  it('every price in every article comes from a declared owner', () => {
+    // GTM-SEO-COMPARE-PRICE-01. Page 1 quoted Coopah at £9.99 a month billed
+    // annually and page 2 at £14.99 or £79.99 a year, both live at once, with
+    // page 1 linking to page 2 three sentences after its own figure. Neither
+    // was right. Eight articles are planned and every one will quote these
+    // numbers, so a price typed into an article is a defect by construction:
+    // it must come from `COMPETITOR_FACTS` or from `PRICING`.
+    //
+    // Matches £12 and £12.34 but not £1.5m, which is funding, not a price.
+    const allowed = new Set<string>([
+      ...Object.values(COMPETITOR_FACTS).flatMap(f => [f.monthly, f.annual]).filter((x): x is string => !!x),
+      PRICING.monthly.display, PRICING.annual.display, PRICING.annual.perMonthDisplay,
+      PRICING.monthly.perWeekDisplay, PRICING.annual.perWeekDisplay,
+    ])
+    const offenders: string[] = []
+    for (const a of COMPARISON_ARTICLES)
+      for (const text of [a.metaDescription, a.hubSummary, ...a.body.map(copyOf)])
+        for (const m of text.match(/£\d+(?:\.\d+)?(?![\d.]|\s*m\b)/g) ?? [])
+          if (!allowed.has(m)) offenders.push(`${a.slug}: ${m} is not in COMPETITOR_FACTS or PRICING`)
+
+    expect(Array.from(new Set(offenders))).toEqual([])
+  })
+
+  it('a competitor is quoted at one price across the whole catalogue', () => {
+    // The owner makes two figures for one product impossible by construction,
+    // so this asserts the owner itself is coherent rather than re-scanning
+    // prose: a duplicate display value across two competitors is almost
+    // always a copy-paste, and a missing verification date is a fact nobody
+    // can re-check.
+    for (const [key, f] of Object.entries(COMPETITOR_FACTS)) {
+      expect(f.verified, `${key}: verification date`).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+      expect(f.source.length, `${key}: a figure with no named source cannot be re-checked`).toBeGreaterThan(0)
+      expect(f.monthly ?? f.annual, `${key}: at least one price`).toBeTruthy()
+    }
   })
 
   it('the brand name is interpolated, never typed as a literal', () => {

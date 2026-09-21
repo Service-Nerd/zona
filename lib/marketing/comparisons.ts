@@ -20,7 +20,7 @@
 // dynamic segment, because that is the URL shape the SEO brief specifies and a
 // root catch-all would swallow every other route in the app.
 
-import { BRAND } from '@/lib/brand'
+import { BRAND, PRICING } from '@/lib/brand'
 import { articleJsonLd } from '@/lib/marketing/articleJsonLd'
 
 /** A run of article text. A bare string is plain copy; the object form is an
@@ -76,6 +76,72 @@ export interface ComparisonArticle {
   hubSummary: string
 }
 
+/**
+ * COMPETITOR FACTS — the single owner (D-08) of every figure these articles
+ * quote about someone else's product.
+ *
+ * ⚠️ WHY THIS EXISTS. Page 1 said Coopah cost £9.99 a month billed annually.
+ * Page 2, verified independently four months later, said £14.99 a month or
+ * £79.99 a year. Both were live at once, and page 1's link to page 2 sat three
+ * sentences after its own figure. Neither was right: the founder confirmed the
+ * annual price on 2026-09-21 as £119.99.
+ *
+ * That is not a typo, it is the configuration singularity applied to the wrong
+ * kind of value. EIGHT articles are planned and every one of them will quote
+ * these numbers. Fixing two strings would have left six pages free to disagree
+ * again, so the figures live here with their source and the date they were
+ * checked, and `comparisons.test.ts` fails the build on any price in any
+ * article that is not one of these or our own.
+ *
+ * ⚠️ WHEN YOU REVISE A FIGURE, move `verified` with it, and move the
+ * `lastUpdatedISO` of every article that quotes it. A competitor's price is
+ * the fastest-rotting fact on these pages.
+ */
+export interface CompetitorFacts {
+  name: string
+  /** Display form including the symbol, e.g. '£14.99'. Null where we do not
+   *  publish a monthly figure for this product. */
+  monthly: string | null
+  /** Display form including the symbol, e.g. '£119.99'. */
+  annual: string | null
+  /** Where the figures came from, named so a future revision can re-check it. */
+  source: string
+  /** ISO date the figures above were last checked against that source. */
+  verified: string
+}
+
+export const COMPETITOR_FACTS: Record<'coopah' | 'runna' | 'trainasone', CompetitorFacts> = {
+  coopah: {
+    name: 'Coopah',
+    // ⚠️ The MONTHLY figure is the weaker of the two. £14.99 comes from the
+    // App Store's in-app-purchase listing (17 Sep 2026) and two independent
+    // 2026 reviews; the ANNUAL figure is the founder's own correction on
+    // 2026-09-21, which superseded both the £79.99 that verification found and
+    // the £9.99-billed-annually page 1 had carried since 10 Sep. Re-check the
+    // monthly against the same source next revision.
+    monthly: '£14.99',
+    annual: '£119.99',
+    source: 'App Store in-app-purchase listing; annual corrected by the founder',
+    verified: '2026-09-21',
+  },
+  runna: {
+    name: 'Runna',
+    monthly: '£15.99',
+    annual: '£99.99',
+    source: 'runna.com/en-gb/pricing',
+    verified: '2026-09-17',
+  },
+  trainasone: {
+    name: 'TrainAsONE',
+    monthly: '£9.99',
+    annual: '£99',
+    source: 'trainasone.com pricing',
+    verified: '2026-09-10',
+  },
+}
+
+const price = (k: keyof typeof COMPETITOR_FACTS) => COMPETITOR_FACTS[k]
+
 const p = (...spans: ArticleSpan[]): ArticleBlock => ({ kind: 'p', spans })
 const h2 = (text: string): ArticleBlock => ({ kind: 'h2', text })
 const table = (caption: string, head: string[], rows: string[][]): ArticleBlock =>
@@ -102,23 +168,17 @@ export const COMPARISON_ARTICLES: ComparisonArticle[] = [
     body: [
       p(`If you want a coaching app that isn't Runna, three actually work: Coopah, TrainAsONE, and ${BRAND.name}, which I built. Runna is still the best-resourced app in this category. The plans are good, it runs on iOS and Android, and it's now backed by Strava's engineering team. The reason to look elsewhere isn't that Runna is bad. It's that Runna is now Strava's, and Strava is built on kudos, segments, leaderboards and Local Legend badges.`),
       p(`Strava announced the acquisition in 2025 and the deal has since closed. Runna says it's staying a standalone app "for the foreseeable future," and you can still buy a Runna subscription on its own without touching Strava at all. But the two are now one company, and the joint Strava-and-Runna subscription is the direction being pushed. If you'd rather your coach and your social feed lived in different apps, that's worth knowing going in.`),
-      p(`The other reason people look elsewhere is price. Runna is £15.99 a month, or £99.99 a year paid upfront. That's not unreasonable for what you get, but it's more than a lot of people expect to pay for a training plan, and it's worth knowing what else is out there before deciding it's the only option.`),
+      p(`The other reason people look elsewhere is price. Runna is ${price('runna').monthly} a month, or ${price('runna').annual} a year paid upfront. That's not unreasonable for what you get, but it's more than a lot of people expect to pay for a training plan, and it's worth knowing what else is out there before deciding it's the only option.`),
 
       h2('Coopah'),
       p(`Coopah is the official training app of London Marathon Events: the TCS London Marathon, Brighton Marathon, the Big Half, the Vitality London 10,000. If you're training for one of those specifically, that partnership buys you something real: aligned taper timing, event-specific messaging, and a discount code through the race itself.`),
-      // ⚠️ GTM-SEO-COMPARE-PRICE-01 — THIS PAGE AND PAGE 2 DISAGREE ON COOPAH'S
-      // PRICE, and the internal link added below sends a reader straight from
-      // one to the other. This page says £9.99/month billed annually; the
-      // 17 Sep 2026 verification for `coopah-vs-runna` found £14.99/month or
-      // £79.99/year from the App Store's own in-app-purchase listing, backed
-      // by two independent 2026 reviews (Tom's Guide, Running.Reviews), and
-      // could not reproduce £9.99 from any source. NOT changed here on
-      // purpose: correcting a competitor's price is the founder's call, not a
-      // silent edit, in case there is a promo or regional variance. Filed as
-      // GTM-SEO-COMPARE-PRICE-01. Fix by moving both to one owner, not by
-      // editing two strings.
+      // GTM-SEO-COMPARE-PRICE-01, CLOSED 2026-09-21. This page carried
+      // "£9.99 a month, billed annually" from 10 Sep while page 2 published
+      // £14.99/£79.99, with page 1's link to page 2 three sentences below it.
+      // Both now read `COMPETITOR_FACTS`, which is the only fix that survives
+      // six more articles.
       p(
-        `It costs £9.99 a month, billed annually, and runs on both iOS and Android. The free trial is a week, stretched to two if you come through a London Marathon Events code. If you want to compare against a free structure first, `,
+        `It costs ${price('coopah').monthly} a month, or ${price('coopah').annual} a year, and runs on both iOS and Android. The free trial is a week, stretched to two if you come through a London Marathon Events code. If you want to compare against a free structure first, `,
         { text: 'my 16-week marathon plan', href: '/plans/marathon-16-week' },
         ` is public whether or not you ever install anything.`,
       ),
@@ -130,11 +190,11 @@ export const COMPARISON_ARTICLES: ComparisonArticle[] = [
       ),
 
       h2('TrainAsONE'),
-      p(`TrainAsONE has the broadest reach of anything on this page: iOS, Android, Garmin and a web app, plus a genuine free tier before you hit a paywall. Premium is £9.99 a month, or £99 a year.`),
+      p(`TrainAsONE has the broadest reach of anything on this page: iOS, Android, Garmin and a web app, plus a genuine free tier before you hit a paywall. Premium is ${price('trainasone').monthly} a month, or ${price('trainasone').annual} a year.`),
       p(`It's an AI-adaptive plan generator: the next session changes based on the one you actually ran, not just the one you were given. That's the same core idea Runna and ${BRAND.name} both use, built by a much smaller team with none of Strava's budget behind it. Same honesty as above: I haven't used it enough to tell you where the plan logic breaks down, only what it costs and what it runs on.`),
 
       h2(BRAND.name),
-      p(`Mine. £7.99 a month, or £59.99 a year, and the free tier stays a genuine free tier: a full plan, not a seven-day demo. No streaks, no badges, no leaderboards, no feed. The whole app is built around telling you when to hold back, because I ran a 100km race in July, went out too hard on the descents because nothing was telling me to stop, and walked the last 40km of it.`),
+      p(`Mine. ${PRICING.monthly.display} a month, or ${PRICING.annual.display} a year, and the free tier stays a genuine free tier: a full plan, not a seven-day demo. No streaks, no badges, no leaderboards, no feed. The whole app is built around telling you when to hold back, because I ran a 100km race in July, went out too hard on the descents because nothing was telling me to stop, and walked the last 40km of it.`),
       p(`It's iOS only: iPhone and Apple Silicon Mac, nothing on Android. No Garmin workout export either, so if you live on a Garmin watch and want sessions pushed to it automatically, that's a real gap, not a small one. And it's built by one person, which means slower feature development than anything else on this page.`),
 
       h2('Which one'),
@@ -170,7 +230,7 @@ export const COMPARISON_ARTICLES: ComparisonArticle[] = [
         `Coopah, Runna and ${BRAND.name} compared on price, platform, watch sync and what each one is built on.`,
         ['', 'Coopah', 'Runna', BRAND.name],
         [
-          ['Price', '£14.99/month or £79.99/year', '£15.99/month or £99.99/year', '£7.99/month or £59.99/year'],
+          ['Price', `${price('coopah').monthly}/month or ${price('coopah').annual}/year`, `${price('runna').monthly}/month or ${price('runna').annual}/year`, `${PRICING.monthly.display}/month or ${PRICING.annual.display}/year`],
           ['Platforms', 'iOS, Android', 'iOS, Android', 'iOS only'],
           ['Plan adapts to your training', 'Yes', 'Yes', 'Yes (free tier rule-based, paid tier AI-enriched)'],
           ['Watch sync', 'Apple Watch, Garmin, Coros, Polar', 'Apple Watch, Garmin, Fitbit, Coros', 'None. No Garmin workout export'],
@@ -183,19 +243,19 @@ export const COMPARISON_ARTICLES: ComparisonArticle[] = [
       h2('Coopah'),
       p(`Coopah is the official training app of London Marathon Events, which covers the TCS London Marathon, the Brighton Marathon, the Big Half and the Vitality London 10,000. If you're running one of those, that partnership is worth something real: taper timing built around the actual event, event-specific messaging, and a discount code through the race itself.`),
       p(`Outside of an LME event, the case for Coopah is the coaching, not the badge on the app. It leans on 24/7 coach access, AI-generated answers plus real human coaches, and a weekly report that breaks down what you actually did against what was planned. That's a genuinely different product shape to Runna or ${BRAND.name}, closer to a human coach with software wrapped around it than an adaptive plan generator on its own.`),
-      p(`It costs £14.99 a month, or £79.99 a year if you pay upfront. It runs on iOS and Android, and syncs with Apple Watch, Garmin, Coros and Polar. The free trial is a week. I haven't trained on it myself, so I won't invent an opinion on how the coaching logic behaves week to week. What I can tell you is the size of the operation behind it: roughly £1.5m in seed funding, a real team, and an official race partnership that neither Runna nor ${BRAND.name} has.`),
+      p(`It costs ${price('coopah').monthly} a month, or ${price('coopah').annual} a year if you pay upfront. It runs on iOS and Android, and syncs with Apple Watch, Garmin, Coros and Polar. The free trial is a week. I haven't trained on it myself, so I won't invent an opinion on how the coaching logic behaves week to week. What I can tell you is the size of the operation behind it: roughly £1.5m in seed funding, a real team, and an official race partnership that neither Runna nor ${BRAND.name} has.`),
 
       h2('Runna'),
       p(`Runna is the biggest app in this category and it earned that position. The plans are well regarded, it runs on iOS and Android, it syncs with Apple Watch, Garmin, Fitbit and Coros, and the plan genuinely adapts as you log runs rather than staying fixed from day one.`),
       p(`Strava announced its acquisition of Runna in 2025 and the deal has closed. Runna says it's staying a standalone app "for the foreseeable future," and you can still buy a Runna subscription on its own without touching Strava at all. But the two are now one company, and if you link them, Runna's training sits next to Strava's kudos, segments, leaderboards and Local Legend badges. If you'd rather keep your coach and your social feed in separate apps, that's worth knowing before you commit.`),
       p(
-        `It costs £15.99 a month, or £99.99 a year paid upfront, making it the most expensive of the three. For most people choosing a first coaching app, on either platform, with the most development resource behind it, Runna is still the safe recommendation. I said the same thing on `,
+        `It costs ${price('runna').monthly} a month, or ${price('runna').annual} a year paid upfront, making it the most expensive per month of the three. For most people choosing a first coaching app, on either platform, with the most development resource behind it, Runna is still the safe recommendation. I said the same thing on `,
         { text: 'the alternatives page', href: '/runna-alternatives' },
         ` I wrote before this one, and nothing here changes that.`,
       ),
 
       h2(BRAND.name),
-      p(`Mine. £7.99 a month, or £59.99 a year, and the free tier is a genuine free tier: a full plan, not a seven-day trial that expires into a paywall. No streaks, no badges, no leaderboards, no feed of any kind. The whole app is built around telling you when to hold back, because I ran a 100km race in July, went out too hard on the descents because nothing was telling me to stop, and walked the last 40km of it.`),
+      p(`Mine. ${PRICING.monthly.display} a month, or ${PRICING.annual.display} a year, and the free tier is a genuine free tier: a full plan, not a seven-day trial that expires into a paywall. No streaks, no badges, no leaderboards, no feed of any kind. The whole app is built around telling you when to hold back, because I ran a 100km race in July, went out too hard on the descents because nothing was telling me to stop, and walked the last 40km of it.`),
       p(`It's iOS only, iPhone and Apple Silicon Mac, nothing on Android, so if you're comparing three apps because you're on Android, ${BRAND.name} was never in this race. There's no Garmin workout export either. If you live on a Garmin watch and want sessions pushed to it automatically, that's a real gap, not a small one, and both Coopah and Runna do this natively. And it's built by one person working around a full-time contracting job, so feature development moves slower than either of the other two, both of which have funded teams behind them.`),
 
       h2('Which one'),
