@@ -2087,6 +2087,47 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ## 🆕 FILED 2026-09-21 — MILES **WEBSITE** TEARDOWN (the 09-20 teardown was the APP)
 
+> ### ⚖️ SLT RULED 2026-09-21 — build 9, kill 1, route 1. Record: `docs/decisions/slt-2026-09-21-website-slickness.md`
+>
+> | # | Item | Verdict | When |
+> |---|---|---|---|
+> | 1 | **W-05** free tier + the nine plans | ✅ BUILD, copy only, highest return on the list | **This week** |
+> | 2 | **W-09** the close | ✅ BUILD — **near-black `#1A1A1A`, NO new colour** | **This week** |
+> | 3 | **W-06/07/08/10** | ✅ BUILD **AS ONE CRAFT PASS**, not four items (Fried: *"eleven items is not a plan, it is a list"*) | **This week** |
+> | 4 | **W-02** how it works + `HowTo` | ✅ BUILD — friction removal, schema rides free | This week if it fits |
+> | 5 | **W-01** guides **shelf** | ✅ BUILD the structure; **publish at 3 guides**, founder cadence | Shelf now, live ~Nov |
+> | 6 | **W-04** zone proof device | ✅ BUILD — **must use real generated plans** | Next |
+> | 7 | **W-03** commitments | ⚠️ **COACHING BOARD** (Hutchinson), expect it to shrink | After W-04 |
+> | — | **W-11** film grain | 🔴 **DEAD**, unanimous | Never |
+>
+> 🔴 **W-09's colour is settled: near-black, no ADR.** A deep moss is a new token value AND it
+> dilutes the meaning P-01 just gave moss ("held the zone"). ⚠️ Miles's band is `#1F3D2E`, a deep
+> forest green, **not** their accent, and the order is green-then-black. **Our `--moss` `#6B8E6B`
+> would be far weaker than the thing that was admired.**
+>
+> 🔴 **W-03 and W-04 are effectively ONE item.** Wood and Hutchinson converged independently:
+> *"a promise is the weakest available instrument against an evidence question. The person asking
+> is not short of reassurance, they are short of proof."* **Build W-04 first; W-03 will have
+> almost nothing left to say.**
+>
+> 🟢 **Illusion-of-progress, named:** only **W-11**. W-08/W-10 are real but low-leverage (do them
+> inside the craft pass). **W-01 is emphatically not busywork** — it puts us at the moment of
+> doubt, which is context, not motivation. **W-06 is not taste** — it is cognitive load.
+>
+> ⚠️ **Sutherland's dissent is RECORDED, not overruled in spirit:** their site is polished because
+> it sells to anxious beginners; ours sells to the overconfident, for whom a slightly austere room
+> is congruent. **Test per item: is this a deliberate absence or an accident? Fix accidents, keep
+> deliberate absences.**
+>
+> ⚠️ **Traynor's standing objection, unresolved:** *"what is the traffic?"* No revenue, no
+> conversion data, no meaningful marketing analytics. **Every ranking here is plausibility, not
+> evidence.**
+>
+> ⚠️ **No engine code is touched, so `verify`, parity, `cohort:shape` and `measure:fitness` CANNOT
+> CATCH A MISTAKE HERE.** The live guards are `noEmDash`, `pricing`, `uiPatternsIntegrity`,
+> `externalLink`, `comparisons`.
+
+
 > ⚠️ **Yesterday's teardown (P-01…P-17) was 17 screenshots of the APP.** None of it touched
 > `milesapp.run`. These are marketing-site items and do not overlap. **Read
 > `docs/canonical/coaching-rulings.md` and [[project-miles-teardown]] before acting on any of them**
@@ -2192,6 +2233,88 @@ prove the thing we actually sell.
 **Keep and push what they have no answer to:** the restraint list (*"No fire emojis. Ever."*) and
 *"Probably not for you if…"*. Anti-qualification is rare, it builds trust fast, and there is nothing
 like it anywhere on their site.
+
+### 🟡 `W-06` — our H1 is 37px and our H2 is 36px, so the page has almost no hierarchy *(S, brand)*
+
+**Measured, both sites, computed CSS:**
+
+| | Miles | Zonna | |
+|---|---|---|---|
+| H1 | **61.4px** / 600 / -0.4px | **36.9px** / 700 / -0.92px | theirs is **66% larger** |
+| H2 | 41.0px / 600 | 36.0px / 600 | |
+| H1:H2 step | **1.50×** | **1.02×** | ours is effectively **no step at all** |
+| eyebrow | 12.8px / 600 / 0.14em | 10–11px / 600–700 / 0.06–0.12em | |
+
+The hero headline and every section heading on our homepage are **within one pixel of each other**.
+A reader scrolling gets no signal about what is a page-level claim and what is a section. That is
+the single largest aesthetic gap between the two sites and it is a type-scale decision, not a taste
+one.
+
+Theirs also sets headlines at **weight 600**, not 800: large and light reads editorial and
+confident; small and heavy reads dense. We are small AND heavy.
+
+⚠️ **Brand-level (ADR-007 / `brand.md`), so SLT before build.** ⚠️ Our eyebrow tracking is
+**deliberately 0.08em** and was standardised there yesterday (codebase 64:17, `ui-patterns.md` §17).
+Theirs at 0.14em is not a reason to move ours. **Do not re-open that.**
+
+### 🟡 `W-07` — no vertical rhythm and no consistent measure *(S)*
+
+**Section padding, ours, top to bottom:** `48/56 · 0/56 · 72/72 · 80/80 · 80/80 · 80/80 · 72/72 ·
+80/80 · 112/112 · 56/48 · 40/0`. **Theirs: `72/72` on every single content section**, with `108/64`
+for the hero and `88/96` for the closing CTA. Three values, used on purpose.
+
+**Content max-width, ours:** `none · none · 900 · none · 900 · none · 640 · none · 760 · none · 1100`.
+**Theirs: 1240 hero, then 1080 on every section.** Ours means the left edge of the content moves as
+you scroll. **Slickness is mostly alignment**, and this is the cheapest slickness available.
+
+Also: two near-empty strips (**76px** and **60px** tall) sit between real sections. Audit whether
+they earn their place or are leftover spacers adding noise.
+
+### 🟢 `W-08` — the band alternation is muddy *(XS, one token swap)*
+
+We alternate `--bg` `#F3F0EB` with `--bg-soft` `#EDE9E1`: two warm tones about 8 points apart, so
+the banding reads as a smudge rather than a rhythm. Theirs alternates **cream `#FAF8F5` with pure
+white `#FFFFFF`** — crisp, and the white bands make cards and screenshots lift.
+
+**Proposal: alternate `--bg` with `--card` (`#FFFFFF`), which is already a token**, and keep
+`--bg-soft` for its documented job (inset areas and input fields) rather than as a section ground.
+No new colour, no ADR-007 change, one swap.
+
+### 🔴 `W-09` — our page does not CLOSE *(S, and this is the one the founder spotted)*
+
+**Theirs ends on two heavy bands:** a deep forest-green CTA (`#1F3D2E`, 88/96 padding) and then a
+near-black footer (`#1C1C1E`, 470px tall). The page arrives somewhere.
+
+**Ours:** a dark CTA (`#1A1A1A`) at section **9 of 12**, then it goes **light again** for two more
+sections and a `#F3F0EB` footer identical to the page background. **We spend our one heavy band and
+then trail off into nothing.**
+
+⚠️ **The founder described it as "moss across the bottom after their dark". The order is the other
+way round** (deep green CTA, then near-black footer) and their green band is `#1F3D2E`, a much
+darker forest green, **not** their accent `#6B8F71`. Worth getting right before we copy the shape:
+a band in our actual `--moss` `#6B8E6B` would be far lighter and weaker than what he liked.
+
+**Proposal:** move the dark CTA to LAST before the footer, and give the footer real weight. Whether
+the CTA band is near-black or a deep moss is a brand call for the SLT, and **a deep moss is a NEW
+colour value** (`--moss` itself is too light for a full-bleed band), which makes it an ADR-007
+question, not a free choice.
+
+### 🟢 `W-10` — the footer is 143px of undifferentiated links *(XS)*
+
+One row of nine links on the page background, no grouping, no sign-off, 143px tall against their
+470px. It is the last thing every visitor sees and it currently says nothing. Group it (Product ·
+Plans · Company · Legal), put the App Store badge in it, and give it the weight `W-09` needs.
+
+### 🔴 `W-11` — film-grain overlay — **DEAD, SLT 2026-09-21, unanimous** *(do not re-propose)*
+
+They run a 3% SVG noise texture fixed over the whole page at `z-index: 2000`. It is why a flat cream
+page reads as paper rather than as a blank div, and it costs one element.
+
+⚠️ **Tension with our "no chrome" rule** (`ui-patterns.md`), which is why this is flagged rather
+than proposed. Also, when I forced it opaque while auditing, it covered the entire page: if we ever
+do this, the opacity is load-bearing and needs a test.
+
+---
 
 ---
 
