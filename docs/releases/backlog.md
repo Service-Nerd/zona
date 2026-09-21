@@ -18,7 +18,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-21 (last ship `ac23deb`):** tree clean · `verify` exit 0 · **2,937 tests / 330 files** · **132 invariants** (code=doc, 0 orphans; the one I wrote was reverted with its fix) · `audit-docs.sh` **ALL CLEAN**. 🔴 **`SHIP-RECORD-ALLTIME-01` — THE AUDIT READ ALL CLEAN WITH A REGISTRY ROW DELETED.** Found by falsifying my own clean run rather than trusting it. The ship-record check runs over commits SINCE a marker, and **a clean run advances that marker to HEAD**, so every pass after the first inspects zero commits and prints ok. Second time an incremental tripwire in that file has been read as an inventory (`BACKLOG-STALE-ALLTIME-01` closed the identical hole ten lines below). An all-time hard check is not viable — **291 of 454 all-time scopes lack records** — so it is a debt register that only fails on GROWTH. ⚠️ **It caught its own missing records on the first run after the commit.** 
+**State at END of 2026-09-21 (last ship `4010006`):** tree clean · `verify` exit 0 · **2,937 tests / 330 files** · **132 invariants** (code=doc, 0 orphans; the one I wrote was reverted with its fix) · `audit-docs.sh` **ALL CLEAN**. 🔴 **`SHIP-RECORD-ALLTIME-01` — THE AUDIT READ ALL CLEAN WITH A REGISTRY ROW DELETED.** Found by falsifying my own clean run rather than trusting it. The ship-record check runs over commits SINCE a marker, and **a clean run advances that marker to HEAD**, so every pass after the first inspects zero commits and prints ok. Second time an incremental tripwire in that file has been read as an inventory (`BACKLOG-STALE-ALLTIME-01` closed the identical hole ten lines below). An all-time hard check is not viable — **291 of 454 all-time scopes lack records** — so it is a debt register that only fails on GROWTH. ⚠️ **It caught its own missing records on the first run after the commit.** 🔴 **`DOC-AUDIT-BOTH-SHAPES-01` — the roadmap check saw 19 backlog items and MISSED 20.** It matched one bullet shape while the backlog also uses `###` headings; 3 open items had no roadmap line, 2 of them pre-existing. **Fourth time in two days, and the comment directly above the line I was editing had already named the pattern.** Found only by falsifying my own ALL CLEAN. ⚠️ **`CHECK-SLOW-NOISE-01` — the duration gate gave three different verdicts on one unchanged tree** (HARD WALL / 3 step changes / clean) purely on machine load. **Misled me twice today. Re-measure idle; never re-baseline to go green.** 
 
 🔴 **`HM-ANCHOR-VS-GOAL-01` — THE SESSION HEADER WAS COVERING FOR THE PRESCRIPTION, AND NOTHING SHIPPED.** A card's header pace is documented by §85 as the WORK pace; every row fell through to the generic quality band whatever its work anchor was. **2,811 sweep sessions displayed a pace their own reps contradicted** (live on `/plans/10k-12-week`: header `5:30–6:00` above reps at `5:21–5:34`, so a runner following the header runs it **30 s/km too slow**). ⚠️ **`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` classifies by reading that header**, so all 2,811 counted toward §22's 50% floor BECAUSE OF the lie. Honest headers → **555 sweep cases below the floor and 36 unit tests red**. Traced on a real 1:50 half: `hm_pace_intervals` prescribes **5:49–6:11 against a goal pace of 5:13** on three PEAK sessions, because `HM` resolves to CURRENT half pace, not goal. **The fix, the classifier and a new invariant were written, measured and REVERTED**: shipping needs a prescription change or a weakened constitutional invariant, and both are the board's. ⚖️ **TAKEN TO THE BOARD SAME DAY AND RULED: CORRECT WITH AMENDMENT, ratified as §120** — on a time-target plan `HM` resolves to GOAL pace, as `T` has since 2026-09-03 and as the sibling `mp_blocks` row already does. ⚠️ **INSUFFICIENT EVIDENCE on Willy's bound, so it does NOT ship yet:** both obvious gates were rejected (`goalBeyondMeasuredFitness` tests against INTERVAL pace; `difficulty_band` is forbidden by §44 point 3, Willy's own constraint), and a 15% bound costs 27% of these sessions their row while pressing on §22's own 50% floor. **The number must be measured, not chosen.** ⚠️ **The scan found what the submission missed:** §44's live difficulty note already promises *"race-pace sessions will bite harder"* while the engine prescribes the opposite. `docs/decisions/hm-anchor-vs-goal-01.md`, §120. 
 
@@ -44,6 +44,34 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 ⚠️ **NOTHING HERE IS APPROVED AND NOTHING IS BUILT.** These are proposals. Four carry an automatic
 approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
 — not merely approved — until the Coaching Board rules.
+
+### 🟡 `CHECK-SLOW-NOISE-01` — the duration gate cries wolf under machine load
+
+Filed 2026-09-21. **Not urgent, and it is a credibility problem rather than a correctness one.**
+
+`npm run check:slow` reads the LAST `npm run test` report. Measured three times in one session on
+the same unchanged tree:
+
+| run | result |
+|---|---|
+| 1 (Lighthouse + 2 servers running) | **HARD WALL** + 4 step changes |
+| 2 (dev server running) | 3 step changes |
+| 3 (idle, after a pause) | **clean, all baselined** |
+
+Same code, same baseline, three different verdicts. The offenders are always the same
+plan-generating tests (`targetedGrid`, `qualityAeroFallback`, `emittedCopyGlyphs`,
+`noteDurationFormat`), which are the longest ones and so the most load-sensitive.
+
+⚠️ **It misled me TWICE today** and the second time I nearly re-baselined a regression that was not
+there. This repo's own doctrine is explicit that a check which cries wolf gets ignored, which is the
+same as not having it.
+
+**Candidate fixes, none chosen:** compare a RATIO against the suite's total runtime rather than
+absolute ms; take the median of N runs; or refuse to report at all when the machine is loaded.
+⚠️ **Do NOT simply widen the 1.4x threshold** — that trades a false alarm for a missed regression,
+which is the wrong direction for the one check that watches for the suite becoming unusable.
+
+**Never re-baseline this to make a run green.** Re-measure idle first; that is what settled it here.
 
 ### 🟡 `A11Y-MOCKUP-CONTRAST-01` — the homepage scores 96, not 100, and the phone mockup is the whole reason
 

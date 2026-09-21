@@ -6,6 +6,35 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — DOC-AUDIT-BOTH-SHAPES-01: I read the warning and still needed the falsification
+
+**Dev.** I filed a backlog item deliberately without a roadmap line, ran the audit expecting it to
+complain, and it said ALL CLEAN. The check matched one shape of backlog entry. The backlog uses
+two. Nineteen items were being checked; twenty were invisible, and three of the invisible ones were
+genuinely open with no roadmap line — two of them nothing to do with me.
+
+**The honest bit, and it is the whole entry.** The comment directly above the line I changed says:
+
+> "each was written to answer the question that had just been asked, and the NEXT question was
+> always outside it"
+
+I read that comment. I was editing the line under it. I had already widened two other checks in
+this same file the same day for exactly this reason. And I still only found it because I falsified
+the result instead of trusting it.
+
+That is the fourth instance in two days. The lesson is not "widen your checks" — I clearly know
+that. It is that **knowing the pattern does not make you see the instance**. The only thing that
+reliably worked, four times out of four, was deliberately breaking the thing and watching whether
+the check noticed.
+
+**Also today:** `check:slow` gave three different verdicts on one unchanged tree — HARD WALL under
+Lighthouse, three step changes with a dev server up, clean when idle. It misled me twice and the
+second time I nearly re-baselined a regression that did not exist. Filed as CHECK-SLOW-NOISE-01,
+with the fix constrained: by ratio or median, **never** by widening the threshold, because that
+trades a false alarm for a missed one on the check that watches the suite becoming unusable.
+
+---
+
 ## 2026-09-21 — SHIP-RECORD-ALLTIME-01: the audit read ALL CLEAN with a row deleted
 
 **Dev.** I had just made `audit-docs.sh` read ALL CLEAN, so before believing it I deleted a
