@@ -608,3 +608,33 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   .hero-meta-short { display: inline; }
 }
 
+
+/* ── The homepage fact row, centred on a phone (founder, 2026-09-21) ────────
+ *
+ * Four short facts in two declared PAIRS, separated by middots.
+ *
+ * ⚠️ THE PAIRS ARE EXPLICIT BECAUSE A MIDDOT CANNOT SURVIVE AN ARBITRARY
+ * WRAP. It is a relationship between two things, so it is wrong wherever the
+ * break lands beside it — leading a line (pointing backwards at nothing) or
+ * ending one (pointing forwards at nothing) — and CSS has no selector for
+ * "first or last on its line". Three earlier cuts each moved the dot and
+ * each produced the other version of the same defect. Declaring the pairs
+ * removes the gamble: below 560px the two pairs ARE the two lines.
+ *
+ * 560px is where the four facts plus their separators and gaps stop fitting
+ * the content measure. Above it, `.fact-sep-mid` reappears and the row is
+ * one line exactly as it was.
+ *
+ * ⚠️ `justify-content` is NOT set inline on `.fact-row`. It was, and this
+ * rule silently lost to it — an inline style beats a media query without
+ * `!important`, and reaching for `!important` would have hidden the real
+ * mistake, which was styling a responsive property inline. */
+.fact-sep-mid { display: inline; }
+
+@media (max-width: 560px) {
+  .fact-row {
+    justify-content: center;
+    text-align: center;
+  }
+  .fact-sep-mid { display: none; }
+}

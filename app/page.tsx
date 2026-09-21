@@ -309,8 +309,34 @@ export default async function Home() {
       {/* ── Facts band — MoorHub stat-strip structure, no vanity metrics ──
           v2 (design_handoff_v2). Honest facts only; price from PRICING. */}
       <section style={{ maxWidth: 'var(--measure-page)', margin: '0 auto', padding: '0 24px var(--sect-y)' }}>
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-start',
+        {/* ⚠️ THE PAIRS ARE EXPLICIT, SO THE WRAP IS NOT A GAMBLE
+            (founder, 2026-09-21: "looks off on mobile, I'd want bullets
+            between and it centred").
+
+            Three cuts before this one, each fixing the previous one's tell:
+
+              1. `· fact` bundled into each item. Invisible on one line, and
+                 the moment it wrapped the second line BEGAN with a middot,
+                 indented past the page gutter.
+              2. Trailing the middot instead. Gutter fixed, but a wrapped
+                 line now ENDED with a stray dot pointing at nothing.
+              3. Middots as independent children plus a centring media query.
+                 The query never applied — `justifyContent` was set INLINE,
+                 and an inline style beats a media rule without
+                 `!important` — and the trailing dot survived anyway.
+
+            The real problem is that all three left the line break to the
+            browser, and a middot is a relationship between two things: it is
+            wrong wherever a break lands next to it, and there is no CSS
+            selector for "first or last on its line".
+
+            So the pairs are declared. Below 560px the row is two centred
+            lines of `A · B`; above it, the pair separator reappears and all
+            four sit on one line exactly as before. Deterministic at every
+            width, and no dot is ever orphaned. */}
+        <div className="fact-row" style={{
+          display: 'flex', flexWrap: 'wrap',
+          alignItems: 'baseline',
           gap: '10px 22px',
           fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-2)',
           letterSpacing: '0.01em',
@@ -324,25 +350,22 @@ export default async function Home() {
               describes the single SCHEDULED daily push, and everything else is
               a response to something the runner did, not an engagement ping.
               Same class as the "four answers" overclaim fixed in GTM-SITE-01. */}
-          {/* ⚠️ THE SEPARATOR TRAILS ITS ITEM, IT DOES NOT LEAD THE NEXT ONE.
-              Each span used to render `· fact`, which is invisible on one
-              line and wrong the moment the row wraps: at 390px this became
-
-                  5 zones      ·  Mostly easy running
-                ·  £7.99/month    ·  One daily nudge
-
-              with a dangling middot starting the second line and the items
-              indented past the page gutter. Trailing it instead leaves the
-              middot at the END of a wrapped line, where it reads as "there
-              is more", and every item starts flush with the gutter. */}
           {(() => {
-            const facts = ['5 zones', 'Mostly easy running', `${PRICING.monthly.display}/month`, 'One daily nudge']
-            return facts.map((fact, i) => (
-              <span key={fact} style={{ display: 'inline-flex', alignItems: 'center', gap: '22px' }}>
-                {fact}
-                {i < facts.length - 1 && <span aria-hidden style={{ color: 'var(--line-strong)' }}>·</span>}
-              </span>
-            ))
+            const dot = (k: string) => (
+              <span key={k} aria-hidden style={{ color: 'var(--line-strong)' }}>&middot;</span>
+            )
+            const pairs: string[][] = [
+              ['5 zones', 'Mostly easy running'],
+              [`${PRICING.monthly.display}/month`, 'One daily nudge'],
+            ]
+            return pairs.flatMap((pair, i) => [
+              // Hidden below 560px: at phone width the two pairs ARE the two
+              // lines, so the separator between them has nothing to sit between.
+              ...(i > 0 ? [<span key={`mid-${i}`} className="fact-sep-mid" aria-hidden style={{ color: 'var(--line-strong)' }}>&middot;</span>] : []),
+              <span key={`pair-${i}`} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '22px', whiteSpace: 'nowrap' }}>
+                {pair[0]}{dot(`d-${i}`)}{pair[1]}
+              </span>,
+            ])
           })()}
         </div>
       </section>
@@ -805,13 +828,29 @@ export default async function Home() {
       </Section>
 
       {/* Founder note kept: it is real brand content and the only place the
-          site says who built it. Moved ABOVE the shared footer rather than
-          deleted, so the footer itself can be identical on every page. */}
-      <section style={{ padding: '40px 24px 0', maxWidth: '1100px', margin: '0 auto' }}>
-        <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.5, color: 'var(--ink-2)', margin: 0 }}>
-          Built by {BRAND.founder.firstName}. Runs medium-hard on everything. That&apos;s how I know.
+          site says who built it. Above the shared footer rather than deleted,
+          so the footer itself can be identical on every page.
+
+          🔴 IT READ AS A LINE SOMEBODY FORGOT TO DELETE, and the cause was
+          two-thirds spacing (founder, 2026-09-21: "looks misplaced").
+          It was a hand-rolled `<section>` with `padding: '40px 24px 0'` — 40
+          above, ZERO below — immediately before the near-black closing band,
+          so the last words physically touched the black. It also sat outside
+          the rhythm system every other band uses (W-07's `--sect-y` tokens)
+          at its own hardcoded 1100px, and was set in the same size and
+          colour as ordinary body copy, so nothing said it was a signature.
+
+          Now a `Section`: the shared rhythm gives it air on both sides, the
+          read measure stops a one-line note spanning the full page frame,
+          and the name is set in `--ink` against `--mute` so it reads as
+          signed rather than as a stray paragraph. No rule, no rail, no
+          chrome — the type does it. */}
+      <Section width="read">
+        <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.6, color: 'var(--mute)', margin: 0 }}>
+          <span style={{ color: 'var(--ink)', fontWeight: 600 }}>Built by {BRAND.founder.firstName}.</span>{' '}
+          Runs medium-hard on everything. That&apos;s how I know.
         </p>
-      </section>
+      </Section>
 
       {/* ── The receipt — the ONE dark band (v2, design_handoff_v2 Change 1) ──
           A near-black punctuation mark, not a theme (ADR-008 stands). Carries
