@@ -72,32 +72,32 @@ export default function TermsPage() {
           </div>
         </div>
 
-        <Section title="Acceptance">
+        <DocSection title="Acceptance">
           <P>By creating an account or using {BRAND.name} (&quot;the service&quot;), you agree to these terms. If you do not agree, do not use the service.</P>
           <P>You must be at least 14 years old to use {BRAND.name}. If you are under 18, you confirm that a parent or guardian has reviewed these terms with you.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Who we are">
+        <DocSection title="Who we are">
           <P>{BRAND.name} is operated by {BRAND.founder.legalName}, based in the United Kingdom. The service is available at <strong>zonna.run</strong> and via the App Store.</P>
           <P>Contact: <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Your account">
+        <DocSection title="Your account">
           <P>You are responsible for keeping your account credentials secure and for activity that happens under your account. Tell us immediately if you suspect unauthorised access.</P>
           <P>You agree to provide accurate information when signing up and to keep that information current. One person, one account.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="The service">
+        <DocSection title="The service">
           <P>{BRAND.name} provides personalised running training plans, session tracking, and coaching feedback. The service relies on data you provide (race, fitness, HR zones) and, optionally, data from connected sources (Strava, Apple Health).</P>
           <P>Training advice from {BRAND.name} is informational only. It is not medical advice. You alone are responsible for deciding whether a session is safe for you on any given day. If you have any health condition, are recovering from injury, or have not exercised in a long time, consult a doctor before starting a training plan.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Free and paid tiers">
+        <DocSection title="Free and paid tiers">
           <P>{BRAND.name} has two tiers: a free tier and a paid subscription. The free tier provides generic training plans, session display, session logging, and pace/HR targets. The paid subscription unlocks AI-generated plans, dynamic plan reshaping, Strava and Apple Health intelligence, AI session feedback, and weekly coaching reports. The full list of paid features is shown on the upgrade screen at the time of purchase.</P>
           <P>New accounts include a {PRICING.trialDays}-day free trial of the paid tier. The trial begins on first sign-up, runs once per account, and downgrades automatically to the free tier if you do not subscribe.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Subscription terms">
+        <DocSection title="Subscription terms">
           <SubHead>Price and billing period</SubHead>
           <P>Paid plans are billed at <strong>{PRICING.monthly.label}</strong> or <strong>{PRICING.annual.label}</strong> ({PRICING.annual.perMonthDisplay} equivalent), in {PRICING.currency}. Prices include applicable taxes where required by law.</P>
 
@@ -118,9 +118,9 @@ export default function TermsPage() {
 
           <SubHead>Price changes</SubHead>
           <P>If we change the subscription price, we will notify you by email or in-app at least 30 days before the change takes effect, so you have time to cancel before being charged the new price.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Acceptable use">
+        <DocSection title="Acceptable use">
           <P>You agree not to:</P>
           <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
             {[
@@ -142,55 +142,55 @@ export default function TermsPage() {
             ))}
           </ul>
           <P>We may suspend or terminate accounts that violate these rules.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Your data">
+        <DocSection title="Your data">
           <P>How we collect, store, and use your personal data is described in our <A href="/privacy">Privacy Policy</A>. You retain ownership of training data you generate (sessions, plans, feedback). You grant us a limited licence to store and process this data for the sole purpose of providing the service to you.</P>
           <P>You can export or delete your data at any time. See the Privacy Policy for details.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Intellectual property">
+        <DocSection title="Intellectual property">
           <P>{BRAND.name}, including the software, the training plan engine, the coaching content, the brand, the design system, and the underlying methodology, is owned by us and protected by copyright and other intellectual property laws. We grant you a personal, non-exclusive, non-transferable licence to use the service for your own training, subject to these terms.</P>
           <P>Nothing in these terms transfers ownership of any intellectual property to you.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Third-party services">
+        <DocSection title="Third-party services">
           <P>The service integrates with third-party platforms (Strava, Apple Health, Google sign-in, Apple sign-in, Anthropic, Supabase, Stripe, RevenueCat, Apple App Store). Your use of those platforms is governed by their own terms. We are not responsible for outages, errors, or policy changes on those platforms.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Health and safety disclaimer">
+        <DocSection title="Health and safety disclaimer">
           <P><strong>{BRAND.name} is not a medical device or a healthcare service.</strong> Training plans, coaching feedback, readiness signals, and session targets are generated from algorithms and your self-reported data. They are guidance, not prescriptions.</P>
           <P>You are solely responsible for monitoring how you feel during exercise and for deciding to stop, slow down, or skip a session. Stop immediately and seek medical attention if you experience chest pain, severe shortness of breath, dizziness, fainting, or any other concerning symptom.</P>
           <P>Consult a qualified healthcare professional before starting any new training programme, particularly if you have a heart condition, high blood pressure, are pregnant, are recovering from an injury, or have not exercised regularly in the past 12 months.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Disclaimers">
+        <DocSection title="Disclaimers">
           <P>The service is provided &quot;as is&quot; and &quot;as available&quot;. To the fullest extent permitted by law, we disclaim all warranties, express or implied, including warranties of merchantability, fitness for a particular purpose, accuracy, and non-infringement.</P>
           <P>We do not guarantee that the service will be uninterrupted, error-free, or that any specific training outcome (race time, fitness improvement, injury prevention) will result from using it.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Limitation of liability">
+        <DocSection title="Limitation of liability">
           <P>To the fullest extent permitted by law, {BRAND.name} and its operators will not be liable for any indirect, incidental, consequential, special, or punitive damages, including loss of profits, loss of data, or personal injury, arising from your use of the service.</P>
           <P>Our total aggregate liability to you for any claim arising from these terms or the service will not exceed the amount you have paid us in the 12 months preceding the event giving rise to the claim, or £100, whichever is greater.</P>
           <P>Nothing in these terms limits liability for death or personal injury caused by negligence, fraud, or any liability that cannot be excluded by law.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Termination">
+        <DocSection title="Termination">
           <P>You can stop using the service at any time and delete your account from the Profile screen.</P>
           <P>We may suspend or terminate your access if you breach these terms, if continued operation creates legal or security risk, or if we discontinue the service. We will give reasonable notice unless immediate action is required to protect the service or other users.</P>
           <P>On termination, your right to use the service ends. Sections that by their nature should survive termination, including intellectual property, disclaimers, limitation of liability, and governing law, survive.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Changes to these terms">
+        <DocSection title="Changes to these terms">
           <P>We may update these terms from time to time. If changes are material, we will notify you by email or in-app at least 14 days before they take effect. The &quot;last updated&quot; date at the top of this page reflects the most recent revision.</P>
           <P>Continued use of {BRAND.name} after changes take effect constitutes acceptance of the updated terms.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Governing law">
+        <DocSection title="Governing law">
           <P>These terms are governed by the laws of England and Wales. Any dispute arising from these terms or the service will be subject to the exclusive jurisdiction of the courts of England and Wales, except that you may bring claims in the courts of your country of residence where local consumer-protection law gives you that right.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Contact">
+        <DocSection title="Contact">
           <P>For questions about these terms:</P>
           <div style={{
             background: 'var(--card-bg)',
@@ -202,7 +202,7 @@ export default function TermsPage() {
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-sm)', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
                        <A href="mailto:support@zonna.run">support@zonna.run</A>
           </div>
-        </Section>
+        </DocSection>
 
         {/* Footer */}
         <div style={{
@@ -238,7 +238,7 @@ export default function TermsPage() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function DocSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: '48px' }}>
       <div style={{

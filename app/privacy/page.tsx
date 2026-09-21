@@ -72,12 +72,12 @@ export default function PrivacyPage() {
           </div>
         </div>
 
-        <Section title="Who we are">
+        <DocSection title="Who we are">
           <P>{BRAND.name} is a running training application operated by {BRAND.founder.legalName}, based in the United Kingdom. The app is available at <strong>zonna.run</strong> and via the App Store.</P>
           <P>For any privacy-related queries, contact us at <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="What we collect">
+        <DocSection title="What we collect">
           <P>We collect the minimum needed to run the app. Nothing more.</P>
           <SubHead>Account data</SubHead>
           <P>When you sign up, we store your email address and an encrypted password (if using email sign-in), or a reference to your Google or Apple account (if using OAuth). We also store your first name, last name, and any profile details you choose to add.</P>
@@ -87,19 +87,19 @@ export default function PrivacyPage() {
           <P>When you log a training session, we store: completion status, RPE (rate of perceived exertion, 1–10), fatigue tags, distance, duration, and, where available from Strava, your average heart rate. This is used to provide coaching feedback and track your progress.</P>
           <SubHead>Usage data</SubHead>
           <P>We do not currently collect analytics or behavioural data beyond what is required for core app functionality. When analytics are added, this policy will be updated.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Strava">
+        <DocSection title="Strava">
           <P>If you connect Strava, {BRAND.name} requests read-only access to your Strava activities. Specifically: <strong>{BRAND.name} will read your Strava activities to provide coaching insights.</strong> We do not write to Strava, we do not access your social connections, and we do not share your Strava data with third parties.</P>
           <P>Your Strava access token is stored securely in your account. You can disconnect Strava at any time from the Profile screen. This deletes the stored token immediately.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Apple Health">
+        <DocSection title="Apple Health">
           <P>If you connect Apple Health (iOS app only), {BRAND.name} requests <strong>read-only</strong> access to your runs and recovery signals: workouts, heart rate samples within those workouts, resting heart rate, heart rate variability, sleep duration, and VO₂ max. We use this data to coach your training and detect days when your body needs a softer session.</P>
           <P>Apple Health authorisation is managed entirely by iOS. {BRAND.name} never writes to Apple Health and never reads any health categories outside those listed above. For your runs, we store both summary values (distance, duration, average heart rate) and the per-workout heart rate sample stream. This lets the coach detect cardiac drift and effort fade across a single session. For daily recovery signals (resting heart rate, HRV, sleep), we store one daily summary value per metric, not raw sample streams. You can disconnect at any time from the Profile screen, or revoke access from iOS Settings → Privacy → Health → {BRAND.name}.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="How we use your data">
+        <DocSection title="How we use your data">
           <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
             {[
               'To generate and display your personalised training plan',
@@ -118,9 +118,9 @@ export default function PrivacyPage() {
             ))}
           </ul>
           <P>We do not sell your data. We do not use your data for advertising. We do not share your data with third parties except as described below.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Third parties">
+        <DocSection title="Third parties">
           <SubHead>Supabase</SubHead>
           <P>Our database and authentication are provided by Supabase, Inc. Your data is stored on Supabase infrastructure (AWS, EU region). Supabase is GDPR-compliant. <A href="https://supabase.com/privacy">Supabase privacy policy →</A></P>
           <SubHead>Anthropic (Claude AI)</SubHead>
@@ -139,14 +139,14 @@ export default function PrivacyPage() {
           <P>The app is hosted on Vercel. Request logs may be retained by Vercel per their standard policies. <A href="https://vercel.com/legal/privacy-policy">Vercel privacy policy →</A></P>
           <SubHead>RevenueCat</SubHead>
           <P>App Store subscriptions are managed via RevenueCat, which gives us a unified view of subscription status. RevenueCat receives the App Store transaction ID, your subscription status (active, cancelled, refunded), and a pseudonymous user identifier tied to your {BRAND.name} account, not your name, email, or payment details. Apple handles all payment information directly. <A href="https://www.revenuecat.com/privacy">RevenueCat privacy policy →</A></P>
-        </Section>
+        </DocSection>
 
-        <Section title="Data retention">
+        <DocSection title="Data retention">
           <P>We keep your data for as long as your account is active. If you delete your account, all associated data is permanently deleted within 30 days, including your plan, session history, and Strava connection.</P>
           <P>Supabase authentication records are deleted immediately on account deletion.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Your rights (GDPR)">
+        <DocSection title="Your rights (GDPR)">
           <P>If you are based in the UK or European Economic Area, you have the following rights under GDPR:</P>
           <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
             {[
@@ -167,9 +167,9 @@ export default function PrivacyPage() {
             ))}
           </ul>
           <P>To exercise any of these rights, email <A href="mailto:support@zonna.run">support@zonna.run</A>. We will respond within 30 days.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Your rights (CCPA)">
+        <DocSection title="Your rights (CCPA)">
           <P>If you are a California resident, you have rights under the California Consumer Privacy Act (CCPA):</P>
           <ul style={{ margin: '0 0 16px', padding: '0 0 0 20px' }}>
             {[
@@ -188,28 +188,28 @@ export default function PrivacyPage() {
             ))}
           </ul>
           <P>To exercise these rights, email <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Account deletion">
+        <DocSection title="Account deletion">
           <P>You can delete your account at any time from the Profile screen in the app. Deletion is permanent and removes all associated data: your plan, session history, Strava connection, and account credentials.</P>
           <P>If you are unable to delete via the app, email <A href="mailto:support@zonna.run">support@zonna.run</A> and we will delete your account within 7 days.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Children">
+        <DocSection title="Children">
           <P>{BRAND.name} is not directed at children under 13. We do not knowingly collect personal data from anyone under 13. If you believe a child under 13 has provided us with personal data, please contact <A href="mailto:support@zonna.run">support@zonna.run</A> and we will delete it promptly.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Cookies and local storage">
+        <DocSection title="Cookies and local storage">
           <P>{BRAND.name} uses browser local storage (not cookies) to persist your theme preference and Strava session token on your device. This data stays on your device and is not transmitted to our servers.</P>
           <P>We do not use tracking cookies or third-party advertising cookies.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Changes to this policy">
+        <DocSection title="Changes to this policy">
           <P>If we make material changes to this policy, we will notify you by email or via an in-app notice before the changes take effect. The "last updated" date at the top of this page reflects the most recent revision.</P>
           <P>Continued use of {BRAND.name} after changes constitutes acceptance of the updated policy.</P>
-        </Section>
+        </DocSection>
 
-        <Section title="Contact">
+        <DocSection title="Contact">
           <P>For any questions about this policy or how your data is handled:</P>
           <div style={{
             background: 'var(--card-bg)',
@@ -221,7 +221,7 @@ export default function PrivacyPage() {
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-sm)', color: 'var(--text-primary)', marginBottom: '4px', fontWeight: 500 }}>{BRAND.name}</div>
                        <A href="mailto:support@zonna.run">support@zonna.run</A>
           </div>
-        </Section>
+        </DocSection>
 
         {/* Footer */}
         <div style={{
@@ -257,7 +257,7 @@ export default function PrivacyPage() {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function DocSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: '48px' }}>
       <div style={{

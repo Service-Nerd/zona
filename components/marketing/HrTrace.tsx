@@ -1,6 +1,5 @@
 /**
- * DESIGN-V3 — the post-run heart-rate trace. Shared: the hero uses it large,
- * the "four easy runs" strip uses it mini, and it is the same component.
+ * DESIGN-V3 — the post-run heart-rate trace on the marketing homepage.
  *
  * ── THE NUMBER AND THE DRAWING HAVE TO AGREE ──────────────────────────────
  *
@@ -19,6 +18,14 @@
  * about the session as well as the number. So the PATH was re-cut to make the
  * breach 25.45% of the run — 14.0 minutes — while keeping the gesture and the
  * depth (it still dives 48 units above the ceiling, so the amber reads).
+ *
+ * ⚠️ NO `mini` VARIANT. The handoff specifies one, for a "four easy runs,
+ * same ceiling" strip. That strip is in the EXPLORATION file
+ * (hero-directions.dc.html), not in the page spec
+ * (homepage-surfaces.dc.html), and `SameWeekTwice` already makes the same
+ * point on the same page using real plan data. Shipping an unused variant is
+ * decorative API, which this repo already treats as a defect class for
+ * config. Re-add it with the strip if the strip is ever built.
  *
  * `lib/marketing/hrTraceGeometry.test.ts` re-measures the committed path and
  * fails if it stops matching `BREACH_MINUTES`. The number is authored once, in
@@ -46,7 +53,6 @@ const HELD_END = { cx: 580, cy: 172 }
 export function HrTrace({
   phase,
   drawn,
-  mini = false,
   ticks = false,
   idSuffix = '',
 }: {
@@ -56,19 +62,17 @@ export function HrTrace({
   /** Drives the stroke draw-in. The parent sets it after mount, or
    *  immediately under reduced motion. */
   drawn: boolean
-  /** Thicker strokes and a coarser ceiling dash, so the breach still reads at
-   *  ~140px wide. No ceiling label, no ticks. */
-  mini?: boolean
   ticks?: boolean
-  /** The clip path needs a document-unique id: the hero and the four mini
-   *  traces are all on the page at once, and a duplicated id makes every
-   *  later instance clip against the first one's rect. */
+  /** The clip path needs a document-unique id. One instance is on the page
+   *  today, but a duplicated id makes every later instance clip against the
+   *  FIRST one's rect, and that failure is invisible until the second one
+   *  exists — so the id is parameterised now rather than after. */
   idSuffix?: string
 }) {
   const clipId = `hr-above-ceiling${idSuffix}`
   const keen = phase === 0
-  const strokeW = mini ? 7 : 3
-  const dotR = mini ? 9 : 5
+  const strokeW = 3
+  const dotR = 5
 
   return (
     <div style={{ width: '100%' }}>
@@ -109,9 +113,7 @@ export function HrTrace({
         {/* The ceiling itself */}
         <line
           x1="16" y1={TRACE_VIEWBOX.ceilingY} x2="584" y2={TRACE_VIEWBOX.ceilingY}
-          stroke={mini ? 'var(--mute)' : 'var(--mute-2)'}
-          strokeWidth={mini ? 5 : 1.5}
-          strokeDasharray={mini ? '10 14' : '4 7'}
+          stroke="var(--mute-2)" strokeWidth={1.5} strokeDasharray="4 7"
         />
 
         {/* Keen */}
@@ -141,7 +143,7 @@ export function HrTrace({
         </g>
       </svg>
 
-      {!mini && (
+      {(
         <div style={{
           position: 'absolute', left: 0,
           // Anchored to the CEILING, not to a fraction of the box. The line
@@ -158,7 +160,7 @@ export function HrTrace({
       )}
       </div>
 
-      {!mini && ticks && (
+      {ticks && (
         <div style={{
           display: 'flex', justifyContent: 'space-between', marginTop: 10,
           fontSize: 'var(--fs-micro)', fontWeight: 700, letterSpacing: '0.08em',

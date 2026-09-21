@@ -42,7 +42,15 @@ function componentProps(raw: string): string[] | null {
     return iface[1].split('\n').map(l => l.trim()).filter(Boolean)
       .map(l => (l.match(/^([A-Za-z_$][\w$]*)\s*\??\s*:/) || [])[1]).filter(Boolean) as string[]
   }
-  const m = src.match(/export default function \w+\s*\(\s*\{([\s\S]*?)\}\s*:/)
+  // ⚠️ NAMED EXPORTS TOO, and the reason is a real miss. This matched only
+  // `export default function`, and every marketing component in this codebase
+  // is a NAMED export — so registering a contract for one produced "could not
+  // read props" rather than a comparison. A parser that only understands one
+  // export style silently declines to check the other, which is the same
+  // "only as wide as its list" shape as the three audit checks widened
+  // earlier today. Found 2026-09-21 by registering contracts for HrTrace,
+  // Section, TabbedPhone and PhoneShell.
+  const m = src.match(/export (?:default )?function \w+\s*\(\s*\{([\s\S]*?)\}\s*:/)
   if (!m) return null
   // Split on TOP-LEVEL commas: a one-line destructure and a multi-line one must
   // parse the same, and `state = 'future'` / nested shapes must not split.

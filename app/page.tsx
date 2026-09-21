@@ -340,7 +340,7 @@ export default async function Home() {
           decorative dividers `ui-patterns.md` bans. This section is CARDS on
           the page ground: the cards are the structure. `--bg-soft` returns to
           its documented job (inset areas, input fields). */}
-      <section style={{ padding: 'var(--sect-y) 24px' }}>
+      <Section width="full">
         <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
           <Eyebrow>The problem</Eyebrow>
           <SectionTitle accent="the same grey zone.">Every run ends up in</SectionTitle>
@@ -363,10 +363,10 @@ export default async function Home() {
             />
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* ── What it does — three pillars + product mockups ───────────── */}
-      <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
+      <Section>
         <Eyebrow>The product</Eyebrow>
         <SectionTitle accent="done with restraint.">Three things,</SectionTitle>
 
@@ -431,7 +431,7 @@ export default async function Home() {
             </ProductStill>
           </Pillar>
         </div>
-      </section>
+      </Section>
 
       {/* ── Personalisation mechanic — previews the in-app profile/wizard ── */}
       {/* W-08 — no tinted ground and no hairlines. `--bg-soft` was acting as a
@@ -440,7 +440,7 @@ export default async function Home() {
           decorative dividers `ui-patterns.md` bans. This section is CARDS on
           the page ground: the cards are the structure. `--bg-soft` returns to
           its documented job (inset areas, input fields). */}
-      <section style={{ padding: 'var(--sect-y) 24px' }}>
+      <Section width="full">
         <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
           <Eyebrow>Personalised, not generic</Eyebrow>
           <SectionTitle sub="Your race, your history, your week, your legs. Pace bands and HR zones are derived from what you actually tell it, not lifted from a template.">
@@ -474,7 +474,7 @@ export default async function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* ── W-02: the journey, from plan-in-hand to race day ─────────────
           SLT-ruled 2026-09-21. The site described PROPERTIES and never said
@@ -502,7 +502,7 @@ export default async function Home() {
           component stills. Those two already carry the page's proof, and a
           third showcase block would make the page repetitive. Numbered text
           is also the austere register Sutherland argued for at the SLT. */}
-      <section style={{ padding: 'var(--sect-y) 24px' }}>
+      <Section width="full">
         <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
           <Eyebrow>How it goes</Eyebrow>
           <SectionTitle
@@ -578,12 +578,12 @@ export default async function Home() {
             ))}
           </ol>
         </div>
-      </section>
+      </Section>
 
       <SameWeekTwice />
 
       {/* ── What's not in the app — the restraint, made explicit ───────── */}
-      <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
+      <Section>
         <Eyebrow>The restraint</Eyebrow>
         <SectionTitle sub="What I left out, on purpose.">
           What&apos;s not in the app.
@@ -620,7 +620,7 @@ export default async function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </Section>
 
       {/* ── Counter-positioning — who this isn't for ──────────────────── */}
       {/* W-08 — the page's ONE white band, and it is deliberate rather than
@@ -674,7 +674,7 @@ export default async function Home() {
       {/* ── FAQ — native <details> disclosure (v2, design_handoff_v2) ──────
           Zero-JS, server-rendered, keyboard-accessible; no new interaction
           model. Dry brand voice; prices from PRICING. Free SEO. */}
-      <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-read)', margin: '0 auto' }}>
+      <Section width="read">
         <Eyebrow>Questions</Eyebrow>
         <SectionTitle>The obvious ones.</SectionTitle>
         <div style={{
@@ -721,7 +721,7 @@ export default async function Home() {
             </details>
           ))}
         </div>
-      </section>
+      </Section>
 
       {/* ── The free tier — W-05 (SLT 2026-09-21, ranked #1 on the list) ─────
           This is a PROMOTION and a rewrite, not a new section. The argument
@@ -741,7 +741,7 @@ export default async function Home() {
           build when a PAID_ONLY_ONGOING gate has no row on /pricing; a second
           page claiming what free includes would be a new drift surface, and
           this is the item most likely to have created one. */}
-      <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
+      <Section>
         <Eyebrow>The free tier</Eyebrow>
         <SectionTitle
           accent="Then decide."
@@ -788,7 +788,7 @@ export default async function Home() {
             </Link>
           </p>
         </div>
-      </section>
+      </Section>
 
       {/* Founder note kept: it is real brand content and the only place the
           site says who built it. Moved ABOVE the shared footer rather than

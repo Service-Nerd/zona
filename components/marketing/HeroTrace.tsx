@@ -25,7 +25,7 @@ import { HERO_TRACE, LOOP_SECONDS, DRAW_DELAY_MS, type TracePhase } from '@/lib/
  * as a still. The CSS half is handled by the motion tokens collapsing to 0s
  * in globals.css, so the transitions are inert even mid-flight.
  */
-export function HeroTrace({ compact = false }: { compact?: boolean }) {
+export function HeroTrace() {
   const [phase, setPhase] = useState<TracePhase>(0)
   const [drawn, setDrawn] = useState(false)
 
@@ -50,15 +50,15 @@ export function HeroTrace({ compact = false }: { compact?: boolean }) {
     <div style={{
       background: 'var(--surface-moss-wash)',
       borderRadius: 'var(--radius-xl)',
-      padding: compact ? 12 : 'clamp(16px, 2.5vw, 36px)',
+      padding: 'clamp(16px, 2.5vw, 36px)',
     }}>
       <div style={{
         background: 'var(--card)',
         border: '1px solid var(--line)',
         borderRadius: 'var(--radius-lg)',
         boxShadow: 'var(--shadow-card)',
-        padding: compact ? 18 : 'clamp(18px, 2.2vw, 28px)',
-        display: 'flex', flexDirection: 'column', gap: compact ? 16 : 20,
+        padding: 'clamp(18px, 2.2vw, 28px)',
+        display: 'flex', flexDirection: 'column', gap: 20,
       }}>
         {/* Header */}
         <div style={{
@@ -70,7 +70,7 @@ export function HeroTrace({ compact = false }: { compact?: boolean }) {
             textTransform: 'uppercase', color: 'var(--mute)',
           }}>{HERO_TRACE.eyebrow}</span>
           <span style={{
-            fontSize: compact ? 'var(--fs-caption)' : 'var(--fs-sm)',
+            fontSize: 'var(--fs-sm)',
             color: 'var(--mute)', fontVariantNumeric: 'tabular-nums',
           }}>
             <span className="hero-meta-long">{HERO_TRACE.meta}</span>
@@ -83,7 +83,7 @@ export function HeroTrace({ compact = false }: { compact?: boolean }) {
           {HERO_TRACE.states.map((s, i) => (
             <div key={s.value} style={{
               ...fade(keen ? i === 0 : i === 1),
-              display: 'flex', alignItems: 'baseline', gap: compact ? 10 : 12,
+              display: 'flex', alignItems: 'baseline', gap: 12,
             }}>
               <span style={{
                 fontSize: 'var(--fs-verdict)', fontWeight: 800, letterSpacing: '-0.04em',
@@ -91,21 +91,21 @@ export function HeroTrace({ compact = false }: { compact?: boolean }) {
                 color: s.tone === 'warn' ? 'var(--warn-strong)' : 'var(--moss-strong)',
               }}>{s.value}</span>
               <span style={{
-                fontSize: compact ? 'var(--fs-sm)' : 'var(--fs-body-lg)',
-                color: 'var(--ink-2)', lineHeight: 1.35, maxWidth: compact ? '8em' : undefined,
+                fontSize: 'var(--fs-body-lg)',
+                color: 'var(--ink-2)', lineHeight: 1.35, maxWidth: undefined,
               }}>{HERO_TRACE.label}</span>
             </div>
           ))}
         </div>
 
-        <HrTrace phase={phase} drawn={drawn} ticks idSuffix={compact ? '-hero-c' : '-hero'} />
+        <HrTrace phase={phase} drawn={drawn} ticks idSuffix="-hero" />
 
         <div style={{ height: 1, background: 'var(--line)' }} />
 
         {/* Kit */}
         <div style={{ display: 'grid' }}>
           {HERO_TRACE.states.map((s, i) => (
-            <div key={s.value} style={{ ...fade(keen ? i === 0 : i === 1), display: 'flex', gap: compact ? 10 : 12 }}>
+            <div key={s.value} style={{ ...fade(keen ? i === 0 : i === 1), display: 'flex', gap: 12 }}>
               <span aria-hidden="true" style={{
                 width: 3, borderRadius: 2, flexShrink: 0,
                 background: s.tone === 'warn' ? 'var(--warn-strong)' : 'var(--moss-strong)',
@@ -117,7 +117,7 @@ export function HeroTrace({ compact = false }: { compact?: boolean }) {
                   color: s.tone === 'warn' ? 'var(--warn-strong)' : 'var(--moss-strong)',
                 }}>{HERO_TRACE.coachEyebrow}</span>
                 <span style={{
-                  fontSize: compact ? 'var(--fs-body)' : 'var(--fs-body-lg)', lineHeight: 1.55,
+                  fontSize: 'var(--fs-body-lg)', lineHeight: 1.55,
                   color: s.tone === 'warn' ? 'var(--coach-ink)' : 'var(--ink-2)',
                 }}>{s.sentence}</span>
               </div>
