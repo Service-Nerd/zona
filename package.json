@@ -29,7 +29,8 @@
     "test:liveness": "tsx scripts/test-liveness.ts",
     "check:slow": "tsx scripts/check-test-duration.ts",
     "audit:plans": "tsx scripts/audit-plan-quality.ts",
-    "measure:envelope": "tsx scripts/measure-envelope.ts"
+    "measure:envelope": "tsx scripts/measure-envelope.ts",
+    "export:plans": "tsx scripts/export-marketing-plans.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
