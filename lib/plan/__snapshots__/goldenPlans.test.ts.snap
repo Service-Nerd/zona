@@ -3253,7 +3253,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
     {
       "date": "2026-11-02",
       "label": "Peak — holding the volume",
-      "long_run_hrs": 1.4,
+      "long_run_hrs": 1.3,
       "n": 12,
       "phase": "peak",
       "sessions": {
@@ -3294,7 +3294,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
           ],
           "detail": null,
           "distance_km": 14.5,
-          "duration_mins": 86,
+          "duration_mins": 79,
           "hr_target": "< 146 bpm",
           "id": "w12-sun",
           "label": "Long run — marathon pace + HM-pace finish",
@@ -4541,7 +4541,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
     {
       "date": "2026-10-12",
       "label": "Peak — consistency",
-      "long_run_hrs": 2,
+      "long_run_hrs": 1.9,
       "n": 11,
       "phase": "peak",
       "sessions": {
@@ -4582,7 +4582,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           ],
           "detail": null,
           "distance_km": 19,
-          "duration_mins": 119,
+          "duration_mins": 112,
           "hr_target": "< 142 bpm",
           "id": "w11-sun",
           "label": "Long run with HM-pace finish",
@@ -4754,7 +4754,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
     {
       "date": "2026-10-26",
       "label": "Peak — steady",
-      "long_run_hrs": 2,
+      "long_run_hrs": 1.9,
       "n": 13,
       "phase": "peak",
       "sessions": {
@@ -4795,7 +4795,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
           ],
           "detail": null,
           "distance_km": 19,
-          "duration_mins": 119,
+          "duration_mins": 112,
           "hr_target": "< 142 bpm",
           "id": "w13-sun",
           "label": "Long run with HM-pace finish",
@@ -6114,7 +6114,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "tempo_cruise",
           "coach_notes": [
-            "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -6150,7 +6150,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "duration_mins": 43,
           "hr_target": "147–161 bpm",
           "id": "w9-wed",
-          "label": "MARATHON-pace reps",
+          "label": "Marathon-pace reps",
           "pace_target": "4:31–4:43 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
@@ -6229,7 +6229,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "progressive_tempo",
           "coach_notes": [
-            "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -6274,7 +6274,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "duration_mins": 48,
           "hr_target": "147–161 bpm",
           "id": "w10-wed",
-          "label": "MARATHON-pace progression",
+          "label": "Marathon-pace progression",
           "pace_target": "4:31–4:43 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
@@ -6358,7 +6358,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "threshold_mile_repeats",
           "coach_notes": [
-            "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -6394,7 +6394,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "duration_mins": 56,
           "hr_target": "147–161 bpm",
           "id": "w11-wed",
-          "label": "MARATHON-pace reps",
+          "label": "Marathon-pace reps",
           "pace_target": "4:31–4:43 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
@@ -6410,7 +6410,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
     {
       "date": "2026-10-19",
       "label": "Peak — holding the volume",
-      "long_run_hrs": 2.7,
+      "long_run_hrs": 2.5,
       "n": 12,
       "phase": "peak",
       "sessions": {
@@ -6449,7 +6449,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           ],
           "detail": null,
           "distance_km": 29,
-          "duration_mins": 161,
+          "duration_mins": 152,
           "hr_target": "< 147 bpm",
           "id": "w12-sun",
           "label": "Marathon-pace long run",
@@ -6480,7 +6480,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "tempo_continuous",
           "coach_notes": [
-            "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -6507,7 +6507,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
           "duration_mins": 46,
           "hr_target": "147–161 bpm",
           "id": "w12-wed",
-          "label": "MARATHON-pace sustained",
+          "label": "Marathon-pace sustained",
           "pace_target": "4:31–4:43 /km",
           "primary_metric": "distance",
           "rpe_target": 7,
@@ -6713,7 +6713,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "wed": {
           "catalogue_id": "goal_pace_sharpener",
           "coach_notes": [
-            "MARATHON-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
+            "Marathon-pace work. Target 4:37 /km. Controlled, even splits — exit each rep wanting more.",
           ],
           "derived_set": {
             "blocks": [
@@ -6989,24 +6989,6 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
     "race_distance_km": 21.1,
     "race_name": "",
     "resting_hr": 0,
-    "rule_adjustments": [
-      {
-        "resolution": "Held weekly volume at 20 km (target 17) by trimming easy runs; long run + quality preserved.",
-        "rule": "V1-volume-quality-split",
-        "violation": "Week 6 introduced the first quality session AND stepped volume up from 17 to 23 km (>5% bump).",
-        "weeks_affected": [
-          6,
-        ],
-      },
-      {
-        "resolution": "Re-anchored week 7 to §2's 10% cap measured from delivered volume (now 23 km) by trimming easy runs; long run + quality preserved.",
-        "rule": "V1-volume-quality-split-reanchor",
-        "violation": "Week 7 stepped up from the volume curve (26 km) rather than from the 20 km week 6 actually delivered after its quality-split trim, a +30% delivered rise.",
-        "weeks_affected": [
-          7,
-        ],
-      },
-    ],
     "tier": "trial",
     "time_compressed": false,
     "training_age": "6-18mo",
@@ -7327,8 +7309,8 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
             "4×20s strides at 5K effort, full recovery between.",
           ],
           "detail": null,
-          "distance_km": 4,
-          "duration_mins": 28,
+          "distance_km": 7,
+          "duration_mins": 49,
           "hr_target": "< 138 bpm",
           "id": "w6-fri",
           "label": "Easy run + strides — Zone 2",
@@ -7399,7 +7381,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       },
       "theme": "One quality session. Everything else stays easy.",
       "type": "normal",
-      "weekly_km": 20,
+      "weekly_km": 23,
     },
     {
       "date": "2026-09-14",
@@ -7413,8 +7395,8 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
             "4×20s strides at 5K effort, full recovery between.",
           ],
           "detail": null,
-          "distance_km": 4,
-          "duration_mins": 28,
+          "distance_km": 7,
+          "duration_mins": 49,
           "hr_target": "< 138 bpm",
           "id": "w7-fri",
           "label": "Easy run + strides — Zone 2",
@@ -7492,7 +7474,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       },
       "theme": "One quality session. Everything else stays easy.",
       "type": "normal",
-      "weekly_km": 23,
+      "weekly_km": 26,
     },
     {
       "badge": "deload",

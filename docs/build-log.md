@@ -6,6 +6,65 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — MKT-PLAN-SHAPE-01: the published plans peaked in week 3, and every check said they were fine
+
+**Dev.** The founder sent a coaching-logic audit of the nine training plans we publish, because
+they are about to become carousels — one slide per week, publicly, to runners who comment. Seven
+of the nine collapsed coming out of the base phase's recovery week. The half-marathon plan, the
+one going out first against a competitor's, **peaked in week 3. In base.** Peak phase topped out at
+41 km against a base week of 45, and the easy runs in between dropped to 4 km, which made the
+quality session the longest weekday run.
+
+One cause. `applyV1VolumeQualityStimulusSplit` holds a week flat when it introduces the plan's
+first quality session — a real safety rule, Willy's gate, *intensity and volume do not progress in
+the same week*. It compared that week against `weeks[triggerIdx - 1]`. On seven of nine plans the
+week before the first quality session is the **recovery week**. So "hold volume flat" meant "hold
+at 70% of what the runner was already running". Then the next pass — also correct — ramped the rest
+of the block from the value actually delivered, and carried the cut through build and peak.
+
+**The bit that should have prevented it was already written, one function away.** §2 exempts a
+post-deload bounceback, in those words, because "returning to a volume held two weeks ago is not a
+spike". `buildVolumeSequence` implements it. V1 is a second producer of the same rule and never
+learned the exemption. That is the third time this repo has paid for two writers of one fact — the
+deload cadence had five copies, the session-distance expression had twenty.
+
+**AI-building.** The thing worth keeping: a second Claude session had reviewed these same nine
+plans that morning and reported all nine fit for purpose, 0 error-severity violations, builds +30%
+to +83%. That report was **true**. `validatePlan` was clean before the fix and clean after it. Every
+week was individually legal; what was broken was the relationship *between* weeks, and none of our
+four harnesses can see that — `verify` proves plans are valid, `verify:parity` proves they are
+unchanged, `cohort:shape` proves the population has not shifted, `measure:fitness` proves the runner
+gets built. A plan that is valid, unchanged, correctly classified and fit, and still peaks in week
+3, passes all four. They also measured peak-over-week-1, which is blind to *where* the peak falls by
+construction. They corrected the record unprompted, which is the part I would want in a human
+colleague.
+
+**Product.** Six of the ten invariants the brief proposed conflict with decisions the Coaching Board
+already took, and I did not quietly soften any of them. They are implemented exactly as written,
+measured, reported on every run, and tagged with the principle they collide with. The headline one:
+proposed invariant #1 **already exists** as `INV-PLAN-DELIVERED-RAMP`, and is a warning rather than
+an error *by board ruling*. It fires 6 times on the nine plans; the version in the brief fires 22.
+The whole gap is three gates the board added deliberately — chronic load, an absolute-km floor, and
+a tolerance for the fact that weekly volume is an integer, so 37 → 41 reads +10.8% where the curve
+it came from read +7.7%.
+
+**The honest bit.** One finding I could not fix, and the reason is a proof rather than a shrug. An
+18-week marathon plan put a recovery week in **week 2** — after a single loading week. That is 26%
+of the cohort grid and 100% of the 18-week cell, and every instance is the plan's *opening* block.
+The obvious fix moves it: the plan goes to deloads at 4, 8 and 12, and now the peak phase never
+exceeds build. So I brute-forced all 220 ways to place three deloads in that plan's twelve eligible
+weeks. **Zero satisfy every rule we have already ratified.** Exactly two satisfy all of them bar
+one, and neither is reachable by the greedy algorithm the placement rule specifies. The fix is a
+search, not a threshold. The board ratified the principle, shipped the check as a warning at its
+measured 30.8%, and filed the producer change with a falsifier attached: when it ships, that number
+must go to zero, not to a residual.
+
+I also nearly shipped the check itself broken — it emitted the same plan-level finding once per
+week, sixteen identical rows on one golden plan, and the test passed the whole time because it
+asserted `toContain` rather than an exact list.
+
+---
+
 ## 2026-09-21 — W-05 / W-07 / W-08 / W-09 / W-10 (and W-06 withdrawn, W-11 killed): the craft pass, and the number I gave the board that was wrong
 
 **Dev.** A competitor launched, the founder asked whether our site could be slicker, and I measured

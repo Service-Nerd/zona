@@ -73,6 +73,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-LABEL-MATCHES-PACE',
   'INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD',
   'INV-PLAN-DELOAD-PLACEMENT',
+  'INV-PLAN-MIN-LOADING-BLOCK',
   'INV-PLAN-INJURY-NO-HILLS',
   'INV-PLAN-RETURNING-INTENSITY-REENTRY',
   'INV-PLAN-DURATION-ANCHORED-KEEPS-MINUTES',
@@ -878,6 +879,55 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         actual: `longest ${statedLongest}km > weekly ${statedWeekly}km`,
         expected: 'longest_recent_run_km ≤ current_weekly_km',
       })
+    }
+  }
+
+  // INV-PLAN-MIN-LOADING-BLOCK — CoachingPrinciples §119
+  // (Coaching Board DELOAD-PLAN-OPENING-01, 2026-09-21). `warn`.
+  //
+  // A single loading week between two recovery weeks — or before the first —
+  // is not a loading block. §95 already says so about the build phase's second
+  // week ("the runner gets exactly one week of a new stimulus and is then
+  // recovered from it"); §119 is that sentence with the phase label removed.
+  //
+  // ⚠️ IT FIRES ON THE PLAN'S OPENING ALMOST EXCLUSIVELY, AND THAT IS THE
+  // FINDING. Measured 2026-09-21 across 4,406 cohort plans and 6,144 targeted:
+  // 1,131 (26.3%) and 2,048 (33.3%) carry a one-week loading block, and EVERY
+  // ONE OF THEM IS THE OPENING BLOCK — a recovery week in week 2, after the
+  // runner's first week. Mid-plan: 0. §95's remedy creates the block (at the
+  // standard cadence its `since === recoveryFreq - 3` test IS `since === 1`,
+  // so it produces one every time it fires) and the backward-normalisation
+  // pass, which balances the gaps BETWEEN deloads and treats week 0 as one,
+  // then parks it at the front.
+  //
+  // ⚠️ `warn`, NOT `error`, AND THE PRODUCER IS DELIBERATELY UNCHANGED.
+  // Brute force over all 220 placements of three deloads in the 18-week
+  // marathon's twelve eligible weeks: enforcing this floor greedily moves the
+  // plan to [4,8,12], which trades the week-2 deload for a peak phase that
+  // never exceeds build. Exactly two placements satisfy every ratified rule
+  // at once — [3,6,9] and [3,6,10] — and neither is reachable by §87's
+  // forward-walk-and-re-anchor. The fix is a SEARCH, not a threshold, so the
+  // board ratified the principle and filed the producer change rather than
+  // shipping a lateral move. Registered debt: DELOAD-PLAN-OPENING-01.
+  {
+    const main = plan.weeks.filter(w => w.n >= 1)
+    let run = 0
+    for (const w of main) {
+      const isDl = w.type === 'deload' || w.badge === 'deload'
+      if (isDl) {
+        if (run < GENERATION_CONFIG.MIN_LOADING_BLOCK_WEEKS) {
+          violations.push({
+            code: 'INV-PLAN-MIN-LOADING-BLOCK',
+            principle_ref: 'CoachingPrinciples §119 (§3, §95)',
+            severity: 'warn',
+            week: w.n,
+            message: `Week ${w.n} is a recovery week after only ${run} loading week${run === 1 ? '' : 's'}. A block that short is not a loading block — the runner gets one week of stimulus and is then recovered from it (§119, §95's own words with the phase label removed).`,
+            actual: `${run} loading week${run === 1 ? '' : 's'} before the recovery week`,
+            expected: `>= ${GENERATION_CONFIG.MIN_LOADING_BLOCK_WEEKS}`,
+          })
+        }
+        run = 0
+      } else if (w.type !== 'race') run++
     }
   }
 

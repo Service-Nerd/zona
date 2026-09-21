@@ -8242,3 +8242,80 @@ it."* Owner: `lib/plan/baseBuildCopy.ts`, single owner, 8 tests including the ru
 
 **Config.** `GET_RUNNING_MIN_WEEKS = 8`, `GET_RUNNING_MAX_WEEKS = 15`.
 **Owner.** `lib/plan/getRunningPlan.ts`. **Enforced by** `INV-PLAN-GET-RUNNING-BUILD-RATIO`.
+
+## 119. A loading block is never one week — including the plan's first
+
+*(Coaching Board DELOAD-PLAN-OPENING-01, 2026-09-21. **CORRECT WITH AMENDMENT** —
+the principle ships; the placement change is filed, not taken. Hutchinson chairing.)*
+
+**Principle.** At least `MIN_LOADING_BLOCK_WEEKS` loading weeks must sit between
+two recovery weeks, **and before the first one**.
+`INV-PLAN-MIN-LOADING-BLOCK` (`warn`).
+
+**Why.** §95 already rules on this defect and names it precisely — *"the runner
+gets exactly one week of a new stimulus and is then recovered from it"* — but
+scopes it to the build phase's second week. §119 is that sentence with the phase
+label removed. Willy's hard constraint in §95 ("back-to-back deloads do not add
+recovery, they remove a loading stimulus") is the same argument at zero loading
+weeks; one is not materially different.
+
+⚠️ **§95's OWN REMEDY IS THE PRODUCER.** At the standard cadence its count test
+`since === recoveryFreq - 3` **is** `since === 1`, so every time §95 fires it
+leaves exactly one loading week. The backward-normalisation pass in
+`computeDeloadWeeks` — which balances the gaps *between* deloads and implicitly
+treats week 0 as a deload — then moves that block to the **front of the plan**.
+§95 therefore trades a specific instance of its own defect for the general case,
+and parks the result on the runner's first fortnight.
+
+**Measured 2026-09-21**, 4,406 cohort plans (coprime stride) and 6,144 targeted:
+
+| | one-week loading blocks | at the plan's opening | mid-plan |
+|---|---|---|---|
+| cohort grid | 1,131 (**26.3%**) | 1,131 | **0** |
+| targeted grid | 2,048 (**33.3%**) | 2,048 | **0** |
+| 16-week plans | 53.6% | | |
+| 18-week plans | 50.5% (100% of the targeted marathon cell) | | |
+
+**Not one occurred mid-plan.** The defect is entirely the opening block, which is
+why it survived: §95's ratification measured *adjacency* (zero loading weeks) and
+*build position-2*, and neither metric can see a one-week block sitting at week 2.
+
+### ⚠️ The producer change is FILED, not taken — and the reason is a proof
+
+The obvious fix is to raise the floor in `computeDeloadWeeks`. It was built and
+measured, and it is a **lateral move**: the 18-week marathon goes
+`[2,6,10]` → `[4,8,12]`, which replaces the week-2 deload with a peak phase that
+never exceeds build (the deload lands on the last build week, peak opens on a
+bounceback, and §47 step-backs its first week). One gating defect becomes two.
+
+So all **220** placements of three deloads across that plan's twelve eligible
+weeks were generated and validated:
+
+| constraint relaxed (others held) | legal placements |
+|---|---|
+| nothing | **0 of 220** |
+| §87 no-phase-opening | 0 |
+| §95 no-build-position-2 | 0 |
+| §119 min loading block | 0 |
+| §23 / peak-is-the-peak | 0 |
+| resume-after-recovery | 0 |
+| **"3 loading weeks before any recovery"** | **2** — `[3,6,9]`, `[3,6,10]` |
+
+The binding constraint is the **three**-week minimum, not the two-week one. D-21
+governs: a rule that cannot be honoured is a defect in the rule, so §119 is
+**two**, which is satisfiable. But neither surviving placement is reachable by
+§87's forward-walk-and-re-anchor algorithm — **the fix is a search, not a
+threshold**, and the board will not ship a threshold that moves the failure.
+
+**Population cost of the rejected greedy fix, recorded so it is not re-proposed
+blind:** one-week blocks 1,131 → 604 (−46.6%) and the targeted marathon cell to
+zero, against build position-2 25.7% → 38.0% (+12.3pp), 24 more designed
+refusals in 41,472 (all "14 km/week → marathon", §44's floor), `measure:fitness`
+**unchanged on every cohort and all seven marathon personas**, and `cohort:shape`
+moving no metric by more than 0.6pp. It is not a bad trade; it is the wrong
+trade, because it does not fix the plan that prompted it.
+
+**Config.** `GENERATION_CONFIG.MIN_LOADING_BLOCK_WEEKS = 2`.
+**Owner.** Checker only — `INV-PLAN-MIN-LOADING-BLOCK`. `computeDeloadWeeks`
+deliberately does not read it. **Registered debt:** `DELOAD-PLAN-OPENING-01`,
+filed 2026-09-21, one day old at time of writing.

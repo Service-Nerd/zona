@@ -1622,6 +1622,33 @@ const ACKNOWLEDGED_WARN_RATES: Record<string, string> = {
   // If it is still ~31% after that programme, the acceptance was wrong.
   'INV-PLAN-PEAK-NOT-BELOW-START':
     'True rate after removing race-week masking (was 28.1% with the bug). 22.3pp are constrained runners the check is MEANT to catch, all declared. Tracked to fall by the 2026-09-16 compliance programme.',
+
+  // 30.8% (4389/14253), acknowledged 2026-09-21 on the day the check shipped.
+  //
+  // ⚠️ THIS RATE IS THE SIZE OF AN UNFIXED DEFECT, NOT THE NOISE FLOOR OF A
+  // CHECK, and the distinction is the whole reason this entry is allowed.
+  // Willy's standard in §1 — "not a safety mechanism, it is noise, and noise
+  // gets suppressed" — is about a check that FIRES WRONGLY. Every one of these
+  // 4,389 firings is correct: the plan really does put a recovery week after a
+  // single loading week, and on every one of them it is the plan's OPENING
+  // block (measured separately: 1,131/4,406 cohort and 2,048/6,144 targeted,
+  // mid-plan ZERO).
+  //
+  // The producer is unchanged BY BOARD RULING, not by omission. Brute force over
+  // all 220 placements of three deloads in the 18-week marathon's twelve
+  // eligible weeks: 0 satisfy the full constraint set, and the greedy fix moves
+  // the plan to [4,8,12], trading the week-2 deload for a peak phase that never
+  // exceeds build. Exactly two placements satisfy everything ([3,6,9], [3,6,10])
+  // and neither is reachable by §87's forward-walk-and-re-anchor. §119 records
+  // the full costing.
+  //
+  // ⚠️ NOT A PERMANENT ACCEPTANCE, AND IT HAS A FALSIFIER. When
+  // DELOAD-PLAN-OPENING-01 ships this must go to approximately ZERO — it is not
+  // a "constrained runner" residual like the entry above, it is a placement bug
+  // with no legitimate instances. If it is still ~30% after that work, the fix
+  // did not fix it.
+  'INV-PLAN-MIN-LOADING-BLOCK':
+    'The measured size of DELOAD-PLAN-OPENING-01, not check noise: every firing is a real one-week loading block and ~100% of them are the plan\'s opening block. Producer change deferred by board ruling (§119) because the greedy fix moves the failure rather than removing it. Expected to fall to ~0, not to a residual.',
 }
 const noiseRates = Array.from(warnByCode.entries())
   .map(([code, n]) => ({ code, n, pct: (n / generated) * 100 }))

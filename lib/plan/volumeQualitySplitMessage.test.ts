@@ -22,17 +22,27 @@ import type { GeneratorInput } from '@/types/plan'
 const FROZEN_NOW = new Date('2026-08-20T09:00:00Z')
 const PLAN_START = '2026-09-07'
 
-// The audit's Task B profile — reliably triggers V1 in week 5.
+// The audit's Task B profile — triggers V1 in week 6, against a LOADING week.
 const TASK_B: GeneratorInput = {
-  // RE-DATED 2026-09-16 (§97 Am., LONG-RUNWAY-EARNS-PLAN-01). This fixture is a
-  // 12-WEEK 10K and every assertion below was written against that shape. It used
-  // to say 2026-11-30, which gave 13 weeks AVAILABLE and was silently truncated to
-  // 12 by the old `idealWeeks` cap. Now that surplus weeks become plan weeks, that
-  // same date builds 13 and the quality rotation lands on different catalogue rows.
-  // Pinned to the Monday that makes the 12 weeks REAL rather than incidental — the
-  // race stays a Monday, so the PV2-G race-week shape these fixtures exercise is
-  // unchanged.
-  race_date: '2026-11-23', race_distance_km: 10, goal: 'time_target',
+  // RE-DATED 2026-09-16 (§97 Am., LONG-RUNWAY-EARNS-PLAN-01). It used to say
+  // 2026-11-30, which gave 13 weeks AVAILABLE and was silently truncated to 12 by
+  // the old `idealWeeks` cap. Now that surplus weeks become plan weeks, that same
+  // date builds 13 and the quality rotation lands on different catalogue rows.
+  //
+  // ⚠️ RE-DATED AGAIN 2026-09-21 (MKT-PLAN-SHAPE-01), 2026-11-23 -> 2026-12-09,
+  // AND THE REASON MATTERS MORE THAN THE DATE. At 2026-11-23 this fixture's first
+  // quality week (5) fell immediately after the base phase's DELOAD, and V1 fired
+  // because it compared a build week against a recovery week — which is the exact
+  // defect fixed that day. The fixture chosen in August to prove V1's message was
+  // honest was itself an instance of V1 firing wrongly, and the test could not see
+  // that because it only ever asked whether the SENTENCE was arithmetically
+  // consistent, never whether the INTERVENTION was warranted.
+  //
+  // 2026-12-09 is a 14-week 10K whose first quality week (6) follows a LOADING
+  // week (47 km) and genuinely steps up from it (47 -> 50, +6%), so V1 fires for
+  // the reason it exists. `expect(adj).toBeTruthy()` below is what caught the
+  // change; it is the assertion that makes this test worth having.
+  race_date: '2026-12-09', race_distance_km: 10, goal: 'time_target',
   target_time: '0:44:59', days_available: 4, age: 43,
   current_weekly_km: 40, longest_recent_run_km: 18,
   resting_hr: 48, max_hr: 188, preferred_long_run_day: 'sun',
@@ -67,5 +77,23 @@ describe('V1-volume-quality-split — the message matches the arithmetic', () =>
 
     const week = plan.weeks.find(w => w.n === adj.weeks_affected[0])!
     expect(held).toBe(week.weekly_km)
+  })
+
+  // MKT-PLAN-SHAPE-01 — V1 compares against the last LOADING week, never a
+  // recovery week. Asserted on the produced plan rather than by reading the
+  // producer's own variable, so it is a statement about the runner's plan and
+  // not a restatement of the implementation.
+  it('the week V1 measures against is one the runner actually loaded', () => {
+    const plan = generateRulePlan(TASK_B, 'paid', PLAN_START)
+    const adj = (plan.meta.rule_adjustments ?? []).find(a => a.rule === 'V1-volume-quality-split')!
+    const from = Number(adj.violation.match(/from (\d+(?:\.\d+)?) to /)![1])
+
+    const idx = plan.weeks.findIndex(w => w.n === adj.weeks_affected[0])
+    const reference = plan.weeks.slice(0, idx).reverse()
+      .find(w => w.type !== 'deload' && w.type !== 'race')!
+
+    expect(reference.type, 'V1 must not hold a build week flat against a recovery week').not.toBe('deload')
+    expect(from, `V1 reported "${from} km" but the last loading week was ${reference.weekly_km} km`)
+      .toBe(reference.weekly_km)
   })
 })

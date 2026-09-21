@@ -18,7 +18,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-21 (last ship `f4fd36b`):** tree clean · `verify` exit 0 · **2,851 tests / 320 files** · **131 invariants** (code=doc, 0 orphans) · liveness **128/131 woken, 3 accounted, 0 unclassified** · `audit-docs.sh` ALL CLEAN. 🔴 **`DATE-DST-01` — A QUARTER OF ALL PLANS WERE GENERATED ONE WEEK SHORT, EVERY SPRING, FOR AS LONG AS THE ENGINE HAS EXISTED.** `weeksBetweenLocal` parsed its endpoints as local midnight (correctly, deliberately) and then differenced them in milliseconds (fatally): two local midnights across a spring-forward are 24n − 1 hours apart, so `Math.floor` dropped a day, and on the Monday-to-Monday spans `computePlanLength` actually differences, a dropped day is a dropped **WEEK**. **Measured 25.0% of spans over three years — 13.5% at 8 weeks rising to 36.5% at 20, concentrated in the spring race season** — and it also fed §44's refusal gate. Found by reviewing the nine published `/plans/*` pages: for eleven weeks of every year `/plans/5k-12-week` rendered ELEVEN weeks under the words "12 Weeks" in its own title, heading and URL. `lib/dates.ts` is now the single owner; **six** hand-written copies read it, including one inside `invariants.ts` (producer and checker disagreed) and `dayBoundary` (the Sunday of the change silently dropped Saturday from the due list). ⚠️ **`verify:parity` said IDENTICAL twice** — 5,940 cases, then 7,884 after naively adding a later race date — because two conditions had to be true at once and I only fixed one; the `PARITY-DST-01` block now reports **30 of 5,994 changed, all inside it**. `measure:envelope` marathon **78.1% → 78.7%**, whole product **92.3% → 92.5%** (declared). 🟠 **`npm run verify` was RED on main this morning with nothing committed** — a fixture pinned an absolute race date and aged past §44's minimum. **30 more test files are in the same state, with race dates weeks away**: `FIXTURE-CLOCK-SWEEP-01`. 🟢 **Published-plan review, all nine: 0 error-severity violations, builds +30% to +83%, 2 to 3 deloads each, quality 0.56 to 0.67 per build week.** Three page-visible copy defects fixed (`MKT-PLAN-PHASE-NOTE-01`); `planNotes.test.ts` now walks all **53 anchors a year**, where `plans.test.ts` froze one Wednesday. 🟢 **Comparison page 2 shipped** (`/coopah-vs-runna`), adding a `table` block kind — which **silently turned two house-style checks off** until `copyOf` was made exhaustive. 🟢 **`GTM-CHARITY-05`/`06` are LIVE** — the migration had **never applied**: `CREATE OR REPLACE VIEW` cannot insert a column mid-list, and because the SQL editor runs the script in one transaction, that one failing statement **rolled the second view back too** and the error named neither. Appended rather than dropped (`v_paying_users` depends on the view; `CASCADE` would have silently deleted it). Verified on live data: **two users who read `trial` now read `grant`**, exactly as predicted. ⚠️ **Two charity codes HAVE been redeemed** — an earlier note of mine said none ever had. **No migration in the repo is now unapplied.** 🟢 **Website craft pass shipped** (`W-05/07/08/09/10`): eleven section padding pairs and eight content widths became **three tokens and two measures** in `globals.css`; the site stopped alternating bands (**three grounds, each spent once**); and the dark receipt band moved from **section 9 of 11 to LAST**, so the page closes. The free-tier case was promoted out of a card headed *"Not ready for the app?"* sitting after the dark band. 🔴 **`W-06` WITHDRAWN the same day it was ruled** — I gave the SLT an H1 measured at a ~527px pane (36.9px, "no hierarchy"); at 1280 it is **46.08px**, the step is **1.28×**, and relative to its own column ours is **9.0% against their 10.2%**. **Second Miles claim withdrawn in two days after measuring properly — STATE THE VIEWPORT IN THE CLAIM.** 🔴 **We could not copy their close:** they use TWO dark bands, `ui-patterns.md` allows exactly ONE (ADR-008), and the board was not told that when it ruled. `W-11` film grain killed. 🔻 **YOURS, and nothing else is blocking:** **`GTM-SEO-COMPARE-PRICE-01` — pages 1 and 2 give Coopah two different prices and page 1 now links to page 2 three sentences after the wrong one** · `OPS-VERCEL-PLAN-01` + `OPS-SUPABASE-PLAN-01` (P0) · `LEGAL-COUNSEL-01` · the `P-13(c)` illustration commission · the **second-typeface** decision that gates `P-06(b)` · **device verification: nothing built has ever run on one**, though `/refusal-preview`, `/zone-block-preview`, `/me-preview` and `/onboarding-preview` make it quick.
+**State at END of 2026-09-21 (last ship `3f3239d`):** tree clean · `verify` exit 0 · **2,869 tests / 321 files** · **132 invariants** (code=doc, 0 orphans) · liveness **129/132 woken, 3 accounted, 0 unclassified** · `audit-docs.sh` ALL CLEAN. 🔴 **`MKT-PLAN-SHAPE-01` — THE HALF-MARATHON PLAN WE PUBLISH PEAKED IN WEEK 3, IN BASE, AND EVERY CHECK SAID IT WAS FINE.** `applyV1VolumeQualityStimulusSplit` holds a week flat when it introduces the first quality session (Willy's CD-16 gate, correct) and compared it against `weeks[triggerIdx - 1]` — which on **7 of the 9 published plans** is the base phase's **RECOVERY week**. "Hold volume flat" therefore meant "hold at 70% of what the runner was already running", a 38% cut on the week the plan says the hard work begins; the re-anchor pass then correctly ramped the rest of the block from the trimmed value and carried it through build and peak. Half-marathon **peak 41 km against a base week of 45**, easy runs at the 4 km floor so the quality session was the longest weekday run. ⚠️ **§2's remedy was already written one function away** — `buildVolumeSequence` exempts a post-deload bounceback in those words. **Third time this repo has paid for two writers of one fact.** V1 now fires **60.4% → 31.8%** of plans. ⚠️ **ALL NINE WERE `validatePlan`-CLEAN BEFORE AND AFTER** — each week individually legal, the relationship BETWEEN weeks broken, which `verify` / `verify:parity` / `cohort:shape` / `measure:fitness` **all structurally cannot see**. A peer session reviewed the same nine that morning and reported them fit for purpose; that report was TRUE, and its metric (peak-over-week-1) is blind to WHERE the peak falls. 🟢 Also fixed, all display: segmented long runs priced at the paces they prescribe (29 km / 192 min = 6:37/km against its own 5:40/km note; 6–9% overstated on all five), race week showing `15 km + race` rather than folding the race into `weekly_km`, and `MARATHON-pace reps` (an enum leaking into copy) → `Marathon-pace reps`. ⚖️ **Board ratified §119** — a loading block is never one week, `MIN_LOADING_BLOCK_WEEKS = 2`, `INV-PLAN-MIN-LOADING-BLOCK` (`warn` at a measured **30.8%**). **The producer change is FILED, NOT TAKEN, and the reason is a proof:** all **220** placements of three deloads in the 18-week marathon's twelve eligible weeks were generated and validated — **0 satisfy the full constraint set**, exactly **2** satisfy everything but a THREE-week floor, and neither is reachable by §87's greedy forward-walk. **The fix is a search, not a threshold** (`DELOAD-PLAN-OPENING-01`, with a falsifier: the warn must go to ~0, not to a residual). 🔻 **SIX OF THE TEN PROPOSED INVARIANTS CONFLICT WITH RATIFIED DOCTRINE** and are advisory **by decision, not omission** — I1 already exists as `INV-PLAN-DELIVERED-RAMP` (§94, `warn` by board ruling; 22 findings vs its 6, the whole gap being §94's chronic-load gate, 3 km floor and integer-rounding tolerance); I7a contradicts ADR-018/§9/§52; I8 contradicts §8; I9 contradicts §49; I5 is provably unsatisfiable. Register: `docs/decisions/mkt-plan-shape-01-conflicts.md`. ⚠️ **`verify:parity` 2,750 of 5,994 CHANGED, intended** — V1's un-trim plus two display re-pricings; `cohort:shape` moves no metric beyond 0.1pp and `measure:fitness` is unchanged on every cohort and all seven marathon personas. **I did not decompose the 2,750 into coaching-vs-display.** ⚠️ **Two of my own bugs, both caught by the falsification cases and neither by review:** the I4 injury carve read only the config constant so the too-shallow arm never gated for anyone, and the new invariant sat inside `validatePlan`'s per-week loop emitting sixteen identical rows while `toContain` passed. **Easy share by time, post-fix: 90.9%–96.2%.** 🔻 **STILL YOURS:** `OPS-VERCEL-PLAN-01` + `OPS-SUPABASE-PLAN-01` (P0) · `LEGAL-COUNSEL-01` · the `P-13(c)` illustration commission · the **second-typeface** decision gating `P-06(b)` · **device verification: nothing built has ever run on one.**
 
 🥇 **THE ENGINE'S PRIORITY-ONE DEFECT IS FIXED. `S114-GET-YOU-ROUND-01` — founder decision.** Where the week cannot hold the long run the race asks for, **the long run yields and the plan says so.** Measured on 6,480 beginner-marathon inputs: a week with one session ≥75% of it **45.2% → 0%** · loading weeks with ≤2 runs **40.5% → 0%** · any week over §52's 60% **37.9% → 0.2%** · fewer days than asked **49.4% → 33.7%** · **refused 2,358 → 2,321, FEWER**.
 
@@ -2343,6 +2343,76 @@ do this, the opacity is load-bearing and needs a test.
 ---
 
 ## 🆕 FILED 2026-09-21 — from the published-plan review
+
+### ✅ `MKT-PLAN-SHAPE-01` — CLOSED 2026-09-21. The coaching-logic audit of the nine published plans.
+
+Full conflict register: `docs/decisions/mkt-plan-shape-01-conflicts.md`. **Read it before
+re-opening anything below** — six of the ten proposed invariants conflict with ratified doctrine and
+are advisory by decision, not by omission.
+
+**Shipped:** the V1 anchor (P0-A / P0-B / P1-B, one cause), segmented-long-run duration (P1-C),
+race-week display (D1), `MARATHON-pace` casing (D2), plus `lib/plan/planShapeInvariants.ts`,
+`marketingPlanShape.test.ts` (in `npm run verify`) and `npm run audit:plan-shape`.
+
+**Board ruled §119** (a loading block is never one week) — principle, `MIN_LOADING_BLOCK_WEEKS`,
+`INV-PLAN-MIN-LOADING-BLOCK` (`warn`). Producer change deferred, see below.
+
+---
+
+### 🔴 `DELOAD-PLAN-OPENING-01` — OPEN. §119's producer change: deload placement needs a SEARCH.
+
+**Filed 2026-09-21** by the Coaching Board, which ratified the principle and declined the greedy fix.
+
+`INV-PLAN-MIN-LOADING-BLOCK` fires on **30.8% of the property sweep** (4,389/14,253) and ~100% of
+those are the plan's **opening** block — a recovery week in week 2, after the runner's first week.
+§95's remedy produces it (at the standard cadence its `since === recoveryFreq - 3` test **is**
+`since === 1`) and the backward-normalisation pass, which balances gaps *between* deloads and
+implicitly treats week 0 as one, parks it at the front.
+
+⚠️ **The obvious fix was built, measured and rejected.** Raising the floor greedily moves the
+18-week marathon to `[4,8,12]`, which replaces the week-2 deload with a peak phase that never
+exceeds build. All **220** placements of three deloads across that plan's twelve eligible weeks were
+generated and validated: **0 satisfy the full constraint set**; exactly two (`[3,6,9]`, `[3,6,10]`)
+satisfy everything except a *three*-week minimum, and **neither is reachable by §87's
+forward-walk-and-re-anchor**. The fix is a search over legal placements scored against §3 / §87 /
+§95 / §119 / §23, not a threshold.
+
+**Costing of the rejected greedy fix, so it is not re-proposed blind:** one-week blocks 1,131 → 604
+(−46.6%), targeted marathon cell to zero; build position-2 25.7% → 38.0% (+12.3pp); 24 more designed
+refusals in 41,472 (all "14 km/week → marathon", §44's floor); `measure:fitness` **unchanged** on
+every cohort and all seven marathon personas; `cohort:shape` no metric moving more than 0.6pp.
+
+**Falsifier on close:** the warn rate must go to ~0, not to a residual. It is a placement bug with
+no legitimate instances, unlike `INV-PLAN-PEAK-NOT-BELOW-START` beside it in the acknowledged list.
+
+---
+
+### 🟠 `WEEK12-LR-CAP-CLIFF-01` — OPEN. The 5K plan steps +44% in week 3, and it is not §94's residual.
+
+**Filed 2026-09-21.** `5k-12-week` delivers **18 → 18 → 26 km**. Weeks 1–2 are held by
+`WEEK_1_2_LONG_RUN_CAP_MULTIPLIER` (long run capped to `longest_recent_run_km × m` = 5.5 km), and
+§9's long-vs-easy ratio then drags every easy run down to the 4 km floor **with** it — costing the
+week 4–6 km against its own curve. The cap lifts in week 3 and the whole week jumps at once.
+
+⚠️ **Distinct from every other I1 finding**, which are §94's documented delivered-vs-curve residual.
+This one is a cap that cliff-edges rather than ramps, and it is worst where `longest_recent_run_km`
+is small relative to weekly volume — i.e. on the shortest-race plans, where a runner's longest run
+is naturally close to their easy runs.
+
+**Board item** — ramping the cap changes what the engine prescribes in weeks 1–3 for every runner
+whose longest recent run binds. Not attempted here.
+
+---
+
+### 🟡 `MKT-PLAN-SEGMENT-BASIS-01` — OPEN, small. Is §25's `race_pace_pct` a share of DISTANCE or TIME?
+
+**Filed 2026-09-21.** The codebase is not unanimous. §24b's own coach note states it in km
+(*"Middle 20% (≈3.7 km)"*); `sessionComposer.ts` splits §25's catalogue rows by time
+(`segMins = total * mpPct / 100`). For the five live sessions the readings differ by under a minute
+(marathon: 181 vs 180), so the I7b duration fix is robust either way — but `withDistances` then
+prices **every** part at one uniform `kmPerMin`, so the race-pace segment's displayed **distance** is
+computed at the session's average pace and understates it. Resolve the basis, then fix the display.
+
 
 ### ✅ `GTM-SEO-COMPARE-PRICE-01` — CLOSED 2026-09-21, same day it was filed
 

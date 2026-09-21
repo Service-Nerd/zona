@@ -15,6 +15,7 @@ import { stepParts } from '@/lib/plan/resolveMainSet'
 import { type MarketingPlan, planAnchor, faqsFor, getPlan, planCardTitle } from '@/lib/marketing/plans'
 import { PHASE_LABEL, phaseNote } from '@/lib/marketing/planNotes'
 import type { Session, Week } from '@/types/plan'
+import { trainingKm } from '@/lib/plan/weekVolume'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
@@ -237,9 +238,15 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
                         {isRaceWeek && <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, color: 'var(--s-race)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Race week</span>}
                         <span style={{ display: 'block', fontSize: 13, color: 'var(--mute)', marginTop: 2 }}>{w.label}</span>
                       </div>
+                      {/* D1 — race week shows what the runner TRAINS and what they
+                          RACE, separately. `weekly_km` includes the race, so the half
+                          plan rendered "36 km" on a race week that follows 41 → 32 → 26,
+                          reading as the biggest week of the taper. The runner trains 15
+                          and races 21.1. `trainingKm` is the shared owner, so this page
+                          and the shape checker cannot disagree. */}
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <span style={{ fontFamily: 'var(--font-brand)', fontSize: 18, fontWeight: 800, color: 'var(--ink)' }}>{w.weekly_km}</span>
-                        <span style={{ fontSize: 12, color: 'var(--mute)', marginLeft: 3 }}>km</span>
+                        <span style={{ fontFamily: 'var(--font-brand)', fontSize: 18, fontWeight: 800, color: 'var(--ink)' }}>{trainingKm(w)}</span>
+                        <span style={{ fontSize: 12, color: 'var(--mute)', marginLeft: 3 }}>km{isRaceWeek ? ' + race' : ''}</span>
                       </div>
                     </div>
 

@@ -215,6 +215,31 @@ export const GENERATION_CONFIG = {
   MASTERS_AGE_THRESHOLD: 45,
   RECOVERY_WEEK_VOLUME_PCT: 70,
 
+  // §119 (Coaching Board DELOAD-PLAN-OPENING-01, 2026-09-21) — the fewest
+  // LOADING weeks that may sit between two recovery weeks, or before the first
+  // one. Willy's no-adjacent-deloads constraint (§95) carried one week further:
+  // a single loading week between two recovery weeks is not a loading block,
+  // and §95's own words for the defect it exists to prevent — "the runner gets
+  // exactly one week of a new stimulus and is then recovered from it" — are a
+  // description of this, not of something else.
+  //
+  // ⚠️ IT BINDS ON THE PLAN'S OPENING TOO, WHICH IS WHERE THE ENTIRE MEASURED
+  // DEFECT LIVES. 1,131 of 4,406 cohort plans and 2,048 of 2,048 18-week
+  // marathon plans place a recovery week at WEEK 2 — after one loading week,
+  // the runner's first. Not one occurs mid-plan.
+  //
+  // ⚠️ READ BY THE CHECKER ONLY, AND THAT IS THE RULING, NOT AN OVERSIGHT.
+  // `INV-PLAN-MIN-LOADING-BLOCK` (`warn`) consumes it; `computeDeloadWeeks` does
+  // NOT, because the board ruled the producer change is a SEARCH, not a
+  // threshold. Measured by brute force over all 220 placements of three deloads
+  // in the 18-week marathon's twelve eligible weeks: with this floor enforced
+  // greedily the engine lands on [4,8,12], which trades the week-2 deload for
+  // a peak phase that never exceeds build (I2 + I3). Exactly TWO placements
+  // satisfy every ratified rule at once — [3,6,9] and [3,6,10] — and neither is
+  // reachable by the forward-walk-and-re-anchor algorithm §87 specifies.
+  // Registered debt (DELOAD-PLAN-OPENING-01), filed 2026-09-21.
+  MIN_LOADING_BLOCK_WEEKS: 2,
+
   // §2 Amendment 2 (COMPLIANCE-FIX-2, Coaching Board 2026-09-16) — the deload
   // depth for a runner §12's volume cap governs (knee / shin-splint history).
   //

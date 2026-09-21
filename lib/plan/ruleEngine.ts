@@ -23,7 +23,7 @@ import { GENERATION_CONFIG, raceDistanceKey, type RaceDistanceKey } from './gene
 // card, and they were printing raw minute counts: "tops out at 208 minutes ...
 // moving for around 338 minutes". Measured before the fix: 42,444 minute values
 // across 29,624 notes, 48.2% of them >= 60, the largest 338 (5h 38).
-import { formatDuration } from '@/lib/format'
+import { formatDuration, raceDistanceDisplayName } from '@/lib/format'
 // Notes are prose, so a null (impossible here: every caller passes a finite
 // positive number) must not print "null".
 const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.round(mins)} min`
@@ -1772,8 +1772,11 @@ function makeQualitySession(args: {
       phase === 'taper'
         ? 'sharpener'
         : ((isEffortGoverned ? null : goalPaceShapeWord(catalogueRow)) ?? 'intervals')
+    // D2 — the runner-facing name, not the enum value. See
+    // `raceDistanceDisplayName`: `distLabel` is a RaceDistanceKey, and
+    // 'MARATHON' shipped as "MARATHON-pace reps" on the published pages.
     const overrideLabel = distLabel
-      ? `${distLabel}-pace ${overrideShape}`
+      ? `${raceDistanceDisplayName(distLabel)}-pace ${overrideShape}`
       : 'Goal-pace cruise intervals'
     label = catalogueRowGoalPace
       ? (catalogueRow?.name ?? fallbackLabel)
@@ -1832,7 +1835,7 @@ function makeQualitySession(args: {
     // Don't carry the catalogue's voice through (it belongs to whichever
     // category the selector fell back to — usually aerobic for 10K plans
     // where no 10K-eligible threshold row exists).
-    notes.push(`${distLabel ?? 'Goal'}-pace work. Target ${goalPace}. Controlled, even splits — exit each rep wanting more.`)
+    notes.push(`${distLabel ? raceDistanceDisplayName(distLabel) : 'Goal'}-pace work. Target ${goalPace}. Controlled, even splits — exit each rep wanting more.`)
   } else if (isVo2max && catalogueRow?.coach_voice_notes) {
     // VO2max sessions keep their catalogue voice (the catalogue's vo2max
     // entries — Three minutes is long, Heroic openers ruin it — are correct).
@@ -4909,6 +4912,82 @@ function applyLongRunProgressionCap(weeks: Week[], pace: PaceGuide, floors: Sess
   }
 }
 
+/**
+ * §25 / §24b — price a race-pace long run at the paces its own coach note
+ * prescribes (I7b, MKT-PLAN-SHAPE-01, 2026-09-21).
+ *
+ * THE DEFECT. Every long run in the engine is priced `dur(km, minPerKmEasy)`,
+ * which is right for a long run that is entirely easy. The three constructors
+ * that build a long run with a RACE-PACE SEGMENT inherited that line unchanged,
+ * so the published marathon plan told the runner:
+ *
+ *     "Marathon-pace long run · 29 km · 192 min"
+ *     "Final 40% at MP: 5:40 /km."
+ *
+ * 192 min over 29 km is **6:37/km**. The session states a 5:40/km segment in its
+ * own second line and then prices none of it. Measured across the nine published
+ * plans, all five segmented long runs overstate their duration, by 6–9%.
+ *
+ * ⚠️ WHY IT IS A DISPLAY FIX AND NOT A PRESCRIPTION CHANGE, which is what keeps
+ * it out of the Coaching Board (ADR-017's "defect fixes restoring documented
+ * intent"). The distance is unchanged, the segment is unchanged, the pace is
+ * unchanged — the runner is asked to run exactly what they were asked to run
+ * before. Only the minutes the card claims it will take are corrected, and they
+ * only ever go DOWN, so no minutes-based ceiling (§9's `LONG_RUN_CAP_MINUTES`,
+ * INV-PLAN-LONG-CAP-MINS) can be newly breached. ADR-015 already owns exactly
+ * this assertion one layer up: the number shown to the runner must be the number
+ * the prescription implies.
+ *
+ * ⚠️ THE DOSE IS READ AS A FRACTION OF DISTANCE, AND THE CODEBASE IS NOT
+ * UNANIMOUS ABOUT THAT. §24b's own coach note states it in km ("Middle 20%
+ * (≈3.7 km)"), which is the distance reading; `sessionComposer.ts` splits §25's
+ * rows by TIME (`segMins = total * mpPct / 100`). For the five live sessions the
+ * two readings differ by under a minute (marathon: 181 vs 180), so nothing here
+ * turns on it — but it is a real ambiguity in §25's `race_pace_pct` and it is
+ * filed rather than silently resolved (MKT-PLAN-SEGMENT-BASIS-01).
+ */
+function applyRacePaceSegmentDuration(weeks: Week[], pace: PaceGuide): void {
+  for (const w of weeks) {
+    for (const s of Object.values(w.sessions) as (Session | undefined)[]) {
+      if (!s || !isLongRun(s)) continue
+      if (!s.lr_segment_pace) continue          // §47 strips this on a step-back
+      const distKm = s.distance_km
+      if (distKm == null || distKm <= 0) continue   // duration-anchored: §79/§80's metric contract
+
+      const row = catalogueRowFor(s)
+      const mss = row?.main_set_structure as
+        { type?: string; race_pace_pct?: number; race_pace_zone?: string } | undefined
+
+      // Segments as { fraction of distance, min/km }. Two shapes exist and
+      // neither is inferred from a label (D-17): §25's rows DECLARE their dose
+      // in `main_set_structure.race_pace_pct`, and §24b's inline 5K/10K session
+      // has no row at all, so its own two config constants are the authority.
+      let segments: { frac: number; minPerKm: number }[] = []
+      if (mss?.type === 'long_run_with_segment' && typeof mss.race_pace_pct === 'number') {
+        const segMinPerKm = mss.race_pace_zone === 'HM' ? pace.minPerKmHM : pace.minPerKmMarathon
+        if (segMinPerKm == null) continue
+        segments = [{ frac: mss.race_pace_pct / 100, minPerKm: segMinPerKm }]
+      } else if (!row && pace.minPerKmMarathon != null && pace.minPerKmHM != null) {
+        segments = [
+          { frac: GENERATION_CONFIG.LR_5K10K_PEAK_MID_SEGMENT_PCT,   minPerKm: pace.minPerKmMarathon },
+          { frac: GENERATION_CONFIG.LR_5K10K_PEAK_FINAL_SEGMENT_PCT, minPerKm: pace.minPerKmHM },
+        ]
+      } else continue
+
+      const segFrac = segments.reduce((a, x) => a + x.frac, 0)
+      if (segFrac <= 0 || segFrac > 1) continue
+      const mins = distKm * (1 - segFrac) * pace.minPerKmEasy
+        + segments.reduce((a, x) => a + distKm * x.frac * x.minPerKm, 0)
+      const priced = Math.round(mins)
+      // Only ever REDUCES — a race-pace segment is by definition faster than
+      // easy. A guard, not an expectation: if a pace table ever inverts, the
+      // session keeps the conservative number rather than silently growing.
+      if (priced > 0 && priced < (s.duration_mins ?? Infinity)) s.duration_mins = priced
+    }
+    w.long_run_hrs = computeLongRunHrs(w.sessions, pace)
+  }
+}
+
 // ─── V1–V7 post-pass rules ────────────────────────────────────────────────────
 // Each helper runs after weeks/sessions are built, mutates the weeks array
 // (and a shared ruleAdjustments audit list) in place, and returns nothing.
@@ -5157,7 +5236,46 @@ function flattenIntroducingWeek(
   minRatio: number,
 ): { trimmedToKm: number } | null {
   const curr = weeks[triggerIdx]
-  const prev = weeks[triggerIdx - 1]
+
+  // MKT-PLAN-SHAPE-01 (2026-09-21) — THE REFERENCE IS THE LAST **LOADING** WEEK,
+  // NOT THE WEEK BEFORE. A defect fix restoring this function's own stated
+  // intent, so ADR-017-exempt from the Coaching Board (see the commit).
+  //
+  // V1 exists to hold volume FLAT across the week that introduces intensity:
+  // "intensity and volume do not progress in the same week" (Willy, CD-16). That
+  // sentence presumes the comparison week is a week the runner LOADED. Read
+  // against `weeks[triggerIdx - 1]` it was not: build week 1 follows the base
+  // phase's RECOVERY week on 7 of the 9 published plans, so "hold flat" meant
+  // "hold at 70% of what the runner was already running" — a 38% CUT dressed as
+  // a safety rule, on the exact week the plan tells the runner the hard work
+  // begins.
+  //
+  // It then compounds, because `reanchorWeekAfterTrim` (correctly) ramps the
+  // rest of the block from what was actually delivered. Measured on the nine
+  // published plans, before → after:
+  //
+  //   half-marathon-12-week  45 28R 28 31 34 37 41  →  45 28R 41 48 49 50 51
+  //   sub-45-10k-plan        45 28R 30 33 36 35R 46 →  45 28R 43 50 56 35R 46
+  //
+  // On the HM plan the peak phase topped out at 41 km against a BASE week of 45:
+  // the plan peaked in week 3 and spent the next nine weeks getting back. That is
+  // the same arithmetic D-21 records for deload bouncebacks ("the first organic
+  // user's 14-week plan peaked in week 3, in the base phase"), reached by a
+  // different route — and §2's own remedy for it was already written and
+  // implemented one function away: `buildVolumeSequence` exempts a post-deload
+  // bounceback because "returning to a volume held two weeks ago is not a spike".
+  // V1 is a SECOND producer of the same rule and never learned the exemption.
+  // Two writers of one fact, drifting — the fault DELOAD-OWNER-01 and
+  // SESSION-KM-01 both exist to remove, here found a third time.
+  //
+  // ⚠️ THIS DOES NOT WEAKEN V1. Where the introducing week genuinely steps up
+  // from the volume the runner has been holding, V1 fires exactly as before and
+  // the re-anchor cascade still runs. What it no longer does is read a planned
+  // REDUCTION as the runner's chronic load.
+  let prev = weeks[triggerIdx - 1]
+  for (let j = triggerIdx - 1; j >= 0; j--) {
+    if (weeks[j].type !== 'deload' && weeks[j].type !== 'race') { prev = weeks[j]; break }
+  }
 
   // Name the stimulus this week actually introduced, so the record says which
   // of the two triggers fired rather than always claiming "first quality".
@@ -7041,6 +7159,14 @@ function buildRulePlanOnce(
   // pass sized was not the week the runner receives. Same lesson §6 Am.1's own
   // comment records: anchor on the number no later pass will move.
   applyTaperDeliveredDepth(weeks, pace, peakKm, input.race_distance_km, sessionFloorsFor(input.longest_recent_run_km))
+
+  // I7b (MKT-PLAN-SHAPE-01, 2026-09-21) — A SEGMENTED LONG RUN IS PRICED AT THE
+  // PACES IT PRESCRIBES, NOT ENTIRELY AT EASY PACE.
+  //
+  // Runs LAST of the long-run passes, so it only ever re-prices a segment that
+  // survived §47's step-back rewrite (which strips `lr_segment_pace`) and every
+  // cap that could still move the distance.
+  applyRacePaceSegmentDuration(weeks, pace)
 
   // §24e AMENDMENT (Coaching Board 2026-09-19, LONG-SESSION-FUEL-01) — a long
   // run long enough to need fuel says so. THE GATE IS DURATION, NOT THE RACE'S

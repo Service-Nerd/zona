@@ -311,3 +311,30 @@ export function formatElapsedDelta(seconds: number | null | undefined): string |
   if (m > 0)          return `${m}m`
   return `${s}s`
 }
+
+/**
+ * The RUNNER-FACING name of a race-distance key — D2 (MKT-PLAN-SHAPE-01,
+ * 2026-09-21).
+ *
+ * `raceDistanceKey()` returns an ENUM (`'5K' | '10K' | 'HM' | 'MARATHON' | ...`)
+ * and §22 interpolates it straight into a session label and a coach note:
+ * `` `${distLabel}-pace ${shape}` ``. For `5K`/`10K` the enum happens to read as
+ * a name, which is why nobody noticed that `MARATHON` does not — the nine
+ * published plan pages shipped **"MARATHON-pace reps"**, **"MARATHON-pace
+ * ladder"** and **"MARATHON-pace progression"** to a runner, shouting the word
+ * in the middle of a sentence written in Zonna's voice.
+ *
+ * ⚠️ AN ENUM VALUE THAT READS LIKE A LABEL IS THE TRAP. Four of the six keys are
+ * safe by coincidence of capitalisation; two are not, and `50K`/`100K` will be
+ * the next surprise the day a §22 rename reaches an ultra. This is the one
+ * place that decides, so the coincidence stops being load-bearing.
+ *
+ * Deliberately NOT a `.toLowerCase()` + capitalise: `HM`, `5K`, `50K` and `100K`
+ * must all keep their own casing, so the mapping is stated rather than derived.
+ */
+export function raceDistanceDisplayName(key: string): string {
+  switch (key) {
+    case 'MARATHON': return 'Marathon'
+    default:         return key   // 5K, 10K, HM, 50K, 100K already read correctly
+  }
+}
