@@ -6,6 +6,42 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — SITE-MOBILE-02: four attempts at one middot
+
+**Dev.** The founder said a row of four short facts "looks off on mobile — I'd want bullets between
+and it centred". Simple. It took four goes and the first three were all the same mistake wearing
+different clothes.
+
+The row is `A · B · C · D`, wrapping to two lines on a phone. Version one put the dot at the front
+of each item, so the second line began with a dot pointing backwards at nothing, indented past the
+page gutter. Version two moved the dot to the end of each item, which fixed the indent and left a
+dot dangling off the end of line one, pointing forwards at nothing. Version three made the dots
+their own elements and added a media query to centre the row — and the media query silently did
+nothing, because `justify-content` was set as an inline style and an inline style beats a media
+rule. The tempting fix there is `!important`, which would have hidden the actual error: styling a
+responsive property inline in the first place.
+
+The thing all three shared is that they left the line break to the browser. A middot is a
+relationship between two things. Wherever the break lands next to one, it is wrong, and CSS has no
+way to say "hide this if it is first or last on its line". So the fourth version declares the
+pairs. Below 560px the two pairs *are* the two lines, centred, one dot each. Above it, the
+between-pairs dot comes back and the row is one line exactly as before. Nothing is left to chance.
+
+**Product.** The other note was that a one-line founder credit "looks misplaced". It was, and the
+cause was forty pixels of padding above it and zero below, with a near-black band immediately
+after — so the last words were touching the black. It had also been written as its own hand-rolled
+section at a hardcoded width, outside the spacing system every other band on the page uses, and
+set in the same type as ordinary body copy. Three small omissions, none of them visible in the
+code, all of them visible the moment you look at a phone.
+
+**The honest bit.** He asked a third thing: is that even the right message? I have a view — the
+price in the middle of the row is the odd one out, because it is already stated a screen above and
+it turns four facts into a spec sheet. I did not ship it. It touches a board ruling from this
+morning about how prominent the free tier should be, and "he asked a question" is not the same as
+"he asked for a change". The layout was mine to fix. The words are a decision.
+
+---
+
 ## 2026-09-21 — SITE-MOBILE-01: he was right about the green, and the reason was already in our own docs
 
 **Dev.** Four notes from the founder, looking at the live site on a phone. Three were quick. The
