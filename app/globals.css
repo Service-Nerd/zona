@@ -62,6 +62,14 @@
      Both are the same hue and saturation, scaled down in lightness until
      they clear 4.5:1 against --bg-soft, the darkest ground either sits on.
      moss-strong: 4.82 on --bg, 4.52 on --bg-soft, 5.48 with white on it. */
+  /* DESIGN-V3 — the hero's moss wash. The ONE place a tinted surface sits
+     behind a card, framing the HR trace so the evidence card reads as
+     evidence rather than as another white box. Deliberately NOT a general
+     surface: it is scoped to the hero trace by the handoff and by the fact
+     that a third page ground would flatten the page/inset alternation the
+     surface system depends on. */
+  --surface-moss-wash: #E7EDE4;
+
   --moss-strong:     #557055;
   --warn-strong:     #88622B;
 
@@ -138,6 +146,22 @@
   --fs-metric:       26px;   /* inline metric */
   --fs-metric-lg:    38px;   /* price, hero metric */
 
+  /* DESIGN-V3 — numerals used as GRAPHIC elements, not as text. All four are
+     clamped rather than fixed: the handoff quotes desktop values and a 390px
+     composition, and a clamp is how one token serves both without a media
+     query per site. `tabular-nums` and a tight negative tracking are part of
+     the treatment, not optional; they live at the call site because they are
+     font-feature settings rather than sizes.
+
+     ⚠️ These are NOT part of the reading scale. Nothing set at these sizes is
+     read as prose: they are a verdict, a proof figure, a step marker, a price.
+     Keeping them out of --fs-* proper is what stops the reading scale drifting
+     back toward nineteen values (SITE-TYPE-01). */
+  --fs-verdict:      clamp(52px, 8vw, 72px);   /* the hero's minutes-above figure */
+  --fs-numeral:      clamp(40px, 6vw, 56px);   /* proof cards, zone share */
+  --fs-numeral-lg:   clamp(48px, 7vw, 64px);   /* the price */
+  --fs-step:         clamp(56px, 9vw, 88px);   /* 01 / 02 / 03 step markers */
+
   /* Responsive headings. One clamp each, replacing nine bespoke ones. The
      min is sized for 375px and the max for 1280px; nothing between them is
      hand-tuned, which is the point. */
@@ -178,6 +202,21 @@
   --radius-md:       14px;   /* was 12px */
   --radius-lg:       18px;   /* was 16px */
   --radius-xl:       22px;   /* was 20px */
+
+  /* DESIGN-V3 — motion. Named because the same three timings recur across the
+     trace, the verdict and the phone, and because `prefers-reduced-motion`
+     has to be able to zero all of them in one place (see the media query at
+     the end of this file). The 7s loop interval is JS, not CSS: it drives
+     React state, so it lives with the component that owns the state.
+
+     ⚠️ The draw-in easing is load-bearing. A linear draw reads as a progress
+     bar; this curve starts fast and settles, which reads as a trace being
+     recorded. */
+  --motion-draw:       1.6s cubic-bezier(0.33, 0, 0.2, 1);
+  --motion-crossfade:  0.65s ease;   /* trace state A <-> B */
+  --motion-verdict:    0.5s ease;    /* the number and Kit's line */
+  --motion-ui:         0.15s ease;   /* interactive state */
+  --motion-fill:       0.2s ease;    /* colour fills */
 
   /* ── Card elevation (v2, design_handoff_v2) ──────────────────────────
      Two-layer card shadow. A 1px contact shadow seats the card on the warm
@@ -530,3 +569,35 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 @media (min-width: 1024px) {
   .qr-desktop-only { display: block; }
 }
+
+/* DESIGN-V3 — prefers-reduced-motion.
+   The motion tokens collapse to zero in ONE place, so a component that uses
+   them cannot forget. The JS side does the other half: the hero never starts
+   its loop and sets `drawn` immediately, leaving the trace in state A (the
+   amber breach), which is the state that carries the product's point.
+
+   ⚠️ Scoped to the named tokens rather than a blanket
+   `*{animation:none!important}`. A global kill also removes focus-visible
+   transitions and the scroll behaviour people rely on, and this codebase has
+   no other animation worth suppressing. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-draw:      0s linear;
+    --motion-crossfade: 0s linear;
+    --motion-verdict:   0s linear;
+    --motion-ui:        0s linear;
+    --motion-fill:      0s linear;
+  }
+}
+
+/* DESIGN-V3 — the evidence card's header is two-up on a wide card and would
+   collide on a phone. The handoff ships a shorter right-hand string for its
+   390px composition; this is that swap, in CSS so one server-rendered card
+   serves both widths with no JS and no hydration branch. */
+.hero-meta-long  { display: inline; }
+.hero-meta-short { display: none; }
+@media (max-width: 560px) {
+  .hero-meta-long  { display: none; }
+  .hero-meta-short { display: inline; }
+}
+

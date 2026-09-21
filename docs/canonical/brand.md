@@ -359,6 +359,59 @@ The visual language is defined in full at:
 - `docs/canonical/ui-patterns.md` — component anatomy, spacing, typography
 - `docs/architecture/ADR-007-warm-slate-palette.md` + `ADR-008-single-theme-only.md` — the current design system (single light theme). System B and ADR-001's colour tokens are superseded; the token-as-single-source-of-truth *principle* is retained.
 
+### Tokens added by the v3 design handoff (2026-09-21)
+
+All in `app/globals.css`, which stays the single source of truth for colour and type.
+
+| Token | Value | Job |
+|---|---|---|
+| `--surface-moss-wash` | `#E7EDE4` | The **hero evidence card's frame, and nothing else.** A tinted surface behind a card, so the proof reads as evidence rather than as another white box. ⚠️ **Not a page ground.** A third band colour would flatten the surface rule below. |
+| `--fs-verdict` | `clamp(52px, 8vw, 72px)` | The hero's minutes-above figure |
+| `--fs-numeral` | `clamp(40px, 6vw, 56px)` | Proof figures, zone share |
+| `--fs-numeral-lg` | `clamp(48px, 7vw, 64px)` | The price |
+| `--fs-step` | `clamp(56px, 9vw, 88px)` | The 01 / 02 / 03 step markers |
+| `--motion-draw` | `1.6s cubic-bezier(0.33,0,0.2,1)` | The trace's stroke draw-in |
+| `--motion-crossfade` | `0.65s ease` | Trace state A ↔ B |
+| `--motion-verdict` | `0.5s ease` | The number and Kit's line |
+| `--motion-ui` / `--motion-fill` | `0.15s` / `0.2s ease` | Interactive state, colour fills |
+
+⚠️ **The four numeral tokens are NOT part of the reading scale.** Nothing set at those sizes is read
+as prose: they are a verdict, a proof figure, a step marker, a price. Keeping them separate from
+`--fs-*` proper is what stops the reading scale drifting back toward nineteen values (`SITE-TYPE-01`).
+
+⚠️ **Every motion token collapses to `0s` under `prefers-reduced-motion`,** in one `@media` block at
+the end of `globals.css`, so a component that uses them cannot forget. The JS half is the
+component's: the hero never starts its loop and leaves the card in its amber state.
+
+### Three surfaces, and what the v3 handoff was NOT allowed to change
+
+`components/marketing/Section.tsx` takes `surface="page | inset | dark"`. The homepage uses `page`
+throughout and `dark` once. ⚠️ **It does not alternate bands, and `inset` is not a page ground** —
+see `ui-patterns.md` § Section grounds (W-08). The v3 handoff asked for alternating warm bands, two
+ink bands and a paper-grain overlay. All three had already been decided against, two of them the
+same day, and all three were confirmed with the founder rather than assumed:
+
+| The design asked for | The rule | Outcome |
+|---|---|---|
+| Alternating `#F3F0EB` / `#EDE9E1` bands | § Section grounds: *"The marketing site does not alternate band colours"* | **Declined.** One ground, one white spotlight, one dark close |
+| Two full-bleed ink bands | § Dark Ground: *"Exactly one near-black section per marketing page"* (ADR-008) | **Declined.** One, at the close |
+| A 3% paper-grain overlay | `W-11`, killed by the SLT 2026-09-21, unanimous, *"do not re-propose"* | **Declined** |
+
+Enforced by `lib/marketing/sectionSurfaces.test.ts`.
+
+### The CTA colour, and why it is not the handoff's
+
+The handoff flags one deliberate deviation from the design system: its CTAs use `#5A7C5A` (4.62:1
+with white) rather than `--moss` `#6B8E6B` (3.68:1, below AA), and asks that we either adopt it or
+raise the label size, but *"don't silently revert to `#6B8E6B`"*.
+
+We do neither, because the problem was already solved: **`--moss-strong` `#557055`** shipped the
+same morning as `A11Y-CONTRAST-01` and measures **5.48:1** with white. Adding `#5A7C5A` beside it
+would be a second dark moss for one job. The handoff's requirement is met and exceeded; its
+specific hex is not adopted.
+
+---
+
 ### Quick reference: banned values
 
 | Banned | Reason |

@@ -1,0 +1,85 @@
+import type { CSSProperties, ReactNode } from 'react'
+
+/**
+ * DESIGN-V3 — one band of the marketing page.
+ *
+ * The surface system is the whole point of the handoff: the page reads as a
+ * sequence of grounds rather than one long scroll, and the alternation is
+ * what makes the white cards look like cards. Before this, every section was
+ * a hand-written `<section style={{ padding: 'var(--sect-y) 24px', maxWidth:
+ * ... }}>` and the surface was whatever the page background happened to be.
+ *
+ * ⚠️ THE BACKGROUND IS FULL-BLEED, THE CONTENT IS NOT. That is why this is a
+ * component rather than a class: an inset band whose colour stops at 1100px
+ * reads as a very wide card, which is the opposite of a band. The outer
+ * element carries the surface and spans the viewport; the inner element
+ * carries the measure.
+ *
+ * ⚠️ `dark` IS RATIONED TO ONE PER PAGE AND THAT IS A RULE, NOT A
+ * PREFERENCE. `ui-patterns.md` § Dark Ground: "Exactly one near-black section
+ * per marketing page. It is a punctuation mark, not a theme — ADR-008 stands.
+ * A second dark section would make it a dark theme; don't." The v3 handoff
+ * asked for two ink bands; the founder confirmed one (2026-09-21), which is
+ * also how the identical request was answered during the Miles teardown
+ * (W-10). `lib/marketing/sectionSurfaces.test.ts` counts them.
+ */
+
+export type SectionSurface = 'page' | 'inset' | 'dark'
+
+const SURFACE: Record<SectionSurface, { background: string; color: string }> = {
+  page:  { background: 'var(--bg)',      color: 'var(--ink-2)' },
+  inset: { background: 'var(--bg-soft)', color: 'var(--ink-2)' },
+  dark:  { background: 'var(--ground)',  color: 'var(--on-ground)' },
+}
+
+export function Section({
+  surface = 'page',
+  width = 'page',
+  rhythm = 'normal',
+  hairline = false,
+  id,
+  style,
+  innerStyle,
+  children,
+}: {
+  surface?: SectionSurface
+  /** `read` is the ~70-character prose column; `full` opts out for a band
+   *  that manages its own width. */
+  width?: 'page' | 'read' | 'full'
+  /** `hero` is lighter because the header sits above it; `close` is heavier
+   *  because the page ends there. Both are existing W-07 tokens. */
+  rhythm?: 'normal' | 'hero' | 'close' | 'none'
+  /** A 1px top rule. Used where two bands of DIFFERENT colour meet and the
+   *  colour change alone is too quiet, per the handoff. */
+  hairline?: boolean
+  id?: string
+  style?: CSSProperties
+  innerStyle?: CSSProperties
+  children: ReactNode
+}) {
+  const pad =
+    rhythm === 'hero'  ? 'var(--sect-y-hero) 24px'
+    : rhythm === 'close' ? 'var(--sect-y-close) 24px'
+    : rhythm === 'none'  ? '0 24px'
+    : 'var(--sect-y) 24px'
+
+  const maxWidth =
+    width === 'read' ? 'var(--measure-read)'
+    : width === 'full' ? undefined
+    : 'var(--measure-page)'
+
+  return (
+    <section
+      id={id}
+      style={{
+        ...SURFACE[surface],
+        ...(hairline ? { borderTop: `1px solid ${surface === 'dark' ? 'var(--ground-line)' : 'var(--line)'}` } : {}),
+        ...style,
+      }}
+    >
+      <div style={{ maxWidth, margin: '0 auto', padding: pad, ...innerStyle }}>
+        {children}
+      </div>
+    </section>
+  )
+}

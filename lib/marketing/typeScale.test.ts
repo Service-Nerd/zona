@@ -30,7 +30,19 @@ const ROOT = path.resolve(__dirname, '../..')
  * at mockup scale, not this website's typography. Putting them on the site
  * scale would make the drawing wrong in order to make a grep clean.
  */
-const MOCKUPS = ['components/marketing/PhoneFrame.tsx', 'components/marketing/ProductStill.tsx']
+const MOCKUPS = [
+  'components/marketing/PhoneFrame.tsx',
+  'components/marketing/ProductStill.tsx',
+  // DESIGN-V3 — the same drawing, split across more files. `PhoneShell` is
+  // the frame extracted OUT of PhoneFrame so there is one device rather than
+  // two, and `TabbedPhone` adds the Plan and Coach screens to it. Their 10px
+  // nav labels and 11px status bar are iOS chrome at mockup scale, exactly as
+  // PhoneFrame's were before the extraction. ⚠️ An exemption that does not
+  // follow a refactor is how a rule quietly stops applying to the thing it
+  // was written about.
+  'components/marketing/PhoneShell.tsx',
+  'components/marketing/TabbedPhone.tsx',
+]
 
 const SURFACES = [
   'app/page.tsx', 'app/plans', 'app/pricing', 'app/about', 'app/guides',

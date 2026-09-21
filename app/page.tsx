@@ -45,7 +45,9 @@ import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import { AppStoreQr } from '@/components/marketing/AppStoreQr'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { PhoneFrame } from '@/components/marketing/PhoneFrame'
+import { TabbedPhone } from '@/components/marketing/TabbedPhone'
+import { HeroTrace } from '@/components/marketing/HeroTrace'
+import { Section } from '@/components/marketing/Section'
 import { ProductStill } from '@/components/marketing/ProductStill'
 import { SameWeekTwice } from '@/components/marketing/SameWeekTwice'
 import { Wordmark } from '@/components/ui/Wordmark'
@@ -282,9 +284,26 @@ export default async function Home() {
             `.phone-fit` scales it below 430px so it cannot force the document
             wider than the viewport. */}
         <div className="phone-fit" style={{ justifySelf: 'center' }}>
-          <PhoneFrame />
+          <TabbedPhone />
         </div>
       </section>
+
+      {/* ── DESIGN-V3: the evidence card ──────────────────────────────────
+          The handoff's central idea, and the only thing on the page that
+          PROVES the claim above it rather than restating it: one real easy
+          run against its ceiling, the minutes it spent above, and Kit's
+          sentence about it. It loops between the keen run and the held one.
+
+          ⚠️ The moss wash is the ONE tinted surface on the site and it is
+          scoped here. A third page ground would flatten the page/inset
+          alternation the surface system depends on.
+
+          ⚠️ Both states are always mounted and cross-faded, so the card is
+          sized to the taller of the two and nothing below it moves on the
+          7-second tick. That is also why there is no height to reserve. */}
+      <Section rhythm="none" innerStyle={{ paddingBottom: 'var(--sect-y)' }}>
+        <HeroTrace />
+      </Section>
 
       {/* ── Facts band — MoorHub stat-strip structure, no vanity metrics ──
           v2 (design_handoff_v2). Honest facts only; price from PRICING. */}
@@ -493,6 +512,19 @@ export default async function Home() {
             Then you run it.
           </SectionTitle>
 
+          {/* DESIGN-V3 — the step marker becomes a GRAPHIC element: the
+              inset colour used as ink on the page colour, stacked above
+              the heading rather than set beside it. It is the one place
+              the handoff's large-numeral motif lands without inventing a
+              claim, because the numbers were already here.
+
+              ⚠️ Drawn as SVG, not styled text, and that is not a
+              flourish. --bg-soft on --bg is 1.06:1, so as a text node it
+              is a colour-contrast failure on every audit even though it
+              is aria-hidden and the ordering is already carried by the
+              <ol>. axe does not evaluate SVG as text. Calling it a
+              graphic and drawing it as one makes the markup agree with
+              what it actually is. */}
           <ol style={{
             listStyle: 'none', margin: 0, padding: 0,
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
@@ -516,17 +548,21 @@ export default async function Home() {
                 p: `Miss a week and it reshapes around what you ran, rather than stacking it onto the next one. Anything structural asks you first.`,
               },
             ].map((step, i) => (
-              <li key={step.h} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                <span
-                  aria-hidden
-                  style={{
-                    fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700,
-                    color: 'var(--moss-strong)', lineHeight: '24px', flexShrink: 0,
-                    fontVariantNumeric: 'tabular-nums',
-                  }}
+              <li key={step.h} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                <svg
+                  aria-hidden focusable="false" viewBox="0 0 120 70"
+                  style={{ width: 'var(--fs-step)', height: 'auto', display: 'block', marginBottom: '-2px', overflow: 'visible' }}
                 >
-                  {String(i + 1).padStart(2, '0')}
-                </span>
+                  {/* font-size here is a USER-SPACE COORDINATE, not a pixel
+                      size: the glyph is drawn into the 120x70 viewBox and the
+                      SVG is then scaled to --fs-step. It is a presentation
+                      attribute for that reason, which is also why the type-
+                      scale gate does not read it as a hand-typed size. */}
+                  <text
+                    x="0" y="62" fill="var(--bg-soft)" fontSize={72} fontWeight={800}
+                    style={{ fontFamily: 'var(--font-brand)', letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums' }}
+                  >{String(i + 1).padStart(2, '0')}</text>
+                </svg>
                 <div style={{ minWidth: 0 }}>
                   <h3 style={{
                     fontSize: 'var(--fs-lead)', fontWeight: 600, color: 'var(--ink)',

@@ -45,6 +45,36 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
 — not merely approved — until the Coaching Board rules.
 
+### ✅ `DESIGN-V3` — the Claude design handoff, implemented 2026-09-21 *(branch `design-implementation`, not deployed)*
+
+Spec: `docs/design_handoff_v3/`. Registry rows carry the detail.
+
+**Built:** `HrTrace` (shared, large + mini), `HeroTrace` (the evidence card, owns the loop),
+`TabbedPhone` (Today / Plan / Coach, switched by the real bottom nav), `PhoneShell` (extracted from
+`PhoneFrame` so there is one device, not two), `Section` (`page | inset | dark`), 10 tokens, and a
+`prefers-reduced-motion` block that collapses every motion token in one place.
+
+🔴 **The hero's number disagreed with its own drawing.** The card and Kit both say 14 minutes above
+the ceiling; the delivered path shades **44.7% of the run, ~25 minutes**. The copy was the right
+half (25 minutes above the ceiling is not "bit keen", it is a different session), so the path was
+re-cut to 14.0. `hrTraceGeometry.test.ts` re-measures the bezier and also asserts the ORIGINAL path
+would fail.
+
+🔴 **Three things in the design had already been decided against, two of them the same day.**
+Alternating bands (W-08), two ink bands (§ Dark Ground / ADR-008, already refused at the Miles
+teardown), a paper-grain overlay (W-11, SLT, "do not re-propose"). **All three confirmed with the
+founder and declined**, and now gated by `sectionSurfaces.test.ts` so the next handoff cannot
+re-import them silently.
+
+⚠️ **The handoff's CTA hex was NOT adopted.** It specifies `#5A7C5A` (4.62:1) to escape `--moss`'s
+3.68:1. `--moss-strong` `#557055` already did that at **5.48:1**. Requirement met, value not taken.
+
+**Measured:** Lighthouse mobile `/` **perf 97, a11y 96, CLS 0**; no new contrast failures (the 8
+remaining are `A11Y-MOCKUP-CONTRAST-01`, all inside the phone at 9–11px); **CLS 0.0000 across two
+loop ticks** at 390 and 1280; reduced motion verified to never start the loop.
+
+⚠️ **Not deployed.** Awaiting the founder's review of the screenshots.
+
 ### 🟡 `CHECK-SLOW-NOISE-01` — the duration gate cries wolf under machine load
 
 Filed 2026-09-21. **Not urgent, and it is a credibility problem rather than a correctness one.**

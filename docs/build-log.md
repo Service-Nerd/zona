@@ -6,6 +6,52 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — DESIGN-V3: the number said 14 and the drawing said 25
+
+**Dev.** A Claude design handoff: an animated post-run HR trace for the hero, a tabbed phone, and a
+homepage surface system. The brief was to treat the HTML as a visual spec and rebuild it as
+production components.
+
+The first thing I did was measure the hero's central claim. The card says "14 minutes above your
+ceiling" and Kit's sentence says 14 too. The drawn path sits above the ceiling from x=197 to x=448,
+which is **44.7% of the 8 km run — about 25 minutes of a 55-minute easy run.** The copy agreed with
+itself and disagreed with the picture by nearly a factor of two.
+
+Both halves cannot be right, and the interesting question was which to keep. 25 minutes above the
+ceiling on an easy run is not "bit keen", it is a tempo run, and Kit's whole line would be wrong
+about the session and not just the number. So the copy was right and the curve was exaggerated. I
+re-cut the path to 25.45% — 14.0 minutes — while keeping the gesture and the depth, so the amber
+still reads. A test now flattens the committed bezier, finds its crossings with the ceiling
+numerically, and fails if the shaded minutes stop matching the constant the sentence is built from.
+It also asserts that the ORIGINAL path would fail, so the check cannot quietly stop measuring.
+
+**The honest bit.** Nobody would have caught this by looking. The number is in a card, the sentence
+is under a divider, and the claim they share is a shape. It was only found because the brief said
+"the shaded minutes must match Kit's line" and I treated that as something to compute rather than
+something to eyeball.
+
+**Product.** Three things in the design had already been decided against, two of them the same day:
+alternating warm bands (W-08, that morning, with a note saying in as many words that the proposal
+should not be re-imported from the next teardown — and here it was, from a different source), two
+full-bleed ink bands (§ Dark Ground, ADR-008, already refused once during the Miles teardown), and
+a paper-grain overlay (W-11, killed unanimously by the SLT, "do not re-propose").
+
+I stopped and asked rather than either silently overriding them or silently dropping the design.
+All three were declined. What that cost is small: the components, the evidence card, the tabbed
+phone and the numeral motif all landed. What it protected is a set of decisions that took a board
+sitting to reach and would have been reversed by a file arriving with no knowledge of them.
+
+**A design system can't know what you decided yesterday.** That is not a criticism of the handoff;
+it is the reason the conflict scan has to happen on the way in.
+
+**AI-building.** The CTA is the neatest case. The handoff flags its own deviation: the system's
+moss is 3.68:1 with white, below AA, so it uses `#5A7C5A` at 4.62:1 and says don't revert. We
+already had `--moss-strong` `#557055` at 5.48:1, shipped that morning. Taking the handoff's hex
+would have put two dark mosses in the palette for one job. The requirement was the point, not the
+value.
+
+---
+
 ## 2026-09-21 — DOC-AUDIT-BOTH-SHAPES-01: I read the warning and still needed the falsification
 
 **Dev.** I filed a backlog item deliberately without a roadmap line, ran the audit expecting it to
