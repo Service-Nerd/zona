@@ -433,6 +433,93 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ── W-02: the journey, from plan-in-hand to race day ─────────────
+          SLT-ruled 2026-09-21. The site described PROPERTIES and never said
+          what happens after you tap download, which is an unanswered question
+          at the decision point.
+
+          ⚠️ SCOPED DOWN FROM "four steps, first open to race day" AFTER
+          READING THE PAGE. A generic 1-tell-us-about-you / 2-get-a-plan /
+          3-run / 4-adapt would have duplicated the section directly above
+          this one: "Your plan starts from your answers" already IS steps one
+          and two, with the wizard answers and a generated session card. So
+          this picks up exactly where that section stops, at the moment the
+          plan exists. The seam was already drawn; repeating it would have been
+          a fourth telling of the same thing.
+
+          ⚠️ AND NO `HowTo` SCHEMA, against the brief. It was approved as "a
+          free rider on the same work". It rides on nothing: Google retired
+          HowTo rich results in September 2023, so it produces zero SERP lift
+          on desktop or mobile. Adding dead schema is surface area that reads
+          as an SEO win to the next person. Filed the wider finding separately
+          (SEO-SCHEMA-STALE-01) because `FAQPage` went the same way in May 2026
+          and we ship it in two places.
+
+          Deliberately plainer than the sections either side: no cards, no
+          component stills. Those two already carry the page's proof, and a
+          third showcase block would make the page repetitive. Numbered text
+          is also the austere register Sutherland argued for at the SLT. */}
+      <section style={{ padding: 'var(--sect-y) 24px' }}>
+        <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
+          <Eyebrow>How it goes</Eyebrow>
+          <SectionTitle
+            accent="That's the hard part."
+            sub="No dashboard to read, no score to chase. The week shows up, you run it, and it adjusts around the weeks you actually had."
+          >
+            Then you run it.
+          </SectionTitle>
+
+          <ol style={{
+            listStyle: 'none', margin: 0, padding: 0,
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
+            gap: '28px 32px', counterReset: 'step',
+          }}>
+            {[
+              {
+                h: 'One session, one screen',
+                p: `Today shows the run, its zone, its pace band and its heart-rate ceiling. Not your week, not your streak, not a chart. One job.`,
+              },
+              {
+                h: 'You run it, or you do not',
+                p: `Tick it off by hand, or let Apple Health do it. A missed run is information, not a failure, and nothing turns red.`,
+              },
+              {
+                h: `${BRAND.coachName} reads what you actually did`,
+                p: `Whether you held the zone or drifted above it, in a sentence. Said on the day it happened, not buried in a monthly summary.`,
+              },
+              {
+                h: 'The plan bends to the week you had',
+                p: `Miss a week and it reshapes around what you ran, rather than stacking it onto the next one. Anything structural asks you first.`,
+              },
+            ].map((step, i) => (
+              <li key={step.h} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <span
+                  aria-hidden
+                  style={{
+                    fontFamily: 'var(--font-brand)', fontSize: '13px', fontWeight: 700,
+                    color: 'var(--moss)', lineHeight: '24px', flexShrink: 0,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{
+                    fontSize: '16px', fontWeight: 600, color: 'var(--ink)',
+                    margin: '0 0 6px', lineHeight: 1.35,
+                  }}>
+                    {step.h}
+                  </h3>
+                  <p style={{ fontSize: '14.5px', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
+                    {step.p}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
       {/* ── What's not in the app — the restraint, made explicit ───────── */}
       <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
         <Eyebrow>The restraint</Eyebrow>

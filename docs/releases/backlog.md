@@ -2085,6 +2085,32 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ---
 
+## 🆕 FILED 2026-09-21 — SEO schema that no longer earns anything
+
+> 🔲 **SEO-SCHEMA-STALE-01 — two of our structured-data types produce ZERO Google rich results** *(P3, marketing, filed 2026-09-21 out of W-02.)*
+>
+> Found while checking whether `HowTo` was worth adding for W-02. It is not: **Google retired HowTo
+> rich results in September 2023**, desktop and mobile. W-02 shipped without it.
+>
+> ⚠️ **The same happened to `FAQPage` in May 2026, four months ago, and we ship it in two places** —
+> `lib/marketing/plans.ts` (all nine plan pages) and `app/charity-runners/page.tsx`. Google's stated
+> reasoning in both cases was low usage and widespread abuse.
+>
+> **Do NOT rip it out, and that is the actual recommendation.** There is no penalty, the markup is
+> still valid schema.org, and the AI search surfaces that increasingly matter do parse it, which is
+> arguably now the better reason to carry it than the one we added it for. **What is stale is the
+> BELIEF, not the code**: any note, plan or report that treats those FAQs as earning rich results in
+> Google is wrong and has been since May.
+>
+> **The work is therefore:** (1) correct the claim wherever it is written down, including the
+> `GTM-SEO-COMPARE-01` and `GTM-SEO-PLANS-01` registry rows if they assert it; (2) decide whether to
+> keep investing in FAQ blocks for SEO reasons or for answer-engine reasons, which are different
+> briefs with different copy; (3) leave the markup alone either way.
+>
+> ⚠️ **Worth noting how close this came to shipping as a win.** The SLT approved `HowTo` as "a free
+> rider on the same work" and I nearly built it on that basis. Nobody was careless: the rich result
+> existed when most of us learned the pattern.
+
 ## 🆕 FILED 2026-09-21 — MILES **WEBSITE** TEARDOWN (the 09-20 teardown was the APP)
 
 > ### ⚖️ SLT RULED 2026-09-21 — build 9, kill 1, route 1. Record: `docs/decisions/slt-2026-09-21-website-slickness.md`
@@ -2184,7 +2210,9 @@ competition, and each one ends at a product that is literally built for that pro
 ⚠️ **Founder-written by standing decision** (same rule as the comparison pages: ~1/week, do not
 bulk-draft). File the structure, not the prose.
 
-### 🟢 `W-02` — "How it works": the journey is missing from our site entirely *(S)*
+### ✅ `W-02` — SHIPPED 2026-09-21 (scoped down on contact with the page; `HowTo` schema DROPPED). Registry row has the detail.
+
+### ~~`W-02` original filing~~
 
 Their four steps run first-open to race-day, and the section is marked up as **`HowTo` schema** —
 an SEO play, not just a layout. **We use `Article`, `FAQPage`, `BreadcrumbList`, `SoftwareApplication`,

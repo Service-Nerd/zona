@@ -199,6 +199,18 @@ Primary white cards carry `box-shadow: var(--shadow-card)` — a 1px contact sha
 
 > Live-app follow-up (device-verified): the inline `StatCell`/`StatRow`/`ActionListCard` primaries inside `DashboardClient.tsx` were left for an on-device pass — they sit inside other containers on the Coach/Me screens where nesting must be checked visually.
 
+## Numbered journey steps — marketing (W-02, 2026-09-21)
+
+A sequence of short steps on a marketing page. Deliberately the PLAINEST block on the page: no cards, no borders, no component stills.
+
+- `<ol>` on `repeat(auto-fit, minmax(min(100%, 240px), 1fr))`, 4-across at 1280 and one column at 375.
+- Each step: a **moss two-digit numeral** (`01`, 13px/700, `tabular-nums`, `aria-hidden`) beside an `<h3>` (16px/600) and one sentence (14.5px, `--ink-2`).
+- The numeral is decorative — it is `aria-hidden` because an ordered list already announces order to a screen reader, and "01 One session one screen" read aloud twice is noise.
+
+**Why plain, and why this is a rule rather than a preference.** The sections either side of it on the homepage already carry the page's proof: "Three things" pairs each claim with a REAL component (§ ProductStill), and "Personalised, not generic" shows the wizard answers generating a session card. A third showcase block makes the page repetitive and the eye stops reading any of them. ⚠️ **Do not "upgrade" this to cards.** Its restraint is the design, and it is the register the SLT's recorded dissent argued for: *"a site that is a touch too plain is congruent with 'you're trying hard, that's the problem'."*
+
+---
+
 ## Section grounds — three, and each one means something (W-08, 2026-09-21)
 
 **The marketing site does not alternate band colours.** It has exactly three grounds and each is spent on purpose:

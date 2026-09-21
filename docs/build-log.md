@@ -65,6 +65,48 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — W-02: the approved scope was wrong, and reading the page is what showed it
+
+**Dev.** The brief said add a four-step "how it works", first open to race day, and the SLT approved
+it. I went to build it, read the page properly first, and found that the section immediately above
+where it would sit already does the first half: "Your plan starts from your answers" shows the
+wizard inputs and a generated session card. That IS step one and step two.
+
+So the approved scope would have been the fourth telling of the same thing on one page. What was
+actually missing is everything after the plan exists: what a Tuesday looks like, what happens when
+you miss a week, whether anything asks you before it changes. The journey now starts where that
+section stops. The seam was already drawn; I just hadn't looked at it.
+
+That is the second time today a brief I wrote myself survived a board and then dissolved on contact
+with the code. Both times the fix was ten minutes of reading.
+
+**The part I'd have shipped wrong.** Step four first read "you see the change before it applies".
+That is false. ADR-012 is explicit: sub-threshold reshapes auto-apply silently and only structural
+changes surface a confirmation. It now says "anything structural asks you first", which is what the
+engine actually does. A plausible sentence about your own product is the easiest kind of lie to
+write, because nothing fails when you write it.
+
+**Marketing.** I also killed the schema half of the item. It was approved as "a free rider on the
+same work", and it rides on nothing: Google retired HowTo rich results in September 2023, so it
+produces no rich result on desktop or mobile. Shipping it would have left a block of JSON-LD that
+reads as an SEO win to whoever finds it next and does nothing at all.
+
+Checking that turned up the bigger one. **FAQPage rich results were retired in May 2026**, this
+year, and we ship FAQPage on the plan pages and the charity page. Nobody has been wrong to add it
+and there is no penalty for keeping it, but if anyone believes those FAQs are earning rich results
+in Google, that belief went stale four months ago. Filed rather than ripped out, because the schema
+is still machine-readable and the AI search surfaces that increasingly matter do parse it. **The
+thing to correct is the belief, not the code.**
+
+**Design.** The block is deliberately the plainest thing on the page: numbered text, no cards, no
+component stills. The two sections either side already pair claims with real components, and a
+third showcase block makes the page repetitive. It is also the register the SLT's recorded dissent
+asked for, that a site a touch too plain is congruent with "you're trying hard, that's the problem".
+Written into `ui-patterns.md` as a pattern with a "do not upgrade this to cards" note, because the
+restraint is the design and restraint is the thing that gets optimised away.
+
+---
+
 ## 2026-09-21 — DOC-AUDIT-ROADMAP-01: I shipped the check, and then the check caught me, three times running
 
 **Dev.** The doc audit verifies that a shipped item has a registry row, a build-log entry, a
