@@ -16,14 +16,50 @@ SINCE="${1:-$(date +%Y-%m-%d)}"
 fail=0
 say() { printf '%s\n' "$*"; }
 
-say "── ship records (feat/fix scopes since $SINCE) ──"
-ids=$(git log --since="$SINCE 00:00" --pretty=format:"%s" \
-      | grep -oE "^(feat|fix)\([A-Z0-9-]+\)" | grep -oE "\([A-Z0-9-]+\)" | tr -d '()' | sort -u)
-for id in $ids; do
-  r=$(grep -c "^| $id " docs/canonical/feature-registry.md || true)
-  b=$(grep -c "^## .*$id" docs/build-log.md || true)
+# ── The ship-record window: a MARKER, not a calendar date ───────────────────
+#
+# ⚠️ THIS CHECK READ "ALL CLEAN" WHILE CHECKING NOTHING, and that is why the
+# window changed. It was scoped to `--since today`. At 00:00 on 2026-09-21 the
+# date rolled over, the list emptied, and 2026-09-20's thirty-nine ship scopes
+# stopped being covered — one of which (`§117 Am.2`) had a feature-registry row
+# and no build-log entry. Found by reconciling by hand, not by this script.
+#
+# Third time in two days that a date-scoped list expired and took its coverage
+# with it (`BACKLOG-STALE-ALLTIME-01` was the same shape: eleven shipped items
+# sat open because the backlog check also stopped at midnight). **A date-scoped
+# list is a list that empties on its own.**
+#
+# So the window is now a commit marker that only advances when the check is
+# CLEAN. A gap stays in scope until it is fixed, and nothing falls out of scope
+# because the clock moved.
+MARKER_FILE=".claude/state/last-doc-audit.txt"
+MARKER="$(cat "$MARKER_FILE" 2>/dev/null | tr -d '[:space:]')"
+if [ -n "${1:-}" ]; then RANGE_DESC="since $SINCE"; RANGE_ARGS=(--since="$SINCE 00:00")
+elif [ -n "$MARKER" ] && git cat-file -e "$MARKER^{commit}" 2>/dev/null; then
+  RANGE_DESC="since $MARKER"; RANGE_ARGS=("$MARKER..HEAD")
+else
+  RANGE_DESC="since $SINCE (no marker yet)"; RANGE_ARGS=(--since="$SINCE 00:00")
+fi
+
+say "── ship records (feat/fix scopes $RANGE_DESC) ──"
+# ⚠️ THE SCOPE PATTERN IS DELIBERATELY LOOSE. It used to be `[A-Z0-9-]+`, which
+# could not see `feat(§117 Am.2)` at all — nor `COMPLIANCE-FIX-2/3`,
+# `FIRSTRUN-MOMENTS-01a`, `ADR-015/016` or any lowercase scope. Measured across
+# all history: **270 of 508 scopes (53%) were invisible to it.** A check that
+# silently skips half its population is worse than one that is absent, because
+# it reports ok.
+ids=$(git log "${RANGE_ARGS[@]}" --pretty=format:"%s" \
+      | grep -oE "^(feat|fix)\([^)]+\)" | sed -E 's/^(feat|fix)\(//; s/\)$//' \
+      | tr ',' '\n' | sed -E 's/^ +| +$//g' | grep -v '^$' | sort -u)
+# ⚠️ LINE-WISE, NOT `for id in $ids`. A word-splitting loop turned the scope
+# `§117 Am.2` into two ids (`§117` and `Am.2`) and reported a gap against a
+# fragment that was never a scope. Caught by falsifying this very check.
+while IFS= read -r id; do
+  [ -z "$id" ] && continue
+  r=$(grep -cF "| $id " docs/canonical/feature-registry.md || true)
+  b=$(grep -cF -- "$id" <(grep '^## ' docs/build-log.md) || true)
   if [ "$r" = "0" ] || [ "$b" = "0" ]; then say "  GAP $id registry=$r buildlog=$b"; fail=1; rfail=1; fi
-done
+done <<< "$ids"
 [ "${rfail:-0}" = "0" ] && say "  ok"
 
 # ── BACKLOG STATUS vs what actually shipped ─────────────────────────────────
@@ -167,5 +203,12 @@ done
 [ "$sfail" = "0" ] && say "  ok"
 
 say ""
+# ⚠️ THE MARKER ADVANCES ONLY ON A CLEAN RUN. A gap therefore stays in scope
+# until it is actually fixed, rather than ageing out of the window the way the
+# old `--since today` bound let eleven backlog items and one build-log entry do.
+if [ "$fail" = "0" ] && [ -z "${1:-}" ]; then
+  mkdir -p "$(dirname "$MARKER_FILE")"
+  git rev-parse HEAD > "$MARKER_FILE"
+fi
 [ "$fail" = "0" ] && say "ALL CLEAN" || say "GAPS FOUND (above)"
 exit $fail
