@@ -5,6 +5,40 @@ angle. Feeds the weekly DHTB LinkedIn build-in-public posts — keep it honest, 
 it specific, no polish. The content system adds the voice.
 
 ---
+## 2026-09-20 — §117 Am.2: an exemption without a bound is not a relaxation, it is a hole
+
+*(Backfilled 2026-09-21. This ship had a feature-registry row and no build-log entry — found by
+reconciling all 39 of that day's ship scopes by hand, because `audit-docs.sh` scopes its
+ship-record check to TODAY and the date had rolled over. An audit is only ever as wide as its
+list, and at 00:00 that list emptied.)*
+
+**Dev.** `LONG-RUN-SHORT` was made WATCHED rather than scored on §117 run-walk plans, because the
+board had ruled an 18.5 km peak long run adequate at peak 34. That was correct. What was missing
+is that **nothing in the code distinguished 18.5 from 13.5** — the exemption covered both.
+
+**The closest call of the day.** Had `S116-FLOOR-VS-TARGET-01` also passed, the marathon would
+have cleared the founder's 90% bar **for the first time, by admitting people to plans that do not
+work.** The number would have moved and the runners would have been worse off. That is the exact
+failure the fit-for-purpose measure exists to prevent, arriving through the measure itself.
+
+Built the bound and it fired on real plans immediately: **11–13 km peak long runs** at 8 km/week
+with 19–20 week runways. The cause is worth keeping: §111's door asks whether the *ratio* is
+lawful and **never whether there is time to build to the peak that ratio came from.**
+
+**Two fixes, because one was not enough.** A runway gate in `runWalkApplies` — reusing
+`onRampWeeksNeeded` rather than re-deriving §2's ramp — and a check on the **finished plan that
+refuses** rather than hands one over. ⚠️ An invariant alone was not enough: in production
+`validatePlan` only LOGS, so the runner still receives the plan. Refusing is worse for the metric
+and better for the runner, which is the trade the board made.
+
+**The honest bit, three times over.** My first cut invented a fudge factor — `MIN_REMAINING_WEEKS
+/ 4`, "for the taper", a number produced by dividing an unrelated constant. Removed. The first
+"0 plans below the floor" was **vacuous**: I had deleted the flag's setter while deduplicating two
+`runWalkApplies` calls, so the invariant could not fire — the third vacuous measurement that day.
+And it reads `sessionKmSelfPaced` because `distance_km ?? 0` on duration-anchored beginner plans
+was the **fifth** recorded instance of that error.
+
+Marathon 77.6% → 78.1%, whole product 92.3%.
 
 ## 2026-09-20 — P-02: the biggest item on the board, and the risky part was already solved
 
