@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-09-21 — the component was called an arc and it drew a straight line
+## 2026-09-21 — PLAN-ARC-V2: the component was called an arc and it drew a straight line
 
 **Dev.** The founder said the plan progression strip "looks a bit dated… a bit flat". I went to
 restyle it and found it was flat in the literal sense: every week rendered at `height: 100%`, so
