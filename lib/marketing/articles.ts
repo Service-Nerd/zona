@@ -90,6 +90,30 @@ export interface MarketingArticle {
   signature: string
   /** The single plain-text App Store link that closes every article. */
   appStoreLinkText: string
+  /**
+   * GUIDES ONLY, and required on them — the `CoachingPrinciples.md` sections
+   * this guide's claims rest on, e.g. `['§12', '§2']`.
+   *
+   * ⚠️ WHY A FIELD AND NOT A CONVENTION (SLT 2026-09-21, Hutchinson).
+   * Three of the eight planned guides answer COACHING questions under a Zonna
+   * byline, on the open web, to people with no plan in front of them: "should
+   * my easy runs feel this slow" (§12), "am I overtraining or just tired"
+   * (§2/§3), "what pace should my long run be" (§52). **That is a coaching
+   * surface, and it does not become a marketing surface because it lives at
+   * /guides.** If the article and the engine disagree we have published a
+   * position we do not implement, which is this codebase's most frequently
+   * recorded failure: prose drifting from the rule it describes.
+   *
+   * The rule the board set is deliberately cheap to obey: **a guide may only
+   * assert what an existing principle already asserts, and it names the
+   * section.** A claim no principle covers is a Coaching Board item BEFORE it
+   * is a writing task.
+   *
+   * ⚠️ This field cannot check that the claims MATCH the sections. It checks
+   * that somebody had to name one, which is the point at which the question
+   * gets asked at all.
+   */
+  principleRefs?: readonly string[]
   /** One line for the /compare hub card: what this page actually answers.
    *  REQUIRED on purpose. A hub entry that has to be written is a hub entry
    *  that exists; deriving it from the meta description would produce eight

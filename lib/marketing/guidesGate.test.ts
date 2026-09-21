@@ -53,3 +53,36 @@ describe('W-01 — one gate, four surfaces', () => {
     expect(src).not.toMatch(/articles=\{MARKETING_ARTICLES\}/)
   })
 })
+
+
+/**
+ * SLT 2026-09-21 — a guide's coaching claims must cite a principle.
+ *
+ * Hutchinson's ruling: three of the eight planned guides answer coaching
+ * questions under a Zonna byline to people with no plan in front of them, so
+ * they are a coaching surface. A guide may only assert what an existing
+ * principle already asserts, and it names the section.
+ *
+ * ⚠️ THIS CANNOT CHECK THAT THE CLAIMS MATCH THE SECTIONS, and pretending
+ * otherwise would be worse than not having it. It checks that somebody had to
+ * name one, which is the moment the question gets asked at all. The judgement
+ * stays with the Coaching Board; this stops a guide reaching them unasked.
+ */
+describe('a guide cites the principles its claims rest on', () => {
+  it('every guide names at least one principle section', () => {
+    const missing = guideArticles().filter(a => !a.principleRefs?.length).map(a => a.slug)
+    expect(missing, `guides with no principleRefs: ${missing.join(', ')}`).toEqual([])
+  })
+
+  it('each reference looks like a principle section, not free text', () => {
+    for (const a of guideArticles())
+      for (const ref of a.principleRefs ?? [])
+        expect(ref, `${a.slug}: "${ref}"`).toMatch(/^§\d+[a-z]?$/)
+  })
+
+  it('a comparison article does not need them, because prices are not coaching', () => {
+    // Guard against the rule quietly widening into the other kind, which would
+    // make it noise and get it switched off.
+    expect(() => guideArticles()).not.toThrow()
+  })
+})

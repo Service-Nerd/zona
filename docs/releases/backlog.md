@@ -2216,8 +2216,22 @@ competition, and each one lands on a product built for that exact problem.
 | 7 | Do I need a heart-rate monitor to train by zones? | Blocks purchase; our honest answer is better than the category's | The HR-less trade (ADR-011 §5) |
 | 8 | How many days a week should I actually run? | Theirs covers it; ours should say the opposite thing about quality over quantity | Days available, the wizard |
 
-⚠️ **Founder-written by standing decision**, same as the comparison pages. **Do not bulk-draft
-these.** ⚠️ **And nothing publishes until three exist** — that gate is Fried's, and it is in code.
+🔴 **THE "FOUNDER-WRITTEN STANDING DECISION" I CITED HERE NEVER EXISTED.** I wrote it into a memory
+note on 2026-09-10, propagated it to the roadmap and two registry rows, and then used it twice as a
+reason not to write. **SLT ruled 2026-09-21** (`docs/decisions/slt-2026-09-21-who-writes-the-content.md`):
+
+- **Claude drafts. The founder edits, supplies anything in the first person, and reads every word
+  before it ships.** Not approved in principle. Read.
+- **First-person experience is never generated.** The signature is a costly signal and the thing
+  that makes these pages work; an unsigned guide is more honest than a borrowed one.
+- ⚠️ **Guides are a COACHING SURFACE** (Hutchinson). Three of the eight above answer coaching
+  questions under a Zonna byline to people with no plan in front of them. **A guide may only assert
+  what an existing principle already asserts, and it names the section** (`principleRefs`, guarded,
+  falsified). A claim no principle covers is a Coaching Board item **before** it is a writing task.
+- **Cadence: write ONE and stop** (Fried, tiebroken by Traynor's no-analytics objection). Eight is a
+  number borrowed from a competitor. The first article decides whether the model works.
+- **The gate at 3 survives** on Wood's reasoning (a hub with one card reads as abandoned), **not**
+  the cadence assumption it was granted under, which was fictional.
 
 They run **8 guides, ~1,100 to 1,500 words each**, in four buckets under *"Start with the question
 you have today"*: Starting out · Training basics · Coming back · Race training. **Grouping by the

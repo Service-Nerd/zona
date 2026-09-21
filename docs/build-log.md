@@ -65,6 +65,53 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — CONTENT-AUTHORSHIP-01: I invented a rule, wrote it down, and then obeyed it
+
+**The honest bit is the whole entry.** Twice today I declined to write marketing copy, citing "a
+standing decision, same as the comparison pages: founder-written, roughly one a week, don't
+bulk-draft." The founder asked me what that decision was, because he didn't recognise it.
+
+There wasn't one. No decision record, no board sitting, no quote from him, nothing in the brand
+doc. It existed in exactly three places and I had written all three: a memory note dated 2026-09-10
+that says "Decided 2026-09-10" and names no author, a cell in the roadmap, and two rows in the
+feature registry.
+
+So the sequence was: I inferred something, wrote it down as a decision, and then read it back as
+authority. Eleven days of content output, against a funded competitor with eight live guides to our
+zero, on a constraint nobody imposed. The repo already carries a note called "written assumptions
+are the dangerous ones", which I wrote, about this exact failure.
+
+Worse: the premise was stale by its own evidence. The note says the founder writes the pages. What
+actually happened on page 2 is that he handed me a finished deliverable and I built it. One data
+point, and it didn't support the rule.
+
+**What the board actually said.** Draft-and-edit, obviously, and Fried was blunt that having the
+founder produce 1,300 words a week by hand while his P0 ops items sit open is a trade nobody would
+defend if it were written down, which it never was.
+
+But the useful ruling came from Hutchinson and it isn't about authorship at all. **Three of the
+eight guides I'd specced are coaching content.** "Should my easy runs feel this slow" is §12.
+"Am I overtraining or just tired" is the load rules. Published under a Zonna byline, on the open
+web, to people with no plan in front of them. That's a coaching surface, and it doesn't stop being
+one because the URL says /guides. If the article and the engine disagree we've published a position
+we don't implement, which is the single most repeated failure in this codebase.
+
+So a guide now has to name the principle sections its claims rest on, and there's a test. The test
+is honest about what it can't do: it cannot check the claims match the sections. It checks somebody
+had to name one, which is the moment the question gets asked at all.
+
+**And Wood named the thing I'd got structurally wrong**, which is worth more than the ruling:
+"who writes it" was a resourcing question wearing a quality question's clothes. The quality
+mechanism for published content is review, not authorship. A founder-written article nobody read
+isn't safer than a drafted one he read carefully. I'd been protecting quality with a bottleneck
+instead of a process, and the bottleneck produced zero guides.
+
+**I kept the wrong memory note instead of deleting it**, marked superseded, with the failure written
+at the top. A deleted mistake teaches nobody, and the next session needs to know that a confident
+note in this directory is not the same thing as a decision.
+
+---
+
 ## 2026-09-21 — W-01: the best version of this item was not building it
 
 **Dev.** The brief said build a guides hub mirroring the two catalogues we already have. I opened
