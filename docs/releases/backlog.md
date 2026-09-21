@@ -39,6 +39,30 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
 — not merely approved — until the Coaching Board rules.
 
+### 🔴 `HM-ANCHOR-VS-GOAL-01` — the session header was covering for the prescription *(COACHING BOARD, filed 2026-09-21)*
+
+**Full filing with every measurement: `docs/decisions/hm-anchor-vs-goal-01.md`. Read that, not this.**
+
+Found by chasing a founder note about a wrong-looking CV header on a published plan page.
+
+**The header defect (one line to fix, measured):** a card's header pace is documented by §85 as the
+session's WORK pace, and every row fell through to the generic quality band regardless of its work
+anchor. **2,811 sessions in `verify:sweep` displayed a pace their own reps contradicted.** Live
+today on `/plans/10k-12-week`: header `5:30–6:00 /km` above reps at `5:21–5:34 /km`, so a runner
+following the header runs the session up to **30 s/km too slow**.
+
+**What it was covering (the board's question):** `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` classifies
+a session as goal-pace work by reading that header, so all 2,811 counted toward §22's 50% floor
+**because of the lie**. With honest headers, **555 sweep cases fall below the floor and 36 unit
+tests fail**. Traced on a real 1:50 half-marathon input: `hm_pace_intervals` prescribes
+**5:49–6:11 /km against a goal pace of 5:13** on three PEAK-phase sessions, because `HM` resolves
+to the runner's CURRENT half pace rather than their goal one.
+
+🔴 **NOTHING SHIPPED, DELIBERATELY.** The fix, the structural classifier and a new
+`INV-PLAN-HEADER-PACE-MATCHES-WORK` were written, measured and reverted: shipping needs either a
+prescription change or a weakened constitutional invariant, and both are the board's. ⚠️ **The
+defect is live in production and doing nothing is also a decision.**
+
 ### ⚖️ RULED 2026-09-20 — READ THIS BEFORE THE PROPOSALS BELOW
 
 ✅ **FOUNDER ACCEPTED ALL SLT RECOMMENDATIONS, 2026-09-20.** P-01 build · P-07 don't build ·
