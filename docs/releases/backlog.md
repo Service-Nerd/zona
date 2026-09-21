@@ -2270,7 +2270,7 @@ not need) and never once says **what happens after you tap download**. A buyer c
 builds it → **read the entire plan, free, before paying anyone** → run it → it reflows when your
 week breaks. Step three is the one they cannot copy, because they do not have it.
 
-### 🔴 `W-03` — **KILLED 2026-09-21 by the Coaching Board. Do not re-propose a homepage commitments block.**
+### ✅ `W-03` — **CLOSED 2026-09-21: KILLED by the Coaching Board.** Do not re-propose a homepage commitments block.
 
 **Ruling: CORRECT WITH AMENDMENT, and the amendment removed the item.** A block of promises
 answering an evidence question is the weakest available instrument. `SameWeekTwice` (W-04) already
