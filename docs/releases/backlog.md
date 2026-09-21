@@ -2085,6 +2085,116 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 
 ---
 
+## 🆕 FILED 2026-09-21 — MILES **WEBSITE** TEARDOWN (the 09-20 teardown was the APP)
+
+> ⚠️ **Yesterday's teardown (P-01…P-17) was 17 screenshots of the APP.** None of it touched
+> `milesapp.run`. These are marketing-site items and do not overlap. **Read
+> `docs/canonical/coaching-rulings.md` and [[project-miles-teardown]] before acting on any of them**
+> — four things must never be re-proposed, and the palette claim was already falsified once.
+
+**Measured, not asserted** (computed CSS from the live site, not screenshot pixels):
+
+| | Miles site | Zonna token | Δ per channel |
+|---|---|---|---|
+| ink | `#1A1A1A` | `--ink` `#1A1A1A` | **0, 0, 0** |
+| amber | `#B8863B` | `--warn` `#B8853A` | 0, 1, 1 |
+| green | `#6B8F71` | `--moss` `#6B8E6B` | 0, 1, 6 |
+| muted | `#8A8A85` | `--mute` `#8A857D` | 0, 5, 8 |
+| ground | `#FAF8F5` | `--bg` `#F3F0EB` | 7, 8, 10 |
+| typeface | Be Vietnam Pro | Inter | different |
+
+⚠️ **This does NOT reinstate the withdrawn claim.** On 2026-09-20 I sampled their **app** screenshots
+and got accent `#617C62` against our `#6B8E6B` (Δ41.8) and withdrew *"their palette is ours"*. That
+withdrawal stands: it was about the app, measured from pixels. The **website**, read from computed
+CSS, is a different surface and is far closer. **Do not report either number without saying which
+surface and which method.** The commercial conclusion is unchanged and now better evidenced:
+**warm-neutral plus a single green is the category default and cannot be our differentiator**, which
+is the argument P-01 already won.
+
+**Their commercials, from their own JSON-LD:** Miles Pro **$14.99/mo or $99.99/yr, 7-day trial on
+annual only, no ongoing free tier.** We are roughly **half the price with a genuine free tier**.
+
+**Their positioning is NOT ours.** *"Every runner starts somewhere."* · *"Around half of Miles
+runners are new to running."* · couch-to-5K, run-walk, "how to start running when you're out of
+shape". They are buying **beginner search volume**. We target a **behaviour** (`You're trying hard.
+That's the problem.`). The overlap is real and growing (Make-A-Wish first-timers, §118) but it is
+narrower than the visual similarity suggests.
+
+---
+
+### 🟢 `W-01` — Guides hub: eight questions our runner actually searches *(M, the biggest commercial gap)*
+
+They run **8 guides, ~1,100 to 1,500 words each**, in four buckets under *"Start with the question
+you have today"*: Starting out · Training basics · Coming back · Race training. **Grouping by the
+runner's STATE, not by topic taxonomy** — that framing is the good bit and it is free to take.
+Marked up as `ItemList`.
+
+**We already have the architecture twice over:** `MARKETING_PLANS` and `COMPARISON_ARTICLES` both
+self-register into a hub, the sitemap and the tests. A third catalogue is one file plus a four-line
+shim per page. **The build is small; the writing is the bottleneck.**
+
+🔴 **The angle is the whole value, and ours is not theirs.** Their guides answer *beginner*
+questions, which is the most contested keyword set in the category and the one they are funded to
+win. Ours should answer the questions **our** runner types: *"why am I not getting faster"* ·
+*"should my easy runs feel this slow"* · *"what is Zone 2 and am I doing it wrong"* · *"why is my
+heart rate so high on easy runs"* · *"am I overtraining or just tired"*. Lower volume, far lower
+competition, and each one ends at a product that is literally built for that problem.
+
+⚠️ **Founder-written by standing decision** (same rule as the comparison pages: ~1/week, do not
+bulk-draft). File the structure, not the prose.
+
+### 🟢 `W-02` — "How it works": the journey is missing from our site entirely *(S)*
+
+Their four steps run first-open to race-day, and the section is marked up as **`HowTo` schema** —
+an SEO play, not just a layout. **We use `Article`, `FAQPage`, `BreadcrumbList`, `SoftwareApplication`,
+`Offer`, `Organization`, `Person`. We have no `HowTo` anywhere.**
+
+Our homepage describes **properties** (a plan that fits you, in-the-moment coaching, nothing you do
+not need) and never once says **what happens after you tap download**. A buyer cannot picture it.
+
+**Ours differs from theirs at step three and that is the point:** answer the wizard → the engine
+builds it → **read the entire plan, free, before paying anyone** → run it → it reflows when your
+week breaks. Step three is the one they cannot copy, because they do not have it.
+
+### 🟡 `W-03` — Three promises: right vehicle, wrong content *(S, needs SLT)*
+
+⚠️ **Do not copy this as a values block.** Read what their promises actually DO: promise 01, *"the
+goal stays yours"*, pre-empts the single biggest churn fear (*the app will quietly downgrade my
+goal*). It is **objection-handling dressed as a value.**
+
+Our objection is different and sharper, and **nothing on our site answers it**:
+**"if I hold back this much, won't I get slower?"** That is THE objection to a restraint-based
+product and we sell restraint on every surface without ever defusing it.
+
+So: a three-commitment block, but the commitments answer *that*. Needs the SLT because it is a
+positioning claim, and the third one likely needs the Coaching Board because it would assert
+something about outcomes.
+
+### 🟡 `W-04` — "Same week, two plans": the strongest device on their site *(M)*
+
+A side-by-side of one disrupted week — rigid plan versus theirs — with the reflow and a stated
+reason per change. **It PROVES the claim instead of asserting it.** Our homepage asserts "the plan
+adjusts" in a single clause and never shows it, while `AdjustmentDiff` and ADR-012's confirmation
+tiles already exist in the product.
+
+**Ours should be a ZONE version, not a schedule version:** the same four runs, one week run in the
+grey middle and one week held, and what each produces. Their device proves flexibility; ours would
+prove the thing we actually sell.
+
+### 🔴 `W-05` — We bury our two strongest weapons against them *(S, copy only)*
+
+1. **The free tier.** They have a **7-day trial on annual and no ongoing free tier**; we have a
+   genuine one, at roughly **half the price**. Ours currently appears in **hero small print**.
+2. **Nine complete, readable plans.** They publish *guides about* plans. **We publish the plans.**
+   Nobody has to trust us or sign up to check. That is the most persuasive asset we own and the
+   homepage links it without ever making the point.
+
+**Keep and push what they have no answer to:** the restraint list (*"No fire emojis. Ever."*) and
+*"Probably not for you if…"*. Anti-qualification is rare, it builds trust fast, and there is nothing
+like it anywhere on their site.
+
+---
+
 ## 🆕 FILED 2026-09-21 — from the published-plan review
 
 ### ✅ `GTM-SEO-COMPARE-PRICE-01` — CLOSED 2026-09-21, same day it was filed
