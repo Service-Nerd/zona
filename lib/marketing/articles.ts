@@ -440,18 +440,28 @@ export const guideArticles = (): MarketingArticle[] =>
   MARKETING_ARTICLES.filter(a => a.kind === 'guide')
 
 /**
- * W-01 — the guides hub does not go live until there are three guides.
+ * How many guides before the HUB opens.
  *
- * SLT 2026-09-21, resolving Fried against Traynor. Fried: *"a hub with two
- * guides is worse than no hub"*, and the writing is founder-time at roughly
- * one a week. Traynor: the shelf is nearly free and its absence delays the
- * third guide. So the shelf ships now and the door opens at three.
+ * ⚠️ WAS 3, SET TO 1 BY FOUNDER DECISION 2026-09-21, overruling the SLT gate.
+ * Recorded rather than quietly changed, because the board's reasoning was
+ * sound and the risk it named is real.
  *
- * ⚠️ THE GATE IS A CONSTANT, NOT A NOTE. Written anywhere else it becomes
- * something to remember on the day guide number two is added, and this
- * codebase's history is a list of rules that held only while someone did.
+ * The original gate (Fried, on Wood's reasoning): *"a hub with two guides is
+ * worse than no hub"* — a one-card index teaches a visitor the section is
+ * abandoned. That is a genuine failure mode and removing the gate does not
+ * remove it.
+ *
+ * **So it is answered in the design instead of by the number.** Below
+ * `GUIDES_SECTION_MATURE` the hub says plainly that it is being written one
+ * guide at a time. A section that tells you it is small reads as deliberate;
+ * a section that shows you one card and says nothing reads as neglected. Same
+ * page, opposite impression, and the difference is one sentence.
+ *
+ * THE CONSTANT STAYS rather than the gate being deleted: the mechanism and its
+ * four reading surfaces are still correct, and a future decision to hold a new
+ * section back is a one-line change instead of a rebuild.
  */
-export const GUIDES_MIN_TO_PUBLISH = 3
+export const GUIDES_MIN_TO_PUBLISH = 1
 
 /**
  * Is the guides HUB open? Not "is a guide live".
@@ -479,6 +489,19 @@ export const GUIDES_MIN_TO_PUBLISH = 3
  */
 export const guidesArePublished = (): boolean =>
   guideArticles().length >= GUIDES_MIN_TO_PUBLISH
+
+/**
+ * Is the section big enough to stand on its own, or should it say so?
+ *
+ * Separate from `guidesArePublished` on purpose: "should this hub exist" and
+ * "should this hub explain itself" are different questions, and merging two
+ * questions into one boolean is exactly what deadlocked the publish gate
+ * against Fried's cadence earlier today.
+ */
+export const GUIDES_SECTION_MATURE = 3
+
+export const guidesSectionIsMature = (): boolean =>
+  guideArticles().length >= GUIDES_SECTION_MATURE
 
 /** Copy for the /guides hub. Same shape and same reasoning as COMPARISON_HUB:
  *  a wording change touches one file, and hub and cards cannot drift apart. */

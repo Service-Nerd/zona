@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { guideArticles, guidesArePublished, GUIDES_MIN_TO_PUBLISH } from './articles'
+import { guideArticles, guidesArePublished, guidesSectionIsMature, GUIDES_MIN_TO_PUBLISH, GUIDES_SECTION_MATURE } from './articles'
 
 /**
  * W-01 — the guides shelf is gated in ONE place, and everything follows it.
@@ -38,7 +38,27 @@ const read = (p: string) =>
 describe('W-01 — one gate, four surfaces', () => {
   it('the gate is a relationship, not a restated number', () => {
     expect(guidesArePublished()).toBe(guideArticles().length >= GUIDES_MIN_TO_PUBLISH)
-    expect(GUIDES_MIN_TO_PUBLISH).toBeGreaterThan(1)
+  })
+
+  it('a small section still explains itself, even with the publish gate at 1', () => {
+    // ⚠️ THIS ASSERTION MOVED. It used to read `GUIDES_MIN_TO_PUBLISH > 1`,
+    // guarding against the publish gate going vacuous. The founder set that
+    // gate to 1 on 2026-09-21, overruling the SLT, which makes the old
+    // assertion an argument rather than a check.
+    //
+    // What it was PROTECTING is still worth protecting: the board's actual
+    // concern was never the number, it was that a one-card index reads as
+    // abandoned. That now lives in `GUIDES_SECTION_MATURE` and the hub's
+    // young-section note, so the guard follows it there.
+    expect(guidesSectionIsMature()).toBe(guideArticles().length >= GUIDES_SECTION_MATURE)
+    expect(GUIDES_SECTION_MATURE).toBeGreaterThan(1)
+    expect(GUIDES_SECTION_MATURE).toBeGreaterThan(GUIDES_MIN_TO_PUBLISH)
+
+    // While the section is young the hub must say so, or the failure the gate
+    // used to prevent simply happens at a different number.
+    const hub = read('app/guides/page.tsx')
+    expect(hub).toMatch(/guidesSectionIsMature\(\)/)
+    expect(hub).toMatch(/youngNote/)
   })
 
   it('the hub route reads the gate rather than deciding for itself', () => {

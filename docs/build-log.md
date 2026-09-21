@@ -65,6 +65,35 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — GUIDES-INDEX-01: overruled, and the right response was not just to change the number
+
+**Dev.** The founder overruled the board's gate: put the index up now with one guide, add the rest
+as we go. Fair call, and it is his to make.
+
+The lazy version of obeying that is changing a 3 to a 1 and moving on. But the board's objection
+was not arithmetic. Fried, on Wood's reasoning, said a hub with two guides is worse than no hub,
+and the mechanism he meant is specific: **a one-card index teaches a visitor the section is
+abandoned.** That failure does not go away because the gate opened earlier. It just happens.
+
+So the number changed and the risk got answered separately. Below a maturity threshold the hub now
+carries one line: "One at a time, and only when there is something worth saying. The list is short
+on purpose." A section that tells you it is small reads as deliberate. A section that shows you one
+card and says nothing reads as neglected. Same page, opposite impression, one sentence apart, and
+it happens to be more on-brand than the gate was.
+
+**The thing I want to remember is the second constant.** I could have reused the publish gate for
+the young-section note. I did not, because I spent an hour earlier today untangling exactly that
+mistake: the publish gate had been doing double duty as "is this article live", which deadlocked
+two rulings that were both correct. Two questions in one boolean is cheap to write and expensive to
+own, and I had the evidence in the same session.
+
+**And one test assertion moved rather than being deleted.** I had `GUIDES_MIN_TO_PUBLISH > 1` as a
+guard against the gate going vacuous. The founder's decision makes that assertion an argument, not
+a check, and deleting it would have quietly removed the protection along with the disagreement.
+What it was protecting was never the number. It followed the risk to the new constant.
+
+---
+
 ## 2026-09-21 — W-01a: approval found a deadlock between two rulings from the same meeting
 
 **Dev.** The founder read guide 1 and approved it, which should have been a one-line change. It was

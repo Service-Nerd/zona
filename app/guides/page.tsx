@@ -1,19 +1,21 @@
 // W-01 — the guides hub.
 //
-// ⚠️ GATED, AND THE GATE IS THE POINT. SLT 2026-09-21 resolved Fried against
-// Traynor: the shelf ships now, the door opens at `GUIDES_MIN_TO_PUBLISH`.
-// Fried's objection was that "a hub with two guides is worse than no hub" and
-// the writing is founder-time at roughly one a week; Traynor's was that the
-// shelf is nearly free and its absence delays the third guide. Both hold, so
-// the page exists and 404s until there are three.
+// ⚠️ STILL GATED, but at 1 since the founder overruled the SLT's 3 on
+// 2026-09-21. The board's reasoning was sound and the risk it named is real:
+// "a hub with two guides is worse than no hub", because a one-card index
+// reads as abandoned. Lowering the number does not remove that risk, so it is
+// answered in the DESIGN — `youngNote` says the section is being written one
+// guide at a time, while it is small. A section that tells you it is small
+// reads as deliberate; one that shows a single card and says nothing reads as
+// neglected.
 //
 // The gate is read from the catalogue, never restated here — a second copy of
-// "three" is how a gate ends up meaning two different things.
+// the number is how a gate ends up meaning two different things.
 
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ArticleHub, hubMetadata } from '@/components/marketing/ArticleHub'
-import { guideArticles, guidesArePublished, GUIDE_HUB } from '@/lib/marketing/articles'
+import { guideArticles, guidesArePublished, guidesSectionIsMature, GUIDE_HUB } from '@/lib/marketing/articles'
 
 export const revalidate = 86400
 
@@ -27,6 +29,9 @@ export default function GuideHubPage() {
       articles={guideArticles()}
       section={null}
       breadcrumbLabel="Guides"
+      youngNote={guidesSectionIsMature()
+        ? undefined
+        : 'One at a time, and only when there is something worth saying. The list is short on purpose.'}
     />
   )
 }

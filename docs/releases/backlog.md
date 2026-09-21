@@ -2194,97 +2194,49 @@ narrower than the visual similarity suggests.
 
 ### ✅ `W-01` — SHELF SHIPPED 2026-09-21. Catalogue, renderer, gated hub, route and tests. Registry row has the detail.
 
-### 🟡 `W-01a` — write the guides *(guide 1 LIVE; two more before the hub opens)*
+### 🟡 `W-01a` — write the guides *(1 of 8 live; the index is OPEN)*
 
-> ✅ **Guide 1 approved by the founder and PUBLISHED 2026-09-21** at
-> `/guides/should-easy-runs-feel-this-slow`. Linked contextually from the homepage's
-> `SameWeekTwice` block. **The hub stays shut until three.**
+> 🔴 **FOUNDER DECISION 2026-09-21: the index page goes live now, and guides are added as we go.**
+> This overrules the SLT gate of three (`GUIDES_MIN_TO_PUBLISH` 3 → 1).
 >
-> 🔴 **Approval surfaced a DEADLOCK between two SLT rulings from the same sitting**, and it is worth
-> keeping because the resolution is not a compromise. **Fried:** *"write ONE. Publish it. Do not
-> write the second until the first has existed for a fortnight."* **Wood:** the hub opens at three,
-> because *"a hub with one card teaches a visitor the section is abandoned."* Gating the ARTICLE on
-> the hub makes Fried's ruling unreachable: the first guide can never exist, so the second is never
-> written, so the hub never opens. **The two rulings are about different objects — Wood's objection
-> is to a one-card HUB, not to a guide existing.** So an approved guide is live on approval and the
-> hub still waits.
->
-> ⚠️ **Which makes the orphan risk real, and it is guarded.** A live guide with a shut hub has no
-> hub card, and a page nothing links to is worse than an unpublished one. `guidesGate.test.ts`
-> fails if any guide lacks an inbound link from a marketing surface.
+> ⚠️ **The board's concern was real and is answered in the design, not dismissed.** Fried, on Wood's
+> reasoning: *"a hub with two guides is worse than no hub"* — a one-card index reads as **abandoned**.
+> Lowering the number does not remove that. So below `GUIDES_SECTION_MATURE = 3` the hub carries a
+> line saying it is written one at a time. **A section that tells you it is small reads as
+> deliberate; one that shows a single card and says nothing reads as neglected.** Same page,
+> opposite impression, one sentence apart.
 
-**Guide 1 is drafted and awaiting the founder's read at `/guide-preview`.** Nothing publishes until
-he has read it (SLT `CONTENT-AUTHORSHIP-01`), and the hub stays closed until there are three
-(`GUIDES_MIN_TO_PUBLISH`, Fried's gate on Wood's reasoning).
+**Live now:** `/guides` (index) · `/guides/should-easy-runs-feel-this-slow` · footer link under READ.
 
-**Cadence is ONE and stop** — write the second only once the first has been read and has existed
-for a fortnight. Eight is a number borrowed from a competitor.
+**Adding a guide is one catalogue entry.** `kind: 'guide'`, a `principleRefs` array, and the body
+blocks. No route work, no hub work, no sitemap work — all three read the catalogue. Every existing
+catalogue test covers it the moment it is added.
 
-⚠️ **Split from `W-01` on 2026-09-21** because the shelf shipping and the writing continuing is a
-state the doc audit could not express: one ID cannot be both a registry row and an open item. The
-eight titles, their search intent and the product surface each lands on are in the `W-01` brief
-above.
+#### The seven still to write
 
-**Structure is done and gated.** `/guides` exists, 404s until there are three guides, and the
-footer link, the sitemap entries and the hub all read one constant (`GUIDES_MIN_TO_PUBLISH`).
-Adding a guide is **one entry in `MARKETING_ARTICLES` with `kind: 'guide'` plus a four-line route
-shim** — identical to a comparison page, because it IS one. Every existing catalogue test covers it
-the moment it is added.
-
-⚠️ **NO third catalogue was built, against the filing.** A guide is structurally an article: same
-blocks, same renderer, same hub, same JSON-LD, same tests. `lib/marketing/comparisons.ts` was
-renamed `articles.ts` and given a `kind`.
-
-**THE EIGHT, and the angle for each.** Not their eight. Theirs answer beginner questions they are
-funded to win; these answer what OUR runner types at 10pm, which is lower volume and far lower
-competition, and each one lands on a product built for that exact problem.
-
-| # | Working title | The search behind it | Where it lands |
+| # | Working title | The search behind it | Principles it rests on |
 |---|---|---|---|
-| 1 | Should my easy runs really feel this slow? | The single most common doubt about the method, and the one that makes people quit it | §12's ceiling, and the free plans |
-| 2 | Why is my heart rate so high on easy runs? | Genuine distress, usually answered badly elsewhere ("you're unfit") | Zone 2, HR vs pace |
-| 3 | Am I overtraining, or just tired? | Searched at the exact moment of doubt the product exists to resolve | The grey-zone thesis |
-| 4 | I missed a week. Do I start again? | The churn moment for every plan, ours included | The reshape, and W-04's device |
-| 5 | Why am I not getting faster? | The core truth, as a question | "You're trying hard. That's the problem." |
-| 6 | What pace should my long run be? | High volume, and we have a specific answer most apps fudge | §52, the long run |
-| 7 | Do I need a heart-rate monitor to train by zones? | Blocks purchase; our honest answer is better than the category's | The HR-less trade (ADR-011 §5) |
-| 8 | How many days a week should I actually run? | Theirs covers it; ours should say the opposite thing about quality over quantity | Days available, the wizard |
+| ✅ 1 | Should easy runs really feel this slow? | **LIVE 2026-09-21** | §12, §1, §2 |
+| 🔲 2 | Why is my heart rate so high on easy runs? | Genuine distress, usually answered badly elsewhere ("you're unfit") | §12, §14 |
+| 🔲 3 | Am I overtraining, or just tired? | Searched at the exact moment of doubt the product exists to resolve | §2, §3 |
+| 🔲 4 | I missed a week. Do I start again? | The churn moment for every plan, ours included | §87, ADR-012 |
+| 🔲 5 | Why am I not getting faster? | The core truth, as a question | §1, §12 |
+| 🔲 6 | What pace should my long run be? | High volume, and we have a specific answer most apps fudge | §52, §25 |
+| 🔲 7 | Do I need a heart-rate monitor to train by zones? | Blocks purchase; our honest answer beats the category's | ADR-011 §5, §14 |
+| 🔲 8 | How many days a week should I actually run? | Theirs covers it; ours should say the opposite about quality over quantity | §1, §9 |
 
-🔴 **THE "FOUNDER-WRITTEN STANDING DECISION" I CITED HERE NEVER EXISTED.** I wrote it into a memory
-note on 2026-09-10, propagated it to the roadmap and two registry rows, and then used it twice as a
-reason not to write. **SLT ruled 2026-09-21** (`docs/decisions/slt-2026-09-21-who-writes-the-content.md`):
+⚠️ **Every guide is a COACHING SURFACE** (Hutchinson, SLT 2026-09-21). A guide may only assert what
+an existing principle already asserts, **and it names the section** — `principleRefs` is required
+and guarded. A claim no principle covers is a **Coaching Board item before it is a writing task**.
+The principle column above is a starting point, not a ruling.
 
-- **Claude drafts. The founder edits, supplies anything in the first person, and reads every word
-  before it ships.** Not approved in principle. Read.
-- **First-person experience is never generated.** The signature is a costly signal and the thing
-  that makes these pages work; an unsigned guide is more honest than a borrowed one.
-- ⚠️ **Guides are a COACHING SURFACE** (Hutchinson). Three of the eight above answer coaching
-  questions under a Zonna byline to people with no plan in front of them. **A guide may only assert
-  what an existing principle already asserts, and it names the section** (`principleRefs`, guarded,
-  falsified). A claim no principle covers is a Coaching Board item **before** it is a writing task.
-- **Cadence: write ONE and stop** (Fried, tiebroken by Traynor's no-analytics objection). Eight is a
-  number borrowed from a competitor. The first article decides whether the model works.
-- **The gate at 3 survives** on Wood's reasoning (a hub with one card reads as abandoned), **not**
-  the cadence assumption it was granted under, which was fictional.
+⚠️ **And `§12 Amendment 2` binds all of them: describe the METHOD, never forecast the RUNNER.** No
+ratio on a public page (inherits the P-02 veto), no injury-reduction claim, and restraint framed as
+**redistribution, never reduction** (Sims).
 
-They run **8 guides, ~1,100 to 1,500 words each**, in four buckets under *"Start with the question
-you have today"*: Starting out · Training basics · Coming back · Race training. **Grouping by the
-runner's STATE, not by topic taxonomy** — that framing is the good bit and it is free to take.
-Marked up as `ItemList`.
-
-**We already have the architecture twice over:** `MARKETING_PLANS` and `COMPARISON_ARTICLES` both
-self-register into a hub, the sitemap and the tests. A third catalogue is one file plus a four-line
-shim per page. **The build is small; the writing is the bottleneck.**
-
-🔴 **The angle is the whole value, and ours is not theirs.** Their guides answer *beginner*
-questions, which is the most contested keyword set in the category and the one they are funded to
-win. Ours should answer the questions **our** runner types: *"why am I not getting faster"* ·
-*"should my easy runs feel this slow"* · *"what is Zone 2 and am I doing it wrong"* · *"why is my
-heart rate so high on easy runs"* · *"am I overtraining or just tired"*. Lower volume, far lower
-competition, and each one ends at a product that is literally built for that problem.
-
-⚠️ **Founder-written by standing decision** (same rule as the comparison pages: ~1/week, do not
-bulk-draft). File the structure, not the prose.
+**Production model** (`CONTENT-AUTHORSHIP-01`): Claude drafts, the founder edits, supplies anything
+first-person, and **reads every word before it ships**. Read a draft at `/guide-preview` before it
+is added to the catalogue.
 
 ### ✅ `W-02` — SHIPPED 2026-09-21 (scoped down on contact with the page; `HowTo` schema DROPPED). Registry row has the detail.
 

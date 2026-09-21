@@ -28,12 +28,17 @@ export interface HubCopy {
 }
 
 export function ArticleHub({
-  hub, articles, section, breadcrumbLabel,
+  hub, articles, section, breadcrumbLabel, youngNote,
 }: {
   hub: HubCopy
   articles: MarketingArticle[]
   section: SiteSection
   breadcrumbLabel: string
+  /** Shown above the cards while the section is still small. Answers the
+   *  failure the publish gate used to prevent: a one-card index reads as
+   *  abandoned unless it tells you it is deliberate. Omit once the section
+   *  stands on its own. */
+  youngNote?: string
 }) {
   const ld = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
@@ -62,6 +67,15 @@ export function ArticleHub({
       </section>
 
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
+        {youngNote && (
+          <p style={{
+            fontSize: 14, lineHeight: 1.55, color: 'var(--mute)',
+            margin: '0 0 18px', paddingLeft: 14, borderLeft: '2px solid var(--line)',
+            maxWidth: 560,
+          }}>
+            {youngNote}
+          </p>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {articles.map(a => (
             <Link key={a.slug} href={articlePath(a)} style={{ textDecoration: 'none' }}>
