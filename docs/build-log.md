@@ -65,6 +65,42 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — W-01a: approval found a deadlock between two rulings from the same meeting
+
+**Dev.** The founder read guide 1 and approved it, which should have been a one-line change. It was
+not, because publishing it revealed that two rulings I had implemented faithfully could not both
+happen.
+
+Fried said write one, publish it, and do not write the second until the first has existed for a
+fortnight. Wood said the hub opens at three, because a hub with one card reads as abandoned. I had
+gated the article on the hub, which seemed obviously right at the time: a guide whose hub returns
+404 is an orphan.
+
+Put together, those three positions deadlock. The first guide can never exist publicly, so it can
+never be observed, so the second is never written, so the hub never opens.
+
+**The resolution is not a compromise and that is the useful part.** The two rulings are about
+different objects. Wood's objection is to a one-card *hub*. It is not an objection to a guide
+existing. Once you separate "is this article live" from "is the section open", both rulings hold
+completely: the article publishes on approval, the hub waits for three.
+
+I had merged two concepts into one boolean because they happened to have the same answer on the day
+I wrote it.
+
+**The orphan worry was real though**, and dropping the gate does not make it go away. A live page
+with no hub card and nothing linking to it is worse than an unpublished one. So the guide gets a
+contextual link from the block on the homepage that shows a week drifting above its ceiling, which
+is a better inbound link than a directory entry would have been, and a test fails if any guide
+lacks one.
+
+**The honest bit.** The new test caught its own explanatory comment, because it greps source. I
+fixed precisely that failure in a different guard about an hour earlier, wrote a note in the commit
+about how a guard firing on its own documentation teaches you to write around it, and then wrote a
+new source-reading test without the fix. Knowing a lesson and applying it to the next thing you
+write are different skills, and today has been a long demonstration of the gap.
+
+---
+
 ## 2026-09-21 — DOC-AUDIT-SECOND-SHAPE-01: asked if the docs were current, so I checked instead of answering
 
 **Dev.** The founder asked whether the backlog, feature registry, build log and contracts were all

@@ -48,20 +48,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     })),
+    // Guides are listed as soon as they exist; the HUB only once it is open.
+    // Listing a live article is the point of publishing it. Listing a 404ing
+    // hub would advertise a dead page.
+    ...guideArticles().map(a => ({
+      url: `${APP_URL}${articlePath(a)}`,
+      lastModified: a.lastUpdatedISO,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+    })),
     ...(guidesArePublished()
-      ? [
-          {
-            url: `${APP_URL}/${GUIDE_HUB.slug}`,
-            changeFrequency: 'weekly' as const,
-            priority: 0.8,
-          },
-          ...guideArticles().map(a => ({
-            url: `${APP_URL}${articlePath(a)}`,
-            lastModified: a.lastUpdatedISO,
-            changeFrequency: 'monthly' as const,
-            priority: 0.7,
-          })),
-        ]
+      ? [{ url: `${APP_URL}/${GUIDE_HUB.slug}`, changeFrequency: 'weekly' as const, priority: 0.8 }]
       : []),
     // GTM-SITE-02 — about. Lower priority than pricing but a real due-diligence
     // surface for a charity deciding whether to trust us with its fundraisers.

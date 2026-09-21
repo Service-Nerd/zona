@@ -17,7 +17,23 @@ import { guideArticles, guidesArePublished, GUIDES_MIN_TO_PUBLISH } from './arti
  * would catch, because the other three would look right. So each surface is
  * asserted to READ the gate, not to produce today's answer.
  */
-const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
+/**
+ * Read a source file with COMMENTS STRIPPED.
+ *
+ * ⚠️ Every assertion below greps source, and a comment explaining a rule
+ * contains the rule. This exact trap fired four times in one day across this
+ * codebase, once on `hardcodedUnits.test.ts`, which was fixed the same
+ * afternoon — and then I wrote a new source-reading test without the fix and
+ * it caught my own comment describing why the route is no longer gated.
+ *
+ * A guard that fires on its own documentation teaches you to write around the
+ * guard, which is strictly worse than a false negative. Strip once, here, so
+ * no assertion has to think about it.
+ */
+const read = (p: string) =>
+  readFileSync(join(process.cwd(), p), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n').filter(l => !l.trim().startsWith('//')).join('\n')
 
 describe('W-01 — one gate, four surfaces', () => {
   it('the gate is a relationship, not a restated number', () => {
@@ -99,7 +115,7 @@ describe('a guide cites the principles its claims rest on', () => {
  *      — and `/guide-preview` exists precisely to be read before then.
  */
 describe('the article breadcrumb', () => {
-  const src = readFileSync(join(process.cwd(), 'components/marketing/ArticlePage.tsx'), 'utf8')
+  const src = read('components/marketing/ArticlePage.tsx')
 
   it('derives its hub from the article, not a hardcoded string', () => {
     expect(src).not.toMatch(/name: 'Comparisons', item:/)
@@ -109,5 +125,39 @@ describe('the article breadcrumb', () => {
   it('renders the hub unlinked when that hub is not published', () => {
     expect(src).toMatch(/hub\.published/)
     expect(src).toMatch(/guidesArePublished\(\)/)
+  })
+})
+
+/**
+ * W-01a — an approved guide is LIVE, and it is not an orphan.
+ *
+ * Two SLT rulings from the same sitting deadlocked while article publication
+ * was gated on the hub: Fried's "publish one and see" could never happen,
+ * because the hub needs three and the first can never exist. They are about
+ * different objects — Wood's objection is to a one-card HUB, not to a guide
+ * existing — so the article publishes on approval and the hub still waits.
+ *
+ * ⚠️ Which means a live guide with a shut hub has NO hub card, and would be an
+ * orphan without a deliberate inbound link. That is worse than unpublished:
+ * a page nothing links to is a page crawlers discount and readers never find.
+ */
+describe('W-01a — a live guide is reachable', () => {
+  it('every guide is linked from somewhere in the marketing site', () => {
+    const surfaces = [
+      'app/page.tsx',
+      'components/marketing/SameWeekTwice.tsx',
+      'components/marketing/ArticleHub.tsx',
+    ].map(read).join('\n')
+    const orphans = guideArticles()
+      .filter(a => !surfaces.includes(`/guides/${a.slug}`))
+      // The hub links every guide once it is open, so that covers them then.
+      .filter(() => !guidesArePublished())
+      .map(a => a.slug)
+    expect(orphans, `guides with no inbound link: ${orphans.join(', ')}`).toEqual([])
+  })
+
+  it('the article route is NOT gated on the hub', () => {
+    const src = read('app/guides/[slug]/page.tsx')
+    expect(src).not.toMatch(/guidesArePublished/)
   })
 })

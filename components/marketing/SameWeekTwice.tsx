@@ -178,6 +178,19 @@ export function SameWeekTwice() {
           {col('Run to the ceiling', 'Easy days kept genuinely easy, so the hard day has somewhere to go.', 'held', HELD_ABOVE_PCT, held.line)}
         </div>
 
+        {/* W-01a — the guide's inbound link, and it is contextual rather than a
+            hub card on purpose. The guides hub stays shut until there are
+            three (Wood), but an approved guide is live from the day it is
+            approved (Fried), so it needs a link that is genuinely useful
+            rather than a directory entry. A reader who has just seen a week
+            drift above its ceiling is the exact reader with this question. */}
+        <p style={{ fontSize: '15px', lineHeight: 1.6, color: 'var(--ink-2)', margin: '20px 0 0', maxWidth: '620px' }}>
+          Wondering whether your easy runs are supposed to feel this slow?{' '}
+          <Link href="/guides/should-easy-runs-feel-this-slow" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+            That is the whole question, and it has an answer &rarr;
+          </Link>
+        </p>
+
         <p style={{ fontSize: '12.5px', lineHeight: 1.5, color: 'var(--mute)', margin: '14px 0 0', maxWidth: '620px' }}>
           The sessions and their ceilings come from the plan itself. The two sets of heart-rate
           readings are an illustration of two ways to run the week, not a measurement of anyone.

@@ -2194,7 +2194,24 @@ narrower than the visual similarity suggests.
 
 ### ✅ `W-01` — SHELF SHIPPED 2026-09-21. Catalogue, renderer, gated hub, route and tests. Registry row has the detail.
 
-### 🟡 `W-01a` — write the guides *(the open half, founder-gated)*
+### 🟡 `W-01a` — write the guides *(guide 1 LIVE; two more before the hub opens)*
+
+> ✅ **Guide 1 approved by the founder and PUBLISHED 2026-09-21** at
+> `/guides/should-easy-runs-feel-this-slow`. Linked contextually from the homepage's
+> `SameWeekTwice` block. **The hub stays shut until three.**
+>
+> 🔴 **Approval surfaced a DEADLOCK between two SLT rulings from the same sitting**, and it is worth
+> keeping because the resolution is not a compromise. **Fried:** *"write ONE. Publish it. Do not
+> write the second until the first has existed for a fortnight."* **Wood:** the hub opens at three,
+> because *"a hub with one card teaches a visitor the section is abandoned."* Gating the ARTICLE on
+> the hub makes Fried's ruling unreachable: the first guide can never exist, so the second is never
+> written, so the hub never opens. **The two rulings are about different objects — Wood's objection
+> is to a one-card HUB, not to a guide existing.** So an approved guide is live on approval and the
+> hub still waits.
+>
+> ⚠️ **Which makes the orphan risk real, and it is guarded.** A live guide with a shut hub has no
+> hub card, and a page nothing links to is worse than an unpublished one. `guidesGate.test.ts`
+> fails if any guide lacks an inbound link from a marketing surface.
 
 **Guide 1 is drafted and awaiting the founder's read at `/guide-preview`.** Nothing publishes until
 he has read it (SLT `CONTENT-AUTHORSHIP-01`), and the hub stays closed until there are three

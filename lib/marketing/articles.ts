@@ -453,6 +453,30 @@ export const guideArticles = (): MarketingArticle[] =>
  */
 export const GUIDES_MIN_TO_PUBLISH = 3
 
+/**
+ * Is the guides HUB open? Not "is a guide live".
+ *
+ * ⚠️ THESE WERE ONE THING UNTIL 2026-09-21 AND CONFLATING THEM PRODUCED A
+ * DEADLOCK between two SLT rulings from the same sitting:
+ *
+ *   Fried's cadence — "write ONE. Publish it. Do not write the second until
+ *   the first has existed for a fortnight." The point is to learn whether
+ *   anyone wants these before writing eight.
+ *
+ *   Wood's gate — the hub opens at three, because "a hub with one card teaches
+ *   a visitor the section is abandoned."
+ *
+ * Gate the ARTICLE on the hub and Fried's ruling becomes unreachable: the
+ * first guide can never exist for a fortnight, so the second is never written,
+ * so the hub never opens. Both rulings are right and they are about different
+ * objects. **Wood's objection is to a one-card HUB, not to a guide existing.**
+ *
+ * So: an approved guide in the catalogue is LIVE, at `/guides/<slug>`, and the
+ * hub stays shut until three. A guide is not orphaned in the meantime — it is
+ * linked in context from the homepage, which is a better inbound link than a
+ * hub card anyway, and the breadcrumb already renders the hub unlinked while
+ * it is closed (GUIDE-BREADCRUMB-01).
+ */
 export const guidesArePublished = (): boolean =>
   guideArticles().length >= GUIDES_MIN_TO_PUBLISH
 
