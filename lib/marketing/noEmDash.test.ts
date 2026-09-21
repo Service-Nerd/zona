@@ -49,6 +49,7 @@ const SURFACES = [
   'lib/marketing/founderStory.ts',
   'components/marketing/AppStoreBadge.tsx',
   'components/marketing/ArticleHub.tsx',
+  'components/marketing/SameWeekTwice.tsx',
   'components/marketing/ArticlePage.tsx',
   'components/marketing/PhoneFrame.tsx',
   'components/marketing/ProductStill.tsx',

@@ -199,6 +199,22 @@ Primary white cards carry `box-shadow: var(--shadow-card)` — a 1px contact sha
 
 > Live-app follow-up (device-verified): the inline `StatCell`/`StatRow`/`ActionListCard` primaries inside `DashboardClient.tsx` were left for an on-device pass — they sit inside other containers on the Coach/Me screens where nesting must be checked visually.
 
+## Proof-by-contrast block — `SameWeekTwice` (W-04, 2026-09-21)
+
+Two outcomes of one real prescription, side by side, on a marketing page.
+
+- **The prescription is generated, not transcribed.** `generateRulePlan` at render time, out of a named published plan, with a link to it. The block cannot drift from the plan it cites.
+- **The verdict is the product's own function.** `zoneWeekStatement()` writes those sentences inside the app; the page runs it rather than paraphrasing it. Change the product's wording and the page changes with it.
+- Outcome dots: `--warn` for drifted, `--moss` for held. This is P-01's semantic pair, and a marketing page is where it has to mean the same thing it means in the app.
+- Two columns on `repeat(auto-fit, minmax(min(100%, 280px), 1fr))`; stacks at 375.
+- **A labelled illustration line is mandatory** where any value is not measured.
+
+⚠️ **The rule that makes this honest, and it is Hutchinson's:** *"use real generated plans, or do not build it. The outcome half is where you will be tempted to invent numbers."* The prescription and the verdict are real. The executed heart rates are an illustration and the page says so, because with roughly three users there is no honest aggregate to quote.
+
+⚠️ **IT MAKES NO OUTCOME CLAIM, ON PURPOSE.** It does not say the held week produces adaptation or the grey week wastes it. That is physiology, it belongs to W-03, and W-03 is with the Coaching Board. What it shows is that the app can tell the difference — a claim about the product, and demonstrably true. **Do not "strengthen" this block with a result.**
+
+---
+
 ## Numbered journey steps — marketing (W-02, 2026-09-21)
 
 A sequence of short steps on a marketing page. Deliberately the PLAINEST block on the page: no cards, no borders, no component stills.

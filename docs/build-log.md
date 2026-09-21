@@ -65,6 +65,46 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — W-04: the honest version of a competitor's best idea
+
+**Dev.** Their strongest page element is a side-by-side of one disrupted week: rigid plan on the
+left, theirs on the right, reflowing with a reason per change. It proves the claim instead of
+asserting it, which is more than our homepage was doing with the same promise.
+
+Copying it would have been wrong though, because it proves *their* thing. Flexibility is their
+pitch. Ours is zone discipline. So the device became: one real week, run two ways, and what the app
+says about each.
+
+**The constraint made it better.** Hutchinson's condition was blunt: use real generated plans or do
+not build it, because the outcome half is where you will be tempted to invent numbers. So the four
+sessions are pulled from the engine at render time out of the published half marathon plan, with a
+link to it. Not transcribed. If the plan changes, the block changes.
+
+Then the bit I am actually pleased with: the two verdict sentences are not marketing copy. They are
+`zoneWeekStatement()`, the function that writes that sentence inside the app, run over the two sets
+of outcomes. The page says "None of this week's 4 runs stayed in the zone. The next easy one is the
+one to hold" because that is literally what the product would say. If we reword the product, the
+page rewords itself.
+
+**Where I had to stop.** The obvious next sentence is the one that sells: and *this* is why you are
+not getting faster. I did not write it. That is a physiology claim, it is W-03, and W-03 is with the
+Coaching Board precisely because "the evidence supports this approach" and "you will get slower" are
+different sentences. What this block demonstrates is narrower and defensible: the app can tell the
+difference. Most cannot.
+
+I have put a "do not strengthen this block with a result" note in the pattern doc, because that is
+exactly the edit someone makes in six months when it needs to convert harder.
+
+**The executed heart rates are an illustration and the page says so in a visible line.** We have
+about three users. There is no honest aggregate to quote, and quoting one would be the invention the
+condition was written to prevent.
+
+**One process note.** I ran `next build` while the dev server was up and it clobbered `.next`, so
+the page rendered completely unstyled and for a moment I thought I had broken the design system.
+Restarting the dev server fixed it. Worth knowing before diagnosing a CSS failure that is not one.
+
+---
+
 ## 2026-09-21 — Guide one, and the gate that made it unreadable
 
 **Dev.** First article written under the new ruling. The interesting constraint was not the voice,

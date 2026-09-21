@@ -43,6 +43,7 @@ import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import { PhoneFrame } from '@/components/marketing/PhoneFrame'
 import { ProductStill } from '@/components/marketing/ProductStill'
+import { SameWeekTwice } from '@/components/marketing/SameWeekTwice'
 import { Wordmark } from '@/components/ui/Wordmark'
 
 // GTM-SITE-02 item 3 — the real app components, not imitations of them.
@@ -519,6 +520,8 @@ export default async function Home() {
           </ol>
         </div>
       </section>
+
+      <SameWeekTwice />
 
       {/* ── What's not in the app — the restraint, made explicit ───────── */}
       <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
