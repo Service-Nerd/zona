@@ -59,6 +59,7 @@ import { BRAND } from '@/lib/brand'
 import { Wordmark } from '@/components/ui/Wordmark'
 
 import { PhoneShell } from '@/components/marketing/PhoneShell'
+import type { DemoBlockView } from '@/components/marketing/phoneBlock'
 
 
 // The still's plan: week 6 of a 16-week build, so 10 weeks remain. Every
@@ -67,9 +68,14 @@ import { PhoneShell } from '@/components/marketing/PhoneShell'
 // check the arithmetic. The countdown wording mirrors formatRaceCountdown()
 // in DashboardClient (runners think in weeks; the unit flips to days inside
 // the final week). It is NOT "84 days out" — that was the pre-2026 format.
-const WEEK_N = 6
-const TOTAL_WEEKS = 16
-const COUNTDOWN = `${TOTAL_WEEKS - WEEK_N} weeks out`
+//
+// ⚠️ THE TWO NUMBERS ARE NO LONGER OWNED HERE. They used to be private
+// constants, and the Plan tab that later joined this device generated a
+// 12-week half marathon while this screen said 16 — one phone showing two
+// runners. They now arrive as props from the SAME generated plan the Plan
+// and Coach tabs render, with `DEMO_BLOCK` as the shared intent and
+// `buildDemoPlanScreen()` as the producer. Nothing on the device restates a
+// week count any more; every surface reads it.
 
 /** Date-strip day cells. `date` is the calendar number, `dot` the session-type
  *  accent (null = rest day, no dot). Thu is selected/today. Mirrors the real
@@ -146,7 +152,8 @@ function KitByline({ role }: { role: string }) {
  * in step. Purely presentational: no hooks, so it still renders inside the
  * server-component homepage.
  */
-export function TodayStill() {
+export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
+  const COUNTDOWN = `${totalWeeks - weekN} weeks out`
   return (
     <>
 
@@ -188,7 +195,7 @@ export function TodayStill() {
         <div style={{ padding: '16px 18px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Base · Week {WEEK_N}
+              Base · Week {weekN}
             </span>
             <div style={{ flex: 1, height: '1px', background: 'var(--line)' }} />
             <span style={{
@@ -241,7 +248,7 @@ export function TodayStill() {
             <span style={{
               fontSize: '11px', fontWeight: 600, color: 'var(--mute)',
               letterSpacing: '0.08em', textTransform: 'uppercase',
-            }}>Week {WEEK_N} of {TOTAL_WEEKS}</span>
+            }}>Week {weekN} of {totalWeeks}</span>
             <span style={{ color: 'var(--ink-2)', lineHeight: 0 }}>
               <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
                 <path d="M7 4L13 10L7 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -345,10 +352,12 @@ export function TodayStill() {
   )
 }
 
-export function PhoneFrame() {
+/** The block arrives as props. This file must never import the engine — see
+ *  `demoBlockView()` in `lib/marketing/demoPlanScreen.ts` for why. */
+export function PhoneFrame(block: DemoBlockView) {
   return (
     <PhoneShell activeTab="Today">
-      <TodayStill />
+      <TodayStill {...block} />
     </PhoneShell>
   )
 }

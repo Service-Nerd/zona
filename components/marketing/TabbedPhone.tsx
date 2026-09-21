@@ -3,11 +3,16 @@
 import { useState } from 'react'
 import { PhoneShell, type PhoneTab } from '@/components/marketing/PhoneShell'
 import { TodayStill } from '@/components/marketing/PhoneFrame'
-import SessionCard from '@/components/shared/SessionCard'
+import type { DemoBlockView } from '@/components/marketing/phoneBlock'
 import ZoneRings from '@/components/shared/ZoneRings'
-import CoachNoteBlock from '@/components/shared/CoachNoteBlock'
+import CoachByline from '@/components/shared/CoachByline'
 import PlanArc from '@/components/shared/PlanArc'
-import { DEMO_WEEK, DEMO_ZONE_WEEK, DEMO_COACH_NOTE } from '@/lib/marketing/demoSurfaces'
+import PlanCalendar from '@/components/training/PlanCalendar'
+import { DEMO_ZONE_WEEK, DEMO_COACH_NOTE, DEMO_BLOCK, DEMO_RACE_ARC } from '@/lib/marketing/demoSurfaces'
+import { buildRaceProgressArc } from '@/lib/coaching/raceProgressArc'
+import { RaceProgressArcRow } from '@/components/shared/RaceProgressArcRow'
+import { RACE_PROJECTIONS_COPY } from '@/components/shared/raceProjectionsCopy'
+import type { DemoPlanScreen } from '@/lib/marketing/demoPlanScreen'
 
 /**
  * DESIGN-V3 — one phone, three screens, switched by the bottom nav.
@@ -33,12 +38,32 @@ import { DEMO_WEEK, DEMO_ZONE_WEEK, DEMO_COACH_NOTE } from '@/lib/marketing/demo
  * `realComponents.test.ts` exists because a still said "8 km" while the app
  * said "8km".
  *
- * So every screen here renders REAL shared components — `SessionCard`,
- * `ZoneRings`, `CoachNoteBlock`, `PlanArc` — fed by `demoSurfaces`, which is
- * the established pattern `ProductStill` already uses on this page. The
- * layout follows `docs/canonical/screen-architecture.md`, which is the
- * authority on what belongs on each screen. The handoff supplied the FRAME
- * and the idea of showing three screens; it did not supply their contents.
+ * ⚠️ AND THE SECOND CUT WAS STILL WRONG, for a subtler reason worth keeping.
+ * It was rebuilt from `screen-architecture.md` — which says what BELONGS on a
+ * screen, not what the screen IS. The founder caught it: "the plan screen
+ * shows the weeks... coach is a Kit card and how it went." Reading
+ * `PlanScreen` and `CoachScreen` in DashboardClient settled it:
+ *
+ *   Plan  = ScreenHeader "Your plan" -> race -> PlanArc -> zone compliance ->
+ *           Kit's plan card -> **PlanCalendar**, the Past/Now/Next/Later WEEK
+ *           cards. My version showed three loose session cards and no weeks.
+ *   Coach = ScreenHeader "Your coach" -> **ONE Kit read** with the zone rings
+ *           INSIDE it. The rings take `chromeless` for exactly this reason:
+ *           they once kept their own border under the read and the founder
+ *           read them as two cards, correctly. My version made them a
+ *           separate card again and put them first.
+ *
+ * **A doc about a screen is not the screen.** Read the component.
+ *
+ * Every screen now renders REAL components — `PlanArc`, `PlanCalendar`,
+ * `ZoneRings`, `CoachByline` — over a REAL generated plan (`generateRulePlan`,
+ * the same call `SameWeekTwice` and the published plan pages make) and
+ * `demoSurfaces`. The handoff supplied the FRAME and the idea of showing
+ * three screens; it did not supply their contents.
+ *
+ * ⚠️ THE PLAN ARRIVES AS A PROP, GENERATED ON THE SERVER. See
+ * `lib/marketing/demoPlanScreen.ts` — this file is `'use client'`, so calling
+ * the engine here would ship it to every visitor.
  *
  * ⚠️ NO SEGMENTED CONTROL. The handoff draws one above the frame and says in
  * as many words not to ship it: in the product, the nav changes tabs.
@@ -49,113 +74,196 @@ import { DEMO_WEEK, DEMO_ZONE_WEEK, DEMO_COACH_NOTE } from '@/lib/marketing/demo
  */
 
 
-function ScreenHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
+
+function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
+  // Reproduced from DashboardClient's own ScreenHeader, which is a private
+  // function there rather than a shared component. Same sizes, same tokens.
   return (
-    <div style={{ padding: '14px 16px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <span style={{
-        fontSize: 'var(--fs-micro)', fontWeight: 700, letterSpacing: '0.08em',
-        textTransform: 'uppercase', color: 'var(--mute)',
-      }}>{eyebrow}</span>
-      <span style={{
-        fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--ink)',
-      }}>{title}</span>
+    <div style={{ padding: '16px 16px 8px' }}>
+      <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px' }}>{title}</div>
+      {sub && <div style={{ fontSize: 12, color: 'var(--mute)', marginTop: 3, letterSpacing: '0.04em' }}>{sub}</div>}
     </div>
   )
 }
 
 /**
- * PLAN — `screen-architecture.md`: "Own the training arc." What belongs here
- * is the Plan Arc with its race countdown, the week-by-week session grid, and
- * this week's framing (phase, theme, km target).
+ * PLAN — `PlanScreen` in DashboardClient: "Your plan", the race, the arc,
+ * Kit's card, then **PlanCalendar** — the Past / Now / Next / Later WEEK
+ * cards. The weeks ARE the screen; a flat list of sessions is a different
+ * screen (Today) wearing this one's header.
  *
- * ⚠️ What was here before: a 7-day dot strip, a flat list of four
- * hand-drawn cards and an invented "4 sessions / 38km / 3 rest days" summary.
- * The arc — the FIRST thing the real screen shows and the thing that makes it
- * "own the training arc" — was missing entirely.
- *
- * Real components: `PlanArc`, `SessionCard`. Data: `DEMO_WEEK`.
+ * ⚠️ `currentWeek` is READ from the plan, not typed. `PlanCalendar` decides
+ * which week is "Now" from today's date via `getCurrentWeekIndex`, and a
+ * hardcoded arc number would disagree with it the moment the anchor moved.
  */
-function PlanStill() {
+function PlanStill({ plan, block }: { plan: DemoPlanScreen; block: DemoBlockView }) {
   return (
     <>
-      <ScreenHeader eyebrow="Week 6 of 16 · Base" title="This week" />
-
-      <div style={{ padding: '0 16px 16px' }}>
+      <ScreenHeader title="Your plan" sub="Marathon" />
+      <div style={{ padding: '0 16px 14px' }}>
         <PlanArc
-          totalWeeks={16}
-          currentWeek={6}
-          doneWeeks={5}
-          deloadWeeks={[4, 8, 12]}
-          raceWeek={16}
+          totalWeeks={block.totalWeeks}
+          currentWeek={block.weekN}
+          doneWeeks={block.weekN - 1}
+          raceWeek={block.totalWeeks}
           phaseLabel="base → build → peak → taper"
         />
       </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '0 16px' }}>
-        {DEMO_WEEK.map(s => (
-          <SessionCard key={s.name} {...s} />
-        ))}
+      {/* This week, in the product's own words. `weekVoice` is computed by
+          `lib/coaching/weekVoice.ts` — the same rule-engine functions the app
+          renders this card from — so the sentence cannot be marketing copy
+          wearing the app's clothes. Markup mirrors PlanScreen's card: moss
+          rail, "This week" eyebrow, phase chip, headline, up to two items,
+          km-target footer. No Kit byline: see demoPlanScreen.ts. */}
+      <div style={{ padding: '0 16px 0' }}>
+        <div style={{
+          background: 'var(--card)', boxShadow: 'var(--shadow-card)',
+          border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)',
+          overflow: 'hidden',
+        }}>
+          <div style={{ padding: '14px 16px 14px 19px', position: 'relative' }}>
+            <span aria-hidden style={{
+              position: 'absolute', left: 8, top: 14, bottom: 14,
+              width: 3, borderRadius: 2, background: 'var(--moss)',
+            }} />
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{
+                fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--mute)',
+                textTransform: 'uppercase', letterSpacing: '0.08em',
+              }}>This week</span>
+              {plan.weekVoice.phaseLabel && (
+                <span style={{
+                  marginLeft: 'auto', fontSize: 'var(--fs-micro)', fontWeight: 700,
+                  color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase',
+                }}>{plan.weekVoice.phaseLabel}</span>
+              )}
+            </div>
+            <div style={{
+              fontSize: 15, fontWeight: 600, color: 'var(--ink)',
+              lineHeight: 1.4, letterSpacing: '-0.01em',
+              marginBottom: plan.weekVoice.items.length > 0 ? 10 : 0,
+            }}>{plan.weekVoice.headline}</div>
+            {plan.weekVoice.items.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {plan.weekVoice.items.map(item => (
+                  <div key={item} style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.55 }}>{item}</div>
+                ))}
+              </div>
+            )}
+          </div>
+          {plan.weekVoice.target && (
+            <div style={{
+              padding: '10px 16px', borderTop: '1px solid var(--line)',
+              display: 'flex', alignItems: 'center', gap: 12,
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>
+                {plan.weekVoice.target} target
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--mute)' }}>no runs logged yet</span>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* The real weeks view. Interactive in the app; the handlers are no-ops
+          here because this is a still, and `PlanCalendar` keeps move and swap
+          behind a tap, so at rest it shows exactly what a runner sees. */}
+      <div style={{ paddingTop: 12 }} />
+      <PlanCalendar
+        weeks={plan.weeks}
+        allOverrides={[]}
+        allCompletions={{}}
+        onOverrideChange={() => {}}
+        onSessionTap={() => {}}
+      />
     </>
   )
 }
 
 /**
- * COACH — `screen-architecture.md`: "Kit's synthesis — what your training
- * data means and what to do next... The user opens Coach to hear from Kit."
- * What belongs here is Kit's weekly read and the zone rings.
+ * COACH — `CoachScreen` in DashboardClient: "Your coach · W6 of 16", then
+ * **CO-ONE, the ONE Kit read**, with the zone rings inside that same card
+ * ("the week, pictured — one card with the read, not a second one").
  *
- * ⚠️ What was here before was fiction in three ways: four horizontal bars
- * where the product plots the week as RINGS (the brand mark used as a data
- * display, Pattern 22); the sentence "Target is 80%. Last week: 62%.", which
- * appears nowhere in the product; and no Kit read at all — the one thing the
- * screen exists for. It also hand-drew bars while `components/shared/
- * ZoneBar.tsx` calls itself the canonical zone-visualisation primitive.
+ * ⚠️ `chromeless` is the whole point. The rings once sat under the read and
+ * kept their own border, and the founder read them as two cards. Giving them
+ * their own card here would reproduce a bug the product already fixed.
  *
- * Real components: `ZoneRings`, `CoachNoteBlock aiGenerated` (which brings
- * the real byline and the real AIMark sparkle, so the AI provenance on the
- * marketing page is the product's own, not an impression of it).
- * Data: `DEMO_ZONE_WEEK`, `DEMO_COACH_NOTE` — the same figures the homepage
- * already shows, so the two surfaces cannot disagree.
+ * ⚠️ THE WEEK COUNT COMES FROM THE SAME PLAN THE PLAN TAB RENDERS. It was
+ * typed as "W6 of 16" in the first pass — a 16-week count on a phone whose
+ * Plan tab shows a 12-week half marathon. Two tabs of one device disagreed
+ * about which block the runner is in, which is the fiction problem again at
+ * a smaller scale. Caught by `realComponents.test.ts`, not by looking.
  */
-function CoachStill() {
+/** The arc is a pure computation over three times; building it at module
+ *  scope keeps it out of every render and proves it is not state. */
+const ARC_COPY = RACE_PROJECTIONS_COPY.status.arc!
+const arc = buildRaceProgressArc(DEMO_RACE_ARC)
+
+function CoachStill({ block }: { block: DemoBlockView }) {
   return (
     <>
-      {/* The eyebrow says THIS week because ZoneRings' own default label
-          does ("This week in zones"), and two timeframes on one screen is
-          the kind of small lie that makes a mockup feel drawn. */}
-      <ScreenHeader eyebrow="This week" title="How it is going" />
-
-      <div style={{ padding: '0 16px 14px' }}>
-        <ZoneRings pctByZone={DEMO_ZONE_WEEK.pct} meta={DEMO_ZONE_WEEK.meta} />
+      <ScreenHeader title="Your coach" sub={`W${block.weekN} of ${block.totalWeeks}`} />
+      <div style={{
+        margin: '0 12px', background: 'var(--card)', borderRadius: 16,
+        border: '0.5px solid var(--line)', padding: '14px 14px 4px',
+        display: 'flex', flexDirection: 'column', gap: 10,
+      }}>
+        <CoachByline color="moss" role="This week" />
+        <span style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.55, color: 'var(--ink-2)' }}>
+          {DEMO_COACH_NOTE.observation}
+        </span>
+        <span style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.55, color: 'var(--ink-2)', fontStyle: 'italic' }}>
+          {DEMO_COACH_NOTE.instruction}
+        </span>
+        <ZoneRings pctByZone={DEMO_ZONE_WEEK.pct} meta={DEMO_ZONE_WEEK.meta} chromeless />
       </div>
 
-      <div style={{ padding: '0 16px' }}>
-        <CoachNoteBlock aiGenerated timestamp={DEMO_COACH_NOTE.timestamp}>
-          <span style={{ display: 'block', marginBottom: '10px' }}>
-            {DEMO_COACH_NOTE.observation}
-          </span>
-          <span style={{ display: 'block', fontStyle: 'italic' }}>
-            {DEMO_COACH_NOTE.instruction}
-          </span>
-        </CoachNoteBlock>
-      </div>
+      {/* THE ARC — where I was, where I am, the goal I chose. The block the
+          real CoachScreen renders directly under the read, and the reason the
+          still stops looking like a screen that ran out: without it a quarter
+          of the device was empty warm slate, which reads as "that is all there
+          is" rather than as a crop. Real component, real copy constant, real
+          `buildRaceProgressArc`; only the three times are illustrative. */}
+      {arc && (
+        <div style={{ padding: '12px 12px 0' }}>
+          <div style={{
+            background: 'var(--card)', borderRadius: 16,
+            border: '0.5px solid var(--line)', padding: '14px 14px 16px',
+          }}>
+            <div style={{
+              fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--mute)',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4,
+            }}>{ARC_COPY.raceEyebrow}</div>
+            <div style={{ fontSize: 12, color: 'var(--ink-2)', marginBottom: 14 }}>
+              {DEMO_RACE_ARC.raceName}
+            </div>
+            <RaceProgressArcRow arc={arc} copy={ARC_COPY} />
+          </div>
+        </div>
+      )}
     </>
   )
 }
 
-export function TabbedPhone({ initial = 'Today' }: { initial?: PhoneTab }) {
+export function TabbedPhone({ plan, initial = 'Today' }: { plan: DemoPlanScreen | null; initial?: PhoneTab }) {
   const [tab, setTab] = useState<PhoneTab>(initial)
+  // ONE block, read off the ONE generated plan, handed to all three tabs.
+  // The alternative — each still deriving its own, or the page passing a
+  // second prop — is how the device came to show a 16-week build on Today
+  // and a 12-week one on Plan.
+  const block: DemoBlockView = plan
+    ? { weekN: plan.currentWeekIndex + 1, totalWeeks: plan.totalWeeks }
+    : { weekN: DEMO_BLOCK.weekN, totalWeeks: DEMO_BLOCK.totalWeeks }
   return (
     <PhoneShell
       activeTab={tab}
       // `Me` is in the nav because the product has four tabs and a mockup that
       // hides one is a mockup of a different app. It has no screen here, so
-      // selecting it would show Today under a "Me" nav, which is worse than
-      // not responding. It stays visible and inert.
-      onTab={t => { if (t !== 'Me') setTab(t) }}
+      // selecting it would show Today under a "Me" nav.
+      onTab={t => { if (t !== 'Me' && !(t === 'Plan' && !plan)) setTab(t) }}
     >
-      {tab === 'Plan' ? <PlanStill /> : tab === 'Coach' ? <CoachStill /> : <TodayStill />}
+      {tab === 'Plan' && plan ? <PlanStill plan={plan} block={block} /> : tab === 'Coach' ? <CoachStill block={block} /> : <TodayStill {...block} />}
     </PhoneShell>
   )
 }

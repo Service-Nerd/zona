@@ -3,10 +3,8 @@
 import React, { useState } from 'react'
 import type { Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
-import { createClient } from '@/lib/supabase/client'
-import { authedFetch } from '@/lib/supabase/authedFetch'
 import { getSessionColor } from '@/lib/session-types'
-import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan'
+import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan/weekResolution'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
 
 interface Completion {
@@ -99,7 +97,33 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
   // for move/swap. State held here so navigating away resets — option-value,
   // not use-value, in the brand sense (the tap-to-reveal IS the friction).
   const [expandedLaterWeek, setExpandedLaterWeek] = useState<number | null>(null)
-  const supabase = createClient()
+
+  /**
+   * ⚠️ SUPABASE IS LOADED ON FIRST MOVE OR SWAP, NOT ON RENDER.
+   *
+   * Only `handleMove` and `handleSwap` persist anything, and both are already
+   * async and already make network round-trips, so a dynamic import costs
+   * them nothing measurable. A static import cost every page that renders
+   * this component **139 kB** of `@supabase/supabase-js` up front.
+   *
+   * That is not a theoretical saving. The marketing homepage renders the real
+   * week cards in its phone still (DESIGN-V3 — the screens must be what the
+   * app does), and a still can never move or swap: measured, the homepage's
+   * First Load JS went 110 kB -> 249 kB purely from this import, on the one
+   * page where Lighthouse and crawl budget actually matter. Inside the app
+   * the chunk is already in flight for other reasons, so this is a marketing
+   * win and an app no-op.
+   *
+   * `createBrowserClient` returns the same instance per browser, so calling
+   * it inside the handler rather than at render changes no behaviour.
+   */
+  async function persistence() {
+    const [{ createClient }, { authedFetch }] = await Promise.all([
+      import('@/lib/supabase/client'),
+      import('@/lib/supabase/authedFetch'),
+    ])
+    return { supabase: createClient(), authedFetch }
+  }
 
   const currentWeekIndex = getCurrentWeekIndex(weeks)
   const safeIndex = currentWeekIndex >= 0 ? currentWeekIndex : 0
@@ -112,6 +136,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
 
   async function handleMove(weekN: number, originalDay: string, newDay: string, currentSlot: string) {
     if (currentSlot === newDay) return
+    const { supabase, authedFetch } = await persistence()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     let updated = allOverrides.filter(o => !(o.week_n === weekN && o.original_day === originalDay))
@@ -146,6 +171,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
     targetOriginal: string, targetSlot: string,
   ) {
     if (sourceSlot === targetSlot) return
+    const { supabase, authedFetch } = await persistence()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 

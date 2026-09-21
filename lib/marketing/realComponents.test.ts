@@ -135,28 +135,102 @@ describe('the demo data is coherent', () => {
  * `TabbedPhone`'s first cut shipped exactly that. Built from the v3 design
  * handoff's description rather than from the product, its Coach screen drew
  * four horizontal zone bars, asserted "Target is 80%. Last week: 62%." — a
- * sentence that appears nowhere in the app — and omitted Kit's weekly read,
- * which `screen-architecture.md` names as the reason the screen exists. Its
- * Plan screen invented a summary row and left out the Plan Arc. Every test
- * passed, because none of them was looking at whether the screen was real.
+ * sentence that appears nowhere in the app — and omitted Kit's weekly read.
+ * Its Plan screen invented a summary row and left out the Plan Arc. Every
+ * test passed, because none of them was looking at whether it was real.
  *
- * A designer who has not seen the app cannot draw it, and a marketing mockup
- * that shows a feature the product lacks is a promise the product breaks.
- * This is the check for that.
+ * ⚠️ AND THE FIRST VERSION OF **THIS** CHECK PINNED THE WRONG ANSWER TOO.
+ * It was written against the SECOND cut, which was rebuilt from
+ * `screen-architecture.md` — a document about what BELONGS on a screen, not
+ * about what the screen IS. It therefore required `SessionCard` and
+ * `CoachNoteBlock` on the Plan and Coach tabs and was perfectly green over a
+ * Plan screen with no WEEKS on it, which is the one thing the real Plan
+ * screen is made of. A gate written from a doc inherits the doc's distance
+ * from the code.
+ *
+ * So this no longer hardcodes a component list at all. **It reads
+ * `DashboardClient`.** For each screen it slices the real screen function out
+ * of the app and requires that every component the marketing still claims to
+ * show is actually rendered there, and that the components the real screen
+ * leads with are present in the still. If the app's Plan screen stops
+ * rendering the weeks, this fails; if the marketing still drifts from it,
+ * this fails.
  */
 describe('DESIGN-V3 — marketing screens render the real app', () => {
   const tabbed = read('components/marketing/TabbedPhone.tsx')
+  const dash = read('app/dashboard/DashboardClient.tsx')
 
-  it('renders real shared components, not redrawn ones', () => {
-    for (const c of ['SessionCard', 'ZoneRings', 'CoachNoteBlock', 'PlanArc']) {
-      expect(tabbed, `TabbedPhone should render the real ${c}`).toContain(`<${c}`)
-      expect(tabbed).toContain(`components/shared/${c}`)
+  /** The source of one top-level `function <name>(` through to the next one. */
+  function screenSource(name: string): string {
+    const open = dash.indexOf(`\nfunction ${name}(`)
+    expect(open, `${name} should exist in DashboardClient`).toBeGreaterThan(-1)
+    const next = dash.indexOf('\nfunction ', open + 1)
+    return dash.slice(open, next > -1 ? next : undefined)
+  }
+
+  /**
+   * What each marketing tab must show, and the app screen it is claiming to
+   * be. Every entry is verified in BOTH directions below, so neither list can
+   * quietly become aspirational.
+   */
+  const SCREENS: { tab: string; appScreen: string; components: string[] }[] = [
+    // The weeks ARE the Plan screen. `PlanCalendar` renders the Past / Now /
+    // Next / Later week cards; the arc is what the screen opens with.
+    { tab: 'Plan',  appScreen: 'PlanScreen',  components: ['PlanArc', 'PlanCalendar'] },
+    // Coach leads with Kit's weekly read and pictures the week with rings.
+    { tab: 'Coach', appScreen: 'CoachScreen', components: ['CoachByline', 'ZoneRings'] },
+  ]
+
+  /**
+   * `<Name` followed by a JSX boundary. ⚠️ A plain `toContain('<PlanCalendar')`
+   * is satisfied by `<PlanCalendarX`, so the first cut of this check passed
+   * when the app screen was mutated to prove it could fail. Substring
+   * matching is biased toward passing — the same trap `configConsumer.test.ts`
+   * documents — and a gate that cannot go red is not a gate.
+   */
+  const renders = (src: string, c: string) => new RegExp(`<${c}[\\s/>]`).test(src)
+
+  it.each(SCREENS)('$tab shows what $appScreen shows', ({ appScreen, components }) => {
+    const app = screenSource(appScreen)
+    for (const c of components) {
+      expect(renders(app, c), `${appScreen} should render ${c} — if it no longer does, the marketing still is now fiction`)
+        .toBe(true)
+      expect(renders(tabbed, c), `the marketing ${appScreen.replace('Screen', '')} tab should render the real ${c}`)
+        .toBe(true)
     }
   })
 
-  it('takes its data from demoSurfaces, so the page cannot contradict itself', () => {
-    for (const d of ['DEMO_WEEK', 'DEMO_ZONE_WEEK', 'DEMO_COACH_NOTE']) {
-      expect(tabbed, `${d} is the shared figure; a local copy would drift`).toContain(d)
+  it('renders the shared components rather than redrawing them', () => {
+    // Every component the still renders must be imported from the app's own
+    // tree, never defined locally. A local `function PlanArc` would satisfy
+    // the check above and be a drawing.
+    for (const c of SCREENS.flatMap(s => s.components)) {
+      expect(tabbed, `${c} must be imported, not redrawn`).toMatch(
+        new RegExp(`import (\\\\{ )?${c}.*from '@/components/`)
+      )
+      expect(tabbed).not.toMatch(new RegExp(`^\\\\s*function ${c}\\\\b`, 'm'))
+    }
+  })
+
+  it('puts the rings INSIDE Kit’s read, as the app does', () => {
+    // CoachScreen's own comment: "THE WEEK, PICTURED — one card with the read,
+    // not a second one." The rings take `chromeless` for exactly this. A
+    // second bordered card under the read is a bug the product already fixed.
+    expect(read('app/dashboard/DashboardClient.tsx')).toContain('chromeless')
+    expect(tabbed, 'ZoneRings in the Coach still must be chromeless — one card, not two')
+      .toMatch(/<ZoneRings[^>]*chromeless/)
+  })
+
+  it('takes the plan from the engine and the figures from demoSurfaces', () => {
+    // The weeks are generated, not transcribed — the same call the published
+    // plan pages make. It happens on the SERVER (see demoPlanScreen.ts); this
+    // file is a client component and must only receive the data.
+    const code = tabbed.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    expect(tabbed).toContain('DemoPlanScreen')
+    expect(code, 'the engine must not be imported into a client bundle')
+      .not.toContain('generateRulePlan')
+    for (const d of ['DEMO_ZONE_WEEK', 'DEMO_COACH_NOTE']) {
+      expect(code, `${d} is the shared figure; a local copy would drift`).toContain(d)
     }
   })
 
@@ -173,10 +247,26 @@ describe('DESIGN-V3 — marketing screens render the real app', () => {
     // The exact fabrication that shipped. Kept as a literal because the
     // failure was a specific invented sentence, not a category.
     expect(code).not.toContain('Target is 80%')
-    expect(code).not.toContain('Last week: 62%')
+    // A week count typed by hand would drift from the generated plan, and
+    // DATE-DST-01 means the engine itself can return one week short.
+    expect(code, 'read the week count from the plan, never type it').not.toMatch(/of 1[26]\b/)
   })
 
-  it('Today is imported, never redrawn', () => {
+  it('opens on Today, because Today is the product\u2019s argument', () => {
+    // The homepage phone must land on Today. Plan and Coach are what the app
+    // ALSO does; Today is "one job per screen" made visible, and it is the
+    // screen the hero copy is about. Checked on the page, not just on the
+    // component's default, because a stray `initial` prop would be invisible
+    // to a default-value assertion.
+    expect(tabbed).toMatch(/initial\s*=\s*'Today'/)
+    const page = read('app/page.tsx')
+    const tag = page.match(/<TabbedPhone[^>]*\/?>/)
+    expect(tag, 'the homepage should render TabbedPhone').not.toBeNull()
+    expect(tag![0], 'do not pass `initial` on the homepage \u2014 it must open on Today')
+      .not.toMatch(/\binitial\b/)
+  })
+
+  it('reuses the Today still rather than redrawing it', () => {
     // The one screen the first cut got right, because it was reused.
     expect(tabbed).toContain('TodayStill')
     expect(tabbed).not.toMatch(/function TodayStill\b/)

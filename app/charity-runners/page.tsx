@@ -52,6 +52,7 @@ import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import { PhoneFrame } from '@/components/marketing/PhoneFrame'
+import { demoBlockView } from '@/lib/marketing/demoPlanScreen'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const PAGE_URL = `${APP_URL}/charity-runners`
@@ -220,7 +221,7 @@ export default function CharityRunnersPage() {
           Light section only: the frame renders its screen ground dark inside a
           --ground section (known constraint, PhoneFrame header). */}
       <section style={{ padding: '8px 24px 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
-        <div className="phone-fit"><PhoneFrame /></div>
+        <div className="phone-fit"><PhoneFrame {...demoBlockView()} /></div>
         <p style={{
           fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--mute)',
           margin: 0, maxWidth: '420px', textAlign: 'center',

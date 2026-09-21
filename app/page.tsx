@@ -46,6 +46,7 @@ import { AppStoreQr } from '@/components/marketing/AppStoreQr'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { TabbedPhone } from '@/components/marketing/TabbedPhone'
+import { buildDemoPlanScreen } from '@/lib/marketing/demoPlanScreen'
 import { HeroTrace } from '@/components/marketing/HeroTrace'
 import { Section } from '@/components/marketing/Section'
 import { ProductStill } from '@/components/marketing/ProductStill'
@@ -284,7 +285,7 @@ export default async function Home() {
             `.phone-fit` scales it below 430px so it cannot force the document
             wider than the viewport. */}
         <div className="phone-fit" style={{ justifySelf: 'center' }}>
-          <TabbedPhone />
+          <TabbedPhone plan={buildDemoPlanScreen()} />
         </div>
       </section>
 

@@ -41,6 +41,54 @@ export interface DemoSession {
  * Three types, not one, because the session colour system carries meaning and
  * the homepage was using exactly one of the eight colours it owns.
  */
+/**
+ * The block every marketing device still describes: week 6 of a 16-week
+ * marathon build, so 10 weeks remain.
+ *
+ * ⚠️ IT IS HERE BECAUSE THREE SURFACES HAVE TO AGREE AND TWO OF THEM DID
+ * NOT. `PhoneFrame`'s Today still owned `WEEK_N`/`TOTAL_WEEKS` privately and
+ * said "Week 6 of 16"; the Coach tab was typed "W6 of 16" by hand; and the
+ * Plan tab generated a **12-week half marathon**. One device, three tabs,
+ * two different races and two different block lengths. A visitor switching
+ * tabs was looking at two runners.
+ *
+ * `buildDemoPlanScreen()` generates the real plan from this, so the Plan
+ * tab's arc and the Coach tab's header now READ the block rather than
+ * restating it. Change it here and all three move together.
+ */
+export const DEMO_BLOCK = {
+  /** Marketing plan slug the Plan tab generates. Must be a 16-week race. */
+  slug: 'marathon-16-week',
+  weekN: 6,
+  totalWeeks: 16,
+} as const
+
+/**
+ * The Coach screen's race arc: where the runner was at plan start, where they
+ * are now, and the goal they chose. Feeds the REAL `buildRaceProgressArc` and
+ * `RaceProgressArcRow`, with the real `RACE_PROJECTIONS_COPY.status.arc`.
+ *
+ * ⚠️ AN ILLUSTRATION, ON THE SAME FOOTING AS `DEMO_ZONE_WEEK`, and the page
+ * already draws this line explicitly: `SameWeekTwice`'s header states that the
+ * PRESCRIPTION is real and generated while the EXECUTION is "two ways a runner
+ * might run this week, not a measurement of anyone" — because we have roughly
+ * three users and there is no honest aggregate to quote. Three benchmark times
+ * are outcome data, so they sit on the illustration side of that line.
+ *
+ * ⚠️ §109 / §44.1: this surface may REMEMBER and COMPARE, never PREDICT.
+ * `buildRaceProgressArc` enforces it — there is no projected race-day finish
+ * here and there must never be one. Do not add a fourth "on track for" point.
+ */
+export const DEMO_RACE_ARC = {
+  /** 4:12:00 at plan start. */
+  baselineSeconds: 4 * 3600 + 12 * 60,
+  /** 4:06:30 measured now, five weeks in. */
+  currentSeconds: 4 * 3600 + 6 * 60 + 30,
+  /** The runner's own target, not a forecast. */
+  goalSeconds: 4 * 3600,
+  raceName: 'Manchester Marathon',
+} as const
+
 export const DEMO_WEEK: DemoSession[] = [
   {
     type: 'easy',
