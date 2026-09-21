@@ -6,6 +6,49 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — SITE-MOBILE-01: he was right about the green, and the reason was already in our own docs
+
+**Dev.** Four notes from the founder, looking at the live site on a phone. Three were quick. The
+interesting one was "the new graph card with the green shadow: not sure the site looks consistent
+with that."
+
+He was right, and what makes it worth writing down is that the argument was already in the
+repository. That morning we had cut the marketing site to three background colours, each used once,
+on the grounds that a site which alternates bands reads as a smudge rather than a rhythm. Then the
+design handoff landed in the afternoon with a pale green frame around the hero card, and it went in
+as a new token. One tinted surface, used in exactly one place, on an otherwise warm-neutral page.
+
+Nobody broke a rule. The rule was written in one document and the token was added in another, eight
+hours apart, and the two never met. The fix was not to invent anything: another component already
+frames a surface for exactly this reason and its own header spells out the pattern. Swapped it in,
+deleted the token, and turned the test that used to *scope* the green into one that asserts it does
+not come back.
+
+**Product.** The nav one is a smaller version of the same thing. On every screen above phone width
+the wordmark sits hard left and the links hard right. On a phone the links wrap onto their own row
+and were packed left — so the single arrangement a visitor has seen everywhere else quietly
+inverted on the one screen most of them will actually use. One line of CSS. It had been live for
+weeks.
+
+**AI-building.** Two failures on my side, both the same shape.
+
+I wrote a test asserting the new frame carries a hairline, and it passed when I deleted the
+hairline — because the white card *inside* the frame has an identical border two lines further
+down, and I had grepped the file rather than the element. That is the third time today a check of
+mine could not go red. The pattern is always a substring standing in for a location.
+
+And I nearly reported a layout bug that did not exist. A full-page screenshot showed the whole
+mobile page clipped at the right edge — cards cut in half, text running off. It was a capture
+artefact. Measuring the live page said the document was exactly as wide as the viewport with
+nothing outside it. If I had trusted the picture I would have "fixed" a working layout.
+
+**The honest bit.** One of his four notes I could not reproduce at all. Rather than guess at it and
+ship a change he did not ask for, I measured, said exactly what I measured, and asked him to point
+at it. The temptation with an ambiguous instruction is to pick the reading that gives you something
+to do.
+
+---
+
 ## 2026-09-21 — PLAN-ARC-V2: the component was called an arc and it drew a straight line
 
 **Dev.** The founder said the plan progression strip "looks a bit dated… a bit flat". I went to
