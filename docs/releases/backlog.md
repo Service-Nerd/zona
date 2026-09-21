@@ -84,7 +84,9 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-21 (last ship `0262254`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,989 tests / 334 files** · `audit-docs.sh` clean · 89 commits. 🟢 **`SITE-MOBILE-02`** — the founder signature had `padding: '40px 24px 0'` with the near-black band as its next sibling, so **"That's how I know." physically touched the black**; it was also outside the rhythm system at a hardcoded width and set as body copy. Now a `Section` at the read measure. 🟢 **The fact row took FOUR cuts at one middot.** Leading dot → wrapped line began with it; trailing dot → wrapped line ended with it; independent dots + a centring media query → ⚠️ **the query never applied, because `justifyContent` was set INLINE and an inline style beats a media rule without `!important`** (and reaching for `!important` would have buried the real error: styling a responsive property inline). **All three left the break to the browser, which IS the defect** — a middot is a relationship between two things and CSS has no selector for "first or last on its line". The pairs are now DECLARED: below 560px the two pairs ARE the two lines. 🔻 **OPEN, founder's call: is the fact row the right MESSAGE?** My view — three-quarters right, the price is the odd one out (stated one screen above; a price between a feature count and a notification policy makes it a spec sheet). Proposed replacement carries W-05's free-tier point instead. **Not shipped: it touches a live SLT ruling, and a question is not an instruction.**
+**State at END of 2026-09-21 (last ship `64fde64`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,992 tests / 334 files** · 91 commits. 🟢 **`SITE-HERO-01`** — SLT ruled three open homepage decisions (`docs/decisions/slt-2026-09-21-homepage-three.md`). ⚠️ **I briefed the board WRONG and caught it before they ruled:** the hero was already two columns with the PHONE on the right, so 2a was a swap not a restructure. **The evidence card now sits in the hero**; the price is **out of the fact row** — three seats voted remove for different reasons and **Sutherland's governs because it generalises: TIMING, not repetition — never put a price adjacent to a proof moment.** 🔴 **TWO PERMANENT KILLS, both better value than what shipped:** the design's proof band (**all three claims measured FALSE**; "most runners manage half that" is a statistic about a population we have never observed) and the phone-geometry resize. **`DESIGN-V3-FIDELITY` CLOSED.** ⚠️ **Three defects introduced while building, all found by MEASURING not looking:** the 3s loop silently made the cross-fades **21.7% of the cycle** (and **I first dismissed the screenshot as a capture artefact**); the longer copy ate the 320px gutter to **5px while `scrollWidth === innerWidth` stayed true**, so it would have shipped unseen; and the fix did nothing because the facts were bare TEXT NODES, which flexbox merges once the element between them is hidden.
+
+**Earlier on 2026-09-21 (last ship `0262254`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,989 tests / 334 files** · `audit-docs.sh` clean · 89 commits. 🟢 **`SITE-MOBILE-02`** — the founder signature had `padding: '40px 24px 0'` with the near-black band as its next sibling, so **"That's how I know." physically touched the black**; it was also outside the rhythm system at a hardcoded width and set as body copy. Now a `Section` at the read measure. 🟢 **The fact row took FOUR cuts at one middot.** Leading dot → wrapped line began with it; trailing dot → wrapped line ended with it; independent dots + a centring media query → ⚠️ **the query never applied, because `justifyContent` was set INLINE and an inline style beats a media rule without `!important`** (and reaching for `!important` would have buried the real error: styling a responsive property inline). **All three left the break to the browser, which IS the defect** — a middot is a relationship between two things and CSS has no selector for "first or last on its line". The pairs are now DECLARED: below 560px the two pairs ARE the two lines. 🔻 **OPEN, founder's call: is the fact row the right MESSAGE?** My view — three-quarters right, the price is the odd one out (stated one screen above; a price between a feature count and a notification policy makes it a spec sheet). Proposed replacement carries W-05's free-tier point instead. **Not shipped: it touches a live SLT ruling, and a question is not an instruction.**
 
 **Earlier on 2026-09-21 (last ship `026d079`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,989 tests / 334 files** · `audit-docs.sh` clean · 87 commits. 🟢 **`SITE-MOBILE-01`** — four founder notes from the live site on a phone. Nav **right-aligned when it wraps** (above 430px it is `space-between`, below it the links were packed LEFT, so the arrangement seen on every other screen silently inverted on the smallest one). **`--surface-moss-wash` DELETED** — he queried the green frame and was right for a reason already written down: W-08 had reduced the site to three grounds each spent once, and the wash, added by the v3 handoff eight hours later, was a fourth and the only tinted surface anywhere. **Nobody broke a rule; the rule and the token were written in different documents on the same day and never met.** Frame is now `ProductStill`'s documented inset. Loop **7s → 3s**. A dangling wrap separator in the fact row fixed. ⚠️ **One note NOT reproduced** ("things aligned right, maybe centrally") — measured live at 390/375: `scrollWidth === innerWidth`, nothing outside the viewport, phone centred 49/49. ⚠️ **A full-page headless screenshot showed the page clipped at the right edge and that was a CAPTURE ARTEFACT** — trusting it would have meant 'fixing' a working layout. ⚠️ **A new check was HOLLOW: deleting the inset's border did not fail it**, because the card inside carries an identical border — third substring-bias miss in one day.
 
@@ -119,7 +121,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
 — not merely approved — until the Coaching Board rules.
 
-### 🟡 `DESIGN-V3-FIDELITY` — what is still not the v3 design, after the premise was corrected
+### ✅ `DESIGN-V3-FIDELITY` — CLOSED 2026-09-21. Two shipped, one killed, the fourth was withdrawn earlier the same day.
 
 Filed 2026-09-21, **re-scoped the same day.** The original filing said the target was "match the
 handoff". The founder challenged that: *"whatever screens we're using on the website have to be
@@ -157,8 +159,21 @@ frame means re-measuring every screen inside it.
 ⚠️ **Do NOT "fix" #1 or #2 by redrawing a screen.** The screens are the app; the frame is the
 design's. Those are separate questions and only the frame is open.
 
-**Estimate: 2–3 hours.** Separate from the copy-driven omissions (the design's `80%`/`1`/`4` proof
-cards and CTA copy), which need a founder decision about claims rather than build time.
+> ✅ **CLOSED 2026-09-21 by SLT** (`docs/decisions/slt-2026-09-21-homepage-three.md`).
+> · **#1 hero composition — SHIPPED.** ⚠️ The brief above was wrong: the hero was ALREADY a
+>   two-column grid whose right column held the phone. 2a does not add a column, it asks which
+>   object belongs in the one that exists. The evidence card now sits there and the phone follows.
+> · **#3 CTA hover — SHIPPED**, with `:focus-visible`, on a new `--moss-deep` (7.21:1, deliberately
+>   *stronger* than the base: a hover must never be the weaker contrast).
+> · 🔴 **#2 phone geometry — DEAD. Do not re-propose.** Re-measuring every screen inside a frame
+>   that now holds the real `PlanCalendar`, for a difference no reader can perceive.
+>
+> 🔴 **And the copy-driven omissions are DEAD too, on measurement rather than taste.** The
+> design's `80%`/`1`/`4` proof cards: our easy share is **85.6%** and §1 is per-distance so there
+> is no single number; **"most runners manage half that" is a statistic about a population we have
+> never observed**; `post_run_reframe` and `dynamic_reshape_r20` are both **PAID**, so two of the
+> three cards describe things a free reader does not get. It cannot return as "better numbers" —
+> three numerals beside a real measurement compete with it whatever they say.
 
 
 ### ✅ `DESIGN-V3` — the Claude design handoff, implemented 2026-09-21 *(branch `design-implementation`, not deployed)*

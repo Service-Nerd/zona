@@ -6,6 +6,56 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — SITE-HERO-01: the board killed two things, and the reasons are worth more than the code
+
+**Dev.** Three open homepage decisions, taken to the board in one sitting. Two of the three answers
+were "don't build it", and both kills were better value than the thing I shipped.
+
+The first was a proof band from the design: three big numbers with a sentence under each. It had
+been dropped earlier as "new claims needing a decision", which is a polite way of saying nobody had
+checked. So I checked. All three were false. Our easy share is 85.6%, not 80%, and there isn't a
+single number to print anyway because the cap is set per race distance. One card described a
+feature that is paid, on a page selling the free tier. Another quoted a sessions-per-week figure
+that is actually whatever the runner chose. And one line — "most runners manage half that" — was a
+statistic about a population we have never observed. It exists because 40% is half of an invented
+80%.
+
+The line I'll keep from that: *if a section's content has to be invented after the design is drawn,
+the section was a shape, not an idea.*
+
+The second kill was resizing a phone mockup from 320 to 390 to match a spec. It would mean
+re-measuring every screen inside the frame, and the frame now holds the real plan calendar. Nobody
+looking at the page can perceive the difference. The test that killed it is the same test that
+passed the thing I did build: does this fix something, or does it merely comply?
+
+**Product.** What shipped is small. The evidence card moved into the hero's right column, where the
+phone had been. The argument was that every running app shows you a phone and almost none show you
+what the app found out about you — and that card was below the fold.
+
+The other change was removing a price from a four-fact row. Three people voted to remove it for
+three different reasons, and I've recorded only one of them as governing, because it's the only one
+that tells you anything next time: it's a *timing* error, not a repetition error. The reader has
+just looked at a heart-rate trace and thought "that's me", and we followed it with an invoice. The
+other two readings would let someone put a price back there as long as they removed one elsewhere.
+
+**The honest bit.** I introduced three defects building this and found all of them by measuring
+rather than by looking.
+
+Shortening the hero loop to three seconds — a one-line change someone asked for — silently made the
+cross-fades a fifth of the cycle, so the card spent a lot of its life showing two numbers on top of
+each other. I saw it in a screenshot and dismissed it as a capture artefact. It wasn't.
+
+Then the new, longer copy squeezed the page gutter at 320px down to five pixels against a
+sixteen-pixel floor — and crucially, the document didn't overflow, so every check I had said fine.
+That one would have shipped.
+
+And the fix for it did nothing at all, because the two bits of text either side of the separator
+were bare text nodes rather than elements, and flexbox quietly merges loose text into one item once
+you hide what's between them. The media query I'd written had been matching the whole time. There
+was simply nothing there for it to lay out.
+
+---
+
 ## 2026-09-21 — SITE-MOBILE-02: four attempts at one middot
 
 **Dev.** The founder said a row of four short facts "looks off on mobile — I'd want bullets between
