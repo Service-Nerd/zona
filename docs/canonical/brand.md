@@ -365,7 +365,7 @@ All in `app/globals.css`, which stays the single source of truth for colour and 
 
 | Token | Value | Job |
 |---|---|---|
-| `--surface-moss-wash` | `#E7EDE4` | The **hero evidence card's frame, and nothing else.** A tinted surface behind a card, so the proof reads as evidence rather than as another white box. ⚠️ **Not a page ground.** A third band colour would flatten the surface rule below. |
+| ~~`--surface-moss-wash`~~ | ~~`#E7EDE4`~~ | 🔴 **REMOVED 2026-09-21, the day after it was added.** It framed the hero evidence card so the proof would read as evidence rather than another white box. The founder queried it on sight — *"the new graph card with the green shadow: not sure the site looks consistent with that"* — and he was right for a reason already written down: **W-08 had reduced this site to three grounds, each spent once, and this was a fourth**, used in exactly one place, and the only tinted surface anywhere. The frame is now the documented **inset** (`--bg-soft` + one hairline, `ProductStill`'s pattern): no new token, no new ground, same containment. ⚠️ **Do not reintroduce a tinted surface to make one card special.** If a card needs emphasis, it is an inset. |
 | `--fs-verdict` | `clamp(52px, 8vw, 72px)` | The hero's minutes-above figure |
 | `--fs-numeral` | `clamp(40px, 6vw, 56px)` | Proof figures, zone share |
 | `--fs-numeral-lg` | `clamp(48px, 7vw, 64px)` | The price |

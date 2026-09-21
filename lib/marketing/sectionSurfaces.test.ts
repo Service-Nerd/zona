@@ -29,6 +29,12 @@ const src = (f: string) =>
 
 const HOME = 'app/page.tsx'
 
+/** Every marketing component, read from disk rather than listed — a hand-written
+ *  list is the "only as wide as its list" failure this repo keeps recording. */
+const MARKETING_FILES = fs.readdirSync(path.join(ROOT, 'components/marketing'))
+  .filter(f => /\.tsx?$/.test(f))
+  .map(f => `components/marketing/${f}`)
+
 describe('marketing section surfaces', () => {
   it('uses at most ONE dark ground on the homepage', () => {
     const home = src(HOME)
@@ -59,9 +65,45 @@ describe('marketing section surfaces', () => {
     expect(sec).not.toMatch(/#[0-9a-f]{3,8}/i)
   })
 
-  it('the hero moss wash is scoped to the hero, not a page ground', () => {
-    const uses = ['app/page.tsx', 'components/marketing/HeroTrace.tsx', 'components/marketing/Section.tsx']
-      .filter(f => src(f).includes('--surface-moss-wash'))
-    expect(uses, 'the moss wash escaped the hero').toEqual(['components/marketing/HeroTrace.tsx'])
+  /**
+   * ⚠️ THE MOSS WASH IS GONE, AND THE CHECK BECAME THE OPPOSITE OF ITSELF.
+   *
+   * `--surface-moss-wash` (#E7EDE4) framed the hero evidence card for one
+   * day. This test used to scope it to that one file. The founder queried it
+   * on sight — "the new graph card with the green shadow: not sure the site
+   * looks consistent with that" — and the reason was already written down:
+   * W-08 had reduced the site to THREE grounds, each spent once, and the
+   * wash was a fourth, used once, and the only tinted surface anywhere.
+   *
+   * The frame is now the documented inset (`--bg-soft` + a hairline,
+   * `ProductStill`'s pattern). So the rule to enforce is no longer "keep it
+   * scoped" but "it does not come back" — including as a fresh hex, which is
+   * how a removed token usually returns.
+   */
+  it('no tinted surface returns to make one card special', () => {
+    for (const f of ['app/globals.css', 'app/page.tsx',
+                     'components/marketing/HeroTrace.tsx', 'components/marketing/Section.tsx']) {
+      expect(src(f), `${f} reintroduces the moss wash token`).not.toContain('--surface-moss-wash')
+    }
+    // The hex itself, and its near neighbours, in any marketing component.
+    for (const f of MARKETING_FILES) {
+      expect(src(f), `${f} hardcodes the retired wash colour`).not.toMatch(/#E7EDE4/i)
+    }
+  })
+
+  it('the hero card is framed as an INSET, the pattern ProductStill documents', () => {
+    const hero = src('components/marketing/HeroTrace.tsx')
+    const i = hero.indexOf("background: 'var(--bg-soft)'")
+    expect(i, 'the frame should use the inset ground').toBeGreaterThan(-1)
+
+    // ⚠️ SCOPE IT TO THE INSET'S OWN STYLE OBJECT. A file-level
+    // `toContain("border: '1px solid var(--line)'")` passed with the inset's
+    // border deleted, because the white card INSIDE it carries an identical
+    // border two lines further down — so the check could not go red, which
+    // deleting the border proved. Third substring-bias miss today; the fix
+    // is always to bound the region rather than to grep the file.
+    const frame = hero.slice(i, hero.indexOf('}}', i))
+    expect(frame, 'an inset carries exactly one hairline of its own')
+      .toContain("border: '1px solid var(--line)'")
   })
 })

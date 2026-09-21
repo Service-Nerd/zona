@@ -68,7 +68,6 @@
      surface: it is scoped to the hero trace by the handoff and by the fact
      that a third page ground would flatten the page/inset alternation the
      surface system depends on. */
-  --surface-moss-wash: #E7EDE4;
 
   --moss-strong:     #557055;
   --warn-strong:     #88622B;
@@ -553,6 +552,14 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
     gap: 20px !important;
     flex-wrap: wrap;
     row-gap: 10px;
+    /* RIGHT-ALIGNED WHEN IT WRAPS, AND THIS RESTORES A RELATIONSHIP RATHER
+       THAN INVENTING ONE (founder, 2026-09-21). At every width above 430px
+       the nav row is `space-between`: wordmark hard left, links hard right.
+       Below it the group takes a full-width row of its own and was packed
+       LEFT, so the one arrangement a visitor has seen on every other screen
+       silently inverted on the smallest one. Ending the row keeps the
+       wordmark and the links on opposite sides at every width. */
+    justify-content: flex-end;
   }
   .site-nav a {
     font-size: 13.5px !important;

@@ -46,9 +46,33 @@ export function HeroTrace() {
     transition: 'opacity var(--motion-verdict)',
   } as const)
 
+  // ⚠️ AN INSET, NOT A TINT. This frame was `--surface-moss-wash`,
+  // a pale green introduced by the v3 handoff so the proof
+  // "reads as evidence rather than as another white box".
+  //
+  // The founder queried it on sight: *"the new graph card with the green
+  // shadow — not sure that the site looks consistent with that."* He is
+  // right, and the reason is documented one file away. W-08 reduced this
+  // site to THREE grounds, each spent once (`--bg`, `--card`, `--ground`),
+  // and the wash was a fourth, used in exactly one place, and the only
+  // tinted surface anywhere on it. A single green frame on an otherwise
+  // warm-neutral page reads as a leftover from a different design.
+  //
+  // `ProductStill` already solved framing a surface and its header states
+  // the rule: an INSET, not a card — `--bg-soft`, one hairline, no shadow
+  // of its own, because the thing inside brings its own white card and
+  // shadow and wrapping that in another card is card-in-card. Using it
+  // here costs no token, introduces no ground, and keeps the containment
+  // that made the wash worth having.
+  //
+  // The retired value is recorded in `brand.md` § tokens, not here: the
+  // pre-commit hook blocks a hardcoded hex anywhere in `components/`,
+  // comments included, and it is right to — a hex in a comment is one
+  // copy-paste from being a hex in a style.
   return (
     <div style={{
-      background: 'var(--surface-moss-wash)',
+      background: 'var(--bg-soft)',
+      border: '1px solid var(--line)',
       borderRadius: 'var(--radius-xl)',
       padding: 'clamp(16px, 2.5vw, 36px)',
     }}>

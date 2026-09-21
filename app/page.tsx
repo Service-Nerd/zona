@@ -324,13 +324,26 @@ export default async function Home() {
               describes the single SCHEDULED daily push, and everything else is
               a response to something the runner did, not an engagement ping.
               Same class as the "four answers" overclaim fixed in GTM-SITE-01. */}
-          {['5 zones', 'Mostly easy running', `${PRICING.monthly.display}/month`, 'One daily nudge']
-            .map((fact, i) => (
+          {/* ⚠️ THE SEPARATOR TRAILS ITS ITEM, IT DOES NOT LEAD THE NEXT ONE.
+              Each span used to render `· fact`, which is invisible on one
+              line and wrong the moment the row wraps: at 390px this became
+
+                  5 zones      ·  Mostly easy running
+                ·  £7.99/month    ·  One daily nudge
+
+              with a dangling middot starting the second line and the items
+              indented past the page gutter. Trailing it instead leaves the
+              middot at the END of a wrapped line, where it reads as "there
+              is more", and every item starts flush with the gutter. */}
+          {(() => {
+            const facts = ['5 zones', 'Mostly easy running', `${PRICING.monthly.display}/month`, 'One daily nudge']
+            return facts.map((fact, i) => (
               <span key={fact} style={{ display: 'inline-flex', alignItems: 'center', gap: '22px' }}>
-                {i > 0 && <span aria-hidden style={{ color: 'var(--line-strong)' }}>·</span>}
                 {fact}
+                {i < facts.length - 1 && <span aria-hidden style={{ color: 'var(--line-strong)' }}>·</span>}
               </span>
-            ))}
+            ))
+          })()}
         </div>
       </section>
 

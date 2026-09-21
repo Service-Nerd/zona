@@ -62,7 +62,14 @@ export const HERO_TRACE = {
   coachEyebrow: `${BRAND.coachName} · your coach`,
 } as const
 
-/** Seconds between state flips. Never runs under reduced motion. */
-export const LOOP_SECONDS = 7
+/**
+ * Seconds between state flips. Never runs under reduced motion.
+ *
+ * Founder, 2026-09-21: poll the number every 3 seconds. It was 7, which is
+ * long enough that a visitor scrolling past sees one state and never learns
+ * there is a second — and the second state ("0", held the zone) is the half
+ * that makes the first one mean something.
+ */
+export const LOOP_SECONDS = 3
 /** Delay before the draw-in, so the stroke animates rather than appearing drawn. */
 export const DRAW_DELAY_MS = 150
