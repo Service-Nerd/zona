@@ -65,6 +65,49 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — DOC-AUDIT-DISCRIMINATOR-01: the note was there and half the script ignored it
+
+**Dev.** The doc audit reported a killed item as still open. It was matching a prose bullet inside a
+quoted board ruling, because that bullet happens to start with an emoji and a bolded item ID.
+
+The fix is one regex clause, and the interesting part is that the clause already existed. The
+sibling check ten lines below requires a provenance parenthetical exactly so it does not fire on
+narrative text, and CLAUDE.md carries a note explaining why, naming the incident where four
+separate parses of that file produced four different counts.
+
+So the rule was written down, in the right file, about the right failure, and the check twenty
+lines above it did not obey it. I have been treating "is it documented" as the end state of a
+lesson all day. It is not. **A written rule only travels as far as someone carries it**, and inside
+a single shell script it did not make it from one block to the next.
+
+---
+
+## 2026-09-21 — GUIDE-BREADCRUMB-01: the preview page earned itself in one look
+
+**Dev.** The founder asked me to check the guide preview looked consistent with the rest of the
+site. It does, because it renders through the same component as the comparison articles. But
+looking at it found two things no test was ever going to.
+
+The breadcrumb JSON-LD hardcoded "Comparisons". Every guide would have told crawlers it sat under
+the comparison hub, quietly, for as long as guides existed. Structured data is exactly the surface
+where a mistake survives, because nobody reads it and nothing renders it.
+
+And the visible crumb linked to `/guides`, which 404s until three guides exist. So the one page a
+reviewer is sent to had a breadcrumb pointing at a dead page. Both fixes are one line each; neither
+was findable from the source, because the code looks correct in both cases. The renderer had
+already computed the right hub and then two places ignored it.
+
+**Worth noting what this says about the preview route.** I added it a few hours ago because the
+publish gate and the review requirement together made the draft unreadable. It has now paid for
+itself before the thing it was built to review has even been read: the first person to open it was
+me, checking layout, and the layout was fine while two other things were not.
+
+That is the fourth preview route in this codebase and the argument for them keeps being the same
+one. A surface nobody can see does not get reviewed, and the defects it hides are not the ones you
+would predict.
+
+---
+
 ## 2026-09-21 — W-03 / PREF-SWEEP-COMMENTS-01: I asked the board to kill my own item, and it did
 
 **Dev.** W-03 was going to be a block of commitments on the homepage answering the objection our

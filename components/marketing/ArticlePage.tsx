@@ -17,7 +17,7 @@ import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { SiteHeader, type SiteSection } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
-import { articlePath, marketingArticleJsonLd, COMPARISON_HUB, GUIDE_HUB, type MarketingArticle, type ArticleSpan, type ArticleBlock } from '@/lib/marketing/articles'
+import { articlePath, guidesArePublished, marketingArticleJsonLd, COMPARISON_HUB, GUIDE_HUB, type MarketingArticle, type ArticleSpan, type ArticleBlock } from '@/lib/marketing/articles'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
@@ -47,11 +47,19 @@ function renderSpans(spans: ArticleSpan[]) {
 export function ArticlePage({ article }: { article: MarketingArticle }) {
   const url = `${APP_URL}${articlePath(article)}`
 
+  const hub = article.kind === 'guide'
+    ? { slug: GUIDE_HUB.slug, label: 'Guides', section: null as SiteSection, published: guidesArePublished() }
+    : { slug: COMPARISON_HUB.slug, label: 'Comparisons', section: 'comparisons' as SiteSection, published: true }
+
   const breadcrumbLd = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: APP_URL },
-      { '@type': 'ListItem', position: 2, name: 'Comparisons', item: `${APP_URL}/comparisons` },
+      // ⚠️ This hardcoded 'Comparisons' and `/comparisons` until 2026-09-21,
+      // so a GUIDE's structured data told crawlers it sat under the comparison
+      // hub. Worse than the visible breadcrumb being wrong, because nobody
+      // looks at it. It follows the article's kind now, like everything else.
+      { '@type': 'ListItem', position: 2, name: hub.label, item: `${APP_URL}/${hub.slug}` },
       { '@type': 'ListItem', position: 3, name: article.h1, item: url },
     ],
   }
@@ -59,9 +67,6 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
   // schema.org Article. Built by the shared wiring in comparisons.ts, which
   // reads `dateModified` from the same field as the visible "Last updated" line.
   const articleLd = marketingArticleJsonLd(article)
-  const hub = article.kind === 'guide'
-    ? { slug: GUIDE_HUB.slug, label: 'Guides', section: null as SiteSection }
-    : { slug: COMPARISON_HUB.slug, label: 'Comparisons', section: 'comparisons' as SiteSection }
 
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh', fontFamily: 'var(--font-ui)' }}>
@@ -81,7 +86,17 @@ export function ArticlePage({ article }: { article: MarketingArticle }) {
         <ol style={{ display: 'flex', gap: 8, listStyle: 'none', padding: 0, margin: 0, fontSize: 13, color: 'var(--mute)', flexWrap: 'wrap' }}>
           <li><Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link></li>
           <li aria-hidden>›</li>
-          <li><Link href={`/${hub.slug}`} style={{ color: 'var(--mute)', textDecoration: 'none' }}>{hub.label}</Link></li>
+          {/* ⚠️ NOT A LINK WHEN THE HUB IS NOT PUBLISHED. The guides hub 404s
+              until `GUIDES_MIN_TO_PUBLISH` is met, and on `/guide-preview` —
+              which exists precisely so a draft can be read before the gate
+              opens — this breadcrumb was pointing at that 404. A crumb that
+              leads nowhere is worse than no crumb: it reads as a broken site
+              rather than an unopened section. */}
+          <li>
+            {hub.published
+              ? <Link href={`/${hub.slug}`} style={{ color: 'var(--mute)', textDecoration: 'none' }}>{hub.label}</Link>
+              : <span style={{ color: 'var(--mute)' }}>{hub.label}</span>}
+          </li>
           <li aria-hidden>›</li>
           <li aria-current="page" style={{ color: 'var(--ink-2)' }}>{article.h1}</li>
         </ol>

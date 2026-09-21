@@ -86,3 +86,28 @@ describe('a guide cites the principles its claims rest on', () => {
     expect(() => guideArticles()).not.toThrow()
   })
 })
+
+/**
+ * The breadcrumb follows the article's KIND, and does not link to a closed hub.
+ *
+ * Two defects found by looking at `/guide-preview` on 2026-09-21, both in the
+ * shared renderer:
+ *   1. The BreadcrumbList JSON-LD hardcoded "Comparisons" and `/comparisons`,
+ *      so a guide told crawlers it sat under the wrong hub. Worse than the
+ *      visible crumb being wrong, because nobody looks at structured data.
+ *   2. The visible crumb linked to `/guides`, which 404s until the gate opens
+ *      — and `/guide-preview` exists precisely to be read before then.
+ */
+describe('the article breadcrumb', () => {
+  const src = readFileSync(join(process.cwd(), 'components/marketing/ArticlePage.tsx'), 'utf8')
+
+  it('derives its hub from the article, not a hardcoded string', () => {
+    expect(src).not.toMatch(/name: 'Comparisons', item:/)
+    expect(src).toMatch(/name: hub\.label/)
+  })
+
+  it('renders the hub unlinked when that hub is not published', () => {
+    expect(src).toMatch(/hub\.published/)
+    expect(src).toMatch(/guidesArePublished\(\)/)
+  })
+})
