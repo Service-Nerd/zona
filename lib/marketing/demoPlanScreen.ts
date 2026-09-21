@@ -5,6 +5,7 @@ import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { getCurrentWeekIndex } from '@/lib/plan'
 import { buildWeekVoiceContext, getWeekVoiceHeadline, getWeekVoiceItems, PHASE_LABELS } from '@/lib/coaching/weekVoice'
 import { sumRoundedDistance, formatDistance } from '@/lib/format'
+import { planArcSeries } from '@/lib/plan/weekVolume'
 import type { Week } from '@/types/plan'
 
 /**
@@ -42,6 +43,13 @@ export type DemoPlanScreen = {
   /** Array index of the week `PlanCalendar` will label "Now". */
   currentWeekIndex: number
   totalWeeks: number
+  /**
+   * `PlanArc`'s series — training km per week, and the raw phase key per
+   * week. Computed HERE, on the server, from the same `planArcSeries` owner
+   * the app calls, so the homepage cannot draw a different shape from the
+   * Plan screen.
+   */
+  arc: { km: number[]; phase: (string | null)[] }
   /**
    * The Plan screen's this-week card, computed by the product's OWN rule
    * engine (`lib/coaching/weekVoice.ts`) over this plan's current week.
@@ -96,6 +104,7 @@ export function buildDemoPlanScreen(): DemoPlanScreen | null {
     weeks: plan.weeks,
     currentWeekIndex,
     totalWeeks: plan.weeks.length,
+    arc: planArcSeries(plan.weeks),
     weekVoice: {
       headline: getWeekVoiceHeadline(ctx),
       // Two, as the Plan card shows — the Coach card is the one that shows three.

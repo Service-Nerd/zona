@@ -75,3 +75,16 @@ export const PHASE_LABELS: Record<string, string> = {
   maintenance_restoration: 'Restoration', maintenance_base: 'Base',
 }
 
+
+/**
+ * A phase key as a runner should read it. The single owner of that mapping,
+ * so a surface never renders a raw `maintenance_restoration`.
+ *
+ * ⚠️ `ui-patterns.md` §12 claimed for months that "PHASE_LABELS has no
+ * maintenance keys, so it falls back to raw keys". It has had them since
+ * ADR-013. Stale doc, corrected with PLAN-ARC-V2.
+ */
+export function phaseDisplayLabel(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  return PHASE_LABELS[raw] ?? raw
+}

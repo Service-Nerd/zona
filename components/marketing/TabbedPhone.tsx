@@ -105,6 +105,7 @@ function PlanStill({ plan, block }: { plan: DemoPlanScreen; block: DemoBlockView
           totalWeeks={block.totalWeeks}
           currentWeek={block.weekN}
           doneWeeks={block.weekN - 1}
+          weekKm={plan.arc.km}
           raceWeek={block.totalWeeks}
           phaseLabel="base → build → peak → taper"
         />

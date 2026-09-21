@@ -50,3 +50,29 @@ export function trainingKm(w: WeekLike): number {
   if (r <= 0) return w.weekly_km
   return Math.round((w.weekly_km - r) * 10) / 10
 }
+
+/**
+ * The series `PlanArc` draws: one training-volume figure and one raw phase
+ * key per week, in plan order.
+ *
+ * ⚠️ IT IS HERE BECAUSE TWO CALLERS ASK THE SAME QUESTION. `PlanScreen` and
+ * the marketing device still both render the arc, and the moment each wrote
+ * its own `weeks.map(trainingKm)` they could drift — the shape on the
+ * homepage would stop being the shape in the app, which is the whole thing
+ * the DESIGN-V3 fidelity work exists to prevent.
+ *
+ * ⚠️ `trainingKm`, NOT `weekly_km`. On race week `weekly_km` includes the
+ * race, so a height-encoded bar would draw race week as the BIGGEST week of
+ * the taper — the exact rendering defect this module was written for.
+ *
+ * Phases come back as RAW keys. Turning `maintenance_restoration` into
+ * "Restoration" is a display decision and belongs to `phaseDisplayLabel`,
+ * which lives next to `PHASE_LABELS`; `lib/plan` does not import
+ * `lib/coaching`.
+ */
+export function planArcSeries(weeks: WeekLike[]): { km: number[]; phase: (string | null)[] } {
+  return {
+    km: weeks.map(trainingKm),
+    phase: weeks.map(w => (w as unknown as { phase?: string }).phase ?? null),
+  }
+}

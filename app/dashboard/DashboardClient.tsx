@@ -29,6 +29,7 @@ import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
 import { isLongRun, coachingSessionType } from '@/lib/plan/sessionRole'
 import { buildWeekVoiceContext, getWeekVoiceHeadline, getWeekVoiceItems, PHASE_LABELS } from '@/lib/coaching/weekVoice'
+import { planArcSeries } from '@/lib/plan/weekVolume'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
@@ -8403,11 +8404,11 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
     for (let i = 0; i < currentWeekIndex; i++) count++
     return count
   })()
-  const deloadWeekNumbers = plan.weeks.reduce<number[]>((acc, wk, i) => {
-    const w = wk as any
-    if (w.type === 'deload' || w.badge === 'deload') acc.push(i + 1)
-    return acc
-  }, [])
+  // PLAN-ARC-V2: the arc no longer takes `deloadWeeks`. Height encodes a
+  // recovery week as the short bar it is, and a second opacity encoding
+  // would only make the notch fainter. `deloadWeekNumbers` fed nothing else,
+  // so it went with the prop rather than sitting here unread.
+  const arcSeries = planArcSeries(plan.weeks)
   const raceWeekNumber = (() => {
     // Goal race = LAST race-flagged week (mid-plan 'race_event' tune-ups also
     // carry a 'race' badge; findIndex would mark the tune-up on the plan arc).
@@ -8514,7 +8515,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           totalWeeks={totalWeeks}
           currentWeek={weekOrdinal}
           doneWeeks={doneWeeksCount}
-          deloadWeeks={deloadWeekNumbers}
+          weekKm={arcSeries.km}
           raceWeek={raceWeekNumber}
           phaseLabel={phaseLabel || undefined}
         />
