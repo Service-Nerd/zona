@@ -48,9 +48,18 @@ say "── ship records (feat/fix/perf scopes $RANGE_DESC) ──"
 # all history: **270 of 508 scopes (53%) were invisible to it.** A check that
 # silently skips half its population is worse than one that is absent, because
 # it reports ok.
+# ⚠️ A TRAILING PROSE SUFFIX IS STRIPPED, AND ONLY THAT. `fix(COPY-VOICE-01 et
+# al)` made this check hunt for a feature literally called "COPY-VOICE-01 et
+# al" while the records sat under the real id. The temptation was to accept
+# only ID-SHAPED tokens, and that is exactly the narrowing the note above
+# records as having hidden 53% of all scopes. So the pattern stays loose and
+# one specific suffix comes off. A commit scope should still be a bare id; this
+# stops a formatting slip becoming a permanent false gap, it does not bless it.
 ids=$(git log "${RANGE_ARGS[@]}" --pretty=format:"%s" \
       | grep -oE "^(feat|fix|perf)\([^)]+\)" | sed -E 's/^(feat|fix|perf)\(//; s/\)$//' \
-      | tr ',' '\n' | sed -E 's/^ +| +$//g' | grep -v '^$' | sort -u)
+      | tr ',' '\n' | sed -E 's/^ +| +$//g' \
+      | sed -E 's/[[:space:]]+(et al|etc\.?|and others)$//I' \
+      | sed -E 's/^ +| +$//g' | grep -v '^$' | sort -u)
 # ⚠️ LINE-WISE, NOT `for id in $ids`. A word-splitting loop turned the scope
 # `§117 Am.2` into two ids (`§117` and `Am.2`) and reported a gap against a
 # fragment that was never a scope. Caught by falsifying this very check.
@@ -61,6 +70,49 @@ while IFS= read -r id; do
   if [ "$r" = "0" ] || [ "$b" = "0" ]; then say "  GAP $id registry=$r buildlog=$b"; fail=1; rfail=1; fi
 done <<< "$ids"
 [ "${rfail:-0}" = "0" ] && say "  ok"
+
+# ── SHIP-RECORD-ALLTIME-01 ─────────────────────────────────────────────────
+#
+# ⚠️ THE CHECK ABOVE STOPS CHECKING THE MOMENT IT PASSES, AND THAT IS NOT A
+# THEORY. It runs over commits SINCE the marker in
+# `.claude/state/last-doc-audit.txt`, and a clean run ADVANCES that marker. So
+# the second run inspects zero commits and prints `ok`. Falsified on
+# 2026-09-21 by deleting the SITE-TYPE-01 registry row an hour after it was
+# added: the audit read ALL CLEAN.
+#
+# This is the identical weakness `BACKLOG-STALE-ALLTIME-01` was written to
+# close on the backlog check, one section below, and the same reasoning
+# applies: an incremental check is a tripwire, not an inventory.
+#
+# ⚠️ A COUNT, NOT A LIST, BECAUSE THE DEBT IS REAL AND LARGE. Measured
+# 2026-09-21: 291 of 454 all-time scopes lack a registry row, a build-log
+# heading, or both. Most predate the discipline. Failing the build on those
+# would make the whole audit unrunnable, which is how a check gets deleted.
+# So the baseline is stated and only GROWTH fails. Same debt-register pattern
+# as SWEEP-BASELINE-01 and the liveness baseline, and the same caveat: a
+# declared reason is not a fixed problem, and nothing here schedules the 291.
+SHIP_RECORD_DEBT_BASELINE=291
+say "── ship records: ALL-TIME debt (baseline ${SHIP_RECORD_DEBT_BASELINE}) ──"
+all_ids=$(git log --pretty=format:"%s" \
+      | grep -oE "^(feat|fix|perf)\([^)]+\)" | sed -E 's/^(feat|fix|perf)\(//; s/\)$//' \
+      | tr ',' '\n' | sed -E 's/^ +| +$//g' \
+      | sed -E 's/[[:space:]]+(et al|etc\.?|and others)$//I' \
+      | sed -E 's/^ +| +$//g' | grep -v '^$' | sort -u)
+debt=0
+while IFS= read -r id; do
+  [ -z "$id" ] && continue
+  r=$(grep -cF "| $id " docs/canonical/feature-registry.md || true)
+  b=$(grep -cF -- "$id" <(grep '^## ' docs/build-log.md) || true)
+  if [ "$r" = "0" ] || [ "$b" = "0" ]; then debt=$((debt+1)); fi
+done <<< "$all_ids"
+if [ "$debt" -gt "$SHIP_RECORD_DEBT_BASELINE" ]; then
+  say "  GREW: $debt undocumented scopes, baseline $SHIP_RECORD_DEBT_BASELINE. A ship lost its records."
+  fail=1
+elif [ "$debt" -lt "$SHIP_RECORD_DEBT_BASELINE" ]; then
+  say "  $debt (improved from $SHIP_RECORD_DEBT_BASELINE — lower the baseline in this script)"
+else
+  say "  $debt, unchanged"
+fi
 
 # ── BACKLOG STATUS vs what actually shipped ─────────────────────────────────
 #
