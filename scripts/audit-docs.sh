@@ -41,7 +41,7 @@ else
   RANGE_DESC="since $SINCE (no marker yet)"; RANGE_ARGS=(--since="$SINCE 00:00")
 fi
 
-say "── ship records (feat/fix scopes $RANGE_DESC) ──"
+say "── ship records (feat/fix/perf scopes $RANGE_DESC) ──"
 # ⚠️ THE SCOPE PATTERN IS DELIBERATELY LOOSE. It used to be `[A-Z0-9-]+`, which
 # could not see `feat(§117 Am.2)` at all — nor `COMPLIANCE-FIX-2/3`,
 # `FIRSTRUN-MOMENTS-01a`, `ADR-015/016` or any lowercase scope. Measured across
@@ -49,7 +49,7 @@ say "── ship records (feat/fix scopes $RANGE_DESC) ──"
 # silently skips half its population is worse than one that is absent, because
 # it reports ok.
 ids=$(git log "${RANGE_ARGS[@]}" --pretty=format:"%s" \
-      | grep -oE "^(feat|fix)\([^)]+\)" | sed -E 's/^(feat|fix)\(//; s/\)$//' \
+      | grep -oE "^(feat|fix|perf)\([^)]+\)" | sed -E 's/^(feat|fix|perf)\(//; s/\)$//' \
       | tr ',' '\n' | sed -E 's/^ +| +$//g' | grep -v '^$' | sort -u)
 # ⚠️ LINE-WISE, NOT `for id in $ids`. A word-splitting loop turned the scope
 # `§117 Am.2` into two ids (`§117` and `Am.2`) and reported a gap against a
@@ -240,7 +240,7 @@ done
 
 say ""
 say "── state blocks name the last SHIP ──"
-last=$(git log --pretty=format:'%h %s' | grep -E '^[a-f0-9]+ (feat|fix)\(' | head -1 | cut -d' ' -f1)
+last=$(git log --pretty=format:'%h %s' | grep -E '^[a-f0-9]+ (feat|fix|perf)\(' | head -1 | cut -d' ' -f1)
 mem="$HOME/.claude/projects/$(pwd | tr '/' '-')/memory/MEMORY.md"
 sfail=0
 # ⚠️ EVERY state paragraph, not "does the file mention the SHA somewhere".

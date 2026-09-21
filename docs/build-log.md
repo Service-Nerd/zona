@@ -6,6 +6,198 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — A11Y-CONTRAST-01 + PERF-FONT-01: Inter was loaded twice, and the muted text never passed
+
+**Dev.** Ran Lighthouse mobile against a production build, not the dev server, because dev numbers
+are noise. Homepage 89, plan 98, guide 95. Then read the failures instead of the scores.
+
+Inter was being fetched **twice**: an `@import` at the top of `globals.css` and a `<link>` in the
+head. The `@import` is the expensive one and I had not thought about why. A stylesheet cannot
+request another stylesheet until it has itself been fetched and parsed, so the browser was doing
+`globals.css` → Google's CSS → the font files. Three round trips, all blocking the first paint.
+`next/font` downloads the files at build time and serves them same-origin, which deletes the chain
+and both external hosts.
+
+The part I did not predict: it also fixed the layout shift. CLS was 0.161 on the homepage and 0.110
+on a guide, and in both reports the element that moved was just the first thing *below* some text.
+Not the element's fault at all: the text reflowed when the real font replaced the fallback, and
+everything under it jumped. `next/font` emits a `size-adjust` fallback matched to Inter's metrics,
+so there is nothing to reflow. **CLS 0 on all three pages.**
+
+**The honest bit.** Contrast failed on every page and it was not a component, it was the palette.
+`--mute` scored 3.22:1. AA wants 4.5. That token is used 484 times and has been wrong the whole
+time, on a product whose own brand doc says the audience runs from 25 to 65+.
+
+The interesting decision was `--moss`. It fails as text (3.24) and white-on-moss fails as a button
+(3.68, on the primary CTA). The obvious move is to darken it. I did not, because `--moss` is also a
+fill, a border, a dot and an active state, where 3:1 is the right bar and it passes — and darkening
+it would repaint the native app too, on a day with no deploys and no device to look at. So it got
+an AA sibling for the cases AA actually governs. The accent did not have to move, and the test now
+pins it so nobody moves it by accident.
+
+**What I did not fix, and said so.** Nine contrast failures remain on the homepage, all inside the
+phone mockup. It renders app UI at about 70% scale, so its text is 9 to 11px, and nothing at that
+size passes. The fix is to resize the illustration or change the app's own colours. The homepage
+scores 96 rather than 100 and that is the reason.
+
+**Then a false alarm worth keeping.** `check:slow` reported a HARD WALL and four step changes. It
+reads the last test report, and that report had been written while Lighthouse and two servers were
+running on the same Mac. Re-measured idle: all baselined, nothing stepped. Same shape as the CI
+timing race a few days ago. Compare durations before believing a regression.
+
+---
+
+## 2026-09-21 — COPY-VOICE-01: the site was arguing with itself, in front of the buyer
+
+**Product.** Four contradictions, and each one is the kind a reader notices and you do not.
+
+The comparison table said the free tier adapts to your training. It does not: reshaping is a paid
+gate and `/pricing` says so on the same site. A plan FAQ made the same claim, and pointed at "the
+static plan below" from a section that sits below the plan. `/pricing` sold "the weekly score for
+how disciplined the week was" while the homepage sells "no dashboard to read, no score to chase" —
+the page where someone decides to pay was selling the thing the brand exists to refuse. And the
+watch-sync row said "None", when we read Apple Health including Apple Watch heart rate, which is
+the entire coaching input.
+
+None of those was a typo. Each one was written truthfully by someone looking at one page.
+
+**The voice.** The founder story was in the third person ("the runner built a tool") while the
+homepage three sections away said "that's how I know". `/about`'s whole argument is *you are not
+being asked to trust a brand, you are being asked to trust someone who will answer the email
+himself* — and a corporate "we" quietly works against it on the page making the case.
+
+The story's last line had also expired: "Started training for a 100K" was written before Race to
+the Stones in July and stayed up after it. It names the race and the date now, and claims no
+result, because a finish is not mine to invent.
+
+**Dev.** Two defects fell out of looking. `textContent` on a rep row read **"1600 mat 4:25–4:35
+/km"** — the two spans were separated by a CSS `gap` and by nothing at all in the text. A `gap` is
+not a separator for a copy-paste, a text extractor, or some screen-reader modes. One character.
+
+And the hero mockup read "Hold the zone · 132–145 bpm today" directly above a card reading
+"< 145 bpm". §12 makes an easy run a **ceiling**, not a band. A range tells the runner 132 is a
+floor to reach, which is the opposite instruction, on the most-seen pixel on the site.
+
+**AI-building.** The gate I wrote for this passed on the first run, and it should not have. I had
+listed four files inside `lib/marketing` instead of the directory, so it never looked at the one
+file its own comment described as a considered exception. A test whose scope quietly excludes its
+hard case is a green tick with nothing behind it.
+
+---
+
+## 2026-09-21 — IA-CROSSLINK-01, W-01c and IA-QR-01: four of six were already done
+
+**Product.** Six IA items on the list. Four were already true: `/pricing` already used the shared
+footer, the footer already carried Guides, the guide breadcrumb already pointed at a live hub, and
+the sitemap already listed both. Saying so is the audit's job. Three of them now have tests,
+because nothing was watching any of them.
+
+The two that were real:
+
+**The cross-links ran one way.** All five goal-time plans link to their distance plan. All four
+distance plans link to zero goal plans. That is the *more* valuable direction and it was the
+missing one — the free 5K plan is the page a search actually lands on, and it was a dead end toward
+the sub-25 page that suits someone with a target better. The test now enforces reciprocity across
+the two groups but deliberately not within a group, because a curated three-item list cannot be
+symmetric.
+
+**The guides hub groups by intent, and today that changes nothing.** Four buckets, one per question
+the eight planned guides answer. Grouping switches on at the second *populated* bucket, so with one
+guide the hub still renders flat. That is the design, not a shortfall: four headings over one
+article advertises three empty rooms, which is exactly the "reads as abandoned" risk the board
+named against having the hub at all. Guide 2 is also `easy`, so it switches on at guide 3, with
+nothing to build when it does.
+
+**Dev.** The QR code beside the hero CTA is desktop-only, which is the whole point: the app is iOS
+only, so on desktop the badge opens a page you then have to re-find on your phone. Hidden below
+1024px in CSS, not a JS width check — no hydration mismatch, no layout shift, no JavaScript.
+
+The bit worth remembering is that a committed generated artifact fails in the worst possible way: a
+QR that still scans, still looks right, goes nowhere, and that nobody on the team will ever scan.
+So the generator is committed and a test re-encodes the App Store URL and compares.
+
+---
+
+## 2026-09-21 — SITE-SCHEMA-01: two of the four asks were already true
+
+**Dev.** Article markup and Person author were already on every article, and the sitemap already
+listed the guide hub and the guide. Pinned both with tests rather than reporting work I did not do.
+
+What was actually wrong was smaller and sharper. The homepage declared `SoftwareApplication` — the
+general type — on an iOS app whose own `operatingSystem` field said "iOS 16.6 or later". It carried
+one Offer, the monthly one, so a price-aware result showed the higher of our two numbers and hid
+the better-value annual.
+
+And the founder was two people. "Russell Shear" as the app's author and on `/about`; "Russ Shear"
+as every article's author. To a crawler that is two authors, which is the opposite of what an
+author field is for, and to a reader who lands on a guide and then `/about` it is a different
+person. Now one constant, with the legal name kept separate — the privacy policy identifies the
+operator of a service, which is not a byline.
+
+---
+
+## 2026-09-21 — SITE-META-01: two lines in the root layout gave every page the same social card
+
+**Dev.** Measured in the rendered HTML rather than inferred from the source, which is the only
+reason any of this was findable.
+
+The root layout set `twitter.title` and `twitter.description`. Next resolves an *absent* twitter
+title from the page's own title, so those two lines meant every page that did not restate a whole
+twitter block shared one card: guides, comparisons, privacy, terms, support and all nine plan
+pages. The fix was deleting two lines, not adding fifteen blocks. That inversion is the thing worth
+keeping — the instinct was to add.
+
+`maximumScale: 1` was refusing pinch zoom on every page of the site and the app. That is WCAG 2.1
+SC 1.4.4, failed outright, for an audience the brand doc puts at 25 to 65+. iOS has ignored the
+lock since Safari 10, so it was buying nothing and costing Android.
+
+The iOS status bar was declared twice, disagreeing: the metadata export said `default`, a raw meta
+tag said `black-translucent`, and whichever Next emitted last won silently.
+
+`/api/og` took no request at all, so a guide, a plan, the pricing page and the homepage were
+indistinguishable in a shared link.
+
+**The honest bit.** `lib/marketing/plans.ts` typed the brand name out eighteen times, against a
+CLAUDE.md rule that exists precisely because this product has already renamed twice. Not in the
+brief; found while reading. That is the argument for reading the file rather than grepping for the
+thing you came for.
+
+**AI-building.** The test I wrote failed on its own comment: the line explaining "NO maximumScale"
+contains the word `maximumScale`. Third time in one day something matched its own explanation.
+Strip comments centrally, once, not per assertion.
+
+---
+
+## 2026-09-21 — SITE-TYPE-01: there was no type scale, and the half-pixels proved it
+
+**Dev.** Before writing anything I counted. 170 font sizes, hand-typed inline, across 16 files, in
+nineteen distinct values, plus nine separate hero clamps of which three were within 2px of each
+other.
+
+The tell was the half-pixels. 12.5, 13.5, 14.5 and 15.5 accounted for 30 of the 170. Nobody chooses
+14.5px. It is what a number becomes when each component nudges a value it copied from a neighbour,
+and it is the clearest possible evidence that no scale existed to copy from.
+
+Sixteen tokens now own it. 210 call sites migrated, zero unmapped. Distinct rendered sizes fell
+from 15 to 10 on `<p>` and 11 to 7 on `<h2>`, measured with a headless browser before and after
+rather than counted in the source.
+
+**The honest bit.** I listed the deliberate deltas in the token block — 17 joining 18, 20 and 22
+joining 21, two clamps merging — because a consolidation that hides its own changes is exactly how
+the half-pixels got there. Somebody nudged and did not say.
+
+The mockup components are exempt, and the reasoning ships in the gate rather than the commit
+message. `PhoneFrame` draws a simulated iPhone: its 9px tab labels are a picture of iOS chrome at
+mockup scale, not this website's typography. Putting them on the site scale would make the drawing
+wrong in order to make a grep clean.
+
+**AI-building.** The falsification attempt passed, and I nearly took that as proof. I had injected
+a hand-typed size in place of a token that page did not actually use, so nothing changed and the
+gate was never exercised. Then I broke it three ways properly: a literal px, a bare clamp, a token
+`globals.css` does not declare. A gate you have not seen go red is a gate you have not tested.
+
+---
+
 ## 2026-09-21 — OPS-DEPLOY-FILTER-01: we used all 100 of the day's deploys by lunchtime, and over half shipped an identical site
 
 **Dev.** Vercel stopped deploying mid-session: *"Resource is limited, try again in 1 day (more than 100)."*
