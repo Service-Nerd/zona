@@ -6,6 +6,58 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — W-05 / W-07 / W-08 / W-09 / W-10 (and W-06 withdrawn, W-11 killed): the craft pass, and the number I gave the board that was wrong
+
+**Dev.** A competitor launched, the founder asked whether our site could be slicker, and I measured
+both sites from computed CSS rather than eyeballing them. The homepage turned out to carry **eleven
+different section padding pairs and eight different content widths**, and none of the three padding
+values it used most actually exists on our own documented spacing scale. Each one was reasonable
+where it was written. Together they meant the left edge of the content moved as you scrolled.
+
+That is now three tokens and two measures, in `globals.css`, so a page reads the rhythm instead of
+inventing one. At 375px the section padding resolves to 56px, which is the canonical app value, so
+the phone does not pay for the desktop's air.
+
+**The honest bit, and it is the whole entry.** I told the SLT our hero headline was 36.9px against
+their 61.4px, with an H1-to-H2 step of 1.02x, "effectively no hierarchy". The habit seat promoted
+the item on precisely that, as a cognitive-load problem rather than a taste one. **The reading came
+from a browser pane about 527px wide, before a `clamp()` had reached its desktop value.** At a real
+1280 our H1 is 46.08px and the step is 1.28x.
+
+Then the comparison that actually settles it, which I had not done: type relative to the column it
+sits in. Ours is 9.0% of its hero column. Theirs is 10.2%. We are within 1.2 points. Their headline
+looks bigger because **their hero column is 31% wider than ours**, not because they set type more
+confidently. And our size is already a written-down decision, reduced deliberately *because* our
+hero is two-column, with the reasoning in the source: "a considered revision of that decision, not
+an accident."
+
+So I withdrew the item rather than demoting it. That is the second claim about this competitor I
+have withdrawn in two days after measuring properly, and both errors ran the same direction: they
+looked further ahead than they are. The rule I am taking from it is narrow and mechanical. **Put
+the viewport in the claim.** A number from a browser without a stated width is not a measurement.
+
+**Product.** Two things I could not copy, and both were more interesting than the things I could.
+
+They close on two dark bands, a deep green call-to-action and then a near-black footer. Our own
+pattern doc allows exactly one near-black section per page, on the reasoning that a second one
+stops being punctuation and becomes a theme. I had not surfaced that to the board when it ruled
+"weight the footer", so I corrected the scope rather than bending the rule: the footer gets weight
+from structure, four grouped columns and a home for the App Store badge, not from darkness.
+
+And they alternate every section between cream and white. I proposed we do the same and then
+talked myself out of it while writing the pattern up. Alternation makes a ground change mean
+nothing. We now have three grounds and each is spent once: the page, one white spotlight, one dark
+close. The white one goes on "Probably not for you if…", because anti-qualification is the single
+thing a funded competitor will never write about itself.
+
+**The one that was free.** The strongest commercial asymmetry we have, a genuine free tier and nine
+complete published plans against a rival with a seven-day trial and neither, existed on the page as
+a small card headed "Not ready for the app?" placed after the dark band. We had framed the most
+persuasive thing we do as a consolation prize for people who said no. It is now a section, before
+the close, and every fact in it is read from the pricing source rather than retyped.
+
+---
+
 ## 2026-09-21 — GTM-CHARITY-05 / GTM-CHARITY-06: the migration everyone thought was live, and why one failing statement hid two
 
 **Dev.** The founder told me he had run the charity migration and asked me to tick it off. I checked

@@ -108,6 +108,24 @@ Canonical spacing values. No others.
 56px  — hero section spacing
 ```
 
+### Marketing section rhythm (W-07, 2026-09-21)
+
+The scale above is written for a 375-wide screen read at arm's length under a thumb, and it tops out at 56px. A marketing section is read at 1280 and needs more air, so the site extends it with **three tokens and no others**:
+
+| Token | Value | Use |
+|---|---|---|
+| `--sect-y` | `clamp(56px, 6vw, 80px)` | every content section, top and bottom |
+| `--sect-y-hero` | `clamp(32px, 4vw, 48px)` | hero only — the header sits above it |
+| `--sect-y-close` | `clamp(72px, 9vw, 112px)` | the one dark band, deliberately heavier |
+
+**Responsive by construction:** at 375px `--sect-y` resolves to **56px, which IS the canonical value**, so the phone never pays for the desktop's air.
+
+**And two measures, not eight:** `--measure-page` (1100px, matching the site frame so the content edge stops moving as you scroll) and `--measure-read` (720px, a reading column of roughly 70 characters at 17px).
+
+⚠️ **Why this is a rule and not a suggestion.** Before it, the homepage alone carried **eleven different padding pairs** (48/56, 0/56, 72/72, 80/80 ×3, 72/72, 80/80, 112/112, 56/48, 40/0) and **eight different content widths** (1100, 900, 640, 760, 780…), none of 72/80/112 being on the canonical scale at all. Each was reasonable where it was written. Together they meant the left edge of the content moved as you scrolled. **Slickness is mostly alignment.**
+
+---
+
 Card inner padding: `20px` horizontal, `14–20px` vertical depending on content density.  
 List gap between session cards: `12px`.  
 Section gap (week → week): `28–32px`.
@@ -180,6 +198,24 @@ Primary white cards carry `box-shadow: var(--shadow-card)` — a 1px contact sha
 - **Never nest.** A shadowed card inside a shadowed card doubles the effect and looks cheap — the parent carries the elevation, the children don't.
 
 > Live-app follow-up (device-verified): the inline `StatCell`/`StatRow`/`ActionListCard` primaries inside `DashboardClient.tsx` were left for an on-device pass — they sit inside other containers on the Coach/Me screens where nesting must be checked visually.
+
+## Section grounds — three, and each one means something (W-08, 2026-09-21)
+
+**The marketing site does not alternate band colours.** It has exactly three grounds and each is spent on purpose:
+
+| Ground | Where | Why |
+|---|---|---|
+| `--bg` | every content section | the page. Cards in `--card` do the structural work on top of it |
+| `--card` (white) | **one** section per page | a spotlight, not a rhythm |
+| `--ground` (near-black) | **one** section per page, last | the close. See the receipt band below |
+
+**What this replaced:** `--bg` alternating with `--bg-soft`, two warm tones **eight points apart**, propped up by hairline borders top and bottom. At that distance banding reads as a smudge rather than a rhythm, and the hairlines holding it together are the decorative dividers this document bans. `--bg-soft` returns to its documented job: inset areas and input fields.
+
+**Where the white band is spent on the homepage:** *"Probably not for you if…"*. Anti-qualification is the most distinctive thing on the site and the one thing a funded competitor will never write, so it gets the page's only ground change before the close. A ground change needs an edge, so the hairlines stay on **that section only**.
+
+⚠️ **A competitor teardown proposed cream/white alternation across every section, and it was rejected.** Alternation makes a ground change mean nothing; two of them mean something. Recorded so the same proposal is not re-imported from the next teardown.
+
+---
 
 ## Dark Ground — "The receipt" band (design_handoff_v2)
 
@@ -450,7 +486,12 @@ The first version took a `width` prop so the header matched its page's CONTENT w
 
 The header frame is now constant; the CONTENT column stays whatever each page needs (760 for reading measure on articles, 1100 on the homepage). That is the ordinary site-frame pattern: chrome is site-level, the text column is content-level, and they are allowed to differ. It is a **constant rather than a defaulted prop** specifically so no call site can reintroduce the drift.
 
-**Footer anatomy**
+**Footer anatomy** *(amended W-10, 2026-09-21 — GROUPED)*
+- **Four columns: Train · Read · Company · Get {BRAND.name}**, on `repeat(auto-fit, minmax(min(100%, 150px), 1fr))`, which gives 4 across at 1280 and a 2×2 on a 375 phone. Column headings are the canonical section label (11px, 700, uppercase, **0.08em**, `--mute`).
+- **The App Store badge has a home** in the fourth column. It renders nothing until the App Store URL exists, so that column is simply absent pre-approval rather than a gap.
+- Copyright sits last, under its own hairline.
+- ⚠️ **The link set, the labels and the order are UNCHANGED** — only the arrangement is. Nine links in one undifferentiated 13px row gave the last thing every visitor sees no structure, and "Charity runners" sat between "Comparisons" and "Support" as though a peer of both.
+- 🔴 **It is NOT a dark footer, and that is a rule rather than a preference.** See § Dark Ground: exactly one near-black section per page (ADR-008). The competitor this work came from closes on **two** dark bands; we close on one, and the footer's job is to be quiet underneath it. **Weight comes from structure, not darkness.**
 - **No brand statement.** The footer is navigation and legal only. Putting `BRAND.brandStatement` in SHARED chrome rendered it on all 8 pages and duplicated it on two of them (the homepage already ends on a designed 48px closing moment; `/privacy` already carries its own quiet 10px line). That is DIV-020's "over-use degrades the asset" at site scale. The voice moment is a deliberate page-level placement, never chrome.
 - **One link set, one order, one label per destination**: Home · Plans · Comparisons · Support · Privacy · Terms. The current page stays in the list — omitting the self-link is what made every footer subtly different.
 - Copyright line last.

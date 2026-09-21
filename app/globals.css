@@ -58,6 +58,29 @@
   /* v2 modernisation (design_handoff_v2, 2026-09-10): each step raised once.
      12px on a card reads 2019; 14–18px is where premium products sit now.
      Pure token change — every surface using var(--radius-*) moves at once. */
+  /* ── Marketing section rhythm (W-07, 2026-09-21) ──────────────────────
+     THREE values for the whole marketing site, replacing eleven hand-written
+     padding pairs on the homepage alone (48/56, 0/56, 72/72, 80/80 x3, 72/72,
+     80/80, 112/112, 56/48, 40/0) and EIGHT different content widths.
+
+     ⚠️ These deliberately extend the app's canonical spacing rhythm, which
+     tops out at 56px. That scale is written for a 375-wide screen read at
+     arm's length under a thumb; a marketing section is read at 1280 and needs
+     more air. The extension is stated here rather than improvised per section,
+     which is what produced the eleven pairs.
+
+     Responsive by construction: at 375px `--sect-y` resolves to 56px, which IS
+     the canonical value, so the phone never pays for the desktop's air. */
+  --sect-y:          clamp(56px, 6vw, 80px);    /* every content section */
+  --sect-y-hero:     clamp(32px, 4vw, 48px);    /* hero — the header sits above it */
+  --sect-y-close:    clamp(72px, 9vw, 112px);   /* the ONE dark band, deliberately heavier */
+
+  /* TWO measures, not eight. `--measure-page` matches the site frame so the
+     content edge stops moving as you scroll; `--measure-read` is a reading
+     column for prose-dominant sections (~70 characters at 17px). */
+  --measure-page:    1100px;
+  --measure-read:    720px;
+
   --radius-sm:       10px;   /* was 8px  */
   --radius-md:       14px;   /* was 12px */
   --radius-lg:       18px;   /* was 16px */

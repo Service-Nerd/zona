@@ -27,22 +27,53 @@
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { SITE_WIDTH } from '@/components/marketing/SiteHeader'
+import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 
-const LINKS: Array<{ href: string; label: string }> = [
-  { href: '/', label: 'Home' },
-  { href: '/plans', label: 'Plans' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/about', label: 'About' },
-  { href: '/comparisons', label: 'Comparisons' },
-  // GTM-CHARITY-01. In the FOOTER, not the nav — the nav stays two items by SLT
-  // ruling, and the charity's own email is the real front door for this page.
-  // This link exists so the page is inspectable and shareable by us: the
-  // founder could not find his own page, which meant he could not QA it or
-  // notice it rotting. A maintenance argument, not a traffic one.
-  { href: '/charity-runners', label: 'Charity runners' },
-  { href: '/support', label: 'Support' },
-  { href: '/privacy', label: 'Privacy' },
-  { href: '/terms', label: 'Terms' },
+// W-10 (2026-09-21) — GROUPED, not lengthened. The link set and the labels are
+// unchanged; only the arrangement is. Nine links in one undifferentiated
+// 13px row gave the last thing every visitor sees no structure at all, and
+// "Charity runners" sat between "Comparisons" and "Support" as though it were
+// a peer of both.
+//
+// 🔴 IT IS NOT A DARK FOOTER, AND THAT IS A RULE RATHER THAN A PREFERENCE.
+// `ui-patterns.md` § Dark Ground: "Exactly one near-black section per
+// marketing page. It is a punctuation mark, not a theme (ADR-008). A second
+// dark section would make it a dark theme; don't." The competitor this work
+// came from closes on TWO dark bands. We close on one, and the footer's job is
+// to be quiet underneath it.
+//
+// Weight here therefore comes from STRUCTURE: three named columns, the App
+// Store badge given a home, and a real top rule. Not from darkness.
+const GROUPS: Array<{ heading: string; links: Array<{ href: string; label: string }> }> = [
+  {
+    heading: 'Train',
+    links: [
+      { href: '/', label: 'Home' },
+      { href: '/plans', label: 'Plans' },
+      { href: '/pricing', label: 'Pricing' },
+    ],
+  },
+  {
+    heading: 'Read',
+    links: [
+      { href: '/comparisons', label: 'Comparisons' },
+      { href: '/about', label: 'About' },
+      // GTM-CHARITY-01. In the FOOTER, not the nav — the nav stays short by SLT
+      // ruling, and the charity's own email is the real front door for this
+      // page. This link exists so the page is inspectable and shareable by us:
+      // the founder could not find his own page, which meant he could not QA it
+      // or notice it rotting. A maintenance argument, not a traffic one.
+      { href: '/charity-runners', label: 'Charity runners' },
+    ],
+  },
+  {
+    heading: 'Company',
+    links: [
+      { href: '/support', label: 'Support' },
+      { href: '/privacy', label: 'Privacy' },
+      { href: '/terms', label: 'Terms' },
+    ],
+  },
 ]
 
 // Same single frame as the header — see SiteHeader's SITE_WIDTH note.
@@ -55,16 +86,59 @@ export function SiteFooter() {
         background: 'var(--bg)',
       }}
     >
-      <div style={{ maxWidth: SITE_WIDTH, margin: '0 auto', padding: '36px 24px 48px' }}>
-        <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>
-          {LINKS.map(l => (
-            <Link key={l.href} href={l.href} style={{ color: 'var(--mute)', textDecoration: 'none' }}>
-              {l.label}
-            </Link>
+      <div style={{ maxWidth: SITE_WIDTH, margin: '0 auto', padding: '40px 24px 48px' }}>
+        <div style={{
+          display: 'grid',
+          // The badge column is last on desktop and first-wrapping on a phone.
+          // `auto-fit` + `min(100%, 150px)` keeps a 375px screen to one column
+          // with the standard 24px gutter rather than forcing a horizontal
+          // scroll, which is how the header once broke the whole document.
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))',
+          gap: '28px 24px',
+          alignItems: 'start',
+        }}>
+          {GROUPS.map(g => (
+            <nav key={g.heading} aria-label={g.heading}>
+              <h2 style={{
+                fontFamily: 'var(--font-brand)',
+                fontSize: 11, fontWeight: 700,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
+                color: 'var(--mute)', margin: '0 0 12px',
+              }}>
+                {g.heading}
+              </h2>
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 9 }}>
+                {g.links.map(l => (
+                  <li key={l.href}>
+                    <Link href={l.href} style={{ fontSize: 14, color: 'var(--ink-2)', textDecoration: 'none' }}>
+                      {l.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
           ))}
+
+          {/* The badge has never had a home in the chrome. It renders nothing
+              until the App Store URL exists, exactly as it does elsewhere, so
+              this column is simply absent pre-approval rather than a gap. */}
+          <div>
+            <h2 style={{
+              fontFamily: 'var(--font-brand)',
+              fontSize: 11, fontWeight: 700,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              color: 'var(--mute)', margin: '0 0 12px',
+            }}>
+              Get {BRAND.name}
+            </h2>
+            <AppStoreBadge />
+          </div>
         </div>
 
-        <p style={{ fontSize: 12, color: 'var(--mute)', margin: '20px 0 0' }}>
+        <p style={{
+          fontSize: 12, color: 'var(--mute)',
+          margin: '36px 0 0', paddingTop: 20, borderTop: '1px solid var(--line)',
+        }}>
           © {new Date().getFullYear()} {BRAND.name}
         </p>
       </div>

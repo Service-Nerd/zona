@@ -37,6 +37,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { BRAND, PRICING } from '@/lib/brand'
+import { FREE_FEATURES } from '@/lib/marketing/pricing'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
@@ -168,8 +169,8 @@ export default async function Home() {
           centred-only layouts"). The centring was never a reviewed decision:
           GTM-SITE-01 only ruled on the tagline kicker. */}
       <section style={{
-        maxWidth: '1100px', margin: '0 auto',
-        padding: '48px 24px 56px',
+        maxWidth: 'var(--measure-page)', margin: '0 auto',
+        padding: 'var(--sect-y-hero) 24px var(--sect-y)',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))',
         gap: '32px',
@@ -263,7 +264,7 @@ export default async function Home() {
 
       {/* ── Facts band — MoorHub stat-strip structure, no vanity metrics ──
           v2 (design_handoff_v2). Honest facts only; price from PRICING. */}
-      <section style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 24px 56px' }}>
+      <section style={{ maxWidth: 'var(--measure-page)', margin: '0 auto', padding: '0 24px var(--sect-y)' }}>
         <div style={{
           display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-start',
           gap: '10px 22px',
@@ -290,13 +291,14 @@ export default async function Home() {
       </section>
 
       {/* ── Thesis ───────────────────────────────────────────────────── */}
-      <section style={{
-        background: 'var(--bg-soft)',
-        borderTop: '1px solid var(--line)',
-        borderBottom: '1px solid var(--line)',
-        padding: '72px 24px',
-      }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      {/* W-08 — no tinted ground and no hairlines. `--bg-soft` was acting as a
+          section background 8 points from `--bg`, which reads as a smudge
+          rather than a rhythm, and the hairlines that propped it up are the
+          decorative dividers `ui-patterns.md` bans. This section is CARDS on
+          the page ground: the cards are the structure. `--bg-soft` returns to
+          its documented job (inset areas, input fields). */}
+      <section style={{ padding: 'var(--sect-y) 24px' }}>
+        <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
           <Eyebrow>The problem</Eyebrow>
           <SectionTitle accent="the same grey zone.">Every run ends up in</SectionTitle>
 
@@ -321,7 +323,7 @@ export default async function Home() {
       </section>
 
       {/* ── What it does — three pillars + product mockups ───────────── */}
-      <section style={{ padding: '80px 24px', maxWidth: '1100px', margin: '0 auto' }}>
+      <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
         <Eyebrow>The product</Eyebrow>
         <SectionTitle accent="done with restraint.">Three things,</SectionTitle>
 
@@ -389,13 +391,14 @@ export default async function Home() {
       </section>
 
       {/* ── Personalisation mechanic — previews the in-app profile/wizard ── */}
-      <section style={{
-        background: 'var(--bg-soft)',
-        borderTop: '1px solid var(--line)',
-        borderBottom: '1px solid var(--line)',
-        padding: '80px 24px',
-      }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+      {/* W-08 — no tinted ground and no hairlines. `--bg-soft` was acting as a
+          section background 8 points from `--bg`, which reads as a smudge
+          rather than a rhythm, and the hairlines that propped it up are the
+          decorative dividers `ui-patterns.md` bans. This section is CARDS on
+          the page ground: the cards are the structure. `--bg-soft` returns to
+          its documented job (inset areas, input fields). */}
+      <section style={{ padding: 'var(--sect-y) 24px' }}>
+        <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
           <Eyebrow>Personalised, not generic</Eyebrow>
           <SectionTitle sub="Your race, your history, your week, your legs. Pace bands and HR zones are derived from what you actually tell it, not lifted from a template.">
             Your plan starts from your answers.
@@ -431,7 +434,7 @@ export default async function Home() {
       </section>
 
       {/* ── What's not in the app — the restraint, made explicit ───────── */}
-      <section style={{ padding: '80px 24px', maxWidth: '900px', margin: '0 auto' }}>
+      <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
         <Eyebrow>The restraint</Eyebrow>
         <SectionTitle sub="What we left out, on purpose.">
           What&apos;s not in the app.
@@ -471,13 +474,19 @@ export default async function Home() {
       </section>
 
       {/* ── Counter-positioning — who this isn't for ──────────────────── */}
+      {/* W-08 — the page's ONE white band, and it is deliberate rather than
+          alternation. Every other light section sits on `--bg`; this is the
+          only ground change before the dark close. It is spent HERE because
+          anti-qualification is the most distinctive thing on the site and the
+          one thing a funded competitor will never write. A ground change needs
+          an edge, so the hairlines stay on this section only. */}
       <section style={{
-        background: 'var(--bg-soft)',
+        background: 'var(--card)',
         borderTop: '1px solid var(--line)',
         borderBottom: '1px solid var(--line)',
-        padding: '72px 24px',
+        padding: 'var(--sect-y) 24px',
       }}>
-        <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'left' }}>
+        <div style={{ maxWidth: 'var(--measure-read)', margin: '0 auto', textAlign: 'left' }}>
           <Eyebrow>Honestly</Eyebrow>
           <h2 style={{
             fontFamily: 'var(--font-brand)',
@@ -516,7 +525,7 @@ export default async function Home() {
       {/* ── FAQ — native <details> disclosure (v2, design_handoff_v2) ──────
           Zero-JS, server-rendered, keyboard-accessible; no new interaction
           model. Dry brand voice; prices from PRICING. Free SEO. */}
-      <section style={{ padding: '80px 24px', maxWidth: '760px', margin: '0 auto' }}>
+      <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-read)', margin: '0 auto' }}>
         <Eyebrow>Questions</Eyebrow>
         <SectionTitle>The obvious ones.</SectionTitle>
         <div style={{
@@ -563,6 +572,82 @@ export default async function Home() {
             </details>
           ))}
         </div>
+      </section>
+
+      {/* ── The free tier — W-05 (SLT 2026-09-21, ranked #1 on the list) ─────
+          This is a PROMOTION and a rewrite, not a new section. The argument
+          already existed as a 780px card headed "Not ready for the app? Start
+          with a free plan." placed AFTER the dark band, which is the weakest
+          slot on the page, and which framed the strongest thing we do as a
+          consolation prize for people who said no.
+
+          Traynor: *"they are $14.99/mo with a 7-day trial on annual only and
+          no ongoing free tier. That is not a feature difference, it is a
+          category difference in RISK TO THE BUYER, and it is in small print."*
+          Sutherland: *"giving away the whole product is the most persuasive
+          thing you do, and you are whispering it."*
+
+          ⚠️ EVERY FACT HERE IS READ FROM `lib/marketing/pricing.ts` AND
+          `PRICING`. Nothing is restated. `pricing.test.ts` already fails the
+          build when a PAID_ONLY_ONGOING gate has no row on /pricing; a second
+          page claiming what free includes would be a new drift surface, and
+          this is the item most likely to have created one. */}
+      <section style={{ padding: 'var(--sect-y) 24px', maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
+        <Eyebrow>The free tier</Eyebrow>
+        <SectionTitle
+          accent="Then decide."
+          sub="Nine complete plans are on this site right now, 5K to marathon. Every week, every session, every pace band. No signup, no email, no weeks blurred out to make a point."
+        >
+          Read the whole plan.
+        </SectionTitle>
+
+        <ul style={{
+          listStyle: 'none', margin: '0 0 28px', padding: 0,
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+          gap: '12px',
+        }}>
+          {FREE_FEATURES.map(f => (
+            <li key={f.gate} style={{
+              display: 'flex', gap: '12px', alignItems: 'flex-start',
+              background: 'var(--card)', border: '1px solid var(--line)',
+              borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
+              padding: '16px 18px',
+            }}>
+              {/* Left accent bar — the same visual language as a session card,
+                  by design rather than coincidence (ui-patterns.md §1). */}
+              <span aria-hidden style={{
+                width: 3, alignSelf: 'stretch', minHeight: 30, borderRadius: 2,
+                background: 'var(--moss)', flexShrink: 0,
+              }} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)' }}>{f.name}</div>
+                <div style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--mute)', marginTop: 3 }}>{f.detail}</div>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'baseline' }}>
+          <Link href="/plans" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
+            Read the free plans &rarr;
+          </Link>
+          <p style={{ fontSize: '13px', color: 'var(--mute)', margin: 0 }}>
+            Paid adds the coaching that reads your actual runs: {PRICING.monthly.label} or{' '}
+            {PRICING.annual.label}.{' '}
+            <Link href="/pricing" style={{ color: 'var(--mute)', textDecoration: 'underline' }}>
+              What that gets you
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      {/* Founder note kept: it is real brand content and the only place the
+          site says who built it. Moved ABOVE the shared footer rather than
+          deleted, so the footer itself can be identical on every page. */}
+      <section style={{ padding: '40px 24px 0', maxWidth: '1100px', margin: '0 auto' }}>
+        <p style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--ink-2)', margin: 0 }}>
+          Built by Russell. Runs medium-hard on everything. That&apos;s how I know.
+        </p>
       </section>
 
       {/* ── The receipt — the ONE dark band (v2, design_handoff_v2 Change 1) ──
@@ -630,41 +715,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── Free-plans teaser — routes the not-ready-yet visitor to the SEO hub ──
-          Top padding is 56px, not 8px. The dark band above it is a full-bleed
-          block with 112px of internal padding, so an 8px gap read as a
-          collision: the card looked stuck to the band's hard edge rather than
-          following it. 56px sits below the page's 72/80px major-section rhythm
-          because this is a secondary closing card, not a section in its own
-          right. (A stray "Footer" comment used to sit here, above the teaser
-          rather than above <SiteFooter/> at the end. Removed.) */}
-      <section style={{ maxWidth: '780px', margin: '0 auto', padding: '56px 24px 48px' }}>
-        <div style={{
-          background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
-          padding: '26px 22px',
-        }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--ink)', margin: '0 0 8px', letterSpacing: '-0.01em' }}>
-            Not ready for the app? Start with a free plan.
-          </h2>
-          <p style={{ fontSize: '15px', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 16px', maxWidth: '520px' }}>
-            5K to marathon, built the same way: mostly easy running, every run zoned. Read
-            any of them free. No signup, no wall.
-          </p>
-          <Link href="/plans" style={{ fontSize: '15px', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
-            See the free plans &rarr;
-          </Link>
-        </div>
-      </section>
-
-      {/* Founder note kept: it is real brand content and the only place the
-          site says who built it. Moved ABOVE the shared footer rather than
-          deleted, so the footer itself can be identical on every page. */}
-      <section style={{ padding: '40px 24px 0', maxWidth: '1100px', margin: '0 auto' }}>
-        <p style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--ink-2)', margin: 0 }}>
-          Built by Russell. Runs medium-hard on everything. That&apos;s how I know.
-        </p>
-      </section>
       <SiteFooter />
     </main>
   )
