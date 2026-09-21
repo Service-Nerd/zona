@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { KEEN_PATH, HELD_PATH, TRACE_VIEWBOX } from '@/components/marketing/HrTrace'
-import { BREACH_MINUTES, RUN_MINUTES, HERO_TRACE } from '@/lib/marketing/heroTrace'
+import { BREACH_MINUTES, RUN_MINUTES, HERO_TRACE, LOOP_SECONDS } from '@/lib/marketing/heroTrace'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 /**
  * DESIGN-V3 — the shaded minutes must match Kit's line.
@@ -108,5 +110,51 @@ describe('HR trace geometry matches the copy', () => {
     const minutes = breachFraction(original) * RUN_MINUTES
     expect(minutes).toBeGreaterThan(20)   // measured 24.6
     expect(Math.abs(minutes - BREACH_MINUTES)).toBeGreaterThan(5)
+  })
+})
+
+
+/**
+ * ⚠️ A CROSS-FADE MUST STAY A SMALL FRACTION OF THE LOOP IT SERVES.
+ *
+ * The fades were tuned against a 7-second loop (0.65s and 0.5s — 9.3% and
+ * 7.1% of the cycle, so the card was almost always settled). When the loop
+ * dropped to 3 seconds nothing else moved, and those same durations became
+ * **21.7% and 16.7%**: more than a fifth of the card's life showing two
+ * numbers and two of Kit's sentences on top of each other. It looks like a
+ * rendering fault, and it was first mistaken for a screenshot artefact.
+ *
+ * Two constants in two languages, in two files, with no link between them.
+ * This is the link.
+ */
+describe('hero loop — the fades are sized against the loop, not against nothing', () => {
+  const css = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8')
+  /** Read a duration token from the FIRST `:root` block, not the
+   *  reduced-motion override further down, which is legitimately 0s. */
+  const root = css.slice(0, css.indexOf('@media (prefers-reduced-motion'))
+  const seconds = (name: string) => {
+    const m = root.match(new RegExp(`--${name}:\\s*([\\d.]+)s`))
+    expect(m, `--${name} should be declared in :root with a seconds value`).not.toBeNull()
+    return Number(m![1])
+  }
+
+  it.each(['motion-crossfade', 'motion-verdict'])(
+    '%s is at most 12%% of LOOP_SECONDS',
+    token => {
+      const share = seconds(token) / LOOP_SECONDS
+      expect(
+        Math.round(share * 1000) / 10,
+        `--${token} is ${seconds(token)}s against a ${LOOP_SECONDS}s loop. ` +
+          'Above ~12% the card spends a visible share of its life as a double exposure.',
+      ).toBeLessThanOrEqual(12)
+    },
+  )
+
+  it('and is not so short that the fade reads as a jump cut', () => {
+    // The lower bound matters too: a 0.05s "cross-fade" is a swap, and a swap
+    // of the number under a static curve is what makes a loop feel like a bug.
+    for (const t of ['motion-crossfade', 'motion-verdict']) {
+      expect(seconds(t), `--${t} should still read as a fade`).toBeGreaterThanOrEqual(0.15)
+    }
   })
 })

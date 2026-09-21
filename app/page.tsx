@@ -280,30 +280,38 @@ export default async function Home() {
         </p>
         </div>
 
-        {/* The product. Light section only: the frame renders its screen ground
-            dark inside a --ground section (PhoneFrame's known constraint).
-            `.phone-fit` scales it below 430px so it cannot force the document
-            wider than the viewport. */}
-        <div className="phone-fit" style={{ justifySelf: 'center' }}>
-          <TabbedPhone plan={buildDemoPlanScreen()} />
+        {/* ── THE EVIDENCE CARD, IN THE HERO'S RIGHT COLUMN (direction 2a,
+            SLT 2026-09-21) ────────────────────────────────────────────────
+            The hero was already a two-column grid; the question was only
+            what sits in the second column. It held the phone and the card
+            sat below the fold.
+
+            Sutherland: "every running app on earth shows you a phone in its
+            hero. Almost none show you the thing the app FOUND OUT about
+            you." Traynor put the commercial case the same way: the card is
+            the one asset on this site a competitor cannot copy, because
+            copying it means having built the thing. It was below the fold.
+
+            The phone follows immediately, so nothing is lost. ⚠️ Fried did
+            not block this but did not vote for it either, and his test is
+            the one that killed the phone-geometry item in the same sitting:
+            does this FIX something, or merely COMPLY? It ships because it
+            changes what a visitor sees before scrolling, which a mockup
+            resize does not. */}
+        <div style={{ justifySelf: 'stretch', alignSelf: 'center', minWidth: 0 }}>
+          <HeroTrace />
         </div>
       </section>
 
-      {/* ── DESIGN-V3: the evidence card ──────────────────────────────────
-          The handoff's central idea, and the only thing on the page that
-          PROVES the claim above it rather than restating it: one real easy
-          run against its ceiling, the minutes it spent above, and Kit's
-          sentence about it. It loops between the keen run and the held one.
-
-          ⚠️ The moss wash is the ONE tinted surface on the site and it is
-          scoped here. A third page ground would flatten the page/inset
-          alternation the surface system depends on.
-
-          ⚠️ Both states are always mounted and cross-faded, so the card is
-          sized to the taller of the two and nothing below it moves on the
-          7-second tick. That is also why there is no height to reserve. */}
-      <Section rhythm="none" innerStyle={{ paddingBottom: 'var(--sect-y)' }}>
-        <HeroTrace />
+      {/* The product, directly under the promise and the proof. Light section
+          only: the frame renders its screen ground dark inside a --ground
+          section (PhoneFrame's known constraint). `.phone-fit` scales it
+          below 430px so it cannot force the document wider than the
+          viewport. */}
+      <Section rhythm="none" innerStyle={{ paddingBottom: 'var(--sect-y)', display: 'grid' }}>
+        <div className="phone-fit" style={{ justifySelf: 'center' }}>
+          <TabbedPhone plan={buildDemoPlanScreen()} />
+        </div>
       </Section>
 
       {/* ── Facts band — MoorHub stat-strip structure, no vanity metrics ──
@@ -352,18 +360,58 @@ export default async function Home() {
               Same class as the "four answers" overclaim fixed in GTM-SITE-01. */}
           {(() => {
             const dot = (k: string) => (
-              <span key={k} aria-hidden style={{ color: 'var(--line-strong)' }}>&middot;</span>
+              <span key={k} aria-hidden className="fact-sep-in" style={{ color: 'var(--line-strong)' }}>&middot;</span>
             )
+            // ⚠️ THE PRICE CAME OUT OF THIS ROW (SLT 2026-09-21), and the
+            // reason that governs is Sutherland's rather than the other
+            // two, because it is the one that generalises:
+            //
+            //   TIMING, not repetition. The reader has just looked at the
+            //   trace and had the small uncomfortable thought "that's me".
+            //   That is the most valuable half-second on the page, and we
+            //   followed it with an invoice. Recognition and transaction
+            //   are different mental modes. **Never put a price adjacent to
+            //   a proof moment.**
+            //
+            // Fried read it as repetition (three mentions on one page signal
+            // a company unsure of its price) and Traynor as dilution. All
+            // three voted remove; the price still appears in the hero
+            // paragraph and in the paid line below, which is once, well.
+            //
+            // "5 zones" went too: a specification, and table stakes. "Every
+            // session zoned" is a promise about behaviour, true at BOTH
+            // tiers (free zones are formula-derived, but they are zones).
+            //
+            // "Nine plans, free to read" is W-05 delivered rather than
+            // undermined — that ruling was about the FREE TIER being in
+            // small print, not about the price. It is deliberately precise:
+            // free GENERATION is 5K/10K/HM per `FREE_FEATURES`, while all
+            // nine published plan pages are readable with no signup. It
+            // claims reading, and nine is read off `plans.ts`.
+            //
+            // Wood on the last item: keep it and resist making it sound
+            // bigger. It is the only fact here describing a constraint the
+            // product places on ITSELF, which for this audience is the
+            // whole differentiator.
             const pairs: string[][] = [
-              ['5 zones', 'Mostly easy running'],
-              [`${PRICING.monthly.display}/month`, 'One daily nudge'],
+              ['Mostly easy running', 'Every session zoned'],
+              ['Nine plans, free to read', 'One daily nudge'],
             ]
             return pairs.flatMap((pair, i) => [
               // Hidden below 560px: at phone width the two pairs ARE the two
               // lines, so the separator between them has nothing to sit between.
               ...(i > 0 ? [<span key={`mid-${i}`} className="fact-sep-mid" aria-hidden style={{ color: 'var(--line-strong)' }}>&middot;</span>] : []),
-              <span key={`pair-${i}`} style={{ display: 'inline-flex', alignItems: 'baseline', gap: '22px', whiteSpace: 'nowrap' }}>
-                {pair[0]}{dot(`d-${i}`)}{pair[1]}
+              // ⚠️ EACH FACT IS ITS OWN ELEMENT, and that is not tidiness.
+              // They were bare text nodes either side of the dot. Flexbox
+              // wraps loose text in ANONYMOUS flex items, and once the dot
+              // is `display: none` at the smallest widths the two runs merge
+              // into a single anonymous item — so `flex-direction: column`
+              // and `gap` had nothing to act on and the facts rendered
+              // joined: "Mostly easy runningEvery session zoned". The media
+              // query was matching the whole time; there was simply nothing
+              // for it to lay out.
+              <span key={`pair-${i}`} className="fact-pair" style={{ display: 'inline-flex', alignItems: 'baseline', gap: '22px', whiteSpace: 'nowrap' }}>
+                <span>{pair[0]}</span>{dot(`d-${i}`)}<span>{pair[1]}</span>
               </span>,
             ])
           })()}

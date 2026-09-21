@@ -194,7 +194,7 @@ export default function CharityRunnersPage() {
               rectangle, which read as two unrelated buttons that happened to be
               adjacent. Measured, not eyeballed. If the badge's shape ever
               changes, change this with it. */}
-          <a href="#code" style={{
+          <a href="#code" className="cta-pill" style={{
             display: 'inline-flex', alignItems: 'center', gap: '10px',
             background: 'var(--moss-strong)', color: 'var(--card)',
             // lineHeight 18px, not 1: the badge's content box is set by its

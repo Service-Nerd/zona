@@ -101,6 +101,7 @@ export function WaitlistForm() {
       <button
         type="submit"
         disabled={state === 'submitting'}
+        className="cta-pill"
         style={{
           flex: '0 0 auto',
           padding: '13px 24px',

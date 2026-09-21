@@ -70,6 +70,13 @@
      surface system depends on. */
 
   --moss-strong:     #557055;
+  /* One step darker, for the pressed/hover state of a moss CTA. 7.21:1 on
+     white against --moss-strong's 5.46:1, so the hover is both visibly
+     darker AND the more accessible of the two — a hover must never be the
+     weaker contrast. Added with the CTA hover (SLT 2026-09-21); the
+     handoff's own #4C6B4C was not taken, for the same reason its #5A7C5A
+     was not: we already had the base and only needed the step. */
+  --moss-deep:       #465D46;
   --warn-strong:     #88622B;
 
   /* A11Y-CONTRAST-01 — two session colours also appear as TEXT, as the small
@@ -212,8 +219,19 @@
      bar; this curve starts fast and settles, which reads as a trace being
      recorded. */
   --motion-draw:       1.6s cubic-bezier(0.33, 0, 0.2, 1);
-  --motion-crossfade:  0.65s ease;   /* trace state A <-> B */
-  --motion-verdict:    0.5s ease;    /* the number and Kit's line */
+  /* ⚠️ THESE ARE SIZED AGAINST `LOOP_SECONDS` IN lib/marketing/heroTrace.ts,
+     AND THEY WERE NOT, WHICH SHOWED IMMEDIATELY. They were 0.65s and 0.5s
+     against a 7-second loop — 9.3% and 7.1% of the cycle, so the card was
+     almost always settled. The loop went to 3s (founder, 2026-09-21) and
+     nothing else moved, which silently made them **21.7% and 16.7%**: more
+     than a fifth of the card's life spent mid-fade, showing two numbers and
+     two of Kit's sentences overlapping. It reads as a rendering fault.
+     Caught in a screenshot and at first mistaken for a capture artefact.
+     Re-scaled to hold the original proportions. If the loop changes again,
+     these change with it — `heroTraceGeometry.test.ts` fails the build if a
+     fade exceeds 12% of the loop, so this cannot drift silently again. */
+  --motion-crossfade:  0.3s ease;    /* trace state A <-> B */
+  --motion-verdict:    0.22s ease;   /* the number and Kit's line */
   --motion-ui:         0.15s ease;   /* interactive state */
   --motion-fill:       0.2s ease;    /* colour fills */
 
@@ -631,6 +649,22 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  * mistake, which was styling a responsive property inline. */
 .fact-sep-mid { display: inline; }
 
+/* ⚠️ AND BELOW 360px THE PAIRS THEMSELVES DO NOT FIT, measured after the
+ * copy changed. The row's facts got longer when the price came out (SLT
+ * 2026-09-21), and a `nowrap` pair of 311px inside a 272px content box at
+ * 320px ate the page gutter down to 5px — under the 16px floor this site
+ * holds at every width. It did not overflow the document, which is exactly
+ * why it would have shipped unnoticed: `scrollWidth === innerWidth` was
+ * still true.
+ *
+ * So at the smallest widths each fact takes its own centred line and the
+ * in-pair middot goes with the pairing it described. A separator between
+ * two things that are no longer beside each other is not a separator. */
+@media (max-width: 360px) {
+  .fact-pair { flex-direction: column; gap: 6px !important; }
+  .fact-sep-in { display: none; }
+}
+
 @media (max-width: 560px) {
   .fact-row {
     justify-content: center;
@@ -638,3 +672,27 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   }
   .fact-sep-mid { display: none; }
 }
+
+/* ── CTA pill: hover, focus and press (SLT 2026-09-21) ─────────────────────
+ *
+ * There was NO hover state anywhere on the marketing site. Fried's framing:
+ * that is not a fidelity nicety, it is a missing affordance — on a desktop a
+ * button with no hover reads as not-a-button.
+ *
+ * ⚠️ `:focus-visible` IS PART OF THIS, NOT AN EXTRA. Shipping hover alone
+ * would hand the affordance to people with a pointer and withhold it from
+ * everyone navigating by keyboard, which is the accessibility version of the
+ * same defect. Both states use the same token so they cannot drift.
+ *
+ * The transition rides `--motion-ui`, which collapses to 0s inside the
+ * `prefers-reduced-motion` block, so this needs no exception of its own. */
+.cta-pill {
+  transition: background var(--motion-ui), transform var(--motion-ui);
+}
+.cta-pill:hover { background: var(--moss-deep); }
+.cta-pill:focus-visible {
+  background: var(--moss-deep);
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.cta-pill:active { transform: translateY(1px); }

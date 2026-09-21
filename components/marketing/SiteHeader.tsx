@@ -135,6 +135,7 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
           {/* The single button in the chrome, and the only colour in it. */}
           <a
             href={BRAND.appStore.url}
+            className="cta-pill"
             style={{
               fontSize: 'var(--fs-sm)',
               fontWeight: 700,
