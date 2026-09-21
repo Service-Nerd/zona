@@ -65,6 +65,40 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — DOC-AUDIT-SECOND-SHAPE-01: asked if the docs were current, so I checked instead of answering
+
+**Dev.** The founder asked whether the backlog, feature registry, build log and contracts were all
+up to date. The honest way to answer that is not to remember, it is to run something, so I
+tabulated every W-item against its registry row.
+
+Five shipped items were still carrying their original problem statements. "The band alternation is
+muddy." "Our page does not CLOSE." "The footer is 143px of undifferentiated links." All shipped
+hours earlier, all with registry rows saying so, and anyone reading the bench would have concluded
+the craft pass never happened.
+
+The audit said ALL CLEAN throughout, because its open-item parse matches one header shape and I had
+filed the whole W-series in a different one. Not a subtle difference either: it looks for a quoted
+bullet and these are `###` headings.
+
+**That is the fourth time in two days**, after the ship-record window that emptied at midnight, the
+backlog check that only read today's scopes, and the roadmap line nobody verified. I have been
+writing the same lesson each time and treating it as a property of the specific list. It is not.
+**A checker that encodes one way of writing something is blind to every other way, and people write
+things more than one way — including the person who wrote the checker.**
+
+**Then the widening was wrong too, which is the more interesting bit.** It immediately reported two
+killed items as open, because `🔴` means high-priority-open in one header shape and
+killed-or-withdrawn in the other. Same file, same symbol, opposite meanings, and nobody decided
+that. I excluded it and wrote down that normalising the document is the better fix than teaching
+the script about the inconsistency, because right now the script is carrying knowledge that should
+live in the convention.
+
+**And one genuine ambiguity the check was right to find.** W-01 had a registry row for the shelf
+and was still open for the writing. One ID cannot be both. Split into a shipped shelf and W-01a for
+the guides, which is what it actually is.
+
+---
+
 ## 2026-09-21 — DOC-AUDIT-DISCRIMINATOR-01: the note was there and half the script ignored it
 
 **Dev.** The doc audit reported a killed item as still open. It was matching a prose bullet inside a

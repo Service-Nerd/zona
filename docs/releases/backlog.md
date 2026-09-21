@@ -2192,7 +2192,21 @@ narrower than the visual similarity suggests.
 
 ---
 
-### 🟡 `W-01` — SHELF SHIPPED 2026-09-21. **The writing is yours, and here is the brief.**
+### ✅ `W-01` — SHELF SHIPPED 2026-09-21. Catalogue, renderer, gated hub, route and tests. Registry row has the detail.
+
+### 🟡 `W-01a` — write the guides *(the open half, founder-gated)*
+
+**Guide 1 is drafted and awaiting the founder's read at `/guide-preview`.** Nothing publishes until
+he has read it (SLT `CONTENT-AUTHORSHIP-01`), and the hub stays closed until there are three
+(`GUIDES_MIN_TO_PUBLISH`, Fried's gate on Wood's reasoning).
+
+**Cadence is ONE and stop** — write the second only once the first has been read and has existed
+for a fortnight. Eight is a number borrowed from a competitor.
+
+⚠️ **Split from `W-01` on 2026-09-21** because the shelf shipping and the writing continuing is a
+state the doc audit could not express: one ID cannot be both a registry row and an open item. The
+eight titles, their search intent and the product surface each lands on are in the `W-01` brief
+above.
 
 **Structure is done and gated.** `/guides` exists, 404s until there are three guides, and the
 footer link, the sitemap entries and the hub all read one constant (`GUIDES_MIN_TO_PUBLISH`).
@@ -2325,7 +2339,9 @@ tiles already exist in the product.
 grey middle and one week held, and what each produces. Their device proves flexibility; ours would
 prove the thing we actually sell.
 
-### 🔴 `W-05` — We bury our two strongest weapons against them *(S, copy only)*
+### ✅ `W-05` — SHIPPED 2026-09-21. The free-tier case is a section before the close, reading its facts from `pricing.ts`. Registry row has the detail.
+
+### ~~`W-05` original filing~~
 
 1. **The free tier.** They have a **7-day trial on annual and no ongoing free tier**; we have a
    genuine one, at roughly **half the price**. Ours currently appears in **hero small print**.
@@ -2379,7 +2395,9 @@ confident; small and heavy reads dense. We are small AND heavy.
 **deliberately 0.08em** and was standardised there yesterday (codebase 64:17, `ui-patterns.md` §17).
 Theirs at 0.14em is not a reason to move ours. **Do not re-open that.**
 
-### 🟡 `W-07` — no vertical rhythm and no consistent measure *(S)*
+### ✅ `W-07` — SHIPPED 2026-09-21. Eleven padding pairs and eight measures became three tokens and two, in `globals.css`. Registry row has the detail.
+
+### ~~`W-07` original filing~~
 
 **Section padding, ours, top to bottom:** `48/56 · 0/56 · 72/72 · 80/80 · 80/80 · 80/80 · 72/72 ·
 80/80 · 112/112 · 56/48 · 40/0`. **Theirs: `72/72` on every single content section**, with `108/64`
@@ -2392,7 +2410,9 @@ you scroll. **Slickness is mostly alignment**, and this is the cheapest slicknes
 Also: two near-empty strips (**76px** and **60px** tall) sit between real sections. Audit whether
 they earn their place or are leftover spacers adding noise.
 
-### 🟢 `W-08` — the band alternation is muddy *(XS, one token swap)*
+### ✅ `W-08` — SHIPPED 2026-09-21. The site stopped alternating: three grounds, each spent once. ⚠️ Cream/white alternation was REJECTED, not deferred. Registry row has the detail.
+
+### ~~`W-08` original filing~~
 
 We alternate `--bg` `#F3F0EB` with `--bg-soft` `#EDE9E1`: two warm tones about 8 points apart, so
 the banding reads as a smudge rather than a rhythm. Theirs alternates **cream `#FAF8F5` with pure
@@ -2402,7 +2422,9 @@ white `#FFFFFF`** — crisp, and the white bands make cards and screenshots lift
 `--bg-soft` for its documented job (inset areas and input fields) rather than as a section ground.
 No new colour, no ADR-007 change, one swap.
 
-### 🔴 `W-09` — our page does not CLOSE *(S, and this is the one the founder spotted)*
+### ✅ `W-09` — SHIPPED 2026-09-21. The dark band moved from section 9 of 11 to last. ⚠️ We could NOT copy their two-dark-band close — `ui-patterns.md` allows exactly one (ADR-008). Registry row has the detail.
+
+### ~~`W-09` original filing~~
 
 **Theirs ends on two heavy bands:** a deep forest-green CTA (`#1F3D2E`, 88/96 padding) and then a
 near-black footer (`#1C1C1E`, 470px tall). The page arrives somewhere.
@@ -2421,7 +2443,9 @@ the CTA band is near-black or a deep moss is a brand call for the SLT, and **a d
 colour value** (`--moss` itself is too light for a full-bleed band), which makes it an ADR-007
 question, not a free choice.
 
-### 🟢 `W-10` — the footer is 143px of undifferentiated links *(XS)* — ⚠️ **SCOPE CORRECTED**
+### ✅ `W-10` — SHIPPED 2026-09-21. Four grouped columns with the App Store badge; 4-across at 1280, 2x2 at 375. ⚠️ NOT a dark footer, and that is a rule. Registry row has the detail.
+
+### ~~`W-10` original filing~~ — ⚠️ **SCOPE CORRECTED**
 
 🔴 **It cannot be a dark footer, and the board was not told this when it ruled.**
 `ui-patterns.md` § *Dark Ground*: **"Exactly one near-black section per marketing page… A second

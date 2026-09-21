@@ -128,8 +128,30 @@ grep -oE '^\| *`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`? *[—/]' docs/canonical/feature-r
 # Open headers carry a *(provenance)* block; in-item emphasis bullets do not.
 # Without that discriminator this fires on narrative text, which is how four
 # separate parses of this file produced four different counts.
-grep -oE '^> (🔲|🔴|🔴🔴|🔵|⏸️|⚠️) \*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?[ —–-].*\*\(' docs/releases/backlog.md \
-  | grep -oE '\*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u > /tmp/_open
+{
+  grep -oE '^> (🔲|🔴|🔴🔴|🔵|⏸️|⚠️) \*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`?[ —–-].*\*\(' docs/releases/backlog.md \
+      | grep -oE '\*\*`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
+  # ⚠️ SECOND HEADER SHAPE, added 2026-09-21. The quoted-bullet form above is
+  # the convention; the W-series was filed as `### 🟡 `W-07` — ...` instead.
+  # This parse could not see that shape AT ALL, so FIVE shipped items sat in
+  # the backlog still reading as open problem statements ("the band
+  # alternation is muddy", "our page does not CLOSE") while their registry
+  # rows said shipped. Found by hand, not by this script.
+  #
+  # FOURTH time in two days that "an audit is only ever as wide as its list"
+  # has bitten, and the lesson has stopped being about any one list: a checker
+  # that encodes ONE way of writing something is blind to every other way, and
+  # people write things more than one way.
+  # ⚠️ 🔴 IS EXCLUDED HERE AND INCLUDED ABOVE, ON PURPOSE. The two header
+  # shapes carry different marker semantics: in the quoted-bullet form 🔴
+  # means an open item at high priority, and in the `###` form it means KILLED
+  # or WITHDRAWN. Treating them alike reported W-06 (withdrawn) and W-11
+  # (killed) as open. The inconsistency is in the document, not the check, and
+  # normalising the document is the better fix — recorded so whoever does that
+  # knows this clause exists.
+  grep -oE '^### (🔲|🟡|🟠|🟢|🔵|⏸️) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
+    | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
+} | sort -u > /tmp/_open
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
 done
