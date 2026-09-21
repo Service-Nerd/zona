@@ -28,6 +28,7 @@ import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { SITE_WIDTH } from '@/components/marketing/SiteHeader'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
+import { guidesArePublished } from '@/lib/marketing/articles'
 
 // W-10 (2026-09-21) — GROUPED, not lengthened. The link set and the labels are
 // unchanged; only the arrangement is. Nine links in one undifferentiated
@@ -56,6 +57,16 @@ const GROUPS: Array<{ heading: string; links: Array<{ href: string; label: strin
   {
     heading: 'Read',
     links: [
+      // W-01 — appears the day the guides hub opens, and not before. The hub
+      // 404s until `GUIDES_MIN_TO_PUBLISH` is met, so a fixed link here would
+      // advertise a dead page for however long the third guide takes. Driving
+      // it off the same gate means nobody has to remember to add it.
+      //
+      // FOOTER, NOT HEADER, and that follows the existing rule rather than
+      // making an exception to it: the nav is deliberately short by SLT
+      // ruling, `/about` and `/charity-runners` are already footer-only for
+      // that reason, and "Read" is exactly where a guide belongs.
+      ...(guidesArePublished() ? [{ href: '/guides', label: 'Guides' }] : []),
       { href: '/comparisons', label: 'Comparisons' },
       { href: '/about', label: 'About' },
       // GTM-CHARITY-01. In the FOOTER, not the nav — the nav stays short by SLT

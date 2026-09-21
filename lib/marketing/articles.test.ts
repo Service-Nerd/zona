@@ -6,7 +6,7 @@
 // cover pages that do not exist yet.
 
 import { describe, it, expect } from 'vitest'
-import { COMPARISON_ARTICLES, COMPARISON_HUB, COMPETITOR_FACTS, comparisonArticleJsonLd, type ArticleBlock } from './comparisons'
+import { MARKETING_ARTICLES, COMPARISON_HUB, GUIDE_HUB, COMPETITOR_FACTS, comparisonArticles, guideArticles, guidesArePublished, GUIDES_MIN_TO_PUBLISH, marketingArticleJsonLd, type ArticleBlock } from './articles'
 import { PRICING } from '@/lib/brand'
 import { BRAND } from '@/lib/brand'
 
@@ -23,25 +23,25 @@ const copyOf = (block: ArticleBlock): string => {
 }
 
 const allCopy = (): string[] =>
-  COMPARISON_ARTICLES.flatMap(a => [
+  MARKETING_ARTICLES.flatMap(a => [
     a.metaTitle, a.metaDescription, a.ogTitle, a.ogDescription,
     a.h1, a.lastUpdated, a.signature, a.appStoreLinkText,
     ...a.body.map(copyOf),
   ])
 
 describe('comparison articles — SEO limits', () => {
-  it.each(COMPARISON_ARTICLES.map(a => [a.slug, a] as const))(
+  it.each(MARKETING_ARTICLES.map(a => [a.slug, a] as const))(
     '%s: meta title is under 60 characters', (_slug, a) => {
       expect(a.metaTitle.length).toBeLessThan(60)
     })
 
-  it.each(COMPARISON_ARTICLES.map(a => [a.slug, a] as const))(
+  it.each(MARKETING_ARTICLES.map(a => [a.slug, a] as const))(
     '%s: meta description is under 155 characters', (_slug, a) => {
       expect(a.metaDescription.length).toBeLessThan(155)
     })
 
   it('slugs are unique and URL-clean', () => {
-    const slugs = COMPARISON_ARTICLES.map(a => a.slug)
+    const slugs = MARKETING_ARTICLES.map(a => a.slug)
     expect(new Set(slugs).size).toBe(slugs.length)
     for (const s of slugs) expect(s).toMatch(/^[a-z0-9-]+$/)
   })
@@ -49,7 +49,7 @@ describe('comparison articles — SEO limits', () => {
   it('every table row is as wide as its header, and carries a caption', () => {
     // A short row renders a silently missing cell, which on a price comparison
     // is a competitor's price vanishing rather than a visible break.
-    for (const a of COMPARISON_ARTICLES)
+    for (const a of MARKETING_ARTICLES)
       for (const b of a.body) {
         if (b.kind !== 'table') continue
         expect(b.caption.length, `${a.slug}: table caption is required for screen readers`).toBeGreaterThan(0)
@@ -60,7 +60,7 @@ describe('comparison articles — SEO limits', () => {
   })
 
   it('every article carries a machine-readable last-updated date', () => {
-    for (const a of COMPARISON_ARTICLES) expect(a.lastUpdatedISO).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    for (const a of MARKETING_ARTICLES) expect(a.lastUpdatedISO).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 })
 
@@ -86,7 +86,7 @@ describe('comparison articles — house style', () => {
       PRICING.monthly.perWeekDisplay, PRICING.annual.perWeekDisplay,
     ])
     const offenders: string[] = []
-    for (const a of COMPARISON_ARTICLES)
+    for (const a of MARKETING_ARTICLES)
       for (const text of [a.metaDescription, a.hubSummary, ...a.body.map(copyOf)])
         for (const m of text.match(/£\d+(?:\.\d+)?(?![\d.]|\s*m\b)/g) ?? [])
           if (!allowed.has(m)) offenders.push(`${a.slug}: ${m} is not in COMPETITOR_FACTS or PRICING`)
@@ -118,7 +118,7 @@ describe('comparison articles — house style', () => {
   })
 
   it('internal links are root-relative and external links are absolute', () => {
-    for (const a of COMPARISON_ARTICLES) {
+    for (const a of MARKETING_ARTICLES) {
       for (const b of a.body) {
         if (b.kind !== 'p') continue
         for (const span of b.spans) {
@@ -135,38 +135,38 @@ function readSource(): string {
   const { readFileSync } = require('node:fs') as typeof import('node:fs')
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { join } = require('node:path') as typeof import('node:path')
-  return readFileSync(join(process.cwd(), 'lib/marketing/comparisons.ts'), 'utf8')
+  return readFileSync(join(process.cwd(), 'lib/marketing/articles.ts'), 'utf8')
 }
 
 describe('comparison articles — Article JSON-LD', () => {
-  it.each(COMPARISON_ARTICLES.map(a => [a.slug, a] as const))(
+  it.each(MARKETING_ARTICLES.map(a => [a.slug, a] as const))(
     '%s: dateModified is the SAME date the page displays', (_slug, a) => {
       // The whole point of the wiring. If someone revises the copy and bumps the
       // visible "Last updated" line without touching the structured data, Google
       // is told one date while the reader sees another. One field feeds both, so
       // this cannot happen — this test is what keeps it that way.
-      expect(comparisonArticleJsonLd(a).dateModified).toBe(a.lastUpdatedISO)
+      expect(marketingArticleJsonLd(a).dateModified).toBe(a.lastUpdatedISO)
     })
 
-  it.each(COMPARISON_ARTICLES.map(a => [a.slug, a] as const))(
+  it.each(MARKETING_ARTICLES.map(a => [a.slug, a] as const))(
     '%s: datePublished is independent of dateModified', (_slug, a) => {
       // Distinct FIELDS, even where they hold the same value at first publish.
       // Deriving datePublished from lastUpdatedISO would make every revision
       // look like a brand-new article.
-      expect(comparisonArticleJsonLd(a).datePublished).toBe(a.publishedISO)
+      expect(marketingArticleJsonLd(a).datePublished).toBe(a.publishedISO)
       expect(a.publishedISO <= a.lastUpdatedISO).toBe(true)
     })
 
-  it.each(COMPARISON_ARTICLES.map(a => [a.slug, a] as const))(
+  it.each(MARKETING_ARTICLES.map(a => [a.slug, a] as const))(
     '%s: headline and description match the page meta exactly', (_slug, a) => {
-      const ld = comparisonArticleJsonLd(a)
+      const ld = marketingArticleJsonLd(a)
       expect(ld.headline).toBe(a.metaTitle)
       expect(ld.description).toBe(a.metaDescription)
       expect(ld.mainEntityOfPage).toBe(`https://www.zonna.run/${a.slug}`)
     })
 
   it('carries the constant author and publisher, with the brand interpolated', () => {
-    const ld = comparisonArticleJsonLd(COMPARISON_ARTICLES[0])
+    const ld = marketingArticleJsonLd(MARKETING_ARTICLES[0])
     expect(ld['@context']).toBe('https://schema.org')
     expect(ld['@type']).toBe('Article')
     expect(ld.author).toEqual({ '@type': 'Person', name: 'Russ Shear' })
@@ -176,8 +176,8 @@ describe('comparison articles — Article JSON-LD', () => {
   it('the helper is not hardcoded per page — every article produces valid output', () => {
     // Guards the "pages 2 through 8 inherit this" promise: a new entry gets
     // complete JSON-LD with no extra wiring.
-    for (const a of COMPARISON_ARTICLES) {
-      const ld = comparisonArticleJsonLd(a)
+    for (const a of MARKETING_ARTICLES) {
+      const ld = marketingArticleJsonLd(a)
       for (const k of ['headline', 'datePublished', 'dateModified', 'description', 'mainEntityOfPage'] as const) {
         expect(String(ld[k]).length).toBeGreaterThan(0)
       }
@@ -199,13 +199,55 @@ describe('comparison hub — /compare', () => {
   })
 
   it('every article can be rendered as a hub card', () => {
-    // The hub is driven off COMPARISON_ARTICLES, so pages 2-8 list themselves.
+    // The hub is driven off MARKETING_ARTICLES, so pages 2-8 list themselves.
     // `hubSummary` is required precisely so a new article cannot ship with a
     // blank card, which is the failure mode of a derived-summary hub.
-    for (const a of COMPARISON_ARTICLES) {
+    for (const a of MARKETING_ARTICLES) {
       expect(a.hubSummary.length).toBeGreaterThan(0)
       expect(a.hubSummary).not.toBe(a.metaDescription)
       expect(a.lastUpdated.length).toBeGreaterThan(0)
     }
+  })
+})
+
+
+/**
+ * W-01 — the guide half of the catalogue, covered BEFORE a guide exists.
+ *
+ * Every rule above already runs over the whole catalogue, so an unwritten
+ * guide is pre-covered for meta length, em dashes, brand literals, prices and
+ * link shape the moment it is added. These add the rules that are specific to
+ * having two KINDS in one list, and to the publish gate.
+ *
+ * ⚠️ The gate assertions are written so they keep meaning something after the
+ * third guide lands: they assert the RELATIONSHIP between the count and the
+ * gate, not today's count of zero. A test that only says "there are no guides
+ * yet" deletes itself the day it matters.
+ */
+describe('W-01 — guides share the catalogue without contaminating comparisons', () => {
+  it('every article declares a kind, and the two selectors partition the list', () => {
+    for (const a of MARKETING_ARTICLES) expect(['comparison', 'guide']).toContain(a.kind)
+    expect(comparisonArticles().length + guideArticles().length).toBe(MARKETING_ARTICLES.length)
+  })
+
+  it('the comparison hub never lists a guide, and vice versa', () => {
+    expect(comparisonArticles().every(a => a.kind === 'comparison')).toBe(true)
+    expect(guideArticles().every(a => a.kind === 'guide')).toBe(true)
+  })
+
+  it('the publish gate tracks the guide count rather than a second copy of it', () => {
+    expect(guidesArePublished()).toBe(guideArticles().length >= GUIDES_MIN_TO_PUBLISH)
+  })
+
+  it('the two hubs have different slugs, so neither can shadow the other', () => {
+    expect(GUIDE_HUB.slug).not.toBe(COMPARISON_HUB.slug)
+    expect(MARKETING_ARTICLES.map(a => a.slug)).not.toContain(GUIDE_HUB.slug)
+    expect(MARKETING_ARTICLES.map(a => a.slug)).not.toContain(COMPARISON_HUB.slug)
+  })
+
+  it('the guide hub copy obeys the same SEO limits as an article', () => {
+    expect(GUIDE_HUB.metaTitle.length).toBeLessThan(60)
+    expect(GUIDE_HUB.metaDescription.length).toBeLessThan(155)
+    for (const v of Object.values(GUIDE_HUB)) expect(v).not.toContain('—')
   })
 })

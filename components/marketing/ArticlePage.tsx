@@ -15,9 +15,9 @@
 
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
-import { SiteHeader } from '@/components/marketing/SiteHeader'
+import { SiteHeader, type SiteSection } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
-import { comparisonArticleJsonLd, type ComparisonArticle, type ArticleSpan, type ArticleBlock } from '@/lib/marketing/comparisons'
+import { marketingArticleJsonLd, COMPARISON_HUB, GUIDE_HUB, type MarketingArticle, type ArticleSpan, type ArticleBlock } from '@/lib/marketing/articles'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
@@ -44,7 +44,7 @@ function renderSpans(spans: ArticleSpan[]) {
   })
 }
 
-export function ComparisonPage({ article }: { article: ComparisonArticle }) {
+export function ArticlePage({ article }: { article: MarketingArticle }) {
   const url = `${APP_URL}/${article.slug}`
 
   const breadcrumbLd = {
@@ -58,14 +58,21 @@ export function ComparisonPage({ article }: { article: ComparisonArticle }) {
 
   // schema.org Article. Built by the shared wiring in comparisons.ts, which
   // reads `dateModified` from the same field as the visible "Last updated" line.
-  const articleLd = comparisonArticleJsonLd(article)
+  const articleLd = marketingArticleJsonLd(article)
+  const hub = article.kind === 'guide'
+    ? { slug: GUIDE_HUB.slug, label: 'Guides', section: null as SiteSection }
+    : { slug: COMPARISON_HUB.slug, label: 'Comparisons', section: 'comparisons' as SiteSection }
 
   return (
     <main style={{ background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh', fontFamily: 'var(--font-ui)' }}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
 
-      <SiteHeader current="comparisons" />
+      {/* W-01 — the breadcrumb and the active nav item follow the article's
+          KIND. A guide reached from search must say it is a guide, not sit
+          under Comparisons; that was the first thing to break when this
+          renderer stopped serving one hub. */}
+      <SiteHeader current={hub.section} />
 
       {/* GTM-SITE-01 — the plan spokes carried a breadcrumb and the comparison
           articles did not, so a reader arriving from search had no sense of
@@ -74,7 +81,7 @@ export function ComparisonPage({ article }: { article: ComparisonArticle }) {
         <ol style={{ display: 'flex', gap: 8, listStyle: 'none', padding: 0, margin: 0, fontSize: 13, color: 'var(--mute)', flexWrap: 'wrap' }}>
           <li><Link href="/" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Home</Link></li>
           <li aria-hidden>›</li>
-          <li><Link href="/comparisons" style={{ color: 'var(--mute)', textDecoration: 'none' }}>Comparisons</Link></li>
+          <li><Link href={`/${hub.slug}`} style={{ color: 'var(--mute)', textDecoration: 'none' }}>{hub.label}</Link></li>
           <li aria-hidden>›</li>
           <li aria-current="page" style={{ color: 'var(--ink-2)' }}>{article.h1}</li>
         </ol>
@@ -177,7 +184,7 @@ function ArticleTable({ block }: { block: Extract<ArticleBlock, { kind: 'table' 
 
 /** Metadata builder shared by every comparison route, so the eight pages cannot
  *  drift in canonical/OG shape. Mirrors the /plans `generateMetadata` output. */
-export function comparisonMetadata(article: ComparisonArticle) {
+export function articleMetadata(article: MarketingArticle) {
   const url = `${APP_URL}/${article.slug}`
   return {
     title: article.metaTitle,

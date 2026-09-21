@@ -65,6 +65,51 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — W-01: the best version of this item was not building it
+
+**Dev.** The brief said build a guides hub mirroring the two catalogues we already have. I opened
+the comparisons one to copy its shape and realised there was nothing to copy it *into*. A guide is
+an article. Same body blocks, same renderer, same hub, same structured data, same tests. The only
+genuine difference is which hub it belongs to and which breadcrumb it draws.
+
+So there is no third catalogue. There is a `kind` field and two selectors, and the hub markup got
+extracted so both hubs render from one component instead of two copies drifting apart.
+
+**The rename was the part I nearly skipped.** Once the catalogue held guides, a constant called
+`COMPARISON_ARTICLES` was lying. It is tempting to leave that and file it, because a rename is 57
+symbols across 8 files and touches nothing a user sees. But this codebase still carries
+`strava_activities` — a table that has not been Strava-specific for a long time, documented in
+CLAUDE.md with the instruction to "read it as the run log". That note exists because nobody renamed
+it on the day it stopped being true, and every person since has paid a small tax to learn it.
+
+A name is cheapest to fix on the day it starts lying. It was mechanical, the compiler checked all
+of it, and the diff is one commit.
+
+**And the rename immediately earned itself.** With guides in the same list, `/comparisons` would
+have listed them, because it mapped the whole catalogue. That was correct code right up until the
+moment it wasn't, and I only saw it because I was reading every call site to rename them.
+
+**AI-building.** The gate is the bit I would defend hardest. The board's ruling was "build the
+shelf, publish at three", and the obvious implementation is a note in the backlog saying don't
+launch this yet. Four surfaces have to agree for that to hold: the hub, the sitemap's article list,
+the sitemap's hub entry, and the footer link.
+
+So it is one constant that all four read, and the test asserts each surface *reads the gate* rather
+than that it produces today's answer. With zero guides, a behavioural test passes whether the hub
+checks the gate or just hardcodes false. The failure worth guarding is the third guide landing and
+one of the four not noticing, because the other three would look right and nothing would be red.
+
+**The honest bit.** The catalogue's own meta-description test failed on my guide hub copy: 166
+characters against its 155 limit. I wrote the rule into that file two days ago.
+
+**Product.** What I did not do is write the guides. The eight titles are in the backlog with the
+search intent and the product surface each one lands on, because the useful half of this item was
+never the HTML: it was working out that our guides should not be theirs. Theirs answer beginner
+questions they are funded to win. Ours answer what our runner types at 10pm, which is lower volume,
+far less contested, and lands on a product built for that exact problem.
+
+---
+
 ## 2026-09-21 — W-02: the approved scope was wrong, and reading the page is what showed it
 
 **Dev.** The brief said add a four-step "how it works", first open to race day, and the SLT approved

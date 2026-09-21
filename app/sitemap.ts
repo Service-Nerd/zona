@@ -5,7 +5,7 @@
 
 import type { MetadataRoute } from 'next'
 import { MARKETING_PLANS } from '@/lib/marketing/plans'
-import { COMPARISON_ARTICLES, COMPARISON_HUB } from '@/lib/marketing/comparisons'
+import { comparisonArticles, guideArticles, guidesArePublished, COMPARISON_HUB, GUIDE_HUB } from '@/lib/marketing/articles'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
@@ -37,14 +37,32 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // This sitemap is a HAND-MAINTAINED list, not a walk of the route tree, so a
     // new page under app/ does NOT appear here on its own. Driving it off the
     // catalogue means the remaining seven articles are listed the moment they
-    // are added to `COMPARISON_ARTICLES`, rather than depending on someone
+    // are added to `MARKETING_ARTICLES`, rather than depending on someone
     // remembering this file.
-    ...COMPARISON_ARTICLES.map(a => ({
+    // W-01 — comparisons always; guides only once the hub is open. Listing a
+    // guide whose hub 404s would advertise an orphan to a crawler, and the
+    // gate lives in the catalogue so this file cannot disagree with the page.
+    ...comparisonArticles().map(a => ({
       url: `${APP_URL}/${a.slug}`,
       lastModified: a.lastUpdatedISO,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     })),
+    ...(guidesArePublished()
+      ? [
+          {
+            url: `${APP_URL}/${GUIDE_HUB.slug}`,
+            changeFrequency: 'weekly' as const,
+            priority: 0.8,
+          },
+          ...guideArticles().map(a => ({
+            url: `${APP_URL}/${a.slug}`,
+            lastModified: a.lastUpdatedISO,
+            changeFrequency: 'monthly' as const,
+            priority: 0.7,
+          })),
+        ]
+      : []),
     // GTM-SITE-02 — about. Lower priority than pricing but a real due-diligence
     // surface for a charity deciding whether to trust us with its fundraisers.
     {

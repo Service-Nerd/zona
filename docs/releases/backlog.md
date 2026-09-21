@@ -2189,7 +2189,35 @@ narrower than the visual similarity suggests.
 
 ---
 
-### 🟢 `W-01` — Guides hub: eight questions our runner actually searches *(M, the biggest commercial gap)*
+### 🟡 `W-01` — SHELF SHIPPED 2026-09-21. **The writing is yours, and here is the brief.**
+
+**Structure is done and gated.** `/guides` exists, 404s until there are three guides, and the
+footer link, the sitemap entries and the hub all read one constant (`GUIDES_MIN_TO_PUBLISH`).
+Adding a guide is **one entry in `MARKETING_ARTICLES` with `kind: 'guide'` plus a four-line route
+shim** — identical to a comparison page, because it IS one. Every existing catalogue test covers it
+the moment it is added.
+
+⚠️ **NO third catalogue was built, against the filing.** A guide is structurally an article: same
+blocks, same renderer, same hub, same JSON-LD, same tests. `lib/marketing/comparisons.ts` was
+renamed `articles.ts` and given a `kind`.
+
+**THE EIGHT, and the angle for each.** Not their eight. Theirs answer beginner questions they are
+funded to win; these answer what OUR runner types at 10pm, which is lower volume and far lower
+competition, and each one lands on a product built for that exact problem.
+
+| # | Working title | The search behind it | Where it lands |
+|---|---|---|---|
+| 1 | Should my easy runs really feel this slow? | The single most common doubt about the method, and the one that makes people quit it | §12's ceiling, and the free plans |
+| 2 | Why is my heart rate so high on easy runs? | Genuine distress, usually answered badly elsewhere ("you're unfit") | Zone 2, HR vs pace |
+| 3 | Am I overtraining, or just tired? | Searched at the exact moment of doubt the product exists to resolve | The grey-zone thesis |
+| 4 | I missed a week. Do I start again? | The churn moment for every plan, ours included | The reshape, and W-04's device |
+| 5 | Why am I not getting faster? | The core truth, as a question | "You're trying hard. That's the problem." |
+| 6 | What pace should my long run be? | High volume, and we have a specific answer most apps fudge | §52, the long run |
+| 7 | Do I need a heart-rate monitor to train by zones? | Blocks purchase; our honest answer is better than the category's | The HR-less trade (ADR-011 §5) |
+| 8 | How many days a week should I actually run? | Theirs covers it; ours should say the opposite thing about quality over quantity | Days available, the wizard |
+
+⚠️ **Founder-written by standing decision**, same as the comparison pages. **Do not bulk-draft
+these.** ⚠️ **And nothing publishes until three exist** — that gate is Fried's, and it is in code.
 
 They run **8 guides, ~1,100 to 1,500 words each**, in four buckets under *"Start with the question
 you have today"*: Starting out · Training basics · Coming back · Race training. **Grouping by the

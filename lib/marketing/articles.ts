@@ -1,4 +1,20 @@
-// GTM-SEO-COMPARE-01 — the comparison-article catalogue.
+// The marketing ARTICLE catalogue — comparisons and guides.
+//
+// ⚠️ RENAMED FROM `comparisons.ts` on 2026-09-21 (W-01), at the moment it
+// stopped holding only comparisons. The alternative was a catalogue called
+// COMPARISON_ARTICLES that contains guides, and this repo already carries the
+// standing cost of exactly that: `strava_activities` is documented in
+// CLAUDE.md as "a v1 misnomer, read it as the run log", years after the name
+// stopped being true. A name is cheapest to fix on the day it starts lying.
+//
+// ⚠️ AND NO THIRD CATALOGUE. W-01 was scoped as a guides hub mirroring this
+// file and `plans.ts`. It is not: a guide IS an article — same blocks, same
+// renderer, same hub shape, same JSON-LD, same tests. A third copy of this
+// machinery would have been the third writer of one pattern, which is the
+// failure this codebase names more often than any other. `kind`
+// discriminates; the hubs filter.
+//
+// GTM-SEO-COMPARE-01 (comparisons) + W-01 (guides).
 //
 // Single source of truth for the competitor-comparison pages, mirroring the
 // GTM-SEO-PLANS-01 shape (`lib/marketing/plans.ts`): copy lives here as data, a
@@ -44,7 +60,12 @@ export type ArticleBlock =
    *  must be `head.length` long; asserted in `comparisons.test.ts`. */
   | { kind: 'table'; caption: string; head: string[]; rows: string[][] }
 
-export interface ComparisonArticle {
+export type ArticleKind = 'comparison' | 'guide'
+
+export interface MarketingArticle {
+  /** Which hub this belongs to, and which breadcrumb it renders. Comparisons
+   *  answer "which app should I use"; guides answer "what should I do". */
+  kind: ArticleKind
   slug: string
   /** Under 60 characters. Asserted by `comparisons.test.ts`. */
   metaTitle: string
@@ -147,8 +168,9 @@ const h2 = (text: string): ArticleBlock => ({ kind: 'h2', text })
 const table = (caption: string, head: string[], rows: string[][]): ArticleBlock =>
   ({ kind: 'table', caption, head, rows })
 
-export const COMPARISON_ARTICLES: ComparisonArticle[] = [
+export const MARKETING_ARTICLES: MarketingArticle[] = [
   {
+    kind: 'comparison',
     slug: 'runna-alternatives',
     metaTitle: `Runna alternatives for runners who don't want streaks`,
     metaDescription:
@@ -208,6 +230,7 @@ export const COMPARISON_ARTICLES: ComparisonArticle[] = [
     ],
   },
   {
+    kind: 'comparison',
     slug: 'coopah-vs-runna',
     metaTitle: `Coopah vs Runna vs ${BRAND.name}: an honest comparison`,
     metaDescription:
@@ -277,7 +300,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
  * that renders the visible "Last updated" line, so the structured data cannot
  * claim one date while the page shows another. Asserted in comparisons.test.ts.
  */
-export function comparisonArticleJsonLd(article: ComparisonArticle) {
+export function marketingArticleJsonLd(article: MarketingArticle) {
   return articleJsonLd({
     headline: article.metaTitle,
     datePublished: article.publishedISO,
@@ -302,6 +325,41 @@ export const COMPARISON_HUB = {
   sub: `Comparisons of the coaching apps people actually choose between, including the ones that beat ${BRAND.name} and the runners it is wrong for. No affiliate links, no scores out of ten.`,
 } as const
 
-export function getComparison(slug: string): ComparisonArticle | undefined {
-  return COMPARISON_ARTICLES.find(a => a.slug === slug)
+export const comparisonArticles = (): MarketingArticle[] =>
+  MARKETING_ARTICLES.filter(a => a.kind === 'comparison')
+
+export const guideArticles = (): MarketingArticle[] =>
+  MARKETING_ARTICLES.filter(a => a.kind === 'guide')
+
+/**
+ * W-01 — the guides hub does not go live until there are three guides.
+ *
+ * SLT 2026-09-21, resolving Fried against Traynor. Fried: *"a hub with two
+ * guides is worse than no hub"*, and the writing is founder-time at roughly
+ * one a week. Traynor: the shelf is nearly free and its absence delays the
+ * third guide. So the shelf ships now and the door opens at three.
+ *
+ * ⚠️ THE GATE IS A CONSTANT, NOT A NOTE. Written anywhere else it becomes
+ * something to remember on the day guide number two is added, and this
+ * codebase's history is a list of rules that held only while someone did.
+ */
+export const GUIDES_MIN_TO_PUBLISH = 3
+
+export const guidesArePublished = (): boolean =>
+  guideArticles().length >= GUIDES_MIN_TO_PUBLISH
+
+/** Copy for the /guides hub. Same shape and same reasoning as COMPARISON_HUB:
+ *  a wording change touches one file, and hub and cards cannot drift apart. */
+export const GUIDE_HUB = {
+  slug: 'guides',
+  metaTitle: `Running guides for people who go too hard | ${BRAND.name}`,
+  metaDescription:
+    `Straight answers to what runners actually ask at 10pm: how slow easy should feel, and whether you are overtraining or just tired.`,
+  eyebrow: 'Guides',
+  h1: `The questions you are actually asking.`,
+  sub: `Not a library of tempo-run explainers. The specific things that go wrong when you are trying hard and it is not working, answered plainly.`,
+} as const
+
+export function getArticle(slug: string): MarketingArticle | undefined {
+  return MARKETING_ARTICLES.find(a => a.slug === slug)
 }
