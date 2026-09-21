@@ -45,6 +45,28 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
 — not merely approved — until the Coaching Board rules.
 
+### 🟡 `DESIGN-V3-FIDELITY` — four places the v3 build is not the v3 design
+
+Filed 2026-09-21, out of `DESIGN-V3`. **None of these conflict with anything** — they are simply
+not done, and three of the four were never flagged at the time.
+
+| # | Gap | Spec | Built |
+|---|---|---|---|
+| 1 | Hero composition | direction **2a**: two columns, evidence card in the right column | card full-width below the existing hero |
+| 2 | Phone geometry | 390×844, radius 52, 54px status bar, 104×30 dynamic island, 16px gutter | existing `PhoneShell`: 320 wide, radius 46, 30px bar, 86×22 notch |
+| 3 | Today screen | eyebrow `TUESDAY 22 SEPTEMBER`, 26/800 title, session chip, 34/800 hero, stat pair, `Start run` | existing `TodayStill` reused |
+| 4 | CTA hover | `#5A7C5A` → `#4C6B4C` | no hover state on the page |
+
+🔴 **#3 is the one that shows.** Plan and Coach were built to spec and Today was not, so the tabbed
+phone presents three screens from two different designs. Fix #3 before #1, #2 or #4.
+
+⚠️ **#2 is not a free change.** `PhoneShell` is shared with `PhoneFrame`, and `CONTENT_H` is
+load-bearing: the content box clips at a fixed height because anything spilling past it paints over
+the nav. Resizing the frame means re-measuring every screen inside it.
+
+**Estimate: half a day for all four.** Separate from the copy-driven omissions (the design's proof
+cards and CTA), which need a founder decision about claims, not build time.
+
 ### ✅ `DESIGN-V3` — the Claude design handoff, implemented 2026-09-21 *(branch `design-implementation`, not deployed)*
 
 Spec: `docs/design_handoff_v3/`. Registry rows carry the detail.
@@ -72,6 +94,41 @@ re-import them silently.
 **Measured:** Lighthouse mobile `/` **perf 97, a11y 96, CLS 0**; no new contrast failures (the 8
 remaining are `A11Y-MOCKUP-CONTRAST-01`, all inside the phone at 9–11px); **CLS 0.0000 across two
 loop ticks** at 390 and 1280; reduced motion verified to never start the loop.
+
+#### ⚠️ NOT BUILT — the negative space, stated because the row above reads as complete
+
+Three categories. Only the first was a decision anyone made deliberately at the time.
+
+**A. Declined by the founder (asked, answered, gated).** Band alternation (W-08), the second ink
+band (ADR-008), the paper-grain overlay (W-11). See the table above.
+
+**B. Overridden by the brief's own rule 3** — *"all copy from the current site; where they differ
+the current site's copy wins."*
+- The design's **proof band** (`80%` / `1` / `4` white numeral cards) is **not built.** Those are
+  three new numeric claims with no equivalent on the live site. The existing facts strip stays.
+- The design's **CTA** (`Start 14-day trial →` and `£7.99 / month · cancel in two taps`) is **not
+  built.** The live hero's App Store badge and QR stay.
+- Consequence worth naming: **the homepage has none of the design's numeral cards.** The numeral
+  motif survives only on the 01/02/03 step markers.
+
+**C. FIDELITY GAPS — not built, and NOT flagged at the time. These are mine.**
+- **The hero is not direction 2a.** 2a is a two-column hero with the evidence card in the right
+  column. The card was built full-width BELOW the existing hero and the existing hero was left
+  alone. The card exists; the composition it was drawn for does not.
+- **The phone is not the design's phone.** Spec: 390×844 frame, radius 52, 54px status bar, 104×30
+  dynamic island, 16px gutter. Built: the existing `PhoneShell` — 320 wide, radius 46, 30px status
+  bar, 86×22 notch. Reusing the shell was right for DRY; not reconciling the dimensions was not a
+  decision, it was an omission.
+- **Today is not the design's Today.** Spec: eyebrow `TUESDAY 22 SEPTEMBER`, title at 26/800,
+  session chip, 34/800 hero, stat pair, `Start run` CTA. The existing `TodayStill` was reused.
+  ⚠️ **Plan and Coach WERE built to spec, so the three screens are not a consistent set** — one of
+  them is from a different design. That is the most visible of these.
+- **No CTA hover state.** Spec is `#5A7C5A → #4C6B4C`. There is no hover anywhere on the page.
+
+⚠️ **How C happened, because the cause is repeatable.** Not regressing the audit fixes and reusing
+existing components were both right, and they quietly became "keep the existing hero and the
+existing phone". Those were real design decisions taken by default and never put to the founder —
+the same failure as inventing a constraint, in the other direction. Tracked as `DESIGN-V3-FIDELITY`.
 
 ⚠️ **Not deployed.** Awaiting the founder's review of the screenshots.
 
