@@ -1,42 +1,48 @@
 {
- "measuredAt": "2026-09-19",
- "testTimeoutMs": 30000,
- "tests": [
-  {
-   "file": "lib/plan/targetedGrid.test.ts",
-   "title": "every input generates or refuses by design \u2014 no hard failures",
-   "ms": 15267,
-   "reason": "\u26a0\ufe0f THE ONE TO WATCH \u2014 50.1% of the 30,000 ms budget and 39% of the whole suite's test time on its own. It generates thousands of plans across an exhaustive grid, which is the point: a sampled version could not make the claim in its title. It is the test that caused CI-TIMEOUT-01 (red on the old 5,000 ms default, at +1.4% on the day, having been over the line for weeks). ALLOWED, because exhaustiveness is doctrine here and the grid is the asset \u2014 but it has roughly one doubling of headroom left before the hard wall, and widening the grid again is a decision to make deliberately, not a diff to wave through."
-  },
-  {
-   "file": "lib/plan/emittedCopyGlyphs.test.ts",
-   "title": "no runner-facing string contains a section symbol (\u00a7)",
-   "ms": 3224,
-   "reason": "Generates a plan corpus and walks every emitted string. The cost is the corpus, not the scan; sharing one corpus across this file's cases is the obvious saving if it ever needs one."
-  },
-  {
-   "file": "lib/plan/emittedCopyGlyphs.test.ts",
-   "title": "the em-dash debt does not grow while BRAND-EMDASH-01 is open",
-   "ms": 2568,
-   "reason": "Same corpus as the case above, generated a second time. Genuinely reducible \u2014 it is here as a baselined number rather than a fix because BRAND-EMDASH-01 closing removes the case entirely."
-  },
-  {
-   "file": "lib/plan/noteDurationFormat.test.ts",
-   "title": "generated notes read in hours past the hour, and still exist",
-   "ms": 1284,
-   "reason": "TODO \u2014 state why this test is allowed to be slow."
-  },
-  {
-   "file": "lib/plan/qualityAeroFallback.test.ts",
-   "title": "NO quality session anywhere in the corpus is an aerobic row",
-   "ms": 4802,
-   "reason": "QUALITY-AERO-FALLBACK-01, 2026-09-19. A CORPUS assertion: a quality slot must never be filled by an aerobic row. The traced single case is asserted separately and is fast; this one exists because the fallback is reachable from ANY thin pool, so one plan cannot make the claim in its title. Already SAMPLED with a coprime stride of 31 (a prefix would over-sample whichever axis the grid varies slowest \u2014 the bias the liveness work hit three times), which took it from 67s unsampled to 16.8s at stride 7 to 4.8s here. Going faster means sampling below ~500 quality sessions, at which point it can pass while the defect is live in a cohort it happened to miss."
-  },
-  {
-   "file": "lib/plan/useCaseEnvelope.test.ts",
-   "title": "42.2 km \u2014 a weighted majority of entrants get a plan we would hand over",
-   "ms": 1800,
-   "reason": "USE-CASE-ENVELOPE-01, marathon arm. The only harness answering \"are 90-95% of use cases fit for purpose?\" -- the other five are UNIFORM corpora and count a 10 km/week marathoner as heavily as a 30 km/week one (32% refusal uniform vs 18.3% weighted, measured the same day). \u26a0\ufe0f THE MARATHON ARM IS THE SLOWEST BY DESIGN: its envelope is 9,216 cases against 4,608 for every other distance (six volume bands and four runway bands, because the entry population is genuinely wider), and marathon plans are the longest to generate. It is also the FOUNDER'S PRIORITY DISTANCE, so under-sampling it to buy a second of budget is the wrong trade. Already at a coprime stride of 29, validated against the full population (75.5% vs 75.4%). The five other distance arms each run well under the reporting threshold. A previous marathon-only case in this same file was DELETED rather than baselined alongside it, because the per-distance suite measures the same population. (Title no longer embeds the floor: it did, and raising a floor renamed the test and orphaned this entry.)"
-  }
- ]
+  "measuredAt": "2026-09-19",
+  "testTimeoutMs": 30000,
+  "tests": [
+    {
+      "file": "lib/plan/targetedGrid.test.ts",
+      "title": "every input generates or refuses by design \u2014 no hard failures",
+      "ms": 15267,
+      "reason": "\u26a0\ufe0f THE ONE TO WATCH \u2014 50.1% of the 30,000 ms budget and 39% of the whole suite's test time on its own. It generates thousands of plans across an exhaustive grid, which is the point: a sampled version could not make the claim in its title. It is the test that caused CI-TIMEOUT-01 (red on the old 5,000 ms default, at +1.4% on the day, having been over the line for weeks). ALLOWED, because exhaustiveness is doctrine here and the grid is the asset \u2014 but it has roughly one doubling of headroom left before the hard wall, and widening the grid again is a decision to make deliberately, not a diff to wave through."
+    },
+    {
+      "file": "lib/plan/emittedCopyGlyphs.test.ts",
+      "title": "no runner-facing string contains a section symbol (\u00a7)",
+      "ms": 3224,
+      "reason": "Generates a plan corpus and walks every emitted string. The cost is the corpus, not the scan; sharing one corpus across this file's cases is the obvious saving if it ever needs one."
+    },
+    {
+      "file": "lib/plan/emittedCopyGlyphs.test.ts",
+      "title": "the em-dash debt does not grow while BRAND-EMDASH-01 is open",
+      "ms": 2568,
+      "reason": "Same corpus as the case above, generated a second time. Genuinely reducible \u2014 it is here as a baselined number rather than a fix because BRAND-EMDASH-01 closing removes the case entirely."
+    },
+    {
+      "file": "lib/plan/noteDurationFormat.test.ts",
+      "title": "generated notes read in hours past the hour, and still exist",
+      "ms": 1284,
+      "reason": "TODO \u2014 state why this test is allowed to be slow."
+    },
+    {
+      "file": "lib/plan/qualityAeroFallback.test.ts",
+      "title": "NO quality session anywhere in the corpus is an aerobic row",
+      "ms": 4802,
+      "reason": "QUALITY-AERO-FALLBACK-01, 2026-09-19. A CORPUS assertion: a quality slot must never be filled by an aerobic row. The traced single case is asserted separately and is fast; this one exists because the fallback is reachable from ANY thin pool, so one plan cannot make the claim in its title. Already SAMPLED with a coprime stride of 31 (a prefix would over-sample whichever axis the grid varies slowest \u2014 the bias the liveness work hit three times), which took it from 67s unsampled to 16.8s at stride 7 to 4.8s here. Going faster means sampling below ~500 quality sessions, at which point it can pass while the defect is live in a cohort it happened to miss."
+    },
+    {
+      "file": "lib/plan/useCaseEnvelope.test.ts",
+      "title": "42.2 km \u2014 a weighted majority of entrants get a plan we would hand over",
+      "ms": 1800,
+      "reason": "USE-CASE-ENVELOPE-01, marathon arm. The only harness answering \"are 90-95% of use cases fit for purpose?\" -- the other five are UNIFORM corpora and count a 10 km/week marathoner as heavily as a 30 km/week one (32% refusal uniform vs 18.3% weighted, measured the same day). \u26a0\ufe0f THE MARATHON ARM IS THE SLOWEST BY DESIGN: its envelope is 9,216 cases against 4,608 for every other distance (six volume bands and four runway bands, because the entry population is genuinely wider), and marathon plans are the longest to generate. It is also the FOUNDER'S PRIORITY DISTANCE, so under-sampling it to buy a second of budget is the wrong trade. Already at a coprime stride of 29, validated against the full population (75.5% vs 75.4%). The five other distance arms each run well under the reporting threshold. A previous marathon-only case in this same file was DELETED rather than baselined alongside it, because the per-distance suite measures the same population. (Title no longer embeds the floor: it did, and raising a floor renamed the test and orphaned this entry.)"
+    },
+    {
+      "file": "lib/vercelBuildFilter.test.ts",
+      "title": "passes its own falsification suite in both directions",
+      "ms": 2697,
+      "reason": "Spawns git roughly thirty times: it builds a throwaway repository in a temp dir and makes a real commit per case. The cost IS the test. \u26a0\ufe0f It used to be near-instant, because it pinned SHAs from this repo's own history \u2014 and that version FAILED IN CI, where actions/checkout@v4 defaults to fetch-depth 1 and none of those commits exist. Worse than the three red cases: FOUR of its six \"passes\" were hollow, reading ok only because the base ref was unreachable so the filter fell through to BUILD, which was what they expected anyway. A synthetic repo cannot be shallow, cannot age out, and cannot be rewritten under the test. Paying 2.7s for that is the right trade. If it ever needs to be cheaper, the git calls can be batched with a single fast-import rather than dropping cases."
+    }
+  ]
 }

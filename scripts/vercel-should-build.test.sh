@@ -1,75 +1,108 @@
 #!/usr/bin/env bash
-# Falsification for scripts/vercel-should-build.sh — both directions, against
-# REAL commits from this repo's history, not synthetic fixtures.
+# Falsification for scripts/vercel-should-build.sh — both directions.
 #
 # A build filter that only ever says BUILD is indistinguishable from no filter
 # and saves nothing. A build filter that wrongly says SKIP ships nothing and
 # LOOKS EXACTLY LIKE A SUCCESSFUL DEPLOY. Both failures are silent, so both
 # directions are asserted here.
+#
+# ⚠️ EVERY CASE RUNS AGAINST A SYNTHETIC REPO BUILT IN A TEMP DIR, and the
+# reason is a real CI failure, not tidiness.
+#
+# The first version pinned real SHAs from this repo's history. That fixed the
+# problem it was written for (a `--since=midnight` search would have aged out
+# of reaching anything) and introduced a worse one: `actions/checkout@v4`
+# defaults to `fetch-depth: 1`, so CI has ONE commit and none of those SHAs
+# exist. Reproduced locally with `git clone --depth 1`:
+#
+#     6 passed, 3 failed
+#
+# and the three failures were the least of it. FOUR of the six "passes" were
+# VACUOUS — they read `ok` because the base ref was unreachable so the filter
+# fell through to BUILD, which is what those cases expected anyway. They never
+# examined a diff. A suite that is 3 red and 4 hollow is worse than one that is
+# simply red, because the green half invites you to trust it.
+#
+# A synthetic repo cannot age out, cannot be shallow, and cannot depend on this
+# project's history being rewritten. It also lets the cases be exhaustive
+# rather than "whatever happened to be in the log".
 
 set -uo pipefail
-cd "$(dirname "$0")/.."
-F=scripts/vercel-should-build.sh
-pass=0; fail=0
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+F="$ROOT/scripts/vercel-should-build.sh"
+pass=0; fail=0; ran=0
 
-# want: skip | build
-check() {
-  local want=$1 base=$2 head=$3 env=${4:-production} label=$5
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+cd "$TMP"
+git init -q .
+git config user.email t@t.t; git config user.name t
+git config commit.gpgsign false
+printf '{\n  "scripts": { "build": "next build" }\n}\n' > package.json
+mkdir -p docs .claude scripts app lib
+echo a > docs/a.md; echo a > .claude/a.json; echo a > scripts/a.sh
+echo a > README.md; echo a > app/a.tsx; echo a > lib/a.ts
+git add -A && git commit -qm base
+BASE_COMMIT=$(git rev-parse HEAD)
+
+# Each case commits a change on top of BASE_COMMIT, then resets back, so the
+# cases are independent of each other's order.
+commit_and_check() { # want, label, then files to touch
+  local want=$1 label=$2; shift 2
+  git reset -q --hard "$BASE_COMMIT"
+  for f in "$@"; do echo "$RANDOM" >> "$f"; done
+  git add -A && git commit -qm "$label"
+  local out rc
+  out=$(VERCEL_ENV=production BUILD_FILTER_BASE="$BASE_COMMIT" BUILD_FILTER_HEAD=HEAD bash "$F" 2>&1); rc=$?
+  local got=build; [ $rc -eq 0 ] && got=skip
+  ran=$((ran+1))
+  if [ "$got" = "$want" ]; then pass=$((pass+1)); printf '  ok    %-46s %s\n' "$label" "$out"
+  else fail=$((fail+1)); printf '  FAIL  %-46s want=%s got=%s  %s\n' "$label" "$want" "$got" "$out"; fi
+}
+
+raw_check() { # want, label, env, base, head
+  local want=$1 label=$2 env=$3 base=$4 head=$5
   local out rc
   out=$(VERCEL_ENV="$env" BUILD_FILTER_BASE="$base" BUILD_FILTER_HEAD="$head" bash "$F" 2>&1); rc=$?
   local got=build; [ $rc -eq 0 ] && got=skip
-  if [ "$got" = "$want" ]; then
-    pass=$((pass+1)); printf '  ok    %-52s %s\n' "$label" "$out"
-  else
-    fail=$((fail+1)); printf '  FAIL  %-52s want=%s got=%s  %s\n' "$label" "$want" "$got" "$out"
-  fi
+  ran=$((ran+1))
+  if [ "$got" = "$want" ]; then pass=$((pass+1)); printf '  ok    %-46s %s\n' "$label" "$out"
+  else fail=$((fail+1)); printf '  FAIL  %-46s want=%s got=%s  %s\n' "$label" "$want" "$got" "$out"; fi
 }
 
 echo "vercel-should-build:"
-# A preview is a person waiting to look at something. Never skip one.
-check build c4479db~1 c4479db preview "preview deploy of a docs-only commit"
-# Docs-only, both shapes this repo actually produces.
-check skip  c4479db~1 c4479db production "docs: state blocks name (docs/ only)"
-# Code. Must build.
-check build b250057~1 b250057 production "feat(W-01b): nav change (components/)"
-# Unreachable refs fall through to BUILD, never to SKIP.
-check build 0000000000000000000000000000000000000000 HEAD production "unreachable base"
-check build HEAD       0000000000000000000000000000000000000000 production "unreachable head"
-# A commit touching docs AND code must BUILD: the code half is deployable, and
-# an "it is mostly docs" filter that skipped these would be the dangerous one.
-# b250057 changed components/ AND docs/ in one commit.
-check build b250057~1 b250057 production "docs+code in one commit builds"
 
-# scripts/-only must SKIP. 4010006 and ac23deb each spent a deployment on an
-# audit-script edit that `next build` never reads.
-check skip  4010006~1 4010006 production "scripts/-only commit skips"
-check skip  ac23deb~1 ac23deb production "scripts/-only commit skips (2)"
+# ── SKIP: nothing a visitor can see ───────────────────────────────────────
+commit_and_check skip  "docs/ only"                       docs/a.md
+commit_and_check skip  ".claude/ only"                    .claude/a.json
+commit_and_check skip  "scripts/ only"                    scripts/a.sh
+commit_and_check skip  "README only"                      README.md
+commit_and_check skip  "docs + .claude + scripts + README" docs/a.md .claude/a.json scripts/a.sh README.md
 
-# ...unless the build command starts reading scripts/, which is checked live
-# against package.json rather than assumed.
-run_with_pkg() {
-  local want=$1 tmp; tmp=$(mktemp)
-  cp package.json "$tmp"
-  python3 - "$2" <<'PY2'
-import json, sys
-d = json.load(open('package.json'))
-d['scripts']['prebuild'] = sys.argv[1]
-json.dump(d, open('package.json', 'w'), indent=2)
-PY2
-  local out rc
-  out=$(VERCEL_ENV=production BUILD_FILTER_BASE=4010006~1 BUILD_FILTER_HEAD=4010006 bash "$F" 2>&1); rc=$?
-  cp "$tmp" package.json; rm -f "$tmp"
-  local got=build; [ $rc -eq 0 ] && got=skip
-  if [ "$got" = "$want" ]; then pass=$((pass+1)); printf '  ok    %-52s %s\n' "build reads scripts/ -> exclusion lifts" "$out"
-  else fail=$((fail+1)); printf '  FAIL  %-52s want=%s got=%s %s\n' "build reads scripts/ -> exclusion lifts" "$want" "$got" "$out"; fi
-}
-run_with_pkg build "node scripts/gen.mjs"
+# ── BUILD: anything the site is made of ───────────────────────────────────
+commit_and_check build "app/ changed"                     app/a.tsx
+commit_and_check build "lib/ changed"                     lib/a.ts
+commit_and_check build "a NEW top-level file"             package.json
+# The dangerous one: mostly-docs with a single deployable file hidden in it.
+commit_and_check build "docs + one app/ file"             docs/a.md app/a.tsx
 
-# ⚠️ EVERY REF HERE IS A PINNED SHA, DELIBERATELY. The first cut found the
-# docs+code case with `git log --since=midnight`, which would have quietly
-# stopped testing anything from tomorrow onward. That is precisely
-# FIXTURE-CLOCK-SWEEP-01, found in this repo the same morning: a check that
-# ages out of reaching its subject still passes, and reads as coverage.
+# ── The guard: scripts/ stops being excluded if the build reads it ────────
+git reset -q --hard "$BASE_COMMIT"
+printf '{\n  "scripts": { "prebuild": "node scripts/gen.mjs", "build": "next build" }\n}\n' > package.json
+echo x >> scripts/a.sh
+git add -A && git commit -qm "build reads scripts/"
+raw_check build "scripts/ only, but the build READS scripts/" production "$BASE_COMMIT" HEAD
+git reset -q --hard "$BASE_COMMIT"
 
-echo "  $pass passed, $fail failed"
-[ $fail -eq 0 ]
+# ── Fail-safe: every uncertain case BUILDS, never skips ───────────────────
+raw_check build "a preview deploy is never skipped"  preview    "$BASE_COMMIT" HEAD
+raw_check build "VERCEL_ENV unset"                   ""         "$BASE_COMMIT" HEAD
+raw_check build "unreachable base"                   production 0000000000000000000000000000000000000000 HEAD
+raw_check build "unreachable head"                   production "$BASE_COMMIT" 0000000000000000000000000000000000000000
+
+# ⚠️ A suite that silently stops reaching its cases reads as a clean run. The
+# CI failure this file exists for had FOUR hollow passes; this is the guard
+# against that recurring.
+echo "  $pass passed, $fail failed ($ran cases ran)"
+[ "$ran" -eq 14 ] || { echo "  FAIL: expected 14 cases to run, got $ran"; exit 1; }
+[ "$fail" -eq 0 ]
