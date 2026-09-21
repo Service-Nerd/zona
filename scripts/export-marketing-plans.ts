@@ -21,12 +21,36 @@ import { writeFileSync } from 'node:fs'
 
 const DAY = ['mon','tue','wed','thu','fri','sat','sun'] as const
 const DAY_LABEL: Record<string,string> = { mon:'Mon',tue:'Tue',wed:'Wed',thu:'Thu',fri:'Fri',sat:'Sat',sun:'Sun' }
+import { execSync } from 'node:child_process'
+
+/** Provenance. An export is a SNAPSHOT of an engine that changes, and this file
+ *  leaves the repo: it becomes slide copy, a deck, a PDF. Without a commit on
+ *  it there is no way to tell a current export from one taken before a fix.
+ *
+ *  ⚠️ This is not hypothetical. The first export shipped on 2026-09-21 was
+ *  generated hours before MKT-PLAN-SHAPE-01 landed, when seven of the nine
+ *  plans still peaked in their BASE phase. It was handed over as source
+ *  material for a carousel and was wrong by lunchtime, with nothing on its face
+ *  to say so. */
+const stamp = (() => {
+  try {
+    const sha = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim()
+    const dirty = execSync('git status --porcelain lib/plan lib/marketing', { encoding: 'utf8' }).trim()
+    return `${sha}${dirty ? ' + UNCOMMITTED engine changes' : ''}`
+  } catch { return 'unknown commit' }
+})()
+
 const md: string[] = [], json: any[] = []
 
 md.push('# Zonna free plans — full content export',
   '',
-  `Generated ${new Date().toISOString().slice(0,10)} from the live engine, the same call the pages make.`,
-  'Content is identical on every publishing date (checked across 53 anchors), so this matches the site.',
+  `Generated ${new Date().toISOString().slice(0,16).replace('T', ' ')} from the live engine, at commit \`${stamp}\`.`,
+  'The same call the pages make, so this matches the site AS OF THAT COMMIT.',
+  '',
+  '> ⚠️ **This is a snapshot, not a source of truth.** The plans are generated, not stored, so an',
+  '> export goes stale the moment `lib/plan/*` changes. Content IS stable across publishing dates',
+  '> (checked over 53 anchors), so the date is not the risk: the COMMIT is. Re-run `npm run export:plans`',
+  '> and check the commit above before using this for anything that leaves the building.',
   '')
 
 for (const p of MARKETING_PLANS) {
