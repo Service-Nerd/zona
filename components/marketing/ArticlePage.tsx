@@ -24,7 +24,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
 
 /** Inline text links only. No button or CTA styling in this content type. */
-const LINK_STYLE = { color: 'var(--moss)', fontWeight: 600, textDecoration: 'underline' } as const
+const LINK_STYLE = { color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'underline' } as const
 
 const BODY_STYLE = {
   fontSize: 'var(--fs-lead-lg)',

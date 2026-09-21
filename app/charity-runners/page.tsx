@@ -84,7 +84,7 @@ const DISTANCES = [
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
+      fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
       textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
     }}>{children}</div>
   )
@@ -195,7 +195,7 @@ export default function CharityRunnersPage() {
               changes, change this with it. */}
           <a href="#code" style={{
             display: 'inline-flex', alignItems: 'center', gap: '10px',
-            background: 'var(--moss)', color: 'var(--card)',
+            background: 'var(--moss-strong)', color: 'var(--card)',
             // lineHeight 18px, not 1: the badge's content box is set by its
             // 18px Apple icon, so matching font size alone still left this 4px
             // shorter (34 vs 38). Matching the CONTENT height is what makes the
@@ -274,7 +274,7 @@ export default function CharityRunnersPage() {
             }}>
               <span style={{
                 flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%',
-                background: 'var(--moss)', color: 'var(--card)',
+                background: 'var(--moss-strong)', color: 'var(--card)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 'var(--fs-sm)', fontWeight: 800,
               }}>{i + 1}</span>
@@ -326,7 +326,7 @@ export default function CharityRunnersPage() {
               <div key={title} style={{ display: 'flex', gap: '16px', padding: '14px 0' }}>
                 <span aria-hidden style={{
                   width: '3px', alignSelf: 'stretch', borderRadius: '2px',
-                  background: 'var(--moss)', flexShrink: 0,
+                  background: 'var(--moss-strong)', flexShrink: 0,
                 }} />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 'var(--fs-lead)', fontWeight: 700, color: 'var(--ink)', marginBottom: '3px' }}>{title}</div>

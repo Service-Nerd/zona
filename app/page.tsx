@@ -438,7 +438,7 @@ export default async function Home() {
             <AnswersCard />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
               <div style={{
-                fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--moss)',
+                fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--moss-strong)',
                 textTransform: 'uppercase', letterSpacing: '0.1em',
               }}>
                 → Generates
@@ -521,7 +521,7 @@ export default async function Home() {
                   aria-hidden
                   style={{
                     fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700,
-                    color: 'var(--moss)', lineHeight: '24px', flexShrink: 0,
+                    color: 'var(--moss-strong)', lineHeight: '24px', flexShrink: 0,
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
@@ -620,7 +620,7 @@ export default async function Home() {
                 display: 'flex', gap: '12px', alignItems: 'baseline',
                 fontSize: 'var(--fs-lead-lg)', lineHeight: 1.45, color: 'var(--ink)',
               }}>
-                <span aria-hidden style={{ color: 'var(--moss)', fontWeight: 700, flexShrink: 0 }}>·</span>
+                <span aria-hidden style={{ color: 'var(--moss-strong)', fontWeight: 700, flexShrink: 0 }}>·</span>
                 <span>{line}</span>
               </li>
             ))}
@@ -730,7 +730,7 @@ export default async function Home() {
                   by design rather than coincidence (ui-patterns.md §1). */}
               <span aria-hidden style={{
                 width: 3, alignSelf: 'stretch', minHeight: 30, borderRadius: 2,
-                background: 'var(--moss)', flexShrink: 0,
+                background: 'var(--moss-strong)', flexShrink: 0,
               }} />
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--ink)' }}>{f.name}</div>
@@ -741,7 +741,7 @@ export default async function Home() {
         </ul>
 
         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'baseline' }}>
-          <Link href="/plans" style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
+          <Link href="/plans" style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--moss-strong)', textDecoration: 'none' }}>
             Read the free plans &rarr;
           </Link>
           <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', margin: 0 }}>
@@ -839,7 +839,7 @@ export default async function Home() {
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
+      fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
       textTransform: 'uppercase', letterSpacing: '0.08em',
       marginBottom: '12px',
     }}>
@@ -874,7 +874,7 @@ function SectionTitle({ children, accent, sub }: { children: React.ReactNode; ac
         {accent && (
           <>
             <br />
-            <span style={{ color: 'var(--moss)' }}>{accent}</span>
+            <span style={{ color: 'var(--moss-strong)' }}>{accent}</span>
           </>
         )}
       </h2>

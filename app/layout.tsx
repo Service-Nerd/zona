@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import './styles/polish-tokens.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
@@ -7,6 +8,32 @@ import { BRAND } from '@/lib/brand'
 import { ogImage, OG_LOCALE } from '@/lib/marketing/siteMeta'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
+
+// PERF-FONT-01 (2026-09-21) — Inter is SELF-HOSTED, and it was loaded twice.
+//
+// It came in through an `@import` at the top of globals.css AND a <link> in
+// this head. The @import is the worse of the two and was the expensive one:
+// a stylesheet cannot request another stylesheet until it has itself been
+// fetched and parsed, so the browser did globals.css -> the Google CSS ->
+// the font files, three round trips deep, all render-blocking. Lighthouse
+// named it twice (render-blocking-resources, network-dependency-tree).
+//
+// `next/font` downloads the files at BUILD time and serves them same-origin,
+// which removes both external hosts and the whole chain. It also emits a
+// `size-adjust` fallback matched to Inter's metrics, which is what actually
+// fixes the layout shift: measured CLS was 0.161 on the homepage and 0.110 on
+// a guide, and in both cases the shifted element was simply the first thing
+// BELOW the text that reflowed when the real font arrived.
+//
+// Weights are the ones the type scale uses. Listing them explicitly keeps the
+// download to what is needed; `variable` hands the family to globals.css so
+// --font-ui and --font-brand stay the only names any component knows.
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  display: 'swap',
+  variable: '--font-inter',
+})
 
 // GTM-SITE-01 — viewport moved out of `metadata` into its own export, which is
 // where Next 14 wants it. It warned on EVERY route, on every build ("Unsupported
@@ -87,7 +114,7 @@ const polishMode = process.env.NEXT_PUBLIC_POLISH_MODE === 'true'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-polish={polishMode ? 'on' : 'off'}>
+    <html lang="en" className={inter.variable} data-polish={polishMode ? 'on' : 'off'}>
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
@@ -105,12 +132,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             so it reuses the warm-slate bg literal single-sourced in lib/brand.ts
             (same non-CSS-surface exception as the OG image). Value === --bg. */}
         <meta name="theme-color" content={BRAND.og.bg} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body><ErrorBoundary>{children}</ErrorBoundary><CapacitorBoot /></body>
     </html>

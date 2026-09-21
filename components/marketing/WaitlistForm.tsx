@@ -108,7 +108,7 @@ export function WaitlistForm() {
           fontWeight: 600,
           fontFamily: 'var(--font-ui)',
           color: 'white',
-          background: 'var(--moss)',
+          background: 'var(--moss-strong)',
           border: 'none',
           borderRadius: 'var(--radius-md, 8px)',
           cursor: state === 'submitting' ? 'default' : 'pointer',
@@ -124,7 +124,7 @@ export function WaitlistForm() {
           style={{
             flexBasis: '100%',
             fontSize: 'var(--fs-sm)',
-            color: 'var(--warn)',
+            color: 'var(--warn-strong)',
             textAlign: 'center',
             marginTop: '2px',
           }}

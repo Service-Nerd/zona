@@ -92,7 +92,7 @@ export default function AboutPage() {
       {/* ── The story ───────────────────────────────────────────────────── */}
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
         <div style={{
-          fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
+          fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
           textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px',
         }}>
           Why {BRAND.name} exists
@@ -127,7 +127,7 @@ export default function AboutPage() {
         <div style={{ position: 'relative', padding: '6px 0 6px 20px', margin: '28px 0' }}>
           <span aria-hidden style={{
             position: 'absolute', left: 0, top: '4px', bottom: '4px',
-            width: '3px', borderRadius: '2px', background: 'var(--moss)',
+            width: '3px', borderRadius: '2px', background: 'var(--moss-strong)',
           }} />
           <p style={{
             fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h4)', fontWeight: 700,
@@ -153,7 +153,7 @@ export default function AboutPage() {
       }}>
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
           <div style={{
-            fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
+            fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
             textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px',
           }}>
             Who you are dealing with
@@ -189,7 +189,7 @@ export default function AboutPage() {
           href="mailto:russ@zonna.run"
           style={{
             display: 'inline-flex', alignItems: 'center', minHeight: '44px',
-            fontSize: 'var(--fs-body)', color: 'var(--moss)', fontWeight: 600,
+            fontSize: 'var(--fs-body)', color: 'var(--moss-strong)', fontWeight: 600,
             textDecoration: 'underline', textUnderlineOffset: '3px',
           }}
         >
@@ -198,7 +198,7 @@ export default function AboutPage() {
 
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '20px 0 0' }}>
           Running on a charity place?{' '}
-          <Link href="/charity-runners" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/charity-runners" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
             Start here &rarr;
           </Link>
         </p>

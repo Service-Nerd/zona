@@ -61,7 +61,7 @@ function MainSet({ s }: { s: Session }) {
               {b.repeat > 1 && (
                 <span style={{
                   flexShrink: 0, fontSize: 'var(--fs-caption)', fontWeight: 800, paddingTop: 1,
-                  color: 'var(--s-quality)', fontVariantNumeric: 'tabular-nums',
+                  color: 'var(--warn-strong)', fontVariantNumeric: 'tabular-nums',
                 }}>{b.repeat}&times;</span>
               )}
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -178,7 +178,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
 
       {/* ── Hero: the diagnosis ─────────────────────────────────────────── */}
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '24px 24px 8px' }}>
-        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: '0 0 16px' }}>
+        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 16px' }}>
           You&rsquo;re trying hard. That&rsquo;s the problem.
         </p>
         <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 18px' }}>
@@ -228,7 +228,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           return (
             <div key={gi} style={{ marginBottom: 28 }}>
               <div style={{ marginBottom: 12 }}>
-                <h3 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-caption)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: 0 }}>{meta.label}</h3>
+                <h3 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-caption)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: 0 }}>{meta.label}</h3>
                 {meta.note && <p style={{ fontSize: 'var(--fs-body)', lineHeight: 1.5, color: 'var(--ink-2)', margin: '4px 0 0' }}>{meta.note}</p>}
               </div>
 
@@ -243,8 +243,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
                     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
                       <div>
                         <span style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead)', fontWeight: 800, color: 'var(--ink)' }}>Week {w.n}</span>
-                        {isDeload && <span style={{ marginLeft: 8, fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--s-recov)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Recovery</span>}
-                        {isRaceWeek && <span style={{ marginLeft: 8, fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--s-race)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Race week</span>}
+                        {isDeload && <span style={{ marginLeft: 8, fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--s-recov-strong)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Recovery</span>}
+                        {isRaceWeek && <span style={{ marginLeft: 8, fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--s-race-strong)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Race week</span>}
                         <span style={{ display: 'block', fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 2 }}>{w.label}</span>
                       </div>
                       {/* D1 — race week shows what the runner TRAINS and what they
@@ -317,7 +317,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           </p>
           <AppStoreBadge />
           <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', margin: '16px 0 0' }}>
-            Or <Link href="/pricing" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>see what free covers first &rarr;</Link>
+            Or <Link href="/pricing" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>see what free covers first &rarr;</Link>
           </p>
         </div>
       </section>
@@ -344,7 +344,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
               <Link key={r.slug} href={`/plans/${r.slug}`} style={{ textDecoration: 'none' }}>
                 <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 12, padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--ink)' }}>{planCardTitle(r)}</span>
-                  <span style={{ fontSize: 'var(--fs-body-lg)', color: 'var(--moss)' }} aria-hidden>→</span>
+                  <span style={{ fontSize: 'var(--fs-body-lg)', color: 'var(--moss-strong)' }} aria-hidden>→</span>
                 </div>
               </Link>
             ))}

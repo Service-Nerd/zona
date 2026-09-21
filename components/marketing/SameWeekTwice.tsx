@@ -107,7 +107,7 @@ export function SameWeekTwice() {
       <p style={{
         fontSize: 'var(--fs-body)', lineHeight: 1.5, margin: 0, paddingTop: 12,
         borderTop: '1px solid var(--line)',
-        color: tone === 'grey' ? 'var(--warn)' : 'var(--moss)', fontWeight: 600,
+        color: tone === 'grey' ? 'var(--warn-strong)' : 'var(--moss-strong)', fontWeight: 600,
       }}>
         {verdict}
       </p>
@@ -118,7 +118,7 @@ export function SameWeekTwice() {
     <section style={{ padding: 'var(--sect-y) 24px' }}>
       <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
         <div style={{
-          fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
+          fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
           textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
         }}>
           The same week, twice
@@ -128,11 +128,11 @@ export function SameWeekTwice() {
           fontWeight: 600, lineHeight: 1.2, color: 'var(--ink)', margin: 0, maxWidth: '720px',
         }}>
           One week, run two ways.<br />
-          <span style={{ color: 'var(--moss)' }}>The app can tell.</span>
+          <span style={{ color: 'var(--moss-strong)' }}>The app can tell.</span>
         </h2>
         <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: '620px', margin: '14px 0 0' }}>
           These four sessions are week {SOURCE_WEEK} of{' '}
-          <Link href={`/plans/${SOURCE_SLUG}`} style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href={`/plans/${SOURCE_SLUG}`} style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
             my free 12-week half marathon plan
           </Link>
           , exactly as the engine builds them. Same prescription in both columns. The only
@@ -186,7 +186,7 @@ export function SameWeekTwice() {
             drift above its ceiling is the exact reader with this question. */}
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '20px 0 0', maxWidth: '620px' }}>
           Wondering whether your easy runs are supposed to feel this slow?{' '}
-          <Link href="/guides/should-easy-runs-feel-this-slow" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/guides/should-easy-runs-feel-this-slow" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
             That is the whole question, and it has an answer &rarr;
           </Link>
         </p>

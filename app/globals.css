@@ -2,7 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* PERF-FONT-01 — the Google Fonts @import is GONE. Inter is self-hosted by
+   next/font in app/layout.tsx: same-origin, no third-party round trip, and a
+   size-adjusted fallback so the page does not reflow when it arrives. */
 
 /* ══════════════════════════════════════════════════════════════════════
    Zonna — Warm Slate Design Token System (ADR-007)
@@ -20,7 +22,16 @@
   /* ── Ink ─────────────────────────────────────────────────────────── */
   --ink:             #1A1A1A;   /* primary text — near-black, not pure */
   --ink-2:           #3D3A36;   /* secondary text — warm dark grey */
-  --mute:            #8A857D;   /* muted / supporting text */
+  /* A11Y-CONTRAST-01 (2026-09-21) — #8A857D scored 3.22:1 on --bg and
+     3.03:1 on --bg-soft. WCAG 2.1 AA wants 4.5:1 for normal text and this
+     is a MUTED TEXT token: there is no use of it that is not text, so
+     there is nothing to trade off. Lighthouse flagged it on all three
+     pages audited. Darkened along its own hue and saturation, so it is the
+     same warm grey: 4.80 on --bg, 4.50 on --bg-soft, 5.45 on --card.
+     ⚠️ Used 484 times across the app as well as the site. That is the
+     point of a token, and an accessibility floor is not a per-screen
+     decision. */
+  --mute:            #6D6963;   /* muted / supporting text */
   --mute-2:          #B5B0A7;   /* placeholder / disabled / dimmed */
 
   /* ── Lines ───────────────────────────────────────────────────────── */
@@ -34,6 +45,33 @@
 
   /* ── Semantic: warning ───────────────────────────────────────────── */
   --warn:            #B8853A;   /* coaching notes, warnings — warm amber */
+
+  /* A11Y-CONTRAST-01 — moss and amber AT AA, for anywhere they carry TEXT.
+     --moss #6B8E6B scores 3.24:1 on --bg and white-on-moss is 3.68:1, so the
+     primary "Get the app" button failed AA at 13.5px bold. --warn is worse
+     at 2.86:1.
+
+     ⚠️ TWO TOKENS RATHER THAN REPAINTING THE ACCENT, DELIBERATELY. --moss is
+     also a fill, a border, a dot and an active state, where 3:1 is the
+     correct bar and the current value passes it. Darkening --moss itself
+     would restate ADR-007's palette across the native app as well, on a day
+     with no deploys and no device to check it on. These carry the cases AA
+     actually governs: moss or amber as TEXT on a light ground, and moss as a
+     FILL behind white text.
+
+     Both are the same hue and saturation, scaled down in lightness until
+     they clear 4.5:1 against --bg-soft, the darkest ground either sits on.
+     moss-strong: 4.82 on --bg, 4.52 on --bg-soft, 5.48 with white on it. */
+  --moss-strong:     #557055;
+  --warn-strong:     #88622B;
+
+  /* A11Y-CONTRAST-01 — two session colours also appear as TEXT, as the small
+     uppercase week badges on a plan page ("RACE WEEK", "DELOAD"). At 11px
+     they need 4.5:1 and scored 3.78 and 3.42. The accent values themselves
+     are untouched: as a left rail or a dot they are graphics, where 3:1 is
+     the bar and they pass it. */
+  --s-race-strong:   #A15522;
+  --s-recov-strong:  #46725D;
   --warn-bg:         #F5EBD4;   /* warning background */
 
   /* ── Semantic: danger ────────────────────────────────────────────── */
@@ -51,8 +89,8 @@
   --s-cross:         #3D8A88;   /* cross-train */
 
   /* ── Typography ──────────────────────────────────────────────────── */
-  --font-ui:         'Inter', sans-serif;
-  --font-brand:      'Inter', sans-serif;   /* Space Grotesk retired — see ADR-007 */
+  --font-ui:         var(--font-inter), 'Inter', sans-serif;
+  --font-brand:      var(--font-inter), 'Inter', sans-serif;   /* Space Grotesk retired — see ADR-007 */
 
   /* ── Type scale (SITE-TYPE-01, 2026-09-21) ───────────────────────────
      Measured before it was written: the marketing site had NO type scale at

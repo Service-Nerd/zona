@@ -53,7 +53,7 @@ export const metadata: Metadata = pageMetadata({
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss)',
+      fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
       textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
     }}>{children}</div>
   )
@@ -158,7 +158,7 @@ export default function PricingPage() {
             borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
             padding: '24px 22px',
           }}>
-            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--moss-strong)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
               Full access
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
@@ -209,7 +209,7 @@ export default function PricingPage() {
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
           Running on a charity place? Some charities cover the full app for their
           runners.{' '}
-          <Link href="/charity-runners" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/charity-runners" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
             How that works &rarr;
           </Link>
         </p>
@@ -231,7 +231,7 @@ export default function PricingPage() {
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
             <AppStoreBadge />
-            <Link href="/plans" style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--moss)', textDecoration: 'none' }}>
+            <Link href="/plans" style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--moss-strong)', textDecoration: 'none' }}>
               Or read a free plan first &rarr;
             </Link>
           </div>

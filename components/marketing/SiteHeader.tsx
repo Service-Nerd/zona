@@ -122,7 +122,7 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
                 style={{
                   fontSize: 'var(--fs-body)',
                   fontWeight: active ? 700 : 600,
-                  color: active ? 'var(--moss)' : 'var(--ink-2)',
+                  color: active ? 'var(--moss-strong)' : 'var(--ink-2)',
                   textDecoration: 'none',
                   whiteSpace: 'nowrap',
                 }}
@@ -139,7 +139,7 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
               fontSize: 'var(--fs-sm)',
               fontWeight: 700,
               color: 'var(--card)',
-              background: 'var(--moss)',
+              background: 'var(--moss-strong)',
               padding: '8px 14px',
               borderRadius: 999,
               textDecoration: 'none',

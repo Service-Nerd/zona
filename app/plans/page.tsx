@@ -40,7 +40,7 @@ export default function PlansHubPage() {
       <SiteHeader current="plans" />
 
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
-        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: '0 0 14px' }}>
+        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 14px' }}>
           Free training plans
         </p>
         <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 18px' }}>
@@ -60,7 +60,7 @@ export default function PlansHubPage() {
         if (items.length === 0) return null
         return (
           <section key={group.key} style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
-            <h2 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-caption)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: '0 0 12px' }}>{group.label}</h2>
+            <h2 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-caption)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 12px' }}>{group.label}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {items.map(p => (
                 <Link key={p.slug} href={`/plans/${p.slug}`} style={{ textDecoration: 'none' }}>
@@ -69,7 +69,7 @@ export default function PlansHubPage() {
                       <div style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)' }}>{planCardTitle(p)}</div>
                       <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 3, maxWidth: 520 }}>{p.whoFor}</div>
                     </div>
-                    <span style={{ fontSize: 'var(--fs-lead-lg)', color: 'var(--moss)', flexShrink: 0 }} aria-hidden>→</span>
+                    <span style={{ fontSize: 'var(--fs-lead-lg)', color: 'var(--moss-strong)', flexShrink: 0 }} aria-hidden>→</span>
                   </div>
                 </Link>
               ))}
@@ -83,7 +83,7 @@ export default function PlansHubPage() {
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
             Every plan here is the flat version. The app takes the same plan and adapts it:
             your real heart-rate zones, your week, your race, and moves the sessions when life
-            gets in the way. <a href={BRAND.appStore.url} style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>Start free in the app →</a>
+            gets in the way. <a href={BRAND.appStore.url} style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>Start free in the app →</a>
           </p>
         </div>
       </section>
@@ -96,7 +96,7 @@ export default function PlansHubPage() {
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
           Running on a charity place? The risk is not the distance, it is getting hurt
           before race day.{' '}
-          <Link href="/charity-runners" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/charity-runners" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
             Read this first &rarr;
           </Link>
         </p>
@@ -106,7 +106,7 @@ export default function PlansHubPage() {
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
           Weighing up apps rather than plans? The comparisons are honest about where {BRAND.name} is
           the wrong answer.{' '}
-          <Link href="/comparisons" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+          <Link href="/comparisons" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
             Compare the options &rarr;
           </Link>
         </p>

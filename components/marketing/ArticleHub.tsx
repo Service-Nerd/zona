@@ -64,7 +64,7 @@ export function ArticleHub({
       <SiteHeader current={section} />
 
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
-        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', margin: '0 0 14px' }}>
+        <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 14px' }}>
           {hub.eyebrow}
         </p>
         <h1 style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)', fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.02em', color: 'var(--ink)', margin: '0 0 18px' }}>
@@ -113,7 +113,7 @@ export function ArticleHub({
                         Updated <time dateTime={a.lastUpdatedISO}>{a.lastUpdated}</time>
                       </div>
                     </div>
-                    <span style={{ fontSize: 'var(--fs-lead-lg)', color: 'var(--moss)', flexShrink: 0 }} aria-hidden>→</span>
+                    <span style={{ fontSize: 'var(--fs-lead-lg)', color: 'var(--moss-strong)', flexShrink: 0 }} aria-hidden>→</span>
                   </div>
                 </Link>
                   ))}
@@ -133,7 +133,7 @@ export function ArticleHub({
                     Updated <time dateTime={a.lastUpdatedISO}>{a.lastUpdated}</time>
                   </div>
                 </div>
-                <span style={{ fontSize: 'var(--fs-lead-lg)', color: 'var(--moss)', flexShrink: 0 }} aria-hidden>→</span>
+                <span style={{ fontSize: 'var(--fs-lead-lg)', color: 'var(--moss-strong)', flexShrink: 0 }} aria-hidden>→</span>
               </div>
             </Link>
             ))}
@@ -145,11 +145,11 @@ export function ArticleHub({
         <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18 }}>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
             Every plan {BRAND.name} publishes is free to read before you pay anyone for anything.{' '}
-            <Link href="/plans" style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>See the plans &rarr;</Link>
+            <Link href="/plans" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>See the plans &rarr;</Link>
           </p>
           {siblingHub && (
             <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '10px 0 0', maxWidth: 620 }}>
-              <Link href={siblingHub.href} style={{ color: 'var(--moss)', fontWeight: 600, textDecoration: 'none' }}>
+              <Link href={siblingHub.href} style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>
                 {siblingHub.label} &rarr;
               </Link>
             </p>
