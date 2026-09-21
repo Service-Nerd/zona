@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/colors.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/typography.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/base.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/styles.css">
+<script src="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/_ds_bundle.js"></script>
+</helmet>
+<div style="position:relative;width:100%">
+<svg viewBox="0 30 600 190" style="width:100%;height:auto;display:block;overflow:visible" aria-hidden="true">
+<defs>
+<clipPath id="zt-above-ceiling"><rect x="0" y="0" width="600" height="120"></rect></clipPath>
+</defs>
+<g style="opacity:{{ keenOpacity }};transition:opacity 0.65s ease">
+<path d="M20,200 C55,186 85,150 115,138 C150,124 172,132 202,118 C232,104 252,86 277,76 C302,66 322,60 347,64 C372,68 392,84 412,98 C434,113 452,124 472,130 C505,140 538,148 580,156 L580,220 L20,220 Z" fill="#B8853A" fill-opacity="0.22" clip-path="url(#zt-above-ceiling)"></path>
+</g>
+<line x1="16" y1="120" x2="584" y2="120" stroke="{{ ceilingColor }}" stroke-width="{{ ceilingW }}" stroke-dasharray="{{ ceilingDash }}"></line>
+<g style="opacity:{{ keenOpacity }};transition:opacity 0.65s ease">
+<path d="M20,200 C55,186 85,150 115,138 C150,124 172,132 202,118 C232,104 252,86 277,76 C302,66 322,60 347,64 C372,68 392,84 412,98 C434,113 452,124 472,130 C505,140 538,148 580,156" fill="none" stroke="#3D3A36" stroke-width="{{ strokeW }}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1200" style="stroke-dashoffset:{{ dash }};transition:{{ drawTrans }}"></path>
+<circle cx="580" cy="156" r="{{ dotR }}" fill="#3D3A36" style="opacity:{{ dotOpacity }};transition:opacity 0.5s ease 0.7s"></circle>
+</g>
+<g style="opacity:{{ heldOpacity }};transition:opacity 0.65s ease">
+<path d="M20,206 C55,198 85,182 115,174 C150,166 172,172 202,164 C232,156 252,152 277,158 C302,164 322,160 347,163 C372,167 392,161 412,166 C434,170 452,164 472,168 C505,172 538,168 580,172" fill="none" stroke="#6B8E6B" stroke-width="{{ strokeW }}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1200" style="stroke-dashoffset:{{ dash }};transition:{{ drawTrans }}"></path>
+<circle cx="580" cy="172" r="{{ dotR }}" fill="#6B8E6B" style="opacity:{{ dotOpacity }};transition:opacity 0.5s ease 0.7s"></circle>
+</g>
+</svg>
+<sc-if value="{{ showLabel }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:0;top:33%;font-family:Inter,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Ceiling 145 bpm</div>
+</sc-if>
+<sc-if value="{{ showTicks }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;justify-content:space-between;margin-top:10px;font-family:Inter,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D;font-variant-numeric:tabular-nums">
+<span>0 km</span><span>4 km</span><span>8 km</span>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:520,&quot;height&quot;:200},&quot;phase&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:0,&quot;max&quot;:1},&quot;drawn&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;mini&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const phase = Number(this.props.phase ?? 0);
+    const drawn = this.props.drawn ?? true;
+    const mini = this.props.mini ?? false;
+    return {
+      keenOpacity: phase === 0 ? 1 : 0,
+      heldOpacity: phase === 0 ? 0 : 1,
+      dash: drawn ? 0 : 1200,
+      dotOpacity: drawn ? 1 : 0,
+      dotR: mini ? 9 : 5,
+      strokeW: mini ? 7 : 3,
+      ceilingW: mini ? 5 : 1.5,
+      ceilingColor: mini ? '#8A857D' : '#B5B0A7',
+      ceilingDash: mini ? '10 14' : '4 7',
+      showLabel: !mini,
+      showTicks: !mini && (this.props.ticks ?? false),
+      drawTrans: 'stroke-dashoffset 1.6s cubic-bezier(0.33,0,0.2,1)'
+    };
+  }
+}
+</script>
+</body>
+</html>

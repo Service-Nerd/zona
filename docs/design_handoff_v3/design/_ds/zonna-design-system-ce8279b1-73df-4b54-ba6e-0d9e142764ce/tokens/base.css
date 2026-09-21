@@ -1,0 +1,15 @@
+/* Base reset + document defaults (app/globals.css). */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);min-height:100dvh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+a{color:var(--moss);text-decoration:none}
+a:hover{color:#5A7C5A;text-decoration:underline}
+:focus-visible{outline:2px solid var(--moss);outline-offset:2px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:2px}
+.wheel-scroll{scrollbar-width:none;-ms-overflow-style:none}
+.wheel-scroll::-webkit-scrollbar{display:none}
+.label-uppercase{letter-spacing:.06em;text-transform:uppercase}
+.label-uppercase-wide{letter-spacing:.1em;text-transform:uppercase}
+.num-data{font-variant-numeric:tabular-nums}
+.divider-hairline{height:.5px;background:rgba(26,26,26,.06);margin:14px 0}

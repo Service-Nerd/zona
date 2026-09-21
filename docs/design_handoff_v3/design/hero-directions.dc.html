@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/colors.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/typography.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/radius.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/motion.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/base.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/styles.css">
+<script src="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/_ds_bundle.js"></script>
+<style>
+body{background:#F3F0EB;font-family:Inter,system-ui,sans-serif;margin:0}
+a{color:#5A7C5A}
+a:hover{color:#3D3A36}
+</style>
+</helmet>
+
+<section style="padding:56px;display:flex;flex-direction:column;gap:32px;background:#EDE9E1;width:max-content;min-width:100%;box-sizing:border-box">
+<div style="display:flex;flex-direction:column;gap:8px;max-width:760px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Turn 2 · Recommended</div>
+<div style="font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A">2a — Split editorial, with the verdict inside the card</div>
+<div style="font-size:14px;color:#3D3A36;line-height:1.55">My call: <a href="#1b">1b</a>'s structure. A homepage hero has to carry the positioning line, and 1c has no room for it — it's a product card, not a hero. So 1b keeps the words on the left and the evidence on the right, but the card now borrows the big number from <a href="#1c">1c</a> and the moss wash from <a href="#1a">1a</a>. The number is the thing a visitor remembers; the trace is the proof underneath it. Distance ticks added so it reads as a run, no bpm axis, no travelling dot — that's dashboard energy. The loop stays, on a 7-second beat.</div>
+</div>
+
+<div id="2a" style="display:flex;flex-direction:column;gap:24px;flex-shrink:0">
+<div style="background:#F3F0EB;border-radius:20px;padding:64px 56px;display:grid;grid-template-columns:minmax(0,0.85fr) minmax(0,1fr);gap:56px;align-items:center;width:1000px">
+<div style="display:flex;flex-direction:column;gap:22px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Slow down. You've got a day job.</div>
+<h1 style="margin:0;font-size:52px;line-height:1.04;font-weight:800;letter-spacing:-0.025em;color:#1A1A1A;text-wrap:pretty">You can't outrun your easy days.</h1>
+<p style="margin:0;font-size:16px;line-height:1.6;color:#3D3A36;max-width:380px">Zonna gives every easy run a heart-rate ceiling, then tells you in one sentence whether you held it.</p>
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+<button style="font-size:15px;font-weight:600;background:#5A7C5A;color:#FFFFFF;border:none;border-radius:999px;padding:15px 26px;cursor:pointer;display:inline-flex;gap:8px;align-items:center" style-hover="background:#4C6B4C">Start 14-day trial <span style="opacity:0.75">→</span></button>
+<span style="font-size:13px;color:#8A857D">£7.99 / month · cancel in two taps</span>
+</div>
+</div>
+<div style="background:#E7EDE4;border-radius:20px;padding:24px">
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 12px 32px rgba(26,26,26,0.05);padding:26px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Yesterday · 8 km easy</span>
+<span style="font-size:13px;color:#8A857D;font-variant-numeric:tabular-nums">Zone 2 · ceiling 145 bpm</span>
+</div>
+<div style="display:grid">
+<div style="grid-area:1/1;display:flex;align-items:baseline;gap:12px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<span style="font-size:72px;font-weight:800;letter-spacing:-0.04em;line-height:0.9;color:#B8853A;font-variant-numeric:tabular-nums">14</span>
+<span style="font-size:15px;color:#3D3A36">minutes above your ceiling</span>
+</div>
+<div style="grid-area:1/1;display:flex;align-items:baseline;gap:12px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<span style="font-size:72px;font-weight:800;letter-spacing:-0.04em;line-height:0.9;color:#6B8E6B;font-variant-numeric:tabular-nums">0</span>
+<span style="font-size:15px;color:#3D3A36">minutes above your ceiling</span>
+</div>
+</div>
+<dc-import name="HrTrace" phase="{{ phase }}" drawn="{{ drawn }}" ticks="{{ true }}" hint-size="100%,180px"></dc-import>
+<div style="height:1px;background:rgba(26,26,26,0.08)"></div>
+<div style="display:grid">
+<div style="grid-area:1/1;display:flex;gap:12px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#B8853A;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</span>
+<span style="font-size:15px;line-height:1.55;color:#3D2600">Bit keen. 14 minutes above your ceiling. Ease it back Thursday.</span>
+</div>
+</div>
+<div style="grid-area:1/1;display:flex;gap:12px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#6B8E6B;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#6B8E6B">Kit · your coach</span>
+<span style="font-size:15px;line-height:1.55;color:#3D3A36">Held Zone 2 the whole way. That's the win.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="width:390px;background:#F3F0EB;border-radius:20px;padding:28px 20px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Slow down. You've got a day job.</div>
+<h2 style="margin:0;font-size:32px;line-height:1.08;font-weight:800;letter-spacing:-0.025em;color:#1A1A1A;text-wrap:pretty">You can't outrun your easy days.</h2>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#3D3A36">Zonna gives every easy run a heart-rate ceiling, then tells you in one sentence whether you held it.</p>
+</div>
+<div style="background:#E7EDE4;border-radius:18px;padding:12px">
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:16px;box-shadow:0 1px 2px rgba(26,26,26,0.04);padding:18px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Yesterday · 8 km easy</span>
+<span style="font-size:12px;color:#8A857D;font-variant-numeric:tabular-nums">145 bpm</span>
+</div>
+<div style="display:grid">
+<div style="grid-area:1/1;display:flex;align-items:baseline;gap:10px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<span style="font-size:52px;font-weight:800;letter-spacing:-0.04em;line-height:0.9;color:#B8853A;font-variant-numeric:tabular-nums">14</span>
+<span style="font-size:13px;color:#3D3A36;line-height:1.35">minutes above<br>your ceiling</span>
+</div>
+<div style="grid-area:1/1;display:flex;align-items:baseline;gap:10px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<span style="font-size:52px;font-weight:800;letter-spacing:-0.04em;line-height:0.9;color:#6B8E6B;font-variant-numeric:tabular-nums">0</span>
+<span style="font-size:13px;color:#3D3A36;line-height:1.35">minutes above<br>your ceiling</span>
+</div>
+</div>
+<dc-import name="HrTrace" phase="{{ phase }}" drawn="{{ drawn }}" ticks="{{ true }}" hint-size="100%,140px"></dc-import>
+<div style="height:1px;background:rgba(26,26,26,0.08)"></div>
+<div style="display:grid">
+<div style="grid-area:1/1;display:flex;gap:10px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#B8853A;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</span>
+<span style="font-size:14px;line-height:1.55;color:#3D2600">Bit keen. 14 minutes above your ceiling. Ease it back Thursday.</span>
+</div>
+</div>
+<div style="grid-area:1/1;display:flex;gap:10px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#6B8E6B;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#6B8E6B">Kit · your coach</span>
+<span style="font-size:14px;line-height:1.55;color:#3D3A36">Held Zone 2 the whole way. That's the win.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<button style="font-size:15px;font-weight:600;background:#5A7C5A;color:#FFFFFF;border:none;border-radius:999px;padding:15px 22px;cursor:pointer;width:100%">Start 14-day trial</button>
+</div>
+</div>
+</section>
+
+<section style="padding:56px;display:flex;flex-direction:column;gap:40px;background:#F3F0EB;width:max-content;min-width:100%;box-sizing:border-box">
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Turn 1 · Hero directions</div>
+<div style="font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A">Post-run HR trace — three ways in</div>
+<div style="font-size:14px;color:#3D3A36;max-width:640px;line-height:1.55">Same trace, same two states, same Kit lines. Each direction is shown at desktop width and at 390px. The loop runs on a 7-second beat and stops entirely under reduced motion.</div>
+</div>
+
+<div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+<div id="1a" style="display:flex;flex-direction:column;gap:16px;width:900px;flex-shrink:0">
+<div style="display:flex;align-items:baseline;gap:10px">
+<span style="font-size:11px;font-weight:800;letter-spacing:0.06em;color:#FFFFFF;background:#1A1A1A;border-radius:100px;padding:4px 10px">1a</span>
+<span style="font-size:15px;font-weight:700;color:#1A1A1A">Quiet panel</span>
+<span style="font-size:13px;color:#8A857D">Moss wash holds the whole hero. Trace on white inside it.</span>
+</div>
+<div style="background:#E7EDE4;border-radius:20px;padding:48px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:14px;max-width:620px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6B8E6B">Yesterday · 8 km easy</div>
+<h1 style="margin:0;font-size:44px;line-height:1.08;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;text-wrap:pretty">Training plans that stop you overtraining.</h1>
+</div>
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;padding:28px 28px 24px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 8px 24px rgba(26,26,26,0.04);display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;justify-content:space-between;align-items:flex-end">
+<div style="display:flex;gap:40px">
+<div><div style="font-size:40px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">8.0</div><div style="font-size:13px;color:#8A857D;margin-top:4px">km</div></div>
+<div><div style="font-size:40px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">142</div><div style="font-size:13px;color:#8A857D;margin-top:4px">avg bpm</div></div>
+<div><div style="font-size:40px;font-weight:800;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;line-height:1;color:{{ breachColor }}">{{ breachValue }}</div><div style="font-size:13px;color:#8A857D;margin-top:4px">min above ceiling</div></div>
+</div>
+</div>
+<dc-import name="HrTrace" phase="{{ phase }}" drawn="{{ drawn }}" hint-size="100%,180px"></dc-import>
+<div style="position:relative;background:#F5EBD4;border-radius:14px;padding:16px 18px 16px 26px;display:grid">
+<span aria-hidden="true" style="position:absolute;left:8px;top:16px;bottom:16px;width:3px;border-radius:2px;background:#B8853A"></span>
+<div style="grid-area:1/1;display:flex;flex-direction:column;gap:8px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</div>
+<div style="font-size:15px;line-height:1.55;color:#3D2600">Bit keen. 14 minutes above your ceiling. Ease it back Thursday.</div>
+</div>
+<div style="grid-area:1/1;display:flex;flex-direction:column;gap:8px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</div>
+<div style="font-size:15px;line-height:1.55;color:#3D2600">Held Zone 2 the whole way. That's the win.</div>
+</div>
+</div>
+</div>
+</div>
+<div style="display:flex;justify-content:flex-start">
+<div style="width:390px;background:#E7EDE4;border-radius:20px;padding:24px 20px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6B8E6B">Yesterday · 8 km easy</div>
+<h2 style="margin:0;font-size:28px;line-height:1.12;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;text-wrap:pretty">Training plans that stop you overtraining.</h2>
+</div>
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(26,26,26,0.04)">
+<div style="display:flex;gap:24px">
+<div><div style="font-size:30px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">8.0</div><div style="font-size:12px;color:#8A857D;margin-top:3px">km</div></div>
+<div><div style="font-size:30px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">142</div><div style="font-size:12px;color:#8A857D;margin-top:3px">avg bpm</div></div>
+<div><div style="font-size:30px;font-weight:800;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;line-height:1;color:{{ breachColor }}">{{ breachValue }}</div><div style="font-size:12px;color:#8A857D;margin-top:3px">min over</div></div>
+</div>
+<dc-import name="HrTrace" phase="{{ phase }}" drawn="{{ drawn }}" hint-size="100%,130px"></dc-import>
+<div style="position:relative;background:#F5EBD4;border-radius:14px;padding:14px 16px 14px 24px;display:grid">
+<span aria-hidden="true" style="position:absolute;left:8px;top:14px;bottom:14px;width:3px;border-radius:2px;background:#B8853A"></span>
+<div style="grid-area:1/1;display:flex;flex-direction:column;gap:6px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</div>
+<div style="font-size:14px;line-height:1.55;color:#3D2600">Bit keen. 14 minutes above your ceiling. Ease it back Thursday.</div>
+</div>
+<div style="grid-area:1/1;display:flex;flex-direction:column;gap:6px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</div>
+<div style="font-size:14px;line-height:1.55;color:#3D2600">Held Zone 2 the whole way. That's the win.</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="1b" style="display:flex;flex-direction:column;gap:16px;width:900px;flex-shrink:0">
+<div style="display:flex;align-items:baseline;gap:10px">
+<span style="font-size:11px;font-weight:800;letter-spacing:0.06em;color:#FFFFFF;background:#1A1A1A;border-radius:100px;padding:4px 10px">1b</span>
+<span style="font-size:15px;font-weight:700;color:#1A1A1A">Split editorial</span>
+<span style="font-size:13px;color:#8A857D">Words left, evidence right. Kit sits under the trace as a hairline note.</span>
+</div>
+<div style="background:#F3F0EB;border-radius:20px;padding:48px;display:grid;grid-template-columns:minmax(0,0.85fr) minmax(0,1fr);gap:48px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Slow down. You've got a day job.</div>
+<h1 style="margin:0;font-size:46px;line-height:1.05;font-weight:800;letter-spacing:-0.025em;color:#1A1A1A;text-wrap:pretty">You can't outrun your easy days.</h1>
+<p style="margin:0;font-size:15px;line-height:1.6;color:#3D3A36;max-width:360px">Zonna sets a ceiling for every easy run and tells you, plainly, when you went over it.</p>
+<div style="display:flex;align-items:center;gap:16px">
+<button style="font-size:15px;font-weight:600;letter-spacing:0.01em;background:#5A7C5A;color:#FFFFFF;border:none;border-radius:12px;padding:14px 22px;cursor:pointer;display:inline-flex;gap:8px;align-items:center" style-hover="background:#4C6B4C">Start 14-day trial <span style="opacity:0.7">→</span></button>
+<span style="font-size:13px;color:#8A857D">£7.99 / month</span>
+</div>
+</div>
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;padding:26px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 10px 30px rgba(26,26,26,0.05);display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Easy run · 8 km</span>
+<span style="font-size:13px;color:#8A857D;font-variant-numeric:tabular-nums">Zone 2 · 145 bpm ceiling</span>
+</div>
+<dc-import name="HrTrace" phase="{{ phase }}" drawn="{{ drawn }}" hint-size="100%,160px"></dc-import>
+<div style="height:1px;background:rgba(26,26,26,0.08)"></div>
+<div style="display:grid">
+<div style="grid-area:1/1;display:flex;gap:12px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#B8853A;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</span>
+<span style="font-size:15px;line-height:1.55;color:#3D2600">Bit keen. 14 minutes above your ceiling. Ease it back Thursday.</span>
+</div>
+</div>
+<div style="grid-area:1/1;display:flex;gap:12px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#6B8E6B;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#6B8E6B">Kit · your coach</span>
+<span style="font-size:15px;line-height:1.55;color:#3D3A36">Held Zone 2 the whole way. That's the win.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div style="width:390px;background:#F3F0EB;border-radius:20px;padding:24px 20px;display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Slow down. You've got a day job.</div>
+<h2 style="margin:0;font-size:32px;line-height:1.08;font-weight:800;letter-spacing:-0.025em;color:#1A1A1A;text-wrap:pretty">You can't outrun your easy days.</h2>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#3D3A36">Zonna sets a ceiling for every easy run and tells you, plainly, when you went over it.</p>
+</div>
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:16px;padding:18px;box-shadow:0 1px 2px rgba(26,26,26,0.04);display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Easy run · 8 km</span>
+<span style="font-size:12px;color:#8A857D;font-variant-numeric:tabular-nums">145 bpm</span>
+</div>
+<dc-import name="HrTrace" phase="{{ phase }}" drawn="{{ drawn }}" hint-size="100%,130px"></dc-import>
+<div style="height:1px;background:rgba(26,26,26,0.08)"></div>
+<div style="display:grid">
+<div style="grid-area:1/1;display:flex;gap:10px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#B8853A;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</span>
+<span style="font-size:14px;line-height:1.55;color:#3D2600">Bit keen. 14 minutes above your ceiling. Ease it back Thursday.</span>
+</div>
+</div>
+<div style="grid-area:1/1;display:flex;gap:10px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#6B8E6B;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#6B8E6B">Kit · your coach</span>
+<span style="font-size:14px;line-height:1.55;color:#3D3A36">Held Zone 2 the whole way. That's the win.</span>
+</div>
+</div>
+</div>
+</div>
+<button style="font-size:15px;font-weight:600;background:#5A7C5A;color:#FFFFFF;border:none;border-radius:12px;padding:14px 22px;cursor:pointer;width:100%">Start 14-day trial</button>
+</div>
+</div>
+
+<div id="1c" style="display:flex;flex-direction:column;gap:16px;width:900px;flex-shrink:0">
+<div style="display:flex;align-items:baseline;gap:10px">
+<span style="font-size:11px;font-weight:800;letter-spacing:0.06em;color:#FFFFFF;background:#1A1A1A;border-radius:100px;padding:4px 10px">1c</span>
+<span style="font-size:15px;font-weight:700;color:#1A1A1A">Verdict first</span>
+<span style="font-size:13px;color:#8A857D">The number is the hero. Trace is a quiet band under it.</span>
+</div>
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;padding:56px 48px 44px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 12px 32px rgba(26,26,26,0.04);display:flex;flex-direction:column;gap:36px">
+<div style="display:flex;align-items:flex-start;gap:40px">
+<div style="display:grid;min-width:240px">
+<div style="grid-area:1/1;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<div style="font-size:112px;font-weight:800;letter-spacing:-0.04em;line-height:0.86;color:#B8853A;font-variant-numeric:tabular-nums">14</div>
+<div style="font-size:15px;color:#3D3A36;margin-top:12px">minutes above your ceiling</div>
+</div>
+<div style="grid-area:1/1;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<div style="font-size:112px;font-weight:800;letter-spacing:-0.04em;line-height:0.86;color:#6B8E6B;font-variant-numeric:tabular-nums">0</div>
+<div style="font-size:15px;color:#3D3A36;margin-top:12px">minutes above your ceiling</div>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:16px;padding-top:6px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">8 km easy · Zone 2 · 145 bpm ceiling</div>
+<div style="display:grid">
+<p style="grid-area:1/1;margin:0;font-size:24px;line-height:1.35;font-weight:600;letter-spacing:-0.01em;color:#1A1A1A;opacity:{{ keenOpacity }};transition:opacity 0.5s ease;text-wrap:pretty">Bit keen. 14 minutes above your ceiling. Ease it back Thursday.</p>
+<p style="grid-area:1/1;margin:0;font-size:24px;line-height:1.35;font-weight:600;letter-spacing:-0.01em;color:#1A1A1A;opacity:{{ heldOpacity }};transition:opacity 0.5s ease;text-wrap:pretty">Held Zone 2 the whole way. That's the win.</p>
+</div>
+<div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+<span aria-hidden="true" style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#6B8E6B 0%,#5A7C5A 100%);color:#FFFFFF;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">K</span>
+<span style="font-size:13px;font-weight:700;color:#1A1A1A">Kit</span>
+<span style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#6B8E6B">your coach</span>
+</div>
+</div>
+</div>
+<div style="background:#E7EDE4;border-radius:16px;padding:22px 24px">
+<dc-import name="HrTrace" phase="{{ phase }}" drawn="{{ drawn }}" hint-size="100%,150px"></dc-import>
+</div>
+</div>
+<div style="width:390px;background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;padding:28px 20px 20px;box-shadow:0 1px 2px rgba(26,26,26,0.04);display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">8 km easy · 145 bpm ceiling</div>
+<div style="display:grid">
+<div style="grid-area:1/1;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<div style="font-size:84px;font-weight:800;letter-spacing:-0.04em;line-height:0.86;color:#B8853A;font-variant-numeric:tabular-nums">14</div>
+<div style="font-size:14px;color:#3D3A36;margin-top:10px">minutes above your ceiling</div>
+</div>
+<div style="grid-area:1/1;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<div style="font-size:84px;font-weight:800;letter-spacing:-0.04em;line-height:0.86;color:#6B8E6B;font-variant-numeric:tabular-nums">0</div>
+<div style="font-size:14px;color:#3D3A36;margin-top:10px">minutes above your ceiling</div>
+</div>
+</div>
+</div>
+<div style="background:#E7EDE4;border-radius:14px;padding:16px">
+<dc-import name="HrTrace" phase="{{ phase }}" drawn="{{ drawn }}" hint-size="100%,120px"></dc-import>
+</div>
+<div style="display:grid">
+<p style="grid-area:1/1;margin:0;font-size:18px;line-height:1.4;font-weight:600;color:#1A1A1A;opacity:{{ keenOpacity }};transition:opacity 0.5s ease;text-wrap:pretty">Bit keen. 14 minutes above your ceiling. Ease it back Thursday.</p>
+<p style="grid-area:1/1;margin:0;font-size:18px;line-height:1.4;font-weight:600;color:#1A1A1A;opacity:{{ heldOpacity }};transition:opacity 0.5s ease;text-wrap:pretty">Held Zone 2 the whole way. That's the win.</p>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<span aria-hidden="true" style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#6B8E6B 0%,#5A7C5A 100%);color:#FFFFFF;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center">K</span>
+<span style="font-size:13px;font-weight:700;color:#1A1A1A">Kit</span>
+<span style="font-size:10px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#6B8E6B">your coach</span>
+</div>
+</div>
+</div>
+
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;padding:36px;max-width:900px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">The trace, small</div>
+<div style="font-size:20px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A">Four easy runs, same ceiling</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="background:#F3F0EB;border-radius:12px;padding:14px"><dc-import name="HrTrace" phase="0" drawn="{{ drawn }}" mini="{{ true }}" hint-size="100%,70px"></dc-import></div>
+<div style="font-size:12px;color:#8A857D">Mon · run on feel</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="background:#F3F0EB;border-radius:12px;padding:14px"><dc-import name="HrTrace" phase="0" drawn="{{ drawn }}" mini="{{ true }}" hint-size="100%,70px"></dc-import></div>
+<div style="font-size:12px;color:#8A857D">Wed · run on feel</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="background:#E7EDE4;border-radius:12px;padding:14px"><dc-import name="HrTrace" phase="1" drawn="{{ drawn }}" mini="{{ true }}" hint-size="100%,70px"></dc-import></div>
+<div style="font-size:12px;color:#3D3A36">Sat · run to the ceiling</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="background:#E7EDE4;border-radius:12px;padding:14px"><dc-import name="HrTrace" phase="1" drawn="{{ drawn }}" mini="{{ true }}" hint-size="100%,70px"></dc-import></div>
+<div style="font-size:12px;color:#3D3A36">Sun · run to the ceiling</div>
+</div>
+</div>
+</div>
+
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;loopSeconds&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:7,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:3,&quot;max&quot;:12,&quot;step&quot;:1,&quot;unit&quot;:&quot;s&quot;}}">
+class Component extends DCLogic {
+  state = { phase: 0, drawn: false, reduced: false };
+  componentDidMount() {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (mq.matches) { this.setState({ drawn: true, reduced: true }); return; }
+    this._t = setTimeout(() => this.setState({ drawn: true }), 120);
+    this._i = setInterval(() => this.setState(s => ({ phase: s.phase === 0 ? 1 : 0 })), (this.props.loopSeconds ?? 7) * 1000);
+  }
+  componentWillUnmount() { clearTimeout(this._t); clearInterval(this._i); }
+  renderVals() {
+    const keen = this.state.phase === 0;
+    return {
+      phase: this.state.phase,
+      drawn: this.state.drawn,
+      keenOpacity: keen ? 1 : 0,
+      heldOpacity: keen ? 0 : 1,
+      breachValue: keen ? '14' : '0',
+      breachColor: keen ? '#B8853A' : '#6B8E6B'
+    };
+  }
+}
+</script>
+</body>
+</html>

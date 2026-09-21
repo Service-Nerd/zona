@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/colors.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/sessions.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/typography.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/radius.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/motion.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/base.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/styles.css">
+<script src="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:#F3F0EB;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:2;opacity:0.03;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23g)'/%3E%3C/svg%3E")}
+a{color:#5A7C5A;text-decoration:none}
+a:hover{color:#3D3A36}
+</style>
+</helmet>
+<div style="background:#F3F0EB;color:#3D3A36">
+
+<header style="border-bottom:1px solid rgba(26,26,26,0.08);background:#F3F0EB">
+<div style="max-width:1080px;margin:0 auto;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px">
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.Wordmark" size="sm" hint-size="80px,20px"></x-import>
+<nav style="display:flex;gap:28px;align-items:center">
+<a href="#how" style="font-size:14px;color:#3D3A36">How it works</a>
+<a href="#not" style="font-size:14px;color:#3D3A36">What's not in it</a>
+<a href="#price" style="font-size:14px;color:#3D3A36">Pricing</a>
+</nav>
+<button style="font-size:14px;font-weight:600;background:#5A7C5A;color:#FFFFFF;border:none;border-radius:999px;padding:11px 20px;cursor:pointer" style-hover="background:#4C6B4C">Start free trial</button>
+</div>
+</header>
+
+<section style="background:#F3F0EB">
+<div style="max-width:1080px;margin:0 auto;padding:88px 24px 80px;display:flex;flex-direction:column;gap:48px">
+<div style="display:grid;grid-template-columns:minmax(0,1fr);gap:22px;max-width:720px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Slow down. You've got a day job.</span>
+<h1 style="margin:0;font-size:56px;line-height:1.04;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;text-wrap:pretty">Training plans that stop you overtraining.</h1>
+<p style="margin:0;font-size:17px;line-height:1.6;color:#3D3A36;max-width:520px">Every easy run gets a ceiling. Zonna watches it, says one honest sentence about it, and moves the week when life gets in the way.</p>
+<div style="display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+<button style="font-size:15px;font-weight:600;background:#5A7C5A;color:#FFFFFF;border:none;border-radius:999px;padding:15px 26px;cursor:pointer" style-hover="background:#4C6B4C">Start 14-day trial →</button>
+<span style="font-size:14px;color:#8A857D">£7.99 / month · £59.99 / year</span>
+</div>
+</div>
+<div style="background:#E7EDE4;border-radius:20px;padding:36px">
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 12px 32px rgba(26,26,26,0.05);padding:28px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Yesterday · 8 km easy · Zone 2</span>
+<span style="font-size:13px;color:#8A857D;font-variant-numeric:tabular-nums">Ceiling 145 bpm</span>
+</div>
+<div style="display:grid">
+<div style="grid-area:1/1;display:flex;align-items:baseline;gap:12px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<span style="font-size:72px;font-weight:800;letter-spacing:-0.04em;line-height:0.9;color:#B8853A;font-variant-numeric:tabular-nums">14</span>
+<span style="font-size:15px;color:#3D3A36">minutes above your ceiling</span>
+</div>
+<div style="grid-area:1/1;display:flex;align-items:baseline;gap:12px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<span style="font-size:72px;font-weight:800;letter-spacing:-0.04em;line-height:0.9;color:#6B8E6B;font-variant-numeric:tabular-nums">0</span>
+<span style="font-size:15px;color:#3D3A36">minutes above your ceiling</span>
+</div>
+</div>
+<dc-import name="HrTrace" phase="{{ phase }}" drawn="{{ drawn }}" ticks="{{ true }}" hint-size="100%,170px"></dc-import>
+<div style="height:1px;background:rgba(26,26,26,0.08)"></div>
+<div style="display:grid">
+<div style="grid-area:1/1;display:flex;gap:12px;opacity:{{ keenOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#B8853A;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</span>
+<span style="font-size:15px;line-height:1.55;color:#3D2600">Bit keen. 14 minutes above your ceiling. Ease it back Thursday.</span>
+</div>
+</div>
+<div style="grid-area:1/1;display:flex;gap:12px;opacity:{{ heldOpacity }};transition:opacity 0.5s ease">
+<span aria-hidden="true" style="width:3px;border-radius:2px;background:#6B8E6B;flex-shrink:0"></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#6B8E6B">Kit · your coach</span>
+<span style="font-size:15px;line-height:1.55;color:#3D3A36">Held Zone 2 the whole way. That's the win.</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section style="background:#EDE9E1;border-top:1px solid rgba(26,26,26,0.08)">
+<div style="max-width:1080px;margin:0 auto;padding:72px 24px">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px">
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 10px 28px rgba(26,26,26,0.04);padding:28px">
+<div style="font-size:56px;font-weight:800;letter-spacing:-0.03em;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">80%</div>
+<div style="font-size:14px;line-height:1.55;color:#3D3A36;margin-top:12px">of your week belongs in Zone 2. Most runners manage half that.</div>
+</div>
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 10px 28px rgba(26,26,26,0.04);padding:28px">
+<div style="font-size:56px;font-weight:800;letter-spacing:-0.03em;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">1</div>
+<div style="font-size:14px;line-height:1.55;color:#3D3A36;margin-top:12px">sentence from Kit after each run. No dashboard to interpret.</div>
+</div>
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 10px 28px rgba(26,26,26,0.04);padding:28px">
+<div style="font-size:56px;font-weight:800;letter-spacing:-0.03em;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">4</div>
+<div style="font-size:14px;line-height:1.55;color:#3D3A36;margin-top:12px">sessions a week, reshaped whenever the week falls apart.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="not" style="background:#1A1A1A">
+<div style="max-width:1080px;margin:0 auto;padding:96px 24px">
+<div style="display:grid;grid-template-columns:minmax(0,0.9fr) minmax(0,1fr);gap:56px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:18px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Restraint</span>
+<h2 style="margin:0;font-size:40px;line-height:1.1;font-weight:800;letter-spacing:-0.02em;color:#F3F0EB;text-wrap:pretty">What's not in the app</h2>
+<p style="margin:0;font-size:15px;line-height:1.6;color:#B5B0A7;max-width:380px">Everything below was considered and left out. That is the product.</p>
+</div>
+<div style="display:flex;flex-direction:column">
+<div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid rgba(243,240,235,0.12);font-size:17px;color:#F3F0EB"><span style="color:#8A857D">—</span>Streaks</div>
+<div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid rgba(243,240,235,0.12);font-size:17px;color:#F3F0EB"><span style="color:#8A857D">—</span>Leaderboards</div>
+<div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid rgba(243,240,235,0.12);font-size:17px;color:#F3F0EB"><span style="color:#8A857D">—</span>Readiness scores and vitals</div>
+<div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid rgba(243,240,235,0.12);font-size:17px;color:#F3F0EB"><span style="color:#8A857D">—</span>Charts you have to interpret</div>
+<div style="display:flex;gap:14px;padding:16px 0;font-size:17px;color:#F3F0EB"><span style="color:#8A857D">—</span>Fire emojis. Ever.</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="how" style="background:#F3F0EB">
+<div style="max-width:1080px;margin:0 auto;padding:88px 24px;display:flex;flex-direction:column;gap:40px">
+<h2 style="margin:0;font-size:36px;line-height:1.12;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;max-width:520px;text-wrap:pretty">Three decisions, then it gets out of the way.</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="font-size:88px;font-weight:800;letter-spacing:-0.04em;color:#EDE9E1;line-height:0.8;font-variant-numeric:tabular-nums">01</div>
+<div style="font-size:17px;font-weight:700;color:#1A1A1A">Your race and your week</div>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#3D3A36">Distance, date, and the days you can actually run. Two minutes.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="font-size:88px;font-weight:800;letter-spacing:-0.04em;color:#EDE9E1;line-height:0.8;font-variant-numeric:tabular-nums">02</div>
+<div style="font-size:17px;font-weight:700;color:#1A1A1A">A ceiling per session</div>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#3D3A36">Every run arrives with a zone, a heart-rate ceiling and a pace band.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="font-size:88px;font-weight:800;letter-spacing:-0.04em;color:#EDE9E1;line-height:0.8;font-variant-numeric:tabular-nums">03</div>
+<div style="font-size:17px;font-weight:700;color:#1A1A1A">One sentence back</div>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#3D3A36">Kit reads the run, says what happened, and shifts the week if it needs shifting.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="price" style="background:#EDE9E1;border-top:1px solid rgba(26,26,26,0.08)">
+<div style="max-width:1080px;margin:0 auto;padding:80px 24px;display:flex;justify-content:center">
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:20px;box-shadow:0 1px 2px rgba(26,26,26,0.04),0 14px 36px rgba(26,26,26,0.05);padding:40px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:20px">
+<span style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">One plan</span>
+<div style="display:flex;align-items:baseline;gap:8px">
+<span style="font-size:64px;font-weight:800;letter-spacing:-0.03em;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">£7.99</span>
+<span style="font-size:15px;color:#8A857D">/ month</span>
+</div>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#3D3A36">Or £59.99 a year. 14 days of full access first, no card games, cancel in two taps.</p>
+<button style="font-size:15px;font-weight:600;background:#5A7C5A;color:#FFFFFF;border:none;border-radius:12px;padding:15px 22px;cursor:pointer;width:100%" style-hover="background:#4C6B4C">Start 14-day trial</button>
+</div>
+</div>
+</section>
+
+<section style="background:#1A1A1A">
+<div style="max-width:1080px;margin:0 auto;padding:104px 24px;display:flex;flex-direction:column;align-items:center;gap:28px;text-align:center">
+<h2 style="margin:0;font-size:48px;line-height:1.06;font-weight:800;letter-spacing:-0.025em;color:#F3F0EB;max-width:620px;text-wrap:pretty">You can't outrun your easy days.</h2>
+<p style="margin:0;font-size:16px;line-height:1.6;color:#B5B0A7;max-width:440px">Hold the zone for six weeks and see what the hard days feel like.</p>
+<button style="font-size:16px;font-weight:600;background:#5A7C5A;color:#FFFFFF;border:none;border-radius:999px;padding:16px 30px;cursor:pointer" style-hover="background:#5A7C5A">Start 14-day trial →</button>
+</div>
+</section>
+
+<footer style="background:#F3F0EB;border-top:1px solid rgba(26,26,26,0.08)">
+<div style="max-width:1080px;margin:0 auto;padding:32px 24px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap">
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.Wordmark" size="xs" hint-size="60px,14px"></x-import>
+<span style="font-size:12px;color:#8A857D">zonna.run · Privacy · Terms</span>
+</div>
+</footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;loopSeconds&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:6,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:3,&quot;max&quot;:12,&quot;step&quot;:1,&quot;unit&quot;:&quot;s&quot;}}">
+class Component extends DCLogic {
+  state = { phase: 0, drawn: false };
+  componentDidMount() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { this.setState({ drawn: true }); return; }
+    this._t = setTimeout(() => this.setState({ drawn: true }), 150);
+    this._i = setInterval(() => this.setState(s => ({ phase: s.phase === 0 ? 1 : 0 })), (this.props.loopSeconds ?? 6) * 1000);
+  }
+  componentWillUnmount() { clearTimeout(this._t); clearInterval(this._i); }
+  renderVals() {
+    const keen = this.state.phase === 0;
+    return { phase: this.state.phase, drawn: this.state.drawn, keenOpacity: keen ? 1 : 0, heldOpacity: keen ? 0 : 1 };
+  }
+}
+</script>
+</body>
+</html>

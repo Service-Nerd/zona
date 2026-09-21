@@ -1,0 +1,13 @@
+/* Motion — short, functional, no spinners (ui-patterns § Loading State). */
+:root{
+--ease-standard:ease; /* @kind other */
+--dur-fast:0.1s; /* @kind other */
+--dur-base:0.15s; /* @kind other */
+--dur-slow:0.2s; /* @kind other */
+--dur-sheet:0.28s /* @kind other */
+}
+@keyframes zonna-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes zonna-slide-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes ai-mark-pulse{0%,100%{opacity:.55;transform:scale(.92)}50%{opacity:1;transform:scale(1.05)}}
+@keyframes coach-byline-thinking{0%,100%{opacity:.4}50%{opacity:.85}}
+@keyframes zonna-ptr-pulse{0%,100%{opacity:.5;transform:scale(.82)}50%{opacity:1;transform:scale(1.12)}}

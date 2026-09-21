@@ -1,0 +1,9 @@
+/* Spacing rhythm — canonical values only (ui-patterns § Spacing Rhythm). */
+:root{
+--space-1:4px;--space-2:8px;--space-3:12px;--space-4:14px;--space-5:16px;
+--space-6:20px;--space-7:24px;--space-8:28px;--space-9:32px;--space-10:40px;
+--space-11:48px;--space-12:56px;
+/* Applied rules */
+--card-padding:20px;--card-padding-y:14px;--list-gap:12px;--section-gap:28px;
+--screen-gutter:16px;--nav-height:60px;--tap-min:44px;--site-width:1100px;--reading-width:760px
+}

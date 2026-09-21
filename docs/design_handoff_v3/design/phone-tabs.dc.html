@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/colors.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/sessions.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/typography.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/radius.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/motion.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/tokens/base.css">
+<link rel="stylesheet" href="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/styles.css">
+<script src="_ds/zonna-design-system-ce8279b1-73df-4b54-ba6e-0d9e142764ce/_ds_bundle.js"></script>
+<style>
+body{background:#F3F0EB;font-family:Inter,system-ui,sans-serif;margin:0}
+a{color:#5A7C5A}a:hover{color:#3D3A36}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#F3F0EB;display:flex;justify-content:center;align-items:flex-start;padding:48px 24px;font-family:Inter,system-ui,sans-serif">
+<div style="display:flex;flex-direction:column;align-items:center;gap:24px">
+
+<div style="width:390px;height:844px;background:#F3F0EB;border-radius:52px;border:1px solid rgba(26,26,26,0.12);box-shadow:0 1px 2px rgba(26,26,26,0.04),0 24px 60px rgba(26,26,26,0.10);position:relative;overflow:hidden;display:flex;flex-direction:column">
+
+<div style="height:54px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 28px;position:relative">
+<span style="font-size:14px;font-weight:600;color:#1A1A1A;font-variant-numeric:tabular-nums">07:12</span>
+<div aria-hidden="true" style="position:absolute;left:50%;top:10px;transform:translateX(-50%);width:104px;height:30px;border-radius:100px;background:#1A1A1A"></div>
+<div style="display:flex;align-items:center;gap:6px">
+<span aria-hidden="true" style="width:17px;height:10px;border:1px solid #1A1A1A;border-radius:3px;display:inline-block;position:relative;opacity:0.8"></span>
+</div>
+</div>
+
+<div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+
+<div style="padding:8px 16px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.Wordmark" size="sm" hint-size="70px,20px"></x-import>
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.NotificationBell" count="{{ 1 }}" hint-size="24px,24px"></x-import>
+</div>
+
+<div style="display:flex;gap:4px;padding:0 16px 12px;flex-shrink:0">
+<button onClick="{{ selectToday }}" style="flex:1;min-height:36px;border-radius:10px;border:1px solid {{ todayBorder }};background:{{ todayBg }};color:{{ todayInk }};font-family:Inter,sans-serif;font-size:13px;font-weight:{{ todayWeight }};cursor:pointer;transition:background 0.2s ease,border-color 0.15s ease">Today</button>
+<button onClick="{{ selectPlan }}" style="flex:1;min-height:36px;border-radius:10px;border:1px solid {{ planBorder }};background:{{ planBg }};color:{{ planInk }};font-family:Inter,sans-serif;font-size:13px;font-weight:{{ planWeight }};cursor:pointer;transition:background 0.2s ease,border-color 0.15s ease">Plan</button>
+<button onClick="{{ selectCoach }}" style="flex:1;min-height:36px;border-radius:10px;border:1px solid {{ coachBorder }};background:{{ coachBg }};color:{{ coachInk }};font-family:Inter,sans-serif;font-size:13px;font-weight:{{ coachWeight }};cursor:pointer;transition:background 0.2s ease,border-color 0.15s ease">Coach</button>
+</div>
+
+<div style="flex:1;overflow-y:auto;padding:4px 16px 20px">
+
+<sc-if value="{{ isToday }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:20px">
+<div>
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Tuesday 22 September</div>
+<h1 style="margin:8px 0 0;font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A">Today</h1>
+</div>
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:12px;box-shadow:0 1px 2px rgba(26,26,26,0.04);display:flex;overflow:hidden">
+<div style="width:3px;background:#3D6FB0;flex-shrink:0"></div>
+<div style="flex:1;padding:20px">
+<span style="display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;padding:3px 8px;border-radius:4px;background:rgba(61,111,176,0.15);color:#3D6FB0">Easy</span>
+<div style="font-size:34px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A;font-variant-numeric:tabular-nums;margin-top:14px;line-height:1">8 km, easy</div>
+<div style="font-size:14px;color:#3D3A36;margin-top:10px;line-height:1.55">Zone 2 · under 145 bpm · 6:30–7:30 /km</div>
+<div style="height:1px;background:rgba(26,26,26,0.08);margin:18px 0"></div>
+<div style="display:flex;gap:28px">
+<div><div style="font-size:20px;font-weight:800;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">55</div><div style="font-size:12px;color:#8A857D;margin-top:4px">min</div></div>
+<div><div style="font-size:20px;font-weight:800;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">145</div><div style="font-size:12px;color:#8A857D;margin-top:4px">bpm ceiling</div></div>
+</div>
+</div>
+</div>
+<div style="position:relative;background:#F5EBD4;border-radius:14px;padding:16px 18px 16px 26px">
+<span aria-hidden="true" style="position:absolute;left:8px;top:16px;bottom:16px;width:3px;border-radius:2px;background:#B8853A"></span>
+<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</div>
+<div style="font-size:14px;line-height:1.55;color:#3D2600;margin-top:10px">Bit keen on Sunday. Hold the ceiling today.</div>
+</div>
+<button style="width:100%;font-size:15px;font-weight:600;background:#5A7C5A;color:#FFFFFF;border:none;border-radius:12px;padding:14px 22px;cursor:pointer" style-hover="background:#4C6B4C">Start run</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPlan }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:18px">
+<div>
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">Week 6 of 16 · base</div>
+<h1 style="margin:8px 0 0;font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A">This week</h1>
+</div>
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.WeekStrip" value="tue" dc-props="{{ weekProps }}" hint-size="100%,52px"></x-import>
+<div style="display:flex;flex-direction:column;gap:12px">
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.SessionCard" type="easy" name="Easy 8 km" detail="Zone 2 · under 145 bpm" metric="55 min" state="current" hint-size="100%,64px"></x-import>
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.SessionCard" type="quality" name="Threshold 3 × 8 min" detail="Zone 3 · 4:45 /km" metric="50 min" hint-size="100%,64px"></x-import>
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.SessionCard" type="easy" name="Easy 6 km" detail="Zone 2 · under 145 bpm" metric="40 min" hint-size="100%,64px"></x-import>
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.SessionCard" type="long" name="Long 18 km" detail="Zone 2 · conversational" metric="2 h 05" hint-size="100%,64px"></x-import>
+</div>
+<div style="background:#EDE9E1;border-radius:10px;padding:16px;display:flex;justify-content:space-between">
+<div><div style="font-size:22px;font-weight:800;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">4</div><div style="font-size:12px;color:#8A857D;margin-top:4px">sessions</div></div>
+<div><div style="font-size:22px;font-weight:800;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">38</div><div style="font-size:12px;color:#8A857D;margin-top:4px">km</div></div>
+<div><div style="font-size:22px;font-weight:800;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">3</div><div style="font-size:12px;color:#8A857D;margin-top:4px">rest days</div></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCoach }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:20px">
+<div>
+<div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#8A857D">15–21 September</div>
+<h1 style="margin:8px 0 0;font-size:26px;font-weight:800;letter-spacing:-0.02em;color:#1A1A1A">This week in zones</h1>
+</div>
+<div style="background:#FFFFFF;border:1px solid rgba(26,26,26,0.06);border-radius:12px;box-shadow:0 1px 2px rgba(26,26,26,0.04);padding:20px">
+<div style="display:flex;align-items:baseline;gap:10px">
+<span style="font-size:56px;font-weight:800;letter-spacing:-0.03em;color:#1A1A1A;font-variant-numeric:tabular-nums;line-height:1">71%</span>
+<span style="font-size:14px;color:#3D3A36">in Zone 2</span>
+</div>
+<div style="font-size:13px;color:#8A857D;margin-top:8px">Target is 80%. Last week: 62%.</div>
+<div style="height:1px;background:rgba(26,26,26,0.08);margin:20px 0"></div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font-size:11px;font-weight:700;color:#8A857D;width:22px">Z1</span>
+<span style="flex:1;height:8px;border-radius:4px;background:#EDE9E1;overflow:hidden;display:block"><span style="display:block;height:8px;width:9%;background:#4E8068;border-radius:4px"></span></span>
+<span style="font-size:13px;font-weight:700;color:#1A1A1A;font-variant-numeric:tabular-nums;width:34px;text-align:right">9%</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font-size:11px;font-weight:700;color:#1A1A1A;width:22px">Z2</span>
+<span style="flex:1;height:8px;border-radius:4px;background:#EDE9E1;overflow:hidden;display:block"><span style="display:block;height:8px;width:71%;background:#3D6FB0;border-radius:4px"></span></span>
+<span style="font-size:13px;font-weight:700;color:#1A1A1A;font-variant-numeric:tabular-nums;width:34px;text-align:right">71%</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font-size:11px;font-weight:700;color:#8A857D;width:22px">Z3</span>
+<span style="flex:1;height:8px;border-radius:4px;background:#EDE9E1;overflow:hidden;display:block"><span style="display:block;height:8px;width:14%;background:#B8853A;border-radius:4px"></span></span>
+<span style="font-size:13px;font-weight:700;color:#1A1A1A;font-variant-numeric:tabular-nums;width:34px;text-align:right">14%</span>
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font-size:11px;font-weight:700;color:#8A857D;width:22px">Z4</span>
+<span style="flex:1;height:8px;border-radius:4px;background:#EDE9E1;overflow:hidden;display:block"><span style="display:block;height:8px;width:6%;background:#C86A2A;border-radius:4px"></span></span>
+<span style="font-size:13px;font-weight:700;color:#1A1A1A;font-variant-numeric:tabular-nums;width:34px;text-align:right">6%</span>
+</div>
+</div>
+</div>
+<div style="position:relative;background:#F5EBD4;border-radius:14px;padding:16px 18px 16px 26px">
+<span aria-hidden="true" style="position:absolute;left:8px;top:16px;bottom:16px;width:3px;border-radius:2px;background:#B8853A"></span>
+<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#B8853A">Kit · your coach</div>
+<div style="font-size:14px;line-height:1.55;color:#3D2600;margin-top:10px">Closer. The easy days are still creeping up at the end.</div>
+</div>
+</div>
+</sc-if>
+
+</div>
+</div>
+
+<x-import component-from-global-scope="ZonnaDesignSystem_ce8279.BottomNav" dc-props="{{ navProps }}" hint-size="100%,60px"></x-import>
+</div>
+
+<div style="font-size:12px;color:#8A857D">Tap Today · Plan · Coach</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:480,&quot;height&quot;:960}}">
+class Component extends DCLogic {
+  state = { tab: 'today' };
+  tabStyle(name) {
+    const on = this.state.tab === name;
+    return {
+      bg: on ? 'rgba(107,142,107,0.1)' : 'transparent',
+      border: on ? '#6B8E6B' : 'rgba(26,26,26,0.08)',
+      ink: on ? '#3D3A36' : '#8A857D',
+      weight: on ? 700 : 500
+    };
+  }
+  renderVals() {
+    const t = this.tabStyle('today'), p = this.tabStyle('plan'), c = this.tabStyle('coach');
+    return {
+      isToday: this.state.tab === 'today',
+      isPlan: this.state.tab === 'plan',
+      isCoach: this.state.tab === 'coach',
+      selectToday: () => this.setState({ tab: 'today' }),
+      selectPlan: () => this.setState({ tab: 'plan' }),
+      selectCoach: () => this.setState({ tab: 'coach' }),
+      todayBg: t.bg, todayBorder: t.border, todayInk: t.ink, todayWeight: t.weight,
+      planBg: p.bg, planBorder: p.border, planInk: p.ink, planWeight: p.weight,
+      coachBg: c.bg, coachBorder: c.border, coachInk: c.ink, coachWeight: c.weight,
+      weekProps: { days: [
+        { day: 'mon', status: 'done' }, { day: 'tue', status: 'today' }, { day: 'wed', status: 'rest' },
+        { day: 'thu', status: 'session' }, { day: 'fri', status: 'rest' }, { day: 'sat', status: 'future' },
+        { day: 'sun', status: 'future' }
+      ] },
+      navProps: {
+        items: [
+          { value: 'today', label: 'Today' }, { value: 'plan', label: 'Plan' },
+          { value: 'coach', label: 'Coach' }, { value: 'me', label: 'Me' }
+        ],
+        value: this.state.tab,
+        onChange: v => { if (v !== 'me') this.setState({ tab: v }); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

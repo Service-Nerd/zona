@@ -1,0 +1,15 @@
+/* Session-type + HR-zone colours. Zone colours ARE session colours (ui-patterns
+   § HR Zone → Session Colour Coherence). Owner upstream: lib/session-types.ts. */
+:root{
+--s-easy:#3D6FB0;--s-long:#5E4FB0;--s-quality:#B8853A;--s-inter:#B84545;
+--s-race:#C86A2A;--s-recov:#4E8068;--s-strength:#5A6578;--s-cross:#3D8A88;
+/* Zone → colour */
+--zone-1:var(--s-recov);--zone-2:var(--s-easy);--zone-3:var(--s-quality);--zone-4:var(--s-race);--zone-5:var(--s-inter);
+/* Session aliases used across the codebase */
+--session-easy:var(--s-easy);--session-easy-soft:var(--moss-soft);
+--session-long:var(--s-long);--session-quality:var(--s-quality);
+--session-intervals:var(--s-inter);--session-intervals-soft:rgba(184,69,69,0.1);
+--session-race:var(--s-race);--session-recovery:var(--s-recov);
+--session-recovery-soft:rgba(78,128,104,0.1);
+--session-strength:var(--s-strength);--session-cross:var(--s-cross)
+}

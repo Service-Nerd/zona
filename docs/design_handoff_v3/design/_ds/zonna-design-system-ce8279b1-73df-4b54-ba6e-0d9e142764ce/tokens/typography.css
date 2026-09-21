@@ -1,0 +1,19 @@
+/* Type scale — Inter only. --font-ui and --font-brand both resolve to Inter. */
+:root{
+--font-ui:'Inter',system-ui,sans-serif;
+--font-brand:'Inter',system-ui,sans-serif;
+--font-data:var(--font-ui);
+/* Sizes (ui-patterns § Typography Scale) */
+--type-hero:56px;--type-metric-lg:44px;--type-title:26px;--type-metric-cell:28px;
+--type-body-lg:17px;--type-metric-md:17px;--type-card:15px;--type-body:14px;
+--type-detail:13px;--type-secondary:12px;--type-metric-sm:11px;--type-label:10px;
+/* Weights */
+--weight-display:800;--weight-bold:700;--weight-semi:600;--weight-medium:500;--weight-regular:400;
+/* Tracking */
+--track-label:0.08em;--track-label-wide:0.14em;--track-tight:-0.03em;--track-hero:-0.02em;
+/* Line heights */
+--leading-tight:1.2;--leading-body:1.55;--leading-loose:1.7
+}
+.font-brand{font-family:var(--font-brand)}
+.font-ui{font-family:var(--font-ui)}
+.font-data{font-family:var(--font-ui);font-variant-numeric:tabular-nums}
