@@ -72,7 +72,7 @@ export default function AboutPage() {
       name: `About ${BRAND.name}`,
       url: PAGE_URL,
       // Person, not Organization: the honest claim here is one named human.
-      about: { '@type': 'Person', name: 'Russell Shear' },
+      about: { '@type': 'Person', name: BRAND.founder.name },
     },
     {
       '@context': 'https://schema.org', '@type': 'BreadcrumbList',
@@ -166,7 +166,7 @@ export default function AboutPage() {
             One person, still using it.
           </h2>
           <P>
-            {BRAND.name} is built and run by Russ Shear. Not a team, not a content farm,
+            {BRAND.name} is built and run by {BRAND.founder.name}. Not a team, not a content farm,
             not a white-labelled plan library with a logo on it. The coaching logic is
             written down, argued over and checked against what the app actually does,
             because the person writing it is also the person following it.
@@ -183,7 +183,7 @@ export default function AboutPage() {
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{ height: '1px', background: 'var(--line)', margin: '0 0 20px' }} />
         <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
-          Russ Shear &middot; Founder
+          {BRAND.founder.name} &middot; Founder
         </div>
         <a
           href="mailto:russ@zonna.run"

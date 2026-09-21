@@ -78,7 +78,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="Who we are">
-          <P>{BRAND.name} is operated by Russell Shear, based in the United Kingdom. The service is available at <strong>zonna.run</strong> and via the App Store.</P>
+          <P>{BRAND.name} is operated by {BRAND.founder.legalName}, based in the United Kingdom. The service is available at <strong>zonna.run</strong> and via the App Store.</P>
           <P>Contact: <A href="mailto:support@zonna.run">support@zonna.run</A>.</P>
         </Section>
 

@@ -120,19 +120,39 @@ export default async function Home() {
   // rich result stale (CLAUDE.md: pricing is parameterised in lib/brand.ts).
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'SoftwareApplication',
+    // MobileApplication, not SoftwareApplication. It is the narrower subtype
+    // and it is simply the true one: this ships through the App Store as an
+    // iOS app, and `operatingSystem` below already said so while the type
+    // claimed the general case. Google reads the subtype for app results.
+    '@type': 'MobileApplication',
     name: BRAND.name,
     description: `Training plans for runners who go medium-hard on everything. ${BRAND.name} sets the zone for each session and holds you to it. Built for the day-job runner.`,
     applicationCategory: 'HealthApplication',
     operatingSystem: 'iOS 16.6 or later',
     url: APP_URL,
     installUrl: BRAND.appStore.url,
-    author: { '@type': 'Person', name: 'Russell Shear' },
-    offers: {
-      '@type': 'Offer',
-      price: String(PRICING.monthly.amount),
-      priceCurrency: PRICING.currency,
-    },
+    author: { '@type': 'Person', name: BRAND.founder.name },
+    // BOTH prices. A single monthly Offer described the product as if the
+    // annual plan did not exist, and the annual is the better-value one: a
+    // price-aware result showed the higher of our two numbers and hid the
+    // lower. Values come from PRICING, never a literal, so a price change
+    // cannot leave the rich result stale.
+    offers: [
+      {
+        '@type': 'Offer',
+        name: 'Monthly',
+        price: String(PRICING.monthly.amount),
+        priceCurrency: PRICING.currency,
+        url: `${APP_URL}/pricing`,
+      },
+      {
+        '@type': 'Offer',
+        name: 'Annual',
+        price: String(PRICING.annual.amount),
+        priceCurrency: PRICING.currency,
+        url: `${APP_URL}/pricing`,
+      },
+    ],
   }
 
   return (
@@ -726,7 +746,7 @@ export default async function Home() {
           deleted, so the footer itself can be identical on every page. */}
       <section style={{ padding: '40px 24px 0', maxWidth: '1100px', margin: '0 auto' }}>
         <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.5, color: 'var(--ink-2)', margin: 0 }}>
-          Built by Russell. Runs medium-hard on everything. That&apos;s how I know.
+          Built by {BRAND.founder.firstName}. Runs medium-hard on everything. That&apos;s how I know.
         </p>
       </section>
 

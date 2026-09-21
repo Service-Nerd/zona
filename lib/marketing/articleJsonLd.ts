@@ -14,8 +14,10 @@ import { BRAND } from '@/lib/brand'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
-/** Constant across all articles. Not a parameter on purpose. */
-const AUTHOR_NAME = 'Russ Shear'
+/** Constant across all articles. Not a parameter on purpose.
+ *  Reads BRAND.founder so the Article author and the homepage's
+ *  MobileApplication author cannot be two different people again. */
+const AUTHOR_NAME = BRAND.founder.name
 
 export interface ArticleJsonLdInput {
   headline: string

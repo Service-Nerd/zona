@@ -83,6 +83,30 @@ export const BRAND = {
    */
   coreTruth: 'You\u2019re trying hard. That\u2019s the problem.',
 
+  /**
+   * The founder, as the site refers to him.
+   *
+   * ⚠️ PARAMETERISED FOR EXACTLY THE REASON `coreTruth` WAS (GTM-SITE-03): one
+   * person was appearing under two names. The homepage's SoftwareApplication
+   * `author` and the /about and legal pages said "Russell Shear"; every
+   * article's Article `author` said "Russ Shear". To a crawler those are two
+   * authors, which is the opposite of what an author field is for, and to a
+   * reader who lands on a guide and then /about it reads as a different
+   * person. He goes by Russ.
+   *
+   * `legalName` is separate and is NOT a style choice: the privacy policy and
+   * terms name the operator of the service, and that is a legal identification
+   * rather than a byline.
+   */
+  founder: {
+    /** Byline, structured-data author, prose. */
+    name: 'Russ Shear',
+    /** First name alone, where the copy is conversational. */
+    firstName: 'Russ',
+    /** Operator of the service. Legal surfaces only. */
+    legalName: 'Russell Shear',
+  },
+
   /** Sub-text shown below the sign-in card heading. */
   signinSub: 'Pick it up where you left off.',
 
