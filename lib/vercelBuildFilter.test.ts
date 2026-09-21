@@ -25,8 +25,22 @@ describe('vercel build filter', () => {
     })
     expect(out).toContain('0 failed')
     expect(out).not.toContain('FAIL')
-    // The suite is worthless if it stops reaching cases. Assert the count too,
-    // so a silently-skipped case fails rather than reading as a clean run.
-    expect(out).toMatch(/14 passed, 0 failed \(14 cases ran\)/)
+
+    // The suite is worthless if it stops reaching cases, so the count is
+    // asserted too — but NOT by restating the number here.
+    //
+    // ⚠️ IT WAS, AND IT BROKE THE MOMENT THE SUITE GREW. This line read
+    // `/14 passed, 0 failed \(14 cases ran\)/` while the shell script
+    // asserted 14 itself. Two owners of one number: adding the five cases
+    // that cover the `HEAD^` defect turned this red for no reason connected
+    // to the filter, on the same commit as the fix. The shell script owns
+    // its own case count (it exits non-zero if the tally is short, which
+    // `execFileSync` would throw on); this asserts the SHAPE and a floor,
+    // so it cannot drift and cannot silently accept a shrinking suite.
+    const tally = out.match(/(\d+) passed, 0 failed \((\d+) cases ran\)/)
+    expect(tally, 'the suite must print its tally').not.toBeNull()
+    expect(tally![1], 'every case that ran must have passed').toBe(tally![2])
+    expect(Number(tally![2]), 'the suite must not shrink below its known coverage')
+      .toBeGreaterThanOrEqual(19)
   })
 })
