@@ -56,7 +56,20 @@ export interface PrincipleCoverage {
  * Lower it in the same commit that classifies one — that is how the debt is
  * locked in rather than drifting back.
  */
-export const UNVERIFIED_BASELINE = 0
+// ⚠️ RAISED 0 -> 1 on 2026-09-21, and a raised baseline should be argued for,
+// not slipped in. §120 (HM-ANCHOR-VS-GOAL-01) was RATIFIED by the Coaching
+// Board and DELIBERATELY NOT SHIPPED: the ruling is CORRECT WITH AMENDMENT on
+// the anchor and INSUFFICIENT EVIDENCE on the amendment's bound, so the engine
+// does not implement it yet. An invariant written today would fail on every
+// generated plan, because the behaviour it checks for does not exist.
+//
+// `unverified` is the honest classification and `exempt` would be a lie: this
+// is not a principle nothing can breach, it is one the engine currently
+// breaches everywhere. The entry exists so the gap is counted rather than
+// forgotten, which is the whole reason this manifest does.
+//
+// ⚠️ Lower it back to 0 in the commit that ships §120's numeric and invariant.
+export const UNVERIFIED_BASELINE = 1
 
 /**
  * Principles whose stated enforcer is an invariant that has NEVER BEEN PROVEN
@@ -219,4 +232,15 @@ export const PRINCIPLE_COVERAGE: readonly PrincipleCoverage[] = [
   { n: 117, by: 'invariant', ref: 'INV-PLAN-RUNWALK-PRESCRIBED' },  // Finish-goal run-walk marathon. The invariant covers amendment 3 (the interval is PRESCRIBED on every running session), which is the whole safety argument for the lower door. It does NOT cover the peak value itself (amendment 1) — that is a config numeric governed by configPrincipleSync, not a property of a generated plan.  // §117 Am.2 is enforced by INV-PLAN-RUNWALK-ADEQUATE (same section).
   { n: 118, by: 'invariant', ref: 'INV-PLAN-GET-RUNNING-BUILD-RATIO' },
   { n: 119, by: 'invariant', ref: 'INV-PLAN-MIN-LOADING-BLOCK' },  // A loading block is never one week. ⚠️ The invariant CHECKS it; `computeDeloadWeeks` does NOT enforce it, by board ruling — brute force over all 220 deload placements on the 18-week marathon found 0 satisfying the full constraint set and exactly 2 satisfying everything but a THREE-week floor, neither reachable by §87's greedy re-anchor. So the severity is `warn` and the producer change is registered debt (DELOAD-PLAN-OPENING-01, filed 2026-09-21). Measured firing rate at ratification: 26.3% of cohort plans, 33.3% of the targeted grid, 100% of them the plan's OPENING block.  // The get-running plan. ⚠️ The invariant covers the TOTAL BUILD ceiling (amendment 2) — the §2 blind spot this section exists to close. It does not cover the plan's ADEQUACY, because a plan with no race has no adequacy bar to hold it to, which is also why no harness watches this plan kind.
+  { n: 120, by: 'unverified',
+    why: 'RATIFIED, NOT SHIPPED (Coaching Board 2026-09-21, HM-ANCHOR-VS-GOAL-01). '
+       + 'On a time-target plan the HM anchor must resolve to GOAL pace, as T has since '
+       + '2026-09-03 and as the sibling mp_blocks row already does. The engine does not do '
+       + 'this yet, so there is nothing for an invariant to pass on. Blocked on ONE number: '
+       + 'RACE_PACE_ANCHOR_MAX_STRETCH_PCT, Willy\'s bound, which must be MEASURED rather '
+       + 'than chosen because a 15% bound costs 27% of these sessions their row and presses '
+       + 'on §22\'s own 50% floor. Both obvious gates were examined and rejected: '
+       + 'goalBeyondMeasuredFitness tests against INTERVAL pace, and difficulty_band is '
+       + 'forbidden by §44 point 3. Ships with INV-PLAN-RACE-ANCHOR-MATCHES-GOAL and '
+       + 'INV-PLAN-HEADER-PACE-MATCHES-WORK; lower UNVERIFIED_BASELINE to 0 in that commit.' },
 ] as const

@@ -18,9 +18,9 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-21 (last ship `7f39d83`):** tree clean · `verify` exit 0 · **2,937 tests / 330 files** · **132 invariants** (code=doc, 0 orphans, unchanged: the one I wrote was reverted with its fix) · `audit-docs.sh` clean but for one malformed commit scope of mine (`COPY-VOICE-01 et al` — a scope must be a bare ID). 
+**State at END of 2026-09-21 (last ship `ac23deb`):** tree clean · `verify` exit 0 · **2,937 tests / 330 files** · **132 invariants** (code=doc, 0 orphans; the one I wrote was reverted with its fix) · `audit-docs.sh` **ALL CLEAN**. 🔴 **`SHIP-RECORD-ALLTIME-01` — THE AUDIT READ ALL CLEAN WITH A REGISTRY ROW DELETED.** Found by falsifying my own clean run rather than trusting it. The ship-record check runs over commits SINCE a marker, and **a clean run advances that marker to HEAD**, so every pass after the first inspects zero commits and prints ok. Second time an incremental tripwire in that file has been read as an inventory (`BACKLOG-STALE-ALLTIME-01` closed the identical hole ten lines below). An all-time hard check is not viable — **291 of 454 all-time scopes lack records** — so it is a debt register that only fails on GROWTH. ⚠️ **It caught its own missing records on the first run after the commit.** 
 
-🔴 **`HM-ANCHOR-VS-GOAL-01` — THE SESSION HEADER WAS COVERING FOR THE PRESCRIPTION, AND NOTHING SHIPPED.** A card's header pace is documented by §85 as the WORK pace; every row fell through to the generic quality band whatever its work anchor was. **2,811 sweep sessions displayed a pace their own reps contradicted** (live on `/plans/10k-12-week`: header `5:30–6:00` above reps at `5:21–5:34`, so a runner following the header runs it **30 s/km too slow**). ⚠️ **`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` classifies by reading that header**, so all 2,811 counted toward §22's 50% floor BECAUSE OF the lie. Honest headers → **555 sweep cases below the floor and 36 unit tests red**. Traced on a real 1:50 half: `hm_pace_intervals` prescribes **5:49–6:11 against a goal pace of 5:13** on three PEAK sessions, because `HM` resolves to CURRENT half pace, not goal. **The fix, the classifier and a new invariant were written, measured and REVERTED**: shipping needs a prescription change or a weakened constitutional invariant, and both are the board's. `docs/decisions/hm-anchor-vs-goal-01.md`. 
+🔴 **`HM-ANCHOR-VS-GOAL-01` — THE SESSION HEADER WAS COVERING FOR THE PRESCRIPTION, AND NOTHING SHIPPED.** A card's header pace is documented by §85 as the WORK pace; every row fell through to the generic quality band whatever its work anchor was. **2,811 sweep sessions displayed a pace their own reps contradicted** (live on `/plans/10k-12-week`: header `5:30–6:00` above reps at `5:21–5:34`, so a runner following the header runs it **30 s/km too slow**). ⚠️ **`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` classifies by reading that header**, so all 2,811 counted toward §22's 50% floor BECAUSE OF the lie. Honest headers → **555 sweep cases below the floor and 36 unit tests red**. Traced on a real 1:50 half: `hm_pace_intervals` prescribes **5:49–6:11 against a goal pace of 5:13** on three PEAK sessions, because `HM` resolves to CURRENT half pace, not goal. **The fix, the classifier and a new invariant were written, measured and REVERTED**: shipping needs a prescription change or a weakened constitutional invariant, and both are the board's. ⚖️ **TAKEN TO THE BOARD SAME DAY AND RULED: CORRECT WITH AMENDMENT, ratified as §120** — on a time-target plan `HM` resolves to GOAL pace, as `T` has since 2026-09-03 and as the sibling `mp_blocks` row already does. ⚠️ **INSUFFICIENT EVIDENCE on Willy's bound, so it does NOT ship yet:** both obvious gates were rejected (`goalBeyondMeasuredFitness` tests against INTERVAL pace; `difficulty_band` is forbidden by §44 point 3, Willy's own constraint), and a 15% bound costs 27% of these sessions their row while pressing on §22's own 50% floor. **The number must be measured, not chosen.** ⚠️ **The scan found what the submission missed:** §44's live difficulty note already promises *"race-pace sessions will bite harder"* while the engine prescribes the opposite. `docs/decisions/hm-anchor-vs-goal-01.md`, §120. 
 
 🟢 **Website audit, six sections, six commits.** `SITE-TYPE-01`: there was **no type scale** — 170 hand-typed sizes in 19 values across 16 files, 30 of them half-pixels; now 16 tokens, 210 call sites, distinct `<p>` sizes 15→10. `SITE-META-01`: two lines in the root layout gave **every page the same social card**; `maximumScale:1` refused pinch zoom (**WCAG 1.4.4**); the iOS status bar was declared twice and disagreed; `/api/og` took no request; `plans.ts` typed the brand name **18 times**. `SITE-SCHEMA-01`: `MobileApplication` + both prices, and the founder was **two people** to a crawler. **Two of the four asks were already true and are now pinned.** `IA-CROSSLINK-01`: all 5 goal plans linked to a distance plan, **all 4 distance plans linked to zero goal plans**. `W-01c`: guides group by intent, **flat until the second populated bucket, so it changes nothing visible today** (switches on at guide 3). `IA-QR-01`: desktop-only App Store QR, gated by re-encoding the URL. `COPY-VOICE-01`: four self-contradictions fixed (free tier 'adapts' vs a paid gate; 'weekly score' vs 'no score to chase'; watch sync 'None' when we read Apple Watch HR; an FAQ pointing 'below' at the plan above it), the site converted to first person, and the founder story's **expired** race line replaced. Plus `textContent` reading **'1600 mat'** and a hero mockup showing a **band** where §12 prescribes a **ceiling**. `A11Y-CONTRAST-01`/`PERF-FONT-01`: Lighthouse mobile on a production build — `/` **89→97**, plan a11y **95→100**, guide **95→98** and a11y **96→100**, **CLS 0.161/0.110 → 0**, FCP 1.9s→0.9s. Inter was loaded **twice**, the `@import` three round trips deep. ⚠️ **9 contrast failures remain on the homepage**, all inside the phone mockup at 9–11px; that is why it is 96 not 100. 
 
@@ -45,29 +45,32 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 approval gate (§4A) and are written as decision notes in `docs/decisions/`. Three cannot be *scoped*
 — not merely approved — until the Coaching Board rules.
 
-### 🔴 `HM-ANCHOR-VS-GOAL-01` — the session header was covering for the prescription *(COACHING BOARD, filed 2026-09-21)*
+### 🟡 `HM-ANCHOR-VS-GOAL-01` — RULED by the Coaching Board 2026-09-21, ratified as **§120**, NOT YET SHIPPED
 
-**Full filing with every measurement: `docs/decisions/hm-anchor-vs-goal-01.md`. Read that, not this.**
+**Ruling + every measurement: `docs/decisions/hm-anchor-vs-goal-01.md`. Principle: §120.**
 
-Found by chasing a founder note about a wrong-looking CV header on a published plan page.
+**CORRECT WITH AMENDMENT** on the anchor: on a time-target plan `HM` resolves to **GOAL** pace, as
+`T` has since 2026-09-03 and as the sibling `mp_blocks` row already does. **INSUFFICIENT EVIDENCE**
+on the amendment's bound, which is what blocks the ship.
 
-**The header defect (one line to fix, measured):** a card's header pace is documented by §85 as the
-session's WORK pace, and every row fell through to the generic quality band regardless of its work
-anchor. **2,811 sessions in `verify:sweep` displayed a pace their own reps contradicted.** Live
-today on `/plans/10k-12-week`: header `5:30–6:00 /km` above reps at `5:21–5:34 /km`, so a runner
-following the header runs the session up to **30 s/km too slow**.
+**Why it matters:** measured on 1,296 sessions, the same runner's "HM-pace intervals" are 26 s/km
+too SLOW for an ambitious goal and 45 s/km too FAST for a conservative one, wrong in both
+directions. Without a benchmark, `HM pace` takes **two values (6:00 / 5:20) for every target from
+1:25 to 2:20**. And §44's live difficulty note already promises *"race-pace sessions will bite
+harder"* while the engine prescribes the opposite.
 
-**What it was covering (the board's question):** `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` classifies
-a session as goal-pace work by reading that header, so all 2,811 counted toward §22's 50% floor
-**because of the lie**. With honest headers, **555 sweep cases fall below the floor and 36 unit
-tests fail**. Traced on a real 1:50 half-marathon input: `hm_pace_intervals` prescribes
-**5:49–6:11 /km against a goal pace of 5:13** on three PEAK-phase sessions, because `HM` resolves
-to the runner's CURRENT half pace rather than their goal one.
+**Blocked on ONE thing: the value of `RACE_PACE_ANCHOR_MAX_STRETCH_PCT`.** Both obvious gates were
+examined and rejected (`goalBeyondMeasuredFitness` tests against INTERVAL pace; `difficulty_band` is
+forbidden by §44 point 3). A 15% bound costs 27% of these sessions their row, 20% costs 19%, and
+losing the row presses on §22's own 50% floor. **It must be measured, not chosen.**
 
-🔴 **NOTHING SHIPPED, DELIBERATELY.** The fix, the structural classifier and a new
-`INV-PLAN-HEADER-PACE-MATCHES-WORK` were written, measured and reverted: shipping needs either a
-prescription change or a weakened constitutional invariant, and both are the board's. ⚠️ **The
-defect is live in production and doing nothing is also a decision.**
+**To ship, one commit:** the numeric + `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` +
+`INV-PLAN-HEADER-PACE-MATCHES-WORK` (written, falsified) + the header fix + the structural
+classifier + `npm run measure:fitness` on the changed engine.
+
+⚠️ **The header fix cannot ship alone** — the ratio invariant classifies by reading the header, so
+truth-telling drops 555 plans below §22. Anchor and header ship together. ⚠️ **The defect is live.**
+
 
 ### ⚖️ RULED 2026-09-20 — READ THIS BEFORE THE PROPOSALS BELOW
 

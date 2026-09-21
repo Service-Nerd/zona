@@ -83,13 +83,65 @@ change, not a relabelling.
 
 ---
 
-## 4. Status
+## 4. RULING — Coaching Board, 2026-09-21
 
-**Nothing shipped.** The header fix, the structural classifier and a new
-`INV-PLAN-HEADER-PACE-MATCHES-WORK` invariant were all written, measured and then **reverted**,
-because shipping them requires either changing what the engine prescribes or weakening a
-constitutional invariant, and both are the board's call. The branch state is clean; this document
-is the deliverable.
+**CORRECT WITH AMENDMENT** on the anchor. **INSUFFICIENT EVIDENCE** on the amendment's bound.
+Net effect: **ratified, does not yet ship.** Principle landed as **§120**.
 
-⚠️ **The defect is LIVE in production today** and has been for as long as the HM anchor has
-existed. Doing nothing is a decision too.
+**Option 1 adopted.** On a time-target plan the `HM` anchor resolves to GOAL pace, as `T` has since
+2026-09-03 and as the sibling `mp_blocks` row already does. Option 2 (ineligibility on divergence)
+was rejected: it deletes race-specific work from most time-target half plans, breaking §22 to fix a
+pace. Option 3 (fix the build rotation) was rejected: the 555 ratio failures are a symptom, and the
+rotation is not where the wrong number comes from.
+
+### What the conflict scan found that the submission did not
+
+1. **`mp_blocks`** — the same `race_specific` job one row away — is anchored **`goal`**, while
+   `hm_pace_intervals` is anchored `HM`. The catalogue already answered this and never carried it
+   across.
+2. **§44's difficulty note already promises this behaviour in production:** *"the pace you're
+   targeting is quicker than your benchmark currently supports, so race-pace sessions will bite
+   harder than the interval work."* They do not. The copy describes §120 and the engine does the
+   opposite.
+3. **§85's CV shield does not transfer.** CV is shielded because the "over" of an over-under is
+   defined relative to threshold. "HM pace" is defined relative to a race the runner has named a
+   target time for. Different kind of anchor.
+4. **§1 is untouched** — it counts SESSIONS (CD-19), so a pace change cannot move it. Recorded so it
+   is not raised later as a phantom gate.
+
+### Why the bound is unresolved, and why that blocks the ship
+
+Willy's amendment is chair-adopted: above some divergence the row is not offered. **Both obvious
+gates were examined and rejected** — `goalBeyondMeasuredFitness` tests against INTERVAL pace and so
+only catches an impossible goal, not a 20–30% reach; and `difficulty_band`, which tracks the reach
+closely, is forbidden by **§44 point 3 (Willy's own constraint): the band is derived only from
+pre-generation feasibility, never from plan-quality signals.**
+
+So a new constant is needed and its value must be **measured**: a 15% bound costs 27% of these
+sessions their row, 20% costs 19%, and losing the row presses on §22's own 50% floor. The bound
+trades one principle against another and cannot be set by preference.
+
+### Also measured, and recorded because it looked convincing and was wrong
+
+I expected the no-benchmark cohort to be the whole problem. **29% of no-benchmark sessions exceed a
+15% error and 27% of benchmarked ones do too.** Splitting by benchmark rescues nothing; the fault is
+the anchor, not the estimate behind it.
+
+## 5. To ship, in one commit
+
+1. ✅ **Principle** — §120, landed 2026-09-21.
+2. ⬜ **Numeric** — `GENERATION_CONFIG.RACE_PACE_ANCHOR_MAX_STRETCH_PCT`, value measured, with the
+   §22 trade stated at the chosen number.
+3. ⬜ **Invariants** — `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` and `INV-PLAN-HEADER-PACE-MATCHES-WORK`
+   (the latter already written and falsified), both with `plan-invariants.md` rows.
+4. ⬜ **`npm run measure:fitness` on the CHANGED engine.** The board's own procedure requires it
+   before any prescription change and it has not been run, because the change has not been built.
+5. ⬜ The header fix and the structural classifier, **in the same commit** — see below.
+
+⚠️ **THE TWO CHANGES SHIP TOGETHER OR NOT AT ALL.** The honest header cannot ship alone:
+`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` classifies goal-pace work by READING that header, so
+telling the truth drops 555 plans below §22. Once the anchor resolves to goal, those sessions are
+genuinely goal-paced and the ratio is satisfied by the prescription rather than by the display.
+
+⚠️ **The defect is LIVE in production and has been for as long as the HM anchor has existed.**
+Doing nothing is a decision too.

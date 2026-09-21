@@ -6,6 +6,37 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-21 — SHIP-RECORD-ALLTIME-01: the audit read ALL CLEAN with a row deleted
+
+**Dev.** I had just made `audit-docs.sh` read ALL CLEAN, so before believing it I deleted a
+registry row I had added an hour earlier and ran it again. **ALL CLEAN.**
+
+The marker. The ship-record check runs over commits *since* the SHA in
+`.claude/state/last-doc-audit.txt`, and a clean run advances that SHA to HEAD. So the first pass
+checks everything, passes, moves the marker, and every pass after that inspects zero commits and
+prints ok. The check that had just certified today's nine ships could no longer see any of them.
+
+**The honest bit.** This is the second time. `BACKLOG-STALE-ALLTIME-01` closed the identical hole
+on the backlog check ten lines below in the same file, and I did not think to ask whether its
+neighbour had the same shape. An incremental check is a tripwire, not an inventory, and I keep
+reading one as the other.
+
+**The number that decided the design.** 291 of 454 all-time scopes have no registry row, no
+build-log heading, or neither. Most predate the discipline. A hard all-time check would fail on
+every run forever, which is not a check, it is a thing someone deletes. So it is a debt register:
+the baseline is committed, only growth fails, and an improvement asks you to lower it.
+
+It caught its own missing records on the very first run after I committed it. 291 → 292. That is
+the most reassuring thing that happened all day.
+
+**And a smaller one.** My own commit scope `fix(COPY-VOICE-01 et al)` had the audit hunting for a
+feature literally called "COPY-VOICE-01 et al". The tempting fix was to accept only ID-shaped
+tokens — and the comment directly above the parser records that exact narrowing having hidden 53%
+of all scopes when someone tried it before. So the pattern stays loose and one prose suffix comes
+off. Reading the comment above the line you are about to change is not optional.
+
+---
+
 ## 2026-09-21 — A11Y-CONTRAST-01 + PERF-FONT-01: Inter was loaded twice, and the muted text never passed
 
 **Dev.** Ran Lighthouse mobile against a production build, not the dev server, because dev numbers

@@ -8408,3 +8408,109 @@ trade, because it does not fix the plan that prompted it.
 **Owner.** Checker only — `INV-PLAN-MIN-LOADING-BLOCK`. `computeDeloadWeeks`
 deliberately does not read it. **Registered debt:** `DELOAD-PLAN-OPENING-01`,
 filed 2026-09-21, one day old at time of writing.
+
+---
+
+## 120. "Race pace" means the pace of the race you are training for
+
+**Ruling: Coaching Board, 2026-09-21, `HM-ANCHOR-VS-GOAL-01`. CORRECT WITH AMENDMENT on the
+anchor; INSUFFICIENT EVIDENCE on the amendment's bound, so the change is ratified and
+DOES NOT YET SHIP.** Full filing and every measurement: `docs/decisions/hm-anchor-vs-goal-01.md`.
+
+**The principle.** On a **time-target** plan, a race-specific session's pace anchor resolves to the
+runner's **GOAL** race pace, not to an estimate of their current ability at that distance. A session
+named for a race distance exists to rehearse the race. Rehearsing it at a pace the runner is not
+going to run is not specificity, it is a coincidence.
+
+### Why — and the constitution had already decided this twice
+
+1. **§22 ruled it for `T` on 2026-09-03, unanimously:** *"a goal-paced week's override must reach
+   the derived_set, not just the label… the T anchor now resolves to goal pace… **for every
+   threshold-category row**."* `hm_pace_intervals` is `category: 'race_specific'`, which is the only
+   reason it escaped. **This section is that ruling applied to the category it was under-scoped to
+   miss, not a new idea.**
+2. **The catalogue already does it one row away.** `mp_blocks` — *"Marathon-pace blocks"*,
+   `race_specific`, the identical job at peak — is anchored **`goal`**. `hm_pace_intervals` is
+   anchored **`HM`**. Two sibling rows resolving the same concept from opposite sources.
+
+### ⚠️ And the product was already PROMISING this behaviour in writing
+
+§44's difficulty note, live today, tells a runner whose goal outruns their benchmark:
+
+> *"Demanding — the pace you're targeting is quicker than your benchmark currently supports, **so
+> race-pace sessions will bite harder than the interval work**. That gap is the plan's job."*
+
+The engine then prescribes those race-pace sessions at the runner's **current** pace, so they do not
+bite harder. **The copy describes the behaviour this section ratifies, and the engine does the
+opposite.** That is the strongest single argument here and it was found by the conflict scan, not by
+the submission.
+
+### What was measured
+
+Same runner, same benchmark (10K in 50:00), goal varied — so only the target moves:
+
+| goal | goal pace | prescribed "HM pace" | error |
+|---|---|---|---|
+| 1:45 | 4:59 | 5:25 | **26 s/km too slow** |
+| 1:59 | 5:38 | 5:25 | 13 s/km too fast |
+| 2:10 | 6:10 | 5:25 | **45 s/km too fast** |
+
+Wrong in **both** directions; right only by coincidence in the middle. Across 1,296 generated
+`hm_pace_intervals` sessions the median error is **3.7%**, the 90th percentile **25.5%**, the range
+**−55% to +37%**. Without a benchmark it is worse and not defensible at all: `HM pace` took
+**exactly two values, 6:00 and 5:20**, for every target from 1:25 to 2:20, so a 1:25 aspirant is
+handed peak reps **118 s/km slower than race pace**.
+
+> ⚠️ **A hypothesis that failed, recorded because it looked convincing.** I expected the
+> no-benchmark cohort to be the whole problem and the benchmarked cohort to be broadly fine.
+> Measured: 29% of no-benchmark sessions exceed a 15% error and **27% of benchmarked ones do too**.
+> Splitting by benchmark rescues nothing. The fault is the anchor, not the estimate behind it.
+
+### ⚠️ Willy's amendment: the substitution is BOUNDED, and the bound is NOT YET A NUMBER
+
+Anchoring to goal fixes both directions, and for the **conservative-goal** runner it *reduces* load —
+they are currently prescribed peak reps up to 45 s/km **faster** than their race, which Sims noted
+lands hardest on the masters and peri/post-menopausal runners this product serves. That case is live
+today and this change makes it safer.
+
+The residual risk is the opposite runner. At the top of the measured range the engine would prescribe
+four × 2 km at a pace **37% faster** than the runner's current half-marathon pace, in **peak**, weeks
+before the race. Willy's condition, chair-adopted: **above some divergence the row is not offered at
+all**, falling through the selector to threshold work rather than prescribing a pace with no
+demonstrated basis.
+
+**Two candidate gates were examined and BOTH rejected, which is why the bound is unresolved:**
+
+- **`goalBeyondMeasuredFitness`** already exists, but it tests goal pace against **interval** pace.
+  It fires only for a frankly impossible goal, not for a 20–30% reach. It is a fantasy detector, not
+  a stretch bound.
+- **`difficulty_band`** tracks the reach closely (it flips between 8.0% and 16.9% in the measured
+  grid) and was the obvious reuse. **§44 point 3 — Willy's own constraint — forbids it:** *"the band
+  is derived only from PRE-GENERATION feasibility, never from plan-quality signals."* Making a band
+  drive session selection inverts that, and a second authority on "is this goal a stretch?" is the
+  duplicate-semantics failure this repo has already paid for three times.
+
+**So a new named constant is required, and its VALUE must be measured rather than chosen.** At a 15%
+bound 27% of these sessions lose the row; at 20%, 19%. Losing the row means losing race-specific work
+and pressing on §22's own 50% floor, so the bound trades one principle against another and cannot be
+set by preference.
+
+### Status: ratified, not shipped
+
+**Required before this ships**, in one commit:
+
+1. **Principle** — this section. ✅ landed.
+2. **Numeric** — `GENERATION_CONFIG.RACE_PACE_ANCHOR_MAX_STRETCH_PCT`, **value measured**, with the
+   §22 trade stated at the chosen number.
+3. **Invariant** — `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` plus `INV-PLAN-HEADER-PACE-MATCHES-WORK`
+   (already written and falsified), both with `plan-invariants.md` rows.
+4. **`npm run measure:fitness` on the CHANGED engine.** The board's own procedure requires it before
+   any prescription change, and it has not been run, because the change has not been built.
+
+⚠️ **A dependency worth stating: this ruling is what unblocks the header.** 2,811 sweep sessions
+currently display a pace their own reps contradict, and the honest header cannot ship alone because
+`INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` classifies goal-pace work **by reading that header**, so
+truth-telling drops 555 plans below §22. Once the anchor resolves to goal, those sessions become
+genuinely goal-paced and the ratio is satisfied by the prescription rather than by the display.
+**The two changes ship together or not at all.**
+
