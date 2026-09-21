@@ -96,8 +96,25 @@ function scan(): Array<{ file: string; line: number; code: string }> {
 
   const hits: Array<{ file: string; line: number; code: string }> = []
   for (const file of files) {
+    // ⚠️ Block-comment state, added 2026-09-21. The line check below skips
+    // `//`, `*` and `/*` openers, which covers JSDoc and single-line comments
+    // but NOT the CONTINUATION lines of a JSX `{/* ... */}` block, whose
+    // middle lines start with ordinary prose.
+    //
+    // It caught a comment in `SameWeekTwice.tsx` that was explaining THIS RULE,
+    // quoting the banned pattern in order to describe it. A guard that fires on
+    // its own documentation is the same comment-read-as-code class this repo
+    // hit four times in one day from the other direction, and the cost is
+    // worse than a false negative: it teaches you to write around the guard.
+    let inBlockComment = false
     readFileSync(file, 'utf8').split('\n').forEach((raw, i) => {
       const trimmed = raw.trim()
+      const opens = /\{?\/\*/.test(raw) && !/\*\/\}?/.test(raw.slice(raw.search(/\{?\/\*/) + 2))
+      if (inBlockComment) {
+        if (/\*\/\}?/.test(raw)) inBlockComment = false
+        return
+      }
+      if (opens) { inBlockComment = true; return }
       // A comment EXPLAINING the rule is not a second copy of it.
       if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) return
       const m = raw.match(UNIT_AFTER_INTERPOLATION)

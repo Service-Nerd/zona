@@ -37,6 +37,7 @@ import Link from 'next/link'
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { zoneWeekStatement, classifyRun } from '@/lib/coaching/zoneWeekStatement'
+import { formatDistance } from '@/lib/format'
 import type { Session } from '@/types/plan'
 
 const SOURCE_SLUG = 'half-marathon-12-week'
@@ -155,7 +156,13 @@ export function SameWeekTwice() {
                 <span style={{ width: 30, flexShrink: 0, color: 'var(--mute)', fontWeight: 600 }}>{DAY_LABEL[x.day]}</span>
                 <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{x.s.label}</span>
                 <span style={{ color: 'var(--mute)' }}>
-                  {x.s.distance_km != null ? `${x.s.distance_km} km` : null}
+                  {/* ADR-015 — `lib/format.ts` is the sole owner of every
+                      distance string. PREF-SWEEP-01 caught this welded as
+                      `${km} km` on the first write; the identical pattern one
+                      file over in `PlanPage` is registered debt, which is
+                      exactly why the guard blocks NEW instances rather than
+                      trusting the surrounding code as an example. */}
+                  {formatDistance(x.s.distance_km, 'km')}
                   {x.s.zone ? ` · ${x.s.zone}` : null}
                   {x.s.hr_target ? ` · ${x.s.hr_target}` : null}
                 </span>

@@ -326,7 +326,7 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
   {
     kind: 'guide',
     slug: 'should-easy-runs-feel-this-slow',
-    principleRefs: ['§12', '§1'],
+    principleRefs: ['§12', '§1', '§2'],
     metaTitle: 'Should easy runs feel this slow?',
     metaDescription:
       `Yes, and slower than that. Why your easy pace should feel almost embarrassing, what the ceiling actually is, and how to tell easy from lazy.`,
@@ -342,10 +342,12 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
     hubSummary: `Yes. And the reason it feels wrong is the same reason it works.`,
     body: [
       p(`Short answer: yes, and there is a reasonable chance it should be slower still. The feeling you are describing, that this cannot possibly be doing anything, is not a sign you have the pace wrong. For most runners it is the first sign they have it right.`),
+      p(`The thing that is well established here is not a promise about what easy running will do for you. It is the problem: recreational runners consistently accumulate more moderate-effort work than they intend to. Ask a group what their easy pace is and then look at what they actually ran, and the gap is the whole story. That is where the stagnation comes from, and it is the specific thing this plan is built to stop.`),
 
       h2('What an easy run is actually for'),
       p(`An easy run is not a small hard run. It is a different session with a different job, and the job is aerobic adaptation: more capillaries, more mitochondria, a heart that moves more blood per beat. Those adaptations respond to time spent in the right zone, not to effort. You cannot hurry them by trying harder, and trying harder actively costs you, because the fatigue you generate has to be paid back out of the session that was supposed to be hard.`),
       p(`This is why the pace feels wrong. Every other kind of training you have done rewards effort. This one rewards patience, and patience feels like nothing is happening.`),
+      p(`Worth being precise about what is being asked, because it is easy to hear the wrong thing: this is not about doing less. It is about where the effort goes. Most of your week is easy so that one day a week can be genuinely hard, and that hard day is the one that gets protected. Running everything at seven-tenths is not more work, it is the same work spread so thin that none of it lands.`),
 
       h2('The ceiling, and why it is a ceiling'),
       p(`${BRAND.name} caps every easy run at the top of Zone 2, which is roughly 60 to 70 percent of heart-rate reserve. The important word is cap. It is not a band you are supposed to sit inside and it is not a target to hit.`),
@@ -363,6 +365,9 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       p(`The distinction that matters is not how hard it feels, it is what the session is for. A lazy run is one with no job. An easy run has a specific job and a specific ceiling, and staying under that ceiling on a day your legs feel good is harder than running fast. That is the discipline the whole method rests on.`),
       p(`The test is not the individual run, it is the week. If your easy days are genuinely easy, your hard day should feel available. If you arrive at the hard session already flat, the easy days were not easy, whatever your watch said.`),
 
+      h2('One more reason, and it is not about speed'),
+      p(`A week with most of its sessions genuinely easy and one properly hard day puts less cumulative mechanical load through your legs than four moderate-hard runs covering the same distance. That is arithmetic rather than a prediction, and it is a separate argument from the pace one. Nobody can tell you whether you personally will stay healthy. What can be said is which of two weeks asks more of the tissue, and it is not the one that feels harder to hold back on.`),
+
       h2('Why this is most of your week'),
       p(
         `In a ${BRAND.name} plan the large majority of your sessions are easy, and that ratio is the plan rather than a gap in it. Intensity is counted in sessions across the whole block, not minutes within a run, so one genuinely hard session in a week of genuinely easy ones is a complete week of training. `,
@@ -370,8 +375,10 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
         `, so you can count the easy days yourself before you believe anyone about this.`,
       ),
 
-      h2('If it still feels wrong'),
-      p(`It will, for about three weeks. The thing to watch is not the pace of the easy runs, it is what happens to the hard one. Same effort at a lower heart rate, or the same heart rate at a quicker pace, is the adaptation arriving. That is the number worth checking, and it is the only one that answers the question you actually asked.`),
+      h2('Week three is the hard part'),
+      p(`Week one is a relief. Week two feels like cheating. Week three is when people quit the method, and it is worth knowing why in advance: your easy pace has not moved, the hard session has not felt dramatically better, and somebody you run with is training harder than you and saying so. That is the point at which most people quietly add ten seconds a kilometre back, and once they do they are in the grey zone for good.`),
+      p(`Nothing has gone wrong at week three. That is just the shape of it. Aerobic adaptation is not fast and it is not dramatic, and the first month mostly buys you the ability to keep going.`),
+      p(`The marker to watch is not a pace and it is not a heart rate. Both move with heat, sleep, caffeine and how your week went, by more than three weeks of adaptation will move them, so you will read noise and conclude it is not working. The question to ask instead is simpler and you already know the answer: when the hard session comes round, does it feel available? If your easy days were genuinely easy, it should. If you arrive at it already flat, they were not, whatever your watch said.`),
     ],
   },
 ]

@@ -2102,8 +2102,11 @@ Review personas: M2 / M3 / M5 at **29.5 km (70%)**, M1 / M1d at 26.0 km. M3's ne
 > BELIEF, not the code**: any note, plan or report that treats those FAQs as earning rich results in
 > Google is wrong and has been since May.
 >
-> **The work is therefore:** (1) correct the claim wherever it is written down, including the
-> `GTM-SEO-COMPARE-01` and `GTM-SEO-PLANS-01` registry rows if they assert it; (2) decide whether to
+> ✅ **(1) DONE 2026-09-21** — the registry rows were checked and **neither asserts a Google rich
+> result**, so there was no false claim to correct there; the stale belief existed only in the W-02
+> brief, which was corrected before it shipped. The remaining work is below.
+>
+> **The work is therefore:** (1) ~~correct the claim wherever it is written down~~ done; (2) decide whether to
 > keep investing in FAQ blocks for SEO reasons or for answer-engine reasons, which are different
 > briefs with different copy; (3) leave the markup alone either way.
 >
@@ -2267,7 +2270,35 @@ not need) and never once says **what happens after you tap download**. A buyer c
 builds it → **read the entire plan, free, before paying anyone** → run it → it reflows when your
 week breaks. Step three is the one they cannot copy, because they do not have it.
 
-### 🟡 `W-03` — Three promises: right vehicle, wrong content *(S, needs SLT)*
+### 🔴 `W-03` — **KILLED 2026-09-21 by the Coaching Board. Do not re-propose a homepage commitments block.**
+
+**Ruling: CORRECT WITH AMENDMENT, and the amendment removed the item.** A block of promises
+answering an evidence question is the weakest available instrument. `SameWeekTwice` (W-04) already
+does the proof job with real plan data and the product's own verdict function, and a third telling
+on one page is surface area. Wood and Hutchinson reached this independently at the SLT:
+*"the person asking is not short of reassurance, they are short of proof."*
+
+**The surviving content went into guide 1, not the homepage:**
+- **McMillan's week-three expectation** — not a promise, a warning about the shape. *"Week one is a
+  relief, week two feels like cheating, week three is when people quit"*, and the reason is that the
+  easy pace has not moved and somebody else is training harder and saying so.
+- **The marker: does the hard session feel available.** ⚠️ **Hutchinson REJECTED the heart-rate
+  marker I had already drafted** — correct physiology, hazardous instrument: day-to-day HR at a
+  given pace moves with heat, sleep and stress by more than three weeks of novice adaptation, and
+  **our own 40 s/km within-month variability measurement is the evidence.**
+- **Seiler's problem-not-remedy framing** — assert that recreational runners accumulate more
+  moderate work than they intend (well supported); do not assert what easy running will do for them
+  (thin at 3 to 4 hours a week).
+- **Willy's load statement**, in the guide and deliberately away from the speed answer.
+- **Sims's binding constraint: redistribution, never reduction.**
+
+🔴 **The rule is now constitutional — `§12 Amendment 2`: describe the METHOD, never forecast the
+RUNNER.** No ratio on a public page (inherits the P-02 veto: at 4 days, 80/20 vs 90/10 is 0.8 vs
+0.4 sessions and does not quantise). No injury-reduction claim. ⚠️ **Not mechanically checkable** —
+no test can read a sentence and decide whether it forecasts a runner; `principleRefs` makes an
+unsupported claim visible at review rather than preventing it.
+
+### ~~`W-03` original filing~~
 
 ⚠️ **Do not copy this as a values block.** Read what their promises actually DO: promise 01, *"the
 goal stays yours"*, pre-empts the single biggest churn fear (*the app will quietly downgrade my
@@ -2281,7 +2312,9 @@ So: a three-commitment block, but the commitments answer *that*. Needs the SLT b
 positioning claim, and the third one likely needs the Coaching Board because it would assert
 something about outcomes.
 
-### 🟡 `W-04` — "Same week, two plans": the strongest device on their site *(M)*
+### ✅ `W-04` — SHIPPED 2026-09-21 as `SameWeekTwice`. Real plan data, the product's own verdict function, and NO outcome claim (that half is W-03). Registry row has the detail.
+
+### ~~`W-04` original filing~~
 
 A side-by-side of one disrupted week — rigid plan versus theirs — with the reflow and a stated
 reason per change. **It PROVES the claim instead of asserting it.** Our homepage asserts "the plan

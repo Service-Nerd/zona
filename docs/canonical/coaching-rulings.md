@@ -21,7 +21,23 @@ memory.
 
 ---
 
-## Standing rulings — 2026-09-20, Miles teardown batch
+## Standing rulings — 2026-09-21
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **W-03 homepage commitments block** | 🔴 **KILLED — CORRECT WITH AMENDMENT, and the amendment removed the item** | A block of promises answering an evidence question is the weakest available instrument. `SameWeekTwice` (W-04) already does the proof job with real plan data and the product's own verdict function; a third telling on one page is surface area. **Wood and Hutchinson reached this independently at the SLT:** *"the person asking is not short of reassurance, they are short of proof."* **Do not re-propose a commitments block.** |
+| **§12 Amendment 2 — describe the METHOD, never forecast the RUNNER** | 🟢 **RATIFIED** | The first ruling in the constitution about **assertions rather than prescriptions**. A statement about the PLAN is verifiable by reading the plan; a statement about a person we have never met, with an unstated time horizon, is not something this product can know. ⚠️ **No numeric and NO INVARIANT** — no test can read a sentence and decide whether it forecasts a runner. Declared under §34 rather than discovered later. |
+| **The heart-rate progress marker** | 🔴 **REJECTED after being drafted** | *"Same effort at a lower heart rate"* is uncontroversial physiology and a **hazardous instrument**: day-to-day HR at a given pace moves with heat, sleep, caffeine and stress by margins comparable to three weeks of novice adaptation. **Our own 40 s/km within-month easy-pace variability is the evidence** — the same measurement that killed the 5 s/km trend constant. Replaced by McMillan's marker: **does the hard session feel available.** |
+| **A ratio on a public marketing page** | 🔴 **FORBIDDEN — inherits the P-02 veto** | At four running days 80/20 versus 90/10 is **0.8 against 0.4 quality sessions and does not quantise.** Seiler: assert the PROBLEM (recreational runners accumulate more moderate work than they intend, well supported) not the REMEDY (thin at 3 to 4 hours a week). |
+| **An injury-reduction claim** | 🔴 **FORBIDDEN** | Individual injury prediction is not something this or any product can do. ⚠️ **But Willy's LOAD statement is true and was being missed:** a week with one hard day places less cumulative mechanical load than four moderate-hard runs at the same volume. Arithmetic, not prediction. **Guide only, away from the speed answer** — answering a performance question with injury reads as changing the subject. |
+| **Restraint framed as REDUCTION** | 🔴 **FORBIDDEN — Sims, binding on all marketing copy** | *"Most of your week is easy so one day can be genuinely hard"* is redistribution and is safe. *"Do less"* is not, and **the copy drifts from the first to the second easily because the second is shorter.** The populations most susceptible to that reading are already under-fuelling. She also records that this objection lands harder on women in the cohort: **the copy is not competing with the runner's own doubt, it is competing with a person standing next to her.** |
+
+Record: `docs/decisions/slt-2026-09-21-who-writes-the-content.md` (the SLT half) and
+§12 Amendment 2 (the coaching half).
+
+---
+
+## Standing rulings — 2026-09-20, Miles teardown batch## Standing rulings — 2026-09-20, Miles teardown batch
 
 Record: `docs/decisions/coaching-board-2026-09-20-miles-teardown-batch.md` ·
 `docs/decisions/slt-2026-09-20-miles-teardown-batch.md`

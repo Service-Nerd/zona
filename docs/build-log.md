@@ -65,6 +65,52 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — W-03 / PREF-SWEEP-COMMENTS-01: I asked the board to kill my own item, and it did
+
+**Dev.** W-03 was going to be a block of commitments on the homepage answering the objection our
+marketing never addresses: if I hold back this much, won't I get slower? The SLT approved the
+vehicle and refused the content, and routed it to the Coaching Board.
+
+I took it there asking, among other things, whether it should exist at all. It should not. A block
+of promises answering an evidence question is the weakest instrument available, W-04 already shows
+the proof with real data, and a third telling on the same page is surface area. Wood and Hutchinson
+had arrived there independently the day before: the person asking is not short of reassurance, they
+are short of proof.
+
+**What survived is one idea and it is better than the block would have been.** McMillan's, and it
+is not a promise: week one is a relief, week two feels like cheating, and week three is when people
+quit, because the easy pace has not moved and somebody they run with is training harder and saying
+so. Telling someone in advance that week three feels exactly like that is worth more than any
+assurance about outcomes, and it costs nothing in credibility because it is an expectation rather
+than a forecast.
+
+**The bit that stung, usefully.** My drafted guide told the reader to watch for the same effort at a
+lower heart rate. Hutchinson accepted the physiology and rejected the instrument: day-to-day heart
+rate at a given pace moves with heat, sleep, caffeine and stress by more than three weeks of novice
+adaptation will move it, so a beginner watching for it reads noise and concludes the method failed.
+
+The evidence he used was ours. We measured within-month easy-pace variability at 40 seconds per
+kilometre earlier this month, which is why a 5 s/km trend constant got thrown out. I had that
+number in my own memory and still wrote the sentence. McMillan's replacement needs no watch at all:
+when the hard session comes round, does it feel available.
+
+**And the rule is now constitutional.** §12 Amendment 2: describe the method, never forecast the
+runner. It is the first thing in that document about assertions rather than prescriptions, which
+surprised me, given how much of the last month has been fixing claims on public pages. It ships
+with no numeric and no invariant, and both are stated as decisions rather than left to be noticed:
+no test can read a sentence and decide whether it forecasts a person.
+
+**The honest bit.** The units guard caught my new component welding "km" onto a value instead of
+going through the formatter. Correct catch, my mistake. Then it caught the comment I wrote
+explaining the fix, because the comment quotes the banned pattern in order to describe it.
+
+That is the fourth time today something in this repo has read a comment as code, and this time it
+was the guard doing it to me. I fixed the guard rather than rewording around it, because a check
+that fires on its own documentation teaches you to write in a way that avoids the check, which is
+strictly worse than a false negative.
+
+---
+
 ## 2026-09-21 — W-04: the honest version of a competitor's best idea
 
 **Dev.** Their strongest page element is a side-by-side of one disrupted week: rigid plan on the

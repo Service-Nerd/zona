@@ -1204,6 +1204,95 @@ missed `65% in zone / 26% above cap` case.
 
 ---
 
+### Amendment 2 — what may be claimed PUBLICLY about the method — added 2026-09-21 (Coaching Board, W-03)
+
+**Principle.** On any public surface, Zonna may **describe the method**. It may not
+**forecast the runner**.
+
+Those are different grammatical objects and the distinction is the whole rule:
+
+| Allowed | Forbidden |
+|---|---|
+| *"This plan keeps easy runs under a ceiling so the hard day has somewhere to go."* | *"You won't get slower."* |
+| *"Recreational runners systematically accumulate more moderate work than they intend, and it is associated with stagnation."* | *"You will get faster."* |
+| *"A week with one hard day places less cumulative mechanical load than four moderate-hard runs at the same volume."* | *"You will get injured less."* |
+
+A statement about the PLAN is verifiable by reading the plan. A statement about a
+PERSON we have never met, with an unstated time horizon, is not something this or
+any product can know.
+
+**Why this is in the constitution rather than in brand.md.** It is the first ruling
+here about **assertions rather than prescriptions**, and it exists so the next
+marketing page does not re-litigate it. `/pricing` had two false clauses deleted in
+September; the W-02 brief carried an outcome claim that was caught in review. The
+failure is recurrent and the surface is permanent.
+
+**Three specific bounds, each from the seat that owns it.**
+
+**Seiler — no ratio on a public page.** What the intensity-distribution data shows is
+a *description of what successful endurance athletes do*, and the controlled evidence
+for recreational athletes at three to four hours a week is limited with modest effect
+sizes. What IS well supported for our cohort is the negative: they accumulate more
+moderate work than they intend. **Assert the problem, not the remedy.** And a ratio
+inherits the **P-02 veto (09-20)**: at four running days 80/20 versus 90/10 is
+**0.8 against 0.4 quality sessions and does not quantise**, so a ratio on a page
+misleads at the volumes most of our runners actually train at.
+
+**McMillan — the approved content is an EXPECTATION, not a promise, and it is about
+week three.** Week one they are relieved, week two it feels like cheating, and week
+three they are worried because the easy pace has not moved and other runners are
+training harder. **That is when they quietly add ten seconds a kilometre back and
+return to the grey zone for good.** A promise does not reach that person. Being told
+in advance that week three feels exactly like this, and that it is the shape of the
+method rather than evidence of failure, does.
+
+⚠️ **The honest marker at week three is NOT a pace or a heart rate. It is *does the
+hard session feel available*.** No watch, uncontaminated by weather, and the runner
+already knows the answer.
+
+**Hutchinson — why the heart-rate marker was REJECTED, having first been drafted.**
+*"Same effort at a lower heart rate"* is uncontroversial physiology: reduced HR at a
+fixed submaximal workload is a well-established marker of aerobic adaptation. It is
+nonetheless **hazardous as a self-assessment instrument for a novice over three
+weeks**, because day-to-day HR at a given pace moves with heat, sleep, caffeine,
+hydration and stress by margins comparable to the adaptation being looked for. Our
+own measurement is the evidence: **within-month easy-pace variability of 40 s/km**,
+which is why a 5 s/km constant was thrown out. Correct as physiology, **wrong as an
+instrument**, so it is replaced by McMillan's marker.
+
+**Sims — binding on all of the above: restraint framed as REDISTRIBUTION, never as
+REDUCTION.** *"Most of your week is easy so that one day can be genuinely hard"* is a
+statement about where effort goes and is safe. *"Do less"* is not, and the copy drifts
+from the first to the second easily because the second is shorter. The populations most
+susceptible to that reading are the ones already under-fuelling. ⚠️ She also records
+that this objection lands harder on women in the cohort: **the block is not competing
+with the runner's own doubt, it is competing with a person standing next to her telling
+her she is not doing enough.** A promise loses that argument; a mechanism may not.
+
+**Willy — the load statement is true and belongs in a guide, not beside the speed
+answer.** A week with most sessions genuinely easy and one hard day places less
+cumulative mechanical load on tissue than four moderate-hard runs at similar volume.
+That is an arithmetic property of the prescription, the same class of claim as *"this
+plan caps your easy runs"*. **But answering a performance question with injury reads
+as changing the subject**, which is the oldest tell in coaching marketing.
+
+**What this ruling KILLED.** W-03's homepage commitments block. A block of promises
+answering an evidence question is the weakest available instrument; `SameWeekTwice`
+(W-04) already does the proof job with real plan data and the product's own verdict
+function, and a third telling on one page is surface area. Wood and Hutchinson reached
+this independently at the SLT: *"the person asking is not short of reassurance, they
+are short of proof."*
+
+**⚠️ NOT MECHANICALLY CHECKABLE, recorded under §34's pattern.** No test can read a
+sentence and decide whether it forecasts a runner. The nearest guard is the one already
+shipped: a guide's `principleRefs` forces it to name the section its claims rest on,
+which makes an unsupported claim **visible at review** rather than preventing it. The
+missing invariant is a known risk, not an oversight. **There is also no numeric**, and
+that too is a decision rather than an omission.
+
+---
+
+
 ## 13. Fitness classification — VDOT first, volume fallback
 
 > **Superseded for the classifier logic by §79 (dual-signal), SLT-approved 2026-08-06 (GEN-FIX-07/D2).** VDOT-first with a volume fallback misclassified a 30 km/week runner as a beginner on one slow 5K. §79 now requires VDOT *and* volume to agree before applying the beginner intensity ceiling. This section is retained for the definition of the three levels and their thresholds; the *derivation* rule is §79's.
