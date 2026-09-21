@@ -65,6 +65,39 @@ asserted `toContain` rather than an exact list.
 
 ---
 
+## 2026-09-21 — Guide one, and the gate that made it unreadable
+
+**Dev.** First article written under the new ruling. The interesting constraint was not the voice,
+it was `principleRefs`: a guide may only assert what a principle already asserts, and it names the
+section. That turns out to change how you write rather than just what you can claim. You cannot
+reach for the persuasive generality, because there is no section behind it.
+
+It also pushed the article somewhere better than I would have gone unprompted. The strongest
+paragraph in it tells the reader that our own shipped zone-drift detector was wrong, with the
+production numbers: 6 of 22 flagged runs were predominantly too easy, the worst at 17 percent in
+zone with nothing at all above the ceiling. That is in §12's Amendment 1 because the Coaching Board
+ruled our detector incorrect. Citing a principle meant citing the amendment, and the amendment is
+an admission. The rule made the article more honest, not less free.
+
+**The part I nearly shipped broken.** The publish gate holds guides at 404 until there are three.
+The ruling says the founder reads every word before anything ships. Both are correct and together
+they meant the draft he is supposed to read returned a 404. I added a preview route, which is the
+fourth time this codebase has needed one: `/refusal-preview`, `/zone-block-preview` and
+`/me-preview` all exist for the same reason. **A surface nobody can see does not get reviewed. It
+gets approved.**
+
+**And one small architecture note.** Guides needed a different URL shape from comparisons, which
+sit at the root because the search query literally is the slug. Four places built that URL string
+by hand: the hub link, the sitemap, the Article JSON-LD and the page metadata. A kind-dependent rule
+across four hand-written producers is the shape where three get updated and one does not, so it is
+one function now.
+
+The catalogue test caught the change immediately, which was satisfying, and then I nearly fixed it
+the lazy way by calling the new function inside the assertion. That would have made the test assert
+the producer against itself. It spells the expected URL out per kind instead.
+
+---
+
 ## 2026-09-21 — CONTENT-AUTHORSHIP-01: I invented a rule, wrote it down, and then obeyed it
 
 **The honest bit is the whole entry.** Twice today I declined to write marketing copy, citing "a

@@ -35,6 +35,8 @@ const SURFACES = [
   'app/plans/[slug]/page.tsx',
   'app/comparisons/page.tsx',
   'app/guides/page.tsx',
+  'app/guides/[slug]/page.tsx',
+  'app/guide-preview/page.tsx',
   'app/runna-alternatives/page.tsx',
   'app/coopah-vs-runna/page.tsx',
   'app/charity-runners/page.tsx',

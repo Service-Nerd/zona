@@ -17,7 +17,7 @@ import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { SiteHeader, type SiteSection } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
-import { marketingArticleJsonLd, COMPARISON_HUB, GUIDE_HUB, type MarketingArticle, type ArticleSpan, type ArticleBlock } from '@/lib/marketing/articles'
+import { articlePath, marketingArticleJsonLd, COMPARISON_HUB, GUIDE_HUB, type MarketingArticle, type ArticleSpan, type ArticleBlock } from '@/lib/marketing/articles'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
@@ -45,7 +45,7 @@ function renderSpans(spans: ArticleSpan[]) {
 }
 
 export function ArticlePage({ article }: { article: MarketingArticle }) {
-  const url = `${APP_URL}/${article.slug}`
+  const url = `${APP_URL}${articlePath(article)}`
 
   const breadcrumbLd = {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
@@ -185,7 +185,7 @@ function ArticleTable({ block }: { block: Extract<ArticleBlock, { kind: 'table' 
 /** Metadata builder shared by every comparison route, so the eight pages cannot
  *  drift in canonical/OG shape. Mirrors the /plans `generateMetadata` output. */
 export function articleMetadata(article: MarketingArticle) {
-  const url = `${APP_URL}/${article.slug}`
+  const url = `${APP_URL}${articlePath(article)}`
   return {
     title: article.metaTitle,
     description: article.metaDescription,

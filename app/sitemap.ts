@@ -5,7 +5,7 @@
 
 import type { MetadataRoute } from 'next'
 import { MARKETING_PLANS } from '@/lib/marketing/plans'
-import { comparisonArticles, guideArticles, guidesArePublished, COMPARISON_HUB, GUIDE_HUB } from '@/lib/marketing/articles'
+import { articlePath, comparisonArticles, guideArticles, guidesArePublished, COMPARISON_HUB, GUIDE_HUB } from '@/lib/marketing/articles'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
@@ -43,7 +43,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // guide whose hub 404s would advertise an orphan to a crawler, and the
     // gate lives in the catalogue so this file cannot disagree with the page.
     ...comparisonArticles().map(a => ({
-      url: `${APP_URL}/${a.slug}`,
+      url: `${APP_URL}${articlePath(a)}`,
       lastModified: a.lastUpdatedISO,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
@@ -56,7 +56,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
             priority: 0.8,
           },
           ...guideArticles().map(a => ({
-            url: `${APP_URL}/${a.slug}`,
+            url: `${APP_URL}${articlePath(a)}`,
             lastModified: a.lastUpdatedISO,
             changeFrequency: 'monthly' as const,
             priority: 0.7,

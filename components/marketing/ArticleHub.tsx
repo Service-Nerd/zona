@@ -13,7 +13,7 @@ import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { SiteHeader, type SiteSection } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
-import type { MarketingArticle } from '@/lib/marketing/articles'
+import { articlePath, type MarketingArticle } from '@/lib/marketing/articles'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
@@ -64,7 +64,7 @@ export function ArticleHub({
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {articles.map(a => (
-            <Link key={a.slug} href={`/${a.slug}`} style={{ textDecoration: 'none' }}>
+            <Link key={a.slug} href={articlePath(a)} style={{ textDecoration: 'none' }}>
               <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-brand)', fontSize: 18, fontWeight: 800, color: 'var(--ink)' }}>{a.metaTitle}</div>

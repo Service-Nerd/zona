@@ -314,6 +314,66 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       ),
     ],
   },
+  // ── GUIDE 1 ────────────────────────────────────────────────────────────
+  // SLT 2026-09-21: Claude drafts, the founder edits, supplies anything first
+  // person, and READS IT END TO END before it ships. Nothing here is written
+  // in his voice about his own running, by rule.
+  //
+  // ⚠️ `principleRefs` is not decoration. Hutchinson's ruling: this is a
+  // COACHING surface, answering a coaching question under a Zonna byline to
+  // someone with no plan in front of them. Every claim below traces to §12 or
+  // its Amendment 1, and nothing here asserts anything the engine does not.
+  {
+    kind: 'guide',
+    slug: 'should-easy-runs-feel-this-slow',
+    principleRefs: ['§12', '§1'],
+    metaTitle: 'Should easy runs feel this slow?',
+    metaDescription:
+      `Yes, and slower than that. Why your easy pace should feel almost embarrassing, what the ceiling actually is, and how to tell easy from lazy.`,
+    ogTitle: 'Should easy runs feel this slow?',
+    ogDescription:
+      `Yes, and probably slower. What an easy run is actually for, and why running it "comfortably hard" is the thing costing you the race.`,
+    h1: `Should easy runs really feel this slow?`,
+    lastUpdated: '21 September 2026',
+    lastUpdatedISO: '2026-09-21',
+    publishedISO: '2026-09-21',
+    signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
+    appStoreLinkText: `Get ${BRAND.name} on the App Store`,
+    hubSummary: `Yes. And the reason it feels wrong is the same reason it works.`,
+    body: [
+      p(`Short answer: yes, and there is a reasonable chance it should be slower still. The feeling you are describing, that this cannot possibly be doing anything, is not a sign you have the pace wrong. For most runners it is the first sign they have it right.`),
+
+      h2('What an easy run is actually for'),
+      p(`An easy run is not a small hard run. It is a different session with a different job, and the job is aerobic adaptation: more capillaries, more mitochondria, a heart that moves more blood per beat. Those adaptations respond to time spent in the right zone, not to effort. You cannot hurry them by trying harder, and trying harder actively costs you, because the fatigue you generate has to be paid back out of the session that was supposed to be hard.`),
+      p(`This is why the pace feels wrong. Every other kind of training you have done rewards effort. This one rewards patience, and patience feels like nothing is happening.`),
+
+      h2('The ceiling, and why it is a ceiling'),
+      p(`${BRAND.name} caps every easy run at the top of Zone 2, which is roughly 60 to 70 percent of heart-rate reserve. The important word is cap. It is not a band you are supposed to sit inside and it is not a target to hit.`),
+      p(
+        `Going slower than the cap breaks nothing. An easy run at the very bottom of your range is a perfectly good easy run, and any app that flags it as a problem is measuring the wrong thing. We know because ours did: a detector we shipped counted time OUTSIDE the zone in both directions, and on review 6 of 22 flagged runs were predominantly too easy, the worst at 17 percent in zone with 83 percent below and nothing at all above. That was our bug, not the runner's. `,
+        { text: 'The rule is a ceiling now', href: '/plans' },
+        `, and it only looks down.`,
+      ),
+
+      h2('How slow, in practice'),
+      p(`If you train by heart rate, the ceiling is the number. If you do not, the usable version is the talk test: you should be able to speak a full sentence without breaking it up to breathe. Not a word, not four words. A sentence.`),
+      p(`For a lot of people that lands somewhere between 60 and 90 seconds per kilometre slower than the pace they have been calling easy. That gap is the entire problem, and it is why the runs have not been working.`),
+
+      h2('Easy is not the same as lazy'),
+      p(`The distinction that matters is not how hard it feels, it is what the session is for. A lazy run is one with no job. An easy run has a specific job and a specific ceiling, and staying under that ceiling on a day your legs feel good is harder than running fast. That is the discipline the whole method rests on.`),
+      p(`The test is not the individual run, it is the week. If your easy days are genuinely easy, your hard day should feel available. If you arrive at the hard session already flat, the easy days were not easy, whatever your watch said.`),
+
+      h2('Why this is most of your week'),
+      p(
+        `In a ${BRAND.name} plan the large majority of your sessions are easy, and that ratio is the plan rather than a gap in it. Intensity is counted in sessions across the whole block, not minutes within a run, so one genuinely hard session in a week of genuinely easy ones is a complete week of training. `,
+        { text: 'Every plan we publish is free to read', href: '/plans' },
+        `, so you can count the easy days yourself before you believe anyone about this.`,
+      ),
+
+      h2('If it still feels wrong'),
+      p(`It will, for about three weeks. The thing to watch is not the pace of the easy runs, it is what happens to the hard one. Same effort at a lower heart rate, or the same heart rate at a quicker pace, is the adaptation arriving. That is the number worth checking, and it is the only one that answers the question you actually asked.`),
+    ],
+  },
 ]
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
@@ -330,7 +390,7 @@ export function marketingArticleJsonLd(article: MarketingArticle) {
     datePublished: article.publishedISO,
     dateModified: article.lastUpdatedISO,
     description: article.metaDescription,
-    url: `${APP_URL}/${article.slug}`,
+    url: `${APP_URL}${articlePath(article)}`,
   })
 }
 
@@ -348,6 +408,23 @@ export const COMPARISON_HUB = {
   h1: `Which running app, honestly.`,
   sub: `Comparisons of the coaching apps people actually choose between, including the ones that beat ${BRAND.name} and the runners it is wrong for. No affiliate links, no scores out of ten.`,
 } as const
+
+/**
+ * The single owner of an article's URL (D-08).
+ *
+ * Comparisons sit at the ROOT (`/runna-alternatives`) because the search query
+ * IS the slug: people type "runna alternatives". That reasoning does not carry
+ * to a guide — nobody searches for a brand when they type "should my easy runs
+ * feel this slow" — so guides sit under their hub, where the breadcrumb
+ * (Home > Guides > ...) finally matches the URL it claims to describe.
+ *
+ * ⚠️ FOUR PLACES BUILT THIS STRING BY HAND before this existed: the hub link,
+ * the sitemap, the Article JSON-LD and the page metadata. Four producers of
+ * one fact, and the kind-dependent shape is exactly the sort of rule three of
+ * them would have kept and one would have missed.
+ */
+export const articlePath = (a: Pick<MarketingArticle, 'kind' | 'slug'>): string =>
+  a.kind === 'guide' ? `/${GUIDE_HUB.slug}/${a.slug}` : `/${a.slug}`
 
 export const comparisonArticles = (): MarketingArticle[] =>
   MARKETING_ARTICLES.filter(a => a.kind === 'comparison')

@@ -162,7 +162,15 @@ describe('comparison articles — Article JSON-LD', () => {
       const ld = marketingArticleJsonLd(a)
       expect(ld.headline).toBe(a.metaTitle)
       expect(ld.description).toBe(a.metaDescription)
-      expect(ld.mainEntityOfPage).toBe(`https://www.zonna.run/${a.slug}`)
+      // ⚠️ The expected URL is SPELLED OUT per kind rather than built with
+      // `articlePath`. Calling the producer would make this assert the
+      // function against itself, which is the blind-checker shape this repo
+      // keeps getting caught by. A comparison sits at the root because the
+      // search query IS the slug; a guide sits under its hub.
+      const expected = a.kind === 'guide'
+        ? `https://www.zonna.run/guides/${a.slug}`
+        : `https://www.zonna.run/${a.slug}`
+      expect(ld.mainEntityOfPage).toBe(expected)
     })
 
   it('carries the constant author and publisher, with the brand interpolated', () => {
