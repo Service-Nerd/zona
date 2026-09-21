@@ -481,3 +481,14 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
     font-size: 13.5px !important;
   }
 }
+
+/* IA-QR-01 — the hero's App Store QR code, desktop only.
+   A QR on a phone asks someone to scan their own screen, so it is hidden
+   below 1024px. Done in CSS, not a JS width check: no hydration mismatch, no
+   layout shift, no JavaScript. The breakpoint lives here with the rest of the
+   system rather than inline, because an inline style cannot carry a media
+   query and a one-off breakpoint in a component is how a system drifts. */
+.qr-desktop-only { display: none; }
+@media (min-width: 1024px) {
+  .qr-desktop-only { display: block; }
+}

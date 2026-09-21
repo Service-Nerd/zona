@@ -59,7 +59,7 @@ export const MARKETING_PLANS: MarketingPlan[] = [
     ogDescription: 'Most of this plan is easy running. That’s not a mistake. It’s the plan. Read it free, then get the version that adapts to you.',
     whoFor: 'For the runner who already runs a bit and wants a faster, more comfortable 5K without grinding every session into the ground.',
     input: (raceDate) => ({ ...BASE, race_date: raceDate, race_distance_km: 5, current_weekly_km: 20, longest_recent_run_km: 5, days_available: 4 }),
-    related: ['10k-12-week', 'half-marathon-12-week', 'marathon-16-week'],
+    related: ['sub-25-5k-plan', '10k-12-week', 'half-marathon-12-week'],
   },
   {
     slug: '10k-12-week',
@@ -73,7 +73,7 @@ export const MARKETING_PLANS: MarketingPlan[] = [
     ogDescription: 'Most of this plan is easy running. That’s not a mistake. It’s the plan. Read it free, then get the version that adapts to you.',
     whoFor: 'For the runner who can already cover the distance and wants a stronger 10K, without going medium-hard on everything and stalling.',
     input: (raceDate) => ({ ...BASE, race_date: raceDate, race_distance_km: 10, current_weekly_km: 25, longest_recent_run_km: 8, days_available: 4 }),
-    related: ['5k-12-week', 'half-marathon-12-week', 'marathon-16-week'],
+    related: ['sub-50-10k-plan', 'sub-45-10k-plan', '5k-12-week', 'half-marathon-12-week'],
   },
   {
     slug: 'half-marathon-12-week',
@@ -87,7 +87,7 @@ export const MARKETING_PLANS: MarketingPlan[] = [
     ogDescription: 'Most of this plan is easy running. That’s not a mistake. It’s the plan. Read it free, then get the version that adapts to you.',
     whoFor: 'For the runner training around a job and a life who wants to reach the start line fit, not fried.',
     input: (raceDate) => ({ ...BASE, race_date: raceDate, race_distance_km: 21.1, current_weekly_km: 35, longest_recent_run_km: 14, days_available: 4 }),
-    related: ['10k-12-week', 'marathon-16-week', '5k-12-week'],
+    related: ['sub-2-hour-half-marathon-plan', '10k-12-week', 'marathon-16-week'],
   },
   {
     slug: 'marathon-16-week',
@@ -101,7 +101,7 @@ export const MARKETING_PLANS: MarketingPlan[] = [
     ogDescription: 'Most of this plan is easy running, the way marathon training is meant to be. Read it free, then get the version that adapts to you.',
     whoFor: 'For the runner chasing a marathon around a full life, who knows the race is won by not overcooking the easy weeks.',
     input: (raceDate) => ({ ...BASE, race_date: raceDate, race_distance_km: 42.2, current_weekly_km: 45, longest_recent_run_km: 20, days_available: 5 }),
-    related: ['half-marathon-12-week', '10k-12-week', '5k-12-week'],
+    related: ['sub-4-hour-marathon-plan', 'half-marathon-12-week', '10k-12-week'],
   },
 
   // ── Wave 2 — goal-time plans (the try-hard amateur's exact search) ────────

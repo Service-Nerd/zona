@@ -15,7 +15,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ArticleHub, hubMetadata } from '@/components/marketing/ArticleHub'
-import { guideArticles, guidesArePublished, guidesSectionIsMature, GUIDE_HUB, COMPARISON_HUB } from '@/lib/marketing/articles'
+import { guideArticles, guidesByIntent, shouldGroupGuides, guidesArePublished, guidesSectionIsMature, GUIDE_HUB, COMPARISON_HUB } from '@/lib/marketing/articles'
 
 export const revalidate = 86400
 
@@ -23,10 +23,18 @@ export const metadata: Metadata = hubMetadata(GUIDE_HUB)
 
 export default function GuideHubPage() {
   if (!guidesArePublished()) notFound()
+
+  // W-01c — grouping switches itself on at the second POPULATED bucket, so at
+  // one guide this is undefined and the hub renders flat. Four headings over
+  // one article advertises three empty rooms, which is the same "reads as
+  // abandoned" failure the publish gate exists for.
+  const groups = shouldGroupGuides() ? guidesByIntent() : undefined
+
   return (
     <ArticleHub
       hub={GUIDE_HUB}
       articles={guideArticles()}
+      groups={groups}
       section="guides"
       breadcrumbLabel="Guides"
       youngNote={guidesSectionIsMature()

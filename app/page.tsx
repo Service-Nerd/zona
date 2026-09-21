@@ -42,6 +42,9 @@ import { FREE_FEATURES } from '@/lib/marketing/pricing'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
+import { AppStoreQr } from '@/components/marketing/AppStoreQr'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { PhoneFrame } from '@/components/marketing/PhoneFrame'
 import { ProductStill } from '@/components/marketing/ProductStill'
 import { SameWeekTwice } from '@/components/marketing/SameWeekTwice'
@@ -107,7 +110,11 @@ export default async function Home() {
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/dashboard')
 
-  // ── SEO-01 — SoftwareApplication structured data ──────────────────────────
+  // IA-QR-01 — inlined so the code inherits currentColor; an <img> cannot.
+  // This page is statically generated, so the read happens at build time.
+  const appStoreQrSvg = readFileSync(join(process.cwd(), 'public/appstore-qr.svg'), 'utf8')
+
+  // ── SEO-01 — app structured data ──────────────────────────
   // Rendered here rather than in app/layout.tsx: that layout is the ROOT layout
   // and also serves /dashboard and /auth, where this markup would be wrong. There
   // is no marketing-specific layout.
@@ -236,9 +243,15 @@ export default async function Home() {
           {' '}{BRAND.name} prescribes the zone for each session and holds you to it.
         </p>
 
-        {/* Primary action — App Store download. Single CTA, post-launch. */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        {/* Primary action — App Store download. Single CTA, post-launch.
+            IA-QR-01 — the scannable code sits beside it and only at >=1024px,
+            where the badge is least useful: the app is iOS only, so a desktop
+            visitor who clicks the badge lands on a page they then have to
+            re-find on their phone. `alignItems: flex-start` keeps the badge on
+            the text baseline whether or not the code is showing. */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 20 }}>
           <AppStoreBadge />
+          <AppStoreQr svg={appStoreQrSvg} />
         </div>
 
         {/* Trial + pricing in owned voice — honest numbers, brand tone. */}

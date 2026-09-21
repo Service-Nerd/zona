@@ -30,6 +30,7 @@ export interface HubCopy {
 
 export function ArticleHub({
   hub, articles, section, breadcrumbLabel, youngNote, siblingHub,
+  groups,
 }: {
   hub: HubCopy
   articles: MarketingArticle[]
@@ -39,6 +40,9 @@ export function ArticleHub({
    *  who finishes the guides has no route to the comparisons and vice versa,
    *  and the footer is the only thing joining them today. */
   siblingHub?: { href: string; label: string }
+  /** Intent buckets. Passed only when the hub should group (see
+   *  `shouldGroupGuides`); omitted or single-bucket renders flat. */
+  groups?: { id: string; label: string; articles: MarketingArticle[] }[]
   /** Shown above the cards while the section is still small. Answers the
    *  failure the publish gate used to prevent: a one-card index reads as
    *  abandoned unless it tells you it is deliberate. Omit once the section
@@ -81,8 +85,45 @@ export function ArticleHub({
             {youngNote}
           </p>
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {articles.map(a => (
+        {/* W-01c — grouped by what the reader came to find out, and flat
+            until there is enough to group. `groups` is passed only by the
+            guide hub, and only once two buckets have something in them: four
+            headings over one article advertises three empty rooms, which is
+            exactly the "reads as abandoned" objection the hub gate exists
+            for. */}
+        {groups && groups.length > 1 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 30 }}>
+            {groups.map(g => (
+              <div key={g.id}>
+                <h2 style={{
+                  fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--mute)',
+                  margin: '0 0 12px',
+                }}>
+                  {g.label}
+                </h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {g.articles.map(a => (
+                <Link key={a.slug} href={articlePath(a)} style={{ textDecoration: 'none' }}>
+                  <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)' }}>{a.metaTitle}</div>
+                      <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 3, maxWidth: 520 }}>{a.hubSummary}</div>
+                      <div style={{ fontSize: 'var(--fs-caption)', color: 'var(--mute)', marginTop: 6 }}>
+                        Updated <time dateTime={a.lastUpdatedISO}>{a.lastUpdated}</time>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: 'var(--fs-lead-lg)', color: 'var(--moss)', flexShrink: 0 }} aria-hidden>→</span>
+                  </div>
+                </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {articles.map(a => (
             <Link key={a.slug} href={articlePath(a)} style={{ textDecoration: 'none' }}>
               <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
                 <div>
@@ -95,8 +136,9 @@ export function ArticleHub({
                 <span style={{ fontSize: 'var(--fs-lead-lg)', color: 'var(--moss)', flexShrink: 0 }} aria-hidden>→</span>
               </div>
             </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>

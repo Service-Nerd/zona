@@ -62,10 +62,37 @@ export type ArticleBlock =
 
 export type ArticleKind = 'comparison' | 'guide'
 
+/**
+ * W-01c — what a guide is FOR, which is how a reader looking for one thinks.
+ *
+ * The hub groups by this rather than listing eight titles flat. The buckets
+ * are the four questions the eight planned guides actually answer, not a
+ * taxonomy invented first and filled in after.
+ *
+ * ⚠️ GROUPING ACTIVATES ONLY WHEN TWO OR MORE BUCKETS HAVE SOMETHING IN THEM,
+ * and that is not a hedge. Wood's objection to the hub at all was that a
+ * short list with structure imposed on it reads as ABANDONED: four headings
+ * over one article advertises three empty rooms. Below the threshold the hub
+ * renders flat and looks deliberate, which it is. The structure is here so
+ * the second guide switches it on rather than needing a build.
+ */
+export const GUIDE_INTENTS = [
+  { id: 'easy',      label: 'Running easy' },
+  { id: 'week',      label: 'Building the week' },
+  { id: 'wrong',     label: 'When it goes wrong' },
+  { id: 'kit',       label: 'Zones and kit' },
+] as const
+
+export type GuideIntent = (typeof GUIDE_INTENTS)[number]['id']
+
 export interface MarketingArticle {
   /** Which hub this belongs to, and which breadcrumb it renders. Comparisons
    *  answer "which app should I use"; guides answer "what should I do". */
   kind: ArticleKind
+  /** Guides only: which hub group it sits in. Required for a guide, asserted
+   *  in `articles.test.ts` — an ungrouped guide would silently vanish from a
+   *  grouped hub, which is the worst of the available failures. */
+  intent?: GuideIntent
   slug: string
   /** Under 60 characters. Asserted by `comparisons.test.ts`. */
   metaTitle: string
@@ -325,6 +352,7 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
   // its Amendment 1, and nothing here asserts anything the engine does not.
   {
     kind: 'guide',
+    intent: 'easy',
     slug: 'should-easy-runs-feel-this-slow',
     principleRefs: ['§12', '§1', '§2'],
     metaTitle: 'Should easy runs feel this slow?',
@@ -438,6 +466,30 @@ export const comparisonArticles = (): MarketingArticle[] =>
 
 export const guideArticles = (): MarketingArticle[] =>
   MARKETING_ARTICLES.filter(a => a.kind === 'guide')
+
+/**
+ * Guides bucketed by intent, in `GUIDE_INTENTS` order, empty buckets dropped.
+ * The hub decides whether to USE the grouping (see `shouldGroupGuides`); this
+ * only reports the shape.
+ */
+export function guidesByIntent(): { id: GuideIntent; label: string; articles: MarketingArticle[] }[] {
+  const all = guideArticles()
+  return GUIDE_INTENTS
+    .map(g => ({ id: g.id, label: g.label, articles: all.filter(a => a.intent === g.id) }))
+    .filter(g => g.articles.length > 0)
+}
+
+/**
+ * Whether the hub should render groups at all.
+ *
+ * ⚠️ Two POPULATED BUCKETS, not two articles. Two guides in the same bucket
+ * under one heading is a heading for no reason, and one bucket showing while
+ * three stay hidden tells the reader nothing they can act on. Below the
+ * threshold the hub renders flat, which is what it does today at one guide.
+ */
+export function shouldGroupGuides(): boolean {
+  return guidesByIntent().length >= 2
+}
 
 /**
  * How many guides before the HUB opens.

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { guideArticles, guidesArePublished, guidesSectionIsMature, GUIDES_MIN_TO_PUBLISH, GUIDES_SECTION_MATURE } from './articles'
+import { guideArticles, guidesArePublished, guidesSectionIsMature, guidesByIntent, shouldGroupGuides, GUIDE_INTENTS, GUIDES_MIN_TO_PUBLISH, GUIDES_SECTION_MATURE } from './articles'
 
 /**
  * W-01 — the guides shelf is gated in ONE place, and everything follows it.
@@ -179,5 +179,37 @@ describe('W-01a — a live guide is reachable', () => {
   it('the article route is NOT gated on the hub', () => {
     const src = read('app/guides/[slug]/page.tsx')
     expect(src).not.toMatch(/guidesArePublished/)
+  })
+})
+
+/**
+ * W-01c — the guide hub groups by intent, and only when grouping says
+ * something.
+ */
+describe('guide hub grouping', () => {
+  it('requires an intent on every guide', () => {
+    const ungrouped = guideArticles().filter(a => !a.intent)
+    expect(
+      ungrouped.map(a => a.slug),
+      'a guide with no intent silently vanishes from a grouped hub',
+    ).toEqual([])
+  })
+
+  it('only buckets into declared intents', () => {
+    const ids = new Set(GUIDE_INTENTS.map(g => g.id))
+    for (const a of guideArticles()) expect(ids.has(a.intent!), `${a.slug}: ${a.intent}`).toBe(true)
+  })
+
+  it('loses no guide to grouping', () => {
+    const grouped = guidesByIntent().flatMap(g => g.articles.map(a => a.slug)).sort()
+    expect(grouped).toEqual(guideArticles().map(a => a.slug).sort())
+  })
+
+  it('stays flat until two buckets are populated', () => {
+    // Not a hedge: four headings over one article advertises three empty
+    // rooms, which is the "reads as abandoned" failure the hub gate exists
+    // for. Asserted as a RULE about the count, not about today's answer, so
+    // it keeps holding as guides are added.
+    expect(shouldGroupGuides()).toBe(guidesByIntent().length >= 2)
   })
 })

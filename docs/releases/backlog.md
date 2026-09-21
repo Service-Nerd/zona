@@ -2214,16 +2214,26 @@ catalogue test covers it the moment it is added.
 
 #### The seven still to write
 
-| # | Working title | The search behind it | Principles it rests on |
-|---|---|---|---|
-| ✅ 1 | Should easy runs really feel this slow? | **LIVE 2026-09-21** | §12, §1, §2 |
-| 🔲 2 | Why is my heart rate so high on easy runs? | Genuine distress, usually answered badly elsewhere ("you're unfit") | §12, §14 |
-| 🔲 3 | Am I overtraining, or just tired? | Searched at the exact moment of doubt the product exists to resolve | §2, §3 |
-| 🔲 4 | I missed a week. Do I start again? | The churn moment for every plan, ours included | §87, ADR-012 |
-| 🔲 5 | Why am I not getting faster? | The core truth, as a question | §1, §12 |
-| 🔲 6 | What pace should my long run be? | High volume, and we have a specific answer most apps fudge | §52, §25 |
-| 🔲 7 | Do I need a heart-rate monitor to train by zones? | Blocks purchase; our honest answer beats the category's | ADR-011 §5, §14 |
-| 🔲 8 | How many days a week should I actually run? | Theirs covers it; ours should say the opposite about quality over quantity | §1, §9 |
+| # | Working title | `intent` | The search behind it | Principles it rests on |
+|---|---|---|---|---|
+| ✅ 1 | Should easy runs really feel this slow? | `easy` | **LIVE 2026-09-21** | §12, §1, §2 |
+| 🔲 2 | Why is my heart rate so high on easy runs? | `easy` | Genuine distress, usually answered badly elsewhere ("you're unfit") | §12, §14 |
+| 🔲 3 | Am I overtraining, or just tired? | `wrong` | Searched at the exact moment of doubt the product exists to resolve | §2, §3 |
+| 🔲 4 | I missed a week. Do I start again? | `wrong` | The churn moment for every plan, ours included | §87, ADR-012 |
+| 🔲 5 | Why am I not getting faster? | `week` | The core truth, as a question | §1, §12 |
+| 🔲 6 | What pace should my long run be? | `easy` | High volume, and we have a specific answer most apps fudge | §52, §25 |
+| 🔲 7 | Do I need a heart-rate monitor to train by zones? | `kit` | Blocks purchase; our honest answer beats the category's | ADR-011 §5, §14 |
+| 🔲 8 | How many days a week should I actually run? | `week` | Theirs covers it; ours should say the opposite about quality over quantity | §1, §9 |
+
+⚠️ **`intent` is REQUIRED on every guide** (`W-01c`, `GUIDE_INTENTS` in `lib/marketing/articles.ts`)
+and `guidesGate.test.ts` fails without it: a guide with no intent would silently vanish from a
+grouped hub, which is the worst of the available failures. The four buckets are **Running easy**,
+**Building the week**, **When it goes wrong**, **Zones and kit**.
+
+⚠️ **The hub stays FLAT until two buckets are populated.** Four headings over one article
+advertises three empty rooms, which is the same "reads as abandoned" risk Wood named against the
+hub itself. Guide 2 is also `easy`, so grouping switches on at **guide 3**, not guide 2. Nothing to
+build when it does.
 
 ⚠️ **Every guide is a COACHING SURFACE** (Hutchinson, SLT 2026-09-21). A guide may only assert what
 an existing principle already asserts, **and it names the section** — `principleRefs` is required
