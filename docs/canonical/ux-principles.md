@@ -76,18 +76,35 @@ After generating a plan, new users who land on a rest day or an empty first week
 
 ---
 
-## Screen Design Principles
+## Screen Design Principles — THE RESTRAINT RULES
+
+> ⚖️ **This section is the SINGLE OWNER of the restraint rules.** Transferred from
+> `brand.md` § Visual Principles to the Design Board on **2026-09-22** by founder ruling
+> (ownership-map.md; ADR-023). `brand.md`, `CLAUDE.md` and `ui-patterns.md` reference
+> this table and must not restate it. Guarded by
+> `lib/marketing/restraintRulesOwnership.test.ts`.
+>
+> **Why the transfer.** These rules were written in **four** places and had already
+> drifted: `CLAUDE.md` had lost the destructive-confirmation exception, so read alone it
+> banned modals outright. They were de facto design doctrine — duplicated into two design
+> documents and enforced by design tests — while nominally owned by brand. Ambiguous
+> ownership is what produced the drift.
+>
+> **They are now amendable by Design Board ruling**, which means the three artifacts and
+> a row in `design-rulings.md`. Amendable is not the same as weak: changing one is a
+> visible, recorded act, which is more than `brand.md` ever required.
 
 The job of each screen is defined in `docs/canonical/screen-architecture.md`. That document is the canonical reference for what belongs on which screen and the validation test to apply before adding any feature. Read it before building any new screen or moving content between screens.
 
-| Principle | What it means |
-|-----------|---------------|
-| One job per screen | Each screen has exactly one primary purpose. No multi-purpose dashboards. |
-| Calm guidance | Inform. Do not alarm. The user decides when to act. |
-| Restraint = progress | Whitespace, brevity, and silence are features. |
-| No popups | All interactions navigate. Modals only for destructive confirmations. |
-| Back arrow top-left | Navigation is always predictable and reversible. |
-| Slide-up sheets | Mirrored nav bar at bottom, not top. Consistent with mobile convention. |
+| Principle | What it means | ⚠️ The clause that gets lost |
+|-----------|---------------|---|
+| **One job per screen** | Each screen has exactly one primary purpose. **No dashboards. No noise.** | "No multi-purpose dashboards" is the same rule, not a weaker one |
+| **Calm guidance, not alerts** | Information is presented; **the user decides when to act.** Inform, do not alarm | Both halves. "Inform, do not alarm" alone loses who holds the timing |
+| **Restraint = progress** | Whitespace, brevity and silence are features. **Empty means calm, not broken** | 🔴 The empty-state clause was dropped in two of the four copies |
+| **No popups** | All interactions navigate to a full screen. **Modal overlays only for destructive confirmations (delete, disconnect). Never for information** | 🔴 **`CLAUDE.md` omitted the exception entirely**, so modals read as banned outright. This is the divergence that justified the transfer |
+| **Back arrow top-left** | Navigation is always predictable and reversible | — |
+| **Slide-up sheets** | Mirrored nav bar at **bottom**, not top. Never a top-right Cancel | Consistent with mobile convention, and deliberately unlike the competitor's sheet (P-02) |
+| **No red in the training UI** | Red implies danger or failure. Amber for warnings, coral for high-intensity. `--danger` (`#B84545`) for form validation and error states **only** | 🔴 Existed in `brand.md` alone; absent from the other three copies |
 
 ---
 

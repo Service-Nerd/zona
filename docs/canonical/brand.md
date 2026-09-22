@@ -327,17 +327,23 @@ This is a design gate, not a guideline.
 
 ## Visual Principles
 
-### Core rules
+### Core rules — TRANSFERRED to the Design Board, 2026-09-22
 
-| Rule | Detail |
-|------|--------|
-| No red in the training UI | Red implies danger or failure. Zonna uses amber for warnings, coral for high-intensity sessions. Form validation / error states may use `--danger` (`#B84545`) only — never in training UI. |
-| No popups | All interactions navigate to full screens. Modal overlays only for destructive confirmations (delete, disconnect). Never for information. |
-| Back arrow top-left | Navigation is always predictable and reversible. |
-| One job per screen | Each screen has exactly one primary purpose. No dashboards. No noise. |
-| Calm guidance, not alerts | Information is presented; the user decides when to act. |
-| Restraint = progress | Whitespace, brevity, and silence are features. Empty means calm, not broken. |
-| Slide-up sheets | Mirrored nav bar at bottom, not top. |
+> ⚖️ **These rules are no longer brand doctrine.** *No popups · one job per screen / no
+> dashboards, no noise · calm guidance, not alerts · restraint = progress · back arrow
+> top-left · slide-up sheets · no red in the training UI* now live at
+> **`docs/canonical/ux-principles.md` § Screen Design Principles**, which is their single
+> owner, and are amendable by Design Board ruling (ADR-023).
+>
+> **They were written here, in `ux-principles.md`, in `CLAUDE.md` and in `ui-patterns.md`
+> — four copies — and had already diverged.** `CLAUDE.md` had lost the
+> destructive-confirmation exception to "no popups"; two copies had dropped *"empty means
+> calm, not broken"*; and *"no red in the training UI"* existed only here. Ownership is
+> now one file, and this one references it.
+>
+> **What brand still owns:** positioning, audience, competitor framing, the three locked
+> taglines, `BRAND.voiceAnchor`, voice and tone, and the Correction / Reframe /
+> Adjustment voices. See `docs/canonical/ownership-map.md`.
 
 ### What this looks like in practice
 
