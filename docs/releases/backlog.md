@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-22 (last ship `8184c32`) — PUSHED.** Suites green: **452 tests / 40 files** in the marketing + shared scope. Typecheck clean. All six hook suites pass. Six commits: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage, `<Section>` adoption, the docs. · **`8184c32`** made the step numerals perceivable (they were 1.07:1 *on purpose*, drawn as SVG because axe does not read SVG as text) and filed `SITE-SPACE-01` — **448 gaps, 19 real distinct values, the same number `SITE-TYPE-01` found for font sizes.**
+**State at END of 2026-09-22 (last ship `0a18a67`) — PUSHED.** Suites green: **452 tests / 40 files** in the marketing + shared scope. Typecheck clean. All six hook suites pass. Six commits: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage, `<Section>` adoption, the docs. · **`8184c32`** made the step numerals perceivable (they were 1.07:1 *on purpose*, drawn as SVG because axe does not read SVG as text) and filed `SITE-SPACE-01` — **448 gaps, 19 real distinct values, the same number `SITE-TYPE-01` found for font sizes.** · **`0a18a67`** shipped the spacing scale (`--space-1…7`, 69 gaps swept) and **SITE-WAVE-2** closed the conversion dead zone: a CTA at the proof (screen 5.1), largest in-body gap **12.7 → 8.3 screens**, and both SEO hubs went from **zero** in-body asks to one.
 
 🧭 **The homepage, measured at 375px:** first ground change **screen 10.6 → 3.4**, proof **52% → 24%**, sections **14 → 11**, page **12,317 → 11,773px**, content `<h2>` **9 (all 26px) → 6 with a scale**.
 
@@ -577,7 +577,7 @@ unmeasured. The original item, for the record:
 8. **Footer column labels are `<h2>` at 11px** — four of them, polluting the document
    outline for crawlers and heading-navigation users.
 
-### 🧭 `SITE-WAVE-2` — the conversion defect · **NEXT, and now easier**
+### ✅ `SITE-WAVE-2` — SHIPPED 2026-09-22. The conversion dead zone.
 ⚠️ **Re-scope before building:** wave 1b moved the proof to **24%** and put the white spotlight
 on it, so *"a contextual CTA at the proof moment"* now has a ground change to anchor to and sits
 near the top of the page instead of at 53%. The 13.3-screen gap this was written against is

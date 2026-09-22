@@ -6,6 +6,37 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — SITE-WAVE-2 · the pages built to catch traffic were the only ones not converting it
+
+**Shipped:** A CTA at the proof moment (screen 5.1), and an in-body download ask on `/guides` and
+`/comparisons`. Largest in-body CTA gap on the homepage: **12.7 screens → 8.3**.
+
+**Dev learning:** My original audit said *"six pages have no App Store CTA."* Wrong — the grep
+matched `apps.apple.com` and missed `<AppStoreBadge>` and `BRAND.appStore.url`. Every page had
+header and footer links. **The true finding was narrower and far more useful: six pages made no
+ask IN THEIR OWN CONTENT.** The guard now matches the component, not the URL.
+
+**Product/creator learning:** The founder's own ruling was that plans and guides are the traffic
+channel and the app download is the conversion. Measured against that, **the two SEO hubs — the
+pages whose entire job is catching traffic — were the only ones with zero in-body asks.** The
+strategy and the implementation had never been checked against each other.
+
+**AI-building learning:** Seventh unbounded-match bug of the session, and this one failed on
+CORRECT code: I grepped the proof component for `background: 'var(--card)'` to assert the CTA
+wasn't a card-on-a-card, and it failed — because that section legitimately contains two white
+comparison cards. **A check that fires on correct code is worse than no check**, because the first
+thing anyone does is delete it. Bound to the 240 characters wrapping the badge, then re-falsified.
+
+**The honest bit:** Three separate indentation misses in one build, all from reading `sed`-prefixed
+output as if it were the literal file. I only stopped guessing after the third. Inserting by line
+number after measuring the indent worked first time, every time.
+
+**Hook material:** "Six pages have no call to action" was wrong. The real number was zero pages
+missing a CTA and six missing one that meant anything.
+
+**Postable?:** maybe
+
+
 ## 2026-09-22 — SITE-WAVE-4 · the type audit and the spacing audit found the same number
 
 **Shipped:** `--space-1…7`, a 4px scale, swept across 69 hand-typed gaps on the marketing site.

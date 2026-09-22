@@ -35,6 +35,7 @@
 
 import Link from 'next/link'
 import { Section } from '@/components/marketing/Section'
+import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { zoneWeekStatement, classifyRun } from '@/lib/coaching/zoneWeekStatement'
@@ -207,6 +208,24 @@ export function SameWeekTwice() {
             That is the whole question, and it has an answer &rarr;
           </Link>
         </p>
+
+        {/* 🎯 SITE-WAVE-2 — THE CTA AT THE PROOF MOMENT (Design Board sitting one).
+            The homepage had in-body download links at screen 0.6 and then
+            nothing until 13.3: a 12.7-SCREEN DEAD ZONE. Sitting two moved the
+            proof to 24%, so the most persuasive section on the page sat four
+            screens deep with no way to act on it.
+
+            ⚠️ NO CARD HERE, deliberately. The in-body CTA pattern
+            (PlanPage:326) is a --card card with a heading, and this band is
+            ALREADY --card since 1b-iii gave the proof the white spotlight. A
+            white card on a white ground is a box with no edges. The badge and
+            the line above it carry it.
+
+            ⚠️ Not adjacent to a price: the price sits at screen 0.6, four
+            screens up. That is a standing ruling, not a habit. */}
+        <div style={{ marginTop: 'var(--space-5)' }}>
+          <AppStoreBadge />
+        </div>
 
         <p style={{ fontSize: 'var(--fs-caption)', lineHeight: 1.5, color: 'var(--mute)', margin: '14px 0 0', maxWidth: '620px' }}>
           The sessions and their ceilings come from the plan itself. The two sets of heart-rate

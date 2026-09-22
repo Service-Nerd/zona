@@ -246,6 +246,55 @@ describe('marketing section surfaces', () => {
       'nothing is demoted by size alone any more').toBeGreaterThanOrEqual(1)
   })
 
+  it('every acquisition surface makes an IN-BODY download ask', () => {
+    // SITE-WAVE-2, Design Board sitting one, 2026-09-22.
+    //
+    // ⚠️ IN-BODY, NOT TOTAL. Header and footer carry an App Store link on every
+    // page, so a naive count says every page converts. The real measure is
+    // whether a page asks IN ITS OWN CONTENT — and /guides and /comparisons,
+    // the two SEO acquisition hubs, had ZERO. Per the founder's ruling that
+    // plans and guides are the traffic channel and the app is the conversion,
+    // the pages built to catch traffic were the only ones not converting it.
+    //
+    // My first audit of this reported "six pages have no CTA" because the grep
+    // missed <AppStoreBadge> and BRAND.appStore.url. Match the COMPONENT.
+    const SURFACES = [
+      'components/marketing/ArticleHub.tsx',  // /guides and /comparisons
+      'components/marketing/SameWeekTwice.tsx', // the proof, on the homepage
+      'components/marketing/PlanPage.tsx',
+      'app/pricing/page.tsx',
+      'app/plans/page.tsx',
+    ]
+    for (const f of SURFACES) {
+      expect(src(f), `${f} makes no in-body download ask`)
+        .toMatch(/<AppStoreBadge|BRAND\.appStore\.url/)
+    }
+  })
+
+  it('the proof section carries the CTA, and it is not a card on a card', () => {
+    // The homepage had in-body links at screen 0.6 then nothing until 13.3 — a
+    // 12.7-screen dead zone — while sitting two put the most persuasive section
+    // at 24%. The CTA now sits at the end of the proof (screen 5.1), which cuts
+    // the largest gap to 8.3.
+    //
+    // ⚠️ AND IT MUST NOT BE THE CARD PATTERN. 1b-iii gave the proof the white
+    // spotlight, so the band is already --card; the in-body CTA card used
+    // everywhere else would be a white box on a white ground.
+    const proof = src('components/marketing/SameWeekTwice.tsx')
+    const badge = proof.indexOf('<AppStoreBadge')
+    expect(badge, 'the proof section has lost its CTA').toBeGreaterThan(-1)
+
+    // ⚠️ BOUND TO THE CTA'S OWN WRAPPER, NOT THE FILE. The first version grepped
+    // the whole component for `background: 'var(--card)'` and failed on correct
+    // code — this section legitimately contains two white comparison cards
+    // ("Run on feel" / "Run to the ceiling"). Seventh time in this session that
+    // an unbounded match has produced a wrong answer. Look at the 240 characters
+    // that actually wrap the badge.
+    const wrapper = proof.slice(Math.max(0, badge - 240), badge)
+    expect(wrapper, 'the proof CTA has grown a --card wrapper on an already-white band')
+      .not.toMatch(/background:\s*'var\(--card\)'/)
+  })
+
   it('the App Store QR code stays dead', () => {
     // 🔴 KILLED 2026-09-22 by founder instruction (design-rulings.md).
     //

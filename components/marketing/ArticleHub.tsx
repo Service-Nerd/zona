@@ -11,6 +11,7 @@
 
 import Link from 'next/link'
 import { Section } from '@/components/marketing/Section'
+import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
 import { BRAND } from '@/lib/brand'
 import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader, type SiteSection } from '@/components/marketing/SiteHeader'
@@ -150,6 +151,32 @@ export function ArticleHub({
             ))}
           </div>
         )}
+      </Section>
+
+      {/* 🎯 SITE-WAVE-2 — THE IN-BODY ASK (Design Board sitting one).
+          /guides and /comparisons are the SEO acquisition hubs and carried ZERO
+          in-body download asks: header and footer only. Per the founder's ruling
+          that plans and guides are the TRAFFIC CHANNEL and the app download is
+          the CONVERSION, the two pages built to catch traffic were the only ones
+          not converting it.
+      
+          Reuses the established in-body CTA card (PlanPage:326) rather than
+          inventing a hub variant. */}
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+        <div style={{
+          background: 'var(--card)', border: '1px solid var(--line)',
+          borderRadius: 'var(--radius-lg)', padding: '26px 22px',
+        }}>
+          <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>
+            The answers are free. So is the plan.
+          </h2>
+          <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 18px', maxWidth: 520 }}>
+            {BRAND.name} builds the week around your zones, your days and your race date,
+            and holds you to it. Two weeks of it costs nothing.
+          </p>
+          <AppStoreBadge />
+        </div>
       </Section>
 
       <Section width="full" rhythm="none"
