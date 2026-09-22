@@ -78,6 +78,16 @@ and so showed km to a miles runner.
 - Sessions are rendered in `mon–sun` order regardless of plan JSON key order.
 - Overrides are applied before render: `original_day` sessions appear at `new_day` slots. Overridden slots show the moved session.
 - Rest sessions and empty days render a rest label — they are not tappable.
+- **The week-header total resolves through `sessionKmSelfPaced()`** (`lib/plan/sessionDistance.ts`),
+  never `session.distance_km` directly, at **both** week-header sites. A session is anchored
+  EITHER by distance OR by duration, and a beginner's plan is duration-anchored on 95.8% of
+  sessions; `distance_km ?? 0` asserts "this session covered no ground", which summed a real
+  week to 0 and — because the total renders behind `intendedKm > 0` — made it vanish entirely.
+  That read to the runner as *"some weeks have a total and some don't"* and, separately, as
+  *"everything shows duration even though my profile says distance"*. The owner returns
+  **null, never 0**, when nothing resolves, so an unresolvable session refuses rather than
+  under-reporting. `lib/marketing/appReviewDefects.test.ts` counts both sites (APP-REVIEW-W2,
+  2026-09-22; the `?? 0` class, SESSION-KM-01/02).
 - Sessions can be moved via a drag handle (≡ icon). Move mode shows "tap an empty day to move, or another session to swap" hint and highlights two kinds of target slots:
   - **Move target** (empty slot — rest day or undefined day): dashed teal outline, body text reads "Move here". On tap, the source session moves into the slot and the rest placeholder disappears.
   - **Swap target** (another non-rest, uncompleted, unskipped session): solid teal outline, source session label tinted teal with "tap to swap" hint and `⇄` glyph on the right. On tap, the two sessions exchange slots in one atomic write.
