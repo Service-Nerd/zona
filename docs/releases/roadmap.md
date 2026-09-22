@@ -135,6 +135,7 @@ device pass.
 | `DESIGN-PERFORATION-01` | 🧭 Design Board | M-8 **INSUFFICIENT EVIDENCE** — Collins wants the ticket-stub device, Silvanto calls it chrome and cites W-11. **Settles with one artefact at 375px, not a discussion** |
 | `DESIGN-DAYDOT-CHANNEL-01` | 🧭 Design Board | The `DateStrip` day dot is a **4px circle** whose single channel — hue — carries **both** the session type (eight colours) and completion state, so a completed interval and a completed easy run are the same teal dot. Exposed by applying S6's bound. ⚠️ **An icon is not the fix** (no glyph fits at 4px); the candidate is separating the channels, which is a ruling |
 | `RACE-WEEK-SHAKEOUT-VOLUME-01` | 🏃 Coaching Board | ⚠️ **Unverified — reproduce before acting.** May be a sweep artefact |
+| `DESIGN-REVEAL-SHAPE-01` | 🧭 Design Board | **Ruled — build** (§ 6p). `PlanArc` at reveal scale on the plan preview with ONE annotation on the first dip. Re-scoped from `P-06(b)`; the swipeable stack is a permanent kill and the second typeface is deferred, not refused |
 | `DESIGN-CD1-TAXONOMY-01` | 🧭 Design Board → 🏃 Coaching Board | Parked. Collins' first assignment: do five session names resolve to one pace? **Take the measurement first — the 2026-08 premise has moved** |
 | `DESIGN-EMPTYSTATE-ART-01` | 🧭 Design Board | Parked — ratify the "no illustration" that was recorded as *"a taste call made against the documented rule"* and never put to a board |
 | `DESIGN-LAUNCH-SCREEN-01` | 🧭 Design Board | Parked — ratify the "close P-11" that was never ruled |
