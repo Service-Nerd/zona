@@ -145,6 +145,10 @@ export default function MovePreviewPage() {
             onSessionTap={() => {}}
             moveMode={mode}
             onMoveTelemetry={a => setLog(prev => [...prev, a])}
+            onMovePhase={ph => setTrace(prev => {
+              const at = t0.current ? Date.now() - t0.current : 0
+              return [...prev.slice(-13), `${String(at).padStart(4)}ms  \u2039gesture\u203a ${ph}`]
+            })}
           />
         </div>
 
@@ -195,13 +199,15 @@ export default function MovePreviewPage() {
         </div>
 
         {/* The raw trace. Read it after one hold-and-drag: if `CANCEL` appears,
-            the browser claimed the gesture and the drag never had a chance. */}
+            the browser claimed the gesture. Lines marked \u2039gesture\u203a are the
+            component's OWN state — the browser lines alone cannot tell a press
+            that never armed from one that armed and was torn down. */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginTop: 16 }}>
           <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--line)', fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             What the browser did
           </div>
           <pre style={{ margin: 0, padding: '10px 12px', fontFamily: 'ui-monospace, monospace', fontSize: 11, lineHeight: 1.6, color: 'var(--ink-2)', whiteSpace: 'pre-wrap' }}>
-            {trace.length ? trace.join('\n') : 'Hold a session row, drag it to another day, let go.'}
+            {trace.length ? trace.join('\n') : 'Hold a session row for half a second, drag it to another day, let go.'}
           </pre>
           <button
             onClick={() => setTrace([])}

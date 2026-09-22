@@ -6,6 +6,41 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — MOVE-PROTOTYPE-01b · my trace logged the browser, not my code
+**Shipped:** Fixed a press that cancelled itself, and made the gesture report its own state.
+
+**Dev learning:** `setTimeout` leaves its id in the ref after the callback has run. I was
+using `pressTimer.current` as the flag for "still waiting for the long-press", so the moment
+the press armed, that flag stayed true — and the runner's first movement exceeded the slop
+and called the cancel path on a press that had already succeeded. One missing
+`pressTimer.current = null` inside the callback. A truthy-ref-as-state-flag is fine right up
+until the thing it refers to completes on its own.
+
+**Product/creator learning:** Two rounds of "still doesn't work" and I had nothing to work
+with, because the diagnostic panel I built logged `pointerdown`, `pointercancel` and
+`scroll` — what the *browser* did. A press that never arms and a press that arms and is
+immediately torn down produce an identical browser trace. The instrument could not
+distinguish the two failure modes it existed to distinguish. The gesture now emits its own
+phases and they interleave with the browser's.
+
+**AI-building learning:** Every string-matching test I had passed while this was broken, and
+they had all been falsified. So I wrote the failure as arithmetic instead — a ten-line
+reduction of the ref-and-handler pair, asserting both that it fails when the id is left
+behind and that it survives when the id is cleared. That one is not fooled by the code being
+rearranged, because it models the behaviour rather than the text.
+
+**The honest bit:** I am not claiming this is fixed. The bug I found degrades the drag but
+does not obviously explain a total failure, and nothing I can do on this machine produces a
+real touch — the browser pane wasn't even compositing frames when I tried to drive real
+mouse input. I have fixed what I can prove is wrong and made the next report diagnostic.
+Saying "fixed" here would be the third confident claim in a row about something I have never
+seen work.
+
+**Hook material:** Two rounds of "it doesn't work", and my debug panel could not tell the
+difference between the two things that might have been wrong.
+
+**Postable?:** yes
+
 ## 2026-09-22 — MOVE-PROTOTYPE-01a · a synthetic event is not a gesture
 **Shipped:** Hold-and-drag actually works now, plus a raw browser trace on the preview page
 so the next failure arrives as evidence rather than as "it doesn't work".

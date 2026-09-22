@@ -97,6 +97,61 @@ describe('🔴 the instrument does not favour either gesture', () => {
   })
 })
 
+describe('🔴 the press, once armed, survives the runner moving', () => {
+  // THE BUG THE FOUNDER HIT TWICE, reproduced as arithmetic rather than as a
+  // string match, because the string-matching gates all passed while it was
+  // broken.
+  //
+  // `setTimeout` leaves its id in the ref after the callback runs. The move
+  // handler gated on `pressTimer.current` to decide "still waiting for the
+  // press", so once armed that gate stayed TRUE — and the first movement
+  // exceeded the slop and cancelled a press that had already succeeded. The
+  // drag armed and was torn down by the runner's own first movement.
+  function gesture({ clearOnFire }: { clearOnFire: boolean }) {
+    // A faithful reduction of the handler pair: a ref that may or may not be
+    // nulled when the timer fires, and a move that branches on it.
+    const ref = { current: null as number | null }
+    let armed = false, cancelled = false
+    ref.current = 1                       // setTimeout scheduled
+    // …timer fires:
+    if (clearOnFire) ref.current = null
+    armed = true
+    // …runner now moves 40px, well past the 8px slop:
+    if (ref.current) { cancelled = true; armed = false }
+    return { armed, cancelled }
+  }
+
+  it('fails the way the founder saw it when the id is left behind', () => {
+    expect(gesture({ clearOnFire: false })).toEqual({ armed: false, cancelled: true })
+  })
+
+  it('and survives once the id is cleared as the timer fires', () => {
+    expect(gesture({ clearOnFire: true })).toEqual({ armed: true, cancelled: false })
+  })
+
+  it('the component clears it — bound to the timer body, not the file', () => {
+    const i = CAL.indexOf('pressTimer.current = setTimeout(')
+    expect(i).toBeGreaterThan(-1)
+    const body = CAL.slice(i, CAL.indexOf('}, PRESS_MS)', i))
+    expect(body, 'the timer must null its own id as it fires').toContain('pressTimer.current = null')
+  })
+
+  it('and the gesture reports its OWN phases, not just the browser events', () => {
+    // The preview page logged pointerdown/pointercancel/scroll — what the
+    // BROWSER did. A press that never armed and a press that armed and was torn
+    // down produce an IDENTICAL browser trace, which is why two rounds of
+    // "still doesn't work" carried no diagnosis.
+    expect(CAL).toContain('function logPhase')
+    for (const m of ['ARMED on', 'press cancelled', 'drop on', 'released on nothing']) {
+      expect(CAL, `missing phase: ${m}`).toContain(m)
+    }
+  })
+
+  it('no setPointerCapture — it bought nothing and added platform quirks', () => {
+    expect(CAL).not.toContain('setPointerCapture')
+  })
+})
+
 describe('the gesture does not steal the list', () => {
   it('🔴 the gesture is taken by a NON-PASSIVE touchmove listener, not touch-action', () => {
     // THIS ASSERTION USED TO ENFORCE THE BUG. It required

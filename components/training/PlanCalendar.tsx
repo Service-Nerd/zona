@@ -118,9 +118,12 @@ interface Props {
   /** Prototype instrumentation only. Fires once per completed or abandoned
    *  attempt so the board can rule on a measurement. Never wired in the app. */
   onMoveTelemetry?: (e: MoveAttempt) => void
+  /** Prototype instrumentation only — the GESTURE's own phases, which the
+   *  browser-event trace on the preview page structurally cannot see. */
+  onMovePhase?: (phase: string) => void
 }
 
-export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, moveMode = 'tap', onMoveTelemetry }: Props) {
+export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, moveMode = 'tap', onMoveTelemetry, onMovePhase }: Props) {
   const [showPast, setShowPast] = useState(false)
   // PLAN-STRIP-EXPAND: single Later-week may be expanded into a full WeekCard
   // for move/swap. State held here so navigating away resets — option-value,
@@ -259,6 +262,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
         sessionMetricOverrides={sessionMetricOverrides}
         moveMode={moveMode}
         onMoveTelemetry={onMoveTelemetry}
+        onMovePhase={onMovePhase}
       />
     )
   }
@@ -439,11 +443,12 @@ function PlanSectionLabel({ children, right }: { children: React.ReactNode; righ
   )
 }
 
-function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides, moveMode = 'tap', onMoveTelemetry }: {
+function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides, moveMode = 'tap', onMoveTelemetry, onMovePhase }: {
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
   /** MOVE-PROTOTYPE-01 — see Props. Defaults to the shipped tap flow. */
   moveMode?: 'tap' | 'drag'
   onMoveTelemetry?: (e: MoveAttempt) => void
+  onMovePhase?: (phase: string) => void
   onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
   onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
   onSwap: (weekN: number, sourceOriginal: string, sourceSlot: string, targetOriginal: string, targetSlot: string) => void
@@ -570,6 +575,17 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   const attempt     = useRef<{ started: number; interactions: number; misses: number } | null>(null)
   const suppressClick = useRef(false)
 
+  // 🔴 THE BROWSER TRACE COULD NOT HAVE FOUND THIS, AND THAT IS THE LESSON.
+  //
+  // The preview page logs `pointerdown` / `pointercancel` / `scroll` — what the
+  // BROWSER did. If the press never arms, or arms and is torn down by the first
+  // move, the browser trace looks exactly like a working one. A gesture needs
+  // its own state on the record, not just the events underneath it.
+  // ⚠️ NOT `phase` — that name already means the TRAINING phase in this scope
+  // (base / build / peak / taper). tsc caught the shadow; the catalogue calls
+  // this class "shadowed identifier" and it normally does NOT get caught.
+  function logPhase(s: string) { onMovePhase?.(s) }
+
   function beginAttempt() {
     if (!attempt.current) attempt.current = { started: Date.now(), interactions: 0, misses: 0 }
   }
@@ -586,6 +602,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   }
 
   function clearPress() {
+    if (pressTimer.current) logPhase('press cancelled — moved before it armed')
     const wasArming = !!pressTimer.current
     if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null }
     pressOrigin.current = null
@@ -617,16 +634,26 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     // it produces a confident wrong one.
     beginAttempt()
     pressOrigin.current = { x: e.clientX, y: e.clientY }
-    // Capture so every later move and the release keep targeting THIS row even
-    // once the finger is over another one. Without it the events retarget and
-    // the source can stop hearing its own gesture.
-    const el = e.currentTarget as HTMLElement
-    const pid = e.pointerId
+    // ⚠️ NO `setPointerCapture`. It was here, and it bought nothing: every row
+    // carries the same handlers and the drop target is found geometrically with
+    // `elementFromPoint`, so events retargeting to another row is harmless. It
+    // only added a platform-quirk surface to a gesture that was already failing.
+    logPhase(`press on ${key}`)
     pressTimer.current = setTimeout(() => {
+      // 🔴 CLEAR THE TIMER ID THE MOMENT IT FIRES.
+      //
+      // `setTimeout` leaves its id in the ref after the callback runs, so
+      // `pressTimer.current` stayed TRUTHY once armed — and `onRowPointerMove`
+      // gates on exactly that to decide "still waiting for the press". So the
+      // first move after arming took the arming branch, exceeded the slop, and
+      // called `clearPress()` — cancelling the press that had already
+      // succeeded. The drag armed and was torn down by the runner's own first
+      // movement.
+      pressTimer.current = null
       countInteraction()
-      try { el.setPointerCapture(pid) } catch { /* capture is best-effort */ }
       setDragKey(key)
       setMovingDay(key)
+      logPhase(`ARMED on ${key}`)
       if (navigator.vibrate) navigator.vibrate(30)
     }, PRESS_MS)
   }
@@ -652,6 +679,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     if (moveMode !== 'drag') return
     clearPress()
     if (!dragKey) return
+    logPhase('CANCEL — the browser took the gesture')
     setDragKey(null)
     setDragOver(null)
     setMovingDay(null)
@@ -668,6 +696,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     const target = dayUnder(e.clientX, e.clientY)
     setDragKey(null)
     setDragOver(null)
+    logPhase(target ? `drop on ${target}` : 'released on nothing')
     if (target && target !== dragKey) {
       countInteraction()
       // Pass the source explicitly: `setDragKey(null)` above has already run and

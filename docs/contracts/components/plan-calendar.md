@@ -26,6 +26,7 @@ interface Props {
   sessionMetricOverrides?: SessionMetricOverrides   // per-session metric override
   moveMode?: 'tap' | 'drag'                        // MOVE-PROTOTYPE-01; defaults 'tap'
   onMoveTelemetry?: (e: MoveAttempt) => void       // prototype instrumentation only
+  onMovePhase?: (phase: string) => void            // the GESTURE's own phases
 }
 ```
 
@@ -43,6 +44,13 @@ reaches `onMove`/`onSwap` directly.
 
 `onMoveTelemetry` fires once per completed or abandoned attempt and exists only for
 `/move-preview`. It is never wired in the app.
+
+`onMovePhase` emits the gesture's OWN state — `press on sun`, `ARMED on sun`, `press
+cancelled`, `drop on thu`, `released on nothing`. ⚠️ **It exists because the preview page's
+browser-event trace could not distinguish the two failure modes it was built to
+distinguish**: a press that never armed and a press that armed and was immediately torn down
+produce an identical sequence of `pointerdown` / `pointermove` / `pointerup`. Two rounds of
+"it doesn't work" carried no diagnosis for exactly that reason.
 
 **Units (INV-PREF-001).** Every distance this component renders resolves through
 `lib/format.ts` with `units` — the prescribed session distance, the week header
