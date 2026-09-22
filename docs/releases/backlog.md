@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-22 (last ship `fa0272a`, `HM-ANCHOR-VS-GOAL-01` / §120; §121 to follow) — PUSHED.** Full `npm run verify`: **3,017 tests / 336 files**, all passing; typecheck clean; `audit-docs.sh` ALL CLEAN. ⚠️ **`452 tests / 40 files`, quoted in earlier blocks, is the NARROWER marketing-and-shared scope** — both measures named. Thirteen commits today: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage waves, `<Section>` adoption, the docs, the step-numeral contrast fix, the spacing scale, `SITE-WAVE-2`, `SITE-BEAT-01`, and the engine pair. · 🔴 **`SITE-WAVE-3` is DEAD** — the founder answered the palette question on a device: *"its better"*. · **`6d935bc`** closed three **0px** gaps created by sitting two's own merges; **the spacing scale could not have caught them — it measured 448 gaps that EXISTED.** · **`fa0272a`** shipped **§120 + Amendment 1**: 2,811 sessions displayed a pace their own reps contradicted, and `HM` meant the runner's CURRENT half pace, so a 1:50 target got its three PEAK race-specific sessions **36–58 s/km too slow**. The board **rejected the percentage constant it had itself named** — right question, wrong unit — and bounded the anchor against **CV**. §22 costs nothing (14,253 plans, zero violations); maintenance at 21.1 km **44.8 → 48.2%**, A/B'd to the bound alone. · **§121** takes the race out of training volume: the taper phase outweighed the peak phase in **15.3% of plans and 50% of marathons**, and excluding the race **no taper anywhere exceeded its peak**. · ⚠️ **Three items filed, not fixed:** `RACE-ANCHOR-CV-OVERRIDE-01` (a §85/§22 **deadlock** — the obvious fix was built and reverted, it turns §22's own arm red on 100 tests), `SESSION-SIZING-ANCHOR-01`, and `TAPER-OVER-PEAK-01` (§121's invariant found 10 plans on its first sweep that the ruling's own grid could not reach).
+**State at END of 2026-09-22 (last ship `f7ff827`, `RACE-WEEK-VOLUME-01` / §121) — PUSHED.** Full `npm run verify`: **3,017 tests / 336 files** (⚠️ exits 1 on the DURATION gate only — the filed `CI-DURATION-TARGETEDGRID-01`; measured, not assumed: the flagged test reads 2,085 ms in the parallel suite and ~700 ms in isolation, so the baseline was NOT re-based). Typecheck clean; `audit-docs.sh` ALL CLEAN. ⚠️ `452 tests / 40 files` in earlier blocks is the NARROWER marketing-and-shared scope. Fourteen commits today: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage waves, `<Section>` adoption, the docs, the step-numeral contrast fix, the spacing scale, `SITE-WAVE-2`, `SITE-BEAT-01`, and the engine pair. · 🔴 **`SITE-WAVE-3` is DEAD** — the palette question went to the founder on a device: *"its better"*. · **`fa0272a` §120** — 2,811 sessions showed a pace their own reps contradicted; the board **rejected the constant it had itself named** (right question, wrong unit) and bounded the anchor against **CV**. · **`f7ff827` §121** — the race is no longer training volume (the taper outweighed the peak in **50% of marathons**). · ✅ **`SESSION-SIZING-ANCHOR-01` CLOSED — the premise was FALSE** (0 of 1,320 sessions; my first measurement said 20.2% because the denominator counted a RAMP anchor, and my first gate was hollow). · 🔴 **`TAPER-OVER-PEAK-01` RULED, not built** — not a taper defect, **the peak is too small**: at 2 days/week §1 offers only 100/0 or 50/50, the arithmetic that VETOED P-02. Blocked on measuring the §22 and cohort effect. · 🔴 **`RACE-ANCHOR-CV-OVERRIDE-01`** — a §85/§22 deadlock, built and reverted (100 tests red).
 
 🧭 **The homepage, measured at 375px:** first ground change **screen 10.6 → 3.4**, proof **52% → 24%**, sections **14 → 11**, page **12,317 → 11,773px**, content `<h2>` **9 (all 26px) → 6 with a scale**.
 
@@ -383,23 +383,38 @@ a check asserting no hand-typed gap outside the scale, falsified.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §121 — the invariant found a second defect on its first sweep
 
-### 🏃 `TAPER-OVER-PEAK-01` — a taper that out-trains the peak, with the race already excluded
-**Board: COACHING.** Baselined in `SWEEP-BASELINE-01`, not fixed.
+### 🏃 `TAPER-OVER-PEAK-01` — RULED **CORRECT WITH AMENDMENT**, not built
+**Board: 🏃 COACHING BOARD (ruled 2026-09-22).** Baselined in `SWEEP-BASELINE-01` meanwhile.
 
-`INV-PLAN-RACE-NOT-VOLUME` shipped with §121 and immediately found **10 plans in 14,253** where a
-taper week carries more training volume than the biggest week of the peak phase — **with the race
-already taken out**. Examples: `50km/experienced/days=3/cwk=25/age=62` (taper 52 km against a peak
-of 47) and `10km/intermediate/days=2/cwk=5/age=44` (15 against 12).
+`INV-PLAN-RACE-NOT-VOLUME` shipped with §121 and found **10 plans in 14,253** where a taper week
+carries more training volume than the peak phase **with the race already excluded**.
 
-⚠️ **§121's ruling says this cannot happen, and its grid could not see it.** The sitting measured
-8,510 plans and recorded *"excluding the race session, no taper anywhere exceeds its peak phase."*
-True of that grid. The property sweep is wider at the edges — **2 days a week, 5 km a week, age 62**
-— and those are exactly the cohorts it finds. Same class as `SWEEP-AGE-01` and the liveness debt:
-the defect was always there and the corpus could not reach it.
+🔴 **IT IS NOT A TAPER DEFECT. THE PEAK IS TOO SMALL.** Diagnosed on a 1,223-plan grid — **6 hits,
+all one cohort: 10K / beginner / 2 days / time-target:**
 
-🔴 **NOT MINE TO FIX.** A taper that trains more than the peak is a volume-curve question and
-changes what the engine prescribes. §121 itself is display-only and unaffected: these ten plans now
-read honestly and are still shaped wrong.
+```
+w10 build   19 km   easy:84m  easy:64m
+w11 peak    12 km   easy:52m  quality:40m   <- quality REPLACES the long easy run
+w12 peak    12 km   easy:56m  quality:38m
+w13 taper   15 km   easy:72m  easy:48m      <- the taper out-trains the peak
+```
+
+At two sessions a week, converting one to a short quality session removes a third of the week.
+
+🔴 **§1 SETTLES IT, AND THE BOARD HAS RULED THIS ARITHMETIC BEFORE.** §1 counts SESSIONS (CD-19), so
+at 2 days the only ratios are 100/0 and **50/50** — a quality session is **50% intensity** against a
+declared 80/20 ceiling. P-02's intensity row was **VETOED** on exactly this reasoning at 3–4 days
+("there is no 80/20 to select"). **Two days is worse and nobody checked it.** §90 Amendment 1 already
+built the yield mechanism (`INJURY_QUALITY_YIELD_TO_INTENSITY_CEILING`) and scoped it to injury:
+**the scope is what is wrong, not the mechanism.**
+
+**Ruling:** extend the yield to any week where quality would exceed §1's ceiling by session count,
+not only injury weeks — at 2 available days, quality yields.
+
+⚠️ **NOT BUILT, and the reason is a measurement rather than a filing excuse:** the effect on §22's
+exposure floor and on `cohort:shape` for the 2-day population is unmeasured, and §120 is the second
+time this week a change that looked small moved maintenance by 3.4pp. That measurement is the next
+piece of work.
 
 **Also from this ship:** `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` went **13 → 0** — §120 anchored
 `hm_pace_intervals` to goal pace, so a time-target plan that previously prescribed zero goal-pace
@@ -432,19 +447,24 @@ to the board, not to a commit shipping §120.
 **Visible meanwhile, not hidden:** `INV-PLAN-HEADER-PACE-MATCHES-WORK` emits `warn` (not `error`)
 for exactly this case and names the item, so the sweep counts it every run.
 
-### 🏃 `SESSION-SIZING-ANCHOR-01` — the sizing twin, parked by §120 itself
-**Board: COACHING.** Filed, unmeasured.
+### ✅ `SESSION-SIZING-ANCHOR-01` — **CLOSED 2026-09-22. The premise was false.**
 
-`minPerKm` sizes a session and therefore sets its prescribed **distance**, and it uses
-`pace.minPerKmQuality` for every non-VO2max quality session regardless of its work anchor — so a
-CV-anchored session's distance is computed at THRESHOLD pace, and an HM-anchored one likewise.
-§120 §6 names it and explicitly leaves it: *"moving it changes prescribed distance, which is a
-prescription change on its own account."* **Magnitude not measured.** The header fix deliberately
-changed `pace_target` and left `minPerKm` alone for this reason.
+Measured: **1,320 quality sessions, 0 sized at threshold while running somewhere else.** A
+structured session's distance comes from `segmentPricedKm(repPlan.mainMins,
+repPlan.workPaceMinPerKm)` — its own work pace — and never from `minPerKm`. `minPerKm` reaches only
+unstructured sessions and the two continuous tempo rows, which are genuinely threshold work. §120 §6
+asserted the defect and never measured it; **I repeated the assertion when I filed it.**
 
----
+⚠️ **My first measurement said 20.2%.** It counted 267 `progressive_tempo` sessions because
+`requiredPaceAnchors` returns the row's `E`-anchored opening third, and E is a ramp rather than a
+second work intensity — `hasMixedWorkAnchors` filters it for exactly that reason. Filtering it takes
+the number to zero. **Fifth time a wrong claim here has come from the denominator.**
 
-## 🔧 FILED 2026-09-22 DURING SITE-BEAT-01 — a gate that straddles its own threshold
+⚠️ **My first gate was HOLLOW.** It inferred "sized at work pace" from the derived set having a
+repeated paced block, which is true whatever the sizing does — reinstating the old guard left it
+green. Tracing why is what found the false premise. Bounding the replacement took **three attempts**
+(`segmentPricedDistance` appears four times in `ruleEngine.ts`). `lib/plan/sessionSizingAnchor.test.ts`
+now goes red on the real swap.
 
 ### 🔧 `CI-DURATION-TARGETEDGRID-01` — `npm run verify` is non-deterministic at the duration wall
 **Board: none.** Tooling, no user-facing surface, no prescription change.
