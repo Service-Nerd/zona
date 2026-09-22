@@ -145,13 +145,21 @@ export default function ModifyPlanSheet({
             borderTop: '1px solid var(--line)', padding: '12px 20px',
             marginTop: '20px',
           }}>
+            {/* S2 (Design Board, app review 2026-09-22) — DISMISS IS NEVER THE
+                CTA COLOUR. This shipped as a full-width `--moss` button reading
+                "Close", which is the strongest colour in the system spent on
+                leaving. The founder named it: *"I don't think one of our key
+                calls to action should be Close in big green moss."*
+
+                `--moss` is reserved for the action the runner came to take. It
+                stays on `Apply N changes` below, which IS that action. */}
             {pending.length === 0 ? (
               <button
                 onClick={close}
                 style={{
                   width: '100%', padding: '14px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--moss)', border: 'none', cursor: 'pointer',
-                  fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--card)',
+                  background: 'var(--bg-soft)', border: '1px solid var(--line)', cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)',
                 }}
               >
                 Close

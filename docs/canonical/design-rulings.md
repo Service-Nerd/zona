@@ -363,6 +363,60 @@ Third founder device pass, and the first on **desktop**.
 
 ---
 
+## 6g. THE APP REVIEW — sitting three (2026-09-22)
+
+**Brief:** `docs/canonical/app-review-brief.md`, founder, verbatim. **Blank sheet**, conditional on
+naming up- and downstream impact; a significant brand change goes to the SLT first. The standard is
+**feeling** — *"I want them to talk to their friends about the app"* — and correct-and-forgettable
+has failed it.
+
+**Evidence:** the founder's notes on Today, Plan, Coach, Me, Session Detail (screenshots), Login;
+`WIZARD-HARNESS-01`'s walk of the full 18-step flow; and the measurements below.
+
+### Systems — ruled before any screen, because six of his notes are one decision each
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **S1 — one sheet pattern, over the nav** | ⚠️ **RETURNED TO THE BOARD, mis-escalated.** Slide-up sheets are ALREADY approved (`ux-principles.md`) and a shared `Sheet` primitive already exists (`SHEET-PRESENT-01`) owning z-index, nav inset, animation, focus trap. 🔴 **The founder is reversing HIS OWN prior rule**, encoded in that primitive: *"come up from the nav bar but not overlay it."* Not a brand change, not the SLT's — **one property on one primitive.** ⚠️ **The board escalated this as "reverses no-popups" and that was wrong: the scan ran against the restraint rules and never looked for the primitive** |
+| **S2 — dismiss is never `--moss`** | 🟢 **SHIP** | `--moss` is the CTA colour. Spending the strongest colour in the system on *dismiss* teaches the opposite of what it means, on every sheet. Silvanto: not a veto today, **but a `--moss` close shipping after this sitting is one** |
+| **S3 — one CTA vocabulary** | 🟢 **SHIP** | Measured in the wizard: **four labels for one button** — `Continue` · `Continue →` · `Got it →` · `Skip this →` — with the arrow on some and not others |
+| **S4 — an optional step's primary may never be the SKIP** | 🟢 **SHIP.** The sharpest finding of the review | Measured: the moss primary (`rgb(107,142,107)`, white text), largest target on the screen, in the thumb zone, reads **"Skip this →" on 5 of 15 steps.** Answering costs a tap; declining costs none. **We built a wizard that is easiest not to fill in** (Wroblewski) |
+| **S5 — one time-to-race vocabulary** | 🟢 **SHIP** | Three today: *"214 days to go"* (Plan) · *"30 weeks 4 days out"* (Today) · *"77 days until then"*. Collins: **three vocabularies for one fact is the product not knowing what it is saying** |
+| **S6 — an icon language, bounded** | 🟢 **SHIP WITH AMENDMENT** | Only where a label **repeats down a list** (session types, day markers, plan adjustments). **Never replacing a label read once.** Silvanto: *an icon is a word the reader has to learn* |
+
+### Screens
+
+| Ruling | Status | |
+|---|---|---|
+| **A1 — week navigation leaves Today** | 🟢 SHIP | Today is one day; Plan owns weeks. Duplicated today |
+| **A2 — Plan leads with the plan** | 🟢 SHIP | Five tiles before the first week, on a screen called Plan |
+| **A3 — the race appears once on Plan** | 🟢 SHIP | Twice today |
+| **A4 — tab bar rebalanced** | 🟢 SHIP | Measured: `padding: '6px 0 max(12px, env(safe-area-inset-bottom))'` — **6px above the icons, 34px below**, asymmetric by 28px. The safe-area inset is being spent as CONTENT padding; it is **background**. ⚠️ The founder said *"move the menu down"*; the fix is to rebalance the content, not move the bar |
+| **A5 — Coach gets a progress language: SHAPE, never SCORE** | 🟢 SHIP | **Load ratio as a bare number is KILLED.** Sierra: *a number that has to be tapped to mean anything has taught nobody anything.* 🔴 **This reverses "no dashboards" — recorded as a reversal**, on Zhuo's distinction: the rule was against a wall of numbers substituting for a decision, not against showing a runner their own progress |
+| **A6 — Me stays a settings screen** | 🟢 SHIP | See the permanent kill below. Fix **flat** — order, hierarchy, visualisation, icons — not with a price |
+| **A7 — Login unchanged** | 🟢 SHIP | Fit for purpose is the right answer for a door |
+| **A8 — Session Detail: a RUN-NOW block** | ⚖️ **SHIP WITH AMENDMENT — and it contradicts the founder** | He asked for one page. **Not granted as stated:** the screen's job is the full prescription, and compressing it means deleting prescription, which is the Coaching Board's. **The complaint is right and the diagnosis is wrong** — the problem is not length, it is that the thing you need mid-run is not at the top. A run-now block fits one screen; everything else stays below it. **Nothing is cut; the order changes** |
+
+### 🔴 Permanent kills
+
+| | |
+|---|---|
+| **A settings screen that merchandises** | **SLT, unanimous.** Sutherland: *a feature list is the weakest instrument you own* — put the answer where the question occurs. Fried: every screen doing a second job does the first worse. Wood: **Me is the lowest-frequency surface in the product**, so it is the worst place for a conversion moment and the best place to feel like nagging. ⚠️ **Traynor's seat is VACANT and this was his question** — no seat prices conversion, and his recall trigger (a measurable trial-to-paid rate) does not exist. We would be designing a funnel nobody has observed, which is the three-card proof band's error. **May not return without a measured conversion problem traceable to Me** |
+| **"Wow" delivered as ornament** | Collins: *the wow in this product is the honesty.* Gradients, decorative iconography, chrome. Already standing as W-11 |
+
+### INSUFFICIENT EVIDENCE
+
+- **The move-a-run gesture.** The founder wants hold-and-drag; **Wroblewski pushed back** — drag on a scrolling list, one-handed, outdoors, is the hardest gesture on a phone and has no discoverability. His counter: **tap the session, tap the day.** Board split; needs a prototype. **Recorded as unsettled.**
+- **The black line above the nav.** Untraced — it is **not** the nav's border, which resolves to `rgba(26,26,26,0.08)`. No ruling on an unidentified artefact.
+- **Anything past wizard submission** — ceremony, plan preview, confidence badge, difficulty card. Unwalked.
+
+⚠️ **Seven defects were separated out and are NOT this board's**: `Apply 1 change` doing nothing ·
+units ignoring the profile · week totals on some weeks only · back returning to Today · health
+access prompting while connected · "one session behind" when none was due · em dashes in Coach copy.
+They go through `/zona-debug`.
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |

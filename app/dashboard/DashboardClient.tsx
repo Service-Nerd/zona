@@ -2757,7 +2757,24 @@ export default function DashboardClient() {
             width: '100%', maxWidth: '480px',
             display: 'flex', alignItems: 'center',
             background: 'var(--nav-bg)', borderTop: '0.5px solid var(--border-col)',
-            padding: '6px 0 max(12px, env(safe-area-inset-bottom))',
+            // A4 (Design Board, app review 2026-09-22) — THE SAFE AREA IS
+            // BACKGROUND, NOT PADDING.
+            //
+            // This read `padding: '6px 0 max(12px, env(safe-area-inset-bottom))'`
+            // — 6px above the icons and, on any iPhone with a home indicator,
+            // **34px below**. Asymmetric by 28px, which is exactly the "lots of
+            // white space under the icons" the founder reported.
+            //
+            // `env(safe-area-inset-bottom)` exists so nothing sits UNDER the home
+            // indicator. It is the bar's own reserved strip; spending it as
+            // content padding pushes the labels up and leaves a void beneath
+            // them. The content now gets a balanced 10px top and bottom, and the
+            // inset is added on top of that as the strip it is.
+            //
+            // ⚠️ THE FOUNDER'S WORDS WERE "MOVE THE MENU DOWN" AND THAT IS NOT
+            // THE FIX. Moving the bar would push it under the indicator. The
+            // content moves down inside a bar that stays where it is.
+            padding: '10px 0 calc(10px + env(safe-area-inset-bottom))',
             zIndex: Z_LAYERS.nav,
           }}>
             {navItems.map(({ id, label, icon }) => {

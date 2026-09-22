@@ -6,6 +6,43 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — APP-REVIEW-W1 · the button that said Skip and meant Continue
+
+**Shipped:** The first four rulings from the app review. One CTA vocabulary, an optional-step
+affordance that no longer lies, a dismiss that is not the CTA colour, and a tab bar whose padding is
+symmetric.
+
+**Dev learning:** `function skipStep() { goNext() }`. One line, no branch. Two buttons on six screens
+called the same function under different names, and answering the step then tapping "Skip this"
+**kept your answer**. The label had been false since the step was written, and it took walking the
+flow to see it, because reading the file you see two handlers and assume two behaviours.
+
+**Product/creator learning:** the founder said *"move the menu down"* about the tab bar. The
+measurement said 6px above the icons and 34px below — the content was already as far down as it
+could go, and the void beneath it was the safe-area inset being spent as padding. **Moving the bar
+would have pushed it under the home indicator.** The complaint was exactly right and the instruction
+would have made it worse.
+
+**AI-building learning:** I took a finding to the board that was false — *"the moss primary says
+Skip this"* — because my own walker logged `cta: "Skip this →"` and I read my tool's label instead of
+checking which element it had picked. Measured after: the moss primary says `Continue`; skip is a
+13px muted link. **Second board ruling today built on an instrument I did not interrogate.** The
+retraction produced a better finding than the original.
+
+**The honest bit:** the check guarding the dismiss rule was **wrong three times**. First a
+hand-written three-file list that **missed the actual offender** — the exact button the founder
+complained about. Then a word match that fired on `headline: 'Close. Bit of fine-tuning to do.'`,
+which is prose. Then a handler match that fired on Orientation's `"I'm ready"`, which is a primary
+action wired to a prop called `onDismiss`. **The property was the label all along.**
+
+**Hook material:** A wizard with a "Skip this" button whose implementation is, in full,
+`{ goNext() }`. Tap it after answering and it keeps your answer. Six screens, unnoticed, until
+someone built a harness that could open the flow without making an account.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-22 — WIZARD-HARNESS-01 · you cannot review a flow nobody can open
 
 **Shipped:** A harness for the setup wizard, and the first end-to-end walk of it. 13 answerable

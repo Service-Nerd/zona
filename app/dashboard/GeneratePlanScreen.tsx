@@ -248,7 +248,7 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'race-details':    { title: 'Tell me about the race.', subtitle: 'Race name is optional. The date is not.' },
   'goal':            { title: 'What matters most?',    subtitle: 'Crossing the line, or hitting a number. Both are valid.' },
   'target-time':     { title: "What's the target?",    subtitle: "Be honest. Optimistic goals make bad training plans." },
-  'teach-easy':      { title: 'This plan will feel too easy at first.', subtitle: '', eyebrow: 'Hold the zone', interstitial: true, cta: 'Got it →' },
+  'teach-easy':      { title: 'This plan will feel too easy at first.', subtitle: '', eyebrow: 'Hold the zone', interstitial: true, cta: 'Got it' },
   'weekly-volume':   { title: 'How much are you running now?', subtitle: 'Last four weeks, roughly. Real numbers only.' },
   'longest-run':     { title: 'Longest run in the last six weeks?', subtitle: 'Tells us how much you can already hold.' },
   'training-age':    { title: 'How long have you been at this?', subtitle: 'Consistent months, not total years.', optional: true },
@@ -260,7 +260,7 @@ const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; option
   'your-level':      { title: 'Where are you right now?', subtitle: "Based on what you told us. Overrule it if we've got it wrong." },
   'birth-year':      { title: 'What year were you born?', subtitle: "Only to estimate your max heart rate, if you haven't set one. Kept private.", optional: true },
   'benchmark':       { title: 'Recent race result?',   subtitle: 'Gives us precise pace targets for every session. Skip if you haven\'t raced lately.', optional: true },
-  'teach-easy-day':  { title: 'Easy should feel easy.', subtitle: '', eyebrow: 'The easy day', interstitial: true, cta: 'Continue →' },
+  'teach-easy-day':  { title: 'Easy should feel easy.', subtitle: '', eyebrow: 'The easy day', interstitial: true, cta: 'Continue' },
   'your-week':       { title: 'Which days do you run?',  subtitle: 'Tap the days you train. Tap a weekend day again to make it your long run.' },
   'weekday-ceiling': { title: 'How long on a weekday?',  subtitle: 'Your cap Monday–Friday. Weekends stay open. Skip if you\'re flexible.', optional: true },
   'hard-sessions':   { title: 'You and hard sessions.', subtitle: 'Intervals, tempo, threshold. Where do you land?' },
@@ -1587,9 +1587,14 @@ export default function GeneratePlanScreen({
   // and the sticky CTA reads "That's about right" (an explicit confirm, not a
   // generic Continue).
   const benchConfirm   = currentSubStep === 'benchmark' && benchMode === 'confirm' && !!benchEstimate?.available
+  // S3 (Design Board, app review 2026-09-22) — ONE CTA VOCABULARY, NO ARROWS.
+  // Measured on the walked flow: FOUR labels for one button — `Continue`,
+  // `Continue →`, `Got it →`, `Skip this →` — with the arrow on some and not
+  // others. A button in a fixed position doing a fixed job does not need to
+  // announce direction differently on different screens.
   const ctaLabel       = benchConfirm
-    ? "That's about right →"
-    : (stepMeta.cta ?? (isLastStep ? 'Generate my plan →' : 'Continue'))
+    ? "That's about right"
+    : (stepMeta.cta ?? (isLastStep ? 'Generate my plan' : 'Continue'))
 
   // Progress counts real questions only — the teaching interstitials don't
   // advance the line (CI-7: they're a moment, not a step to tick off).
@@ -1654,12 +1659,32 @@ export default function GeneratePlanScreen({
         borderTop: '1px solid var(--line)',
         background: 'var(--bg)',
       }}>
+        {/* S4a/b (Design Board, app review 2026-09-22) — THE BUTTON THAT LIED.
+            `skipStep()` is `goNext()`. One line, no branch: it clears nothing
+            and records nothing. So on each of the SIX optional steps there were
+            two buttons calling the identical function, and answering the step
+            and then tapping "Skip this →" KEPT the answer. The label was false.
+
+            ⚠️ RELABELLED, NOT REMOVED, AND THE BOARD SAID "REMOVED" — so the
+            departure is stated rather than quietly taken. The ruling's binding
+            amendment keeps an affordance on any optional step with no field
+            label to hang "optional" on. Measured: FIVE of the six have none
+            (training-age, recent-quality, birth-year, weekday-ceiling and
+            injuries are chip/card/wheel steps with no FieldLabel). Applying
+            "remove" literally would delete it from `benchmark` alone and leave
+            it on five, which is a one-of-six exception in a wave whose other
+            ruling is ONE VOCABULARY. Consistency wins; the lie is what gets
+            fixed.
+
+            ⚠️ AND IT IS NOT AN EM DASH. `brand.md` § Punctuation bans them in
+            copy SITE-WIDE — the "app-side exception" CLAUDE.md refers to does
+            not exist in that section. A comma. */}
         {stepMeta.optional && (
           <button
             onClick={skipStep}
             style={{ width: '100%', textAlign: 'center', marginBottom: '8px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', padding: '8px' }}
           >
-            Skip this →
+            Not sure, continue
           </button>
         )}
         <button

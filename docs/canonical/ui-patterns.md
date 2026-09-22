@@ -152,6 +152,38 @@ Guarded by `lib/marketing/beatRhythm.test.ts`.
 
 **And two measures, not eight:** `--measure-page` (1100px, matching the site frame so the content edge stops moving as you scroll) and `--measure-read` (720px, a reading column of roughly 70 characters at 17px).
 
+### App review wave 1 — Design Board sitting three, 2026-09-22
+
+#### One CTA vocabulary (S3)
+
+**A CTA in a fixed position doing a fixed job does not announce direction.** `Continue` throughout; `Got it` only on a teaching interstitial; no arrows.
+
+Measured on the walked wizard: **four labels for one button** — `Continue`, `Continue →`, `Got it →`, `Skip this →` — arrow on some and not others.
+
+#### Dismiss is never `--moss` (S2)
+
+`--moss` is the **CTA colour**: the action the runner came to take. A control whose label is *Close / Cancel / Dismiss* is painted `--bg-soft` with a `--line` border.
+
+The founder named it: *"I don't think one of our key calls to action should be Close in big green moss."* It shipped as a full-width moss `Close` in `ModifyPlanSheet`. ⛔ **Silvanto did not veto this sitting and stated that a `--moss` dismiss shipping after it would be one.**
+
+#### An optional step's affordance does not lie (S4)
+
+🔴 `skipStep()` was **a one-line alias for `goNext()`** — no branch, no clearing, no record. So on each of the **six** optional steps two buttons called the identical function, and **answering the step then tapping "Skip this →" kept the answer.** The label was false.
+
+**The affordance stays** (Wroblewski's binding amendment: five of the six have no `FieldLabel` to hang *optional* on, so removing it would strand a runner who does not know the step is optional) **and reads `Not sure, continue`.** Never *Skip* — nothing is skipped.
+
+⚠️ **Not an em dash.** `brand.md` § Punctuation bans them in copy **site-wide**; the "app-side exception" CLAUDE.md refers to **does not exist in that section**.
+
+#### The safe area is background, not padding (A4)
+
+`padding: 'Npx 0 calc(Npx + env(safe-area-inset-bottom))'` — **the same N top and bottom**, with the inset added on top as the strip it is.
+
+It shipped as `'6px 0 max(12px, env(safe-area-inset-bottom))'`: **6px above the icons, 34px below** on any iPhone with a home indicator, **asymmetric by 28px**. ⚠️ The founder said *"move the menu down"*; **that is not the fix** — moving the bar pushes it under the home indicator. The content moves down inside a bar that stays put.
+
+Guarded by `lib/marketing/appReviewWave1.test.ts`, all four falsified.
+
+---
+
 #### ONE LEFT EDGE — SITE-MEASURE-EDGE, Design Board 2026-09-22
 
 **A narrower measure narrows the box. It does not move it.** `--measure-read` is nested inside the page frame and left-aligned to it; only the right edge moves.

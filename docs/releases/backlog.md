@@ -381,6 +381,34 @@ a check asserting no hand-typed gap outside the scale, falsified.
 
 ---
 
+## ⚖️ FILED 2026-09-22 DURING APP REVIEW WAVE 1
+
+### 👤 `BRAND-EMDASH-APP-01` — the rule is site-wide, the guard is marketing-only, and CLAUDE.md invented an exception
+**Board: 👤 FOUNDER** (locked brand rule) → build.
+
+The founder flagged em dashes in Coach copy. Checking the rule first, as it turned out, mattered:
+
+🔴 **`brand.md` § Punctuation bans the em dash in copy SITE-WIDE.** Its only stated exclusions are
+**en dashes in ranges** and **code comments**. There is no app-side carve-out.
+
+🔴 **`CLAUDE.md` says there is one** — *"Full rule + the app-side exception in `docs/canonical/brand.md`
+§ Punctuation."* **That exception does not exist in that section.** A gap in enforcement was
+explained away by asserting a rule that was never written.
+
+**`noEmDash.test.ts` covers public marketing surfaces only**, so every app and engine string has been
+unguarded since the rule was extended.
+
+⚠️ **THE NUMBER IS NOT MEASURED AND MUST NOT BE QUOTED AS ONE.** A raw scan of string literals across
+`app/dashboard`, `components`, `lib/coaching` and `lib/plan` returns **537**, but most of that is
+`invariants.ts` and `ruleEngine.ts` **violation messages** — internal, never runner-facing. **The
+runner-facing subset is unknown.** Separating them is the work, and doing it inside wave 1 would have
+been exactly the scope creep the founder's feedback was not asking for.
+
+**To close:** measure the runner-facing subset, fix it, extend the guard past marketing, and correct
+CLAUDE.md's false claim.
+
+---
+
 ## ⚖️ FILED 2026-09-22 SHIPPING §121 — the invariant found a second defect on its first sweep
 
 ### 🏃 `TAPER-OVER-PEAK-01` — **RE-RULED 2026-09-22. CORRECT WITH AMENDMENT, not built.**
