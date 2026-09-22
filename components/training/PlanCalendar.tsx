@@ -539,9 +539,25 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   // threshold is the whole cost of the gesture and the prototype must expose it
   // rather than tune it away: `misses` counts every release that landed on no
   // valid day, which is the number the board should rule on.
-  const PRESS_MS = 350
-  const PRESS_SLOP_PX = 8
+  // ⚠️ THESE TWO NUMBERS WERE TESTING THE GESTURE UNFAIRLY, and the founder's
+  // three failed attempts are what said so.
+  //
+  // 350 ms with NO FEEDBACK OF ANY KIND until it elapsed. Nothing on screen
+  // said "I am listening", so there was nothing to teach the timing — you press,
+  // you start moving at 150 ms like a person does, the list scrolls, and it
+  // looks broken. Every time, with no way to learn otherwise. And an 8px slop
+  // cancelled on any drift, which a finger on glass produces and a mouse does
+  // not: the gesture was tuned on a device that cannot reproduce the problem.
+  //
+  // No shipped drag implementation omits press feedback. Letting the board rule
+  // against drag on a prototype that did would be ruling on my build, not on
+  // the interaction.
+  const PRESS_MS = 250
+  const PRESS_SLOP_PX = 14
 
+  /** The finger is down and the press is being waited out. Drives the immediate
+   *  feedback that was missing — see PRESS_MS above. */
+  const [pressKey, setPressKey] = useState<string | null>(null)
   const [dragKey, setDragKey]   = useState<string | null>(null)
   const [dragOver, setDragOver] = useState<string | null>(null)
 
@@ -602,6 +618,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   }
 
   function clearPress() {
+    setPressKey(null)
     if (pressTimer.current) logPhase('press cancelled — moved before it armed')
     const wasArming = !!pressTimer.current
     if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null }
@@ -639,6 +656,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     // `elementFromPoint`, so events retargeting to another row is harmless. It
     // only added a platform-quirk surface to a gesture that was already failing.
     logPhase(`press on ${key}`)
+    setPressKey(key)
     pressTimer.current = setTimeout(() => {
       // 🔴 CLEAR THE TIMER ID THE MOMENT IT FIRES.
       //
@@ -650,6 +668,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
       // succeeded. The drag armed and was torn down by the runner's own first
       // movement.
       pressTimer.current = null
+      setPressKey(null)
       countInteraction()
       setDragKey(key)
       setMovingDay(key)
@@ -663,8 +682,11 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     if (pressTimer.current && pressOrigin.current) {
       const dx = Math.abs(e.clientX - pressOrigin.current.x)
       const dy = Math.abs(e.clientY - pressOrigin.current.y)
-      // Moved before the press armed → this was a scroll. Stand down entirely.
-      if (dx > PRESS_SLOP_PX || dy > PRESS_SLOP_PX) clearPress()
+      // ⚠️ ONLY A PREDOMINANTLY VERTICAL MOVE IS A SCROLL. The old test was
+      // `dx > slop || dy > slop`, so sideways drift — which is not a scroll on
+      // a vertically scrolling list, and which a finger always produces — stood
+      // the press down. Now it has to look like the runner meant to scroll.
+      if (dy > PRESS_SLOP_PX && dy > dx) clearPress()
       return
     }
     if (!dragKey) return
@@ -916,6 +938,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             onMoveIconTap={() => handleMoveIconTap(key)}
             dragMode={moveMode === 'drag'}
             isDragOver={dragOver === key && dragKey !== key}
+            isPressing={pressKey === key}
             onPointerDownRow={(e) => onRowPointerDown(key, isMovable, e)}
             onPointerMoveRow={onRowPointerMove}
             onPointerUpRow={onRowPointerUp}
@@ -1001,7 +1024,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   )
 }
 
-function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, dragMode = false, isDragOver = false, onPointerDownRow, onPointerMoveRow, onPointerUpRow, onPointerCancelRow }: {
+function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, dragMode = false, isDragOver = false, isPressing = false, onPointerDownRow, onPointerMoveRow, onPointerUpRow, onPointerCancelRow }: {
   dayKey: string; session: EffectiveSession | undefined; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
   completion?: Completion; isMovable: boolean; isMoving: boolean
   isMoveTarget: boolean; isSwapTarget: boolean
@@ -1012,6 +1035,9 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   /** MOVE-PROTOTYPE-01 — drag prototype only; all default off. */
   dragMode?: boolean
   isDragOver?: boolean
+  /** Finger is down, waiting out the press. Immediate feedback, so the hold is
+   *  legible instead of being a silent quarter-second. */
+  isPressing?: boolean
   onPointerDownRow?: (e: React.PointerEvent) => void
   onPointerMoveRow?: (e: React.PointerEvent) => void
   onPointerUpRow?: (e: React.PointerEvent) => void
@@ -1051,11 +1077,14 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         display: 'flex', alignItems: 'center',
         padding: isRestType && !isTarget ? '6px 14px' : '10px 14px',
         borderBottom: isLast ? 'none' : '1px solid var(--line)',
-        background: isMoving
+        background: isMoving || isDragOver || isTarget
           ? 'var(--moss-soft)'
-          : isDragOver || isTarget
-          ? 'var(--moss-soft)'
+          : isPressing
+          ? 'var(--bg-soft)'      // the instant the finger lands: "I am listening"
           : 'transparent',
+        // A press that is being waited out settles very slightly. The gesture
+        // has to be legible BEFORE it arms, or there is nothing to learn from.
+        transform: isPressing ? 'scale(0.985)' : undefined,
         cursor: (hasSession || isTarget) ? 'pointer' : 'default',
         opacity: isMoving ? 0.7 : isMoveMode && !isTarget && !isMoving ? 0.4 : isSkipped ? 0.5 : isPast && !isComplete && hasSession ? 0.45 : 1,
         // dashed = move (empty slot); solid = swap (occupied slot); solid on the source while moving.
@@ -1065,7 +1094,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           ? '1px solid var(--moss-mid)'
           : 'none',
         outlineOffset: '-1px',
-        transition: 'background 0.15s, opacity 0.15s',
+        transition: 'background 0.12s, opacity 0.15s, transform 0.12s',
         userSelect: 'none',
         WebkitUserSelect: 'none',
       } as React.CSSProperties}
