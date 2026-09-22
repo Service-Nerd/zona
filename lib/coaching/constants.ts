@@ -87,6 +87,12 @@ export const ZONE_DISCIPLINE_BANDS = {
 export const LOAD_RATIO = {
   watch: 1.3,
   flag:  1.4,  // flag if >1.4 for 2 consecutive weeks
+  // A5 (Design Board 2026-09-22) — the LOWER edge of "your recent normal".
+  // It already governed what the Coach screen tells the runner ("under your
+  // recent normal") and was a bare 0.8 inside a display function, invisible to
+  // every config check this repo owns. Naming it is a no-behaviour-delta
+  // refactor: the value is unchanged.
+  under: 0.8,
 } as const
 
 // Shadow load — actual vs planned

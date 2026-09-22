@@ -522,6 +522,29 @@ green. Tracing why is what found the false premise. Bounding the replacement too
 (`segmentPricedDistance` appears four times in `ruleEngine.ts`). `lib/plan/sessionSizingAnchor.test.ts`
 now goes red on the real swap.
 
+### 🧭 `DESIGN-DAYDOT-CHANNEL-01` — the day marker carries two facts on one channel
+**Board: DESIGN.** Exposed by applying S6's bound; deliberately NOT built inside someone
+else's ruling.
+
+`DateStrip`'s session dot is a **4px circle whose only information is hue**, and that one
+channel carries **two orthogonal facts**:
+
+| Fact | Encoding |
+|---|---|
+| What kind of session | eight type hues — `--s-easy` `--s-long` `--s-quality` `--s-inter` `--s-race` `--s-recov` `--s-strength` `--s-cross` |
+| Whether it is done | `--teal` if complete, `--text-muted` if skipped, **overwriting the type** |
+
+So a completed interval session and a completed easy run are **the same teal dot**, and a
+skipped session is grey — which is also how a muted type reads. The runner cannot recover
+either fact reliably, and at 4px several of the type hues are close to begin with
+(`--s-easy` #3D6FB0 against `--s-long` #5E4FB0).
+
+⚠️ **An icon is not the fix here and S6 already says why:** you cannot draw a glyph at 4px.
+The candidate is **separating the channels** — hue always carries type, fill-vs-ring carries
+completion — which needs no glyph, works at this size, and is a change to what the runner
+reads. **That is a ruling, not an implementation detail**, which is why it is filed rather
+than folded into wave 4.
+
 ### 🏃 `COACH-BEHIND-DAY-TWO-01` — "1 behind" is *correct* and reads as a lie on day two
 **Board: COACHING (§65) first, then DESIGN on the words.** Not a defect. **D6 from the app
 review, investigated and NOT REPRODUCED as a bug** — the count is right, and that is the finding.

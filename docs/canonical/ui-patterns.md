@@ -2450,6 +2450,67 @@ The form-control migration (2026-05-30) moved Login, Benchmark, and the Me-scree
 
 ---
 
+## LoadShape — where this week sits against your normal (A5, 2026-09-22)
+
+**A shape, not a score.** `components/shared/LoadShape.tsx`.
+
+```
+        ┌──────────────────────────────────────┐
+  track │        ████████████████        │     │   ← --moss-soft = your normal
+        └──────────────────────┃───────────────┘   ← marker = this week
+              0.8                    1.3
+```
+
+| | |
+|---|---|
+| **Band** | `LOAD_RATIO.under … LOAD_RATIO.watch` — **the same constants the coaching layer flags on.** A band drawn at numbers the engine does not use is a picture of nothing |
+| **Marker** | Coloured by `loadRatioContext`, the single owner of the verdict, so the marker and the words above it cannot disagree |
+| **No ratio** | **No marker.** An empty track reads as "nothing measured yet"; a marker parked at 1.0 would read as "you are exactly normal", which is a claim we cannot make from no data |
+| **Domain** | 0.5–1.7, clamped. A presentation choice, not a coaching threshold — it exists so the band sits centrally and an extreme week lands on the track rather than off the end |
+
+**Why it exists.** The load ratio was rendered `1.15x` at 28px / 800, its meaning demoted
+to an 11px sub-line, its explanation behind a tap. Sierra: **a number that has to be tapped
+to mean anything has taught nobody anything.** The verdict is the hero now, the shape shows
+where the week sits, and the ratio is evidence underneath. **The number is demoted, not
+deleted.**
+
+⚠️ **This is a RECORDED REVERSAL of "no dashboards"**, on Zhuo's distinction: the rule was
+against a wall of numbers substituting for a decision, not against showing a runner their
+own progress. **The limit is the whole point** — a shape answers the question; axes,
+gridlines, tick labels and legends pose it. `appReviewWave4.test.ts` fails if any of those
+words appears in the component.
+
+⚠️ **Not every number becomes a shape.** The Sessions tile beside it keeps `3/5`, because
+`3/5` means something without a tap — which is exactly Sierra's test. **One tile changing
+and one not is a distinction, and the gate asserts it so nobody "makes them consistent".**
+
+---
+
+## Icons — S6, applied, and it builds nothing today
+
+**The ruling:** an icon language, **only where a label repeats down a list** — S6 named
+session types, day markers and plan adjustments — and **never replacing a label read once.**
+
+🔴 **Applied to its own three surfaces, the bound yields no icon anywhere.** Measured:
+
+| Surface | What it shows | Verdict |
+|---|---|---|
+| **Plan rows** (`PlanCalendar`) | `session.label` at 15px/500, plus a colour accent | **Labelled.** An icon beside it is density, not information |
+| **Plan adjustments** (`AdjustmentDiff`) | `labelSession()` text, before and after | **Labelled.** Same |
+| **Day markers** (`DateStrip` dot) | A **4px** circle. Hue only | **No room for a glyph.** You cannot draw an icon at 4px |
+
+**So S6 is satisfied by doing nothing, and that is the correct outcome of a bounded rule.**
+The founder asked for icons; the board bounded them; the bound, applied honestly, does not
+reach. Inventing a set anyway would be decoration with a ruling stapled to it.
+
+⚠️ **What the measurement DID expose is filed, not built:** the `DateStrip` dot carries
+**two orthogonal facts on one channel** — eight session-type hues *and* completion state —
+so a completed interval and a completed easy run are the same teal dot, and a skipped
+session is grey, which is also how a muted type reads. That is a real encoding defect and it
+needs its own ruling, not a paragraph here. `DESIGN-DAYDOT-CHANNEL-01`.
+
+---
+
 ## Time to race — one vocabulary (S5, Design Board 2026-09-22)
 
 **There is exactly one way this product says how far away the race is, and it lives in

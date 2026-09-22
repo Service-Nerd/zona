@@ -35,7 +35,7 @@ import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from
 import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
-import { ZONE_DRIFT_ABOVE_CEILING_PCT } from '@/lib/coaching/constants'
+import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO } from '@/lib/coaching/constants'
 import { zoneVerdict, zoneVerdictColour, zoneVerdictLabel } from '@/lib/coaching/zoneVerdict'
 import { driftContextFor } from '@/lib/coaching/loadCalc'
 import { BRAND, PRICING } from '@/lib/brand'
@@ -73,6 +73,7 @@ import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
 import PreRunBandCard from '@/components/shared/PreRunBandCard'
+import LoadShape from '@/components/shared/LoadShape'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import { NotificationBell } from '@/components/shared/NotificationBell'
 import { NotificationRow, type NotificationItem } from '@/components/shared/NotificationRow'
@@ -4973,43 +4974,6 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             )
           })()}
 
-          {/* ── WHY THIS SESSION ──────────────────────────────────────
-               Moved directly under the prescription/voice/metric block
-               (above structure). Brand-defining content reads first.
-               AI mark only when content came from the plan enricher
-               (session.coach_notes). DB guidance fallback is hand-authored
-               so no mark — provenance honesty. */}
-          {(session.coach_notes?.filter(Boolean).length > 0 || guidance) && (
-            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
-              <CoachNoteBlock
-                label="WHY THIS SESSION"
-                variant="why"
-                aiGenerated={aiNotes}
-              >
-                {session.coach_notes?.filter(Boolean).length > 0 ? (
-                  // Structured coach notes from plan JSON (AI-generated). Pass through
-                  // renderGuidance so {{token}} placeholders the enricher emitted resolve
-                  // to live values (Z2 ceiling, session HR, etc.) rather than carrying
-                  // stale baked literals after the athlete updates restingHR/maxHR.
-                  renderGuidance(
-                    (session.coach_notes as string[]).filter(Boolean).join(' '),
-                    guidanceContextFromSession({
-                      session,
-                      zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
-                      maxHR, restingHR, goalPace,
-                    }),
-                  )
-                ) : guidance ? (
-                  renderGuidance(guidance.why, guidanceContextFromSession({
-                    session,
-                    zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
-                    maxHR, restingHR, goalPace,
-                  }))
-                ) : null}
-              </CoachNoteBlock>
-            </div>
-          )}
-
           {/* ── STRUCTURED SESSION (R23 composer) ──────────────────────
                When a structured composer result exists, it is the canonical
                "what to do". The plain `session.detail` description below is
@@ -5062,6 +5026,55 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
 
           {/* Week focus block removed (May 2026) — it is a plan-level statement,
               not a session-level statement. Lives on Plan / Today screens. */}
+
+          {/* ── WHY THIS SESSION ──────────────────────────────────────
+               🔴 A8 (Design Board, app review 2026-09-22) — THIS USED TO SIT
+               ABOVE THE STRUCTURE, and the comment below used to justify it:
+               "brand-defining content reads first."
+
+               The founder asked for the whole screen on one page. NOT GRANTED
+               as stated: this screen's job is the full prescription, and
+               compressing it means deleting prescription, which is the Coaching
+               Board's to decide, not this board's. THE COMPLAINT IS RIGHT AND
+               THE DIAGNOSIS IS WRONG — the problem was never length. The thing
+               you need with a phone in your hand at the start of a rep was the
+               SIXTH block down, below the reason you are doing it.
+
+               Nothing is cut. The rationale still reads, one scroll later, when
+               the runner is deciding rather than executing.
+               AI mark only when content came from the plan enricher
+               (session.coach_notes). DB guidance fallback is hand-authored
+               so no mark — provenance honesty. */}
+          {(session.coach_notes?.filter(Boolean).length > 0 || guidance) && (
+            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
+              <CoachNoteBlock
+                label="WHY THIS SESSION"
+                variant="why"
+                aiGenerated={aiNotes}
+              >
+                {session.coach_notes?.filter(Boolean).length > 0 ? (
+                  // Structured coach notes from plan JSON (AI-generated). Pass through
+                  // renderGuidance so {{token}} placeholders the enricher emitted resolve
+                  // to live values (Z2 ceiling, session HR, etc.) rather than carrying
+                  // stale baked literals after the athlete updates restingHR/maxHR.
+                  renderGuidance(
+                    (session.coach_notes as string[]).filter(Boolean).join(' '),
+                    guidanceContextFromSession({
+                      session,
+                      zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
+                      maxHR, restingHR, goalPace,
+                    }),
+                  )
+                ) : guidance ? (
+                  renderGuidance(guidance.why, guidanceContextFromSession({
+                    session,
+                    zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
+                    maxHR, restingHR, goalPace,
+                  }))
+                ) : null}
+              </CoachNoteBlock>
+            </div>
+          )}
 
           {/* ── HOW DID IT FEEL (shown when complete or skipped) ──
                Moved above the sticky CTA — the reflective state outranks
@@ -9497,8 +9510,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // owner: both the tile sub-line and the load-ratio sheet use this label.
   function loadRatioContext(ratio: number | null): { label: string; color: string } {
     if (ratio === null) return { label: '—', color: 'var(--mute)' }
-    if (ratio >= 1.3)   return { label: 'above your recent normal', color: 'var(--danger)' }
-    if (ratio < 0.8)    return { label: 'under your recent normal', color: 'var(--warn)' }
+    if (ratio >= LOAD_RATIO.watch) return { label: 'above your recent normal', color: 'var(--danger)' }
+    if (ratio < LOAD_RATIO.under) return { label: 'under your recent normal', color: 'var(--warn)' }
     return { label: 'right on your normal', color: 'var(--moss)' }
   }
 
@@ -10137,15 +10150,32 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           {([
             {
-              label: 'Load ratio',
-              value: loadRatio !== null ? `${loadRatio.toFixed(2)}x` : '—',
-              sub: isRaceWeek ? 'race week — spike expected' : lrc.label,
-              subColor: isRaceWeek ? 'var(--ink-2)' : lrc.color,
+              // ── A5 — SHAPE, NEVER SCORE (Design Board, app review) ────────
+              // This read `1.15x` at 28px/800 with its meaning demoted to an
+              // 11px sub-line and the explanation behind a tap. Sierra: *a
+              // number that has to be tapped to mean anything has taught nobody
+              // anything.* The VERDICT is the hero now, the shape shows where
+              // the week sits against the runner's normal, and the ratio is
+              // evidence underneath rather than the headline.
+              //
+              // ⚠️ The Sessions tile beside it deliberately KEEPS its number:
+              // "3/5" means something without a tap, which is exactly the test.
+              // One tile changing and one not is a distinction, not a drift.
+              label: 'This week\u2019s load',
+              value: isRaceWeek ? 'Race week' : loadRatio !== null ? lrc.label : 'Not enough runs yet',
+              valueColor: isRaceWeek ? 'var(--ink)' : loadRatio !== null ? lrc.color : 'var(--mute)',
+              shape: <LoadShape ratio={loadRatio} color={isRaceWeek ? 'var(--ink-2)' : lrc.color} />,
+              sub: isRaceWeek
+                ? 'A spike is the point'
+                : loadRatio !== null ? `${loadRatio.toFixed(2)}\u00d7 your recent average` : 'Log a few runs',
+              subColor: 'var(--mute)',
               onTap: () => setLoadSheetOpen(true),
             },
             {
               label: 'Sessions',
-              value: sessionsCompleted !== null && sessionsPlanned !== null ? `${sessionsCompleted}/${sessionsPlanned}` : '—',
+              value: sessionsCompleted !== null && sessionsPlanned !== null ? `${sessionsCompleted}/${sessionsPlanned}` : '\u2014',
+              valueColor: 'var(--ink)',
+              shape: null,
               sub: sc.label,
               subColor: sc.color,
               onTap: undefined,
@@ -10157,10 +10187,19 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                   {m.label}
                   {m.onTap && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)' }}>ⓘ</span>}
                 </div>
-                <div className="num-data" style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: '6px' }}>
+                {/* A5 — a tile whose value is a VERDICT is set in words, not in
+                    the 28px tabular-numeral treatment, which exists for digits
+                    and would wrap a phrase. `num-data` follows the number. */}
+                <div
+                  className={m.shape ? undefined : 'num-data'}
+                  style={m.shape
+                    ? { fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: m.valueColor, letterSpacing: '-0.2px', lineHeight: 1.25 }
+                    : { fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: m.valueColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: '6px' }}
+                >
                   {m.value}
                 </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500, color: m.subColor, lineHeight: 1.3 }}>
+                {m.shape}
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 500, color: m.subColor, lineHeight: 1.3, marginTop: m.shape ? '8px' : 0 }}>
                   {m.sub}
                 </div>
               </>
@@ -12122,7 +12161,18 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           </button>
         </div>
 
-        {/* Display preferences — grouped with training since they affect session cards */}
+        {/* ── Display ──────────────────────────────────────────────
+             🔴 A6 (Design Board, app review 2026-09-22) — THIS USED TO BE
+             UNLABELLED, INSIDE "Your training", and the comment justifying it
+             read "grouped with training since they affect session cards."
+
+             By that argument almost every setting belongs under training,
+             because almost everything here affects a session card. These two
+             controls decide how the app WRITES a number; they decide nothing
+             about the running. A section whose label does not describe its
+             contents is the flatness the founder was pointing at: he could see
+             the screen was sectioned and could not feel the sections. */}
+        <SectionLabel>Display</SectionLabel>
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           {/* Units */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
@@ -12350,7 +12400,14 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             seeing what their subscription covers is the honest half of the
             same card, and hiding it would make the section appear only when
             we want something. */}
-        <SectionLabel>Plan</SectionLabel>
+        {/* 🔴 A6 — THIS SECTION WAS CALLED "Plan" AND CONTAINS THE
+             SUBSCRIPTION CARD, in a product whose entire vocabulary uses "plan"
+             to mean the TRAINING plan — it is the noun on the nav bar, the
+             wizard, the arc and the marketing site. Collins' taxonomy test: a
+             word the product uses for two different things is not a word.
+             Renamed; the card is untouched, and the SLT's kill on a settings
+             screen that merchandises stands. */}
+        <SectionLabel>Subscription</SectionLabel>
         {onUpgrade
           ? <MePlanCard
               hasPaidAccess={!!hasPaidAccess}

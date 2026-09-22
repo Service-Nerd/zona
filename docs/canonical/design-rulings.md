@@ -493,6 +493,29 @@ on one.
 
 ---
 
+## 6j. BUILT — app review wave 4: A5, A6, A8, and S6 building nothing (2026-09-22)
+
+| Ruling | Built | |
+|---|---|---|
+| **A5** Coach: shape, never score | ✅ | The verdict is the hero, `LoadShape` shows where the week sits against the runner's real normal, the ratio is evidence underneath. **Demoted, not deleted.** The band reads `LOAD_RATIO.under/.watch` — the constants the coaching layer flags on — because a band drawn at numbers the engine does not use is a picture of nothing. ⚠️ **`0.8` was a bare literal inside a display function**, governing what the runner is told and invisible to every config check this repo owns; now `LOAD_RATIO.under`, value unchanged. ⚠️ **The Sessions tile deliberately keeps its number** — `3/5` means something without a tap, which is exactly Sierra's test — and the gate asserts the asymmetry so nobody "makes them consistent" |
+| **A8** Session Detail: run-now first | ✅ | The structured set was the **sixth** block, below the rationale, whose own comment read *"brand-defining content reads first"*. The set now precedes it. **Nothing cut** — the rationale reads one scroll later, when the runner is deciding rather than executing. ⚠️ **The founder asked for one page and that was not granted**: compressing means deleting prescription, which is the Coaching Board's |
+| **A6** Me stays settings, fixed flat | ✅ | Two findings, both about a section not describing itself. (1) The display toggles sat **unlabelled inside "Your training"**, justified by *"they affect session cards"* — by which argument almost everything on the screen is training. They have a `Display` section now. (2) 🔴 **The section called "Plan" contains the SUBSCRIPTION card**, in a product where *plan* is the noun on the nav bar, the wizard, the arc and the marketing site. Collins: a word used for two things is not a word. Renamed `Subscription`; the SLT's kill on a merchandising settings screen stands, and the gate asserts no feature list appears there |
+| **S6** an icon language, bounded | ⚪ **APPLIED — AND IT BUILDS NOTHING TODAY.** Correct outcome, recorded so it is not re-opened as an oversight | Measured against S6's own three named surfaces: **Plan rows** print `session.label` at 15px/500 → labelled; **plan adjustments** print `labelSession()` before and after → labelled; the **day marker** is a **4px** dot → no room for a glyph. The founder asked for icons, the board bounded them, and the bound does not reach. **Inventing a set anyway would be decoration with a ruling stapled to it** |
+
+🔵 **What S6's measurement DID expose, filed not built:** the `DateStrip` dot carries **two
+orthogonal facts on one channel** — eight session-type hues *and* completion state — so a
+completed interval and a completed easy run are the same teal dot, and a skipped session is
+grey, which is also how a muted type reads. `DESIGN-DAYDOT-CHANNEL-01`. It needs its own
+ruling, not a paragraph inside someone else's.
+
+⚠️ **What wave 4 does not settle:** nothing ran on a device. A5's claim is that a shape is
+read faster than a decoded ratio, and **that has not been observed** — the source facts
+(hero type size, channel, constants) are what was verified. A8's ruling says a run-now block
+*fits one screen*; the reorder puts the right things first, and **whether it fits was not
+measured.**
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |
