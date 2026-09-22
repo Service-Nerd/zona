@@ -6,6 +6,7 @@ import { DayGridSelector } from './DayGridSelector'
 import { SegmentedControl } from './SegmentedControl'
 import type { GeneratorInput, Plan } from '@/types/plan'
 import { formatDuration } from '@/lib/format'
+import { TextField } from '@/components/shared/TextField'
 import {
   MODIFIABLE_ROWS, MODIFY_GROUP_LABELS, applyEdits, pendingKeys, editsResetLoggedWeeks,
   type ModifyGroup, type PlanEdits, type ModifiableKey,
@@ -45,6 +46,7 @@ export default function ModifyPlanSheet({
   error = null,
   onApply,
   hasPaidAccess,
+  onStartNewPlan,
 }: {
   plan: Plan
   onClose: () => void
@@ -56,6 +58,20 @@ export default function ModifyPlanSheet({
   error?: string | null
   onApply: (next: GeneratorInput, resetsLoggedWeeks: boolean) => void
   hasPaidAccess: boolean
+  /**
+   * PLANVERB-01 — the door this sheet's own existence closed.
+   *
+   * Plan's row now says "Adjust your plan" and Me's says "Start a new plan",
+   * which is the fix for two rows sharing one title and going to different
+   * places. But a runner who opens this sheet BECAUSE they want a different
+   * race has, from the Plan screen, nowhere left to go: the wizard is two
+   * screens away on a tab they were not heading for. Splitting the verbs is
+   * what created that, so the escape belongs here.
+   *
+   * Optional, because a caller with no wizard route is a real case (the sheet
+   * is shared) and an always-on row pointing nowhere is worse than no row.
+   */
+  onStartNewPlan?: () => void
 }) {
   const base = plan.meta?.generator_input as GeneratorInput
   const [edits, setEdits] = useState<PlanEdits>({})
@@ -76,15 +92,48 @@ export default function ModifyPlanSheet({
   )
 
   return (
-    <Sheet onClose={onClose} ariaLabel="Change your plan" maxHeightVh={88}>
+    <Sheet onClose={onClose} ariaLabel="Adjust your plan" maxHeightVh={88}>
       {(close) => (
         <>
           <div style={{ padding: '4px 20px 0' }}>
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 700, color: 'var(--ink)' }}>
-              Change your plan
-            </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px' }}>
-              Nothing changes until you apply.
+            {/* R-5 (Design Board, five-screen review) — A SHEET YOU BROWSE
+                TAKES A TOP-RIGHT DISMISS; A SHEET YOU ACT IN KEEPS THE BOTTOM
+                BAR. Wroblewski conceded his own rule ("slide-up sheets carry a
+                mirrored nav bar at the bottom") on the SHAPE of the sheet.
+                This one is BOTH, in sequence: until something is pending there
+                is nothing to apply and the runner is reading, so a sticky
+                full-width Close is a bar that exists to hold one word while
+                covering the content underneath it. The founder named that:
+                *"the close button is kind of static in and over the top of the
+                modal and the scroll. I don't like it."*
+                The moment an edit is pending the bottom bar arrives with
+                Apply, and the dismiss goes with it. */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 700, color: 'var(--ink)' }}>
+                  Adjust your plan
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px' }}>
+                  Nothing changes until you apply.
+                </div>
+              </div>
+              {pending.length === 0 && (
+                <button
+                  type="button"
+                  onClick={close}
+                  aria-label="Close"
+                  style={{
+                    width: '44px', height: '44px', flexShrink: 0, marginTop: '-6px', marginRight: '-10px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 0, border: 'none', borderRadius: '50%',
+                    background: 'var(--bg-soft)', color: 'var(--ink)', cursor: 'pointer',
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              )}
             </div>
 
             {(['week', 'body', 'race'] as ModifyGroup[]).map(group => (
@@ -142,11 +191,56 @@ export default function ModifyPlanSheet({
                 counting towards this plan. Your runs are kept.
               </div>
             )}
+
+            {/* PLANVERB-01 — the escape. Deliberately NOT amber: this sheet's
+                own note already rules that amber is coaching-warning voice,
+                and wanting a different race is not a warning. The consequence
+                is carried by the subtitle, in the same second-person present
+                tense as every MODIFIABLE_ROW, because that is where this
+                product says what a control costs. Hidden while an edit is
+                pending: offering to throw the plan away mid-edit is offering
+                to discard work the runner has not applied yet. */}
+            {onStartNewPlan && pending.length === 0 && (
+              <>
+                {label('If that is not enough')}
+                <button
+                  type="button"
+                  onClick={onStartNewPlan}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: '12px', padding: '14px 16px', textAlign: 'left',
+                    background: 'var(--card)', borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--line)', cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4 }}>
+                      Start a new plan
+                    </span>
+                    <span style={{ display: 'block', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '2px' }}>
+                      A different race or goal. Replaces the plan you have.
+                    </span>
+                  </span>
+                  <span style={{ color: 'var(--mute)', flexShrink: 0 }} aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                      <path d="M7 4l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </button>
+              </>
+            )}
           </div>
 
-          {/* ── Mirrored bottom bar ────────────────────────────────────────
-              Two states, and NEITHER is a disabled primary sitting there
-              implying the runner has failed to do something. */}
+          {/* ── Mirrored bottom bar, WHEN THERE IS SOMETHING TO APPLY ──────
+              R-5: this bar is the act-in shape. It used to render in both
+              states, so with nothing pending it was a sticky rule and a
+              full-width Close permanently covering the bottom of a list the
+              runner was scrolling. ⚠️ The standing rule that a sheet carries a
+              mirrored bottom bar is NOT reversed — it is qualified by shape,
+              which is the ruling. And the rule against a disabled primary as
+              the resting state is now satisfied by there being no primary at
+              all until there is something to press. */}
+          {pending.length > 0 && (
           <div style={{
             position: 'sticky', bottom: 0, background: 'var(--bg)',
             borderTop: '1px solid var(--line)', padding: '12px 20px',
@@ -160,19 +254,7 @@ export default function ModifyPlanSheet({
 
                 `--moss` is reserved for the action the runner came to take. It
                 stays on `Apply N changes` below, which IS that action. */}
-            {pending.length === 0 ? (
-              <button
-                onClick={close}
-                style={{
-                  width: '100%', padding: '14px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-soft)', border: '1px solid var(--line)', cursor: 'pointer',
-                  fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink-2)',
-                }}
-              >
-                Close
-              </button>
-            ) : (
-              <>
+            <>
                 {/* D1 — the reason, where the action is. A 422 from
                     /api/generate-plan is a DESIGNED refusal carrying a real
                     explanation ("too few weeks", "below the base door"), and
@@ -212,9 +294,9 @@ export default function ModifyPlanSheet({
                 >
                   Discard changes
                 </button>
-              </>
-            )}
+            </>
           </div>
+          )}
         </>
       )}
     </Sheet>
@@ -332,16 +414,22 @@ function RowControl({ rowKey, value, onChange }: {
         </div>
       )
     case 'race_date':
+      // 🔴 PLANVERB-01 / the founder's "the date, it's not rendered correctly".
+      // This hand-rolled `<input type="date">` at `fontSize: '13px'` was the
+      // ONLY input in the app below the 16px floor that `TextField` exists to
+      // lock — iOS zooms the page on any focused input under 16px, so tapping
+      // the race date jumped the sheet. The wizard asks the same question
+      // through `WizardInput` -> `TextField` and does not, which is why the
+      // wizard walk measured no overflow and this surface did.
+      //
+      // Same shape as S5's countdown formatter: the owner existed and the call
+      // site went round it.
       return (
-        <input
+        <TextField
           type="date"
           value={(value as string) ?? ''}
-          onChange={e => onChange(e.target.value)}
-          style={{
-            width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-md)',
-            background: 'var(--bg-soft)', border: '1px solid var(--line)',
-            fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)',
-          }}
+          onChange={onChange}
+          ariaLabel="Race date"
         />
       )
     default:

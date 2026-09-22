@@ -2392,6 +2392,10 @@ export default function DashboardClient() {
             error={modifyError}
             onClose={() => { setModifyOpen(false); setModifyError(null) }}
             onApply={(next, resets) => void runModifyPreview(next, resets)}
+            // PLANVERB-01 — the escape out of "adjust" into "start again".
+            // Closes the sheet first: leaving it mounted behind the wizard
+            // would put two plan-editing surfaces on screen at once.
+            onStartNewPlan={() => { setModifyOpen(false); setModifyError(null); setScreen('generate') }}
           />
         )}
         {screen === 'plan' && !modifyPreview && <PlanScreen plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('plan'); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => setModifyOpen(true) : undefined} />}
@@ -8610,8 +8614,14 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
             }}
           >
             <div>
+              {/* PLANVERB-01 — TWO VERBS, because there were two doors with one
+                  name. This row and the one on Me both read "Change your plan"
+                  and went to different places: this opens `ModifyPlanSheet`
+                  and keeps the plan; Me's opens the wizard, which ARCHIVES it.
+                  The subtitles carried the difference and the title is what a
+                  runner reads. Adjust = keep the plan. Start = replace it. */}
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4 }}>
-                Change your plan
+                Adjust your plan
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
                 Days, time limits, injuries or the race date. Without starting again.
@@ -12135,10 +12145,16 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           >
             <div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>
-                {hasPlan ? 'Change your plan' : 'Generate a plan'}
+                {/* PLANVERB-01 — see the Plan screen's row. This one goes to the
+                    wizard, which archives the live plan, so it says START. The
+                    subtitle names the consequence rather than implying it: the
+                    verb change makes the destructive path MORE discoverable,
+                    and a row that is easier to find has to be honest about
+                    what it does. */}
+                {hasPlan ? 'Start a new plan' : 'Generate a plan'}
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>
-                {hasPlan ? 'Build a new plan around a different race or goal' : 'Choose a template or build a custom plan'}
+                {hasPlan ? 'A different race or goal. Replaces the plan you have.' : 'Choose a template or build a custom plan'}
               </div>
             </div>
             <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>

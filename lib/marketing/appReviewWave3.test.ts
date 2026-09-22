@@ -102,17 +102,24 @@ describe('A2 — Plan leads with the plan', () => {
   it('nothing was cut — all five blocks still render', () => {
     // The ruling is an ordering, not a deletion. If a later change drops one
     // of these while "tidying the order", this says so.
-    for (const marker of ['<ZoneWeekBlock', '<PlanIntroCard', 'Change your plan', 'Why this plan']) {
+    // ⚠️ 'Adjust your plan' was 'Change your plan' until PLANVERB-01, which
+    // split two identically-titled rows that went to different places. A2's
+    // claim is about ORDER and PRESENCE, not about which verb the row uses —
+    // anchoring on incidental copy is the class recorded as "never match a
+    // designed refusal by its MESSAGE", and this is its third appearance.
+    for (const marker of ['<ZoneWeekBlock', '<PlanIntroCard', 'Adjust your plan', 'Why this plan']) {
       expect(SHELL, `missing after the reorder: ${marker}`).toContain(marker)
     }
   })
 
   it('the screen’s one ACTION is the first thing after the calendar', () => {
     const cal = SHELL.indexOf('<PlanCalendar')
-    const change = SHELL.indexOf('Change your plan', cal)
+    // Anchored on the row's HANDLER, which is what makes it the action, rather
+    // than on its label, which PLANVERB-01 has already changed once.
+    const change = SHELL.indexOf('onClick={onOpenModify}', cal)
     const zone = SHELL.indexOf('<ZoneWeekBlock', cal)
-    expect(change).toBeGreaterThan(-1)
-    expect(change, '"Change your plan" must lead the blocks below the weeks').toBeLessThan(zone)
+    expect(change, 'the adjust row is missing below the calendar').toBeGreaterThan(-1)
+    expect(change, 'the adjust row must lead the blocks below the weeks').toBeLessThan(zone)
   })
 })
 

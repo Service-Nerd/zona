@@ -702,8 +702,8 @@ may be reviewed if the board thinks it adds value**; this is the record of what 
 | *"Icons everywhere → text labels where space allows"* | ⚖️ **AMENDED** — meaning, or location on ≥8 rows |
 | *"No icons unless they carry unique meaning"* | ⚖️ **AMENDED** — same |
 | **SHEET-PRESENT-01** — *"come up from the nav bar but not overlay it"* | 🔴 **REVERSED** (S1, § 6i). Shipped. The measurement killed the argument both sides were having: **0px on an SE, 5px on a 13/15** |
-| *"Slide-up sheets: mirrored nav bar at bottom"* | ⚖️ **QUALIFIED BY SHAPE** (R-5): a sheet you **act in** keeps the bottom bar; a sheet you **browse** takes a top-right dismiss. **Wroblewski conceded his own rule** |
-| **A2** — Plan leads with the plan | ⚖️ **AMENDED** (R-4): it asked what should lead and never asked which single thing below the fold is not furniture. One action row earns the space above the weeks |
+| *"Slide-up sheets: mirrored nav bar at bottom"* | ⚖️ **QUALIFIED BY SHAPE** (R-5): a sheet you **act in** keeps the bottom bar; a sheet you **browse** takes a top-right dismiss. **Wroblewski conceded his own rule.** 🔴 **Applied and recorded in § 6r — LATE.** This row and R-4's were the ONLY surviving trace of that sitting; the rulings themselves were never written down |
+| **A2** — Plan leads with the plan | ⚖️ **AMENDED** (R-4): it asked what should lead and never asked which single thing below the fold is not furniture. One action row earns the space above the weeks. ⚠️ **A2's own gate matched that row by its LABEL and went red when `PLANVERB-01` renamed it** — re-anchored on the handler (§ 6r) |
 | **§109** — never state a projection without its derivation | ⚖️ **NEEDS A SECOND HALF** → **Coaching Board**: the derivation must **exist**. The competitor states *"projected from your logged runs"* against **0 runs** |
 | *"State must live in the label, never colour alone"* (WCAG 1.4.1) | 🟢 **UNCHANGED, and now carries a measured debt of 6 sites** |
 | **M-1** consequence subtitles · **M-4** trial timeline | 🔴 **RETRACTED — already built.** Both found during verification, not at the sitting |
@@ -892,6 +892,62 @@ It was ruled this once already, and re-running it on the same evidence is the re
 register exists to prevent. **The settling artefact, named so it cannot come back without one:
 the ticket-stub device rendered on a real Plan card at 375px, beside the current card, on a
 device.** Nothing in this product has ever run on one.
+
+---
+
+## 6r. `PLANVERB-01` — the five-screen review's rulings, LANDED LATE (2026-09-22)
+
+🔴 **THE SITTING HAPPENED AND ITS RULINGS WERE NEVER WRITTEN HERE.** § 6o cites **R-4** and
+**R-5** by their outcomes — *"one action row earns the space above the weeks"* and *"a sheet you
+act in keeps the bottom bar; a sheet you browse takes a top-right dismiss. Wroblewski conceded
+his own rule"* — so the sitting demonstrably ran. **No section recorded it.** This file's own
+maintenance note says every ruling appends in the same commit as its decision, *"a process whose
+memory depends on someone remembering to write it down has no memory"*, and that is exactly what
+happened. Found when the next build went looking for its own scope and could not find it.
+
+⚠️ **What that cost, stated rather than glossed:** the rulings below were rebuilt from § 6o's two
+surviving rows, the founder's verbatim brief, and **fresh measurements of the surfaces**. Any
+ruling from that sitting not reflected in § 6o and not re-derivable from a measurement **is
+lost.** The reconstruction is honest about which part is re-derived and which is new.
+
+### 🔬 Measurements, taken before building
+
+| # | Measured |
+|---|---|
+| 1 | 🔴 **Two rows, one title, two destinations.** `DashboardClient:8614` (Plan) and `:12138` (Me) both read **"Change your plan"**. Plan's opens `ModifyPlanSheet` and KEEPS the plan; **Me's opens the wizard, which ARCHIVES it.** The subtitles carried the difference; the title is what a runner reads |
+| 2 | 🔴 **The race-date field is the ONLY input in the app below 16px.** `ModifyPlanSheet` hand-rolled `<input type="date">` at **`fontSize: '13px'`**. Every other non-checkbox input measured 16px or a token. `TextField`'s own header exists to lock this: *"iOS zooms any focused input below 16px"* |
+| 3 | The wizard asks the same question through `WizardInput` → `TextField`, and `WIZARD-HARNESS-01` measured **zero overflow on all 15 steps at 375px**. **Two surfaces, one question, different results** — recorded in the brief as *"itself the finding"* |
+
+⚠️ **One correction to `TextField`'s own comment**, made while measuring: it names two
+consequences of a sub-16px input — the zoom, and being *trapped* zoomed in by
+`maximum-scale=1`. **The viewport lock was removed** (it failed WCAG 2.1 SC 1.4.4). The zoom
+still happens; the trap no longer does. **Half a documented reason is still a reason, and saying
+which half is the difference between a rule and folklore.**
+
+### ⚖️ Rulings
+
+| | |
+|---|---|
+| **`PLANVERB-01` — two doors, two verbs** | 🟢 **SHIP.** Plan → **"Adjust your plan"** (*keeps the plan*); Me → **"Start a new plan"** (*replaces it*). ⚠️ **The destructive row's subtitle changed too**: *"Build a new plan around a different race or goal"* described the destination and never said the plan you have goes away. A verb change that makes a destructive path **more** discoverable has to be honest about what it costs |
+| **R-5 applied — the sheet has two shapes, in sequence** | 🟢 **SHIP.** With nothing pending there is nothing to apply, so the runner is **browsing**: a top-right dismiss, no bar. The moment an edit is pending the bar arrives with Apply and the dismiss goes. ⚠️ **The standing rule that a slide-up sheet carries a mirrored bottom bar is NOT reversed — it is qualified by shape**, which is R-5's whole content. It also answers the founder directly: *"the close button is kind of static in and over the top of the modal and the scroll. I don't like it."* And *"never a disabled primary as the resting state"* is now satisfied more completely: there is no primary in the resting state at all |
+| **The race date goes through `TextField`** | 🟢 **SHIP** — a defect fix, no board needed. **Same shape as S5's countdown formatter: the owner existed and the call site went round it.** Third time this month |
+| **A "Start a new plan" row inside the sheet** | 🟢 **SHIP — and it is NOT from the sitting.** Splitting the verbs closed the only door from Plan to the wizard, so a runner who opens "Adjust" because they want a different race has nowhere to go. **The gap is created by our own change, so the escape belongs in the same build** (SLC: Complete). Deliberately not amber — the sheet's own note already rules amber is coaching-warning voice, and wanting a different race is not a warning. Hidden while an edit is pending: offering to throw the plan away mid-edit offers to discard work not yet applied |
+
+### 📦 Artifacts
+
+`lib/marketing/planVerb.test.ts` — 7 assertions, all falsified. **Including one that was HOLLOW
+on its first write**: `toContain('onStartNewPlan')` passes against `onStartNewPlanX`, because a
+substring of a renamed identifier is still a substring. **Fifth time this repo has recorded
+substring bias in a single day**, and only falsification found it. Now bounded to the
+declaration, the guarded render and the call site.
+
+⚠️ **Three existing gates went red on the rename, and re-anchoring them is part of the ruling.**
+`appReviewWave3`'s A2 matched the literal `'Change your plan'` twice — but **A2's claim is about
+ORDER and PRESENCE, not about which verb the row uses.** One now anchors on
+`onClick={onOpenModify}`, the thing that makes it the action. The third, *"never renders a
+disabled primary as the resting state"*, asserted the ternary rather than the rule; it now
+asserts the rule. **Anchoring a test on incidental copy is the recorded "never match a designed
+refusal by its MESSAGE" class, and this is its third appearance.**
 
 ---
 

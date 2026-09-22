@@ -67,9 +67,21 @@ describe('P-02 — presentation and copy live where they belong', () => {
   })
 
   it('never renders a disabled primary as the resting state', () => {
-    // Two states: Close when nothing changed, Apply N when something has.
-    expect(SHEET).toContain('pending.length === 0 ?')
-    expect(SHEET).toContain('Discard changes')
+    // ⚠️ THE SHAPE CHANGED, THE RULE DID NOT (R-5, PLANVERB-01). This used to
+    // read `pending.length === 0 ?` — a ternary choosing between a full-width
+    // Close and Apply N. The resting state is now NO BAR AT ALL: a top-right
+    // dismiss in the header, and the bottom bar arrives with the work. The
+    // rule is satisfied more completely than before, because there is no
+    // primary in the resting state to be disabled.
+    expect(SHEET, 'the act-in bar is gated on there being something to apply')
+      .toContain('{pending.length > 0 && (')
+    expect(SHEET, 'the browse-state dismiss sits in the header')
+      .toContain('{pending.length === 0 && (')
+    expect(SHEET, 'and a pending state can still be abandoned').toContain('Discard changes')
+    // The thing actually forbidden, stated directly rather than implied by a
+    // ternary's presence: no `disabled` primary painted in the CTA colour
+    // while nothing is pending.
+    expect(SHEET).not.toMatch(/disabled=\{pending\.length === 0\}/)
   })
 
   it('a pending edit reads in MOSS, not amber', () => {
