@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — COACH-BEHIND-DAY-TWO-01 and the sittings · four items in, one defect out
+**Shipped:** A Coach verdict that can no longer tell a three-day-a-week runner they are behind for missing a single session — plus four board sittings in which three filings turned out to be wrong about themselves.
+
+**Dev learning:** The softener was `done / dueRef >= 0.7`. Enumerate it and it cannot fire below four sessions due: at dueRef 1, 2 or 3 there is no value of `done` that satisfies it while you are still behind. And `dueRef` never exceeds the sessions planned that week. So for anyone training three days a week — 29% of our grid — the softener was decoration. An example-based test would have passed forever: pick dueRef=5, done=4 and it works beautifully. **A reachability hole is only visible by enumerating the domain**, which is why the new test is exhaustive rather than illustrative.
+
+**Product/creator learning:** The principle behind it (§65) was honoured perfectly in its implementation rule and completely unmet in its purpose. The date arithmetic was right; nobody had checked that the softener the arithmetic feeds could actually fire. **"We implemented the rule" and "we achieved what the rule was for" are different claims**, and only one of them had been tested.
+
+**AI-building learning:** Four items went to the board. Three were wrong about themselves, and I only found out because I measured before convening. One premise was false (0 of 10,576), one didn't reproduce, and one was dissolved by a single production query — the item said no charity code had ever been redeemed; two of three are claimed, and the real blocker is that no real charity batch has ever been created. **The measurement is not preparation for the sitting. Three times out of four it WAS the sitting.**
+
+**The honest bit:** My own measuring script was wrong twice and would have carried a false number into a board meeting. First it generated zero plans, refused 12,416, and printed a clean `0%` table — I nearly reported that as a clean result. Fixed, it subtracted a hardcoded 42.195 from every race week on a grid I had filtered to "over 40km", and reported a 13 km median where the real figure was 7. I caught it only because I stopped and inspected one actual race week by hand instead of trusting the aggregate.
+
+**Hook material:** A softener that could never fire for 29% of users, sitting under a principle whose stated purpose is "the product can't accuse the runner of falling behind before lunch." And a board item whose two headline facts were both false in production.
+
+**Postable?:** yes — "I measured before the meeting and three of the four agenda items dissolved" is the one.
+
 ## 2026-09-22 — POSTRUN-ORIGIN-01 · the same bug, one screen over, in a file that had already noticed
 **Shipped:** Post-run remembers where you came from, so Back returns you there instead of dumping you on Today.
 
