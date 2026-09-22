@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — UI-BACKARROW-01 / S2-GATE-NARROW-01 / ICON-RULE-01 · three gates, and the one I named but never wrote
+**Shipped:** One `BackButton` owner replacing 13 hand-rolled back arrows, a dismiss-colour gate widened until it caught the four offenders it had been blind to, and the icon-rule check that a ruling had named in prose and nobody had written.
+
+**Dev learning:** A census is only as wide as the pattern you census with. I bounded a regex to `<button>…</button>` blocks containing `onClick={onBack}` and an `<svg>`, found twelve, and was pleased with myself — and then the thirteenth turned out to be `← Back` set as a literal arrow CHARACTER in the label. No svg. My regex could not see it and never would have. I only found it because the filed count said thirteen and I had twelve. **The instrument agreed with itself, and was wrong.** Second one: the S2 gate could only see an inline `background: 'var(--moss)'`. `RecalibrationTile` paints its dismiss through a local `primary(enabled)` helper, so the moss lives in a function two hundred lines away and the string never appears in the button. A checker reading a different source from the producer, which is a class this repo has written down before and I still walked into.
+
+**Product/creator learning:** `ui-patterns.md` had said *"back arrow top-left, 44px circle, `--bg-soft`"* for months while **6 of 13** arrows obeyed it, two of them at 36px — under the iOS minimum that the same document states in its own "What Not to Build" section. Nothing was broken. Nobody would file a bug. It just quietly was not the product we had written down. A documented rule with no gate is a preference somebody typed.
+
+**AI-building learning:** The widening of the S2 gate WAS the falsification. I widened the word list, ran it, and it went red on exactly the four buttons the backlog had named — before I touched a single one of them. That is much stronger evidence than fixing first and watching a test pass, and it cost nothing but doing the two steps in the other order. Worth making a habit: **change the check before the code, and let the code's current state be the test case.**
+
+**The honest bit:** The full suite was already red when I got to it, and it was my fault. The commit before this one made a Design Board ruling and wrote *"Check: `lib/marketing/iconRule.test.ts`"* into `ui-patterns.md`. That file did not exist. I named a mechanical artifact in a doc and did not write it, which is precisely the failure class this repo has recorded under §92 — a principle claiming an enforcer that was never built. It survived a docs audit that read ALL CLEAN and a push, and was caught by a reference-integrity test during unrelated work, one commit late. And the fix had a trap in it: row icons are not built until wave 3, so the obvious version of that check would have walked an empty set and passed forever. I made its first assertion read the live `MODIFIABLE_ROWS.length` against the ruling's own ">= 8 rows" bound so it can actually wake up today.
+
+**Hook material:** A documented spec that says "44px" while two live buttons are 36px, in an app whose own style guide names 44px as the minimum — and 6 of 13 controls obeying the rule. Plus: I wrote `Check: iconRule.test.ts` into the doctrine and never wrote the file. It took one commit and one unrelated task to find out.
+
+**Postable?:** yes — "I wrote the rule, cited the test, and never wrote the test" is the honest AI-building post, and the 6-of-13 census is the hook.
+
 ## 2026-09-22 — BRAND-EMDASH-APP-01 · the number that would have misled
 **Shipped:** The em-dash rule reaches the app, with a guard, and two docs that stated it
 wrongly are corrected.
