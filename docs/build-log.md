@@ -6,6 +6,45 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — HK-ELEV-COLUMN-01 · the log had one bug in it; the gate found three
+**Shipped:** Fixed a wrong column name that had been silently emptying HealthKit runs since
+June, and built a gate that checks every `.select()` against the real schema.
+
+**Dev learning:** `const { data } = await supabase...` — the error destructured away. That
+one habit turned a typo into a three-and-a-half-month outage. Supabase returns
+`{ data: null, error }` for a bad column, so `data` is null, and the very next line was
+`if (!hkRows?.length) return`, which reads a failed query and an empty table as the same
+thing. The wrong name was `total_elevation_gain`; the column is `elevation_gain`; and the
+same file had it right in a third place. Three copies of one marshalling block, two wrong.
+
+**Product/creator learning:** The founder sent me a log export and asked "is this of
+concern". Four of the 29 lines were mine, from an investigation an hour earlier. The other
+24 were one real defect. But the gate I wrote to stop that defect recurring found two MORE
+families that were not in the log at all — the phase-summary and race-readiness routes
+select a `session_type` column that does not exist, so both AI coaching surfaces have been
+writing their read from an empty array, and taper recalibration selects two columns that
+live on a different table entirely. **A log only shows you the code that ran that day.**
+
+**AI-building learning:** I did not fix the two new ones. Both change what a coaching
+surface reads — resolving session type changes what the model is told, and making taper
+recalibration actually run changes what the engine prescribes in the last weeks before a
+race. They are baselined as declared debt with the gate failing on anything new, and routed
+to the Coaching Board. The temptation to fix all three in one go, while I had the file open
+and the cause understood, was strong and would have shipped a prescription change inside a
+commit titled "fix a column name".
+
+**The honest bit:** My first version of the gate reported six failures and two were mine —
+it comma-split `charity_batches(partner_name, cap, revoked_at)` and handed the embedded
+table's columns to the outer one. If I had reported six without reading them I would have
+filed two defects that do not exist, in the same message where I was telling the founder his
+real ones were serious.
+
+**Hook material:** A database log with 24 identical errors an hour. The feature it broke had
+been dead since June. Nobody noticed because the code read "query failed" and "you have no
+runs" as the same sentence.
+
+**Postable?:** yes
+
 ## 2026-09-22 — MOVE-PROTOTYPE-01 · I built the instrument wrong in my own favour
 **Shipped:** `/move-preview` — both move gestures on a real week, instrumented, so the
 Design Board can settle the one thing it could not.

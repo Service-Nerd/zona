@@ -863,13 +863,22 @@ export default function DashboardClient() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: hkRows } = await supabase
+      // HK-ELEV-COLUMN-01 — `error` is READ now, not destructured away.
+      //
+      // This asked for `total_elevation_gain`. The column is `elevation_gain`,
+      // and the wrong name has been here since 2026-06-06. Supabase answers a
+      // bad column with `{ data: null, error }`, and with the error dropped
+      // `hkRows` was null, the guard below returned, and THIS FUNCTION LOADED
+      // ZERO HEALTHKIT RUNS FOR THREE AND A HALF MONTHS. The only trace was
+      // Postgres errors in a log nobody reads.
+      const { data: hkRows, error: hkErr } = await supabase
         .from('strava_activities')
-        .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, total_elevation_gain')
+        .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, elevation_gain')
         .eq('user_id', user.id)
         .eq('source', 'apple_health')
         .order('start_date', { ascending: false })
         .limit(100)
+      if (hkErr) { console.error('[refreshHealthKitRuns] query failed', hkErr); return }
       if (!hkRows?.length) return
       const newHkRuns = hkRows.map((r: any) => ({
         id:                   r.apple_health_uuid,
@@ -882,7 +891,7 @@ export default function DashboardClient() {
         distance:             r.distance_m ?? 0,
         moving_time:          r.moving_time_s ?? 0,
         elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
-        total_elevation_gain: r.total_elevation_gain ?? 0,
+        total_elevation_gain: r.elevation_gain ?? 0,
         average_heartrate:    r.avg_hr ?? undefined,
         max_heartrate:        r.max_hr ?? undefined,
         average_speed:        r.avg_speed ?? undefined,
@@ -1377,9 +1386,11 @@ export default function DashboardClient() {
         let healthKitRuns: any[] = []
         let hkStravaIds = new Set<number>()
         try {
-          const { data: hkRows } = await supabase
+          // HK-ELEV-COLUMN-01 — same wrong column, same swallowed error, on the
+          // INITIAL load. See refreshHealthKitRuns above.
+          const { data: hkRows, error: hkErr } = await supabase
             .from('strava_activities')
-            .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, total_elevation_gain')
+            .select('apple_health_uuid, strava_activity_id, name, start_date, distance_m, moving_time_s, elapsed_time_s, avg_hr, max_hr, avg_speed, elevation_gain')
             .eq('user_id', user.id)
             .eq('source', 'apple_health')
             .order('start_date', { ascending: false })
@@ -1387,6 +1398,7 @@ export default function DashboardClient() {
           // Marshal each HK row into the StravaActivity-like shape the matcher,
           // picker, and saveCompletion already consume. `id` is the UUID so the
           // link path can branch on `source` to write apple_health_uuid.
+          if (hkErr) console.error('[dashboard load] HealthKit runs query failed', hkErr)
           healthKitRuns = (hkRows ?? []).map((r: any) => ({
             id:                   r.apple_health_uuid,
             source:               'apple_health' as const,
@@ -1398,7 +1410,7 @@ export default function DashboardClient() {
             distance:             r.distance_m ?? 0,
             moving_time:          r.moving_time_s ?? 0,
             elapsed_time:         r.elapsed_time_s ?? r.moving_time_s ?? 0,
-            total_elevation_gain: r.total_elevation_gain ?? 0,
+            total_elevation_gain: r.elevation_gain ?? 0,
             average_heartrate:    r.avg_hr ?? undefined,
             max_heartrate:        r.max_hr ?? undefined,
             average_speed:        r.avg_speed ?? undefined,

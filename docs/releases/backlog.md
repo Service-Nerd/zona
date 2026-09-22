@@ -522,6 +522,38 @@ green. Tracing why is what found the false premise. Bounding the replacement too
 (`segmentPricedDistance` appears four times in `ruleEngine.ts`). `lib/plan/sessionSizingAnchor.test.ts`
 now goes red on the real swap.
 
+### 🏃 `AI-COMPLETION-COLUMN-01` — two AI coaching surfaces read ZERO completions
+**Board: COACHING** (it changes what a model is told about the runner). P1.
+
+`phase-summary` and `race-readiness` both select `session_type` from
+`session_completions`. **That column does not exist.** Supabase answers a bad column with
+`{ data: null, error }`; both destructure the error away and the `?? []` downstream reads the
+failure as *"no completions"*.
+
+**So both AI surfaces have been generating a coaching read from an empty array.** The tell is
+in `race-readiness/route.ts:177`, which filters `c.session_type === 'easy' || 'recovery'` —
+a predicate that has never matched anything, because there is nothing to match.
+
+⚠️ **NOT patched blind, and that is the point.** `session_completions` has no session type;
+the type lives in the plan JSON. Resolving it changes what the model sees on a race-readiness
+note and a phase summary, which is prescription-adjacent. **Route it, measure what the note
+says before and after, then fix.** Found by `SELECT-COLUMN-GATE-01`, not by the log.
+
+### ⚙️ `TAPER-RECAL-COLUMN-01` — taper recalibration has been running on an empty map
+**Board: COACHING** if the fix changes a taper; **no board** if it turns out to be inert. P1.
+
+`recalibrate-taper/route.ts` selects `week_n, actual_load_km` from `strava_activities`.
+**Both columns live on `run_analysis`, not on `strava_activities`.** The query returns null,
+`weeklyActuals` is empty, and `computeTaperRecalibration` is handed nothing.
+
+⚠️ The route's own comment asserts *"strava_activities.week_n is populated when an activity
+is linked to the plan"* — **a written assumption that is false**, which is the class
+[[feedback-written-assumptions-are-the-dangerous-ones]] names.
+
+⚠️ **Fixing it makes taper recalibration actually run for the first time**, which changes
+what the engine prescribes in the last weeks before a race. That is the Coaching Board's, and
+it needs the cohort numbers before it ships. Found by `SELECT-COLUMN-GATE-01`.
+
 ### 🧭 `DESIGN-DAYDOT-CHANNEL-01` — the day marker carries two facts on one channel
 **Board: DESIGN.** Exposed by applying S6's bound; deliberately NOT built inside someone
 else's ruling.
