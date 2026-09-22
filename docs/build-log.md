@@ -6,6 +6,41 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — AI-COMPLETION-COLUMN-01 · a failed query became a confident zero
+**Shipped:** Both AI coaching routes now actually see the runner's completions, and a failed
+read reports unknown instead of nothing.
+
+**Dev learning:** `completionRate = completed / totalSessions`. The completions array was
+always empty because the query named a column that does not exist and the error was thrown
+away — so that expression evaluated to `0 / N` and handed the model a **0%**. Not a null,
+not an absent field: a number, with a decimal point, that a language model then wrote a
+coaching note around. The difference between "I don't know" and "zero" is the whole defect,
+and `?? []` is what converts one into the other.
+
+**Product/creator learning:** The fix was not to add the column. `session_type` belongs in
+the plan JSON where the engine put it, and a completion already carries `(week_n,
+session_day)` — the exact coordinate that addresses a session. So the join was always
+available and nobody took it. Adding the column would have created a second source of truth
+for what a session IS, next to `coachingSessionType`, which is the drift D-17 exists to stop.
+
+**AI-building learning:** The tell was sitting in the code the whole time:
+`c.session_type === 'easy' || c.session_type === 'recovery'` — a filter on a field that
+never existed, so a predicate that had never once matched. A grep for "conditions that can
+never be true" would have found this years earlier than a database log did. That is a real
+check I do not have and probably should.
+
+**The honest bit:** I filed this an hour before fixing it and wrote "both AI surfaces have
+been writing a coaching read from an empty array". That was true and it undersold it. I did
+not notice until I traced the consumer that the empty array does not stay empty-shaped — it
+becomes a zero, and the zero is asserted to the model as fact. Reading the consumer, not the
+query, is what upgraded it from "missing data" to "we told the model something false".
+
+**Hook material:** A filter on a database column that has never existed, so a condition that
+had never once been true, feeding a coaching note that told runners they had completed
+nothing.
+
+**Postable?:** yes
+
 ## 2026-09-22 — TAPER-RECAL-COLUMN-01 · a feature with twenty tests that had never run
 **Shipped:** §68 taper recalibration now actually executes. It never had.
 
