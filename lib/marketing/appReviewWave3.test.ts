@@ -112,14 +112,21 @@ describe('A2 — Plan leads with the plan', () => {
     }
   })
 
-  it('the screen’s one ACTION is the first thing after the calendar', () => {
+  it('the screen’s one ACTION sits above the weeks (A2, amended by R-4)', () => {
+    // ⚠️ AMENDED, NOT REVERSED. A2 shipped this row FIRST BELOW the calendar.
+    // R-4 (Design Board, five-screen review) amends it: A2 ruled what should
+    // LEAD and never asked which single thing below the fold is not
+    // furniture. On an 18-week plan the runner scrolls past every week before
+    // meeting the only control that changes any of them.
+    //
+    // Anchored on the row's HANDLER, which is what makes it the action —
+    // its LABEL has already changed once under PLANVERB-01.
+    const arc = SHELL.indexOf('<PlanArc')
+    const change = SHELL.indexOf('onClick={onOpenModify}')
     const cal = SHELL.indexOf('<PlanCalendar')
-    // Anchored on the row's HANDLER, which is what makes it the action, rather
-    // than on its label, which PLANVERB-01 has already changed once.
-    const change = SHELL.indexOf('onClick={onOpenModify}', cal)
-    const zone = SHELL.indexOf('<ZoneWeekBlock', cal)
-    expect(change, 'the adjust row is missing below the calendar').toBeGreaterThan(-1)
-    expect(change, 'the adjust row must lead the blocks below the weeks').toBeLessThan(zone)
+    expect(change, 'the adjust row is missing').toBeGreaterThan(-1)
+    expect(arc, 'the arc still leads').toBeLessThan(change)
+    expect(change, 'the action row must precede the weeks').toBeLessThan(cal)
   })
 })
 

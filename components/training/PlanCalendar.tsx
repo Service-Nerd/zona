@@ -831,10 +831,27 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
         </div>
       </div>
 
+      {/* DESIGN-DAYDOT-CHANNEL-01 (Design Board § 6q) — HUE CARRIES TYPE,
+            AND NOTHING ELSE OVERWRITES IT.
+            This read:
+              isComplete ? --moss : isSkipped ? --line
+                         : isMoving||isSwapTarget ? --moss : accent
+            so THREE facts shared one channel: a completed interval and a
+            completed easy run were the same colour (the type was destroyed by
+            finishing the run), skipped was the hairline colour — which is also
+            how absence reads — and **moss meant both "complete" and "being
+            moved"**.
+            Now the rail is the session's own colour, always. Completion is
+            carried by the "Done" marker below, skip by the label's existing
+            strike-through, and moss is left to mean exactly one thing: this
+            row is in flight. `ui-patterns.md` already rules that state must
+            live in the label, never colour alone (WCAG 1.4.1), and this row
+            has room for a label — which is why it gets one, and the 4px dot on
+            Today gets a shape instead. */}
       {isMoveTarget ? (
         <div style={{ width: '3px', height: '34px', borderRadius: '2px', background: 'var(--moss-mid)', marginRight: '12px', flexShrink: 0 }} />
       ) : (
-        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isComplete ? 'var(--moss)' : isSkipped ? 'var(--line)' : isMoving || isSwapTarget ? 'var(--moss)' : accent, marginRight: '12px', flexShrink: 0 }} />
+        <div style={{ width: '3px', height: hasSession ? '34px' : '16px', borderRadius: '2px', background: isMoving || isSwapTarget ? 'var(--moss)' : accent, marginRight: '12px', flexShrink: 0 }} />
       )}
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -881,6 +898,21 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
                   is decoration. A fix that looks applied and does nothing. */}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', flexWrap: 'wrap' }}>
+              {/* DESIGN-DAYDOT-CHANNEL-01 — completion in the LABEL, which is
+                  what the WCAG 1.4.1 rule in `ui-patterns.md` has always said
+                  and what the rail was doing instead. Skipped already had a
+                  non-colour channel (the label's strike-through); complete had
+                  none at all — only a muted label and a moss rail, both
+                  colour. It sits first in the wrapping metric row so it reads
+                  before the distance, and it is `--moss` on TEXT, not a filled
+                  chip: moss is the CTA colour and a filled green pill on a
+                  finished row is a reward, which is the illusion-of-progress
+                  class Wood's binding conditions exist to keep out. */}
+              {isComplete && (
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}>
+                  Done
+                </span>
+              )}
               {/* Structured metric (R23+ plans). Render only the chosen metric;
                   fall back to the other if the chosen one is missing on this
                   session. Legacy `detail` text remains the fallback for

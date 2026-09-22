@@ -209,8 +209,16 @@ export default function ModifyPlanSheet({
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     gap: '12px', padding: '14px 16px', textAlign: 'left',
-                    background: 'var(--card)', borderRadius: 'var(--radius-lg)',
-                    border: '1px solid var(--line)', cursor: 'pointer',
+                    background: 'none', borderRadius: 'var(--radius-lg)',
+                    // M-3 (Design Board, Miles open-lens) — THE DASHED BORDER
+                    // IS THE GRAMMAR FOR AN OPTION THAT BRANCHES rather than
+                    // one that selects. Every row above this one is a setting
+                    // you change inside the plan you have; this one leaves.
+                    // A solid card on `--card` made it read as a ninth
+                    // setting, which is precisely the confusion PLANVERB-01
+                    // exists to remove. No fill, so it does not compete with
+                    // the eight rows that are the sheet's actual job.
+                    border: '1px dashed var(--line-strong)', cursor: 'pointer',
                   }}
                 >
                   <span style={{ minWidth: 0 }}>

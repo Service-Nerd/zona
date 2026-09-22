@@ -84,15 +84,35 @@ describe('DAYDOT-TEALKEY-01 — geometry never branches on a colour', () => {
     ).toEqual([])
   })
 
-  it('the day dot still has a size channel for completion', () => {
-    // ⚠️ The fix must not quietly DELETE the redundancy it was protecting.
-    // Falsified by flattening both branches to one size.
-    const src = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
-    const i = src.indexOf('Session dot')
+  it('the day dot carries completion on a NON-COLOUR channel', () => {
+    // ⚠️ THE RULE, NOT THE IMPLEMENTATION. This asserted the literal
+    // `complete ? '6px' : '4px'` and went red when DESIGN-DAYDOT-CHANNEL-01
+    // replaced the size channel with a FILL channel — a strictly better
+    // encoding, failing a test that was guarding the old one by its shape.
+    // Anchoring a check on the mechanism rather than the guarantee is the
+    // "never match by its MESSAGE" class one layer down. What must hold is:
+    // completion changes something that is not the colour.
+    const src = stripComments(readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8'))
+    const i = src.indexOf('dot?.complete')
     expect(i, 'the day dot moved; re-point this assertion').toBeGreaterThan(0)
-    const block = src.slice(i, i + 500)
-    expect(block, 'completion must still change the dot SIZE, not only its colour')
-      .toMatch(/complete\s*\?\s*'6px'\s*:\s*'4px'/)
+    const block = src.slice(Math.max(0, i - 400), i + 600)
+    const nonColour = /dot\?\.complete\s*\?[^:]*:[^,]*/.test(block)
+      && /(background|border|width|height)/.test(block)
+    expect(nonColour, 'completion must change geometry or fill, not only the hue').toBe(true)
+    // And the hue itself must be the SESSION TYPE, never a state colour.
+    expect(block, 'the dot colour comes from the session, not from its status')
+      .toMatch(/dot\.colour|dot\?\.colour/)
+  })
+
+  it('the dot producer never overwrites the type hue with a state colour', () => {
+    const src = stripComments(readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8'))
+    const i = src.indexOf('function getDot(')
+    expect(i, 'getDot moved; re-point this assertion').toBeGreaterThan(0)
+    const body = src.slice(i, i + 900)
+    expect(body, 'every branch must return the session colour').toMatch(/colour:\s*getSessionColor\(s\)/)
+    // Falsified by putting a status colour back in.
+    expect(body, 'a status colour in the hue channel destroys the session type')
+      .not.toMatch(/colour:\s*'var\(--(teal|moss|text-muted|mute)\)'/)
   })
 
   it('the producer no longer emits the retired --teal token', () => {

@@ -5567,13 +5567,22 @@ function DateStrip({ sessions, completions, selectedKey, onSelect }: {
    * colour channel) is `DESIGN-DAYDOT-CHANNEL-01`, Design Board § 6q, wave 3.
    * This fixes only the booby trap.
    */
-  function getDot(key: string): { colour: string; complete: boolean } | null {
+  function getDot(key: string): { colour: string; complete: boolean; skipped: boolean } | null {
     const s = sessionMap[key]
     if (!s || s.type === 'rest') return null
     const comp = completions[s.key] // use originalDay for completion lookup
-    if (comp?.status === 'complete') return { colour: 'var(--moss)', complete: true }
-    if (comp?.status === 'skipped') return { colour: 'var(--text-muted)', complete: false }
-    return { colour: getSessionColor(s), complete: false }
+    // DESIGN-DAYDOT-CHANNEL-01 — THE HUE IS THE SESSION'S TYPE, ALWAYS.
+    // It used to be overwritten: complete returned --teal and skipped returned
+    // --text-muted, so a completed interval and a completed easy run were one
+    // dot and the type was destroyed by finishing the run. State now rides on
+    // the SHAPE (filled = done, ring = not yet) and on opacity (skipped),
+    // which is the fill-vs-ring candidate the filing proposed and the one
+    // encoding that survives at 4px, where neither a glyph nor a label fits.
+    return {
+      colour: getSessionColor(s),
+      complete: comp?.status === 'complete',
+      skipped: comp?.status === 'skipped',
+    }
   }
 
   return (
@@ -5623,14 +5632,22 @@ function DateStrip({ sessions, completions, selectedKey, onSelect }: {
                 </span>
               </div>
 
-              {/* Session dot — larger for completed. The size reads the STATE,
-                  never the colour (DAYDOT-TEALKEY-01). */}
+              {/* Session dot. The size reads the STATE, never the colour
+                  (DAYDOT-TEALKEY-01), and now so does the FILL
+                  (DESIGN-DAYDOT-CHANNEL-01): a done session is a solid dot in
+                  its own type colour, an outstanding one is a ring in the same
+                  colour, and a skipped one is that ring at half strength. Hue
+                  is the type and only the type. Drawn at a constant 8px box so
+                  the ring and the fill occupy the same space and the strip
+                  does not reflow as runs are logged — the old 4px/6px swap
+                  moved every dot on the row. */}
               <div style={{
-                width: dot?.complete ? '6px' : '4px',
-                height: dot?.complete ? '6px' : '4px',
-                borderRadius: '50%',
-                background: dot?.colour ?? 'transparent',
-                transition: 'width 0.1s, height 0.1s',
+                width: '8px', height: '8px', borderRadius: '50%',
+                boxSizing: 'border-box',
+                background: dot?.complete ? dot.colour : 'transparent',
+                border: dot && !dot.complete ? `1.5px solid ${dot.colour}` : 'none',
+                opacity: dot?.skipped ? 0.45 : 1,
+                transition: 'background 0.15s, opacity 0.15s',
               }} />
             </button>
           )
@@ -8577,22 +8594,19 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
            `draggable`, nothing. The claim was false for as long as it existed
            and was found while building MOVE-PROTOTYPE-01, which is the first
            drag this component has ever had (and is off by default). ── */}
-      <div style={{ paddingTop: '12px' }}>
-        <PlanCalendar
-          weeks={plan.weeks}
-          allOverrides={allOverrides}
-          allCompletions={allCompletions}
-          onOverrideChange={onOverrideChange}
-          overridesReady={overridesReady}
-          units={preferredUnits}
-          preferredMetric={preferredMetric}
-          sessionMetricOverrides={sessionMetricOverrides}
-          onSessionTap={(session, weekN, weekTheme) => {
-            onOpenSession?.({ ...session, weekN, weekTheme })
-          }}
-        />
-      </div>
+      {/* ── R-4 (Design Board, five-screen review) — ONE ACTION ROW EARNS
+          THE SPACE ABOVE THE WEEKS. ────────────────────────────────────────
+          A2 ruled what should LEAD this screen (race → arc → weeks) and
+          shipped this row FIRST BELOW the calendar. R-4 amends it: A2 never
+          asked which single thing below the fold is not furniture. The weeks
+          are long — on an 18-week plan the runner scrolls past every one of
+          them before meeting the only control on the screen that changes any
+          of it.
 
+          ⚠️ This is an AMENDMENT, not a reversal. A2's ordering claim (race,
+          then arc, then weeks, then everything that explains them) is intact;
+          the action moves from "first of the explainers" to "last of the
+          headers", which is the one position A2 did not consider. */}
       {/* ── P-02 — the way in. ─────────────────────────────────────────────
           Before this there was NO surface on which a runner could change a
           plan parameter: the only route was re-running the fourteen-screen
@@ -8631,6 +8645,21 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         </div>
       )}
 
+      <div style={{ paddingTop: '12px' }}>
+        <PlanCalendar
+          weeks={plan.weeks}
+          allOverrides={allOverrides}
+          allCompletions={allCompletions}
+          onOverrideChange={onOverrideChange}
+          overridesReady={overridesReady}
+          units={preferredUnits}
+          preferredMetric={preferredMetric}
+          sessionMetricOverrides={sessionMetricOverrides}
+          onSessionTap={(session, weekN, weekTheme) => {
+            onOpenSession?.({ ...session, weekN, weekTheme })
+          }}
+        />
+      </div>
 
       {/* ── P-04: ZONE COMPLIANCE, THE ONE INTENSITY METRIC ON THIS SCREEN ──
           The teardown's finding: a competitor's plan screen shows distance

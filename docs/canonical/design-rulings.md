@@ -951,6 +951,54 @@ refusal by its MESSAGE" class, and this is its third appearance.**
 
 ---
 
+## 6s. Wave 3a — `R-4`, `M-3` and the day-marker channel, built (2026-09-22)
+
+Three rulings applied. **The fourth wave-3 item, `ICON-RULE-01`'s icons, is deliberately NOT in
+this commit** — it covers two surfaces (Me, 13 hand-written rows; the modify sheet, 8
+config-driven ones) and shipping one of them would be shipping half a ruling.
+
+| Ruling | Built |
+|---|---|
+| **R-4** — one action row earns the space above the weeks | 🟢 The adjust row moves from *first below the calendar* to *last of the headers*. ⚠️ **An amendment to A2, not a reversal**: A2's ordering claim (race → arc → weeks → the explainers) is intact. A2 ruled what should LEAD and never asked which single thing below the fold is not furniture — on an 18-week plan the runner scrolls past every week before meeting the only control that changes any of them |
+| **M-3** — the dashed border is the grammar for an option that BRANCHES | 🟢 Applied to the *Start a new plan* row `PLANVERB-01` added to the sheet. Every row above it is a setting you change inside the plan you have; this one leaves. **A solid card on `--card` made it read as a ninth setting**, which is the exact confusion `PLANVERB-01` exists to remove. No fill, so it does not compete with the eight rows that are the sheet's job |
+| **`DESIGN-DAYDOT-CHANNEL-01`** | 🟢 See below |
+
+### The day marker — hue carries type, and nothing else overwrites it
+
+The rail read `isComplete ? --moss : isSkipped ? --line : isMoving||isSwapTarget ? --moss :
+accent`. **Three facts on one channel**, plus a fourth on `opacity` at 0.5 / 0.45 / 0.4.
+
+**The remedy is the rule `ui-patterns.md` already carries** — *state must live in the label,
+never colour alone* (WCAG 1.4.1) — **split by whether there is room for a label**, which is the
+distinction `ICON-RULE-01` had already drawn when it recorded that the 4px dot is where neither
+a glyph nor a label fits:
+
+| Surface | Room? | Completion now reads as |
+|---|---|---|
+| Plan row | yes | the word **"Done"**, first in the wrapping metric row |
+| Today's dot | **4px** | the **fill** — solid = done, ring = outstanding, ring at 45% = skipped |
+
+⚠️ **Three consequences worth stating.** (1) **Moss on the rail now means exactly one thing**:
+this row is in flight. It used to mean *complete* as well. (2) The dot is drawn in a **constant
+8px box** — the previous encoding swapped 4px/6px, so logging one run **moved every dot on the
+row**. (3) *"Done"* is moss **on text, not a filled chip**: moss is the CTA colour and a green
+pill on a finished row is a reward, which is the illusion-of-progress class Wood's binding
+conditions exist to keep out.
+
+### 📦 Artifacts
+
+`lib/marketing/dayDotShape.test.ts` — 5 assertions, falsified four ways (repaint the rail on
+completion; delete the "Done" label; put a state colour back in the producer; reintroduce the
+size swap). `appReviewWave3`'s A2 gate amended for R-4.
+
+⚠️ **And one existing gate was anchored on the MECHANISM rather than the guarantee.**
+`DAYDOT-TEALKEY-01` asserted the literal `complete ? '6px' : '4px'` and went red when this
+replaced the size channel with a **better** one. It now asserts what must hold — *completion
+changes something that is not the colour* — rather than how. **That is "never match by its
+MESSAGE" one layer down, and it is the fourth appearance of the class today.**
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |
