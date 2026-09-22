@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-22 (last ship `b111873`) — PUSHED.** Suites green: **452 tests / 40 files** in the marketing + shared scope. Typecheck clean. All six hook suites pass. Six commits: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage, `<Section>` adoption, the docs.
+**State at END of 2026-09-22 (last ship `8184c32`) — PUSHED.** Suites green: **452 tests / 40 files** in the marketing + shared scope. Typecheck clean. All six hook suites pass. Six commits: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage, `<Section>` adoption, the docs. · **`8184c32`** made the step numerals perceivable (they were 1.07:1 *on purpose*, drawn as SVG because axe does not read SVG as text) and filed `SITE-SPACE-01` — **448 gaps, 19 real distinct values, the same number `SITE-TYPE-01` found for font sizes.**
 
 🧭 **The homepage, measured at 375px:** first ground change **screen 10.6 → 3.4**, proof **52% → 24%**, sections **14 → 11**, page **12,317 → 11,773px**, content `<h2>` **9 (all 26px) → 6 with a scale**.
 

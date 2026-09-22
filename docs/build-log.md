@@ -6,6 +6,41 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — SITE-STEP-CONTRAST-01 · SITE-SPACE-01 · the founder saw two things and both were bigger than they looked
+
+**Shipped:** Step numerals from 1.07:1 to a perceivable token, plus a contrast check that can
+finally see SVG. Filed the spacing scale, ruled and not built.
+
+**Dev learning:** **A contrast test that reads TOKENS cannot see a contrast BUG.** Ours checked
+every text token against every ground, pairwise, and passed — while four 72px numerals sat at
+1.07:1 on the homepage, because it never looked at where a token was *used*. A token being legal
+somewhere is not the same as it being legal *here*. Exactly the `--surface-moss-wash` shape: legal
+in `globals.css`, forbidden by a rule in `ui-patterns.md`, and the two files had never met.
+
+**Product/creator learning:** The founder said the spacing felt inconsistent. Measured: **448 gaps
+across six pages, 19 real distinct values.** `SITE-TYPE-01` had found *nineteen* font sizes a day
+earlier and we fixed type and never looked at space. **The same audit, run one layer over, found
+the same number.** Worth assuming that any repo with a type problem has a spacing problem nobody
+has measured.
+
+**AI-building learning:** I put a contrast table to the board using **hex values I had guessed**.
+`--mute` I called 3.22:1; it is 4.80:1. The board ruled on fabricated measurements and the ruling
+happened to survive. Then, writing the fix, I hardcoded the same invented hex into a code comment
+and the pre-commit hook blocked me. **The machine caught it twice and I caught it zero times.**
+Read the token; never recall it — and that applies hardest when you are *explaining* a value,
+because a hex in a comment drifts from the token it names.
+
+**The honest bit:** The numbers were invisible *on purpose*. The source comment said they were
+drawn as SVG "because axe does not evaluate SVG as text". Someone had a contrast failure and
+solved it by changing the medium until the tool stopped reporting it. It also didn't work — the
+one person we are building for couldn't see them.
+
+**Hook material:** A comment in our own source that says, in effect, "we drew it this way so the
+accessibility checker wouldn't notice." 1.07:1. Four of them, 88px each.
+
+**Postable?:** yes
+
+
 ## 2026-09-22 — ADR-023 · RESTRAINT-OWNER-01 · BUILD-PROC-01 · SITE-WAVE-1a/1b · SITE-WAVE-1a-i · SITE-WAVE-1a-ii · I built a guard, and it caught six of my own bugs
 
 **Shipped:** A Design Board (five seats, hook-enforced), a standard build procedure on the one
