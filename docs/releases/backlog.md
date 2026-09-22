@@ -540,6 +540,35 @@ surfaces sit outside it:**
 most of which no runner ever sees, and a guard that fires on ordinary work gets switched off
 — which this repo has twice recorded as equivalent to having no guard.
 
+### ⚙️ `UI-BACKARROW-01` — a documented back-arrow spec that half the app ignores
+**Board: NONE** — defect fix restoring `ui-patterns.md:2609`.
+
+The pattern is written: *"Full screen, back arrow top-left (**44px circle, `--bg-soft` bg**)."*
+**Census of every `onClick={onBack}` chevron across all 7 screen files: 6 of 12 obey.**
+
+| Offender | What it is |
+|---|---|
+| **2 × 36px** circles | 🔴 **Below our own documented 44px iOS HIG minimum** (`ui-patterns.md` § What Not to Build) |
+| 2 × `--accent-soft` / 8px square | Wrong container |
+| 1 × `--moss-soft` / 8px square | Wrong container, and moss-adjacent |
+| 1 × no container at all | `BenchmarkUpdateScreen` |
+
+**Extract the conforming version** (`FounderNoteScreen`, which got a frontend-design brief in
+May) into one component. ⚠️ **NOT `ScreenHeader`** — that is title + sub with **no back
+arrow**, for tab roots. Getting this wrong was a retracted finding in this review.
+
+### ⚙️ `S2-GATE-NARROW-01` — the dismiss-colour gate cannot see four live offenders
+**Board: NONE** — the ruling stands; its check is too narrow.
+
+S2 ruled *"dismiss is never `--moss`"*. Its gate matches
+`DISMISS_WORDS = close|cancel|dismiss|not now|maybe later|no thanks`. **It omits `back`.**
+
+Four full-width `--moss` buttons call `onBack`: **`Back to training`** (Upgrade),
+**`Back to plan`** (Benchmark), **`Back to today`** (Recalibration), **`Back`** (Reshape) —
+plus **`Not now`**, which is in the list but on a control the tree-walk misses.
+
+**Widen the list, then fix what it catches.** ⚠️ Falsify by re-adding one.
+
 ### 💼 `GTM-REDEEM-PLACEMENT-01` — the charity code has never been redeemed, and it is on the wrong screen
 **Board: SLT** (funnel placement, not design). **Highest expected value in the Miles review.**
 
@@ -554,17 +583,26 @@ screen position, not a build. ⚠️ It was invisible to the Phase-1 checklist, 
 `IMG_7179` as "referral code screen" and scored us PARTIAL for having one.
 
 ### 🧭 `DESIGN-MILES-TAKEABLES-01` — the four patterns the open-lens review ruled SHIP
-**Board: DESIGN (ruled, M-1…M-4)** — build, no further sitting needed except where noted.
+**Board: DESIGN.** ⚠️ **Two of the four were RETRACTED on verification and one was
+SUPERSEDED the next day.** What remains buildable is M-3 and the icon rule below.
 
-1. **Consequence subtitles** (M-1) on every parameter row: what it does to *your training*,
-   not the field's name. **Strings are the founder's.**
-2. **S6 amended** (M-2): icons on a row carrying a **current value**, or where the glyph
-   **encodes the data** (their ability tiers fill 1→4 bars). ⛔ **Silvanto binding**: one
-   glyph per row, one size, one family, one tinted container, or the veto is live.
+1. 🔴 **M-1 RETRACTED — ALREADY BUILT.** All 8 modify-sheet rows and 8 Me rows already carry
+   consequence subtitles, and ours name the cost theirs do not: *"Shifts the whole plan
+   forward or back, **and resets your logged weeks**."* Found by verifying, not at the sitting.
+2. 🔴 **M-2 IS SUPERSEDED — use `ICON-RULE-01`** (`design-rulings.md` § 6n). M-2 amended
+   **S6**, and S6 was not the governing rule; two older ones were. The rule now: an icon
+   earns its place by carrying **MEANING** the label cannot, or **LOCATION** on a list of
+   **≥8 rows**. Qualifies: **Me** (20 rows) and the **modify sheet** (8). Does not: wizard
+   steps, Plan rows, session cards. ⛔ **Silvanto binding**: one glyph, one size, one family,
+   one tinted container, and **the tint may not be semantic** — six session hues are already
+   spent. ⚠️ **Collins, on the record: this is UTILITY, not wow.** Do not cite it as progress
+   against "stand out".
 3. **Dashed-border escape card** (M-3) as the grammar for *an option that branches* rather
    than selects.
-4. **Trial timeline** (M-4) on the upgrade screen: Today / reminder / charge. **Pending the
-   upgrade-screen review**, which has never happened.
+4. 🔴 **M-4 RETRACTED — ALREADY BUILT** as `P-09` on the upgrade screen, and better reasoned
+   than theirs: every row is verified against the actual gates, and its own comment cites the
+   competitor's £24 undercut as the anti-pattern it avoids. Found by verifying, not at the
+   sitting.
 
 ⚠️ **`--moss` is not permitted as an icon tint** without a token decision; their semantic
 tints (red for heart-rate rows) sit next to our six session colours and were NOT ruled.

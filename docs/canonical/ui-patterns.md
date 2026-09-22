@@ -2159,7 +2159,7 @@ Reference: `app/dashboard/DashboardClient.tsx` → `TodayScreen` (ZONE-VIS-02 bl
 
 ### 27. NotificationBell
 
-The bell affordance for the notification inbox (NOTIF-01). Lives top-right on the Today screen's wordmark row — home is where users land, and the most frequent push (daily training) already deep-links to Today. A bell icon is justified under "no icons unless they carry unique meaning": it's the universally-understood notifications affordance with no compact text equivalent.
+The bell affordance for the notification inbox (NOTIF-01). Lives top-right on the Today screen's wordmark row — home is where users land, and the most frequent push (daily training) already deep-links to Today. A bell icon is justified under "no icons unless they carry unique meaning": it's the universally-understood notifications affordance with no compact text equivalent. ⚠️ **That rule is now ICON-RULE-01** — "unique meaning" was the whole test until 2026-09-22, when the board added a second, narrower gate for FINDING on long lists. The bell still qualifies under the first.
 
 ```
 ZONNA ●                         🔔 ●     ← moss unread dot, top-right of glyph
@@ -2486,28 +2486,49 @@ and one not is a distinction, and the gate asserts it so nobody "makes them cons
 
 ---
 
-## Icons — S6, applied, and it builds nothing today
+## Icons — when one earns its place (ICON-RULE-01, Design Board 2026-09-22)
 
-**The ruling:** an icon language, **only where a label repeats down a list** — S6 named
-session types, day markers and plan adjustments — and **never replacing a label read once.**
+> 🔴 **SUPERSEDES S6 and M-2.** S6 bounded icons to *"a label that repeats down a list"* and
+> M-2 amended S6 — **but S6 was not the governing rule.** Two older ones were, and neither
+> was cited at either sitting: *"Icons everywhere → text labels where space allows"*
+> (§ What Not to Build) and *"no icons unless they carry unique meaning"* (quoted as
+> existing doctrine in § NotificationBell). **An amendment to the wrong rule is not an
+> amendment.**
 
-🔴 **Applied to its own three surfaces, the bound yields no icon anywhere.** Measured:
+**An icon must earn its place by carrying what the label cannot. Two ways, and only two.**
 
-| Surface | What it shows | Verdict |
+| | Earns it | Example |
 |---|---|---|
-| **Plan rows** (`PlanCalendar`) | `session.label` at 15px/500, plus a colour accent | **Labelled.** An icon beside it is density, not information |
-| **Plan adjustments** (`AdjustmentDiff`) | `labelSession()` text, before and after | **Labelled.** Same |
-| **Day markers** (`DateStrip` dot) | A **4px** circle. Hue only | **No room for a glyph.** You cannot draw an icon at 4px |
+| **1. Meaning** | The glyph says something the label does not | The **notification bell** — universally understood, no compact text equivalent. A glyph that **encodes an ordinal** (a signal-bar mark filling 1→4 for ability tiers) |
+| **2. Location** | On a list of **eight or more rows**, where the job is *finding*, not *understanding* | **Me** (20 rows, 10 sections) · the **modify sheet** (8 rows, 3 groups) |
 
-**So S6 is satisfied by doing nothing, and that is the correct outcome of a bounded rule.**
-The founder asked for icons; the board bounded them; the bound, applied honestly, does not
-reach. Inventing a set anyway would be decoration with a ruling stapled to it.
+**Everything else remains "text labels where space allows."**
 
-⚠️ **What the measurement DID expose is filed, not built:** the `DateStrip` dot carries
-**two orthogonal facts on one channel** — eight session-type hues *and* completion state —
-so a completed interval and a completed easy run are the same teal dot, and a skipped
-session is grey, which is also how a muted type reads. That is a real encoding defect and it
-needs its own ruling, not a paragraph here. `DESIGN-DAYDOT-CHANNEL-01`.
+**Qualifies today:** Me · the modify sheet. **Does not:** wizard steps, Plan rows, session
+cards — all labelled, all short lists.
+
+⛔ **Silvanto, binding.** One glyph per row · one size · one family · one tinted container.
+**The container tint may NOT be semantic** — the app already spends **six session hues and
+four phase hues**, and a second colour language competing with that is a palette regression
+and the veto is live.
+
+**Why the bound moved.** Sierra: *"the runner already knows what 'Distance units' means.
+They cannot find it. Understanding and locating are different jobs, and the old rule only
+covered the first."* Wroblewski: 20 rows and 10 section headers, and the row already occupies
+that height — a glyph is a landmark, not density.
+
+⚠️ **Collins, recorded, and the board agreed:** this is a **utility** ruling, not a wow
+ruling. **Icons on settings rows will not make anyone tell a friend about this app.** The
+thing in the competitor's screens that stops you is a **handwritten annotation over a bar
+chart** (*"easier on purpose"*), which is not an icon. **Do not cite this ruling as progress
+against "stand out".**
+
+⚠️ **Icons are NOT the fix for colour-only encoding.** The app breaks its own WCAG 1.4.1
+rule (*"state must live in the label, never colour alone"*) at **6 measured sites**, and the
+worst of them is a **4px** dot where neither a glyph nor a label fits. That needs shape or
+fill: `DESIGN-DAYDOT-CHANNEL-01`, still open.
+
+**Check:** `lib/marketing/iconRule.test.ts` — a row-icon may only appear in a list of ≥8.
 
 ---
 
@@ -2780,7 +2801,7 @@ Reference: inline in `app/dashboard/DashboardClient.tsx` (`showMaintTransition` 
 | Hardcoded hex in component files | CSS custom properties only |
 | Space Grotesk, DM Mono, DM Sans | `var(--font-ui)` only |
 | `#D4501A`, `#f5f2ee`, `#0B132B`, `#5BC0BE` | Warm Slate tokens |
-| Icons everywhere | Text labels where space allows |
+| Icons everywhere | Text labels where space allows — **AMENDED by ICON-RULE-01**: an icon earns its place by carrying MEANING the label cannot, or LOCATION on a list of ≥8 rows |
 | Spinner loading states | Skeleton placeholders, or `<AIMark working />` for AI-in-flight |
 | AIMark on rule-engine / hand-authored copy | Mark only model-generated content — provenance honesty |
 | Alert/modal popups | Navigate to full screen |

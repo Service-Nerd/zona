@@ -652,6 +652,64 @@ is probably where much of "feeling something" lives.
 
 ---
 
+## 6n. ICON-RULE-01 — the icon rule, re-ruled on the CORRECT doctrine (2026-09-22)
+
+🔴 **SUPERSEDES S6 and M-2.** Both amended a rule that was not governing. **S6** was written
+during the app review and bounded icons to *"a label that repeats down a list"*; **M-2**
+amended S6. The actual doctrine is older and broader, in two places, and **neither sitting
+cited it**: *"Icons everywhere → text labels where space allows"* and *"no icons unless they
+carry unique meaning"*. **An amendment to the wrong rule is not an amendment**, and this is
+the second time this week a sitting has been re-run for that reason (the other was
+TAPER-OVER-PEAK-01).
+
+**The ruling.** An icon earns its place two ways only: **MEANING** the label cannot give (the
+bell; a glyph encoding an ordinal), or **LOCATION** on a list of **≥8 rows**, where the job is
+finding rather than understanding. Everything else stays *text labels where space allows*.
+
+**Qualifies:** Me (20 rows / 10 sections) · modify sheet (8 rows / 3 groups). **Does not:**
+wizard steps, Plan rows, session cards.
+
+⛔ **Silvanto binding:** one glyph, one size, one family, one tinted container, and **the tint
+may not be semantic** — six session hues and four phase hues are already spent, and a second
+colour language is a palette regression with the veto live.
+
+⚠️ **Collins, recorded and agreed: this is a UTILITY ruling, not a wow ruling.** *"Icons on
+settings rows will not make anyone tell a friend about this app."* The competitor's stopping
+moment is a **handwritten annotation over a bar chart**, not an icon. **Do not cite this as
+progress against "stand out."**
+
+⚠️ **Icons are NOT the fix for colour-only encoding.** Measured: **6 sites** resolve session
+type through `getSessionColor` with **no adjacent label**, against 3 that are labelled — and
+`ui-patterns.md` already rules *"state must live in the label, never colour alone"* (WCAG
+1.4.1). The worst is a **4px** dot where neither glyph nor label fits.
+`DESIGN-DAYDOT-CHANNEL-01` remains the fix and remains open.
+
+---
+
+## 6o. The rule challenges this review produced (2026-09-22)
+
+Every existing rule the app review, the Miles re-read and the five-screen review put in
+question, and what happened to it. **The founder's standing mandate is that any UI/UX rule
+may be reviewed if the board thinks it adds value**; this is the record of what was.
+
+| Rule | Outcome |
+|---|---|
+| **S6** — icons only where a label repeats down a list | 🔴 **SUPERSEDED** by ICON-RULE-01 (wrong rule amended) |
+| **M-2** — the Miles icon amendment | 🔴 **SUPERSEDED** by ICON-RULE-01, one day old |
+| *"Icons everywhere → text labels where space allows"* | ⚖️ **AMENDED** — meaning, or location on ≥8 rows |
+| *"No icons unless they carry unique meaning"* | ⚖️ **AMENDED** — same |
+| **SHEET-PRESENT-01** — *"come up from the nav bar but not overlay it"* | 🔴 **REVERSED** (S1, § 6i). Shipped. The measurement killed the argument both sides were having: **0px on an SE, 5px on a 13/15** |
+| *"Slide-up sheets: mirrored nav bar at bottom"* | ⚖️ **QUALIFIED BY SHAPE** (R-5): a sheet you **act in** keeps the bottom bar; a sheet you **browse** takes a top-right dismiss. **Wroblewski conceded his own rule** |
+| **A2** — Plan leads with the plan | ⚖️ **AMENDED** (R-4): it asked what should lead and never asked which single thing below the fold is not furniture. One action row earns the space above the weeks |
+| **§109** — never state a projection without its derivation | ⚖️ **NEEDS A SECOND HALF** → **Coaching Board**: the derivation must **exist**. The competitor states *"projected from your logged runs"* against **0 runs** |
+| *"State must live in the label, never colour alone"* (WCAG 1.4.1) | 🟢 **UNCHANGED, and now carries a measured debt of 6 sites** |
+| **M-1** consequence subtitles · **M-4** trial timeline | 🔴 **RETRACTED — already built.** Both found during verification, not at the sitting |
+| **"Use `ScreenHeader` on pushed screens"** | 🔴 **RETRACTED — my error.** It is title + sub, **no back arrow**; it is for tab roots |
+| **S2** — dismiss is never `--moss` | 🟢 **STANDS**, but 🔴 **its gate is too narrow**: `DISMISS_WORDS` omits `back` and `not now`, and **4 full-width moss dismiss buttons** sit behind that gap |
+| *"Back arrow top-left (44px circle, `--bg-soft`)"* | 🟢 **STANDS, and is measurably ignored**: **6 of 12** back arrows obey. Two are **36px**, under our own documented iOS HIG minimum |
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |
