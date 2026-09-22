@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — SITE-GROUND-ABOUT-01 / DAYDOT-TEALKEY-01 · a gate scoped to one page, and a size keyed on a dead colour
+**Shipped:** A Design Board sitting that ruled four items nobody had ever formally ruled, two of which built nothing on purpose; a band rule widened from the homepage to every marketing page; and a dot whose size was decided by a string comparison against a banned token.
+
+**Dev learning:** `sectionSurfaces.test.ts` opened with `const HOME = 'app/page.tsx'`. Every assertion below it was about band alternation, a rule that applies to the whole site — and the gate could only ever look at one file. `/about` had carried a forbidden band for weeks with a comment in its own source saying it was forbidden. I widened the walk, ran it, and it immediately failed on a page I had not been looking at: `/charity-runners`, with **two** bands. The other one: `width: dotColor === 'var(--teal)' ? '6px' : '4px'`. `--teal` is retired, alive only as a legacy alias, and the producer returned that literal string for a completed run. **The size channel was load-bearing and keyed on a token we already decided to delete.** Rename it correctly and the dot silently stops growing — no error, no test, just state living in colour alone.
+
+**Product/creator learning:** Two of the four rulings changed nothing in the product, and they were still worth an hour. Both had been sitting in the register as "recommended, never ruled", one annotated as "a taste call made against the documented rule". A decision one person made and wrote down is not a decision — it is a thing the next person re-proposes. Writing "KILLED, may not be re-proposed without new evidence" is the whole deliverable.
+
+**AI-building learning:** Three cuts at one gate, and each miss was a known class. Too loose → three false positives on correct code. Tight enough → it fired on my own doc comment quoting the defect it guards, which is exactly how an earlier gate fired on the prose "Close. Bit of fine-tuning to do." Then the pre-commit hook blocked the commit because that comment named the banned hex — the second time in one day a comment RECORDING a removed colour was read as using one. **A guard cannot tell documentation from violation, and it is right not to try. Name the token, never the value.**
+
+**The honest bit:** I widened the gate expecting to prove a fix I had already made. It found a page I did not know was broken, on a surface a charity partner gets sent to, with the defect present twice. The backlog item said `/about`; the code flags said `/about` and `/charity-runners`. I had read the item and not the flags.
+
+**Hook material:** A test file whose first line was `const HOME = 'app/page.tsx'` guarding a rule that applies to every page. Widened it, and it went red on a page nobody had looked at — twice on the same page.
+
+**Postable?:** yes — "the gate was scoped to one file and the rule was about all of them" is the honest version of a lesson everyone thinks they already know.
+
 ## 2026-09-22 — UI-BACKARROW-01 / S2-GATE-NARROW-01 / ICON-RULE-01 · three gates, and the one I named but never wrote
 **Shipped:** One `BackButton` owner replacing 13 hand-rolled back arrows, a dismiss-colour gate widened until it caught the four offenders it had been blind to, and the icon-rule check that a ruling had named in prose and nobody had written.
 
