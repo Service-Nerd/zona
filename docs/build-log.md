@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — PLANVERB-01 · the sitting I never wrote down, and two doors with one name
+**Shipped:** Split "Change your plan" into "Adjust your plan" (keeps it) and "Start a new plan" (replaces it), routed the race-date field through the input owner, gave the sheet a top-right dismiss until there is something to apply, and landed a board sitting's rulings three days late.
+
+**Dev learning:** Two rows in the same file, both titled "Change your plan". One opened a sheet that edits the plan in place; the other opened the wizard, which archives it. Nothing was broken — both worked exactly as written — and a runner reading four words had no way to tell which one destroyed their training block. The other one: the race-date field was the only `<input>` in the entire app below 16px, sitting at 13px, and `TextField` exists specifically because iOS zooms the page on any focused input under 16px. The rule was written, in the canonical component, in a comment, and the sheet hand-rolled its own input two feet away from it.
+
+**Product/creator learning:** The subtitles were right the whole time — "Without starting again" versus "Build a new plan around a different race or goal". The information was there and the title overrode it. But the second one still wasn't honest: it named the destination, not the cost. Changing the verb made the destructive path easier to find, which meant the subtitle now had to say "Replaces the plan you have." Making something more discoverable obliges you to make it more truthful.
+
+**AI-building learning:** I went to build wave 2 and could not find the rulings it was built on. The sitting had happened — another section cites two of its outcomes by name — but nobody wrote the rulings down, and "nobody" is me. The register's own maintenance note says, in those words, that a process whose memory depends on someone remembering to write it down has no memory. I have now reconstructed it from two surviving cross-references and fresh measurements, and had to write in the record that anything else from that sitting is simply lost.
+
+**The honest bit:** One of my seven new assertions was hollow, and only falsification found it: `toContain('onStartNewPlan')` passes happily against `onStartNewPlanX`, because a substring of a renamed identifier is still a substring. That is the fifth substring-bias miss I have recorded in a single day. And renaming one string turned three existing tests red, two of which were matching a UI row by its label when what they actually cared about was its position.
+
+**Hook material:** Two buttons, same four words, different destinations — one of them archives eighteen weeks of training. And a board sitting whose rulings existed only as two footnotes in a different section.
+
+**Postable?:** yes — "the sitting happened and nobody wrote it down, including me" is the honest one.
+
 ## 2026-09-22 — SITE-GROUND-ABOUT-01 / DAYDOT-TEALKEY-01 · a gate scoped to one page, and a size keyed on a dead colour
 **Shipped:** A Design Board sitting that ruled four items nobody had ever formally ruled, two of which built nothing on purpose; a band rule widened from the homepage to every marketing page; and a dot whose size was decided by a string comparison against a banned token.
 
