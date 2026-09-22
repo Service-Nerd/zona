@@ -406,7 +406,7 @@ has failed it.
 
 ### INSUFFICIENT EVIDENCE
 
-- **The move-a-run gesture.** The founder wants hold-and-drag; **Wroblewski pushed back** — drag on a scrolling list, one-handed, outdoors, is the hardest gesture on a phone and has no discoverability. His counter: **tap the session, tap the day.** Board split; needs a prototype. **Recorded as unsettled.**
+- **The move-a-run gesture.** The founder wants hold-and-drag; **Wroblewski pushed back** — drag on a scrolling list, one-handed, outdoors, is the hardest gesture on a phone and has no discoverability. His counter: **tap the session, tap the day.** Board split; needs a prototype. ✅ **PROTOTYPE BUILT 2026-09-22 — `/move-preview`, `MOVE-PROTOTYPE-01`. Still unsettled; it is now settleable.** 🔴 **And the split above was recorded wrong: Wroblewski's "counter" is what ALREADY SHIPS.** See § 6k.
 - **The black line above the nav.** Untraced — it is **not** the nav's border, which resolves to `rgba(26,26,26,0.08)`. No ruling on an unidentified artefact.
 - **Anything past wizard submission** — ceremony, plan preview, confidence badge, difficulty card. Unwalked.
 
@@ -513,6 +513,49 @@ read faster than a decoded ratio, and **that has not been observed** — the sou
 (hero type size, channel, constants) are what was verified. A8's ruling says a run-now block
 *fits one screen*; the reorder puts the right things first, and **whether it fits was not
 measured.**
+
+---
+
+## 6k. MOVE-PROTOTYPE-01 — the artefact for the one thing the board could not settle (2026-09-22)
+
+Sitting three left the move gesture at **INSUFFICIENT EVIDENCE**, needing a prototype.
+`/move-preview` is it: real generated week, both gestures, instrumented, 404 in production.
+
+🔴 **The split was recorded wrong, and it changes the question.** Wroblewski's "counter" —
+*tap the session, tap the day* — **is what already ships**: tap the `↕` handle, the week
+enters move mode with *"Tap where you want it"*, tap a day, and an inline confirmation row
+names source, destination and swap before anything is written. So the board is not choosing
+between two designs. It is asking whether drag is worth **replacing a shipped flow that an
+incident hardened**.
+
+⚠️ **The safety is held constant, deliberately.** The 2026-06-26 root cause was a runner who
+did not realise the tap-to-move he had executed *was* a move; the override and the AI summary
+that followed corrupted his taper. **A drop IS a commit gesture** — so drag that wrote on
+release would re-open exactly that, and the prototype would be comparing a safe flow against
+an unsafe one and reporting that the unsafe one is faster. Both modes stage into the **same
+`pendingMove` and the same confirmation row.** Only acquire-and-place varies.
+
+**Verified on a running server, both paths end at the identical confirmation row** (*"Move
+Long run — Zone 2 from Sun to Thu?"*), and a press that moves before it arms is correctly
+treated as a scroll and logs nothing.
+
+🔴 **Two defects found in the instrument before anyone used it, both in the board's favour
+to miss:**
+
+| | |
+|---|---|
+| **The clock started when the press ARMED, not at first touch.** A 450 ms hold plus a move reported **162 ms** | Drag was timed from 350 ms in while tap was timed from the finger landing — under-reporting drag by exactly the cost under test. **A biased instrument does not produce a weak ruling, it produces a confident wrong one.** Corrected: the same gesture now reads **515 ms** |
+| A scroll that never armed was going to be logged as an **abandoned attempt** | Every flick down the list would have inflated drag's abandon rate, turning the number into a count of scrolling |
+
+⚠️ **What the numbers on the page are NOT.** The synthetic run reads tap **2 interactions /
+63 ms** against drag **2 interactions / 515 ms**, and **neither is a human measurement** —
+the tap figure has no dwell between targets, and the drag figure is dominated by a scripted
+hold. **The page exists so the founder generates real ones on a device.** The one structural
+fact that is not synthetic: **drag carries a mandatory ~350 ms floor before anything happens
+at all**, and tap does not.
+
+📐 **The number to rule on is "dropped on nothing"** — the cost Wroblewski named, and the one
+a demo run by whoever built the gesture will always under-report.
 
 ---
 

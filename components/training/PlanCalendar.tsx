@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import type { Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { getSessionColor } from '@/lib/session-types'
@@ -78,6 +78,18 @@ const loadMoreStyle: React.CSSProperties = {
   color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase',
 }
 
+/** One attempt at moving a session, from pick-up to confirm or abandon. */
+export interface MoveAttempt {
+  mode: 'tap' | 'drag'
+  /** Pointer interactions the runner spent: taps for 'tap', press+release for 'drag'. */
+  interactions: number
+  /** Milliseconds from pick-up to the confirmation row appearing. */
+  ms: number
+  outcome: 'staged' | 'abandoned'
+  /** 'drag' only: releases that landed on no valid day. The cost Wroblewski named. */
+  misses: number
+}
+
 interface Props {
   weeks: Week[]
   allOverrides: { week_n: number; original_day: string; new_day: string }[]
@@ -90,9 +102,25 @@ interface Props {
   preferredMetric?: SessionMetric
   /** Per-session metric overrides from SessionScreen toggle, keyed `${weekN}_${sessionKey}`. */
   sessionMetricOverrides?: SessionMetricOverrides
+  /** MOVE-PROTOTYPE-01 — which gesture picks a session up.
+   *
+   *  `'tap'` is what ships and what the 2026-06-26 incident hardened. `'drag'`
+   *  is the prototype the Design Board asked for: long-press to pick up, drag
+   *  to a day, release.
+   *
+   *  ⚠️ BOTH STAGE INTO THE SAME `pendingMove` AND THE SAME CONFIRMATION ROW.
+   *  A drop is a commit gesture, and "the runner did not realise the thing he
+   *  did was a move" IS the 2026-06-26 root cause — so drag that writes on
+   *  release would be comparing a safe flow against an unsafe one and calling
+   *  the unsafe one faster. The safety is held constant; only the acquire-and-
+   *  place gesture varies. Defaults to `'tap'`: the Plan screen is unchanged. */
+  moveMode?: 'tap' | 'drag'
+  /** Prototype instrumentation only. Fires once per completed or abandoned
+   *  attempt so the board can rule on a measurement. Never wired in the app. */
+  onMoveTelemetry?: (e: MoveAttempt) => void
 }
 
-export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {} }: Props) {
+export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOverrideChange, onSessionTap, overridesReady = true, units = 'km', preferredMetric = 'distance', sessionMetricOverrides = {}, moveMode = 'tap', onMoveTelemetry }: Props) {
   const [showPast, setShowPast] = useState(false)
   // PLAN-STRIP-EXPAND: single Later-week may be expanded into a full WeekCard
   // for move/swap. State held here so navigating away resets — option-value,
@@ -229,6 +257,8 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
         units={units}
         preferredMetric={preferredMetric}
         sessionMetricOverrides={sessionMetricOverrides}
+        moveMode={moveMode}
+        onMoveTelemetry={onMoveTelemetry}
       />
     )
   }
@@ -409,8 +439,11 @@ function PlanSectionLabel({ children, right }: { children: React.ReactNode; righ
   )
 }
 
-function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides }: {
+function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides, moveMode = 'tap', onMoveTelemetry }: {
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]
+  /** MOVE-PROTOTYPE-01 — see Props. Defaults to the shipped tap flow. */
+  moveMode?: 'tap' | 'drag'
+  onMoveTelemetry?: (e: MoveAttempt) => void
   onSessionTap: (session: SessionTapPayload, weekN: number, weekTheme: string) => void
   onMove: (weekN: number, originalDay: string, newDay: string, currentSlot: string) => void
   onSwap: (weekN: number, sourceOriginal: string, sourceSlot: string, targetOriginal: string, targetSlot: string) => void
@@ -488,7 +521,117 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     .filter(c => c.status === 'complete' && c.strava_activity_km)
     .reduce((sum, c) => sum + (c.strava_activity_km ?? 0), 0)
 
+  // ── MOVE-PROTOTYPE-01 — the drag gesture, for the board's comparison ──────
+  //
+  // Long-press to pick up, drag to a day, release. It stages into the SAME
+  // `pendingMove` as the tap flow, so what is being compared is acquisition and
+  // placement, not safety.
+  //
+  // ⚠️ THE HARD PART IS THE ONE WROBLEWSKI NAMED: this list scrolls. A press
+  // that becomes a drag must not steal a scroll, and a scroll must not become a
+  // drag. So the press only "arms" after PRESS_MS with the finger still inside
+  // PRESS_SLOP_PX — move first and it is a scroll, and we never touch it. That
+  // threshold is the whole cost of the gesture and the prototype must expose it
+  // rather than tune it away: `misses` counts every release that landed on no
+  // valid day, which is the number the board should rule on.
+  const PRESS_MS = 350
+  const PRESS_SLOP_PX = 8
+
+  const [dragKey, setDragKey]   = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState<string | null>(null)
+  const pressTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pressOrigin = useRef<{ x: number; y: number } | null>(null)
+  const attempt     = useRef<{ started: number; interactions: number; misses: number } | null>(null)
+
+  function beginAttempt() {
+    if (!attempt.current) attempt.current = { started: Date.now(), interactions: 0, misses: 0 }
+  }
+  function endAttempt(outcome: 'staged' | 'abandoned') {
+    const a = attempt.current
+    attempt.current = null
+    if (a && onMoveTelemetry) {
+      onMoveTelemetry({ mode: moveMode, interactions: a.interactions, ms: Date.now() - a.started, outcome, misses: a.misses })
+    }
+  }
+  function countInteraction() {
+    beginAttempt()
+    if (attempt.current) attempt.current.interactions += 1
+  }
+
+  function clearPress() {
+    const wasArming = !!pressTimer.current
+    if (pressTimer.current) { clearTimeout(pressTimer.current); pressTimer.current = null }
+    pressOrigin.current = null
+    // A press that moved before it armed is a SCROLL. Discard the clock rather
+    // than logging it, or every flick down the list becomes an "abandoned
+    // attempt" and drag's abandon rate becomes a count of scrolling.
+    if (wasArming && !dragKey) attempt.current = null
+  }
+
+  /** Which day is under the pointer, or null. Hit-tested against the DOM rather
+   *  than computed from row heights: rest rows are shorter than session rows,
+   *  so arithmetic would be wrong on exactly the slots a move targets most. */
+  function dayUnder(x: number, y: number): string | null {
+    if (typeof document === 'undefined') return null
+    const el = document.elementFromPoint(x, y) as HTMLElement | null
+    return el?.closest<HTMLElement>('[data-daykey]')?.dataset.daykey ?? null
+  }
+
+  function onRowPointerDown(key: string, movable: boolean, e: React.PointerEvent) {
+    if (moveMode !== 'drag' || !movable) return
+    // 🔴 THE CLOCK STARTS HERE, AT FIRST TOUCH — not when the press arms.
+    //
+    // It used to start inside the timer callback below, so a drag was timed
+    // from 350ms in while a tap was timed from the finger landing. Measured on
+    // the prototype before anyone used it: a 450ms hold plus a move reported
+    // **162 ms**. The instrument was under-reporting drag by exactly the press
+    // threshold, which is the single largest cost of the gesture and the whole
+    // thing being compared. A biased instrument does not produce a weak ruling,
+    // it produces a confident wrong one.
+    beginAttempt()
+    pressOrigin.current = { x: e.clientX, y: e.clientY }
+    pressTimer.current = setTimeout(() => {
+      countInteraction()
+      setDragKey(key)
+      setMovingDay(key)
+      if (navigator.vibrate) navigator.vibrate(30)
+    }, PRESS_MS)
+  }
+
+  function onRowPointerMove(e: React.PointerEvent) {
+    if (moveMode !== 'drag') return
+    if (pressTimer.current && pressOrigin.current) {
+      const dx = Math.abs(e.clientX - pressOrigin.current.x)
+      const dy = Math.abs(e.clientY - pressOrigin.current.y)
+      // Moved before the press armed → this was a scroll. Stand down entirely.
+      if (dx > PRESS_SLOP_PX || dy > PRESS_SLOP_PX) clearPress()
+      return
+    }
+    if (!dragKey) return
+    e.preventDefault()
+    setDragOver(dayUnder(e.clientX, e.clientY))
+  }
+
+  function onRowPointerUp(e: React.PointerEvent) {
+    if (moveMode !== 'drag') return
+    clearPress()
+    if (!dragKey) return
+    const target = dayUnder(e.clientX, e.clientY)
+    setDragKey(null)
+    setDragOver(null)
+    if (target && target !== dragKey) {
+      countInteraction()
+      handleTargetTap(target)
+      return
+    }
+    // Released on nothing, or back where it started. This is the cost.
+    if (attempt.current) attempt.current.misses += 1
+    setMovingDay(null)
+    endAttempt('abandoned')
+  }
+
   function handleMoveIconTap(key: string) {
+    countInteraction()
     setMovingDay(prev => prev === key ? null : key)
     if (navigator.vibrate) navigator.vibrate(30)
   }
@@ -514,6 +657,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
         && targetSession.type !== 'rest'
         && targetCompletion?.status !== 'complete'
         && targetCompletion?.status !== 'skipped'
+      endAttempt('staged')
       setPendingMove({
         sourceKey: prev,
         targetKey,
@@ -539,6 +683,16 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
 
   function cancelPendingMove() {
     setPendingMove(null)
+  }
+
+  // Abandoning move mode without staging anything is an attempt too, and it is
+  // the one a gesture comparison most needs: a flow you back out of has cost
+  // the runner exactly as much as one you complete.
+  function abandonMove() {
+    setMovingDay(null)
+    setDragKey(null)
+    setDragOver(null)
+    endAttempt('abandoned')
   }
 
   // Metric pair size — current week dominates the visual hierarchy.
@@ -638,8 +792,8 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             units={units}
             metric={resolvedMetric}
             onTap={() => {
-              if (isMoveTarget || isSwapTarget) { handleTargetTap(key); return }
-              if (movingDay) { setMovingDay(null); return }
+              if (isMoveTarget || isSwapTarget) { countInteraction(); handleTargetTap(key); return }
+              if (movingDay) { abandonMove(); return }
               if (!s || s.type === 'rest') return
               onSessionTap({
                 key: s.originalDay ?? key,
@@ -667,13 +821,18 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
               }, weekNum, weekTheme)
             }}
             onMoveIconTap={() => handleMoveIconTap(key)}
+            dragMode={moveMode === 'drag'}
+            isDragOver={dragOver === key && dragKey !== key}
+            onPointerDownRow={(e) => onRowPointerDown(key, isMovable, e)}
+            onPointerMoveRow={onRowPointerMove}
+            onPointerUpRow={onRowPointerUp}
           />
         )
       })}
 
       {movingDay && !pendingMove && (
         <button
-          onClick={() => setMovingDay(null)}
+          onClick={abandonMove}
           style={{
             width: '100%', padding: '10px 14px',
             background: 'var(--moss-soft)',
@@ -748,7 +907,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   )
 }
 
-function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric }: {
+function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, dragMode = false, isDragOver = false, onPointerDownRow, onPointerMoveRow, onPointerUpRow }: {
   dayKey: string; session: EffectiveSession | undefined; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
   completion?: Completion; isMovable: boolean; isMoving: boolean
   isMoveTarget: boolean; isSwapTarget: boolean
@@ -756,6 +915,12 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   onTap: () => void; onMoveIconTap: () => void
   units: DistanceUnits
   metric: SessionMetric
+  /** MOVE-PROTOTYPE-01 — drag prototype only; all default off. */
+  dragMode?: boolean
+  isDragOver?: boolean
+  onPointerDownRow?: (e: React.PointerEvent) => void
+  onPointerMoveRow?: (e: React.PointerEvent) => void
+  onPointerUpRow?: (e: React.PointerEvent) => void
 }) {
   const isComplete = completion?.status === 'complete'
   const isSkipped  = completion?.status === 'skipped'
@@ -770,13 +935,26 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   return (
     <div
       onClick={onTap}
+      // MOVE-PROTOTYPE-01 — `data-daykey` is what the drag hit-test reads. The
+      // target is found with `elementFromPoint`, not by arithmetic on row
+      // heights: rest rows are SHORTER than session rows, so computed offsets
+      // would be wrong on exactly the empty slots a move aims at most.
+      data-daykey={dayKey}
+      onPointerDown={dragMode ? onPointerDownRow : undefined}
+      onPointerMove={dragMode ? onPointerMoveRow : undefined}
+      onPointerUp={dragMode ? onPointerUpRow : undefined}
+      onPointerCancel={dragMode ? onPointerUpRow : undefined}
       style={{
+        // Only suppress the browser's own gesture while a drag is actually in
+        // flight. Setting it up front would kill scrolling on the whole list,
+        // which is the objection this prototype exists to test, not to dodge.
+        touchAction: dragMode && isMoving ? 'none' : undefined,
         display: 'flex', alignItems: 'center',
         padding: isRestType && !isTarget ? '6px 14px' : '10px 14px',
         borderBottom: isLast ? 'none' : '1px solid var(--line)',
         background: isMoving
           ? 'var(--moss-soft)'
-          : isTarget
+          : isDragOver || isTarget
           ? 'var(--moss-soft)'
           : 'transparent',
         cursor: (hasSession || isTarget) ? 'pointer' : 'default',

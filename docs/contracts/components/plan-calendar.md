@@ -24,8 +24,25 @@ interface Props {
   units?: DistanceUnits                             // 'km' | 'mi' — INV-PREF-001
   preferredMetric?: SessionMetric                   // distance vs duration (ADR-015)
   sessionMetricOverrides?: SessionMetricOverrides   // per-session metric override
+  moveMode?: 'tap' | 'drag'                        // MOVE-PROTOTYPE-01; defaults 'tap'
+  onMoveTelemetry?: (e: MoveAttempt) => void       // prototype instrumentation only
 }
 ```
+
+**`moveMode` — MOVE-PROTOTYPE-01 (2026-09-22), the Design Board's requested prototype.**
+`'tap'` is what ships and what the 2026-06-26 incident hardened: tap the `↕` handle, tap a
+day, confirm on an inline row. `'drag'` is long-press to pick up, drag, release.
+
+⚠️ **BOTH STAGE INTO THE SAME `pendingMove` AND THE SAME CONFIRMATION ROW, and that is a
+contract, not an implementation detail.** A drop is a commit gesture, and *"the runner did
+not realise the thing he did was a move"* **is** the 2026-06-26 root cause — so a drag mode
+that wrote on release would re-open it. The prop varies the acquire-and-place gesture and
+nothing else. **Defaults to `'tap'`; the Plan screen passes neither prop**, and
+`lib/marketing/movePrototype.test.ts` fails if either default flips or if the drop path
+reaches `onMove`/`onSwap` directly.
+
+`onMoveTelemetry` fires once per completed or abandoned attempt and exists only for
+`/move-preview`. It is never wired in the app.
 
 **Units (INV-PREF-001).** Every distance this component renders resolves through
 `lib/format.ts` with `units` — the prescribed session distance, the week header

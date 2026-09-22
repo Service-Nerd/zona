@@ -6,6 +6,43 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — MOVE-PROTOTYPE-01 · I built the instrument wrong in my own favour
+**Shipped:** `/move-preview` — both move gestures on a real week, instrumented, so the
+Design Board can settle the one thing it could not.
+
+**Dev learning:** The board's two options were not two options. It recorded "the founder
+wants hold-and-drag; Wroblewski's counter is tap the session, tap the day" — and the second
+one is what has shipped for months. Nobody in the sitting checked, including me. That is not
+a small correction: it turns "pick a design" into "is drag worth replacing a flow an
+incident hardened", which is a much higher bar and a different conversation.
+
+**Product/creator learning:** The safety had to be held constant or the prototype would lie.
+A drop is a commit gesture, and "the runner did not realise the thing he did was a move" is
+the literal root cause of the 2026-06-26 incident that produced the confirmation row. If I
+had let drag write on release it would have come out faster, and it would have been faster
+because it was less safe. So both gestures stage into the same confirmation row and only the
+pick-up-and-place varies.
+
+**AI-building learning:** I built the measuring instrument biased toward the thing I had
+just built. The attempt clock started when the long-press armed, not when the finger landed
+— so a 450ms hold plus a move reported 162ms, while the tap flow was timed from first touch.
+Drag was getting a 350ms head start on the exact cost it is being judged on. I only caught
+it because the number looked too good and I had the hold duration in front of me. A biased
+instrument does not produce a weak ruling; it produces a confident wrong one.
+
+**The honest bit:** One of my thirteen gates was hollow, and the falsification caught it
+rather than my reading of it. `moveMode = 'tap'` appears twice — once on the component, once
+on the inner card — so flipping the outer default to 'drag' left an unbounded `toMatch`
+perfectly green. That is the fifth time in this repo's record that grepping a whole file
+instead of bounding a region produced a check with nothing behind it, and the second time
+today. I also had a falsification silently fail on a shell quoting error and report green,
+which is why every mutation now prints whether it applied before the test runs.
+
+**Hook material:** My prototype told me the drag gesture took 162ms. I had held the button
+down for 450.
+
+**Postable?:** yes
+
 ## 2026-09-22 — APP-REVIEW-W4 · the ruling that correctly built nothing
 **Shipped:** Coach's load ratio became a shape, Session Detail leads with the set rather
 than the reason for it, and two of Me's sections now describe their own contents.

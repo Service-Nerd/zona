@@ -8552,7 +8552,12 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           then everything that explains them. "Change your plan" is kept FIRST
           of the blocks below so the screen's one action is the next thing
           after the calendar rather than the last thing on the page. ══════ */}
-      {/* ── PLAN CALENDAR (existing component, keeps drag-reorder, tap-to-open) ── */}
+      {/* ── PLAN CALENDAR ────────────────────────────────────────────────
+           ⚠️ This comment used to say "keeps drag-reorder". There has never
+           been any drag code in the component — no pointer handlers, no
+           `draggable`, nothing. The claim was false for as long as it existed
+           and was found while building MOVE-PROTOTYPE-01, which is the first
+           drag this component has ever had (and is off by default). ── */}
       <div style={{ paddingTop: '12px' }}>
         <PlanCalendar
           weeks={plan.weeks}
