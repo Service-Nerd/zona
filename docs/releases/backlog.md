@@ -1,5 +1,32 @@
 # Backlog — Zonna
 
+## ⚖️ FILING RULE — every item names its board (standing, 2026-09-22)
+
+**From now on, every item that enters this backlog carries a board tag.** No exceptions,
+including items that need no board.
+
+| Tag | Means | Authority |
+|---|---|---|
+| 🏃 **COACHING BOARD** | Changes what the engine prescribes, or makes a claim about outcomes or physiology **on any surface, including marketing** | ADR-017 |
+| 🧭 **DESIGN BOARD** | Changes what the runner sees or does: layout, hierarchy, type, colour, motion, interaction, screen jobs, states, or a new screen / shared component / marketing section | ADR-023 |
+| 💼 **SLT** | FREE/PAID line, pricing, build cost, roadmap order | — |
+| 👤 **FOUNDER** | Locked brand strings, voice and tone, positioning, anything carrying the personal brand or a partner's name | `brand.md` |
+| ⚙️ **NO BOARD** | Defect fix restoring documented intent, refactor with no behavioural or visible delta, tooling, infrastructure | — |
+
+**An item may carry more than one.** When it does, name the order: which board rules
+first, and on what. The seam rule decides most of them:
+
+> **Design owns the encoding. Coaching owns the meaning. The SLT owns the price.**
+
+Full scope table: `docs/canonical/ownership-map.md` — the single owner of the ownership
+question. Do not reason from the summary above when the map is one click away.
+
+⚠️ **Tag it when you FILE it, not when you pick it up.** The tag is cheap while the item
+is being written and expensive later, when the person reading it is mid-build and has
+already decided what it is.
+
+---
+
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
 ### 1. Where things stand
@@ -261,6 +288,363 @@ existing phone". Those were real design decisions taken by default and never put
 the same failure as inventing a constraint, in the other direction. Tracked as `DESIGN-V3-FIDELITY`.
 
 ⚠️ **Not deployed.** Awaiting the founder's review of the screenshots.
+
+## ⚖️ RULED 2026-09-22 — Coaching Board: the race is not training volume
+
+### 🏃 `RACE-WEEK-VOLUME-01` — RULED **CORRECT WITH AMENDMENT**, not built
+**Board: 🏃 COACHING BOARD (ruled)** → build. **Surface: app AND website.** **Tier: FREE.** **Size: M.**
+**Found by the founder** in the wizard plan preview: *"it looks like it's got the highest volume which doesn't seem right… it looks higher than peak."*
+
+**The ruling: the race does not count as training volume.** `sumWeeklyKm` excludes
+`type === 'race'`, on the same ground §77 already uses to exclude the race from
+`days_cannot_train` — `ruleEngine.ts:2733` already says it in the code's own words:
+*"the race is an external fixed event, not a training session."* Nobody followed the
+sentence through to volume.
+
+**Measured — 8,510 plans** (4 distances × 6 lengths × 10 volumes × 3 levels × 2 goals ×
+3 day-counts × injury):
+
+| | |
+|---|---|
+| Taper phase peak > peak phase peak | **15.3%** |
+| Race week is the plan's biggest week | **16.3%** |
+| 🔴 **Marathon** | **50%** (1,020/2,030) |
+| Half 13% · 10K 0.3% · **5K 0%** | |
+| Beginner **22%** · Intermediate 14% · Experienced 9% | |
+| 🔴 **Injury history 20% vs healthy 10%** | |
+| Worst case | **12 km/wk beginner: peak training week 25 km, race week 59 km** |
+
+⚠️ **Excluding the race session, no taper anywhere exceeds its peak phase. The race is
+the entire cause.** And 0/9 published plans show it — they are all high-volume, which is
+why it never surfaced in the marketing pages.
+
+**Why it matters (McMillan):** the beginner opens the plan preview and sees
+**Base 25 · Build 38 · Peak 41 · Taper 47**. That teaches them the taper is the hardest
+block, which is the single most commonly misunderstood idea in amateur running. **The
+screen argues for the mistake**, hardest at the beginner and injured cohorts — i.e. the
+charity cohort arriving in October.
+
+**Three binding amendments:**
+1. **Separated, not hidden** *(Sims)* — race week reads *"42.2 km race + 5 km shakeouts"*,
+   never one folded number. **A subtraction, not a re-label.**
+2. **Plan totals too** — *"540 km in total"* currently includes the race.
+3. **Display and totals only.** ⚠️ **No prescription changes.** Nothing placed in race
+   week moves, so no cohort shifts.
+
+**Three artifacts:**
+1. **Principle — new §121, "The race is the test, not the training."** ⚠️ The
+   constitution has **125 sections and none defines what `weekly_km` includes**. That
+   absence is the defect.
+2. **Numeric** — none. An exclusion in `sumWeeklyKm` beside `strength` and `rest`.
+3. **Invariant — `INV-PLAN-RACE-NOT-VOLUME`**: no taper week's `weekly_km` exceeds the
+   peak phase maximum. **Falsify by re-including the race and watching 15.3% go red.**
+
+⚠️ **`verify:parity` will report ~16% of plans changed. That is the ruling, not a
+regression.** `cohort:shape` re-baselined with the reason stated.
+
+🔴 **DO NOT SELL THIS AS A SAFETY FIX** *(Willy, binding)*. It is an **honesty** fix.
+A 12 km/wk runner racing 42.2 km is at 1.7× their largest ever week, and removing the
+race from a total does not reduce that by one gram — **it makes it visible.** The
+readiness question is §114's and is filed separately below.
+
+---
+
+### 🏃 `MARATHON-READINESS-GAP-01` — filed, not ruled
+**Board: 🏃 COACHING BOARD.** **Surface: engine.** **Size: TBD.**
+Split off from the above so a display fix could not silently close it. **A beginner
+whose largest training week is 25 km is being sent to race 42.2 km.** Seiler and
+McMillan both raised it; Willy insisted it be separable. §114 territory
+(`S114-GET-YOU-ROUND-01`). **Nothing about this is fixed by RACE-WEEK-VOLUME-01.**
+
+### 🏃 `RACE-WEEK-SHAKEOUT-VOLUME-01` — unverified, do not act on
+**Board: 🏃 COACHING BOARD.** **Size: S.**
+McMillan flagged that the worst-case sweep showed a 59 km race week against a 42.2 km
+race — **16.8 km of shakeouts**, which no coach would prescribe against §30's cap.
+⚠️ **This may be an artefact of the sweep's inputs rather than real.** Reproduce against
+a single named input before treating it as a defect.
+
+---
+
+## 🧭 FILED DURING SITE-WAVE-1a-ii — for wave 1b to rule on
+
+Found by measuring, not by reading. Both preserved exactly in 1a-ii (zero visual
+delta is that wave's whole contract) and flagged in the code where they live.
+
+### 🧭 `SITE-GROUND-ABOUT-01` — `/about` spends `--bg-soft` as a page ground
+**Board: 🧭 DESIGN BOARD.** **Surface: website.** **Size: S.**
+`/about`'s middle section is a full-bleed band in `--bg-soft` with hairline borders top
+and bottom. ⚠️ **`brand.md` says in those words that "inset is not a page ground"** — it is
+the containment surface `ProductStill` frames with. A warm band alternating against `--bg`
+is precisely what **W-08 killed on the homepage**, living on `/about` because nobody
+looked. **Not changed in 1a-ii.** Wave 1b either ratifies it as a legitimate exception or
+moves it to the ruled three grounds.
+
+### 🧭 `SITE-MEASURE-THIRD-01` — a third content measure exists
+**Board: 🧭 DESIGN BOARD.** **Surface: website.** **Size: S.**
+The tokens are `--measure-page: 1100px` and `--measure-read: 720px`. `/about` uses a
+hardcoded **760px** (`SECTION_MAX`), `/guides` uses **560px**, `/plans` uses **620px**.
+⚠️ **This is the corrected version of sitting one's "six different max-widths" finding** —
+several of the six were legitimate inner columns, but these three are *section* measures
+that bypass the token. Preserved in 1a-ii; 1b decides whether they collapse to `--measure-read`.
+
+---
+
+## 📍 WHERE WE ARE — end of 2026-09-22 morning, before any website build
+
+**Nothing is built. Nothing is committed.** 21 uncommitted paths: the Design Board's
+constitution, the ownership map, both board rulings, and the audit.
+
+### Done
+| | |
+|---|---|
+| ✅ **Design Board established** | ADR-023 · 5 seats · hook-enforced on both tool paths · `design-rulings.md` register |
+| ✅ **Ownership ratified** | `ownership-map.md` is the single owner. Seam rule: **design owns the encoding, coaching owns the meaning, the SLT owns the price** |
+| ✅ **Restraint rules transferred** | `brand.md` → `ux-principles.md` (Design Board). Three divergences repaired, incl. `CLAUDE.md` banning modals outright |
+| ✅ **SLT recomposed** | Zhuo in (design chair, dual hat), Traynor stood down and recallable |
+| ✅ **Website audit** | `docs/investigations/website-audit-2026-09-22.md` — measured, plus founder device pass |
+| ✅ **Design Board sitting one** | The waves — `SITE-WAVE-1/2/3` below |
+| ✅ **Design Board sitting two** | The story and the wow moments — below |
+| ✅ **Coaching Board** | `RACE-WEEK-VOLUME-01` ruled |
+| ✅ **INV-DESIGN-002 gated** | `ship-record-check.py` now fires on design doctrine edited without a register row. Falsified both directions, 11 cases |
+
+⚠️ **Sitting two was run OUT OF SEQUENCE** (before wave 1a, which was the agreed order).
+**The outcome is unaffected** — wave 1a is plumbing and changes nothing sitting two ruled
+on. Recorded rather than quietly reordered.
+
+### The order from here
+1. **Wave 1a** — six plumbing items. Not started.
+2. **Wave 1b + Wave 2** — built against sitting two's **six-section** arc, not the current nine.
+3. **Founder device pass** on the result.
+4. **Wave 3** — the palette question becomes live or dead.
+
+---
+
+## 🧭 RULED 2026-09-22 — Design Board sitting two: the story and the wow moments
+
+**Ruling: SHIP WITH AMENDMENT.** Full sitting: `docs/investigations/website-audit-2026-09-22.md`.
+**Board: 🧭 DESIGN BOARD (ruled — build).** **Surface: website.** **Tier: n-a.** **Size: L.**
+
+### The diagnosis
+🔴 **The page front-loads mechanism and back-loads proof.** Hero makes a claim, then
+**three consecutive feature sections** (screens 2.6 → 5.4) explain how the product works,
+and only at **52%** does the page show the claim is true. The founder stopped at **screen
+2.5** — his exit and the gap coincide.
+
+### The five wow moments, and where they go
+| # | Moment | Now | Ruled |
+|---|---|---|---|
+| 1 | Hero evidence card | screen 1 ✅ | **unchanged** (SITE-HERO-01 settled) |
+| 2 | The grey-zone trap | screen 2, as a table | **screen 2, rendered as a CHAIN** — it is a causal chain drawn as three parallel cards; the form contradicts the content |
+| 3 | **One week, run two ways** | **screen 5.4** 🔴 | **→ screen 3.** The only section that makes the reader *better*; a competitor structurally cannot print it |
+| 4 | **Plan-shape strip** *(NEW)* | not on the site | **→ screen 5.** Twenty weeks drawn as one blue/amber/red/green strip. ⚠️ **Needs no palette ruling** — it is the app being *shown* via the established `ProductStill` pattern |
+| 5 | Probably not for you if… | screen 7.1 | **→ screen 6**, and **the white band moves with it** |
+| — | Dark close | screen 9.3 ✅ | **unchanged** — W-09 binding |
+
+### The arc
+**hook → recognition → proof → mechanism → object → refusal → plans → close.**
+**Proof precedes mechanism.** That one sentence is the ruling; everything else follows.
+
+### Cuts and merges — nine content sections become six
+- 🔴 **"Three things, done with restraint" — CUT.** A feature list between the hook and
+  the proof. Content survives inside the mechanism section.
+- 🔴 **"What's not in the app" — MERGED** into "Probably not for you if…". One move
+  (refusal) done twice makes both weaker.
+- **"Your plan starts from your answers" + "Then you run it" — MERGED** into one
+  mechanism section, placed *after* the proof.
+
+⚠️ **Copy is NOT reopened.** Section order, existence and weight are this board's.
+**Wording is `brand.md`'s** and no string is rewritten by this ruling.
+
+### ⚡ Recorded disagreement — Sierra vs Collins on screen 3
+**Sierra:** the proof section, because it is the only one that teaches.
+**Collins:** the plan-shape strip, because it is the only one that stops a thumb.
+**Chair: Sierra takes screen 3** — belief must precede desire; the strip presupposes you
+already want a plan. **Collins takes screen 5.** Recorded because a later sitting may find
+the order wrong, and both arguments should still be available.
+
+### ⛔ Veto check
+**None.** Silvanto confirms the plan-shape strip renders the app's existing session colours
+inside an established pattern — **the app being shown, not the site being recoloured.** He
+states he would veto immediately if it arrived as loose colour on page furniture.
+
+### 📦 Artifacts
+1. **Pattern** — `ui-patterns.md` § Homepage arc (the six-section order + *proof precedes
+   mechanism*), and § Section grounds amended: the white band follows the refusal section.
+2. **Token/constant** — none new.
+3. **Check** — extend `sectionSurfaces.test.ts`: the proof section's index is below the
+   mechanism section's. **Falsify by swapping them.**
+
+### ⚠️ What sitting two did NOT settle
+**Whether six sections is still too many.** Sierra's standard — *does the reader leave able
+to do something they could not before?* — is passed by **one** section even after the cuts.
+The board reduced the page; it did not prove six is right. **And nothing has been seen on a
+device.**
+
+---
+
+## 🧭 RULED 2026-09-22 — Design Board sitting one: the website as a collection
+
+**Ruling: SHIP WITH AMENDMENT, in three sequenced waves.** Full sitting record and all
+five seats: `docs/investigations/website-audit-2026-09-22.md`.
+**Surface: website (with app knock-on in wave 3).** **Tier: n-a (marketing).**
+
+**The finding that governs the order:** the founder's device pass and the measurement
+agree exactly. He disengaged *"after I got past the screenshots"* — screen ~2 of **14.8**.
+The first background change is at **screen 10.6 (72% of the page)**. He left in the gap.
+
+🔴 **And it is not a ruling that needs overturning.** W-08 banned *alternating* bands but
+kept one white spotlight and one dark close. **There are ZERO `surface=` props in the
+codebase.** The three-ground system was ruled, built, and never used.
+
+### 🧭 `SITE-WAVE-1` — implement what was already ruled. No new decisions.
+**Board: 🧭 DESIGN BOARD (ruled — build).** **Size: L.** **Do this first.**
+
+1. **Adopt `<Section>` across all 11 surfaces.** Today it is used by **1 of 11** — the
+   homepage. Every other page hand-rolls sections, rhythm and padding, which is why they
+   *cannot* look consistent: they do not share the mechanism.
+2. **Reconcile the three grounds.** ⚠️ `ui-patterns.md` documents `--bg` / **`--card`
+   white** / `--ground`; `Section.tsx` implements `--bg` / **`--bg-soft`** / `--ground`;
+   `sectionSurfaces.test.ts` forbids `inset` on the homepage. **Three documents, three
+   different systems.** Add the `card` surface the documentation already specifies.
+3. **Spend the grounds** — the ruled spotlight and close, plus ground changes inside the
+   first 10.6 screens.
+4. **One content measure.** The homepage alone uses **six** different max-widths.
+5. **Give the nine H2s a hierarchy.** Nine `<h2>` at identical 26px is a list, not a
+   hierarchy. H3 also renders at two sizes (21px and 16px) for one semantic level.
+6. **Kill the QR code** (founder instruction). `app/page.tsx:257`, one render site;
+   `lib/marketing/appStoreQr.test.ts` comes out with it.
+7. **Move the Apple Watch caveat below the proof card.** The hero currently asks for
+   three text blocks *and a hardware requirement* before the proof.
+8. **Footer column labels are `<h2>` at 11px** — four of them, polluting the document
+   outline for crawlers and heading-navigation users.
+
+### 🧭 `SITE-WAVE-2` — the conversion defect
+**Board: 🧭 DESIGN BOARD (ruled — build).** **Size: M.** **After wave 1.**
+
+🔴 **A 13.3-phone-screen gap with no way to download.** CTAs sit at screens 0.1, 0.6 …
+then nothing until 13.9. **The most persuasive section on the site — "One week, run two
+ways" — is at 53%, and there is nothing to tap there.**
+
+- A contextual CTA at the proof moment.
+- In-body asks on **`/guides` and `/comparisons`** — the SEO acquisition hubs, which
+  today have **zero** in-body download asks (header/footer only). Per the founder's
+  ruling that guides and plans are the traffic channel and the app is the conversion,
+  **the pages built to catch traffic are the ones not converting it.**
+- ⚠️ **Constrained by standing ruling: NEVER adjacent to a price.**
+
+### 🧭 `SITE-WAVE-3` — INSUFFICIENT EVIDENCE. Do not start.
+**Board: 🧭 DESIGN BOARD (ruled — blocked on wave 1).** → **🏃 COACHING BOARD if opened.**
+
+**Collins' question: should the site adopt the app's session-colour language?**
+
+🔴 **Measured, and nobody had this:** the **app** uses six session colours and four phase
+colours — the plan-shape strip is blue/amber/red/green, cards carry coloured rails. The
+**website's own language is `--mute`, `--ink`, `--line`, `--card`, `--bg` and one green.**
+Session colours appear in exactly two marketing files, `PhoneFrame` and `PlanPage` —
+i.e. **only where the app is being shown.** *The product is more colourful than the page
+selling it.*
+
+**What settles it:** ship wave 1, founder looks again. **If it still reads flat with the
+grounds spent, Collins is right and the palette question is live. If it does not, the
+question was never about colour.**
+
+⚠️ **The palette is open by founder ruling (2026-09-22), including `--moss` and
+`--warn`.** If wave 3 opens, the seam rule applies: **Design Board rules the hue, the
+Coaching Board rules the meaning** of the semantic pair, and the change lands in the app.
+
+### ⚡ Recorded disagreement — Silvanto vs Collins, unresolved by design
+**Silvanto:** the flatness is caused by not implementing the three grounds already
+ruled. Fix that, look, and the problem may be gone. **Collins:** one white band and one
+black band is two moments in 14.8 screens, and it does not answer why the site ignores
+the product's own six-colour system. **Both hold** — they answer different questions
+(*is the ruled design implemented?* no; *is it sufficient?* unknown). The wave order
+resolves the sequence without either conceding.
+
+### ⚠️ What sitting one did NOT settle
+**Whether the page's STORY is right.** Sierra's argument — that most of the nine sections
+should not exist at full weight, and that the one section which makes a reader *better*
+sits at 53% — is a **content** ruling, not a ground-colour one. **Wave 1 makes the page
+legible; it does not make it an argument. That is sitting two, and it is the more
+important one.**
+
+---
+
+## 🧭 PARKED 2026-09-22 — the Design Board's opening agenda
+
+Three items, all **APP** (the website has nothing on this list). Parked by the founder
+rather than sat on, so the board convenes against a real queue when it does.
+
+⚠️ **Two of five seats run at half power until something has been seen on a device.**
+Silvanto's craft-and-legibility lens and Wroblewski's one-handed-phone lens both need an
+artefact that does not exist: nothing built on 2026-09-21 has run on a device. They can
+rule on structure; they cannot honestly rule on how anything feels. That is a constraint
+on the sitting, not a reason to delay it.
+
+---
+
+### 🧭 `DESIGN-CD1-TAXONOMY-01` — do five session names resolve to one pace?
+**Board: 🧭 DESIGN BOARD** (leads) → **🏃 COACHING BOARD** (for the prescription half)
+**Seat: Collins** — his first assignment, founder-set. **Surface: app**, with a website
+spillover. **Tier: FREE.**
+
+CD-1 (`docs/decisions/coaching-register-2026-08.md`) is recorded as the highest
+blast-radius item in the coaching register: five differently-named quality sessions —
+*Continuous tempo, Cruise intervals, HM-pace intervals, Progressive tempo, Goal-pace
+sharpener* — prescribed at the same pace and heart rate. *"The names change; the effort
+does not."*
+
+**It splits, and the split is why it is filed here:**
+
+| Half | Question | Board |
+|---|---|---|
+| **Presentation** | Does the product show the runner distinctions the engine does not make? If five names resolve to one prescription, the taxonomy is decoration. CD-1 **option (a)** | 🧭 **Design Board** |
+| **Prescription** | Should the engine produce genuinely different intensities per session type? CD-1 **options (b) / (c)** | 🏃 **Coaching Board** |
+
+⚠️ **The premise has MOVED and the 2026-08 text alone would manufacture a phantom
+finding.** The 2026-08-19 catalogue audit found *"three distinct quality intensities, not
+one"* for a time-goal 10K and concluded CD-1 is **conditional on goal type and distance**:
+the same defect is present or absent depending on who the runner is. CD-2's half is
+already ruled — **§120**, *"race pace means the pace of the race you are training for."*
+
+🔬 **Open with a measurement, not an opinion.** Across the nine published plans: how many
+distinct prescribed paces do the differently-named quality sessions actually resolve to,
+per distance and per goal type? Take the number before any seat speaks.
+
+⚠️ **Website spillover:** the same session names render on the nine published plan pages,
+so a ruling to rename or collapse them changes two surfaces, not one.
+
+---
+
+### 🧭 `DESIGN-EMPTYSTATE-ART-01` — ratify the "no illustration" that was never ruled
+**Board: 🧭 DESIGN BOARD.** **Surface: app.** **Tier: FREE.** **Size: S.**
+
+Recorded in `docs/decisions/2026-09-20-p13c-p11-illustration-research.md` as
+**recommended against and never put to a board** — and explicitly, in that note's own
+words, *"a taste call made against the documented rule"*, made by the assistant alone.
+
+The recommendation: empty states carry **no** illustration — not commissioned, not a free
+pack (unDraw, Open Peeps, Humaaans, Storyset all exist and are licence-clean). The
+argument is that decoration in an empty state contradicts a product whose whole case is
+the absence of decoration, and *"Miles having one is not evidence we need one."*
+
+**It is either doctrine or it is one person's taste. The board decides which.** If it
+stands, it lands as a register row and may not be re-proposed without new evidence.
+
+---
+
+### 🧭 `DESIGN-LAUNCH-SCREEN-01` — ratify the "close P-11" that was never ruled
+**Board: 🧭 DESIGN BOARD.** **Surface: app.** **Tier: FREE.** **Size: S.**
+
+Same note, same status: **recommended close, never ruled.** P-11 proposed a launch screen
+with stock running footage. The recommendation was to close it — *"a launch screen with
+stock running footage is the single most generic thing a running app can do"*, and there
+is no launch-screen problem to solve: the Capacitor splash holds and hands off to the web
+mount.
+
+Not blocked on budget and not a licensing question. ⚠️ **§6's non-identifiable rule would
+still apply to anyone in frame** if it were ever revived.
+
+---
 
 ### 🟡 `CHECK-SLOW-NOISE-01` — the duration gate cries wolf under machine load
 

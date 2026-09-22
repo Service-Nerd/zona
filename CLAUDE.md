@@ -193,13 +193,17 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 
 ## UI Principles
 
-- One job per screen
-- Calm guidance, not alerts
-- Restraint feels like progress
-- No dashboards or noise
-- No popups — all interactions navigate to full screens
+> ⚖️ **The restraint rules are owned by `docs/canonical/ux-principles.md` § Screen Design Principles** (Design Board, ADR-023; transferred from `brand.md` 2026-09-22). **Read them there.** The summary below is a pointer, not the rule — and it is deliberately short, because the long version living here in parallel is what caused the defect noted below.
+>
+> 🔴 **This section previously stated "No popups — all interactions navigate to full screens" with no exception, while `brand.md` and `ux-principles.md` both carried "modal overlays only for destructive confirmations (delete, disconnect); never for information."** Read alone, `CLAUDE.md` banned modals outright. That divergence is why ownership was consolidated.
+
+- One job per screen · no dashboards, no noise
+- Calm guidance, not alerts — the user decides when to act
+- Restraint = progress — whitespace, brevity and silence are features; **empty means calm, not broken**
+- **No popups** — all interactions navigate to full screens. **Modals only for destructive confirmations (delete, disconnect), never for information**
 - Back arrow always top-left
 - Slide-up sheets: mirrored nav bar at bottom, not top
+- **No red in the training UI** — amber for warnings, coral for high intensity; `--danger` for form/error states only
 - Single light theme — no dark mode, no theme toggle
 - **AI provenance is visible** — model-generated content carries the `<AIMark />` glyph (sparkle + accent dot). Working state pulses while AI is in flight; replaces spinners. Apply only to actual model output; never to rule-engine, hand-authored copy, or Strava data. See `ui-patterns.md` § AIMark.
 
@@ -273,7 +277,9 @@ All colour MUST come from CSS custom properties in `globals.css`. Nothing hardco
 
 ### Claude Code Hooks (`.claude/settings.json`, committed)
 Hooks are versioned in `.claude/settings.json` (project behaviour, git-tracked) — **not** `settings.local.json` (machine-local permission grants, gitignored). Scripts live in `.claude/hooks/`.
-- **PreToolUse coaching guard** (`coaching-guard.py`): fires on `Edit|Write|MultiEdit|NotebookEdit` **and on `Bash`** against any **coaching-doctrine file** (`CoachingPrinciples.md`, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, `sessionFormat.ts`) and requires a `/coaching-board` review or a stated exemption before the edit proceeds (ADR-017, INV-COACH-001). Advisory by default; flip `HARD_BLOCK = True` in the script to deny outright. Deliberately does **not** match `ruleEngine.ts` / `lib/coaching/*` — those carry ordinary bug fixes, and a hook that fires on every one of them gets disabled, which is the same as having no hook. **Bash coverage added 2026-09-13, and the gap it closed is worth stating:** for a year this hook matched only the dedicated file tools, so every doctrine edit made through Bash — `sed -i`, a `python3 - <<'PY'` heredoc, `cat > file` — passed with no guard, no prompt and no trace. The claim above that convening is automatic was **false for that path**, which is the path a session told to prefer Bash for file edits uses for everything. For Bash the guard reads `command`, not `file_path`, and a doctrine path in the command is necessary but **not sufficient**: the command must also carry a write signal (redirect *target*, `sed -i`, `tee`, `cp`/`mv` destination, or an interpreter plus a write-mode token). Reads win ties on purpose — `sed -n '1,40p'` and `grep` on a doctrine file are dozens-of-times-a-session operations, and a guard that fires on those gets switched off, which this repo has already recorded as equivalent to having no guard. Tests: `python3 .claude/hooks/coaching-guard.test.py` — 50 cases, both directions, including `grep DOC > /tmp/out` (reads doctrine, writes elsewhere → silent) and `cp DOC /tmp/backup` (copies FROM → silent).
+- **PreToolUse coaching guard** (`coaching-guard.py`): fires on `Edit|Write|MultiEdit|NotebookEdit` **and on `Bash`** against any **coaching-doctrine file** (`CoachingPrinciples.md`, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, `sessionFormat.ts`, **`sessionCatalogueData.ts`**) and requires a `/coaching-board` review or a stated exemption before the edit proceeds (ADR-017, INV-COACH-001). Advisory by default; flip `HARD_BLOCK = True` in the script to deny outright. Deliberately does **not** match `ruleEngine.ts` / `lib/coaching/*` — those carry ordinary bug fixes, and a hook that fires on every one of them gets disabled, which is the same as having no hook. **Bash coverage added 2026-09-13, and the gap it closed is worth stating:** for a year this hook matched only the dedicated file tools, so every doctrine edit made through Bash — `sed -i`, a `python3 - <<'PY'` heredoc, `cat > file` — passed with no guard, no prompt and no trace. The claim above that convening is automatic was **false for that path**, which is the path a session told to prefer Bash for file edits uses for everything. For Bash the guard reads `command`, not `file_path`, and a doctrine path in the command is necessary but **not sufficient**: the command must also carry a write signal (redirect *target*, `sed -i`, `tee`, `cp`/`mv` destination, or an interpreter plus a write-mode token). Reads win ties on purpose — `sed -n '1,40p'` and `grep` on a doctrine file are dozens-of-times-a-session operations, and a guard that fires on those gets switched off, which this repo has already recorded as equivalent to having no guard. Tests: `python3 .claude/hooks/coaching-guard.test.py` — 50 cases, both directions, including `grep DOC > /tmp/out` (reads doctrine, writes elsewhere → silent) and `cp DOC /tmp/backup` (copies FROM → silent).
+- **UserPromptSubmit build trigger** (`build-trigger.py`): loads the `build` skill when a prompt asks for a build. **The only hook that fires before a decision** — every other one is reactive (edit-time guards, commit-time record checks), which is why analysis never had a home. ⚠️ **Noise is the whole design problem here:** matching the word "build" would fire on *"the build is green"*, *"build-log"* and *"rebuild"*, and a hook that fires on ordinary conversation gets switched off (NOISE-GATE-01, recorded twice). It matches **intent phrases** and carries a negative list checked first. Tests: `python3 .claude/hooks/build-trigger.test.py` — **29 cases**, including every build-adjacent phrase the founder actually used in the session that created it.
+- **PreToolUse design guard** (`design-guard.py`): the Design Board's equivalent of the coaching guard (ADR-023). Fires on `Edit|Write|MultiEdit|NotebookEdit` **and `Bash`** against `ui-patterns.md`, `ux-principles.md`, `screen-architecture.md`, `design-rulings.md` and `app/globals.css`, **and on a `Write` of any new `.tsx` under `components/` or `app/`** — there is no pattern for a surface that does not exist yet, so one is being authored whether or not anyone says so. Tests, fixtures and stories are excluded; an **Edit** to an existing component is the soft trigger and deliberately does not fire. ⚠️ **Both this guard and `coaching-guard.py` had a substring-bias defect, found within ten minutes of this one shipping and fixed in the same commit:** rules 2 and 4 grepped the **whole command** for a watched path, so writing `design-guard.test.py` — whose case table lists `CoachingPrinciples.md` as a must-NOT-fire path — tripped the coaching guard. Both now **strip heredoc bodies destined for another file** and **resolve the interpreter's actual write target** (`open(p,'w')` including one hop through a variable) instead of grepping, falling back to the old behaviour only when the target is unresolvable. Third time this repo has recorded the class: **bound the region, never grep the file.** Tests: `python3 .claude/hooks/design-guard.test.py` — 67 cases, both directions.
 - **PreToolUse safety guard** (`guard-bash.py`): blocks unrecoverable Bash before it runs — `git reset --hard`, `git clean -f`, force-push (allows `--force-with-lease`), `git stash drop/clear`, and `rm -rf` against root/home/repo-root/bare-wildcard. Everyday `rm -rf node_modules|.next|/tmp/*` passes. Edit the `RULES` list to tune.
 - **SessionStart context** (`session-start.sh`): injects date + recent commits + uncommitted count, and flags Supabase migration files not recorded in `.claude/state/applied-migrations.txt`. **After applying a new migration, append its basename to that ledger** or every session will warn. This exists to catch the silent-unapplied-migration outage class (avg_temp_c, calories_kcal). Also flags **uncommitted coaching-doctrine changes** — the same failure class as an unapplied migration: live but never reviewed.
 - **PostToolUse fix-test-check** (`fix-test-check.py`): on a `fix:`-subject commit that changed source but no test file, prompts for a regression test. This app's bugs are silent rather than crashing, so a test that fails-before/passes-after is the only durable defence — there's no symptom to notice next time. Advisory; exempts docs/migrations/tooling/native, and accepts "not unit-testable, here's what I verified instead". Pairs with the `zona-debug` skill's exit criteria.
@@ -377,14 +383,54 @@ The **Coaching Board** (`/coaching-board`) is the fourth layer. If `validatePlan
 | | Coaching Board | SLT (`/slt-review`) |
 |---|---|---|
 | Rules on | Is it coaching-**correct**? | Should we **build** it, for whom, at what tier? |
-| Seats | Hutchinson (chair), Seiler, McMillan, Willy, Sims | Sutherland, Fried, Hutchinson, Wood, Traynor |
+| Seats | Hutchinson (chair), Seiler, McMillan, Willy, Sims | Sutherland, Fried, Hutchinson *(coaching chair)*, Wood, Zhuo *(design chair)* |
 | Output | Principle § + config constant + `validatePlan()` invariant | Tier tag + build/don't-build |
 
 - **The board's INCORRECT ruling is a veto.** The SLT cannot overrule it commercially (INV-COACH-003). Hutchinson holds both seats and carries escalations up.
 - **Convening is automatic** — `.claude/hooks/coaching-guard.py` fires on any edit to a doctrine file. Do not rely on remembering.
-- **Doctrine files**: `CoachingPrinciples.md`, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, `sessionFormat.ts`.
+- **Doctrine files**: `CoachingPrinciples.md`, `session-catalogue.md`, `zone-rules.md`, `coaching-rules.md`, `generationConfig.ts`, `planSignatures.ts`, `sessionFormat.ts`, **`sessionCatalogueData.ts`**.
 - **Exempt** (state it in one line and proceed): defect fixes restoring documented intent, formatting, no-behaviour-delta refactors.
+- **Who owns what** → `docs/canonical/ownership-map.md` is the **single owner** of the ownership question for all three bodies plus the founder, and carries the ratified seam rule: **design owns the encoding, coaching owns the meaning, the SLT owns the price.** Do not restate ownership anywhere else.
 - **Zone-label trap**: Zonna's five-zone model is canonical — **Z2 is easy, Z3 is the grey zone**. Seiler's three-zone model calls the *moderate* band "Zone 2". Translate external reasoning on the way in (INV-COACH-004).
+
+### The Design Board — the same layer, for what the runner SEES (ADR-023)
+
+`ui-patterns.md`, the tokens in `globals.css`, and the markup tests are the pattern /
+token / check stack for design. They guarantee the product **honours what was decided**
+and, exactly like `validatePlan()`, they will enforce a dull screen with perfect fidelity.
+
+The **Design Board** (`/design-board`) is the body above them: **Julie Zhuo (chair),
+Miklu Silvanto, Kathy Sierra, Luke Wroblewski, Brian Collins.** It sits **below the SLT and above
+build**, and it owns UI and UX.
+
+| | Coaching Board | Design Board | SLT |
+|---|---|---|---|
+| Rules on | Is it coaching-**correct**? | Is it right for the **person using it**? | Should we **build** it, for whom, at what tier? |
+| Output | Principle § + config constant + invariant | Pattern + token/constant + mechanical check + register row | Tier tag + build/don't-build |
+| Register | `coaching-rulings.md` | `design-rulings.md` | decision notes |
+| Veto? | **Yes** — binds the SLT | **No** — SLT may overturn on cost, **and the overturn is recorded** | — |
+
+- **Read `docs/canonical/design-rulings.md` before any design work.** The settled-ground
+  scan is to this board what the conflict scan is to the Coaching Board, and it exists
+  because dead design decisions were measurably re-proposed: the v3 handoff asked for
+  three things already decided against, **two of them the same day**.
+- **Convening is automatic** — `.claude/hooks/design-guard.py`, on the file tools **and**
+  Bash. A **new screen, shared component or marketing section** is a hard trigger.
+- **Doctrine files**: `ui-patterns.md`, `ux-principles.md`, `screen-architecture.md`,
+  `design-rulings.md`, `app/globals.css`.
+- **Not the board's**: what the engine prescribes, and **any claim about outcomes or
+  physiology on any surface including marketing** (→ Coaching Board, per the W-03
+  precedent); tier, price, roadmap order (→ SLT); locked brand strings and voice
+  (→ `brand.md`).
+- **The escalation joint is sound.** Zhuo chairs this board **and holds an SLT seat**
+  (taken from Traynor, 2026-09-22) — the same dual-hat mechanism as Hutchinson's, which is
+  what makes ADR-017's escalation work. Zhuo carries design escalations up (ADR-023 §5).
+- **Who owns what** → `docs/canonical/ownership-map.md`. Ratified 2026-09-22: the board also owns `lib/format.ts` (ADR-015 display formatting), `promptDistanceFormatters`, AIMark provenance, and ADR-007/008 by amendment. ⚠️ **The six restraint rules in `brand.md` are PENDING a founder ruling and bind the board until then.**
+- ⚠️ **Rule on the measurement, not the impression.** Where a measurement exists the board
+  takes it and names the surface and the method. The website audit found **no type scale
+  at all** and an H1:H2 step of **1.02×**, neither visible by looking; in the same period a
+  capture artefact was read as a layout defect **and** a real defect was dismissed as a
+  capture artefact.
 
 ### Auth at the Route Boundary
 
@@ -521,9 +567,32 @@ Three docs run the work pipeline. Keep them in sync:
 | Doc | Job | When it changes |
 |---|---|---|
 | `docs/releases/roadmap.md` | **The unified plan.** Now / Next / Later × workstream (🏃 Product · 📣 GTM & Marketing · 🔁 Growth & Retention · ⚖️ Legal & Ops). One-liners + status + links. Start here for "what are we doing, in what order, across product *and* market?" | Horizon/status updated as items move; new workstream items added here + detailed in backlog |
-| `docs/releases/backlog.md` | **What's left to ship — the detail bench.** Full specs, scope notes, SLC framing behind each roadmap item. | Item added when scoped; item removed when shipped (moves to feature-registry) |
+| `docs/releases/backlog.md` | **What's left to ship — the detail bench.** Full specs, scope notes, SLC framing behind each roadmap item. ⚖️ **Every item carries a BOARD TAG** — see § Filing rule below. | Item added when scoped; item removed when shipped (moves to feature-registry) |
+| `docs/canonical/ownership-map.md` | **Who rules on what** — the single owner of the ownership question across the Coaching Board, Design Board, SLT and founder, plus the seam rule. Nothing else restates it. | When a board's scope changes, in the same commit as the ruling |
+| `docs/canonical/design-rulings.md` | **Every UI/UX decision already taken, and what may not be re-proposed.** The Design Board's mandatory settled-ground scan reads this before any seat speaks. | A row appended in the same commit as every Design Board ruling, including the DON'T SHIPs |
 | `docs/canonical/feature-registry.md` | **What's been built + tier assignments.** Single source of truth for "does this exist? is it free or paid?" | New entry appended to "Shipped Features" table when a backlog item ships |
 | `docs/build-log.md` | **What each ship taught.** Raw first-person learning notes (dev / product / AI-building / the honest bit), newest first. Not marketing — the weekly build-in-public content job adds the voice. | One entry appended to the top by `/ship`, every ship |
+
+### ⚖️ Filing rule — every backlog item names its board (standing, 2026-09-22)
+
+**Every item entering `backlog.md` carries a board tag, including items that need no board.**
+Tag it when you FILE it, not when you pick it up: the tag is cheap while the item is being
+written and expensive later, when the reader is mid-build and has already decided what it is.
+
+| Tag | Means |
+|---|---|
+| 🏃 **COACHING BOARD** | Changes what the engine prescribes, or makes a claim about outcomes or physiology **on any surface, including marketing** (the W-03 precedent) |
+| 🧭 **DESIGN BOARD** | Changes what the runner sees or does: layout, hierarchy, type, colour, motion, interaction, screen jobs, states, or a new screen / shared component / marketing section |
+| 💼 **SLT** | FREE/PAID line, pricing, build cost, roadmap order |
+| 👤 **FOUNDER** | Locked brand strings, voice and tone, positioning, anything carrying the personal brand or a partner's name |
+| ⚙️ **NO BOARD** | Defect fix restoring documented intent, refactor with no behavioural or visible delta, tooling, infrastructure |
+
+An item may carry more than one — then name the **order**: which board rules first, and on what.
+The seam rule settles most of them: **design owns the encoding, coaching owns the meaning, the SLT
+owns the price.** Full scope table: `docs/canonical/ownership-map.md`.
+
+⚠️ **This is a note, not a gate.** This repo's own record says a rule that holds only while someone
+remembers is not a rule — the filing rule has no mechanical check, unlike the two board guards.
 
 **The flow:** roadmap.md (plan) → backlog.md (spec) → ship → feature-registry.md (built) + build-log.md (learned). An open item lives in roadmap (as a line) + backlog (as detail); once shipped it lives only in feature-registry.
 
@@ -577,6 +646,7 @@ Three docs run the work pipeline. Keep them in sync:
   - ADR-016: date-aware plan resolution & send-gating — `getSessionForDate()` is the canonical "real session on calendar date D?" resolver (returns `null` before-start / after-end / gap / empty day); `isDateBeforePlan()` is the missing before-start guard. No scheduled send may fire without an active plan AND a real session for the target date (never fall back to `weeks[0]`). INV-TIME-001 *(2026-08-10)*
   - ADR-020: plan construction boundary — every week that reaches a runner is built and validated in one place. Foundation weeks used to be constructed a second time, ungoverned, in the browser (a D-08 duplicate-ownership violation) and prepended after `validatePlan()` had already run — two live defects shipped from weeks the validator couldn't see. `lib/plan/foundationCompose.ts → composePlanWithFoundation()` is now the single owner of `plan.weeks` mutation post-generation, called from `/api/generate-plan` (immediate) and `POST /api/generate-plan/foundation` (the deferred >28-day-gap decision, composes onto the existing plan without re-running generation or AI enrichment). `INV-PLAN-SINGLE-CONSTRUCTION` (architectural, not mechanically checked). *(2026-09-03)*
   - ADR-021: experience-gated quality onset — `computePhases` becomes **runner-aware** (the first per-runner phase-length decision). A demonstrably-ready runner (experienced intensity + intermediate+ structure + deep training age + `recent_quality_training: 'regular'` + NOT returning/fresh + **NO injury history**) gets a shorter still-all-easy base (base_pct 35→15, 2-week floor) so quality starts ~2 weeks sooner; §79 extended so intensity governs *timing*, not only hardness; zero injury-relevant tonnage (structural peak target unchanged). Beginners/returners/injured strictly unchanged. New FREE wizard input `recent_quality_training` (demonstrated tissue-readiness, not self-image). `INV-PLAN-EARLY-ONSET-GATED`. §89. *(2026-09-06)*
+  - ADR-023: design board authority model — a five-seat design board (Zhuo chairing, with Silvanto, Sierra, Wroblewski, Collins) rules on UI and UX as the layer between build and the SLT. **No veto over the SLT** (unlike coaching correctness), though Silvanto's seat holds a scoped veto *within* the board on palette or type regression against a documented rule: a ruling binds build, the SLT may overturn it on commercial grounds, and **the overturn is recorded** in `design-rulings.md` so a pattern of design losing to cost is visible. Convening is hook-enforced on both tool paths, and a **new screen, shared component or marketing section is a hard trigger** because there is no pattern for a thing that does not exist yet. Three artifacts per SHIP: pattern + token/constant + a mechanical check made to go red. INV-DESIGN-001…005 *(2026-09-22)*
   - ADR-022: delivered volume ceiling — the load rules (§2/§3/§12) were enforced on the internal volume CURVE, but the runner sees `sumWeeklyKm(placed sessions)`, which diverged above it (deload inversions 12.8%, injury bouncebacks ≥ pre-deload 18.8%). For injury (knee/shin) runners the delivered week now tracks the ceiling via three levers — deload re-anchored to 70% of the POST-CAP prior week, the injury peak week yields its 2nd quality to §12, easy runs trim while the §52 long run never does — plus an injury+beginner+ultra→maintenance trigger. Injury-scoped; healthy divergence stays §52's. Residual is honest (`warn` invariants, §34). §90 *(2026-09-06)*
 - Tier resolution: `lib/trial.ts → resolveTier(inputs, now)` is the **single owner** of the order `admin → active subscription → charity grant → trial → free`, and returns `{ tier, reason }`. `getUserTier` fetches the four rows and calls it; `DashboardClient` does the same on the client (it cannot use a service-role function); the tests test IT, not a copy. Before this the order existed **three** times — server, an OR-chain in `DashboardClient`, and a private `resolve()` inside `tierResolution.test.ts` — so the test asserted its own copy and could not catch either producer drifting, the same flaw as `deloadCadence.test.ts`. D-16 (no parallel semantics) had a warning comment and no mechanism. **`reason` is not decoration:** a lapsed trial and a lapsed grant both resolve to `free`, so the tier alone cannot answer "what do we say when it ends?", which is how a comped charity runner was told "14 days done" (TIER-OWNER-01, 2026-09-11)
 - Trial emails: `decideTrialEmails` takes a REQUIRED access argument (tier + "has ever held a charity grant"). Required, not optional, because the dangerous default is *send* — the compiler makes each call site answer. `app/api/email/send-trial` had no tier check at all and mailed **"3 days left."** / **"Trial ends today"** to comped runners and to people who had already subscribed
@@ -594,6 +664,29 @@ Three docs run the work pipeline. Keep them in sync:
 ---
 
 ## Available Skills
+
+### `build` — THE STANDARD BUILD PROCEDURE
+**Fires automatically** via `.claude/hooks/build-trigger.py` on a `UserPromptSubmit` that asks for a build (*"let's build"*, *"build phase"*, *"implement this"*). Founder's standing instruction, 2026-09-22: **this procedure is not to be re-typed each time.**
+
+**Role:** senior application developer, 20 years, full knowledge of the app, site, patterns and design principles, with architect authority to agree or refuse a new pattern.
+
+**Why this exists:** every other hook fires either the instant a file is edited or the instant a commit lands. Both are *reactive*. `UserPromptSubmit` was the only empty slot and the only one that fires **before a decision** — which is where an analysis phase has to live.
+
+| Phase | |
+|---|---|
+| **0. Name the input** | backlog item · board ruling · RCA · design · founder instruction. **No named input, no build** |
+| **1. Analysis → a WRITTEN BLOCK** | settled ground · reuse before writing · 🔴 **consumer check across APP AND WEBSITE** · upstream/downstream · board routing **now, not when a guard fires** · new pattern agreed · risks → mitigation |
+| **2. Build** | SLC, all states · testable or documented as not · regression-test the consumers · **falsify every new check** |
+| **3. Land** | commit with the item in the **subject's scope** · read the post-commit hooks · `/ship` → feature-registry row + build-log entry |
+
+**How the pieces sequence** (so nothing has to be remembered):
+- `/zona-debug` runs **before** `/build` and produces the RCA. Never inside it.
+- `frontend-design` runs **standalone** *and* is invoked **inside** `/build` for UI craft.
+- `zona-architectural-principles` is consulted during analysis.
+- `/coaching-board`, `/design-board`, `/slt-review` are routed during analysis.
+- `/ship` terminates it.
+
+⚠️ **The guards fire on the FILE, which is too late.** A coaching or design question that never touches a doctrine file will not trip a hook. **Analysis is where routing happens.**
 
 ### `zona-architectural-principles`
 Load when:
@@ -643,6 +736,20 @@ Output is not prose — every CORRECT ruling produces three artifacts in one com
 
 Do NOT load for: display/formatting changes (ADR-015), coaching *copy* and voice (that's brand), or defect fixes restoring documented intent.
 
+### `design-board`
+**Fires automatically** via `.claude/hooks/design-guard.py` on any edit to a design-doctrine file, and on any new screen, shared component or marketing section. Can also be invoked directly with `/design-board [change]`.
+
+Five seats rule on whether a UI/UX change is **right for the person using it** (not whether it is coaching-correct, and not whether to fund it):
+- **Julie Zhuo** (chair) — product design judgement. Is this a decision or a preference, and what is it for?
+- **Miklu Silvanto** (CDO ŌURA, ex-Apple ID) — craft and legibility. Does the screen show what matters **now** before what matters **over time**? Depth via progressive disclosure, never density. ⛔ **Holds a scoped VETO on palette or type regression against `brand.md`** — narrow by construction, and he must name the rule being regressed or the chair refuses it.
+- **Kathy Sierra** — the customer. Is the *runner* getting better, or is the *app* getting more engaging?
+- **Luke Wroblewski** — interaction and input. What is it actually like to use, on a phone, one-handed?
+- **Brian Collins** (COLLINS) — structure and brand challenge. Separates *quiet because it's right* from *quiet because it's safe*, and **collapses taxonomies**: too many session types, phases or tabs? Can challenge anything including the veto; **cannot override it**. 📌 First assignment: **CD-1**.
+
+The **settled-ground scan against `design-rulings.md` is mandatory and runs before any seat speaks.** Every SHIP ruling produces three artifacts in one commit (pattern, token/constant, mechanical check) plus a register row. Rules on measurements where measurements exist, and names the surface and the method. Full authority model: ADR-023.
+
+Do NOT load for: what the engine prescribes (Coaching Board), claims about outcomes or physiology (Coaching Board), tier/pricing/roadmap order (SLT), copy **tone** (that is `brand.md`), or a defect fix restoring a documented pattern.
+
 ### `slt-review`
 Trigger with `/slt-review [item]` when deciding what to build next — specifically when pulling an item from the backlog into active development.
 
@@ -651,7 +758,9 @@ Five board members review the item from distinct lenses:
 - **Jason Fried** — sustainable growth. Does this earn its place in the paid proposition without manipulation?
 - **Alex Hutchinson** — performance science. Is the coaching correct and defensible to experienced runners?
 - **Wendy Wood** — habit science. Does this actually change behaviour or just create the feeling of it?
-- **Des Traynor** — commercial strategy. Does this make the business work?
+- **Julie Zhuo** — design judgement. Is this a decision or a preference, and what will the runner experience? **Also chairs the Design Board** and carries its escalations up (ADR-023).
+
+⚠️ **Des Traynor's commercial seat was stood down 2026-09-22 and is recallable, not deleted.** No seat now asks *"what happens to churn if we don't build this, and to conversion if we do?"* — Fried kills surface area, he does not price it. **Recall trigger:** any of revenue, a measurable trial-to-paid rate, a redeemed-code funnel, or meaningful installs. Until then his own standing objection stands: *"what is the traffic?"*
 
 The review gate: **before a backlog item moves to active build.** Not a post-build review.
 
