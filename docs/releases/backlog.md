@@ -610,77 +610,20 @@ discussion.
 ever run on one. Re-running the sitting on the same evidence is the re-litigation the register
 exists to prevent.
 
-### 🧭 `DESIGN-DAYDOT-CHANNEL-01` — the day marker carries THREE facts on one channel
-**Board: 🧭 DESIGN BOARD (ruled — build).** `design-rulings.md` § 6q, sitting five.
-**Surface: app.** **Tier: FREE.** **Wave 3**, with the Plan-screen work.
+### ✅ `DESIGN-DAYDOT-CHANNEL-01` — **SHIPPED 2026-09-22** (wave 3a, `design-rulings.md` § 6s).
+Hue carries the session type and nothing overwrites it. Completion is the word **"Done"** on the
+Plan row (which has room for a word) and the **fill** on Today's 4px dot (which does not) — the
+split `ICON-RULE-01` had already drawn. **Moss on the rail now means exactly one thing: in flight.**
+⚠️ **The old dot swapped 4px↔6px, so logging one run moved every dot on the strip** — shipped,
+unreported, found while writing the replacement.
 
-🔴 **MEASURED AT THE SITTING, AND IT IS WORSE THAN FILED.** The entry below says *two*
-orthogonal facts. On `PlanCalendar`'s 3x34px rail it is **three**, in one cascading ternary:
-`isComplete ? --moss : isSkipped ? --line : isMoving||isSwapTarget ? --moss : accent`. So
-**moss means both "complete" and "being moved"**, and `opacity` carries a **fourth** channel at
-**0.5** (skipped), **0.45** (past, not complete) and **0.4** (move mode) — three meanings inside
-0.1 of each other.
-
-**Ruling: completion gets a SHAPE channel, not a colour one**, so the session type survives
-finishing the run. The fill-vs-ring candidate below is the right shape and predates the sitting.
-
-⚠️ **The booby-trap half already shipped as `DAYDOT-TEALKEY-01`** — Today's dot sized itself with
-`dotColor === 'var(--teal)' ? '6px' : '4px'`, a string comparison against a **BANNED** token
-surviving only as a legacy alias, so the obvious tidy-up would have silently deleted completion's
-only non-colour channel. That is fixed and gated; **this item is the encoding, not the trap.**
-
-**The original filing, which stands:**
-
-`DateStrip`'s session dot is a **4px circle whose only information is hue**, and that one
-channel carries **two orthogonal facts**:
-
-| Fact | Encoding |
-|---|---|
-| What kind of session | eight type hues — `--s-easy` `--s-long` `--s-quality` `--s-inter` `--s-race` `--s-recov` `--s-strength` `--s-cross` |
-| Whether it is done | `--teal` if complete, `--text-muted` if skipped, **overwriting the type** |
-
-So a completed interval session and a completed easy run are **the same teal dot**, and a
-skipped session is grey — which is also how a muted type reads. The runner cannot recover
-either fact reliably, and at 4px several of the type hues are close to begin with
-(`--s-easy` #3D6FB0 against `--s-long` #5E4FB0).
-
-⚠️ **An icon is not the fix here and S6 already says why:** you cannot draw a glyph at 4px.
-The candidate is **separating the channels** — hue always carries type, fill-vs-ring carries
-completion — which needs no glyph, works at this size, and is a change to what the runner
-reads. **That is a ruling, not an implementation detail**, which is why it is filed rather
-than folded into wave 4.
-
-### 🏃 `COACH-BEHIND-DAY-TWO-01` — "1 behind" is *correct* and reads as a lie on day two
-**Board: COACHING (§65) first, then DESIGN on the words.** Not a defect. **D6 from the app
-review, investigated and NOT REPRODUCED as a bug** — the count is right, and that is the finding.
-
-The founder read *"1 session behind"* on Coach and said *"I wasn't due a session until today."*
-Checked against his live row rather than inferred:
-
-| | |
-|---|---|
-| Plan | 12 weeks, generated 2026-09-17, week 1 starts **Mon 2026-09-21** |
-| Week 1 sessions | `mon` easy · `wed` easy · `fri` easy · `sun` easy |
-| Today | **Tue 2026-09-22** — the second day of the plan |
-| Overrides on weeks 1–2 | **none** (so the Coach verdict reading raw `currentWeek.sessions` is not the cause) |
-| Week-1 completions | three, all from **April**, all correctly `superseded_at` 2026-09-17 |
-
-So Monday prescribed an easy run, it was not run, and `daysDueByEndOfYesterday` returned
-`['mon']`. `1 behind` is arithmetically true. **The reported side was the wrong one** — which is
-exactly what step 2 of the debug pipeline exists to check, and why this is filed rather than fixed.
-
-⚠️ **But the softener is structurally unreachable at the start of a plan, and that is real.**
-`sessionsContext` forgives a runner at `done / dueRef >= 0.7`. On day two `dueRef` is **1**, so
-the ratio is `0/1 = 0`; at `dueRef = 2` the best a one-session runner gets is `0.5`. **The first
-missed session of any plan is always a red verdict**, however long the plan is and however
-little has elapsed. §65 says *today is in flight*; it says nothing about a plan being two days
-old, and the engine has no notion of the runway being short.
-
-**What to measure before ruling:** across the cohort grid, the distribution of `dueRef` on days
-1–5 of week 1, and what share of plans therefore hit a `--warn` verdict in their first 48 hours.
-Then the board decides whether §65 gains an early-plan clause or whether the words change
-(*"1 still to do"* is true, carries no judgement, and needs no coaching amendment). **The words
-are the Design Board's; whether a runner two days in is BEHIND is coaching's.**
+### ✅ `COACH-BEHIND-DAY-TWO-01` — **SHIPPED 2026-09-22. §65 Amendment 1.**
+Measured, the filing **understated** itself: the `>= 0.7` softener cannot fire below FOUR sessions
+due, and `dueRef` never exceeds the week's planned sessions — so for a **three-day-a-week runner it
+could never fire at all, in any week, at any point in any plan (29.0% of the grid)**. §65's date
+arithmetic was right throughout; its **purpose** was not. `BEHIND_VERDICT_MIN_SESSIONS = 2`;
+`behindVerdict.test.ts` is exhaustive over the domain, because an example-based test would have
+passed the whole time.
 
 ### 🔧 `PLAN-COUNTDOWN-SOURCE-01` — the days-to-race figure needs checking against the founder's screen
 **Board: none until it is confirmed.** Filed as an OPEN QUESTION, not a diagnosis.
@@ -989,46 +932,12 @@ so a ruling to rename or collapse them changes two surfaces, not one.
 
 ---
 
-### 🧭 `DESIGN-REVEAL-SHAPE-01` — the plan arrives and never shows its shape
-**Board: 🧭 DESIGN BOARD (ruled — build).** `design-rulings.md` § 6p. **Surface: app.**
-**Tier: FREE.** **Size: M.** Re-scoped from `P-06(b)`, which is now closed.
-
-🔴 **Measured in the sitting: there is no chart at the reveal.** `PlanArc` renders on the
-Plan screen, in `TabbedPhone` and on its preview page. `GeneratePlanScreen` imports
-`PlanHeroMetrics` and **never `PlanArc`** — so at the single moment the plan arrives, the
-runner is shown its numbers and not its shape. The shape only appears later, on a screen
-they have to navigate to.
-
-🔴 **And we already say the sentence, then throw it away.** `GeneratingCeremony`'s fourth
-line is *"Building in the deload weeks. You'll want them."* — our version of the
-competitor's *"easier on purpose"*, in our voice, on a loading screen that evaporates about
-two seconds before the preview. **Collins' reading is that the competitor's move is not the
-handwriting, it is the PERMANENCE**: their sentence is attached to the artefact the runner
-keeps.
-
-**Build.** `PlanArc` at reveal scale on the plan preview, carrying **ONE** annotation on the
-**FIRST dip**, set in Inter, with the hand-gesture carried by a drawn SVG rule rather than by
-letterforms.
-
-⚠️ **Why exactly one, and why not per-week.** Measured across all nine published plans:
-bar pitch is **14.1–22.2px** at the 288px plot (`sub-4-hour-marathon-plan`, 18 weeks:
-**14.1px**), and plans carry **2–5 dips, mean 2.8, scattered** (`4,8` on the 12-weekers;
-`2,6,10,13,17` on the sub-4 marathon). An annotation tied to a 14px target is not a
-relationship a reader can see, and five captions of the same sentence is wallpaper
-(Silvanto, Sierra).
-
-⚠️ **Binding constraints, both already on the register.** The annotated week must resolve
-through `computeDeloadWeeks()` (DELOAD-OWNER-01), **never an array position** — *"easier on
-purpose"* over a week that is not a deload is a false claim about the plan. And it may
-**never** land on the peak week (**Wood, binding**: no emphasis, marker or colour change at
-the tallest bar).
-
-**Artifacts:** pattern → `ui-patterns.md § PlanArc` *Reveal scale*; constant → `PLOT_REVEAL`
-beside `PLOT = 36`; check → the annotated week **is** a deload and **is not** the peak,
-falsified both ways. That last one is the first time Wood's condition reaches a caption
-rather than a bar.
-
----
+### ✅ `DESIGN-REVEAL-SHAPE-01` — **SHIPPED 2026-09-22** (§ 6p).
+`PlanArc` at `PLOT_REVEAL` on the plan preview with **one** annotation on the first dip.
+🔴 **`GeneratePlanScreen` imported `PlanHeroMetrics` and never `PlanArc`**, so the runner met the
+plan's numbers and never its shape. ⚠️ **My gate was hollow and only falsification found it** —
+annotating the PEAK left the suite green because the test held its own copy of the rule;
+`firstDipWeek` is exported now.
 
 ### ✅ `DESIGN-EMPTYSTATE-ART-01` + `DESIGN-LAUNCH-SCREEN-01` — **BOTH RULED 2026-09-22**
 Sitting five, `design-rulings.md` § 6q. Both are now **permanent kill rows in § 2** and may not
