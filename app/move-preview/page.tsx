@@ -28,7 +28,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { notFound } from 'next/navigation'
 import PlanCalendar, { type MoveAttempt } from '@/components/training/PlanCalendar'
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
@@ -39,6 +39,38 @@ export default function MovePreviewPage() {
 
   const [mode, setMode] = useState<'tap' | 'drag'>('tap')
   const [log, setLog] = useState<MoveAttempt[]>([])
+
+  // 🔴 A RAW BROWSER TRACE, because "it doesn't work" is not a bug report and
+  // I cannot drive a real touch gesture from a dev machine.
+  //
+  // The first version of the drag failed on a phone and my verification could
+  // not have caught it: I dispatched synthetic PointerEvents straight at the
+  // element, which bypasses the browser's gesture arbitration entirely. The
+  // hypothesis for that failure was that the browser claimed the gesture for
+  // scrolling and fired `pointercancel`. This panel is how that gets confirmed
+  // or killed by whoever holds the phone, rather than argued about.
+  const [trace, setTrace] = useState<string[]>([])
+  const t0 = useRef<number>(0)
+  useEffect(() => {
+    const push = (name: string) => (e: Event) => {
+      setTrace(prev => {
+        if (name === 'down') t0.current = Date.now()
+        const at = t0.current ? Date.now() - t0.current : 0
+        const pe = e as PointerEvent
+        const line = `${String(at).padStart(4)}ms  ${name}${pe.pointerType ? ` (${pe.pointerType})` : ''}`
+        return [...prev.slice(-11), line]
+      })
+    }
+    const evs: [string, EventListener][] = [
+      ['pointerdown',   push('down')],
+      ['pointercancel', push('CANCEL  ← the browser took the gesture')],
+      ['pointerup',     push('up')],
+      ['touchmove',     push('touchmove')],
+      ['scroll',        push('scroll   ← the list moved')],
+    ]
+    for (const [n, h] of evs) document.addEventListener(n, h, { passive: true, capture: true })
+    return () => { for (const [n, h] of evs) document.removeEventListener(n, h, { capture: true }) }
+  }, [])
 
   // A real generated week, not a fixture. The gesture's difficulty depends on
   // row heights, and rest rows are shorter than session rows — a hand-made week
@@ -160,6 +192,23 @@ export default function MovePreviewPage() {
               Reset
             </button>
           )}
+        </div>
+
+        {/* The raw trace. Read it after one hold-and-drag: if `CANCEL` appears,
+            the browser claimed the gesture and the drag never had a chance. */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginTop: 16 }}>
+          <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--line)', fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700, color: 'var(--ink-2)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            What the browser did
+          </div>
+          <pre style={{ margin: 0, padding: '10px 12px', fontFamily: 'ui-monospace, monospace', fontSize: 11, lineHeight: 1.6, color: 'var(--ink-2)', whiteSpace: 'pre-wrap' }}>
+            {trace.length ? trace.join('\n') : 'Hold a session row, drag it to another day, let go.'}
+          </pre>
+          <button
+            onClick={() => setTrace([])}
+            style={{ width: '100%', padding: 10, border: 'none', borderTop: '1px solid var(--line)', background: 'var(--bg-soft)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em' }}
+          >
+            Clear trace
+          </button>
         </div>
 
         <p style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', lineHeight: 1.6, marginTop: 16 }}>

@@ -38,12 +38,30 @@ import * as COACHING_CONSTANTS from '@/lib/coaching/constants'
 const ROOTS = ['lib', 'app', 'components', 'scripts']
 const SELF = ['generationConfig.ts', 'planSignatures.ts']
 
+/**
+ * 🔴 NOT A CONSUMER, AND IT BROKE THIS TEST BY EXISTING.
+ *
+ * `tableColumns.ts` is a committed snapshot of the DATABASE schema
+ * (SELECT-COLUMN-GATE-01). It lists every column of every table as a bare
+ * string — including `difficulty_tier`, `typical_duration_min` and
+ * `typical_duration_max` on `session_catalogue`, three fields this file
+ * legitimately has on its unconsumed-debt register.
+ *
+ * This check is SUBSTRING-BASED, which its own header says is biased toward
+ * passing. So the moment that snapshot landed, three dead fields read as wired
+ * and the register was told to shrink — a gate flipping another gate green by
+ * mentioning a name. Excluded, because a schema dump is a description of the
+ * database, not a read of the config.
+ */
+const NOT_CONSUMERS = ['contracts/tableColumns.ts']
+
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name)
     if (e.isDirectory()) {
       if (!/node_modules|\.next|\.git/.test(p)) sourceFiles(p, out)
     } else if (/\.(ts|tsx|mjs)$/.test(e.name)) {
+      if (NOT_CONSUMERS.some(x => p.endsWith(x))) continue
       out.push(p)
     }
   }

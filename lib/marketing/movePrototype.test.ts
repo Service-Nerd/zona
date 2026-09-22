@@ -51,7 +51,9 @@ describe('🔴 drag stages — it does not write on release', () => {
     const i = CAL.indexOf('function onRowPointerUp')
     expect(i).toBeGreaterThan(-1)
     const fn = CAL.slice(i, CAL.indexOf('\n  }', i))
-    expect(fn).toContain('handleTargetTap(target)')
+    // The source is passed explicitly — `setDragKey(null)` has already run and
+    // `movingDay` may not have flushed, so the handler must not have to guess.
+    expect(fn).toMatch(/handleTargetTap\(target(, dragKey)?\)/)
     // Never the write path directly.
     expect(fn).not.toMatch(/\bonMove\(|\bonSwap\(/)
   })
@@ -96,10 +98,37 @@ describe('🔴 the instrument does not favour either gesture', () => {
 })
 
 describe('the gesture does not steal the list', () => {
-  it('touch-action is suppressed only while a drag is IN FLIGHT', () => {
-    // Setting it up front would kill scrolling on the whole list, which is the
-    // objection this prototype exists to test, not to dodge.
-    expect(CAL).toMatch(/touchAction: dragMode && isMoving \? 'none' : undefined/)
+  it('🔴 the gesture is taken by a NON-PASSIVE touchmove listener, not touch-action', () => {
+    // THIS ASSERTION USED TO ENFORCE THE BUG. It required
+    // `touchAction: dragMode && isMoving ? 'none' : undefined`, and that is
+    // exactly why hold-and-drag did not work on a phone: the browser resolves
+    // `touch-action` AT TOUCH START, and the press arms 350 ms later — so the
+    // property changed and the in-flight gesture did not. The list scrolled,
+    // the browser fired `pointercancel`, and the drag died every time.
+    //
+    // A green, falsified check, guarding the wrong mechanism. It could only
+    // ever have been caught by a real finger, and my verification had used
+    // synthetic PointerEvents dispatched straight at the element.
+    expect(CAL).toContain("document.addEventListener('touchmove', swallow, { passive: false })")
+    // React's own onTouchMove is attached passively; preventDefault inside it
+    // is ignored. It has to be addEventListener.
+    expect(CAL).not.toMatch(/onTouchMove=\{/)
+    // And the old mechanism must not come back as a "fix".
+    expect(CAL).not.toMatch(/touchAction: dragMode && isMoving/)
+  })
+
+  it('a browser-claimed gesture ABORTS — it is not read as a release', () => {
+    // `pointercancel` wired to the release handler meant a scroll the runner
+    // never intended as a drop could stage a move or count a miss.
+    expect(CAL).toContain('function onRowPointerCancel')
+    expect(CAL).toMatch(/onPointerCancel=\{dragMode \? onPointerCancelRow : undefined\}/)
+  })
+
+  it('the drop does not also open the session', () => {
+    // The row's onClick fires on release. Dropping a run on Thursday and
+    // landing on Session Detail is not a drop.
+    expect(CAL).toContain('suppressClick.current = true')
+    expect(CAL).toMatch(/if \(suppressClick\.current\) \{ suppressClick\.current = false; return \}/)
   })
 
   it('moving before the press arms stands the press down', () => {

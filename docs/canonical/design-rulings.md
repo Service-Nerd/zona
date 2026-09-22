@@ -535,6 +535,30 @@ release would re-open exactly that, and the prototype would be comparing a safe 
 an unsafe one and reporting that the unsafe one is faster. Both modes stage into the **same
 `pendingMove` and the same confirmation row.** Only acquire-and-place varies.
 
+🔴 **AND IT DID NOT WORK ON A PHONE. The founder tried it; my verification could not have
+caught that.** I drove the gesture with **synthetic `PointerEvent`s dispatched straight at
+the element**, which bypasses the browser's gesture arbitration entirely — so it tested the
+handlers, not the gesture. Three mechanisms, fixed:
+
+| | |
+|---|---|
+| **`touch-action` was set only once the press ARMED** | The browser resolves it **at touch start**, and the press arms 350 ms later — so the property changed and the in-flight gesture did not. The list scrolled, the browser fired `pointercancel`, the drag died every time. Now a **non-passive `touchmove` listener** takes the gesture once armed, which is what every real drag library does. ⚠️ React's own `onTouchMove` is attached passively and `preventDefault()` in it is ignored |
+| **`pointercancel` was wired to the RELEASE handler** | A scroll the runner never meant as a drop could stage a move or count a miss. It aborts now |
+| **The row's `onClick` fires on release** | Dropping a run on Thursday and landing on Session Detail is not a drop. Suppressed |
+
+⚠️ **The gate was ENFORCING the bug.** `movePrototype.test.ts` required the exact
+`touchAction: dragMode && isMoving` expression that does not work — a green, falsified check
+guarding the wrong mechanism, and only a real finger could ever have caught it.
+
+⚠️ **A second defect found on the way:** `endAttempt()` ran **inside a `setMovingDay` state
+updater**, so the telemetry called the parent's setter during render (React said so) and
+under StrictMode would have **double-counted the very measurement the prototype exists to
+produce**. Side effects moved out of the updater.
+
+📟 **The page now prints a raw browser trace** — `pointerdown` / `CANCEL` / `scroll` / `up`
+with timings — because *"it doesn't work"* is not a bug report and **a dev machine cannot
+drive a real touch gesture.** If `CANCEL` appears, the browser claimed the gesture.
+
 **Verified on a running server, both paths end at the identical confirmation row** (*"Move
 Long run — Zone 2 from Sun to Thu?"*), and a press that moves before it arms is correctly
 treated as a scroll and logs nothing.

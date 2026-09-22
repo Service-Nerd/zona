@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import type { Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { getSessionColor } from '@/lib/session-types'
@@ -539,9 +539,36 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
 
   const [dragKey, setDragKey]   = useState<string | null>(null)
   const [dragOver, setDragOver] = useState<string | null>(null)
+
+  // 🔴 WHY THIS EFFECT EXISTS — the prototype did not work on a phone, and the
+  // way I verified it could not have told me.
+  //
+  // `touch-action` is resolved by the browser AT TOUCH START. The first cut set
+  // `touchAction: 'none'` only once the long-press had ARMED, i.e. 350 ms into
+  // a touch the browser had already classified as a possible scroll — so the
+  // property changed and the in-flight gesture did not. The finger moved, the
+  // list scrolled, the browser fired `pointercancel`, and the drag died every
+  // time.
+  //
+  // Setting `touch-action: none` up front instead would kill scrolling on the
+  // whole list, which is the objection the prototype exists to TEST, not to
+  // dodge. So: the list scrolls normally, and once a press has armed we take
+  // the gesture with a NON-PASSIVE `touchmove` listener and `preventDefault()`.
+  // That is what every real drag library does, for this reason.
+  //
+  // ⚠️ React's own `onTouchMove` cannot do this — it is attached passively, so
+  // `preventDefault()` inside it is ignored. It has to be `addEventListener`
+  // with `{ passive: false }`.
+  useEffect(() => {
+    if (!dragKey) return
+    const swallow = (e: TouchEvent) => e.preventDefault()
+    document.addEventListener('touchmove', swallow, { passive: false })
+    return () => document.removeEventListener('touchmove', swallow)
+  }, [dragKey])
   const pressTimer  = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pressOrigin = useRef<{ x: number; y: number } | null>(null)
   const attempt     = useRef<{ started: number; interactions: number; misses: number } | null>(null)
+  const suppressClick = useRef(false)
 
   function beginAttempt() {
     if (!attempt.current) attempt.current = { started: Date.now(), interactions: 0, misses: 0 }
@@ -590,8 +617,14 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     // it produces a confident wrong one.
     beginAttempt()
     pressOrigin.current = { x: e.clientX, y: e.clientY }
+    // Capture so every later move and the release keep targeting THIS row even
+    // once the finger is over another one. Without it the events retarget and
+    // the source can stop hearing its own gesture.
+    const el = e.currentTarget as HTMLElement
+    const pid = e.pointerId
     pressTimer.current = setTimeout(() => {
       countInteraction()
+      try { el.setPointerCapture(pid) } catch { /* capture is best-effort */ }
       setDragKey(key)
       setMovingDay(key)
       if (navigator.vibrate) navigator.vibrate(30)
@@ -612,16 +645,34 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
     setDragOver(dayUnder(e.clientX, e.clientY))
   }
 
+  /** The browser took the gesture (scroll, phone call, another finger). This is
+   *  NOT a release — treating it as one is what made the first cut stage or
+   *  miss on a scroll the runner never intended as a drop. */
+  function onRowPointerCancel() {
+    if (moveMode !== 'drag') return
+    clearPress()
+    if (!dragKey) return
+    setDragKey(null)
+    setDragOver(null)
+    setMovingDay(null)
+    endAttempt('abandoned')
+  }
+
   function onRowPointerUp(e: React.PointerEvent) {
     if (moveMode !== 'drag') return
     clearPress()
     if (!dragKey) return
+    // A release is followed by the row's own `onClick`, which opens the session.
+    // Dropping a run on Thursday and landing on Session Detail is not a drop.
+    suppressClick.current = true
     const target = dayUnder(e.clientX, e.clientY)
     setDragKey(null)
     setDragOver(null)
     if (target && target !== dragKey) {
       countInteraction()
-      handleTargetTap(target)
+      // Pass the source explicitly: `setDragKey(null)` above has already run and
+      // `movingDay` may not have flushed, so the handler must not have to guess.
+      handleTargetTap(target, dragKey)
       return
     }
     // Released on nothing, or back where it started. This is the cost.
@@ -645,29 +696,40 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   // tapping a target day stages a pendingMove and renders an inline
   // confirmation row. Confirm fires the write path; Cancel aborts with
   // no DB side-effect. Move icon affordance also bumped (see DayRow).
-  function handleTargetTap(targetKey: string) {
-    setMovingDay(prev => {
-      if (!prev) return null
-      const sourceSession = effectiveSessions[prev]
-      if (!sourceSession) return null
-      const sourceOriginal = sourceSession.originalDay ?? prev
-      const targetSession = effectiveSessions[targetKey]
-      const targetCompletion = targetSession ? completionMap[targetSession.originalDay ?? targetKey] : undefined
-      const targetIsSwappable = !!targetSession
-        && targetSession.type !== 'rest'
-        && targetCompletion?.status !== 'complete'
-        && targetCompletion?.status !== 'skipped'
-      endAttempt('staged')
-      setPendingMove({
-        sourceKey: prev,
-        targetKey,
-        sourceOriginal,
-        targetOriginal: (targetIsSwappable && targetSession) ? (targetSession.originalDay ?? targetKey) : null,
-        sourceLabel: sourceSession.label ?? 'session',
-        targetLabel: targetSession?.label ?? null,
-        isSwap: targetIsSwappable && !!targetSession,
-      })
-      return null
+  function handleTargetTap(targetKey: string, sourceKey?: string) {
+    // 🔴 SIDE EFFECTS ARE NOT DONE INSIDE A STATE UPDATER ANY MORE.
+    //
+    // This body used to sit inside `setMovingDay(prev => { ... })`, reading the
+    // source day from `prev`. That was tolerable while the only side effect was
+    // another setState on the SAME component; adding `endAttempt()` — which
+    // calls the PARENT's setter through `onMoveTelemetry` — made React say so:
+    // "Cannot update a component (MovePreviewPage) while rendering a different
+    // component (WeekCard)". React may run an updater during render, and under
+    // StrictMode runs it twice, so the telemetry could double-count the very
+    // measurement the prototype exists to produce.
+    //
+    // An event handler already has the current state. Read it, then set it.
+    const prev = sourceKey ?? movingDay
+    if (!prev) return
+    const sourceSession = effectiveSessions[prev]
+    if (!sourceSession) { setMovingDay(null); return }
+    const sourceOriginal = sourceSession.originalDay ?? prev
+    const targetSession = effectiveSessions[targetKey]
+    const targetCompletion = targetSession ? completionMap[targetSession.originalDay ?? targetKey] : undefined
+    const targetIsSwappable = !!targetSession
+      && targetSession.type !== 'rest'
+      && targetCompletion?.status !== 'complete'
+      && targetCompletion?.status !== 'skipped'
+    setMovingDay(null)
+    endAttempt('staged')
+    setPendingMove({
+      sourceKey: prev,
+      targetKey,
+      sourceOriginal,
+      targetOriginal: (targetIsSwappable && targetSession) ? (targetSession.originalDay ?? targetKey) : null,
+      sourceLabel: sourceSession.label ?? 'session',
+      targetLabel: targetSession?.label ?? null,
+      isSwap: targetIsSwappable && !!targetSession,
     })
   }
 
@@ -792,6 +854,8 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             units={units}
             metric={resolvedMetric}
             onTap={() => {
+              // Swallow the click the browser sends after a drag release.
+              if (suppressClick.current) { suppressClick.current = false; return }
               if (isMoveTarget || isSwapTarget) { countInteraction(); handleTargetTap(key); return }
               if (movingDay) { abandonMove(); return }
               if (!s || s.type === 'rest') return
@@ -826,6 +890,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             onPointerDownRow={(e) => onRowPointerDown(key, isMovable, e)}
             onPointerMoveRow={onRowPointerMove}
             onPointerUpRow={onRowPointerUp}
+            onPointerCancelRow={onRowPointerCancel}
           />
         )
       })}
@@ -907,7 +972,7 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   )
 }
 
-function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, dragMode = false, isDragOver = false, onPointerDownRow, onPointerMoveRow, onPointerUpRow }: {
+function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, isMovable, isMoving, isMoveTarget, isSwapTarget, isMoveMode, isLast, onTap, onMoveIconTap, units, metric, dragMode = false, isDragOver = false, onPointerDownRow, onPointerMoveRow, onPointerUpRow, onPointerCancelRow }: {
   dayKey: string; session: EffectiveSession | undefined; date: Date; isToday: boolean; isPast: boolean; isFuture: boolean
   completion?: Completion; isMovable: boolean; isMoving: boolean
   isMoveTarget: boolean; isSwapTarget: boolean
@@ -921,6 +986,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
   onPointerDownRow?: (e: React.PointerEvent) => void
   onPointerMoveRow?: (e: React.PointerEvent) => void
   onPointerUpRow?: (e: React.PointerEvent) => void
+  onPointerCancelRow?: () => void
 }) {
   const isComplete = completion?.status === 'complete'
   const isSkipped  = completion?.status === 'skipped'
@@ -943,12 +1009,16 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       onPointerDown={dragMode ? onPointerDownRow : undefined}
       onPointerMove={dragMode ? onPointerMoveRow : undefined}
       onPointerUp={dragMode ? onPointerUpRow : undefined}
-      onPointerCancel={dragMode ? onPointerUpRow : undefined}
+      onPointerCancel={dragMode ? onPointerCancelRow : undefined}
       style={{
         // Only suppress the browser's own gesture while a drag is actually in
         // flight. Setting it up front would kill scrolling on the whole list,
         // which is the objection this prototype exists to test, not to dodge.
-        touchAction: dragMode && isMoving ? 'none' : undefined,
+        // The list scrolls normally; the gesture is taken by a non-passive
+        // touchmove listener once the press arms (see the effect above). Setting
+        // touch-action here did nothing, because the browser resolves it at
+        // touch START and the press arms 350ms later.
+        WebkitTouchCallout: dragMode ? 'none' : undefined,
         display: 'flex', alignItems: 'center',
         padding: isRestType && !isTarget ? '6px 14px' : '10px 14px',
         borderBottom: isLast ? 'none' : '1px solid var(--line)',
