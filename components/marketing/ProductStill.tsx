@@ -33,7 +33,7 @@ export function ProductStill({
           color: 'var(--mute)',
           textTransform: 'uppercase',
           letterSpacing: '0.1em',
-          marginBottom: '10px',
+          marginBottom: 'var(--space-2)',
         }}
       >
         {caption}
@@ -46,7 +46,7 @@ export function ProductStill({
           padding: '16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px',
+          gap: 'var(--space-2)',
         }}
       >
         {children}

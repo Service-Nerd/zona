@@ -103,7 +103,7 @@ export default function AboutPage() {
         innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
         <div style={{
           fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
-          textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px',
+          textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
         }}>
           Why {BRAND.name} exists
         </div>
@@ -123,7 +123,7 @@ export default function AboutPage() {
             alt={FOUNDER_PHOTO.alt}
             style={{
               width: '100%', height: 'auto', display: 'block',
-              borderRadius: 'var(--radius-lg)', marginBottom: '28px',
+              borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-5)',
             }}
           />
         )}
@@ -162,12 +162,12 @@ export default function AboutPage() {
           flagged, because a warm band alternating against --bg is what W-08
           killed on the homepage. */}
       <Section surface="inset" width="full" rhythm="none"
-        style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', marginTop: '48px' }}
+        style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', marginTop: 'var(--space-7)' }}
         innerStyle={{ padding: '56px 24px' }}>
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
           <div style={{
             fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
-            textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px',
+            textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
           }}>
             Who you are dealing with
           </div>

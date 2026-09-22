@@ -194,6 +194,25 @@
 
      Responsive by construction: at 375px `--sect-y` resolves to 56px, which IS
      the canonical value, so the phone never pays for the desktop's air. */
+  /* ── Spacing scale (SITE-WAVE-4 / SITE-SPACE-01, Design Board 2026-09-22) ──
+     448 gaps measured across six marketing pages at 375px: 24 distinct values,
+     19 of them real spacing decisions. NINETEEN IS THE SAME NUMBER SITE-TYPE-01
+     FOUND FOR FONT SIZES -- type was fixed and nobody looked at space.
+
+     4px base. 52% of existing gaps already landed on these exactly; the rest
+     shift by at most 4px.
+
+     WARNING: gaps of 5px and under are NOT on this scale and must not be swept.
+     They are line-box artefacts between inline elements -- typography, not
+     spacing -- and tokenising them buries the real diffs (Wroblewski). */
+  --space-1:          4px;
+  --space-2:          8px;
+  --space-3:          12px;
+  --space-4:          16px;
+  --space-5:          24px;
+  --space-6:          32px;
+  --space-7:          48px;
+
   --sect-y:          clamp(56px, 6vw, 80px);    /* every content section */
   --sect-y-hero:     clamp(32px, 4vw, 48px);    /* hero — the header sits above it */
   --sect-y-close:    clamp(72px, 9vw, 112px);   /* the ONE dark band, deliberately heavier */

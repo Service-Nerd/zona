@@ -67,7 +67,7 @@ export function WaitlistForm() {
         maxWidth: '460px',
         margin: '0 auto',
         display: 'flex',
-        gap: '8px',
+        gap: 'var(--space-2)',
         flexWrap: 'wrap',
         justifyContent: 'center',
       }}

@@ -6,6 +6,37 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — SITE-WAVE-4 · the type audit and the spacing audit found the same number
+
+**Shipped:** `--space-1…7`, a 4px scale, swept across 69 hand-typed gaps on the marketing site.
+
+**Dev learning:** `SITE-TYPE-01` found **19 distinct font sizes** and tokenised them. A day later,
+measuring spacing, I found **19 distinct gap values**. Nobody had looked, because the type fix
+felt like it had covered "the design system". **Run the same audit one layer over — it is the same
+query with a different property name, and it costs twenty minutes.**
+
+**Product/creator learning:** The founder described the symptom exactly ("the zone image then the
+next text is very close") without knowing the cause. Measured, his case was **18px against 50px
+for the same kind of break in the same section.** A user reporting a feeling is usually reporting
+a measurement they cannot take.
+
+**AI-building learning:** My first version of the exemption guard asserted the ≤5px band was
+"non-empty" — and **emptying an entire file did not turn it red**, because it counts across every
+surface. A guard that only fires on total destruction is barely a guard. Baselined it at the
+measured count, and a single swept value now trips it. **"Can it go red" is the wrong question;
+"can it go red for the change I actually fear" is the right one.**
+
+**The honest bit:** I filed this item with no wave at all, then briefly as "wave 1c" — into a wave
+that had already shipped and closed. The founder caught both. Ruled-but-unscheduled is how work
+evaporates, and inventing a sub-number to bolt onto a finished wave is worse than leaving it
+loose, because it looks scheduled.
+
+**Hook material:** Nineteen font sizes. Nineteen spacing values. Same repo, same week, found by
+the same query with one word changed.
+
+**Postable?:** yes
+
+
 ## 2026-09-22 — SITE-STEP-CONTRAST-01 · SITE-SPACE-01 · the founder saw two things and both were bigger than they looked
 
 **Shipped:** Step numerals from 1.07:1 to a perceivable token, plus a contrast check that can

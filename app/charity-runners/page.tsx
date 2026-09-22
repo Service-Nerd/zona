@@ -87,7 +87,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
-      textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
+      textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
     }}>{children}</div>
   )
 }
@@ -197,7 +197,7 @@ export default function CharityRunnersPage() {
           the whole training block. If yours did, it takes about a minute to use. If it
           did not, everything below still applies and the plans are free to read anyway.
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }}>
           {/* Geometry MATCHES AppStoreBadge deliberately: same padding, same
               radius token, same font size, same lineHeight: 1. It previously
               sat beside the badge as a 51px full capsule next to a 38px soft
@@ -205,7 +205,7 @@ export default function CharityRunnersPage() {
               adjacent. Measured, not eyeballed. If the badge's shape ever
               changes, change this with it. */}
           <a href="#code" className="cta-pill" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '10px',
+            display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)',
             background: 'var(--moss-strong)', color: 'var(--card)',
             // lineHeight 18px, not 1: the badge's content box is set by its
             // 18px Apple icon, so matching font size alone still left this 4px
@@ -231,7 +231,7 @@ export default function CharityRunnersPage() {
           Light section only: the frame renders its screen ground dark inside a
           --ground section (known constraint, PhoneFrame header). */}
       <Section width="full" rhythm="none"
-        innerStyle={{ padding: '8px 24px 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
+        innerStyle={{ padding: '8px 24px 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-4)' }}>
         <div className="phone-fit"><PhoneFrame {...demoBlockView()} /></div>
         <p style={{
           fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--mute)',
@@ -276,14 +276,14 @@ export default function CharityRunnersPage() {
         <Eyebrow>If you have a code</Eyebrow>
         <H2>Three steps, about a minute.</H2>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-5)' }}>
           {[
             ['Download the app', `${BRAND.name} is on the App Store. Sign up with Apple, Google or an email address.`],
             ['Open Me, then "Have a charity code?"', 'It is at the bottom of the Me tab. Type the code your charity sent you. Case and dashes do not matter.'],
             ['Build your plan', 'Tell it your race and your week. That is when your access stretches to cover race day, so it cannot run out mid-block.'],
           ].map(([title, body], i) => (
             <div key={title} style={{
-              display: 'flex', gap: '16px', alignItems: 'flex-start',
+              display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start',
               background: 'var(--card)', border: '1px solid var(--line)',
               borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
               padding: '18px 20px',
@@ -331,7 +331,7 @@ export default function CharityRunnersPage() {
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
           <Eyebrow>What you get</Eyebrow>
           <H2>The same app everyone else pays for.</H2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: 'var(--space-5)' }}>
             {[
               ['A plan built round your race',
                'Your distance, your date, the days you can actually run. 5K through ultra.'],
@@ -342,7 +342,7 @@ export default function CharityRunnersPage() {
               ['A plan that moves when life does',
                'Miss a week and it reshapes around what you did, instead of leaving you to catch up on a week that has gone.'],
             ].map(([title, body]) => (
-              <div key={title} style={{ display: 'flex', gap: '16px', padding: '14px 0' }}>
+              <div key={title} style={{ display: 'flex', gap: 'var(--space-4)', padding: '14px 0' }}>
                 <span aria-hidden style={{
                   width: '3px', alignSelf: 'stretch', borderRadius: '2px',
                   background: 'var(--moss-strong)', flexShrink: 0,
@@ -368,10 +368,10 @@ export default function CharityRunnersPage() {
           of the full app regardless, so you can see what the coaching adds.
         </p>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
           {DISTANCES.map(d => (
             <Link key={d.slug} href={`/plans/${d.slug}`} style={{
-              display: 'inline-flex', alignItems: 'baseline', gap: '8px',
+              display: 'inline-flex', alignItems: 'baseline', gap: 'var(--space-2)',
               textDecoration: 'none',
               background: 'var(--card)', border: '1px solid var(--line)',
               borderRadius: '100px', padding: '10px 18px',
@@ -391,7 +391,7 @@ export default function CharityRunnersPage() {
         <div style={{
           border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)',
           background: 'var(--card)', boxShadow: 'var(--shadow-card)', overflow: 'hidden',
-          marginTop: '22px',
+          marginTop: 'var(--space-5)',
         }}>
           {FAQS.map((f, i) => (
             <details key={f.q} style={{ borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}>
@@ -424,7 +424,7 @@ export default function CharityRunnersPage() {
             That is the job, and it is a harder one than going fast. Download the app,
             put your code in, and let it tell you to slow down.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }}>
             <AppStoreBadge />
           </div>
         </div>

@@ -23,7 +23,7 @@ export function AppStoreBadge() {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: '10px',
+        gap: 'var(--space-2)',
         padding: '10px 18px',
         background: 'var(--ink)',
         color: 'white',

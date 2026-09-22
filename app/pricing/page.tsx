@@ -55,7 +55,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
       fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
-      textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
+      textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
     }}>{children}</div>
   )
 }
@@ -65,7 +65,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
  *  tells a first-timer nothing. */
 function Feature({ f, accent }: { f: TierFeature; accent: string }) {
   return (
-    <div style={{ display: 'flex', gap: '14px', padding: '13px 0' }}>
+    <div style={{ display: 'flex', gap: 'var(--space-3)', padding: '13px 0' }}>
       <span aria-hidden style={{
         width: '3px', alignSelf: 'stretch', borderRadius: '2px',
         background: accent, flexShrink: 0,
@@ -128,7 +128,7 @@ export default function PricingPage() {
         innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))',
-          gap: '16px',
+          gap: 'var(--space-4)',
           // Each card takes its own height. A grid row stretches by default,
           // which left the FREE card carrying ~350px of empty white to match
           // the paid column. The note below is right that free must not look
@@ -145,10 +145,10 @@ export default function PricingPage() {
             borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
             padding: '24px 22px',
           }}>
-            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
               Free
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-1)', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-metric-lg)', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-1.5px', lineHeight: 1 }}>
                 {PRICING.symbol}0
               </span>
@@ -156,7 +156,7 @@ export default function PricingPage() {
             <p style={{ fontSize: 'var(--fs-sm)', lineHeight: 1.5, color: 'var(--mute)', margin: '0 0 8px' }}>
               Forever. No card, no countdown.
             </p>
-            <div style={{ borderTop: '1px solid var(--line)', marginTop: '14px', paddingTop: '6px' }}>
+            <div style={{ borderTop: '1px solid var(--line)', marginTop: 'var(--space-3)', paddingTop: 'var(--space-1)' }}>
               {FREE_FEATURES.map(f => <Feature key={f.name} f={f} accent="var(--line-strong)" />)}
             </div>
           </div>
@@ -169,10 +169,10 @@ export default function PricingPage() {
             borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
             padding: '24px 22px',
           }}>
-            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--moss-strong)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--moss-strong)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
               Full access
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', marginBottom: '4px' }}>
               <span style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-metric-lg)', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-1.5px', lineHeight: 1 }}>
                 {PRICING.monthly.display}
               </span>
@@ -182,7 +182,7 @@ export default function PricingPage() {
               Or {PRICING.annual.display} a year, which works out at about{' '}
               {PRICING.symbol}{PRICING.annual.perMonthEquiv.toFixed(2)} a month. Cancel any time.
             </p>
-            <div style={{ borderTop: '1px solid var(--line)', marginTop: '14px', paddingTop: '6px' }}>
+            <div style={{ borderTop: '1px solid var(--line)', marginTop: 'var(--space-3)', paddingTop: 'var(--space-1)' }}>
               <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--ink-2)', padding: '8px 0 2px' }}>
                 Everything in free, plus:
               </div>
@@ -243,7 +243,7 @@ export default function PricingPage() {
             Build a plan, run a fortnight of it, and see whether being told to slow down
             is what you were missing.
           </p>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }}>
             <AppStoreBadge />
             <Link href="/plans" style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--moss-strong)', textDecoration: 'none' }}>
               Or read a free plan first &rarr;

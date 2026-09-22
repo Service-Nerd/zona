@@ -105,7 +105,7 @@ function Sparkle({ size = 10, color = 'var(--warn)' }: { size?: number; color?: 
 function KitByline({ role }: { role: string }) {
   const initial = BRAND.coachName.charAt(0).toUpperCase()
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)' }}>
       {/* COPY-CEILING-01 — "under 145 bpm", not "132-145".
           §12 makes an easy run a CEILING, not a band: going slower than the
           cap breaks nothing, and the guide we publish says so in as many
@@ -163,7 +163,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
           padding: '12px 14px 0 18px', display: 'flex', alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
             {/* The REAL wordmark component — not a hand-rolled span. The
                 previous inline copy rendered lowercase at weight 600 with
                 +0.14em tracking and no NN-moss accent, i.e. a different
@@ -193,7 +193,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
 
         {/* Hero block — context row · greeting · 56px two-line restraint hero */}
         <div style={{ padding: '16px 18px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Base · Week {weekN}
             </span>
@@ -219,7 +219,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
         <div style={{ padding: '18px 18px 0' }}>
           <div style={{ position: 'relative', background: 'var(--warn-bg)', borderRadius: '14px', padding: '16px 18px 16px 26px' }}>
             <span style={{ position: 'absolute', left: '8px', top: '16px', bottom: '16px', width: '3px', borderRadius: '2px', background: 'var(--warn)' }} />
-            <div style={{ marginBottom: '10px' }}>
+            <div style={{ marginBottom: 'var(--space-2)' }}>
               <KitByline role="Your coach" />
             </div>
             <div style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--coach-ink)' }}>
@@ -235,7 +235,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
             week-strip navigation is a named reference-aesthetic anchor
             (CLAUDE.md). Static: the real one is a client component with
             swipe handlers, so its markup is reproduced by hand here. */}
-        <div style={{ marginTop: '18px', borderBottom: '0.5px solid var(--line)', paddingBottom: '8px' }}>
+        <div style={{ marginTop: 'var(--space-4)', borderBottom: '0.5px solid var(--line)', paddingBottom: 'var(--space-2)' }}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '0 16px 8px',
@@ -288,7 +288,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
         {/* Hold the zone — BRAND.voiceAnchor, the in-product voice moment.
             In-product content, not marketing copy, so it does not collide
             with the "never two locked brand lines on one surface" rule. */}
-        <div style={{ padding: '12px 18px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ padding: '12px 18px 0', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--moss)', flexShrink: 0 }} />
           <span style={{
             fontSize: '11px', fontWeight: 700, color: 'var(--moss)',
@@ -298,7 +298,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
 
         {/* Today's session — section label + session card + zone bar + CTA */}
         <div style={{ padding: '14px 18px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-2)' }}>
             <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Today&apos;s session
             </span>
@@ -312,7 +312,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
             borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-card)', overflow: 'hidden',
           }}>
             <div style={{ width: '3px', flexShrink: 0, background: 'var(--s-easy)', borderRadius: '2px 0 0 2px' }} />
-            <div style={{ flex: 1, padding: '14px 12px 14px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ flex: 1, padding: '14px 12px 14px 14px', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.2 }}>Easy run</div>
                 <div style={{ fontSize: '12px', color: 'var(--mute)', marginTop: '2px', lineHeight: 1.3 }}>
@@ -329,7 +329,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
           </div>
 
           {/* Zone bar — 5 segments, Zone 2 lit (easy). Glance-only, no labels. */}
-          <div style={{ display: 'flex', gap: '3px', marginTop: '10px' }}>
+          <div style={{ display: 'flex', gap: '3px', marginTop: 'var(--space-2)' }}>
             {[1, 2, 3, 4, 5].map(z => (
               <div key={z} style={{ flex: 1, height: '4px', borderRadius: '2px', background: z === 2 ? 'var(--s-easy)' : 'var(--bg-soft)' }} />
             ))}
@@ -337,7 +337,7 @@ export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
 
           {/* Primary CTA — the last element the crop MUST show (measured). */}
           <div style={{
-            marginTop: '10px', width: '100%', padding: '14px', textAlign: 'center',
+            marginTop: 'var(--space-2)', width: '100%', padding: '14px', textAlign: 'center',
             borderRadius: 'var(--radius-md)', background: 'var(--moss)',
             color: 'var(--card)', fontSize: '14px', fontWeight: 600, letterSpacing: '0.02em',
           }}>Log this session</div>

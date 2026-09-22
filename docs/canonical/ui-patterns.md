@@ -147,6 +147,40 @@ Section gap (week → week): `28–32px`.
 
 ---
 
+
+### The spacing scale — SITE-WAVE-4, 2026-09-22
+
+**`--space-1…7` = `4 · 8 · 12 · 16 · 24 · 32 · 48`. 4px base. Never hand-type a gap above 5px.**
+
+**Found by the founder on a phone:** *"the space between sections or tiles then next text is
+inconsistent. e.g. the zone image then the next text is very close."* His exact case measured
+**18px** from the stills grid to the next heading, against **50px** for a comparable break in the
+same section. Nothing decided which.
+
+**Measured before ruling:** 448 gaps across six pages at 375px, **24 distinct values, 19 of them
+real spacing decisions.**
+
+🔴 **Nineteen is the same number `SITE-TYPE-01` found for font sizes.** Type was tokenised into
+16 values and **nobody looked at spacing.** Assume any repo with a type problem has a spacing
+problem that has not been measured.
+
+| | |
+|---|---|
+| Swept | **69 occurrences.** 32 already exact, 37 shifted by ≤4px |
+| Page height impact | **largest 26px on 11,773 (0.2%)**; two pages unchanged |
+| Applies to | `marginTop/Bottom`, `gap`, `rowGap`, `columnGap`, `paddingTop/Bottom` |
+
+⚠️ **GAPS OF 5px AND UNDER ARE EXEMPT, deliberately** *(Wroblewski)*. They are line-box artefacts
+between inline elements — typography, not spacing — and **193 of the 448 measured gaps were in
+that band.** Tokenising them produces hundreds of meaningless diffs and buries the real ones. The
+guard asserts the exempt band has not *shrunk*, so the exemption cannot be quietly swept away.
+
+⚠️ **A value needing more than a 4px shift is not swept — it returns to the board.** One exists
+(`56px`) and is listed in the test's `ALLOWED` register with its reason, rather than hidden.
+
+**Guarded by `lib/marketing/spacingScale.test.ts`**, which reads `components/marketing` from disk
+rather than from a list, and strips comments before scanning — this rule's own explanation quotes
+pixel values, and a naive scan flags the paragraph describing the rule as a breach of it.
 ## Design Token Reference
 
 Always use these CSS custom property names. Never hardcode hex values.

@@ -373,7 +373,7 @@ a single named input before treating it as a defect.
 
 ---
 
-## 🧭 `SITE-WAVE-4` / `SITE-SPACE-01` — RULED 2026-09-22, NOT BUILT: the site has no spacing scale
+## ✅ `SITE-WAVE-4` / `SITE-SPACE-01` — SHIPPED 2026-09-22. The site had no spacing scale.
 **Board: 🧭 DESIGN BOARD (ruled — build).** **Surface: website.** **Tier: n-a.** **Size: M.**
 **WAVE 4.** ⚠️ **Not 1c — wave 1 is SHIPPED and closed, and you cannot add to a finished wave.**
 This was found by the founder's device pass *after* wave 1 landed, so it is a new wave, not a

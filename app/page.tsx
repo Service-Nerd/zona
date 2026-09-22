@@ -192,7 +192,7 @@ export default async function Home() {
         padding: 'var(--sect-y-hero) 24px var(--sect-y)',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))',
-        gap: '32px',
+        gap: 'var(--space-6)',
         alignItems: 'center',
       }}>
         <div>
@@ -257,7 +257,7 @@ export default async function Home() {
 
         {/* Trial + pricing in owned voice — honest numbers, brand tone. */}
         <p style={{
-          marginTop: '22px',
+          marginTop: 'var(--space-5)',
           fontSize: 'var(--fs-body)', lineHeight: 1.5, color: 'var(--ink-2)',
         }}>
           Two weeks, full access. After that, keep the plan you built on the free tier, or
@@ -303,7 +303,7 @@ export default async function Home() {
               as a practical note when it follows it. Same words, same token,
               different job. */}
           <p style={{
-            marginTop: '14px',
+            marginTop: 'var(--space-3)',
             fontSize: 'var(--fs-sm)', color: 'var(--mute)',
           }}>
             {BRAND.hrRecommendation}
@@ -419,7 +419,7 @@ export default async function Home() {
               // joined: "Mostly easy runningEvery session zoned". The media
               // query was matching the whole time; there was simply nothing
               // for it to lay out.
-              <span key={`pair-${i}`} className="fact-pair" style={{ display: 'inline-flex', alignItems: 'baseline', gap: '22px', whiteSpace: 'nowrap' }}>
+              <span key={`pair-${i}`} className="fact-pair" style={{ display: 'inline-flex', alignItems: 'baseline', gap: 'var(--space-5)', whiteSpace: 'nowrap' }}>
                 <span>{pair[0]}</span>{dot(`d-${i}`)}<span>{pair[1]}</span>
               </span>,
             ])
@@ -441,7 +441,7 @@ export default async function Home() {
 
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '24px',
+            gap: 'var(--space-5)',
           }}>
             <ThesisCard
               label="Easy days"
@@ -497,10 +497,10 @@ export default async function Home() {
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-            gap: '20px', alignItems: 'stretch',
+            gap: 'var(--space-4)', alignItems: 'stretch',
           }}>
             <AnswersCard />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', justifyContent: 'center' }}>
               <div style={{
                 fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--moss-strong)',
                 textTransform: 'uppercase', letterSpacing: '0.1em',
@@ -559,7 +559,7 @@ export default async function Home() {
           >
             <ProductStill caption={`${BRAND.coachName}, on Today`}>
               <CoachNoteBlock aiGenerated timestamp={DEMO_COACH_NOTE.timestamp}>
-                <span style={{ display: 'block', marginBottom: '10px' }}>
+                <span style={{ display: 'block', marginBottom: 'var(--space-2)' }}>
                   {DEMO_COACH_NOTE.observation}
                 </span>
                 <span style={{ display: 'block', fontStyle: 'italic' }}>
@@ -810,14 +810,14 @@ export default async function Home() {
             Probably not for you if&hellip;
           </h3>
 
-          <ul style={{ listStyle: 'none', margin: '0 0 24px', padding: 0, display: 'grid', gap: '14px' }}>
+          <ul style={{ listStyle: 'none', margin: '0 0 24px', padding: 0, display: 'grid', gap: 'var(--space-3)' }}>
             {[
               'You train six days a week and have a sponsor.',
               'You genuinely believe sleep is for the weak.',
               'You want your phone to applaud you.',
             ].map((line) => (
               <li key={line} style={{
-                display: 'flex', gap: '12px', alignItems: 'baseline',
+                display: 'flex', gap: 'var(--space-3)', alignItems: 'baseline',
                 fontSize: 'var(--fs-lead-lg)', lineHeight: 1.45, color: 'var(--ink)',
               }}>
                 <span aria-hidden style={{ color: 'var(--moss-strong)', fontWeight: 700, flexShrink: 0 }}>·</span>
@@ -872,7 +872,7 @@ export default async function Home() {
                 padding: '18px 20px',
                 fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead)', fontWeight: 600,
                 color: 'var(--ink)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-4)',
               }}>
                 {q}
                 <span aria-hidden style={{ color: 'var(--mute)', fontWeight: 400, flexShrink: 0 }}>+</span>
@@ -919,11 +919,11 @@ export default async function Home() {
         <ul style={{
           listStyle: 'none', margin: '0 0 28px', padding: 0,
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
-          gap: '12px',
+          gap: 'var(--space-3)',
         }}>
           {FREE_FEATURES.map(f => (
             <li key={f.gate} style={{
-              display: 'flex', gap: '12px', alignItems: 'flex-start',
+              display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start',
               background: 'var(--card)', border: '1px solid var(--line)',
               borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
               padding: '16px 18px',
@@ -942,7 +942,7 @@ export default async function Home() {
           ))}
         </ul>
 
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'baseline' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-4)', flexWrap: 'wrap', alignItems: 'baseline' }}>
           <Link href="/plans" style={{ fontSize: 'var(--fs-body-lg)', fontWeight: 600, color: 'var(--moss-strong)', textDecoration: 'none' }}>
             Read the free plans &rarr;
           </Link>
@@ -997,7 +997,7 @@ export default async function Home() {
         <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{
             fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-on-ground)',
-            textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
+            textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
           }}>
             The receipt
           </div>
@@ -1027,7 +1027,7 @@ export default async function Home() {
           <Link
             href={BRAND.appStore.url || '/plans'}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)',
               fontSize: 'var(--fs-body-lg)', fontWeight: 600,
               color: 'var(--ground)', background: 'var(--on-ground)',
               padding: '13px 22px', borderRadius: 'var(--radius-md)',
@@ -1040,8 +1040,8 @@ export default async function Home() {
 
           {/* Sign-off — wordmark only (no tagline; see note above) */}
           <div style={{
-            marginTop: '48px', display: 'flex', flexDirection: 'column',
-            alignItems: 'center', gap: '10px',
+            marginTop: 'var(--space-7)', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', gap: 'var(--space-2)',
           }}>
             <Wordmark size="sm" variant="light" />
           </div>
@@ -1061,7 +1061,7 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
     <div style={{
       fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
       textTransform: 'uppercase', letterSpacing: '0.08em',
-      marginBottom: '12px',
+      marginBottom: 'var(--space-3)',
     }}>
       {children}
     </div>
@@ -1145,7 +1145,7 @@ function ThesisCard({ label, line }: { label: string; line: string }) {
       <div style={{
         fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--mute)',
         textTransform: 'uppercase', letterSpacing: '0.08em',
-        marginBottom: '12px',
+        marginBottom: 'var(--space-3)',
       }}>
         {label}
       </div>
@@ -1242,7 +1242,7 @@ function AnswersCard() {
     }}>
       <div style={{
         fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--mute)',
-        textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '14px',
+        textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 'var(--space-3)',
       }}>
         Your answers
       </div>
@@ -1250,7 +1250,7 @@ function AnswersCard() {
         {answers.map(([q, a], i) => (
           <div key={q} style={{
             display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-            gap: '16px',
+            gap: 'var(--space-4)',
             padding: '12px 0',
             borderTop: i === 0 ? 'none' : '1px solid var(--line)',
           }}>

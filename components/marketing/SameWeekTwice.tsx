@@ -136,7 +136,7 @@ export function SameWeekTwice() {
       <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
         <div style={{
           fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
-          textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px',
+          textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
         }}>
           The same week, twice
         </div>
@@ -189,7 +189,7 @@ export function SameWeekTwice() {
         </div>
 
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: 'var(--space-4)',
         }}>
           {col('Run on feel', 'Every run a bit hard, because they all felt fine at the time.', 'grey', GREY_ABOVE_PCT, grey.line)}
           {col('Run to the ceiling', 'Easy days kept genuinely easy, so the hard day has somewhere to go.', 'held', HELD_ABOVE_PCT, held.line)}
