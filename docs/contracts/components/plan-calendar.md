@@ -24,33 +24,22 @@ interface Props {
   units?: DistanceUnits                             // 'km' | 'mi' — INV-PREF-001
   preferredMetric?: SessionMetric                   // distance vs duration (ADR-015)
   sessionMetricOverrides?: SessionMetricOverrides   // per-session metric override
-  moveMode?: 'tap' | 'drag'                        // MOVE-PROTOTYPE-01; defaults 'tap'
-  onMoveTelemetry?: (e: MoveAttempt) => void       // prototype instrumentation only
-  onMovePhase?: (phase: string) => void            // the GESTURE's own phases
 }
 ```
 
-**`moveMode` — MOVE-PROTOTYPE-01 (2026-09-22), the Design Board's requested prototype.**
-`'tap'` is what ships and what the 2026-06-26 incident hardened: tap the `↕` handle, tap a
-day, confirm on an inline row. `'drag'` is long-press to pick up, drag, release.
+**Moving a session — one gesture, and it is TAP.** Tap the `↕` handle, the week enters move
+mode, tap a day, and an inline confirmation row names source, destination and swap before
+anything is written.
 
-⚠️ **BOTH STAGE INTO THE SAME `pendingMove` AND THE SAME CONFIRMATION ROW, and that is a
-contract, not an implementation detail.** A drop is a commit gesture, and *"the runner did
-not realise the thing he did was a move"* **is** the 2026-06-26 root cause — so a drag mode
-that wrote on release would re-open it. The prop varies the acquire-and-place gesture and
-nothing else. **Defaults to `'tap'`; the Plan screen passes neither prop**, and
-`lib/marketing/movePrototype.test.ts` fails if either default flips or if the drop path
-reaches `onMove`/`onSwap` directly.
+⚠️ **The confirmation step is not optional polish.** The 2026-06-26 incident root cause was
+a runner who did not realise the tap-to-move he had executed *was* a move; the override and
+the AI summary that followed corrupted his taper. `pendingMove` stages between target-tap
+and write, and nothing reaches `onMove`/`onSwap` without a confirm.
 
-`onMoveTelemetry` fires once per completed or abandoned attempt and exists only for
-`/move-preview`. It is never wired in the app.
-
-`onMovePhase` emits the gesture's OWN state — `press on sun`, `ARMED on sun`, `press
-cancelled`, `drop on thu`, `released on nothing`. ⚠️ **It exists because the preview page's
-browser-event trace could not distinguish the two failure modes it was built to
-distinguish**: a press that never armed and a press that armed and was immediately torn down
-produce an identical sequence of `pointerdown` / `pointermove` / `pointerup`. Two rounds of
-"it doesn't work" carried no diagnosis for exactly that reason.
+⚠️ **A hold-and-drag prototype existed here between 2026-09-22 and the same day** (`moveMode`,
+`onMoveTelemetry`, `onMovePhase`, `/move-preview`) and was **removed after the founder ruled
+we are not doing it.** Do not re-add a drag path behind a default-off prop: an unreachable
+path is not a spare tyre. What it cost and what it taught is in `design-rulings.md` § 6l.
 
 **Units (INV-PREF-001).** Every distance this component renders resolves through
 `lib/format.ts` with `units` — the prescribed session distance, the week header

@@ -522,42 +522,6 @@ green. Tracing why is what found the false premise. Bounding the replacement too
 (`segmentPricedDistance` appears four times in `ruleEngine.ts`). `lib/plan/sessionSizingAnchor.test.ts`
 now goes red on the real swap.
 
-### 🧭 `MOVE-DRAG-GESTURE-01` — hold-and-drag, parked pending a device session
-**Board: DESIGN** (it is the board's own INSUFFICIENT EVIDENCE item). **Parked by the
-founder 2026-09-22 after four attempts on a real phone.**
-
-**Nothing is at risk and nothing is half-shipped.** `moveMode` defaults to `'tap'`, the Plan
-screen passes no such prop, and **the shipped tap-tap-confirm flow is untouched.** The
-prototype is `/move-preview`, committed and 404 in production.
-
-**Five real defects were found and fixed getting here** — keep them, they are the expensive
-part:
-
-| | |
-|---|---|
-| `touch-action` set only once the press ARMED | The browser resolves it **at touch start** |
-| `pointercancel` wired to the RELEASE handler | A scroll could stage a move |
-| The row's `onClick` firing on drop | A drop also opened Session Detail |
-| `setTimeout`'s id left in the ref | The runner's **first movement cancelled a press that had already succeeded** |
-| `endAttempt()` inside a state updater | Parent setState during render; **double-counting under StrictMode** |
-
-**The last change, unverified, and the most likely cause of what he actually experienced:**
-the prototype gave **no feedback of any kind until 350 ms**, so nothing taught the timing —
-you press, you start moving at 150 ms as a person does, the list scrolls, it looks broken,
-and there is no way to learn otherwise. Now: press feedback on touch-down, `PRESS_MS` 250,
-slop 14px, and **only a predominantly VERTICAL move counts as a scroll** (sideways drift is
-not a scroll on a vertically scrolling list, and a finger always produces it; a mouse does
-not, which is why it was tuned wrong).
-
-🔴 **WHAT MUST NOT HAPPEN: the board ruling against drag on this prototype's record.** Until
-the fairness fix above is tried on a device, a failure is evidence about my build, not about
-the interaction. ⚠️ **Wroblewski's objection may still be exactly right** — but it has to
-win on a fair test.
-
-⚠️ **To unpark, the first move is a DEVICE, not more code.** The page prints the gesture's
-own phases (`press` / `ARMED` / `press cancelled` / `drop` / `released on nothing`); one
-screenshot answers in a line what four rounds of reasoning did not.
-
 ### 🧭 `DESIGN-DAYDOT-CHANNEL-01` — the day marker carries two facts on one channel
 **Board: DESIGN.** Exposed by applying S6's bound; deliberately NOT built inside someone
 else's ruling.

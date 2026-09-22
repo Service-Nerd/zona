@@ -406,7 +406,7 @@ has failed it.
 
 ### INSUFFICIENT EVIDENCE
 
-- **The move-a-run gesture.** The founder wants hold-and-drag; **Wroblewski pushed back** — drag on a scrolling list, one-handed, outdoors, is the hardest gesture on a phone and has no discoverability. His counter: **tap the session, tap the day.** Board split; needs a prototype. ⏸️ **PARKED 2026-09-22 by the founder** after three rounds on the drag gesture. **The prototype exists** (`/move-preview`) and the **tap flow is unaffected and still ships.** Still unsettled. See § 6l. 🔴 **And the split above was recorded wrong: Wroblewski's "counter" is what ALREADY SHIPS.** See § 6k.
+- **The move-a-run gesture.** The founder wants hold-and-drag; **Wroblewski pushed back** — drag on a scrolling list, one-handed, outdoors, is the hardest gesture on a phone and has no discoverability. His counter: **tap the session, tap the day.** Board split; needs a prototype. 🔴 **CLOSED 2026-09-22 — WE ARE NOT DOING IT** (founder). Not parked, not unsettled: decided. The tap flow stands as the only move gesture. **The prototype and every trace of it have been REMOVED from the code.** May not be re-proposed without named new evidence. See § 6l. 🔴 **And the split above was recorded wrong: Wroblewski's "counter" is what ALREADY SHIPS.** See § 6k.
 - **The black line above the nav.** Untraced — it is **not** the nav's border, which resolves to `rgba(26,26,26,0.08)`. No ruling on an unidentified artefact.
 - **Anything past wizard submission** — ceremony, plan preview, confidence badge, difficulty card. Unwalked.
 
@@ -583,10 +583,20 @@ a demo run by whoever built the gesture will always under-report.
 
 ---
 
-## 6l. MOVE-PROTOTYPE-01 — PARKED (2026-09-22)
+## 6l. MOVE-PROTOTYPE-01 — CLOSED, NOT DOING IT (2026-09-22)
 
-**Founder:** *"If this is proving too difficult we can park it."* Parked. Three rounds on the
-drag gesture without it working in his hand.
+**Founder:** *"The move-drag gesture you can mark as complete as we are not doing it."*
+**This is a DECISION, not a park.** Four rounds, never made to work in his hand.
+
+🔴 **The code is GONE, not disabled.** `moveMode`, `onMoveTelemetry`, `onMovePhase`, the
+pointer handlers and `/move-preview` are all removed. An unreachable path behind a
+default-off prop is not a spare tyre — it is dead weight that the next reader has to
+understand before they can change anything near it. The tap flow is the only move gesture
+and always was.
+
+⚠️ **May not be re-proposed without named new evidence.** Wroblewski's original objection
+stands unrefuted: drag on a scrolling list, one-handed, outdoors, has no discoverability and
+a hold threshold the user cannot feel.
 
 **Nothing is lost and nothing is at risk.** `moveMode` defaults to `'tap'`, the Plan screen
 passes no such prop, and the shipped tap-tap-confirm flow is untouched. The prototype is a

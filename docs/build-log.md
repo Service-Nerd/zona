@@ -6,6 +6,37 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — MOVE-DRAG-GESTURE-01 · deleting the feature and keeping what it taught
+**Shipped:** The hold-and-drag prototype is removed. Tap-to-move stands.
+
+**Dev learning:** I removed it rather than leaving it behind `moveMode = 'tap'`. A prop
+nobody passes reads as optionality — the next person to touch `PlanCalendar` has to work out
+whether the drag path matters before they can change anything near it, and the answer is no
+and will always be no. Deleting it took the component back under its pre-prototype size and
+removed `useRef`/`useEffect` from a file that had not needed them.
+
+**Product/creator learning:** The founder said "mark as complete as we are not doing it".
+That is a different instruction from "park it", and it licenses the delete. Parking means
+the question is open; closing means it isn't. I had already parked it once and then kept
+going, which was me not hearing the first answer.
+
+**AI-building learning:** The expensive part of a rejected feature is not the code, it is
+what the attempt surfaced — five real defects and one instrument lesson. All of that lives
+in `design-rulings.md` and here, where it is useful, and none of it lives in the codebase,
+where it would be a maintenance cost. I kept exactly one thing in the source: the comment
+warning that side effects do not go inside state updaters, because that hazard is about
+React, not about drag.
+
+**The honest bit:** Four rounds, each ending with me confident and the founder saying it
+still didn't work. The bug I eventually found was real, and I still cannot tell you whether
+fixing it would have made the gesture usable, because it was never tried again. The feature
+is closed on a judgement, not on evidence, and the evidence gap is mine.
+
+**Hook material:** I deleted four rounds of work in one commit and kept the five bugs it
+found.
+
+**Postable?:** yes
+
 ## 2026-09-22 — AI-COMPLETION-COLUMN-01 · a failed query became a confident zero
 **Shipped:** Both AI coaching routes now actually see the runner's completions, and a failed
 read reports unknown instead of nothing.
