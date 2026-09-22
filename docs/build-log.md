@@ -6,6 +6,44 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — APP-REVIEW-W4 · the ruling that correctly built nothing
+**Shipped:** Coach's load ratio became a shape, Session Detail leads with the set rather
+than the reason for it, and two of Me's sections now describe their own contents.
+
+**Dev learning:** `0.8` was sitting inside a display function as a bare number, deciding
+whether a runner is told they are "under your recent normal". Not in `GENERATION_CONFIG`,
+not in `constants.ts`, not visible to `configConsumer.test.ts` or any other check this repo
+owns — because it was in a `.tsx` file, in a function that returns a label. Every governance
+layer here keys off where a number lives, and a coaching-adjacent threshold in a component
+is invisible to all of them. Same shape as `peakKmByLevel` living in `length.ts`.
+
+**Product/creator learning:** The founder asked for icons. The board bounded icons to labels
+that repeat down a list. I went to apply the bound and found it reaches nothing: Plan rows
+already print the session name, the adjustment diff already prints before-and-after text,
+and the day marker is a 4px dot you cannot draw a glyph in. So S6 is satisfied by building
+nothing, and that is the correct output of a bounded rule — not an oversight to quietly fix
+by shipping an icon set anyway. What the measurement did find was better than what I was
+asked for: that 4px dot carries eight session-type colours *and* completion state on one
+channel, so a completed interval and a completed easy run are the same teal dot.
+
+**AI-building learning:** I have been burned three times this session by a mutation that did
+not apply, leaving a test green and looking like a hollow check. So for this wave every
+falsification printed `MUTATION APPLIED: True` from an assertion before the test ran. Five
+gates, five verified mutations, five reds. That is now the shape I want: do not ask "did the
+test go red", ask "did the file change, and then did the test go red".
+
+**The honest bit:** A5's whole argument is that a shape is read faster than a decoded ratio,
+and I cannot show that. Nothing in this product has ever run on a device. What I verified is
+that the hero is now the verdict, that the band reads the engine's real thresholds, and that
+no chrome crept in — all source facts. The claim the ruling actually rests on is untested,
+and saying so is the only honest version of "done".
+
+**Hook material:** A design ruling I implemented by building nothing, because applying its
+own bound honestly reached zero surfaces — and the measurement found a better defect than
+the one I was sent to fix.
+
+**Postable?:** yes
+
 ## 2026-09-22 — APP-REVIEW-S1 · the measurement killed the argument both sides were having
 **Shipped:** Slide-up sheets now cover the bottom nav instead of resting on it.
 
