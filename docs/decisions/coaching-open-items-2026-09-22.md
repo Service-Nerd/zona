@@ -295,3 +295,37 @@ display lie; the regression is a refusal to train someone.
 
 **Status: RULED, BUILT, REVERTED, and returned to the board with a named artefact.**
 
+---
+
+# `TAPER-OVER-PEAK-01` — the board's named artefact, MEASURED. Still not built, and now for a better reason.
+
+The re-ruling recorded **INSUFFICIENT EVIDENCE to build, named precisely**: *"`waterFillEasyKm`
+already redistributes an easy pool weighted by each day's ceiling. **Whether that pool is computed
+before or after quality placement is unmeasured** — if before, the shortfall never enters it. One
+line, blast radius across every day count."*
+
+**Measured by reading the producer** (`lib/plan/ruleEngine.ts`):
+
+| Question | Answer |
+|---|---|
+| Before or after quality placement? | **AFTER.** `remainingVolume = Math.max(0, weeklyKm - placedKm)`, where `placedKm` is the long run plus quality. **The shortfall DOES enter the pool.** |
+| What bounds each day? | `ceilOf(d) = min(easyCap, budgetKm)` — **§9's long-vs-easy cap and the runner's own day budget.** That is Willy's binding bound, already in place |
+| What happens beyond the ceilings? | `waterFillEasyKm` fills to each ceiling and, when every day is at its ceiling with volume left, `break`s. **The residual is dropped** — the week runs under its curve target |
+
+🔴 **So the remedy the board specified is substantially what the engine already does.** The
+shortfall is absorbed into the remaining easy running, capped exactly where Willy said to cap it,
+and a week that still cannot reach its target *"runs under, honestly"* — which the board
+sanctioned in those words.
+
+⚠️ **One asymmetry, and it is the only thing left in this item.** The water-fill runs **only when
+`input.day_budgets` is set**; otherwise every easy day receives the uniform `easyKm`. The uniform
+path absorbs the same total but cannot move volume from a tight day to a roomy one, so a day that
+cannot hold its share loses it. **Whether the taper-over-peak cases are concentrated in the
+no-budget path is the next measurement, and it is a different question from the one the board
+asked.**
+
+**Status: NOT BUILT, and the reason has changed.** It was *"we do not know whether the shortfall
+reaches the pool"*. It is now *"it does, and the remedy is already there — so what remains is to
+find out whether the residual cases are the uniform path, and that is measurable before any code
+is written."* ⚠️ **Building the board's remedy as written would be building something that exists.**
+
