@@ -54,6 +54,14 @@ The user opens Today to find out what to run and to log it done. Everything on t
 
 **One screen, one session, one day.**
 
+⚠️ **A1 (Design Board, sitting three, 2026-09-22) — this was TRUE IN THE DOC AND FALSE IN
+THE CODE.** Today carried `‹ Week 4 of 12 ›` with working arrows, and the whole screen
+answered a horizontal swipe by changing week — so both Today and Plan navigated the plan,
+against two entries in the *does not belong here* column above. The arrows, the swipe, and
+the mirrored `viewWeekIndex` state are gone; Today renders the current week and cannot
+change it. **The seven day cells stay** — this week's shape is context for today's session,
+not navigation away from it. The ruling restored the doc; it did not amend it.
+
 ---
 
 ### Plan
@@ -89,6 +97,18 @@ appointments.
 dormant since it shipped. The working handlers were already plumbed to Coach.
 
 **Week Notes** (phase, theme, bullet coaching lines, km target) live here, merged into the "This Week" coaching card — not on Coach.
+
+**Order on Plan — the weeks come first (A2, 2026-09-22).** Measured before the ruling: five
+cards stood between the header and the first week, on a screen whose job is the training
+arc. The order is now **the race → the arc → the weeks → everything that explains them**,
+with *"Change your plan"* first of the blocks below so the screen's one action is the next
+thing after the calendar. ⚠️ **Nothing was cut** — the ruling is an ordering, and a later
+change that drops a block while tidying the order fails `appReviewWave3.test.ts`.
+
+**The race is stated ONCE (A3, 2026-09-22).** Its name, date and countdown sit together
+under the header. The countdown is deliberately **not** attached to the arc: the arc is the
+shape of the training, the countdown is a property of the race, and hanging it under the arc
+is what made the race read twice.
 
 ---
 

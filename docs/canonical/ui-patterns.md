@@ -2441,6 +2441,46 @@ The form-control migration (2026-05-30) moved Login, Benchmark, and the Me-scree
 
 ---
 
+## Time to race — one vocabulary (S5, Design Board 2026-09-22)
+
+**There is exactly one way this product says how far away the race is, and it lives in
+`lib/format.ts`.**
+
+```ts
+import { daysUntilRace, formatRaceCountdown } from '@/lib/format'
+
+const days = daysUntilRace(plan.meta.race_date)          // ceil, ≥ 0, null if absent
+formatRaceCountdown(days)                                 // "30 weeks, 4 days"
+formatRaceCountdown(days, { suffix: 'out' })              // "30 weeks, 4 days out"
+```
+
+| | |
+|---|---|
+| **Unit** | Weeks, because plans are weekly and raw days are harder to scale mentally. The unit flips to days inside the final week, where "5 days" beats "0 weeks, 5 days" |
+| **Only permitted variation** | `suffix`. It varies PLACEMENT, never the number or the unit |
+| **`≤ 0`** | Returns `''`. The caller decides what race day and the past look like — the formatter does not invent a word for them |
+| **Arithmetic** | `daysUntilRace` only. `Math.ceil`, so the morning of race-eve reads "1 day" instead of rounding down to 0 and tripping every `> 0` gate |
+
+**Why it is a rule.** The board measured **three vocabularies for one fact** on screens a
+runner sees in the same session: *"214 days to go"* (Plan), *"30 weeks 4 days out"* (Today),
+*"77 days until then"*. Collins: **three vocabularies for one fact is the product not knowing
+what it is saying.**
+
+⚠️ **The formatter already existed and three of its four call sites went round it.** That is
+the shape of every single-owner defect in this repo — the owner is written, and then not
+used. Underneath the wording there were also **four** independent arithmetic sites, three
+`Math.ceil` and one `Math.round`, so two surfaces could legitimately disagree by a day
+either side of midnight.
+
+⚠️ **This binds the marketing site too.** `PhoneFrame`'s countdown was hand-written with a
+comment promising it *"mirrors formatRaceCountdown()"*. A format copied by hand, with a
+comment asserting it matches, is drift with a certificate. It calls the owner now.
+
+**Check:** `lib/marketing/appReviewWave3.test.ts` — no hand-built countdown string, no
+hand-rolled race arithmetic, and the website imports the owner.
+
+---
+
 ## Cross-Screen Consistency Rules
 
 Every screen must honour these invariants before shipping. Check against this list when auditing.

@@ -338,3 +338,66 @@ export function raceDistanceDisplayName(key: string): string {
     default:         return key   // 5K, 10K, HM, 50K, 100K already read correctly
   }
 }
+
+// ── Time to race — ONE vocabulary, one owner (S5, Design Board 2026-09-22) ──
+//
+// The board measured three vocabularies for one fact on two screens the runner
+// sees in the same session:
+//
+//   Plan   "214 days to go"
+//   Today  "30 weeks 4 days out"
+//   (and)  "77 days until then"
+//
+// Collins: *three vocabularies for one fact is the product not knowing what it
+// is saying.* Underneath the wording there were also FOUR independent
+// arithmetic sites — three `Math.ceil`, one `Math.round` — so two surfaces
+// could legitimately disagree by a day either side of midnight.
+//
+// ⚠️ The formatter already existed. It was a private function inside
+// `DashboardClient.tsx` and THREE of its four call sites went round it, which
+// is the shape of every single-owner defect in this repo: the owner is written,
+// and then not used. ADR-015 makes this file the sole owner of every
+// time/distance/metric string, so it belongs here and nowhere else — including
+// the marketing device, whose own comment said it "mirrors formatRaceCountdown"
+// by hand.
+
+const MS_PER_DAY = 86_400_000
+
+/**
+ * Whole days from `now` to race day, never negative. The single arithmetic
+ * owner: `Math.ceil`, so the morning of race-eve reads "1 day" rather than
+ * rounding down to "0" and tripping every `> 0` gate in the app.
+ *
+ * Returns null for a missing or unparseable date — never 0, which would read as
+ * "race day" on a plan that has no race at all.
+ */
+export function daysUntilRace(raceDate: string | Date | null | undefined, now: Date = new Date()): number | null {
+  if (!raceDate) return null
+  const d = raceDate instanceof Date ? raceDate : new Date(raceDate)
+  if (!Number.isFinite(d.getTime())) return null
+  return Math.max(0, Math.ceil((d.getTime() - now.getTime()) / MS_PER_DAY))
+}
+
+/**
+ * The runner-facing string. Runners think in weeks because plans are weekly, so
+ * raw days are harder to scale mentally; inside the final week the unit flips,
+ * because "5 days" is more useful than "0 weeks, 5 days".
+ *
+ *   1 day   → "1 day"      ·  5 days  → "5 days"
+ *   7 days  → "1 week"     ·  8 days  → "1 week, 1 day"
+ *   65 days → "9 weeks, 2 days"
+ *   ≤ 0     → ""  — the caller decides what race day and the past look like
+ *
+ * `suffix` is the only permitted variation ("out"), and it is a variation in
+ * PLACEMENT, not vocabulary: the number and its unit are identical either way.
+ */
+export function formatRaceCountdown(days: number, opts?: { suffix?: string }): string {
+  if (days <= 0) return ''
+  const suffix = opts?.suffix ? ` ${opts.suffix}` : ''
+  if (days < 7) return `${days} ${days === 1 ? 'day' : 'days'}${suffix}`
+  const weeks = Math.floor(days / 7)
+  const rem   = days % 7
+  const wPart = `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`
+  if (rem === 0) return `${wPart}${suffix}`
+  return `${wPart}, ${rem} ${rem === 1 ? 'day' : 'days'}${suffix}`
+}

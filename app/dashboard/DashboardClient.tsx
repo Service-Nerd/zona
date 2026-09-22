@@ -84,7 +84,7 @@ import NextGoalCard from '@/components/training/NextGoalCard'
 import { isReengagementWeek } from '@/lib/plan/maintenance'
 import { nextGoalOptions, achievementLine, parseTimeToSeconds, type FinishedRace, type NextGoalOption } from '@/lib/coaching/goalSequencing'
 import { composeSession } from '@/lib/plan/sessionComposer'
-import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric } from '@/lib/format'
+import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, daysUntilRace, formatRaceCountdown } from '@/lib/format'
 import { backfillAndLoadSessionMetricOverrides, setSessionMetricOverride, clearSessionMetricOverride } from '@/lib/sessionMetricOverrides'
 import { didSessionHitZone, sessionHRBand, zoneForSessionType, zonesFromZoneString, hrBandForZoneString, zoneKeyForZoneString } from '@/lib/coaching/zoneRules'
 import { zoneDiscipline, zoneTimeSplit, weightOf } from '@/lib/coaching/weeklyZoneAggregate'
@@ -153,16 +153,9 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
 //
 // Caller is responsible for gating on `days > 0` — Today screen hides the
 // row on race day, MeScreen suppresses the suffix block.
-function formatRaceCountdown(days: number, opts?: { suffix?: string }): string {
-  if (days <= 0) return ''
-  const suffix = opts?.suffix ? ` ${opts.suffix}` : ''
-  if (days < 7) return `${days} ${days === 1 ? 'day' : 'days'}${suffix}`
-  const weeks = Math.floor(days / 7)
-  const rem   = days % 7
-  const wPart = `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`
-  if (rem === 0) return `${wPart}${suffix}`
-  return `${wPart}, ${rem} ${rem === 1 ? 'day' : 'days'}${suffix}`
-}
+// formatRaceCountdown + daysUntilRace moved to lib/format.ts (S5, 2026-09-22).
+// ADR-015 makes that file the sole owner of every time string, and three of
+// this function's four call sites used to go round it.
 
 // POST-RUN-02: human-readable relative time for the auto-match subline.
 // Honest and short — "this morning" / "earlier today" / "yesterday" / "{N}d ago".
@@ -1720,7 +1713,6 @@ export default function DashboardClient() {
   }
 
   const currentWeekIndex = plan ? getCurrentWeekIndex(plan.weeks) : 0
-  const [viewWeekIndex, setViewWeekIndex] = useState(0)
 
   // AI-DEPTH-08 — post-race detection.
   // raceWeekIndex: index of the race week in plan.weeks (first race found)
@@ -1905,13 +1897,11 @@ export default function DashboardClient() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, finishedRace])
 
-  // Update to current week once plan loads
-  useEffect(() => {
-    if (plan) {
-      const idx = getCurrentWeekIndex(plan.weeks)
-      setViewWeekIndex(idx >= 0 ? idx : 0)
-    }
-  }, [plan])
+  // A1 — `viewWeekIndex` and this effect are GONE. They mirrored
+  // `currentWeekIndex` (computed above from the same `getCurrentWeekIndex`) into
+  // state purely so Today's arrows could move it. With no arrows the mirror is a
+  // second answer to a question that already had one owner, which is the exact
+  // shape of DELOAD-OWNER-01 and TIER-OWNER-01. Today reads `currentWeekIndex`.
 
   // WIDGET-01 — push race countdown + today's session into the App
   // Group container so the iOS home-screen widget can render them.
@@ -2075,7 +2065,7 @@ export default function DashboardClient() {
   const now = new Date()
   const raceDate = plan?.meta?.race_date ? new Date(plan.meta.race_date) : null
   const raceName = plan?.meta?.race_name ?? ''
-  const daysToRace = raceDate ? Math.max(0, Math.ceil((raceDate.getTime() - now.getTime()) / 86400000)) : 0
+  const daysToRace = daysUntilRace(raceDate, now) ?? 0
 
   const s: React.CSSProperties = {
     height: '100dvh',
@@ -2330,7 +2320,7 @@ export default function DashboardClient() {
         paddingBottom={(bottomNavH ?? 88) + 16}
         disabled={!pullToRefreshEnabled}
       >
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={viewWeekIndex} onWeekChange={setViewWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('today'); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); setScreen(hasPaidAccess ? 'recalibration' : 'upgrade') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={currentWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('today'); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); setScreen(hasPaidAccess ? 'recalibration' : 'upgrade') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -2839,7 +2829,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
   const raceDate   = plan.meta.race_date ? new Date(plan.meta.race_date) : null
   const raceDateStr = raceDate ? raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null
   const totalWeeks = plan.weeks.length
-  const daysToRace = raceDate ? Math.max(0, Math.ceil((raceDate.getTime() - Date.now()) / 86400000)) : null
+  const daysToRace = daysUntilRace(raceDate)
 
   // Find first upcoming non-rest session
   const DOW_KEYS = ['mon','tue','wed','thu','fri','sat','sun']
@@ -5518,19 +5508,27 @@ interface SessionEntry {
   coach_notes?: [string, string?, string?]
 }
 
-function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, totalWeeks, onWeekChange }: {
+// A1 (Design Board, sitting three) — Today is ONE DAY; Plan owns weeks.
+//
+// This strip used to carry `‹ Week 4 of 12 ›` with working arrows, and the
+// whole Today screen answered a horizontal swipe by changing week. So the two
+// screens both navigated the plan, and `screen-architecture.md § Today` had
+// already said they should not: "session history beyond today" and "weekly
+// summaries or trends" are both listed under *does not belong here*.
+//
+// ⚠️ THIS IS A RESTORATION, NOT A NEW RULE. The doc was right and the code had
+// drifted from it — which is why `weekIndex` / `onWeekChange` are gone from the
+// props rather than defaulted: a prop nobody passes is how the drift comes back.
+//
+// The seven day cells stay. They are this week's shape, which is context for
+// today's session, not navigation away from it.
+function DateStrip({ sessions, completions, selectedKey, onSelect }: {
   sessions: SessionEntry[]
   completions: Record<string, any>
   selectedKey: string | null
   onSelect: (key: string) => void
-  weekIndex: number
-  totalWeeks: number
-  onWeekChange: (i: number) => void
 }) {
   const sessionMap = Object.fromEntries(sessions.map(s => [s.displayKey, s]))
-  const touchStartX = useRef<number | null>(null)
-  const touchStartY = useRef<number | null>(null)
-
   function getDotColor(key: string): string | null {
     const s = sessionMap[key]
     if (!s || s.type === 'rest') return null
@@ -5540,43 +5538,8 @@ function DateStrip({ sessions, completions, selectedKey, onSelect, weekIndex, to
     return getSessionColor(s)
   }
 
-  function handleTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null || touchStartY.current === null) return
-    const diffX = touchStartX.current - e.changedTouches[0].clientX
-    const diffY = touchStartY.current - e.changedTouches[0].clientY
-    touchStartX.current = null
-    touchStartY.current = null
-    // Only fire week change if horizontal movement dominates — ignore vertical scrolls
-    if (Math.abs(diffX) < 60 || Math.abs(diffY) > Math.abs(diffX)) return
-    if (diffX > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1)
-    if (diffX < 0 && weekIndex > 0) onWeekChange(weekIndex - 1)
-  }
-
   return (
-    <div
-      style={{ borderBottom: '0.5px solid var(--border-col)', background: 'var(--bg)', paddingBottom: '10px' }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Week label row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 8px' }}>
-        <button
-          onClick={() => weekIndex > 0 && onWeekChange(weekIndex - 1)}
-          style={{ background: 'none', border: 'none', color: weekIndex > 0 ? 'var(--text-secondary)' : 'var(--text-muted)', cursor: weekIndex > 0 ? 'pointer' : 'default', padding: 0, minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        ><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          Week {weekIndex + 1} of {totalWeeks}
-        </span>
-        <button
-          onClick={() => weekIndex < totalWeeks - 1 && onWeekChange(weekIndex + 1)}
-          style={{ background: 'none', border: 'none', color: weekIndex < totalWeeks - 1 ? 'var(--text-secondary)' : 'var(--text-muted)', cursor: weekIndex < totalWeeks - 1 ? 'pointer' : 'default', padding: 0, minWidth: '44px', minHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}
-        >›</button>
-      </div>
-
+    <div style={{ borderBottom: '0.5px solid var(--border-col)', background: 'var(--bg)', padding: '6px 0 10px' }}>
       {/* Day cells */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', padding: '0 8px', gap: '2px' }}>
         {DOW_ORDER.map(key => {
@@ -6790,9 +6753,13 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   )
 }
 
-function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile }: {
+function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile }: {
   recalTile?: React.ReactNode
-  plan: Plan; weekIndex: number; onWeekChange: (i: number) => void; quitDays: number | null
+  plan: Plan
+  /** A1 — the week Today RENDERS. Always the current week: there is no longer
+   *  a setter, because Today does not navigate weeks (Plan does). */
+  weekIndex: number
+  quitDays: number | null
   smokeTrackerEnabled: boolean; daysToRace: number; raceName: string; preferredMetric: 'distance' | 'duration'
   sessionMetricOverrides: Record<string, 'distance' | 'duration'>
   stravaRuns: any[]
@@ -6952,23 +6919,9 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   }, [allOverrides, weekNum])
 
   // Swipe whole screen = week change
-  const touchStartX = useRef<number | null>(null)
-  const touchStartY = useRef<number | null>(null)
-  function onTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
-  function onTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null || touchStartY.current === null) return
-    const diffX = touchStartX.current - e.changedTouches[0].clientX
-    const diffY = touchStartY.current - e.changedTouches[0].clientY
-    touchStartX.current = null
-    touchStartY.current = null
-    // Only fire week change if horizontal movement dominates — ignore vertical scrolls
-    if (Math.abs(diffX) < 60 || Math.abs(diffY) > Math.abs(diffX)) return
-    if (diffX > 0 && weekIndex < totalWeeks - 1) onWeekChange(weekIndex + 1)
-    if (diffX < 0 && weekIndex > 0) onWeekChange(weekIndex - 1)
-  }
+  // A1 — the screen-wide swipe-to-change-week is GONE with the strip's arrows.
+  // Leaving the gesture while removing its visible control would be worse than
+  // either: an undiscoverable way to end up on a week Today cannot explain.
 
   // Build 7-day session list
   const now = new Date()
@@ -7277,7 +7230,7 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
   const { pct: zoneDisciplinePercent, hits: zoneDisciplineHits } = zoneDiscipline(analysisRows)
 
   return (
-    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ paddingBottom: '32px' }}>
+    <div style={{ paddingBottom: '32px' }}>
 
       {/* CONNECT-01 — one-shot reminder banner for users who skipped the
           ConnectRuns ceremony. Self-contained; renders null on the wrong
@@ -7919,9 +7872,6 @@ function TodayScreen({ plan, weekIndex, onWeekChange, quitDays, smokeTrackerEnab
         completions={completions}
         selectedKey={selectedKey}
         onSelect={setSelectedKey}
-        weekIndex={weekIndex}
-        totalWeeks={totalWeeks}
-        onWeekChange={onWeekChange}
       />
 
       {/* ── HOLD THE ZONE ──────────────────────────────────────────────
@@ -8436,7 +8386,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   const raceName = (plan as any)?.meta?.race_name ?? ''
   const raceDate = (plan as any)?.meta?.race_date ? new Date((plan as any).meta.race_date) : null
   const raceDateStr = raceDate ? raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null
-  const daysToRace = raceDate ? Math.max(0, Math.ceil((raceDate.getTime() - Date.now()) / 86400000)) : null
+  const daysToRace = daysUntilRace(raceDate)
 
   // Derive done weeks count and deload week numbers from plan
   const doneWeeksCount = (() => {
@@ -8521,10 +8471,29 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
       {/* ── HEADER ───────────────────────────────────────────────── */}
       <ScreenHeader title="Your plan" />
 
-      {/* ── RACE NAME HEADING ────────────────────────────────────── */}
-      {raceName && (
-        <div style={{ padding: inMaintenance ? '0 16px 2px' : '0 16px 12px', fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2 }}>
-          {raceName}
+      {/* ── THE RACE, ONCE ───────────────────────────────────────────────
+          A3 (Design Board, sitting three): the race appeared TWICE on this
+          screen — as this heading, and again under the arc as
+          `{raceName} · {N} days to go`. One statement of the goal: its name,
+          its date, and how far away it is, in the app's one countdown
+          vocabulary (S5, `formatRaceCountdown` in lib/format.ts).
+
+          ⚠️ The countdown lives HERE and not under the arc on purpose. The arc
+          is the shape of the training; the countdown is a property of the
+          RACE, and attaching it to the arc is what made the race read twice. */}
+      {(raceName || raceDateStr) && (
+        <div style={{ padding: inMaintenance ? '0 16px 2px' : '0 16px 12px' }}>
+          {raceName && (
+            <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.2 }}>
+              {raceName}
+            </div>
+          )}
+          {raceDateStr && (
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '3px', lineHeight: 1.4 }}>
+              {raceDateStr}
+              {daysToRace !== null && daysToRace > 0 ? ` · ${formatRaceCountdown(daysToRace, { suffix: 'out' })}` : daysToRace === 0 ? ' · Race day' : ''}
+            </div>
+          )}
         </div>
       )}
       {/* #3b — when the athlete is inside the post-race maintenance block, the
@@ -8558,27 +8527,33 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           raceWeek={raceWeekNumber}
         />
       </div>
-      {raceDate && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '6px', textAlign: 'center', padding: '0 16px' }}>
-          {raceName ? `${raceName} · ` : ''}{daysToRace === 0 ? 'Race day' : daysToRace === 1 ? '1 day to go' : `${daysToRace} days to go`}
-        </div>
-      )}
 
-      {/* ── P-04: ZONE COMPLIANCE, THE ONE INTENSITY METRIC ON THIS SCREEN ──
-          The teardown's finding: a competitor's plan screen shows distance
-          covered, total distance, current pace, race-day pace and projected
-          finish. Every metric is volume or speed and there is no intensity
-          metric anywhere, in an app whose own marketing argues runners go too
-          fast. Ours had none either, so "am I actually holding the zone?" was
-          answerable only on Coach.
+      {/* ══ A2 — PLAN LEADS WITH THE PLAN (Design Board, sitting three) ══════
+          Measured before the ruling: FIVE cards stood between the header and
+          the first week, on a screen called Plan — zone compliance, change
+          your plan, the plan intro, the rationale notes and the week-voice
+          card. The weeks are the screen's job (screen-architecture.md § Plan:
+          "own the training arc"), and they were the sixth thing on it.
 
-          Placed directly under the arc, above the rationale: it is meant to be
-          glanceable. ⚠️ It deliberately does NOT settle
-          `PLAN-NOTE-PLACEMENT-01` (whether the rationale belongs at the top at
-          all) — that is a separate SLT question and bundling it would answer it
-          by accident. */}
-      <div style={{ padding: '0 16px', marginBottom: '16px' }}>
-        <ZoneWeekBlock outcomes={zoneOutcomesThisWeek} locked={!hasPaidAccess} />
+          NOTHING IS CUT. The order changes: the race, the arc, then the weeks,
+          then everything that explains them. "Change your plan" is kept FIRST
+          of the blocks below so the screen's one action is the next thing
+          after the calendar rather than the last thing on the page. ══════ */}
+      {/* ── PLAN CALENDAR (existing component, keeps drag-reorder, tap-to-open) ── */}
+      <div style={{ paddingTop: '12px' }}>
+        <PlanCalendar
+          weeks={plan.weeks}
+          allOverrides={allOverrides}
+          allCompletions={allCompletions}
+          onOverrideChange={onOverrideChange}
+          overridesReady={overridesReady}
+          units={preferredUnits}
+          preferredMetric={preferredMetric}
+          sessionMetricOverrides={sessionMetricOverrides}
+          onSessionTap={(session, weekN, weekTheme) => {
+            onOpenSession?.({ ...session, weekN, weekTheme })
+          }}
+        />
       </div>
 
       {/* ── P-02 — the way in. ─────────────────────────────────────────────
@@ -8613,6 +8588,23 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         </div>
       )}
 
+
+      {/* ── P-04: ZONE COMPLIANCE, THE ONE INTENSITY METRIC ON THIS SCREEN ──
+          The teardown's finding: a competitor's plan screen shows distance
+          covered, total distance, current pace, race-day pace and projected
+          finish. Every metric is volume or speed and there is no intensity
+          metric anywhere, in an app whose own marketing argues runners go too
+          fast. Ours had none either, so "am I actually holding the zone?" was
+          answerable only on Coach.
+
+          Placed directly under the arc, above the rationale: it is meant to be
+          glanceable. ⚠️ It deliberately does NOT settle
+          `PLAN-NOTE-PLACEMENT-01` (whether the rationale belongs at the top at
+          all) — that is a separate SLT question and bundling it would answer it
+          by accident. */}
+      <div style={{ padding: '0 16px', marginBottom: '16px' }}>
+        <ZoneWeekBlock outcomes={zoneOutcomesThisWeek} locked={!hasPaidAccess} />
+      </div>
 
       {/* ── PLAN INTRO — CA-01 free first-plan "why this plan" (Kit's voice) ──
           Plan-level intro generated once on a free user's first plan. The one
@@ -8771,22 +8763,6 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         )
       })()}
 
-      {/* ── PLAN CALENDAR (existing component, keeps drag-reorder, tap-to-open) ── */}
-      <div style={{ paddingTop: '12px' }}>
-        <PlanCalendar
-          weeks={plan.weeks}
-          allOverrides={allOverrides}
-          allCompletions={allCompletions}
-          onOverrideChange={onOverrideChange}
-          overridesReady={overridesReady}
-          units={preferredUnits}
-          preferredMetric={preferredMetric}
-          sessionMetricOverrides={sessionMetricOverrides}
-          onSessionTap={(session, weekN, weekTheme) => {
-            onOpenSession?.({ ...session, weekN, weekTheme })
-          }}
-        />
-      </div>
 
     </div>
   )
@@ -9432,7 +9408,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const isRaceWeek = (currentWeek as any)?.type === 'race'
 
   // ── R28 / R29 detection ─────────────────────────────────────────────────
-  const daysToRace = Math.round((new Date(plan.meta.race_date).getTime() - Date.now()) / 86_400_000)
+  const daysToRace = daysUntilRace(plan.meta.race_date) ?? -1
   const isRaceWindow = daysToRace >= 0 && daysToRace <= 14
 
   // Phase transition: compare current week's phase with previous week's phase
@@ -9690,7 +9666,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
         return { headline: null, body: null, action: null, isLoading: true, hasAiContent: true } as ReadShape
       }
       if (localRaceReadiness) {
-        const daysLine = daysToRace === 0 ? 'Race day.' : `Race in ${daysToRace} day${daysToRace === 1 ? '' : 's'}.`
+        const daysLine = daysToRace === 0 ? 'Race day.' : `Race in ${formatRaceCountdown(daysToRace)}.`
         return { headline: daysLine, body: localRaceReadiness.content, action: null, isLoading: false, hasAiContent: true } as ReadShape
       }
     }

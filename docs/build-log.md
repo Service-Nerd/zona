@@ -6,6 +6,44 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — APP-REVIEW-W3 · the owner existed and three of four callers ignored it
+**Shipped:** One time-to-race vocabulary, Today stopped navigating weeks, Plan now leads
+with the weeks, and the race is stated once.
+
+**Dev learning:** `formatRaceCountdown` had been written, documented with a careful comment
+explaining why runners think in weeks, and then bypassed by three of its four call sites.
+Underneath it were four separate pieces of arithmetic for "how many days to the race",
+three using `Math.ceil` and one `Math.round`. So the product could show two different
+numbers on two screens, both correct by their own method, on any day near midnight. The
+lesson is not "centralise things" — the centralising had already been done. It is that a
+single owner nobody is forced to use is a suggestion.
+
+**Product/creator learning:** The consumer check in the build procedure says look at the app
+AND the website, every time. This is the first time it has paid out on its own terms: the
+marketing site's phone still had the countdown hand-written, with a comment above it saying
+it "mirrors formatRaceCountdown() in DashboardClient". A hand-copy with a comment asserting
+it matches is worse than a hand-copy without one, because the comment is what stops the next
+person checking. It imports the real function now.
+
+**AI-building learning:** I falsified six gates and one of them lied to me. The A2
+reversion was supposed to move the calendar back below the cards; I wrote the slice indices
+from the post-fix layout, so the mutation did nothing and the test stayed green. A green
+test after a no-op mutation looks exactly like a hollow check, and I only caught it because
+the other five went red and this one did not — the anomaly was the pattern break, not the
+result. Third time this session a mutation failed to apply. The habit I want is: assert the
+file CHANGED before trusting what the test says about it.
+
+**The honest bit:** My first gate for "no hand-rolled race arithmetic" matched any
+`getTime()` difference divided by 86,400,000 and caught `daysToPlanStart`, which is a
+different quantity with its own meaning. The test failed on correct code. That is the
+denominator error this repo has recorded four times, arriving in a check I wrote to prevent
+a different one.
+
+**Hook material:** Four pieces of arithmetic for one number, three rounding up and one
+rounding to nearest. Two screens, two answers, both defensible, on any day near midnight.
+
+**Postable?:** yes
+
 ## 2026-09-22 — APP-REVIEW-W2 · five defects fixed, and the sixth was me
 **Shipped:** The five real defects from the founder's app review (week totals, back
 navigation, the health-access prompt, the modify sheet's missing states) plus an honest

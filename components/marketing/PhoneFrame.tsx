@@ -60,14 +60,20 @@ import { Wordmark } from '@/components/ui/Wordmark'
 
 import { PhoneShell } from '@/components/marketing/PhoneShell'
 import type { DemoBlockView } from '@/components/marketing/phoneBlock'
+import { formatRaceCountdown } from '@/lib/format'
 
 
 // The still's plan: week 6 of a 16-week build, so 10 weeks remain. Every
 // number below is derived from these two so the screen is internally coherent
 // — a visitor who reads "Week 6 of 16" and "10 weeks out" should be able to
-// check the arithmetic. The countdown wording mirrors formatRaceCountdown()
-// in DashboardClient (runners think in weeks; the unit flips to days inside
-// the final week). It is NOT "84 days out" — that was the pre-2026 format.
+// check the arithmetic.
+//
+// ⚠️ THE COUNTDOWN WORDING USED TO BE HAND-MIRRORED HERE, and this comment used
+// to say so: "mirrors formatRaceCountdown() in DashboardClient". A format
+// copied by hand from another file, with a comment promising it matches, is the
+// drift this repo keeps paying for. S5 (Design Board, 2026-09-22) moved the
+// formatter to lib/format.ts as the single owner and this still now CALLS it,
+// so the marketing device cannot say one thing while the app says another.
 //
 // ⚠️ THE TWO NUMBERS ARE NO LONGER OWNED HERE. They used to be private
 // constants, and the Plan tab that later joined this device generated a
@@ -153,7 +159,7 @@ function KitByline({ role }: { role: string }) {
  * server-component homepage.
  */
 export function TodayStill({ weekN, totalWeeks }: DemoBlockView) {
-  const COUNTDOWN = `${totalWeeks - weekN} weeks out`
+  const COUNTDOWN = formatRaceCountdown((totalWeeks - weekN) * 7, { suffix: 'out' })
   return (
     <>
 

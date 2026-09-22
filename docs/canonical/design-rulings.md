@@ -417,6 +417,27 @@ They go through `/zona-debug`.
 
 ---
 
+## 6h. BUILT — app review waves 1–3 (2026-09-22)
+
+| Ruling | Built | The artifact, and what it cost to prove |
+|---|---|---|
+| **S2** dismiss is never `--moss` | ✅ `APP-REVIEW-W1` | ⚠️ **The check was wrong three times**: a hand-written three-file list that missed the actual offender, a word match that fired on the prose `'Close. Bit of fine-tuning to do.'`, a handler match that fired on Orientation's `"I'm ready"`. The property is the **label**, on a tree walk |
+| **S3** one CTA vocabulary | ✅ `APP-REVIEW-W1` | Four labels → one. Arrows stripped |
+| **S4** an optional step's primary is never the skip | ✅ `APP-REVIEW-W1` | 🔴 **RELABELLED, NOT REMOVED — and the board said removed.** Five of six optional steps have no `FieldLabel` to hang *optional* on, so "remove" literally would delete it from one step and leave it on five. Departure recorded |
+| **A4** tab bar rebalanced | ✅ `APP-REVIEW-W1` | 6px above the icons, 34px below. The safe-area inset is background, not content padding |
+| **S5** one time-to-race vocabulary | ✅ `APP-REVIEW-W3` | Owner moved to `lib/format.ts` (`daysUntilRace` + `formatRaceCountdown`), ADR-015's file. ⚠️ **The formatter already existed and three of four call sites went round it**, and there were **four** arithmetic sites — three `ceil`, one `round`. 🔴 **The website was mirroring the format BY HAND with a comment promising it matched**; the consumer check found it and it calls the owner now |
+| **A1** week navigation leaves Today | ✅ `APP-REVIEW-W3` | ⚠️ **A restoration, not a new rule** — `screen-architecture.md § Today` already listed weekly navigation under *does not belong here*, and the code had drifted. Arrows, screen-wide swipe and the mirrored `viewWeekIndex` state all gone. The seven day cells stay |
+| **A2** Plan leads with the plan | ✅ `APP-REVIEW-W3` | Race → arc → **weeks** → everything that explains them, with *"Change your plan"* first below so the screen's one action is the next thing after the calendar. **Nothing cut**, and the gate asserts all five blocks still render |
+| **A3** the race appears once on Plan | ✅ `APP-REVIEW-W3` | Name, date and countdown in one block under the header. The countdown is deliberately **not** under the arc: the arc is the shape of the training, the countdown is a property of the race, and hanging it there is what made the race read twice |
+
+⚠️ **One falsification was a NO-OP and read as a passing gate.** A2's reversion sliced the
+file using post-fix indices, so nothing moved and the check stayed green — which is
+indistinguishable from a hollow check until you look. Redone against the real ordering, it
+goes red on two assertions. **Third time this repo has recorded a falsification that did not
+apply; a mutation must be shown to have changed the file.**
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |
