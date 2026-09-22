@@ -621,6 +621,37 @@ answers in a line what three rounds of reasoning did not.
 
 ---
 
+## 6m. Miles — the OPEN-LENS re-read (2026-09-22)
+
+Full document: `docs/competitor/miles-open-lens-review.md`. All 17 screenshots, **no item
+list**.
+
+🔴 **Why it was needed:** `MILES-GAP-ANALYSIS.md`'s `T-01…T-20` came from the brief's own
+screenshot index — **one item per screenshot, decided before anyone looked.** Every verdict
+answers *"how do we score against this item?"*; none answers *"what is on this screen nobody
+thought to ask about?"* The founder caught it: *"it seems like there's just been a focus on
+change plan."* **Nine findings had no slot. Two are the most important in the teardown.**
+
+| | |
+|---|---|
+| 🔴 **They are saying OUR thing, before their paywall** | The plan-reveal chart is annotated *"easier on purpose"*; the build screen's last step is *"Making recovery part of the plan"*; the first easy run is prescribed *"Not faster than 13:12/mi"*. ⚠️ T-09 rated that loading screen PARTIAL on CRAFT — *"ours is better written, theirs is better drawn"* — and missed that the CONTENT is our positioning. **A checklist scores the slot; it cannot notice the competitor has taken your sentence.** Not a reason to move; a reason to stop saying "only we say this" |
+| 🔴 **Their exit offer abandons their own typeface** | A serif display face used nowhere else in 17 screens, plus a struck-through **£155.88** anchor they have never charged. The gap analysis caught the £24 undercut and stopped. **The paywall was built by a different hand with a different visual system, and it is two scrolls apart** |
+
+**Rulings M-1…M-9** in the review document. Headlines: **M-2 amends S6** (icons on a row with
+a current value, or where the glyph encodes data — Silvanto binding on one family/size/tint);
+**M-6 KILLS a week streak or any cumulative total on the profile, permanently** (Wood
+extended — a streak punishes the rest day this product defends, and a competitor shipping it
+is not evidence); **M-7 the merchandising-profile kill STANDS** on re-examination; **M-5
+routes to the SLT** — 🔴 **our charity codes have never once been redeemed and our redeem
+screen sits on Me, the lowest-frequency surface; Miles puts it IN the onboarding flow.**
+**M-8 INSUFFICIENT EVIDENCE** — Collins wants the ticket-stub perforation, Silvanto calls it
+chrome and cites W-11; settles with one artefact at 375px.
+
+⚠️ **Not settled: no motion or transition comparison is possible from 17 stills**, and that
+is probably where much of "feeling something" lives.
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |

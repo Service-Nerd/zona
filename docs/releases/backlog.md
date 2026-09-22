@@ -540,6 +540,45 @@ surfaces sit outside it:**
 most of which no runner ever sees, and a guard that fires on ordinary work gets switched off
 — which this repo has twice recorded as equivalent to having no guard.
 
+### 💼 `GTM-REDEEM-PLACEMENT-01` — the charity code has never been redeemed, and it is on the wrong screen
+**Board: SLT** (funnel placement, not design). **Highest expected value in the Miles review.**
+
+**No charity code has EVER been redeemed** (`GTM-CHARITY-04`). Our redeem screen lives on
+**Me** — the surface the SLT itself called *"the lowest-frequency surface in the product, so
+the worst place for a conversion moment."* **Miles puts the referral code IN the onboarding
+flow** (`IMG_7179`), between the wizard and the plan, while a code in a runner's hand is
+still in their hand.
+
+⚠️ **This is a placement hypothesis with a measured failure behind it**, and it costs one
+screen position, not a build. ⚠️ It was invisible to the Phase-1 checklist, which filed
+`IMG_7179` as "referral code screen" and scored us PARTIAL for having one.
+
+### 🧭 `DESIGN-MILES-TAKEABLES-01` — the four patterns the open-lens review ruled SHIP
+**Board: DESIGN (ruled, M-1…M-4)** — build, no further sitting needed except where noted.
+
+1. **Consequence subtitles** (M-1) on every parameter row: what it does to *your training*,
+   not the field's name. **Strings are the founder's.**
+2. **S6 amended** (M-2): icons on a row carrying a **current value**, or where the glyph
+   **encodes the data** (their ability tiers fill 1→4 bars). ⛔ **Silvanto binding**: one
+   glyph per row, one size, one family, one tinted container, or the veto is live.
+3. **Dashed-border escape card** (M-3) as the grammar for *an option that branches* rather
+   than selects.
+4. **Trial timeline** (M-4) on the upgrade screen: Today / reminder / charge. **Pending the
+   upgrade-screen review**, which has never happened.
+
+⚠️ **`--moss` is not permitted as an icon tint** without a token decision; their semantic
+tints (red for heart-rate rows) sit next to our six session colours and were NOT ruled.
+
+### 🧭 `DESIGN-PERFORATION-01` — the ticket-stub device, unresolved
+**Board: DESIGN.** M-8, **INSUFFICIENT EVIDENCE**.
+
+Collins wants it: *"every takeable is structure, and structure is how you end up looking like
+the category. The perforation is the only thing on their screens with a personality."*
+Silvanto: it is chrome, and **W-11 killed grain on exactly that argument.**
+
+**Settles with one artefact**: the plan-scale card built both ways, at 375px. Not a
+discussion.
+
 ### 🧭 `DESIGN-DAYDOT-CHANNEL-01` — the day marker carries two facts on one channel
 **Board: DESIGN.** Exposed by applying S6's bound; deliberately NOT built inside someone
 else's ruling.
