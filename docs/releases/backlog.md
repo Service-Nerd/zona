@@ -383,38 +383,50 @@ a check asserting no hand-typed gap outside the scale, falsified.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §121 — the invariant found a second defect on its first sweep
 
-### 🏃 `TAPER-OVER-PEAK-01` — RULED **CORRECT WITH AMENDMENT**, not built
-**Board: 🏃 COACHING BOARD (ruled 2026-09-22).** Baselined in `SWEEP-BASELINE-01` meanwhile.
+### 🔴 `TAPER-OVER-PEAK-01` — **MEASURED 2026-09-22. THE RULING'S REMEDY FAILS, AND MY SUBMISSION WAS WRONG.**
+**Board: 🏃 COACHING BOARD — needs a RE-SITTING.** Baselined in `SWEEP-BASELINE-01` meanwhile.
 
-`INV-PLAN-RACE-NOT-VOLUME` shipped with §121 and found **10 plans in 14,253** where a taper week
-carries more training volume than the peak phase **with the race already excluded**.
+**1. My submission was wrong.** I told the board *"§1 counts SESSIONS, so at 2 days the only ratios
+are 100/0 or 50/50."* That is the **per-week** arithmetic. **§1 counts sessions PLAN-WIDE (CD-19)** —
+which I quoted correctly elsewhere the same day and then reasoned from the other frame anyway.
+Measured across 411 plans:
 
-🔴 **IT IS NOT A TAPER DEFECT. THE PEAK IS TOO SMALL.** Diagnosed on a 1,223-plan grid — **6 hits,
-all one cohort: 10K / beginner / 2 days / time-target:**
+| days | mean §1 share | ceiling | over ceiling | would lose ALL quality |
+|---|---|---|---|---|
+| 2 | **26.6%** | 25% | 76.7% | **0** |
+| 3 | 17.4% | 25% | 28.4% | **0** |
+| 4 | 13.2% | 25% | 0% | 0 |
+| 5–6 | ≤11.3% | 25% | 0% | 0 |
+
+The 2-day cohort is over by **1.6pp**, not by 25pp, and **no plan at any day count loses all its
+quality** under the extension. The ruling was made on a much more dramatic picture than the real one.
+
+**2. The remedy does not work. A/B'd on 1,223 plans: taper>peak went 6 → 9.** Removing quality from
+a taper week lets an easy run take its place, which makes the taper BIGGER. Zero-quality plans:
+222 either way, unchanged.
+
+**3. The actual mechanism, traced on the worst case** (10 km, beginner, 2 days, 5 km/week,
+time target; `peak_km_target` **32**):
 
 ```
-w10 build   19 km   easy:84m  easy:64m
-w11 peak    12 km   easy:52m  quality:40m   <- quality REPLACES the long easy run
-w12 peak    12 km   easy:56m  quality:38m
-w13 taper   15 km   easy:72m  easy:48m      <- the taper out-trains the peak
+w10 build   19 km  148 min   easy:84  easy:64
+w11 peak    12 km   92 min   easy:52  quality:40   <- 37% DROP into peak, 62% below its own target
+w12 peak    12 km   94 min   easy:56  quality:38
+w13 taper   15 km  120 min   easy:72  easy:48      <- above both peak weeks
 ```
 
-At two sessions a week, converting one to a short quality session removes a third of the week.
+🔴 **IT IS NOT AN INTENSITY-DISTRIBUTION PROBLEM AT ALL.** A quality session is sized by a fixed
+work-minute dose; an easy run is sized by the week's volume target. At two sessions a week, swapping
+one for the other costs the week a third of its volume, and nothing tops the remaining easy run back
+up. **The peak week is 12 km against a declared peak target of 32.**
 
-🔴 **§1 SETTLES IT, AND THE BOARD HAS RULED THIS ARITHMETIC BEFORE.** §1 counts SESSIONS (CD-19), so
-at 2 days the only ratios are 100/0 and **50/50** — a quality session is **50% intensity** against a
-declared 80/20 ceiling. P-02's intensity row was **VETOED** on exactly this reasoning at 3–4 days
-("there is no 80/20 to select"). **Two days is worse and nobody checked it.** §90 Amendment 1 already
-built the yield mechanism (`INJURY_QUALITY_YIELD_TO_INTENSITY_CEILING`) and scoped it to injury:
-**the scope is what is wrong, not the mechanism.**
+That is an **ADR-022 divergence** — the load rules enforced on the internal volume CURVE while the
+runner sees `sumWeeklyKm(placed sessions)` — running in the opposite direction from the one ADR-022
+handles. ADR-022 trims a week that exceeds its ceiling; this needs a week UNDER its target to be
+topped up. Scoped there to injury runners; it bites low-day-count runners too.
 
-**Ruling:** extend the yield to any week where quality would exceed §1's ceiling by session count,
-not only injury weeks — at 2 available days, quality yields.
-
-⚠️ **NOT BUILT, and the reason is a measurement rather than a filing excuse:** the effect on §22's
-exposure floor and on `cohort:shape` for the 2-day population is unmeasured, and §120 is the second
-time this week a change that looked small moved maintenance by 3.4pp. That measurement is the next
-piece of work.
+**What a re-sitting needs to rule on:** should the remaining easy run absorb the volume a quality
+session did not carry, at low day counts? That is a prescription change and it is the board's.
 
 **Also from this ship:** `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` went **13 → 0** — §120 anchored
 `hm_pace_intervals` to goal pace, so a time-target plan that previously prescribed zero goal-pace
