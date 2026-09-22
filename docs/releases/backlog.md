@@ -522,23 +522,6 @@ green. Tracing why is what found the false premise. Bounding the replacement too
 (`segmentPricedDistance` appears four times in `ruleEngine.ts`). `lib/plan/sessionSizingAnchor.test.ts`
 now goes red on the real swap.
 
-### 🏃 `AI-COMPLETION-COLUMN-01` — two AI coaching surfaces read ZERO completions
-**Board: COACHING** (it changes what a model is told about the runner). P1.
-
-`phase-summary` and `race-readiness` both select `session_type` from
-`session_completions`. **That column does not exist.** Supabase answers a bad column with
-`{ data: null, error }`; both destructure the error away and the `?? []` downstream reads the
-failure as *"no completions"*.
-
-**So both AI surfaces have been generating a coaching read from an empty array.** The tell is
-in `race-readiness/route.ts:177`, which filters `c.session_type === 'easy' || 'recovery'` —
-a predicate that has never matched anything, because there is nothing to match.
-
-⚠️ **NOT patched blind, and that is the point.** `session_completions` has no session type;
-the type lives in the plan JSON. Resolving it changes what the model sees on a race-readiness
-note and a phase summary, which is prescription-adjacent. **Route it, measure what the note
-says before and after, then fix.** Found by `SELECT-COLUMN-GATE-01`, not by the log.
-
 ### 🧭 `MOVE-DRAG-GESTURE-01` — hold-and-drag, parked pending a device session
 **Board: DESIGN** (it is the board's own INSUFFICIENT EVIDENCE item). **Parked by the
 founder 2026-09-22 after four attempts on a real phone.**

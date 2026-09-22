@@ -45,10 +45,13 @@ import { TABLE_COLUMNS } from './tableColumns'
 // register shrinking is the point — `a declared reason is not a fixed problem`,
 // and the stale-entry check below is what makes leaving mandatory rather than
 // optional.
-const BASELINE = [
-  'app/api/phase-summary/route.ts: session_completions.session_type',
-  'app/api/race-readiness/route.ts: session_completions.session_type',
-]
+// ✅ EMPTY, 2026-09-22. All four entries this register was born with have left
+// it: the two `recalibrate-taper` rows (TAPER-RECAL-COLUMN-01, §68 Am.1) and the
+// two `session_type` rows (AI-COMPLETION-COLUMN-01). **The stale-entry check
+// below is what made leaving mandatory rather than optional** — a register whose
+// reason column is the answer, with nothing scheduling its shrink, is the debt
+// pattern this repo has already recorded as growing quietly.
+const BASELINE: string[] = []
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const e of readdirSync(dir)) {

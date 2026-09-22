@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       // RESHAPE-FIX-WAVE2B-AUDIT: verification columns so the completion-rate
       // count below can exclude bare stubs without misclassifying an
       // activity-linked no-RPE/HR run as one.
-      .select('week_n, status, session_type, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid')
+      .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid')
       .eq('user_id', user.id)
       .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
     // AI-DEPTH-10 — connective tissue across phase transitions. Most recent
@@ -144,7 +144,20 @@ export async function POST(req: NextRequest) {
     const sessions = Object.values((w as any).sessions ?? {}) as any[]
     return sum + sessions.filter((s: any) => s?.type && s.type !== 'rest').length
   }, 0)
-  const completionRate = totalSessions > 0 ? completed / totalSessions : null
+  // 🔴 AI-COMPLETION-COLUMN-01 — `completionRate` WAS ALWAYS 0, AND THAT IS A
+  // FALSE NUMBER, NOT MISSING DATA. The completions query named a column that
+  // does not exist, the error was swallowed, `?? []` gave an empty array, and
+  // `0 / totalSessions` told the model the runner completed NOTHING this phase.
+  // It then wrote them a coaching note on that basis. A null would have been
+  // honest; a zero is a false statement with a decimal point on it.
+  //
+  // The guard below is not decoration: if the completions read ever fails again,
+  // this must be null — unknown — rather than a confident zero.
+  const completionsFailed = !!completionsRes.error
+  const completionRate = completionsFailed || totalSessions === 0
+    ? null
+    : completed / totalSessions
+  if (completionsFailed) console.error('[phase-summary] completions query failed', completionsRes.error)
 
   // ── Build prompt + call AI ──────────────────────────────────────────────
   // FMT-01 — render distances/paces in the reader's unit (INV-PREF-001).

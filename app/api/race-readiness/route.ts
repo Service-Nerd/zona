@@ -6,6 +6,7 @@ import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { buildRaceReadinessPrompt } from '@/lib/coaching/prompts/raceReadiness'
 import { buildAthleteContext } from '@/lib/coaching/prompts/athleteContext'
 import { isVerifiedCompletion } from '@/lib/coaching/completionVerification'
+import { withSessionType } from '@/lib/coaching/completionSessionType'
 import { ANTHROPIC_MODEL_DEEP } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
 import type { Plan } from '@/types/plan'
@@ -99,7 +100,7 @@ export async function POST(req: NextRequest) {
       .from('session_completions')
       // RESHAPE-FIX-WAVE2B-AUDIT: verification columns so the completed-session
       // count excludes bare stubs without dropping an activity-linked no-RPE/HR run.
-      .select('week_n, status, session_type, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid')
+      .select('week_n, session_day, status, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid')
       .eq('user_id', user.id)
       .is('superseded_at', null),   // PLAN-WEEK-COLLISION-01: live plan only
   ])
@@ -169,15 +170,20 @@ export async function POST(req: NextRequest) {
 
   // Recent easy RPE: avg RPE on easy/recovery sessions in the last 3 plan weeks.
   // "Last 3 weeks" = the 3 highest week_n values with completions.
+  // AI-COMPLETION-COLUMN-01 — the type comes from the PLAN, not from a column
+  // that never existed. Until 2026-09-22 this whole array was empty (the bad
+  // column failed the query and the error was swallowed), so the filter below
+  // matched nothing and `recentEasyRpe` was always null.
+  const typed = withSessionType(completions as any[], plan)
   const allWeekNums = Array.from(new Set(completions.map((c: any) => c.week_n))).sort((a: number, b: number) => b - a)
   const recentWeekNums = new Set(allWeekNums.slice(0, 3))
-  const recentEasyRpeSamples = completions
+  const recentEasyRpeSamples = typed
     .filter((c: any) =>
       recentWeekNums.has(c.week_n) &&
       (c.session_type === 'easy' || c.session_type === 'recovery') &&
       c.rpe !== null,
     )
-    .map((c: any) => c.rpe as number)
+    .map((c: any) => c.rpe as number) as number[]
 
   const recentEasyRpe = recentEasyRpeSamples.length > 0
     ? recentEasyRpeSamples.reduce((s, v) => s + v, 0) / recentEasyRpeSamples.length
