@@ -6,6 +6,46 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — SESSION-SIZING-ANCHOR-01 · the defect I filed did not exist
+
+**Shipped:** A gate, and a closed item. Measured 1,320 quality sessions: **zero** are sized at
+threshold pace while their work steps run somewhere else. The defect §120 parked by name was not
+there.
+
+**Dev learning:** A structured session's distance comes from `segmentPricedKm(repPlan.mainMins,
+repPlan.workPaceMinPerKm)` — its own work pace — and never from the `minPerKm` I had been staring
+at. `minPerKm` only reaches unstructured sessions and the two continuous tempo rows, which are
+genuinely threshold work. I had read the expression, seen it was anchor-blind, and never traced
+what consumed it.
+
+**Product/creator learning:** The founder pushed back on the phrase "filed, not fixed" and was
+right to. His rule is: file only what needs a board, new data, or his decision. Measured against
+that, one of my three filings was legitimate (two ratified principles genuinely contradict each
+other) and two were me stopping short — and one of those two turned out to have **no defect in it
+at all**. Filing is not a neutral act: it puts a fiction in the backlog that somebody later spends
+time on.
+
+**AI-building learning:** My first measurement said **20.2%**. It counted 267 `progressive_tempo`
+sessions because the row opens with an `E`-anchored third and I forgot E is a ramp rather than a
+work intensity — the codebase filters it two functions away for exactly that reason. Then my first
+gate was **hollow**: it inferred "sized at work pace" from the derived set's shape, so reinstating
+the bug left it green. Tracing *why the falsification failed* is what found the false premise. The
+broken falsification was more informative than the passing test.
+
+**The honest bit:** bounding the replacement check took **three attempts**. `segmentPricedDistance`
+appears four times in the same file, and two different anchors matched the wrong call and reported
+a failure on correct code. I have written "bound the region, never grep the file" into this
+codebase repeatedly this week and still got it wrong twice in ten minutes. Knowing the rule is not
+the same as applying it.
+
+**Hook material:** I filed a defect, wrote it into three documents, took it to a board — and then
+measured it and found it did not exist. The original claim had been in the codebase for a day,
+asserted confidently, never checked.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-22 — RACE-WEEK-VOLUME-01 / §121 · the taper looked like the hardest block
 
 **Shipped:** The race no longer counts as training volume. Measured on 8,510 plans, the taper

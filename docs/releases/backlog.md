@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-22 (last ship `f7ff827`, `RACE-WEEK-VOLUME-01` / §121) — PUSHED.** Full `npm run verify`: **3,017 tests / 336 files** (⚠️ exits 1 on the DURATION gate only — the filed `CI-DURATION-TARGETEDGRID-01`; measured, not assumed: the flagged test reads 2,085 ms in the parallel suite and ~700 ms in isolation, so the baseline was NOT re-based). Typecheck clean; `audit-docs.sh` ALL CLEAN. ⚠️ `452 tests / 40 files` in earlier blocks is the NARROWER marketing-and-shared scope. Fourteen commits today: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage waves, `<Section>` adoption, the docs, the step-numeral contrast fix, the spacing scale, `SITE-WAVE-2`, `SITE-BEAT-01`, and the engine pair. · 🔴 **`SITE-WAVE-3` is DEAD** — the palette question went to the founder on a device: *"its better"*. · **`fa0272a` §120** — 2,811 sessions showed a pace their own reps contradicted; the board **rejected the constant it had itself named** (right question, wrong unit) and bounded the anchor against **CV**. · **`f7ff827` §121** — the race is no longer training volume (the taper outweighed the peak in **50% of marathons**). · ✅ **`SESSION-SIZING-ANCHOR-01` CLOSED — the premise was FALSE** (0 of 1,320 sessions; my first measurement said 20.2% because the denominator counted a RAMP anchor, and my first gate was hollow). · 🔴 **`TAPER-OVER-PEAK-01` RULED, not built** — not a taper defect, **the peak is too small**: at 2 days/week §1 offers only 100/0 or 50/50, the arithmetic that VETOED P-02. Blocked on measuring the §22 and cohort effect. · 🔴 **`RACE-ANCHOR-CV-OVERRIDE-01`** — a §85/§22 deadlock, built and reverted (100 tests red).
+**State at END of 2026-09-22 (last ship `b538b3d`, `SESSION-SIZING-ANCHOR-01`) — PUSHED.** Full `npm run verify`: **3,017 tests / 336 files** (⚠️ exits 1 on the DURATION gate only — the filed `CI-DURATION-TARGETEDGRID-01`; measured, not assumed: the flagged test reads 2,085 ms in the parallel suite and ~700 ms in isolation, so the baseline was NOT re-based). Typecheck clean; `audit-docs.sh` ALL CLEAN. ⚠️ `452 tests / 40 files` in earlier blocks is the NARROWER marketing-and-shared scope. Fifteen commits today: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage waves, `<Section>` adoption, the docs, the step-numeral contrast fix, the spacing scale, `SITE-WAVE-2`, `SITE-BEAT-01`, and the engine pair. · 🔴 **`SITE-WAVE-3` is DEAD** — the palette question went to the founder on a device: *"its better"*. · **`fa0272a` §120** — 2,811 sessions showed a pace their own reps contradicted; the board **rejected the constant it had itself named** (right question, wrong unit) and bounded the anchor against **CV**. · **`f7ff827` §121** — the race is no longer training volume (the taper outweighed the peak in **50% of marathons**). · ✅ **`SESSION-SIZING-ANCHOR-01` CLOSED — the premise was FALSE** (0 of 1,320 sessions; my first measurement said 20.2% because the denominator counted a RAMP anchor, and my first gate was hollow). · 🔴 **`TAPER-OVER-PEAK-01` RULED, not built** — not a taper defect, **the peak is too small**: at 2 days/week §1 offers only 100/0 or 50/50, the arithmetic that VETOED P-02. Blocked on measuring the §22 and cohort effect. · 🔴 **`RACE-ANCHOR-CV-OVERRIDE-01`** — a §85/§22 deadlock, built and reverted (100 tests red).
 
 🧭 **The homepage, measured at 375px:** first ground change **screen 10.6 → 3.4**, proof **52% → 24%**, sections **14 → 11**, page **12,317 → 11,773px**, content `<h2>` **9 (all 26px) → 6 with a scale**.
 
@@ -686,8 +686,13 @@ ways" — is at 53%, and there is nothing to tap there.**
   **the pages built to catch traffic are the ones not converting it.**
 - ⚠️ **Constrained by standing ruling: NEVER adjacent to a price.**
 
-### 🧭 `SITE-WAVE-3` — INSUFFICIENT EVIDENCE. Do not start.
-**Board: 🧭 DESIGN BOARD (ruled — blocked on wave 1).** → **🏃 COACHING BOARD if opened.**
+### 🔴 `SITE-WAVE-3` — **DEAD 2026-09-22. Permanent kill, do not re-propose.**
+**Board: 🧭 DESIGN BOARD (ruled).** Register row in `design-rulings.md` § 1.
+
+**The settling artefact the sitting named was "ship wave 1, founder looks again."** Waves 1, 2
+and 4 shipped; he looked, on a phone; the answer was **"its better."** ⚠️ **The measurement below
+stands and is NOT new evidence** — it was true when the board ruled INSUFFICIENT EVIDENCE and it
+is what the founder's verdict answered.
 
 **Collins' question: should the site adopt the app's session-colour language?**
 
