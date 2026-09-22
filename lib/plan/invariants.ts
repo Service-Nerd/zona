@@ -80,6 +80,8 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-WEEK-SHARPENING',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE',
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
+  'INV-PLAN-HEADER-PACE-MATCHES-WORK',
+  'INV-PLAN-RACE-ANCHOR-MATCHES-GOAL',
   'INV-PLAN-RACE-SPECIFIC-VARIETY',
   // INV-PLAN-THEME-MATCHES-PRESCRIPTION retired by GEN-FIX-06 (incident N4, P0,
   // 2026-08-06) — its four-literal denylist was replaced by the semantic
@@ -2657,6 +2659,129 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             actual: `${Math.round(ratio*100)}%`,
             expected: '≥ 50%',
           })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-HEADER-PACE-MATCHES-WORK — §120 / HM-ANCHOR-VS-GOAL-01.
+  //
+  // A session card's header pace is documented as the session's WORK pace (§85
+  // computes a time-weighted mean for an over-under specifically so that "the
+  // header is honest about a session whose steps run either side of threshold").
+  // It was not. Every row whose work steps were anchored somewhere other than T
+  // fell through to the generic threshold band: 2,811 sweep sessions displayed a
+  // pace their own reps contradicted, in BOTH directions -- `cv_intervals`
+  // (faster than T) and `hm_pace_intervals` (slower) -- worst case 147 s/km. A
+  // runner reading the header ran the reps up to 30 s/km too slow, which is the
+  // session gone.
+  //
+  // ⚠️ THIS INVARIANT IS ALSO WHAT MAKES §22's RATIO ARM SOUND. That check
+  // classifies goal-pace work by reading `pace_target`, i.e. a display field
+  // deciding a structural question, which is what INV-CLASS forbids. The fix is
+  // NOT a second classifier -- two answers to "is this session goal-paced?" is
+  // the parallel-semantics failure this repo has paid for three times. It is
+  // this check, which makes the header a MECHANICALLY VERIFIED MIRROR of the
+  // prescription, so reading it is reading the prescription.
+  //
+  // Scope: sessions whose derived work steps all carry the SAME pace string.
+  // A mixed-anchor row (§85's over-unders) displays a time-weighted mean that
+  // equals no single step by design, and is skipped rather than given a second
+  // rule that would restate §85's own INV-PLAN-OVER-UNDER-MEAN-NEAR-THRESHOLD.
+  for (const w of plan.weeks) {
+    for (const session of Object.values(w.sessions)) {
+      if (!session || session.type !== 'quality') continue
+      if (!session.pace_target || !session.derived_set) continue
+      const workPaces = new Set(
+        session.derived_set.blocks
+          .flatMap(b => b.steps)
+          .filter(st => st.role === 'work' && st.pace)
+          .map(st => st.pace as string),
+      )
+      if (workPaces.size !== 1) continue           // effort-governed, or §85 mixed
+      const workMid = parsePaceMidpoint(Array.from(workPaces)[0])
+      const headerMid = parsePaceMidpoint(session.pace_target)
+      if (workMid == null || headerMid == null) continue
+      // The header and the work step are formatted as bands of different widths
+      // (±2s vs the row's authored width), so their midpoints can differ by a
+      // rounding width without disagreeing. 3% is §19's own margin, reused
+      // rather than a fourth tolerance invented here.
+      if (Math.abs(workMid - headerMid) / workMid > 0.03) {
+        // ⚠️ THE §22 OVERRIDE ARM IS `warn`, AND IT IS A DEADLOCK, NOT A LEAK.
+        //
+        // When the header IS the plan's goal pace, §22's goal-pace override put
+        // it there: the session was renamed "{Distance}-pace reps" and given the
+        // goal band, while the derived set kept the row's own anchor because §85
+        // shields `CV` in terms ("never substituted by §22's goal-pace
+        // override"). Measured 2026-09-22: 92 of 2,401 single-anchor quality
+        // sessions (3.8%), every one of them this, all at HM and marathon, worst
+        // case 69 s/km.
+        //
+        // The obvious fix — exclude a CV-anchored row from the override, as
+        // `isMixedPaceRow` already excludes over-unders — was BUILT AND REVERTED
+        // the same hour: it turns §22's own ownership arm red on 100 tests
+        // ("second-half peak quality 'CV intervals' is not goal-pace work").
+        // §85 says the row may not be re-priced; §22 says a row in that window
+        // must be goal-paced. A CV row there cannot satisfy both. That is two
+        // ratified principles in deadlock and it belongs to the Coaching Board,
+        // exactly like the §111/§57 deadlock found on 2026-09-20 — not to a
+        // commit shipping §120. Filed as RACE-ANCHOR-CV-OVERRIDE-01.
+        //
+        // `warn`, so the sweep counts it every run and the number cannot drift
+        // unwatched, rather than an exclusion that would make it invisible.
+        const goalMidForHeader = plan.meta.goal_pace_per_km
+          ? parsePaceMidpoint(plan.meta.goal_pace_per_km) : null
+        const isGoalOverride = goalMidForHeader != null
+          && Math.abs(headerMid - goalMidForHeader) / goalMidForHeader <= 0.03
+        violations.push({
+          code: 'INV-PLAN-HEADER-PACE-MATCHES-WORK',
+          principle_ref: 'CoachingPrinciples §120, §85',
+          severity: isGoalOverride ? 'warn' : 'error',
+          week: w.n,
+          message: isGoalOverride
+            ? `${session.label ?? 'session'} header reads goal pace ${session.pace_target} over work steps at ${Array.from(workPaces)[0]} — §22's override vs §85's shield (RACE-ANCHOR-CV-OVERRIDE-01, open)`
+            : `${session.label ?? 'session'} header reads ${session.pace_target} over work steps at ${Array.from(workPaces)[0]} — the runner following the header does not run the session`,
+          actual: session.pace_target,
+          expected: Array.from(workPaces)[0],
+        })
+      }
+    }
+  }
+
+  // INV-PLAN-RACE-ANCHOR-MATCHES-GOAL — §120.
+  //
+  // On a time-target plan, "HM pace" means the pace of the race the runner is
+  // training for, as `T` has since 2026-09-03 and as the sibling `mp_blocks` /
+  // `tenk_pace_intervals` rows were already anchored. Before §120 it meant their
+  // CURRENT half pace, so on a real 1:50 target the three PEAK race-specific
+  // sessions were prescribed 36-58 s/km SLOWER than the pace being trained for.
+  //
+  // ⚠️ THE ROW MAY LEGITIMATELY BE ABSENT and that is not a violation -- §120
+  // Amendment 1 withholds it when goal pace is faster than CV. This checks the
+  // sessions that EXIST, never that one exists; §22's ratio arm is what holds
+  // the plan to race-specific exposure.
+  if (isTimeTarget && plan.meta.goal_pace_per_km) {
+    const goalMid = parsePaceMidpoint(plan.meta.goal_pace_per_km)
+    if (goalMid != null) {
+      for (const w of plan.weeks) {
+        for (const session of Object.values(w.sessions)) {
+          if (!session || session.catalogue_id !== 'hm_pace_intervals') continue
+          const work = session.derived_set?.blocks
+            .flatMap(b => b.steps).find(st => st.role === 'work' && st.pace)
+          if (!work?.pace) continue
+          const workMid = parsePaceMidpoint(work.pace)
+          if (workMid == null) continue
+          if (Math.abs(workMid - goalMid) / goalMid > 0.03) {
+            violations.push({
+              code: 'INV-PLAN-RACE-ANCHOR-MATCHES-GOAL',
+              principle_ref: 'CoachingPrinciples §120',
+              severity: 'error',
+              week: w.n,
+              message: `${session.label ?? 'HM-pace reps'} prescribes ${work.pace} on a plan whose goal pace is ${plan.meta.goal_pace_per_km} — a race-specific session must rehearse the race`,
+              actual: work.pace,
+              expected: plan.meta.goal_pace_per_km,
+            })
+          }
         }
       }
     }

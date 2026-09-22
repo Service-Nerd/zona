@@ -117,6 +117,8 @@ device pass.
 | `SITE-MEASURE-THIRD-01` | 🧭 Design Board | Open — 760px, 560px and 620px section measures bypass the tokens |
 | `RACE-WEEK-VOLUME-01` | 🏃 Coaching Board | **RULED, not built** — the race is not training volume |
 | `MARATHON-READINESS-GAP-01` | 🏃 Coaching Board | Filed, not ruled — a beginner peaking at 25 km sent to race 42.2 km. **Split off so a display fix could not silently close it** |
+| `RACE-ANCHOR-CV-OVERRIDE-01` | 🏃 Coaching Board | **A DEADLOCK, not a leak** — §85 shields CV from §22's goal-pace override; §22 requires that slot to be goal-paced. 92 of 2,401 sessions, worst case 69 s/km. The obvious fix was built and reverted: it turns §22's own ownership arm red on 100 tests |
+| `SESSION-SIZING-ANCHOR-01` | 🏃 Coaching Board | The sizing twin §120 parks by name — `minPerKm` sizes every non-VO2max quality session at THRESHOLD pace whatever its work anchor. Magnitude unmeasured |
 | `RACE-WEEK-SHAKEOUT-VOLUME-01` | 🏃 Coaching Board | ⚠️ **Unverified — reproduce before acting.** May be a sweep artefact |
 | `DESIGN-CD1-TAXONOMY-01` | 🧭 Design Board → 🏃 Coaching Board | Parked. Collins' first assignment: do five session names resolve to one pace? **Take the measurement first — the 2026-08 premise has moved** |
 | `DESIGN-EMPTYSTATE-ART-01` | 🧭 Design Board | Parked — ratify the "no illustration" that was recorded as *"a taste call made against the documented rule"* and never put to a board |

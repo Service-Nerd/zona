@@ -411,6 +411,43 @@ a check asserting no hand-typed gap outside the scale, falsified.
 
 ---
 
+## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
+
+### 🏃 `RACE-ANCHOR-CV-OVERRIDE-01` — §85's shield and §22's exposure requirement cannot both hold
+**Board: COACHING.** Measured, built, reverted, filed. **Not a leak — a deadlock.**
+
+§22's goal-pace override renames a second-half build/peak session to *"{Distance}-pace reps"* and
+sets its header to goal pace. The matching substitution in the derived set applies to the `T`
+anchor **only**, because §85 shields `CV` in terms: *"never substituted by §22's goal-pace override
+— the 'over' of an over-under is defined relative to the runner's THRESHOLD, not to their race
+goal."* The shield is honoured in the rep detail and ignored in the header and the label.
+
+**Measured 2026-09-22:** 92 of 2,401 single-anchor quality sessions (**3.8%**), **all** of them this,
+**all** at HM and marathon. Worst case: a `cv_intervals` session renamed *"Marathon-pace reps"* with
+a header **69 s/km** away from its own work steps.
+
+🔴 **THE OBVIOUS FIX WAS BUILT AND REVERTED THE SAME HOUR.** Excluding a CV-anchored row from the
+override — exactly as `isMixedPaceRow` already excludes over-unders — turns §22's **own ownership
+arm** red on **100 tests**: *"second-half peak quality 'CV intervals' is not goal-pace work."* §85
+says the row may not be re-priced; §22 says a row in that window must be goal-paced. **A CV row
+there cannot satisfy both.** Same shape as the §111/§57 deadlock found 2026-09-20, and it belongs
+to the board, not to a commit shipping §120.
+
+**Visible meanwhile, not hidden:** `INV-PLAN-HEADER-PACE-MATCHES-WORK` emits `warn` (not `error`)
+for exactly this case and names the item, so the sweep counts it every run.
+
+### 🏃 `SESSION-SIZING-ANCHOR-01` — the sizing twin, parked by §120 itself
+**Board: COACHING.** Filed, unmeasured.
+
+`minPerKm` sizes a session and therefore sets its prescribed **distance**, and it uses
+`pace.minPerKmQuality` for every non-VO2max quality session regardless of its work anchor — so a
+CV-anchored session's distance is computed at THRESHOLD pace, and an HM-anchored one likewise.
+§120 §6 names it and explicitly leaves it: *"moving it changes prescribed distance, which is a
+prescription change on its own account."* **Magnitude not measured.** The header fix deliberately
+changed `pace_target` and left `minPerKm` alone for this reason.
+
+---
+
 ## 🔧 FILED 2026-09-22 DURING SITE-BEAT-01 — a gate that straddles its own threshold
 
 ### 🔧 `CI-DURATION-TARGETEDGRID-01` — `npm run verify` is non-deterministic at the duration wall
@@ -800,32 +837,20 @@ right to keep flagging it.
 be verified today: no deploys and no device. **Do not pick an option without looking at the app on a
 phone first.**
 
-### 🟡 `HM-ANCHOR-VS-GOAL-01` — RULED by the Coaching Board 2026-09-21, ratified as **§120**, NOT YET SHIPPED
+### ✅ `HM-ANCHOR-VS-GOAL-01` / §120 + Amendment 1 — **SHIPPED 2026-09-22**
 
-**Ruling + every measurement: `docs/decisions/hm-anchor-vs-goal-01.md`. Principle: §120.**
+Anchor, bound, header and both invariants, in one commit. Detail in
+`docs/canonical/CoachingPrinciples.md` §120 Amendment 1 and the feature registry.
 
-**CORRECT WITH AMENDMENT** on the anchor: on a time-target plan `HM` resolves to **GOAL** pace, as
-`T` has since 2026-09-03 and as the sibling `mp_blocks` row already does. **INSUFFICIENT EVIDENCE**
-on the amendment's bound, which is what blocks the ship.
+**What the bound cost, because it is the largest number and should not be found in a diff:**
+maintenance at 21.1 km **44.8% → 48.2% (+3.4pp)**, maintenancePct +0.9pp, constraintNotePct
++0.9pp, `neverBuildsPct` 18.1→18.6 (masters) and 12.7→12.8 (standard). **A/B'd: the anchor and
+header changes reshape NOTHING (19/19 cohort checks green with the bound disabled) — every
+movement belongs to the bound.**
 
-**Why it matters:** measured on 1,296 sessions, the same runner's "HM-pace intervals" are 26 s/km
-too SLOW for an ambitious goal and 45 s/km too FAST for a conservative one, wrong in both
-directions. Without a benchmark, `HM pace` takes **two values (6:00 / 5:20) for every target from
-1:25 to 2:20**. And §44's live difficulty note already promises *"race-pace sessions will bite
-harder"* while the engine prescribes the opposite.
-
-**Blocked on ONE thing: the value of `RACE_PACE_ANCHOR_MAX_STRETCH_PCT`.** Both obvious gates were
-examined and rejected (`goalBeyondMeasuredFitness` tests against INTERVAL pace; `difficulty_band` is
-forbidden by §44 point 3). A 15% bound costs 27% of these sessions their row, 20% costs 19%, and
-losing the row presses on §22's own 50% floor. **It must be measured, not chosen.**
-
-**To ship, one commit:** the numeric + `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL` +
-`INV-PLAN-HEADER-PACE-MATCHES-WORK` (written, falsified) + the header fix + the structural
-classifier + `npm run measure:fitness` on the changed engine.
-
-⚠️ **The header fix cannot ship alone** — the ratio invariant classifies by reading the header, so
-truth-telling drops 555 plans below §22. Anchor and header ship together. ⚠️ **The defect is live.**
-
+**§22 costs nothing** — 14,253 swept plans, zero `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO`
+violations, no new violations above baseline. That was the board's binding condition and it was a
+hypothesis until measured.
 
 ### ⚖️ RULED 2026-09-20 — READ THIS BEFORE THE PROPOSALS BELOW
 

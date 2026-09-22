@@ -2123,6 +2123,42 @@ export const GENERATION_CONFIG = {
   // inversion (goal 4:30 vs interval 4:33), so it is caught with margin to spare.
   INTENSITY_ORDERING_TOLERANCE_PCT: 0.5,
 
+  // ── The race-pace anchor's upper bound (§120 Amendment 1, 2026-09-22) ───────
+  // How much faster than derived CV pace a runner's stated GOAL pace may be
+  // before the HM race-specific row is not offered at all.
+  //
+  // §120 anchors `hm_pace_intervals` to GOAL pace on a time-target plan, which
+  // is right in both directions — but unbounded it prescribes the impossible.
+  // Measured 2026-09-22, 12,960 sessions across 4,320 generated HM time-target
+  // plans: a 52:00 10K runner targeting a 1:25 half is handed 4 x 2 km at
+  // 4:02/km, which is 50 s/km faster than their own VO2max interval pace, three
+  // times in PEAK. The engine generates that plan today.
+  //
+  // ⚠️ THE BOUND IS AGAINST CV, NOT AGAINST A PERCENTAGE OF CURRENT HM PACE, and
+  // the sitting rejected the percentage form it had itself proposed
+  // (`RACE_PACE_ANCHOR_MAX_STRETCH_PCT`). Right question, wrong unit:
+  // INTENSITY_ORDERING_TOLERANCE_PCT above already asks "how far past a derived
+  // band may a goal pace sit", and a second constant asking it in a different
+  // unit is the duplicate-semantics failure §120's own text cites when it
+  // rejected reusing `difficulty_band`. Same vocabulary, one band down.
+  //
+  // WHY CV IS THE BAND. Measured decomposition of where goal pace lands:
+  //   60.0%  slower than threshold  -> §120 makes these sessions EASIER
+  //   10.0%  T to CV                -> harder but coherent race-specific work
+  //   15.0%  CV to INTERVAL         -> 2 km reps at 5K effort, labelled race pace
+  //   15.0%  at or past INTERVAL    -> not hard, impossible
+  // Past CV an "HM-pace" rep is no longer race rehearsal: it is threshold-or-
+  // harder work at a volume authored for race pace. Cost of the bound: 30.0% of
+  // grid sessions lose the row, and it is never a plan's only non-VO2max quality
+  // (0 of 4,320).
+  //
+  // 0.5%, the same width and for the same reason as its sibling above: goal pace
+  // and CV pace are two independent derivations and a rounding width between
+  // them is noise. Equivalent in the rejected unit, for the record: CV is crossed
+  // at 5.4-6.2% of current HM pace across benchmarks from 57:00 to 34:00 for a
+  // 10K, a spread of 0.8pp -- which is WHY one constant can serve every runner.
+  RACE_PACE_ANCHOR_MAX_OVER_CV_PCT: 0.5,
+
   // ── Race-specific ownership (CoachingPrinciples §22, CD-18/SC-05) ───────────
   // Distances whose race pace is physiologically DISTINCT from interval pace,
   // and which must therefore own a `race_specific` catalogue session rather than

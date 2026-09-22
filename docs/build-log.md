@@ -6,6 +6,51 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — HM-ANCHOR-VS-GOAL-01 / §120 · the number the board asked for was in the wrong unit
+
+**Shipped:** On a time-target half, "HM pace" now means the pace of the race you are training for,
+bounded so it can never be faster than your own CV pace. And the session card's header now states
+the pace its reps actually run: **2,811 sweep sessions had been showing one that contradicted them.**
+
+**Dev learning:** The board's ruling named a constant — `RACE_PACE_ANCHOR_MAX_STRETCH_PCT`, a
+percentage of the runner's current half pace — and told me to measure its value rather than choose
+it. The measurement said the quantity was fine and the **unit** was wrong: there is already a
+constant asking "how far past a derived pace band may a stated goal pace sit", and adding a second
+one measured against a different band is exactly the duplicate-semantics failure the ruling itself
+cited when rejecting a different reuse. Same vocabulary, one band down. Also: enforcement needed no
+new gate at all. `resolveAnchorPace` is the single owner of anchor pricing and the eligibility set is
+built from it, so returning `null` withholds the row through machinery that already existed.
+
+**Product/creator learning:** The worst case is not "a hard session". A 52-minute 10K runner
+targeting a 1:25 half was going to be handed 4 × 2 km at 4:02/km — **50 s/km faster than their own
+VO2max interval pace**, three times in peak phase. The engine generates that plan today. The bound
+costs something real and I wrote the number down rather than let it be found later: 3.4pp more
+half-marathon plans are now classified maintenance rather than build.
+
+**AI-building learning:** My first measurement produced a clean, confident finding that was an
+instrument fault. I read the runner's threshold pace off the session card header, reasoning it falls
+through to the threshold band — and got **0 of 12,960** sessions crossing threshold, which read as
+"the injury concern does not exist." On a goal-pace week the header IS goal pace, so I was comparing
+goal to goal and could only ever get zero. Caught by tracing one real plan and looking at it. The
+real number is 40%. **A measurement that agrees with a convenient conclusion is the one to trace.**
+
+**The honest bit:** I then fixed a second defect the invariant caught, measured it, and had to
+**revert it an hour later**. Excluding CV-anchored rows from the goal-pace override — the obviously
+correct reading of §85 — turns §22's own ownership arm red on 100 tests. §85 says the row may not be
+re-priced, §22 says a row in that window must be goal-paced, and a CV row there cannot satisfy both.
+That is two ratified principles in deadlock, it is the board's to settle, and it is not something to
+smuggle into a commit shipping something else. Filed, and the invariant now warns on it every sweep
+so it cannot go quiet.
+
+**Hook material:** A runner targeting a 1:25 half off a 52-minute 10K would have been prescribed 2 km
+reps at 4:02/km — nearly a minute per kilometre faster than the pace their own VO2max sessions were
+set at. Not a hard session. An impossible one. Shipped by an anchor that meant "your half-marathon
+pace" and never asked which half marathon.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-22 — SITE-BEAT-01 · the merge deleted the gap, and the spacing audit could not see it
 
 **Shipped:** `--beat-y`, the gap between two beats INSIDE one section. Three places on the homepage

@@ -89,4 +89,42 @@ describe('INV-CAT-V2-NO-LITERAL-PACE', () => {
     // on cue. It now asserts the opposite: the checks above are exercised.
     expect(v2Rows().length, 'the v2 checks must run against at least one real row').toBeGreaterThan(0)
   })
+
+  /**
+   * INV-CAT-HM-ANCHOR-IS-HM-ONLY — §120.
+   *
+   * `resolveAnchorPace`'s `HM` arm reads the PLAN's goal pace, which is the
+   * runner's half-marathon goal only because every row carrying an `HM` work
+   * anchor is eligible for the half and nothing else. That was true when §120
+   * shipped and would stop being true, silently and with no error, the first
+   * time a marathon row wanted an HM-paced step: the marathon goal pace would be
+   * handed to it.
+   *
+   * The alternative was threading a second "hm goal pace" parameter through
+   * three functions and their call sites. This holds the same property with one
+   * assertion, and it can be made to go red by widening one row's
+   * `distance_eligibility` — which is exactly the edit that would break it.
+   */
+  it('an HM work anchor may only appear on a half-marathon-only row', () => {
+    const offenders: string[] = []
+    let rowsChecked = 0
+    for (const row of v2Rows()) {
+      const parsed = StructureV2Schema.safeParse(row.main_set_structure)
+      if (!parsed.success) continue
+      const usesHm = parsed.data.blocks.some(b => b.steps.some(
+        st => st.role === 'work' && st.target.kind === 'pace' && st.target.anchor === 'HM'))
+      if (!usesHm) continue
+      rowsChecked++
+      const elig = row.distance_eligibility
+      if (elig.length !== 1 || elig[0] !== 'HM') {
+        offenders.push(`${row.id} is eligible for [${elig.join(', ')}]`)
+      }
+    }
+    expect(offenders,
+      'an HM-anchored row outside HM plans would resolve the WRONG race\'s goal pace (§120)')
+      .toEqual([])
+    // Not vacuous: there is at least one such row, and if it ever disappears
+    // this assertion says so rather than passing over an empty set.
+    expect(rowsChecked, 'no row uses the HM anchor — has §120 been removed?').toBeGreaterThan(0)
+  })
 })

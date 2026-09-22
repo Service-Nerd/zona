@@ -169,7 +169,16 @@ function paceBandStr(centerMins: number, pctTolerance: number): string {
 // with full recovery; they are MEANT to be hard. Discounting them produces
 // under-stimulus. So the discounted VDOT drives easy/threshold paces; the raw
 // benchmark VDOT drives interval paces.
-function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): PaceGuide {
+// EXPORTED for measurement only (HM-ANCHOR-VS-GOAL-01, 2026-09-22). No
+// behaviour delta: the `export` keyword is the whole change.
+//
+// ⚠️ IT IS EXPORTED SO THAT NOBODY RECOMPUTES IT. A board-evidence script needs
+// the runner's threshold pace, and the plan does not carry a PaceGuide — only
+// `meta.vdot` and `meta.vdot_training_anchor`, which are this function's own two
+// arguments. Reconstructing the bands from the VDOT fractions in a script is the
+// second-copy-that-drifts class this repo has recorded five times; calling the
+// producer with the producer's own recorded inputs is not.
+export function buildPaceFromVDOT(discountedVdot: number, rawVdot: number): PaceGuide {
   const eFast = paceAtFraction(discountedVdot, 0.74)
   const eSlow = paceAtFraction(discountedVdot, 0.59)
   const tFast = paceAtFraction(discountedVdot, 0.88)
@@ -950,7 +959,25 @@ const CONTROLLED_THRESHOLD_CUE = 'Controlled effort — if you can’t say a sho
 // `goalPaceMinPerKm` is null whenever the runner has no goal pace (a finish
 // plan, or no target_time) — the anchor is then unresolvable, same "absent
 // anchors are legitimate" posture as resolveMainSet's own docstring.
-function resolveAnchorPace(anchor: PaceAnchor, pace: PaceGuide, goalPaceMinPerKm: number | null): number | null {
+/**
+ * §120 (+ Amendment 1) — the HM anchor on a time-target HALF plan.
+ *
+ * ⚠️ THE `HM` ARM READS `goalPaceMinPerKm`, WHICH IS THE PLAN'S GOAL PACE FOR
+ * WHATEVER DISTANCE THE PLAN IS. That is the runner's half-marathon goal only
+ * because every row carrying an `HM` work anchor is `distance_eligibility:
+ * ['HM']` — one row, `hm_pace_intervals`. Left as a comment that would be true
+ * today and false the first time a marathon row wanted an HM-paced step, so it
+ * is a CHECK instead: `INV-CAT-HM-ANCHOR-IS-HM-ONLY`. Do not delete it and rely
+ * on the sentence above.
+ *
+ * Returning `null` is how §120's bound is enforced, and it needs no second gate:
+ * `resolvableAnchors` is built from this function, so an unresolvable anchor
+ * already makes every row needing it ineligible (CAT-ROW-ELIGIBILITY-01). One
+ * owner prices the anchor and the same owner withholds it.
+ */
+function resolveAnchorPace(
+  anchor: PaceAnchor, pace: PaceGuide, goalPaceMinPerKm: number | null,
+): number | null {
   switch (anchor) {
     case 'E':    return pace.minPerKmEasy
     case 'T':    return pace.minPerKmQuality
@@ -961,7 +988,25 @@ function resolveAnchorPace(anchor: PaceAnchor, pace: PaceGuide, goalPaceMinPerKm
     // segments. That is a legitimate "this runner has no such pace", not a gap:
     // the selector's anchor gate keeps rows needing them out of their pool.
     case 'M':    return pace.minPerKmMarathon
-    case 'HM':   return pace.minPerKmHM
+    case 'HM': {
+      // Finish goal, or a plan that is not a half: unchanged — the runner's
+      // current half-marathon pace, as it has always been.
+      if (goalPaceMinPerKm == null) return pace.minPerKmHM
+      // §120 Amendment 1 — bounded. Past CV this stops being race rehearsal and
+      // becomes threshold-or-harder work at a volume authored for race pace.
+      // Withheld rather than capped: a session named "HM-pace reps" run at a
+      // pace that is NOT the runner's HM goal is the header defect this whole
+      // item exists to fix, and renaming it honestly stops it being
+      // race-specific, which is withholding with extra steps.
+      if (pace.minPerKmCV != null) {
+        const cvFloor = pace.minPerKmCV * (1 - GENERATION_CONFIG.RACE_PACE_ANCHOR_MAX_OVER_CV_PCT / 100)
+        if (goalPaceMinPerKm < cvFloor) return null
+      }
+      // §120 — "HM pace" on a time-target plan means the pace of the race the
+      // runner is training for, as `T` has since 2026-09-03 and as the sibling
+      // `mp_blocks` / `tenk_pace_intervals` rows are already anchored `goal`.
+      return goalPaceMinPerKm
+    }
     default:     return null   // R/race_5K/race_3K: no numeric pace resolved here today
   }
 }
@@ -1664,7 +1709,20 @@ function makeQualitySession(args: {
       // numeric one shipped 859 sessions reading "HM-pace reps" with NO pace at
       // all — caught by INV-PLAN-DERIVED-SET-PACED. Both are null for exactly the
       // same runners (§24b), so the selector's gate stays consistent with both.
-      ...(pace.hmPaceStr ? { HM: pace.hmPaceStr } : {}),
+      // §120 — the DISPLAY half of the HM anchor, resolved through the SAME
+      // owner as the sizing half. It previously read `pace.hmPaceStr` directly,
+      // which was correct only while the anchor meant "current HM pace"; §120
+      // makes it mean "the pace of the race you are training for" on a
+      // time-target plan, and two resolvers answering that question from two
+      // sources is how CAT-ROW-ELIGIBILITY-01 shipped 859 sessions reading
+      // "HM-pace reps" with no pace at all. Band width 2 when substituted, to
+      // match `T`'s goal band above exactly; the unsubstituted case keeps its
+      // authored ±3s string.
+      ...(() => {
+        const hm = resolveAnchorPace('HM', pace, goalPaceMinPerKmForSizing)
+        if (hm == null) return {}
+        return { HM: goalPaceMinPerKmForSizing != null ? paceBandStr(hm, 2) : pace.hmPaceStr! }
+      })(),
       ...(goalPace ? { goal: goalPace } : {}),
     }
     const params = {
@@ -1818,10 +1876,47 @@ function makeQualitySession(args: {
     // distance); reading it here is what keeps the header honest about a session
     // whose steps run either side of threshold, and what makes the ±3% margin
     // §19 was held to rely on something actually measured rather than assumed.
-    minPerKm = isMixedPaceRow && repPlan ? repPlan.workPaceMinPerKm : pace.minPerKmQuality
-    paceTarget = isMixedPaceRow && repPlan
+    //
+    // ⚠️ HM-ANCHOR-VS-GOAL-01, 2026-09-22 — `isMixedPaceRow &&` REMOVED, and
+    // that guard is the whole defect. §85 introduced the time-weighted mean for
+    // over-unders and scoped it to them; every OTHER row fell through to the
+    // generic threshold band no matter what its work steps were anchored to.
+    // Measured on the sweep: 2,811 sessions displayed a pace their own reps
+    // contradicted — `cv_intervals` (CV, faster than T) and `hm_pace_intervals`
+    // (HM) in opposite directions, worst case 147 s/km. A runner reading the
+    // header ran the reps up to 30 s/km too slow, which is the session gone.
+    //
+    // The honest answer was already computed and already scoped correctly:
+    // `pacedRepPlan` resolves each work step through `resolveAnchorPace` and
+    // applies §22's goal substitution only to `T` anchors, so its
+    // `workPaceMinPerKm` IS this session's work pace for a single-anchor row as
+    // much as for an over-under. Nothing new is derived here; a condition is
+    // removed. Rows with no paced rep block (continuous shapes, v1 rows) keep
+    // the threshold band, which is what they genuinely are.
+    minPerKm = repPlan ? repPlan.workPaceMinPerKm : pace.minPerKmQuality
+    // ⚠️ `derivedSet` IS THE LAST RESORT, NOT THE THRESHOLD BAND. `pacedRepPlan`
+    // returns null for any row it cannot dose (continuous shapes, v1 rows, and a
+    // paced-rep row whose rep length blows past the work-minute band) — and the
+    // old fallback then printed the generic threshold band over reps the session
+    // had already resolved. Found by INV-PLAN-HEADER-PACE-MATCHES-WORK on its
+    // first full run: 100 HM sessions reading 5:25-5:40 over work steps at
+    // 10:27-10:53, an eight-minute-per-km lie, because the fix above only
+    // reached rows that dose.
+    //
+    // ⚠️ DISPLAY ONLY — `minPerKm` above is deliberately untouched. It sizes the
+    // session and therefore sets its prescribed DISTANCE, and moving it is a
+    // prescription change the board has NOT ruled on: §120 §6 parks it by name
+    // ("the sizing twin of the header defect"). Raise it as its own item.
+    const derivedWorkPaces = new Set(
+      (derivedSet?.blocks ?? []).flatMap(b => b.steps)
+        .filter(st => st.role === 'work' && st.pace)
+        .map(st => st.pace as string),
+    )
+    paceTarget = repPlan
       ? paceBandStr(repPlan.workPaceMinPerKm, 2)
-      : pace.qualityPaceStr
+      : derivedWorkPaces.size === 1
+        ? Array.from(derivedWorkPaces)[0]
+        : pace.qualityPaceStr
     zone = zones.qualityZone
     hrTarget = zones.qualityHR
   }

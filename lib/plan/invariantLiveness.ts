@@ -308,6 +308,30 @@ export const MUTATIONS: Mutation[] = [
       }
     }
   } },
+  { name: 'HM race-pace reps at the wrong pace', apply: p => {
+    // §120 / INV-PLAN-RACE-ANCHOR-MATCHES-GOAL. Synthesised rather than hunted
+    // for: `hm_pace_intervals` only appears on a time-target HALF, and §120
+    // Amendment 1 withholds it whenever the goal outruns CV, so a mutation that
+    // waited for the corpus to hand one over would read as unwakeable for
+    // reasons that are about the CORPUS, not the rule. Three times now the
+    // liveness debt has turned out to be the sample.
+    const s = sessionsOf(p).find(x => (x as unknown as { derived_set?: unknown }).derived_set)
+      ?? sessionsOf(p)[0]
+    if (!s) return
+    const sn = s as unknown as Poke & { catalogue_id?: string; derived_set?: unknown; type?: string }
+    ;(p.meta as unknown as Record<string, unknown>).goal_pace_per_km = '4:30 /km'
+    sn.type = 'quality'
+    sn.catalogue_id = 'hm_pace_intervals'
+    // Work steps a full minute per km off the goal: the exact defect §120 names
+    // — the peak race-specific session rehearsing a pace that is not the race.
+    sn.derived_set = { version: 2, blocks: [{ repeat: 4, label: 'reps', steps: [
+      { role: 'work', modality: 'run', length: '2 km', pace: '5:30–5:45 /km', pace_mode: 'target', advance: 'auto' },
+      { role: 'recovery', modality: 'jog', length: '3 min', pace: '6:30–7:30 /km', pace_mode: 'ceiling', advance: 'auto' },
+    ] }] }
+    // The header agrees with the reps, so this wakes the ANCHOR rule and not
+    // INV-PLAN-HEADER-PACE-MATCHES-WORK by accident.
+    ;(sn as unknown as { pace_target?: string }).pace_target = '5:30–5:45 /km'
+  } },
   { name: 'strip coach_notes',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).coach_notes }) },
   { name: 'strip derived_set',         apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).derived_set }) },
   { name: 'strip catalogue_id',        apply: p => sessionsOf(p).forEach(s => { delete (s as unknown as Poke).catalogue_id }) },

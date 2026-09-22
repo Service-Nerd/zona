@@ -88,10 +88,24 @@ describe('§99 — hm_pace_intervals states an honest duration', () => {
       return t.toISOString().slice(0, 10)
     }
     const ps = add(TODAY, 7)
+    // ⚠️ A BENCHMARK WAS ADDED 2026-09-22 (§120 Amendment 1), and the reason is
+    // the point of the amendment rather than a fixture convenience. Without one
+    // this runner falls back to the coarse fitness table — intermediate T pace
+    // 5:30-6:00 — while asking for a 1:35 half, which is 4:30/km. §120 anchors
+    // the row to GOAL pace, so unbounded it would prescribe 4 x 2 km at 4:30 to
+    // a runner whose assumed threshold is 5:45, and Amendment 1 now WITHHOLDS
+    // the row instead. §120's own text names the no-benchmark cohort as the
+    // worst case, so the row being absent here is the amendment working.
+    //
+    // The §99 rule this block exists for is about DURATION HONESTY and needs a
+    // runner who still draws the row. The companion test below pins the
+    // withheld case, so the change is held in both directions rather than the
+    // fixture being quietly walked to wherever it goes green.
     const input = {
       race_date: add(ps, 16 * 7), race_distance_km: 21.1, goal: 'time_target',
       target_time: '1:35:00', current_weekly_km: 55, longest_recent_run_km: 19,
       days_available: 5, age: 38, fitness_level: fitness, training_age: '5yr+',
+      benchmark: { type: 'race', time: '0:43:00', distance_km: 10 },
       weeks_at_current_volume: 12, acknowledged_prep_warning: true,
     } as any
     const plan: any = generateRulePlan(input, 'paid', ps, undefined, TODAY)
@@ -127,5 +141,74 @@ describe('§99 — hm_pace_intervals states an honest duration', () => {
   it('the dose is untouched — 4 reps, the v1 prescription', () => {
     expect(build('intermediate').derived_set.blocks[0].repeat).toBe(4)
     expect(build('experienced').derived_set.blocks[0].repeat).toBe(4)
+  })
+})
+
+/**
+ * §120 Amendment 1 — the race-pace anchor is BOUNDED.
+ *
+ * §120 anchors `hm_pace_intervals` to GOAL pace on a time-target half, which is
+ * right in both directions and, unbounded, prescribes the impossible: measured
+ * on 12,960 sessions, a 52:00 10K runner targeting 1:25 was handed 4 x 2 km at
+ * 4:02/km, 50 s/km faster than their own VO2max interval pace, three times in
+ * PEAK.
+ *
+ * The bound is against CV rather than a percentage of current HM pace, because
+ * `INTENSITY_ORDERING_TOLERANCE_PCT` already asks "how far past a derived band
+ * may a goal pace sit" and a second constant asking it in a second unit is the
+ * duplicate-semantics failure §120's own text cites. Measured decomposition:
+ * 60% of goal paces are SLOWER than threshold (§120 makes those easier), 10%
+ * land T-to-CV, 15% CV-to-interval, 15% at or past interval.
+ *
+ * Enforcement needs no new gate. `resolveAnchorPace` is the single owner of
+ * anchor pricing and `resolvableAnchors` is built from it, so returning null
+ * withholds the row through the eligibility path that already exists.
+ */
+describe('§120 Amendment 1 — the bound withholds the row', () => {
+  const TODAY = '2026-09-10'
+  const add = (iso: string, d: number) => {
+    const t = new Date(iso + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + d)
+    return t.toISOString().slice(0, 10)
+  }
+  const ps = add(TODAY, 7)
+  const hmSessions = (targetTime: string, benchmark?: { time: string; distance_km: number }) => {
+    const input = {
+      race_date: add(ps, 16 * 7), race_distance_km: 21.1, goal: 'time_target',
+      target_time: targetTime, current_weekly_km: 55, longest_recent_run_km: 19,
+      days_available: 5, age: 38, fitness_level: 'intermediate', training_age: '5yr+',
+      ...(benchmark ? { benchmark: { type: 'race', ...benchmark } } : {}),
+      weeks_at_current_volume: 12, acknowledged_prep_warning: true,
+    } as any
+    const plan: any = generateRulePlan(input, 'paid', ps, undefined, TODAY)
+    return plan.weeks.flatMap((w: any) =>
+      (Object.values(w.sessions) as any[]).filter(sn => sn?.catalogue_id === 'hm_pace_intervals'))
+  }
+
+  it('WITHHOLDS the row when goal pace is faster than CV', () => {
+    // 1:35 on the coarse no-benchmark fallback: goal 4:30/km against an assumed
+    // threshold of 5:45. This is the case §120 calls "not defensible at all".
+    expect(hmSessions('1:35:00')).toHaveLength(0)
+  })
+
+  it('KEEPS the row for a goal that stays inside CV — the amendment is not a ban', () => {
+    // Same runner, same everything, a target their benchmark supports. If this
+    // ever returns zero the bound has swallowed the case it was written to
+    // protect, and §22 loses its race-specific exposure with it.
+    const kept = hmSessions('1:35:00', { time: '0:43:00', distance_km: 10 })
+    expect(kept.length).toBeGreaterThan(0)
+  })
+
+  it('the header now states the pace the reps actually run', () => {
+    // INV-PLAN-HEADER-PACE-MATCHES-WORK, at the session that motivated it.
+    // 2,811 sweep sessions displayed a pace their own reps contradicted.
+    const mid = (band: string) => {
+      const m = band.match(/(\d+):(\d+)/g) ?? []
+      const toMin = (x: string) => { const [a, b] = x.split(':').map(Number); return a + b / 60 }
+      return m.reduce((s2, x) => s2 + toMin(x), 0) / m.length
+    }
+    for (const sn of hmSessions('1:35:00', { time: '0:43:00', distance_km: 10 })) {
+      const work = sn.derived_set.blocks[0].steps.find((s2: any) => s2.role === 'work')
+      expect(Math.abs(mid(sn.pace_target) - mid(work.pace))).toBeLessThan(0.05)
+    }
   })
 })

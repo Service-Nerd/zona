@@ -64,12 +64,20 @@ const esc = (s: string) => s.replace(/-/g, '\\-')
  * (`**ID` / `` **`ID` `` / `~~**ID`), a table's first cell (blockquoted rows
  * included — the 2026-09-18 index table is inside a `>` block), or a heading.
  * A bare mention in a sentence is deliberately NOT a definition.
+ *
+ * ⚠️ THE HEADING ARM WAS BLIND TO THE BACKLOG'S OWN DOMINANT CONVENTION.
+ * It required the id to follow the hashes immediately, and **measured
+ * 2026-09-22 it matched 15 headings while missing 50** — because the filing
+ * rule added a board-tag emoji (`### 🏃 \`ITEM-01\``) and every entry written
+ * since carries one. So a promise whose entry existed, with a heading, in the
+ * right file, still read as dangling. A short bounded prefix is allowed now;
+ * bounded, so a sentence-shaped heading still cannot qualify as a definition.
  */
 const definitionSite = (id: string) => new RegExp(
   `\\*\\*~*\`?${esc(id)}\\b`
   + `|~~\\*\\*\`?${esc(id)}\\b`
   + `|^>?\\s*\\|\\s*[^|]{0,12}?\`?${esc(id)}\`?[~\\s]*\\|`
-  + `|^#{2,4} +[~\`]*${esc(id)}\\b`,
+  + `|^#{2,4} +[^|\\n]{0,8}?[~\`]*${esc(id)}\\b`,
   'm',
 )
 

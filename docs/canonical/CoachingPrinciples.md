@@ -8514,3 +8514,108 @@ truth-telling drops 555 plans below §22. Once the anchor resolves to goal, thos
 genuinely goal-paced and the ratio is satisfied by the prescription rather than by the display.
 **The two changes ship together or not at all.**
 
+
+---
+
+## §120 Amendment 1 — the bound, measured (Coaching Board, 2026-09-22)
+
+**Principle.** On a time-target half-marathon plan the `HM` anchor resolves to **goal pace, but
+never faster than the runner's own CV pace**. Beyond that the `hm_pace_intervals` row is **not
+offered at all** and the slot falls through the selector to other work.
+
+**Config.** `GENERATION_CONFIG.RACE_PACE_ANCHOR_MAX_OVER_CV_PCT` (0.5%).
+
+### The bound is against CV, and the percentage form this section itself proposed is REJECTED
+
+§120 named `RACE_PACE_ANCHOR_MAX_STRETCH_PCT` — a percentage of the runner's current half pace. The
+board rejected its own name: right question, wrong unit. `INTENSITY_ORDERING_TOLERANCE_PCT` (§44 /
+CD-16) already asks *how far past a derived pace band may a stated goal pace sit*, and a second
+constant asking the same question in a different unit is **the duplicate-semantics failure this
+section's own text cites** when it rejected reusing `difficulty_band`. Same vocabulary, one band
+down. The tolerance is 0.5% for the same reason as its sibling: goal pace and CV pace are two
+independent derivations and a rounding width between them is noise, not a crossing.
+
+⚠️ **§44 point 3 does NOT forbid this, and §120 as written half-implies that it does.** Point 3
+forbids the *difficulty band* reading plan-quality signals. §44's own CD-16 amendment says a
+predicate computed from *"two inputs — target time and benchmark — before any session exists"* is
+pre-generation, and names that as the correct side of the boundary. A stretch gate is that class
+exactly. What was rightly rejected was making the **band** drive session selection.
+
+### Why CV is the band
+
+Measured 2026-09-22 on **12,960 `hm_pace_intervals` sessions across 4,320 generated HM time-target
+plans**, with threshold, CV and interval read from the producer's own `PaceGuide`:
+
+| Where the goal pace lands | share |
+|---|---|
+| Slower than threshold — **§120 makes these sessions EASIER** | **60.0%** |
+| T to CV — harder, and coherent race-specific work | 10.0% |
+| CV to interval — 2 km reps at 5K effort, labelled race pace | 15.0% |
+| **At or past interval pace** | **15.0%** |
+
+One runner, three targets — 52:00 for 10 km, 30 km/week, 3 days:
+
+| Target | Goal pace | Against their own bands | Unbounded §120 prescribes |
+|---|---|---|---|
+| 1:55 | 5:27 | 5 s/km faster than T | Correct. This is the fix working. |
+| 1:45 | 4:59 | 33 s/km faster than T | 2 km reps at 5K effort, called race pace |
+| **1:25** | **4:02** | **50 s/km faster than their INTERVAL pace** | **4 × 2 km at 4:02 for a 52-minute 10K runner. Not hard: impossible. The engine generates that plan today.** |
+
+Past CV an "HM-pace" rep is no longer race rehearsal — it is threshold-or-harder work at a volume
+authored for race pace, three times in **peak**.
+
+**One constant serves every runner, and that is measured rather than assumed.** On a 1-minute-target
+grid across six benchmarks from 57:00 to 34:00 for 10 km, goal pace crosses CV at **5.4–6.2%** of
+current HM pace (spread **0.8pp**) and crosses interval at **13.9–14.3%** (spread **0.5pp**).
+
+### Withheld, not capped
+
+Prescribing `min(goal, CV)` would keep §22's exposure and was examined. It fails on this item's own
+terms: a session named *"HM-pace reps"* run at a pace that is **not** the runner's HM goal is the
+header defect §120 exists to fix. Renaming it honestly stops it being race-specific, which is
+withholding with extra steps.
+
+### The two conditions the ruling was made subject to, discharged
+
+1. **§22 costs nothing.** `scripts/property-validate-plans.ts`, **14,253 plans: zero
+   `INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO` violations, no new violations above baseline.**
+   Withholding does not empty the slot — the selector substitutes, and on a goal-pace week §22's
+   T→goal substitution makes the replacement count. This was a hypothesis in the sitting; it is now
+   a measurement.
+2. **`npm run measure:fitness` on the changed engine** — see the re-baseline note below.
+
+### What it costs, stated rather than discovered
+
+**A/B'd by setting the bound to infinity: the anchor change and the header fix reshape NOTHING
+(19/19 cohort checks green). Every movement below belongs to the bound alone.**
+
+| | baseline | now |
+|---|---|---|
+| maintenance at 21.1 km | 44.8% | **48.2%** (+3.4pp) |
+| maintenance, all distances | — | +0.9pp |
+| plans carrying a constraint note | — | +0.9pp |
+| `neverBuildsPct`, healthy masters | 18.1% | 18.6% |
+| `neverBuildsPct`, healthy standard | 12.7% | 12.8% |
+| grid plans still carrying the row | 100% | **70%** |
+
+⚠️ **The maintenance movement is the honest cost and it is the largest number here.** A half-marathon
+runner whose goal outruns their CV pace is, by this amendment, a runner the engine will not give
+race-pace reps to — and 3.4pp of them are then classified `maintenance` rather than `build`. That is
+the engine declining to pretend, which is what this product is for, but it is a real reduction in
+what those runners are prescribed and it should not be discovered later in a diff.
+
+### Enforcement
+
+`resolveAnchorPace` is the single owner of anchor pricing and `resolvableAnchors` is built from it,
+so returning `null` withholds the row through the eligibility gate that already exists
+(CAT-ROW-ELIGIBILITY-01). **No second gate, no parallel semantics.**
+
+Invariants: `INV-PLAN-RACE-ANCHOR-MATCHES-GOAL`, `INV-PLAN-HEADER-PACE-MATCHES-WORK`, and
+`INV-CAT-HM-ANCHOR-IS-HM-ONLY` (a catalogue check, not a plan one — the `HM` arm reads the plan's
+goal pace, which is the half-marathon goal only while every HM-anchored row is half-only).
+
+⚠️ **`INV-PLAN-HEADER-PACE-MATCHES-WORK` is also what makes §22's ratio arm sound.** That check
+classifies goal-pace work by reading `pace_target` — a display field deciding a structural question,
+which INV-CLASS forbids. The fix is **not** a second classifier; it is this invariant, which makes
+the header a mechanically verified mirror of the prescription, so reading it is reading the
+prescription.
