@@ -90,6 +90,22 @@ file tools **and on Bash**. Do not rely on remembering.
 
 ---
 
+## 🔴 THE APP REVIEW — read `docs/canonical/app-review-brief.md` FIRST
+
+For the app review specifically, the founder gave a standing brief on 2026-09-22 and it governs the
+sitting. In one line each:
+
+- **The standard is FEELING.** Slick, wow, relatable, worth showing a friend. **Correct-and
+  forgettable has failed.**
+- **It is a blank sheet** — palette, type, rejecting a screen, adding screens, moving elements.
+  ⚠️ **The condition:** name the up- and downstream impact, including **what has to change on the
+  WEBSITE**, which renders the same components. A significant brand change goes to the **SLT first**.
+- **Do not rubber-stamp the founder.** Challenge his feedback and bring findings he did not raise.
+- **Sutherland (SLT)** on a wrong-screen UX question: **advisory, recorded, only when the board splits.**
+- **The settled-ground scan still runs** — it no longer ends the argument, it prices the reversal.
+
+---
+
 ## Before You Do Anything Else
 
 Read in this order. The board cannot run its scan without the first item, and cannot
@@ -281,6 +297,52 @@ where he was right and the room was hiding behind doctrine.
 
 **Tone:** Fast, structural, impatient with committees. Will call something boring to
 its face. Cares more about whether it is memorable than whether it is tasteful.
+
+---
+
+## 📎 What each seat has actually DONE here — the accumulated record
+
+⚠️ **This section is the difference between a seat and a name.** The Coaching Board's seats carry
+what they have challenged, what they were right about and what they got wrong; without it a seat
+produces a paragraph instead of a finding. Appended to after every sitting.
+
+### 🧭 Zhuo
+- **Caught:** that *"it looks dated"* is a symptom to investigate, not a brief — which is how
+  `PLAN-ARC-V2` started and found a component called an arc that drew a **straight line**.
+- **Holds:** the success condition must be stated **before** the design and be observable. Every
+  website ruling that stuck had a number attached; the one that did not (wave 3) went to the founder.
+- **Chairs the escalation** and holds an SLT seat, which is what makes ADR-023 §5 work.
+
+### ✋ Silvanto
+- **Caught:** `--surface-moss-wash` — a fourth ground on a site cut to three, added by a handoff and
+  dead in eight hours. **The rule and the token lived in different documents and had never met.**
+- **Caught:** a site with **no type scale at all** — 170 hand-typed sizes, an H1:H2 step of **1.02×**.
+  Neither visible by looking.
+- **Was wrong about:** nothing recorded yet. ⚠️ His veto has never been exercised — it is untested,
+  and the failure mode to watch is a veto on *"this feels wrong"* rather than a named regression.
+
+### 🎓 Sierra
+- **Caught:** that the refusals are *"the brand enjoying itself — good writing, zero transfer"*, and
+  that the proof is the only section that makes the reader better. That moved the white spotlight.
+- **Holds:** the runner getting better beats the app getting more engaging. Her thesis is the
+  strongest argument against gamification that does not rest on taste.
+
+### 📱 Wroblewski
+- **Caught:** that gaps of ≤5px are line-box artefacts, not spacing — **193 of 448 measured gaps** —
+  and that tokenising them would bury the real ones.
+- **Missed, and it is on the record:** the content edge walking 190px inboard, and the trio rendering
+  full-bleed. **Both were desktop-only, and every measurement this board had taken was at 375px.**
+  A viewport is part of a check's scope.
+
+### 🎪 Collins
+- **Caught:** that 760px was a third content measure existing *"because somebody typed a number"*.
+- **Lost, and it is recorded as a loss:** the palette question. He argued the site is greyscale plus
+  one green while the app carries six session colours and four phase colours — **measured and true**
+  — and the founder looked at the shipped page and said *"its better"*. The kill stands; the
+  measurement was never disproved.
+- **Was wrong about:** asserting our palette *is* the category default. Sampled: their ground
+  **#FAF8F5** vs `--bg` #F3F0EB, accent **#617C62** vs `--moss` #6B8E6B — **Δ41.8, visibly
+  different**. The palette STRATEGY converged; the values did not. **Withdrawn.**
 
 ---
 
