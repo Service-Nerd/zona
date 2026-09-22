@@ -531,6 +531,21 @@ export default async function Home() {
               one third of the product's public face." Dropping it recreates
               PLAN-LONGRUN-COLOUR-01: the site promising what the app no longer
               contains. The wrapper died; the trio moved. */}
+        {/* 🔴 THE PAGE COLUMN, AND IT WAS MISSING. When sitting two moved this
+            trio out of the section that was cut, it landed as a SIBLING of the
+            `--measure-page` wrapper above rather than inside it — and this
+            `<Section>` is `width="full"`, so the trio rendered **24-1412 on a
+            1440 viewport**: the full screen, while every other band sat in the
+            1100px column at 168.
+
+            ⚠️ MY OWN EDGE MEASUREMENT COULD NOT SEE IT. It collected elements
+            carrying a `max-width` and took the smallest left edge; this grid has
+            no max-width at all, so the band reported 168 from its neighbour and
+            read as correct. **A measurement that only looks at elements with the
+            property cannot find the element that is missing it.** Found by the
+            founder, on desktop, twice — the second time after I had "fixed" the
+            alignment without touching this. */}
+        <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
         <div style={{
           display: 'grid',
           // `min(100%, 280px)`, not a bare 280px. A bare minimum track cannot
@@ -583,6 +598,7 @@ export default async function Home() {
               <ZoneRings pctByZone={DEMO_ZONE_WEEK.pct} meta={DEMO_ZONE_WEEK.meta} />
             </ProductStill>
           </Pillar>
+        </div>
         </div>
       {/* ⚠️ MERGED, NOT DELETED — Design Board sitting two, 2026-09-22.
           "Your plan starts from your answers" and "Then you run it" were two

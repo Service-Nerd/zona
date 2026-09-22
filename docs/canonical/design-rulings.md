@@ -353,6 +353,10 @@ Third founder device pass, and the first on **desktop**.
 | **The dark close is centred — the ONE exception** | 🟢 **RATIFIED** | W-09 makes it the page's punctuation and it goes last. One deliberate break at the end is a full stop; four accidental ones mid-page are a mess |
 | **`SITE-MEASURE-THIRD-01` — the 760px third measure** | 🔴 **RETIRED** | It matched no rule and existed because somebody typed a number (Collins). Now `--measure-read` |
 
+| **A `width="full"` Section must re-wrap its content in the page column** | 🟢 **SHIPPED** — found by the founder on the SECOND desktop pass, after the edge fix | The ProductStill trio was moved into the mechanism band by sitting two and landed as a **sibling** of the page-column wrapper. The Section is `width="full"`, so at 1440px the trio rendered **24-1412 — the full screen** — while every other band sat at 168. 🔴 **IT SURVIVED A MEASUREMENT AIMED STRAIGHT AT IT:** the edge audit collected elements carrying a `max-width` and took the smallest left edge; this grid has **no max-width at all**, so the band reported its neighbour's 168 and read as correct. **A measurement that only looks at elements WITH the property cannot find the element that is MISSING it.** |
+
+⚠️ **THE EDGE FIX DID NOT FIX WHAT HE ASKED ABOUT.** His words were *"those are using the full span of the page"* — the trio, literally full-bleed — and I measured the prose bands' centring, found a real defect, fixed it, and reported done. **Both were real; only one was his.** Read the complaint against the artefact before deciding which defect it names.
+
 ⚠️ **INVISIBLE AT 375px**, where both measures collapse to the gutter. **Two founder device passes missed it and a third, on desktop, did not.** A viewport is part of a design check's scope, not a detail of how it was run — and every measurement in this register until now was taken at 375.
 
 ⚠️ **The gate was first written as `.tsx` and vitest never ran it** — the include pattern is `components/**/*.test.ts`, so it reported "No test files found" and would have sat green-by-absence forever. A test the runner cannot see is the purest hollow check there is.

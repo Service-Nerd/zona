@@ -6,6 +6,42 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — SITE-TRIO-FULLBLEED-01 · I fixed a real defect that was not the one he reported
+
+**Shipped:** The ProductStill trio now sits in the page column. It was rendering **24-1412 on a
+1440 viewport** — the full screen — while every other band sat at 168.
+
+**Dev learning:** `Section width="full"` opts out of the page frame so a band can manage its own
+width. Anything placed inside it that is not re-wrapped in `--measure-page` renders full-bleed. The
+trio was moved into the mechanism band by a board sitting and landed as a *sibling* of the wrapper
+rather than a child. One nesting level.
+
+**Product/creator learning:** He said *"those are using the full span of the page."* That is
+literally what was happening, and I read it as a complaint about the page's alignment in general. I
+measured the prose bands, found that the content edge moved four times, fixed that, and reported
+done. It was a real defect and it was not his. **Read the complaint against the artefact before
+deciding which defect it names.**
+
+**AI-building learning:** The measurement I ran to answer him could not have found it. It collected
+every element carrying a `max-width`, took the smallest left edge per band, and reported 168 — which
+it got from the trio's *neighbour*, because the trio grid has no `max-width` at all. **A measurement
+that only looks at elements WITH the property cannot find the element that is MISSING it.** That is
+the same denominator failure as the ramp anchor and the global-vs-local timeout, three times in one
+day, in three unrelated places.
+
+**The honest bit:** the gate took two attempts. The first anchored on the trio's JSX comment — and
+the helper that reads the file **strips comments**, so it failed on correct code with "the marker
+has moved". Second test in a row written against a version of the file the helper does not return.
+
+**Hook material:** He reported the same thing twice. The first time I measured, found a genuine
+defect, shipped it and said done. The thing he was pointing at was still there — a grid spanning
+1,388 pixels of a 1,440 pixel screen — and my measurement had looked directly at that band and
+reported it correct, because the element I needed to see was the one with nothing to measure.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-22 — CI-SLOW-LOAD-01 + DOCS-PUSH-GATE-01 · "why are we debating? fix it"
 
 **Shipped:** The duration gate now measures the code instead of the machine, and the documentation

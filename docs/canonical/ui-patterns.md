@@ -172,7 +172,11 @@ Guarded by `lib/marketing/beatRhythm.test.ts`.
 
 ⚠️ **INVISIBLE AT 375px**, where both measures collapse to the gutter. Two founder device passes missed it and a third, on desktop, did not. **A viewport is part of a design check's scope, not a detail of how it was run.**
 
-Guarded by `components/marketing/section.markup.test.ts`.
+**A `width="full"` Section re-wraps its content in the page column.** `full` opts out of the frame so a band can manage its own width (the white spotlight, the proof); anything placed inside it that is not re-wrapped in `--measure-page` renders **full-bleed**. The ProductStill trio did exactly that after sitting two moved it — **24-1412 on a 1440 viewport** against every other band at 168.
+
+⚠️ **It survived a measurement aimed straight at it.** The edge audit collected elements carrying a `max-width`; this grid has none, so the band reported its neighbour's 168. **A measurement that only looks at elements WITH the property cannot find the one MISSING it.**
+
+Guarded by `components/marketing/section.markup.test.ts` and `lib/marketing/sectionSurfaces.test.ts`.
 
 ⚠️ **Why this is a rule and not a suggestion.** Before it, the homepage alone carried **eleven different padding pairs** (48/56, 0/56, 72/72, 80/80 ×3, 72/72, 80/80, 112/112, 56/48, 40/0) and **eight different content widths** (1100, 900, 640, 760, 780…), none of 72/80/112 being on the canonical scale at all. Each was reasonable where it was written. Together they meant the left edge of the content moved as you scrolled. **Slickness is mostly alignment.**
 

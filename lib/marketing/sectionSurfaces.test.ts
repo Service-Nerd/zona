@@ -381,4 +381,37 @@ describe('marketing section surfaces', () => {
     expect(frame, 'an inset carries exactly one hairline of its own')
       .toContain("border: '1px solid var(--line)'")
   })
+
+  it('a full-bleed Section wraps its content in the page column — SITE-MEASURE-EDGE', () => {
+    // 🔴 THE DEFECT THE EDGE MEASUREMENT COULD NOT SEE. `Section width="full"`
+    // opts out of the frame so a band can manage its own width — the white
+    // spotlight, the proof. Anything placed inside it that is NOT re-wrapped in
+    // `--measure-page` therefore renders full-bleed. The ProductStill trio was
+    // moved into the mechanism band by sitting two and landed as a SIBLING of
+    // the page-column wrapper, so at 1440px it spanned **24-1412** while every
+    // other band sat in the 1100px column at 168.
+    //
+    // ⚠️ IT SURVIVED A MEASUREMENT AIMED STRAIGHT AT IT. The edge audit
+    // collected elements carrying a `max-width` and took the smallest left edge;
+    // this grid has no max-width at all, so the band reported its neighbour's
+    // 168 and read as correct. **A measurement that only looks at elements
+    // WITH the property cannot find the element that is MISSING it.**
+    //
+    // ⚠️ ANCHORED ON CODE, NOT ON A COMMENT. The first cut anchored on the
+    // trio's `THE PRODUCTSTILL TRIO` comment marker — and `src()` STRIPS
+    // COMMENTS, so it failed on correct code with "the marker has moved". Two
+    // tests in a row now written against a version of the file the helper does
+    // not hand back.
+    //
+    // `gap: '18px 24px'` is the trio grid's own declaration and appears exactly
+    // once in the file, so the 200 characters before it are the grid's opening
+    // and whatever wraps it. `--measure-page` appears many times overall; a
+    // file-wide grep would pass on any of them.
+    const home = src(HOME)
+    const grid = home.indexOf("gap: '18px 24px'")
+    expect(grid, 'the trio grid declaration has moved — re-anchor this test').toBeGreaterThan(-1)
+    expect(home.slice(Math.max(0, grid - 260), grid),
+      'the trio must sit inside the page column, or it renders full-bleed')
+      .toContain('var(--measure-page)')
+  })
 })
