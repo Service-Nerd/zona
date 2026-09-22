@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-22 (last ship `0a18a67`) — PUSHED.** Suites green: **452 tests / 40 files** in the marketing + shared scope. Typecheck clean. All six hook suites pass. Six commits: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage, `<Section>` adoption, the docs. · **`8184c32`** made the step numerals perceivable (they were 1.07:1 *on purpose*, drawn as SVG because axe does not read SVG as text) and filed `SITE-SPACE-01` — **448 gaps, 19 real distinct values, the same number `SITE-TYPE-01` found for font sizes.** · **`0a18a67`** shipped the spacing scale (`--space-1…7`, 69 gaps swept) and **SITE-WAVE-2** closed the conversion dead zone: a CTA at the proof (screen 5.1), largest in-body gap **12.7 → 8.3 screens**, and both SEO hubs went from **zero** in-body asks to one.
+**State at END of 2026-09-22 (last ship `6d935bc`, `SITE-BEAT-01`) — PUSHED.** Full `npm run verify`: **3,013 tests / 336 files**, all passing; typecheck clean. ⚠️ **`452 tests / 40 files`, quoted in earlier blocks, is the NARROWER marketing-and-shared scope** — both measures named rather than silently swapped. Eleven commits today: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage waves, `<Section>` adoption, the docs, the step-numeral contrast fix, the spacing scale, `SITE-WAVE-2`, and `SITE-BEAT-01`. · **`8184c32`** made the step numerals perceivable (1.07:1 *on purpose*, drawn as SVG because axe does not read SVG as text). · **`0a18a67`** shipped the spacing scale (`--space-1…7`, 69 gaps swept). · **`323ea08`** closed the conversion dead zone: a CTA at the proof (screen 5.1), largest in-body gap **12.7 → 8.3 screens**. · **`6d935bc`** closed three **0px** gaps created by sitting two's own section merges (`--beat-y`); 🔴 **the spacing scale could not have caught them — it measured 448 gaps that EXISTED, and a gap of zero is an absent decision, not a value.** · 🔴 **`SITE-WAVE-3` is DEAD** — the founder answered the palette question on a device: *"its better"*. · ⚠️ **`verify` exited 1 on the second of two runs over identical code**, on a duration gate (`CI-DURATION-TARGETEDGRID-01`, filed, not re-baselined).
 
 🧭 **The homepage, measured at 375px:** first ground change **screen 10.6 → 3.4**, proof **52% → 24%**, sections **14 → 11**, page **12,317 → 11,773px**, content `<h2>` **9 (all 26px) → 6 with a scale**.
 
@@ -411,6 +411,36 @@ a check asserting no hand-typed gap outside the scale, falsified.
 
 ---
 
+## 🔧 FILED 2026-09-22 DURING SITE-BEAT-01 — a gate that straddles its own threshold
+
+### 🔧 `CI-DURATION-TARGETEDGRID-01` — `npm run verify` is non-deterministic at the duration wall
+**Board: none.** Tooling, no user-facing surface, no prescription change.
+
+Two `npm run verify` runs over **identical code**, twenty minutes apart on the same machine:
+
+| Run | `targetedGrid.test.ts` · "every input generates or refuses by design" | Gate | Exit |
+|---|---|---|---|
+| 1 | **19,402 ms** — 64.7% of the 30,000 ms budget, **+27.1%** on baseline | pass | **0** |
+| 2 | **21,949 ms** — 73% of budget, **1.44× step change** | HARD WALL + STEP CHANGE | **1** |
+
+⚠️ **The gate is not wrong; it is sitting on the line.** Even the run that PASSED reported
+**+27.1%** against baseline. The test has genuinely crept up (last touched by `d4d1e30`
+REFUSAL-COPY-02) and the budget no longer has headroom for ordinary machine-load variance.
+`noteDurationFormat` did the same thing, 1,284 → 1,868 ms.
+
+🔴 **DO NOT RE-BASELINE TO MAKE IT GREEN.** That is forbidden doctrine here and it would
+delete the only signal that the grid is growing. Either find what grew in `targetedGrid` and
+trim it (the `CI-TIMEOUT-01` precedent, `c2363e1`, did exactly that), or raise the budget with
+a stated reason — but a budget raised because the machine was busy is a budget that measures
+nothing.
+
+⚠️ **Discovered while shipping SITE-BEAT-01, which touches no file under `lib/plan/`.** It is
+pre-existing and unrelated; it is recorded here rather than absorbed, because a flaky gate that
+nobody files is a gate that gets ignored and then disabled. Same class as
+`CI #349 was a TIMING race`.
+
+---
+
 ## 🧭 FILED DURING SITE-WAVE-1a-ii — for wave 1b to rule on
 
 Found by measuring, not by reading. Both preserved exactly in 1a-ii (zero visual
@@ -435,10 +465,16 @@ that bypass the token. Preserved in 1a-ii; 1b decides whether they collapse to `
 
 ---
 
-## 📍 WHERE WE ARE — 2026-09-22, six commits pushed
+## 📍 WHERE WE ARE — 2026-09-22, eleven commits
 
-**State at 2026-09-22, last ship `b111873`.** `verify`-scoped suites green: **452 tests / 40 files**. Typecheck
-clean. All six hook suites pass. Tree clean.
+**State at 2026-09-22, last ship `6d935bc` (`SITE-BEAT-01`).** Full `npm run verify` suite:
+**3,013 tests / 336 files, all passing** — counted from the run, not from the previous block.
+⚠️ **Earlier blocks on this page quote `452 tests / 40 files`, which is the NARROWER
+marketing-and-shared scope, not this one.** Two measures, so both are named.
+
+🔴 **`npm run verify` exited 1 on the second of two runs over IDENTICAL code**, on a duration
+gate, not a behaviour one. Filed as `CI-DURATION-TARGETEDGRID-01` above. Nothing was
+re-baselined to make it green.
 
 ### Shipped today
 | | |
@@ -465,9 +501,11 @@ clean. All six hook suites pass. Tree clean.
 moved ground are exactly the class that could differ at 1024px.
 
 ### Next
-1. **Founder device pass** on the deployed result.
-2. **`SITE-WAVE-2`** — the CTA, re-scoped against the new proof position.
-3. **`SITE-WAVE-3`** — Collins' palette question lives or dies on what the device pass shows.
+1. ✅ **Founder device pass** — done twice. Verdict on the palette: **"its better."**
+2. ✅ **`SITE-WAVE-2`** — shipped (`323ea08`).
+3. 🔴 **`SITE-WAVE-3` — DEAD.** Collins' palette question was put to the founder on a device and
+   answered *"its better"*. The site does not adopt the app's session-colour language. It may not
+   be re-proposed without named new evidence; see `design-rulings.md`.
 4. **Sitting three** — does the ProductStill trio still earn its place now it has no section?
 5. **`RACE-WEEK-VOLUME-01`** — ruled by the Coaching Board, **not built.**
 

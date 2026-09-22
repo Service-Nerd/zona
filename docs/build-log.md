@@ -6,6 +6,45 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — SITE-BEAT-01 · the merge deleted the gap, and the spacing audit could not see it
+
+**Shipped:** `--beat-y`, the gap between two beats INSIDE one section. Three places on the homepage
+rendered at exactly **0px**. All three now 39px at 375, 56px at 1440.
+
+**Dev learning:** The gap between two sections was a property of the **container**, not the content.
+Design Board sitting two merged four sections into two, which was right, and the `<Section>` boundary
+was the only thing holding the space apart. Delete the boundary, delete the space. Only the merged
+sections were affected: I swept `/pricing`, `/about`, `/plans` and `/charity-runners` in the browser
+and all four were clean. Also: `Eyebrow` applies the gap as `paddingTop`, not `marginTop`, because an
+eyebrow is usually the first child of its wrapper and a first child's top margin collapses out
+through a padding-less parent. It renders identically today. That is exactly why it was worth fixing
+now: the next wrapper to gain a border would move the gap and nothing would fail.
+
+**Product/creator learning:** The founder answered a different question ("is the palette flat?" →
+*"its better"*) and in the same breath found the whole population of a defect I had shipped four
+hours earlier. He listed three. A browser sweep found three. His eye was the complete instrument.
+
+**AI-building learning:** He asked *"I thought you fixed those."* The tempting answer is a hedge. The
+true answer is that SITE-WAVE-4 measured **448 gaps that existed**, and a gap of zero is not a gap —
+it is an absent decision, and a scale test can only tokenise a value somebody already typed. **A
+spacing audit finds wrong values and is structurally blind to missing ones.** I had written "448
+gaps measured across six pages" into the register as evidence of coverage. It was never the
+population, and nothing in the repo said so until this entry.
+
+**The honest bit:** Two of my own guards went red on a change that reordered nothing and reversed no
+ruling. They anchored the page's beat ORDER on the literal string `<Eyebrow>Honestly</Eyebrow>`, so
+adding a `beat` prop broke them. That is the same failure I recorded a day earlier when four refusal
+strings were retuned for tone and broke eight prose matchers in five files. **I wrote the lesson down
+and then wrote the same test.**
+
+**Hook material:** Three gaps on a live homepage, measured at 0px, 0px, 0px — created by a design
+decision that was correct, and invisible to a spacing audit that had measured 448 gaps on six pages
+the same morning. A gap of zero is not a gap.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-22 — SITE-WAVE-2 · the pages built to catch traffic were the only ones not converting it
 
 **Shipped:** A CTA at the proof moment (screen 5.1), and an in-body download ask on `/guides` and
