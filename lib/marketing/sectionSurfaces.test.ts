@@ -57,10 +57,17 @@ describe('marketing section surfaces', () => {
     }
   })
 
-  it('Section offers the three surfaces and maps them to real tokens', () => {
+  it('Section offers the four surfaces and maps them to real tokens', () => {
+    // ⚠️ FOUR keys, THREE page grounds. `card` was added 2026-09-22 (Design
+    // Board sitting one) because `ui-patterns.md` has documented the white
+    // spotlight as one of the three grounds since W-08, and this component
+    // could not express it — so the homepage hand-rolled a raw background
+    // instead. `inset` is the FOURTH key and is NOT a page ground: brand.md
+    // says so in those words, and spending it as one is the band alternation
+    // W-08 killed. The test below still forbids it on the homepage.
     const sec = src('components/marketing/Section.tsx')
-    for (const s of ['page', 'inset', 'dark']) expect(sec).toContain(`${s}:`)
-    for (const t of ['--bg)', '--bg-soft)', '--ground)']) expect(sec).toContain(t)
+    for (const s of ['page', 'card', 'inset', 'dark']) expect(sec).toContain(`${s}:`)
+    for (const t of ['--bg)', '--card)', '--bg-soft)', '--ground)']) expect(sec).toContain(t)
     // No hardcoded colour may enter the surface map.
     expect(sec).not.toMatch(/#[0-9a-f]{3,8}/i)
   })
@@ -80,6 +87,211 @@ describe('marketing section surfaces', () => {
    * scoped" but "it does not come back" — including as a fresh hex, which is
    * how a removed token usually returns.
    */
+  it('every marketing surface uses the shared Section, not a raw <section>', () => {
+    // SITE-WAVE-1a-ii, 2026-09-22. Before this, <Section> was imported by ONE
+    // surface out of eleven — the homepage — and every other page hand-rolled
+    // its sections, its rhythm and its padding. Pages that do not share the
+    // mechanism cannot share the result, which is why "make them consistent"
+    // had nowhere to start.
+    //
+    // ⚠️ THIS IS THE ENABLER, NOT THE FIX. Adoption was deliberately ZERO
+    // VISUAL DELTA: width="full" + rhythm="none" reproduce each page's existing
+    // padding exactly. What it buys is that `surface=` now EXISTS on every
+    // page, so wave 1b can spend a ground. It could not before.
+    // ⚠️ THE FIRST VERSION OF THIS WAS A HAND-WRITTEN LIST OF SEVEN PAGE FILES,
+    // and it passed while `SameWeekTwice.tsx` still rendered a raw <section> —
+    // because that is a COMPONENT, and components were not on the list. "An
+    // audit is only ever as wide as its list" is recorded in this repo about a
+    // different check that missed a whole category the same way.
+    // So: the marketing components are READ FROM DISK, not enumerated.
+    const PAGES = [
+      'app/page.tsx',
+      'app/plans/page.tsx',
+      'app/pricing/page.tsx',
+      'app/about/page.tsx',
+      'app/charity-runners/page.tsx',
+    ]
+    const COMPONENTS = fs.readdirSync(path.join(ROOT, 'components/marketing'))
+      .filter(f => f.endsWith('.tsx') && f !== 'Section.tsx')
+      .map(f => `components/marketing/${f}`)
+    const SURFACES = [...PAGES, ...COMPONENTS]
+    for (const f of SURFACES) {
+      const code = src(f)
+      // A raw <section ...> with attributes. `</section>` is not matched, and a
+      // bare <section> with no attributes is not what this is guarding against.
+      expect(code, `${f} still hand-rolls a raw <section> instead of using <Section>`)
+        .not.toMatch(/<section\s+[a-zA-Z]/)
+      // A component with no sections at all does not need the import — the
+      // rule is "no RAW sections", not "everything must use Section".
+      if (/<Section[\s>]/.test(code)) {
+        expect(code, `${f} uses <Section> but does not import it`)
+          .toContain("from '@/components/marketing/Section'")
+      }
+    }
+  })
+
+  it('PROOF PRECEDES MECHANISM on the homepage', () => {
+    // Design Board sitting two, 2026-09-22 — the ruling in one sentence.
+    //
+    // The page front-loaded mechanism and back-loaded proof: the hero made a
+    // claim, three consecutive feature sections explained how the product
+    // works, and only at 52% did the page SHOW the claim was true. The founder
+    // stopped reading at screen 2.5 of 14.8. He never reached it.
+    //
+    // Sierra: `SameWeekTwice` is the only section where the reader learns to
+    // SEE something, and a competitor whose proposition is encouragement
+    // structurally cannot print it. It now sits at screen 3.4 (23%).
+    //
+    // ⚠️ Bound to SOURCE ORDER, not a pixel position: a percentage would move
+    // every time any section's length changed, and a guard that fires on
+    // unrelated edits gets switched off.
+    const home = src('app/page.tsx')
+    const proof = home.indexOf('<SameWeekTwice />')
+    expect(proof, 'the homepage no longer renders the proof section').toBeGreaterThan(-1)
+
+    // Every section that EXPLAINS the mechanism must come after it.
+    for (const eyebrow of ['Personalised, not generic', 'How it goes']) {
+      const mech = home.indexOf(`<Eyebrow>${eyebrow}</Eyebrow>`)
+      expect(mech, `the "${eyebrow}" section has gone`).toBeGreaterThan(-1)
+      expect(proof, `"${eyebrow}" now precedes the proof — sitting two ruled the opposite`)
+        .toBeLessThan(mech)
+    }
+    // And the recognition beat still precedes the proof: problem, then evidence.
+    expect(home.indexOf('<Eyebrow>The problem</Eyebrow>')).toBeLessThan(proof)
+  })
+
+  it('the cuts and merges from sitting two hold', () => {
+    // Design Board sitting two, 2026-09-22 — nine content sections became six.
+    const home = src('app/page.tsx')
+
+    // 1. "Three things, done with restraint" — the SECTION is cut.
+    expect(home, 'the "Three things" section has returned')
+      .not.toMatch(/<SectionTitle[^>]*>\s*Three things,/)
+
+    // 2. 🔴 BUT ITS CONTENTS SURVIVED, AND THIS IS THE IMPORTANT HALF.
+    // The settled-ground scan caught that cutting the section wholesale would
+    // delete ZoneRings from the site. The register says: "Dropping ZoneRings —
+    // REVERSED, retained. One of three components in the homepage trio,
+    // literally one third of the product's public face." Dropping it recreates
+    // PLAN-LONGRUN-COLOUR-01 — the site promising what the app no longer has.
+    expect((home.match(/<ProductStill/g) || []).length,
+      'the ProductStill trio is no longer three').toBe(3)
+    // ⚠️ A BOUNDED MATCH, NOT toContain. The first version of this line was
+    // `.toContain('<ZoneRings')` — which passes for `<ZoneRingsX`, so renaming
+    // the component away would NOT have turned it red. That is the exact
+    // `toContain('<PlanCalendar')` / `<PlanCalendarX` trap this repo has
+    // already recorded, reproduced here while writing the guard against it.
+    expect(home, 'ZoneRings has been dropped from the homepage — see the register')
+      .toMatch(/<ZoneRings[\s/>]/)
+
+    // 3. The two refusal sections are ONE section.
+    //
+    // ⚠️ THIS ASSERTION USED TO ANCHOR ON `surface="card"`, because the refusal
+    // band held the white spotlight when sitting two merged them. 1b-iii moved
+    // the spotlight to the proof and this check went red — correctly. It was
+    // encoding a premise that a later ruling changed. Anchor on the MERGE
+    // itself, which is what sitting two actually ruled, not on the ground that
+    // happened to be underneath it at the time.
+    const restraint = home.indexOf('<Eyebrow>The restraint</Eyebrow>')
+    const honestly = home.indexOf('<Eyebrow>Honestly</Eyebrow>')
+    expect(restraint, '"The restraint" has gone').toBeGreaterThan(-1)
+    expect(honestly, '"Honestly" has gone').toBeGreaterThan(-1)
+    expect(restraint, 'the refusal order flipped').toBeLessThan(honestly)
+    // No </Section> between them: they are one section, not two adjacent ones.
+    expect(home.slice(restraint, honestly), 'the refusal sections have been split apart again')
+      .not.toContain('</Section>')
+  })
+
+  it('the white spotlight marks the PROOF, and there is still exactly one', () => {
+    // Design Board 1b-iii, 2026-09-22. ui-patterns.md §257 AMENDED, not
+    // contradicted: it read "the white band is spent on 'Probably not for you
+    // if…'; anti-qualification is the most distinctive thing on the site".
+    // That was true of a page whose proof sat at 52%. Sitting two moved the
+    // proof to 24% and the premise stopped being true — we changed it ourselves.
+    //
+    // The page has exactly ONE movable ground change: W-09 binds the close to
+    // last, and W-08 permits one white spotlight, "a spotlight, not a rhythm".
+    // Spent at 63% it left the first two thirds one uninterrupted ground, which
+    // is the founder's measured complaint. It now marks the only section that
+    // teaches the reader anything.
+    const proof = src('components/marketing/SameWeekTwice.tsx')
+    expect(proof, 'the proof section has lost the white spotlight')
+      .toMatch(/surface="card"/)
+
+    // ⚠️ STILL EXACTLY ONE. A second white band is the alternation W-08 killed.
+    const all = [...MARKETING_FILES, 'app/page.tsx']
+      .map(f => (src(f).match(/surface="card"/g) || []).length)
+      .reduce((a, b) => a + b, 0)
+    expect(all, 'more than one white spotlight — W-08 permits exactly one').toBe(1)
+  })
+
+  it('the homepage has a heading HIERARCHY, not eight equal announcements', () => {
+    // 1b-iii. Before this every section heading was --fs-h2, so a reader had no
+    // way to know the proof mattered more than the FAQ.
+    //
+    // ⚠️ SIZE AND TAG ARE SEPARATE, and conflating them was a real defect here:
+    // the first cut demoted BOTH, which turned standalone sections into <h3>
+    // subordinate to whatever preceded them, and inverted the refusal band so
+    // its subordinate heading led. A tag is an outline claim; a size is a
+    // design one. `sub` makes both; `minor` makes only the second.
+    const home = src('app/page.tsx')
+    expect(home, 'SectionTitle has lost its weight prop').toMatch(/weight\?: 'lead' \| 'minor' \| 'sub'/)
+    expect(home, 'size and tag have been conflated again').toMatch(/const H = weight === 'sub' \? 'h3' : 'h2'/)
+
+    // The two headings that sit INSIDE a merged section are subordinate.
+    expect((home.match(/weight="sub"/g) || []).length,
+      'a merged section\'s second heading is no longer subordinate').toBeGreaterThanOrEqual(1)
+    // And at least one section is quieter without claiming subordination.
+    expect((home.match(/weight="minor"/g) || []).length,
+      'nothing is demoted by size alone any more').toBeGreaterThanOrEqual(1)
+  })
+
+  it('the App Store QR code stays dead', () => {
+    // 🔴 KILLED 2026-09-22 by founder instruction (design-rulings.md).
+    //
+    // ⚠️ THIS CHECK EXISTS BECAUSE REMOVING THE FEATURE REMOVED ITS TEST.
+    // `appStoreQr.test.ts` went with the component, which left nothing at all
+    // asserting the decision — the same shape as a kill recorded in prose and
+    // then quietly undone. This file already guards W-11's paper grain and the
+    // moss wash; the QR belongs beside them.
+    //
+    // The rationale, so it cannot return as "but it helps desktop visitors":
+    // a QR code on a page already being read on a phone asks the visitor to
+    // photograph their own screen. It only ever worked from desktop, and the
+    // desktop visitor is the one least likely to install right now.
+    for (const f of ['app/page.tsx', 'components/marketing/SiteFooter.tsx']) {
+      expect(src(f), `${f} reintroduces the App Store QR`).not.toMatch(/AppStoreQr|appstore-qr/i)
+    }
+  })
+
+  it('footer column labels are not <h2> — they do not compete with content sections', () => {
+    // Design Board sitting one, 2026-09-22. Four footer labels rendered at 11px
+    // sat at the SAME outline level as the page's content sections, which a
+    // crawler and a heading-navigation user both have to wade through.
+    // `<nav aria-label>` already names each group, so the heading is for
+    // navigation, not identification.
+    expect(src('components/marketing/SiteFooter.tsx')).not.toMatch(/<h2[\s>]/)
+  })
+
+  it('the hardware caveat follows the proof, it does not gate it', () => {
+    // Design Board sitting one. BRAND.hrRecommendation sat in the hero's LEFT
+    // column, which on mobile put a HARDWARE REQUIREMENT above the evidence
+    // card — the one asset a competitor cannot copy. A caveat before the proof
+    // reads as a condition of believing the claim; after it, as a practical
+    // note. Same words, different job.
+    //
+    // ⚠️ Bound to the hero region, not the whole file: the FAQ further down
+    // legitimately mentions an Apple Watch, and grepping the file would pass on
+    // that and prove nothing.
+    const page = src('app/page.tsx')
+    const hero = page.slice(0, page.indexOf('Facts band'))
+    const proof = hero.indexOf('<HeroTrace />')
+    const caveat = hero.indexOf('BRAND.hrRecommendation')
+    expect(proof, 'the hero no longer renders HeroTrace').toBeGreaterThan(-1)
+    expect(caveat, 'the hero no longer renders the hardware caveat').toBeGreaterThan(-1)
+    expect(caveat, 'the caveat has moved back above the proof card').toBeGreaterThan(proof)
+  })
+
   it('no tinted surface returns to make one card special', () => {
     for (const f of ['app/globals.css', 'app/page.tsx',
                      'components/marketing/HeroTrace.tsx', 'components/marketing/Section.tsx']) {

@@ -110,14 +110,15 @@ export function SiteFooter() {
         }}>
           {GROUPS.map(g => (
             <nav key={g.heading} aria-label={g.heading}>
-              <h2 style={{
+              {/* <h3> for the same reason as the nav columns above. */}
+              <h3 style={{
                 fontFamily: 'var(--font-brand)',
                 fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
                 letterSpacing: '0.08em', textTransform: 'uppercase',
                 color: 'var(--mute)', margin: '0 0 12px',
               }}>
                 {g.heading}
-              </h2>
+              </h3>
               <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 9 }}>
                 {g.links.map(l => (
                   <li key={l.href}>
@@ -134,14 +135,17 @@ export function SiteFooter() {
               until the App Store URL exists, exactly as it does elsewhere, so
               this column is simply absent pre-approval rather than a gap. */}
           <div>
-            <h2 style={{
+            {/* <h3> for the same reason as the nav columns above: a footer
+                column label is for navigation, not for identifying a section of
+                the page. */}
+            <h3 style={{
               fontFamily: 'var(--font-brand)',
               fontSize: 'var(--fs-eyebrow)', fontWeight: 700,
               letterSpacing: '0.08em', textTransform: 'uppercase',
               color: 'var(--mute)', margin: '0 0 12px',
             }}>
               Get {BRAND.name}
-            </h2>
+            </h3>
             <AppStoreBadge />
           </div>
         </div>

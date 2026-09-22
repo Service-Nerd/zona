@@ -42,7 +42,6 @@ import { FREE_FEATURES } from '@/lib/marketing/pricing'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
 import { AppStoreBadge } from '@/components/marketing/AppStoreBadge'
-import { AppStoreQr } from '@/components/marketing/AppStoreQr'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { TabbedPhone } from '@/components/marketing/TabbedPhone'
@@ -115,7 +114,6 @@ export default async function Home() {
 
   // IA-QR-01 — inlined so the code inherits currentColor; an <img> cannot.
   // This page is statically generated, so the read happens at build time.
-  const appStoreQrSvg = readFileSync(join(process.cwd(), 'public/appstore-qr.svg'), 'utf8')
 
   // ── SEO-01 — app structured data ──────────────────────────
   // Rendered here rather than in app/layout.tsx: that layout is the ROOT layout
@@ -189,7 +187,7 @@ export default async function Home() {
           ("left-aligned content with a consistent horizontal margin, never
           centred-only layouts"). The centring was never a reviewed decision:
           GTM-SITE-01 only ruled on the tagline kicker. */}
-      <section style={{
+      <Section width="full" rhythm="none" innerStyle={{
         maxWidth: 'var(--measure-page)', margin: '0 auto',
         padding: 'var(--sect-y-hero) 24px var(--sect-y)',
         display: 'grid',
@@ -247,14 +245,14 @@ export default async function Home() {
         </p>
 
         {/* Primary action — App Store download. Single CTA, post-launch.
-            IA-QR-01 — the scannable code sits beside it and only at >=1024px,
-            where the badge is least useful: the app is iOS only, so a desktop
-            visitor who clicks the badge lands on a page they then have to
-            re-find on their phone. `alignItems: flex-start` keeps the badge on
-            the text baseline whether or not the code is showing. */}
+            ⚠️ IA-QR-01's scannable code was REMOVED 2026-09-22 (founder
+            instruction, recorded in design-rulings.md). The rationale is worth
+            keeping so it does not come back: a QR code on a page that is
+            already being read on a phone asks the visitor to photograph their
+            own screen. It only ever worked from desktop, and the desktop
+            visitor is the one least likely to install right now. */}
         <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 20 }}>
           <AppStoreBadge />
-          <AppStoreQr svg={appStoreQrSvg} />
         </div>
 
         {/* Trial + pricing in owned voice — honest numbers, brand tone. */}
@@ -267,17 +265,6 @@ export default async function Home() {
           I won&apos;t email you to come back.
         </p>
 
-        {/* HR-SYNC-04 — device expectation-setter. Replaces the older, weaker
-            "Apple Watch supported" line: zone coaching needs an HR stream, so
-            "works best with" sets the right pre-download expectation (voice-
-            neutral). Single source: BRAND.hrRecommendation (same line as the
-            in-app UpgradeScreen). */}
-        <p style={{
-          marginTop: '8px',
-          fontSize: 'var(--fs-sm)', color: 'var(--mute)',
-        }}>
-          {BRAND.hrRecommendation}
-        </p>
         </div>
 
         {/* ── THE EVIDENCE CARD, IN THE HERO'S RIGHT COLUMN (direction 2a,
@@ -300,8 +287,29 @@ export default async function Home() {
             resize does not. */}
         <div style={{ justifySelf: 'stretch', alignSelf: 'center', minWidth: 0 }}>
           <HeroTrace />
+
+          {/* HR-SYNC-04 — device expectation-setter. It replaced the older,
+              weaker "Apple Watch supported" line: zone coaching needs an HR
+              stream, so "works best with" sets the right pre-download
+              expectation, voice-neutral. Single source:
+              BRAND.hrRecommendation — the same line the in-app UpgradeScreen
+              renders, so the app and the site cannot drift.
+
+              ⚠️ MOVED BELOW THE PROOF 2026-09-22 (Design Board sitting one).
+              It sat in the hero's LEFT column, which put a HARDWARE REQUIREMENT
+              above the evidence card on mobile — three text blocks and a caveat
+              before the one asset a competitor cannot copy. A caveat reads as a
+              condition of believing the claim when it precedes the proof, and
+              as a practical note when it follows it. Same words, same token,
+              different job. */}
+          <p style={{
+            marginTop: '14px',
+            fontSize: 'var(--fs-sm)', color: 'var(--mute)',
+          }}>
+            {BRAND.hrRecommendation}
+          </p>
         </div>
-      </section>
+      </Section>
 
       {/* The product, directly under the promise and the proof. Light section
           only: the frame renders its screen ground dark inside a --ground
@@ -316,7 +324,8 @@ export default async function Home() {
 
       {/* ── Facts band — MoorHub stat-strip structure, no vanity metrics ──
           v2 (design_handoff_v2). Honest facts only; price from PRICING. */}
-      <section style={{ maxWidth: 'var(--measure-page)', margin: '0 auto', padding: '0 24px var(--sect-y)' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: 'var(--measure-page)', margin: '0 auto', padding: '0 24px var(--sect-y)' }}>
         {/* ⚠️ THE PAIRS ARE EXPLICIT, SO THE WRAP IS NOT A GAMBLE
             (founder, 2026-09-21: "looks off on mobile, I'd want bullets
             between and it centred").
@@ -416,7 +425,7 @@ export default async function Home() {
             ])
           })()}
         </div>
-      </section>
+      </Section>
 
       {/* ── Thesis ───────────────────────────────────────────────────── */}
       {/* W-08 — no tinted ground and no hairlines. `--bg-soft` was acting as a
@@ -450,22 +459,78 @@ export default async function Home() {
         </div>
       </Section>
 
+      {/* 🎯 THE PROOF, MOVED TO SCREEN 3 — Design Board sitting two, 2026-09-22.
+          It was at 52% of a 14.8-screen page, and the founder stopped reading at
+          screen 2.5. He never saw it.
+
+          Sierra: this is the ONLY section where the reader learns to SEE
+          something — the same four sessions run on feel against run to the
+          ceiling, with the real percentages above the ceiling. A reader who
+          studies it starts recognising the grey zone in their own week without
+          us, and a competitor whose proposition is encouragement structurally
+          cannot print it.
+
+          Zhuo's ruling in one sentence: PROOF PRECEDES MECHANISM. The page used
+          to explain how the product works three times before showing that the
+          claim was true. */}
+      <SameWeekTwice />
+
+
       {/* ── What it does — three pillars + product mockups ───────────── */}
-      <Section>
-        <Eyebrow>The product</Eyebrow>
-        <SectionTitle accent="done with restraint.">Three things,</SectionTitle>
 
-        {/* Claim above, proof directly beneath it, three times.
-            Previously these were two unrelated grids: three text cards making
-            claims, then three hand-drawn imitations of app surfaces that were
-            not tied to any of them. Pairing each claim with the real component
-            that demonstrates it is the item (SLT, GTM-SITE-02): a card saying
-            "every run has a zone" is a promise, and a SessionCard reading
-            "Zone 2 · < 145 bpm · 6:30-7:30 /km" is a demonstration.
+      {/* ── Personalisation mechanic — previews the in-app profile/wizard ── */}
+      {/* W-08 — no tinted ground and no hairlines. `--bg-soft` was acting as a
+          section background 8 points from `--bg`, which reads as a smudge
+          rather than a rhythm, and the hairlines that propped it up are the
+          decorative dividers `ui-patterns.md` bans. This section is CARDS on
+          the page ground: the cards are the structure. `--bg-soft` returns to
+          its documented job (inset areas, input fields). */}
+      <Section width="full">
+        <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
+          <Eyebrow>Personalised, not generic</Eyebrow>
+          <SectionTitle sub="Your race, your history, your week, your legs. Pace bands and HR zones are derived from what you actually tell it, not lifted from a template.">
+            Your plan starts from your answers.
+          </SectionTitle>
 
-            The claims lost their card. When the proof beneath is itself a
-            framed object, putting the sentence in a box too gives every column
-            two boxes and the page stops having a subject. */}
+          {/* Answers → generated session. Lifted from the real wizard + Today
+              session card. Stacks on mobile; the arrow flips to vertical. */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gap: '20px', alignItems: 'stretch',
+          }}>
+            <AnswersCard />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
+              <div style={{
+                fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--moss-strong)',
+                textTransform: 'uppercase', letterSpacing: '0.1em',
+              }}>
+                → Generates
+              </div>
+              {/* The real card, from the real component. This is the payoff of
+                  the answers beside it, so an imitation here was the weakest
+                  possible place to have one.
+
+                  No ProductStill frame: this section's ground is already
+                  --bg-soft, which is the ground the card has in the app, and
+                  the "Generates" eyebrow above is the caption. Framing it would
+                  have added a second label saying the same thing. */}
+              <SessionCard {...DEMO_WEEK[0]} />
+            </div>
+          </div>
+        </div>
+
+          {/* 🎯 THE PRODUCTSTILL TRIO, MOVED — Design Board sitting two cut the
+              "Three things, done with restraint" SECTION, not its contents:
+              "content survives inside the mechanism section".
+
+              ⚠️ THE SETTLED-GROUND SCAN CAUGHT THIS. Cutting the section
+              wholesale would have deleted ZoneRings from the site, and the
+              ruling register says in terms: "Dropping ZoneRings — REVERSED,
+              retained. One of three components in the homepage trio, literally
+              one third of the product's public face." Dropping it recreates
+              PLAN-LONGRUN-COLOUR-01: the site promising what the app no longer
+              contains. The wrapper died; the trio moved. */}
         <div style={{
           display: 'grid',
           // `min(100%, 280px)`, not a bare 280px. A bare minimum track cannot
@@ -516,50 +581,16 @@ export default async function Home() {
             </ProductStill>
           </Pillar>
         </div>
-      </Section>
+      {/* ⚠️ MERGED, NOT DELETED — Design Board sitting two, 2026-09-22.
+          "Your plan starts from your answers" and "Then you run it" were two
+          consecutive sections making the SAME rhetorical move: here is how the
+          product works. Three of those in a row is where the founder stopped
+          reading. They are now one mechanism section, placed AFTER the proof.
 
-      {/* ── Personalisation mechanic — previews the in-app profile/wizard ── */}
-      {/* W-08 — no tinted ground and no hairlines. `--bg-soft` was acting as a
-          section background 8 points from `--bg`, which reads as a smudge
-          rather than a rhythm, and the hairlines that propped it up are the
-          decorative dividers `ui-patterns.md` bans. This section is CARDS on
-          the page ground: the cards are the structure. `--bg-soft` returns to
-          its documented job (inset areas, input fields). */}
-      <Section width="full">
-        <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
-          <Eyebrow>Personalised, not generic</Eyebrow>
-          <SectionTitle sub="Your race, your history, your week, your legs. Pace bands and HR zones are derived from what you actually tell it, not lifted from a template.">
-            Your plan starts from your answers.
-          </SectionTitle>
-
-          {/* Answers → generated session. Lifted from the real wizard + Today
-              session card. Stacks on mobile; the arrow flips to vertical. */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
-            gap: '20px', alignItems: 'stretch',
-          }}>
-            <AnswersCard />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', justifyContent: 'center' }}>
-              <div style={{
-                fontSize: 'var(--fs-micro)', fontWeight: 700, color: 'var(--moss-strong)',
-                textTransform: 'uppercase', letterSpacing: '0.1em',
-              }}>
-                → Generates
-              </div>
-              {/* The real card, from the real component. This is the payoff of
-                  the answers beside it, so an imitation here was the weakest
-                  possible place to have one.
-
-                  No ProductStill frame: this section's ground is already
-                  --bg-soft, which is the ground the card has in the app, and
-                  the "Generates" eyebrow above is the caption. Framing it would
-                  have added a second label saying the same thing. */}
-              <SessionCard {...DEMO_WEEK[0]} />
-            </div>
-          </div>
-        </div>
-      </Section>
+          ⚠️ FOR WAVE 1B-III: both headings are still <SectionTitle>, i.e. still
+          H2. The WRAPPER is merged; the reader still meets two equal
+          announcements. Demoting the second is a hierarchy change and belongs
+          with the rest of the hierarchy work, not smuggled in here. */}
 
       {/* ── W-02: the journey, from plan-in-hand to race day ─────────────
           SLT-ruled 2026-09-21. The site described PROPERTIES and never said
@@ -587,10 +618,10 @@ export default async function Home() {
           component stills. Those two already carry the page's proof, and a
           third showcase block would make the page repetitive. Numbered text
           is also the austere register Sutherland argued for at the SLT. */}
-      <Section width="full">
         <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
           <Eyebrow>How it goes</Eyebrow>
           <SectionTitle
+            weight="sub"  /* second half of the MERGED mechanism section: genuinely subordinate */
             accent="That's the hard part."
             sub="No dashboard to read, no score to chase. The week shows up, you run it, and it adjusts around the weeks you actually had."
           >
@@ -665,12 +696,47 @@ export default async function Home() {
         </div>
       </Section>
 
-      <SameWeekTwice />
-
       {/* ── What's not in the app — the restraint, made explicit ───────── */}
-      <Section>
+
+      {/* ── Counter-positioning — who this isn't for ──────────────────── */}
+      {/* W-08 — the page's ONE white band, and it is deliberate rather than
+          alternation. Every other light section sits on `--bg`; this is the
+          only ground change before the dark close. It is spent HERE because
+          anti-qualification is the most distinctive thing on the site and the
+          one thing a funded competitor will never write. A ground change needs
+          an edge, so the hairlines stay on this section only. */}
+      {/* 🎯 THE WHITE SPOTLIGHT, now expressed through the component.
+          ui-patterns.md has documented this as one of the three grounds since
+          W-08 — and until 2026-09-22 Section had no `card` surface, so this
+          band hand-rolled `background: var(--card)` instead. That is precisely
+          how the doc, the component and the test came to describe three
+          different systems. Zero delta: surface="card" is the same token. */}
+      {/* ⚠️ THE WHITE SPOTLIGHT LEFT THIS SECTION — Design Board 1b-iii,
+          2026-09-22, and `ui-patterns.md` §257 is amended, not contradicted.
+
+          §257 read: "the white band is spent on 'Probably not for you if…';
+          anti-qualification is the most distinctive thing on the site." That was
+          true of a page where the proof sat at 52%. SITTING TWO MOVED THE PROOF
+          TO 24% AND THE PREMISE STOPPED BEING TRUE — we changed it ourselves.
+
+          Sierra: the refusals are the brand enjoying itself. Good writing, zero
+          transfer. The proof is the only section that makes the reader better,
+          and it is the one a competitor structurally cannot print. The page has
+          exactly ONE movable ground change; it goes to that. */}
+      <Section width="full" rhythm="none"
+        style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}
+        innerStyle={{ padding: 'var(--sect-y) 24px' }}>
+        <div style={{ maxWidth: 'var(--measure-read)', margin: '0 auto', textAlign: 'left' }}>
+          {/* ⚠️ MERGED IN — Design Board sitting two, 2026-09-22. "What's not in
+              the app" and "Probably not for you if…" were two consecutive
+              sections making ONE move: refusal. Sierra: both are the brand
+              enjoying itself, and doing it twice makes both weaker. They are now
+              one refusal, and it keeps the white spotlight.
+              ⚠️ VISIBLE CHANGE, and it is the ruling: this content moves from
+              --bg onto the white ground. Where that band SITS is wave 1b-iii. */}
         <Eyebrow>The restraint</Eyebrow>
-        <SectionTitle sub="What I left out, on purpose.">
+        <SectionTitle
+            /* LEADS the merged refusal band — it comes first, so it carries the h2 */ sub="What I left out, on purpose.">
           What&apos;s not in the app.
         </SectionTitle>
 
@@ -705,31 +771,24 @@ export default async function Home() {
             </div>
           ))}
         </div>
-      </Section>
 
-      {/* ── Counter-positioning — who this isn't for ──────────────────── */}
-      {/* W-08 — the page's ONE white band, and it is deliberate rather than
-          alternation. Every other light section sits on `--bg`; this is the
-          only ground change before the dark close. It is spent HERE because
-          anti-qualification is the most distinctive thing on the site and the
-          one thing a funded competitor will never write. A ground change needs
-          an edge, so the hairlines stay on this section only. */}
-      <section style={{
-        background: 'var(--card)',
-        borderTop: '1px solid var(--line)',
-        borderBottom: '1px solid var(--line)',
-        padding: 'var(--sect-y) 24px',
-      }}>
-        <div style={{ maxWidth: 'var(--measure-read)', margin: '0 auto', textAlign: 'left' }}>
           <Eyebrow>Honestly</Eyebrow>
-          <h2 style={{
+          {/* ⚠️ <h3>, NOT <h2> — 1b-iii, 2026-09-22.
+
+              This is the SECOND beat of the merged refusal band: "What's not in
+              the app" comes first and carries the h2. The first cut of this had
+              them the wrong way round — the subordinate heading led the band —
+              and it was caught by reading the RENDERED OUTLINE, not the source.
+              A heading's tag is an outline claim; its size is a design one, and
+              conflating the two is what produced the inversion. */}
+            <h3 style={{
             fontFamily: 'var(--font-brand)',
-            fontSize: 'var(--fs-h2)',
+            fontSize: 'var(--fs-h3)',
             fontWeight: 600, lineHeight: 1.2,
             color: 'var(--ink)', margin: '0 0 28px',
           }}>
             Probably not for you if&hellip;
-          </h2>
+          </h3>
 
           <ul style={{ listStyle: 'none', margin: '0 0 24px', padding: 0, display: 'grid', gap: '14px' }}>
             {[
@@ -754,14 +813,15 @@ export default async function Home() {
             Plenty of excellent apps will. This one won&apos;t.
           </p>
         </div>
-      </section>
+      </Section>
 
       {/* ── FAQ — native <details> disclosure (v2, design_handoff_v2) ──────
           Zero-JS, server-rendered, keyboard-accessible; no new interaction
           model. Dry brand voice; prices from PRICING. Free SEO. */}
       <Section width="read">
         <Eyebrow>Questions</Eyebrow>
-        <SectionTitle>The obvious ones.</SectionTitle>
+        <SectionTitle
+            weight="minor"  /* standalone FAQ section: loses SIZE, keeps h2, outline unchanged */>The obvious ones.</SectionTitle>
         <div style={{
           border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)',
           background: 'var(--card)', boxShadow: 'var(--shadow-card)', overflow: 'hidden',
@@ -829,6 +889,7 @@ export default async function Home() {
       <Section>
         <Eyebrow>The free tier</Eyebrow>
         <SectionTitle
+            weight="minor"  /* standalone section: loses SIZE, keeps h2 */
           accent="Then decide."
           sub="Nine complete plans are on this site right now, 5K to marathon. Every week, every session, every pace band. No signup, no email, no weeks blurred out to make a point."
         >
@@ -907,10 +968,12 @@ export default async function Home() {
           WORDMARK ONLY: pairing BRAND.tagline here would put two of the three
           locked brand lines on one surface, the DIV-021 rule this page just
           fixed. */}
-      <section style={{
-        background: 'var(--ground)', color: 'var(--on-ground)',
-        padding: '112px 24px',
-      }}>
+      {/* 🎯 THE DARK CLOSE, now expressed through the component. W-09 binds it
+          to LAST position; surface="dark" resolves to the same --ground and
+          --on-ground pair the raw style set. Zero visual delta.
+          ⚠️ EXACTLY ONE near-black band per page (ADR-008). This is it. */}
+      <Section surface="dark" width="full" rhythm="none"
+        innerStyle={{ padding: '112px 24px' }}>
         <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{
             fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-on-ground)',
@@ -963,7 +1026,7 @@ export default async function Home() {
             <Wordmark size="sm" variant="light" />
           </div>
         </div>
-      </section>
+      </Section>
 
       <SiteFooter />
     </main>
@@ -997,12 +1060,35 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
  *  Split on the clause that IS the argument ("the same grey zone", "done with
  *  restraint"), never at an arbitrary midpoint. A headline with a single clause
  *  gets no accent rather than being forced into two. */
-function SectionTitle({ children, accent, sub }: { children: React.ReactNode; accent?: string; sub?: string }) {
+function SectionTitle({ children, accent, sub, weight = 'lead' }: {
+  children: React.ReactNode; accent?: string; sub?: string
+  /** ⚠️ HIERARCHY, added 1b-iii 2026-09-22 (Design Board).
+   *
+   *  The page had EIGHT <h2> at exactly 26px. That is not a hierarchy, it is a
+   *  list with eight equal entries, and a reader scrolling gets eight equal
+   *  announcements with no way to know the proof matters more than the FAQ.
+   *
+   *  `lead`  — a section that carries the argument: the problem, the proof, and
+   *            the opening of the mechanism. Stays --fs-h2.
+   *  `minor` — a supporting beat. Renders --fs-h3, and where it sits INSIDE a
+   *            merged section it is also an <h3>, because it genuinely is
+   *            subordinate rather than merely quieter. Standalone sections
+   *            (FAQ, free tier) keep <h2> and only lose size: demoting their
+   *            TAG would misstate the document outline for a crawler. */
+  weight?: 'lead' | 'minor' | 'sub'
+}) {
+  // ⚠️ SIZE AND TAG ARE SEPARATE, and conflating them was a defect caught by
+  // measuring the rendered outline: `minor` demoted BOTH, which turned the FAQ
+  // and free-tier sections into <h3> subordinate to whatever preceded them.
+  // They are standalone sections; quieter is a size decision, subordinate is an
+  // outline claim, and only `sub` makes the second one.
+  const H = weight === 'sub' ? 'h3' : 'h2'
+  const quiet = weight !== 'lead'
   return (
-    <div style={{ marginBottom: '48px' }}>
-      <h2 style={{
+    <div style={{ marginBottom: quiet ? '32px' : '48px' }}>
+      <H style={{
         fontFamily: 'var(--font-brand)',
-        fontSize: 'var(--fs-h2)',
+        fontSize: quiet ? 'var(--fs-h3)' : 'var(--fs-h2)',
         fontWeight: 600, lineHeight: 1.2,
         color: 'var(--ink)', margin: 0,
         maxWidth: '720px',
@@ -1014,7 +1100,7 @@ function SectionTitle({ children, accent, sub }: { children: React.ReactNode; ac
             <span style={{ color: 'var(--moss-strong)' }}>{accent}</span>
           </>
         )}
-      </h2>
+      </H>
       {sub && (
         <p style={{
           fontSize: 'var(--fs-lead)', lineHeight: 1.55, color: 'var(--ink-2)',
