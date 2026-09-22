@@ -121,3 +121,47 @@ needs one too, and the app cannot be emulated in a browser at all.**
 artifacts. **`/build` for anything that follows** — analysis before code, and the consumer check
 covers **app AND website** every time, because a number on one is often the same number on the
 other.
+
+---
+
+## What the board can actually SEE — measured 2026-09-22, before the sitting
+
+**Local harnesses only.** Every `*-preview` route 404s in production by design, so this is a
+`npm run dev` review, not a device one.
+
+| Screen job (`screen-architecture.md`) | Viewable? | Where |
+|---|---|---|
+| **Today** | ✅ | `TabbedPhone` on `/` — the REAL components, fed by `buildDemoPlanScreen` |
+| **Plan** | ✅ | `TabbedPhone` + `/plan-arc-preview` (real `PlanCalendar`, real `PlanArc`) |
+| **Coach** | ✅ | `/coach-preview` + `TabbedPhone` |
+| **Me** | ✅ | `/me-preview` (real `IdentityCard`, real `ProfileSection`) |
+| **Session Detail** | 🔴 **NO** | see below |
+
+Extras with harnesses: `/onboarding-preview`, `/post-run-preview`, `/zone-block-preview`,
+`/refusal-preview`, `/guide-preview`. All eight routes verified **200** on 2026-09-22.
+
+### 🔴 Session Detail cannot be shown, and that fact is itself evidence
+
+`SessionScreen` is a function **inside `DashboardClient.tsx`** — a file of **13,000+ lines** — and it
+takes **25 props**. There is no way to render it without standing up the whole dashboard behind
+auth, which is why no harness exists.
+
+**The board should hear this as a finding rather than an apology.** This repo's own record says an
+auth-gated surface needs a fixture page, and the two times one was built it found defects no test
+could reach (`ONBOARD-EXIT-01`, `PROFILE-NAME-01` — the founder's own name shipped as the
+placeholder). The screen that carries *"understand one session's full prescription"* is the one
+screen nobody can look at without logging in.
+
+⚠️ **Rule on what is visible and name what is not.** Four of five screen jobs are reviewable from
+real components. Session Detail is not, and any ruling that touches it is INSUFFICIENT EVIDENCE
+until a harness exists.
+
+### What changed in the product TODAY, which the board has not seen
+
+- **§120** — a session card's header now states the pace its reps actually run. **2,811 sessions
+  previously displayed a pace their own reps contradicted**, worst case 147 s/km. Session Detail and
+  every card are affected.
+- **§121** — the race is no longer counted as training volume, so week totals and the plan total
+  dropped on race week. Race week now reads *"15 km + 42.2 km race"*.
+- **The Design Board exists** (ADR-023) and its register `design-rulings.md` now carries six
+  sections of settled ground from the website sittings. **The settled-ground scan reads it first.**
