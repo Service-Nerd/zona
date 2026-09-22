@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — APP-REVIEW-S1 · the measurement killed the argument both sides were having
+**Shipped:** Slide-up sheets now cover the bottom nav instead of resting on it.
+
+**Dev learning:** The rule I reversed had a test. The test read
+`expect(src).toContain('paddingBottom')`. My change sets `paddingBottom: 0` — which contains
+the string `paddingBottom`. So the guard for "the sheet must reserve the nav's height"
+would have passed the exact change that removed it, and had been passing for nine days with
+nothing behind it. I only found out because I went looking for the test to update it. If I
+had reversed the rule without checking, the suite would have told me everything was fine.
+
+**Product/creator learning:** The founder asked for a panel position and I nearly built a
+panel position. The measurement said covering the nav buys 0px on an SE and 5px on a 13/15
+— so whatever he was reacting to, it was not space. What it actually was: the backdrop
+spans the whole viewport at 40% ink with an onClick that dismisses, so the nav sat there
+dimmed, looking like four destinations, and tapping "Plan" closed the sheet. A control that
+lies, in the fattest tap strip on the phone. Same fix, completely different reason, and the
+reason is what goes on the record so the next person does not re-argue it as taste.
+
+**AI-building learning:** When a change buys nothing measurable, the argument was never
+about the measurement. That is now a heuristic I want to reach for earlier: take the number
+first, and if the number is 5px, stop designing and start asking what the person actually
+saw.
+
+**The honest bit:** Covering the nav broke something I did not think about until after the
+edit — the panel's own close bar now sits where the home indicator is, because the nav used
+to absorb that for it. The primitive had to grow a `env(safe-area-inset-bottom)` of its own.
+Moving a boundary means inheriting what the old boundary was quietly doing.
+
+**Hook material:** The test guarding "reserve the nav's height" passed a change that set
+that height to zero, because it only checked the property was mentioned.
+
+**Postable?:** yes
+
 ## 2026-09-22 — APP-REVIEW-W3 · the owner existed and three of four callers ignored it
 **Shipped:** One time-to-race vocabulary, Today stopped navigating weeks, Plan now leads
 with the weeks, and the race is stated once.

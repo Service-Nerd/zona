@@ -31,9 +31,44 @@ describe('Sheet primitive is the single owner of sheet presentation', () => {
     expect(src).not.toMatch(/zIndex:\s*\d{3,}/)
   })
 
-  it('rests on the nav by reserving the measured nav height', () => {
+  // S1 (Design Board 2026-09-22) — the sheet COVERS the nav.
+  //
+  // 🔴 THIS TEST USED TO ASSERT THE OPPOSITE RULE AND COULD NOT ENFORCE IT. It
+  // read `expect(src).toContain('paddingBottom')`, which `paddingBottom: 0`
+  // satisfies just as well as `paddingBottom: navH`. So the rule the reversal
+  // overturned had a green tick with nothing behind it for nine days — the
+  // `--section-gap` class again, found while reversing the rule it guarded.
+  it('the backdrop reserves NOTHING at the bottom — the panel covers the nav', () => {
+    const i = src.indexOf("position: 'fixed', inset: 0, zIndex: Z_LAYERS.sheet")
+    expect(i, 'the backdrop style block').toBeGreaterThan(-1)
+    const backdrop = src.slice(i, i + 600)
+    expect(backdrop).toMatch(/paddingBottom:\s*0\b/)
+    // The specific thing that is gone: reserving the measured nav height, which
+    // left the nav visible, scrimmed at 40% ink, and wired to dismiss.
+    expect(backdrop).not.toMatch(/paddingBottom:\s*`\$\{navH\}px`/)
+  })
+
+  it('but the measured nav height is still CONSUMED — by the height bound', () => {
+    // It no longer positions anything. It keeps a tall sheet's own content out
+    // of the home-indicator strip, which is why the context still exists.
     expect(src).toContain('useNavHeight')
-    expect(src).toContain('paddingBottom')
+    expect(src).toMatch(/maxHeight:[^\n]*\$\{navH\}px/)
+  })
+
+  it('the panel clears the home indicator itself, now that the nav does not', () => {
+    // Same doctrine as A4: the safe-area inset is a reserved strip, ADDED, never
+    // spent as content padding. Without this the close bar the standing rule
+    // puts at the panel's bottom sits under the home bar.
+    const i = src.indexOf("borderRadius: '20px 20px 0 0'")
+    expect(i).toBeGreaterThan(-1)
+    expect(src.slice(i, i + 700)).toContain("paddingBottom: 'env(safe-area-inset-bottom, 0px)'")
+  })
+
+  it('a sheet covers the nav; it does NOT become a screen (Silvanto, binding)', () => {
+    // maxHeightVh 88 is load-bearing, not a default. A sheet whose content
+    // cannot fit at 88vh is evidence the content belongs on a screen.
+    expect(src).toMatch(/maxHeightVh\s*=\s*88/)
+    expect(src).not.toMatch(/maxHeightVh\s*=\s*100/)
   })
 })
 

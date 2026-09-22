@@ -377,7 +377,7 @@ has failed it.
 
 | Ruling | Status | May not be re-raised without |
 |---|---|---|
-| **S1 — one sheet pattern, over the nav** | ⚠️ **RETURNED TO THE BOARD, mis-escalated.** Slide-up sheets are ALREADY approved (`ux-principles.md`) and a shared `Sheet` primitive already exists (`SHEET-PRESENT-01`) owning z-index, nav inset, animation, focus trap. 🔴 **The founder is reversing HIS OWN prior rule**, encoded in that primitive: *"come up from the nav bar but not overlay it."* Not a brand change, not the SLT's — **one property on one primitive.** ⚠️ **The board escalated this as "reverses no-popups" and that was wrong: the scan ran against the restraint rules and never looked for the primitive** |
+| **S1 — one sheet pattern, over the nav** | 🟢 **RULED 2026-09-22 — SHIP WITH AMENDMENT. See § 6i.** (was: ⚠️ RETURNED TO THE BOARD, mis-escalated.) Slide-up sheets are ALREADY approved (`ux-principles.md`) and a shared `Sheet` primitive already exists (`SHEET-PRESENT-01`) owning z-index, nav inset, animation, focus trap. 🔴 **The founder is reversing HIS OWN prior rule**, encoded in that primitive: *"come up from the nav bar but not overlay it."* Not a brand change, not the SLT's — **one property on one primitive.** ⚠️ **The board escalated this as "reverses no-popups" and that was wrong: the scan ran against the restraint rules and never looked for the primitive** |
 | **S2 — dismiss is never `--moss`** | 🟢 **SHIP** | `--moss` is the CTA colour. Spending the strongest colour in the system on *dismiss* teaches the opposite of what it means, on every sheet. Silvanto: not a veto today, **but a `--moss` close shipping after this sitting is one** |
 | **S3 — one CTA vocabulary** | 🟢 **SHIP** | Measured in the wizard: **four labels for one button** — `Continue` · `Continue →` · `Got it →` · `Skip this →` — with the arrow on some and not others |
 | **S4 — an optional step's primary may never be the SKIP** | 🟢 **SHIP.** The sharpest finding of the review | Measured: the moss primary (`rgb(107,142,107)`, white text), largest target on the screen, in the thumb zone, reads **"Skip this →" on 5 of 15 steps.** Answering costs a tap; declining costs none. **We built a wizard that is easiest not to fill in** (Wroblewski) |
@@ -435,6 +435,61 @@ file using post-fix indices, so nothing moved and the check stayed green — whi
 indistinguishable from a hollow check until you look. Redone against the real ordering, it
 goes red on two assertions. **Third time this repo has recorded a falsification that did not
 apply; a mutation must be shown to have changed the file.**
+
+---
+
+## 6i. S1 — the sheet covers the nav (2026-09-22)
+
+**Ruling: SHIP WITH AMENDMENT.** The founder's ask is granted. **The amendment is that the
+reason on the record is neither his nor the board's first one.**
+
+| | |
+|---|---|
+| **Asked for** | *"These load above the NAV bar, the nav goes grey. I'd like them to load on top of it."* |
+| **First handled as** | An SLT escalation, *"reverses no-popups"*. 🔴 **Wrong.** Slide-up sheets are separately approved in `ux-principles.md`; the no-popups rule governs whether a sheet EXISTS, not where its bottom edge lands. **The scan ran against the restraint rules and never looked for the primitive** |
+| **Reverses** | SHEET-PRESENT-01's *"come up from the nav bar but not overlay it"* — the founder's own earlier rule. Explicitly, by name |
+
+**📐 The measurement killed the argument both sides were having.** Covering the nav buys
+**0px on an iPhone SE and 5px (0.6%) on a 13/15.** This was never about room.
+
+**What the measurement found instead** — source geometry, not impression:
+
+| Property | Value | Consequence |
+|---|---|---|
+| Backdrop | `position: fixed; inset: 0` | Spans the nav |
+| Layer | `Z_LAYERS.sheet` 4000 vs `nav` 3000 | Paints over it |
+| Fill | `--scrim` `rgba(26,26,26,0.40)` | Nav dimmed 40% toward ink |
+| Handler | `onClick={close}` | **Tapping a nav icon dismissed the sheet. It did not navigate** |
+
+The nav was **visible, dimmed, and lying** — four destinations, one behaviour — across all
+**six** sheet instances, in the thumb's home strip. Sierra: *trust in navigation is the
+cheapest thing a product owns and the most expensive to rebuild.* Collins: *resting on the
+nav was hedging; a sheet is a commitment.*
+
+⚠️ **Wroblewski, recorded so it does not return: the alternative was WORSE.** Leaving the
+nav live and un-scrimmed contradicts `role="dialog"` + `aria-modal="true"` + the focus trap,
+which no screen reader can resolve, and puts two competing exit gestures inside 80px.
+
+⛔ **Silvanto, binding, not a veto:** `maxHeightVh = 88` is load-bearing. **A sheet covers
+the nav; it does not become a screen.** He would veto a later move to full height; what
+would move him is content that genuinely cannot fit at 88vh, which would itself be evidence
+the content belongs on a screen. Not tested.
+
+🔴 **The rule this reverses was never actually guarded.** `sheetPresentation.test.ts` asserted
+`expect(src).toContain('paddingBottom')`, which `paddingBottom: 0` satisfies exactly as well
+as `paddingBottom: navH`. Nine days of a green tick with nothing behind it — the
+`--section-gap` class — **found while reversing the rule it was supposed to protect.** Four
+real assertions now, each falsified, and mutation A was verified to have changed the file
+before its red was believed.
+
+**Artifacts:** pattern → `ui-patterns.md` § Slide-up Sheet (amended) · constant →
+`maxHeightVh = 88` + `Z_LAYERS` unchanged · check → `sheetPresentation.test.ts`, 4 new
+assertions, all falsified.
+
+**⚠️ What this does not settle:** nobody has seen it on a device. The ruling turns on a
+control that lies, which is a source fact; whether covering the nav *feels* right in the
+hand is not established, and this product's standing weakness is that nothing has ever run
+on one.
 
 ---
 

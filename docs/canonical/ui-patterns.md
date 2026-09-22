@@ -1644,7 +1644,16 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 > **What the primitive owns, so no caller re-invents it:**
 > - **Portal to `document.body`** — the sheet escapes the app's scrolling content container entirely. The shell locks `<body>` and scrolls an inner div, and WKWebView mispositions `position: fixed` descendants of a scrolling container; rendered at the body, the sheet is truly viewport-anchored.
 > - **One z-index, above the nav by construction** — `Z_LAYERS.sheet` from `lib/ui/zLayers.ts` (the single owner of stacking: `guide > sheet > nav > content`, asserted by `zLayers.test.ts`). No component hardcodes a sheet z-index.
-> - **Rests on the nav's top edge** — the overlay reserves the *measured* nav height (published via `NavHeightProvider` from `DashboardClient`, consumed with `useNavHeight()`) as `paddingBottom`, so the panel's bottom and its sticky close bar sit on the nav, never under or over it. It tracks the nav automatically, so NAV-SPACE-01 and any future nav change need no sheet edit.
+> - **Covers the nav** — the panel's bottom edge is the viewport's. 🔴 **REVERSED 2026-09-22 (S1, Design Board), explicitly and by name.** This read *"rests on the nav's top edge"*, encoding the founder's own earlier rule, *"come up from the nav bar but not overlay it"*.
+>
+>   ⚠️ **The reversal is NOT about room.** Measured: covering the nav buys **0px on an iPhone SE and 5px — 0.6% — on a 13/15.** When a change buys nothing measurable, the argument was never about the measurement.
+>
+>   **What was actually wrong:** the backdrop is `position: fixed; inset: 0` at `Z_LAYERS.sheet` (4000) against the nav's 3000, filled with `--scrim` at 40% ink and carrying `onClick={close}`. So the nav was **visible, dimmed, and lying** — it offered four destinations and delivered one behaviour, and tapping *Plan* dismissed the sheet instead of navigating. The fattest, most reachable strip on the phone, the thumb's home, wired to the wrong verb, on all six sheet instances. **A modal dialog covers the application**; the one exit is the panel's own bottom bar, which the standing rule already puts there.
+>
+>   ⚠️ **Wroblewski, recorded so it does not return:** the alternative — leaving the nav LIVE and un-scrimmed — is worse. The panel carries `role="dialog"`, `aria-modal="true"` and a focus trap, and a live nav outside an `aria-modal` dialog is a contradiction a screen reader cannot resolve, with two competing exit gestures inside 80px.
+>
+>   The measured nav height is **still published and still consumed** — by `maxHeight`, so a tall sheet cannot grow into the home-indicator strip — and the panel now carries `paddingBottom: env(safe-area-inset-bottom)` itself, because the nav used to absorb that for it. Same doctrine as A4: **the inset is a reserved strip, added, never spent as content padding.**
+> - **⛔ A sheet covers the nav; it does NOT become a screen.** `maxHeightVh = 88` is **load-bearing, not a default** (Silvanto, binding). A sheet whose content cannot fit at 88vh is evidence the content belongs on a screen — and this product has retired two screens for less.
 > - **Enter + exit animation, backdrop + Escape dismissal, body-scroll lock, focus capture/trap/restore, and the drag pill.**
 >
 > **How to use it:**
@@ -1662,7 +1671,7 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 >   </Sheet>
 > )}
 > ```
-> `onClose` = "fully closed, unmount me" (the primitive calls it *after* the exit animation). The `close` passed to children triggers that animated dismissal from any affordance (bottom Close, a ✕, "Decide later"). The primitive draws the drag pill; do not add your own. Reintroducing a below-nav sheet overlay fails `components/shared/sheetPresentation.test.ts`.
+> `onClose` = "fully closed, unmount me" (the primitive calls it *after* the exit animation). The `close` passed to children triggers that animated dismissal from any affordance (bottom Close, a ✕, "Decide later"). The primitive draws the drag pill; do not add your own. Reintroducing a below-nav sheet overlay fails `components/shared/sheetPresentation.test.ts`. ⚠️ **That test asserted the OLD rule and could not enforce it**: it read `expect(src).toContain('paddingBottom')`, which `paddingBottom: 0` satisfies exactly as well as `paddingBottom: navH`. The rule had a green tick with nothing behind it, and it was found while reversing the rule it guarded.
 >
 > **Exception:** `ScreenGuide` (first-load coach-mark) is deliberately NOT a `Sheet` — it teaches nav position by drawing a mirrored nav of its own — but it takes its layer from `Z_LAYERS.guide`, so it too stacks correctly.
 

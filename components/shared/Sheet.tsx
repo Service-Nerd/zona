@@ -15,11 +15,28 @@
 //     scrolling container. Rendered at the body, the sheet is truly viewport-
 //     anchored.
 //   • One z-index (Z_LAYERS.sheet) that is above the nav BY CONSTRUCTION.
-//   • Resting on the nav's top edge — the overlay reserves the measured nav
-//     height as paddingBottom, so the panel's bottom (and its sticky close bar)
-//     land exactly on the nav, never under or over it. The founder's rule —
-//     "come up from the nav bar but not overlay it" — is a property of the
-//     primitive, and it tracks the nav automatically (NAV-SPACE-01 and beyond).
+//   • COVERING the nav — the panel's bottom edge is the viewport's (S1, Design
+//     Board 2026-09-22). ⚠️ THIS REVERSES SHEET-PRESENT-01's ORIGINAL RULE,
+//     "come up from the nav bar but not overlay it", explicitly and by name.
+//
+//     The reversal is NOT about room. Measured: covering the nav buys 0px on an
+//     iPhone SE and 5px — 0.6% — on a 13/15. The defect was that the backdrop is
+//     `inset: 0` at Z_LAYERS.sheet (4000) against the nav's 3000, filled with
+//     `--scrim` at 40% ink and carrying `onClick={close}`. So the nav was
+//     VISIBLE, DIMMED, AND LYING: it offered four destinations and delivered
+//     one behaviour, and tapping "Plan" dismissed the sheet instead of
+//     navigating. The fattest, most reachable strip on the phone was wired to
+//     the wrong verb, on all six sheets in the product.
+//
+//     A modal dialog covers the application. The one exit is the panel's own
+//     bottom bar, which the standing rule already puts there.
+//
+//     ⚠️ The nav height is still MEASURED and still consumed — by `maxHeight`
+//     below, so a tall sheet cannot grow into the home-indicator strip.
+//   • `maxHeightVh` 88 is LOAD-BEARING, not a default (Silvanto, binding). This
+//     is a sheet that covers the nav, NOT a sheet becoming a screen. A sheet
+//     whose content cannot fit at 88vh is evidence the content belongs on a
+//     screen.
 //   • Enter + exit animation, backdrop + Escape dismissal, body-scroll lock,
 //     and focus handling (focus the panel on open, trap Tab within it, restore
 //     on close).
@@ -35,7 +52,9 @@ import { Z_LAYERS } from '@/lib/ui/zLayers'
 // ── Nav height ─────────────────────────────────────────────────────────────
 // The bottom nav measures itself (ResizeObserver in DashboardClient) and
 // publishes the height here so any sheet, wherever it is declared in the tree,
-// can rest on the nav's top edge. Null while the nav is unmounted (first-time
+// can bound its own height against it. ⚠️ Since S1 the panel COVERS the nav, so
+// this no longer positions anything — it only keeps a tall sheet's content out
+// of the home-indicator strip. Null while the nav is unmounted (first-time
 // onboarding) or before first measure; sheets fall back to a sane default.
 
 const NavHeightContext = createContext<number | null>(null)
@@ -150,9 +169,9 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
         position: 'fixed', inset: 0, zIndex: Z_LAYERS.sheet,
         background: 'var(--scrim)',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        // Rest on the nav's top edge: reserve the measured nav height so the
-        // flex-end panel bottom lands exactly on the nav, never under it.
-        paddingBottom: `${navH}px`,
+        // S1 — the panel's bottom edge is the VIEWPORT's, so the sheet covers
+        // the nav rather than resting on a dimmed, dead copy of it.
+        paddingBottom: 0,
         boxSizing: 'border-box',
         opacity: shown ? 1 : 0,
         transition: transition ?? 'opacity 0.2s ease-out',
@@ -168,6 +187,14 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
           paddingTop: '8px',
+          // S1 completeness — the panel now reaches the viewport's bottom edge,
+          // so ITS content (the close bar the standing rule puts there) would
+          // otherwise sit under the home indicator. The nav used to absorb this
+          // for us. Same doctrine as A4: the inset is a reserved strip, not
+          // content padding, so it is added rather than spent.
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          // navH is still consumed HERE even though the panel covers the nav:
+          // it keeps a tall sheet's own content out of the home-indicator strip.
           maxHeight: `min(${maxHeightVh}vh, calc(100vh - ${navH}px - 24px))`,
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch',
