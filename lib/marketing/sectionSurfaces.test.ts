@@ -29,6 +29,20 @@ const src = (f: string) =>
 
 const HOME = 'app/page.tsx'
 
+/**
+ * Source index of an `<Eyebrow>` by its TEXT, tolerant of its props.
+ *
+ * ⚠️ These assertions used to read `home.indexOf('<Eyebrow>Honestly</Eyebrow>')`
+ * and they went red on SITE-BEAT-01 — a change that moved nothing, reordered
+ * nothing and reversed no ruling. It added a `beat` prop. **What these tests
+ * are guarding is the ORDER of the page's beats, and the tag's attribute list
+ * is not part of that claim.** Same shape as the prose matchers that broke when
+ * four refusal strings were retuned for tone: anchor on the thing the rule is
+ * about, never on incidental syntax around it.
+ */
+const eyebrowAt = (code: string, text: string) =>
+  code.search(new RegExp(`<Eyebrow\\b[^>]*>\\s*${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*<`))
+
 /** Every marketing component, read from disk rather than listed — a hand-written
  *  list is the "only as wide as its list" failure this repo keeps recording. */
 const MARKETING_FILES = fs.readdirSync(path.join(ROOT, 'components/marketing'))
@@ -151,13 +165,13 @@ describe('marketing section surfaces', () => {
 
     // Every section that EXPLAINS the mechanism must come after it.
     for (const eyebrow of ['Personalised, not generic', 'How it goes']) {
-      const mech = home.indexOf(`<Eyebrow>${eyebrow}</Eyebrow>`)
+      const mech = eyebrowAt(home, eyebrow)
       expect(mech, `the "${eyebrow}" section has gone`).toBeGreaterThan(-1)
       expect(proof, `"${eyebrow}" now precedes the proof — sitting two ruled the opposite`)
         .toBeLessThan(mech)
     }
     // And the recognition beat still precedes the proof: problem, then evidence.
-    expect(home.indexOf('<Eyebrow>The problem</Eyebrow>')).toBeLessThan(proof)
+    expect(eyebrowAt(home, 'The problem')).toBeLessThan(proof)
   })
 
   it('the cuts and merges from sitting two hold', () => {
@@ -192,8 +206,8 @@ describe('marketing section surfaces', () => {
     // encoding a premise that a later ruling changed. Anchor on the MERGE
     // itself, which is what sitting two actually ruled, not on the ground that
     // happened to be underneath it at the time.
-    const restraint = home.indexOf('<Eyebrow>The restraint</Eyebrow>')
-    const honestly = home.indexOf('<Eyebrow>Honestly</Eyebrow>')
+    const restraint = eyebrowAt(home, 'The restraint')
+    const honestly = eyebrowAt(home, 'Honestly')
     expect(restraint, '"The restraint" has gone').toBeGreaterThan(-1)
     expect(honestly, '"Honestly" has gone').toBeGreaterThan(-1)
     expect(restraint, 'the refusal order flipped').toBeLessThan(honestly)

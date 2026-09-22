@@ -217,6 +217,25 @@
   --sect-y-hero:     clamp(32px, 4vw, 48px);    /* hero — the header sits above it */
   --sect-y-close:    clamp(72px, 9vw, 112px);   /* the ONE dark band, deliberately heavier */
 
+  /* ── The BEAT (SITE-BEAT-01, Design Board 2026-09-22) ────────────────────
+     The gap between two beats INSIDE one section. `--sect-y` separates
+     sections; nothing separated beats, so a merged section's second beat
+     started at exactly 0px from the block above it.
+
+     ⚠️ DERIVED FROM `--sect-y`, NOT A FOURTH INDEPENDENT VALUE, and the
+     derivation is the design decision. Design Board sitting two MERGED four
+     sections into two. A merge that leaves the beats as far apart as sections
+     were is cosmetic -- the reader still meets two announcements. A beat must
+     read as subordinate to a section boundary at every viewport, and `calc`
+     makes that true by construction rather than by two clamps agreeing.
+     0.7 resolves to 39px at 375, 43px at 1024, 56px at 1440, against a
+     section's 56/61/80 PER SIDE (so 112/123/160 between two sections).
+
+     ⚠️ SITE-WAVE-4's scale could not have caught this. It measured 448 gaps
+     that EXISTED. A gap of zero is not a gap -- it is an absent decision, and
+     a scale test can only tokenise a value somebody already typed. */
+  --beat-y:          calc(var(--sect-y) * 0.7);
+
   /* TWO measures, not eight. `--measure-page` matches the site frame so the
      content edge stops moving as you scroll; `--measure-read` is a reading
      column for prose-dominant sections (~70 characters at 17px). */

@@ -541,6 +541,9 @@ export default async function Home() {
           // the pricing page.
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
           gap: '18px 24px',
+          // SITE-BEAT-01. The trio is the second beat of the MERGED mechanism
+          // section, so it sat at exactly 0px under the "→ Generates" card.
+          marginTop: 'var(--beat-y)',
         }}>
           <Pillar
             title="A plan that fits you"
@@ -619,7 +622,7 @@ export default async function Home() {
           third showcase block would make the page repetitive. Numbered text
           is also the austere register Sutherland argued for at the SLT. */}
         <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
-          <Eyebrow>How it goes</Eyebrow>
+          <Eyebrow beat>How it goes</Eyebrow>
           <SectionTitle
             weight="sub"  /* second half of the MERGED mechanism section: genuinely subordinate */
             accent="That's the hard part."
@@ -792,7 +795,7 @@ export default async function Home() {
           ))}
         </div>
 
-          <Eyebrow>Honestly</Eyebrow>
+          <Eyebrow beat>Honestly</Eyebrow>
           {/* ⚠️ <h3>, NOT <h2> — 1b-iii, 2026-09-22.
 
               This is the SECOND beat of the merged refusal band: "What's not in
@@ -1056,12 +1059,23 @@ export default async function Home() {
 // ─── Local presentational components ────────────────────────────────────────
 
 /** Section eyebrow — moss, uppercase, the canonical 0.08em label. */
-function Eyebrow({ children }: { children: React.ReactNode }) {
+/**
+ * @param beat opens a SECOND beat inside a section that already has one.
+ *
+ * ⚠️ `paddingTop`, NOT `marginTop`, and that is not a stylistic preference. An
+ * Eyebrow is often the FIRST child of its wrapper div, and a first child's top
+ * margin collapses out through a parent that has no padding or border. The
+ * rendered result happens to look identical today, which is precisely the
+ * problem: the next wrapper that gains a border silently changes where the gap
+ * lands. Padding never collapses.
+ */
+function Eyebrow({ children, beat = false }: { children: React.ReactNode; beat?: boolean }) {
   return (
     <div style={{
       fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
       textTransform: 'uppercase', letterSpacing: '0.08em',
       marginBottom: 'var(--space-3)',
+      paddingTop: beat ? 'var(--beat-y)' : undefined,
     }}>
       {children}
     </div>

@@ -132,8 +132,23 @@ The scale above is written for a 375-wide screen read at arm's length under a th
 | `--sect-y` | `clamp(56px, 6vw, 80px)` | every content section, top and bottom |
 | `--sect-y-hero` | `clamp(32px, 4vw, 48px)` | hero only — the header sits above it |
 | `--sect-y-close` | `clamp(72px, 9vw, 112px)` | the one dark band, deliberately heavier |
+| `--beat-y` | `calc(var(--sect-y) * 0.7)` | **the gap between two beats INSIDE one section** (SITE-BEAT-01) |
 
 **Responsive by construction:** at 375px `--sect-y` resolves to **56px, which IS the canonical value**, so the phone never pays for the desktop's air.
+
+#### The beat — SITE-BEAT-01, 2026-09-22
+
+**A section separated from a section. Nothing separated a beat from a beat, so three of them rendered at exactly 0px.** Found by the founder on a phone, measured live on all three: the trio of product stills under the wizard card, `How it goes` under the trio, and `Honestly` under the refusal grid. `0 · 0 · 0`.
+
+🔴 **Design Board sitting two CREATED this defect, and that is the finding.** It merged four sections into two, correctly. A `<Section>` boundary is what was carrying the space, so deleting the boundary deleted the space, and the merged sections were the only ones affected. **Every other marketing page measured clean.** When you merge two containers, the gap between them was a property of the container, not of the content: re-express it or it is gone.
+
+🔴 **`SITE-WAVE-4`'s scale could not have caught it, and this is its stated negative space.** That sweep measured **448 gaps that existed**. A gap of zero is not a gap, it is an absent decision, and a scale test can only tokenise a value somebody already typed. **A spacing audit finds wrong values; it is blind to missing ones.**
+
+**Derived, never a fourth independent clamp.** `--beat-y` is `--sect-y × 0.7` so a beat is subordinate to a section boundary at every viewport by construction rather than by two clamps happening to agree. 39px at 375, 43px at 1024, 56px at 1440, against a section's 56/61/80 **per side**. A beat spaced like a section would make the merge cosmetic: the reader would still meet two equal announcements, which is the thing sitting two set out to remove.
+
+**Use:** `<Eyebrow beat>` for a beat that opens with an eyebrow, `marginTop: 'var(--beat-y)'` for one that opens with a block. `Eyebrow` applies it as **`paddingTop`, not `marginTop`** — an eyebrow is frequently the first child of its wrapper and a first child's top margin collapses out through a padding-less, border-less parent. It renders identically today, which is exactly why the next wrapper to gain a border would move the gap silently.
+
+Guarded by `lib/marketing/beatRhythm.test.ts`.
 
 **And two measures, not eight:** `--measure-page` (1100px, matching the site frame so the content edge stops moving as you scroll) and `--measure-read` (720px, a reading column of roughly 70 characters at 17px).
 

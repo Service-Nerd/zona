@@ -307,6 +307,40 @@ measurements. **Read the token, never recall it.**
 
 ---
 
+## 6e. Second founder device pass, 2026-09-22 — `SITE-BEAT-01`, and the board's own merge caused it
+
+He answered the wave-3 question — **"its better"** — and in the same breath named three more
+gaps: *"the tile above A plan that fits you… the your zones on Coach image and How it goes…
+the what's not in the app tile and HONESTLY. there's no space."* **Measured live on all three
+before the board spoke: 0px, 0px, 0px.** He found the entire population; a browser sweep of
+the page and of `/pricing`, `/about`, `/plans` and `/charity-runners` found nothing else.
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **`--beat-y` — a section is separated from a section; a BEAT must be separated from a beat** | 🟢 **SHIPPED.** `calc(var(--sect-y) * 0.7)` → 39 / 43 / 56px at 375 / 1024 / 1440 | 🔴 **SITTING TWO CAUSED THIS.** The merges were right, and a `<Section>` boundary was the thing carrying the space: deleting the boundary deleted the space. Only the merged sections were affected; four other pages measured clean. **When you merge two containers, the gap between them was a property of the CONTAINER** |
+| **Derived from `--sect-y`, never a fourth independent clamp** | 🟢 **GUARDED** — the test rejects any value that is not `calc(var(--sect-y) * f)`, `0.4 < f < 1` | A beat spaced like a section makes the merge **cosmetic**: the reader still meets two equal announcements, which is exactly what sitting two set out to remove. `calc` makes subordination true at every viewport rather than true because two clamps happen to agree |
+| **`Eyebrow beat` applies `paddingTop`, not `marginTop`** | 🟢 **SHIPPED** | An eyebrow is frequently the FIRST child of its wrapper, and a first child's top margin collapses out through a padding-less, border-less parent. **It renders identically today** — which is why the next wrapper to gain a border would move the gap with nothing failing |
+
+🔴 **"I thought you fixed those" — he was right to ask, and the honest answer is that
+`SITE-WAVE-4` could not have.** That sweep measured **448 gaps that existed**. A gap of zero
+is not a gap, it is an **absent decision**, and a scale test can only tokenise a value
+somebody already typed. **A spacing audit finds wrong values and is structurally blind to
+missing ones.** Wave 4's own register row above records "448 gaps measured" as its evidence;
+that number was never the population, and nothing said so until now.
+
+⚠️ **Two of our own guards went red on a change that reversed no ruling.** `sectionSurfaces`
+anchored beat order on the literal string `<Eyebrow>Honestly</Eyebrow>`; adding a prop broke
+it. The rule those tests carry is the **order of the page's beats**, and a tag's attribute
+list is not part of that claim. Same shape as the four refusal strings that broke eight prose
+matchers. They now match by text, tolerant of props.
+
+⚠️ **What the new gate does NOT prove.** It anchors on `<Eyebrow>`, which is how two of the
+three beats open. The third opens with a bare grid and is held by a count assertion alone —
+**a new block-opened beat with no gap would pass.** There is no general way to recognise "a
+block that starts a beat" from source; the browser sweep is the wider instrument.
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |
