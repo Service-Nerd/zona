@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — DESIGN-DAYDOT-CHANNEL-01 · one colour carrying three facts, and the test that guarded the wrong thing
+**Shipped:** The plan row's coloured rail stopped being repainted by completion, skip and move; completion is now the word "Done" where there is room for a word, and the fill of the dot where there is not.
+
+**Dev learning:** One ternary, four branches, three unrelated facts: `isComplete ? --moss : isSkipped ? --line : isMoving||isSwapTarget ? --moss : accent`. Written that way it looks tidy. What it means is that finishing a run erases what kind of run it was, and that moss on that rail meant "complete" or "being moved" depending on state you cannot see from the pixel. The fix was not clever — it was to stop putting four things down one pipe and to use the channel that was already sitting there unused: words on the row that has room, fill on the dot that does not.
+
+**Product/creator learning:** The rule was already written. `ui-patterns.md` has said "state must live in the label, never colour alone" for a long time, and an earlier ruling had already recorded that the 4px dot is the one place where neither a glyph nor a label fits. I did not need a new principle; I needed to notice that the existing one splits cleanly by whether the surface has room for a word. Most of the design decisions this week have been that shape — not new rules, but rules nobody had applied to a specific pixel.
+
+**AI-building learning:** My own test from earlier the same day failed on a change that made the product better. It asserted `complete ? '6px' : '4px'` — the exact expression — when the thing it was defending was "completion is carried by something other than colour". Replacing the size channel with a fill channel is strictly stronger, and the test called it a regression. **Anchor a check on the guarantee, not the mechanism**, or the check becomes an argument against improving the thing it guards. That is the fourth time today I have written a variant of this sentence.
+
+**The honest bit:** The old dot swapped between 4px and 6px to show completion, which means logging a single run visibly moved every other dot on the week strip. That shipped, nobody reported it, and I only found it while writing the replacement.
+
+**Hook material:** A ternary with four branches encoding three unrelated facts on one colour channel — and a fourth fact on opacity, at 0.5, 0.45 and 0.4. Three meanings inside a tenth of an alpha value.
+
+**Postable?:** yes — "my test failed because I made the product better" is a good, uncomfortable one.
+
 ## 2026-09-22 — PLANVERB-01 · the sitting I never wrote down, and two doors with one name
 **Shipped:** Split "Change your plan" into "Adjust your plan" (keeps it) and "Start a new plan" (replaces it), routed the race-date field through the input owner, gave the sheet a top-right dismiss until there is something to apply, and landed a board sitting's rulings three days late.
 
