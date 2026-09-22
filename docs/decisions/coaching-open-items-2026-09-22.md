@@ -151,3 +151,91 @@ screen position, not a build.
 ⚠️ **Traynor's seat is vacant and this is his question.** His recall trigger is *a redeemed-code
 funnel* — which is precisely what does not exist. The board must rule knowing no seat prices
 conversion.
+
+---
+
+# The sittings, 2026-09-22
+
+**Four items went in. Two closed on the conflict scan or the measurement without a seat
+speaking, one was ruled, and one was dissolved by a production query.**
+
+## A. `MARATHON-READINESS-GAP-01` — 🔴 CLOSED ON THE SCAN
+
+The premise is false (0 of 10,576). **And my reformulated finding — the beginner long-run tail at
+42.7% of race distance — is §114, ratified by FOUNDER DECISION on 2026-09-19** after the board
+reached a genuine trilemma, with McMillan's position carrying. §114 names this exact trade in its
+own words: *"A runner who does a 17 km longest run and run-walks the last stretch finishes. A
+runner handed a 26 km run off an 8 km/week base is injured in week 15 and does not start."*
+
+⚠️ **The mandatory conflict scan caught this before any seat spoke, which is the second time it
+has done so this month.** Without it I would have taken a ratified founder decision to the board
+as a defect.
+
+§114's obligation — *"the long run yields **and the plan says so**"* — **is built and gated both
+ways** (`meta.volume_constraint_note`; `planReviewCB01.test.ts` asserts the note appears when
+§114 binds and does NOT appear when it does not). **Nothing to rule. Do not re-file.**
+
+## B. `RACE-WEEK-SHAKEOUT-VOLUME-01` — 🔴 CLOSED, DOES NOT REPRODUCE
+
+Its own filing required reproduction first. Reproduced: the worst race week across 10,576 plans
+is **17 km** — 8 km of shakeouts (inside §30's 35-minute cap) plus a 9 km easy run **four days
+out**. Against a 54.7–57.7 km peak that is a **~30% race week**, conservative taper volume. **§30
+is not breached and the 59 km figure was the artefact the filing suspected it might be.**
+
+## C. `RACE-ANCHOR-CV-OVERRIDE-01` — ⚖️ CORRECT WITH AMENDMENT
+
+**Conflict scan:** §22 · §85 · §33 · §120 Am.1.
+
+🔴 **§22 ALREADY HAS AN EXEMPTION CLASS, AND THE REVERTED FIX EXEMPTED AT THE WRONG MOMENT.** §22
+reads: *"the engine MUST prescribe goal pace on the build/peak quality slot, **with VO2max
+sessions exempt**."* The fix built and reverted on 2026-09-22 excluded the CV row from the
+**override**, leaving it **selected into** a slot §22 requires to be goal-paced. Of course §22's
+ownership arm went red on 100 tests: the slot was still there and still empty of goal-pace work.
+
+**The board:** Hutchinson — the question is not whether a CV row may be re-priced, §85 settles
+that in terms; it is whether a CV row should ever be **chosen** for that slot. Seiler — it should
+not: a CV row and a goal-pace row are different intensities, and §22's window is about exposure.
+Willy — no injury vector either way; a labelling and selection question. McMillan — 3.8%, all HM
+and marathon, worst case a **69 s/km** divergence between a card's header and its own work steps,
+which the runner cannot reconcile. Sims — no objection from this seat.
+
+**Ruling: a CV-anchored row is NOT ELIGIBLE for §22's second-half goal-pace slot**, rather than
+being exempted from the override after selection. ⚠️ **Safe by §22's own construction:** §22
+already requires that *"a distance whose race pace is physiologically distinct from I-pace MUST
+own a `race_specific` catalogue session"*, and HM and marathon both do — so a goal-paced
+alternative is guaranteed to exist and the slot is filled rather than emptied.
+
+**Artifacts required in one commit:** principle amendment (§85 or §22, naming the selection
+seam) · the eligibility rule in the selection path · `INV-PLAN-HEADER-PACE-MATCHES-WORK`
+promoted from `warn` toward `error` for this class once the count reaches zero.
+⚠️ **`npm run measure:fitness` on the changed engine before the commit — the board's own
+procedure — and `verify:parity` will move.**
+
+## D. `GTM-REDEEM-PLACEMENT-01` — 💼 SLT: DON'T BUILD. The blocker is not a screen position.
+
+🔴 **Two of the filing's premises are false, and the second dissolves the item.** Queried against
+production:
+
+| Filed | Measured |
+|---|---|
+| *"No charity code has EVER been redeemed"* | **2 of 3 claimed**, 2026-09-11 and 2026-09-18, both with a real user attached. **The redemption flow works end to end** |
+| *"Our redeem screen lives on Me"* | **Three doors.** Me, **the wizard's first question** (`GeneratePlanScreen:1813`, gated `isOnboarding \|\| !hasPaidAccess`), and Upgrade — the code comment says *"the one the OTHER TWO doors use"* |
+
+**And the decisive fact: the only batch in the database is `partner_name = 'TEST'`, cap 3,
+created 2026-09-11. No real charity batch has ever been created; Make-A-Wish has never been
+issued codes.**
+
+So there is no funnel to reposition. **Sutherland:** a zero with no codes behind it is not a
+signal, it is an empty set. **Fried:** the door already sits on the wizard's first question;
+moving it buys nothing until someone is holding a code. **Wood:** the two TEST claims tell us the
+mechanism works, which is what the filing quietly doubted. **Zhuo:** the only live design question
+is prominence — it is a 12px `--mute` underlined link — and that cannot be answered without
+traffic either. **Hutchinson (chair):** we would be designing a funnel nobody has observed, which
+is the three-card proof band's error on this board's own record.
+
+**🔻 FOUNDER ACTION, not a build: create the Make-A-Wish batch.** It is the only thing that can
+produce the evidence this item needs.
+
+⚠️ **Traynor's recall trigger is "a redeemed-code funnel". It still does not exist** — the two
+claims are the founder's own TEST batch. **His seat stays vacant, and that is now a measured fact
+rather than an assumption.**
