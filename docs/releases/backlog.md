@@ -386,33 +386,19 @@ a check asserting no hand-typed gap outside the scale, falsified.
 
 ## ⚖️ FILED 2026-09-22 DURING APP REVIEW WAVE 1
 
-### 👤 `BRAND-EMDASH-APP-01` — the rule is site-wide, the guard is marketing-only, and CLAUDE.md invented an exception
-**Board: 👤 FOUNDER** (locked brand rule) → build.
+### ✅ `BRAND-EMDASH-APP-01` — **SHIPPED 2026-09-22.**
+The founder settled the scope: *"No em dash in text or spoken word. In descriptions for sessions
+it's ok. I just don't want it in sentences."* ⚠️ **The raw count was 544 string literals and
+quoting it would have misled** — the real job was **48 sentences across 13 files**. `CLAUDE.md`
+cited an app-side exception in `brand.md` that **does not exist in that section**; doctrine, doc
+and check had disagreed three ways for months, and both docs are corrected.
+`lib/marketing/noEmDashApp.test.ts` guards every string literal under `components/` and
+`app/dashboard/`, each exemption carrying its reason.
 
-The founder flagged em dashes in Coach copy. Checking the rule first, as it turned out, mattered:
-
-🔴 **`brand.md` § Punctuation bans the em dash in copy SITE-WIDE.** Its only stated exclusions are
-**en dashes in ranges** and **code comments**. There is no app-side carve-out.
-
-🔴 **`CLAUDE.md` says there is one** — *"Full rule + the app-side exception in `docs/canonical/brand.md`
-§ Punctuation."* **That exception does not exist in that section.** A gap in enforcement was
-explained away by asserting a rule that was never written.
-
-**`noEmDash.test.ts` covers public marketing surfaces only**, so every app and engine string has been
-unguarded since the rule was extended.
-
-⚠️ **THE NUMBER IS NOT MEASURED AND MUST NOT BE QUOTED AS ONE.** A raw scan of string literals across
-`app/dashboard`, `components`, `lib/coaching` and `lib/plan` returns **537**, but most of that is
-`invariants.ts` and `ruleEngine.ts` **violation messages** — internal, never runner-facing. **The
-runner-facing subset is unknown.** Separating them is the work, and doing it inside wave 1 would have
-been exactly the scope creep the founder's feedback was not asking for.
-
-**To close:** measure the runner-facing subset, fix it, extend the guard past marketing, and correct
-CLAUDE.md's false claim.
-
----
-
-## ⚖️ FILED 2026-09-22 SHIPPING §121 — the invariant found a second defect on its first sweep
+🔻 **Residual, filed and NOT counted done: `BRAND-EMDASH-LIB-01`.** `ruleEngine` mixes
+runner-facing notes with dev-only invariant text **in one file**, so a path-based rule would be
+wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
+own sentence — are untouched.
 
 ### 🏃 `TAPER-OVER-PEAK-01` — **RE-RULED 2026-09-22. CORRECT WITH AMENDMENT, not built.**
 **Board: 🏃 COACHING BOARD (re-sat; first ruling VACATED).** Baselined in `SWEEP-BASELINE-01` meanwhile.
@@ -483,28 +469,35 @@ quality now prescribes some. Baseline lowered to lock it in.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §120 — two items, one of them a principle DEADLOCK
 
-### 🏃 `RACE-ANCHOR-CV-OVERRIDE-01` — §85's shield and §22's exposure requirement cannot both hold
-**Board: COACHING.** Measured, built, reverted, filed. **Not a leak — a deadlock.**
+### 🏃 `RACE-ANCHOR-CV-OVERRIDE-01` — **RULED 2026-09-22, BUILT, AND REVERTED THE SAME DAY.**
+**Board: 🏃 COACHING BOARD.** **Two mechanisms have now failed, at opposite ends. Re-propose
+neither.**
 
-§22's goal-pace override renames a second-half build/peak session to *"{Distance}-pace reps"* and
-sets its header to goal pace. The matching substitution in the derived set applies to the `T`
-anchor **only**, because §85 shields `CV` in terms: *"never substituted by §22's goal-pace override
-— the 'over' of an over-under is defined relative to the runner's THRESHOLD, not to their race
-goal."* The shield is honoured in the rep detail and ignored in the header and the label.
+**The defect stands:** 92 of 2,401 single-anchor quality sessions (**3.8%**), all HM and marathon;
+worst case a `cv_intervals` session renamed *"Marathon-pace reps"* with a header **69 s/km** from
+its own work steps. §85 shields `CV` from §22's goal-pace override in terms; §22 requires a
+second-half peak row to BE goal-paced.
 
-**Measured 2026-09-22:** 92 of 2,401 single-anchor quality sessions (**3.8%**), **all** of them this,
-**all** at HM and marathon. Worst case: a `cv_intervals` session renamed *"Marathon-pace reps"* with
-a header **69 s/km** away from its own work steps.
+| Attempt | Outcome |
+|---|---|
+| Exempt the CV row from the **override** | 🔴 §22's own ownership arm red on **100 tests** — the row was still selected into the slot and the slot was still empty of goal-pace work |
+| Make the CV row **ineligible for the slot** (ruled 2026-09-22) | 🔴 **`neverBuildsPct` ROSE** (18.6→18.8%, 12.8→12.9% — the one figure with no tolerance), **3 plans now REFUSE** (9,671→9,668), and `segmentPricedDistance` found **zero** reps-scaled threshold sessions, because the CV rows excluded **were** those sessions |
 
-🔴 **THE OBVIOUS FIX WAS BUILT AND REVERTED THE SAME HOUR.** Excluding a CV-anchored row from the
-override — exactly as `isMixedPaceRow` already excludes over-unders — turns §22's **own ownership
-arm** red on **100 tests**: *"second-half peak quality 'CV intervals' is not goal-pace work."* §85
-says the row may not be re-priced; §22 says a row in that window must be goal-paced. **A CV row
-there cannot satisfy both.** Same shape as the §111/§57 deadlock found 2026-09-20, and it belongs
-to the board, not to a commit shipping §120.
+🥇 **Why the second attempt's safety argument was wrong, and it was mine.** §22 requires the
+distance to **OWN** a `race_specific` row; **it does not follow that the row is ELIGIBLE** for this
+runner, in this phase, at this weekly volume, with this fitness rank and these resolvable anchors —
+the selector has six other gates in front of it. **I reasoned from the catalogue's contents to a
+runner's eligible set, and those are different objects.**
 
-**Visible meanwhile, not hidden:** `INV-PLAN-HEADER-PACE-MATCHES-WORK` emits `warn` (not `error`)
-for exactly this case and names the item, so the sweep counts it every run.
+**Reverted, not re-baselined:** three runners losing a plan entirely is worse than 92 sessions
+carrying a mislabelled header — the defect is a display lie, the regression is a refusal to train
+someone. **Visible meanwhile:** `INV-PLAN-HEADER-PACE-MATCHES-WORK` emits `warn` and names the item
+every sweep.
+
+🔻 **The settling artefact, which neither sitting has taken:** for each of the 92 sessions, **what
+else was actually ELIGIBLE in that slot for that runner** — not what the catalogue owns, but what
+the selector would have returned. If the answer is "nothing", the deadlock belongs to the
+**catalogue**, not to §22 or §85.
 
 ### ✅ `SESSION-SIZING-ANCHOR-01` — **CLOSED 2026-09-22. The premise was false.**
 

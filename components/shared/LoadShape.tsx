@@ -38,7 +38,13 @@ export default function LoadShape({ ratio, color, label }: {
   /** The verdict colour from the single owner (`loadRatioContext`), so the
    *  marker and the words above it can never disagree. */
   color: string
-  ariaLabel?: string
+  /** The accessible description. ⚠️ There was ALSO an `ariaLabel?: string` here
+   *  — declared in the type, never destructured, never read, and passed by no
+   *  caller. A prop that does nothing is worse than no prop: the next person to
+   *  need an override would have passed it and watched it be ignored. Found by
+   *  registering this component's contract (COMPONENT-CONTRACT-GATE-01), which
+   *  compares the DESTRUCTURE against the document and so could see it when the
+   *  type alone could not. Declared-but-inert, in prop form. */
   label?: string
 }) {
   const bandLeft  = pct(LOAD_RATIO.under)

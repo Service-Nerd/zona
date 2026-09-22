@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — DOC-CURRENCY-01 · the audit said ALL CLEAN and five entries were stale
+**Shipped:** Backlog, feature registry, contracts and build-log actually brought current — by checking them against git rather than by running the script that says they are fine.
+
+**Dev learning:** `audit-docs.sh` reported ALL CLEAN. Its shipped-but-open check is scoped to the scopes it sees in the day's commits, so an item that shipped as part of a build filed under a different name is invisible to it. I cross-checked all 216 registry IDs against open backlog headers by hand and found five stale entries. **A check scoped to today cannot answer a question about all time**, and the honest reading of ALL CLEAN is "the things this script looks at are fine", which is a narrower claim than the one I was about to make.
+
+**Product/creator learning:** Registering a contract for a component immediately found a dead prop. `LoadShape` declared `ariaLabel?: string`, never destructured it, and no caller passed it — so the first person to need an accessible-label override would have passed it and watched nothing happen. The contract gate compares the **destructure** against the document, so it sees what the type declaration alone cannot. Writing the contract was the check.
+
+**AI-building learning:** The founder asked "are we done" and the temptation was to run the audit, read ALL CLEAN, and say yes. The script had been green through every one of the five stale entries. **When the question is "is everything up to date", the tool that answers it is the one that reads the actual state — git, the code — not the one that watches for regressions.** Those are different jobs and I nearly substituted one for the other.
+
+**The honest bit:** Three of the five stale entries were items I shipped myself, today, and then left sitting in the backlog as open work. I wrote the registry row and the build-log entry for each, and did not go back and close the thing they came from.
+
+**Hook material:** A documentation audit that reported ALL CLEAN while five shipped items sat in the backlog as open — three of them shipped that same day, by me.
+
+**Postable?:** yes — "my green check was answering a narrower question than the one I asked it" generalises well past this repo.
+
 ## 2026-09-22 — DESIGN-REVEAL-SHAPE-01 · my test passed while I broke the rule it was guarding
 **Shipped:** The plan's shape now appears at the moment the plan arrives, with one annotation saying why a week is smaller — and a test that can actually tell when that annotation lands in the wrong place.
 
