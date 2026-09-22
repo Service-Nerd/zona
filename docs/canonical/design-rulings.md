@@ -116,6 +116,7 @@ Record: `slt-2026-09-21-website-slickness.md` · `slt-2026-09-21-homepage-three.
 | **Phone-geometry resize to 390×844 (3.2)** | 🔴 **DEAD** | Fails Fried's test, the same test that **passed** the hero swap in the same sitting: *does this FIX something, or merely COMPLY?* No reader can perceive the difference, and it means re-measuring every screen inside the frame |
 | **Alternating band colours on the marketing site** | 🔴 **KILLED** (W-08) | The site has **three grounds, each spent once**: `page`, one white `inset` spotlight, one `dark` close. Enforced by `lib/marketing/sectionSurfaces.test.ts` |
 | **A second full-bleed ink band** | 🔴 **KILLED** | *"Exactly one near-black section per marketing page"* (ADR-008). It goes **last** (W-09) |
+| **`Section surface="inset"` as a full-bleed PAGE BAND, on any marketing page** | 🔴 **KILLED 2026-09-22**, sitting five § 6q | `Section.tsx`'s own header already said it: *"`inset` IS NOT A PAGE GROUND… Spending it as a section ground is band alternation, which W-08 killed."* `/about` did exactly that for weeks because **`sectionSurfaces.test.ts` opened `const HOME = 'app/page.tsx'` — the gate was scoped to one page**, so a rule written against band alternation could not see it anywhere else. **If a card needs emphasis it is an inset CARD, not an inset BAND** |
 | **A tinted surface to make one card special (`--surface-moss-wash`)** | 🔴 **KILLED 2026-09-21**, the day after it was added | It was a fourth ground on a site cut to three. **If a card needs emphasis, it is an inset** (`--bg-soft` + one hairline, `ProductStill`'s pattern). No new token, no new ground |
 | **`#5A7C5A` as the CTA colour** | 🔴 **NOT ADOPTED** | The problem it solves was already solved: **`--moss-strong` `#557055`** measures **5.48:1** against the handoff's 4.62:1. Adding it would be a second dark moss for one job |
 | **A competitor's price on our pages** | 🔴 **FORBIDDEN** unless it joins `COMPETITOR_FACTS` | Sutherland: *"the moment you say 'cheaper than Miles' you have entered their frame and made price the axis."* Traynor: we cannot maintain a claim about someone else's pricing |
@@ -139,11 +140,11 @@ Record: `plan-arc-v2.md` · `slt-2026-08-29-planzy-ux.md` ·
 | **A projection graph / trajectory curve (UX-PROGRESS-01)** | ⚖️ 🔴 **KILLED** | A smooth downward curve is a promise the app cannot keep, and violates "no dashboards or noise". **The honest ceiling is three points** — baseline → current → goal, never an interpolated slope. Any trajectory viz is a **Coaching Board correctness question first** (§109, §44.1) |
 | **A three-tier plan picker ("challenging")** | 🔴 **VETOED** (CD-21c) | The tier flatters the ego the product exists to disarm; Wood: it recruits the over-motivated Type-A's willpower |
 | **Weight / height capture in the wizard** | 🔴 **KILLED** | Hutchinson veto + Wood: **illusion-of-progress data**. No formula we hold reads it |
-| **Empty-state illustration (bought, free, or commissioned)** | 🟡 **RECOMMENDED AGAINST, never formally ruled** | Free licences exist and are not the problem; the objection is that decoration in an empty state contradicts a product whose argument is the absence of decoration. ⚠️ **Explicitly recorded as "a taste call made against the documented rule"** and never put to a board. **First-sitting candidate** |
+| **Empty-state illustration (bought, free, or commissioned)** | 🔴 **KILLED 2026-09-22 — RATIFIED, sitting five, § 6q** | Free licences exist and were never the objection: decoration in an empty state **contradicts a product whose argument is the absence of decoration**, on the same screen. Sierra: an empty state exists to say what to do next, and a drawing takes that sentence's space. Collins declined to fight it and said why. ⚠️ **Measured: 16 empty-state strings in `DashboardClient` alone, none carrying an illustration** — the ruling builds nothing and changes only that it may not be re-proposed. It had been recorded as *"a taste call made against the documented rule"*, made by one person with no board |
 | **A commissioned line-art illustration style** | 🔴 **SUPERSEDED** | The value in the competitor's is that **the drawing IS the volume curve** — and neither a stock pack nor a commissioned one can know the runner's curve. We hold it. Folds into P-06 as generated output |
 | **A swipeable plan-reveal card stack with a "3 / 5" position counter** (the P-06(b) half) | 🔴 **KILLED 2026-09-22** — Wroblewski + Zhuo, § 6p | **The reveal takes ZERO input today** — `GeneratingCeremony` staggers `RevealCard` over `repWeeks` and hands off. A swipe adds N gestures and a dismissal decision to someone who has just answered fifteen wizard questions. **The pacing it was proposed to add already exists** |
 | **A handwriting typeface for the plan annotation, shipped without amending `Inter only` by name** | ⚖️ 🔴 **VETO STANDS** — Silvanto, § 6p | The veto is against it arriving quietly, **not** against the rule being amended openly. ⚠️ **The typeface question itself is DEFERRED, not refused**, and cannot be answered until there is a chart at the reveal to annotate (`DESIGN-REVEAL-SHAPE-01`) |
-| **A stock-footage launch screen (P-11)** | 🟡 **RECOMMENDED CLOSE, never ruled** | *"The single most generic thing a running app can do"*, and there is no launch-screen problem: the Capacitor splash holds and hands off. **First-sitting candidate** |
+| **A stock-footage launch screen (P-11)** | 🔴 **KILLED 2026-09-22 — RATIFIED, sitting five, § 6q** | *"The single most generic thing a running app can do."* ⚠️ **Wroblewski: there is no problem to solve, and that is the ruling** — the splash is configured and working (`backgroundColor: #F3F0EB` = `--bg`, `showSpinner: false`, `launchAutoHide` with a 10s cold-start net, hidden on web mount by `CapacitorBoot.tsx`), so a launch screen would add a wait that does not currently exist. If ever revived, § 6's non-identifiable rule applies to anyone in frame |
 | **A paid "coach register" / DHTB voice tier (P-07)** | 🔴 **KILLED** | Traynor's reason is distinct from the others': it makes the personal brand a **purchasable component**, a dependency on a person written into the revenue line, and `brand.md` says the app must outlive the personal brand |
 | **Pill words on the compliance statement** | 🔴 **CUT** | The colour carries the meaning. Sutherland: *"a glossary entry is what you write when you don't trust the thing you made."* Most runners see no change; a minority see jargon |
 | **A privacy reassurance sentence at the health-connect step** | 🔴 **CUT**, link only | Sutherland: *"a man saying 'I've never been to prison' during a job interview."* It introduces an AI, and things being sent to it, at the moment someone decides whether to hand over their heart rate |
@@ -787,6 +788,110 @@ question that had blocked `P-06(b)` was one step early.
 3. **Mechanical check** — the annotated week **is** a deload and **is not** the peak. Wood's
    binding condition has been mechanical for `PlanArc`'s own bars since PLAN-ARC-V2; this is
    the first time it reaches a caption.
+
+---
+
+## 6q. Sitting five — four decisions that were made and never ruled (2026-09-22)
+
+Three of these were filed in the register's own words as *"recommended, never put to a
+board"*, and one had been ruled INSUFFICIENT EVIDENCE with no settling artefact named.
+**The settled-ground scan changed two of the four before a seat spoke.**
+
+### 🔬 Measurements
+
+| Item | Measured |
+|---|---|
+| Empty-state art | **16** "nothing yet"-shaped strings in `DashboardClient` alone, **none carrying an illustration**. The recommendation is already the de-facto state on every surface |
+| Launch screen | The Capacitor splash works: `backgroundColor: '#F3F0EB'` (`--bg`), `showSpinner: false`, `launchAutoHide` with a 10s cold-start net, hidden manually on web mount by `CapacitorBoot.tsx`. **There is no gap to fill** |
+| `/about` ground | Three sections: `page` · **`surface="inset"` full-bleed band** · `page`. The homepage's 18 sections spend `card` once and `dark` once (last) and **no `inset` at all** |
+| Day marker | 🔴 Three facts on one channel, not the two filed, plus a fourth on `opacity` — and the one redundant channel is keyed on a **banned token string** |
+
+---
+
+### 1. `DESIGN-EMPTYSTATE-ART-01` — 🟢 SHIP, ratified as doctrine
+
+No illustration in an empty state: not commissioned, not a free pack (unDraw, Open Peeps,
+Humaaans, Storyset are all licence-clean and that was never the objection). **Collins did not
+fight it and said why:** the argument is not taste, it is that the product's whole claim is the
+absence of decoration, so an illustration contradicts the pitch on the same screen. **Sierra:**
+an empty state exists to say what to do next, and a drawing occupies the space that sentence
+needs. ⚠️ **Nothing is built by this ruling** — it ratifies the state the app is already in. What
+changes is that it may not be re-proposed without named new evidence, which is the entire point:
+it was recorded as *"a taste call made against the documented rule"*, made by one person.
+
+### 2. `DESIGN-LAUNCH-SCREEN-01` (P-11) — 🔴 DON'T SHIP, permanent
+
+**Wroblewski: there is no problem here.** The splash holds, the app mounts, the splash hides; a
+stock-footage screen would add a wait that does not currently exist. **Collins:** *"the single
+most generic thing a running app can do"* was right the first time. ⚠️ If ever revived, § 6's
+non-identifiable rule applies to anyone in frame.
+
+### 3. `SITE-GROUND-ABOUT-01` — 🟢 SHIP WITH AMENDMENT
+
+🔴 **The scan settled this.** `components/marketing/Section.tsx`'s own header says it in those
+words: *"`inset` IS NOT A PAGE GROUND, and brand.md says so in those words. It is the containment
+surface `ProductStill` uses to frame a component. Spending it as a section ground is band
+alternation, which W-08 killed."* `/about` does exactly that, full-bleed, hairlined top and
+bottom.
+
+⛔ **Silvanto names the rule:** W-08, and the `--surface-moss-wash` kill, which already settled
+the remedy — *if a card needs emphasis, it is an inset CARD, not an inset BAND.* This is the same
+defect in a different file.
+
+🔴 **And the reason it survived is the reason everything survives here.**
+`lib/marketing/sectionSurfaces.test.ts` opens `const HOME = 'app/page.tsx'`. **The gate was
+scoped to one page**, so a rule written against band alternation could not see band alternation
+on any other page. Third time in one day this board has hit *an audit is only as wide as its
+list*.
+
+**Amendment:** the band becomes `page`; the gate widens from the homepage to every marketing
+page.
+
+### 4. `DESIGN-DAYDOT-CHANNEL-01` — 🟢 SHIP WITH AMENDMENT, and it SPLITS
+
+The filing said *two orthogonal facts on one channel*. Measured, it is **three**, in one
+cascading ternary on `PlanCalendar`'s 3x34px rail:
+
+```
+background: isComplete ? 'var(--moss)' : isSkipped ? 'var(--line)'
+          : isMoving || isSwapTarget ? 'var(--moss)' : accent
+```
+
+- **Completion overwrites the session type entirely** — a completed interval and a completed easy
+  run are one colour, so the type information is destroyed by finishing the run
+- **Moss means both "complete" and "being moved"**
+- Skipped is `--line`, the hairline colour, which is also how absence reads
+- `opacity` carries a fourth channel at **0.5** (skipped), **0.45** (past, not complete) and
+  **0.4** (move mode) — three meanings inside 0.1 of each other
+
+🔴 **And on Today's `DateStrip` the one piece of redundant encoding that exists is booby-trapped:**
+
+```
+width: dotColor === 'var(--teal)' ? '6px' : '4px'
+```
+
+The size channel is keyed on a **string comparison against `--teal`** — a token `CLAUDE.md` lists
+as **BANNED** (`#5BC0BE`, *"replaced by `--moss`"*), surviving only as a legacy alias in
+`globals.css`. `getDotColor` returns the literal `'var(--teal)'` for a completed session. **The
+moment anyone does the obvious tidy-up and returns `'var(--moss)'`, the dot silently stops
+growing and completion loses its only non-colour channel.** That is D-17 — classify by a
+structural signal, never by a display string another layer can rewrite — reappearing in the
+palette layer.
+
+**Sierra:** the runner cannot learn to read this, because it is not consistent enough to learn.
+**Wroblewski:** 4px, outdoors, one-handed.
+
+| Split | |
+|---|---|
+| **`DAYDOT-TEALKEY-01`** | ⚙️ **NO BOARD** — defect. Key the size on the STATE, never on a colour token string. Gate: the size branch never compares a colour |
+| **`DESIGN-DAYDOT-CHANNEL-01`** | Completion gets a **shape** channel rather than a colour one, so session type survives completion. **Wave 3**, with the Plan-screen work |
+
+### 5. `DESIGN-PERFORATION-01` — 🟡 INSUFFICIENT EVIDENCE, artefact NAMED
+
+It was ruled this once already, and re-running it on the same evidence is the re-litigation this
+register exists to prevent. **The settling artefact, named so it cannot come back without one:
+the ticket-stub device rendered on a real Plan card at 375px, beside the current card, on a
+device.** Nothing in this product has ever run on one.
 
 ---
 

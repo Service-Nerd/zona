@@ -588,9 +588,32 @@ Silvanto: it is chrome, and **W-11 killed grain on exactly that argument.**
 **Settles with one artefact**: the plan-scale card built both ways, at 375px. Not a
 discussion.
 
-### 🧭 `DESIGN-DAYDOT-CHANNEL-01` — the day marker carries two facts on one channel
-**Board: DESIGN.** Exposed by applying S6's bound; deliberately NOT built inside someone
-else's ruling.
+⚠️ **RE-RULED INSUFFICIENT EVIDENCE 2026-09-22** (sitting five, § 6q) and the artefact is now
+**named precisely, so it cannot come back without one**: the ticket-stub device rendered on a
+**real Plan card at 375px, beside the current card, ON A DEVICE.** Nothing in this product has
+ever run on one. Re-running the sitting on the same evidence is the re-litigation the register
+exists to prevent.
+
+### 🧭 `DESIGN-DAYDOT-CHANNEL-01` — the day marker carries THREE facts on one channel
+**Board: 🧭 DESIGN BOARD (ruled — build).** `design-rulings.md` § 6q, sitting five.
+**Surface: app.** **Tier: FREE.** **Wave 3**, with the Plan-screen work.
+
+🔴 **MEASURED AT THE SITTING, AND IT IS WORSE THAN FILED.** The entry below says *two*
+orthogonal facts. On `PlanCalendar`'s 3x34px rail it is **three**, in one cascading ternary:
+`isComplete ? --moss : isSkipped ? --line : isMoving||isSwapTarget ? --moss : accent`. So
+**moss means both "complete" and "being moved"**, and `opacity` carries a **fourth** channel at
+**0.5** (skipped), **0.45** (past, not complete) and **0.4** (move mode) — three meanings inside
+0.1 of each other.
+
+**Ruling: completion gets a SHAPE channel, not a colour one**, so the session type survives
+finishing the run. The fill-vs-ring candidate below is the right shape and predates the sitting.
+
+⚠️ **The booby-trap half already shipped as `DAYDOT-TEALKEY-01`** — Today's dot sized itself with
+`dotColor === 'var(--teal)' ? '6px' : '4px'`, a string comparison against a **BANNED** token
+surviving only as a legacy alias, so the obvious tidy-up would have silently deleted completion's
+only non-colour channel. That is fixed and gated; **this item is the encoding, not the trap.**
+
+**The original filing, which stands:**
 
 `DateStrip`'s session dot is a **4px circle whose only information is hue**, and that one
 channel carries **two orthogonal facts**:
@@ -691,14 +714,12 @@ nobody files is a gate that gets ignored and then disabled. Same class as
 Found by measuring, not by reading. Both preserved exactly in 1a-ii (zero visual
 delta is that wave's whole contract) and flagged in the code where they live.
 
-### 🧭 `SITE-GROUND-ABOUT-01` — `/about` spends `--bg-soft` as a page ground
-**Board: 🧭 DESIGN BOARD.** **Surface: website.** **Size: S.**
-`/about`'s middle section is a full-bleed band in `--bg-soft` with hairline borders top
-and bottom. ⚠️ **`brand.md` says in those words that "inset is not a page ground"** — it is
-the containment surface `ProductStill` frames with. A warm band alternating against `--bg`
-is precisely what **W-08 killed on the homepage**, living on `/about` because nobody
-looked. **Not changed in 1a-ii.** Wave 1b either ratifies it as a legitimate exception or
-moves it to the ruled three grounds.
+### ✅ `SITE-GROUND-ABOUT-01` — **RULED AND BUILT 2026-09-22** (sitting five, § 6q).
+
+The band is the page ground now, hairlines kept. 🔴 **And the gate that could not see it found
+a SECOND page the sitting did not know about:** `/charity-runners` carried **two** inset bands —
+literal alternation, on the page a charity partner is sent to. **This item named only `/about`;
+the code flags named both.** `sectionSurfaces.test.ts` now walks every marketing page.
 
 ### ✅ `SITE-MEASURE-THIRD-01` — **CLOSED 2026-09-22 by SITE-MEASURE-EDGE.**
 
@@ -993,34 +1014,16 @@ rather than a bar.
 
 ---
 
-### 🧭 `DESIGN-EMPTYSTATE-ART-01` — ratify the "no illustration" that was never ruled
-**Board: 🧭 DESIGN BOARD.** **Surface: app.** **Tier: FREE.** **Size: S.**
+### ✅ `DESIGN-EMPTYSTATE-ART-01` + `DESIGN-LAUNCH-SCREEN-01` — **BOTH RULED 2026-09-22**
+Sitting five, `design-rulings.md` § 6q. Both are now **permanent kill rows in § 2** and may not
+be re-proposed without named new evidence.
 
-Recorded in `docs/decisions/2026-09-20-p13c-p11-illustration-research.md` as
-**recommended against and never put to a board** — and explicitly, in that note's own
-words, *"a taste call made against the documented rule"*, made by the assistant alone.
-
-The recommendation: empty states carry **no** illustration — not commissioned, not a free
-pack (unDraw, Open Peeps, Humaaans, Storyset all exist and are licence-clean). The
-argument is that decoration in an empty state contradicts a product whose whole case is
-the absence of decoration, and *"Miles having one is not evidence we need one."*
-
-**It is either doctrine or it is one person's taste. The board decides which.** If it
-stands, it lands as a register row and may not be re-proposed without new evidence.
-
----
-
-### 🧭 `DESIGN-LAUNCH-SCREEN-01` — ratify the "close P-11" that was never ruled
-**Board: 🧭 DESIGN BOARD.** **Surface: app.** **Tier: FREE.** **Size: S.**
-
-Same note, same status: **recommended close, never ruled.** P-11 proposed a launch screen
-with stock running footage. The recommendation was to close it — *"a launch screen with
-stock running footage is the single most generic thing a running app can do"*, and there
-is no launch-screen problem to solve: the Capacitor splash holds and hands off to the web
-mount.
-
-Not blocked on budget and not a licensing question. ⚠️ **§6's non-identifiable rule would
-still apply to anyone in frame** if it were ever revived.
+⚠️ **Neither builds anything, and that is the point.** They were recorded as *"recommended
+against / recommended close, never put to a board"* — one of them explicitly as *"a taste call
+made against the documented rule"*, made by one person. **Measured: 16 empty-state strings in
+`DashboardClient` alone, none carrying an illustration**, and the Capacitor splash is configured
+and working (`#F3F0EB`, `showSpinner: false`, hidden on web mount), so there is no launch-screen
+problem to solve. The ruling changes only whether they come back.
 
 ---
 

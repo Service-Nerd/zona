@@ -5547,13 +5547,29 @@ function DateStrip({ sessions, completions, selectedKey, onSelect }: {
   onSelect: (key: string) => void
 }) {
   const sessionMap = Object.fromEntries(sessions.map(s => [s.displayKey, s]))
-  function getDotColor(key: string): string | null {
+  /**
+   * DAYDOT-TEALKEY-01 — the dot's STATE and its COLOUR are separate answers.
+   *
+   * 🔴 This returned a colour only, and the dot sized itself with
+   * `dotColor === 'var(--teal)' ? '6px' : '4px'` — a string comparison against
+   * `--teal`, a token `CLAUDE.md` lists as BANNED (retired in favour of `--moss`) and which survives only as a legacy alias in `globals.css`. So
+   * the ONE redundant channel completion had was keyed on a retired token
+   * name: the moment anyone did the obvious tidy-up and returned
+   * `'var(--moss)'`, the dot would silently stop growing and completion would
+   * be carried by colour alone. That is D-17 — never branch on a display
+   * string another layer is allowed to rewrite — reappearing in the palette.
+   *
+   * The wider problem (session type, completion, skip and move all sharing one
+   * colour channel) is `DESIGN-DAYDOT-CHANNEL-01`, Design Board § 6q, wave 3.
+   * This fixes only the booby trap.
+   */
+  function getDot(key: string): { colour: string; complete: boolean } | null {
     const s = sessionMap[key]
     if (!s || s.type === 'rest') return null
     const comp = completions[s.key] // use originalDay for completion lookup
-    if (comp?.status === 'complete') return 'var(--teal)'
-    if (comp?.status === 'skipped') return 'var(--text-muted)'
-    return getSessionColor(s)
+    if (comp?.status === 'complete') return { colour: 'var(--moss)', complete: true }
+    if (comp?.status === 'skipped') return { colour: 'var(--text-muted)', complete: false }
+    return { colour: getSessionColor(s), complete: false }
   }
 
   return (
@@ -5564,7 +5580,7 @@ function DateStrip({ sessions, completions, selectedKey, onSelect }: {
           const s = sessionMap[key]
           const isSelected = key === selectedKey
           const isToday = s?.today ?? false
-          const dotColor = getDotColor(key)
+          const dot = getDot(key)
           const dateNum = s ? s.rawDate.getDate().toString() : ''
 
           return (
@@ -5603,12 +5619,13 @@ function DateStrip({ sessions, completions, selectedKey, onSelect }: {
                 </span>
               </div>
 
-              {/* Session dot — larger for completed */}
+              {/* Session dot — larger for completed. The size reads the STATE,
+                  never the colour (DAYDOT-TEALKEY-01). */}
               <div style={{
-                width: dotColor === 'var(--teal)' ? '6px' : '4px',
-                height: dotColor === 'var(--teal)' ? '6px' : '4px',
+                width: dot?.complete ? '6px' : '4px',
+                height: dot?.complete ? '6px' : '4px',
                 borderRadius: '50%',
-                background: dotColor ?? 'transparent',
+                background: dot?.colour ?? 'transparent',
                 transition: 'width 0.1s, height 0.1s',
               }} />
             </button>

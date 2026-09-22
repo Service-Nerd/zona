@@ -30,6 +30,32 @@ const src = (f: string) =>
 const HOME = 'app/page.tsx'
 
 /**
+ * 🔴 EVERY MARKETING PAGE, NOT JUST THE HOMEPAGE (SITE-GROUND-ABOUT-01,
+ * Design Board sitting five, `design-rulings.md` § 6q).
+ *
+ * The band rule below was written against band alternation and scoped to
+ * `HOME`, so it **could not see band alternation on any other page**. `/about`
+ * carried a full-bleed `surface="inset"` band for weeks, flagged in its own
+ * source with a comment saying it was wrong, while this file read green.
+ * Third time in one day the board hit *an audit is only as wide as its list*.
+ *
+ * Read from disk, never listed: a hand-written list is the same failure one
+ * level up, which is why MARKETING_FILES below already works this way.
+ */
+const MARKETING_PAGES: string[] = (function walk(dir: string): string[] {
+  const out: string[] = []
+  for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${e.name}`
+    // Skip the app's own surfaces and the route groups that are not marketing.
+    if (e.isDirectory()) {
+      if (['dashboard', 'api', 'auth'].includes(e.name)) continue
+      out.push(...walk(rel))
+    } else if (e.name === 'page.tsx') out.push(rel)
+  }
+  return out
+})('app')
+
+/**
  * Source index of an `<Eyebrow>` by its TEXT, tolerant of its props.
  *
  * ⚠️ These assertions used to read `home.indexOf('<Eyebrow>Honestly</Eyebrow>')`
@@ -57,11 +83,26 @@ describe('marketing section surfaces', () => {
     expect(viaSection + viaToken, 'a second near-black band makes it a dark theme (ADR-008)').toBeLessThanOrEqual(1)
   })
 
-  it('does not alternate warm bands', () => {
+  it('does not alternate warm bands, on ANY marketing page', () => {
     // W-08: --bg-soft is an inset area and an input field, not a section
-    // ground. `Section surface="inset"` exists for surfaces that legitimately
-    // have one; the homepage is not one of them.
-    expect(src(HOME)).not.toContain('surface="inset"')
+    // ground. `Section.tsx`'s own header says it in those words: spending
+    // `inset` as a section ground IS band alternation. No marketing page is
+    // entitled to one — if a card needs emphasis it is an inset CARD.
+    const offenders = MARKETING_PAGES.filter(f => src(f).includes('surface="inset"'))
+    expect(
+      offenders,
+      'a full-bleed --bg-soft band. W-08 killed band alternation; `inset` is a containment '
+      + 'surface, not a page ground (design-rulings.md § 6q)',
+    ).toEqual([])
+  })
+
+  it('the page walk actually reaches more than the homepage', () => {
+    // ⚠️ A gate that widened to an empty set would read green for the same
+    // reason the old one did. This asserts the INSTRUMENT, not the rule:
+    // `/about` — the page the widening was written for — must be in scope.
+    expect(MARKETING_PAGES).toContain('app/about/page.tsx')
+    expect(MARKETING_PAGES).toContain(HOME)
+    expect(MARKETING_PAGES.length).toBeGreaterThan(3)
   })
 
   it('ships no paper-grain overlay', () => {

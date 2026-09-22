@@ -242,12 +242,13 @@ export default function CharityRunnersPage() {
       </Section>
 
       {/* ── The real risk ───────────────────────────────────────────────── */}
-      {/* ⚠️ FOR WAVE 1B — SITE-GROUND-ABOUT-01: another `--bg-soft` PAGE GROUND.
-          brand.md says in those words that "inset is not a page ground"; it is
-          the containment surface ProductStill frames with. Preserved exactly
-          (1a-ii changes nothing visible) and flagged, because warm bands
-          alternating against --bg are what W-08 killed on the homepage. */}
-      <Section surface="inset" width="full" rhythm="none"
+      {/* SITE-GROUND-ABOUT-01 — RULED 2026-09-22 (design-rulings.md § 6q).
+          Was `surface="inset"`. ⚠️ The backlog item named only `/about`; the
+          WIDENED gate found this page, with TWO of them — literal alternation
+          (page, page, band, page, band, page…) on the page a charity partner
+          is sent to. The hairlines stay: they were doing the separating work,
+          not the tint. */}
+      <Section width="full" rhythm="none"
         style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}
         innerStyle={{ padding: '64px 24px' }}>
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
@@ -320,12 +321,13 @@ export default function CharityRunnersPage() {
           Left-accent rows, not a card grid. That is the documented feature-list
           pattern (same visual language as session cards) and it removes four
           more boxes from a middle that had about twenty. */}
-      {/* ⚠️ FOR WAVE 1B — SITE-GROUND-ABOUT-01: another `--bg-soft` PAGE GROUND.
-          brand.md says in those words that "inset is not a page ground"; it is
-          the containment surface ProductStill frames with. Preserved exactly
-          (1a-ii changes nothing visible) and flagged, because warm bands
-          alternating against --bg are what W-08 killed on the homepage. */}
-      <Section surface="inset" width="full" rhythm="none"
+      {/* SITE-GROUND-ABOUT-01 — RULED 2026-09-22 (design-rulings.md § 6q).
+          Was `surface="inset"`. ⚠️ The backlog item named only `/about`; the
+          WIDENED gate found this page, with TWO of them — literal alternation
+          (page, page, band, page, band, page…) on the page a charity partner
+          is sent to. The hairlines stay: they were doing the separating work,
+          not the tint. */}
+      <Section width="full" rhythm="none"
         style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', marginTop: '56px' }}
         innerStyle={{ padding: '64px 24px' }}>
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>

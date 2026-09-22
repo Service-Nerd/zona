@@ -156,12 +156,15 @@ export default function AboutPage() {
       </Section>
 
       {/* ── The bit a charity actually wants to know ────────────────────── */}
-      {/* ⚠️ FOR WAVE 1B — SITE-GROUND-ABOUT-01: this spends --bg-soft as a PAGE
-          GROUND, and brand.md says in those words that "inset is not a page
-          ground". Preserved exactly (1a-ii changes nothing visible) and
-          flagged, because a warm band alternating against --bg is what W-08
-          killed on the homepage. */}
-      <Section surface="inset" width="full" rhythm="none"
+      {/* SITE-GROUND-ABOUT-01 — RULED 2026-09-22 (design-rulings.md § 6q).
+          This was `surface="inset"`, a full-bleed --bg-soft band. `Section`'s
+          own header says "inset IS NOT A PAGE GROUND... spending it as a
+          section ground is band alternation, which W-08 killed", and it
+          survived here only because `sectionSurfaces.test.ts` was scoped to
+          `app/page.tsx`. Now the page ground, with the hairlines kept: they
+          were doing the separating work, not the tint. If this section ever
+          needs emphasis it gets an inset CARD, never a band. */}
+      <Section width="full" rhythm="none"
         style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', marginTop: 'var(--space-7)' }}
         innerStyle={{ padding: '56px 24px' }}>
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
