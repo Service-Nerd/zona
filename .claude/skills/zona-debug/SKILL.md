@@ -3,6 +3,15 @@ name: zona-debug
 description: "Standard pipeline for bug analysis, investigation, root-cause analysis, fix recommendation, and blast-radius assessment in Zonna. Routes to the Coaching Board or SLT only when the fix changes prescription or tier. Triggers: bug, defect, broken, wrong value, not working, doesn't fire, silently, investigate, root cause, RCA, why is this happening, regression, it shows X but should show Y."
 ---
 
+> 🏗️ **This skill runs BEFORE `/build`, never inside it** (founder, 2026-09-22).
+> Diagnosis and implementation are different jobs: this skill produces the **RCA**,
+> and `/build` implements the fix with that RCA as its named input.
+>
+> ⚠️ **A defect found MID-BUILD:** not significant → fix it in that build. Significant →
+> **stop, come here for the RCA**, then decide whether it joins that build or becomes its
+> own item. *"Include it in the build"* must never become *"fix it without understanding
+> it."*
+
 # Zonna Bug Pipeline
 
 One approach, every time. The symptoms and repro steps change; the method does not.

@@ -55,6 +55,25 @@ NOT_A_FEATURE = re.compile(r'^(ADR|CD|CB|INV|D)-')
 
 REGISTRY = 'docs/canonical/feature-registry.md'
 BUILDLOG = 'docs/build-log.md'
+
+# ── Design Board rulings (ADR-023, INV-DESIGN-002/003) ─────────────────────
+# Added 2026-09-22, before wave 1a, because the invariants were written as
+# "architectural, not mechanically checked" and this repo's own record says a
+# rule that holds only while someone remembers is not a rule.
+#
+# ⚠️ THE LOW-NOISE RULE. Do NOT demand a register row from every commit that
+# touches a component — that is every UI commit in the repo and the hook would
+# be off within a day (NOISE-GATE-01, recorded twice). The trigger is narrow:
+# a SHIP commit that edits DESIGN DOCTRINE is a board ruling landing, and a
+# ruling that does not reach `design-rulings.md` is the settled-ground scan's
+# blind spot — the next sitting convenes without it and re-litigates.
+DESIGN_RULINGS = 'docs/canonical/design-rulings.md'
+DESIGN_DOCTRINE = (
+    'docs/canonical/ui-patterns.md',
+    'docs/canonical/ux-principles.md',
+    'docs/canonical/screen-architecture.md',
+    'app/globals.css',
+)
 # Source, as opposed to a pure documentation commit.
 SOURCE = re.compile(r'^(lib|app|components|scripts|supabase)/')
 
@@ -82,6 +101,19 @@ def buildlog_headings(root):
         return None
 
 
+def design_ruling_gap(changed):
+    """A ship commit edited design doctrine but recorded no ruling.
+
+    Returns the doctrine files touched, or None when there is nothing to say.
+    """
+    touched = [f for f in changed if f in DESIGN_DOCTRINE]
+    if not touched:
+        return None
+    if DESIGN_RULINGS in changed:
+        return None  # the ruling was recorded in the same commit, as required
+    return touched
+
+
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
@@ -102,6 +134,21 @@ def main() -> int:
         return 0
     if not any(SOURCE.match(f) for f in changed):
         return 0  # documentation-only: nothing was built
+
+    # ── Design Board ruling check (ADR-023) — independent of the registry one.
+    design_gap = design_ruling_gap(changed)
+    if design_gap:
+        sys.stderr.write(
+            "DESIGN DOCTRINE CHANGED, BUT NO RULING RECORDED (ADR-023, INV-DESIGN-002).\n\n"
+            f"  commit: {subject[:90]}\n"
+            f"  touched: {', '.join(design_gap)}\n"
+            f"  missing: a row in {DESIGN_RULINGS}\n\n"
+            "Editing design doctrine IS a Design Board ruling. A ruling that never reaches the\n"
+            "register is invisible to the next sitting's settled-ground scan, which is how the\n"
+            "v3 handoff re-proposed three things already decided against, two of them the same\n"
+            "day. Append the row, including for a DON'T SHIP.\n\n"
+            "If this is a formatting fix or a one-line exemption, ignore this.\n"
+        )
 
     scope = SCOPE.match(subject)
     ids = [i for i in dict.fromkeys(ITEM_ID.findall(scope.group(1) if scope else subject))

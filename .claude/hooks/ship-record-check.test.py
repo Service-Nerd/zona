@@ -85,6 +85,45 @@ headings = ' '.join(l for l in BUILDLOG_SAMPLE.splitlines() if l.startswith('## 
 check("body mention is NOT an entry", 'GTM-CHARITY-02' in headings, False)
 check("heading IS an entry", 'UX-AUTH-02' in headings, True)
 
+# ── Design Board ruling gate (ADR-023, INV-DESIGN-002) ───────────────────────
+# Added 2026-09-22, before wave 1a. INV-DESIGN-002/003 were written into ADR-023
+# as "architectural, not mechanically checked" — this closes that. A ruling that
+# never reaches design-rulings.md is invisible to the next sitting's
+# settled-ground scan, which is how the v3 handoff re-proposed three things
+# already decided against, two of them the same day.
+#
+# ⚠️ The MUST-NOT-FIRE cases matter more than the others. If this fired on every
+# UI commit it would be switched off within a day, which this repo has twice
+# recorded as equivalent to having no hook (NOISE-GATE-01).
+def fires(changed):
+    return src.design_ruling_gap(changed) is not None
+
+check("doctrine edited, no register row",
+      fires(['docs/canonical/ui-patterns.md', 'app/page.tsx']), True)
+check("globals.css token edited, no register row",
+      fires(['app/globals.css', 'components/marketing/Section.tsx']), True)
+check("ux-principles edited, no register row",
+      fires(['docs/canonical/ux-principles.md']), True)
+check("screen-architecture edited, no register row",
+      fires(['docs/canonical/screen-architecture.md']), True)
+
+# The correct shape: the ruling is recorded in the same commit.
+check("doctrine WITH its register row",
+      fires(['docs/canonical/ui-patterns.md', 'docs/canonical/design-rulings.md', 'app/page.tsx']), False)
+check("globals.css WITH its register row",
+      fires(['app/globals.css', 'docs/canonical/design-rulings.md']), False)
+
+# Silence, or the hook dies.
+check("an ordinary UI commit stays silent",
+      fires(['components/marketing/Hero.tsx', 'app/page.tsx']), False)
+check("an engine commit stays silent",
+      fires(['lib/plan/ruleEngine.ts', 'lib/plan/invariants.ts']), False)
+check("a markup test alone stays silent",
+      fires(['lib/marketing/sectionSurfaces.test.ts']), False)
+check("coaching doctrine is the other hook's business",
+      fires(['docs/canonical/CoachingPrinciples.md']), False)
+check("no files at all", fires([]), False)
+
 if failures:
     print("FAIL")
     for f in failures:
