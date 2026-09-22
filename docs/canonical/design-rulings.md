@@ -342,7 +342,7 @@ block that starts a beat" from source; the browser sweep is the wider instrument
 
 ---
 
-## 6f. §MEASURE-EDGE — the content edge walked down the page (2026-09-22)
+## 6f. SITE-MEASURE-EDGE — the content edge walked down the page (2026-09-22)
 
 Third founder device pass, and the first on **desktop**.
 

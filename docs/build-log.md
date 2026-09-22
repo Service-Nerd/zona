@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-09-22 — SHIP-DOCS-01 + §MEASURE-EDGE · the skill instructed on three documents and the audit checked eight
+## 2026-09-22 — SHIP-DOCS-01 + SITE-MEASURE-EDGE · the skill instructed on three documents and the audit checked eight
 
 **Shipped:** `/ship` now names all eleven document surfaces, a new audit gate holds board rulings to
 their register, and the homepage stopped moving its content edge as you scroll.

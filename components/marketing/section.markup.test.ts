@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { Section } from './Section'
 
 /**
- * §MEASURE-EDGE — ONE LEFT EDGE DOWN THE PAGE (Design Board, 2026-09-22).
+ * SITE-MEASURE-EDGE — ONE LEFT EDGE DOWN THE PAGE (Design Board, 2026-09-22).
  *
  * Found by the founder on desktop: *"a plan that fits you / in-the-moment
  * coaching / nothing you don't need — those are using the full span of the page,

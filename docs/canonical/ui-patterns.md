@@ -152,7 +152,7 @@ Guarded by `lib/marketing/beatRhythm.test.ts`.
 
 **And two measures, not eight:** `--measure-page` (1100px, matching the site frame so the content edge stops moving as you scroll) and `--measure-read` (720px, a reading column of roughly 70 characters at 17px).
 
-#### ONE LEFT EDGE — §MEASURE-EDGE, Design Board 2026-09-22
+#### ONE LEFT EDGE — SITE-MEASURE-EDGE, Design Board 2026-09-22
 
 **A narrower measure narrows the box. It does not move it.** `--measure-read` is nested inside the page frame and left-aligned to it; only the right edge moves.
 

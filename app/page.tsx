@@ -749,7 +749,7 @@ export default async function Home() {
       <Section width="full" rhythm="none"
         style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}
         innerStyle={{ padding: 'var(--sect-y) 24px' }}>
-        {/* §MEASURE-EDGE — the read column starts where every other band starts.
+        {/* SITE-MEASURE-EDGE — the read column starts where every other band starts.
             It is nested inside the page frame rather than centred on its own; see
             `Section`'s comment for the measurement. */}
         <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
