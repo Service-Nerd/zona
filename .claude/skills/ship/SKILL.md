@@ -122,6 +122,21 @@ invent.**
 **Run `./scripts/audit-docs.sh` before you say the documents are up to date.** Never answer that
 question from memory — it has been answered from memory and been wrong every single time.
 
+🔴 **IT IS NOW A HOOK, BECAUSE "REMEMBER TO RUN IT" DID NOT WORK.**
+`.claude/hooks/push-docs-check.py` runs the audit on every `git push` and prints what is missing.
+**`audit-docs.sh` is a GIT-BASED check** — it compares shipped commits against the records — so it
+can only be right AFTER the commit. Answering from the edits you just made is answering from
+memory, and `git push` is the last moment before the work leaves the machine.
+
+⚠️ **TWO OF THE MISSES ARE STRUCTURAL AND WILL RECUR EVERY BATCH:**
+
+1. **A state block cannot name its own SHA.** It is written before the commit that must cite it,
+   so the last commit of a batch leaves it stale *by construction*. **Every batch needs a follow-up
+   docs commit.** Nothing you do at write time avoids this.
+2. **The id in the commit SCOPE must equal the id in the registry row and the build-log heading.**
+   `ship-record-check.py` matches the scope. A row filed under `§MEASURE-EDGE` while the scope says
+   `SITE-MEASURE-EDGE` is invisible to it and reads as a missing record. **One id, everywhere.**
+
 ---
 
 ## Procedure

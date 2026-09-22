@@ -87,8 +87,9 @@ const DRIFT_TOLERANCE = 1.4
 /** Orientation only — CI-TIMEOUT-01's measured runner ratio, in isolation. */
 const CI_RATIO_FOR_ORIENTATION = 3.5
 
-interface BaselineEntry { file: string; title: string; ms: number; reason: string }
+interface BaselineEntry { file: string; title: string; ms: number; reason: string; budgetMs?: number }
 
+let SUITE_MS = 0
 function readSlowTests(): Array<{ file: string; title: string; ms: number }> {
   if (!existsSync(REPORT)) {
     console.error(`✗ ${REPORT} not found. Run \`npm run test\` first (it writes the report).`)
@@ -97,14 +98,28 @@ function readSlowTests(): Array<{ file: string; title: string; ms: number }> {
   const report = JSON.parse(readFileSync(REPORT, 'utf8'))
   const out: Array<{ file: string; title: string; ms: number }> = []
   let total = 0
+  // ⚠️ THE DENOMINATOR. Rule 3 used to compare absolute milliseconds against a
+  // baseline of absolute milliseconds, which is not a property of the CODE: the
+  // same test measured 2,085 ms in the full parallel suite and ~700 ms in
+  // isolation across three runs on the same commit. So the gate went red for
+  // reasons that said nothing about the change, `npm run verify` sat at exit 1
+  // all day, and a permanently-red gate is the same as no gate.
+  //
+  // A busier machine scales EVERY test, so a test's SHARE of the suite's own
+  // total is load-invariant. That is the number rule 3 compares now. The hard
+  // wall and the new-slow-test rule stay in absolute ms, because a timeout is
+  // an absolute thing and a newcomer at 9 s is a choice whatever else is running.
+  let suiteMs = 0
   for (const suite of report.testResults ?? []) {
     const file = String(suite.name).replace(process.cwd() + '/', '')
     for (const t of suite.assertionResults ?? []) {
       total++
       const ms = Math.round(t.duration ?? 0)
+      suiteMs += ms
       if (ms >= REPORT_MS) out.push({ file, title: t.title, ms })
     }
   }
+  SUITE_MS = suiteMs
   // An empty report is a probe that reached nothing, not a fast suite.
   if (total === 0) {
     console.error('✗ the report contains no tests at all. That is a broken report, not a fast suite.')
@@ -123,11 +138,11 @@ if (write) {
       ? (JSON.parse(readFileSync(BASELINE, 'utf8')).tests as BaselineEntry[])
           .find(b => b.file === s.file && b.title === s.title)
       : undefined
-    return { ...s, reason: prev?.reason ?? 'TODO — state why this test is allowed to be slow.' }
+    return { ...s, reason: prev?.reason ?? 'TODO — state why this test is allowed to be slow.', ...(prev?.budgetMs ? { budgetMs: prev.budgetMs } : {}) }
   })
   writeFileSync(
     BASELINE,
-    JSON.stringify({ measuredAt: new Date().toISOString().slice(0, 10), testTimeoutMs: TEST_TIMEOUT_MS, tests: entries }, null, 2) + '\n',
+    JSON.stringify({ measuredAt: new Date().toISOString().slice(0, 10), testTimeoutMs: TEST_TIMEOUT_MS, suiteMs: SUITE_MS, tests: entries }, null, 2) + '\n',
   )
   console.log(`✓ wrote ${entries.length} entries to ${BASELINE}.`)
   console.log('  Say in the commit WHICH number moved and why. Never re-baseline to go green.')
@@ -150,7 +165,18 @@ if (process.env.CI) {
   process.exit(0)
 }
 
-const baseline: BaselineEntry[] = JSON.parse(readFileSync(BASELINE, 'utf8')).tests
+const baselineDoc = JSON.parse(readFileSync(BASELINE, 'utf8'))
+const baseline: BaselineEntry[] = baselineDoc.tests
+// The suite total the baseline was measured against. Absent on a baseline
+// written before CI-SLOW-LOAD-01, in which case rule 3 falls back to absolute
+// ms exactly as before -- degrade to the old behaviour, never to no check.
+const BASE_SUITE_MS: number | null = typeof baselineDoc.suiteMs === 'number' && baselineDoc.suiteMs > 0
+  ? baselineDoc.suiteMs : null
+const LOAD = BASE_SUITE_MS && SUITE_MS > 0 ? SUITE_MS / BASE_SUITE_MS : 1
+if (BASE_SUITE_MS) {
+  console.log(`Suite total ${SUITE_MS} ms against a baseline of ${BASE_SUITE_MS} ms — this run is ${LOAD.toFixed(2)}x.`)
+  console.log('Rule 3 compares each test\'s SHARE of that total, so a busy machine cannot trip it.')
+}
 const hardMs = Math.round(TEST_TIMEOUT_MS * HARD_FRACTION)
 const failures: string[] = []
 
@@ -176,12 +202,28 @@ for (const s of slow) {
     )
     continue
   }
-  if (s.ms > hardMs) {
-    failures.push(`HARD WALL — ${s.file} · "${s.title}" at ${s.ms} ms is over ${HARD_FRACTION * 100}% of the ${TEST_TIMEOUT_MS} ms budget.`)
+  // ⚠️ A TEST'S OWN BUDGET, NOT THE GLOBAL ONE. `targetedGrid` declares
+  // `}, 120_000)` at its call site and this rule was measuring it against the
+  // 30,000 ms GLOBAL `testTimeout` — so a test at 18% of its real budget was
+  // reported as being at 73% of a budget that does not apply to it. That is the
+  // wrong denominator, which is the failure class this repo has recorded more
+  // times than any other. A baseline entry may declare `budgetMs`; without one
+  // the global applies, which is right for a newcomer that has justified nothing.
+  const budgetMs = b.budgetMs ?? TEST_TIMEOUT_MS
+  const wallMs = Math.round(budgetMs * HARD_FRACTION)
+  if (s.ms > wallMs) {
+    failures.push(`HARD WALL — ${s.file} · "${s.title}" at ${s.ms} ms is over ${HARD_FRACTION * 100}% of its ${budgetMs} ms budget.`)
   }
-  if (s.ms > b.ms * DRIFT_TOLERANCE) {
+  // ⚠️ SHARE, NOT MILLISECONDS. `b.ms * LOAD` is what this test WOULD have cost
+  // at the baseline share under today's load. Comparing against that removes the
+  // machine from the measurement and leaves the code.
+  const expectedMs = b.ms * LOAD
+  if (s.ms > expectedMs * DRIFT_TOLERANCE) {
+    const shareNow = SUITE_MS > 0 ? ((s.ms / SUITE_MS) * 100).toFixed(2) : '?'
+    const shareBase = BASE_SUITE_MS ? ((b.ms / BASE_SUITE_MS) * 100).toFixed(2) : '?'
     failures.push(
-      `STEP CHANGE — ${s.file} · "${s.title}" went ${b.ms} -> ${s.ms} ms (>${DRIFT_TOLERANCE}x).\n` +
+      `STEP CHANGE — ${s.file} · "${s.title}" went ${b.ms} -> ${s.ms} ms ` +
+      `(share ${shareBase}% -> ${shareNow}% of the suite, >${DRIFT_TOLERANCE}x at this run's ${LOAD.toFixed(2)}x load).\n` +
       `    This is a step change, not noise. Say what grew and why, then re-baseline.`,
     )
   }

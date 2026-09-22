@@ -6,6 +6,45 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — CI-SLOW-LOAD-01 + DOCS-PUSH-GATE-01 · "why are we debating? fix it"
+
+**Shipped:** The duration gate now measures the code instead of the machine, and the documentation
+audit runs on every push instead of when I remember.
+
+**Dev learning:** Both were the wrong denominator, which is the failure class this repo records
+more than any other. The duration gate compared **absolute milliseconds** to a baseline of absolute
+milliseconds — the same test measured 2,085 ms under the full parallel suite and ~700 ms in
+isolation on the identical commit. A share of the suite's own total is load-invariant; milliseconds
+are not. And the hard wall measured every test against the **global** `testTimeout` while
+`targetedGrid` declares its own `}, 120_000)` at the call site, so a test at 18% of its real budget
+was reported at 73% of a budget that does not apply to it.
+
+**Product/creator learning:** The founder asked "why are we debating? fix it" and he was right.
+I had measured the flakiness, filed it, written a careful note about why not to re-baseline — and
+left `npm run verify` red all day. **A permanently-red gate is the same as no gate**, which is a
+sentence already written in this codebase about a different check. I was defending the doctrine
+against re-baselining and missing that the gate itself was wrong.
+
+**AI-building learning:** The other half is worse, because it is about me rather than a script. He
+asked why the documents are never up to date when it is part of the build process. The answer:
+`audit-docs.sh` is a **git-based** check, so it can only be right *after* the commit — and I kept
+answering from the edits I had just made, which is answering from memory. Every single time it was
+answered that way it was wrong. It is now a hook on `git push`.
+
+**The honest bit:** two of the misses are structural and I had not noticed. A state block **cannot
+name its own SHA** — it is written before the commit that must cite it, so the last commit of every
+batch leaves it stale by construction. And the id in the commit scope has to equal the id in the
+registry row: I shipped `SITE-MEASURE-EDGE` with records filed under `§MEASURE-EDGE`, so both
+records existed and both were invisible to the check that looks for them.
+
+**Hook material:** A test-duration gate that had been red all day, on a test sitting at 18% of its
+own timeout. It was being measured against a budget four times smaller than the one it actually
+runs under, because the check read the global setting and the test declares its own.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-22 — SHIP-DOCS-01 + SITE-MEASURE-EDGE · the skill instructed on three documents and the audit checked eight
 
 **Shipped:** `/ship` now names all eleven document surfaces, a new audit gate holds board rulings to

@@ -12,6 +12,13 @@
 # day's ships. An audit is only ever as wide as its list.
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
+# ⚠️ `--no-advance` IS A FLAG, NOT A DATE. `push-docs-check.py` runs this on
+# every `git push` and must not move the marker -- a read-only probe with a side
+# effect is the thing this script's own marker comment warns about. Without this
+# branch the flag was being read as `$1`, i.e. as a SINCE date, producing
+# `git log --since="--no-advance 00:00"`. It happened to behave; it was luck.
+NO_ADVANCE=0
+if [ "${1:-}" = "--no-advance" ]; then NO_ADVANCE=1; shift; fi
 SINCE="${1:-$(date +%Y-%m-%d)}"
 fail=0
 say() { printf '%s\n' "$*"; }
@@ -397,7 +404,7 @@ say ""
 # run of a READ-ONLY check dirtied the working tree, so `git status` was never
 # clean during a session and a real change could hide behind the churn. A check
 # with a side effect on every invocation is a check people stop running.
-if [ "$fail" = "0" ] && [ -z "${1:-}" ]; then
+if [ "$fail" = "0" ] && [ -z "${1:-}" ] && [ "$NO_ADVANCE" = "0" ]; then
   head_sha="$(git rev-parse HEAD)"
   if [ "$MARKER" != "$head_sha" ]; then
     mkdir -p "$(dirname "$MARKER_FILE")"
