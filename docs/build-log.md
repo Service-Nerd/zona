@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — POSTRUN-ORIGIN-01 · the same bug, one screen over, in a file that had already noticed
+**Shipped:** Post-run remembers where you came from, so Back returns you there instead of dumping you on Today.
+
+**Dev learning:** One screen, two exits, and they disagreed. `onDone` routed back to the session the runner came from and carried a comment explaining exactly why that mattered. `onBack` was `setScreen('today')`, hardcoded. The result is that finishing the flow properly takes you to the right place and *changing your mind* takes you two screens away — the escape hatch behaves worse than the happy path, which is precisely backwards.
+
+**Product/creator learning:** Reshape needed nothing. All four states, including an error state with a "Try again" — the state that gets skipped most often in this codebase was already there. Worth recording, because a review that only reports findings quietly trains everyone to expect findings.
+
+**AI-building learning:** I wrote a gate that COUNTS instead of checking presence: `setPostRunOrigin` must be called exactly as many times as `setScreen('post-run')` appears. Presence would have passed with two of three entry points stamped, which is the same defect with better odds — and this repo has already shipped that shape once, in a config script that knew about one local plugin when there were two. **If the fix is "do X at every Y", the test has to count Y.**
+
+**The honest bit:** The fix for this exact bug already existed in the same file. `sessionOrigin` was added weeks ago for the identical hardcoded line on a different screen, and the write-up at the time even said "the identical line appears TWICE in that file." Somebody — me — read that sentence, fixed the one in front of them, and did not go looking for the next screen with the same shape. The note observed the duplication and then filed itself away.
+
+**Hook material:** A comment in the codebase that says "the identical line appears twice in this file", sitting above a fix applied to one of them.
+
+**Postable?:** yes — "we documented the duplication and then didn't act on it" is the honest version of every backlog.
+
 ## 2026-09-22 — DESIGN-DAYDOT-CHANNEL-01 · one colour carrying three facts, and the test that guarded the wrong thing
 **Shipped:** The plan row's coloured rail stopped being repainted by completion, skip and move; completion is now the word "Done" where there is room for a word, and the fill of the dot where there is not.
 
