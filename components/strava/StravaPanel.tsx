@@ -87,7 +87,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
       const data = await res.json()
       setAnalysis(data.content?.map((b: { text?: string }) => b.text || '').join('') || 'Analysis unavailable.')
     } catch {
-      setAnalysis('Analysis unavailable — check your connection.')
+      setAnalysis('Analysis unavailable. Check your connection.')
     }
   }
 

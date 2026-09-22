@@ -417,7 +417,7 @@ export default function ZoneRings(props: Props) {
           }}
         >
           {linkable
-            ? 'Run with HR this week — the rings fill in on their own.'
+            ? 'Run with HR this week. The rings fill in on their own.'
             : 'Nothing for the rings yet. A run with HR is all this needs.'}
         </div>
         {linkable && props.onConnect && (

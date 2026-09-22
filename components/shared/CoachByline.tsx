@@ -54,7 +54,14 @@ export default function CoachByline({
   const isMoss      = color === 'moss'
   const accent      = isMoss ? 'var(--moss)' : 'var(--warn)'
   const avatarStart = isMoss ? 'var(--moss)' : 'var(--warn)'
-  const avatarEnd   = isMoss ? '#5A7C5A'     : '#9A6F2A'
+  // ⚠️ THE GRADIENT'S DARK STOP WAS TWO HARDCODED HEX VALUES — the exact thing
+  // ADR-007 forbids and the pre-commit hook blocks. `--moss-strong` and
+  // `--warn-strong` are the existing darker steps of the same two hues, so the
+  // gradient keeps its direction and loses the literals.
+  //
+  // (The hook reads COMMENTS too, which is right: it caught this note quoting
+  // the very values it was recording the removal of.)
+  const avatarEnd   = isMoss ? 'var(--moss-strong)' : 'var(--warn-strong)'
   const roleLabel   = role ?? 'YOUR COACH'
   const tooltip     = title ?? `${BRAND.coachName} is your AI coach`
   const initial     = BRAND.coachName.charAt(0).toUpperCase()
@@ -73,7 +80,7 @@ export default function CoachByline({
           display:        'inline-flex',
           alignItems:     'center',
           justifyContent: 'center',
-          color:          '#FFFFFF',
+          color:          'var(--card)',
           fontFamily:     'var(--font-ui)',
           fontSize:       '11px',
           fontWeight:     700,
@@ -158,7 +165,7 @@ export default function CoachByline({
         type="button"
         onClick={onClick}
         title={tooltip}
-        aria-label={`${BRAND.coachName} — ${roleLabel.toLowerCase()}`}
+        aria-label={`${BRAND.coachName} · ${roleLabel.toLowerCase()}`}
         style={{
           ...sharedStyle,
           background: 'transparent',
@@ -176,7 +183,7 @@ export default function CoachByline({
   return (
     <span
       role="img"
-      aria-label={`${BRAND.coachName} — ${roleLabel.toLowerCase()}`}
+      aria-label={`${BRAND.coachName} · ${roleLabel.toLowerCase()}`}
       title={tooltip}
       style={sharedStyle}
     >

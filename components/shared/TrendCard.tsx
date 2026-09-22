@@ -400,7 +400,7 @@ export default function TrendCard(props: TrendCardProps) {
     const to   = formatPace(nowPace, units)
     if (!from || !to) return null
     if (paceCtx === 'confounds') {
-      return `You were running ${from}, now ${to} — so this is not a like-for-like comparison.`
+      return `You were running ${from}, now ${to}, so this is not a like-for-like comparison.`
     }
     return `At a similar pace: ${from} then, ${to} now.`
   })()

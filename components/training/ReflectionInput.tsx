@@ -277,7 +277,7 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
       <textarea
         value={noteText}
         onChange={e => setNoteText(e.target.value.slice(0, REFRAME_TIER.USER_NOTE_MAX_CHARS))}
-        placeholder="Anything you want me to know about that run — how it felt, what was on your mind. I'll read it back."
+        placeholder="Anything you want me to know about that run: how it felt, what was on your mind. I'll read it back."
         rows={4}
         style={{
           width: '100%', boxSizing: 'border-box',

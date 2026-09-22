@@ -522,6 +522,24 @@ green. Tracing why is what found the false premise. Bounding the replacement too
 (`segmentPricedDistance` appears four times in `ruleEngine.ts`). `lib/plan/sessionSizingAnchor.test.ts`
 now goes red on the real swap.
 
+### 👤 `BRAND-EMDASH-LIB-01` — the half the app guard cannot reach
+**Board: FOUNDER** (his rule) / ⚙️ no board to implement. Residual from
+`BRAND-EMDASH-APP-01`, filed rather than silently left.
+
+`noEmDashApp.test.ts` guards `components/` and `app/dashboard/`. **Two runner-facing
+surfaces sit outside it:**
+
+1. **Coach copy in `lib/`.** `ruleEngine.ts` alone holds 79 em-dash literals, and they are a
+   mix of **runner-facing coach notes** and **dev-only invariant text in the same file** — so
+   a path-based rule would be wrong in both directions. Needs the strings separated by where
+   they SURFACE, not by where they live.
+2. **Push notification bodies** — literally the "spoken word" half of the founder's rule, and
+   the one a phone reads aloud.
+
+⚠️ **Do not extend the guard by adding `lib/` to its roots.** It would fire on 250 literals,
+most of which no runner ever sees, and a guard that fires on ordinary work gets switched off
+— which this repo has twice recorded as equivalent to having no guard.
+
 ### 🧭 `DESIGN-DAYDOT-CHANNEL-01` — the day marker carries two facts on one channel
 **Board: DESIGN.** Exposed by applying S6's bound; deliberately NOT built inside someone
 else's ruling.

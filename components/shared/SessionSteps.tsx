@@ -90,7 +90,7 @@ function SectionCard({
         <span style={{ display: 'flex', alignItems: 'center', gap: '7px', fontFamily: FONT, fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: accent }}>
           {name}
           {info && (
-            <button type="button" onClick={info} aria-label={`${name} — tap to learn`} style={{ all: 'unset', cursor: 'pointer', width: '15px', height: '15px', borderRadius: '50%', border: '1.2px solid currentColor', fontSize: '9.5px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: 0.75 }}>i</button>
+            <button type="button" onClick={info} aria-label={`${name} · tap to learn`} style={{ all: 'unset', cursor: 'pointer', width: '15px', height: '15px', borderRadius: '50%', border: '1.2px solid currentColor', fontSize: '9.5px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: 0.75 }}>i</button>
           )}
         </span>
         <span style={{ fontFamily: FONT, fontSize: '11px', fontWeight: 700, color: accent, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>

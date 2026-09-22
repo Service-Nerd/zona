@@ -240,7 +240,7 @@ type RecentQuality = 'none' | 'occasional' | 'regular'
 const RECENT_QUALITY_OPTIONS: { label: string; sub: string; value: RecentQuality }[] = [
   { value: 'none',       label: 'Mostly easy.',    sub: 'Steady running. Nothing structured lately.' },
   { value: 'occasional', label: 'Here and there.', sub: 'The odd session. Not a routine.' },
-  { value: 'regular',    label: 'Most weeks.',     sub: 'Intervals, hills or tempo — consistently, recently.' },
+  { value: 'regular',    label: 'Most weeks.',     sub: 'Intervals, hills or tempo: consistently, recently.' },
 ]
 
 const STEP_META: Record<WizardSubStep, { title: string; subtitle: string; optional?: boolean; eyebrow?: string; interstitial?: boolean; cta?: string }> = {
@@ -355,7 +355,7 @@ const PHASE_COLOUR: Record<string, string> = {
 }
 
 const PHASE_DESCRIPTION: Record<string, string> = {
-  foundation: 'Pre-plan easy running. Easy sessions only — no quality, no strides.',
+  foundation: 'Pre-plan easy running. Easy sessions only: no quality, no strides.',
   base:       'Aerobic foundation. Easy runs, nothing fancy.',
   build:      'One quality session a week. Everything else stays easy.',
   peak:       'Race-specific sharpening. Volume holds; the work gets specific.',
@@ -1954,7 +1954,7 @@ export default function GeneratePlanScreen({
         ]
 
         const whyLine = rec.isReturning
-          ? "You've got the miles in your legs — just not this month. That's not beginner, that's coming back."
+          ? "You've got the miles in your legs, just not this month. That's not beginner, that's coming back."
           : 'Based on your volume and history. Change it if we’ve read you wrong.'
 
         return (

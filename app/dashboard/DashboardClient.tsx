@@ -3055,12 +3055,12 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
                   // Karvonen: real data used — no disclaimer needed, but confirm it.
                   if (haveHR) msg = 'Zones personalised from your heart rate data.'
                 } else if (method === 'karvonen_estimated_max') {
-                  msg = 'Resting HR used. Max HR estimated from age — add your measured max in Profile to refine.'
+                  msg = 'Resting HR used. Max HR estimated from age. Add your measured max in Profile to refine.'
                 } else if (method === 'percent_of_max') {
                   msg = 'Max HR used. Add your resting HR in Profile for more accurate zones.'
                 } else {
                   // percent_of_estimated_max — no HR data at all
-                  msg = note ?? 'Zones estimated from age — no HR data available. Add values in Profile, or connect Apple Health, to personalise.'
+                  msg = note ?? 'Zones estimated from age: no HR data available. Add values in Profile, or connect Apple Health, to personalise.'
                 }
                 if (!msg) return null
                 return (
@@ -3141,7 +3141,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
       if (!granted) {
         // Denial / unavailable / framework not linked — Capacitor doesn't
         // distinguish in the return value. Calm one-liner, Zona voice.
-        setError('Apple Health said no. Enable in iOS Settings → Health — or connect later.')
+        setError('Apple Health said no. Enable in iOS Settings → Health, or connect later.')
         return
       }
       const { data: { user } } = await supabase.auth.getUser()
@@ -3386,7 +3386,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
       onEnabled()
     } catch (e: any) {
       console.warn('[push onboarding] failed:', e)
-      setError(`Couldn't set up notifications. Skip for now — try from Me later.`)
+      setError(`Couldn't set up notifications. Skip for now; try from Me later.`)
     } finally {
       setPending(null)
     }
@@ -4737,7 +4737,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             <button
               type="button"
               onClick={() => { if (isInteractive) setZoneSheetOpen(true) }}
-              aria-label={isInteractive ? `${rangeLabel} — tap to learn` : rangeLabel}
+              aria-label={isInteractive ? `${rangeLabel} · tap to learn` : rangeLabel}
               style={{
                 display: 'block', width: '100%', textAlign: 'left',
                 marginBottom: '14px',
@@ -6212,7 +6212,7 @@ function getRestCopy(weekType?: string, weekPhase?: string, sessionType?: string
         label: 'No run today',
         headline: 'Step away from the trainers.',
         body: isBeginner
-          ? `You've earned this${name}. The fitness is there — rest is how it stays.`
+          ? `You've earned this${name}. The fitness is there; rest is how it stays.`
           : isExperienced
           ? "Fitness is locked. Any run now is a liability. Leave it."
           : "You've done the work. The fitness is locked in. Resting now is the last thing on the plan.",
@@ -6243,9 +6243,9 @@ function getRestCopy(weekType?: string, weekPhase?: string, sessionType?: string
         label: 'No run today',
         headline: 'Rest is the work.',
         body: isBeginner
-          ? `This is how it works${name}. Run, rest, adapt — in that order. The rest day is non-negotiable.`
+          ? `This is how it works${name}. Run, rest, adapt, in that order. The rest day is non-negotiable.`
           : isExperienced
-          ? "Aerobic base is built in the margins — the sleep, the rest, the boring discipline of doing nothing."
+          ? "Aerobic base is built in the margins: the sleep, the rest, the boring discipline of doing nothing."
           : "Aerobic fitness isn't built during the run. It's built in the recovery that follows. This day matters.",
       }
   }
@@ -7209,7 +7209,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
       if (!hasLong || !injuries?.length) return ""
       if (injuries.some(i => i.includes('achilles'))) return " Watch the achilles on the long run."
       if (injuries.some(i => i.includes('knee')))     return " Protect the knee on hills."
-      if (injuries.some(i => i.includes('shin')))     return " Easy on the downhills — shin splints risk."
+      if (injuries.some(i => i.includes('shin')))     return " Easy on the downhills. Shin splints risk."
       return ""
     })()
 
@@ -9837,7 +9837,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
       emptyCta      = isNative && onConnect ? { label: 'Connect a source', onClick: onConnect } : null
     } else if (!hasRuns) {
       emptyHeadline = "Waiting on your first run."
-      emptyBody     = "Go log a session — even an easy one. Once I see a run with heart rate, I can say something useful."
+      emptyBody     = "Go log a session, even an easy one. Once I see a run with heart rate, I can say something useful."
       emptyCta      = null
     } else if (!hasHr) {
       emptyHeadline = "One more thing."
@@ -9898,7 +9898,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             ) : (
               // Empty state: dimmed Kit identity, NO AIMark (Pattern 16
               // provenance honesty — empty line is hand-authored).
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', opacity: 0.45 }} aria-label={`${BRAND.coachName} — this week`}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', opacity: 0.45 }} aria-label={`${BRAND.coachName} · this week`}>
                 <span aria-hidden="true" style={{
                   width: '22px', height: '22px', borderRadius: '50%',
                   background: 'var(--moss)',
@@ -10254,7 +10254,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {[
                   'Compares this week\'s training load to your rolling average over the past four weeks. A ratio of 1.0 means you\'re doing exactly what your body is used to.',
-                  'Under 0.8 — you\'re doing less than normal, which is fine for recovery weeks. Between 0.8 and 1.3 is the safe build zone. Above 1.3 means this week is harder than your recent baseline.',
+                  'Under 0.8: you\'re doing less than normal, which is fine for recovery weeks. Between 0.8 and 1.3 is the safe build zone. Above 1.3 means this week is harder than your recent baseline.',
                   'Big spikes in load are where injuries happen and where performance dips. Consistent load, week over week, is how fitness actually builds.',
                 ].map((text, i) => (
                   <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>{text}</div>
@@ -10292,9 +10292,9 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
               <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {[
-                  'Each session in your plan has a prescribed zone — Zone 2 for easy runs, Zone 3 for tempo, Zone 4–5 for intervals. Zone discipline measures how many of your completed sessions actually landed in that zone.',
+                  'Each session in your plan has a prescribed zone: Zone 2 for easy runs, Zone 3 for tempo, Zone 4–5 for intervals. Zone discipline measures how many of your completed sessions actually landed in that zone.',
                   'Running easy days too hard is the most common training mistake. It doesn\'t feel like much in the moment, but it blunts the aerobic benefit and leaves you too tired to push when the hard sessions arrive.',
-                  'A score above 80% means easy was easy and hard was hard. That\'s the structure that builds fitness. Below 60% usually means the easy days are drifting into grey-zone territory — hard enough to add fatigue, not hard enough to drive adaptation.',
+                  'A score above 80% means easy was easy and hard was hard. That\'s the structure that builds fitness. Below 60% usually means the easy days are drifting into grey-zone territory: hard enough to add fatigue, not hard enough to drive adaptation.',
                 ].map((text, i) => (
                   <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>{text}</div>
                 ))}
@@ -10661,7 +10661,7 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
     ? errMsg
     : status === 'checking' ? 'Checking…'
     : status === 'subscribed' ? "Kit pings you when he's read your run."
-    : status === 'denied' ? 'Blocked in iOS Settings — open to enable.'
+    : status === 'denied' ? 'Blocked in iOS Settings. Open to enable.'
     : loading ? 'Working…'
     : "Off. Tap to let Kit ping you when he's read your run."
 
@@ -11206,7 +11206,7 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
       const { fetchAppleHealthHRSnapshot } = await import('@/lib/health/clientSync')
       const snapshot = await fetchAppleHealthHRSnapshot()
       if (!snapshot) {
-        setErr('No data — open Apple Health and let your Watch sync')
+        setErr('No data. Open Apple Health and let your Watch sync')
         return
       }
       onPrefill(snapshot.restingHR, snapshot.maxHR)
@@ -11215,7 +11215,7 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
       if (snapshot.restingHR == null) {
         setErr('Got max HR, but no resting HR yet')
       } else if (snapshot.maxHR == null) {
-        setErr('Got resting HR, but no max HR yet — a workout adds this')
+        setErr('Got resting HR, but no max HR yet; a workout adds this')
       }
     } catch (e) {
       // Most common cause once availability passes: read permission was revoked
@@ -11731,7 +11731,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
 
   function buildMailto() {
     const versionTag = appInfo?.version ? `v${appInfo.version}` : platform
-    const subject = `${BRAND.name} support — ${versionTag}`
+    const subject = `${BRAND.name} support · ${versionTag}`
     const body = [
       '',
       '',
@@ -11739,7 +11739,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
       `Sent from ${BRAND.name} ${versionLabel} · ${platform}`,
       `Account: ${email || '(not available)'}`,
       `Plan: ${tier}`,
-      '(This helps us help you — feel free to delete it.)',
+      '(This helps us help you; feel free to delete it.)',
     ].join('\n')
     return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
   }
@@ -12028,7 +12028,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               {row(
                 'Zones',
                 hrConfigured ? `Z2 ≤ ${z2Ceiling} · Max ${maxHR}` : 'Not set',
-                hrConfigured ? null : 'Set RHR and Max HR below — your zones lock in.',
+                hrConfigured ? null : 'Set RHR and Max HR below. Your zones lock in.',
                 hrConfigured ? 'set' : 'unset',
               )}
 
@@ -12036,8 +12036,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 'Benchmark',
                 bmDate ? `${bmWeeks}w old` : 'Not set',
                 bmStale
-                  ? 'Targets may be soft — re-benchmark when you can.'
-                  : bmDate ? null : 'No benchmark — pace targets are estimated.',
+                  ? 'Targets may be soft. Re-benchmark when you can.'
+                  : bmDate ? null : 'No benchmark: pace targets are estimated.',
                 bmDate ? (bmStale ? 'stale' : 'set') : 'unset',
                 onOpenBenchmark,
               )}
@@ -12291,7 +12291,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                   </div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', lineHeight: 1.4 }}>
                     {lastCheckedLabel === null
-                      ? 'Not yet — tap Check now to run.'
+                      ? 'Not yet. Tap Check now to run.'
                       : lastAdjustmentCheckFoundChange
                         ? `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · Plan tweaked`
                         : `${lastCheckedLabel.charAt(0).toUpperCase() + lastCheckedLabel.slice(1)} · No changes needed`}
@@ -12732,11 +12732,11 @@ function buildScoreExplanations(
   let distLine: string
   if (planned != null && actual != null) {
     if (Math.abs(actual - planned) < 0.3) {
-      distLine = `Hit the planned distance — ${formatDistance(actual, units, { exact: true })}.`
+      distLine = `Hit the planned distance: ${formatDistance(actual, units, { exact: true })}.`
     } else if (actual > planned) {
       distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })}.`
     } else {
-      distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })} — short.`
+      distLine = `Planned ${formatDistance(planned, units, { exact: true })}, ran ${formatDistance(actual, units, { exact: true })}. Short.`
     }
   } else if (plannedMins != null && actualMins != null) {
     // 2 minutes is the time-axis sibling of the 0.3 km tolerance above: at the
@@ -12744,11 +12744,11 @@ function buildScoreExplanations(
     // axes forgive the same amount of session rather than two different amounts.
     const TIME_TOLERANCE_MINS = 2
     if (Math.abs(actualMins - plannedMins) < TIME_TOLERANCE_MINS) {
-      distLine = `Hit the planned time — ${formatDuration(actualMins)}.`
+      distLine = `Hit the planned time: ${formatDuration(actualMins)}.`
     } else if (actualMins > plannedMins) {
       distLine = `Planned ${formatDuration(plannedMins)}, ran ${formatDuration(actualMins)}.`
     } else {
-      distLine = `Planned ${formatDuration(plannedMins)}, ran ${formatDuration(actualMins)} — short.`
+      distLine = `Planned ${formatDuration(plannedMins)}, ran ${formatDuration(actualMins)}. Short.`
     }
   } else {
     distLine = 'No distance data.'
@@ -12775,7 +12775,7 @@ function buildScoreExplanations(
   const trend = analysis.ef_trend_pct as number | null | undefined
   let efLine: string
   if (trend == null) {
-    efLine = 'No baseline yet — need a few similar runs.'
+    efLine = 'No baseline yet: need a few similar runs.'
   } else if (trend >= 0) {
     efLine = `${trend.toFixed(1)}% above your baseline.`
   } else {
@@ -14094,11 +14094,11 @@ function InfoBox({ children }: { children: React.ReactNode }) {
 function QuitTab({ quitDays, raceDistanceKm, onBack }: { quitDays: number | null; raceDistanceKm?: number; onBack: () => void }) {
   const days = quitDays ?? 0
   const milestones = [
-    { days: 3,  label: 'Day 3 — Nicotine clearing' },
+    { days: 3,  label: 'Day 3 · Nicotine clearing' },
     { days: 7,  label: 'Week 1' },
-    { days: 14, label: 'Day 14 — Habit breaking' },
-    { days: 30, label: 'Day 30 — Lung function' },
-    { days: 60, label: 'Day 60 — Aerobic gains' },
+    { days: 14, label: 'Day 14 · Habit breaking' },
+    { days: 30, label: 'Day 30 · Lung function' },
+    { days: 60, label: 'Day 60 · Aerobic gains' },
   ]
   const raceCtx = raceDistanceKm ? `a ${raceDistanceKm}km race` : 'your race'
   return (

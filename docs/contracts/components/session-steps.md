@@ -49,3 +49,10 @@ interface SessionStepsProps {
 - Zone parsing + live HR band: `zonesFromZoneString` / `hrBandForZoneString` in `lib/coaching/zoneRules.ts`.
 
 Reference: `components/shared/SessionSteps.tsx`. Integration: `DashboardClient.tsx → SessionPopupInner`.
+
+## Punctuation (BRAND-EMDASH-APP-01, 2026-09-22)
+
+The zone hint reads `{name} · tap to learn`. ⚠️ **It was `{name} — tap to learn`.** The
+founder's rule is no em dash in a sentence; a label separator is not a sentence, so it takes
+the **middot** the app already uses (`{raceName} · {date}`) rather than a colon. Guarded by
+`lib/marketing/noEmDashApp.test.ts`.

@@ -171,13 +171,29 @@ stop. In almost every case the sentence reads better for it, which is the point.
 | `the grey middle — medium-hard on everything — is` | `the grey middle, medium-hard on everything, is` |
 | `Zonna — Plans to stop you overtraining` | `Zonna: Plans to stop you overtraining` |
 
-**What is NOT banned:**
+**What is NOT banned** (scope settled by the founder 2026-09-22, `BRAND-EMDASH-APP-01`:
+*"No em dash in text or spoken word. In descriptions for sessions it's ok. I just don't
+want it in sentences."*):
 - **En dashes (`–`) in ranges.** `6:30–7:30 /km`, `Zone 4–5`, `RPE 1–10`. These
   are correct typography and the engine emits them everywhere. Never strip them.
 - **Code comments.** They are not copy, and mangling them costs legibility for
   no reader benefit.
+- **Session descriptions.** The founder's explicit carve-out. The catalogue's
+  prose about what a session *is* may use one.
+- **A bare `—` as a no-value placeholder** (`{value ?? '—'}`). Typography, not a
+  sentence, and replacing it with a word would be worse.
+- **Invariant messages, AI prompt text and console logs.** No runner reads them.
 
-**Enforced mechanically** by `lib/marketing/noEmDash.test.ts`, which fails the
+⚠️ **This section never contained an "app-side exception", and `CLAUDE.md` claimed
+it did for months** — the rule was site-wide, the guard was marketing-only, and the
+doctrine, the doc and the check disagreed three ways until 2026-09-22. If you find
+yourself citing an exception, cite the line.
+
+**Enforced mechanically** on the app by `lib/marketing/noEmDashApp.test.ts` — every string
+literal under `components/` and `app/dashboard/`, with each exemption carrying its reason,
+because an exemption without one becomes a place to hide the next. ⚠️ **The raw literal count
+was 544 and quoting it would have misled**; the runner-facing subset was **48 sentences
+across 13 files**. And on marketing by `lib/marketing/noEmDash.test.ts`, which fails the
 build on an em dash in any public marketing surface. A written style rule is not
 a rule in this repo — see the canonical-host default, the config/principle sync
 and the deload cadence, all of which drifted while a doc said they shouldn't.

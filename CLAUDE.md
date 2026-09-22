@@ -57,7 +57,15 @@ One sentence is better than two. Specific beats abstract. Never motivational.
 
 **Marketing copy has two mechanical guards, because prose about a rule always drifts from the rule** (the homepage once claimed "four answers" against a ~15-question wizard and survived five wizard changes): `lib/marketing/noEmDash.test.ts` (below) and `lib/marketing/pricing.test.ts`, which fails the build if a `PAID_ONLY_ONGOING` gate has no row on `/pricing` or an argued omission. **Add a paid feature, update the pricing page.**
 
-**No em dashes (`—`) in copy** (founder call, 2026-09-11). Use a colon, comma, semicolon or full stop. **En dashes (`–`) in ranges are correct and must be kept** (`6:30–7:30 /km`, `Zone 4–5`, `RPE 1–10`). Code comments are exempt. Enforced by `lib/marketing/noEmDash.test.ts` across all public marketing surfaces — **add any new marketing page to that test's `SURFACES` list.** Full rule + the app-side exception in `docs/canonical/brand.md` § Punctuation.
+**No em dashes (`—`) in copy** (founder call, 2026-09-11). Use a colon, comma, semicolon or full stop. **En dashes (`–`) in ranges are correct and must be kept** (`6:30–7:30 /km`, `Zone 4–5`, `RPE 1–10`). Code comments are exempt. Enforced on **marketing** by `lib/marketing/noEmDash.test.ts` (**add any new marketing page to that test's `SURFACES` list**) and on the **app** by `lib/marketing/noEmDashApp.test.ts`, which guards every string literal under `components/` and `app/dashboard/`.
+
+🔴 **This line used to promise "the app-side exception in `brand.md` § Punctuation". There is no such exception in that section** — the rule was site-wide and the guard was marketing-only, so for months the doctrine, the doc and the check disagreed three ways (`BRAND-EMDASH-APP-01`). The founder settled the scope on 2026-09-22:
+
+> *"No em dash in text or spoken word. In descriptions for sessions it's ok. I just don't want it in sentences."*
+
+So: **sentences the runner reads or hears, no em dash. Session descriptions, allowed.** Bare `—` as a no-value placeholder is typography, not prose, and is exempt — as are code comments, invariant messages, AI prompt text and console logs, each named with its reason in the guard.
+
+⚠️ **The raw literal count was 544 and quoting it would have misled.** The runner-facing subset was **48 sentences across 13 files**. Measure the subset that matters before reporting a number.
 
 ---
 

@@ -200,7 +200,7 @@ function Live({
           marginBottom: '8px',
         }}
       >
-        {confirming ? 'Updating plan…' : 'Accept — update my plan'}
+        {confirming ? 'Updating plan…' : 'Accept and update my plan'}
       </button>
 
       {/* Dismiss link */}

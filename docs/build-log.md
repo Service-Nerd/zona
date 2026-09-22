@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — BRAND-EMDASH-APP-01 · the number that would have misled
+**Shipped:** The em-dash rule reaches the app, with a guard, and two docs that stated it
+wrongly are corrected.
+
+**Dev learning:** The raw count was 544 string literals and it was the wrong number to act
+on. Broken down: 250 in lib (mostly dev-only), 92 AI prompt builders, 89 invariant messages,
+28 session catalogue, 10 API routes, 75 runner-facing UI — and of those 75, **27 were the
+bare `—` no-value placeholder**, which is typography, not a sentence. The real job was 48
+sentences. If I had "fixed 544 em dashes" I would have mangled invariant text, prompt copy
+and placeholders to satisfy a rule none of them are subject to.
+
+**Product/creator learning:** Three artefacts disagreed and none of them was lying.
+`brand.md` says the rule is site-wide. The only guard covered marketing. `CLAUDE.md` cited
+"the app-side exception in brand.md § Punctuation" — and there is no such exception in that
+section. Nobody wrote something false; a scope was asserted in one file, narrowed in another
+and never reconciled. That is how a rule becomes three rules.
+
+**AI-building learning:** I guarded the two directories wholesale rather than listing the
+files that carry copy. A hand-maintained list is blind to the file nobody adds to it, which
+this repo has recorded as its own failure class. The cost is exemptions — and each one
+carries a written reason, because an exemption without a reason is where the next one hides.
+
+**The honest bit:** I did not finish it. `ruleEngine.ts` holds 79 em-dash literals that are
+runner-facing coach notes and dev-only invariant text **in the same file**, so a path-based
+rule would be wrong in both directions, and push notification bodies — literally the "spoken
+word" half of the founder's own sentence — are untouched. Filed as `BRAND-EMDASH-LIB-01`
+rather than quietly counted as done, with a note not to just add `lib/` to the guard's roots.
+
+**Hook material:** 544 em dashes in the codebase. 48 of them were the problem. The other 496
+were invariant messages, prompt text and dashes that mean "no value".
+
+**Postable?:** yes
+
 ## 2026-09-22 — MOVE-DRAG-GESTURE-01 · deleting the feature and keeping what it taught
 **Shipped:** The hold-and-drag prototype is removed. Tap-to-move stands.
 
