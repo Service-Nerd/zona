@@ -112,7 +112,7 @@ device pass.
 | `SITE-WAVE-1` | 🧭 Design Board | ✅ **SHIPPED** — `<Section>` across 11 surfaces, proof 52% → 24%, nine content sections → six, white spotlight moved to the proof, heading hierarchy. ⚠️ **Not device-verified** |
 | `SITE-WAVE-2` | 🧭 Design Board | ⏭️ **NEXT** — the CTA at the proof moment. ⚠️ **Re-scope:** wave 1b moved the proof to 24% and gave it a ground change to anchor to, so the 13.3-screen gap this was written against measures differently now |
 | `SITE-WAVE-3` | 🧭 Design Board → 🏃 Coaching Board if opened | 🔒 **BLOCKED on the device pass.** Collins: the app uses six session colours and four phase colours; the site's own language is greyscale plus one green. Lives or dies on what the founder sees |
-| `SITE-SPACE-01` | 🧭 Design Board | **RULED, not built.** No `--space-*` family exists: 448 gaps, 19 real distinct values — **the same number `SITE-TYPE-01` found for font sizes.** Scale `4·8·12·16·24·32·48`; 52% already fit. ⚠️ **Ships WITH its sweep, never before** |
+| `SITE-WAVE-4` (`SITE-SPACE-01`) | 🧭 Design Board | **RULED, not built.** No `--space-*` family exists: 448 gaps, 19 real distinct values — **the same number `SITE-TYPE-01` found for font sizes.** Scale `4·8·12·16·24·32·48`; 52% already fit. ⚠️ **Ships WITH its sweep, never before** |
 | `SITE-GROUND-ABOUT-01` | 🧭 Design Board | Open — `/about` and `/charity-runners` spend `--bg-soft` as a page ground on three bands |
 | `SITE-MEASURE-THIRD-01` | 🧭 Design Board | Open — 760px, 560px and 620px section measures bypass the tokens |
 | `RACE-WEEK-VOLUME-01` | 🏃 Coaching Board | **RULED, not built** — the race is not training volume |

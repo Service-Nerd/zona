@@ -373,8 +373,12 @@ a single named input before treating it as a defect.
 
 ---
 
-## 🧭 `SITE-SPACE-01` — RULED 2026-09-22, NOT BUILT: the site has no spacing scale
+## 🧭 `SITE-WAVE-4` / `SITE-SPACE-01` — RULED 2026-09-22, NOT BUILT: the site has no spacing scale
 **Board: 🧭 DESIGN BOARD (ruled — build).** **Surface: website.** **Tier: n-a.** **Size: M.**
+**WAVE 4.** ⚠️ **Not 1c — wave 1 is SHIPPED and closed, and you cannot add to a finished wave.**
+This was found by the founder's device pass *after* wave 1 landed, so it is a new wave, not a
+retrofit. ⚠️ It was also briefly filed with **no wave at all**, which is how an item gets ruled
+and then quietly never scheduled.
 **Found by the founder on his phone:** *"the space between sections or tiles then next text is
 inconsistent. e.g. the zone image then the next text is very close."*
 
