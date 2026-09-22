@@ -383,8 +383,24 @@ a check asserting no hand-typed gap outside the scale, falsified.
 
 ## ⚖️ FILED 2026-09-22 SHIPPING §121 — the invariant found a second defect on its first sweep
 
-### 🔴 `TAPER-OVER-PEAK-01` — **MEASURED 2026-09-22. THE RULING'S REMEDY FAILS, AND MY SUBMISSION WAS WRONG.**
-**Board: 🏃 COACHING BOARD — needs a RE-SITTING.** Baselined in `SWEEP-BASELINE-01` meanwhile.
+### 🏃 `TAPER-OVER-PEAK-01` — **RE-RULED 2026-09-22. CORRECT WITH AMENDMENT, not built.**
+**Board: 🏃 COACHING BOARD (re-sat; first ruling VACATED).** Baselined in `SWEEP-BASELINE-01` meanwhile.
+
+🔴 **The first ruling contradicted §1 CD-21 Amendment 1, which had already ruled on this exact
+cohort — and my conflict scan missed it.** CD-21 Am.1: *"At two runs a week there is no distribution
+to describe — the ratio is not violated, it is **undefined**"* (Seiler); *"forcing compliance would
+mean **two easy runs and no quality**"* (Sims). That is what I proposed. **The scan was run against
+the section, not its amendments.**
+
+**Re-ruled:** the defect belongs to **ADR-022**, not §1 — a week whose delivered volume falls
+materially below its own curve target must have the shortfall absorbed by its remaining easy
+running, the mirror of ADR-022's trim. **Willy's bound is binding:** capped by §9's long-run share
+and §45's progression cap; a week that still cannot reach its target runs under, honestly.
+
+**INSUFFICIENT EVIDENCE to build, named precisely:** `waterFillEasyKm` (UX-WIZARD-01 Stage B) already
+redistributes an easy pool weighted by each day's ceiling. **Whether that pool is computed before or
+after quality placement is unmeasured** — if before, the shortfall never enters it. One line,
+blast radius across every day count.
 
 **1. My submission was wrong.** I told the board *"§1 counts SESSIONS, so at 2 days the only ratios
 are 100/0 or 50/50."* That is the **per-week** arithmetic. **§1 counts sessions PLAN-WIDE (CD-19)** —

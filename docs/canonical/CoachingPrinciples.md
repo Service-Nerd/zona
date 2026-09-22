@@ -122,6 +122,12 @@ An earlier version of this section claimed the six values were *"verified agains
 
 ### Amendment 1 — the ceiling does not apply to `maintenance`-profile plans
 
+> 🔴 **READ THIS AMENDMENT WHENEVER §1 IS THE BASIS OF A SUBMISSION.** On 2026-09-22 a board sitting
+> ruled that quality should yield to §1's ceiling at two available days — **which is exactly what
+> this amendment forbids**, in the words below, for exactly this cohort. The conflict scan was run
+> and it was run against the SECTION, not its AMENDMENTS. Vacated at a re-sitting the same day
+> (`TAPER-OVER-PEAK-01`). **A scan that stops at the section heading is not a scan.**
+
 Not a day-count exemption. A **profile** exemption, keyed to the state §52 already assigns.
 
 **Why.** A distribution ratio presupposes enough sessions to distribute. At two runs a week there is no distribution to describe — **the ratio is not violated, it is undefined** (Seiler). §9 forces the long run to ~56% of a 2-day week's volume, so "long run plus one quality" is the only shape available; it is also exactly what a coach would write for a time-crunched runner chasing a 5K (McMillan). Forcing compliance would mean two easy runs and no quality — which for the peri- and post-menopausal runners in this cohort removes the single highest-value stimulus in the plan, and there are only two sessions to take it from (Sims).

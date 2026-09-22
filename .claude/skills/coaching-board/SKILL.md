@@ -259,7 +259,16 @@ as the neutral case.
 
 2. **State the proposed change in one sentence.** Everyone works from the same brief.
 
-3. **Run the conflict scan — mandatory, before any member speaks.** Read the proposed
+3. **Run the conflict scan — mandatory, before any member speaks.**
+
+   🔴 **SCAN THE AMENDMENTS, NOT JUST THE SECTIONS.** On 2026-09-22 this board ruled
+   that quality should yield to §1's ceiling at two available days. **§1 CD-21
+   Amendment 1 forbids exactly that, for exactly that cohort, in as many words** —
+   *"at two runs a week the ratio is not violated, it is UNDEFINED"* (Seiler),
+   *"forcing compliance would mean two easy runs and no quality"* (Sims). The scan
+   was run. It was run against the section heading. The ruling was vacated at a
+   re-sitting the same day. **Most of this constitution's real content is now in
+   amendments; a scan that stops at `## §N` is not a scan.** Read the proposed
    change against the existing sections of `CoachingPrinciples.md` and **name the
    conflicting section numbers explicitly** (e.g. "as written, this contradicts §12
    and weakens §1"). With 80 sections this is the single highest-value mechanical
