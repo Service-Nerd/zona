@@ -239,3 +239,59 @@ produce the evidence this item needs.
 ⚠️ **Traynor's recall trigger is "a redeemed-code funnel". It still does not exist** — the two
 claims are the founder's own TEST batch. **His seat stays vacant, and that is now a measured fact
 rather than an assumption.**
+
+---
+
+# ⚠️ `RACE-ANCHOR-CV-OVERRIDE-01` — BUILT, MEASURED, REVERTED. **The ruling's own safety assumption failed.**
+
+**2026-09-22, the same day as the ruling.** This is the **second** time this item has been built
+and reverted, and the second mechanism to fail. **That is the finding.**
+
+## What the board ruled, and what it rested on
+
+A CV-anchored row is **not eligible** for §22's second-half goal-pace slot. The safety argument
+was mine and the board adopted it: *"§22 already requires that a distance whose race pace is
+physiologically distinct from I-pace MUST own a `race_specific` catalogue session, and HM and
+marathon both do. A goal-paced alternative is guaranteed to exist, so the slot is filled rather
+than emptied."*
+
+## Built, then measured on the changed engine — the board's own procedure
+
+Added `goalPaceSlot` to `CatalogueSelectorArgs`, filtered CV-anchored non-VO2max rows out of the
+eligible set, and passed the flag from **both** quality slots. Type-clean. Then:
+
+| Check | Result |
+|---|---|
+| `planFitness` — **`neverBuildsPct`** | 🔴 **ROSE.** healthy masters **18.6% → 18.8%**, healthy standard **12.8% → 12.9%**. `CLAUDE.md`: *"`neverBuildsPct` rising above zero fails with **no tolerance**"* |
+| `planFitness` — cohort size | 🔴 **9,671 → 9,668.** Three plans now **refuse** that previously generated |
+| `segmentPricedDistance` | 🔴 **0 reps-scaled threshold sessions**, where there were some. **The CV rows I excluded WERE those sessions** |
+| `cohortShape`, `goldenPlans` ×3 | moved, as anticipated |
+
+🔴 **The guarantee is not a guarantee.** §22 requires the distance to *own* a `race_specific`
+row; it does not follow that the row is **eligible for this runner, in this phase, at this
+weekly volume, with this fitness rank and these resolvable anchors.** The selector's filter chain
+has six other gates in front of it. **I reasoned from the catalogue's contents to a runner's
+eligible set, and those are different objects.**
+
+## Reverted, not re-baselined
+
+`CLAUDE.md` is explicit that a baseline is never moved to turn a test green, and a `neverBuilds`
+rise is the one figure with no tolerance at all. **Three runners losing a plan entirely is a worse
+outcome than 92 sessions carrying a mislabelled header** — the defect this was fixing is a
+display lie; the regression is a refusal to train someone.
+
+## What this leaves, honestly
+
+- The **defect stands**: 92 of 2,401 sessions (3.8%), all HM and marathon, worst case a **69 s/km**
+  divergence between a card's header and its own work steps. It remains **visible**, not hidden —
+  `INV-PLAN-HEADER-PACE-MATCHES-WORK` emits `warn` and names the item on every sweep.
+- **Two mechanisms have now failed**, and they failed at opposite ends: exempting at override time
+  empties §22's ownership arm (100 tests), and excluding at selection time empties the runner's
+  eligible set (3 plans refused, never-builds up).
+- ⚠️ **Do not re-propose either.** The next attempt must start from the measurement that neither
+  sitting has: **for each of the 92 sessions, what else was actually ELIGIBLE in that slot for
+  that runner?** Not what the catalogue owns — what the selector would have returned. If the
+  answer is "nothing", the deadlock is structural and belongs to the catalogue, not to §22 or §85.
+
+**Status: RULED, BUILT, REVERTED, and returned to the board with a named artefact.**
+
