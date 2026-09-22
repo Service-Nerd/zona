@@ -152,6 +152,28 @@ Guarded by `lib/marketing/beatRhythm.test.ts`.
 
 **And two measures, not eight:** `--measure-page` (1100px, matching the site frame so the content edge stops moving as you scroll) and `--measure-read` (720px, a reading column of roughly 70 characters at 17px).
 
+#### ONE LEFT EDGE — §MEASURE-EDGE, Design Board 2026-09-22
+
+**A narrower measure narrows the box. It does not move it.** `--measure-read` is nested inside the page frame and left-aligned to it; only the right edge moves.
+
+🔴 **The sentence above was the rule and the page was breaking it.** Found by the founder on desktop: *"those are using the full span of the page, and then everything after that has gone really centralised, it's a bit of a mess."* Measured at 1440px, the content's left edge top to bottom:
+
+```
+168 · 168 · 168 · 168 · 168 · 168 · 358 · 358 · 168 · 358 · 338
+```
+
+**Three distinct left edges, moving four times**, while the header and the footer both sat at **168**. The cause was one property: `margin: '0 auto'` on a 720px box inside an 1100px frame centres it, pushing every prose band **190px inboard** of everything else.
+
+**The measure was never the defect.** 720px for prose is right; a 1100px line of body text is unreadable. The centring was.
+
+**The one exception, and it is deliberate:** the dark close is centred. W-09 makes it the page's punctuation mark and it goes last, so one break at the end reads as a full stop rather than a fifth wobble mid-page. Result: **3 left edges → 2, edge moves 4 → 1.**
+
+⚠️ **760px is retired** (`SITE-MEASURE-THIRD-01`, filed 2026-09-22 and closed by this ruling). It was a third measure that matched no rule and existed because somebody typed a number.
+
+⚠️ **INVISIBLE AT 375px**, where both measures collapse to the gutter. Two founder device passes missed it and a third, on desktop, did not. **A viewport is part of a design check's scope, not a detail of how it was run.**
+
+Guarded by `components/marketing/section.markup.test.ts`.
+
 ⚠️ **Why this is a rule and not a suggestion.** Before it, the homepage alone carried **eleven different padding pairs** (48/56, 0/56, 72/72, 80/80 ×3, 72/72, 80/80, 112/112, 56/48, 40/0) and **eight different content widths** (1100, 900, 640, 760, 780…), none of 72/80/112 being on the canonical scale at all. Each was reasonable where it was written. Together they meant the left edge of the content moved as you scrolled. **Slickness is mostly alignment.**
 
 ---

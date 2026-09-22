@@ -87,8 +87,29 @@ export function Section({
         ...style,
       }}
     >
-      <div style={{ maxWidth, margin: '0 auto', padding: pad, ...innerStyle }}>
-        {children}
+      {/* ⚠️ THE READ COLUMN IS NESTED, NOT NARROWED, AND THAT IS THE RULING.
+          `margin: '0 auto'` on a 720px box centres it — which pushed every prose
+          band **190px inboard** of everything else on the page. Measured at
+          1440px: the content's left edge ran 168 · 168 · 168 · 168 · 168 · 168 ·
+          358 · 358 · 168 · 358 · 338. **Three distinct left edges, moving four
+          times**, while the header and the footer both sit at 168.
+          `ui-patterns.md` gives `--measure-page` its purpose in those words —
+          *"matching the site frame so the content edge stops moving as you
+          scroll"* — so the rule's own reason was what the page was breaking.
+          Found by the founder on desktop; invisible at 375px, where both
+          measures collapse to the gutter, which is why two device passes missed
+          it.
+          The measure is not the defect. The centring was. The outer box owns the
+          frame and the padding; the inner box owns the reading width and starts
+          where every other band starts. */}
+      <div style={{
+        // `full` opts out of the frame and manages its own width — unchanged.
+        maxWidth: width === 'full' ? undefined : 'var(--measure-page)',
+        margin: '0 auto', padding: pad, ...innerStyle,
+      }}>
+        {maxWidth === 'var(--measure-read)'
+          ? <div style={{ maxWidth }}>{children}</div>
+          : children}
       </div>
     </section>
   )

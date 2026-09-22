@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-22 (last ship `b538b3d`, `SESSION-SIZING-ANCHOR-01`) — PUSHED.** Full `npm run verify`: **3,017 tests / 336 files** (⚠️ exits 1 on the DURATION gate only — the filed `CI-DURATION-TARGETEDGRID-01`; measured, not assumed: the flagged test reads 2,085 ms in the parallel suite and ~700 ms in isolation, so the baseline was NOT re-based). Typecheck clean; `audit-docs.sh` ALL CLEAN. ⚠️ `452 tests / 40 files` in earlier blocks is the NARROWER marketing-and-shared scope. Fifteen commits today: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage waves, `<Section>` adoption, the docs, the step-numeral contrast fix, the spacing scale, `SITE-WAVE-2`, `SITE-BEAT-01`, and the engine pair. · 🔴 **`SITE-WAVE-3` is DEAD** — the palette question went to the founder on a device: *"its better"*. · **`fa0272a` §120** — 2,811 sessions showed a pace their own reps contradicted; the board **rejected the constant it had itself named** (right question, wrong unit) and bounded the anchor against **CV**. · **`f7ff827` §121** — the race is no longer training volume (the taper outweighed the peak in **50% of marathons**). · ✅ **`SESSION-SIZING-ANCHOR-01` CLOSED — the premise was FALSE** (0 of 1,320 sessions; my first measurement said 20.2% because the denominator counted a RAMP anchor, and my first gate was hollow). · 🔴 **`TAPER-OVER-PEAK-01` RULED, not built** — not a taper defect, **the peak is too small**: at 2 days/week §1 offers only 100/0 or 50/50, the arithmetic that VETOED P-02. Blocked on measuring the §22 and cohort effect. · 🔴 **`RACE-ANCHOR-CV-OVERRIDE-01`** — a §85/§22 deadlock, built and reverted (100 tests red).
+**State at END of 2026-09-22 (last ship `e943a1d`, `SHIP-DOCS-01`) — PUSHED.** Full `npm run verify`: **3,017 tests / 336 files** (⚠️ exits 1 on the DURATION gate only — the filed `CI-DURATION-TARGETEDGRID-01`; measured, not assumed: the flagged test reads 2,085 ms in the parallel suite and ~700 ms in isolation, so the baseline was NOT re-based). Typecheck clean; `audit-docs.sh` ALL CLEAN. ⚠️ `452 tests / 40 files` in earlier blocks is the NARROWER marketing-and-shared scope. Fifteen commits today: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage waves, `<Section>` adoption, the docs, the step-numeral contrast fix, the spacing scale, `SITE-WAVE-2`, `SITE-BEAT-01`, and the engine pair. · 🔴 **`SITE-WAVE-3` is DEAD** — the palette question went to the founder on a device: *"its better"*. · **`fa0272a` §120** — 2,811 sessions showed a pace their own reps contradicted; the board **rejected the constant it had itself named** (right question, wrong unit) and bounded the anchor against **CV**. · **`f7ff827` §121** — the race is no longer training volume (the taper outweighed the peak in **50% of marathons**). · ✅ **`SESSION-SIZING-ANCHOR-01` CLOSED — the premise was FALSE** (0 of 1,320 sessions; my first measurement said 20.2% because the denominator counted a RAMP anchor, and my first gate was hollow). · 🔴 **`TAPER-OVER-PEAK-01` RULED, not built** — not a taper defect, **the peak is too small**: at 2 days/week §1 offers only 100/0 or 50/50, the arithmetic that VETOED P-02. Blocked on measuring the §22 and cohort effect. · 🔴 **`RACE-ANCHOR-CV-OVERRIDE-01`** — a §85/§22 deadlock, built and reverted (100 tests red). · ✅ **`SHIP-DOCS-01`** — `/ship` named **3** documents while `audit-docs.sh` checked **8**, and `design-rulings.md` was in neither; new § board rulings gate, which **found a real gap on its first run**. · 🟢 **`§MEASURE-EDGE`** — the founder's first DESKTOP pass: the content's left edge ran **168·168·168·168·168·168·358·358·168·358·338** while header and footer sat at 168. **The measure was never the defect, the centring was.** 3 edges → 2, moves 4 → 1; 760px retired. ⚠️ **Invisible at 375px — every prior design measurement was taken there.**
 
 🧭 **The homepage, measured at 375px:** first ground change **screen 10.6 → 3.4**, proof **52% → 24%**, sections **14 → 11**, page **12,317 → 11,773px**, content `<h2>` **9 (all 26px) → 6 with a scale**.
 
@@ -508,26 +508,12 @@ is precisely what **W-08 killed on the homepage**, living on `/about` because no
 looked. **Not changed in 1a-ii.** Wave 1b either ratifies it as a legitimate exception or
 moves it to the ruled three grounds.
 
-### 🧭 `SITE-MEASURE-THIRD-01` — a third content measure exists
-**Board: 🧭 DESIGN BOARD.** **Surface: website.** **Size: S.**
-The tokens are `--measure-page: 1100px` and `--measure-read: 720px`. `/about` uses a
-hardcoded **760px** (`SECTION_MAX`), `/guides` uses **560px**, `/plans` uses **620px**.
-⚠️ **This is the corrected version of sitting one's "six different max-widths" finding** —
-several of the six were legitimate inner columns, but these three are *section* measures
-that bypass the token. Preserved in 1a-ii; 1b decides whether they collapse to `--measure-read`.
+### ✅ `SITE-MEASURE-THIRD-01` — **CLOSED 2026-09-22 by §MEASURE-EDGE.**
 
----
-
-## 📍 WHERE WE ARE — 2026-09-22, eleven commits
-
-**State at 2026-09-22, last ship `6d935bc` (`SITE-BEAT-01`).** Full `npm run verify` suite:
-**3,013 tests / 336 files, all passing** — counted from the run, not from the previous block.
-⚠️ **Earlier blocks on this page quote `452 tests / 40 files`, which is the NARROWER
-marketing-and-shared scope, not this one.** Two measures, so both are named.
-
-🔴 **`npm run verify` exited 1 on the second of two runs over IDENTICAL code**, on a duration
-gate, not a behaviour one. Filed as `CI-DURATION-TARGETEDGRID-01` above. Nothing was
-re-baselined to make it green.
+The 760px band is now `--measure-read`. Closed as part of the ruling on the founder's desktop
+pass, which found the larger defect underneath it: **the content's left edge moved four times
+down the homepage** (168 · 168 · 168 · 168 · 168 · 168 · 358 · 358 · 168 · 358 · 338) while the
+header and footer both sat at 168. `design-rulings.md` § 6f.
 
 ### Shipped today
 | | |

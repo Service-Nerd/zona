@@ -6,6 +6,42 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — SHIP-DOCS-01 + §MEASURE-EDGE · the skill instructed on three documents and the audit checked eight
+
+**Shipped:** `/ship` now names all eleven document surfaces, a new audit gate holds board rulings to
+their register, and the homepage stopped moving its content edge as you scroll.
+
+**Dev learning:** The founder said "every time I ask whether the docs are up to date, something has
+been missed." Measured: the skill named **3** documents, the audit checked **8**. The five it did
+not instruct were only ever caught after the fact — a net, not a process. And `design-rulings.md`
+was in neither, because the hook that guards it fires on *editing a doctrine file*, and a ruling
+like "wave 3 is dead" edits no file at all.
+
+**Product/creator learning:** He then found a layout defect on desktop that three of us had walked
+past. The content's left edge runs 168 six times, then 358, 358, back to 168, then 358, then 338.
+Header and footer both sit at 168. The rule that was being broken **states its own purpose in the
+document**: "matching the site frame so the content edge stops moving as you scroll." Nobody had
+checked the page against the sentence.
+
+**AI-building learning:** Every measurement in the design register until today was taken at 375px.
+Both measures collapse to the gutter there, so this defect was structurally invisible to every
+check I had run. **A viewport is part of a check's scope, not a detail of how it was run.**
+
+**The honest bit:** two hollow checks in one hour. The audit gate reused a feature-id pattern that
+requires two digits (`THING-01`), and board ids do not have them (`SITE-WAVE-3`, `CD-1`) — it
+reported ALL CLEAN with the exact miss it was written for sitting in front of it. Then the layout
+gate was written as `.tsx` and vitest's include is `components/**/*.test.ts`, so the runner never
+saw it: "No test files found" and I nearly read that as a pass. **A test the runner cannot see is
+the purest hollow check there is.**
+
+**Hook material:** A design rule that says, in the document, "so the content edge stops moving as
+you scroll." The page it governs moved it four times. Nobody compared the page to the sentence for
+a day, and the founder found it in ten seconds on a laptop.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-22 — SESSION-SIZING-ANCHOR-01 · the defect I filed did not exist
 
 **Shipped:** A gate, and a closed item. Measured 1,320 quality sessions: **zero** are sized at

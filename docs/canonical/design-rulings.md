@@ -342,6 +342,23 @@ block that starts a beat" from source; the browser sweep is the wider instrument
 
 ---
 
+## 6f. §MEASURE-EDGE — the content edge walked down the page (2026-09-22)
+
+Third founder device pass, and the first on **desktop**.
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **One left edge: a narrower measure narrows the box, it does not move it** | 🟢 **SHIPPED.** `--measure-read` nests inside the page frame; **3 left edges → 2, edge moves 4 → 1** | Measured at 1440px: `168 · 168 · 168 · 168 · 168 · 168 · 358 · 358 · 168 · 358 · 338`, while header and footer both sat at **168**. 🔴 **`ui-patterns.md` gives `--measure-page` its purpose in those words — *"matching the site frame so the content edge stops moving as you scroll"* — so the rule's own reason was what the page was breaking.** The cause was one property: `margin: '0 auto'` on a 720px box inside an 1100px frame pushes it **190px inboard** |
+| **720px for prose stays** | 🟢 **STANDING, untouched** | The measure was never the defect. A 1100px line of body text is unreadable; W-07's two measures are correct. **Do not re-propose collapsing to one measure** |
+| **The dark close is centred — the ONE exception** | 🟢 **RATIFIED** | W-09 makes it the page's punctuation and it goes last. One deliberate break at the end is a full stop; four accidental ones mid-page are a mess |
+| **`SITE-MEASURE-THIRD-01` — the 760px third measure** | 🔴 **RETIRED** | It matched no rule and existed because somebody typed a number (Collins). Now `--measure-read` |
+
+⚠️ **INVISIBLE AT 375px**, where both measures collapse to the gutter. **Two founder device passes missed it and a third, on desktop, did not.** A viewport is part of a design check's scope, not a detail of how it was run — and every measurement in this register until now was taken at 375.
+
+⚠️ **The gate was first written as `.tsx` and vitest never ran it** — the include pattern is `components/**/*.test.ts`, so it reported "No test files found" and would have sat green-by-absence forever. A test the runner cannot see is the purest hollow check there is.
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |

@@ -749,7 +749,11 @@ export default async function Home() {
       <Section width="full" rhythm="none"
         style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}
         innerStyle={{ padding: 'var(--sect-y) 24px' }}>
-        <div style={{ maxWidth: 'var(--measure-read)', margin: '0 auto', textAlign: 'left' }}>
+        {/* §MEASURE-EDGE — the read column starts where every other band starts.
+            It is nested inside the page frame rather than centred on its own; see
+            `Section`'s comment for the measurement. */}
+        <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
+        <div style={{ maxWidth: 'var(--measure-read)', textAlign: 'left' }}>
           {/* ⚠️ MERGED IN — Design Board sitting two, 2026-09-22. "What's not in
               the app" and "Probably not for you if…" were two consecutive
               sections making ONE move: refusal. Sierra: both are the brand
@@ -835,6 +839,7 @@ export default async function Home() {
           }}>
             Plenty of excellent apps will. This one won&apos;t.
           </p>
+        </div>
         </div>
       </Section>
 
@@ -997,7 +1002,13 @@ export default async function Home() {
           ⚠️ EXACTLY ONE near-black band per page (ADR-008). This is it. */}
       <Section surface="dark" width="full" rhythm="none"
         innerStyle={{ padding: '112px 24px' }}>
-        <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center' }}>
+        {/* ⚠️ THE ONE DELIBERATE EXCEPTION, and it is centred on purpose. W-09
+            makes the dark band the page's punctuation mark and it goes last, so
+            one break at the end is a full stop rather than a fifth wobble
+            mid-page. 760px was a THIRD measure that matched no rule
+            (SITE-MEASURE-THIRD-01, filed and now closed) — it is the documented
+            reading measure. */}
+        <div style={{ maxWidth: 'var(--measure-read)', margin: '0 auto', textAlign: 'center' }}>
           <div style={{
             fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-on-ground)',
             textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
