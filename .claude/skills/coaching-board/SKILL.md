@@ -22,7 +22,14 @@ a bad principle with perfect fidelity.
 It authors and amends the constitution. It does not re-litigate enforcement —
 that is what the invariants are for.
 
-See `docs/architecture/ADR-017-coaching-board-authority.md` for the authority model.
+See `docs/architecture/ADR-017-coaching-board-authority.md` for the authority model,
+and **`docs/canonical/ownership-map.md` for scope** — the single owner of what this
+board rules on versus the Design Board, the SLT and the founder. It also carries the
+ratified seam rule: **design owns the encoding, coaching owns the meaning, the SLT owns
+the price.** Do not restate ownership here; reference it.
+
+⚠️ **Eight doctrine files, not seven.** `sessionCatalogueData.ts` is the runtime source
+of what the engine may prescribe and was outside the guard for four months (SC-00).
 
 ---
 

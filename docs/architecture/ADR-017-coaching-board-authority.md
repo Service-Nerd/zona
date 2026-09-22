@@ -7,6 +7,11 @@
 
 ---
 
+> **Ownership:** `docs/canonical/ownership-map.md` is the single owner of what this
+> board rules on versus the Design Board, the SLT and the founder, and of the ratified
+> seam rule (**design owns the encoding, coaching owns the meaning, the SLT owns the
+> price**). This ADR defines the board's *authority*; the map defines its *scope*.
+
 ## Context
 
 Zonna has three governance layers for coaching:

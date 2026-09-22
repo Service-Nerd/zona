@@ -1,40 +1,40 @@
 #!/usr/bin/env python3
-"""PreToolUse coaching-doctrine guard for Edit / Write / MultiEdit / Bash.
+"""PreToolUse design-doctrine guard for Edit / Write / MultiEdit / Bash.
 
-Zonna's Configuration Singularity concentrates every coaching decision into a
-small set of named files. That makes "is this a coaching decision?" a file-path
-match rather than a judgement call — which is exactly what a hook can enforce.
+Zonna's visual and experiential doctrine is concentrated into a small set of
+named files, the same way the Configuration Singularity concentrates coaching
+decisions. That makes "is this a design decision?" a file-path match rather than
+a judgement call — which is exactly what a hook can enforce.
 
-CoachingPrinciples.md states the coupling itself:
-    "If you are editing a numeric, you are editing this document.
-     If you are editing this document, you are editing a numeric."
+Purpose: make the /design-board review fire automatically (ADR-023). This repo
+carries a standing correction that exists SOLELY because the `frontend-design`
+skill kept being skipped for UI work — description-based auto-triggering has a
+documented failure history here. A hook does not forget.
 
-Purpose: make the /coaching-board review fire automatically. Skill descriptions
-alone have already proven unreliable for this repo (see the standing correction
-that frontend-design must be triggered for UI work — that memory exists because
-description-based auto-triggering kept being missed). A hook does not forget.
+Two categories, two messages:
+
+  1. DOCTRINE  — the pattern/token constitution. Editing it IS a design ruling.
+  2. NEW SURFACE — a Write (not an Edit) of a component or a page. There is no
+     pattern for a thing that does not exist yet, so one is being authored
+     whether or not anyone says so. Softer message, same routing.
 
 Contract: reads the PreToolUse payload as JSON on stdin.
   - Default (HARD_BLOCK = False): exit 0 and emit hookSpecificOutput JSON so the
     reminder is injected as context. The edit proceeds; the model is told to
     convene the board or state an exemption.
-  - HARD_BLOCK = True: write the reason to stderr and exit 2, which Claude Code
-    treats as "deny + show stderr to the model".
+  - HARD_BLOCK = True: write the reason to stderr and exit 2 ("deny + show").
 
-Flip HARD_BLOCK if advisory injection turns out to be too easy to sail past.
-
-BASH COVERAGE (added 2026-09-13). For its first year this hook matched only the
-dedicated file tools, so every doctrine edit made through Bash — `sed -i`, a
-`python3 - <<'PY'` heredoc, `cat > file` — passed with no guard, no prompt and no
-trace. CLAUDE.md's claim that "convening is automatic" was therefore false for
-that entire path, and it is the path a session told to prefer Bash for file edits
-uses for everything. Three doctrine commits on 2026-09-13 went through it.
+BASH COVERAGE IS NOT OPTIONAL, and the reason is on the record. For a year the
+coaching guard matched only the dedicated file tools, so every doctrine edit made
+through Bash — `sed -i`, a heredoc, `cat > file` — passed with no guard, no
+prompt and no trace. That is the path a session told to prefer Bash for file
+edits uses for everything. This hook ships with it from day one.
 
 The hard part is not spotting the path, it is NOT firing on the overwhelmingly
-common case of READING one. `sed -n '1,40p' CoachingPrinciples.md` and
-`grep -n "§84" CoachingPrinciples.md` must stay silent, or the hook becomes noise
-and gets switched off — which this repo has already recorded as the same outcome
-as having no hook. So a doctrine path in the command is necessary but NOT
+common case of READING one. `sed -n '1,40p' ui-patterns.md` and
+`grep -n "ZoneBar" ui-patterns.md` must stay silent, or the hook becomes noise
+and gets switched off — which this repo has twice recorded as the same outcome as
+having no hook. So a doctrine path in the command is necessary but NOT
 sufficient: the command must also carry a write signal, and for redirection the
 path must be the redirect TARGET rather than merely an argument.
 """
@@ -46,26 +46,37 @@ import sys
 # Set True to deny the edit outright instead of injecting an advisory reminder.
 HARD_BLOCK = False
 
-# Editing any of these IS a coaching decision, by doctrine. Matched on path
-# suffix so absolute and repo-relative paths both hit.
+# ── Category 1: doctrine ────────────────────────────────────────────────────
+# Editing any of these IS a design ruling, by ADR-023. Matched on path suffix so
+# absolute and repo-relative paths both hit.
 DOCTRINE_FILES = [
-    "docs/canonical/CoachingPrinciples.md",
-    "docs/canonical/session-catalogue.md",
-    "docs/canonical/zone-rules.md",
-    "docs/canonical/coaching-rules.md",
-    "lib/plan/generationConfig.ts",
-    "lib/plan/planSignatures.ts",
-    "lib/plan/sessionFormat.ts",
-    # Added 2026-08-20 (SC-00). This file IS the catalogue of concrete sessions
-    # the engine may prescribe — doctrine by any reading. It was omitted because
-    # the Supabase `session_catalogue` table was believed to be the runtime
-    # source; it never was, so for four months what a runner could be given was
-    # editable with no board review. Same regression class as HealthObserverPlugin
-    # missing from the cap-config re-add list: the guard existed, the entry didn't.
-    "lib/plan/sessionCatalogueData.ts",
+    "docs/canonical/ui-patterns.md",
+    "docs/canonical/ux-principles.md",
+    "docs/canonical/screen-architecture.md",
+    "docs/canonical/design-rulings.md",
+    # The token layer. ADR-007/ADR-008 live here as values; a token edit is a
+    # palette/type decision even when it looks like a one-line tweak. The
+    # `--surface-moss-wash` incident is the case in point: legal in this file,
+    # forbidden by a rule in ui-patterns.md, and the two had never met.
+    "app/globals.css",
 ]
 
+# ── Category 2: a new surface ───────────────────────────────────────────────
+# A Write (not an Edit) to one of these is a new component or page, or a
+# full-file replacement of one. Either way there is no existing pattern being
+# followed, which is precisely when the board should see it.
+NEW_SURFACE_DIRS = ("components/", "app/")
+NEW_SURFACE_SUFFIXES = (".tsx",)
+# Excluded: tests, fixtures, and stories are not user-facing surfaces, and a
+# guard that fires when someone writes a markup test for a ruling the board just
+# made is a guard that teaches people to ignore it.
+NEW_SURFACE_EXCLUDE = (".test.", ".spec.", "__fixtures__/", "__mocks__/", ".stories.")
+
 TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
+# Only a whole-file write counts as a new surface. An Edit is a change to
+# something that already has a pattern; that is the soft trigger, and a soft
+# trigger is a judgement call the hook deliberately does not make.
+NEW_SURFACE_TOOLS = {"Write"}
 
 # ── Bash write detection ────────────────────────────────────────────────────
 # In-place / stream editors and copiers, where naming the file IS writing it.
@@ -97,12 +108,48 @@ _WRITE_MODE_RE = re.compile(
     re.VERBOSE,
 )
 
-# Redirection: capture the TARGET only. `grep x DOCTRINE > /tmp/out` reads
+# Redirection: capture the TARGET only. `grep x PATTERNS > /tmp/out` reads
 # doctrine and writes elsewhere — that must not fire.
 _REDIRECT_TARGET_RE = re.compile(r">>?\s*['\"]?([^\s'\";|&)]+)")
 
 # `cp`/`mv` onto a doctrine file: the destination is the last bare argument.
 _COPY_RE = re.compile(r"(?:^|[|;&]|\s)(?:cp|mv|install|rsync)\s+(.+)")
+
+
+def normalise(path: str) -> str:
+    return path.replace(os.sep, "/")
+
+
+def matched_doctrine_file(path: str):
+    """Return the doctrine file this path refers to, or None."""
+    if not path:
+        return None
+    p = normalise(path)
+    for doc in DOCTRINE_FILES:
+        if p.endswith(doc):
+            return doc
+    return None
+
+
+def matched_new_surface(path: str):
+    """Return the surface path if it is a user-facing component or page."""
+    if not path:
+        return None
+    p = normalise(path)
+    if not p.endswith(NEW_SURFACE_SUFFIXES):
+        return None
+    if any(ex in p for ex in NEW_SURFACE_EXCLUDE):
+        return None
+    if not any(("/" + d) in p or p.startswith(d) for d in NEW_SURFACE_DIRS):
+        return None
+    return p
+
+
+def _first_mention(cmd: str, candidates):
+    for item in candidates:
+        if item in cmd:
+            return item
+    return None
 
 
 # ── Heredoc bodies that are DATA, not commands ──────────────────────────────
@@ -252,8 +299,8 @@ def _interpreter_script_region(cmd):
     return cmd
 
 
-def _bash_writes_doctrine(command: str):
-    """Return the doctrine file this command WRITES, or None.
+def _bash_write_target(command: str):
+    """Return (category, hit) for a command that WRITES doctrine or a surface.
 
     Deliberately asymmetric: a missed write leaves the original hole open, but a
     false positive on a read gets the hook disabled. Reads win ties.
@@ -261,87 +308,112 @@ def _bash_writes_doctrine(command: str):
     if not command:
         return None
     cmd = normalise(command)
-    cmd = _strip_data_heredocs(cmd, matched_doctrine_file)
 
-    # 1. Redirection — only when a doctrine file is the redirect target.
-    for target in _REDIRECT_TARGET_RE.findall(cmd):
-        hit = matched_doctrine_file(target)
+    def _protected(path):
+        return matched_doctrine_file(path) or matched_new_surface(path)
+
+    cmd = _strip_data_heredocs(cmd, _protected)
+
+    def classify(path):
+        hit = matched_doctrine_file(path)
         if hit:
-            return hit
+            return ("doctrine", hit)
+        hit = matched_new_surface(path)
+        if hit:
+            return ("surface", hit)
+        return None
+
+    # 1. Redirection — only when the file is the redirect TARGET.
+    for target in _REDIRECT_TARGET_RE.findall(cmd):
+        found = classify(target.strip("'\""))
+        if found:
+            return found
 
     # 2. In-place editors / tee / patch: naming the file is writing it.
     hit = _inplace_target(cmd, DOCTRINE_FILES)
     if hit:
-        return hit
+        return ("doctrine", hit)
 
     # 3. cp / mv / rsync onto a doctrine path (destination = last argument).
     for args in _COPY_RE.findall(cmd):
         parts = [a for a in args.split() if not a.startswith("-")]
         if parts:
-            hit = matched_doctrine_file(parts[-1].strip("'\""))
-            if hit:
-                return hit
+            found = classify(parts[-1].strip("'\""))
+            if found:
+                return found
 
     # 4. An interpreter that both mentions a doctrine path AND opens something
-    #    for writing. This is the `python3 - <<'PY' ... open(p, 'w') ... PY`
-    #    shape that produced the three unguarded commits.
+    #    for writing — the `python3 - <<'PY' ... open(p, 'w') ... PY` shape.
     if _INTERPRETER_RE.search(cmd) and _WRITE_MODE_RE.search(cmd):
         targets = _interpreter_write_paths(cmd)
         if targets:
             for t in targets:
-                hit = matched_doctrine_file(t)
-                if hit:
-                    return hit
+                found = classify(t)
+                if found:
+                    return found
         else:
             # Unresolvable shape: fall back to the pre-2026-09-22 behaviour
             # rather than reopening the hole.
-            hit = _first_doctrine_mention(_interpreter_script_region(cmd))
+            hit = _first_mention(_interpreter_script_region(cmd), DOCTRINE_FILES)
             if hit:
-                return hit
+                return ("doctrine", hit)
 
     return None
 
 
-def _first_doctrine_mention(cmd: str):
-    for doc in DOCTRINE_FILES:
-        if doc in cmd:
-            return doc
-    return None
-
-REMINDER = """⚖️  COACHING DOCTRINE FILE — Coaching Board review required.
+DOCTRINE_REMINDER = """🎨  DESIGN DOCTRINE FILE — Design Board review required.
 
 You are editing: {path}
 
-This file encodes what the engine prescribes to a runner. Per ADR-017, changes
-to coaching doctrine go through the Coaching Board (Hutchinson chairing, with
-Seiler, McMillan, Willy, Sims) BEFORE the edit lands.
+This file encodes how the product looks and behaves. Per ADR-023, changes to
+design doctrine go through the Design Board (Zhuo chairing, with Silvanto,
+Sierra, Wroblewski, Collins) BEFORE the edit lands.
+
+⛔ Silvanto holds a scoped VETO on palette or type regression against a documented
+rule in brand.md or ui-patterns.md. If this edit touches the palette or the type
+scale, that veto is live and he must name the rule.
 
 Do one of these, explicitly, before continuing:
 
-  1. Invoke the `coaching-board` skill and run the review. A CORRECT ruling must
-     produce all three artifacts in one commit — principle (§), numeric
-     (GENERATION_CONFIG), and invariant (validatePlan()).
+  1. Invoke the `design-board` skill and run the review. The settled-ground scan
+     against docs/canonical/design-rulings.md is MANDATORY and runs before any
+     seat speaks — this repo has measurably re-litigated dead design decisions,
+     twice in one day. A SHIP ruling must produce all three artifacts in one
+     commit: pattern, token or named constant, and a mechanical check that has
+     been made to go red.
 
   2. State the exemption in one line and proceed. Valid exemptions: a defect fix
-     restoring already-documented intent; formatting or typo correction; a
-     refactor with no behavioural delta; or writing up artifacts for a board
-     review that has ALREADY ruled in this session.
+     restoring an already-documented pattern; formatting or typo correction; a
+     refactor with no visible delta; or writing up artifacts for a board review
+     that has ALREADY ruled in this session.
+
+Check the TOKEN layer and the PATTERN layer in the same pass. `--surface-moss-wash`
+was legal in globals.css and forbidden by a rule in ui-patterns.md; the two files
+had never met, and it shipped and was deleted within eight hours.
 
 Do not silently proceed without doing one of the two."""
 
+SURFACE_REMINDER = """🎨  NEW USER-FACING SURFACE — Design Board review expected.
 
-def normalise(path: str) -> str:
-    return path.replace(os.sep, "/")
+You are writing a whole file: {path}
 
+There is no existing pattern for a surface that does not exist yet, so one is
+being authored here whether or not anyone says so. Per ADR-023 a new screen,
+shared component or marketing section is a HARD trigger for the Design Board
+(Zhuo chairing, with Silvanto, Sierra, Wroblewski, Collins).
 
-def matched_doctrine_file(path: str):
-    if not path:
-        return None
-    p = normalise(path)
-    for doc in DOCTRINE_FILES:
-        if p.endswith(doc):
-            return doc
-    return None
+Before continuing, do one of these:
+
+  1. Invoke the `design-board` skill. Settled-ground scan first
+     (docs/canonical/design-rulings.md), then the five seats, then the ruling
+     and its three artifacts.
+
+  2. State in one line why this is exempt — e.g. it follows a named existing
+     pattern in ui-patterns.md and introduces no new one, or it is a defect fix,
+     or it is an overwrite with no visible delta.
+
+If this is genuinely a new pattern, it needs a section in ui-patterns.md and a
+row in design-rulings.md, not just a file."""
 
 
 def main() -> int:
@@ -353,17 +425,25 @@ def main() -> int:
     tool_name = payload.get("tool_name")
     tool_input = payload.get("tool_input") or {}
 
+    found = None
     if tool_name == "Bash":
-        hit = _bash_writes_doctrine(tool_input.get("command", "") or "")
+        found = _bash_write_target(tool_input.get("command", "") or "")
     elif tool_name in TOOLS:
-        hit = matched_doctrine_file(tool_input.get("file_path", "") or "")
-    else:
+        path = tool_input.get("file_path", "") or ""
+        hit = matched_doctrine_file(path)
+        if hit:
+            found = ("doctrine", hit)
+        elif tool_name in NEW_SURFACE_TOOLS:
+            hit = matched_new_surface(path)
+            if hit:
+                found = ("surface", hit)
+
+    if not found:
         return 0
 
-    if not hit:
-        return 0
-
-    message = REMINDER.format(path=hit)
+    category, hit = found
+    template = DOCTRINE_REMINDER if category == "doctrine" else SURFACE_REMINDER
+    message = template.format(path=hit)
 
     if HARD_BLOCK:
         sys.stderr.write(message + "\n")

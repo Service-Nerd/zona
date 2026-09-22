@@ -114,6 +114,30 @@ BASH_CASES = [
     ("redirect to non-doctrine",   "echo x > lib/plan/invariants.ts",            PASS),
     ("no path at all",             "npm run verify",                             PASS),
     ("empty command",              "",                                           PASS),
+
+    # ── 2026-09-22 regression: the guard fired while writing a TEST FILE ────
+    # Writing `.claude/hooks/design-guard.test.py` — whose case table lists
+    # CoachingPrinciples.md as a must-NOT-fire path — tripped this hook, because
+    # rules 2 and 4 grepped the whole command for a doctrine mention instead of
+    # resolving what was actually being written. Substring bias, the class this
+    # repo has recorded three times.
+    ("heredoc writing a test that quotes doctrine",
+     "cat > .claude/hooks/design-guard.test.py <<'E'\nCASES=[('x','Edit','" + DOC + "',PASS)]\nopen(p,'w').write(s)\nE", PASS),
+    ("python heredoc editing another file that mentions doctrine",
+     "python3 - <<'PY'\np='.claude/skills/slt-review/SKILL.md'\ns=open(p).read().replace('a','" + DOC + "')\nopen(p,'w').write(s)\nPY", PASS),
+    ("python heredoc genuinely writing doctrine, via a variable",
+     "python3 - <<'PY'\np='" + DOC + "'\nopen(p,'w').write(s)\nPY", FLAG),
+
+    # Segment binding: an unrelated `sed -i` plus a doctrine READ elsewhere in
+    # the same command must not fire.
+    ("unrelated sed -i, then a doctrine grep",
+     "sed -i '' 's/a/b/' lib/plan/ruleEngine.ts\ngrep -n foo " + DOC, PASS),
+    ("doctrine INSIDE the sed segment of a chain",
+     "npm run verify && sed -i '' 's/a/b/' " + DOC, FLAG),
+
+    # The interpreter fallback is bound to the interpreter's own script region.
+    ("python edits other files, then a later grep READS doctrine",
+     "python3 - <<'PY'\nfor path, old, new in edits:\n    open(path,'w').write(s)\nPY\ngrep -rn x " + DOC, PASS),
 ]
 
 
