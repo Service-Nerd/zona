@@ -6,6 +6,42 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — WIZARD-HARNESS-01 · you cannot review a flow nobody can open
+
+**Shipped:** A harness for the setup wizard, and the first end-to-end walk of it. 13 answerable
+steps, 2 teaching interstitials, generation.
+
+**Dev learning:** The wizard component takes one required prop (`onBack`) and a dozen optional
+ones, so the harness is ~100 lines. The thing that made it feel impossible was that it lives inside
+a 14,000-line file behind auth — not that it was coupled. **Check the props before concluding a
+component is untestable.**
+
+**Product/creator learning:** The founder said *"make sure the inputs are modern, useful, no bugs in
+them."* That is a measurement, and I had been about to take it to the board as an opinion. Walking
+it produced four findings in ten minutes, and the sharpest one nobody had said out loud: **on an
+optional step the moss-filled primary button says "Skip this →".** The most prominent affordance on
+the screen is spent on declining to answer, and five of fifteen steps are optional.
+
+**AI-building learning:** Three attempts to automate the walk before it worked, and each failure was
+the same shape — the script assumed the control type instead of reading it. It clicked "the first
+button", which was a nav element; then it filled inputs by `type`, which skipped the range sliders
+because they already had a value. **The walker kept finding what it expected instead of what was
+there**, which is the same error as every wrong measurement I made today.
+
+**The honest bit:** my first static pass mapped every step to a control by grepping for the nearest
+component name, and produced a table that was pure artefact — the first eight steps all "used
+CardSelect" and the last ten all "used WizardInput", because that is the order the file happens to
+be in. **It looked exactly like data.** I threw it away rather than report it, and then read the
+actual render switch.
+
+**Hook material:** A setup wizard where, on a third of the steps, the biggest greenest button on the
+screen says "Skip this". Nobody had noticed, because nobody could open the flow without making a new
+account.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-22 — SITE-TRIO-FULLBLEED-01 · I fixed a real defect that was not the one he reported
 
 **Shipped:** The ProductStill trio now sits in the page column. It was rendering **24-1412 on a
