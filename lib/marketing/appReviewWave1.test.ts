@@ -113,7 +113,17 @@ describe('S2 — dismiss is never the CTA colour', () => {
     // handler.** A button that SAYS Close is a dismiss whatever its callback is
     // called; a button that says "I'm ready" is not, whatever its callback is
     // called.
-    const DISMISS_WORDS = /^(close|cancel|dismiss|not now|maybe later|no thanks)$/i
+    // ⚠️ AND TOO NARROW A FOURTH TIME (S2-GATE-NARROW-01, 2026-09-22). The
+    // list omitted every BACK form, and four full-width `--moss` buttons sat
+    // behind that gap: "Back to training" (Upgrade), "Back to plan"
+    // (Benchmark), "Back to today" (Recalibration) and a bare "Back" (the
+    // reshape screen). **An audit is only ever as wide as its list** — the
+    // third time this repo has written that sentence.
+    //
+    // `back to <anywhere>` is deliberately open-ended rather than a fixed set
+    // of destinations: enumerating them is what made the list too narrow each
+    // of the previous three times.
+    const DISMISS_WORDS = /^(close|cancel|dismiss|not now|maybe later|no thanks|back|go back|back to [a-z ]+)$/i
     const offenders: string[] = []
     for (const f of files) {
       const src = strip(read(f))
@@ -121,7 +131,23 @@ describe('S2 — dismiss is never the CTA colour', () => {
         const block = m[0]
         const label = (block.match(/>\s*([^<>{}]{1,24}?)\s*<\/button>/) ?? [])[1]
         if (!label || !DISMISS_WORDS.test(label.trim())) continue
-        if (/background:\s*'var\(--moss\)'/.test(block)) offenders.push(`${f}: "${label.trim()}"`)
+        // ⚠️ AND IT COULD ONLY SEE AN INLINE STYLE. `RecalibrationTile`
+        // paints its dismiss through a local `primary(enabled)` helper, so
+        // `background: 'var(--moss)'` never appeared in the button block and
+        // the gate was structurally blind to it — the same shape as a checker
+        // reading a different source from the producer. One hop of resolution:
+        // if the style is an identifier or a call defined in this file, look
+        // at THAT definition too. One hop, not a graph walk: unresolvable is
+        // reported as unresolvable rather than guessed.
+        let styled = block
+        const ref = block.match(/style=\{([A-Za-z_$][\w$]*)\s*[({]?/)
+        if (ref) {
+          const decl = src.match(
+            new RegExp('const\\s+' + ref[1] + '\\s*[=:][\\s\\S]{0,400}?\\n\\s*\\}'),
+          )
+          if (decl) styled += decl[0]
+        }
+        if (/background:[^;}]*var\(--moss\)/.test(styled)) offenders.push(`${f}: "${label.trim()}"`)
       }
     }
     expect(offenders, 'a dismiss control painted in the CTA colour').toEqual([])

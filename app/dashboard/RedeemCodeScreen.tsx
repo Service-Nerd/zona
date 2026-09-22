@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { BRAND } from '@/lib/brand'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { formatCodeInput, CODE_PREFIX } from '@/lib/charity/code'
+import BackButton from '@/components/shared/BackButton'
 
 function formatEnds(iso: string): string {
   try {
@@ -79,20 +80,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
       <div style={{ padding: '16px 16px 8px' }}>
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          style={{
-            width: '44px', height: '44px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: 'none', borderRadius: '50%',
-            background: 'var(--bg-soft)', color: 'var(--ink)', cursor: 'pointer',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        <BackButton onClick={onBack} />
       </div>
 
       <div style={{ padding: '8px 20px 48px', maxWidth: '480px', margin: '0 auto' }}>

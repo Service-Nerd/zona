@@ -17,6 +17,7 @@
 
 import { BRAND } from '@/lib/brand'
 import { FOUNDER_STORY } from '@/lib/marketing/founderStory'
+import BackButton from '@/components/shared/BackButton'
 
 export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
   return (
@@ -24,22 +25,7 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
       {/* Back arrow — 44pt tap target, --bg-soft round button per Session
           Detail header pattern in ui-patterns.md § Screen Templates. */}
       <div style={{ padding: '16px 16px 8px' }}>
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          style={{
-            width: '44px', height: '44px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: 'none', borderRadius: '50%',
-            background: 'var(--bg-soft)',
-            color: 'var(--ink)',
-            cursor: 'pointer',
-          }}
-        >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+        <BackButton onClick={onBack} />
       </div>
 
       <div style={{ padding: '8px 20px 48px', maxWidth: '480px', margin: '0 auto' }}>

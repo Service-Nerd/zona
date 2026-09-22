@@ -2627,7 +2627,19 @@ Every screen must honour these invariants before shipping. Check against this li
 
 ### Session Detail Screen
 
-- Full screen, back arrow top-left (44px circle, `--bg-soft` bg)
+- Full screen, back arrow top-left (44px circle, `--bg-soft` bg) — **`components/shared/BackButton.tsx` is the single owner. Never hand-roll one.**
+
+> 🔴 **UI-BACKARROW-01 — this line existed for months and half the app ignored it.** A census
+> of every back control across the screen files found **6 of 13** obeying: two at **36px**
+> (below the 44px iOS HIG minimum this document states in § What Not to Build), two 8px
+> squares on `--accent-soft`, one on `--moss-soft` — the CTA colour on a control that is not
+> a CTA — and **two with no container at all**. Extracted from `FounderNoteScreen`, which
+> was the conforming version. ⚠️ **Four already-legal arrows gained a 2px glyph** (18→20px):
+> a single owner has to pick one, and that is the price of there being one answer.
+> ⚠️ **Not `ScreenHeader`** — that is title + subtitle with **no back arrow**, for tab roots;
+> conflating the two was a retracted finding in the review that produced this item.
+> **Check:** `lib/marketing/backArrowOwner.test.ts`, falsified both ways (a hand-rolled arrow
+> re-added; the owner shrunk to 36px).
 - Eyebrow: day + week label (`10px 600 --mute uppercase`)
 - Title: session name (`16px 700 --ink`)
 - Session type chip right-aligned

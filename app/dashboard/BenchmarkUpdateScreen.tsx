@@ -8,6 +8,7 @@ import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
 import { Chip } from '@/components/shared/Chip'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
+import BackButton from '@/components/shared/BackButton'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -181,15 +182,7 @@ export default function BenchmarkUpdateScreen({
 
       {/* Header */}
       <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
-        <button
-          onClick={onBack}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--mute)', padding: '0 0 20px', display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px' }}>Back</span>
-        </button>
+        <BackButton onClick={onBack} style={{ marginBottom: '20px' }} />
 
         <div style={{ marginBottom: '28px' }}>
           <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', marginBottom: '6px' }}>
@@ -292,9 +285,10 @@ export default function BenchmarkUpdateScreen({
             onClick={onBack}
             style={{
               width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
-              background: 'var(--moss)', border: 'none', cursor: 'pointer',
+              // S2 — dismiss is never the CTA colour.
+              background: 'var(--bg-soft)', border: '1px solid var(--line)', cursor: 'pointer',
               fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-              color: 'var(--card)',
+              color: 'var(--ink-2)',
               transition: 'all 0.15s',
             }}
           >

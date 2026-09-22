@@ -105,6 +105,7 @@ const BenchmarkUpdateScreen = dynamic(() => import('./BenchmarkUpdateScreen'), {
 const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: false })
 import { RecalibrationReadyTile, RecalibrationEntryScreen } from './RecalibrationTile'
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
+import BackButton from '@/components/shared/BackButton'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
 
@@ -3549,15 +3550,7 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const backBtn = (
-    <button onClick={onBack} aria-label="Back" style={{
-      width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-soft)',
-      border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: 'var(--ink)', flexShrink: 0,
-    }}>
-      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-        <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
+    <BackButton onClick={onBack} />
   )
 
   // Split into Today vs Earlier (loaded list only).
@@ -6671,15 +6664,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   }
 
   const backBtn = (
-    <button onClick={onBack} style={{
-      width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-soft)',
-      border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: 'var(--ink)', marginBottom: '20px', flexShrink: 0,
-    }}>
-      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-        <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
+    <BackButton onClick={onBack} style={{ marginBottom: '20px' }} />
   )
 
   return (
@@ -6769,7 +6754,8 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
 
       {(status === 'clean' || status === 'error') && (
         <div style={{ flexShrink: 0, padding: '12px 20px calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--line)', background: 'var(--bg)' }}>
-          <button onClick={onBack} style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)' }}>
+          {/* S2 — dismiss is never the CTA colour. */}
+          <button onClick={onBack} style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--bg-soft)', border: '1px solid var(--line)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink-2)' }}>
             Back
           </button>
         </div>
@@ -11478,9 +11464,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
-        <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>
+        <BackButton onClick={onBack} />
         <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
           Delete your account
         </div>
@@ -11610,15 +11594,7 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
   }
 
   const backBtn = (
-    <button onClick={onBack} style={{
-      width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-soft)',
-      border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: 'var(--ink)', marginBottom: '20px', flexShrink: 0,
-    }}>
-      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-        <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-    </button>
+    <BackButton onClick={onBack} style={{ marginBottom: '20px' }} />
   )
 
   return (
@@ -11762,9 +11738,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       {/* Header — back arrow top-left (ui-patterns: back arrow always top-left) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
-        <button onClick={onBack} style={{ border: 'none', color: 'var(--moss)', cursor: 'pointer', padding: 0, width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--moss-soft)', flexShrink: 0 }} aria-label="Back">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>
+        <BackButton onClick={onBack} />
         <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
           Contact support
         </div>
@@ -13229,17 +13203,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
         borderBottom: `1px solid var(--line)`,
         position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
       }}>
-        <button onClick={onBack} style={{
-          border: 'none', cursor: 'pointer', padding: '0',
-          width: '44px', height: '44px', flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          borderRadius: '50%', background: 'var(--bg-soft)',
-          color: 'var(--ink)',
-        }}>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M11.5 3.5L6 9L11.5 14.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+        <BackButton onClick={onBack} />
 
         {/* Eyebrow + title */}
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -13789,15 +13753,7 @@ function PostRunScreen({
         position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
         borderBottom: '1px solid var(--line)',
       }}>
-        <button onClick={onBack} style={{
-          width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-soft)',
-          border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--ink)', flexShrink: 0,
-        }} aria-label="Back to Today">
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-            <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
+        <BackButton onClick={onBack} ariaLabel="Back to Today" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
@@ -14077,7 +14033,7 @@ function PostRunScreen({
 function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px' }}>
-      <button onClick={onBack} style={{ border: 'none', color: 'var(--accent)', fontSize: '18px', cursor: 'pointer', padding: '0' , width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', background: 'var(--accent-soft)'}}><svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{verticalAlign:'middle'}}><path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+      <BackButton onClick={onBack} />
       <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>{title}</div>
     </div>
   )

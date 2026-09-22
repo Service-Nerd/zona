@@ -23,6 +23,7 @@ import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFramin
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { createClient } from '@/lib/supabase/client'
 import ExternalLink from '@/components/shared/ExternalLink'
+import BackButton from '@/components/shared/BackButton'
 
 // Ordered by recurring value — Kit's daily read and the weekly zone score are the ongoing
 // proof of subscription value. AI plan generation is high at onboarding but low thereafter.
@@ -180,9 +181,10 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
           onClick={onBack}
           style={{
             marginTop: '36px', padding: '14px 32px',
-            background: 'var(--moss)', border: 'none', borderRadius: '10px',
+            // S2 — dismiss is never the CTA colour.
+            background: 'var(--bg-soft)', border: '1px solid var(--line)', borderRadius: '10px',
             fontFamily: 'var(--font-ui)', fontWeight: 600,
-            fontSize: '1rem', color: 'var(--card)',
+            fontSize: '1rem', color: 'var(--ink-2)',
             cursor: 'pointer',
           }}
         >
@@ -218,18 +220,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
     }}>
       {/* Back */}
       <div style={{ padding: '16px 20px 0' }}>
-        <button
-          onClick={onBack}
-          style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--text-muted)', padding: '4px 0',
-            fontFamily: 'var(--font-ui)', fontSize: '15px',
-            display: 'flex', alignItems: 'center', gap: '4px',
-          }}
-          aria-label="Back"
-        >
-          ← Back
-        </button>
+        <BackButton onClick={onBack} />
       </div>
 
       <div style={{ flex: 1, padding: '28px 20px 32px', display: 'flex', flexDirection: 'column' }}>

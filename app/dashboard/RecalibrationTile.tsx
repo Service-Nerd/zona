@@ -4,6 +4,7 @@
 // to /api/recalibrate-zones. Design 2026-08-06.
 import React, { CSSProperties, useMemo, useState } from 'react'
 import { DurationPicker } from '@/components/shared/DurationPicker'
+import BackButton from '@/components/shared/BackButton'
 import {
   recalSecondsFromParts, isRecalTimeInRange, formatRecalTime, defaultRecalMins,
 } from '@/lib/coaching/recalTime'
@@ -93,6 +94,16 @@ export function RecalibrationEntryScreen({
     background: enabled ? 'var(--moss)' : 'var(--bg-soft)',
     color: enabled ? 'var(--card)' : 'var(--mute)',
   })
+  /* S2 — dismiss is never the CTA colour. `Back to today` was painted with
+     `primary(true)`, so the moss never appeared in the button and the S2 gate
+     was structurally blind to it (S2-GATE-NARROW-01). The helper is unchanged:
+     it still paints the real confirm at line ~169. */
+  const secondary: CSSProperties = {
+    boxSizing: 'border-box', width: '100%', minHeight: '52px', padding: '0 16px',
+    borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
+    font: '600 16px/1 var(--font-ui)', cursor: 'pointer',
+    background: 'var(--bg-soft)', color: 'var(--ink-2)',
+  }
   const quiet: CSSProperties = {
     width: '100%', minHeight: '44px', background: 'transparent', border: 'none',
     font: '500 15px/1 var(--font-ui)', color: 'var(--mute)', cursor: 'pointer',
@@ -106,14 +117,7 @@ export function RecalibrationEntryScreen({
 
   return (
     <div style={screen}>
-      <button type="button" onClick={onBack} aria-label="Back"
-        style={{ width: '44px', height: '44px', marginLeft: '-10px', display: 'flex', alignItems: 'center',
-          background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}>
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <path d="M12 4L6 10l6 6" stroke={busy ? 'var(--mute)' : 'var(--ink)'}
-            strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
+      <BackButton onClick={onBack} style={{ marginLeft: '-10px', color: busy ? 'var(--mute)' : 'var(--ink)' }} />
 
       {status === 'applied' ? (
         <>
@@ -128,7 +132,7 @@ export function RecalibrationEntryScreen({
             There it is. Don&rsquo;t ruin it.
           </p>
           <div style={{ marginTop: 'auto' }}>
-            <button type="button" style={primary(true)} onClick={onBack}>Back to today</button>
+            <button type="button" style={secondary} onClick={onBack}>Back to today</button>
           </div>
         </>
       ) : (
