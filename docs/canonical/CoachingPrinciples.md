@@ -3756,6 +3756,44 @@ Config: `GENERATION_CONFIG.GOAL_SEQUENCING`, `PREP_TIME_THRESHOLDS`, `POST_RACE_
 
 **Test enforcement.** `lib/coaching/dayBoundary.test.ts` locks the exact behaviour — noon Wednesday with a Monday week start returns `['mon', 'tue']` and never `['mon', 'tue', 'wed']`. If a future contributor "fixes" the off-by-one by adding +1, the test will scream.
 
+### §65 Amendment 1 — the VERDICT, not only the window (Coaching Board, 2026-09-22)
+
+**`COACH-BEHIND-DAY-TWO-01`.** §65's implementation rule was honoured perfectly and its purpose
+was not. `daysDueByEndOfYesterday` is used correctly on every surface listed above; today is
+never counted. But the Coach screen's *verdict* then softened the runner at
+`done / dueRef >= 0.7`, and **that ratio cannot be satisfied below four sessions due**:
+
+```
+dueRef=1 NEVER · 2 NEVER · 3 NEVER · 4 at done=3 · 5 at 4 · 6 at 5 · 7 at 5 or 6
+```
+
+`dueRef` never exceeds the sessions planned in that week. **So for a runner training three days a
+week the softener could never fire — in any week, at any point in any plan. 29.0% of the cohort
+grid.** They miss one Tuesday and read amber, every time, forever. That is the precise population
+§65 was written for: *"Zonna is for runners who already feel behind."*
+
+**Principle.** A single outstanding session is never expressed as a judgement, at any session
+count. Below `BEHIND_VERDICT_MIN_SESSIONS` outstanding, the surface states what remains without
+the amber verdict.
+
+**Why this and not a blanket softener.** Seiler's precedent is this constitution's own, twice:
+§1 CD-21 Amendment 1 — *"a distribution ratio presupposes enough sessions to distribute … the
+ratio is not violated, it is **undefined**"* — and `INV-PLAN-LR-MAX-WEEKLY-PCT`, which binds only
+above two runs for the same reason. **One outstanding session out of one due is not a ratio; it is
+an event.** McMillan: three days a week *is* the time-crunched amateur, which is our demographic,
+not an edge case.
+
+⚠️ **ADDITIVE.** The 0.7 softener is untouched, so a runner 2 of 7 behind is softened exactly as
+before, and a three-day runner who has done **none** of three still receives a real verdict. Only
+the single-session case changes.
+
+**Config.** `lib/coaching/constants.ts → BEHIND_VERDICT_MIN_SESSIONS = 2`.
+**Enforced by** `lib/coaching/behindVerdict.test.ts` — **exhaustive over `dueRef` 1..7 and every
+`done`, not example-based.** ⚠️ **An example-based test would have passed the whole time**: pick
+`dueRef=5, done=4` and the old softener works beautifully. A reachability hole is only visible by
+enumerating the domain. Falsified three ways, including setting the bound to **1**, at which the
+rule is inert — which is how a fix ships and does nothing.
+
 **Originating decision:** Traynor flagged the pattern in the weekly-report SLT review (2026-06-19) — *"this is the second 'in-flight vs done' bug we've shipped (the picker date-window had the same pattern). Worth pulling out a dayBoundary doctrine."* Deferred at the time as out-of-scope; brought forward to canon the same day.
 
 ---

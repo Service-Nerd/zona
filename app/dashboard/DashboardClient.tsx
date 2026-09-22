@@ -35,7 +35,7 @@ import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from
 import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
-import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO } from '@/lib/coaching/constants'
+import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, BEHIND_VERDICT_MIN_SESSIONS } from '@/lib/coaching/constants'
 import { zoneVerdict, zoneVerdictColour, zoneVerdictLabel } from '@/lib/coaching/zoneVerdict'
 import { driftContextFor } from '@/lib/coaching/loadCalc'
 import { BRAND, PRICING } from '@/lib/brand'
@@ -9608,6 +9608,23 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
     const behind = dueRef - done
     if (behind <= 0)             return { label: 'on track', color: 'var(--moss)' }
     if (done / dueRef >= 0.7)    return { label: 'on track', color: 'var(--moss)' }
+    // COACH-BEHIND-DAY-TWO-01 / §65 Amendment (Coaching Board 2026-09-22) —
+    // A SINGLE OUTSTANDING SESSION IS NEVER A JUDGEMENT.
+    //
+    // The 0.7 softener above cannot fire below four sessions due, and `dueRef`
+    // never exceeds the week's planned sessions — so for a THREE-DAY-A-WEEK
+    // runner it could never fire at all, in any week, at any point in any
+    // plan. 29.0% of the cohort grid. They miss one Tuesday and read amber,
+    // every time, forever. §65's date arithmetic was right and its purpose was
+    // not. Seiler's CD-21 Am.1 is the precedent: at small n a ratio is not
+    // violated, it is undefined.
+    //
+    // Additive: `done: 0, dueRef: 3` is still a real verdict, and a runner 2 of
+    // 7 behind is still softened by the ratio above. Only the single-session
+    // case changes, and it states the fact without the judgement.
+    if (behind < BEHIND_VERDICT_MIN_SESSIONS) {
+      return { label: `${behind} still to do`, color: 'var(--mute)' }
+    }
     return { label: `${behind} behind`, color: 'var(--warn)' }
   }
 

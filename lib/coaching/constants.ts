@@ -95,6 +95,40 @@ export const LOAD_RATIO = {
   under: 0.8,
 } as const
 
+/**
+ * COACH-BEHIND-DAY-TWO-01 / §65 Amendment — the minimum number of outstanding
+ * sessions before the Coach screen's verdict becomes a JUDGEMENT.
+ *
+ * 🔴 WHY IT EXISTS. The verdict softened a runner at `done / dueRef >= 0.7`.
+ * Measured exhaustively, that ratio **cannot fire below four sessions due**:
+ *
+ *     dueRef=1 NEVER · dueRef=2 NEVER · dueRef=3 NEVER
+ *     dueRef=4 at done=3 · 5 at 4 · 6 at 5 · 7 at 5 or 6
+ *
+ * And `dueRef` never exceeds the sessions planned in that week. **So for a
+ * runner training three days a week the softener can NEVER fire — in any week,
+ * at any point in any plan. 29.0% of the cohort grid.** Miss one Tuesday and
+ * the verdict is amber, every time, forever.
+ *
+ * §65's implementation rule is honoured perfectly — `daysDueByEndOfYesterday`
+ * is used correctly and today is never counted. **Its PURPOSE is not:**
+ * *"Zonna is for runners who already feel behind. The product can't earn its
+ * anti-overtraining promise if its own surfaces accuse the runner of falling
+ * behind before lunch."*
+ *
+ * The precedent is this constitution's own, twice: §1 CD-21 Amendment 1
+ * (Seiler) — *"a distribution ratio presupposes enough sessions to distribute
+ * … the ratio is not violated, it is **undefined**"* — and
+ * `INV-PLAN-LR-MAX-WEEKLY-PCT`, which binds only above two runs for the same
+ * reason. One outstanding session out of one due is not a ratio; it is an
+ * event.
+ *
+ * ⚠️ ADDITIVE, NOT A REPLACEMENT. The 0.7 softener stays, so a runner 2 of 7
+ * behind is softened exactly as today, and a three-day runner who does NONE of
+ * three still gets a real verdict. Only the single-session case changes.
+ */
+export const BEHIND_VERDICT_MIN_SESSIONS = 2
+
 // Shadow load — actual vs planned
 export const SHADOW_LOAD_THRESHOLD_PCT = 15  // >15% over plan triggers reflection
 
