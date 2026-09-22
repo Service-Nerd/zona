@@ -203,6 +203,16 @@ blocked.**
 | `S111-SUBFLOOR-VOLUME-01` | build a base-building plan type? | blocked on the charity's answer; runbook drafted, unsent |
 | `RACE-KEY-TWO-OWNERS-01` | collapse two `raceDistanceKey` ladders? | 88 diverging values, currently unreachable (the wizard's six distances all agree) |
 
+## Standing rulings — 2026-09-22
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **`HM-ANCHOR-VS-GOAL-01` — §120 + Amendment 1** | 🟢 **SHIPPED** | On a time-target half the `HM` anchor resolves to **GOAL** pace, bounded so it is never faster than the runner's own **CV** pace. ⚠️ **The board REJECTED the constant it had itself named** (`RACE_PACE_ANCHOR_MAX_STRETCH_PCT`, a % of current HM pace): right question, wrong unit, because `INTENSITY_ORDERING_TOLERANCE_PCT` already asks how far past a derived band a goal pace may sit. **Do not re-propose a percentage-of-current-pace bound.** Measured: 60% of goal paces are SLOWER than threshold (§120 makes those easier), 15% land at or past INTERVAL pace — a 52:00 10K runner targeting 1:25 was handed 4 × 2 km at **4:02/km**, 50 s/km faster than their own VO2max pace. |
+| **`RACE-WEEK-VOLUME-01` — §121** | 🟢 **SHIPPED** | The race is the test, not the training: excluded from `weekly_km` and from the plan total. Taper phase outweighed peak phase in **15.3% of plans and 50% of marathons**; excluding the race, **no taper anywhere exceeds its peak**. 🔴 **An HONESTY fix, never to be sold as a safety one** (Willy, binding) — a 12 km/week runner racing 42.2 km is at 1.7× their largest ever week and this changes that by nothing. |
+| **`TAPER-OVER-PEAK-01`** | ⚖️ **CORRECT WITH AMENDMENT — ruled, NOT BUILT** | 🔴 **Not a taper defect: the PEAK is too small.** At 2 days a week a quality session replaces a third of the week, so peak weeks come out below build weeks and below the taper. **§1 counts SESSIONS**, so 2 days offers only 100/0 or **50/50** against a declared 80/20 ceiling — the arithmetic that **VETOED P-02's intensity row** at 3–4 days, never checked at 2. §90 Amendment 1 already built the yield mechanism and scoped it to injury; **the scope is what is wrong, not the mechanism.** ⚠️ Blocked on measuring the §22 exposure and cohort effect — a measurement, not a filing excuse. |
+| **`SESSION-SIZING-ANCHOR-01`** | ✅ **CLOSED — the premise was FALSE** | §120 §6 asserted a "sizing twin of the header defect" and never measured it. **1,320 quality sessions: 0 sized at threshold while running elsewhere.** A structured session prices its distance from its own work pace. **Do not re-file it.** |
+| **`RACE-ANCHOR-CV-OVERRIDE-01`** | 🔴 **OPEN — a DEADLOCK, not a leak** | §85 shields `CV` from §22's goal-pace override; §22 requires a second-half build/peak slot to be goal-paced. **A CV row there cannot satisfy both.** 92 of 2,401 sessions, worst case 69 s/km. ⚠️ **The obvious fix was BUILT AND REVERTED the same hour** — it turns §22's own ownership arm red on 100 tests. Same shape as the §111/§57 deadlock. |
+
 ## Standing reservations — recorded, not findings
 
 - **Willy on M5** (masters 58, +94% build): compliant, top of his range, first cell he would look at if injury reports arrive. Recorded three times.

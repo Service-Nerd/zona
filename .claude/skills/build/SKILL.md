@@ -180,11 +180,16 @@ afterwards is a note that does not exist.
    `ship-record-check.py` reads the subject's scope and never the body.
 2. **The post-commit hooks fire**: `backlog-touch`, `fix-test-check`, `ship-record-check`,
    `state-block-check`. **Read them. They are not decoration.**
-3. **`/ship`** — moves the item out of `backlog.md` into `feature-registry.md` (a row) and
-   `build-log.md` (a `##` entry). **This is where backlog and build-log land.**
-4. **Design doctrine touched?** A row in `design-rulings.md` in the **same commit**
-   (INV-DESIGN-002, now gated).
-5. **Coaching doctrine touched?** Principle § + numeric + invariant, in the same commit.
+3. **`/ship`** — and read its **§ THE DOCUMENTS** table, which names **eleven** surfaces, not
+   the three this line used to imply. Measured 2026-09-22: `/ship` instructed on three documents
+   while `audit-docs.sh` checked eight, so the rest were only ever caught after the fact.
+4. **`./scripts/audit-docs.sh`** — **run it, never answer "are the docs up to date?" from
+   memory.** It has been answered from memory repeatedly and been wrong every time.
+5. **A BOARD RULED?** A row in `design-rulings.md` / `coaching-rulings.md` in the **same
+   commit** — **including a DON'T SHIP, a kill, or a RULED-but-not-built.** ⚠️ The guards fire on
+   doctrine FILES, and a ruling can edit no file at all; `audit-docs.sh` § board rulings is what
+   catches that.
+6. **Coaching doctrine touched?** Principle § + numeric + invariant, in the same commit.
 
 ---
 

@@ -328,6 +328,68 @@ done
 [ "$sfail" = "0" ] && say "  ok"
 
 say ""
+say "── board rulings: a RULED item has a register row ──"
+# ⚠️ THE GAP THIS CLOSES, AND IT IS THE ONE THE FOUNDER KEEPS FINDING.
+#
+# `/ship` names THREE documents (backlog, feature-registry, build-log) and this
+# audit checks SEVEN surfaces. The four it does not instruct are only ever caught
+# after the fact -- which is why "are the docs up to date?" kept being answered
+# yes and being wrong.
+#
+# `design-rulings.md` was in NEITHER. `ship-record-check.py` has a design-ruling
+# check, but it fires only when a commit EDITS a doctrine file -- and a ruling
+# like "SITE-WAVE-3 is dead" edits no doctrine file at all. So on 2026-09-22 a
+# permanent kill lived for hours as a sentence inside a sitting narrative, while
+# the state blocks said KILLED and the register the settled-ground scan actually
+# READS said nothing. That is precisely the failure the register exists for, and
+# this repo has already paid for it twice in one day.
+#
+# The rule: a backlog heading that announces a board ruling (RULED / DEAD /
+# KILLED / VETOED) on an item whose body carries a BOARD TAG must have that
+# item's id in the matching ruling register.
+rfail=0
+python3 - <<'PYEOF' || rfail=1
+import re, sys, pathlib
+bl = pathlib.Path('docs/releases/backlog.md').read_text(encoding='utf-8')
+registers = {
+    'DESIGN':   pathlib.Path('docs/canonical/design-rulings.md'),
+    'COACHING': pathlib.Path('docs/canonical/coaching-rulings.md'),
+}
+text = {k: (v.read_text(encoding='utf-8') if v.exists() else '') for k, v in registers.items()}
+# ⚠️ ONE OR MORE DIGITS, NOT TWO. The first cut of this check copied
+# `ship-record-check.py`'s id pattern, which requires `-\d{2,}` because feature
+# ids read `THING-01`. Board ruling ids do not: `SITE-WAVE-3`, `CD-1`, `W-03`.
+# So the check reported ALL CLEAN while the very miss it was written for --
+# SITE-WAVE-3's absent kill row -- sat in front of it. Caught by falsifying it
+# against that exact case rather than trusting the green.
+ITEM = re.compile(r'\b([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-\d+)\b')
+RULED = re.compile(r'\b(RULED|DEAD|KILLED|VETOED)\b')
+
+lines = bl.split('\n')
+heads = [(i, l) for i, l in enumerate(lines) if l.startswith('### ')]
+gaps = []
+for n, (i, head) in enumerate(heads):
+    if not RULED.search(head):
+        continue
+    ids = ITEM.findall(head)
+    if not ids:
+        continue
+    end = heads[n + 1][0] if n + 1 < len(heads) else len(lines)
+    body = '\n'.join(lines[i:end])
+    m = re.search(r'\*\*Board:\s*\S*\s*(DESIGN|COACHING)', body)
+    if not m:
+        continue
+    board = m.group(1)
+    if ids[0] not in text[board]:
+        gaps.append(f"  NO REGISTER ROW {ids[0]} is {RULED.search(head).group(1)} by the {board} board, "
+                    f"but its id is absent from {registers[board].name}")
+for g in gaps:
+    print(g)
+sys.exit(1 if gaps else 0)
+PYEOF
+[ "$rfail" = "1" ] && fail=1 || say "  ok"
+
+say ""
 # ⚠️ THE MARKER ADVANCES ONLY ON A CLEAN RUN. A gap therefore stays in scope
 # until it is actually fixed, rather than ageing out of the window the way the
 # old `--since today` bound let eleven backlog items and one build-log entry do.

@@ -85,6 +85,45 @@ naming the missing guard. A silently-failing feature is not "shipped" — it is
 
 If the commit was a partial step (e.g. infra for a multi-commit feature, a bug fix, a refactor), do NOT invoke `/ship`. Only ship when the user-visible feature is actually delivered.
 
+## 🔴 THE DOCUMENTS — all of them, not the three this skill used to name
+
+**This section exists because the founder kept asking "are the docs up to date?", kept being
+told yes, and kept being right to doubt it.** Measured 2026-09-22: this skill instructed on
+**three** documents while `scripts/audit-docs.sh` checked **eight surfaces**. The five it did
+not instruct were only ever caught *after the fact*, which is not a process — it is a net.
+
+| Document | When it applies | Checked by |
+|---|---|---|
+| `docs/releases/backlog.md` | **Always.** The entry leaves, or is marked ✅/🔴 with the outcome | `audit-docs.sh` (shipped-but-open, both today and all-time) |
+| `docs/canonical/feature-registry.md` | **Always.** A row whose FIRST CELL carries the id | `ship-record-check.py` + `audit-docs.sh` |
+| `docs/build-log.md` | **Always.** A `##` heading carrying the id | `ship-record-check.py` + `audit-docs.sh` |
+| `docs/releases/roadmap.md` | Any item that stays OPEN needs a line; a shipped one's line is closed | `audit-docs.sh` (open item with no roadmap line) |
+| **The state blocks** in backlog + roadmap | On the LAST push of a batch — they must name the last ship | `state-block-check.py` + `audit-docs.sh` |
+| `docs/canonical/design-rulings.md` | **Any Design Board ruling, including a DON'T SHIP or a kill** | `audit-docs.sh` § board rulings |
+| `docs/canonical/coaching-rulings.md` | **Any Coaching Board ruling, including RULED-not-built** | `audit-docs.sh` § board rulings |
+| `docs/canonical/plan-invariants.md` | A new or retired invariant | `audit-docs.sh` (code vs doc, both directions) |
+| `docs/contracts/` | A changed API route or component prop interface | `audit-docs.sh` |
+| `CoachingPrinciples.md` / `ui-patterns.md` | A board ruling's principle or pattern artifact | the board guards |
+| `MEMORY.md` + a topic file | End of a working session | `audit-docs.sh` |
+
+⚠️ **THE HOLE THIS CLOSED, AND WHY NO HOOK SAW IT.** `ship-record-check.py` has a design-ruling
+check, but it fires only when a commit **edits a doctrine file** — and a ruling like *"SITE-WAVE-3
+is dead"* edits no doctrine file at all. So a permanent kill lived for hours as a sentence inside a
+sitting narrative while the state blocks said KILLED and **the register that the settled-ground
+scan actually reads said nothing.** A kill that is not in the register is a kill the next sitting
+re-proposes, which this repo has already paid for twice in one day.
+
+⚠️ **AND THE FIRST VERSION OF THAT NEW CHECK WAS HOLLOW.** It reused `ship-record-check.py`'s id
+pattern, which requires `-\d{2,}` because feature ids read `THING-01`. Board ruling ids do not:
+`SITE-WAVE-3`, `CD-1`, `W-03`. It reported ALL CLEAN with the exact miss it was written for sitting
+in front of it. **Falsify a new check against the incident that caused it, not against a case you
+invent.**
+
+**Run `./scripts/audit-docs.sh` before you say the documents are up to date.** Never answer that
+question from memory — it has been answered from memory and been wrong every single time.
+
+---
+
 ## Procedure
 
 1. **Identify the item.** If user supplied an ID/name, find it in `backlog.md`. Otherwise, infer from the commit: scan `backlog.md` Now/Next/Later sections for entries matching the commit's intent. If ambiguous, ask the user — do not guess.
