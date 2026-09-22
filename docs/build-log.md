@@ -6,6 +6,43 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — MOVE-PROTOTYPE-01a · a synthetic event is not a gesture
+**Shipped:** Hold-and-drag actually works now, plus a raw browser trace on the preview page
+so the next failure arrives as evidence rather than as "it doesn't work".
+
+**Dev learning:** `touch-action` is resolved by the browser **at touch start**. I set it to
+`none` only once the long-press armed, 350 ms in — so the property changed and the gesture
+already in flight did not. The browser was still treating the touch as a possible scroll,
+so it scrolled, fired `pointercancel`, and the drag died. Every time, on every phone. The
+fix is what every real drag library does: leave the list scrollable, and once the press
+arms, take the gesture with a **non-passive `touchmove` listener** and `preventDefault()`.
+React's own `onTouchMove` cannot do it — it is attached passively and the preventDefault is
+ignored.
+
+**Product/creator learning:** I tested the gesture by dispatching synthetic `PointerEvent`s
+straight at the element. That exercises my handlers and nothing else — it bypasses every
+piece of the browser's gesture arbitration, which is precisely where the bug lived. I wrote
+"verified on a running server" in a register entry off the back of it. The honest version
+would have been "handlers verified; gesture untested, because this machine cannot produce a
+real touch."
+
+**AI-building learning:** The test I wrote to protect the behaviour was **enforcing the
+bug**. It required the exact `touchAction: dragMode && isMoving` expression that does not
+work, and I had falsified it — broken it, watched it go red, restored it. Falsification
+proves a check has teeth. It says nothing about whether the check is pointed at the right
+thing. Those are different properties and I have been treating them as one.
+
+**The honest bit:** Fixing this broke a third test by existing. The schema snapshot I added
+an hour earlier lists every column name in the database, `configConsumer.test.ts` decides
+whether a config key is "consumed" by substring-searching the source, and three genuinely
+dead `session_catalogue` fields suddenly read as wired — so it told me to shrink a debt
+register that was correct. A gate turning another gate green by mentioning a name.
+
+**Hook material:** My drag prototype passed its own test suite, had been falsified, and did
+not work when a human put a finger on it.
+
+**Postable?:** yes
+
 ## 2026-09-22 — HK-ELEV-COLUMN-01 · the log had one bug in it; the gate found three
 **Shipped:** Fixed a wrong column name that had been silently emptying HealthKit runs since
 June, and built a gate that checks every `.select()` against the real schema.
