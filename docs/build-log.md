@@ -6,6 +6,51 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — APP-REVIEW-W2 · five defects fixed, and the sixth was me
+**Shipped:** The five real defects from the founder's app review (week totals, back
+navigation, the health-access prompt, the modify sheet's missing states) plus an honest
+"not a bug" on the sixth.
+
+**Dev learning:** `?? 0` claimed its fourth measured scalp. `PlanCalendar` read
+`s?.distance_km ?? 0` to total a week, and a beginner's plan is duration-anchored on 95.8%
+of sessions, so the week summed to zero and a `> 0` render gate made the whole total
+disappear. Two symptoms the founder reported separately — "some weeks have a total and
+some don't" and "everything shows duration though my profile says distance" — were one
+line, written twice in the same file. The repo already had the owner (`sessionKmSelfPaced`,
+returns null rather than zero, precisely so this cannot happen). Nobody used it here.
+
+**Product/creator learning:** The most useful thing I did all session was open the
+database. The founder said "one session behind — I wasn't due a session until today", and
+I had a neat hypothesis (missing override resolution in the Coach verdict). Wrong. His
+week 1 starts Monday, prescribes a Monday easy run, has no overrides, and the old
+completions are correctly superseded. The count was right. What is actually wrong is
+subtler and I would never have found it by fixing the bug I imagined: the "you're fine"
+softener is `done / dueRef >= 0.7`, and on day two `dueRef` is 1, so the ratio is 0. The
+first missed session of any plan is always a red verdict. That is a coaching question, not
+a defect, and it goes to the board with a number attached.
+
+**AI-building learning:** The debug skill's step 2 — "do not assume the reported side is
+the wrong one" — is the step I would always skip if it were not written down, because the
+founder reporting a bug feels like evidence the code is wrong. It is evidence the two
+disagree. Four SQL queries settled it in about a minute, against an hour I would have spent
+building a fix for a defect that was not there. Cost of checking: tiny. Cost of not
+checking: a change to how "behind" is computed, shipped on a false premise, into the
+one screen the founder called "a real moment" for paid users.
+
+**The honest bit:** I wrote the regression test's site-counting regex as
+`.map\([^)]*sessionKmSelfPaced` and it matched zero of two, because the arrow function is
+`(s: any) =>` and that `)` ends the character class immediately. The test failed on correct
+code and for a few seconds I believed I had missed a site. Second time this session a gate
+was wrong rather than the thing it guards. The habit that saves it every time is the same
+one: falsify before trusting — break the fix, watch the test go red, restore it. All five
+went red on their own reversion.
+
+**Hook material:** Four database queries turned "fix the bug" into "there is no bug, and
+here is the real one you could not see." The founder's `dueRef` was 1, so the forgiveness
+threshold of 0.7 needed 0.7 of a session.
+
+**Postable?:** yes
+
 ## 2026-09-22 — APP-REVIEW-W1 · the button that said Skip and meant Continue
 
 **Shipped:** The first four rulings from the app review. One CTA vocabulary, an optional-step

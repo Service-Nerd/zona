@@ -522,6 +522,53 @@ green. Tracing why is what found the false premise. Bounding the replacement too
 (`segmentPricedDistance` appears four times in `ruleEngine.ts`). `lib/plan/sessionSizingAnchor.test.ts`
 now goes red on the real swap.
 
+### 🏃 `COACH-BEHIND-DAY-TWO-01` — "1 behind" is *correct* and reads as a lie on day two
+**Board: COACHING (§65) first, then DESIGN on the words.** Not a defect. **D6 from the app
+review, investigated and NOT REPRODUCED as a bug** — the count is right, and that is the finding.
+
+The founder read *"1 session behind"* on Coach and said *"I wasn't due a session until today."*
+Checked against his live row rather than inferred:
+
+| | |
+|---|---|
+| Plan | 12 weeks, generated 2026-09-17, week 1 starts **Mon 2026-09-21** |
+| Week 1 sessions | `mon` easy · `wed` easy · `fri` easy · `sun` easy |
+| Today | **Tue 2026-09-22** — the second day of the plan |
+| Overrides on weeks 1–2 | **none** (so the Coach verdict reading raw `currentWeek.sessions` is not the cause) |
+| Week-1 completions | three, all from **April**, all correctly `superseded_at` 2026-09-17 |
+
+So Monday prescribed an easy run, it was not run, and `daysDueByEndOfYesterday` returned
+`['mon']`. `1 behind` is arithmetically true. **The reported side was the wrong one** — which is
+exactly what step 2 of the debug pipeline exists to check, and why this is filed rather than fixed.
+
+⚠️ **But the softener is structurally unreachable at the start of a plan, and that is real.**
+`sessionsContext` forgives a runner at `done / dueRef >= 0.7`. On day two `dueRef` is **1**, so
+the ratio is `0/1 = 0`; at `dueRef = 2` the best a one-session runner gets is `0.5`. **The first
+missed session of any plan is always a red verdict**, however long the plan is and however
+little has elapsed. §65 says *today is in flight*; it says nothing about a plan being two days
+old, and the engine has no notion of the runway being short.
+
+**What to measure before ruling:** across the cohort grid, the distribution of `dueRef` on days
+1–5 of week 1, and what share of plans therefore hit a `--warn` verdict in their first 48 hours.
+Then the board decides whether §65 gains an early-plan clause or whether the words change
+(*"1 still to do"* is true, carries no judgement, and needs no coaching amendment). **The words
+are the Design Board's; whether a runner two days in is BEHIND is coaching's.**
+
+### 🔧 `PLAN-COUNTDOWN-SOURCE-01` — the days-to-race figure needs checking against the founder's screen
+**Board: none until it is confirmed.** Filed as an OPEN QUESTION, not a diagnosis.
+
+While confirming D6 I read the founder's live plan: **race 2026-12-12, which is 81 days out.**
+My note of his Plan-screen feedback records **"214 days to go"**, and Today as **"30 weeks 4 days"**
+(214 days) alongside **"77 days"**. 214 days from today is 2027-04-24, which matches **nothing** in
+his data: `plans.plan_json` says 2026-12-12, `user_settings.plan_json` is **null**, and the legacy
+`gist_url` plan says **2026-07-11**.
+
+⚠️ **I do not have the screenshot in front of me and the number came from my own notes, so the
+number itself is the unverified part.** Do not build against it. Next step is one look at the
+Plan screen with his account: if it really says 214, there is a third countdown source nobody has
+named, and that is a two-writer split of the kind that has bitten this repo before. If it says 81,
+this closes and only the **vocabulary** problem remains, which is already ruled as **S5**.
+
 ### 🔧 `CI-DURATION-TARGETEDGRID-01` — `npm run verify` is non-deterministic at the duration wall
 **Board: none.** Tooling, no user-facing surface, no prescription change.
 

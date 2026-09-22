@@ -41,12 +41,19 @@ import {
 export default function ModifyPlanSheet({
   plan,
   onClose,
+  busy = false,
+  error = null,
   onApply,
   hasPaidAccess,
 }: {
   plan: Plan
   onClose: () => void
   /** Regenerate with the overlaid input. The caller owns diff-then-accept. */
+  /** D1 — the sheet renders its OWN in-flight and failure states. They used to
+   *  live only inside the confirm screen, which does not exist until the
+   *  request has already SUCCEEDED, so the whole failure path was invisible. */
+  busy?: boolean
+  error?: string | null
   onApply: (next: GeneratorInput, resetsLoggedWeeks: boolean) => void
   hasPaidAccess: boolean
 }) {
@@ -166,15 +173,34 @@ export default function ModifyPlanSheet({
               </button>
             ) : (
               <>
+                {/* D1 — the reason, where the action is. A 422 from
+                    /api/generate-plan is a DESIGNED refusal carrying a real
+                    explanation ("too few weeks", "below the base door"), and
+                    until now the runner never saw it: the sheet stayed open and
+                    the button appeared dead. `--warn`, never `--danger`: a
+                    refusal is not an error state (§INV-DS-005). */}
+                {error && (
+                  <div style={{
+                    marginBottom: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px',
+                    lineHeight: 1.5, color: 'var(--warn)',
+                  }}>
+                    {error}
+                  </div>
+                )}
                 <button
-                  onClick={() => onApply(applyEdits(base, edits), resets)}
+                  onClick={busy ? undefined : () => onApply(applyEdits(base, edits), resets)}
+                  disabled={busy}
                   style={{
                     width: '100%', padding: '14px', borderRadius: 'var(--radius-md)',
-                    background: 'var(--moss)', border: 'none', cursor: 'pointer',
-                    fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--card)',
+                    background: busy ? 'var(--moss-soft)' : 'var(--moss)', border: 'none',
+                    cursor: busy ? 'progress' : 'pointer',
+                    fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
+                    color: busy ? 'var(--mute)' : 'var(--card)',
                   }}
                 >
-                  {`Apply ${pending.length} change${pending.length === 1 ? '' : 's'}`}
+                  {busy
+                    ? 'Rebuilding your plan…'
+                    : `Apply ${pending.length} change${pending.length === 1 ? '' : 's'}`}
                 </button>
                 <button
                   onClick={() => setEdits({})}

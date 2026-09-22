@@ -5,6 +5,7 @@ import type { Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { getSessionColor } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan/weekResolution'
+import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
 
 interface Completion {
@@ -463,7 +464,23 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
   // Intended km = sum of rounded individual session distances, so the week
   // total matches what the user sees on each session row. Plan JSON's
   // weekly_km is ignored as a display source for this reason.
-  const sessionDistances = Object.values(ws).map((s: any) => s?.distance_km as number | undefined)
+  // 🔴 SESSION-KM-03 (2026-09-22) — THE SAME DEFECT THIS REPO HAS ALREADY PAID
+  // FOR TWICE. This read `s?.distance_km` directly, and a session is anchored
+  // EITHER by distance OR by duration: on a beginner's plan **95.8% of sessions
+  // carry `duration_mins` and a null `distance_km`.** `sumRoundedDistance` skips
+  // null, so such a week summed to ZERO and the total — gated on
+  // `intendedKm > 0` below — simply did not render. That is the founder's
+  // "some weeks show a total in the top right and some don't", and the same
+  // report's "everything shows duration even though my profile says distance":
+  // one defect, not two. There was no distance to show.
+  //
+  // `sessionKmSelfPaced` is the SINGLE OWNER of "how far is this session"
+  // (lib/plan/sessionDistance.ts), written for exactly this: it reads
+  // `distance_km` when present and converts from `duration_mins` at the
+  // session's own prescribed pace when it is not. It returns `null`, never 0,
+  // when neither is resolvable — `?? 0` is not a safe default, it asserts "this
+  // session covered no ground", which is what produced SESSION-KM-01/02.
+  const sessionDistances = Object.values(ws).map((s: any) => sessionKmSelfPaced(s))
   const intendedKm = sumRoundedDistance(sessionDistances, units)
   const completionMap: Record<string, Completion> = {}
   completions.forEach(c => { completionMap[c.session_day] = c })
@@ -966,7 +983,10 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
   const isRace = (week as any).type === 'race' || (week as any).badge === 'race'
   const phase = (week as any).phase as string | undefined
   const isMaint = phase === 'maintenance_restoration' || phase === 'maintenance_base'
-  const sessionDistances = Object.values(ws).map((s: any) => s?.distance_km as number | undefined)
+  // SESSION-KM-03 — the second of the two sites. Both read `distance_km` raw;
+  // fixing one and not the other is how five copies of the pace formatter
+  // happened. See the note on the first.
+  const sessionDistances = Object.values(ws).map((s: any) => sessionKmSelfPaced(s))
   const intendedKm = sumRoundedDistance(sessionDistances, units)
   const completionMap: Record<string, string> = {}
   completions.forEach(c => { completionMap[c.session_day] = c.status })
