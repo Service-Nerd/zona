@@ -1000,6 +1000,56 @@ MESSAGE" one layer down, and it is the fourth appearance of the class today.**
 
 ---
 
+## 6t. Sitting six — post-run and reshape, the last two unreviewed screens (2026-09-22)
+
+The founder's list from the screens brief was *upgrade, post-run, benchmark, recalibration,
+reshape*. The five-screen review covered the first three and the change-plan surface; these two
+were the remainder, and they close the walk of every screen in the product.
+
+### 🔬 Measurements
+
+| Screen | Measured |
+|---|---|
+| **Reshape** | ✅ **All four states present** — a shimmer skeleton while checking, `found`, `clean` and `error` — **and the error carries a "Try again"**, which is the state this product most often omits. One entry point (Me), and `onBack` matches it. **No ruling; nothing to build** |
+| **Post-run** | 🔴 **Three entry points, one hardcoded exit** |
+
+### The finding, and it is a REPEAT
+
+`PostRunScreen`'s two exits disagreed:
+
+- **`onDone`** routed to the session the runner came from. POST-RUN-02 reasoned that terminus out
+  and left a comment saying why: *"so the verdict is the resting state — not Today."*
+- **`onBack`** was a hardcoded `setScreen('today')`.
+
+So: open a session **from Plan**, tap the linked run, tap **Back** — and you land on **Today**,
+two screens from where you were. Tap **Done** instead and you land correctly. ⚠️ **The escape
+hatch was worse than the completion path**, which punishes the runner for changing their mind.
+
+🔴 **This is D4's class and it was already fixed once IN THIS FILE.** `sessionOrigin` exists
+because back-from-Plan was the same hardcoded line, and that write-up recorded *"the identical
+line appears TWICE in that file."* **The note observed the duplication and nobody went looking
+for the next screen with the same shape.**
+
+### ⚖️ Ruling — SHIP
+
+Post-run gets an origin, exactly as sessions already have one. Three entries, three stamps: the
+push deep-link / cold start and Today both resolve to Today (**honestly** — on a cold start there
+is no screen behind it), Session Detail resolves back to the session.
+
+### 📦 Artifacts
+
+`lib/marketing/screenOrigin.test.ts`, falsified three ways (restore the hardcoded back; drop the
+stamp from one of three entries; delete the `sessionOrigin` pattern it copies).
+
+⚠️ **The gate is deliberately GENERAL and counts rather than checks presence.** It asserts
+`setPostRunOrigin` is called **as many times as `setScreen('post-run')` is** — because a stamped
+origin on two of three entries is the same defect with better odds, and this repo has shipped
+exactly that (`fix-cap-config.mjs` knew one local plugin of two for months). It also asserts
+`sessionOrigin` still exists: if the pattern this copies is deleted, the reason this exists goes
+with it.
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |
