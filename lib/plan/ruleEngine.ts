@@ -4186,10 +4186,39 @@ function computeLongRunHrs(sessions: Partial<Record<Day, Session>>, pace: PaceGu
   return null
 }
 
+/**
+ * §121 — THE RACE IS THE TEST, NOT THE TRAINING.
+ *
+ * `type === 'race'` is excluded on exactly the ground §77 already uses to keep
+ * the race out of `days_cannot_train`, and which this file states in its own
+ * words at the §77 site: *"the race is an external fixed event, not a training
+ * session."* Nobody followed that sentence through to volume.
+ *
+ * ⚠️ WHAT IT WAS DOING TO THE SCREEN. Measured on 8,510 plans: the taper phase
+ * peak exceeded the peak phase peak in **15.3%** of plans, race week was the
+ * plan's biggest week in **16.3%**, and at MARATHON it was **50%**. Worst case,
+ * a 12 km/week beginner: peak training week 25 km, race week 59 km. Excluding
+ * the race session, no taper anywhere exceeds its peak phase — the race is the
+ * entire cause. A beginner opening the plan preview read
+ * `Base 25 · Build 38 · Peak 41 · Taper 47` and was taught that the taper is the
+ * hardest block, which is the most commonly misunderstood idea in amateur
+ * running. **The screen argued for the mistake**, hardest at the beginner and
+ * injury-history cohorts (22% and 20%, against 9% experienced).
+ *
+ * 🔴 **THIS IS AN HONESTY FIX AND MUST NOT BE SOLD AS A SAFETY ONE** (Willy,
+ * binding). A 12 km/week runner racing 42.2 km is at 1.7x their largest ever
+ * week, and taking the race out of a total does not reduce that by one gram. It
+ * makes it VISIBLE. The readiness question is §114's and is filed separately
+ * (MARATHON-READINESS-GAP-01).
+ *
+ * ⚠️ DISPLAY AND TOTALS ONLY. Nothing placed in race week moves, so no session
+ * changes and no cohort is reclassified by this. `verify:parity` reports ~16% of
+ * plans changed and that is the ruling, not a regression.
+ */
 function sumWeeklyKm(sessions: Partial<Record<Day, Session>>, pace: PaceGuide): number {
   let total = 0
   for (const s of Object.values(sessions)) {
-    if (!s || s.type === 'strength' || s.type === 'rest') continue
+    if (!s || s.type === 'strength' || s.type === 'rest' || s.type === 'race') continue
     total += sessionKmOrZero(s, pace.minPerKmEasy)
   }
   return Math.round(total)

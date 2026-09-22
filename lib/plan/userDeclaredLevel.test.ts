@@ -148,10 +148,28 @@ describe('§79 — an UPWARD declaration must not buy tonnage', () => {
       user_declared_level: 'experienced',
     }
     const plan = generateRulePlan(ultra, 'paid', PLAN_START)
-    const deliveredPeak = Math.max(...plan.weeks.map(w => w.weekly_km ?? 0))
     const band = getDistanceConfig(100).peakKmByLevel
-    expect(deliveredPeak).toBeGreaterThan(band.beginner)   // the trap
-    const codes = validatePlan(plan, ultra).map(v => v.code)
+
+    // ⚠️ §121 REMOVED MOST OF THIS TRAP, AND THAT IS WORTH RECORDING. The
+    // comment above cites "108km delivered" against a 72km band — on a plan
+    // whose race is 100 km. Once `sumWeeklyKm` stopped counting the race
+    // (§121, 2026-09-22) the same input delivers 66, i.e. BELOW its band, so
+    // the over-band condition this test needs no longer arises naturally here.
+    // A good part of the "false positive class" was the race being counted as
+    // training volume.
+    //
+    // The PROPERTY still matters: the invariant must read whether a DECLARATION
+    // bought tonnage, never whether delivery happens to exceed a band. So the
+    // over-band case is now forged rather than hoped for — the same technique
+    // the sibling test above uses, and it no longer depends on an inflation that
+    // has since been fixed.
+    const over = Math.max(...plan.weeks.map(w => w.weekly_km ?? 0), band.beginner) + 20
+    const forged: Plan = {
+      ...plan,
+      weeks: plan.weeks.map((w, i) => (i === plan.weeks.length - 2 ? { ...w, weekly_km: over } : w)),
+    }
+    expect(Math.max(...forged.weeks.map(w => w.weekly_km ?? 0))).toBeGreaterThan(band.beginner)  // the trap
+    const codes = validatePlan(forged, ultra).map(v => v.code)
     expect(codes).not.toContain('INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE')
   })
 })

@@ -74,13 +74,24 @@ describe('planScale — the honest size of the plan', () => {
     expect(planScale(p)?.hardestMonth).toBe('March')
   })
 
-  it('the RACE is inside the total, which is what "of it" claims', () => {
+  it('the RACE is OUTSIDE the total — §121, the race is the test, not the training', () => {
+    // 🔴 THIS ASSERTION USED TO BE ITS OWN OPPOSITE. It read "the RACE is inside
+    // the total, which is what 'of it' claims" and expected '50km' — 10 km of
+    // training plus a 42.2 km race, rounded. The Coaching Board ruled the other
+    // way on 2026-09-22 (§121) after measuring the population: the race is an
+    // external fixed event, not a training session, and folding it into a total
+    // makes the plan look larger than the work it asks for.
+    //
+    // The "of it" claim survives because the race is still NAMED separately —
+    // `raceDistance` below is unchanged, so the sentence reads "about 10 km of
+    // training, 42.2 km of it on the day". A subtraction, not a re-label.
     const p = plan([
       week(1, '2027-01-04', { mon: session({ distance_km: 10 }) }),
       week(2, '2027-04-25', { sun: session({ type: 'race', distance_km: 42.2 }) }),
     ])
-    // 52.2 -> 50. If the race were excluded this would be 10.
-    expect(planScale(p)?.totalDistance).toBe('50km')
+    expect(planScale(p)?.totalDistance).toBe('10km')
+    // Not hidden: the race is still reported, with its iconic decimals.
+    expect(planScale(p)?.raceDistance).toContain('42.2')
   })
 
   it('a race session is not mistaken for the longest RUN', () => {

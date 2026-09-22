@@ -41,17 +41,48 @@ const beginner = (cwk: number, raceKm = 42.2): GeneratorInput => ({
 describe('S106-RACE-PEAK-01 — the race week is not a training peak', () => {
   const plan = generateRulePlan(beginner(20), 'paid', START)
 
-  it('the case is real: a race week EXISTS and is the biggest week', () => {
-    // Anti-vacuous. If the race stops being the largest week this file is inert.
+  /**
+   * ⚠️ §121 CLOSED THIS HOLE ONE LAYER DEEPER, 2026-09-22, AND THIS FILE'S OWN
+   * ANTI-VACUOUS GUARD IS WHAT SAID SO.
+   *
+   * The two assertions here used to read "the case is real: a race week EXISTS
+   * and is the biggest week" and "deliveredPeakKm ignores it". Both went red on
+   * §121, because `sumWeeklyKm` now excludes the race and a race week can no
+   * longer BE the biggest week — the precondition the file was built on is gone
+   * by construction.
+   *
+   * That does not make S106's filter dead code and it must not be deleted:
+   * `deliveredPeakKm` is a §111 numerator read by the admission door, and a
+   * filter that is currently redundant is the cheapest possible guard against
+   * `weekly_km` meaning something else again. What changes is the CLAIM. The
+   * property worth pinning is no longer "the race week is excluded from a total
+   * that contains it" — it is that **no week, race week included, can push
+   * `deliveredPeakKm` above the training target**, which is what §111's
+   * numerator is for and which holds under either definition.
+   */
+  it('the race week is no longer the biggest week — §121, at the source', () => {
     const race = plan.weeks.find(w => w.type === 'race')
     expect(race, 'no race week').toBeTruthy()
     const others = plan.weeks.filter(w => w.n > 0 && w.type !== 'race')
-    expect(race!.weekly_km!).toBeGreaterThan(Math.max(...others.map(w => w.weekly_km ?? 0)))
+    const biggestTraining = Math.max(...others.map(w => w.weekly_km ?? 0))
+    // The exact inversion §121 removed: this was `toBeGreaterThan`.
+    expect(race!.weekly_km!).toBeLessThanOrEqual(biggestTraining)
   })
 
-  it('🔴 deliveredPeakKm ignores it', () => {
+  it('🔴 deliveredPeakKm is the biggest TRAINING week and nothing else', () => {
+    // The property that survives §121 and can still go red: re-include the race
+    // anywhere upstream and the race week's total rises above every training
+    // week, so this equality breaks.
+    const trainingWeeks = plan.weeks.filter(w => w.n > 0 && w.type !== 'race')
+    const biggestTraining = Math.max(...trainingWeeks.map(w => w.weekly_km ?? 0))
+    expect(deliveredPeakKm(plan)).toBeCloseTo(biggestTraining, 1)
+
+    // Anti-vacuous: the race session still EXISTS and still carries a marathon.
+    // Without this the equality above would also hold on a plan with no race in
+    // it at all, which is the shape of a check that stops checking.
     const race = plan.weeks.find(w => w.type === 'race')!
-    expect(deliveredPeakKm(plan)).toBeLessThan(race.weekly_km!)
+    const raceSession = Object.values(race.sessions).find(sn => sn?.type === 'race')
+    expect(raceSession?.distance_km ?? 0, 'the race session must still carry its distance').toBeGreaterThan(40)
   })
 
   it('🔴 the peak it reports IS the training target, not the race', () => {

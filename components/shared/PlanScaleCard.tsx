@@ -57,8 +57,15 @@ export default function PlanScaleCard({
         </span>
       </div>
 
+      {/* ⚠️ "of it" WAS A LIE THE MOMENT §121 LANDED, and nothing but this
+          consumer check would have caught it. The sentence read "The race itself
+          is 42.2km of it" while the number above it counted only training — so
+          the card claimed the race was part of a total it had just been taken
+          out of. §121 is a subtraction, not a re-label: the race is still named,
+          it is simply named as what comes AFTER the training rather than as a
+          slice of it. Voice unchanged — dry, one sentence, no reassurance. */}
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.6 }}>
-        between now and race day. The race itself is {raceDistance} of it.
+        of training between now and race day. Then {raceDistance} on the day.
       </div>
 
       {/* Dread lives in the unknown, so the worst day gets a number. Omitted

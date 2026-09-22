@@ -6,6 +6,50 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — RACE-WEEK-VOLUME-01 / §121 · the taper looked like the hardest block
+
+**Shipped:** The race no longer counts as training volume. Measured on 8,510 plans, the taper
+phase was outweighing the peak phase in **15.3% of plans and 50% of marathons** — and excluding
+the race session, **no taper anywhere exceeded its peak**. The race was the whole cause.
+
+**Dev learning:** The identical symptom had been fixed the day before, at the display layer, on
+one published page. That fix's own header argued — well, and correctly on the evidence it had —
+that redefining `weekly_km` would "silently move a number ~40 call sites depend on, to fix a
+rendering problem." What changed the answer was measuring the population rather than the page.
+Then the interesting bit: because that display fix existed, `trainingKm(w)` was already
+`weekly_km − raceKm`, so fixing it at the source would have subtracted a marathon **twice**. The
+function is now an identity and deliberately kept — deleting it would scatter `w.weekly_km` back
+across the callers and lose the one place the term is defined.
+
+**Product/creator learning:** A beginner opened the plan preview and read
+`Base 25 · Build 38 · Peak 41 · Taper 47`. That teaches the taper is the hardest block, which is
+the single most misunderstood idea in amateur running, and it hit the beginner (22%) and
+injury-history (20%) cohorts hardest — the people least able to argue with the screen. The board
+was blunt that this is an **honesty** fix and not a safety one: a 12 km/week runner racing a
+marathon is at 1.7× their biggest ever week, and taking the race out of a total does not change
+that by one gram. It stops the screen arguing for the mistake.
+
+**AI-building learning:** The consumer check is the step that earns its keep. Following
+`weekly_km` outward found a live copy defect nothing else would have: the plan-scale card read
+*"The race itself is 42.2km of it"* — a sentence that became false the instant the race left the
+total — and the markup test guarding it **asserted the false version by name**. A test can pin a
+lie as firmly as a truth.
+
+**The honest bit:** four tests went red and every one of them was asserting the old contract,
+including one whose entire premise ("a race week exists and is the biggest week") is now
+impossible by construction. The temptation is to walk fixtures to wherever they go green. Each
+one got its claim rewritten with the reason, and one of them taught me something: the
+"false-positive class" it guarded — a 100 km ultra plan delivering 108 km against a 72 km band —
+was **substantially the 100 km race being counted as training**.
+
+**Hook material:** 8,510 plans. In 50% of the marathons, the taper was the biggest block of the
+plan. Remove the race from the sum and the number is zero. The cause was one line that never said
+whether a race counts as training, in a constitution with 125 sections.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-22 — HM-ANCHOR-VS-GOAL-01 / §120 · the number the board asked for was in the wrong unit
 
 **Shipped:** On a time-target half, "HM pace" now means the pace of the race you are training for,

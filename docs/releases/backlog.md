@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-22 (last ship `6d935bc`, `SITE-BEAT-01`) — PUSHED.** Full `npm run verify`: **3,013 tests / 336 files**, all passing; typecheck clean. ⚠️ **`452 tests / 40 files`, quoted in earlier blocks, is the NARROWER marketing-and-shared scope** — both measures named rather than silently swapped. Eleven commits today: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage waves, `<Section>` adoption, the docs, the step-numeral contrast fix, the spacing scale, `SITE-WAVE-2`, and `SITE-BEAT-01`. · **`8184c32`** made the step numerals perceivable (1.07:1 *on purpose*, drawn as SVG because axe does not read SVG as text). · **`0a18a67`** shipped the spacing scale (`--space-1…7`, 69 gaps swept). · **`323ea08`** closed the conversion dead zone: a CTA at the proof (screen 5.1), largest in-body gap **12.7 → 8.3 screens**. · **`6d935bc`** closed three **0px** gaps created by sitting two's own section merges (`--beat-y`); 🔴 **the spacing scale could not have caught them — it measured 448 gaps that EXISTED, and a gap of zero is an absent decision, not a value.** · 🔴 **`SITE-WAVE-3` is DEAD** — the founder answered the palette question on a device: *"its better"*. · ⚠️ **`verify` exited 1 on the second of two runs over identical code**, on a duration gate (`CI-DURATION-TARGETEDGRID-01`, filed, not re-baselined).
+**State at END of 2026-09-22 (last ship `fa0272a`, `HM-ANCHOR-VS-GOAL-01` / §120; §121 to follow) — PUSHED.** Full `npm run verify`: **3,017 tests / 336 files**, all passing; typecheck clean; `audit-docs.sh` ALL CLEAN. ⚠️ **`452 tests / 40 files`, quoted in earlier blocks, is the NARROWER marketing-and-shared scope** — both measures named. Thirteen commits today: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage waves, `<Section>` adoption, the docs, the step-numeral contrast fix, the spacing scale, `SITE-WAVE-2`, `SITE-BEAT-01`, and the engine pair. · 🔴 **`SITE-WAVE-3` is DEAD** — the founder answered the palette question on a device: *"its better"*. · **`6d935bc`** closed three **0px** gaps created by sitting two's own merges; **the spacing scale could not have caught them — it measured 448 gaps that EXISTED.** · **`fa0272a`** shipped **§120 + Amendment 1**: 2,811 sessions displayed a pace their own reps contradicted, and `HM` meant the runner's CURRENT half pace, so a 1:50 target got its three PEAK race-specific sessions **36–58 s/km too slow**. The board **rejected the percentage constant it had itself named** — right question, wrong unit — and bounded the anchor against **CV**. §22 costs nothing (14,253 plans, zero violations); maintenance at 21.1 km **44.8 → 48.2%**, A/B'd to the bound alone. · **§121** takes the race out of training volume: the taper phase outweighed the peak phase in **15.3% of plans and 50% of marathons**, and excluding the race **no taper anywhere exceeded its peak**. · ⚠️ **Three items filed, not fixed:** `RACE-ANCHOR-CV-OVERRIDE-01` (a §85/§22 **deadlock** — the obvious fix was built and reverted, it turns §22's own arm red on 100 tests), `SESSION-SIZING-ANCHOR-01`, and `TAPER-OVER-PEAK-01` (§121's invariant found 10 plans on its first sweep that the ruling's own grid could not reach).
 
 🧭 **The homepage, measured at 375px:** first ground change **screen 10.6 → 3.4**, proof **52% → 24%**, sections **14 → 11**, page **12,317 → 11,773px**, content `<h2>` **9 (all 26px) → 6 with a scale**.
 
@@ -299,63 +299,33 @@ the same failure as inventing a constraint, in the other direction. Tracked as `
 
 ## ⚖️ RULED 2026-09-22 — Coaching Board: the race is not training volume
 
-### 🏃 `RACE-WEEK-VOLUME-01` — RULED **CORRECT WITH AMENDMENT**, not built
-**Board: 🏃 COACHING BOARD (ruled)** → build. **Surface: app AND website.** **Tier: FREE.** **Size: M.**
-**Found by the founder** in the wizard plan preview: *"it looks like it's got the highest volume which doesn't seem right… it looks higher than peak."*
+### ✅ `RACE-WEEK-VOLUME-01` / §121 — **SHIPPED 2026-09-22**
 
-**The ruling: the race does not count as training volume.** `sumWeeklyKm` excludes
-`type === 'race'`, on the same ground §77 already uses to exclude the race from
-`days_cannot_train` — `ruleEngine.ts:2733` already says it in the code's own words:
-*"the race is an external fixed event, not a training session."* Nobody followed the
-sentence through to volume.
+All three amendments. `sumWeeklyKm` and `planScale` exclude the race; `weekVolumeLabel` is the
+single owner of *"15 km + 42.2 km race"* and is read by the wizard preview, the generating
+ceremony and the published plan pages; `INV-PLAN-RACE-NOT-VOLUME` holds the taper under the
+peak. Detail in `CoachingPrinciples.md` §121.
 
-**Measured — 8,510 plans** (4 distances × 6 lengths × 10 volumes × 3 levels × 2 goals ×
-3 day-counts × injury):
+**Amendment 3 verified, not assumed:** `cohort:shape` came back **byte-identical** — no plan's
+sessions moved and no runner was reclassified.
 
-| | |
-|---|---|
-| Taper phase peak > peak phase peak | **15.3%** |
-| Race week is the plan's biggest week | **16.3%** |
-| 🔴 **Marathon** | **50%** (1,020/2,030) |
-| Half 13% · 10K 0.3% · **5K 0%** | |
-| Beginner **22%** · Intermediate 14% · Experienced 9% | |
-| 🔴 **Injury history 20% vs healthy 10%** | |
-| Worst case | **12 km/wk beginner: peak training week 25 km, race week 59 km** |
+⚠️ **Four tests asserted the OLD contract and each was restated rather than deleted**, because
+"it went red" is not a reason to change what a test claims:
+`planScale.test.ts` asserted *"the RACE is inside the total, which is what 'of it' claims"* —
+now its own opposite, with the reason · `planArc.test.ts`'s fixture folded the race into
+`weekly_km` · `racePeakExclusion.test.ts`'s **anti-vacuous guard is what told me §121 closed its
+hole one layer deeper**, so S106's filter is now belt-and-braces and the claim it pins changed ·
+`userDeclaredLevel.test.ts`'s "false positive class" turned out to be **substantially the race
+being counted** (a 100 km plan delivering 108 against a 72 band), so the over-band case is now
+forged rather than hoped for.
 
-⚠️ **Excluding the race session, no taper anywhere exceeds its peak phase. The race is
-the entire cause.** And 0/9 published plans show it — they are all high-volume, which is
-why it never surfaced in the marketing pages.
+🔴 **AND A LIVE COPY DEFECT THE CONSUMER CHECK CAUGHT.** `PlanScaleCard` read *"The race itself
+is 42.2km of it"* — a sentence that became false the moment the race left the total. Nothing
+else would have found it; the markup test guarding it asserted the false version by name.
 
-**Why it matters (McMillan):** the beginner opens the plan preview and sees
-**Base 25 · Build 38 · Peak 41 · Taper 47**. That teaches them the taper is the hardest
-block, which is the single most commonly misunderstood idea in amateur running. **The
-screen argues for the mistake**, hardest at the beginner and injured cohorts — i.e. the
-charity cohort arriving in October.
-
-**Three binding amendments:**
-1. **Separated, not hidden** *(Sims)* — race week reads *"42.2 km race + 5 km shakeouts"*,
-   never one folded number. **A subtraction, not a re-label.**
-2. **Plan totals too** — *"540 km in total"* currently includes the race.
-3. **Display and totals only.** ⚠️ **No prescription changes.** Nothing placed in race
-   week moves, so no cohort shifts.
-
-**Three artifacts:**
-1. **Principle — new §121, "The race is the test, not the training."** ⚠️ The
-   constitution has **125 sections and none defines what `weekly_km` includes**. That
-   absence is the defect.
-2. **Numeric** — none. An exclusion in `sumWeeklyKm` beside `strength` and `rest`.
-3. **Invariant — `INV-PLAN-RACE-NOT-VOLUME`**: no taper week's `weekly_km` exceeds the
-   peak phase maximum. **Falsify by re-including the race and watching 15.3% go red.**
-
-⚠️ **`verify:parity` will report ~16% of plans changed. That is the ruling, not a
-regression.** `cohort:shape` re-baselined with the reason stated.
-
-🔴 **DO NOT SELL THIS AS A SAFETY FIX** *(Willy, binding)*. It is an **honesty** fix.
-A 12 km/wk runner racing 42.2 km is at 1.7× their largest ever week, and removing the
-race from a total does not reduce that by one gram — **it makes it visible.** The
-readiness question is §114's and is filed separately below.
-
----
+**Deliberately NOT changed, stated rather than discovered:** `PlanCalendar`'s per-week tile
+computes its own `intendedKm` and shows it against `actualKm` from the activity log. Excluding
+the race there would render **`57 / 15`** on race week. Different question, different answer.
 
 ### 🏃 `MARATHON-READINESS-GAP-01` — filed, not ruled
 **Board: 🏃 COACHING BOARD.** **Surface: engine.** **Size: TBD.**
@@ -408,6 +378,32 @@ values). Same disease, one layer down, and nobody looked at spacing when type wa
 
 **Artifacts:** pattern in `ui-patterns.md` § Spacing Rhythm · `--space-1…7` in `globals.css` ·
 a check asserting no hand-typed gap outside the scale, falsified.
+
+---
+
+## ⚖️ FILED 2026-09-22 SHIPPING §121 — the invariant found a second defect on its first sweep
+
+### 🏃 `TAPER-OVER-PEAK-01` — a taper that out-trains the peak, with the race already excluded
+**Board: COACHING.** Baselined in `SWEEP-BASELINE-01`, not fixed.
+
+`INV-PLAN-RACE-NOT-VOLUME` shipped with §121 and immediately found **10 plans in 14,253** where a
+taper week carries more training volume than the biggest week of the peak phase — **with the race
+already taken out**. Examples: `50km/experienced/days=3/cwk=25/age=62` (taper 52 km against a peak
+of 47) and `10km/intermediate/days=2/cwk=5/age=44` (15 against 12).
+
+⚠️ **§121's ruling says this cannot happen, and its grid could not see it.** The sitting measured
+8,510 plans and recorded *"excluding the race session, no taper anywhere exceeds its peak phase."*
+True of that grid. The property sweep is wider at the edges — **2 days a week, 5 km a week, age 62**
+— and those are exactly the cohorts it finds. Same class as `SWEEP-AGE-01` and the liveness debt:
+the defect was always there and the corpus could not reach it.
+
+🔴 **NOT MINE TO FIX.** A taper that trains more than the peak is a volume-curve question and
+changes what the engine prescribes. §121 itself is display-only and unaffected: these ten plans now
+read honestly and are still shaped wrong.
+
+**Also from this ship:** `INV-PLAN-TIME-TARGET-QUALITY-FLOOR` went **13 → 0** — §120 anchored
+`hm_pace_intervals` to goal pace, so a time-target plan that previously prescribed zero goal-pace
+quality now prescribes some. Baseline lowered to lock it in.
 
 ---
 

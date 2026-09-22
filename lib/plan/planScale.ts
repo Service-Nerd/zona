@@ -70,6 +70,13 @@ export function planScale(plan: Plan, units: DistanceUnits = 'km'): PlanScale | 
   for (const week of weeks) {
     for (const session of Object.values(week?.sessions ?? {}) as (Session | undefined)[]) {
       if (!session) continue
+      // §121 — the race is the test, not the training. Excluded here for the
+      // same reason `sumWeeklyKm` excludes it: a total that folds the race in
+      // says "you will cover about 540 km" where a chunk of that is the event
+      // the training is FOR. Amendment 2 of the ruling, and it is a subtraction
+      // rather than a re-label — `raceDistance` below already names the race
+      // separately, so nothing is hidden by taking it out of the total.
+      if (session.type === 'race') continue
       const km = sessionKmSelfPaced(session)
       // Unresolvable distance. Measured at 0 of 161 sessions across a
       // first-timer and an intermediate marathon plan, but "zero in the corpus"

@@ -16,7 +16,7 @@ import { stepParts } from '@/lib/plan/resolveMainSet'
 import { type MarketingPlan, planAnchor, faqsFor, getPlan, planCardTitle } from '@/lib/marketing/plans'
 import { PHASE_LABEL, phaseNote } from '@/lib/marketing/planNotes'
 import type { Session, Week } from '@/types/plan'
-import { trainingKm } from '@/lib/plan/weekVolume'
+import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 const SECTION_MAX = 760
@@ -259,15 +259,20 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
                         {isRaceWeek && <span style={{ marginLeft: 8, fontSize: 'var(--fs-eyebrow)', fontWeight: 700, color: 'var(--s-race-strong)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>Race week</span>}
                         <span style={{ display: 'block', fontSize: 'var(--fs-sm)', color: 'var(--mute)', marginTop: 2 }}>{w.label}</span>
                       </div>
-                      {/* D1 — race week shows what the runner TRAINS and what they
-                          RACE, separately. `weekly_km` includes the race, so the half
-                          plan rendered "36 km" on a race week that follows 41 → 32 → 26,
-                          reading as the biggest week of the taper. The runner trains 15
-                          and races 21.1. `trainingKm` is the shared owner, so this page
-                          and the shape checker cannot disagree. */}
+                      {/* §121 Amendment 1 — race week shows what the runner TRAINS and
+                          what they RACE, separately and with the race NAMED. This page
+                          used to render `{trainingKm} km + race`, which was right about
+                          the subtraction and vague about the thing subtracted; the
+                          shared owner returns "15 km + 21.1 km race" so the wizard
+                          preview, the plan screen and this page cannot drift.
+                          ⚠️ NO `?? \`${km} km\`` FALLBACK. The first cut had one and
+                          PREF-SWEEP-01 caught it: a unit glyph welded to an
+                          interpolated value bypasses lib/format.ts, which ADR-015
+                          makes the sole owner of every distance string. The fallback
+                          was also unreachable — `weekVolumeLabel` returns null only
+                          when `formatDistance` does. */}
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <span style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)' }}>{trainingKm(w)}</span>
-                        <span style={{ fontSize: 'var(--fs-caption)', color: 'var(--mute)', marginLeft: 3 }}>km{isRaceWeek ? ' + race' : ''}</span>
+                        <span style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-lead-lg)', fontWeight: 800, color: 'var(--ink)' }}>{weekVolumeLabel(w)}</span>
                       </div>
                     </div>
 

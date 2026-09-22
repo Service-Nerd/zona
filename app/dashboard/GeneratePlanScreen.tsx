@@ -13,6 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import SignOutLink from '@/components/shared/SignOutLink'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
+import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
 import { formatDistance, formatDuration } from '@/lib/format'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
@@ -386,9 +387,15 @@ function PreviewPhaseStrip(
           return (
             <div
               key={w.n}
+              /* §121 Amendment 1 — the race is named, never folded in. This
+                 preview is where the founder found the defect ("it looks like
+                 it's got the highest volume... higher than peak"), and the bar
+                 heights are fixed by §121 at the source; the tooltip is where
+                 the two numbers are told apart. Shared owner, so this and the
+                 published plan pages cannot drift. */
               title={isFoundation
-                ? `Foundation · ${formatDistance(w.weekly_km, units) ?? ''}`
-                : `Week ${w.n} · ${formatDistance(w.weekly_km, units) ?? ''} · ${w.phase ?? 'base'}${isDeload ? ' · recovery' : ''}${isRaceWeek ? ' · race' : ''}`}
+                ? `Foundation · ${weekVolumeLabel(w, units) ?? ''}`
+                : `Week ${w.n} · ${weekVolumeLabel(w, units) ?? ''} · ${w.phase ?? 'base'}${isDeload ? ' · recovery' : ''}${isRaceWeek ? ' · race' : ''}`}
               style={{
                 flex: 1,
                 height: isFoundation ? '60%' : '100%',  // subdued height for foundation

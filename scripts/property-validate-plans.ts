@@ -1268,9 +1268,34 @@ const BASELINE: Record<string, number> = {
   // 25 -> 26, TIME-TARGET-QUALITY-FLOOR 17 -> 13. **Declared, not absorbed.**
   // The population did not change; the sample did. Never re-baseline to go green.
   'INV-PLAN-MAIN-SET-ORDERING': 26,
-  'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': 13,
+  // 13 -> 0 on 2026-09-22. §120 anchored `hm_pace_intervals` to goal pace, so a
+  // time-target plan that previously prescribed ZERO goal-pace quality now
+  // prescribes some. Lowered to lock the fix in, per the rule above: "every
+  // count that falls is progress and the baseline should be lowered."
+  'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': 0,
   'INV-PLAN-PEAK-OVER-BASE': 1,
   'INV-PLAN-WEEK-1-2-LONG-CAP': 1,
+
+  // ── §121's invariant found a SECOND defect on its first sweep (2026-09-22) ──
+  //
+  // 10 plans in 14,253 where a taper week out-trains the peak phase **with the
+  // race already excluded** — e.g. `50km/experienced/days=3/cwk=25/age=62`
+  // (taper 52 against a peak of 47) and `10km/intermediate/days=2/cwk=5/age=44`
+  // (15 against 12).
+  //
+  // ⚠️ THE RULING SAID THIS COULD NOT HAPPEN, AND THE RULING'S GRID COULD NOT
+  // SEE IT. §121 measured 8,510 plans and recorded "excluding the race session,
+  // no taper anywhere exceeds its peak phase." True of that grid. This sweep is
+  // wider at the edges — 2 days a week, 5 km a week, age 62 — and those are the
+  // cohorts it finds. Same class as SWEEP-AGE-01 and the liveness debt: the
+  // defect was always there and the corpus could not reach it.
+  //
+  // 🔴 BASELINED, NOT FIXED, AND THE FIX IS NOT MINE. A taper that trains more
+  // than the peak phase is a volume-curve question — it changes what the engine
+  // PRESCRIBES, which is the Coaching Board's. Filed as `TAPER-OVER-PEAK-01`.
+  // §121 itself is display-only and is unaffected: these plans read honestly and
+  // are still shaped wrong.
+  'INV-PLAN-RACE-NOT-VOLUME': 10,
 
   // ── §53 variety, ROTATION SPENDS A SHARED ROW (CB-BEGINNER-CATALOGUE-01, 2026-09-19) ──
   //

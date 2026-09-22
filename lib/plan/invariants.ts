@@ -82,6 +82,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-RACE-SPECIFIC-EXPOSURE-RATIO',
   'INV-PLAN-HEADER-PACE-MATCHES-WORK',
   'INV-PLAN-RACE-ANCHOR-MATCHES-GOAL',
+  'INV-PLAN-RACE-NOT-VOLUME',
   'INV-PLAN-RACE-SPECIFIC-VARIETY',
   // INV-PLAN-THEME-MATCHES-PRESCRIPTION retired by GEN-FIX-06 (incident N4, P0,
   // 2026-08-06) — its four-literal denylist was replaced by the semantic
@@ -2658,6 +2659,50 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
             message: `Goal-pace ratio in second-half build/peak is ${Math.round(ratio*100)}% (${goalPaceQuality}/${nonVo2Quality}); spec ≥50%`,
             actual: `${Math.round(ratio*100)}%`,
             expected: '≥ 50%',
+          })
+        }
+      }
+    }
+  }
+
+  // INV-PLAN-RACE-NOT-VOLUME — §121, "the race is the test, not the training".
+  //
+  // No taper week may carry more volume than the biggest week of the peak phase.
+  // Before §121 that was violated by **15.3% of plans and 50% of marathons**,
+  // and excluding the race session no taper anywhere exceeded its peak phase —
+  // the race was the entire cause. A beginner opening the plan preview read
+  // `Base 25 · Build 38 · Peak 41 · Taper 47` and was taught that the taper is
+  // the hardest block. Worst case, a 12 km/week beginner: peak training week
+  // 25 km, race week 59 km.
+  //
+  // ⚠️ THIS IS AN HONESTY CHECK, NOT A SAFETY ONE (Willy, binding). It does not
+  // make a 12 km/week runner's marathon smaller; it stops the screen arguing for
+  // the most commonly misunderstood idea in amateur running.
+  //
+  // Skipped when there is no peak phase at all (maintenance plans, short
+  // signatures) — there is nothing to compare against, and asserting against an
+  // empty max is how `?? 0` defects get written.
+  {
+    const peakKms = plan.weeks
+      .filter(w => w.phase === 'peak' && w.type !== 'deload')
+      .map(w => w.weekly_km ?? 0)
+    const taperWeeks = plan.weeks.filter(w => w.phase === 'taper')
+    if (peakKms.length > 0 && taperWeeks.length > 0) {
+      const peakMax = Math.max(...peakKms)
+      for (const w of taperWeeks) {
+        const km = w.weekly_km ?? 0
+        // A rounding width, not a tolerance for real inversions: `weekly_km` is
+        // `Math.round`ed by `sumWeeklyKm`, so two weeks that are genuinely equal
+        // can differ by 1.
+        if (km > peakMax + 1) {
+          violations.push({
+            code: 'INV-PLAN-RACE-NOT-VOLUME',
+            principle_ref: 'CoachingPrinciples §121',
+            severity: 'error',
+            week: w.n,
+            message: `Taper week ${w.n} carries ${km}km against a peak-phase maximum of ${peakMax}km — the taper must not read as the plan's hardest block`,
+            actual: km,
+            expected: `<= ${peakMax}`,
           })
         }
       }

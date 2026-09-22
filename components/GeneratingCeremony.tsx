@@ -9,6 +9,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { ceremonyLinesFor } from '@/lib/plan/ceremonyLines'
 import AIMark from './shared/AIMark'
@@ -150,7 +151,9 @@ function RevealCard({ week, phaseLabel, phaseColour, visible }: {
       </div>
       <div style={{ paddingTop: '8px', borderTop: '0.5px solid var(--border-col)', display: 'flex', gap: '16px' }}>
         {week.weekly_km > 0 && (
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>{week.weekly_km} km</span>
+          /* §121 Amendment 1 — the race is named, never folded in. Same shared
+             owner as the wizard preview and the published plan pages. */
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>{weekVolumeLabel(week as never) ?? `${week.weekly_km} km`}</span>
         )}
         {week.badge && (
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--amber)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{week.badge}</span>

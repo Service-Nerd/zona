@@ -8,10 +8,19 @@ import type { Plan } from '@/types/plan'
 const read = (p: string) => readFileSync(join(process.cwd(), p), 'utf8')
 const SRC = 'components/shared/PlanArc.tsx'
 
-/** A week with one session of the given distance, plus an optional race. */
+/**
+ * A week with one training session of `km`, plus an optional race on top.
+ *
+ * ⚠️ `weekly_km` IS THE TRAINING FIGURE, and that changed on 2026-09-22. The
+ * fixture used to set `weekly_km: km` with the race folded in, because that is
+ * what `sumWeeklyKm` produced; §121 excludes the race at the source, so a
+ * fixture that still folds it in is testing a contract the engine no longer has.
+ * `km` is now what the runner TRAINS and `raceKm` is added beside it, which is
+ * exactly the shape a generated plan has.
+ */
 function week(n: number, km: number, opts: { phase?: string; raceKm?: number } = {}) {
   const sessions: Record<string, unknown> = {
-    mon: { type: 'easy', distance_km: km - (opts.raceKm ?? 0) },
+    mon: { type: 'easy', distance_km: km },
   }
   if (opts.raceKm) sessions.sun = { type: 'race', distance_km: opts.raceKm }
   return { n, weekly_km: km, phase: opts.phase, sessions } as unknown as Plan['weeks'][number]
@@ -22,7 +31,9 @@ describe('PLAN-ARC-V2 — planArcSeries is the single owner of the arc’s data'
     // The defect `weekVolume.ts` was written for: `weekly_km` includes the
     // race, so a height-encoded race week would tower over the taper it sits
     // at the end of.
-    const weeks = [week(1, 40), week(2, 32), week(3, 26), week(4, 36, { raceKm: 21.1 })]
+    // Race week TRAINS 15 and races 21.1 — the published half plan's real shape,
+    // which rendered as "36 km" and towered over a taper coming down 40-32-26.
+    const weeks = [week(1, 40), week(2, 32), week(3, 26), week(4, 15, { raceKm: 21.1 })]
     const { km } = planArcSeries(weeks)
     expect(km).toEqual([40, 32, 26, trainingKm(weeks[3])])
     expect(km[3], 'race week must draw SHORTER than the taper that precedes it').toBeLessThan(km[2])

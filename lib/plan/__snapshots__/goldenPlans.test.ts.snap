@@ -1474,7 +1474,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 26,
+      "weekly_km": 5,
     },
   ],
 }
@@ -2188,7 +2188,7 @@ exports[`golden plans > P1-beginner-3d-5k-finish-free-no-benchmark — full plan
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 10,
+      "weekly_km": 5,
     },
   ],
 }
@@ -3503,7 +3503,7 @@ exports[`golden plans > P2-intermediate-4d-10k-time-target — full plan snapsho
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 15,
+      "weekly_km": 5,
     },
   ],
 }
@@ -5113,7 +5113,7 @@ exports[`golden plans > P3-intermediate-4d-hm-time-target — full plan snapshot
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 33,
+      "weekly_km": 12,
     },
   ],
 }
@@ -6926,7 +6926,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 56,
+      "weekly_km": 14,
     },
   ],
 }
@@ -8378,7 +8378,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 26,
+      "weekly_km": 5,
     },
   ],
 }
@@ -10204,7 +10204,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
       },
       "theme": "The work is done. Arrive rested.",
       "type": "race",
-      "weekly_km": 56,
+      "weekly_km": 14,
     },
   ],
 }

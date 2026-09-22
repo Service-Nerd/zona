@@ -8619,3 +8619,90 @@ classifies goal-pace work by reading `pace_target` — a display field deciding 
 which INV-CLASS forbids. The fix is **not** a second classifier; it is this invariant, which makes
 the header a mechanically verified mirror of the prescription, so reading it is reading the
 prescription.
+
+---
+
+## §121 — The race is the test, not the training (Coaching Board, 2026-09-22)
+
+**Principle.** A week's `weekly_km`, and a plan's total distance, count what the runner
+**trains**. The race itself is excluded.
+
+**Config.** None. An exclusion in `sumWeeklyKm` beside `strength` and `rest`, and the same
+exclusion in `planScale`.
+
+⚠️ **THE CONSTITUTION HAS 125 SECTIONS AND NONE OF THEM DEFINED WHAT `weekly_km` INCLUDES.
+That absence is the defect.** `ruleEngine.ts` already said the operative sentence, at the §77
+site, in its own words — *"the race is an external fixed event, not a training session"* —
+and used it to keep the race out of `days_cannot_train`. Nobody followed the sentence through
+to volume.
+
+### What it was doing
+
+**Found by the founder** in the wizard plan preview: *"it looks like it's got the highest
+volume which doesn't seem right… it looks higher than peak."*
+
+Measured on **8,510 plans** (4 distances × 6 lengths × 10 volumes × 3 levels × 2 goals × 3
+day-counts × injury):
+
+| | |
+|---|---|
+| Taper phase peak > peak phase peak | **15.3%** |
+| Race week is the plan's biggest week | **16.3%** |
+| 🔴 **Marathon** | **50%** (1,020 / 2,030) |
+| Half 13% · 10K 0.3% · 5K 0% | |
+| Beginner **22%** · intermediate 14% · experienced 9% | |
+| 🔴 **Injury history 20% against healthy 10%** | |
+| Worst case | **12 km/week beginner: peak training week 25 km, race week 59 km** |
+
+⚠️ **Excluding the race session, no taper anywhere exceeds its peak phase. The race is the
+entire cause** — not a rendering choice on one page, which is what it looked like when the
+same symptom was met on 2026-09-21 and fixed at the display layer (D1 / MKT-PLAN-SHAPE-01).
+
+**Why it matters (McMillan).** The beginner opens the plan preview and reads
+**Base 25 · Build 38 · Peak 41 · Taper 47**. That teaches them the taper is the hardest
+block, which is the single most commonly misunderstood idea in amateur running. **The screen
+argues for the mistake**, hardest at the beginner and injury-history cohorts — the charity
+cohort arriving in October.
+
+### Three binding amendments
+
+1. **Separated, not hidden** *(Sims)* — race week reads *"15 km + 42.2 km race"*, never one
+   folded number. **A subtraction, not a re-label.** One owner, `weekVolumeLabel`, because the
+   wizard preview, the generating ceremony and the published plan pages all answer it.
+2. **Plan totals too** — *"540 km in total"* included the race; `planScale` now excludes it.
+3. **Display and totals only.** ⚠️ **No prescription changes.** Nothing placed in race week
+   moves.
+
+### 🔴 DO NOT SELL THIS AS A SAFETY FIX (Willy, binding)
+
+It is an **honesty** fix. A 12 km/week runner racing 42.2 km is at **1.7× their largest ever
+week**, and removing the race from a total does not reduce that by one gram — **it makes it
+visible.** The readiness question is §114's and is filed separately as
+`MARATHON-READINESS-GAP-01`.
+
+### What this supersedes, and the reasoning that was right at the time
+
+`lib/plan/weekVolume.ts` was written on 2026-09-21 and its header argued, correctly on the
+evidence then available, that *"the fix is a second question, not a changed answer —
+redefining `weekly_km` to exclude the race would silently move a number that ~40 call sites
+depend on, to fix a rendering problem."* The population measurement is what changed the
+answer: 15.3% of plans, 50% of marathons, and the race as the sole cause. **`trainingKm` is
+now an identity and is KEPT** — computing `weekly_km − raceKm` on top of §121 would subtract a
+marathon twice.
+
+### Deliberately NOT changed, and stated rather than discovered
+
+`PlanCalendar`'s per-week tile computes its own `intendedKm` from session distances and shows
+it against `actualKm` from the activity log. Excluding the race there would render **`57 / 15`**
+on race week, because the run the runner actually did includes the race. That tile answers
+"how much did I cover this week", which is a different question from "how hard is this block",
+and the ruling's evidence is entirely about the second.
+
+### Enforcement
+
+`INV-PLAN-RACE-NOT-VOLUME` — no taper week's `weekly_km` exceeds the peak phase maximum
+(+1 km, a rounding width, since `sumWeeklyKm` rounds). **Falsified on the ruling's own worst
+case:** re-including the race turns a 12 km/week beginner marathoner's taper week 20 from 8 km
+to 50 km against a peak-phase maximum of 32, and the invariant fires. ⚠️ The golden corpus does
+not contain such a case, so a falsification run only against golden plans reports nothing —
+the check is not hollow, the fixture is narrow.
