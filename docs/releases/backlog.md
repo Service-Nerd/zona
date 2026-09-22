@@ -553,6 +553,19 @@ still in their hand.
 screen position, not a build. ⚠️ It was invisible to the Phase-1 checklist, which filed
 `IMG_7179` as "referral code screen" and scored us PARTIAL for having one.
 
+### 🔴 `ICON-RULE-01` — the icons are NOT BEING BUILT (founder, 2026-09-22)
+**Board: ruled; the BUILD is declined.** `design-rulings.md` § 2.
+
+The **rule stands and is gated** (`lib/marketing/iconRule.test.ts`): an icon earns its place by
+MEANING or by LOCATION on a list of >= 8 rows, with Silvanto's one-glyph/one-size/one-family/
+non-semantic-tint binding. **What is declined is building the set.** ⚠️ **Collins had already
+recorded the reason at the ruling itself** — *"icons on settings rows will not make anyone tell a
+friend about this app"* — and asked that it never be cited as progress against "stand out". The
+founder's call is the same call one day later. **May not return as a wow item; only as a measured
+findability problem on Me.**
+
+---
+
 ### 🧭 `DESIGN-MILES-TAKEABLES-01` — the four patterns the open-lens review ruled SHIP
 **Board: DESIGN.** ⚠️ **Two of the four were RETRACTED on verification and one was
 SUPERSEDED the next day.** What remains buildable is M-3 and the icon rule below.
