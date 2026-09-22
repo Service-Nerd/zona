@@ -141,6 +141,8 @@ Record: `plan-arc-v2.md` · `slt-2026-08-29-planzy-ux.md` ·
 | **Weight / height capture in the wizard** | 🔴 **KILLED** | Hutchinson veto + Wood: **illusion-of-progress data**. No formula we hold reads it |
 | **Empty-state illustration (bought, free, or commissioned)** | 🟡 **RECOMMENDED AGAINST, never formally ruled** | Free licences exist and are not the problem; the objection is that decoration in an empty state contradicts a product whose argument is the absence of decoration. ⚠️ **Explicitly recorded as "a taste call made against the documented rule"** and never put to a board. **First-sitting candidate** |
 | **A commissioned line-art illustration style** | 🔴 **SUPERSEDED** | The value in the competitor's is that **the drawing IS the volume curve** — and neither a stock pack nor a commissioned one can know the runner's curve. We hold it. Folds into P-06 as generated output |
+| **A swipeable plan-reveal card stack with a "3 / 5" position counter** (the P-06(b) half) | 🔴 **KILLED 2026-09-22** — Wroblewski + Zhuo, § 6p | **The reveal takes ZERO input today** — `GeneratingCeremony` staggers `RevealCard` over `repWeeks` and hands off. A swipe adds N gestures and a dismissal decision to someone who has just answered fifteen wizard questions. **The pacing it was proposed to add already exists** |
+| **A handwriting typeface for the plan annotation, shipped without amending `Inter only` by name** | ⚖️ 🔴 **VETO STANDS** — Silvanto, § 6p | The veto is against it arriving quietly, **not** against the rule being amended openly. ⚠️ **The typeface question itself is DEFERRED, not refused**, and cannot be answered until there is a chart at the reveal to annotate (`DESIGN-REVEAL-SHAPE-01`) |
 | **A stock-footage launch screen (P-11)** | 🟡 **RECOMMENDED CLOSE, never ruled** | *"The single most generic thing a running app can do"*, and there is no launch-screen problem: the Capacitor splash holds and hands off. **First-sitting candidate** |
 | **A paid "coach register" / DHTB voice tier (P-07)** | 🔴 **KILLED** | Traynor's reason is distinct from the others': it makes the personal brand a **purchasable component**, a dependency on a person written into the revenue line, and `brand.md` says the app must outlive the personal brand |
 | **Pill words on the compliance statement** | 🔴 **CUT** | The colour carries the meaning. Sutherland: *"a glossary entry is what you write when you don't trust the thing you made."* Most runners see no change; a minority see jargon |
@@ -707,6 +709,84 @@ may be reviewed if the board thinks it adds value**; this is the record of what 
 | **"Use `ScreenHeader` on pushed screens"** | 🔴 **RETRACTED — my error.** It is title + sub, **no back arrow**; it is for tab roots |
 | **S2** — dismiss is never `--moss` | 🟢 **STANDS**, but 🔴 **its gate is too narrow**: `DISMISS_WORDS` omits `back` and `not now`, and **4 full-width moss dismiss buttons** sit behind that gap |
 | *"Back arrow top-left (44px circle, `--bg-soft`)"* | 🟢 **STANDS, and is measurably ignored**: **6 of 12** back arrows obey. Two are **36px**, under our own documented iOS HIG minimum |
+
+---
+
+## 6p. `P-06(b)` — the annotation, and the question that was one step early (2026-09-22)
+
+**Convened on the founder's question about Collins' observation in § 6n** — that the icon
+ruling is utility, not wow, and the competitor's stopping moment is *"a handwritten
+annotation over a bar chart."* The observation was **already filed**, as `P-06(b)`, owner
+RUSS, gated on granting a second typeface against the `Inter only` rule in § 3.
+
+⚠️ **This is the first time any part of the post-wizard surface has been reviewed.** The
+register's own INSUFFICIENT EVIDENCE list carries *"anything past wizard submission —
+ceremony, plan preview, confidence badge, difficulty card. Unwalked."* One corner of it
+is now walked. The rest is not.
+
+### The measurements, taken before any seat spoke
+
+| # | Measured | Method |
+|---|---|---|
+| 1 | **Bar pitch is 14.1–22.2px.** Worst case `sub-4-hour-marathon-plan`, 18 weeks: **14.1px** | `PlanArc` bars are `flex:1` with `gap:2px` in a 288px plot at the 320px content width |
+| 2 | **2–5 dips per plan, mean 2.8, and they are SCATTERED** — `4,8` on the 12-weekers, `2,6,10,13,17` on the sub-4 marathon | All nine published plans, `zonna-plans-export.json` |
+| 3 | 🔴 **There is no chart at the reveal to annotate.** `PlanArc` renders on the Plan screen, `TabbedPhone` and its preview page. `GeneratePlanScreen` imports `PlanHeroMetrics` and never `PlanArc` | grep, both files |
+| 4 | 🔴 **We already say the sentence, and then throw it away.** `GeneratingCeremony`'s fourth line is *"Building in the deload weeks. You'll want them."* — our "easier on purpose", in voice, on a screen that evaporates ~2s before the preview | `COPY_PAID` / `COPY_FREE` |
+| 5 | 🔴 **The paced card stack already exists.** `RevealCard` over `repWeeks`, staggered and phase-coloured | `GeneratingCeremony.tsx:96,335` |
+
+**Measurements 3, 4 and 5 are the sitting.** The proposal was three things; two were built
+and the third had nothing to attach to.
+
+### Settled ground
+
+`Inter only` (§ 3, the rule under challenge) · `No chrome` (§ 3) · **`No celebration of the
+peak` — Wood, binding** (§ 2), which forbids annotating the tallest bar · `Shape, never
+completion` (§ 2) · *A commissioned line-art style — SUPERSEDED, "folds into P-06 as
+generated output"* (§ 2), which is the row that put the annotation here in the first place.
+
+### The board
+
+- **Zhuo (chair).** Three decisions bundled, two already built. **The typeface is the last
+  question in the chain, not the first** — you cannot choose a face for a mark with nothing
+  to attach to.
+- **Silvanto.** Before type, scale: an annotation tied to a **14.1px** target is not a
+  relationship a reader can see, and 2–5 scattered dips is not the competitor's one region.
+  ⚖️ **On the rule: a handwriting face IS a regression against `Inter only` unless that row
+  is amended by name in the same ruling. Veto stands against it shipping quietly; not
+  against it being amended openly.**
+- **Sierra.** Said once it teaches; said five times it is wallpaper. **The better outcome is
+  the runner recognising a short week without a caption** — perceptual expertise, worth more
+  than a font.
+- **Wroblewski.** The reveal takes **zero input** today. A swipeable stack with a counter
+  adds N gestures and a dismissal decision to someone who has just answered fifteen wizard
+  questions. At 320px there is no gutter for a margin note to live in.
+- **Collins**, who raised it and moved on the measurements: **the competitor's move is not
+  the handwriting, it is the PERMANENCE.** Their sentence is attached to the artefact the
+  runner keeps; ours is attached to a loading screen. *"We have the better sentence and we
+  throw it away."* The takeable is to put the shape on the reveal and attach the sentence to
+  it — not to buy a font.
+
+### ⚖️ Ruling
+
+| Part | Verdict |
+|---|---|
+| **Swipeable card stack + "3 / 5" position counter** | 🔴 **DON'T SHIP — permanent.** The stagger already paces the reveal; a swipe adds input to the one moment in the product that has none. Row in § 2 |
+| **`P-06(b)` re-scoped → `DESIGN-REVEAL-SHAPE-01`** | 🟢 **SHIP WITH AMENDMENT.** `PlanArc` at reveal scale on the plan preview, carrying **ONE** annotation on the **first dip**, set in Inter, the hand-gesture carried by a drawn SVG rule rather than by letterforms |
+| **The second typeface** | 🟡 **DEFERRED, NOT REFUSED.** Unanswerable until a chart exists to annotate. It returns to the founder as one narrow decision — annotations only, this surface only — with the Inter version built and on a device to compare against |
+
+⚠️ **The founder was not asked for the typeface exception, and that was the point.** The
+question that had blocked `P-06(b)` was one step early.
+
+### 📦 Artifacts
+
+1. **Pattern** — `ui-patterns.md § PlanArc`, new *Reveal scale* subsection: the plot height,
+   and the one-annotation rule with its reason (measurements 1 and 2).
+2. **Constant** — `PLOT_REVEAL` beside `PLOT = 36`; the annotated week resolved through
+   `computeDeloadWeeks()` (DELOAD-OWNER-01), **never an array position** — *"easier on
+   purpose"* over a week that is not a deload is a false claim about the plan.
+3. **Mechanical check** — the annotated week **is** a deload and **is not** the peak. Wood's
+   binding condition has been mechanical for `PlanArc`'s own bars since PLAN-ARC-V2; this is
+   the first time it reaches a caption.
 
 ---
 
