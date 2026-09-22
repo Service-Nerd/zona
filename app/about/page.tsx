@@ -23,6 +23,7 @@
 // was built by someone who needed it, and that he is still using it.
 
 import type { Metadata } from 'next'
+import { Section } from '@/components/marketing/Section'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
 import { pageMetadata } from '@/lib/marketing/siteMeta'
@@ -90,7 +91,16 @@ export default function AboutPage() {
       <SiteHeader />
 
       {/* ── The story ───────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
+      {/* SITE-WAVE-1a-ii — adopted the shared Section 2026-09-22 (Design Board
+          sitting one). ZERO VISUAL DELTA is this wave's contract: width="full"
+          + rhythm="none" hand the inner div exactly the maxWidth, margin and
+          padding the raw element had. The win is that `surface=` now EXISTS on
+          this page, so wave 1b can spend a ground here.
+          ⚠️ FOR WAVE 1B — SITE-MEASURE-THIRD-01: SECTION_MAX is 760, a THIRD
+          measure beside --measure-page 1100 and --measure-read 720. Preserved,
+          not endorsed. */}
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
         <div style={{
           fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
           textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px',
@@ -143,14 +153,17 @@ export default function AboutPage() {
           planning to prove something. It is not the exciting version of training. It is
           the version that keeps working.
         </P>
-      </section>
+      </Section>
 
       {/* ── The bit a charity actually wants to know ────────────────────── */}
-      <section style={{
-        background: 'var(--bg-soft)',
-        borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)',
-        padding: '56px 24px', marginTop: '48px',
-      }}>
+      {/* ⚠️ FOR WAVE 1B — SITE-GROUND-ABOUT-01: this spends --bg-soft as a PAGE
+          GROUND, and brand.md says in those words that "inset is not a page
+          ground". Preserved exactly (1a-ii changes nothing visible) and
+          flagged, because a warm band alternating against --bg is what W-08
+          killed on the homepage. */}
+      <Section surface="inset" width="full" rhythm="none"
+        style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', marginTop: '48px' }}
+        innerStyle={{ padding: '56px 24px' }}>
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
           <div style={{
             fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
@@ -177,10 +190,11 @@ export default function AboutPage() {
             asked to trust someone who will answer the email himself.
           </P>
         </div>
-      </section>
+      </Section>
 
       {/* ── Close ───────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{ height: '1px', background: 'var(--line)', margin: '0 0 20px' }} />
         <div style={{ fontSize: 'var(--fs-body)', fontWeight: 600, color: 'var(--ink)', marginBottom: '4px' }}>
           {BRAND.founder.name} &middot; Founder
@@ -202,7 +216,7 @@ export default function AboutPage() {
             Start here &rarr;
           </Link>
         </p>
-      </section>
+      </Section>
 
       <SiteFooter />
     </main>

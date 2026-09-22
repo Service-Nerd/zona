@@ -10,6 +10,7 @@
 // Presentational and server-rendered: no hooks, no client directive.
 
 import Link from 'next/link'
+import { Section } from '@/components/marketing/Section'
 import { BRAND } from '@/lib/brand'
 import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader, type SiteSection } from '@/components/marketing/SiteHeader'
@@ -63,7 +64,16 @@ export function ArticleHub({
 
       <SiteHeader current={section} />
 
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      {/* SITE-WAVE-1a-ii — adopted <Section> 2026-09-22 (Design Board sitting
+          one). ZERO VISUAL DELTA is this wave's contract: `width="full"` +
+          `rhythm="none"` hand the inner div exactly the maxWidth, margin and
+          padding the raw <section> had, and the outer band declares the `--bg`
+          it was already inheriting from <main>.
+          The point is not tidiness — it is that `surface=` now EXISTS on this
+          page, so wave 1b can spend a ground here. It could not before.
+          ⚠️ FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
         <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 14px' }}>
           {hub.eyebrow}
         </p>
@@ -73,9 +83,10 @@ export function ArticleHub({
         <p style={{ fontSize: 'var(--fs-lead-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 8px', maxWidth: 620 }}>
           {hub.sub}
         </p>
-      </section>
+      </Section>
 
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '16px 24px 8px' }}>
         {youngNote && (
           <p style={{
             fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--mute)',
@@ -139,9 +150,10 @@ export function ArticleHub({
             ))}
           </div>
         )}
-      </section>
+      </Section>
 
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
         <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18 }}>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0, maxWidth: 620 }}>
             Every plan {BRAND.name} publishes is free to read before you pay anyone for anything.{' '}
@@ -155,7 +167,7 @@ export function ArticleHub({
             </p>
           )}
         </div>
-      </section>
+      </Section>
 
       <SiteFooter />
     </main>

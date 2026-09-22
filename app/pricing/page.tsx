@@ -26,6 +26,7 @@
 // it in public.
 
 import type { Metadata } from 'next'
+import { Section } from '@/components/marketing/Section'
 import Link from 'next/link'
 import { BRAND, PRICING } from '@/lib/brand'
 import { pageMetadata } from '@/lib/marketing/siteMeta'
@@ -97,7 +98,16 @@ export default function PricingPage() {
       <SiteHeader current="pricing" />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
+      {/* SITE-WAVE-1a-ii — adopted <Section> 2026-09-22 (Design Board sitting
+          one). ZERO VISUAL DELTA is this wave's contract: `width="full"` +
+          `rhythm="none"` hand the inner div exactly the maxWidth, margin and
+          padding the raw <section> had, and the outer band declares the `--bg`
+          it was already inheriting from <main>.
+          The point is not tidiness — it is that `surface=` now EXISTS on this
+          page, so wave 1b can spend a ground here. It could not before.
+          ⚠️ FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
         <Eyebrow>Pricing</Eyebrow>
         <h1 style={{
           fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)',
@@ -111,10 +121,11 @@ export default function PricingPage() {
           you built and drop to the free tier, or you keep the coaching. Nothing is
           deleted and nothing nags you.
         </p>
-      </section>
+      </Section>
 
       {/* ── The two tiers ───────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <div style={{
           display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))',
           gap: '16px',
@@ -179,10 +190,11 @@ export default function PricingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* ── The honest bit about what "free" means after the trial ──────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderLeft: '3px solid var(--warn)',
@@ -202,10 +214,11 @@ export default function PricingPage() {
             for you, use the free tier.
           </p>
         </div>
-      </section>
+      </Section>
 
       {/* ── Charity runners. The page that makes the code make sense. ───── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
           Running on a charity place? Some charities cover the full app for their
           runners.{' '}
@@ -213,10 +226,11 @@ export default function PricingPage() {
             How that works &rarr;
           </Link>
         </p>
-      </section>
+      </Section>
 
       {/* ── Close ───────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
@@ -236,7 +250,7 @@ export default function PricingPage() {
             </Link>
           </div>
         </div>
-      </section>
+      </Section>
 
       <SiteFooter />
     </main>

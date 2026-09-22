@@ -45,6 +45,7 @@
 // two-week trial, never to a request form.
 
 import type { Metadata } from 'next'
+import { Section } from '@/components/marketing/Section'
 import Link from 'next/link'
 import { BRAND, PRICING } from '@/lib/brand'
 import { pageMetadata } from '@/lib/marketing/siteMeta'
@@ -173,7 +174,16 @@ export default function CharityRunnersPage() {
       <SiteHeader />
 
       {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
+      {/* SITE-WAVE-1a-ii — adopted the shared Section 2026-09-22 (Design Board
+          sitting one). ZERO VISUAL DELTA is this wave's contract: width="full"
+          + rhythm="none" hand the inner div exactly the maxWidth, margin and
+          padding the raw element had, and the outer band declares the `--bg`
+          it already inherited from <main>.
+          The win is that `surface=` now EXISTS on this page, so wave 1b can
+          spend a ground here. It could not before.
+          FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y-hero) 24px 0' }}>
         <Eyebrow>For charity runners</Eyebrow>
         <h1 style={{
           fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-h1)',
@@ -209,7 +219,7 @@ export default function CharityRunnersPage() {
           </a>
           <AppStoreBadge />
         </div>
-      </section>
+      </Section>
 
       {/* ── The product, before the argument ──────────────────────────────
           The page previously showed NOTHING of the app: six stacked sections
@@ -220,7 +230,8 @@ export default function CharityRunnersPage() {
 
           Light section only: the frame renders its screen ground dark inside a
           --ground section (known constraint, PhoneFrame header). */}
-      <section style={{ padding: '8px 24px 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ padding: '8px 24px 56px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px' }}>
         <div className="phone-fit"><PhoneFrame {...demoBlockView()} /></div>
         <p style={{
           fontSize: 'var(--fs-body)', lineHeight: 1.55, color: 'var(--mute)',
@@ -228,14 +239,17 @@ export default function CharityRunnersPage() {
         }}>
           One screen, one job: the run you are doing today and the zone to hold it in.
         </p>
-      </section>
+      </Section>
 
       {/* ── The real risk ───────────────────────────────────────────────── */}
-      <section style={{
-        background: 'var(--bg-soft)',
-        borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)',
-        padding: '64px 24px',
-      }}>
+      {/* ⚠️ FOR WAVE 1B — SITE-GROUND-ABOUT-01: another `--bg-soft` PAGE GROUND.
+          brand.md says in those words that "inset is not a page ground"; it is
+          the containment surface ProductStill frames with. Preserved exactly
+          (1a-ii changes nothing visible) and flagged, because warm bands
+          alternating against --bg are what W-08 killed on the homepage. */}
+      <Section surface="inset" width="full" rhythm="none"
+        style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}
+        innerStyle={{ padding: '64px 24px' }}>
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
           <Eyebrow>The thing nobody tells you</Eyebrow>
           <H2>The risk is not that you are too slow. It is that you try too hard.</H2>
@@ -253,11 +267,12 @@ export default function CharityRunnersPage() {
             It is the version that gets you to the start line.
           </P>
         </div>
-      </section>
+      </Section>
 
       {/* ── How to use the code. The founder's note: nothing on this page
             told a runner that codes existed or what to do with one. ───── */}
-      <section id="code" style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0', scrollMarginTop: '80px' }}>
+      <Section id="code" width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0', scrollMarginTop: '80px' }}>
         <Eyebrow>If you have a code</Eyebrow>
         <H2>Three steps, about a minute.</H2>
 
@@ -294,7 +309,7 @@ export default function CharityRunnersPage() {
           Codes come from your charity, not from me, and each one works once. If you think
           you should have one and do not, ask whoever organises your place.
         </p>
-      </section>
+      </Section>
 
       {/* ── What the code unlocks ────────────────────────────────────────
           On --bg-soft: the page had exactly ONE tonal break in its whole
@@ -305,11 +320,14 @@ export default function CharityRunnersPage() {
           Left-accent rows, not a card grid. That is the documented feature-list
           pattern (same visual language as session cards) and it removes four
           more boxes from a middle that had about twenty. */}
-      <section style={{
-        background: 'var(--bg-soft)',
-        borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)',
-        padding: '64px 24px', marginTop: '56px',
-      }}>
+      {/* ⚠️ FOR WAVE 1B — SITE-GROUND-ABOUT-01: another `--bg-soft` PAGE GROUND.
+          brand.md says in those words that "inset is not a page ground"; it is
+          the containment surface ProductStill frames with. Preserved exactly
+          (1a-ii changes nothing visible) and flagged, because warm bands
+          alternating against --bg are what W-08 killed on the homepage. */}
+      <Section surface="inset" width="full" rhythm="none"
+        style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', marginTop: '56px' }}
+        innerStyle={{ padding: '64px 24px' }}>
         <div style={{ maxWidth: SECTION_MAX, margin: '0 auto' }}>
           <Eyebrow>What you get</Eyebrow>
           <H2>The same app everyone else pays for.</H2>
@@ -337,10 +355,11 @@ export default function CharityRunnersPage() {
             ))}
           </div>
         </div>
-      </section>
+      </Section>
 
       {/* ── No code. The honest fallback, deliberately AFTER the offer. ── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <Eyebrow>No code?</Eyebrow>
         <H2>Then start with a free plan.</H2>
         <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 22px' }}>
@@ -362,10 +381,11 @@ export default function CharityRunnersPage() {
             </Link>
           ))}
         </div>
-      </section>
+      </Section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px 0' }}>
         <Eyebrow>Questions</Eyebrow>
         <H2>The ones charity runners actually ask.</H2>
         <div style={{
@@ -387,10 +407,11 @@ export default function CharityRunnersPage() {
             </details>
           ))}
         </div>
-      </section>
+      </Section>
 
       {/* ── Close ───────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: 'var(--sect-y) 24px var(--sect-y)' }}>
         <div style={{
           background: 'var(--card)', border: '1px solid var(--line)',
           borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
@@ -407,7 +428,7 @@ export default function CharityRunnersPage() {
             <AppStoreBadge />
           </div>
         </div>
-      </section>
+      </Section>
 
       <SiteFooter />
     </main>

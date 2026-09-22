@@ -24,10 +24,20 @@ import type { CSSProperties, ReactNode } from 'react'
  * (W-10). `lib/marketing/sectionSurfaces.test.ts` counts them.
  */
 
-export type SectionSurface = 'page' | 'inset' | 'dark'
+export type SectionSurface = 'page' | 'card' | 'inset' | 'dark'
 
 const SURFACE: Record<SectionSurface, { background: string; color: string }> = {
   page:  { background: 'var(--bg)',      color: 'var(--ink-2)' },
+  // ⚠️ `card` ADDED 2026-09-22 (Design Board sitting one). It is the WHITE
+  // SPOTLIGHT that `ui-patterns.md` § Section grounds has documented as one of
+  // the three grounds since W-08 — and which this component could not express,
+  // so the homepage hand-rolled it with a raw background instead. The doc, the
+  // component and `sectionSurfaces.test.ts` described three different systems;
+  // this is the reconciliation, not a new ground.
+  card:  { background: 'var(--card)',    color: 'var(--ink-2)' },
+  // ⚠️ `inset` IS NOT A PAGE GROUND, and brand.md says so in those words. It is
+  // the containment surface `ProductStill` uses to frame a component. Spending
+  // it as a section ground is band alternation, which W-08 killed.
   inset: { background: 'var(--bg-soft)', color: 'var(--ink-2)' },
   dark:  { background: 'var(--ground)',  color: 'var(--on-ground)' },
 }

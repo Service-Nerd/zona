@@ -1,5 +1,20 @@
 # UI Patterns — Zonna Visual Language
 
+> ⚖️ **This document is Design Board doctrine (ADR-023).** Editing it is a design
+> ruling, not a note-taking exercise, and `.claude/hooks/design-guard.py` fires on
+> every edit to it — including through Bash. Convene `/design-board`, or state the
+> exemption in one line.
+>
+> **Read `docs/canonical/design-rulings.md` first.** It records what has already
+> been decided and what may not be re-proposed. Two design decisions were
+> re-litigated from scratch on 2026-09-21 because the rule and the token lived in
+> different files and never met.
+>
+> Every Design Board SHIP ruling lands three artifacts in one commit: a **pattern**
+> here, a **token or named constant**, and a **mechanical check that has been made
+> to go red** — plus a row in the ruling register.
+
+
 **Reference aesthetic**: Runna · Planzy  
 **Authority**: This document defines layout patterns, component anatomy, spacing, and typography rules for all Zonna screens. Read before building any new screen or component.
 
@@ -239,7 +254,25 @@ A sequence of short steps on a marketing page. Deliberately the PLAINEST block o
 
 **What this replaced:** `--bg` alternating with `--bg-soft`, two warm tones **eight points apart**, propped up by hairline borders top and bottom. At that distance banding reads as a smudge rather than a rhythm, and the hairlines holding it together are the decorative dividers this document bans. `--bg-soft` returns to its documented job: inset areas and input fields.
 
-**Where the white band is spent on the homepage:** *"Probably not for you if…"*. Anti-qualification is the most distinctive thing on the site and the one thing a funded competitor will never write, so it gets the page's only ground change before the close. A ground change needs an edge, so the hairlines stay on **that section only**.
+**Where the white band is spent on the homepage:** *"One week, run two ways"* — the proof section.
+
+> ⚠️ **AMENDED 2026-09-22 (Design Board, SITE-WAVE-1b-iii). This line previously read:**
+> *"Probably not for you if…. Anti-qualification is the most distinctive thing on the site
+> and the one thing a funded competitor will not copy."*
+>
+> **That was true of a page whose proof sat at 52%, and sitting two moved the proof to
+> 24%. We changed the premise ourselves, two hours earlier.** Sierra's finding decided it:
+> the refusal sections are the brand enjoying itself — good writing, zero transfer — while
+> the proof is the only section that makes the reader better at running, and the one a
+> competitor whose whole proposition is encouragement **structurally cannot print**.
+>
+> **The arithmetic mattered as much as the argument.** The page has exactly ONE movable
+> ground change: W-09 binds the close to last, and this table permits one white spotlight.
+> Spent at 63% of a 14.6-screen page it left the first two thirds one uninterrupted ground,
+> which is the founder's measured complaint. **First ground change: screen 9.2 → 3.4.**
+>
+> The refusal keeps its content and its position; it loses the emphasis.
+> Guarded by `sectionSurfaces.test.ts`.
 
 ⚠️ **A competitor teardown proposed cream/white alternation across every section, and it was rejected.** Alternation makes a ground change mean nothing; two of them mean something. Recorded so the same proposal is not re-imported from the next teardown.
 
@@ -2479,6 +2512,13 @@ Reference: inline in `app/dashboard/DashboardClient.tsx` (`showMaintTransition` 
 ---
 
 ## What Not to Build
+
+> ⚖️ **This table is component guidance, not the rule statement.** The restraint rules
+> themselves are owned by `docs/canonical/ux-principles.md` § Screen Design Principles
+> (Design Board, ADR-023). ⚠️ **"Alert/modal popups" below does NOT mean modals are
+> banned** — the owner's rule permits them for destructive confirmations (delete,
+> disconnect) and forbids them for information. A previous copy of that rule in
+> `CLAUDE.md` lost the exception, which is why ownership was consolidated on 2026-09-22.
 
 | Avoid | Use instead |
 |---|---|

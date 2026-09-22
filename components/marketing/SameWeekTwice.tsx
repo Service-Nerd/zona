@@ -34,6 +34,7 @@
 // is demonstrably true.
 
 import Link from 'next/link'
+import { Section } from '@/components/marketing/Section'
 import { MARKETING_PLANS, planAnchor } from '@/lib/marketing/plans'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { zoneWeekStatement, classifyRun } from '@/lib/coaching/zoneWeekStatement'
@@ -115,7 +116,23 @@ export function SameWeekTwice() {
   )
 
   return (
-    <section style={{ padding: 'var(--sect-y) 24px' }}>
+    /* SITE-WAVE-1b-i — adopted the shared Section 2026-09-22. This component
+       rendered its OWN raw <section>, which is why the homepage measured 14
+       sections against 13 <Section> elements, and why the 1a-ii adoption guard
+       passed while a raw section survived: that guard lists seven page files
+       and this is a component. An audit is only ever as wide as its list.
+       Zero visual delta — width="full" + rhythm="none" reproduce the padding. */
+    /* 🎯 THE WHITE SPOTLIGHT — Design Board 1b-iii, 2026-09-22.
+       The page has exactly one movable ground change: the close is bound last
+       by W-09, and W-08 permits one white spotlight, "a spotlight, not a
+       rhythm". It was spent at 63% of a 14.6-screen page, so the first two
+       thirds were one uninterrupted ground — the founder's measured complaint.
+       It now marks the proof at 24%: the only section that teaches the reader
+       anything, and the one a competitor whose proposition is encouragement
+       structurally cannot print. ui-patterns.md §257 amended accordingly. */
+    <Section surface="card" width="full" rhythm="none"
+      style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}
+      innerStyle={{ padding: 'var(--sect-y) 24px' }}>
       <div style={{ maxWidth: 'var(--measure-page)', margin: '0 auto' }}>
         <div style={{
           fontSize: 'var(--fs-caption)', fontWeight: 700, color: 'var(--moss-strong)',
@@ -196,6 +213,6 @@ export function SameWeekTwice() {
           readings are an illustration of two ways to run the week, not a measurement of anyone.
         </p>
       </div>
-    </section>
+    </Section>
   )
 }

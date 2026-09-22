@@ -6,6 +6,7 @@
 // Warm Slate tokens only (no hardcoded brand string / colour).
 
 import Link from 'next/link'
+import { Section } from '@/components/marketing/Section'
 import { BRAND } from '@/lib/brand'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
@@ -177,7 +178,16 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
       </nav>
 
       {/* ── Hero: the diagnosis ─────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '24px 24px 8px' }}>
+      {/* SITE-WAVE-1a-ii — adopted the shared Section 2026-09-22 (Design Board
+          sitting one). ZERO VISUAL DELTA is this wave's contract: width="full"
+          + rhythm="none" hand the inner div exactly the maxWidth, margin and
+          padding the raw element had, and the outer band declares the `--bg`
+          it already inherited from <main>.
+          The win is that `surface=` now EXISTS on this page, so wave 1b can
+          spend a ground here. It could not before.
+          FOR WAVE 1B: the rhythm below is preserved, not endorsed. */}
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '24px 24px 8px' }}>
         <p style={{ fontFamily: 'var(--font-brand)', fontSize: 'var(--fs-sm)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss-strong)', margin: '0 0 16px' }}>
           You&rsquo;re trying hard. That&rsquo;s the problem.
         </p>
@@ -200,10 +210,11 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
         </div>
 
         <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '22px 0 0', maxWidth: 620 }}>{plan.whoFor}</p>
-      </section>
+      </Section>
 
       {/* ── The zone idea (differentiator, on the page) ─────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '32px 24px' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '32px 24px' }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: '24px 22px' }}>
           <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 10px' }}>Why so much easy?</h2>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: 0 }}>
@@ -213,10 +224,11 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
             your easy runs and saves the effort for the one day a week that earns it.
           </p>
         </div>
-      </section>
+      </Section>
 
       {/* ── The plan, week by week ──────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '4px 24px 8px' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '4px 24px 8px' }}>
         <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 4px', letterSpacing: '-0.01em' }}>The plan, week by week</h2>
         <p style={{ fontSize: 'var(--fs-body)', color: 'var(--mute)', margin: '0 0 20px' }}>Free. Take it exactly as it is.</p>
 
@@ -283,10 +295,11 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
             </div>
           )
         })}
-      </section>
+      </Section>
 
       {/* ── The honesty section ─────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px 8px' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '20px 24px 8px' }}>
         <div style={{ borderLeft: '3px solid var(--moss)', paddingLeft: 18, margin: '8px 0' }}>
           <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 12px', letterSpacing: '-0.01em' }}>This is the flat version.</h2>
           <p style={{ fontSize: 'var(--fs-lead)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 12px', maxWidth: 620 }}>
@@ -299,7 +312,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
             The app is the coach.
           </p>
         </div>
-      </section>
+      </Section>
 
       {/* ── CTA ──────────────────────────────────────────────────────────
           COPY-CTA-01 — this was a WAITLIST, and the app has been on the App
@@ -308,7 +321,8 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
           something that already exists, and put a form between them and a
           download. The badge is the action now; the waitlist component stays
           in the repo, unused, for the next pre-launch surface. */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
         <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 16, padding: '26px 22px' }}>
           <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 6px' }}>The plan above is yours. No catch.</h2>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.55, color: 'var(--ink-2)', margin: '0 0 18px', maxWidth: 520 }}>
@@ -320,10 +334,11 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
             Or <Link href="/pricing" style={{ color: 'var(--moss-strong)', fontWeight: 600, textDecoration: 'none' }}>see what free covers first &rarr;</Link>
           </p>
         </div>
-      </section>
+      </Section>
 
       {/* ── FAQ ─────────────────────────────────────────────────────────── */}
-      <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+      <Section width="full" rhythm="none"
+        innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
         <h2 style={{ fontSize: 'var(--fs-h4)', fontWeight: 800, color: 'var(--ink)', margin: '0 0 16px', letterSpacing: '-0.01em' }}>Questions</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {faqs.map((f, i) => (
@@ -333,11 +348,12 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
             </div>
           ))}
         </div>
-      </section>
+      </Section>
 
       {/* ── Related plans (internal links) ──────────────────────────────── */}
       {related.length > 0 && (
-        <section style={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
+        <Section width="full" rhythm="none"
+          innerStyle={{ maxWidth: SECTION_MAX, margin: '0 auto', padding: '28px 24px 8px' }}>
           <h2 style={{ fontSize: 'var(--fs-lead-lg)', fontWeight: 700, color: 'var(--ink)', margin: '0 0 14px' }}>Other free plans</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {related.map(r => (
@@ -349,7 +365,7 @@ export function PlanPage({ plan }: { plan: MarketingPlan }) {
               </Link>
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
