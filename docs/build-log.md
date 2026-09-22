@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — DESIGN-REVEAL-SHAPE-01 · my test passed while I broke the rule it was guarding
+**Shipped:** The plan's shape now appears at the moment the plan arrives, with one annotation saying why a week is smaller — and a test that can actually tell when that annotation lands in the wrong place.
+
+**Dev learning:** I wrote a gate for a board's binding condition — "the annotation may never land on the tallest bar" — then falsified it by making the component annotate exactly that. **It stayed green.** The test had its own copy of the rule, so mutating the component changed nothing the test computed. This codebase already has that failure written down under a different name: a tier test that asserted its own private copy of the resolution order and therefore could not catch either producer drifting. I read that note weeks ago and wrote the same bug anyway. The fix was to export the rule from the component so there is one of it.
+
+**Product/creator learning:** The reason this item had been stuck was not the thing anyone thought. It was blocked on a typography decision — grant a second typeface or not — and the actual blocker was that there was no chart on that screen at all. The component existed, the data existed, three other surfaces rendered it, and the one moment that matters imported the numbers and not the shape. **A decision can sit blocked for weeks on the last question in the chain.**
+
+**AI-building learning:** Falsification is not a formality at the end. Of the checks I wrote today, two were hollow and one fired on my own documentation, and every one of those was found by deliberately breaking the thing rather than by reading the test. The ratio is bad enough that "green" on a new gate should mean nothing until it has been made red.
+
+**The honest bit:** Mid-build I found that `w.type === 'deload' || w.badge === 'deload'` is written out by hand in twelve places, and two of them omit the badge — so two invariants quietly disagree with ten others about which weeks are deloads. I added the single owner and then did **not** migrate the two divergent ones, because doing so widens what those invariants fire on, and that is an engine change I have no measurement for. Filing it rather than fixing it feels like leaving the job half done; folding it into a display build silently would have been worse.
+
+**Hook material:** I mutated the code to violate the exact rule my new test existed to protect. The test passed. It had a copy of the rule.
+
+**Postable?:** yes — "my test asserted its own copy" is the one every engineer recognises and nobody admits.
+
 ## 2026-09-22 — COACH-BEHIND-DAY-TWO-01 and the sittings · four items in, one defect out
 **Shipped:** A Coach verdict that can no longer tell a three-day-a-week runner they are behind for missing a single session — plus four board sittings in which three filings turned out to be wrong about themselves.
 
