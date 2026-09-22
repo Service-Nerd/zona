@@ -18,8 +18,25 @@ type Props = {
   weekKm: number[]              // REQUIRED — training km per week, plan order
   weekPhase: (string | null)[]  // REQUIRED — DISPLAY labels, plan order
   raceWeek?: number             // 1-indexed
+  reveal?: boolean              // DESIGN-REVEAL-SHAPE-01 — reveal scale + one annotation
 }
 ```
+
+### `reveal` — the plan-arrival scale, and the only surface that annotates
+
+`false` (default) renders at `PLOT` **36px**, which is a Plan-screen height: the arc sits in a
+dense scroll among five other blocks. `true` renders at `PLOT_REVEAL` **88px** and adds **one**
+annotation on the first dip — *"Week N is easier on purpose."*
+
+Used by **`GeneratePlanScreen`'s plan preview only.** 🔴 Before `DESIGN-REVEAL-SHAPE-01` that
+screen imported `PlanHeroMetrics` and **never `PlanArc`**, so at the one moment a plan arrives the
+runner met its numbers and never its shape.
+
+⚠️ **One annotation, and the number is measured**: bar pitch is 14.1–22.2px at the 320px content
+width, and plans carry 2–5 scattered dips (mean 2.8). ⚠️ **Set in Inter** — the hand is the drawn
+rule, not the letterforms; the second-typeface question is deferred, not refused. ⚠️ **Never the
+peak** (Wood, binding). The rule is exported as **`firstDipWeek`** so
+`lib/marketing/revealShape.test.ts` asserts the producer rather than a copy of it.
 
 ### `weekKm` — required, and the bars map over it
 

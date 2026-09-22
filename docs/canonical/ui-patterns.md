@@ -2532,6 +2532,42 @@ fill: `DESIGN-DAYDOT-CHANNEL-01`, still open.
 
 ---
 
+## PlanArc — reveal scale (DESIGN-REVEAL-SHAPE-01, Design Board 2026-09-22)
+
+**At the moment a plan arrives, `PlanArc` renders at `PLOT_REVEAL` (88px) with one annotation.**
+Everywhere else it is `PLOT` (36px).
+
+🔴 **The defect this closes.** `PlanArc` rendered on the Plan screen, in `TabbedPhone` and on its
+own preview page — and **not on the reveal.** `GeneratePlanScreen` imported `PlanHeroMetrics` and
+never `PlanArc`, so at the one moment the plan arrives the runner met its **numbers** and never
+its **shape**; the shape appeared later, on a tab they had to navigate to. That is also why the
+second-typeface question could not be answered: there was no chart to annotate.
+
+**One annotation, on the first dip, and the number is measured.** Bar pitch is **14.1–22.2px** at
+the 320px content width (worst case the 18-week marathon at 14.1px), and plans carry **2–5 dips,
+mean 2.8, scattered** — `4,8` on the twelve-weekers, `2,6,10,13,17` on the sub-4 marathon. An
+annotation tied to a 14px target is not a relationship a reader can see (Silvanto); five captions
+of one sentence is wallpaper (Sierra).
+
+⚠️ **Set in Inter. The hand is the drawn rule, not the letterforms.** `Inter only` is standing and
+Silvanto's veto is live against a handwriting face arriving quietly; **the second typeface is
+DEFERRED, not refused**, and returns with this on a device to compare against.
+
+⚠️ **Two binding constraints, both guarded against REAL generated plans:**
+- the annotated week must genuinely be **easier than both neighbours** — *"easier on purpose"* over
+  a week that is not is a false claim about the plan (DELOAD-OWNER-01);
+- it may **never be the peak** — Wood, binding: *"no emphasis, no marker, no colour change at the
+  tallest bar."*
+
+🔴 **`firstDipWeek` is EXPORTED so the check asserts the producer, not a copy.** The gate's first
+version mirrored the rule in the test file, and falsification caught it: mutating the component to
+annotate the **peak** left the suite green. That is the recorded `tierResolution.test.ts` flaw —
+*"the test asserted its own copy and could not catch either producer drifting."*
+
+**Check:** `lib/marketing/revealShape.test.ts`.
+
+---
+
 ## Time to race — one vocabulary (S5, Design Board 2026-09-22)
 
 **There is exactly one way this product says how far away the race is, and it lives in

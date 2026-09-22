@@ -4,6 +4,9 @@
 'use client'
 
 import PlanHeroMetrics from '@/components/shared/PlanHeroMetrics'
+import PlanArc from '@/components/shared/PlanArc'
+import { planArcSeries } from '@/lib/plan/weekVolume'
+import { phaseDisplayLabel } from '@/lib/coaching/weekVoice'
 import RefusalView from '@/components/shared/RefusalView'
 import { useState, useEffect, useRef } from 'react'
 import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
@@ -1408,6 +1411,32 @@ export default function GeneratePlanScreen({
               they drift. */}
           <div style={{ marginTop: '14px' }}>
             <PlanHeroMetrics plan={plan} units={preferredUnits} canReshape={!!hasPaidAccess} />
+          </div>
+
+          {/* DESIGN-REVEAL-SHAPE-01 (Design Board § 6p) — THE SHAPE, at the one
+              moment it matters.
+              🔴 Measured at the sitting: `PlanArc` rendered on the Plan screen,
+              in `TabbedPhone` and on its preview page — and NOT HERE. This
+              screen imported `PlanHeroMetrics` and never `PlanArc`, so at the
+              moment the plan arrived the runner met its NUMBERS and never its
+              SHAPE; the shape appeared later, on a tab they had to navigate to.
+              P-06(c) gave this panel the biggest week and the total. This gives
+              it the arc those numbers describe, and one sentence saying why a
+              week is smaller before it reads as a bug. */}
+          {/* Derived at render, never stored — a series written at generation
+              goes stale the moment a plan is reshaped, which is this repo's
+              recorded stale-mid-pipeline class (and the same reason P-06(c)'s
+              hero numbers are derived here too). */}
+          <div style={{ marginTop: '20px' }}>
+            <PlanArc
+              totalWeeks={plan.weeks.length}
+              currentWeek={1}
+              doneWeeks={0}
+              weekKm={planArcSeries(plan.weeks).km}
+              weekPhase={planArcSeries(plan.weeks).phase.map(phaseDisplayLabel)}
+              raceWeek={plan.weeks.find(w => w.type === 'race')?.n}
+              reveal
+            />
           </div>
         </div>
 

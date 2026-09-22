@@ -245,3 +245,31 @@ export function deloadVolumeFraction(volumeCappedInjury: boolean): number {
     ? GENERATION_CONFIG.INJURY_RECOVERY_WEEK_VOLUME_PCT
     : GENERATION_CONFIG.RECOVERY_WEEK_VOLUME_PCT) / 100
 }
+
+/**
+ * DELOAD-WEEK-PREDICATE-01 — "is THIS WEEK OBJECT a deload?", one answer.
+ *
+ * 🔴 DELOAD-OWNER-01 one level down. This module already owns *is week N on
+ * the cadence* (`isDeloadWeek`) and *where do they land* (`computeDeloadWeeks`).
+ * Nothing owned the third question, asked of a week that already exists — and
+ * the expression `w.type === 'deload' || w.badge === 'deload'` is hand-written
+ * in **twelve** places across `invariants.ts`, `baseBuildValidate.ts` and the
+ * measurement scripts.
+ *
+ * ⚠️ AND THEY DO NOT AGREE. Two sites read `type` ALONE
+ * (`invariants.ts:2093` counts `plan.weeks.filter(w => w.type === 'deload')`;
+ * `:2632` skips on `w.type === 'deload'`), so they see a different set of weeks
+ * from the other ten whenever a week carries the badge without the type. **This
+ * is the same shape as the five copies of the cadence expression that agreed
+ * only by accident of surrounding control flow.**
+ *
+ * ⚠️ THE TWO DIVERGENT SITES ARE NOT MIGRATED HERE, DELIBERATELY. Pointing them
+ * at this predicate would widen what those invariants fire on, which is an
+ * engine behaviour change with its own blast radius and belongs to its own
+ * item, measured — not folded silently into a display build. Filed as
+ * `DELOAD-WEEK-PREDICATE-01`.
+ */
+export function isDeloadWeekObject(week: { type?: string | null; badge?: string | null } | null | undefined): boolean {
+  if (!week) return false
+  return week.type === 'deload' || week.badge === 'deload'
+}
