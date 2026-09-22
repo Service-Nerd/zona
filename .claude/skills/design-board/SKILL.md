@@ -103,7 +103,11 @@ claim to know the product without the rest.
 6. **Tokens and design system rules** → `CLAUDE.md` § Design System + `app/globals.css`
 7. **What exists and at what tier** → `docs/canonical/feature-registry.md`
 8. **This board's authority** → `docs/architecture/ADR-023-design-board-authority.md`
-9. **The market**, when the sitting touches competitive positioning →
+9. **Context for THIS sitting's surface** → `docs/canonical/board-context-app-review.md`
+   when the sitting is about the app. It carries what the website sitting established so the
+   app sitting does not rediscover it, plus the finding that runs both ways: **the app is more
+   colourful than the website.**
+10. **The market**, when the sitting touches competitive positioning →
    `docs/MILES-GAP-ANALYSIS.md`, `docs/MILES-PROOFS.md`,
    `docs/investigations/competitive-ux-scope-2026-08-29.md`
 

@@ -132,7 +132,15 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-21 (last ship `64fde64`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,992 tests / 334 files** · 90 commits. 🟢 **`SITE-HERO-01`** — SLT ruled three open homepage decisions (`docs/decisions/slt-2026-09-21-homepage-three.md`). ⚠️ **I briefed the board WRONG and caught it before they ruled:** the hero was already two columns with the PHONE on the right, so 2a was a swap not a restructure. **The evidence card now sits in the hero**; the price is **out of the fact row** — three seats voted remove for different reasons and **Sutherland's governs because it generalises: TIMING, not repetition — never put a price adjacent to a proof moment.** 🔴 **TWO PERMANENT KILLS, both better value than what shipped:** the design's proof band (**all three claims measured FALSE**; "most runners manage half that" is a statistic about a population we have never observed) and the phone-geometry resize. **`DESIGN-V3-FIDELITY` CLOSED.** ⚠️ **Three defects introduced while building, all found by MEASURING not looking:** the 3s loop silently made the cross-fades **21.7% of the cycle** (and **I first dismissed the screenshot as a capture artefact**); the longer copy ate the 320px gutter to **5px while `scrollWidth === innerWidth` stayed true**, so it would have shipped unseen; and the fix did nothing because the facts were bare TEXT NODES, which flexbox merges once the element between them is hidden.
+**State at END of 2026-09-22 (last ship `b111873`) — PUSHED.** Suites green: **452 tests / 40 files** in the marketing + shared scope. Typecheck clean. All six hook suites pass. Six commits: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage, `<Section>` adoption, the docs.
+
+🧭 **The homepage, measured at 375px:** first ground change **screen 10.6 → 3.4**, proof **52% → 24%**, sections **14 → 11**, page **12,317 → 11,773px**, content `<h2>` **9 (all 26px) → 6 with a scale**.
+
+🔴 **NOT DEVICE-VERIFIED, and that is the blocker on everything downstream.** Every number above is emulated 375px in a headless browser. **Desktop and tablet widths are entirely unmeasured**, and `width="full"` conversions plus a moved ground are exactly the class that could differ at 1024px. Two Design Board seats cannot rule on *feel* until the founder looks.
+
+⚠️ **Six instances of one defect class in a day** — substring bias in checks (`toContain('<ZoneRings')` passes for `<ZoneRingsX`). The fifth was inside the guard written against the fourth. **Only falsifying each check caught them**; three were green and hollow.
+
+**Earlier — end of 2026-09-21 (last ship `64fde64`), SHIPPED AND LIVE.** `verify` exit 0 · **2,992 tests / 334 files** · 90 commits. 🟢 **`SITE-HERO-01`** — SLT ruled three open homepage decisions (`docs/decisions/slt-2026-09-21-homepage-three.md`). ⚠️ **I briefed the board WRONG and caught it before they ruled:** the hero was already two columns with the PHONE on the right, so 2a was a swap not a restructure. **The evidence card now sits in the hero**; the price is **out of the fact row** — three seats voted remove for different reasons and **Sutherland's governs because it generalises: TIMING, not repetition — never put a price adjacent to a proof moment.** 🔴 **TWO PERMANENT KILLS, both better value than what shipped:** the design's proof band (**all three claims measured FALSE**; "most runners manage half that" is a statistic about a population we have never observed) and the phone-geometry resize. **`DESIGN-V3-FIDELITY` CLOSED.** ⚠️ **Three defects introduced while building, all found by MEASURING not looking:** the 3s loop silently made the cross-fades **21.7% of the cycle** (and **I first dismissed the screenshot as a capture artefact**); the longer copy ate the 320px gutter to **5px while `scrollWidth === innerWidth` stayed true**, so it would have shipped unseen; and the fix did nothing because the facts were bare TEXT NODES, which flexbox merges once the element between them is hidden.
 
 **Earlier on 2026-09-21 (last ship `0262254`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,989 tests / 334 files** · `audit-docs.sh` clean · 89 commits. 🟢 **`SITE-MOBILE-02`** — the founder signature had `padding: '40px 24px 0'` with the near-black band as its next sibling, so **"That's how I know." physically touched the black**; it was also outside the rhythm system at a hardcoded width and set as body copy. Now a `Section` at the read measure. 🟢 **The fact row took FOUR cuts at one middot.** Leading dot → wrapped line began with it; trailing dot → wrapped line ended with it; independent dots + a centring media query → ⚠️ **the query never applied, because `justifyContent` was set INLINE and an inline style beats a media rule without `!important`** (and reaching for `!important` would have buried the real error: styling a responsive property inline). **All three left the break to the browser, which IS the defect** — a middot is a relationship between two things and CSS has no selector for "first or last on its line". The pairs are now DECLARED: below 560px the two pairs ARE the two lines. 🔻 **OPEN, founder's call: is the fact row the right MESSAGE?** My view — three-quarters right, the price is the odd one out (stated one screen above; a price between a feature count and a notification policy makes it a spec sheet). Proposed replacement carries W-05's free-tier point instead. **Not shipped: it touches a live SLT ruling, and a question is not an instruction.**
 
@@ -389,33 +397,41 @@ that bypass the token. Preserved in 1a-ii; 1b decides whether they collapse to `
 
 ---
 
-## 📍 WHERE WE ARE — end of 2026-09-22 morning, before any website build
+## 📍 WHERE WE ARE — 2026-09-22, six commits pushed
 
-**Nothing is built. Nothing is committed.** 21 uncommitted paths: the Design Board's
-constitution, the ownership map, both board rulings, and the audit.
+**State at 2026-09-22, last ship `b111873`.** `verify`-scoped suites green: **452 tests / 40 files**. Typecheck
+clean. All six hook suites pass. Tree clean.
 
-### Done
+### Shipped today
 | | |
 |---|---|
-| ✅ **Design Board established** | ADR-023 · 5 seats · hook-enforced on both tool paths · `design-rulings.md` register |
-| ✅ **Ownership ratified** | `ownership-map.md` is the single owner. Seam rule: **design owns the encoding, coaching owns the meaning, the SLT owns the price** |
-| ✅ **Restraint rules transferred** | `brand.md` → `ux-principles.md` (Design Board). Three divergences repaired, incl. `CLAUDE.md` banning modals outright |
-| ✅ **SLT recomposed** | Zhuo in (design chair, dual hat), Traynor stood down and recallable |
-| ✅ **Website audit** | `docs/investigations/website-audit-2026-09-22.md` — measured, plus founder device pass |
-| ✅ **Design Board sitting one** | The waves — `SITE-WAVE-1/2/3` below |
-| ✅ **Design Board sitting two** | The story and the wow moments — below |
-| ✅ **Coaching Board** | `RACE-WEEK-VOLUME-01` ruled |
-| ✅ **INV-DESIGN-002 gated** | `ship-record-check.py` now fires on design doctrine edited without a register row. Falsified both directions, 11 cases |
+| `5e92ea9` | **ADR-023 Design Board** + the substring defect it found in `coaching-guard.py` |
+| `c5e0bf9` | **RESTRAINT-OWNER-01** — and `CLAUDE.md` was banning modals outright |
+| `1137aad` | **BUILD-PROC-01** — the build procedure on `UserPromptSubmit`, plus INV-DESIGN-002 gated |
+| `573dd8f` | **The homepage** — waves 1a-i, 1b-i, 1b-ii, 1b-iii |
+| `b111873` | **SITE-WAVE-1a-ii** — `<Section>` across 11 surfaces, zero visual delta |
+| `b30e13d` | **Docs** — the audit, the rulings, the filing rule |
 
-⚠️ **Sitting two was run OUT OF SEQUENCE** (before wave 1a, which was the agreed order).
-**The outcome is unaffected** — wave 1a is plumbing and changes nothing sitting two ruled
-on. Recorded rather than quietly reordered.
+### The homepage, measured at 375px
+| | Start of day | Now |
+|---|---|---|
+| First ground change | screen **10.6** (72%) | screen **3.4** (24%) |
+| Proof position | **52%** | **24%** |
+| Sections | 14 | **11** |
+| Page height | 12,317px | **11,773px** |
+| Content `<h2>` | 9, all 26px | **6, with a scale** |
 
-### The order from here
-1. **Wave 1a** — six plumbing items. Not started.
-2. **Wave 1b + Wave 2** — built against sitting two's **six-section** arc, not the current nine.
-3. **Founder device pass** on the result.
-4. **Wave 3** — the palette question becomes live or dead.
+### 🔴 THE ONE THING THAT IS NOT DONE
+**Nothing has run on a device.** Every number above is emulated 375px in a headless browser.
+**Desktop and tablet widths are entirely unmeasured**, and `width="full"` conversions plus a
+moved ground are exactly the class that could differ at 1024px.
+
+### Next
+1. **Founder device pass** on the deployed result.
+2. **`SITE-WAVE-2`** — the CTA, re-scoped against the new proof position.
+3. **`SITE-WAVE-3`** — Collins' palette question lives or dies on what the device pass shows.
+4. **Sitting three** — does the ProductStill trio still earn its place now it has no section?
+5. **`RACE-WEEK-VOLUME-01`** — ruled by the Coaching Board, **not built.**
 
 ---
 
@@ -496,8 +512,13 @@ The first background change is at **screen 10.6 (72% of the page)**. He left in 
 kept one white spotlight and one dark close. **There are ZERO `surface=` props in the
 codebase.** The three-ground system was ruled, built, and never used.
 
-### 🧭 `SITE-WAVE-1` — implement what was already ruled. No new decisions.
-**Board: 🧭 DESIGN BOARD (ruled — build).** **Size: L.** **Do this first.**
+### ✅ `SITE-WAVE-1` — SHIPPED 2026-09-22 (`3b3bec4` · `573dd8f` · `b111873`)
+**All eight items done**, split in the build into 1a-i (three independent fixes), 1a-ii (the
+`<Section>` mechanism) and 1b-i/ii/iii (the arc, the cuts and merges, the spotlight and
+hierarchy). Registry rows: `SITE-WAVE-1a-i`, `SITE-WAVE-1a-ii`, `SITE-WAVE-1b`.
+
+⚠️ **NOT DEVICE-VERIFIED.** Every measurement is emulated 375px; desktop and tablet are
+unmeasured. The original item, for the record:
 
 1. **Adopt `<Section>` across all 11 surfaces.** Today it is used by **1 of 11** — the
    homepage. Every other page hand-rolls sections, rhythm and padding, which is why they
@@ -518,7 +539,11 @@ codebase.** The three-ground system was ruled, built, and never used.
 8. **Footer column labels are `<h2>` at 11px** — four of them, polluting the document
    outline for crawlers and heading-navigation users.
 
-### 🧭 `SITE-WAVE-2` — the conversion defect
+### 🧭 `SITE-WAVE-2` — the conversion defect · **NEXT, and now easier**
+⚠️ **Re-scope before building:** wave 1b moved the proof to **24%** and put the white spotlight
+on it, so *"a contextual CTA at the proof moment"* now has a ground change to anchor to and sits
+near the top of the page instead of at 53%. The 13.3-screen gap this was written against is
+measured differently now — **re-measure before scoping.**
 **Board: 🧭 DESIGN BOARD (ruled — build).** **Size: M.** **After wave 1.**
 
 🔴 **A 13.3-phone-screen gap with no way to download.** CTAs sit at screens 0.1, 0.6 …

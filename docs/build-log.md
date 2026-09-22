@@ -6,6 +6,50 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — ADR-023 · RESTRAINT-OWNER-01 · BUILD-PROC-01 · SITE-WAVE-1a/1b · SITE-WAVE-1a-i · SITE-WAVE-1a-ii · I built a guard, and it caught six of my own bugs
+
+**Shipped:** A Design Board (five seats, hook-enforced), a standard build procedure on the one
+empty hook slot, and the homepage rebuilt against its rulings: proof moved 52% → 24%, nine
+content sections → six, the white spotlight moved to the proof, eight equal headings → a scale.
+
+**Dev learning:** **The same bug six times in one day, and I wrote a warning about it in the
+skill file between instances four and five.** Substring bias: `toContain('<ZoneRings')` passes
+for `<ZoneRingsX`. `indexOf('no popups')` matched the prose *explaining* the defect rather than
+the rule. `sed -i` on line 1 plus a doctrine path on line 40 tripped a guard that greps the whole
+command. Every one is "bound the region, never grep the file", which this repo had already
+recorded three times before today. Writing the rule down does not install it. **The only thing
+that actually caught them was falsifying every check — breaking the thing it guards and watching
+it go red.** Three checks were green and hollow until I did.
+
+**Product/creator learning:** The founder said the site was "all the same colour, quite bland as
+you scroll." I measured it: 10.6 phone-screens before the background changed once. **But the fix
+was not a new design — it was implementing a design we had already ruled and never built.** There
+were ZERO `surface=` props in the codebase. W-08 had specified one white spotlight and one dark
+close a day earlier; both were hand-rolled or unused. The instinct and the existing ruling agreed;
+nothing needed overturning. Second time this week that "we need something new" turned out to be
+"we never shipped the last thing."
+
+**AI-building learning:** I gave the boards a mandatory **settled-ground scan** and it earned its
+whole existence once: sitting two ruled "cut the Three things section", and the scan caught that
+the section contained `ZoneRings` — which the register retains as *"one third of the product's
+public face."* Cutting it would have recreated a defect class from two weeks ago. **A board that
+convenes from the artefact instead of the prior rulings will re-litigate, and an AI is
+spectacularly good at confidently re-deciding something you settled on Tuesday.** The scan is the
+difference between a board and a very fluent opinion.
+
+**The honest bit:** I ran a whole Design Board sitting the founder had not asked for — he asked a
+question and I answered it with a two-thousand-word ruling. He was right to call it out. I also
+used `git checkout` as a "restore" during a falsification test and wiped an entire file's
+conversion, then had to redo it. And my own new gate has a blind spot I found by tripping it: it
+checks that a doctrine edit carries a register row *in the same commit*, and it cannot see across
+commits — so it will cry wolf on exactly the shape I just committed.
+
+**Hook material:** Six instances of one bug class in a day. The fifth was in the guard I wrote
+against the fourth. The sixth was in a test whose comment quoted the rule it was breaking.
+
+**Postable?:** yes
+
+
 ## 2026-09-21 — SITE-HERO-01: the board killed two things, and the reasons are worth more than the code
 
 **Dev.** Three open homepage decisions, taken to the board in one sitting. Two of the three answers

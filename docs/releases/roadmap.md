@@ -24,7 +24,15 @@
 🟢 **Engine backlog: NOTHING OPEN.** `CAT-DEPTH-01` SHIPPED (CB-BEGINNER-CATALOGUE-01) — the SLT escalation it was waiting on was overtaken by the fix. `S9-DURATION-FLOOR-01` and `S53-ROTATION-SCARCITY-01` closed. *(This bullet read "Still open: CAT-DEPTH-01, ESCALATED TO SLT" for hours after the ship — the second stale state paragraph in this file, and `audit-docs.sh` could not see either because it only asked whether the file named the last SHA ANYWHERE. Gate widened in the same commit.)*
 
 
-**State at END of 2026-09-21 (last ship `64fde64`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,992 tests / 334 files** · 90 commits. 🟢 **`SITE-HERO-01`** — SLT ruled three open homepage decisions (`docs/decisions/slt-2026-09-21-homepage-three.md`). ⚠️ **I briefed the board WRONG and caught it before they ruled:** the hero was already two columns with the PHONE on the right, so 2a was a swap not a restructure. **The evidence card now sits in the hero**; the price is **out of the fact row** — three seats voted remove for different reasons and **Sutherland's governs because it generalises: TIMING, not repetition — never put a price adjacent to a proof moment.** 🔴 **TWO PERMANENT KILLS, both better value than what shipped:** the design's proof band (**all three claims measured FALSE**; "most runners manage half that" is a statistic about a population we have never observed) and the phone-geometry resize. **`DESIGN-V3-FIDELITY` CLOSED.** ⚠️ **Three defects introduced while building, all found by MEASURING not looking:** the 3s loop silently made the cross-fades **21.7% of the cycle** (and **I first dismissed the screenshot as a capture artefact**); the longer copy ate the 320px gutter to **5px while `scrollWidth === innerWidth` stayed true**, so it would have shipped unseen; and the fix did nothing because the facts were bare TEXT NODES, which flexbox merges once the element between them is hidden.
+**State at END of 2026-09-22 (last ship `b111873`) — PUSHED.** Suites green: **452 tests / 40 files** in the marketing + shared scope. Typecheck clean. All six hook suites pass. Six commits: the Design Board (ADR-023), the restraint-rules transfer, the build procedure, the homepage, `<Section>` adoption, the docs.
+
+🧭 **The homepage, measured at 375px:** first ground change **screen 10.6 → 3.4**, proof **52% → 24%**, sections **14 → 11**, page **12,317 → 11,773px**, content `<h2>` **9 (all 26px) → 6 with a scale**.
+
+🔴 **NOT DEVICE-VERIFIED, and that is the blocker on everything downstream.** Every number above is emulated 375px in a headless browser. **Desktop and tablet widths are entirely unmeasured**, and `width="full"` conversions plus a moved ground are exactly the class that could differ at 1024px. Two Design Board seats cannot rule on *feel* until the founder looks.
+
+⚠️ **Six instances of one defect class in a day** — substring bias in checks (`toContain('<ZoneRings')` passes for `<ZoneRingsX`). The fifth was inside the guard written against the fourth. **Only falsifying each check caught them**; three were green and hollow.
+
+**Earlier — end of 2026-09-21 (last ship `64fde64`), SHIPPED AND LIVE.** `verify` exit 0 · **2,992 tests / 334 files** · 90 commits. 🟢 **`SITE-HERO-01`** — SLT ruled three open homepage decisions (`docs/decisions/slt-2026-09-21-homepage-three.md`). ⚠️ **I briefed the board WRONG and caught it before they ruled:** the hero was already two columns with the PHONE on the right, so 2a was a swap not a restructure. **The evidence card now sits in the hero**; the price is **out of the fact row** — three seats voted remove for different reasons and **Sutherland's governs because it generalises: TIMING, not repetition — never put a price adjacent to a proof moment.** 🔴 **TWO PERMANENT KILLS, both better value than what shipped:** the design's proof band (**all three claims measured FALSE**; "most runners manage half that" is a statistic about a population we have never observed) and the phone-geometry resize. **`DESIGN-V3-FIDELITY` CLOSED.** ⚠️ **Three defects introduced while building, all found by MEASURING not looking:** the 3s loop silently made the cross-fades **21.7% of the cycle** (and **I first dismissed the screenshot as a capture artefact**); the longer copy ate the 320px gutter to **5px while `scrollWidth === innerWidth` stayed true**, so it would have shipped unseen; and the fix did nothing because the facts were bare TEXT NODES, which flexbox merges once the element between them is hidden.
 
 **Earlier on 2026-09-21 (last ship `0262254`) — SHIPPED AND LIVE.** `verify` exit 0 · **2,989 tests / 334 files** · `audit-docs.sh` clean · 89 commits. 🟢 **`SITE-MOBILE-02`** — the founder signature had `padding: '40px 24px 0'` with the near-black band as its next sibling, so **"That's how I know." physically touched the black**; it was also outside the rhythm system at a hardcoded width and set as body copy. Now a `Section` at the read measure. 🟢 **The fact row took FOUR cuts at one middot.** Leading dot → wrapped line began with it; trailing dot → wrapped line ended with it; independent dots + a centring media query → ⚠️ **the query never applied, because `justifyContent` was set INLINE and an inline style beats a media rule without `!important`** (and reaching for `!important` would have buried the real error: styling a responsive property inline). **All three left the break to the browser, which IS the defect** — a middot is a relationship between two things and CSS has no selector for "first or last on its line". The pairs are now DECLARED: below 560px the two pairs ARE the two lines. 🔻 **OPEN, founder's call: is the fact row the right MESSAGE?** My view — three-quarters right, the price is the odd one out (stated one screen above; a price between a feature count and a notification policy makes it a spec sheet). Proposed replacement carries W-05's free-tier point instead. **Not shipped: it touches a live SLT ruling, and a question is not an instruction.**
 
@@ -91,6 +99,31 @@ Supporting strategy: `docs/gtm/go-to-market-plan-2026-06.md` (the GTM playbook �
 **Prior update:** 2026-07-17 (MAINT-01 post-race maintenance block added to LATER — SLT reviewed, build decision unanimous; full spec in backlog)
 **Prior update:** 2026-06-24 (HR sync latency absorption SLT-reviewed + committed — HR-SYNC-01/02/03/04 added as priority #7a/b/c after the founder-data evidence that 2/3 recent Watch runs missed HR permanently; Strava approval confirmed not arriving so Layer 2 unconditionally committed; opportunity register `HR-SYNC-FUTURES` captured in backlog for the Swift bridge's wider unlock surface)
 **Prior update:** 2026-06-22 (post-launch wave — shipped ENGINE-02, DS-05, DS-07 A+B, CA-03, ENGINE-03-pre, AUTH-RESET-01, BRAND tech-debt; GTM-09/10 reconciled; cycle coaching SLT-reviewed → deferred behind gates; Plan-restore cancelled)
+
+---
+
+## 🧭 WEBSITE — Design Board waves (2026-09-22)
+
+**State at 2026-09-22, last ship `b111873`.** Wave 1 shipped; the rest is sequenced behind a
+device pass.
+
+| Item | Board | Status |
+|---|---|---|
+| `SITE-WAVE-1` | 🧭 Design Board | ✅ **SHIPPED** — `<Section>` across 11 surfaces, proof 52% → 24%, nine content sections → six, white spotlight moved to the proof, heading hierarchy. ⚠️ **Not device-verified** |
+| `SITE-WAVE-2` | 🧭 Design Board | ⏭️ **NEXT** — the CTA at the proof moment. ⚠️ **Re-scope:** wave 1b moved the proof to 24% and gave it a ground change to anchor to, so the 13.3-screen gap this was written against measures differently now |
+| `SITE-WAVE-3` | 🧭 Design Board → 🏃 Coaching Board if opened | 🔒 **BLOCKED on the device pass.** Collins: the app uses six session colours and four phase colours; the site's own language is greyscale plus one green. Lives or dies on what the founder sees |
+| `SITE-GROUND-ABOUT-01` | 🧭 Design Board | Open — `/about` and `/charity-runners` spend `--bg-soft` as a page ground on three bands |
+| `SITE-MEASURE-THIRD-01` | 🧭 Design Board | Open — 760px, 560px and 620px section measures bypass the tokens |
+| `RACE-WEEK-VOLUME-01` | 🏃 Coaching Board | **RULED, not built** — the race is not training volume |
+| `MARATHON-READINESS-GAP-01` | 🏃 Coaching Board | Filed, not ruled — a beginner peaking at 25 km sent to race 42.2 km. **Split off so a display fix could not silently close it** |
+| `RACE-WEEK-SHAKEOUT-VOLUME-01` | 🏃 Coaching Board | ⚠️ **Unverified — reproduce before acting.** May be a sweep artefact |
+| `DESIGN-CD1-TAXONOMY-01` | 🧭 Design Board → 🏃 Coaching Board | Parked. Collins' first assignment: do five session names resolve to one pace? **Take the measurement first — the 2026-08 premise has moved** |
+| `DESIGN-EMPTYSTATE-ART-01` | 🧭 Design Board | Parked — ratify the "no illustration" that was recorded as *"a taste call made against the documented rule"* and never put to a board |
+| `DESIGN-LAUNCH-SCREEN-01` | 🧭 Design Board | Parked — ratify the "close P-11" that was never ruled |
+
+🔴 **THE BLOCKER IS THE FOUNDER'S PHONE.** Everything above was measured in a headless browser at
+375px. Two Design Board seats (Silvanto on craft and legibility, Wroblewski on one-handed phone
+use) cannot rule on *feel* without it, and desktop and tablet widths are unmeasured entirely.
 
 ---
 
