@@ -51,7 +51,13 @@ Only generated when `daysToRace ∈ [0, 14]`. The route enforces this — calls 
 - `plans` — race name, race date, race distance, week phases (for current phase), total planned sessions
 - `user_settings` — `first_name` for personalised greeting
 - `run_analysis` — `hr_in_zone_pct`, `ef_trend_pct`, `actual_load_km` across entire plan (manual excluded)
-- `session_completions` — completion counts (whole plan) + `rpe` on easy/recovery sessions in last 3 weeks
+- `session_completions` — completion counts (whole plan) + `rpe` on easy/recovery sessions in last 3 weeks.
+  Selected as `week_n, session_day, status, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid`.
+  ⚠️ **NOT `session_type` — that column has never existed** (AI-COMPLETION-COLUMN-01,
+  2026-09-22). The easy/recovery filter therefore ran against an empty array and **had never
+  once matched**, so `recentEasyRpe` was always null. The type is resolved from the **plan**
+  via `withSessionType()` → `coachingSessionType` (INV-CLASS), and the filter runs on the
+  TYPED rows — filtering the raw ones compiles, passes tsc, and matches nothing.
 
 ## Prompt source
 

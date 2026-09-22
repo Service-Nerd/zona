@@ -57,7 +57,18 @@ Keyed on `(user_id, phase_ended, transition_week_n)` via the `phase_summaries` p
 - `plans` — identifies weeks belonging to the completed phase, derives next phase name
 - `user_settings` — `first_name` for personalised greeting
 - `run_analysis` — `hr_in_zone_pct`, `ef_trend_pct`, `actual_load_km` per session (Strava/AH only, manual excluded)
-- `session_completions` — completion counts per phase week
+- `session_completions` — completion counts per phase week. Selected as
+  `week_n, session_day, status, rpe, fatigue_tag, avg_hr, strava_activity_id, apple_health_uuid`.
+  ⚠️ **NOT `session_type` — that column has never existed** (AI-COMPLETION-COLUMN-01,
+  2026-09-22). It was selected here until then, so the query failed, the error was
+  destructured away, and `?? []` made the array empty for the feature's whole life. The type
+  is resolved from the **plan** via `withSessionType()` → `coachingSessionType` (INV-CLASS),
+  joined on `(week_n, session_day)`.
+
+  🔴 **`completionRate` is `null` when the completions read fails, never 0.** It was
+  `completed / totalSessions` on an always-empty array — `0 / N` — so the model was told, as
+  a number, that the runner completed **0% of the phase**, and wrote a coaching note on that
+  basis. Unknown must not render as zero.
 
 ## Prompt source
 
