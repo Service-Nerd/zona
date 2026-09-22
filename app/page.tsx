@@ -634,13 +634,33 @@ export default async function Home() {
               the handoff's large-numeral motif lands without inventing a
               claim, because the numbers were already here.
 
-              ⚠️ Drawn as SVG, not styled text, and that is not a
-              flourish. --bg-soft on --bg is 1.06:1, so as a text node it
-              is a colour-contrast failure on every audit even though it
-              is aria-hidden and the ordering is already carried by the
-              <ol>. axe does not evaluate SVG as text. Calling it a
-              graphic and drawing it as one makes the markup agree with
-              what it actually is. */}
+              🔴 REVERSED 2026-09-22 (Design Board). This comment used to
+              read: "Drawn as SVG, not styled text, and that is not a flourish.
+              --bg-soft on --bg is 1.06:1, so as a text node it would fail; axe
+              does not evaluate SVG as text."
+
+              THAT IS NOT AN ACCESSIBILITY DECISION, IT IS A DECISION NOT TO BE
+              TOLD ABOUT ONE. Measured: 1.07:1. And it failed on its own terms —
+              the founder, who is the target reader, could not see the numbers
+              at all, so we were paying up to 88px of vertical space four times
+              for marks nobody perceives.
+
+              Sierra: 01/02/03/04 is WAYFINDING. It tells the reader this is a
+              sequence, there are four, and where they are in it. Either it is
+              perceivable and does that job, or it is deleted and we reclaim the
+              space. Invisible-but-present is the worst of both.
+
+              Now --mute, which clears 3:1 on --bg: the muted supporting-text
+              token, and no new token is needed. --mute-2 does not clear it.
+              ⚠️ Exact ratios live in ui-patterns.md and a11yContrast.test.ts,
+              which READ the tokens; a hex written into a comment is a value
+              that can drift from the one it names, and the pre-commit hook is
+              right to block it. Inventing a value between them would be doctrine for
+              one element. It stays SVG because the glyph is drawn into a 120x70
+              viewBox and scaled to --fs-step, which is a presentation choice
+              and always was; what changed is that it is no longer a way to
+              avoid the checker.
+              */}
           <ol style={{
             listStyle: 'none', margin: 0, padding: 0,
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
@@ -675,7 +695,7 @@ export default async function Home() {
                       attribute for that reason, which is also why the type-
                       scale gate does not read it as a hand-typed size. */}
                   <text
-                    x="0" y="62" fill="var(--bg-soft)" fontSize={72} fontWeight={800}
+                    x="0" y="62" fill="var(--mute)" fontSize={72} fontWeight={800}
                     style={{ fontFamily: 'var(--font-brand)', letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums' }}
                   >{String(i + 1).padStart(2, '0')}</text>
                 </svg>

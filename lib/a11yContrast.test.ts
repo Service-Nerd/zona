@@ -79,6 +79,53 @@ describe('WCAG AA contrast', () => {
     expect(token('--warn')).toBe('#B8853A')
   })
 
+  it('every SVG fill that carries meaning clears 3:1 on its ground', () => {
+    // 🔴 ADDED 2026-09-22 (Design Board, SITE-STEP-CONTRAST-01) BECAUSE THIS
+    // FILE COULD NOT SEE THE DEFECT IT EXISTS TO CATCH.
+    //
+    // Everything above reads TOKENS and checks them pairwise. It never looks at
+    // where a token is USED. So `fill="var(--bg-soft)"` on a --bg ground —
+    // 1.07:1, four 72px numerals on the homepage — passed every check here, and
+    // the source comment said out loud that it was drawn as SVG because "axe
+    // does not evaluate SVG as text".
+    //
+    // A token being legal somewhere is not the same as it being legal HERE.
+    // That is the same shape as --surface-moss-wash: legal in globals.css,
+    // forbidden by a rule in ui-patterns.md, and the two never met.
+    //
+    // 3:1 is the AA threshold for graphics and large text, not 4.5:1 — these
+    // are 72px glyphs, and holding them to body-text contrast would force them
+    // darker than the heading beside them.
+    const PAGES = ['../app/page.tsx', '../components/marketing/SameWeekTwice.tsx']
+    const GROUND = token('--bg')
+    // A ground token used as a fill is background-coloured BY DEFINITION and can
+    // never clear 3:1 on itself. Naming them is the point of the check.
+    const NEVER_AS_FILL = ['--bg', '--bg-soft', '--card', '--line']
+
+    const offenders: string[] = []
+    for (const rel of PAGES) {
+      const file = path.resolve(__dirname, rel)
+      if (!fs.existsSync(file)) continue
+      const src = fs.readFileSync(file, 'utf8')
+        // ⚠️ Strip comments FIRST. This check's own explanation quotes the old
+        // `fill="var(--bg-soft)"`, and a naive scan would flag the paragraph
+        // describing the bug as the bug. Sixth time this repo has met that.
+        .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+      // Array.from: this tsconfig targets below es2015, so a raw matchAll iterator
+      // fails `tsc --noEmit` while vitest runs it happily. The push hook runs tsc.
+      for (const m of Array.from(src.matchAll(/fill="var\((--[a-z0-9-]+)\)"/g))) {
+        const name = m[1]!
+        if (NEVER_AS_FILL.includes(name)) {
+          offenders.push(`${rel}: fill=${name} is a GROUND token, it can never clear 3:1`)
+          continue
+        }
+        const r = ratio(token(name), GROUND)
+        if (r < 3) offenders.push(`${rel}: fill=${name} is ${r.toFixed(2)}:1 on --bg, needs 3:1`)
+      }
+    }
+    expect(offenders, 'an SVG fill fails contrast on its ground').toEqual([])
+  })
+
   it('does not reintroduce a render-blocking font import', () => {
     // PERF-FONT-01. The @import was three round trips deep and blocked the
     // first paint; it also caused the layout shift next/font's size-adjust

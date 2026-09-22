@@ -242,6 +242,41 @@ A sequence of short steps on a marketing page. Deliberately the PLAINEST block o
 
 ---
 
+
+### ⛔ The step numeral must be PERCEIVABLE — reversed 2026-09-22
+
+**`fill="var(--mute)"` (#6D6963, 4.80:1 on `--bg`). Never a ground token.**
+
+🔴 **This reverses a `DESIGN-V3` decision, and the reason it was made is the reason it
+was reversed.** The numerals were `fill="var(--bg-soft)"` — **1.07:1** — and the source
+comment said so explicitly, adding that they were *drawn as SVG because "axe does not
+evaluate SVG as text"*.
+
+**That is not an accessibility decision. It is a decision not to be told about one.** And
+it failed on its own terms: the founder, the target reader, could not see the numbers, so
+the page paid up to 88px of vertical space four times for marks nobody perceived.
+
+**Sierra's framing decided it: 01/02/03/04 is WAYFINDING.** It tells the reader this is a
+sequence, there are four, and where they are in it. Either it is perceivable and does that
+job, or it is deleted and the space is reclaimed. **Invisible-but-present is the worst of
+both.**
+
+| | |
+|---|---|
+| Threshold | **3:1** — the AA bar for graphics and large text, not 4.5:1. These are 72px glyphs |
+| Chosen | `--mute`, the muted supporting-text token |
+| ⚠️ Rejected | `--moss` (3.24:1) technically qualifies but carries the *"held the zone"* semantic (P-01); spending it on furniture dilutes it. `--mute-2` fails at **1.90:1** |
+| ⚠️ Never | `--bg`, `--bg-soft`, `--card`, `--line` as a fill. **A ground token can never clear 3:1 on its own ground** |
+
+**It stays SVG.** The glyph is drawn into a 120×70 viewBox and scaled to `--fs-step`, which
+is a legitimate presentation choice and always was. What changed is that it is no longer a
+way around the checker.
+
+**Guarded by `lib/a11yContrast.test.ts`.** ⚠️ **That file could not previously see this
+defect** — every other check in it reads TOKENS pairwise and never looks at where a token
+is USED, so a ground token used as a fill passed everything. Same shape as
+`--surface-moss-wash`: legal in `globals.css`, forbidden by a rule here, and the two never
+met.
 ## Section grounds — three, and each one means something (W-08, 2026-09-21)
 
 **The marketing site does not alternate band colours.** It has exactly three grounds and each is spent on purpose:

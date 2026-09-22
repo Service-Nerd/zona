@@ -287,6 +287,26 @@ the next ruling; assert what was actually ruled.
 
 ---
 
+## 6d. Founder device pass, 2026-09-22 — two findings, two root causes
+
+The founder looked at the pushed site on his phone. Both observations were correct and both
+turned out to be larger than the symptom.
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **Step numerals must clear 3:1** | 🟢 **SHIPPED** — `--bg-soft` (1.07:1) → `--mute` (4.80:1) | 🔴 **Reverses `DESIGN-V3`.** They were near-invisible ON PURPOSE and drawn as SVG *because "axe does not evaluate SVG as text"* — **a decision not to be told about a failure**, which also failed on its own terms because the target reader could not see them. Sierra: 01/02/03/04 is **wayfinding**; perceivable or deleted, never invisible-but-present |
+| **A ground token may never be an SVG `fill`** | 🟢 **GUARDED** | `--bg`, `--bg-soft`, `--card`, `--line` cannot clear 3:1 on their own ground by definition |
+| **`a11yContrast.test.ts` now checks USAGE, not just tokens** | 🟢 **SHIPPED** | ⚠️ **The file could not see the defect it exists to catch.** Every other check reads tokens pairwise and never looks at where one is used. Same shape as `--surface-moss-wash` |
+| **`SITE-SPACE-01` — a spacing scale** | 🟡 **RULED, NOT BUILT** | **448 gaps measured on six pages: 24 distinct values, 19 of them real spacing decisions** (≤5px are line-box artefacts, excluded). **19 is the same number `SITE-TYPE-01` found for font sizes.** Scale: `4 · 8 · 12 · 16 · 24 · 32 · 48`; **52% of gaps already land on it exactly**, 48% shift by ≤4px. ⚠️ **Ships WITH its sweep, never before** — a token family nobody applies is the `surface=` failure repeated |
+
+⚠️ **THE BOARD RULED ON NUMBERS I INVENTED.** The contrast table put to the seats used
+GUESSED hex values: `--mute` was presented as 3.22:1 and is actually **4.80:1**; `--mute-2`
+as 2.21:1, actually **1.90:1**. The ruling survives on the corrected figures and `--mute`
+is still right on semantics, but the record shows the board deciding on fabricated
+measurements. **Read the token, never recall it.**
+
+---
+
 ## 7. Assigned and not yet ruled
 
 | Item | Seat | State |

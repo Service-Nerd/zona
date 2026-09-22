@@ -373,6 +373,40 @@ a single named input before treating it as a defect.
 
 ---
 
+## 🧭 `SITE-SPACE-01` — RULED 2026-09-22, NOT BUILT: the site has no spacing scale
+**Board: 🧭 DESIGN BOARD (ruled — build).** **Surface: website.** **Tier: n-a.** **Size: M.**
+**Found by the founder on his phone:** *"the space between sections or tiles then next text is
+inconsistent. e.g. the zone image then the next text is very close."*
+
+**Measured — 448 gaps across six pages at 375px:**
+
+| | |
+|---|---|
+| Distinct values | **24** |
+| ≤5px — line-box artefacts, **not decisions** | 193 gaps, 5 values |
+| 🔴 **>5px — real spacing decisions** | **257 gaps, 19 values** |
+| The founder's exact case | **18px** from the stills grid to the next heading, against **50px** for a comparable break in the same section |
+
+⚠️ **19 is the same number `SITE-TYPE-01` found for font sizes** (170 hand-typed sizes in 19
+values). Same disease, one layer down, and nobody looked at spacing when type was fixed.
+`globals.css` has type tokens, section-rhythm tokens and radii — **no `--space-*` family at all.**
+
+**The ruled scale: seven tokens, 4px base — `4 · 8 · 12 · 16 · 24 · 32 · 48`.**
+**52% of existing gaps already land on it exactly**; 48% shift by 1–4px; largest shift 4px.
+
+**Binding amendments:**
+1. ⚠️ **Ships WITH its sweep, never before.** A token family nobody applies is the `surface=`
+   failure repeated: ruled, built, unused.
+2. ⚠️ **Gaps ≤5px are EXCLUDED** *(Wroblewski)*. They are line-box artefacts between inline
+   boxes — typography, not spacing. A sweep that tokenises them produces hundreds of
+   meaningless diffs and buries the real ones.
+3. Largest permitted shift is **4px**. Anything larger returns to the board.
+
+**Artifacts:** pattern in `ui-patterns.md` § Spacing Rhythm · `--space-1…7` in `globals.css` ·
+a check asserting no hand-typed gap outside the scale, falsified.
+
+---
+
 ## 🧭 FILED DURING SITE-WAVE-1a-ii — for wave 1b to rule on
 
 Found by measuring, not by reading. Both preserved exactly in 1a-ii (zero visual
