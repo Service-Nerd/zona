@@ -539,21 +539,6 @@ the type lives in the plan JSON. Resolving it changes what the model sees on a r
 note and a phase summary, which is prescription-adjacent. **Route it, measure what the note
 says before and after, then fix.** Found by `SELECT-COLUMN-GATE-01`, not by the log.
 
-### ⚙️ `TAPER-RECAL-COLUMN-01` — taper recalibration has been running on an empty map
-**Board: COACHING** if the fix changes a taper; **no board** if it turns out to be inert. P1.
-
-`recalibrate-taper/route.ts` selects `week_n, actual_load_km` from `strava_activities`.
-**Both columns live on `run_analysis`, not on `strava_activities`.** The query returns null,
-`weeklyActuals` is empty, and `computeTaperRecalibration` is handed nothing.
-
-⚠️ The route's own comment asserts *"strava_activities.week_n is populated when an activity
-is linked to the plan"* — **a written assumption that is false**, which is the class
-[[feedback-written-assumptions-are-the-dangerous-ones]] names.
-
-⚠️ **Fixing it makes taper recalibration actually run for the first time**, which changes
-what the engine prescribes in the last weeks before a race. That is the Coaching Board's, and
-it needs the cohort numbers before it ships. Found by `SELECT-COLUMN-GATE-01`.
-
 ### 🧭 `MOVE-DRAG-GESTURE-01` — hold-and-drag, parked pending a device session
 **Board: DESIGN** (it is the board's own INSUFFICIENT EVIDENCE item). **Parked by the
 founder 2026-09-22 after four attempts on a real phone.**

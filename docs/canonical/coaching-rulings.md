@@ -21,6 +21,25 @@ memory.
 
 ---
 
+## TAPER-RECAL-COLUMN-01 — §68 had never applied to anybody (2026-09-22)
+
+**Ruling: CORRECT WITH AMENDMENT.** Ship the table fix; §68 gains a recorded note that it
+never executed, and a mechanical check that it **can fire**.
+
+| | |
+|---|---|
+| **The defect** | `recalibrate-taper` selected `week_n, actual_load_km` from `strava_activities`. Both live on `run_analysis`. Empty map → *"insufficient actual data (0 < 2 weeks)"* on every call since the feature shipped |
+| **Why an amendment, not a defect note** | Hutchinson: *this is not a defect fix restoring documented intent.* §68 has never executed, so every taper rule ratified since was measured against an engine in which it was silent. This introduces behaviour |
+| **The near-miss** | 🔴 **§6 Amendment 2 also says "the week the runner ACTUALLY DID"** — and is a **different quantity**: it anchors to what the generated plan *delivers* vs what the curve intended (generation-time), while §68 anchors to what the runner *logged*. They compose; the pre-taper week sits in **peak**, where Am.2 does not reach. **No double cut.** A scan stopping at the section heading would have blocked a correct change |
+| **Measured blast radius** | **2** users have any `run_analysis` load rows; **1** has the two weeks §68 requires. Cheap now, expensive later |
+| **Binding on build** | `superseded_at is null` is part of the principle: `week_n` is within-plan (PLAN-WEEK-COLLISION-01), so without it the functional peak comes from a **different race**. McMillan, on copy: **the runner is never told the plan changed because they underperformed** |
+
+**Artifacts.** Principle → §68 Amendment 1 · Numeric → the existing `TAPER_RECAL_*`
+constants, unchanged and now actually read · Check → `lib/plan/taperRecalLiveness.test.ts`,
+**falsified four ways including reinstating the original defect**. ⚠️ The 20 existing
+assertions in `taperRecalibration.test.ts` could not have caught this: they hand the
+function a map, and the defect was that the route never built one.
+
 ## Standing rulings — 2026-09-21
 
 | Ruling | Status | May not be re-raised without |

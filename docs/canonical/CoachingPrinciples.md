@@ -3917,6 +3917,52 @@ Upward recalibration (overperformance) is intentionally excluded — a well-trai
 
 ---
 
+### §68 Amendment 1 — it never ran (TAPER-RECAL-COLUMN-01, Coaching Board 2026-09-22)
+
+🔴 **From the day it shipped until 2026-09-22, §68 APPLIED TO NOBODY.** The route
+selected `week_n, actual_load_km` from **`strava_activities`**, which has neither
+column. Supabase answered `{ data: null, error }`, the error was destructured away,
+`weeklyActuals` was empty, and `computeTaperRecalibration` returned *"insufficient
+actual data (0 < 2 weeks)"* on every call. Both columns live on **`run_analysis`**,
+and the correct query already existed **nine lines apart in a sibling route**.
+
+**Why this is recorded as an amendment rather than a defect note.** Hutchinson, at the
+sitting: *this is not a defect fix restoring documented intent.* §68 has never
+executed, so every taper rule ratified since — §6 Am.1's long-run cap, §6 Am.2's
+delivered-anchored cut, LR-ABS-CAP-LOWVOL — was written and measured against an
+engine in which §68 was silent. Switching it on introduces behaviour; it does not
+restore it.
+
+**Checked at the sitting, and it was the near-miss worth recording: §6 Amendment 2
+does NOT conflict.** Am.2 also speaks of "the week the runner ACTUALLY DID", but it
+anchors to what the *generated plan delivers* against what the volume curve intended
+— generation-time, no runner data. §68 anchors to what the *runner logged*. They
+compose: Am.2 sets the taper's shape, §68 scales its level by `actual peak / planned
+pre-taper`, and the pre-taper week sits in **peak** phase where Am.2 does not reach.
+**No double cut.** A scan that stopped at the section heading would have called this
+a contradiction and blocked a correct change.
+
+⚠️ **`superseded_at is null` is part of the principle, not plumbing.** `week_n` is a
+within-plan coordinate (PLAN-WEEK-COLLISION-01). Without that filter the functional
+peak is computed from training the runner did **for a different race**, which is a
+worse failure than not firing at all — it would taper them against a stranger's
+history. The broken query never needed it because it never returned a row.
+
+**Blast radius at ratification, measured:** of all users, **2** have any
+`run_analysis` load rows and **1** has the two weeks §68 requires. This is cheap to
+get right now and expensive later, which is the reason to do it now rather than a
+reason it does not matter.
+
+**Seats.** Seiler: no objection — volume targets only, no session moves, §1 counts
+sessions. Willy: low vector, and unusually so — §68 **only ever reduces**, upward
+recalibration being explicitly excluded. Sims: the under-completing runner is
+disproportionately the low-energy-availability profile, and tapering them from a
+fiction lands them under-recovered relative to what they actually did. McMillan,
+binding on copy: **the runner must never be told their plan changed because they
+underperformed — re-anchoring is not a judgement.**
+
+---
+
 ## 69. Magnitude calibration — the structural change that earns confirmation
 
 **Principle.** The engine auto-applies changes the runner would have consented to silently — small intensity tweaks, sub-15% distance trims, coach-note-only flags. The engine surfaces a confirmation tile for changes the runner needs to consciously sign off on — day-of-week moves, session-type changes at any slot, distance changes above the threshold per session, and cumulative week-volume changes above the floor.

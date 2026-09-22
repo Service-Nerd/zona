@@ -6,6 +6,43 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-22 — TAPER-RECAL-COLUMN-01 · a feature with twenty tests that had never run
+**Shipped:** §68 taper recalibration now actually executes. It never had.
+
+**Dev learning:** `taperRecalibration.test.ts` has twenty careful assertions — the gate fires
+only at taper entry, the functional peak is a top-N average so one outlier isn't read as
+adaptation, it never raises the taper for an overperformer, it never scales a rest day into
+a run, it leaves race week alone. Every one passes. Every one hands the function a
+`weeklyActuals` map. The defect was that the route that builds that map queried the wrong
+table, so the map was always empty and the function correctly declined. **You can have
+complete coverage of a function and zero coverage of whether anything calls it with real
+data.**
+
+**Product/creator learning:** The conflict scan nearly killed a correct change. §6 Amendment
+2, ratified seven days earlier, also says the taper is anchored to "the week the runner
+ACTUALLY DID" — which reads like the same mechanism. It isn't: Am.2 anchors to what the
+generated plan *delivers* versus what the volume curve *intended*, at generation time, with
+no runner data anywhere near it. §68 anchors to what the runner logged. Two amendments using
+the same English phrase for different quantities, and only reading both in full separates
+them.
+
+**AI-building learning:** The board's amendment was the valuable output, not the fix. The fix
+is one identifier. What Hutchinson insisted on recording is that this is *not* a defect fix
+restoring documented intent — §68 has never executed, so every taper rule ratified since was
+written against an engine where it was silent. Turning it on introduces behaviour. That
+distinction changes what evidence the change needs, and I would have filed it as "restore
+intent" and shipped it with a one-line note.
+
+**The honest bit:** The blast radius is one user. Two people in the entire database have any
+`run_analysis` load rows and one has the two weeks §68 requires. So a feature that has been
+dead since it shipped has cost, so far, almost nothing — which is luck, not design, and the
+only reason it's cheap to fix rather than an incident.
+
+**Hook material:** Twenty passing tests for a feature that had never once executed. They all
+tested the function. None tested whether anything ever called it.
+
+**Postable?:** yes
+
 ## 2026-09-22 — MOVE-PROTOTYPE-01b · my trace logged the browser, not my code
 **Shipped:** Fixed a press that cancelled itself, and made the gesture report its own state.
 

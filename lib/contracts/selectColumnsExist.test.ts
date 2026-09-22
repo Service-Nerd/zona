@@ -40,11 +40,14 @@ import { TABLE_COLUMNS } from './tableColumns'
  *  therefore been running on an empty map and skipping. Correcting either
  *  changes prescription or what the model is told, so they are RCA'd and routed,
  *  not patched. AI-COMPLETION-COLUMN-01 · TAPER-RECAL-COLUMN-01. */
+// ✅ The two `recalibrate-taper` entries LEFT this register on 2026-09-22
+// (TAPER-RECAL-COLUMN-01, Coaching Board CORRECT WITH AMENDMENT, §68 Am.1). The
+// register shrinking is the point — `a declared reason is not a fixed problem`,
+// and the stale-entry check below is what makes leaving mandatory rather than
+// optional.
 const BASELINE = [
   'app/api/phase-summary/route.ts: session_completions.session_type',
   'app/api/race-readiness/route.ts: session_completions.session_type',
-  'app/api/recalibrate-taper/route.ts: strava_activities.week_n',
-  'app/api/recalibrate-taper/route.ts: strava_activities.actual_load_km',
 ]
 
 function walk(dir: string, out: string[] = []): string[] {

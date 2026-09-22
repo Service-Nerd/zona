@@ -74,14 +74,46 @@ export async function POST(req: NextRequest) {
   // Only query build + peak weeks (everything before taper)
   const buildPeakEndWeek = taperPhase.start_week - 1
 
-  const { data: activityRows } = await serviceSupabase
-    .from('strava_activities')
+  // 🔴 TAPER-RECAL-COLUMN-01 — THIS READ `strava_activities`, WHICH HAS NEITHER
+  // COLUMN. §68 has therefore NEVER APPLIED, for any runner, since it shipped.
+  //
+  // The query returned `{ data: null, error }`, the error was destructured away,
+  // `weeklyActuals` was empty, and `computeTaperRecalibration` answered
+  // "insufficient actual data (0 < 2 weeks)" every single time. `week_n` and
+  // `actual_load_km` live on `run_analysis`, and the correct query already
+  // existed NINE LINES APART in a sibling route (`adjust-plan/route.ts:131`) —
+  // the same shape as HK-ELEV-COLUMN-01, where the right column name was also
+  // already present elsewhere in the same codebase.
+  //
+  // ⚠️ `superseded_at is null` IS LOAD-BEARING AND THE OLD QUERY HAD NO
+  // EQUIVALENT. `week_n` is a WITHIN-PLAN coordinate (PLAN-WEEK-COLLISION-01),
+  // so without it a previous plan's week 8 is summed into this plan's week 8 and
+  // the functional peak is computed from training the runner did for a different
+  // race. The broken query never needed the filter because it never returned a
+  // row; switching the table on without it would trade a dormant feature for a
+  // wrong one.
+  //
+  // ⚠️ Manual logs are deliberately INCLUDED (no `source` filter, matching
+  // `adjust-plan`). §68 re-anchors to "the body that actually trained", and a
+  // manually logged run is training the body did. `phase-summary` excludes
+  // manual because it scores zone discipline, which a manual row cannot carry —
+  // a different question.
+  const { data: activityRows, error: actualsErr } = await serviceSupabase
+    .from('run_analysis')
     .select('week_n, actual_load_km')
     .eq('user_id', user.id)
+    .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
     .not('week_n', 'is', null)
     .gte('week_n', 1)
     .lte('week_n', buildPeakEndWeek)
     .gt('actual_load_km', 0)
+
+  // Read the error rather than letting a failed query read as "no training".
+  // That conflation is what hid this defect for its whole life.
+  if (actualsErr) {
+    console.error('[recalibrate-taper] actuals query failed', actualsErr)
+    return NextResponse.json({ skipped: true, reason: 'actuals_query_failed' }, { status: 200 })
+  }
 
   // Aggregate actual km per week
   const weeklyActuals = new Map<number, number>()
