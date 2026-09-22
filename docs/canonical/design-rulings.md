@@ -406,7 +406,7 @@ has failed it.
 
 ### INSUFFICIENT EVIDENCE
 
-- **The move-a-run gesture.** The founder wants hold-and-drag; **Wroblewski pushed back** — drag on a scrolling list, one-handed, outdoors, is the hardest gesture on a phone and has no discoverability. His counter: **tap the session, tap the day.** Board split; needs a prototype. ✅ **PROTOTYPE BUILT 2026-09-22 — `/move-preview`, `MOVE-PROTOTYPE-01`. Still unsettled; it is now settleable.** 🔴 **And the split above was recorded wrong: Wroblewski's "counter" is what ALREADY SHIPS.** See § 6k.
+- **The move-a-run gesture.** The founder wants hold-and-drag; **Wroblewski pushed back** — drag on a scrolling list, one-handed, outdoors, is the hardest gesture on a phone and has no discoverability. His counter: **tap the session, tap the day.** Board split; needs a prototype. ⏸️ **PARKED 2026-09-22 by the founder** after three rounds on the drag gesture. **The prototype exists** (`/move-preview`) and the **tap flow is unaffected and still ships.** Still unsettled. See § 6l. 🔴 **And the split above was recorded wrong: Wroblewski's "counter" is what ALREADY SHIPS.** See § 6k.
 - **The black line above the nav.** Untraced — it is **not** the nav's border, which resolves to `rgba(26,26,26,0.08)`. No ruling on an unidentified artefact.
 - **Anything past wizard submission** — ceremony, plan preview, confidence badge, difficulty card. Unwalked.
 
@@ -580,6 +580,34 @@ at all**, and tap does not.
 
 📐 **The number to rule on is "dropped on nothing"** — the cost Wroblewski named, and the one
 a demo run by whoever built the gesture will always under-report.
+
+---
+
+## 6l. MOVE-PROTOTYPE-01 — PARKED (2026-09-22)
+
+**Founder:** *"If this is proving too difficult we can park it."* Parked. Three rounds on the
+drag gesture without it working in his hand.
+
+**Nothing is lost and nothing is at risk.** `moveMode` defaults to `'tap'`, the Plan screen
+passes no such prop, and the shipped tap-tap-confirm flow is untouched. The prototype is a
+committed page that 404s in production.
+
+**Where it actually stands, so a future sitting does not restart from zero:**
+
+| | |
+|---|---|
+| **Fixed and proven by test** | `touch-action` set after the press armed (the browser resolves it at touch START) · `pointercancel` wired to the release handler · the row's `onClick` firing on drop · `setTimeout`'s id left in the ref, so the **first movement cancelled a press that had already succeeded** · `endAttempt()` inside a state updater, which would have **double-counted under StrictMode** |
+| **Never established** | **Whether the gesture works on a real touch device.** Nothing in this repo has ever run on one, and the dev machine could not drive real input — the browser pane was not compositing frames |
+| **The instrument now** | The page prints the gesture's **own** phases (`press` / `ARMED` / `press cancelled` / `drop` / `released on nothing`) interleaved with browser events |
+
+🥇 **The lesson worth more than the feature: instrument what YOUR CODE did, not what the
+browser did.** The first trace logged `pointerdown` / `pointercancel` / `scroll`, and **a
+press that never armed and a press that armed and was torn down produce an identical
+browser trace.** Two rounds of *"still doesn't work"* carried no diagnosis for that reason
+alone.
+
+⚠️ **To unpark, the first move is a device, not more code.** One run of the phase panel
+answers in a line what three rounds of reasoning did not.
 
 ---
 
