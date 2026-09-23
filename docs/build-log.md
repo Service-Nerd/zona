@@ -6,6 +6,28 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — PREVIEW-STRIP-01 · two bar charts, and only one of them meant anything
+
+**Shipped:** The plan preview shows one chart of your weeks instead of two.
+
+**Dev learning:** The founder asked whether two charts on one screen was right. I'd been waiting for a measurement rather than an opinion, and when I took it there were **four** things describing the same 23 weeks: a metrics block, the volume arc, a phase-colour strip, and the phase cards. Phase encoded three times, peak volume three times.
+
+But the count wasn't the finding. `PlanArc` draws bars where **height is weekly volume**. The strip drew bars where **height meant nothing** — 60% for foundation weeks, 100% for everything else — ninety lines further down the same scroll. A runner who has just learned that tall means hard meets a row of bars that are all the same height. That's not redundant, it's contradictory, and you can only see it by reading what each element actually encodes.
+
+Checking what the strip uniquely carried before deleting it turned up a second contradiction nobody had reported: it rendered `Race · Wk 20` while the metrics block above rendered `23 weeks`. **Two week counts for one plan**, differing by the foundation block. Removing the strip fixed that for free.
+
+**Product/creator learning:** The instinct with "do we need two charts?" is to answer on taste. The board refused to, and required an encoding table first — which is what turned a preference into a finding, and also what stopped me deleting more than I should. Collins wanted the taxonomy collapsed further; each of the remaining three carries a channel the others don't (numbers, shape, words), so he didn't get it.
+
+**AI-building learning:** I wrote a regression test that asserts the *guarantee* — "only one element maps weeks to a row of bars", "the screen states one week count" — rather than "PreviewPhaseStrip is absent", because the latter passes against a renamed re-implementation of the same defect.
+
+Then falsifying found **two flaws in that test, both mine**. My own JSX comment, which quotes `mainWeeks.length` to explain the contradiction, failed my own assertion — the seventh time today a guard fired on its own documentation. And my guards-the-guard check read `toContain('<PlanArc')`, which passes against `<PlanArcX`: **the exact substring-bias flaw I had quoted in that file's header three lines earlier.**
+
+**The honest bit:** I cited the flaw, in writing, and then committed it. Not from ignorance — from writing the citation and the code in the same sitting and never testing the assertion I'd just written a paragraph about. The only thing that caught it was breaking the code on purpose and watching the test stay green.
+
+**Hook material:** Our plan preview had two bar charts on one scroll. In one, bar height was your weekly mileage. In the other, height meant nothing at all. Nobody had reported it, because on a screenshot they look like the same chart twice — you have to read what each one encodes. And while checking what the second one uniquely told the runner, I found the screen was also stating two different week counts for the same plan.
+
+**Postable?:** yes
+
 ## 2026-09-23 — DATE-OWNER-01 · the setting I was asked for and didn't build
 
 **Shipped:** Dates read the same everywhere, and the plan reveal no longer shows you `2026-12-07`.
