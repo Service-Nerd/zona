@@ -151,7 +151,25 @@ export interface BaseVolumeResult {
 /** §44's obligation applied to §111 — a refusal names the lever and an
  *  alternative, in brand voice, never a bare stop. The screen (REFUSAL-SCREEN-01)
  *  renders this as "not yet", using the same date arithmetic it already knows. */
-export function baseVolumeRefusal(a: BaseBuildAssessment, input: GeneratorInput): BaseVolumeResult {
+/**
+ * `finishRescues` — would a finish-goal plan ACTUALLY generate for this runner?
+ *
+ * ⚠️ PASSED IN, NEVER DERIVED HERE, AND THAT IS THE WHOLE LESSON.
+ * The first cut computed it from `runWalkApplies` — §117's own eligibility
+ * predicate — on the reasoning that §117 is what rescues these runners. It is.
+ * The predicate was still wrong: **11 of 45 offers led to a SECOND refusal**,
+ * because §117's adequacy bound (`FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM`) is
+ * checked AFTER the plan is built and a gate cannot see it. A door can be open
+ * and the room still empty.
+ *
+ * So the caller answers the question the only way it can be answered honestly:
+ * by generating the finish-goal plan and seeing. It costs one extra generation
+ * on the refusal path only, and an offer that gets refused again is worse than
+ * no offer at all.
+ */
+export function baseVolumeRefusal(
+  a: BaseBuildAssessment, input: GeneratorInput, finishRescues = false,
+): BaseVolumeResult {
   const distKey = raceDistanceKey(input.race_distance_km)
   const label = distKey === 'MARATHON' ? 'marathon' : distKey === '50K' ? '50K' : distKey === '100K' ? '100K' : 'this distance'
   // §111 Am.2 — THE RETURN TRIGGER (Wood's condition, SLT 2026-09-19).
@@ -176,15 +194,41 @@ export function baseVolumeRefusal(a: BaseBuildAssessment, input: GeneratorInput)
   const when = weeksToBase != null
     ? ` Give it about ${weeksToBase} week${weeksToBase === 1 ? '' : 's'} of steady easy running and come back: we will build the plan then.`
     : ' Come back when you have a few weeks of steady easy running behind you and we will build the plan then.'
-  const message =
-    `${a.currentKm} km a week is too low to build safely to a ${label} yet. ` +
-    `Get to about ${a.minBaseKm} km a week first.${when}`
-  const alternatives = [
-    `Build your weekly volume to around ${a.minBaseKm} km, then generate this plan.`,
-    weeksToBase != null
-      ? `Run easy ${weeksToBase > 8 ? 'three or four' : 'three'} times a week and check back in ${weeksToBase} weeks.`
-      : `Spend the next few weeks running easy to raise your base before the ${label} block begins.`,
-  ]
+  // ⚠️ WHEN §117 CAN SERVE THEM, "COME BACK IN N WEEKS" IS FALSE.
+  // The runner is not short of base for the race, they are short of base for
+  // the TIME. Telling them to wait while the engine could build their plan
+  // this minute is the refusal contradicting itself.
+  // ⚠️ "instead" IS LOAD-BEARING, not a stylistic choice.
+  // `REFUSAL_NAMES_NEXT_STEP` (envelopeMeasure.ts) proves §44's obligation by
+  // MATCHING THE PROSE: /get to|come back|build to|at least|first|instead|about \d/.
+  // The first draft of this sentence read "Finishing it is another matter:
+  // switch your goal to finishing and we will build that plan now" and matched
+  // NONE of them — so the most actionable refusal in the engine scored as a
+  // dropout with no route back, and `useCaseEnvelope.test.ts` went red on 0.1%
+  // of marathon runners.
+  //
+  // ⚠️ SECOND TIME THIS REPO HAS BEEN BITTEN BY MATCHING A REFUSAL ON ITS
+  // WORDING. Recorded rather than worked around: the guard is prose-matching a
+  // semantic obligation, and the next person to improve this copy will trip it
+  // too. Making it structural (a `next_step` field on BaseVolumeResult) is the
+  // real fix and is filed, not done here.
+  const message = finishRescues
+    ? `${a.currentKm} km a week is too low to chase a ${label} time safely. ` +
+      `Switch your goal to finishing instead and we will build that plan now.`
+    : `${a.currentKm} km a week is too low to build safely to a ${label} yet. ` +
+      `Get to about ${a.minBaseKm} km a week first.${when}`
+
+  const alternatives = finishRescues
+    ? [
+        `Switch your goal to finishing and generate this plan now.`,
+        `Or build your weekly volume to around ${a.minBaseKm} km and come back for the time goal.`,
+      ]
+    : [
+        `Build your weekly volume to around ${a.minBaseKm} km, then generate this plan.`,
+        weeksToBase != null
+          ? `Run easy ${weeksToBase > 8 ? 'three or four' : 'three'} times a week and check back in ${weeksToBase} weeks.`
+          : `Spend the next few weeks running easy to raise your base before the ${label} block begins.`,
+      ]
   return {
     message,
     alternatives,

@@ -6162,6 +6162,31 @@ export function applyRecalibration(
 // CB-FOUNDATION-DENOM-01 (2026-09-10) made §1 count main-plan weeks only — the
 // bare and assembled verdicts are now identical, so the ladder does not need the
 // ADR-020 compose path.
+// REFUSAL-FINISH-ROUTE-01 — would this runner get a plan if they asked to
+// FINISH rather than to run a time?
+//
+// ⚠️ GENERATED, NOT PREDICTED. §117's eligibility gate is necessary and NOT
+// sufficient: its adequacy bound (peak long run >= FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM)
+// is checked on the BUILT plan and throws afterwards. Measured on a predicate
+// built from the gate alone: 11 of 45 offers led to a second refusal. The only
+// honest answer is the plan itself.
+//
+// ⚠️ RE-ENTRANCY GUARDED. The probe calls back into generateRulePlan, which can
+// refuse, which would probe again. The depth counter makes that impossible; it
+// is safe as a module-level value because generation is synchronous.
+let finishProbeDepth = 0
+function finishGoalWouldGenerate(
+  input: GeneratorInput, tier: Tier,
+  planStart?: string, today?: string,
+): boolean {
+  if (input.goal === 'finish') return false   // no goal left to switch to
+  if (finishProbeDepth > 0) return false      // never probe from inside a probe
+  finishProbeDepth++
+  try { generateRulePlan({ ...input, goal: 'finish' }, tier, planStart, undefined, today); return true }
+  catch { return false }
+  finally { finishProbeDepth-- }
+}
+
 export function generateRulePlan(
   rawInput: GeneratorInput,
   tier: Tier,
@@ -6196,7 +6221,8 @@ export function generateRulePlan(
     // the single exit path, so every candidate the ladder can return is checked
     // against the plan it actually delivers. Mirrors the §44/§52 refusals.
     const bb = assessBaseBuild(plan, input)
-    if (bb.exceeded) throw new BaseVolumeError(baseVolumeRefusal(bb, input))
+    if (bb.exceeded) throw new BaseVolumeError(
+      baseVolumeRefusal(bb, input, finishGoalWouldGenerate(input, tier, planStart, todayOverride)))
 
     // COPY-STALE-GEN-01 (2026-09-19) — WEEK COPY IS REFRESHED ON THE GENERATION
     // PATH, NOT ONLY ON RESHAPE.
@@ -9270,7 +9296,10 @@ function buildRulePlanOnce(
       // runner sees one consistent message and `isDesignedRefusal` classifies
       // it identically. A second refusal shape for the same outcome is the
       // never-match-a-refusal-by-its-message trap.
-      throw new BaseVolumeError(baseVolumeRefusal(assessBaseBuild(plan, input), input))
+      // Already a finish goal here (§117 only builds finishers), so the probe
+      // short-circuits to false. Passed explicitly rather than defaulted so the
+      // reason is legible at the call site.
+      throw new BaseVolumeError(baseVolumeRefusal(assessBaseBuild(plan, input), input, false))
     }
 
     for (const w of plan.weeks) {
