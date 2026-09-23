@@ -108,3 +108,19 @@ This route no longer calls Anthropic directly. It goes through
   route previously could not tell those apart.
 - `noRawAnthropicCalls.test.ts` fails the build if this file names
   `api.anthropic.com` again. Full contract: `docs/contracts/api/ops-ai-spend.md`.
+
+## Display units reach the limiter (UNITS-DURATION-01, 2026-09-23)
+
+`inferLimiter` takes a **required** `units`, because its `reasoning` string is interpolated
+verbatim into the `sessionFeedback` prompt — which makes it a display surface under ADR-015's
+amendment: a number handed to the model becomes user-facing the moment the model repeats it.
+No request or response shape changed.
+
+- The `getUserDisplayPrefs` read was **already in this route**, just *after* the `inferLimiter`
+  call. It is now hoisted above it.
+- ⚠️ **Three figures, two KINDS, three owners.** `paceFade` is a RATE (`formatPaceDelta`), the two
+  halves are PACES (`formatPace`), the shortfall is a DISTANCE (`formatDistance`). A blanket
+  `/km`→`/mi` rename would have relabelled the rate without converting it — `15s/km` becoming
+  `15s/mi`, which is not any rate at all.
+- ⚠️ `units` is **required, not defaulted**: a rate restated in the wrong unit is silently wrong
+  rather than obviously wrong.
