@@ -56,3 +56,11 @@ Colours/fonts via CSS custom properties only: `--moss` (dot), `--mute` (status t
 ## Consumer
 
 `app/dashboard/DashboardClient.tsx` — wraps the single dashboard scroll container. Enabled only on the primary nav screens (`today`, `plan`, `coach`, `me`) and when `appReady`. `onRefresh` = `handleRefresh`: native `syncOnAppOpen()` (force HealthKit ingest) → `refreshHealthKitRuns()` + `refreshRunAnalysis()` + `refreshCompletions()` + `refreshUnreadNotifications()`. Offline (`navigator.onLine === false`) throws → error state. Reference: PTR-01, ui-patterns.md §30.
+
+## Spacing (APP-SPACE-01, 2026-09-23)
+
+Internal gaps use `var(--space-1…7)` = `4 · 8 · 12 · 16 · 24 · 32 · 48`, swept from hand-typed px on
+2026-09-23 when the app was measured at **zero** token uses against the marketing site's 17. Values
+shifted by at most 4px. ⚠️ **Horizontal page padding is the SCREEN's, not this component's**, and was
+not swept — the shorthand `padding: '0 16px'` is outside the sweep's property list. Gated by
+`lib/appSpacingScale.test.ts`.

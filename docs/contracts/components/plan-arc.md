@@ -93,3 +93,11 @@ These are board rulings, not style preferences. `lib/plan/planArc.test.ts` enfor
 
 - A one-week phase inside a long plan gives its rail segment ~15px and the label ellipsises to `P…`. It degrades without breaking. Measuring text to hide the label instead was judged not worth a client-side measurement loop for a rare case.
 - Future bars are `--mute-2` at full opacity, ≈2.16:1 on white. They must stay visible — the shape of what is *coming* is the anticipation mechanism. The information is carried by height and position rather than colour alone, so this is not a WCAG 1.4.11 case, but do not dim them further.
+
+## Spacing (APP-SPACE-01, 2026-09-23)
+
+Internal gaps use `var(--space-1…7)` = `4 · 8 · 12 · 16 · 24 · 32 · 48`, swept from hand-typed px on
+2026-09-23 when the app was measured at **zero** token uses against the marketing site's 17. Values
+shifted by at most 4px. ⚠️ **Horizontal page padding is the SCREEN's, not this component's**, and was
+not swept — the shorthand `padding: '0 16px'` is outside the sweep's property list. Gated by
+`lib/appSpacingScale.test.ts`.
