@@ -366,63 +366,6 @@ const PHASE_DESCRIPTION: Record<string, string> = {
 }
 
 // Full-width strip — every week as a coloured bar. No scrolling.
-function PreviewPhaseStrip(
-  { weeks, units }: { weeks: Plan['weeks']; units: DistanceUnits },
-) {
-  if (!weeks.length) return null
-  const foundationCount = weeks.filter(w => w.phase === 'foundation').length
-  const mainWeeks = weeks.filter(w => w.phase !== 'foundation')
-  return (
-    <div>
-      {foundationCount > 0 && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: 'var(--space-2)', letterSpacing: '0.02em' }}>
-          Foundation Block · {foundationCount} {foundationCount === 1 ? 'week' : 'weeks'} before your plan
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: '2px', height: '32px', alignItems: 'flex-end' }}>
-        {weeks.map(w => {
-          const isRaceWeek   = w.type === 'race'
-          const isDeload     = w.badge === 'deload'
-          const isFoundation = w.phase === 'foundation'
-          const colour = isRaceWeek
-            ? 'var(--s-race)'
-            : PHASE_COLOUR[w.phase ?? 'base']
-          return (
-            <div
-              key={w.n}
-              /* §121 Amendment 1 — the race is named, never folded in. This
-                 preview is where the founder found the defect ("it looks like
-                 it's got the highest volume... higher than peak"), and the bar
-                 heights are fixed by §121 at the source; the tooltip is where
-                 the two numbers are told apart. Shared owner, so this and the
-                 published plan pages cannot drift. */
-              title={isFoundation
-                ? `Foundation · ${weekVolumeLabel(w, units) ?? ''}`
-                : `Week ${w.n} · ${weekVolumeLabel(w, units) ?? ''} · ${w.phase ?? 'base'}${isDeload ? ' · recovery' : ''}${isRaceWeek ? ' · race' : ''}`}
-              style={{
-                flex: 1,
-                height: isFoundation ? '60%' : '100%',  // subdued height for foundation
-                borderRadius: '2px',
-                background: colour,
-                opacity: isFoundation ? 0.5 : (isDeload ? 0.35 : (isRaceWeek ? 1 : 0.85)),
-                borderBottom: isFoundation ? '1px dashed var(--mute)' : undefined,
-              }}
-            />
-          )
-        })}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-2)' }}>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          {foundationCount > 0 ? 'Foundation' : 'Wk 1'}
-        </span>
-        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Race · Wk {mainWeeks.length}
-        </span>
-      </div>
-    </div>
-  )
-}
-
 // Per-phase summary card — left accent in phase colour, key stats, character line.
 function PhaseSummaryCard({ phase, weeks, units }: { phase: string; weeks: Plan['weeks']; units: DistanceUnits }) {
   if (!weeks.length) return null
@@ -1523,7 +1466,27 @@ export default function GeneratePlanScreen({
           )}
 
           <div style={{ margin: '20px 0 0' }}>
-            <PreviewPhaseStrip weeks={weeks} units={preferredUnits} />
+            {/* ── PreviewPhaseStrip REMOVED — Design Board, 2026-09-23 ──────────
+                🔴 TWO BAR-LIKE ROWS WHERE HEIGHT MEANT DIFFERENT THINGS. `PlanArc`
+                sits ~90 lines above on the same scroll and encodes weekly volume
+                as bar height. This strip was also a row of bars, and its height
+                carried NO meaning — 60% for foundation, 100% for everything else.
+                A runner who has just learned that tall means hard met bars that
+                were all the same height. Collins: *"that is not redundancy, it is
+                a contradiction."*
+
+                Its only unique channel was colour = phase, and the `Plan shape`
+                cards name those phases in words IMMEDIATELY BELOW. Its volume was
+                in a `title=` attribute, which on a phone is unreachable.
+
+                ⚠️ AND REMOVING IT FIXED A SECOND CONTRADICTION: it rendered
+                `Race · Wk {mainWeeks.length}` = 20 while `PlanHeroMetrics` renders
+                `plan.weeks.length` = 23. **Two week-counts for one plan, on one
+                scroll**, differing by the foundation block.
+
+                ⚠️ The "N weeks before your plan" framing is NOT lost — the
+                foundation `PhaseSummaryCard` carries "3 weeks" and its description
+                opens "Pre-plan easy running". Verified before deleting. */}
           </div>
 
           <div style={{ marginTop: 'var(--space-5)' }}>

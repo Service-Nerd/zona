@@ -660,6 +660,27 @@ behind them before a seat spoke; the three that did not are the ones where the f
 impression and nobody had yet measured it. **That split is the board's evidence rule working, not
 the board being slow.**
 
+## 6v. The plan preview had FOUR encodings of one plan (2026-09-23)
+
+| Decision | Status | Why |
+|---|---|---|
+| **`PreviewPhaseStrip` is removed from the plan preview** | 🔴 **DON'T SHIP** | 🔴 **TWO BAR-LIKE ROWS WHERE HEIGHT MEANT DIFFERENT THINGS.** `PlanArc` sits ~90 lines above on the **same scroll** and encodes **weekly volume as bar height**. The strip was also a row of bars and **its height carried no meaning** — 60% for foundation, 100% for everything else. Collins: *"a runner who has just learned that tall means hard scrolls ninety lines and meets bars that are all the same height. **That is not redundancy, it is a contradiction.**"* Its only unique channel was **colour = phase**, which the `Plan shape` cards name **in words immediately below**; its volume lived in a `title=` attribute, **unreachable on a phone** (Wroblewski) |
+| **Removing it fixed a SECOND contradiction nobody had reported** | 🟢 **RECORDED** | The strip rendered `Race · Wk {mainWeeks.length}` = **20** while `PlanHeroMetrics` renders `plan.weeks.length` = **23**. **Two week counts for one plan, on one scroll**, differing by the foundation block. Found during the pre-delete check of what the strip uniquely carried |
+| **The "before your plan" framing is NOT lost** | 🟢 **VERIFIED BEFORE DELETING** | The foundation `PhaseSummaryCard` renders **"3 weeks"** and its description opens **"Pre-plan easy running"**. Each of the strip's three parts was checked for coverage before removal, not after |
+| **Collapsing `PlanArc`, `PlanHeroMetrics` or the phase cards** | 🔴 **NOT GRANTED on this evidence** | Collins wanted the taxonomy collapsed further. **Each of the three carries a channel the others do not**: numbers (peak + total), shape (per-week volume, progress, race), and words (phase names, ranges, prose). Four was never the problem; **two contradicting bar rows were** |
+
+⚠️ **MEASURED, NOT IMPRESSION.** Phase was encoded **three times** (arc rail, strip colour, card
+names) and peak volume **three times** (hero metric, tallest bar, card "peak 41km"). The chair
+declined to rule on the screenshot and required the encoding table first.
+
+⚠️ **THE GATE ASSERTS THE GUARANTEE, NOT THE ABSENCE OF A COMPONENT** — *"only one element maps
+weeks to a row of bars"* and *"the screen states ONE week count"*. A test that said
+`PreviewPhaseStrip is gone` would pass against a renamed re-implementation of the same defect.
+🔴 **Falsifying it found TWO flaws in the test itself, both mine**: my own JSX comment quoting
+`mainWeeks.length` failed my own assertion (**seventh** *bound the region, never grep the file*),
+and `toContain('<PlanArc')` passed against `<PlanArcX` — **the exact substring-bias flaw quoted in
+that file's own header, committed three lines after quoting it.**
+
 ## 6m. Miles — the OPEN-LENS re-read (2026-09-22)
 
 Full document: `docs/competitor/miles-open-lens-review.md`. All 17 screenshots, **no item
