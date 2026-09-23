@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — REFUSAL-COHERENCE-01 · the refusal was computed from a rule that had not fired
+**Shipped:** A refusal that stops telling runners to reach a number they already exceed, and `npm run review:cohort` — the review's table, diffed, so the next round starts from a delta instead of a re-derivation.
+
+**Dev learning:** Two rules can refuse a runner and share one error type for a good reason: one refusal shape means nothing downstream has to match on wording. What nobody noticed is that they were also sharing the *message*, and the message is arithmetic. The second rule computed its sentence from the first rule's ratio — which at that site had not been exceeded — so it told a runner doing 8 km a week to get to 7 km a week first. **208 refusals, 11.1% of every base-volume refusal in the marathon population, and all 208 were the same runner.**
+
+**The measurement changed the fix.** My first instinct was "not enough time, come back with a longer run-up". The data killed it: these plans fail at *every* runway in the grid, twelve weeks through thirty, and at every day count. Time was not the lever. Shipping that sentence would have replaced an incoherent refusal with a confidently wrong one, which is worse — the first at least looks broken.
+
+**AI-building learning:** I wrote the gate to assert the *property*, not the mechanism. It doesn't check which builder ran or what the sentence says; it checks the one thing the runner experiences — that the target named is above where they already are. A test asserting the new internal cause field would have passed just as happily on a message still carrying the impossible number. Then I falsified it against the actual pre-fix code rather than a simulated defect: 17 of 280 refusals flagged, clean afterwards.
+
+**Product/creator learning:** The headline rate hides the cohort. The marathon sits at 78.7% fit, and that number is not spread across marathoners — it's 93-100% clean at 25 km/week and above, and 12% at 15 km/week. A rate that moves tells you something changed and never tells you who it changed for, and a rise in one band can hide a collapse in another. So the review now prints the same table every time and diffs it, including objections that *disappeared*, which you cannot see by walking only today's keys.
+
+**The honest bit:** My first version of the coherence test swept the 50K envelope too. It failed — not on coherence, but on "did this actually reach a refusal?" 50K refuses nobody, so that half of the test proved nothing. I'd have shipped a green arm testing air if I hadn't written the reach check first.
+
+**Hook material:** Our refusal told runners doing 8 km a week to get to 7 km a week first, because it was computing its advice from a rule that hadn't fired.
+
+**Postable?:** yes — "two errors sharing a type quietly shared a message, and one of them was arithmetic" is a clean general lesson.
+
 ## 2026-09-23 — REFUSAL-FINISH-ROUTE-01 · a door can be open and the room still empty
 **Shipped:** The base-volume refusal now offers the finish-goal route, but only when taking it actually produces a plan.
 
