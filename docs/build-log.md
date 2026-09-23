@@ -6,6 +6,28 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — PACE-UNITS-01 · the formatter was right and nobody could reach it
+
+**Shipped:** Switching to miles now converts the pace on your plan, not just the distance. It has never done so.
+
+**Dev learning:** The bug report was "distance says miles, pace still says /km". My first instinct was that a render site had been missed. It hadn't. `formatPace(353, 'mi')` returns `9:28/mi` and always has — the ADR-015 owner was correct the entire time. The problem was upstream: `ruleEngine.ts` builds `pace_target` as a **string** with `/km` welded on, at generation time, and stores it in `plan_json`. By the time the app renders there is no number left to convert, only prose. 674 of 888 stored sessions.
+
+That reframes the fix completely. Fixing the producer is the "correct" move and it repairs **zero existing plans** — everyone already holding a plan keeps reading kilometres forever. So the fix goes at the read: pull the digits back out of the string, hand them to `formatPace`, let the owner do the arithmetic. Deliberately not a second pace formatter; this repo has a name for that (DELOAD-OWNER-01, five copies of one expression agreeing by accident).
+
+The part I nearly got wrong: `easyPaceAsCeiling` **sniffs the unit back out of the text** — `paceTarget.includes('/km') ? ' /km' : '/mi'`. So the ORDER of the two calls decides what the runner reads, and both functions are individually correct either way. Convert first, then take the ceiling. The reverse hands the ceiling a `/km` string, it faithfully preserves `/km`, and a miles user reads a kilometre pace — the exact defect, reintroduced by composition. That is now an explicit test, in both orders.
+
+**Product/creator learning:** The founder's screenshot showed distance in miles and pace in `/km` on the same card. That is worse than being wrong in one unit consistently, because the card contradicts itself in the space of two lines and the runner has to work out which number to trust. A half-converted screen erodes more confidence than an unconverted one. Same reasoning drove the all-or-nothing rule inside the converter: `9:28–7:02 /mi` renders beautifully and is nonsense.
+
+**AI-building learning:** I widened the guard's regex to catch the pace shape, and separately found the file glob was broken — `git ls-files 'lib/plan/**/*.ts'` returns **zero files**, because `lib/plan` is flat and `**/` does not match a file directly inside a directory. 393 files the guard's own header claimed to cover had never been opened. Two independent blind spots in one check, and **either alone would have hidden this defect**. The previous sweep scanned that exact directory and reported clean.
+
+What that taught me: I trusted the guard's header comment describing what it covered, instead of asking it what it actually read. The header was a claim. `git ls-files` was the measurement, and it took one command. I should ask a check what it can SEE before I believe what it says.
+
+**The honest bit:** Widening both axes surfaced 87 more hits and I wanted to baseline the lot and move on. That would have been the wrong shape — 25 of them are validator messages nobody reads and the other 62 are a genuinely different problem. So I read all 87. Then I measured production expecting to find the prose class live too, and found **zero prose km across all 19 stored plans** while 17 of 19 carry `/km` pace. Tempting to file that as "not a real problem". It isn't — this repo already recorded §80's note naming its cap 0 times in 5,264 plans while being reachable the whole time. "Zero in the corpus" is not "cannot fire". Filed as a closed register with the measurement attached, both halves of it.
+
+**Hook material:** The function that fixes the bug was already in the codebase, already correct, already tested. `formatPace(353, 'mi')` → `9:28/mi`. It was unreachable for five months because a different file had welded the letters `/km` onto a string, and by render time the number was gone. 674 of 888 sessions. The guard built to catch exactly this had two separate blind spots — a missing `/` in a regex, and a glob pattern that matched **zero of 393 files** — and either one alone was enough to hide it.
+
+**Postable?:** yes
+
 ## 2026-09-23 — COMPLETION-TOMBSTONE-01 · the save worked, the row was already dead
 **Shipped:** Completing or skipping a session on a regenerated plan actually shows up. It has been silently failing for anyone who started a new plan since 17 September.
 
