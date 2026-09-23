@@ -186,55 +186,53 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## ⚖️ FILED 2026-09-23 SHIPPING `PACE-UNITS-01`
 
-### ⚙️ `UNITS-PROSE-01` — 62 producer-side sites bake a unit into prose
+### ⚙️ `UNITS-PROSE-01` — **PARTIALLY SHIPPED 2026-09-23.** Runner-facing prose converts; three groups remain.
 
-**Found by the guard that `PACE-UNITS-01` widened, not by looking.** Two
-independent blind spots in `lib/hardcodedUnits.test.ts` were fixed in that
-commit — the regex could not see a PACE unit (`${x} /km`, no `/` in the
-pattern) and the file glob could not see the FILE that wrote one
-(`git ls-files 'lib/plan/**/*.ts'` returns **zero**: `lib/plan` is flat, so
-**393 files** the header claimed to cover were never opened). Either alone
-would have hidden the five-month pace defect. Together they were also hiding
-this.
+🔴 **THE MEASUREMENT IN THE ORIGINAL FILING WAS WRONG AND IS CORRECTED.** It read: *"19 stored
+plans carry ZERO prose km... real but currently UNREALISED in production."* The production query
+used `\d\s*km\b`, and **in Postgres POSIX regex `\b` is a BACKSPACE CHARACTER, not a word
+boundary** (`\y` is). It matched nothing and returned a clean zero.
 
-**The class.** 62 sites build a unit into a string at GENERATION or ANALYSIS
-time, outside `lib/format.ts`, with no reader preference in scope. Same
-architectural fact that made `PACE-UNITS-01` unfixable at its producer: by the
-time the app renders there is no number left to convert. Three groups:
+Re-measured with `\y`: **ALL 19 of 19 stored plans carry prose km** — **101 of 888 sessions** in
+runner-facing `coach_notes`, **16 of 19 plans** in `meta.notes`, 7 in `volume_constraint_note`.
+Generated corpus agrees at **100% of 1,167 plans**. ⚠️ **A clean zero from a broken pattern is
+indistinguishable from a clean zero from clean data**, and the wrong one was reported to the
+founder and written into the debt register.
 
-| Group | Where | Preference available? |
-|---|---|---|
-| **Render-time** | `GeneratingCeremony.tsx`, `ceremonyLines.ts`, `freeIntro.ts` | **Yes** — fixable today, just not threaded |
-| **Request-time** | `baseVolume.ts` + `longRunReadiness.ts` refusals, `planAdjustment.ts` coach notes, `limiter.ts` | **Yes in principle** — the route knows the user |
-| **Stored prose** | `ruleEngine.ts` (30), `foundationBlock.ts`, `maintenance.ts`, `sessionComposer.ts`, `sessionSteps.ts`, `resolveMainSet.ts`, `enrich.ts` | **No** — needs the preference threaded to the producer, or the number stored beside the string |
+**✅ SHIPPED — converted at the READ** (`lib/format.ts → convertDistanceString`), never at the
+producer, for three reasons any one of which is sufficient: every stored plan already carries
+these strings; the toggle is **mutable after generation**; and the producer strings stay
+byte-identical so §44's `REFUSAL_NAMES_NEXT_STEP` and every prose matcher keep passing.
 
-⚠️ **MEASURED, AND THE MEASUREMENT CUTS BOTH WAYS.** Across all **19 stored
-plans**: **17 carry `/km` pace**, and **ZERO carry prose km anywhere in the
-document**. So this class is **real but currently unrealised in production** —
-which is why it is filed rather than fixed alongside the pace work. It is
-explicitly **not** evidence the sites are unreachable: this repo already
-recorded §80's note naming its cap **0 times in 5,264 plans** while being
-reachable all along. **"Zero in the corpus" is not "cannot fire."**
+| Wired | Owner |
+|---|---|
+| Plan-rationale notes (the whole `meta.*note` family) | `planRationaleNotes()` — converted **after** the word cap, so a miles reader never gets fewer notes than a km reader |
+| Session coach notes | `DashboardClient` |
+| The refusal message | `GeneratePlanScreen` |
+| Generating ceremony | `GeneratingCeremony` — was also calling `weekVolumeLabel` **without units** while every other caller passed them |
 
-⚠️ **The register is CLOSED, not open.** `lib/__fixtures__/hardcodedUnitsDebt.json`
-holds all 62 with one shared reason and an entry date. A NEW hit fails the
-build and may **not** be added to it; a FIXED site fails the build until its
-entry is deleted. Same shape as `SWEEP-BASELINE-01`. ⚠️ **A declared reason is
-not a fixed problem, and nothing here schedules its removal** — the date is in
-the fixture so the age is always one line away.
+Gated by `lib/plan/prosePreference.test.ts`. ⚠️ **Two of its assertions were HOLLOW on first
+write** — the corpus carries no pace-bearing prose and never binds the word budget, so breaking
+both properties left it green. Both are now asserted on constructed input. **Only falsifying
+found it.**
 
-⚠️ **Note the `min` half is a DIFFERENT rule.** `${duration_mins} min` is
-unit-independent but violates ADR-015's `formatDuration` contract once the
-value reaches 60 (`90 min`, never `1h 30`). Whoever picks this up should not
-assume one fix serves both.
+**🔻 WHAT REMAINS — three groups, all still in the register:**
 
-**Board:** ⚙️ NO BOARD for the mechanical conversion — ADR-015 already makes
-`lib/format.ts` the sole owner and INV-PREF-001 already says the preference
-reaches every string, so this restores documented intent. 🏃 **COACHING BOARD
-if any refusal or note is REWORDED** rather than re-unitised: `baseVolume.ts`'s
-sentences are load-bearing for `REFUSAL_NAMES_NEXT_STEP` (§44), and this repo
-has broken **8 prose matchers in 5 files** once already by editing four
-refusal strings for tone.
+| Group | Why it is separate |
+|---|---|
+| **AI prompt builders** (`enrich.ts`, `enrichMaintenance.ts`, `freeIntro.ts`) | ADR-015's amendment makes the AI layer a display surface, and **`promptDistanceFormatters(units)` already exists** for exactly this. Wiring, not design |
+| **`lib/coaching/limiter.ts` + `planAdjustment.ts`** | Analysis reasoning and adjustment coach-notes. Built per request; the route knows the units |
+| **The 11 DURATION-only entries** | ⚠️ **A DIFFERENT RULE.** `${duration_mins} min` is unit-independent but breaches ADR-015's `formatDuration` contract once the value reaches 60 (`90 min`, never `1h 30`). **Do not assume one fix serves both** |
+
+⚠️ **THE GATE'S NAMED BLIND SPOT: a companion figure with NO unit attached.** *"wants nearer 53"*,
+implicitly km, is invisible to a regex and survives conversion looking like a plain number. **Two
+existed** and were labelled at the producer. A third would pass the gate silently; it is found by
+reading, not by the test. ⚠️ Labelled as `53km` (one word) not `53 km` (two), because
+`PLAN-NOTE-LENGTH-01`'s **117-word ratchet** failed at 119 and its own message says do not raise it.
+
+**Board:** ⚙️ NO BOARD for the mechanical conversion (ADR-015 already owns it; INV-PREF-001 already
+says the preference reaches every string). 🏃 **COACHING BOARD if any refusal or note is REWORDED**
+rather than re-unitised — nothing was.
 
 ---
 

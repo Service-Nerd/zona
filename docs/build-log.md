@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — UNITS-PROSE-01 · the clean zero that was a broken regex
+
+**Shipped:** If you read in miles, the sentences on your plan now say miles. They never have.
+
+**Dev learning:** This morning I told the founder the class was "real but unrealised — zero of 19 stored plans carry it" and wrote that into a debt register as the justification for deferring it. It was wrong. My production query used `\d\s*km\b`, and **in Postgres POSIX regex `\b` is a backspace character, not a word boundary** — `\y` is. The pattern was looking for a literal control character that never appears, so it matched nothing and returned a confident zero. With `\y`: all 19 of 19 plans, 101 of 888 sessions in runner-facing coach notes.
+
+I only caught it because the generated corpus came back at **100% of 1,167 plans** and the two numbers couldn't both be true. If the corpus had agreed with the query I'd have shipped the deferral.
+
+The fix goes at the read, not the producer, for a reason worth keeping: the units toggle is **mutable after generation**. Baking miles into a stored plan is wrong for the runner who switches back next week. Same trap as PACE-UNITS-01 this morning, one layer up.
+
+**Product/creator learning:** Converting prose is harder than converting a number, because a sentence can carry a figure with **no unit attached**. `"Your biggest week reaches 38 km, where a time goal usually wants nearer 53."` — that 53 is kilometres and a regex cannot see it. Converted naively you get "23.6 mi ... nearer 53", which is worse than not converting at all. Two of those existed; I found them by generating the corpus and flagging leftover numbers, then reading each one.
+
+Then the fix hit a **117-word ratchet** on note length whose failure message says, in as many words, "do not raise the ratchet". Adding " km" twice cost two words. The way out was typographic, not editorial: `53km` is one word where `53 km` is two, and the converter matches both. Zero words spent, ratchet intact, no copy reworded — which also kept it out of the Coaching Board, since rewording a note is a coaching matter and relabelling a unit is not.
+
+**AI-building learning:** I wrote four falsification tests and **two of them passed when they should have failed**. My first instinct was that the breakages hadn't applied, so I re-ran them with an assertion that the injection matched. They had applied. The tests were genuinely hollow: the generated prose contains no pace strings and never binds the word budget, so the corpus could not exercise either property. A corpus test only tests what the corpus happens to contain.
+
+Worse, one of them couldn't have failed for a reason I'd written into the code myself — my comment credited a `(?<!/)` lookbehind for keeping pace safe, and **there is no such lookbehind in the pattern**. What actually protects `6:30–7:30 /km` is that `\s*` cannot match a slash. I'd documented a mechanism that doesn't exist and then tried to falsify the wrong thing.
+
+**The honest bit:** Three of today's items now have the same shape — the fix was easy and the *measurement* was the work. And in two of the three my first measurement was wrong in a way that looked exactly like success: an empty plan corpus this morning that refused every case, and a regex today that matched nothing. Both returned clean zeros. Neither failed.
+
+**Hook material:** I deferred a defect because a database query said zero rows. The query used `\b` for a word boundary. In Postgres, `\b` is the backspace character. The real number was 100% of plans and 101 of 888 sessions. Then two of the four tests I wrote to catch it turned out to be incapable of failing — including one that couldn't fail because a comment I'd written credited a regex lookbehind that was never in the regex.
+
+**Postable?:** yes
+
 ## 2026-09-23 — UNITS-SUBUNIT-01 · the rule that only existed in a test
 
 **Shipped:** If you read in miles, a short cool-down now says "5 min" instead of "~0mi".
