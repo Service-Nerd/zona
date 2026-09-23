@@ -194,9 +194,15 @@ describe('DS-08: tryEnrichHealthKitRow patches temp + splits onto the canonical 
   // covering both the single-`.eq` strava_activities update and the double-`.eq`
   // downstream mirrors.
   const capturingSupabase = (captured: { patch?: Record<string, unknown> }) => {
+    // ⚠️ THE DOUBLE MUST MODEL EVERY LINK THE REAL CHAIN USES.
+    // This had `.eq` and not `.is`, so when COMPLETION-TOMBSTONE-01 added
+    // `.is('superseded_at', null)` to the downstream mirrors the production code
+    // was correct and the TEST threw. A mock that lags the builder reports a
+    // defect in the fix rather than in the code.
     const okChain = (): any => {
       const p: any = Promise.resolve({ error: null })
       p.eq = () => okChain()
+      p.is = () => okChain()
       return p
     }
     return {

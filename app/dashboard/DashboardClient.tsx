@@ -17,6 +17,7 @@ import PlanCalendar from '@/components/training/PlanCalendar'
 import ReflectionInput from '@/components/training/ReflectionInput'
 // Calendar screen retired — CalendarOverlay.tsx renamed to .old.tsx (brand-product-alignment v2)
 import StravaPanel from '@/components/strava/StravaPanel'
+import { upsertCompletion } from '@/lib/plan/completions'
 import { createClient } from '@/lib/supabase/client'
 import { trackEvent } from '@/lib/analytics'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
@@ -2711,9 +2712,8 @@ export default function DashboardClient() {
               // (missedSessionPrompt.day) and the original day diverge; the rest of
               // the system reads completions by original_day.
               const completionKey = missedSessionPrompt.session.key ?? missedSessionPrompt.day
-              await supabase.from('session_completions').upsert({
-                user_id: user.id,
-                week_n: missedSessionPrompt.weekN,
+              await upsertCompletion(supabase, {
+        week_n: missedSessionPrompt.weekN,
                 session_day: completionKey,
                 status: 'skipped',
                 // FIRSTRUN-MISSED-01 — the reason is NOT a fatigue level. It
@@ -2724,8 +2724,7 @@ export default function DashboardClient() {
                 // had all three of their last-three slots taken by them, making
                 // their high-fatigue trigger unreachable.
                 skip_reason: reason,
-                updated_at: new Date().toISOString(),
-              }, { onConflict: 'user_id,week_n,session_day' })
+              })
               // Trigger 2: fire skip adjustment (except "Too tired" — absorbed)
               if (reason !== 'Too tired') {
                 void authedFetch('/api/adjust-plan', {
@@ -4101,16 +4100,14 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         avgHr: completion?.avg_hr ?? null,
         zone2Ceiling: zone2Ceiling ?? undefined,
       })
-      await supabase.from('session_completions').upsert({
-        user_id: user.id,
+      await upsertCompletion(supabase, {
         week_n: weekN,
         session_day: session.key,
         status: completion?.status ?? 'complete',
         rpe: newRpe,
         fatigue_tag: newTag,
         coaching_flag: flag,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,week_n,session_day' })
+      })
       // Trigger 4: fatigue accumulation check after heavy log
       if (newTag && ['Heavy', 'Wrecked', 'Cooked'].includes(newTag)) {
         void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })
@@ -4268,14 +4265,12 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                 avg_hr:               activity.average_heartrate ? Math.round(activity.average_heartrate) : null,
               }
             : {}
-      await supabase.from('session_completions').upsert({
-        user_id: user.id,
+      await upsertCompletion(supabase, {
         week_n: weekN,
         session_day: session.key,
         status,
         ...linkFields,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,week_n,session_day' })
+      })
 
       // Stage the activity link. For the manual-link path through Reflect this
       // ref fires on Reflect close (legacy flow). For the new POST-RUN-01 path
@@ -4635,10 +4630,9 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                 try {
                   const { data: { user } } = await supabase.auth.getUser()
                   if (user) {
-                    await supabase.from('session_completions').upsert({
-                      user_id: user.id, week_n: weekN, session_day: session.key,
-                      status: 'skipped', skip_reason: reason, updated_at: new Date().toISOString(),
-                    }, { onConflict: 'user_id,week_n,session_day' })
+                    await upsertCompletion(supabase, {
+        week_n: weekN, session_day: session.key,
+                      status: 'skipped', skip_reason: reason, })
                     // Trigger 2: skip with reason — fire adjustment check (not "Too tired" — absorbed)
                     if (reason !== 'Too tired') {
                       void authedFetch('/api/adjust-plan', {
@@ -5791,21 +5785,18 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
         const finalKm   = (existingTotalKm ?? 0) + distKm
         const count     = (existingEffortCount ?? 1) + 1
         const finalDisp = (preferredUnits === 'mi' ? finalKm / 1.60934 : finalKm).toFixed(1)
-        await supabase.from('session_completions').upsert({
-          user_id: user.id,
-          week_n: weekN,
+        await upsertCompletion(supabase, {
+        week_n: weekN,
           session_day: key,
           status: 'complete',
           strava_activity_name: `${count} efforts · ${finalDisp}${preferredUnits}`,
           strava_activity_km: +finalKm.toFixed(1),
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'user_id,week_n,session_day' })
+        })
         setSavedStep(true)
         return
       }
 
-      await supabase.from('session_completions').upsert({
-        user_id: user.id,
+      await upsertCompletion(supabase, {
         week_n: weekN,
         session_day: key,
         status: 'complete',
@@ -5815,8 +5806,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
         // rpe / fatigue_tag intentionally omitted: on a DS-07 edit this upsert
         // must not wipe body-state the runner already logged. New logs leave
         // them null (schema default) and set them in the reflect step below.
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,week_n,session_day' })
+      })
       setSavedStep(true)
 
       // DS-06 — store the run as a source='manual' row in the activity log (so it
@@ -5860,12 +5850,11 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
       if (!user) return
       const key = sessionKey ?? todayKey
       const flag = getCoachingFlag({ sessionType: sessionType ?? '', rpe: newRpe, avgHr: null, zone2Ceiling: undefined })
-      await supabase.from('session_completions').upsert({
-        user_id: user.id, week_n: weekN, session_day: key,
+      await upsertCompletion(supabase, {
+        week_n: weekN, session_day: key,
         status: 'complete', rpe: newRpe, fatigue_tag: newTag,
         coaching_flag: flag,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id,week_n,session_day' })
+      })
       // Trigger 4: fatigue accumulation
       if (newTag && ['Heavy', 'Wrecked', 'Cooked'].includes(newTag)) {
         void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })
@@ -13787,16 +13776,21 @@ function PostRunScreen({
         avgHr:       null,
         zone2Ceiling: zone2Ceiling ?? undefined,
       })
-      await supabase.from('session_completions').upsert({
-        user_id:       user.id,
+      // ⚠️ `sessionDay` is `session?.key`, so it is optional. Every OTHER use in
+      // this component guards it (the completion load at :13673 does); this
+      // write did not, because the old untyped `.upsert()` accepted
+      // `session_day: undefined`, PostgREST dropped the key, and the NOT NULL
+      // constraint rejected the row into a `catch {}`. Silent, and found only
+      // because the typed helper would not compile.
+      if (!sessionDay) return
+      await upsertCompletion(supabase, {
         week_n:        weekN,
         session_day:   sessionDay,
         status:        'complete',
         rpe:           newRpe,
         fatigue_tag:   newTag,
         coaching_flag: flag,
-        updated_at:    new Date().toISOString(),
-      }, { onConflict: 'user_id,week_n,session_day' })
+      })
       // Trigger 4: fatigue accumulation check
       if (newTag && ['Heavy', 'Wrecked', 'Cooked'].includes(newTag)) {
         void authedFetch('/api/adjust-plan', { method: 'POST', body: JSON.stringify({}) })

@@ -111,11 +111,19 @@ export async function tryEnrichHealthKitRow(
     .update({ strava_activity_id: activity.id })
     .eq('user_id', userId)
     .eq('apple_health_uuid', match.apple_health_uuid)
+    // COMPLETION-TOMBSTONE-01 — the LIVE row only. The HealthKit uuid survives
+    // on superseded rows too, so without this the Strava id is patched onto a
+    // dead row from the previous plan.
+    .is('superseded_at', null)
   await supabase
     .from('session_completions')
     .update({ strava_activity_id: activity.id })
     .eq('user_id', userId)
     .eq('apple_health_uuid', match.apple_health_uuid)
+    // COMPLETION-TOMBSTONE-01 — the LIVE row only. The HealthKit uuid survives
+    // on superseded rows too, so without this the Strava id is mirrored onto a
+    // dead row from the previous plan and the runner's linked run shows nothing.
+    .is('superseded_at', null)
 
   return { enriched: true, appleHealthUuid: match.apple_health_uuid }
 }

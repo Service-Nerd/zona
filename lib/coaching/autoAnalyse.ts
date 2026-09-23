@@ -232,6 +232,10 @@ export async function claimAutoLink(
       .is('strava_activity_id', null)
       .is('apple_health_uuid', null)
       .neq('status', 'complete')
+      // COMPLETION-TOMBSTONE-01 — the LIVE row only. A superseded row from the
+      // previous plan matches these filters just as well, and attaching a run to
+      // it reports 'attached' while the runner sees nothing.
+      .is('superseded_at', null)
       .select('week_n')
     const attached = Array.isArray(upd.data) ? upd.data.length > 0 : upd.data != null
     return attached ? 'attached' : 'exists'

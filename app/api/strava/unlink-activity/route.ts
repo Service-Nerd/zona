@@ -48,6 +48,10 @@ export async function POST(req: NextRequest) {
     .eq('user_id', user.id)
     .eq('week_n', week_n)
     .eq('session_day', session_day)
+    // COMPLETION-TOMBSTONE-01 — the LIVE row only. Without this, a runner on a
+    // new plan unlinks the previous plan's superseded row: the update succeeds,
+    // reports success, and the link they wanted removed is still on screen.
+    .is('superseded_at', null)
 
   if (completionErr) {
     console.error('[unlink-activity] session_completions update failed', completionErr.message)
