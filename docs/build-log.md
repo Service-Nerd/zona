@@ -6,6 +6,28 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — RUNWALK-VISIBLE-01 · the prescription nobody could read
+
+**Shipped:** If your plan says run-walk, the app now tells you the interval. It never did.
+
+**Dev learning:** I found this while analysing a different build. §117 stamps a run-walk strategy onto every session — "Run 6 minutes, walk 1. Repeat." — and I went looking for where it renders. `grep -riE 'run.?walk' app components` returned **zero**. `git log -S'run_walk' -- app components` returned **zero commits, ever**.
+
+The invariant that guards it, `INV-PLAN-RUNWALK-PRESCRIBED`, was green the whole time. It asserts the field is present on every running session **in the plan JSON**. It cannot see a screen. The checker reads the plan; the runner reads the app.
+
+The mechanism is worth a name, because I think it recurs. `run_walk_strategy` was added in May as a **schema-only reserved field** for a future feature, and the registry said so explicitly: *"Engine does not populate these yet."* For four months, "nothing reads this" was **correct**. Then §117 gave it a writer and nobody added a reader — because the field's unread status had never been a defect before. It is the **inverse of declared-but-inert**: normally you find a field with readers and no writer; here a field had no readers *by design* and quietly acquired a writer.
+
+**Product/creator learning:** This is the difference between a plan being right and a plan being *usable*. §117's whole argument for letting a low-base runner attempt a marathon is that the lower peak is honest **because they're run-walking it**. The board was explicit — *"'run 40 minutes, walk if you need to' is a dare. '6 minutes running, 1 minute walking, ten times' is a session."* We had the session in the database and were showing the runner the dare.
+
+**AI-building learning:** I wrote the gate, then falsified it, and **deleting the renderer left it green.** The reason is almost funny: the renderer's comment block explains the defect, and therefore contains the string `run_walk_strategy`. **My documentation satisfied my own gate.** That's the fifth time today I've hit "bound the region, never grep the file" — the coaching and design guards, the units guard, the RLS coverage test, and now my own.
+
+The first cut also called two explicit *clears* producers — `fueling_protocol: undefined` and `key_session: false`, where the code is deliberately writing nothing. A reset is the opposite of a prescription, and a gate that cries wolf on day one gets switched off.
+
+**The honest bit:** I only found this because a *different* build made me ask where a field renders. Nothing pointed at it. No test, no hook, no measurement — the invariant was green, the plans were valid, the corpus was clean. If I hadn't been building the thing next to it, it would still be sitting there, and the first person to find it would have been a runner on a start line.
+
+**Hook material:** An invariant guarded a coaching rule for three days and passed every time. It checked the instruction was in the database. Nobody checked it was on the screen — and `git log` says no commit in the project's history had ever touched that field in the UI. Then I wrote a test to catch it, deleted the code, and the test still passed: my own comment explaining the bug contained the word it was grepping for.
+
+**Postable?:** yes
+
 ## 2026-09-23 — UNITS-DURATION-01 · ten of eleven could never fire
 
 **Shipped:** A two-hour long run now says "2h 04" instead of "124 min", and the AI coach reads your fade in the units you use.
