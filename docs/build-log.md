@@ -6,6 +6,28 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — LONGRUNSHORT-RUNWALK-KEY-01 · I broke it at lunchtime and fixed it by teatime
+
+**Shipped:** A runner who is run-walking a marathon is no longer scored against the bar for runners who are running it.
+
+**Dev learning:** Two hours earlier I split one flag into two — `finish_goal_run_walk` had meant both *"the peak was reduced"* and *"the runner is run-walking"*, and an injured runner now gets the second without the first. I updated the invariant, the stamping pass and the liveness mutation. I missed the scoring rule, which stayed keyed on the peak half. So a runner who was demonstrably run-walking got judged by the bar §117's own amendment says is *"for a plan built to RUN the race."*
+
+The fix is four characters of flag name. The interesting part is that nothing caught it: the invariant was green, the plans were valid, the suite passed. I found it only because the founder asked whether an open question was worth taking to the board, and the measurement to answer *that* walked straight into it.
+
+**Product/creator learning:** This change moves the headline metric **+0.4pp and changes no plan whatsoever.** That makes it exactly the kind of thing worth being suspicious of, because it recovers part of a cost I'd declared as honest two hours before. The board already had a mechanism for this — ship it as a declared *correction*, keep the pre-correction figure one field away — and the rule that made it safe was written this morning for a different case.
+
+It does **not** fully undo the earlier cost. The day nets 89.8 → 89.5, and 16.7 points of a cohort now get a plan they were being refused. That's the trade I'd want on the record.
+
+**AI-building learning:** Four instrument faults in one thread, all caught before they reached a decision, and the worst was the most ordinary. I told the board the headline wouldn't move — checked `cohortGrid`, which doesn't vary injury history, when the rate comes from `useCaseEnvelope`, which is **50% injured**. Confidently stated, never verified, wrong. The other three: reading the race session as the long run; passing a peak of `0` from an undefined field on an error object; and an effect estimate that said +0.73pp against the owner's +0.4pp.
+
+The pattern is obvious in hindsight: every one was me computing something *beside* the owner instead of asking the owner. When I read `auditPlanQuality`'s own figure, or the engine's own stamp, or ran `measure:envelope`, I got the right answer every time.
+
+**The honest bit:** I also discovered the envelope gate has a **0.6pp tolerance**, so my 0.4pp move passed it silently and only the script's own comparison flagged it. I'd been about to report "suite green" as if nothing had moved. A sub-0.6pp drift can accumulate across commits with the test never complaining, and I don't have a good answer for that yet.
+
+**Hook material:** I split a flag at lunchtime, updated the invariant, the stamping pass and the liveness harness, and missed the one line that scores the result. Every test stayed green. The bug survived because the check that would have caught it had a 0.6 percentage-point tolerance and my mistake was worth 0.4.
+
+**Postable?:** yes
+
 ## 2026-09-23 — MARA-LR-SHAPE-SEAM-01 · the fix that made the number worse
 
 **Shipped:** A knee-history runner on a low base is no longer turned away from a marathon plan. They get one, with a run-walk interval.
