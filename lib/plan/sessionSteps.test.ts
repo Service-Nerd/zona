@@ -19,12 +19,25 @@ describe('parseLength', () => {
 })
 
 describe('targetClause', () => {
+  const ceiling = { role: 'recovery', modality: 'jog', length: '1:30', pace: '5:53–7:02 /km', pace_mode: 'ceiling', advance: 'auto' } as const
   it('marks a ceiling pace with ≤', () => {
-    expect(targetClause({ role: 'recovery', modality: 'jog', length: '1:30', pace: '5:53–7:02 /km', pace_mode: 'ceiling', advance: 'auto' }))
-      .toBe('≤ 5:53–7:02 /km')
+    expect(targetClause(ceiling, 'km')).toBe('≤ 5:53–7:02 /km')
   })
   it('uses RPE when effort-governed', () => {
-    expect(targetClause({ role: 'work', modality: 'run', length: '1:30', pace: null, rpe: 8, advance: 'auto' })).toBe('RPE 8')
+    expect(targetClause({ role: 'work', modality: 'run', length: '1:30', pace: null, rpe: 8, advance: 'auto' }, 'km')).toBe('RPE 8')
+  })
+  // PACE-UNITS-STEPS-01 — the prefix must survive the conversion, and the
+  // conversion must not eat it. Both halves, because a ≤ lost to a regex is a
+  // ceiling silently re-read as a target.
+  it('converts a ceiling band to miles and keeps the ≤', () => {
+    expect(targetClause(ceiling, 'mi')).toBe('≤ 9:28–11:19 /mi')
+  })
+  it('converts a single target pace to miles', () => {
+    expect(targetClause({ role: 'work', modality: 'run', length: '2 km', pace: '5:00 /km', pace_mode: 'target', advance: 'auto' }, 'mi'))
+      .toBe('8:03 /mi')
+  })
+  it('leaves an RPE step alone in miles', () => {
+    expect(targetClause({ role: 'work', modality: 'run', length: '1:30', pace: null, rpe: 8, advance: 'auto' }, 'mi')).toBe('RPE 8')
   })
 })
 
@@ -39,7 +52,7 @@ describe('buildStepGroups — VO2 rep set, distance toggle', () => {
       ],
     }],
   }
-  const groups = buildStepGroups(set, { metric: 'distance', formatDist: fmt })
+  const groups = buildStepGroups(set, { metric: 'distance', units: 'km', formatDist: fmt })
 
   it('is one repeat block of 6 with two rows', () => {
     expect(groups).toHaveLength(1)
@@ -76,7 +89,7 @@ describe('buildStepGroups — hill reps (effort-based, mixed lengths)', () => {
       ]},
     ],
   }
-  const groups = buildStepGroups(set, { metric: 'distance', formatDist: fmt })
+  const groups = buildStepGroups(set, { metric: 'distance', units: 'km', formatDist: fmt })
 
   it('keeps the lead-in as a one-off "Run to base"', () => {
     expect(groups[0].repeat).toBe(1)
@@ -110,7 +123,7 @@ describe('buildStepGroups — duration toggle keeps time primary', () => {
     ]}],
   }
   it('shows the duration as the amount when the toggle is on time', () => {
-    const groups = buildStepGroups(set, { metric: 'duration', formatDist: fmt })
+    const groups = buildStepGroups(set, { metric: 'duration', units: 'km', formatDist: fmt })
     expect(groups[0].rows[0].amount).toBe('5 min')
     expect(groups[0].rows[0].amountIsEstimate).toBe(false)
     expect(groups[0].rows[0].detail).toBe('4:25–4:35 /km')

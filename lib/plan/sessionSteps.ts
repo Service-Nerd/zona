@@ -14,7 +14,7 @@
 
 import type { DerivedSet, DerivedStep } from './resolveMainSet'
 import type { SessionStructure } from './sessionComposer'
-import { apportionRoundedDistance, formatDuration } from '@/lib/format'
+import { apportionRoundedDistance, convertPaceString, formatDuration } from '@/lib/format'
 
 export type StepKind = 'work' | 'rest'
 
@@ -42,6 +42,12 @@ export interface BuildStepOpts {
   metric: 'distance' | 'duration'
   /** Formats a km number in the user's units, e.g. (0.65) => "0.65 km" / "0.4 mi". */
   formatDist: (km: number) => string
+  /** The reader's units. REQUIRED, not defaulted — PACE-UNITS-STEPS-01 shipped
+   *  because a pace could reach this module without anyone being asked which
+   *  unit it was for. `formatDist` already answered that question for the
+   *  amount; nothing answered it for the pace beside it. Same reasoning as
+   *  `LimiterInputs.units`: make the compiler put the question to every caller. */
+  units: 'km' | 'mi'
 }
 
 // ── length parsing ──────────────────────────────────────────────────────────
@@ -116,11 +122,26 @@ export function roleLabelForStep(step: DerivedStep, parsed: ParsedLength): strin
 
 // ── target (secondary detail) ────────────────────────────────────────────
 
-/** The pace / RPE / zone clause, without the length. */
-export function targetClause(step: DerivedStep): string {
+/**
+ * The pace / RPE / zone clause, without the length.
+ *
+ * 🔴 PACE-UNITS-STEPS-01 (2026-09-23) — this returned `step.pace` VERBATIM, and
+ * `step.pace` is the `/km` string the engine welds on at generation. PACE-UNITS-01
+ * fixed the session card's pace TILE the same day and never reached here, so a
+ * miles runner opened a session and read **36 of 38 step rows in km** — beside an
+ * amount this module had already converted. The row said `~0.1mi · 5:30–6:00 /km`:
+ * two units on one line, which is worse than uniformly wrong.
+ *
+ * ⚠️ CONVERTED HERE, NEVER ON `step.pace` ITSELF. `buildRow` hands the SAME field
+ * to `paceMeanSecPerKm` to estimate a distance from it, and that arithmetic is
+ * seconds-per-KM by definition. Converting the field would silently corrupt every
+ * `~X mi` amount on the card — a rate measured in different units from the thing
+ * it divides. Convert at the point of DISPLAY only.
+ */
+export function targetClause(step: DerivedStep, units: 'km' | 'mi'): string {
   if (step.pace) {
     const prefix = step.pace_mode === 'ceiling' ? '≤ ' : step.pace_mode === 'floor' ? '≥ ' : ''
-    return `${prefix}${step.pace}`
+    return `${prefix}${convertPaceString(step.pace, units) ?? step.pace}`
   }
   if (step.rpe != null) return `RPE ${step.rpe}`
   if (step.zone) return step.zone
@@ -139,7 +160,7 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
   const parsed = parseLength(step.length)
   const kind: StepKind = step.role === 'work' ? 'work' : 'rest'
   const role = roleLabelForStep(step, parsed)
-  const target = targetClause(step)
+  const target = targetClause(step, opts.units)
 
   // Distance-native step: the prescription IS a distance ("400 m") — show it.
   if (parsed.kind === 'distance') {
@@ -149,6 +170,7 @@ function buildRow(step: DerivedStep, opts: BuildStepOpts): StepRow {
   // Duration-native step.
   if (parsed.kind === 'duration') {
     const durStr = formatSecsShort(parsed.secs)
+    // RAW `step.pace`, deliberately — this is sec/KM arithmetic (see targetClause).
     const paceSec = paceMeanSecPerKm(step.pace)
     if (opts.metric === 'distance' && paceSec) {
       // Estimate distance from pace — same convention as the section totals.

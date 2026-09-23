@@ -17,7 +17,7 @@ import React from 'react'
 import type { SessionStructure } from '@/lib/plan/sessionComposer'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { buildStepGroups, resolveDisplayFigures, type StepRow } from '@/lib/plan/sessionSteps'
-import { formatDistance, formatDuration } from '@/lib/format'
+import { convertPaceString, formatDistance, formatDuration } from '@/lib/format'
 import type { Zone } from '@/components/shared/ZoneBar'
 
 /** Narrow the Session's `unknown` derived_set to a renderable v2 set. */
@@ -137,12 +137,17 @@ export default function SessionSteps({
   const mainTotal = figures.mainSet
   const cdTotal = figures.cooldown
   const seg = structure.race_pace_segment
+  // PACE-UNITS-STEPS-01 — `seg.pace_target` is baked `/km` like every other
+  // stored pace. The MP long run is the one row on this card that carries a
+  // single goal pace rather than a band, so an unconverted one is the most
+  // consequential number on the screen for a time-target runner.
+  const racePacePace = (convertPaceString(seg?.pace_target, preferredUnits) ?? seg?.pace_target) ?? ''
   const racePaceDetail = seg
-    ? (metric === 'distance' ? `${formatDuration(seg.duration_mins)} · ${seg.pace_target}` : seg.pace_target)
+    ? (metric === 'distance' ? `${formatDuration(seg.duration_mins)} · ${racePacePace}` : racePacePace)
     : ''
 
   const groups = isV2DerivedSet(derivedSet)
-    ? buildStepGroups(derivedSet, { metric, formatDist: (km) => formatDistance(km, preferredUnits, { exact: true }) ?? `${km}${preferredUnits}` })
+    ? buildStepGroups(derivedSet, { metric, units: preferredUnits, formatDist: (km) => formatDistance(km, preferredUnits, { exact: true }) ?? `${km}${preferredUnits}` })
     : null
 
   return (

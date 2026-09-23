@@ -24,10 +24,10 @@ import { generateRulePlan } from './ruleEngine'
 import { composePlanWithFoundation } from './foundationCompose'
 import { isDesignedRefusal } from './designedRefusal'
 import { planRationaleNotes, PLAN_RATIONALE_MAX_WORDS } from './planRationale'
-import { convertDistanceString, formatDistance, formatDuration } from '@/lib/format'
+import { convertDistanceString, convertPaceString, formatDistance, formatDuration } from '@/lib/format'
 import { composeSession } from './sessionComposer'
 import { catalogueRowFor } from './catalogueLink'
-import { resolveDisplayFigures } from './sessionSteps'
+import { buildStepGroups, resolveDisplayFigures } from './sessionSteps'
 import { inferLimiter } from '@/lib/coaching/limiter'
 
 const STRIDE = 149 // prime, avoids aligning with any grid axis
@@ -278,5 +278,80 @@ describe('UNITS-DURATION-01 — the limiter hypothesis is a DISPLAY surface', ()
     expect(r!.reasoning).toMatch(/\b40s\/mi\b/)
     // …and the two PACE clocks converted as well, through their own owner.
     expect(r!.reasoning).not.toMatch(/\/km/)
+  })
+})
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PACE-UNITS-STEPS-01 — the SESSION STEPS card states pace in the reader's unit.
+//
+// 🔴 The founder switched to miles, opened a session, and read km. PACE-UNITS-01
+// had fixed the pace TILE that morning; the step rows under it were never in
+// scope. Measured on one 17-week marathon plan: **36 of 38 step rows** and
+// **2 of 2 race-pace segment lines** still said `/km`, beside an amount this same
+// module had already converted — `~0.1mi · 5:30–6:00 /km`.
+//
+// 🥇 WHY THE GUARD MISSED IT, AND IT IS THE POINT OF PUTTING THE GATE HERE. This
+// file already imported `resolveDisplayFigures` and walked `buildStepGroups`'
+// rows — on the SAME DAY, for the raw-minutes rule, pinned at `units: 'km'`. The
+// audit reached the exact rows and asked them a different question. A list of
+// PROSE fields plus DISTANCE figures has no entry for the pace clause, because
+// the pace clause is neither. **An audit is only as wide as its list**, recorded
+// here for the third time this week.
+//
+// ⚠️ This asserts the GUARANTEE (nothing the card shows states /km while the
+// reader is on miles), never the MECHANISM. A test that mirrors `convertPaceString`
+// would pass against a broken producer — the `tierResolution.test.ts` flaw.
+describe('PACE-UNITS-STEPS-01 — no step row states /km to a miles runner', () => {
+  const rows: { label: string; text: string }[] = []
+  let rowsWithPace = 0
+  const grid = cohortGrid()
+  for (let i = 0; i < grid.length; i += STRIDE) {
+    let plan
+    try { plan = generateRulePlan(grid[i], 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
+    for (const w of plan.weeks) for (const s of Object.values(w.sessions)) {
+      if (!s || s.type === 'rest') continue
+      const st = composeSession({ session: s as never, catalogueRow: catalogueRowFor(s as never) })
+      if (!st) continue
+      const ds = (s as { derived_set?: { version?: number; blocks?: unknown[] } }).derived_set
+      if (ds?.version === 2 && Array.isArray(ds.blocks) && ds.blocks.length) {
+        const groups = buildStepGroups(ds as never, {
+          metric: 'distance', units: 'mi',
+          formatDist: (km) => formatDistance(km, 'mi', { exact: true }) ?? `${km}mi`,
+        })
+        for (const g of groups) for (const r of g.rows) {
+          if (/\d:\d{2}/.test(r.detail)) rowsWithPace++
+          rows.push({ label: `W${w.n} ${r.role}`, text: `${r.amount} · ${r.detail}` })
+        }
+      }
+      // The race-pace segment line the component builds (SessionSteps.tsx).
+      const seg = (st as { race_pace_segment?: { pace_target?: string } }).race_pace_segment
+      if (seg?.pace_target) {
+        rowsWithPace++
+        rows.push({ label: `W${w.n} race-pace segment`, text: convertPaceString(seg.pace_target, 'mi') ?? seg.pace_target })
+      }
+    }
+  }
+
+  it('the corpus reaches the case — step rows carrying a pace exist', () => {
+    // Without this, "no row says /km" is green on a corpus of RPE-only rows.
+    expect(rowsWithPace, 'no step row carried a pace — this gate cannot see the defect').toBeGreaterThan(50)
+  })
+
+  it('🔴 no figure the step card shows states /km', () => {
+    const bad = rows.filter(r => /\/\s*km\b/.test(r.text))
+    expect(bad.slice(0, 5).map(r => `${r.label}: ${r.text}`)).toEqual([])
+    expect(bad).toHaveLength(0)
+  })
+
+  it('🔴 no row mixes units — an mi amount beside a km pace', () => {
+    // The shape the founder actually saw. Stated separately because a module
+    // that converted NEITHER would pass a same-unit check and still be wrong.
+    // ⚠️ THIS LINE READ `/\bmi\b/` AND COULD NEVER FIRE — there is no word
+    // boundary between the digit and the unit in `0.1mi`, so the amount half of
+    // the test matched nothing and the assertion was decoration. Caught by
+    // falsifying, not by reading. Sixth substring/boundary miss this week.
+    const mixed = rows.filter(r => /\d\s*mi\b/.test(r.text) && /\/\s*km\b/.test(r.text))
+    expect(mixed.slice(0, 5).map(r => `${r.label}: ${r.text}`)).toEqual([])
   })
 })

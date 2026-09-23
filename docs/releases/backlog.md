@@ -281,6 +281,24 @@ goes through `TextField`. Replacing a native date input re-opens that.
 
 ---
 
+### ⚙️ `STEP-SUBUNIT-ZERO-01` — a short recovery step reads `~0mi`
+
+Found in passing while fixing `PACE-UNITS-STEPS-01` (2026-09-23), **pre-existing and unchanged by
+it** — the before-probe shows the identical `~0mi`.
+
+`components/shared/SessionSteps.tsx` formats a step's estimated distance with
+`formatDistance(km, units, { exact: true })`. A 30-second recovery jog is ~0.04 mi, which rounds to
+**`~0mi`** — the card tells a runner a step covers no ground.
+
+⚠️ **The fix is NOT "add a decimal place".** `~0.04mi` is noise, and the row already states the
+honest number (`30s`) as its detail. The likely answer is the one `buildRow` already uses for a
+pace-less step: **when the distance rounds to zero, show the DURATION as the primary and drop the
+estimate.** That is a one-line change in `buildRow`, but it moves what the card leads with, so it
+wants measuring first: how many rows across the corpus round to zero, and on which session types.
+
+🔴 **Do not confuse with the `0mi` sub-unit defect closed in `convertDistanceString` today** —
+that was prose conversion. This is the step card's own estimate, a different producer.
+
 ### 🧭 `SHEET-CONTROL-VOCAB-01` — the sheet has four control species
 
 ⚠️ **THIS IS THE REAL FINDING BEHIND *"I just don't like it"*, AND IT IS UNRESOLVED.** The two
