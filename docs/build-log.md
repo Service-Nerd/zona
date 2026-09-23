@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — REFUSAL-FINISH-ROUTE-01 · a door can be open and the room still empty
+**Shipped:** The base-volume refusal now offers the finish-goal route, but only when taking it actually produces a plan.
+
+**Dev learning:** The engine could build a plan for these runners and the refusal never mentioned it. §44's alternatives have named "change goal to finish" since it was written; the code that renders the refusal offered "raise your base" and "come back in N weeks" instead. Small gap, and it is eight weeks of nothing for the runner who hits it.
+
+**The actual lesson is the predicate.** I wrote the offer against §117's own eligibility gate, which is the right predicate in principle since §117 is exactly what rescues these runners. It was still wrong: 11 of 45 offers led to a second refusal. §117 has an adequacy bound that is checked on the *built* plan and throws afterwards, so no gate can see it. **A door can be open and the room still empty.** The only honest test was to generate the plan and look. That costs one extra generation on a path that is already a failure, which is a price worth paying to avoid refusing someone twice.
+
+**Product/creator learning:** An invitation that leads to another door in the face is worse than no invitation. I would rather make the offer to 34 people and honour all 34 than make it to 45 and break it for 11.
+
+**AI-building learning:** The word "instead" is load-bearing in that sentence, and I did not put it there on purpose. A guard proves §44's "a refusal must name a next step" obligation by **matching the prose** with a regex. My first draft was more actionable and matched none of its tokens, so the most useful refusal in the engine scored as a dropout with no route back, and a completely unrelated test went red on 0.1% of marathon runners. Second time this repo has been bitten matching a refusal on its wording. The real fix is a structural field rather than a regex; I filed it rather than widening this change.
+
+**The honest bit:** Three separate fixtures reached the offer zero times before this passed — missing `age`, race dates before the plan start, and a missing acknowledgement flag — and every single time it was the "did the corpus actually reach this?" assertion that caught it, never the logic under test. A test that proves nothing passes just as green as one that proves something. I only knew because I had written the reach check first, and I had written it because this repo has been burned by exactly that before.
+
+**Hook material:** My fix offered 45 runners a way out and 11 of them hit a second locked door, because the check I trusted runs before the thing that fails.
+
+**Postable?:** yes — "a door can be open and the room still empty" generalises to every gate-vs-outcome check.
+
 ## 2026-09-23 — COACH-REVIEW-2026-09-23 · the board had never been shown a foundation week
 **Shipped:** A coaching review round over 532 plans, and the discovery that four of the five harnesses feeding this board cannot see the thing a real runner actually gets.
 
