@@ -20,12 +20,57 @@ import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
 import { auditPlanQuality, objectionsOnly, watchedOnly } from './planQuality'
 import { distanceEnvelope, DISTANCE_BANDS } from './useCaseEnvelope'
+import { getRunningApplies, generateGetRunningPlan } from './getRunningPlan'
+import { weeksBetweenLocal } from './length'
 
 /** §44's standard: a refusal must say what to do NEXT, never just "no". */
 export const REFUSAL_NAMES_NEXT_STEP = /get to|come back|build to|at least|first|instead|about \d/i
 
 export interface DistanceMeasure {
+  /**
+   * ⚠️ THE DENOMINATOR CHANGED — ZERO-REJECTION-SERVED-01, Coaching Board
+   * 2026-09-23 sitting 2. Read this before comparing to any round before it.
+   *
+   * A refusal that hands the runner a validated §118 get-running plan is
+   * **excluded from this rate**, neither pass nor fail. It is reported as
+   * `servedRefusedPct` instead.
+   *
+   * 🔴 **HUTCHINSON, BINDING: THIS IS A CORRECTION, NEVER AN IMPROVEMENT.**
+   * *"The engine did not get better. Nothing about the plans changed. If this
+   * board re-scores and the marathon reads ~91%, not one runner is served
+   * differently than they were yesterday."* `fitPctPreCorrection` is retained
+   * beside it for exactly that reason: a number that rises because its
+   * definition moved must never be readable as progress.
+   */
   fitPct: number
+  /**
+   * The same rate under the PRE-correction definition, where every designed
+   * refusal scored FAIL. Amendment 1. Retained so no round can quote the new
+   * number without the old one being one field away.
+   */
+  fitPctPreCorrection: number
+  /**
+   * WATCHED (amendment 2, Seiler + Sims) — refused by the engine AND offered a
+   * §118 plan. Neither scored nor hidden. **A watched quantity nobody reads is
+   * a hidden one**, so `measure-envelope.ts` prints it every run.
+   */
+  servedRefusedPct: number
+  /**
+   * WATCHED — of the runners this band refuses AND serves, how many does the
+   * get-running plan build far enough to reopen the race door?
+   *
+   * ⚠️ **PER BAND, NEVER AVERAGED (amendment 4, McMillan).** 80.3% at 4 km/week
+   * and 100% at 15 are different promises to different people, and a single
+   * product figure hides the runner who cannot get there. `null` when the band
+   * refuses nobody with a base target to reach.
+   */
+  doorPct: number | null
+  /**
+   * Refused and NOT served — no §118 plan at all. **Still a scored FAIL**
+   * (amendment 3, Hutchinson): the exemption is for runners who receive a plan,
+   * never for the refusal type.
+   */
+  unservedRefusedPct: number
   refusedPct: number
   refusedWithoutNextStepPct: number
   invalidPlans: number
@@ -59,6 +104,8 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
 
   for (const band of DISTANCE_BANDS) {
     let total = 0, fit = 0, refused = 0, noNextStep = 0, invalid = 0
+    // ZERO-REJECTION-SERVED-01 — refused AND handed a §118 plan.
+    let servedRefused = 0, doorEligible = 0, doorReached = 0
     const objections: Record<string, number> = {}
     const watched: Record<string, number> = {}
 
@@ -90,6 +137,35 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
         // worse than one that names a next step, and losing that distinction
         // would hide a regression inside a number that is already failing.
         if (!REFUSAL_NAMES_NEXT_STEP.test(e instanceof Error ? e.message : String(e))) noNextStep += c.weight
+
+        // ── ZERO-REJECTION-SERVED-01 (Coaching Board 2026-09-23, sitting 2) ──
+        //
+        // The bar above was ruled on 2026-09-20 at 16:34. §118 shipped the SAME
+        // DAY, and since then a refusal DOES lead to a plan: `/api/generate-plan`
+        // catches this throw and offers a get-running plan. `ZERO-REJECTION-01`
+        // is not wrong; the world it described changed underneath it nine hours
+        // after it was written.
+        //
+        // ⚠️ CALLS THE SAME TWO OWNERS THE ROUTE CALLS, never a copy of its
+        // rule, so the measure and the product cannot drift.
+        //
+        // ⚠️ AND IT IS NOT SCORED AS A PASS. §118 is not a marathon plan, and
+        // counting it as one re-imports the exact dishonesty ZERO-REJECTION-01
+        // removed. It leaves the denominator; it never joins the numerator.
+        if (!getRunningApplies(c.input)) continue      // amendment 3: still a FAIL
+        servedRefused += c.weight
+        const minBase = (e as { base?: { min_base_km?: number } }).base?.min_base_km
+        // Only a BaseVolumeError names a door. A prep-time or days refusal has no
+        // base target, so it is served but NOT door-eligible — counting it either
+        // way would invent a denominator.
+        if (typeof minBase !== 'number') continue
+        doorEligible += c.weight
+        try {
+          const ci = c.input as unknown as Record<string, string>
+          const ps = ci.plan_start ?? '2026-11-02'
+          const { endsAtKm } = generateGetRunningPlan(c.input, ps, weeksBetweenLocal(ps, ci.race_date))
+          if (endsAtKm >= minBase) doorReached += c.weight
+        } catch { /* served, but the plan does not reach the door */ }
         continue
       }
       const m = plan.meta as unknown as Record<string, unknown>
@@ -110,8 +186,15 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
       if (!errs.length && !objs.length) fit += c.weight
     }
 
+    // THE DENOMINATOR. A served refusal is neither pass nor fail, so it leaves
+    // the population being scored rather than counting against it.
+    const scored = total - servedRefused
     byDistance[String(band.value)] = {
-      fitPct: pc(fit, total),
+      fitPct: pc(fit, scored),
+      fitPctPreCorrection: pc(fit, total),
+      servedRefusedPct: pc(servedRefused, total),
+      doorPct: doorEligible > 0 ? pc(doorReached, doorEligible) : null,
+      unservedRefusedPct: pc(refused - servedRefused, total),
       refusedPct: pc(refused, total),
       refusedWithoutNextStepPct: pc(noNextStep, total),
       invalidPlans: invalid,
@@ -120,8 +203,11 @@ export function measureEnvelope(stride = 29): EnvelopeMeasure {
       watched: Object.fromEntries(
         Object.entries(watched).sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, pc(v, total)])),
     }
+    // The product rate uses the SAME corrected denominator as the per-distance
+    // rate. Mixing the two would produce a whole-product figure that no distance
+    // rolls up to.
     prodFit += fit * band.weight
-    prodTot += total * band.weight
+    prodTot += scored * band.weight
   }
 
   return { stride, productFitPct: pc(prodFit, prodTot), byDistance }

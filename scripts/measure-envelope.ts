@@ -19,7 +19,29 @@ const now = measureEnvelope()
 console.log(`\nFIT FOR PURPOSE — weighted population, stride ${now.stride}\n`)
 for (const [d, m] of Object.entries(now.byDistance)) {
   const top = Object.entries(m.objections).slice(0, 2).map(([k, v]) => `${k} ${v}%`).join(', ')
-  console.log(`  ${d.padStart(5)}km  ${String(m.fitPct).padStart(5)}%   refused ${m.refusedPct}%   ${top}`)
+  // ⚠️ AMENDMENTS 1, 2 AND 4 ARE ALL IN THIS LINE, and none of them is cosmetic.
+  //   1 — `was` is the PRE-CORRECTION rate, printed beside the new one always.
+  //       A number that rose because its definition moved must never appear
+  //       alone (Hutchinson: "a re-score is a correction, never an improvement").
+  //   2 — SERVED and door print EVERY run. A watched quantity nobody reads is a
+  //       hidden one (Seiler, Sims).
+  //   4 — door is PER BAND. There is deliberately no product-level door figure
+  //       (McMillan: 80.3% and 100% are different promises).
+  // ⚠️ AMENDMENT 4, AND THIS LINE NEARLY BROKE IT. McMillan's condition is that
+  // `door` is reported PER BAND, never as a single figure, because 80.3% at
+  // 4 km/week and 100% at 15 are different promises and averaging them hides
+  // the runner who cannot get there. This script's unit is the DISTANCE, so
+  // anything it prints is already an aggregate over volume bands.
+  //
+  // It is printed as `door~` and labelled, rather than dropped: hiding it would
+  // make the exemption invisible, which is the other half of what WATCHED is
+  // for. The per-band figures — the ones the amendment actually requires — are
+  // `npm run review:cohort`, and the footer says so.
+  const served = m.servedRefusedPct > 0
+    ? `  served ${m.servedRefusedPct}%${m.doorPct !== null ? ` (door~ ${m.doorPct}% agg)` : ''}`
+    : ''
+  const was = m.fitPctPreCorrection !== m.fitPct ? `  [was ${m.fitPctPreCorrection}%]` : ''
+  console.log(`  ${d.padStart(5)}km  ${String(m.fitPct).padStart(5)}%${was}   refused ${m.refusedPct}% (unserved ${m.unservedRefusedPct}%)${served}   ${top}`)
 }
 console.log(`\n  WHOLE PRODUCT  ${now.productFitPct}%   (target 90-95%)`)
 
@@ -34,6 +56,13 @@ console.log(`\n  WHOLE PRODUCT  ${now.productFitPct}%   (target 90-95%)`)
 const watchedRows = Object.entries(now.byDistance)
   .flatMap(([d, m]) => Object.entries(m.watched).map(([k, v]) => ({ d, k, v })))
   .filter(r => r.v > 0)
+console.log(`\n  ⚠️ ZERO-REJECTION-SERVED-01 — a refusal that hands the runner a §118 plan is`)
+console.log(`     EXCLUDED from the fit rate, neither pass nor fail. \`[was N%]\` is the same`)
+console.log(`     population under the old bar where every refusal scored FAIL.`)
+console.log(`     THE ENGINE DID NOT CHANGE. A rate that moves here moved by definition.`)
+console.log(`     \`door~ N% agg\` is an AGGREGATE over volume bands and is NOT the promise.`)
+console.log(`     Amendment 4 (McMillan) requires door PER BAND: npm run review:cohort`)
+
 if (watchedRows.length) {
   console.log(`\n  WATCHED — exempted rules, counted but NOT scored:`)
   for (const r of watchedRows) console.log(`    ${r.d.padStart(5)}km  ${r.k} ${r.v}%`)

@@ -1,9 +1,13 @@
 {
  "stride": 29,
- "productFitPct": 92.5,
+ "productFitPct": 96,
  "byDistance": {
   "5": {
    "fitPct": 100,
+   "fitPctPreCorrection": 100,
+   "servedRefusedPct": 0,
+   "doorPct": null,
+   "unservedRefusedPct": 0,
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
@@ -14,6 +18,10 @@
   },
   "10": {
    "fitPct": 100,
+   "fitPctPreCorrection": 100,
+   "servedRefusedPct": 0,
+   "doorPct": null,
+   "unservedRefusedPct": 0,
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
@@ -24,6 +32,10 @@
   },
   "50": {
    "fitPct": 100,
+   "fitPctPreCorrection": 100,
+   "servedRefusedPct": 0,
+   "doorPct": null,
+   "unservedRefusedPct": 0,
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
@@ -32,6 +44,10 @@
   },
   "100": {
    "fitPct": 100,
+   "fitPctPreCorrection": 100,
+   "servedRefusedPct": 0,
+   "doorPct": null,
+   "unservedRefusedPct": 0,
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
@@ -40,6 +56,10 @@
   },
   "21.1": {
    "fitPct": 96.2,
+   "fitPctPreCorrection": 96.2,
+   "servedRefusedPct": 0,
+   "doorPct": null,
+   "unservedRefusedPct": 0,
    "refusedPct": 0,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
@@ -52,7 +72,11 @@
    }
   },
   "42.2": {
-   "fitPct": 78.7,
+   "fitPct": 89.8,
+   "fitPctPreCorrection": 78.7,
+   "servedRefusedPct": 12.4,
+   "doorPct": 90.7,
+   "unservedRefusedPct": 0,
    "refusedPct": 12.4,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
