@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-23 (last ship `8bebce1`, `UNITS-PROSE-01`) — PUSHED.** 3,208 tests · 359 files. 🔴 **I DEFERRED A DEFECT THIS MORNING ON A MEASUREMENT THAT WAS A BROKEN REGEX.** The register read *"19 stored plans carry ZERO prose km — real but UNREALISED"*; the query used `\d\s*km\b`, and **in Postgres POSIX regex `\b` is a BACKSPACE CHARACTER, not a word boundary** (`\y` is). Re-measured: **ALL 19 of 19 plans**, **101 of 888 sessions** in runner-facing `coach_notes`, **16 of 19** in `meta.notes`; generated corpus **100% of 1,167**. ⚠️ **A clean zero from a broken pattern is indistinguishable from a clean zero from clean data** — caught only because the corpus and the query could not both be true. Converted at the **READ** (`convertDistanceString`): the toggle is **MUTABLE after generation**, every stored plan already carries the string, and byte-identical producer strings keep §44's `REFUSAL_NAMES_NEXT_STEP` and every prose matcher green. ⚠️ **Converted AFTER the word cap**, or a miles reader silently gets FEWER notes than a km reader. ⚠️ **Two companion figures carried NO unit** (*"nearer 53"*, implicitly km, invisible to a regex) — labelled `53km` **(one word)** not `53 km` (two), because `PLAN-NOTE-LENGTH-01`'s **117-word ratchet** failed at 119 and says do not raise it. 🔴 **TWO OF MY FOUR FALSIFICATIONS PASSED WHEN THEY SHOULD HAVE FAILED** — the corpus carries no pace prose and never binds the budget, so both assertions were HOLLOW; and one could not fail because **my own comment credited a `(?<!/)` lookbehind that was never in the pattern** (`\s*` cannot match a slash — that is the real guard). Earlier today: `UNITS-SUBUNIT-01` (the same-unit rule lived only in a test), `PACE-UNITS-01`, `COMPLETION-TOMBSTONE-01`, `COACH-MEASURE-PROTOCOL-01`, `ZERO-REJECTION-SERVED-01`, `COHORT-SERVED-01`, `ONRAMP-STEP-UNITS-01`, `REFUSAL-COHERENCE-01`, `REFUSAL-FINISH-ROUTE-01`, `COACH-REVIEW-2026-09-23`, `RUBRIC-STALE-BAR-01`, `DB-USER-PURGE-01`.
+**State at END of 2026-09-23 (last ship `5538bfb`, `UNITS-PROSE-01` phase 2) — PUSHED.** 3,216 tests · 360 files. 🔴 **THE WIRING WAS INERT AND THE COMPILER IS WHAT FOUND IT.** `enrich()` took a `units` argument and then called `buildUserMessage(plan, input, wantPaidFields)` **without it** — accepted, threaded through a route, read by NOTHING. Typecheck green, five tests green, and **re-creating the bug on purpose STAYED GREEN** because every test called the inner function directly and the bug was in its CALLER. Surfaced only by making `units` **REQUIRED** rather than defaulted to `'km'` (the dangerous default is km; `decideTrialEmails` takes its access argument for the same reason), then gated with an **end-to-end assertion on the body actually POSTed to the model**. 🥇 **A GATE ON A FUNCTION IS NOT A GATE ON ITS CALLER.** ⚠️ **The km path changed too, and that is the point** — the prompt said `42.195 km` while the card renders `42.2km` (BUG-KIT-DECIMALS-01, 50.4%). 🔴 **Phase 1 had introduced the same disagreement in prose** (`9.9 mi` beside `10mi`); the converter now calls `formatDistance` exactly as the card does. 🔴 **`rlsCoverage.test.ts` went RED on a table the route never touches** — its route SELECTION and table extractor both grep the whole file, so a **COMMENT** naming `createUserScopedClient` and `charity_codes` pulled the route into the audit and invented a violation. **FOURTH recording of 'bound the region, never grep the file'**; comments stripped, falsified both ways. Register 61 → 57. Earlier today: `UNITS-PROSE-01` phase 1 (a Postgres `\b` is a BACKSPACE), `UNITS-SUBUNIT-01` (the same-unit rule lived only in a test), `PACE-UNITS-01`, `COMPLETION-TOMBSTONE-01`, `COACH-MEASURE-PROTOCOL-01`, `ZERO-REJECTION-SERVED-01`, `COHORT-SERVED-01`, `ONRAMP-STEP-UNITS-01`, `REFUSAL-COHERENCE-01`, `REFUSAL-FINISH-ROUTE-01`, `COACH-REVIEW-2026-09-23`, `RUBRIC-STALE-BAR-01`, `DB-USER-PURGE-01`.
 
 **Superseded state — 2026-09-23 (last ship `64dedad`, `COACH-MEASURE-PROTOCOL-01`) — PUSHED.** 3,142 tests · `review:coaching` **all six steps green**. 🆕 **`npm run review:coaching` — the WHOLE coaching measurement protocol, one command, one scorecard (~70s; `--fast` ~16s).** 🔴 **`coaching-rulings.md` listed FOUR of EIGHT commands as the protocol and went stale the moment `review:cohort` and `measure:fitness` existed — it named neither, and it was the ONLY written statement of it.** **Prose in one file, executed from memory in another, is a memory test not a protocol.** 🔴 **AND CI WAS RUNNING ONE STEP OF SIX** — blind to a fit-for-purpose move, a cohort band collapsing, a new coach objection, or a plan that is valid and does not build the runner. 🥇 **THE NEGATIVE SPACE PRINTS AT THE END OF EVERY RUN, not in a README** — a scorecard of green ticks is how *"all clear"* becomes *"the things this script looks at are fine"*. **Doctrine: `docs/canonical/coaching-measurement.md`** — a rate moves because the **ENGINE**, the **DEFINITION**, or the **POPULATION** moved, and **only the first is progress**. Earlier today: `ZERO-REJECTION-SERVED-01` (marathon 78.7% → **89.8%**, **still 0.2pp under target**, not one plan changed), `COHORT-SERVED-01`, `ONRAMP-STEP-UNITS-01`, `REFUSAL-COHERENCE-01`, `REFUSAL-FINISH-ROUTE-01`, `COACH-REVIEW-2026-09-23`, `RUBRIC-STALE-BAR-01`, `DB-USER-PURGE-01`.
 
@@ -186,7 +186,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## ⚖️ FILED 2026-09-23 SHIPPING `PACE-UNITS-01`
 
-### ⚙️ `UNITS-PROSE-01` — **PARTIALLY SHIPPED 2026-09-23.** Runner-facing prose converts; three groups remain.
+### ⚙️ `UNITS-PROSE-01` — **PHASES 1 + 2 SHIPPED 2026-09-23.** Runner-facing prose and AI prompts convert; two groups remain.
 
 🔴 **THE MEASUREMENT IN THE ORIGINAL FILING WAS WRONG AND IS CORRECTED.** It read: *"19 stored
 plans carry ZERO prose km... real but currently UNREALISED in production."* The production query
@@ -216,12 +216,21 @@ write** — the corpus carries no pace-bearing prose and never binds the word bu
 both properties left it green. Both are now asserted on constructed input. **Only falsifying
 found it.**
 
-**🔻 WHAT REMAINS — three groups, all still in the register:**
+**✅ PHASE 2 SHIPPED — the AI prompt builders.** `enrich.ts`, `enrichMaintenance.ts` and
+`freeIntro.ts` now call `promptDistanceFormatters(units)`, the owner ten other builders already
+used. 🔴 **The wiring was INERT and the compiler found it** — `enrich()` took `units` and called
+`buildUserMessage()` without it. Surfaced only by making `units` **REQUIRED** rather than defaulted
+to `'km'`. ⚠️ **The km path changed too, and that is the point**: the prompt said `42.195 km` while
+the card renders `42.2km`. Enricher output is stored, so `coach_intro`, `confidence_risks` and
+`plan_intro` convert at the read as well. Gated by `promptUnits.test.ts` — which needed an
+**end-to-end assertion on the POSTed body**, because the direct-call tests could not see the inert
+bug at all.
+
+**🔻 WHAT REMAINS — two groups:**
 
 | Group | Why it is separate |
 |---|---|
-| **AI prompt builders** (`enrich.ts`, `enrichMaintenance.ts`, `freeIntro.ts`) | ADR-015's amendment makes the AI layer a display surface, and **`promptDistanceFormatters(units)` already exists** for exactly this. Wiring, not design |
-| **`lib/coaching/limiter.ts` + `planAdjustment.ts`** | Analysis reasoning and adjustment coach-notes. Built per request; the route knows the units |
+| **`lib/coaching/limiter.ts` + `planAdjustment.ts`** | Analysis `reasoning` strings and adjustment coach-notes. Built per request; the route knows the units. ⚠️ `limiter.ts`'s two entries are **pace** (`s/km`, `m:ss/km`), not distance — `convertPaceString` territory, not `convertDistanceString` |
 | **The 11 DURATION-only entries** | ⚠️ **A DIFFERENT RULE.** `${duration_mins} min` is unit-independent but breaches ADR-015's `formatDuration` contract once the value reaches 60 (`90 min`, never `1h 30`). **Do not assume one fix serves both** |
 
 ⚠️ **THE GATE'S NAMED BLIND SPOT: a companion figure with NO unit attached.** *"wants nearer 53"*,
