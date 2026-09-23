@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — MODIFY-SHEET-01 · "I just don't like it" is a symptom, and measuring it cost me two findings
+
+**Shipped:** The day picker in Adjust-your-plan no longer leaves Sunday stranded on its own line.
+
+**Dev learning:** The founder sent two screenshots of a sheet and said he didn't like it. That's not a brief, and the temptation is either to redesign on taste or to ask him what's wrong in pixels. Neither is my job — **taking the measurement is.**
+
+What it found: the day selector was a wrapping flex row, so seven 44px circles at 8px gaps came to **356px** against about **307px** of card width. Six days, then "Sun" alone. Collins had it exactly: that one row *is* the whole impression.
+
+The interesting part is that one row isn't available. Even at zero gap, 7 × 44 = **308px** against 307. Fitting them all costs the 44px tap target — which I'd asserted in a test earlier the same day — so the honest answer isn't "make it fit", it's **make the wrap deliberate**: a four-column grid giving 4 + 3. An orphan reads as a mistake; a balanced pair reads as a layout.
+
+**Product/creator learning:** Measuring **withdrew two of my own four findings.** I'd told the board there were "four corner radii in one sheet" — two of them are a circular close button and a 6px dot, which are supposed to be round. And I'd called the injury chips orphaned too — they're variable-width pills, and wrapping is what chips do; forcing a grid would give equal columns to wildly unequal labels and look worse.
+
+So half my case didn't survive contact with the code. That's the evidence rule working against the person who invoked it, which is the only way it's worth anything.
+
+**AI-building learning:** I also told the founder plainly that three tidy-ups **may not make him like it** — and offered to scope a different sheet instead. The residual is recorded rather than quietly dropped: the sheet still has **four control species** (six segmented controls, two chip rows, a native date input, an action row), and "no single control vocabulary" is the real finding. Two of those were ruled acceptable and one was deferred for a device, so it stands unresolved.
+
+Deferring the date input was the hardest call. It's the one thing that visibly doesn't line up — the only centred control, the only native one. But that file already carries a recorded iOS keyboard-zoom incident from the last time someone touched it, and ruling on a screenshot is how you buy the next one.
+
+**The honest bit:** Four fixes proposed, two shipped, one withdrawn as wrong, one deferred. On a complaint that was entirely valid. The gap between "the founder is right" and "here is the specific thing that is wrong" was four measurements wide, and I'd have got two of them wrong without checking.
+
+**Hook material:** Our plan-adjust sheet put six weekdays on one line and left Sunday on its own. The fix isn't to fit seven across — at 375pt, seven 44px circles need 308px and there are 307 available. One pixel. So the choice was a stranded Sunday, or circles too small to tap reliably. We took a deliberate 4 + 3 instead.
+
+**Postable?:** yes
+
 ## 2026-09-23 — PREVIEW-STRIP-01 · two bar charts, and only one of them meant anything
 
 **Shipped:** The plan preview shows one chart of your weeks instead of two.
