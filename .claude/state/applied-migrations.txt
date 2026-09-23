@@ -66,3 +66,4 @@
 20260918_schema_columns_rpc.sql
 20260920_charity_tier_and_partner_cohort.sql
 20260923_user_data_cascade.sql
+20260923_user_fk_rules_rpc.sql
