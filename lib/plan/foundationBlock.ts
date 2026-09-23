@@ -433,8 +433,36 @@ export function generateFoundationBlock(opts: FoundationBlockOptions): Foundatio
     //
     // §45's `LONG_RUN_PROGRESSION_CAP_PCT` is EXISTING doctrine, applied here
     // rather than a new number invented for the ramp.
+    //
+    // 🔴 AND IT IS NOT SUFFICIENT ON ITS OWN — ONRAMP-STEP-UNITS-01 (2026-09-23).
+    //
+    // §45's cap is RELATIVE (+20%). §116 amendment 2's bound, which
+    // `INV-PLAN-ONRAMP-PER-RUN-STEP` enforces, is ABSOLUTE
+    // (`WEEK1_PER_RUN_STEP_MAX_KM`, 1.5 km). **Those two agree only while the
+    // long run is at or below 7.5 km**, because 20% of 7.5 is exactly 1.5.
+    // Above it they diverge and the relative cap alone BREACHES the absolute
+    // bound, while obeying §45 perfectly:
+    //
+    //     prev 8.7 km → 8.7 × 1.20 = 10.4 km → step +1.7 km against a +1.5 cap
+    //
+    // MEASURED: 54 of 522 §118 get-running plans built for refused marathon
+    // runners, every one at `current_weekly_km` 15 (effective 10.5), firing on
+    // weeks 12-15. Zero fired on week 1, so it is not a start-volume artefact.
+    //
+    // ⚠️ THE 2026-09-20 FIX WAS RIGHT AND ITS CORPUS WAS TOO NARROW. "36 of 36
+    // generatable ramps clean" is true — of §116 ON-RAMP plans, whose long runs
+    // never reach 7.5 km. §118 reuses this builder over 8-15 weeks from a higher
+    // base and walks straight past the crossover. **A cap measured in different
+    // units from the bound it must satisfy is not a cap** — this repo has
+    // recorded that shape for FLOORS three times; this is the same failure
+    // wearing a ceiling.
+    //
+    // So: BOTH, and the tighter one binds. No new numeric is introduced.
     const lrCapByProgression: number = prevLongestRunKm != null
-      ? prevLongestRunKm * (1 + GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100)
+      ? Math.min(
+          prevLongestRunKm * (1 + GENERATION_CONFIG.LONG_RUN_PROGRESSION_CAP_PCT / 100),
+          prevLongestRunKm + GENERATION_CONFIG.WEEK1_PER_RUN_STEP_MAX_KM,
+        )
       : Infinity
     const longRunKm: number = curve === 'ramp'
       ? floor1dp(Math.min(longRunCap, lrCapByProgression))
