@@ -151,3 +151,11 @@ After writing, calls `onOverrideChange` to update parent state. The parent (`Das
 - `allCompletions` values are typed as `any` — should be `Completion`. Tech debt.
 - `TYPE_ACCENT` colour map in `PlanCalendar` is a local duplicate of `session-types.ts`. Violates D-16. Should be removed and replaced with a call to `session-types.ts`. Tech debt.
 - Rendered on the marketing homepage's phone still with no-op handlers (`onOverrideChange`, `onSessionTap`) and empty `allOverrides` / `allCompletions`. Move and swap sit behind a tap, so at rest the still shows exactly what a runner sees — no dead affordances on screen. If a future change surfaces a move/swap control *at rest*, that still becomes "a still pretending to be a demo", which the SLT has already cut once from `PhoneFrame`.
+
+## Dates (DATE-OWNER-01, 2026-09-23)
+
+Every date this component renders goes through `lib/format.ts → formatDate(date, style)`, ADR-015's
+owner, which dates were never brought under until now. `formatDate` returns **null** on an
+unparseable input where a bare `toLocaleDateString` renders the string **"Invalid Date"**, so
+callers supply their own fallback. ⚠️ **`plan_start` / `race_date` remain ISO** — they are storage
+and sort keys, not display strings. Gated by `lib/format.dates.test.ts`.
