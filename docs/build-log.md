@@ -6,6 +6,28 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — UNITS-DURATION-01 · ten of eleven could never fire
+
+**Shipped:** A two-hour long run now says "2h 04" instead of "124 min", and the AI coach reads your fade in the units you use.
+
+**Dev learning:** The debt register pointed at eleven places writing `${mins} min`. The instinct is to fix eleven places. I generated 48,547 sessions and asked which of them could ever produce a value of 60 or more — the threshold where ADR-015's rule actually bites. **Ten produced zero.** A rep is minutes by construction; so is a warm-up. Only the session-level main-set header gets long enough, and it was breaching the rule on **21,062 sessions**, up to **172 raw minutes**.
+
+So this was one edit, not eleven, and the measurement is the only reason I know that. Same story on the other group: one of the four "remaining" sites needed nothing at all, because it writes `coach_notes` and phase 1 already converts those at the read. I checked rather than assumed, and got an afternoon back.
+
+The limiter was the interesting one. Its `reasoning` string is interpolated verbatim into an AI prompt, and it carries three figures of **two different kinds** — a fade *rate* (`15s/km`) and two *pace clocks* (`5:30/km`). I nearly reached for the string converter I'd built earlier in the day. It would have been silently wrong: `15s/km` contains `/km`, so a suffix rename turns it into `15s/mi` while leaving the 15 alone, and 15 s/mi is not the same quantity as 15 s/km. Three figures, three different owners, built at the source.
+
+**Product/creator learning:** Two tests went red on changes that were unambiguously improvements, and both had asserted a *spelling* rather than a guarantee: `/4.0km short/` was pinned to a `toFixed(1)` in the producer, and `toContain('min')` was standing in for "this note is a duration" — which `1h 17` fails while being exactly right. That's the fourth or fifth time this repo has recorded the class. The fix each time is the same: assert against the owner, not against what the owner currently prints.
+
+**AI-building learning:** Third hollow gate of the day, and again only falsifying caught it. My rate test wrapped its assertions in `if (r && /s\//.test(r.reasoning))`. The fixture named the field `fadeSecPerKm` when it's `paceFadeSecPerKm`, and used 15 against a threshold of 20 — so the function returned null, the conditional quietly skipped everything, and breaking the conversion on purpose left the test green.
+
+**A conditional assertion is an assertion that can decline to run.** I now think the guard clause is the tell: if a test needs an `if` to decide whether to assert, the first assertion should be that the branch was reached.
+
+**The honest bit:** Four phases of this today and I've been wrong about the size of it every single time. Filed as 62 sites; the real shape was one live defect per group and a long tail that can't fire. The register went 62 → 56 across the whole day, which looks like almost nothing — and that number is honest rather than flattering, because most survivors are fallback expressions behind the owner that still match the pattern. The count was never the exposure.
+
+**Hook material:** A debt register said eleven places needed fixing. I generated 48,547 training sessions to ask which of them could ever hit the threshold that made it a bug. Ten produced zero. The eleventh was wrong on 21,062 sessions and showed one runner "172 min" where it should have said "2h 52".
+
+**Postable?:** yes
+
 ## 2026-09-23 — UNITS-PROSE-01 phase 2 · the argument nothing read
 
 **Shipped:** If you read in miles, the AI coach is now told your plan in miles before it writes about it.
