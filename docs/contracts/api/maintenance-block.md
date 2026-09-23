@@ -105,3 +105,17 @@ This route no longer calls Anthropic directly. It goes through
   route previously could not tell those apart.
 - `noRawAnthropicCalls.test.ts` fails the build if this file names
   `api.anthropic.com` again. Full contract: `docs/contracts/api/ops-ai-spend.md`.
+
+## Display units in the enrichment prompt (UNITS-PROSE-01, 2026-09-23)
+
+`enrichMaintenanceBlock`'s context carries a **required** `units` field, so the prompt quotes the
+race distance in the units the runner reads (ADR-015's amendment — the AI layer is a display
+surface). No request or response shape changed.
+
+- ⚠️ **Read with the SERVICE client, deliberately.** The first cut created a
+  `createUserScopedClient` here and `rlsCoverage.test.ts` went red — not on this read, but on
+  another operation in the route, because introducing a JWT client into a service-role route makes
+  every operation in it ambiguous, and **under a JWT client an unpermitted write no-ops silently**.
+  This route already holds `serviceClient` and the user is already authenticated.
+- ⚠️ `units` is **required, not optional**: an optional field lets a new caller omit it silently
+  and get kilometres.

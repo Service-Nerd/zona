@@ -490,3 +490,21 @@ A **422** with `reason: 'base_volume'` may now carry an additional `onramp` obje
   performs the block, re-declares volume, and is re-gated on **observed** data
   (§116 amendment 7; `S111-FOUNDATION-CREDIT-01` — crediting unperformed training — was VETOED).
 - **Nothing renders this yet.** That is `P-15`.
+
+## Display units — read once, used by all three AI calls (UNITS-PROSE-01, 2026-09-23)
+
+The route reads the runner's `preferred_units` **once**, near the top, into `displayUnits`, and
+hands it to every AI surface it invokes: the §118 get-running offer copy, `generateFreeIntro()`
+and `enrich()`.
+
+- ⚠️ **No request or response shape changed.** This is what the route TELLS the model, not what it
+  returns. Clients need no change.
+- 🔴 **Before this, the §118 block read prefs on its own and the two enrichers were never told at
+  all** — so a miles runner's plan was enriched from a prompt written in kilometres. ADR-015's
+  amendment makes the AI layer a display surface: a number handed to the model becomes user-facing
+  the moment the model repeats it.
+- ⚠️ **`enrich()` and `generateFreeIntro()` take `units` as a REQUIRED argument**, not one
+  defaulting to `'km'`. The dangerous default is km, and the first cut of this shipped with
+  `enrich()` accepting `units` and never passing it to `buildUserMessage` — inert, and invisible
+  until the compiler was made to ask every call site.
+- A failed prefs read falls back to `km` rather than blocking generation.
