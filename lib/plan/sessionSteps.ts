@@ -257,12 +257,49 @@ export function resolveDisplayFigures(
     ]
     const totalKm = opts.sessionDistanceKm ?? partsKm.reduce((a, b) => a + b, 0)
     const [wu, easy, race, cd] = apportionRoundedDistance(partsKm, totalKm, opts.units)
+    // ── SUB-UNIT PARTS (UNITS-SUBUNIT-01) ────────────────────────────────────
+    //
+    // 🔴 A PART THAT APPORTIONS TO ZERO MUST NOT SAY "~0mi". A cool-down of
+    // 0.71 km is 0.44 of a mile; rounding it to a whole unit prints `~0mi`,
+    // which asserts the runner covers NO GROUND. Measured across 48,547
+    // sessions: **39.7% of sessions in miles** and **3.7% in km** carried a
+    // `~0` part, cool-down in every one of them, real distances 0.25-1.27 km.
+    //
+    // ⚠️ THE RCA THAT FILED THIS SAID "never happens in km". It does — 3.7%,
+    // mostly shakeouts — and it blamed `formatDistance`, which fires ZERO times
+    // on session distances. `apportionRoundedDistance` is the only live
+    // mechanism. Both were corrected by measuring rather than reasoning.
+    //
+    // ⚠️ THE REMEDY IS NOT NEW. `ui-patterns.md` § 21b already rules it for the
+    // time-trial branch below: *"the bookends stay in minutes. There is no
+    // honest distance to put on them… inventing one breaks zone-rules.md's
+    // never-invent rule… applied per PART rather than per session."* This
+    // widens the trigger from one SHAPE to any part with no honest whole unit.
+    //
+    // ⚠️ MINUTES, NOT A DECIMAL. The bookends are PRESCRIBED in minutes and the
+    // distance is derived (`withDistances`), so minutes is the source of truth;
+    // `~0.4mi` would assert a precision the derivation has not got, on a card
+    // where every other figure is a whole unit behind a `~`.
+    //
+    // ⚠️ THE RECONCILIATION SURVIVES BY CONSTRUCTION, which is why this is safe:
+    // a part apportioned to 0 contributes 0 to the sum, so swapping its TEXT
+    // cannot break SESSION-RECONCILE-01. The parts that still carry a distance
+    // still sum to the header.
+    const part = (units: number, mins: number) =>
+      // A part with no distance AND no duration has nothing honest to say, so
+      // it keeps the distance form rather than asserting "0 min". Measured 0 of
+      // 15,638 — but "zero in the corpus" is not "cannot fire".
+      units === 0 && mins > 0
+        ? amountStr(mins, 'duration', opts.units)
+        : amountStr(units, 'distance', opts.units)
     return {
-      warmup:   amountStr(wu, 'distance', opts.units),
-      mainEasy: amountStr(easy, 'distance', opts.units),
-      racePace: seg ? amountStr(race, 'distance', opts.units) : null,
-      mainSet:  amountStr(easy + race, 'distance', opts.units),
-      cooldown: amountStr(cd, 'distance', opts.units),
+      warmup:   part(wu, structure.warmup.duration_mins),
+      mainEasy: part(easy, structure.main.duration_mins),
+      racePace: seg ? part(race, seg.duration_mins) : null,
+      // The main-set header is the SUM of its two rows, so it is sub-unit only
+      // when both are. Its duration is the main block's own total.
+      mainSet:  part(easy + race, structure.main.duration_mins + (seg?.duration_mins ?? 0)),
+      cooldown: part(cd, structure.cooldown.duration_mins),
     }
   }
 

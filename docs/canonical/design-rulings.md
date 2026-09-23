@@ -625,6 +625,23 @@ answers in a line what three rounds of reasoning did not.
 
 ---
 
+
+## 6t. UNITS-SUBUNIT-01 — the card told 39.7% of mile runners they covered zero (2026-09-23)
+
+| Decision | Status | Why |
+|---|---|---|
+| **A session part that apportions to zero whole units shows its DURATION** | 🟢 **SHIP WITH AMENDMENT** | A 0.71 km cool-down is 0.44 mi and printed `~0mi`. Measured on 48,547 sessions via `resolveDisplayFigures`, the owner the card calls: **19,275 sessions (39.7%) in miles, 1,805 (3.7%) in km**, cool-down in every one of the mile cases, real distances 0.25–1.27 km (median 0.71). Every zero part has 2–9 real minutes; **zero cases of both-zero**. Sierra: the runner is *prescribed* "cool down easy, 5 minutes" — `<1mi` is a measurement of a thing they do not measure and cannot act on without knowing their pace |
+| **The SAME-UNIT rule does not survive, because it was never a ruling** | 🔴 **AMENDED** | 🥇 **It lived only in `sessionReconcile.test.ts`, never in `ui-patterns.md`** — which documents that the parts *sum* and never that the headers share a kind, and whose **shipped time-trial diagram renders `WARM-UP 10 min` beside a distance main set**. The one shape that disproved the assertion was **carved out of it** (`NON_PARTITIONED_SHAPES`) rather than examined. **The carve-out was the tell.** Same shape as `--surface-moss-wash`: the rule and the pattern in different documents, never meeting |
+| **Whole card flips to minutes when any part is sub-unit (option B)** | 🔴 **KILLED** | Wroblewski: it silently disables the distance toggle on **~40% of sessions in miles**. The runner set that toggle; removing it because a cool-down is short is the product overruling a stated preference without saying so |
+| **`<1mi` for a sub-unit part (option C)** | 🔴 **KILLED** | Silvanto: a third notation on a card whose language is whole units behind a `~`. Collins: three ways to say "a short bit at the end" is taxonomy bloat when minutes already exist |
+| **The replacement check asserts the GUARANTEE, not the mechanism** | 🟢 **SHIPPED** | Distance-kind parts sum to the header; **a minutes part must have apportioned to exactly 0**, so the fallback cannot hide real ground — which a kind check could not have told you either way. ⚠️ **Tested in km as well as miles**: the obvious version would have run on miles alone, where the founder saw it and where 91% of it lives, and been green on the 1,805 km sessions with the same defect |
+
+⚠️ **The filing RCA was wrong twice, and measuring is what corrected it.** It said *"never happens in km"* (it does, 3.7%) and blamed `formatDistance(0.8,'mi')`, which fires **zero** times on session distances. `apportionRoundedDistance` is the only live mechanism.
+
+⚠️ **Not measured: nobody has seen this on a device.** The ruling is on `resolveDisplayFigures` output, not on a rendered card.
+
+⛔ **Veto check:** Silvanto declined — no documented palette or type rule is regressed.
+
 ## 6m. Miles — the OPEN-LENS re-read (2026-09-22)
 
 Full document: `docs/competitor/miles-open-lens-review.md`. All 17 screenshots, **no item

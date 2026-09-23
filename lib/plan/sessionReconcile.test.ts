@@ -25,6 +25,7 @@ import { generateRulePlan } from './ruleEngine'
 import { composePlanWithFoundation } from './foundationCompose'
 import { composeSession, type SessionStructure } from './sessionComposer'
 import { resolveDisplayFigures } from './sessionSteps'
+import { apportionRoundedDistance } from '@/lib/format'
 import { catalogueRowFor } from './catalogueLink'
 import type { Session } from '@/types/plan'
 
@@ -115,23 +116,69 @@ describe('SESSION-RECONCILE-01 — card figures sum to the session total', () =>
           const main = parseFigure(f.mainSet)
           const cd = parseFigure(f.cooldown)
 
-          // Every section figure is in the same unit.
-          expect(main.kind, `${label}: mixed units`).toBe(wu.kind)
-          expect(cd.kind, `${label}: mixed units`).toBe(wu.kind)
+          // ── UNITS-SUBUNIT-01, Design Board 2026-09-23 ─────────────────────
+          //
+          // 🔴 THIS USED TO ASSERT THE MECHANISM, NOT THE GUARANTEE:
+          //
+          //     expect(main.kind).toBe(wu.kind)   // "every figure, same unit"
+          //     expect(cd.kind).toBe(wu.kind)
+          //
+          // The guarantee SESSION-RECONCILE-01 exists for is *the visible parts
+          // add up*. Same-kind was how that happened to be achieved, not the
+          // promise — and asserting it froze the mechanism in place.
+          //
+          // ⚠️ IT WAS NEVER IN `ui-patterns.md`. The pattern document says the
+          // parts sum; it never says the three headers share a kind. § 21b's
+          // SHIPPED time-trial variant renders `WARM-UP 10 min` beside a
+          // distance main set, and § 21b's metric rule already mixes kinds at
+          // row level ("a hill rep at RPE keeps time as its primary"). So the
+          // rule lived in a test, the pattern contradicted it, and the one
+          // shape that proved it wrong was CARVED OUT rather than examined
+          // (`NON_PARTITIONED_SHAPES`). The carve-out was the tell.
+          //
+          // ⚠️ WHAT REPLACES IT IS STRICTLY STRONGER. A part may fall back to
+          // minutes ONLY when it apportioned to exactly zero units — so the
+          // fallback cannot hide a real distance, which a kind check could not
+          // have told you either way. Distance-kind parts must still sum to the
+          // header exactly, and a minutes part contributes the 0 it really is.
+          const km = session.distance_km ?? 0
+          const distanceTotal = Math.round(units === 'mi' ? km / KM_PER_MI : km)
+          const anyDistance = [wu, main, cd].some(x => x.kind !== 'min')
 
-          const partsSum = wu.value + main.value + cd.value
-
-          // Expected total in the SAME kind the figures came out in — a
-          // duration-anchored session shows minutes even under the distance toggle.
-          let expected: number
-          if (wu.kind === 'min') {
-            expected = structure.total_duration_mins
+          if (!anyDistance) {
+            // Duration-anchored session: minutes even under the distance toggle.
+            const partsSum = wu.value + main.value + cd.value
+            expect(partsSum, `${label}: duration parts ${wu.value}+${main.value}+${cd.value} ≠ ${structure.total_duration_mins}`)
+              .toBe(structure.total_duration_mins)
           } else {
-            const km = session.distance_km ?? 0
-            expected = Math.round(units === 'mi' ? km / KM_PER_MI : km)
-          }
+            // Mixed or all-distance: every non-minutes part is in the reader's
+            // unit, and the minutes ones are the sub-unit fallback.
+            for (const [name, fig] of [['warm-up', wu], ['main-set', main], ['cool-down', cd]] as const) {
+              if (fig.kind !== 'min') {
+                expect(fig.kind, `${label}: ${name} in ${fig.kind}, reader chose ${units}`).toBe(units)
+              }
+            }
+            const partsSum = [wu, main, cd].reduce((a, x) => a + (x.kind === 'min' ? 0 : x.value), 0)
+            expect(partsSum, `${label}: distance parts sum ${partsSum} ≠ total ${distanceTotal}`).toBe(distanceTotal)
 
-          expect(partsSum, `${label}: parts ${wu.value}+${main.value}+${cd.value}=${partsSum} ≠ total ${expected}`).toBe(expected)
+            // 🔴 THE FALLBACK MAY NOT HIDE A REAL DISTANCE. A minutes header is
+            // only legitimate where the apportioned value was 0; if this ever
+            // fires, a part with real ground has been rendered as time.
+            const parts = [
+              structure.warmup.distance_km ?? 0,
+              structure.main.distance_km ?? 0,
+              structure.race_pace_segment?.distance_km ?? 0,
+              structure.cooldown.distance_km ?? 0,
+            ]
+            const totalForApportion = session.distance_km ?? parts.reduce((a, b) => a + b, 0)
+            const [awu, aeasy, arace, acd] = apportionRoundedDistance(parts, totalForApportion, units)
+            const apportioned = { 'warm-up': awu, 'main-set': aeasy + arace, 'cool-down': acd }
+            for (const [name, fig] of [['warm-up', wu], ['main-set', main], ['cool-down', cd]] as const) {
+              if (fig.kind === 'min') {
+                expect(apportioned[name], `${label}: ${name} shows minutes but apportioned to ${apportioned[name]} ${units}`).toBe(0)
+              }
+            }
+          }
         }
       })
     }
@@ -166,6 +213,54 @@ describe('SESSION-RECONCILE-01 — card figures sum to the session total', () =>
 // caught the original bug — the warm-up the card shows must be the same number
 // the coach note promises. A prose/structure disagreement is the defect class;
 // nothing checked the two against each other.
+describe('UNITS-SUBUNIT-01 — no figure on the card may say the runner covers zero', () => {
+  const cases = collectCases()
+
+  // 🔴 THE DEFECT: a 0.71 km cool-down is 0.44 of a mile. Rounded to a whole
+  // unit it printed `~0mi`, which asserts NO GROUND COVERED. Measured before
+  // the fix, across 48,547 sessions: **39.7% of sessions in miles** and **3.7%
+  // in km** carried a `~0` part, cool-down in every one of the 19,275 affected
+  // mile sessions, real distances 0.25-1.27 km (median 0.71).
+  //
+  // ⚠️ THE FILING RCA WAS WRONG TWICE and both were corrected by measuring:
+  // it said "never happens in km" (it does) and blamed `formatDistance` (which
+  // fires ZERO times on session distances). `apportionRoundedDistance` is the
+  // only live mechanism.
+  //
+  // ⚠️ KM IS TESTED, NOT JUST MILES. The obvious version of this test would
+  // have run on miles alone — that is where the founder saw it and where 91%
+  // of it lives — and would have been green on the 1,805 km sessions that have
+  // the same defect. A unit-specific bug is still a bug in the other unit.
+  for (const units of ['km', 'mi'] as const) {
+    for (const metric of ['distance', 'duration'] as const) {
+      it(`no section or row figure reads zero (${metric}, ${units})`, () => {
+        const offenders: string[] = []
+        for (const { session, structure, label } of cases) {
+          const f = resolveDisplayFigures(structure, { metric, units, sessionDistanceKm: session.distance_km ?? null })
+          for (const [name, v] of Object.entries(f)) {
+            if (v == null) continue
+            // `~0km`, `~0mi`, `0 min` — every shape of "nothing happens here".
+            if (/(^|\s)~?0\s*(km|mi|min)\b/.test(v)) offenders.push(`${label} ${name}="${v}"`)
+          }
+        }
+        expect(offenders.slice(0, 10), `${offenders.length} zero figures`).toEqual([])
+      })
+    }
+  }
+
+  it('the sub-unit fallback actually FIRES — the sample reaches the case', () => {
+    // ⚠️ A guard that never sees its own case is green for the wrong reason.
+    // This repo's record: 86 of 93 invariants never fired, and silence could
+    // not tell a working rule from a dead one. So assert the case is REACHED.
+    let minutesFallbacks = 0
+    for (const { session, structure } of cases) {
+      const f = resolveDisplayFigures(structure, { metric: 'distance', units: 'mi', sessionDistanceKm: session.distance_km ?? null })
+      if (session.distance_km != null && / min$/.test(f.cooldown)) minutesFallbacks++
+    }
+    expect(minutesFallbacks, 'no distance-anchored session hit the sub-unit fallback — the sample cannot see the defect this guards').toBeGreaterThan(20)
+  })
+})
+
 describe('TT-STRUCTURE-01 — the time trial shows the trial, and agrees with its own note', () => {
   const trials = collectCases().filter(c => c.structure.shape === 'time_trial')
 
