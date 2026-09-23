@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { execSync } from 'child_process'
+import DEBT from './__fixtures__/hardcodedUnitsDebt.json'
 
 // PREF-SWEEP-01 — the mechanical half of "a unit preference must be honoured
 // EVERYWHERE".
@@ -28,7 +29,19 @@ import { execSync } from 'child_process'
 // Those are found by reading, not by this regex. This gate stops the class it
 // names from GROWING; it does not certify the class is empty.
 
-const UNIT_AFTER_INTERPOLATION = /\}\s*(km|mi|miles|mins?|hrs?|hours?|minutes?)\b/
+// ⚠️ THE OPTIONAL SLASH IS PACE-UNITS-01, AND IT IS WHY THIS GATE MISSED A
+// FIVE-MONTH DEFECT WHILE REPORTING CLEAN.
+//
+// A DISTANCE unit is written `${x}km`. A PACE unit is always written `${x}/km`,
+// and the original pattern had no `/`, so it matched the first and could not
+// see the second. Verified: it CAUGHT `${raceDistanceKm}km race` and MISSED
+// `${formatPace(eFast)}–${formatPace(eSlow)} /km` — the actual line that baked
+// km into 674 of 888 stored sessions.
+//
+// PREF-SWEEP-01 scanned `lib/plan/**`, which contains that line, and passed.
+// **A census is only as wide as its pattern** — the same shape as the
+// svg-bounded back-arrow scan that could not see `← Back` as a literal.
+const UNIT_AFTER_INTERPOLATION = /\}\s*\/?\s*(km|mi|miles|mins?|hrs?|hours?|minutes?)\b/
 
 /**
  * Known sites, each with the reason it is not a defect. Same debt-register
@@ -84,15 +97,67 @@ const BASELINE: ReadonlyArray<{ file: string; snippet: string; reason: string }>
   },
 ]
 
+/**
+ * DEVELOPER-FACING BY WHOLE FILE, not by line.
+ *
+ * Every string in these files is a violation message, an audit objection or a
+ * harness label. They are read in logs, ops rows and test output and are never
+ * rendered to a runner, so a unit preference has nothing to honour in them.
+ * The PREF-SWEEP-01 inventory already separated 58 of `invariants.ts`'s out for
+ * exactly this reason, and BASELINE carries an entry citing that ruling.
+ *
+ * ⚠️ VERIFIED BY READING, NOT BY FILENAME. Each was opened and its hits read
+ * on 2026-09-23 — 25 of them, all of the form `message:` / `actual:` /
+ * `expected:` / `detail:` on an objection record, plus one grid label. Listing
+ * them individually would bury the entries that matter.
+ *
+ * ⚠️ THE COST IS NAMED: if a violation message ever becomes runner-facing, this
+ * gate will not see it. That is a real hole, and it is preferred to a baseline
+ * nobody can read.
+ */
+const DEVELOPER_FACING_FILES: ReadonlySet<string> = new Set([
+  'lib/plan/invariants.ts',          // ~90 validatePlan() violation messages
+  'lib/plan/planShapeInvariants.ts', // 11 — plan-arc invariant messages
+  'lib/plan/baseBuildValidate.ts',   //  7 — §116 base-build validator messages
+  'lib/plan/planQuality.ts',         //  6 — audit objection `detail` strings
+  'lib/plan/useCaseEnvelope.ts',     //  1 — the measurement grid's case label
+])
+
 function scan(): Array<{ file: string; line: number; code: string }> {
+  // 🔴 `**/` DOES NOT MATCH A FILE DIRECTLY INSIDE THE DIRECTORY, and this gate
+  // spent its whole life reporting clean on files it had never opened.
+  //
+  // MEASURED 2026-09-23: `git ls-files 'lib/plan/**/*.ts'` returns **ZERO**
+  // files — `lib/plan` is flat, so every one of its **271** files, including
+  // `ruleEngine.ts` where the `/km` bake lives, was outside the scan.
+  // `lib/coaching/**/*.ts` returned 24 (its subdirectories) while missing
+  // **122** at the top level. **393 files the header claimed to cover.**
+  //
+  // The flat and nested forms are BOTH listed now. `git ls-files` de-duplicates
+  // across pathspecs, so the overlap costs nothing.
+  //
+  // ⚠️ This is the same class as the regex fix above and they compounded: the
+  // pattern could not see a pace unit, AND the file list could not see the file
+  // that wrote one. Either alone would have hidden PACE-UNITS-01.
   const files = execSync(
-    "git ls-files 'app/**/*.ts' 'app/**/*.tsx' 'components/**/*.ts' 'components/**/*.tsx' " +
-      "'lib/plan/**/*.ts' 'lib/coaching/**/*.ts'",
+    "git ls-files 'app/*.ts' 'app/*.tsx' 'app/**/*.ts' 'app/**/*.tsx' " +
+      "'components/*.ts' 'components/*.tsx' 'components/**/*.ts' 'components/**/*.tsx' " +
+      "'lib/plan/*.ts' 'lib/plan/**/*.ts' 'lib/coaching/*.ts' 'lib/coaching/**/*.ts'",
     { encoding: 'utf8', cwd: process.cwd() },
   )
     .trim()
     .split('\n')
     .filter(f => f && !/\.test\.tsx?$/.test(f))
+    // ⚠️ DEVELOPER-FACING BY WHOLE FILE, not by line. `invariants.ts` is 100%
+    // violation messages read in logs and ops rows and never rendered to a
+    // runner — the PREF-SWEEP-01 inventory already separated 58 of them out for
+    // exactly this reason, and BASELINE carries one entry citing that ruling.
+    // Listing ~90 of them individually would bury the entries that matter.
+    //
+    // ⚠️ THE COST IS NAMED: if a violation message ever becomes runner-facing,
+    // this gate will not see it. That is a real hole and it is preferred to a
+    // baseline nobody can read.
+    .filter(f => !DEVELOPER_FACING_FILES.has(f))
 
   const hits: Array<{ file: string; line: number; code: string }> = []
   for (const file of files) {
@@ -133,13 +198,47 @@ describe('PREF-SWEEP-01 — a unit glyph may not be welded to an interpolated va
 
   it('🔴 no NEW hardcoded unit reaches a runner-facing surface', () => {
     const unexplained = hits.filter(
-      h => !BASELINE.some(b => b.file === h.file && h.code.includes(b.snippet)),
+      h => !BASELINE.some(b => b.file === h.file && h.code.includes(b.snippet))
+        && !DEBT.entries.some(d => d.file === h.file && d.code === h.code),
     )
     expect(
       unexplained.map(h => `${h.file}:${h.line}  ${h.code}`),
       "Render this through lib/format.ts (formatDistance / formatDuration) with the reader's " +
-        'units, or — if it genuinely cannot reach a runner — add it to BASELINE with the reason.',
+        'units, or — if it genuinely cannot reach a runner — add it to BASELINE with the reason. ' +
+        'Do NOT add it to the UNITS-PROSE-01 debt register: that register is closed to new ' +
+        'entries by design, and a debt that can grow is not a debt, it is a habit.',
     ).toEqual([])
+  })
+
+  // ── UNITS-PROSE-01, the debt register ────────────────────────────────────
+  //
+  // 62 producer-side sites that bake a unit into a string at GENERATION or
+  // ANALYSIS time, where the reader's preference is not in scope. This is the
+  // same architectural fact that made PACE-UNITS-01 unfixable at its producer:
+  // by the time the app renders, there is no number left to convert.
+  //
+  // ⚠️ MEASURED, NOT ASSUMED: 19 stored plans carry ZERO prose km anywhere in
+  // the document while 17 of 19 carry `/km` pace. So the class is REAL and
+  // currently UNREALISED in production. **"Zero in the corpus" is not "cannot
+  // fire"** — this repo recorded that exact lesson when §80's note named its
+  // cap 0 times in 5,264 plans and was reachable all along.
+  //
+  // ⚠️ A DECLARED REASON IS NOT A FIXED PROBLEM. This register makes the debt
+  // visible and stops it growing. Nothing here schedules its removal, and the
+  // entry date is in the fixture so the age is always one line away.
+  describe('UNITS-PROSE-01 debt register', () => {
+    it('is CLOSED — it may shrink by fixing, never grow', () => {
+      expect(DEBT.entries.length).toBeLessThanOrEqual(DEBT.count)
+    })
+
+    it('every registered site still exists — a stale reason is its own defect', () => {
+      const gone = DEBT.entries.filter(d => !hits.some(h => h.file === d.file && h.code === d.code))
+      expect(
+        gone.map(d => `${d.file}  ${d.code}`),
+        'This site no longer matches. If it was fixed, delete the entry from ' +
+          'lib/__fixtures__/hardcodedUnitsDebt.json and lower `count` in the same commit.',
+      ).toEqual([])
+    })
   })
 
   it('every baselined entry still exists — a stale reason is its own defect', () => {

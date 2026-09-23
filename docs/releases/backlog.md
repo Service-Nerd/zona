@@ -184,6 +184,60 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 🟢 **ENGINE OPEN LIST, end of 2026-09-19:** ~~`PEAK-VS-DELIVERED-BUILD-01`~~ CLOSED (withdrawn — §23 legislates it, 100% compliance) · ~~`S111` metric anti-correlation~~ CLOSED (§114 took the hazard to 0.00%) · ~~`S52-LOPSIDED-BOUND-01`~~ CLOSED (negative result) · ~~`CAT-DEPTH-01`~~ **CLOSED — shipped 2026-09-19**. *(Device verification is founder-owned, untracked.)*
 
+## ⚖️ FILED 2026-09-23 SHIPPING `PACE-UNITS-01`
+
+### ⚙️ `UNITS-PROSE-01` — 62 producer-side sites bake a unit into prose
+
+**Found by the guard that `PACE-UNITS-01` widened, not by looking.** Two
+independent blind spots in `lib/hardcodedUnits.test.ts` were fixed in that
+commit — the regex could not see a PACE unit (`${x} /km`, no `/` in the
+pattern) and the file glob could not see the FILE that wrote one
+(`git ls-files 'lib/plan/**/*.ts'` returns **zero**: `lib/plan` is flat, so
+**393 files** the header claimed to cover were never opened). Either alone
+would have hidden the five-month pace defect. Together they were also hiding
+this.
+
+**The class.** 62 sites build a unit into a string at GENERATION or ANALYSIS
+time, outside `lib/format.ts`, with no reader preference in scope. Same
+architectural fact that made `PACE-UNITS-01` unfixable at its producer: by the
+time the app renders there is no number left to convert. Three groups:
+
+| Group | Where | Preference available? |
+|---|---|---|
+| **Render-time** | `GeneratingCeremony.tsx`, `ceremonyLines.ts`, `freeIntro.ts` | **Yes** — fixable today, just not threaded |
+| **Request-time** | `baseVolume.ts` + `longRunReadiness.ts` refusals, `planAdjustment.ts` coach notes, `limiter.ts` | **Yes in principle** — the route knows the user |
+| **Stored prose** | `ruleEngine.ts` (30), `foundationBlock.ts`, `maintenance.ts`, `sessionComposer.ts`, `sessionSteps.ts`, `resolveMainSet.ts`, `enrich.ts` | **No** — needs the preference threaded to the producer, or the number stored beside the string |
+
+⚠️ **MEASURED, AND THE MEASUREMENT CUTS BOTH WAYS.** Across all **19 stored
+plans**: **17 carry `/km` pace**, and **ZERO carry prose km anywhere in the
+document**. So this class is **real but currently unrealised in production** —
+which is why it is filed rather than fixed alongside the pace work. It is
+explicitly **not** evidence the sites are unreachable: this repo already
+recorded §80's note naming its cap **0 times in 5,264 plans** while being
+reachable all along. **"Zero in the corpus" is not "cannot fire."**
+
+⚠️ **The register is CLOSED, not open.** `lib/__fixtures__/hardcodedUnitsDebt.json`
+holds all 62 with one shared reason and an entry date. A NEW hit fails the
+build and may **not** be added to it; a FIXED site fails the build until its
+entry is deleted. Same shape as `SWEEP-BASELINE-01`. ⚠️ **A declared reason is
+not a fixed problem, and nothing here schedules its removal** — the date is in
+the fixture so the age is always one line away.
+
+⚠️ **Note the `min` half is a DIFFERENT rule.** `${duration_mins} min` is
+unit-independent but violates ADR-015's `formatDuration` contract once the
+value reaches 60 (`90 min`, never `1h 30`). Whoever picks this up should not
+assume one fix serves both.
+
+**Board:** ⚙️ NO BOARD for the mechanical conversion — ADR-015 already makes
+`lib/format.ts` the sole owner and INV-PREF-001 already says the preference
+reaches every string, so this restores documented intent. 🏃 **COACHING BOARD
+if any refusal or note is REWORDED** rather than re-unitised: `baseVolume.ts`'s
+sentences are load-bearing for `REFUSAL_NAMES_NEXT_STEP` (§44), and this repo
+has broken **8 prose matchers in 5 files** once already by editing four
+refusal strings for tone.
+
+---
+
 ## 🎯 2026-09-20 — MILES TEARDOWN, PHASE 2: proposals P-01 to P-14
 
 **Source:** `docs/competitor/miles-teardown-brief.md` §4 · **Assessed in:** `docs/MILES-GAP-ANALYSIS.md`

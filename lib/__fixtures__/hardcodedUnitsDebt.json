@@ -1,0 +1,257 @@
+{
+  "item": "UNITS-PROSE-01",
+  "recorded": "2026-09-23",
+  "reason": "Built OUTSIDE lib/format.ts, at generation or analysis time, with no reader unit preference in scope. Same architectural fact that made PACE-UNITS-01 unfixable at its producer: by the time the app renders, there is no number left to convert. Fixing these needs the preference threaded to the producer or the number stored beside the string, which is UNITS-PROSE-01, not this commit.",
+  "measured": "19 stored plans on 2026-09-23: 17 carry /km pace, ZERO carry prose km anywhere in the document. The class is REAL but currently UNREALISED in production. \"Zero in the corpus\" is not \"cannot fire\".",
+  "count": 62,
+  "entries": [
+    {
+      "file": "components/GeneratingCeremony.tsx",
+      "code": "<span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>{weekVolumeLabel(week as never) ?? `${week.weekly_km} km`}</span>"
+    },
+    {
+      "file": "lib/coaching/limiter.ts",
+      "code": "reasoning:  `pace faded ${paceFade}s/km in the back half (${m1}:${String(s1).padStart(2,'0')}/km → ${m2}:${String(s2).padStart(2,'0')}/km) with HR holding`,"
+    },
+    {
+      "file": "lib/coaching/limiter.ts",
+      "code": "reasoning:  `long run cut ${shortfall.toFixed(1)}km short with RPE ${inputs.rpe} — fueling or pacing in the back half`,"
+    },
+    {
+      "file": "lib/coaching/planAdjustment.ts",
+      "code": "coach_notes: [`Trimmed to ${reduced}km — long runs have been finishing short. Build back to full distance when ready.`] as [string],"
+    },
+    {
+      "file": "lib/coaching/planAdjustment.ts",
+      "code": "coach_notes: [`Trimmed to ${reducedMins} min — long runs have been finishing short. Build back to full time when ready.`] as [string],"
+    },
+    {
+      "file": "lib/plan/baseVolume.ts",
+      "code": "? `${a.currentKm} km a week is too low to chase a ${label} time safely. ` +"
+    },
+    {
+      "file": "lib/plan/baseVolume.ts",
+      "code": ": `${a.currentKm} km a week is too low to build safely to a ${label} yet. ` +"
+    },
+    {
+      "file": "lib/plan/baseVolume.ts",
+      "code": "`Get to about ${a.minBaseKm} km a week first.${when}`"
+    },
+    {
+      "file": "lib/plan/baseVolume.ts",
+      "code": "`Or build your weekly volume to around ${a.minBaseKm} km and come back for the time goal.`,"
+    },
+    {
+      "file": "lib/plan/baseVolume.ts",
+      "code": "`Build your weekly volume to around ${a.minBaseKm} km, then generate this plan.`,"
+    },
+    {
+      "file": "lib/plan/baseVolume.ts",
+      "code": "`We would only get your longest run to about ${Math.round(peakLrKm)} km before race day, ` +"
+    },
+    {
+      "file": "lib/plan/baseVolume.ts",
+      "code": "`and you need at least ${need} km behind you to get round a ${label}. ` +"
+    },
+    {
+      "file": "lib/plan/ceremonyLines.ts",
+      "code": "lines.push(`Your longest run so far is ${Math.round(longest)} km. Week one starts below it.`)"
+    },
+    {
+      "file": "lib/plan/enrich.ts",
+      "code": "- Race: ${plan.meta.race_name} — ${plan.meta.race_date} (${input.race_distance_km} km)"
+    },
+    {
+      "file": "lib/plan/enrich.ts",
+      "code": "- Current weekly volume: ${input.current_weekly_km} km/week"
+    },
+    {
+      "file": "lib/plan/enrichMaintenance.ts",
+      "code": "- Race: ${raceName ?? 'the goal race'} (${raceDistanceKm} km)"
+    },
+    {
+      "file": "lib/plan/foundationBlock.ts",
+      "code": "detail: `${floor1dp(longRunFinalKm).toFixed(1)}km easy — Zone 2 throughout. No exceptions.`,"
+    },
+    {
+      "file": "lib/plan/foundationBlock.ts",
+      "code": "detail: `${floor1dp(eachKm).toFixed(1)}km easy — Zone 2. Conversational pace.`,"
+    },
+    {
+      "file": "lib/plan/freeIntro.ts",
+      "code": "return `${Math.round(km)}km`"
+    },
+    {
+      "file": "lib/plan/longRunReadiness.ts",
+      "code": "`Build up to one ${floor} km run, then come back. Nothing else needs to change.`,"
+    },
+    {
+      "file": "lib/plan/longRunReadiness.ts",
+      "code": "`Your longest recent run is ${longest} km, and this plan needs to start from at least ${floor}. `"
+    },
+    {
+      "file": "lib/plan/maintenance.ts",
+      "code": "detail: `${distKm.toFixed(1)}km easy — Zone 2 throughout. Conversational pace.`,"
+    },
+    {
+      "file": "lib/plan/maintenance.ts",
+      "code": "detail: `${distKm.toFixed(1)}km easy with 4×20s strides. Zone 2 bulk, strides feel easy-fast.`,"
+    },
+    {
+      "file": "lib/plan/resolveMainSet.ts",
+      "code": "if (secs % 60 === 0) return `${secs / 60} min`"
+    },
+    {
+      "file": "lib/plan/resolveMainSet.ts",
+      "code": "return m >= 1000 && m % 1000 === 0 ? `${m / 1000} km` : `${m} m`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.round(mins)} min`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "return `${formatPace(fast)}–${formatPace(slow)} /km`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "easyPaceStr:      `${formatPace(eFast)}–${formatPace(eSlow)} /km`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "qualityPaceStr:   `${formatPace(tFast)}–${formatPace(tSlow)} /km`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "cvPaceStr:        `${formatPace(cvFast)}–${formatPace(cvSlow)} /km`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "intervalPaceStr:  `${formatPace(iFast)}–${formatPace(iSlow)} /km`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "? `${Math.round(openingKm * 10) / 10} km`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": ": `${Math.round(openingKm)} km`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "type: 'race', label: raceName ? `Race — ${raceName}` : `Race day — ${distKm} km`, detail: null,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "`Warm up easy for 10 minutes, then ${cfg.distance_km} km as hard as you can hold. Cool down easy.`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "`Middle ${Math.round(midPct * 100)}% (≈${midKm} km) at marathon pace: ${mpStr}. Controlled — not a tempo session.`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "`Final ${Math.round(finalPct * 100)}% (≈${finalKm} km) at HM pace: ${hmStr}. This is the work. Exit feeling like you had more.`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "`Negative-split finish — last ${Math.round(finalPct * 100)}% (≈${finalKm} km): go by feel, slightly faster than your easy pace. No pace target — proprioception, not pace.`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "violation:      `Week ${curr.n} introduced ${introduced} AND stepped volume up from ${prev.weekly_km} to ${preCorrectionWeeklyKm} km (>${GENERATION_CONFIG.V1_VOLUME_QUALITY_SPLIT_THRESHOLD_PCT}% bump).`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "resolution:     `Held weekly volume at ${newWeekly} km (target ${prev.weekly_km}) by trimming easy runs; long run + quality preserved.`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "violation:      `Week ${reanchored[0]} stepped up from the volume curve (${firstBefore} km) rather than from the ${trimmedToKm} km week ${weeks[trimIdx].n} actually delivered after its quality-split trim, a +${Math.round((firstBefore - trimmedToKm) / trimmedToKm * 100)}% delivered rise.`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "resolution:     `Re-anchored week${reanchored.length > 1 ? 's' : ''} ${reanchored.join(', ')} to §2's ${capPct}% cap measured from delivered volume (now ${deliveredKm} km) by trimming easy runs; long run + quality preserved.`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "resolution:     `Incremented long run by ${incrementKm} km on weeks ${incrementedWeeks.join(', ')} (capped at race × ${raceDistanceKm <= 21 ? GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_SHORT : GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_LONG}).`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "return `${formatPace(paceMinPerKm)} /km`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "? `${ULTRA_FUELLING_PREFIX}${cadence.min}–${cadence.max} minutes, starting in the first hour. ` +"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "reasons.push(`Your biggest week reaches ${peakKmActual} km, where a time goal at this distance usually wants nearer ${Math.round(volumeFloor)}.`)"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}, so the closing stretch will be new ground on the day. The long run can only grow so much week to week, and it ran out of weeks before it got there.`)"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "return `Your weekday limit of ${durationText(input.max_weekday_mins)} is shaping this plan — peak week reaches ${Math.round(peakActual)}km where it would otherwise have gone to ${Math.round(peakIntent)}km, about ${Math.round(lostPct)}% less. Only the volume moves; the sessions and their balance don't. If you want it back, ${lever} is the lever.`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "? `This plan holds your fitness rather than growing it. ${input.current_weekly_km}km a week across ${input.days_available} day${input.days_available === 1 ? '' : 's'} leaves no room to add: ${whyItCannotGrow}, so a harder session takes volume out of the week instead of adding to it. The lever is days, not effort: ${input.days_available + 1} running days would let the same volume climb.`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "? `This plan is built to get you round, not to chase a time. The long run this race needs is big next to the ${input.current_weekly_km}km a week you run now, so by week ${lopsidedWeek.n} it takes up most of the week on its own. You will still get fitter: starting from where you are, you could hardly not. The lever is the other days: more running across the week, not a longer long run.`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "? `Getting there needs more weekly volume than ${trainingWeeks} weeks can safely build from ${Math.round(stated)}km, so the plan builds as far as it safely can and stops there.`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "? `This plan peaks at ${Math.round(deliveredPeak)}km a week, below the ${Math.round(stated)}km you told us you are running now.`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": ": `This plan peaks at ${Math.round(deliveredPeak)}km a week, short of the ${Math.round(peakKm)}km a goal like this usually wants.`"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "notes:        `Standard plan — ${input.race_distance_km}km, ${totalWeeks} weeks`,"
+    },
+    {
+      "file": "lib/plan/ruleEngine.ts",
+      "code": "? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp — the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`"
+    },
+    {
+      "file": "lib/plan/runWalkPlan.ts",
+      "code": "return `Run ${run} minutes, walk ${walk}. Repeat. Take the walk break before you need it, from the first rep.`"
+    },
+    {
+      "file": "lib/plan/sessionComposer.ts",
+      "code": "const workStr = w.distance_m ? `${w.distance_m}m` : w.duration_mins ? `${w.duration_mins} min` : 'main'"
+    },
+    {
+      "file": "lib/plan/sessionComposer.ts",
+      "code": "const recStr = r.duration_secs ? `${r.duration_secs}s` : r.duration_mins ? `${r.duration_mins} min` : ''"
+    },
+    {
+      "file": "lib/plan/sessionComposer.ts",
+      "code": "return `${m.duration_mins} min sustained at ${m.zone ?? 'target zone'}.`"
+    },
+    {
+      "file": "lib/plan/sessionComposer.ts",
+      "code": "return `${m.duration_mins ?? '—'} min progression: ${m.zone_start ?? 'Z2'} → ${m.zone_end ?? 'Z3'}.`"
+    },
+    {
+      "file": "lib/plan/sessionSteps.ts",
+      "code": "if (secs % 60 === 0) return `${secs / 60} min`"
+    },
+    {
+      "file": "lib/plan/sessionSteps.ts",
+      "code": "return metric === 'distance' ? `~${value}${units}` : `${value} min`"
+    }
+  ]
+}

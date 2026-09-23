@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { Plan, BenchmarkInput } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { isLongRun } from '@/lib/plan/sessionRole'
+import { convertPaceString, type DistanceUnits } from '@/lib/format'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
 import { Chip } from '@/components/shared/Chip'
@@ -55,7 +56,11 @@ function StepInput({ value, onChange, placeholder, type = 'text', min }: {
 
 // Pull the first easy + quality pace_target from the plan so the panel shows
 // the actual bands the user is currently training to (not synthesised values).
-function getPaceBands(plan: Plan): { easy: string | null; quality: string | null } {
+// PACE-UNITS-01 — `pace_target` is a STRING with `/km` welded on at generation
+// time (674 of 888 stored sessions), so the unit cannot be fixed at the
+// producer for a plan that already exists. Converted here, at the read, before
+// either band reaches the panel.
+function getPaceBands(plan: Plan, units: DistanceUnits): { easy: string | null; quality: string | null } {
   let easy: string | null = null
   let quality: string | null = null
   for (const week of plan.weeks) {
@@ -67,17 +72,17 @@ function getPaceBands(plan: Plan): { easy: string | null; quality: string | null
       if (!quality && (session.type === 'quality' || session.type === 'tempo' || session.type === 'intervals')) {
         if (session.pace_target) quality = session.pace_target
       }
-      if (easy && quality) return { easy, quality }
+      if (easy && quality) return { easy: convertPaceString(easy, units) ?? null, quality: convertPaceString(quality, units) ?? null }
     }
   }
-  return { easy, quality }
+  return { easy: convertPaceString(easy, units) ?? null, quality: convertPaceString(quality, units) ?? null }
 }
 
 // ─── Updated pace result ──────────────────────────────────────────────────────
 
-function UpdatedPaceResult({ plan, weeksUpdated, stravaConnected }: { plan: Plan; weeksUpdated: number; stravaConnected: boolean }) {
+function UpdatedPaceResult({ plan, weeksUpdated, stravaConnected, units }: { plan: Plan; weeksUpdated: number; stravaConnected: boolean; units: DistanceUnits }) {
   const { meta } = plan
-  const { easy, quality } = getPaceBands(plan)
+  const { easy, quality } = getPaceBands(plan, units)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div style={{
@@ -125,11 +130,13 @@ export default function BenchmarkUpdateScreen({
   plan,
   stravaConnected,
   onUpdated,
+  units = 'km',
 }: {
   onBack: () => void
   plan: Plan
   stravaConnected: boolean
   onUpdated: (plan: Plan) => void
+  units?: DistanceUnits
 }) {
   const [benchmarkType, setBenchmarkType] = useState<'race' | 'tt_30min' | null>(null)
   const [benchmarkDistKm, setBenchmarkDistKm] = useState<number | null>(null)
@@ -198,7 +205,7 @@ export default function BenchmarkUpdateScreen({
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
         {result ? (
-          <UpdatedPaceResult plan={result.plan} weeksUpdated={result.weeksUpdated} stravaConnected={stravaConnected} />
+          <UpdatedPaceResult plan={result.plan} weeksUpdated={result.weeksUpdated} stravaConnected={stravaConnected} units={units} />
         ) : (
           <>
             <RaceTimesCard variant="anchor" stravaConnected={stravaConnected} />

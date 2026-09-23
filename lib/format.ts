@@ -124,6 +124,59 @@ export function formatPace(
   return opts.noSuffix ? body : `${body}/${units}`
 }
 
+/**
+ * PACE-UNITS-01 — convert a STORED pace string into the reader's units.
+ *
+ * ── WHY A STRING GOES IN ───────────────────────────────────────────────────
+ * The engine bakes pace at GENERATION time: `ruleEngine.ts` writes
+ * `` `${formatPace(fast)}–${formatPace(slow)} /km` `` into the plan, unit and
+ * all. By the time a screen renders there is no number left, so `formatPace`
+ * above — which has always converted correctly — is unreachable on this path.
+ * Measured 2026-09-23: **674 of 888 stored sessions (76%)** carry `/km` inside
+ * `pace_target`, and a miles runner read every one of them in km.
+ *
+ * ⚠️ THE STORED STRING STAYS IN KM, DELIBERATELY. `invariants.ts` parses
+ * `pace_target` in SIX places via `parsePaceMidpoint`. Storing miles would have
+ * the constitution comparing mi numbers against km thresholds — *a floor
+ * measured in different units from the thing it guards is not a floor*, which
+ * this repo has already paid for three times. So the conversion happens HERE,
+ * at read time, and the plan is never rewritten.
+ *
+ * ⚠️ IT DELEGATES TO `formatPace` RATHER THAN CONVERTING. A second conversion
+ * rule is how the pace formatter ended up existing four times before FMT-01.
+ * This function's only job is parse → delegate → re-assemble.
+ *
+ * ⚠️ RUN IT BEFORE `easyPaceAsCeiling`, never after. That helper reads the unit
+ * back out of the text (`paceTarget.includes('/km')`) and preserves it, so a
+ * string converted afterwards keeps the km it was handed.
+ *
+ * Shape-preserving: a range stays a range, a single value stays single, and any
+ * trailing prose ("or slower") survives untouched. Anything it cannot parse is
+ * returned unchanged — a display helper must never blank a prescription.
+ */
+export function convertPaceString(
+  stored: string | null | undefined,
+  units: DistanceUnits = 'km',
+): string | null | undefined {
+  if (!stored) return stored
+  // Only a km-denominated string can be converted. A string already in mi, or
+  // one with no unit at all, is left exactly as it is.
+  if (!/\/\s*km\b/.test(stored)) return stored
+  if (units === 'km') return stored
+
+  let failed = false
+  const converted = stored.replace(/(\d{1,2}):(\d{2})/g, (whole, mm: string, ss: string) => {
+    const secPerKm = Number(mm) * 60 + Number(ss)
+    const out = formatPace(secPerKm, units, { noSuffix: true })
+    if (out == null) { failed = true; return whole }
+    return out
+  })
+  // A partial conversion is worse than none: half the range in mi and half in
+  // km is a number nobody can act on.
+  if (failed) return stored
+  return converted.replace(/\/\s*km\b/g, `/${units}`)
+}
+
 /** A pace DELTA (e.g. "fade of 15s/km") converted to the reader's unit.
  *  Same rate conversion, expressed in whole seconds. */
 export function formatPaceDelta(

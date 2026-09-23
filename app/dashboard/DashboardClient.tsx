@@ -17,6 +17,7 @@ import PlanCalendar from '@/components/training/PlanCalendar'
 import ReflectionInput from '@/components/training/ReflectionInput'
 // Calendar screen retired — CalendarOverlay.tsx renamed to .old.tsx (brand-product-alignment v2)
 import StravaPanel from '@/components/strava/StravaPanel'
+import { convertPaceString, formatPace } from '@/lib/format'
 import { upsertCompletion } from '@/lib/plan/completions'
 import { createClient } from '@/lib/supabase/client'
 import { trackEvent } from '@/lib/analytics'
@@ -2682,7 +2683,7 @@ export default function DashboardClient() {
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
           setScreen(hasWizardDraft ? 'generate' : 'today')
         }} />}
-        {screen === 'benchmark' && plan && <BenchmarkUpdateScreen plan={plan} stravaConnected={stravaConnected} onBack={() => setScreen('me')} onUpdated={(updatedPlan) => { setPlan(updatedPlan) }} />}
+        {screen === 'benchmark' && plan && <BenchmarkUpdateScreen plan={plan} units={preferredUnits} stravaConnected={stravaConnected} onBack={() => setScreen('me')} onUpdated={(updatedPlan) => { setPlan(updatedPlan) }} />}
         {screen === 'recalibration' && <RecalibrationEntryScreen distanceKm={recalDistanceKm} status={recalStatus} onBack={() => { setRecalStatus('idle'); setScreen('today') }} onConfirm={handleRecalConfirm} />}
         {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} preferredUnits={preferredUnits} />}
         {screen === 'founder'   && <FounderNoteScreen onBack={() => setScreen('me')} />}
@@ -4340,8 +4341,13 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
   // at. Quality, long and race sessions keep their band: there the range IS the
   // target, and the function leaves them alone (proven: 748 sessions, 656
   // transformed, 0 non-easy altered).
+  // PACE-UNITS-01 — the plan bakes pace as "5:53–7:02 /km" at generation, so
+  // the units toggle could never reach it. Converted HERE, before
+  // `easyPaceAsCeiling`, which reads the unit back out of the text and would
+  // otherwise preserve the km it was handed. `aerobicPace` is already in the
+  // reader's units (computeAerobicPace takes preferredUnits) and is left alone.
   const paceBracket = easyPaceAsCeiling(
-    session.pace_target
+    convertPaceString(session.pace_target, preferredUnits)
       ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null),
     session.type,
   )
@@ -8106,7 +8112,8 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 reflow when aerobicPace lands a beat later. */}
             {(() => {
               const expectsAerobicPace = (selectedSession.type === 'easy' || selectedSession.type === 'run') && !selectedSession.pace_target
-              const rawPaceForDetail = selectedSession.pace_target
+              // PACE-UNITS-01 — same conversion, same reason, before the ceiling helper.
+              const rawPaceForDetail = convertPaceString(selectedSession.pace_target, preferredUnits)
                 ?? (expectsAerobicPace ? aerobicPace : null)
                 ?? (expectsAerobicPace && stravaLoading ? '—' : null)
               // CD-11 / §12 — an easy run's pace is a ceiling, not a window.
@@ -12821,7 +12828,15 @@ function buildScoreExplanations(
     const sec = 1000 / actualAvgSpeedMs
     const m = Math.floor(sec / 60)
     const s = Math.round(sec % 60)
-    paceLine = `Target ${paceTarget}, ran ${m}:${String(s).padStart(2, '0')}/km.`
+    // PACE-UNITS-01 — `paceTarget` arrives already converted (the caller runs it
+    // through `convertPaceString`), so hardcoding `/km` on the ACTUAL pace beside
+    // it printed a miles target next to a km actual in the same sentence.
+    // `formatPace` takes seconds-per-km and owns the conversion.
+    // ⚠️ `units` was ALREADY a parameter here and the caller ALREADY passed
+    // preferredUnits — it was used for distance on the line above and never for
+    // pace. A declared-but-inert argument on the one line that needed it.
+    const ranPace = formatPace(sec, units) ?? `${m}:${String(s).padStart(2, '0')}`
+    paceLine = `Target ${paceTarget}, ran ${ranPace}.`
   } else if (paceTarget) {
     paceLine = `Target ${paceTarget}.`
   } else if (analysis.pace_score != null) {
@@ -13358,7 +13373,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
               )}
               <RunFeedbackCard
                 analysis={analysis}
-                paceTarget={session.pace_target ?? null}
+                paceTarget={convertPaceString(session.pace_target, preferredUnits) ?? null}
                 actualAvgSpeedMs={linkedAct?.average_speed ?? null}
                 onOpenCoach={onOpenCoach}
                 preferredUnits={preferredUnits}
@@ -13832,9 +13847,11 @@ function PostRunScreen({
   const sessionLabel = getSessionLabel(session.type ?? 'easy')
   const dayLabel     = session.day ?? ''
   const weekLabel    = session.weekN ?? weekN
-  const paceTarget   = session.pace_target
+  // PACE-UNITS-01 — `goal_pace_per_km` is baked in km by its very name, so it
+  // needs the same conversion as `pace_target`.
+  const paceTarget   = convertPaceString(session.pace_target, preferredUnits)
     ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null)
-    ?? goalPace ?? null
+    ?? convertPaceString(goalPace, preferredUnits) ?? null
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '120px' }}>
