@@ -657,6 +657,8 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 | Item | Tier | Effort | Notes |
 |------|------|--------|-------|
 | **CA-06 — Plan history UI** | FREE | S | ✅ Shipped 2026-06-05. Read-only list in MeScreen. |
+| **SHEET-DATE-INPUT-01 — the race date is the only native control on the Adjust sheet** | FREE | S | 🧭 DESIGN BOARD, **DEFERRED — needs a DEVICE**. ⚠️ Do not "just restyle it": that file carries a recorded iOS keyboard-zoom incident. Detail in backlog. |
+| **SHEET-CONTROL-VOCAB-01 — the Adjust sheet has four control species** | FREE | M | 🧭 DESIGN BOARD. **The real finding behind *"I just don't like it"*, UNRESOLVED.** A redesign with its own sitting, not a polish pass. Two prior findings already measured and REJECTED — see backlog before proposing. |
 | **UNITS-PROSE-01 — 62 producer-side sites bake a unit into prose** | FREE | M | ⚙️ NO BOARD for the mechanical conversion (ADR-015 already owns it); 🏃 COACHING BOARD if any refusal is REWORDED rather than re-unitised. Closed register: `lib/__fixtures__/hardcodedUnitsDebt.json`. Measured real but unrealised — 19 stored plans carry zero prose km. Detail in backlog. |
 | **CA-02 — Apple Watch companion** | FREE/PAID | L | **NEXT #8** — moved to NEXT (dedicated sprint). Start Apple Developer provisioning now. |
 | ~~**CA-03 — Post-race goal-ladder**~~ ✅ shipped 2026-06-22 | PAID | M | Done — closed the post-race void. Pairs with R24 (multi-race). |

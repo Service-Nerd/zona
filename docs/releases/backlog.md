@@ -261,6 +261,50 @@ rather than re-unitised — nothing was.
 
 ---
 
+## ⚖️ FILED 2026-09-23 — the two `ModifyPlanSheet` items the board DEFERRED
+
+### 🧭 `SHEET-DATE-INPUT-01` — the race date is the only native control on the sheet
+
+**Design Board DEFERRED it, and named why.** It is the *"doesn't line up"* the founder pointed at:
+on a sheet of **six left-aligned `SegmentedControl`s**, the race date is **the only centred control
+and the only native one** — a full-width `<input type="date">` that reads as a *disabled field*
+rather than a picker.
+
+🔴 **DO NOT "JUST RESTYLE IT".** That file already carries a recorded incident: the hand-rolled
+input was at `fontSize: 13px`, **the only input in the app below the 16px floor `TextField` exists
+to lock**, and iOS zoomed the page on focus so tapping the race date **jumped the sheet**. It now
+goes through `TextField`. Replacing a native date input re-opens that.
+
+**Settling artefact the chair named: it has to be looked at ON A DEVICE.** Nothing has run on one.
+
+**Board:** 🧭 DESIGN BOARD. ⚙️ Not a defect — the current control is correct and accessible.
+
+---
+
+### 🧭 `SHEET-CONTROL-VOCAB-01` — the sheet has four control species
+
+⚠️ **THIS IS THE REAL FINDING BEHIND *"I just don't like it"*, AND IT IS UNRESOLVED.** The two
+fixes that shipped (the 4+3 day grid, the dashed border) were tidy-ups, and the founder **was told
+plainly they may not make him like it**.
+
+Measured on `ModifyPlanSheet`: **6 × `SegmentedControl` · 2 wrapping chip rows · 1 native date
+input · 1 action row.** Six fields speak one language and three speak three others.
+
+⚠️ **TWO OF THE FOUR WERE RULED ACCEPTABLE AND ONE DEFERRED**, so this cannot be closed by fixing
+the parts — it is a question about the whole sheet. **The chair offered a scoped rethink and the
+founder did not take it that day.** If it is picked up, it is a redesign with its own sitting, not
+a polish pass.
+
+🔴 **DO NOT RE-PROPOSE, as already measured and REJECTED:** *"four corner radii in one sheet"*
+(two are `50%` on a circular close **button** and a **6px dot**, both supposed to be round; the rest
+is `md`-vs-`lg` on a button where **no convention exists** — 27 `lg` vs 14 `md`), and *"the injury
+chips orphan like the days did"* (**variable-width pills**; wrapping is what chips do, and a grid
+would give equal columns to wildly unequal labels — **worse**).
+
+**Board:** 🧭 DESIGN BOARD.
+
+---
+
 ## 🎯 2026-09-20 — MILES TEARDOWN, PHASE 2: proposals P-01 to P-14
 
 **Source:** `docs/competitor/miles-teardown-brief.md` §4 · **Assessed in:** `docs/MILES-GAP-ANALYSIS.md`
