@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — MARA-LR-SHAPE-SEAM-01 · the fix that made the number worse
+
+**Shipped:** A knee-history runner on a low base is no longer turned away from a marathon plan. They get one, with a run-walk interval.
+
+**Dev learning:** §117 lowers a beginner's peak so that §111's door drops and they qualify for a plan. Sensible. But it never asked about injury history — and a knee-history runner's peak is *already* lowered, by §12's volume cap. So they paid the reduction twice and it pushed their long run from 17 km down to 13, below the adequacy bound §117 itself defines, and the gate refused them. Willy's line stuck: *"that is not a trade, it is a toll."*
+
+I proved it by sweeping the constant rather than reasoning about it. Hold everything else fixed, vary only `FINISH_GOAL_RUNWALK_PEAK_KM`, and the delivered long run tracks it monotonically: 34→13, 38→14, 42→15, 46→16, 50→17, 52→17, 56→19. One line of output, and the mechanism stops being an inference.
+
+**Product/creator learning:** **The fit rate went down and the product got better.** Marathon 89.8% → 89.1%. Those runners were previously *excluded* from the score as "refused but served"; now they generate plans that carry an honest objection, so they count as failures. Refusals at 8 km/week fell 16.7 points and the objection rose 16.6 — matching one-for-one, which is the proof that nothing else moved.
+
+I told the founder that would happen *before* I measured it, which is the only reason it reads as a result rather than a regression. This morning's re-score moved the same number the other way and served nobody differently; the chair made the distinction binding. **A rate is not a goal. What it counts is the goal.**
+
+**AI-building learning:** I filed this seam yesterday with a premise that turned out to be **false** — I claimed the refusal was computed on one plan shape while the runner would have received another. The engine's own stamp said otherwise. My probe had reported `false` because I passed a peak of `0` from an undefined field on an error object. Third instrument fault in the same thread.
+
+What saved it each time was the same habit: don't report the finding, report the *measurement that produced it*, and check the measurement can see what it claims. All three faults were caught before a board seat spoke.
+
+Then the liveness harness caught me too. Splitting the flag made an existing invariant unwakeable, and `invariant:liveness` failed in the same commit with exactly that message. I fixed the mutation rather than baselining the rule as unproven — which is the whole reason that gate exists.
+
+**The honest bit:** This started as "fix km to miles". It ended up in §117's gate because the founder asked for a coach review in between, and the review pointed at one open question that turned out to be already answered, whose *measurement* found a real defect next door. None of that was planned, and I'd have missed all of it if I'd gone to the plans before reading the ruling register.
+
+**Hook material:** I shipped a change that made our headline metric worse, on purpose, and predicted the exact direction beforehand. Refusals for injured low-base runners fell 16.7 points; the objection rate rose 16.6. They match because every runner we stopped turning away became a runner we could now be criticised for serving imperfectly. That's the right trade, and the number can't tell you so.
+
+**Postable?:** yes
+
 ## 2026-09-23 — RUNWALK-VISIBLE-01 · the prescription nobody could read
 
 **Shipped:** If your plan says run-walk, the app now tells you the interval. It never did.
