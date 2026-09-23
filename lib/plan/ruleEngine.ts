@@ -7672,7 +7672,7 @@ function buildRulePlanOnce(
             // note that reports a constraint without naming what it costs the
             // runner is a disclaimer, not coaching. Dropped: "floor", "% of race
             // distance", and the raw distance key.
-            reasons.push(`Your biggest week reaches ${peakKmActual} km, where a time goal at this distance usually wants nearer ${Math.round(volumeFloor)}.`)
+            reasons.push(`Your biggest week reaches ${peakKmActual} km, where a time goal at this distance usually wants nearer ${Math.round(volumeFloor)}km.`)
           }
           if (lrFails) {
             // COPY-GLYPH-01 (founder-reported, 2026-09-17) — this sentence used to
@@ -7685,7 +7685,7 @@ function buildRulePlanOnce(
             // numbers and gains the consequence: this runner arrives at the start
             // line never having run the distance the race asks for, and should be
             // told what that feels like rather than what ratio it breaches.
-            reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}, so the closing stretch will be new ground on the day. The long run can only grow so much week to week, and it ran out of weeks before it got there.`)
+            reasons.push(`Your longest run reaches ${Math.round(actualPeakLrKm * 10) / 10} km, where this race wants nearer ${Math.round(longRunFloorKm * 10) / 10}km, so the closing stretch will be new ground on the day. The long run can only grow so much week to week, and it ran out of weeks before it got there.`)
           }
           // MAINT-LABEL-01 (2026-09-11, second pass) — two defects in one string.
           //

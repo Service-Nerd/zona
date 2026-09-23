@@ -97,6 +97,68 @@ export function apportionRoundedDistance(
   return out
 }
 
+/**
+ * UNITS-PROSE-01 — convert kilometre figures baked into PROSE at generation time.
+ *
+ * 🔴 WHY A READ-TIME REPAIR RATHER THAN A FIX AT THE PRODUCER. The engine writes
+ * runner-facing sentences with `km` welded on — coach notes, constraint notes,
+ * refusals — and stores them in `plan_json`. Measured 2026-09-23: **100% of
+ * 1,167 generated plans** and **19 of 19 stored plans** carry one, including
+ * **101 of 888 sessions** in `coach_notes`. Three independent reasons, any one
+ * sufficient:
+ *
+ *   1. Every plan that already exists carries it. Fixing the producer repairs
+ *      none of them.
+ *   2. The units toggle is MUTABLE AFTER GENERATION. Baking miles at build time
+ *      is wrong for the runner who switches back, which is the same trap
+ *      `plan_json.meta.preferred_units` being NULL already records.
+ *   3. The producer strings stay byte-identical, so §44's
+ *      `REFUSAL_NAMES_NEXT_STEP` and every other prose matcher keep passing.
+ *      This repo broke **8 prose matchers across 5 files** once by editing four
+ *      refusal strings for tone; converting at the read cannot repeat it.
+ *
+ * ⚠️ PACE IS EXCLUDED BY CONSTRUCTION. A pace unit is always written `/km`, so
+ * the pattern refuses a `km` preceded by a slash and leaves `6:30–7:30 /km`
+ * alone — that string belongs to `convertPaceString`, which must remain the
+ * only thing that touches it. Running both over the same text is safe in either
+ * order for exactly this reason.
+ *
+ * ⚠️ IDEMPOTENT BY OUTPUT. Converted text contains `mi`, never `km`, so a second
+ * pass finds nothing. Double conversion would divide by 1.609 twice and is the
+ * failure this property rules out.
+ *
+ * ⚠️ NOT AN OWNER. `formatDistance` does the arithmetic; this only finds the
+ * digits and hands them over. A second km→mi constant would be the
+ * DELOAD-OWNER-01 shape.
+ */
+export function convertDistanceString(
+  text: string | null | undefined,
+  units: DistanceUnits = 'km',
+): string | null | undefined {
+  if (!text) return text
+  if (units === 'km') return text
+  // ⚠️ WHAT ACTUALLY KEEPS PACE OUT IS `\s*`, NOT A LOOKAROUND. An earlier
+  // version of this comment credited a `(?<!/)` lookbehind that was never in the
+  // pattern. `6:30–7:30 /km` is safe because the character between the digits
+  // and `km` is a SLASH, which `\s*` cannot match — verified by running the
+  // pattern with both lookarounds removed and watching pace survive untouched.
+  // `(?<![\d.])` stops a match starting mid-number; `(?!\s*\/)` excludes a rate
+  // like `10 km/h`. Neither is the pace guard, and saying so cost a falsification
+  // that could not fail.
+  return text.replace(/(?<![\d.])(\d+(?:\.\d+)?)\s*km\b(?!\s*\/)/g, (whole, num: string) => {
+    const km = Number(num)
+    if (!Number.isFinite(km)) return whole
+    // `exact` keeps one decimal, because prose quotes small figures a whole
+    // number would erase — "First 0.6 km at Zone 2" must not become "First 0 mi".
+    const out = formatDistance(km, 'mi', { exact: true, noSuffix: true })
+    if (out == null) return whole
+    // A sub-unit figure that still rounds to 0.0 keeps its kilometres rather
+    // than asserting zero — the UNITS-SUBUNIT-01 rule, applied to prose.
+    if (Number(out) === 0) return whole
+    return `${out} mi`
+  })
+}
+
 // ─── Pace formatting — single source of truth (ADR-015, INV-FMT-001) ─────────
 //
 // Pace is stored as seconds per KILOMETRE everywhere (analysis, cohort, splits),

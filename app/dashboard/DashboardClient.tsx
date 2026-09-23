@@ -17,7 +17,7 @@ import PlanCalendar from '@/components/training/PlanCalendar'
 import ReflectionInput from '@/components/training/ReflectionInput'
 // Calendar screen retired — CalendarOverlay.tsx renamed to .old.tsx (brand-product-alignment v2)
 import StravaPanel from '@/components/strava/StravaPanel'
-import { convertPaceString, formatPace } from '@/lib/format'
+import { convertDistanceString, convertPaceString, formatPace } from '@/lib/format'
 import { upsertCompletion } from '@/lib/plan/completions'
 import { createClient } from '@/lib/supabase/client'
 import { trackEvent } from '@/lib/analytics'
@@ -5086,7 +5086,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                   // to live values (Z2 ceiling, session HR, etc.) rather than carrying
                   // stale baked literals after the athlete updates restingHR/maxHR.
                   renderGuidance(
-                    (session.coach_notes as string[]).filter(Boolean).join(' '),
+                    // UNITS-PROSE-01 — coach notes bake `km` at generation time.
+                    convertDistanceString((session.coach_notes as string[]).filter(Boolean).join(' '), preferredUnits) ?? '',
                     guidanceContextFromSession({
                       session,
                       zone2Ceiling: sessionHRBand('easy', restingHR ?? null, maxHR ?? null)?.hi ?? zone2Ceiling,
@@ -8713,7 +8714,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           Ordered, labelled and capped by the single owner planRationaleNotes();
           nothing renders when the plan carries none. */}
       {(() => {
-        const rationale = planRationaleNotes(plan.meta)
+        const rationale = planRationaleNotes(plan.meta, preferredUnits)
         if (rationale.length === 0) return null
         return (
           <div style={{ padding: '16px 16px 0' }}>

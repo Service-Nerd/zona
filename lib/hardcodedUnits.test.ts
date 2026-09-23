@@ -217,11 +217,20 @@ describe('PREF-SWEEP-01 — a unit glyph may not be welded to an interpolated va
   // same architectural fact that made PACE-UNITS-01 unfixable at its producer:
   // by the time the app renders, there is no number left to convert.
   //
-  // ⚠️ MEASURED, NOT ASSUMED: 19 stored plans carry ZERO prose km anywhere in
-  // the document while 17 of 19 carry `/km` pace. So the class is REAL and
-  // currently UNREALISED in production. **"Zero in the corpus" is not "cannot
-  // fire"** — this repo recorded that exact lesson when §80's note named its
-  // cap 0 times in 5,264 plans and was reachable all along.
+  // 🔴 THE MEASUREMENT IN THIS BLOCK WAS WRONG AND IS CORRECTED. It read:
+  // "19 stored plans carry ZERO prose km... the class is REAL and currently
+  // UNREALISED in production." The production query used `\d\s*km\b`, and in
+  // **Postgres POSIX regex `\b` is a BACKSPACE CHARACTER, not a word boundary**
+  // (`\y` is). It matched nothing and returned a clean zero.
+  //
+  // Re-measured with `\y`: **ALL 19 of 19 stored plans carry prose km** — 101 of
+  // 888 sessions in runner-facing `coach_notes`, 16 of 19 plans in `meta.notes`.
+  // A generated corpus agrees at **100% of 1,167 plans**.
+  //
+  // ⚠️ **A clean zero from a broken pattern is indistinguishable from a clean
+  // zero from clean data**, and the wrong one was reported to the founder and
+  // written into this register. Same class as the empty-file regression
+  // comparison that reported success (2026-09-04).
   //
   // ⚠️ A DECLARED REASON IS NOT A FIXED PROBLEM. This register makes the debt
   // visible and stops it growing. Nothing here schedules its removal, and the

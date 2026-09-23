@@ -1,4 +1,5 @@
 import type { Plan } from '@/types/plan'
+import { convertDistanceString, type DistanceUnits } from '@/lib/format'
 
 /**
  * PLAN-NOTE-SURFACE-01 — the single owner of "why this plan is shaped this way".
@@ -103,7 +104,10 @@ export function onsetYieldNote(meta: Plan['meta']): string | null {
  * The ordered, capped list of plan-rationale notes for a plan. Empty array when the
  * plan carries none (the renderer shows nothing — no empty card).
  */
-export function planRationaleNotes(meta: Plan['meta'] | undefined | null): PlanRationaleNote[] {
+export function planRationaleNotes(
+  meta: Plan['meta'] | undefined | null,
+  units: DistanceUnits = 'km',
+): PlanRationaleNote[] {
   if (!meta) return []
   const notes: PlanRationaleNote[] = []
 
@@ -153,5 +157,16 @@ export function planRationaleNotes(meta: Plan['meta'] | undefined | null): PlanR
     out.push(n)
     words += w
   }
-  return out
+  // UNITS-PROSE-01 — the engine welds `km` into these sentences at GENERATION
+  // time, so the reader's preference can only be honoured here, at the read.
+  //
+  // ⚠️ CONVERTED AFTER THE CAP, DELIBERATELY. `wordCount` runs above, and
+  // conversion changes word counts ("38km" is one word, "23.6 mi" is two). Had
+  // this run before the budget, a miles reader would silently receive FEWER
+  // notes than a km reader for the same plan — a units-dependent difference in
+  // what the runner is told, which is worse than the defect being fixed.
+  //
+  // ⚠️ MAPPED ON THE WAY OUT rather than at each `push`, so a note added later
+  // is converted by construction and cannot be the one that was forgotten.
+  return out.map(n => ({ ...n, text: convertDistanceString(n.text, units) ?? n.text }))
 }

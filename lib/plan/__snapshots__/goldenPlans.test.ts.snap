@@ -5211,7 +5211,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
     "vdot_training_anchor": 48.2,
     "version": "2.0",
     "volume_constrained": false,
-    "volume_constraint_note": "This plan is built to get you round, not to chase a time. Your weekly mileage holds steady across this plan rather than climbing into the final weeks. Your longest run reaches 29 km, where this race wants nearer 31.7, so the closing stretch will be new ground on the day. The long run can only grow so much week to week, and it ran out of weeks before it got there. You will still get fitter: starting from where you are, you could hardly not. If you want it to build instead: run 6 days a week instead of 5.",
+    "volume_constraint_note": "This plan is built to get you round, not to chase a time. Your weekly mileage holds steady across this plan rather than climbing into the final weeks. Your longest run reaches 29 km, where this race wants nearer 31.7km, so the closing stretch will be new ground on the day. The long run can only grow so much week to week, and it ran out of weeks before it got there. You will still get fitter: starting from where you are, you could hardly not. If you want it to build instead: run 6 days a week instead of 5.",
     "volume_profile": "maintenance",
     "zone2_ceiling": 147,
   },

@@ -18,7 +18,7 @@ import SignOutLink from '@/components/shared/SignOutLink'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { formatDistance, formatDuration } from '@/lib/format'
+import { convertDistanceString, formatDistance, formatDuration } from '@/lib/format'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
@@ -1350,6 +1350,7 @@ export default function GeneratePlanScreen({
   if (appStep === 'generating') {
     return (
       <GeneratingCeremony
+        units={preferredUnits}
         hasPaidAccess={!!hasPaidAccess}
         plan={plan}
         // FIRSTRUN-MOMENTS-01c — the answers this runner just gave, so the
@@ -1378,7 +1379,9 @@ export default function GeneratePlanScreen({
         <div style={{ flex: 1, padding: '0 20px 24px' }}>
           <RefusalView
             isRefusal={errorIsRefusal}
-            message={error}
+            // UNITS-PROSE-01: a refusal names a weekly volume in km, built
+            // server-side where the reader's preference is not in scope.
+            message={convertDistanceString(error, preferredUnits) ?? error}
             alternatives={errorAlternatives}
             offer={errorOffer}
             offerFailed={offerFailed}

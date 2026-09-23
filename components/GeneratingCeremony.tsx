@@ -12,6 +12,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { ceremonyLinesFor } from '@/lib/plan/ceremonyLines'
+import { convertDistanceString, formatDistance, type DistanceUnits } from '@/lib/format'
 import AIMark from './shared/AIMark'
 
 // ─── Copy ─────────────────────────────────────────────────────────────────────
@@ -41,8 +42,10 @@ const COPY_REVEAL = "There it is. Don't ruin it."
  * for its 28-35s window. Deduped against the generic set so nothing repeats, and
  * capped at the length the timing was built for.
  */
-function ceremonyCopy(input: Partial<GeneratorInput> | null | undefined, generic: string[]): string[] {
-  const personal = ceremonyLinesFor(input)
+function ceremonyCopy(input: Partial<GeneratorInput> | null | undefined, generic: string[], units: DistanceUnits): string[] {
+  // UNITS-PROSE-01 — `ceremonyLines` welds `km` into "Your longest run so far
+  // is 12 km", built from the wizard answers with no units in scope.
+  const personal = ceremonyLinesFor(input).map(l => convertDistanceString(l, units) ?? l)
   if (personal.length === 0) return generic
   // "Almost done." is the closer and must stay last.
   const closer = generic[generic.length - 1]
@@ -93,11 +96,14 @@ function SkeletonCard() {
 
 // ─── Reveal card ─────────────────────────────────────────────────────────────
 
-function RevealCard({ week, phaseLabel, phaseColour, visible }: {
+function RevealCard({ week, phaseLabel, phaseColour, visible, units }: {
   week: Plan['weeks'][0]
   phaseLabel?: string
   phaseColour?: string
   visible: boolean
+  /** UNITS-PROSE-01 — `weekVolumeLabel` has always taken units; this was the
+   *  one caller in the tree that never passed them. */
+  units: DistanceUnits
 }) {
   // D8: sort chips Mon→Sun. Object.entries follows insertion order — the rule
   // engine inserts the long run (often Sunday) first, so unsorted chips read
@@ -153,7 +159,7 @@ function RevealCard({ week, phaseLabel, phaseColour, visible }: {
         {week.weekly_km > 0 && (
           /* §121 Amendment 1 — the race is named, never folded in. Same shared
              owner as the wizard preview and the published plan pages. */
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>{weekVolumeLabel(week as never) ?? `${week.weekly_km} km`}</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)' }}>{weekVolumeLabel(week as never, units) ?? (formatDistance(week.weekly_km, units) ?? '')}</span>
         )}
         {week.badge && (
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--amber)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>{week.badge}</span>
@@ -190,10 +196,14 @@ export default function GeneratingCeremony({
   hasPaidAccess,
   plan,
   input,
+  units = 'km',
   onRevealComplete,
 }: {
   hasPaidAccess: boolean
   plan: Plan | null
+  /** UNITS-PROSE-01 — the reader's km/mi choice. `weekVolumeLabel` has always
+   *  taken it and this caller was the one that never passed it. */
+  units?: DistanceUnits
   /** FIRSTRUN-MOMENTS-01c — the runner's own wizard answers, so the ceremony can
    *  say something only true of them. Optional: without it the generic copy runs
    *  exactly as before. */
@@ -201,7 +211,7 @@ export default function GeneratingCeremony({
   onRevealComplete: () => void
 }) {
   const lines = useMemo(
-    () => ceremonyCopy(input, hasPaidAccess ? COPY_PAID : COPY_FREE),
+    () => ceremonyCopy(input, hasPaidAccess ? COPY_PAID : COPY_FREE, units),
     [input, hasPaidAccess],
   )
   const minDelay = hasPaidAccess ? 3600 : 1800   // ms — minimum ceremony duration
@@ -339,6 +349,7 @@ export default function GeneratingCeremony({
               phaseLabel={phaseLabel}
               phaseColour={phaseColour}
               visible={i < revealedCount}
+              units={units}
             />
           ))}
         </div>
