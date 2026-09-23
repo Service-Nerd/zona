@@ -22,6 +22,7 @@
 import { LIMITER, FATIGUE_HIGH_TAGS } from './constants'
 import type { HrStreamSummary } from './streamAnalysis'
 import type { PaceFadeSummary } from './paceAnalysis'
+import { formatDistance, formatPace, formatPaceDelta, type DistanceUnits } from '@/lib/format'
 
 /**
  * Physiological cause categories. Mutually exclusive — the classifier picks
@@ -50,6 +51,12 @@ export interface LimiterHypothesis {
 }
 
 export interface LimiterInputs {
+  /** UNITS-DURATION-01 / ADR-015 — `reasoning` is fed verbatim into the AI
+   *  prompt (`sessionFeedback.ts`), which makes it a DISPLAY SURFACE: a number
+   *  handed to the model becomes user-facing the moment the model repeats it.
+   *  ⚠️ REQUIRED, NOT DEFAULTED. The dangerous default is `km`, and a rate
+   *  restated in the wrong unit is silently wrong rather than obviously wrong. */
+  units:                  DistanceUnits
   sessionType:            string
   actualAvgHr:            number | null
   prescribedHrCeiling:    number | null
@@ -166,12 +173,17 @@ export function inferLimiter(inputs: LimiterInputs): LimiterHypothesis | null {
   ) {
     const first = inputs.paceFadeSummary!.firstHalfAvgPaceSecPerKm
     const back  = inputs.paceFadeSummary!.backHalfAvgPaceSecPerKm
-    const m1 = Math.floor(first / 60), s1 = Math.round(first % 60)
-    const m2 = Math.floor(back / 60),  s2 = Math.round(back % 60)
+    // ⚠️ THREE FIGURES, TWO DIFFERENT KINDS, THREE OWNERS. `paceFade` is a RATE
+    // (seconds per unit) and takes `formatPaceDelta`; the two halves are PACES
+    // and take `formatPace`. Hand-rolling the clocks here is what put `m:ss/km`
+    // in the string, and a blanket `/km`→`/mi` rename would have relabelled the
+    // RATE without converting it — "15s/km" becoming "15s/mi", which is not any
+    // rate at all. That is why this is built from the owners rather than
+    // rewritten downstream.
     return {
       category:   'muscular',
       confidence: inputs.paceFadeSummary!.sparse ? 'medium' : 'high',
-      reasoning:  `pace faded ${paceFade}s/km in the back half (${m1}:${String(s1).padStart(2,'0')}/km → ${m2}:${String(s2).padStart(2,'0')}/km) with HR holding`,
+      reasoning:  `pace faded ${formatPaceDelta(paceFade, inputs.units) ?? `${paceFade}s/km`} in the back half (${formatPace(first, inputs.units) ?? '—'} → ${formatPace(back, inputs.units) ?? '—'}) with HR holding`,
     }
   }
 
@@ -226,7 +238,7 @@ export function inferLimiter(inputs: LimiterInputs): LimiterHypothesis | null {
     return {
       category:   'fueling',
       confidence: 'low',
-      reasoning:  `long run cut ${shortfall.toFixed(1)}km short with RPE ${inputs.rpe} — fueling or pacing in the back half`,
+      reasoning:  `long run cut ${formatDistance(shortfall, inputs.units, { exact: true }) ?? `${shortfall.toFixed(1)}km`} short with RPE ${inputs.rpe} — fueling or pacing in the back half`,
     }
   }
 

@@ -1,17 +1,13 @@
 {
   "item": "UNITS-PROSE-01",
   "recorded": "2026-09-23",
-  "reason": "PRODUCER-SIDE BY DESIGN, AND CONVERTED AT THE READ. These sites build a unit into a string at GENERATION or ANALYSIS time, where the reader's preference is not in scope. They are deliberately NOT fixed at the producer, for three reasons any one of which is sufficient: (1) 100% of generated plans and 19 of 19 stored plans already carry these strings, so a producer fix repairs none of them; (2) the units toggle is MUTABLE after generation, so baking miles is wrong for the runner who switches back; (3) the producer strings stay byte-identical, so section 44's REFUSAL_NAMES_NEXT_STEP and every other prose matcher keep passing - this repo broke 8 prose matchers across 5 files once by editing four refusal strings. The runner-facing READ sites are wired through lib/format.ts convertDistanceString: planRationaleNotes (the single owner of meta-note display), coach_notes in DashboardClient, the refusal message in GeneratePlanScreen, and GeneratingCeremony. Gated by lib/plan/prosePreference.test.ts. WHAT REMAINS UNWIRED: AI prompt builders (enrich.ts, enrichMaintenance.ts, freeIntro.ts) - ADR-015's amendment makes the AI layer a display surface and promptDistanceFormatters already exists for it; lib/coaching/limiter.ts and planAdjustment.ts reasoning/coach-note strings; and the 11 DURATION-only entries, which are a different rule (ADR-015 formatDuration's 60-to-hours contract), not a units question at all.",
+  "reason": "PRODUCER-SIDE BY DESIGN, AND CONVERTED AT THE READ. These sites build a unit into a string at GENERATION or ANALYSIS time, where the reader's preference is not in scope. They are deliberately NOT fixed at the producer, for three reasons any one of which is sufficient: (1) 100% of generated plans and 19 of 19 stored plans already carry these strings, so a producer fix repairs none of them; (2) the units toggle is MUTABLE after generation, so baking miles is wrong for the runner who switches back; (3) the producer strings stay byte-identical, so section 44's REFUSAL_NAMES_NEXT_STEP and every other prose matcher keep passing - this repo broke 8 prose matchers across 5 files once by editing four refusal strings. The runner-facing READ sites are wired through lib/format.ts convertDistanceString: planRationaleNotes (the single owner of meta-note display), coach_notes in DashboardClient, the refusal message in GeneratePlanScreen, and GeneratingCeremony. Gated by lib/plan/prosePreference.test.ts. WHAT REMAINS, AND AN HONEST NOTE ON THE COUNT: after phases 1-4 most surviving entries are FALLBACK expressions behind the owner, not primary paths - `formatDuration(v) ?? `${v} min`` still matches this pattern, which is why the count moved 57 to 56 while four live defects were fixed. A count is not a measure of exposure here. Genuinely unwired: nothing runner-facing that has been measured as reachable. Ten of the eleven DURATION entries were measured UNREACHABLE at 60+ minutes across 48,547 sessions (`sessionComposer` descriptions and `buildStepGroups` rows produced ZERO) - a rep or a warm-up is minutes by construction, so they cannot breach ADR-015's 60-to-hours rule. The one that could was `amountStr`, the session-card header, at 21,062 of 48,547 sessions and a maximum of 172 raw minutes; it is fixed.",
   "measured": "\ud83d\udd34 CORRECTED 2026-09-23. This field first read: '19 stored plans: 17 carry /km pace, ZERO carry prose km anywhere in the document. The class is REAL but currently UNREALISED in production.' THAT WAS WRONG, and the cause was the instrument, not the data: the production query used '\\d\\s*km\\b', and in Postgres POSIX regex \\b is a BACKSPACE CHARACTER, not a word boundary (\\y is). It matched nothing and returned a clean zero. Re-measured with \\y: ALL 19 of 19 stored plans carry prose km. 101 of 888 sessions carry it in runner-facing coach_notes, 16 of 19 plans in meta.notes, 7 in volume_constraint_note, 3 sessions in derived_set step lengths. Generated corpus agrees: 1,167 of 1,167 plans (100%). A clean zero from a broken pattern is indistinguishable from a clean zero from clean data.",
-  "count": 57,
+  "count": 56,
   "entries": [
     {
       "file": "lib/coaching/limiter.ts",
-      "code": "reasoning:  `pace faded ${paceFade}s/km in the back half (${m1}:${String(s1).padStart(2,'0')}/km \u2192 ${m2}:${String(s2).padStart(2,'0')}/km) with HR holding`,"
-    },
-    {
-      "file": "lib/coaching/limiter.ts",
-      "code": "reasoning:  `long run cut ${shortfall.toFixed(1)}km short with RPE ${inputs.rpe} \u2014 fueling or pacing in the back half`,"
+      "code": "reasoning:  `long run cut ${formatDistance(shortfall, inputs.units, { exact: true }) ?? `${shortfall.toFixed(1)}km`} short with RPE ${inputs.rpe} \u2014 fueling or pacing in the back half`,"
     },
     {
       "file": "lib/coaching/planAdjustment.ts",
@@ -19,7 +15,7 @@
     },
     {
       "file": "lib/coaching/planAdjustment.ts",
-      "code": "coach_notes: [`Trimmed to ${reducedMins} min \u2014 long runs have been finishing short. Build back to full time when ready.`] as [string],"
+      "code": "coach_notes: [`Trimmed to ${formatDuration(reducedMins) ?? `${reducedMins} min`} \u2014 long runs have been finishing short. Build back to full time when ready.`] as [string],"
     },
     {
       "file": "lib/plan/baseVolume.ts",
@@ -231,7 +227,7 @@
     },
     {
       "file": "lib/plan/sessionSteps.ts",
-      "code": "return metric === 'distance' ? `~${value}${units}` : `${value} min`"
+      "code": "return formatDuration(value) ?? `${value} min`"
     }
   ]
 }

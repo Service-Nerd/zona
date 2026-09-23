@@ -26,6 +26,7 @@ import { isLongRun } from '@/lib/plan/sessionRole'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { BRAND } from '@/lib/brand'
 import type { Session } from '@/types/plan'
+import { formatDuration } from '@/lib/format'
 
 export type AdjustmentType = 'reduce_volume' | 'swap_session' | 'extend_recovery' | 'reorder_sessions' | 'flag_for_review'
 
@@ -848,7 +849,11 @@ function buildLongRunShortfallAdjustment(input: AdjustmentCheckInput): ProposedA
         // §66's voice rule, unchanged: lead with the change, frame it as
         // alignment not punishment, leave the door open. Never "you keep
         // failing to finish."
-        coach_notes: [`Trimmed to ${reducedMins} min — long runs have been finishing short. Build back to full time when ready.`] as [string],
+        // UNITS-DURATION-01 — a trimmed long run is routinely over an hour, and
+        // ADR-015 locks `1h 36`, never `96 min`. Its distance twin above needs
+        // no change: `coach_notes` are converted at the READ (UNITS-PROSE-01),
+        // and a duration carries no unit preference to honour.
+        coach_notes: [`Trimmed to ${formatDuration(reducedMins) ?? `${reducedMins} min`} — long runs have been finishing short. Build back to full time when ready.`] as [string],
       }
     }
     return { ...s }

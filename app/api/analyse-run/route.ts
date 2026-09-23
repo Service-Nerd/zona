@@ -363,7 +363,11 @@ export async function POST(req: NextRequest) {
     // the debrief block and the limiter's injury silence guard (§71.3).
     const raceResult = (week as any)?.result_embedded ?? null
 
-    const limiter = inferLimiter({
+const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userId)  // UNITS-DURATION-01 — hoisted ABOVE inferLimiter: `reasoning` is fed
+    // verbatim into the AI prompt, so it is a display surface and needs the
+    // reader's units. It was already being read here, just LATER.
+        const limiter = inferLimiter({
+      units: displayUnits,
       sessionType:            coachingSessionType(session as any),
       actualAvgHr:            activity.avg_hr ?? null,
       prescribedHrCeiling:    liveBand?.hi ?? null,
@@ -381,7 +385,6 @@ export async function POST(req: NextRequest) {
     })
 
     // FMT-01 — render distances/paces in the reader's unit (INV-PREF-001).
-    const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userId)
     const prompt = buildSessionFeedbackPrompt({
     units: displayUnits,
       session,

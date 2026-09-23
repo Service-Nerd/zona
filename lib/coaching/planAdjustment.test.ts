@@ -7,6 +7,7 @@ import {
 import type { Session } from '@/types/plan'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { formatDuration } from '@/lib/format'
 
 // ENGINE-02 — long-run shortfall trigger.
 // We exercise it through the public checkAdjustmentTriggers() entry point so the
@@ -334,8 +335,14 @@ describe('§66 Amendment 1 — duration-anchored long runs', () => {
     const longAfter = result!.sessionsAfter.find(s => s.type === 'long')
     expect(longAfter?.duration_mins).toBe(Math.round(90 * LONG_RUN_SHORTFALL_REDUCE_PCT))
     expect(longAfter?.distance_km, 'must stay absent — the plan does not speak in km').toBeUndefined()
-    expect(String(longAfter?.coach_notes?.[0])).toContain('min')
-    expect(String(longAfter?.coach_notes?.[0])).not.toContain('km')
+    // ⚠️ ASSERTED AGAINST THE OWNER, NOT A SPELLING. This read `toContain('min')`
+    // as a proxy for "this note is a DURATION", and went red when the note
+    // started obeying ADR-015's ≥60 rule: 72 minutes is `1h 12`, and the word
+    // "min" is not in it. The guarantee is that the note speaks in TIME and
+    // never in distance — which is what these two assertions now say.
+    const note = String(longAfter?.coach_notes?.[0])
+    expect(note).toContain(formatDuration(Math.round(90 * LONG_RUN_SHORTFALL_REDUCE_PCT))!)
+    expect(note, 'the plan does not speak in km').not.toMatch(/\d\s*(km|mi)\b/)
   })
 
   it('a runner who completes the FULL time but slowly is NOT short', () => {

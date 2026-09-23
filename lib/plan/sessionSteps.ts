@@ -14,7 +14,7 @@
 
 import type { DerivedSet, DerivedStep } from './resolveMainSet'
 import type { SessionStructure } from './sessionComposer'
-import { apportionRoundedDistance } from '@/lib/format'
+import { apportionRoundedDistance, formatDuration } from '@/lib/format'
 
 export type StepKind = 'work' | 'rest'
 
@@ -202,7 +202,24 @@ export interface DisplayFigureOpts {
 }
 
 function amountStr(value: number, metric: 'distance' | 'duration', units: 'km' | 'mi'): string {
-  return metric === 'distance' ? `~${value}${units}` : `${value} min`
+  if (metric === 'distance') return `~${value}${units}`
+  // 🔴 ADR-015 LOCKS THE ≥60 RULE — `45 min`, `1h 18`, never a bare `78m` and
+  // never `172 min`. This line wrote raw minutes, and `formatDuration` has owned
+  // the rule since INV-FMT-002.
+  //
+  // MEASURED 2026-09-23 across 48,547 sessions: the main-set header read 60+
+  // raw minutes on **21,062 of them (43.4%)**, to a maximum of **172 min** —
+  // which ADR-015 says is `2h 52`. The runner reading "172 min" has to do the
+  // division themselves, on the one figure that tells them how long the session
+  // actually is.
+  //
+  // ⚠️ THE REGISTER POINTED AT ELEVEN DURATION SITES AND TEN OF THEM CANNOT
+  // FIRE. `sessionComposer`'s descriptions and `buildStepGroups`' rows produced
+  // **zero** values ≥60 in the same corpus — a rep or a warm-up is minutes by
+  // construction. Only the session-level header is long enough to break the
+  // rule. **Measuring which entries were reachable is what found the one that
+  // mattered**, and it is why this is not eleven edits.
+  return formatDuration(value) ?? `${value} min`
 }
 
 /** Reconciled per-phase figures for the session-structure card. Pure; the

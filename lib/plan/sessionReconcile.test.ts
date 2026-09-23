@@ -59,6 +59,17 @@ const SAMPLE_STRIDE = 97
  *  `min` is matched before `mi` — otherwise the "mi" inside "min" wins and a
  *  minute figure is misread as miles. */
 function parseFigure(s: string): { value: number; kind: 'km' | 'mi' | 'min' } {
+  // ⚠️ THE HOURS FORM IS A DURATION, NOT AN UNPARSEABLE STRING (UNITS-DURATION-01).
+  // ADR-015 locks `formatDuration`'s ≥60 rule — `45 min`, `1h 18`, `2h` — and
+  // the session-card header now obeys it, so `1h 06` reaches this parser.
+  // Normalised back to MINUTES here rather than special-cased downstream,
+  // because this suite's promise is that the parts SUM, and a sum cannot be
+  // taken across two notations. Same move as the same-unit amendment: assert
+  // the guarantee, never the spelling.
+  const hours = s.match(/(\d+)\s*h(?:\s*(\d{1,2}))?\b/)
+  if (hours) {
+    return { value: parseInt(hours[1], 10) * 60 + parseInt(hours[2] ?? '0', 10), kind: 'min' }
+  }
   const m = s.match(/~?\s*(\d+)\s*(min|km|mi)/)
   if (!m) throw new Error(`unparseable figure: "${s}"`)
   return { value: parseInt(m[1], 10), kind: m[2] as 'km' | 'mi' | 'min' }

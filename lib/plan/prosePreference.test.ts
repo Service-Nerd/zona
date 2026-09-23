@@ -24,7 +24,11 @@ import { generateRulePlan } from './ruleEngine'
 import { composePlanWithFoundation } from './foundationCompose'
 import { isDesignedRefusal } from './designedRefusal'
 import { planRationaleNotes, PLAN_RATIONALE_MAX_WORDS } from './planRationale'
-import { convertDistanceString, formatDistance } from '@/lib/format'
+import { convertDistanceString, formatDistance, formatDuration } from '@/lib/format'
+import { composeSession } from './sessionComposer'
+import { catalogueRowFor } from './catalogueLink'
+import { resolveDisplayFigures } from './sessionSteps'
+import { inferLimiter } from '@/lib/coaching/limiter'
 
 const STRIDE = 149 // prime, avoids aligning with any grid axis
 
@@ -175,5 +179,104 @@ describe('UNITS-PROSE-01 — properties the corpus does not reach', () => {
     // And the conversion really happened — otherwise this passes trivially.
     expect(mi.some(n => /\d+(\.\d+)? mi\b/.test(n.text)), 'nothing converted').toBe(true)
     expect(mi.every(n => !/\d\s*km\b/.test(n.text)), 'a kilometre survived').toBe(true)
+  })
+})
+
+// ── UNITS-DURATION-01 — a DIFFERENT rule from units ─────────────────────────
+//
+// ⚠️ `${duration_mins} min` is unit-independent, so it is not a km/mi question
+// at all. It breaches a different ADR-015 contract: `formatDuration` locks
+// `45 min` / `1h 18`, never a bare `78m` and never `172 min`.
+//
+// 🔴 MEASURED 2026-09-23 across 48,547 sessions: the session card's MAIN-SET
+// header read 60+ raw minutes on **21,062 of them (43.4%)**, to a maximum of
+// **172 min** — which ADR-015 says is `2h 52`.
+//
+// 🥇 THE REGISTER LISTED ELEVEN DURATION SITES AND TEN OF THEM CANNOT FIRE.
+// `sessionComposer`'s descriptions and `buildStepGroups`' rows produced **zero**
+// values ≥60 in the same corpus, because a rep or a warm-up is minutes by
+// construction. Only the session-level header is long enough to break the rule.
+// **Measuring which entries were reachable is what found the one that
+// mattered**, and it is why this was one edit rather than eleven.
+describe('UNITS-DURATION-01 — an hour or more reads as hours', () => {
+  const grid = cohortGrid()
+  const figures: string[] = []
+  for (let i = 0; i < grid.length; i += STRIDE) {
+    let plan
+    try { plan = generateRulePlan(grid[i], 'paid', COHORT_PLAN_START, undefined, COHORT_PLAN_START) } catch { continue }
+    for (const w of plan.weeks) for (const s of Object.values(w.sessions)) {
+      if (!s || s.type === 'rest') continue
+      const st = composeSession({ session: s as never, catalogueRow: catalogueRowFor(s as never) })
+      if (!st) continue
+      const f = resolveDisplayFigures(st, { metric: 'duration', units: 'km', sessionDistanceKm: s.distance_km ?? null })
+      figures.push(f.warmup, f.mainSet, f.mainEasy, f.cooldown, f.racePace ?? '')
+    }
+  }
+
+  it('the corpus reaches the case — sessions of an hour or more exist', () => {
+    // Without this the assertion below is green on a corpus of short sessions.
+    expect(figures.some(v => /\dh\b/.test(v)), 'no figure reached an hour — this cannot see the defect').toBe(true)
+  })
+
+  it('🔴 no card figure states 60 or more raw minutes', () => {
+    const raw = figures.filter(v => {
+      const m = /(?<![\d.])(\d+)\s*min\b/.exec(v)
+      return m != null && Number(m[1]) >= 60
+    })
+    expect(raw.slice(0, 5), `${raw.length} figures state 60+ raw minutes`).toEqual([])
+  })
+
+  it('agrees with formatDuration, the ADR-015 owner — never a second rule', () => {
+    for (const mins of [45, 59, 60, 78, 96, 172]) {
+      const own = formatDuration(mins)
+      expect(own, `${mins} min`).toBeTruthy()
+      if (mins >= 60) expect(own).toMatch(/h/)
+      else expect(own).toMatch(/min/)
+    }
+  })
+})
+
+describe('UNITS-DURATION-01 — the limiter hypothesis is a DISPLAY surface', () => {
+  // `reasoning` is interpolated verbatim into the sessionFeedback prompt, so a
+  // number in it becomes user-facing the moment the model repeats it.
+  const base = {
+    units: 'km' as const, sessionType: 'long', actualAvgHr: null, prescribedHrCeiling: null,
+    hrAboveCeilingPct: null, hrBelowFloorPct: null, streamSummary: null, paceFadeSummary: null,
+    tempC: null, rpe: 8, fatigueTag: null, recentHighFatigueCount: 0,
+    actualDistKm: 18, plannedDistKm: 22, injuryFlagged: false,
+  }
+
+  it('names the shortfall in the reader’s units', () => {
+    expect(inferLimiter({ ...base, units: 'mi' } as never)?.reasoning).toContain('mi short')
+    expect(inferLimiter(base as never)?.reasoning).toContain('km short')
+  })
+
+  it('🔴 a RATE is converted, not merely relabelled', () => {
+    // ⚠️ THE FIRST VERSION OF THIS TEST WAS HOLLOW AND FALSIFYING FOUND IT.
+    // It wrapped the assertions in `if (r && /s\//.test(r.reasoning))`, and the
+    // fixture named the field `fadeSecPerKm` (it is `paceFadeSecPerKm`) with a
+    // value of 15 against a threshold of 20 — so `inferLimiter` returned null,
+    // the conditional swallowed it, and deliberately breaking the rate
+    // conversion left the test GREEN. **A conditional assertion is an assertion
+    // that can decline to run.**
+    const fade = {
+      ...base, units: 'mi' as const, sessionType: 'easy',
+      paceFadeSummary: {
+        paceFadeSecPerKm: 25,            // ≥ LIMITER.MUSCULAR_PACE_FADE_SEC (20)
+        firstHalfAvgPaceSecPerKm: 330,
+        backHalfAvgPaceSecPerKm: 355,
+        sparse: false,
+      },
+      rpe: null, actualDistKm: 10, plannedDistKm: 10,
+    }
+    const r = inferLimiter(fade as never)
+    // No conditional: the branch must be REACHED, or this proves nothing.
+    expect(r?.category, 'the pace-fade branch was not reached — the fixture is the instrument').toBe('muscular')
+    // The trap: `25s/km` contains `/km`, so a blanket suffix rename yields
+    // `25s/mi` — which is not any rate at all. 25 s/km is ~40 s/mi.
+    expect(r!.reasoning, 'the rate kept its km number under a /mi label').not.toMatch(/\b25s\/mi\b/)
+    expect(r!.reasoning).toMatch(/\b40s\/mi\b/)
+    // …and the two PACE clocks converted as well, through their own owner.
+    expect(r!.reasoning).not.toMatch(/\/km/)
   })
 })

@@ -3,8 +3,10 @@ import { inferLimiter, type LimiterInputs } from './limiter'
 import { LIMITER } from './constants'
 import type { HrStreamSummary } from './streamAnalysis'
 import type { PaceFadeSummary } from './paceAnalysis'
+import { formatDistance } from '@/lib/format'
 
 const baseInputs = (): LimiterInputs => ({
+  units: 'km' as const,
   sessionType:            'easy',
   actualAvgHr:            null,
   prescribedHrCeiling:    null,
@@ -319,7 +321,21 @@ describe('inferLimiter', () => {
       })
       expect(r?.category).toBe('fueling')
       expect(r?.confidence).toBe('low')
-      expect(r?.reasoning).toMatch(/4.0km short/)
+      // ⚠️ ASSERTED AGAINST THE OWNER, NOT A HAND-ROLLED SPELLING. This read
+      // `/4.0km short/` and went red when the string moved to `formatDistance`,
+      // which renders `4km` — the same figure a card shows. The old expectation
+      // was pinned to `toFixed(1)`, an arithmetic detail of the producer, and
+      // that is the "never match by its MESSAGE" class this repo has recorded.
+      expect(r?.reasoning).toContain(`${formatDistance(4, 'km', { exact: true })} short`)
+
+      // UNITS-DURATION-01 — the same hypothesis in miles. `reasoning` is fed
+      // verbatim to the AI prompt, so it is a display surface.
+      const mi = inferLimiter({
+        ...baseInputs(), units: 'mi', sessionType: 'long', rpe: 8,
+        plannedDistKm: 22, actualDistKm: 18,
+      })
+      expect(mi?.reasoning, 'the reasoning still names kilometres to a miles reader').toContain('mi short')
+      expect(mi?.reasoning).not.toMatch(/\dkm\b/)
     })
 
     it('does not fire when the long run was completed', () => {
