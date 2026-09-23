@@ -1,44 +1,74 @@
 {
-  "measuredAt": "2026-09-22",
+  "measuredAt": "2026-09-23",
   "testTimeoutMs": 30000,
   "suiteMs": 84821,
   "tests": [
     {
       "file": "lib/plan/targetedGrid.test.ts",
-      "title": "every input generates or refuses by design \u2014 no hard failures",
+      "title": "every input generates or refuses by design — no hard failures",
       "ms": 21963,
-      "reason": "\u26a0\ufe0f THE ONE TO WATCH \u2014 50.1% of the 30,000 ms budget and 39% of the whole suite's test time on its own. It generates thousands of plans across an exhaustive grid, which is the point: a sampled version could not make the claim in its title. It is the test that caused CI-TIMEOUT-01 (red on the old 5,000 ms default, at +1.4% on the day, having been over the line for weeks). ALLOWED, because exhaustiveness is doctrine here and the grid is the asset \u2014 but it has roughly one doubling of headroom left before the hard wall, and widening the grid again is a decision to make deliberately, not a diff to wave through.",
+      "reason": "⚠️ THE ONE TO WATCH — 50.1% of the 30,000 ms budget and 39% of the whole suite's test time on its own. It generates thousands of plans across an exhaustive grid, which is the point: a sampled version could not make the claim in its title. It is the test that caused CI-TIMEOUT-01 (red on the old 5,000 ms default, at +1.4% on the day, having been over the line for weeks). ALLOWED, because exhaustiveness is doctrine here and the grid is the asset — but it has roughly one doubling of headroom left before the hard wall, and widening the grid again is a decision to make deliberately, not a diff to wave through.",
       "budgetMs": 120000
     },
     {
       "file": "lib/plan/qualityAeroFallback.test.ts",
       "title": "NO quality session anywhere in the corpus is an aerobic row",
       "ms": 6769,
-      "reason": "QUALITY-AERO-FALLBACK-01, 2026-09-19. A CORPUS assertion: a quality slot must never be filled by an aerobic row. The traced single case is asserted separately and is fast; this one exists because the fallback is reachable from ANY thin pool, so one plan cannot make the claim in its title. Already SAMPLED with a coprime stride of 31 (a prefix would over-sample whichever axis the grid varies slowest \u2014 the bias the liveness work hit three times), which took it from 67s unsampled to 16.8s at stride 7 to 4.8s here. Going faster means sampling below ~500 quality sessions, at which point it can pass while the defect is live in a cohort it happened to miss."
+      "reason": "QUALITY-AERO-FALLBACK-01, 2026-09-19. A CORPUS assertion: a quality slot must never be filled by an aerobic row. The traced single case is asserted separately and is fast; this one exists because the fallback is reachable from ANY thin pool, so one plan cannot make the claim in its title. Already SAMPLED with a coprime stride of 31 (a prefix would over-sample whichever axis the grid varies slowest — the bias the liveness work hit three times), which took it from 67s unsampled to 16.8s at stride 7 to 4.8s here. Going faster means sampling below ~500 quality sessions, at which point it can pass while the defect is live in a cohort it happened to miss."
+    },
+    {
+      "file": "lib/plan/refusalCoherence.test.ts",
+      "title": "marathon: every refusal names a reachable next step",
+      "ms": 5128,
+      "reason": "REFUSAL-COHERENCE-01, 2026-09-23. Generates the marathon refusal corpus and, for every refusal, re-runs generation at the base the refusal TOLD the runner to reach — the cost is a second full generation per refusal, and it is the whole point: the defect it was written for was a refusal naming a base the runner already had, which a single-pass check cannot see. ⚠️ IT SHIPPED UNBASELINED AND LEFT `npm run verify` EXITING 1 ON MAIN for the rest of the day, invisible because every test PASSED and the eye stops at the pass count. A non-zero exit behind a green test list is this repo's oldest shape."
     },
     {
       "file": "lib/plan/emittedCopyGlyphs.test.ts",
-      "title": "no runner-facing string contains a section symbol (\u00a7)",
+      "title": "no runner-facing string contains a section symbol (§)",
       "ms": 4578,
       "reason": "Generates a plan corpus and walks every emitted string. The cost is the corpus, not the scan; sharing one corpus across this file's cases is the obvious saving if it ever needs one."
+    },
+    {
+      "file": "lib/plan/refusalCoherence.test.ts",
+      "title": "marathon: §44 — every refusal still names a next step",
+      "ms": 4389,
+      "reason": "Same corpus as the case above, generated a second time for §44's separate obligation. Genuinely reducible by sharing one corpus across the file, which is the saving to take if this file ever needs one."
     },
     {
       "file": "lib/plan/emittedCopyGlyphs.test.ts",
       "title": "the em-dash debt does not grow while BRAND-EMDASH-01 is open",
       "ms": 3352,
-      "reason": "Same corpus as the case above, generated a second time. Genuinely reducible \u2014 it is here as a baselined number rather than a fix because BRAND-EMDASH-01 closing removes the case entirely."
+      "reason": "Same corpus as the case above, generated a second time. Genuinely reducible — it is here as a baselined number rather than a fix because BRAND-EMDASH-01 closing removes the case entirely."
     },
     {
       "file": "lib/vercelBuildFilter.test.ts",
       "title": "passes its own falsification suite in both directions",
       "ms": 3249,
-      "reason": "Spawns git roughly thirty times: it builds a throwaway repository in a temp dir and makes a real commit per case. The cost IS the test. \u26a0\ufe0f It used to be near-instant, because it pinned SHAs from this repo's own history \u2014 and that version FAILED IN CI, where actions/checkout@v4 defaults to fetch-depth 1 and none of those commits exist. Worse than the three red cases: FOUR of its six \"passes\" were hollow, reading ok only because the base ref was unreachable so the filter fell through to BUILD, which was what they expected anyway. A synthetic repo cannot be shallow, cannot age out, and cannot be rewritten under the test. Paying 2.7s for that is the right trade. If it ever needs to be cheaper, the git calls can be batched with a single fast-import rather than dropping cases."
+      "reason": "Spawns git roughly thirty times: it builds a throwaway repository in a temp dir and makes a real commit per case. The cost IS the test. ⚠️ It used to be near-instant, because it pinned SHAs from this repo's own history — and that version FAILED IN CI, where actions/checkout@v4 defaults to fetch-depth 1 and none of those commits exist. Worse than the three red cases: FOUR of its six \"passes\" were hollow, reading ok only because the base ref was unreachable so the filter fell through to BUILD, which was what they expected anyway. A synthetic repo cannot be shallow, cannot age out, and cannot be rewritten under the test. Paying 2.7s for that is the right trade. If it ever needs to be cheaper, the git calls can be batched with a single fast-import rather than dropping cases."
+    },
+    {
+      "file": "lib/plan/baseVolumeFinishRoute.test.ts",
+      "title": "the offer only appears when switching the goal ACTUALLY generates a plan",
+      "ms": 1981,
+      "reason": "Generates a plan per candidate goal to prove the offer is never made against a goal that would itself refuse. The second generation IS the assertion — an offer checked against anything cheaper is the claim/computation mismatch class."
     },
     {
       "file": "lib/plan/noteDurationFormat.test.ts",
       "title": "generated notes read in hours past the hour, and still exist",
       "ms": 1722,
       "reason": "Generates a large plan corpus; the cost is the coverage."
+    },
+    {
+      "file": "lib/plan/refusalCoherence.test.ts",
+      "title": "100K: refuses nobody today, so there is no refusal to be incoherent",
+      "ms": 1678,
+      "reason": "Generates the 100K corpus to establish the premise its own title states. ⚠️ It is green because the set is EMPTY, so it proves the distance refuses nobody — not that refusals are coherent. If 100K ever starts refusing, this case becomes load-bearing without its title changing."
+    },
+    {
+      "file": "lib/plan/refusalCoherence.test.ts",
+      "title": "50K: refuses nobody today, so there is no refusal to be incoherent",
+      "ms": 1513,
+      "reason": "As the 100K case: an empty-set premise check over a generated corpus."
     },
     {
       "file": "lib/plan/lrFloorRounding.test.ts",
@@ -48,7 +78,7 @@
     },
     {
       "file": "lib/plan/lrFloorRounding.test.ts",
-      "title": "the two \u00a724 enforcement sites agree on what the floor is",
+      "title": "the two §24 enforcement sites agree on what the floor is",
       "ms": 1121,
       "reason": "Generates a large plan corpus; the cost is the coverage."
     },
@@ -68,13 +98,13 @@
     },
     {
       "file": "lib/plan/week1LeapDenominator.test.ts",
-      "title": "1. WILLY'S BINDING CONDITION \u2014 a big step FOR THE RUNNER still flags",
+      "title": "1. WILLY'S BINDING CONDITION — a big step FOR THE RUNNER still flags",
       "ms": 1091,
       "reason": "Generates a large plan corpus; the cost is the coverage."
     },
     {
       "file": "lib/plan/notesProvenance.test.ts",
-      "title": "credits nobody across a whole FREE plan \u2014 the 41.2% the founder saw",
+      "title": "credits nobody across a whole FREE plan — the 41.2% the founder saw",
       "ms": 1040,
       "reason": "Generates a large plan corpus; the cost is the coverage."
     }
