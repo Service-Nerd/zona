@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — DATE-OWNER-01 · the setting I was asked for and didn't build
+
+**Shipped:** Dates read the same everywhere, and the plan reveal no longer shows you `2026-12-07`.
+
+**Dev learning:** The founder asked me to standardise dates and "ideally follow the logged-in user preference". I measured first: **9 formats, 22 sites, no owner, every one hardcoding `en-GB`**, and one screen printing a raw ISO string. But the measurement also killed the brief — **not one format was ambiguous.** Every one names its month, so `24 Apr 2027` reads fine to an American; it's just unfamiliar word order. And there **is** no date preference in `user_settings` to follow.
+
+So the SLT killed the setting and I built an owner instead. Fried's line is the one I'd keep: *"a new setting is permanent surface area — a preference, a migration, a Me-screen row and a branch in every call, to change word order for people who can already read the date."*
+
+He asked me explicitly to analyse blast radius before touching dates, and he was right to: dates are parsed, sorted and stored as well as displayed. So I measured each — **round-trip zero, persisted zero, sorted or compared zero, server-side zero, tests asserting a format zero.** All nine "is a formatted date parsed back?" hits turned out to be `new Date(iso).toLocale…`, which is one-way. That's what made it safe, and I wouldn't have known without checking.
+
+**Product/creator learning:** The fix the founder actually wanted wasn't localisation, it was **coherence**. One screen said `24 Apr 2027`, another `Mon 16 Nov`, a third `2026-12-07`. That's what makes an app feel assembled rather than designed, and Sutherland named it: solve the real problem, not the rational one.
+
+**AI-building learning:** Two near-misses, both mine. First, `SessionCompleteCard` had its **own local `formatDate`**, so my migration rewrote its body into a call to itself — infinite recursion. The only reason it didn't compile is that the local took one argument and the owner takes two. **Matching signatures would have type-checked and hung.** That's the shadowed-identifier class our own debug catalogue describes as "valid identifier, invisible to tsc", and it was invisible-adjacent here too.
+
+Second, I wrote a new ui-patterns section for the action row — and **pattern 20, "Action List Card", already specified the chevron, the padding and both type sizes.** The numbering test caught it, not me. My settled-ground scan had covered the rulings register and not the pattern file.
+
+That second one changed what I think the finding *is*. The pattern wasn't undocumented. It was documented and correct, and the Plan screen still shipped without a chevron — because the chevron lived as a local `const` in another screen. **A documented pattern with no component gets re-implemented from memory. Prose cannot be imported.**
+
+**The honest bit:** I was asked to build a preference and I've shipped the opposite, having talked the SLT into it. If the founder wants US runners to read `Apr 24, 2027`, that's a legitimate call and it needs the setting — but it should be a decision about market, not about tidiness, and today nothing is misread.
+
+**Hook material:** Asked to add a date-format preference, I measured first and found nine formats, twenty-two call sites, no owner — and that **not one of them was actually ambiguous**. We built the owner and deliberately did not build the setting. Then the migration quietly rewrote one function into a call to itself, and the only thing that stopped it shipping was that the two functions took a different number of arguments.
+
+**Postable?:** yes
+
 ## 2026-09-23 — APP-SPACE-01 + ACTION-ROW-01 · we fixed the website and forgot the product
 
 **Shipped:** The app now uses the spacing scale we ruled for the site a day earlier, and the "Adjust your plan" tile has a chevron so you can tell it's a button.
