@@ -148,14 +148,19 @@ export function convertDistanceString(
   return text.replace(/(?<![\d.])(\d+(?:\.\d+)?)\s*km\b(?!\s*\/)/g, (whole, num: string) => {
     const km = Number(num)
     if (!Number.isFinite(km)) return whole
-    // `exact` keeps one decimal, because prose quotes small figures a whole
-    // number would erase — "First 0.6 km at Zone 2" must not become "First 0 mi".
-    const out = formatDistance(km, 'mi', { exact: true, noSuffix: true })
-    if (out == null) return whole
-    // A sub-unit figure that still rounds to 0.0 keeps its kilometres rather
-    // than asserting zero — the UNITS-SUBUNIT-01 rule, applied to prose.
-    if (Number(out) === 0) return whole
-    return `${out} mi`
+    // 🔴 WHOLE UNITS FIRST, BECAUSE THE CARD IS WHOLE UNITS. The first cut of
+    // this used `exact: true` throughout, which put **"9.9 mi" in a note beside
+    // "10mi" on the card** — the precise disagreement ADR-015's amendment
+    // (BUG-KIT-DECIMALS-01) exists to stop, where prompt and card differed on
+    // 50.4% of prescribed distances. `formatDistance(km, units)` is what every
+    // card calls, so prose calls it too and the two cannot drift.
+    const asCard = formatDistance(km, 'mi', { noSuffix: true })
+    if (asCard != null && Number(asCard) > 0) return `${asCard} mi`
+    // Sub-unit: one decimal, because a whole number would erase it — "First 0.6
+    // km at Zone 2" must not become "First 0 mi" (UNITS-SUBUNIT-01, in prose).
+    const exact = formatDistance(km, 'mi', { exact: true, noSuffix: true })
+    if (exact == null || Number(exact) === 0) return whole
+    return `${exact} mi`
   })
 }
 

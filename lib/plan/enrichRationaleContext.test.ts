@@ -18,14 +18,14 @@ const planWith = (metaExtra: Partial<Plan['meta']>): Plan => ({
 
 describe('enricher rationale context', () => {
   it('injects the plan-rationale notes with a stay-consistent / do-not-repeat instruction', () => {
-    const msg = buildUserMessage(planWith({ terrain_effort_note: 'Off-road, effort leads.' }), input, false)
+    const msg = buildUserMessage(planWith({ terrain_effort_note: 'Off-road, effort leads.' }), input, false, 'km')
     expect(msg).toContain('Off-road, effort leads.')
     expect(msg).toMatch(/do NOT repeat or contradict/i)
     expect(msg).toMatch(/already shown to the runner/i)
   })
 
   it('adds no rationale line when the plan carries no notes (no empty scaffolding)', () => {
-    const msg = buildUserMessage(planWith({}), input, false)
+    const msg = buildUserMessage(planWith({}), input, false, 'km')
     expect(msg).not.toMatch(/already shown to the runner/i)
   })
 })

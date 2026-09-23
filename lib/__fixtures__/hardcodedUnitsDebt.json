@@ -3,7 +3,7 @@
   "recorded": "2026-09-23",
   "reason": "PRODUCER-SIDE BY DESIGN, AND CONVERTED AT THE READ. These sites build a unit into a string at GENERATION or ANALYSIS time, where the reader's preference is not in scope. They are deliberately NOT fixed at the producer, for three reasons any one of which is sufficient: (1) 100% of generated plans and 19 of 19 stored plans already carry these strings, so a producer fix repairs none of them; (2) the units toggle is MUTABLE after generation, so baking miles is wrong for the runner who switches back; (3) the producer strings stay byte-identical, so section 44's REFUSAL_NAMES_NEXT_STEP and every other prose matcher keep passing - this repo broke 8 prose matchers across 5 files once by editing four refusal strings. The runner-facing READ sites are wired through lib/format.ts convertDistanceString: planRationaleNotes (the single owner of meta-note display), coach_notes in DashboardClient, the refusal message in GeneratePlanScreen, and GeneratingCeremony. Gated by lib/plan/prosePreference.test.ts. WHAT REMAINS UNWIRED: AI prompt builders (enrich.ts, enrichMaintenance.ts, freeIntro.ts) - ADR-015's amendment makes the AI layer a display surface and promptDistanceFormatters already exists for it; lib/coaching/limiter.ts and planAdjustment.ts reasoning/coach-note strings; and the 11 DURATION-only entries, which are a different rule (ADR-015 formatDuration's 60-to-hours contract), not a units question at all.",
   "measured": "\ud83d\udd34 CORRECTED 2026-09-23. This field first read: '19 stored plans: 17 carry /km pace, ZERO carry prose km anywhere in the document. The class is REAL but currently UNREALISED in production.' THAT WAS WRONG, and the cause was the instrument, not the data: the production query used '\\d\\s*km\\b', and in Postgres POSIX regex \\b is a BACKSPACE CHARACTER, not a word boundary (\\y is). It matched nothing and returned a clean zero. Re-measured with \\y: ALL 19 of 19 stored plans carry prose km. 101 of 888 sessions carry it in runner-facing coach_notes, 16 of 19 plans in meta.notes, 7 in volume_constraint_note, 3 sessions in derived_set step lengths. Generated corpus agrees: 1,167 of 1,167 plans (100%). A clean zero from a broken pattern is indistinguishable from a clean zero from clean data.",
-  "count": 61,
+  "count": 57,
   "entries": [
     {
       "file": "lib/coaching/limiter.ts",
@@ -54,28 +54,12 @@
       "code": "lines.push(`Your longest run so far is ${Math.round(longest)} km. Week one starts below it.`)"
     },
     {
-      "file": "lib/plan/enrich.ts",
-      "code": "- Race: ${plan.meta.race_name} \u2014 ${plan.meta.race_date} (${input.race_distance_km} km)"
-    },
-    {
-      "file": "lib/plan/enrich.ts",
-      "code": "- Current weekly volume: ${input.current_weekly_km} km/week"
-    },
-    {
-      "file": "lib/plan/enrichMaintenance.ts",
-      "code": "- Race: ${raceName ?? 'the goal race'} (${raceDistanceKm} km)"
-    },
-    {
       "file": "lib/plan/foundationBlock.ts",
       "code": "detail: `${floor1dp(longRunFinalKm).toFixed(1)}km easy \u2014 Zone 2 throughout. No exceptions.`,"
     },
     {
       "file": "lib/plan/foundationBlock.ts",
       "code": "detail: `${floor1dp(eachKm).toFixed(1)}km easy \u2014 Zone 2. Conversational pace.`,"
-    },
-    {
-      "file": "lib/plan/freeIntro.ts",
-      "code": "return `${Math.round(km)}km`"
     },
     {
       "file": "lib/plan/longRunReadiness.ts",

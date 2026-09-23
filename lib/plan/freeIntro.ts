@@ -19,15 +19,22 @@ import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { buildVoiceHeader } from '@/lib/coaching/prompts/voiceRules'
 import { BRAND } from '@/lib/brand'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
+import type { DistanceUnits } from '@/lib/format'
 
 // Friendly race-distance label for the prompt — keeps Kit specific without
 // making it parrot a raw decimal ("42.195km").
-function distanceLabel(km: number): string {
+// ⚠️ ADR-015 AMENDMENT — THE AI LAYER IS A DISPLAY SURFACE. A number handed to
+// the model becomes user-facing the moment the model repeats it, and
+// `promptDistanceFormatters` is the single owner that keeps it matching the
+// card. Ten prompt builders already call it; these were the ones that never
+// did, and they handed the model a raw km figure with the unit hardcoded.
+function distanceLabel(km: number, units: DistanceUnits): string {
   if (Math.abs(km - 5) < 0.5) return '5K'
   if (Math.abs(km - 10) < 0.5) return '10K'
   if (Math.abs(km - 21.0975) < 1) return 'half marathon'
   if (Math.abs(km - 42.195) < 1) return 'marathon'
-  return `${Math.round(km)}km`
+  return promptDistanceFormatters(units).fmtRace(km)
 }
 
 /**
@@ -38,7 +45,12 @@ function distanceLabel(km: number): string {
 export async function generateFreeIntro(
   plan: Plan,
   input: GeneratorInput,
-  userId: string | null = null,
+  userId: string | null,
+  /** ⚠️ REQUIRED, NOT DEFAULTED. The dangerous default is `km`: a miles runner
+   *  silently prompted in kilometres is the exact defect this closes, and it
+   *  leaves no trace. Making the compiler ask each call site is the same
+   *  reasoning `decideTrialEmails` uses for its access argument. */
+  units: DistanceUnits,
 ): Promise<string | null> {
   if (!process.env.ANTHROPIC_API_KEY) return null
 
@@ -63,7 +75,7 @@ export async function generateFreeIntro(
   const phases = Array.from(new Set(plan.weeks.map(w => w.phase).filter(Boolean)))
   const userMsg = [
     `Write the intro line for this plan:`,
-    `- Race: ${plan.meta.race_name || distanceLabel(input.race_distance_km)} — ${distanceLabel(input.race_distance_km)}`,
+    `- Race: ${plan.meta.race_name || distanceLabel(input.race_distance_km, units)} — ${distanceLabel(input.race_distance_km, units)}`,
     `- Length: ${plan.weeks.length} weeks`,
     `- Days available: ${input.days_available}/week`,
     `- Goal: ${input.goal === 'time_target' && input.target_time ? `finish in ${input.target_time}` : 'finish the race'}`,

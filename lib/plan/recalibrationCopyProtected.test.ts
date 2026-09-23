@@ -117,7 +117,7 @@ describe('§78 — the recalibration time trial survives enrichment', () => {
     const originalLabel = before.label
 
     global.fetch = mockAnthropic(enricherRewritesEverything(rulePlan)) as unknown as typeof fetch
-    const { plan, outcome } = await enrich(rulePlan, TENK_WITH_BENCHMARK, 'paid')
+    const { plan, outcome } = await enrich(rulePlan, TENK_WITH_BENCHMARK, 'paid', null, 'km')
 
     // The enricher must have RUN — a test that passes because enrichment failed
     // proves nothing about protection.
@@ -132,7 +132,7 @@ describe('§78 — the recalibration time trial survives enrichment', () => {
   it('every OTHER session is still enriched — the protection is a scalpel, not a block', async () => {
     const rulePlan = generateRulePlan(TENK_WITH_BENCHMARK, 'paid', PLAN_START)
     global.fetch = mockAnthropic(enricherRewritesEverything(rulePlan)) as unknown as typeof fetch
-    const { plan, outcome } = await enrich(rulePlan, TENK_WITH_BENCHMARK, 'paid')
+    const { plan, outcome } = await enrich(rulePlan, TENK_WITH_BENCHMARK, 'paid', null, 'km')
     expect(outcome.status).toBe('applied')
 
     const rewritten = plan.weeks.flatMap(w => Object.values(w.sessions))

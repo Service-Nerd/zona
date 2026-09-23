@@ -15,6 +15,8 @@ import type { Week, RaceResult } from '@/types/plan'
 import { ANTHROPIC_MODEL } from '@/lib/ai/models'
 import { callAnthropic } from '@/lib/ai/callAnthropic'
 import { BRAND } from '@/lib/brand'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
+import type { DistanceUnits } from '@/lib/format'
 
 // ─── Output schema — only voice fields may change ──────────────────────────────
 // coach_debrief + session coach_notes are the sole enrichable fields. Numerics,
@@ -85,6 +87,11 @@ export interface MaintenanceEnrichContext {
   raceResult:     RaceResult
   raceName?:      string | null
   raceDistanceKm: number
+  /** ADR-015 amendment — the AI layer is a display surface, so the prompt
+   *  quotes the race distance in the units the runner reads.
+   *  ⚠️ REQUIRED, NOT OPTIONAL. The dangerous default is `km`, and an optional
+   *  field lets a new caller omit it silently. */
+  units:          DistanceUnits
 }
 
 // ─── Main export ────────────────────────────────────────────────────────────────
@@ -172,7 +179,7 @@ function buildUserMessage(weeks: Week[], ctx: MaintenanceEnrichContext): string 
   return `Add coaching voice to this ${weeks.length}-week post-race maintenance block.
 
 RACE JUST COMPLETED:
-- Race: ${raceName ?? 'the goal race'} (${raceDistanceKm} km)
+- Race: ${raceName ?? 'the goal race'} (${promptDistanceFormatters(ctx.units).fmtRace(raceDistanceKm)})
 - Outcome: ${outcome}${outcome === 'dnf' ? ' (did not finish — use the most restrained register)' : ''}
 - Effort (RPE 1–10): ${raceResult.rpe ?? 'not recorded'}
 

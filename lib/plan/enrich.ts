@@ -16,6 +16,8 @@ import { BRAND } from '@/lib/brand'
 import { RUNNER_NAME_TOKEN, RUNNER_NAME_TOKEN_INSTRUCTION, resolveRunnerNameDeep } from '@/lib/coaching/nameToken'
 import { weekIntensityFlags } from './weekIntensityFlags'
 import { planRationaleNotes } from './planRationale'
+import { promptDistanceFormatters } from '@/lib/coaching/prompts/promptFormat'
+import type { DistanceUnits } from '@/lib/format'
 
 // ─── System prompt (cached via prompt-caching-2024-07-31 beta) ───────────────
 // Brand name is interpolated from BRAND.name so a future rename doesn't bleed
@@ -225,7 +227,12 @@ export async function enrich(
   plan: Plan,
   input: GeneratorInput,
   tier: Tier,
-  userId: string | null = null,
+  userId: string | null,
+  /** ⚠️ REQUIRED, NOT DEFAULTED. The dangerous default is `km`: a miles runner
+   *  silently prompted in kilometres is the exact defect this closes, and it
+   *  leaves no trace. Making the compiler ask each call site is the same
+   *  reasoning `decideTrialEmails` uses for its access argument. */
+  units: DistanceUnits,
 ): Promise<EnrichResult> {
   if (!process.env.ANTHROPIC_API_KEY) {
     return { plan, outcome: { status: 'failed', reason: 'no_api_key' } }
@@ -270,7 +277,7 @@ export async function enrich(
           cache_control: { type: 'ephemeral' },
         },
       ],
-      messages: [{ role: 'user', content: buildUserMessage(plan, input, wantPaidFields) }],
+      messages: [{ role: 'user', content: buildUserMessage(plan, input, wantPaidFields, units) }],
       userId,
     })
 
@@ -364,7 +371,13 @@ function preserveStrideNote(
 
 // Exported for testing — pure function of its inputs (no I/O). Builds the enrichment
 // user prompt.
-export function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boolean): string {
+// ⚠️ ADR-015 AMENDMENT — THE AI LAYER IS A DISPLAY SURFACE. A number handed to
+// the model becomes user-facing the moment the model repeats it, and
+// `promptDistanceFormatters` is the single owner that keeps it matching the
+// card. Ten prompt builders already call it; these were the ones that never
+// did, and they handed the model a raw km figure with the unit hardcoded.
+export function buildUserMessage(plan: Plan, input: GeneratorInput, wantPaidFields: boolean, units: DistanceUnits): string {
+  const { fmtPlanned, fmtRace } = promptDistanceFormatters(units)
   // Send a slim plan representation — numeric fields are context, not targets for change
   const slimWeeks = plan.weeks.map(w => ({
     n: w.n,
@@ -413,8 +426,8 @@ ATHLETE:
 - Name: ${RUNNER_NAME_TOKEN}   (ENRICH-PII-MINIMISE-01 — the real name is substituted after you reply and never reaches this prompt)
 - Fitness level: ${plan.meta.fitness_level ?? input.fitness_level ?? 'intermediate'}
 - Goal: ${input.goal === 'time_target' ? `Finish in ${input.target_time}` : 'Finish the race'}
-- Race: ${plan.meta.race_name} — ${plan.meta.race_date} (${input.race_distance_km} km)
-- Current weekly volume: ${input.current_weekly_km} km/week
+- Race: ${plan.meta.race_name} — ${plan.meta.race_date} (${fmtRace(input.race_distance_km)})
+- Current weekly volume: ${fmtPlanned(input.current_weekly_km)}/week
 - Days available: ${input.days_available}/week
 - Plan compressed (fewer weeks than ideal): ${plan.meta.time_compressed ?? plan.meta.compressed ?? false}
 ${plan.meta.difficulty_band ? `- Plan demand (already assessed by the engine — stay consistent, do not contradict): ${plan.meta.difficulty_band}${plan.meta.difficulty_note ? ` ("${plan.meta.difficulty_note}")` : ''}` : ''}${rationaleContext}

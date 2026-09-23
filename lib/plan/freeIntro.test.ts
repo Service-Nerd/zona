@@ -31,7 +31,7 @@ describe('generateFreeIntro — failure is silent (ADR-006)', () => {
   it('1. no API key — returns null without calling out', async () => {
     delete process.env.ANTHROPIC_API_KEY
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
-    expect(await generateFreeIntro(PLAN, INPUT)).toBeNull()
+    expect(await generateFreeIntro(PLAN, INPUT, null, 'km')).toBeNull()
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 
@@ -43,21 +43,21 @@ describe('generateFreeIntro — failure is silent (ADR-006)', () => {
   ])('2. %s returns null and never throws', async (_label, impl) => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
     vi.spyOn(globalThis, 'fetch').mockImplementation(impl as never)
-    await expect(generateFreeIntro(PLAN, INPUT)).resolves.toBeNull()
+    await expect(generateFreeIntro(PLAN, INPUT, null, 'km')).resolves.toBeNull()
   })
 
   it('3. strips code fences and wrapping quotes the model adds', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
     vi.spyOn(globalThis, 'fetch').mockImplementation((() =>
       Promise.resolve(reply('```\n"Eighteen weeks of holding easy days easy."\n```'))) as never)
-    expect(await generateFreeIntro(PLAN, INPUT)).toBe('Eighteen weeks of holding easy days easy.')
+    expect(await generateFreeIntro(PLAN, INPUT, null, 'km')).toBe('Eighteen weeks of holding easy days easy.')
   })
 
   it('4. curly quotes are stripped too — the model prefers them', async () => {
     process.env.ANTHROPIC_API_KEY = 'test-key'
     vi.spyOn(globalThis, 'fetch').mockImplementation((() =>
       Promise.resolve(reply('“The work is the long run.”'))) as never)
-    expect(await generateFreeIntro(PLAN, INPUT)).toBe('The work is the long run.')
+    expect(await generateFreeIntro(PLAN, INPUT, null, 'km')).toBe('The work is the long run.')
   })
 
   // ⚠️ AMENDED 2026-09-20 (ENRICH-PII-MINIMISE-01). This used to assert the
@@ -72,7 +72,7 @@ describe('generateFreeIntro — failure is silent (ADR-006)', () => {
       body = JSON.parse(init.body)
       return Promise.resolve(reply('ok'))
     }) as never)
-    await generateFreeIntro(PLAN, INPUT)
+    await generateFreeIntro(PLAN, INPUT, null, 'km')
     const sent = JSON.stringify(body)
     expect(sent).toContain(`${PLAN.weeks.length} weeks`)
     expect(sent).toContain('half marathon')

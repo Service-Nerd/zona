@@ -35,7 +35,7 @@ const MAINT_WEEKS: Week[] = [
 ]
 
 const RESULT: RaceResult = { finish_time: '3:45:00', distance_km: 42.2, rpe: 7, outcome: 'on_target' }
-const CTX = { raceResult: RESULT, raceName: 'Test Marathon', raceDistanceKm: 42.2 }
+const CTX = { raceResult: RESULT, raceName: 'Test Marathon', raceDistanceKm: 42.2, units: 'km' as const }
 
 function mockAnthropic(bodyText: string, ok = true, status = 200) {
   return vi.fn().mockResolvedValue({

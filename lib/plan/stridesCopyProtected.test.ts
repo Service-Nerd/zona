@@ -107,7 +107,7 @@ describe('§28 — stride notes survive enrichment', () => {
 
   it('buildUserMessage surfaces the stride line to the model (the prompt half of the fix)', () => {
     const plan = generateRulePlan(MARATHON_4D, 'paid', PLAN_START)
-    const msg = buildUserMessage(plan, MARATHON_4D, true)
+    const msg = buildUserMessage(plan, MARATHON_4D, true, 'km')
     expect(msg).toMatch(/"strides":/)
     expect(msg).toMatch(/4×20s strides at 5K effort/)
   })
@@ -117,7 +117,7 @@ describe('§28 — stride notes survive enrichment', () => {
     const eligible = eligibleStrideWeeks(rulePlan)
 
     global.fetch = mockAnthropic(enricherDropsStrides(rulePlan)) as unknown as typeof fetch
-    const { plan, outcome } = await enrich(rulePlan, MARATHON_4D, 'paid')
+    const { plan, outcome } = await enrich(rulePlan, MARATHON_4D, 'paid', null, 'km')
 
     // The enricher must have RUN — a test that passes because enrichment failed
     // proves nothing about protection.
@@ -132,7 +132,7 @@ describe('§28 — stride notes survive enrichment', () => {
   it('the voice is still applied — the protection is a scalpel, not a block', async () => {
     const rulePlan = generateRulePlan(MARATHON_4D, 'paid', PLAN_START)
     global.fetch = mockAnthropic(enricherDropsStrides(rulePlan)) as unknown as typeof fetch
-    const { plan, outcome } = await enrich(rulePlan, MARATHON_4D, 'paid')
+    const { plan, outcome } = await enrich(rulePlan, MARATHON_4D, 'paid', null, 'km')
     expect(outcome.status).toBe('applied')
 
     // Labels were rewritten, and the stride-carrying easy runs kept their new

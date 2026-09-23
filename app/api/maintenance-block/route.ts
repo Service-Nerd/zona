@@ -20,6 +20,7 @@ import { READINESS } from '@/lib/coaching/constants'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import type { Plan } from '@/types/plan'
+import { getUserDisplayPrefs } from '@/lib/userPrefs'
 
 export async function POST(req: NextRequest) {
   const serviceClient = createServiceClient(
@@ -166,10 +167,23 @@ export async function POST(req: NextRequest) {
   // (ADR-006 hybrid pattern). Free/expired users keep the rule-engine block as-is.
   const tier = await getUserTier(user.id)
   if (isFeatureAllowed('maintenance_coaching', tier)) {
+    // UNITS-PROSE-01 / ADR-015 amendment — the AI layer is a display surface,
+    // so the prompt quotes the race distance in the units the runner reads.
+    //
+    // ⚠️ THE SERVICE CLIENT, DELIBERATELY. The first cut created a
+    // `createUserScopedClient` here and `rlsCoverage.test.ts` went red — not on
+    // this read, but on a `charity_codes` UPDATE elsewhere in the route, because
+    // introducing a JWT client into a service-role route makes every operation
+    // in it ambiguous. **Under a JWT client an unpermitted write no-ops
+    // SILENTLY.** This route already holds `serviceClient`, the user is already
+    // authenticated, and `getUserDisplayPrefs` takes any client — so one client
+    // per route is both the safer and the simpler answer.
+    const mUnits = (await getUserDisplayPrefs(serviceClient, user.id)).units
     maintWeeks = await enrichMaintenanceBlock(maintWeeks, {
       raceResult,
       raceName:       plan.meta.race_name,
       raceDistanceKm: plan.meta.race_distance_km,
+      units:          mUnits,
     }, undefined, user.id)
   }
 

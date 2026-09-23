@@ -24,7 +24,7 @@ import { generateRulePlan } from './ruleEngine'
 import { composePlanWithFoundation } from './foundationCompose'
 import { isDesignedRefusal } from './designedRefusal'
 import { planRationaleNotes, PLAN_RATIONALE_MAX_WORDS } from './planRationale'
-import { convertDistanceString } from '@/lib/format'
+import { convertDistanceString, formatDistance } from '@/lib/format'
 
 const STRIDE = 149 // prime, avoids aligning with any grid axis
 
@@ -126,7 +126,20 @@ describe('UNITS-PROSE-01 — properties the corpus does not reach', () => {
     expect(convertDistanceString('easy at 6:30–7:30 /km', 'mi')).toBe('easy at 6:30–7:30 /km')
     expect(convertDistanceString('5:53 /km or slower', 'mi')).toBe('5:53 /km or slower')
     // …while a DISTANCE in the same sentence still converts.
-    expect(convertDistanceString('run 10 km at 6:30 /km', 'mi')).toBe('run 6.2 mi at 6:30 /km')
+    expect(convertDistanceString('run 10 km at 6:30 /km', 'mi')).toBe('run 6 mi at 6:30 /km')
+  })
+
+  it('🔴 prose agrees with the CARD, not with a second rounding rule', () => {
+    // 🔴 THE FIRST CUT OF THE CONVERTER USED `exact: true` THROUGHOUT and put
+    // "9.9 mi" in a note beside "10mi" on the card — the exact disagreement
+    // ADR-015's amendment (BUG-KIT-DECIMALS-01) exists to stop, where prompt
+    // and card differed on 50.4% of prescribed distances. Asserted against
+    // `formatDistance`, the producer, never against a copy of its rule.
+    for (const km of [16, 50, 42.195, 10, 1, 3]) {
+      const card = formatDistance(km, 'mi')
+      expect(convertDistanceString(`${km} km`, 'mi'), `${km}km disagrees with the card`)
+        .toBe(`${card!.replace('mi', '')} mi`)
+    }
   })
 
   it('🔴 never asserts zero — a sub-unit figure keeps its kilometres', () => {

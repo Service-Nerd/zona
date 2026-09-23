@@ -27,8 +27,37 @@ function walk(dir: string): string[] {
   })
 }
 
+/**
+ * 🔴 STRIP COMMENTS BEFORE READING CODE. Both the route SELECTION below and
+ * `extractTableUsage` are substring matches over the whole file, so a COMMENT
+ * that names `createUserScopedClient` or a table pulls a route into this audit
+ * and then reports a violation that does not exist in the code.
+ *
+ * ⚠️ MEASURED 2026-09-23: a comment in `maintenance-block/route.ts` explaining
+ * why the route deliberately does NOT use a user-scoped client was enough to
+ * (a) select the route and (b) report `charity_codes: performs update` — a
+ * table the route never touches. The comment was accurate; the guard could not
+ * tell prose from code.
+ *
+ * **Bound the region, never grep the file.** This repo has now recorded that
+ * class four times: the coaching and design guards (heredoc bodies and
+ * interpreter write targets), `hardcodedUnits.test.ts` (a comment explaining
+ * its own rule), and here. A guard that fires on its own documentation teaches
+ * you to write around the guard, which is worse than a false negative.
+ *
+ * Conservative by design: only a `//` that OPENS a line is stripped, so a
+ * `https://` inside a string literal survives.
+ */
+function stripComments(src: string): string {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n')
+    .map(l => (/^\s*\/\//.test(l) ? '' : l))
+    .join('\n')
+}
+
 const converted = walk(API)
-  .map(file => ({ file, src: readFileSync(file, 'utf8') }))
+  .map(file => ({ file, src: stripComments(readFileSync(file, 'utf8')) }))
   .filter(r => r.src.includes('createUserScopedClient'))
 
 describe('user-scoped routes are covered by RLS policies', () => {

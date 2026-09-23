@@ -31,7 +31,7 @@ describe('the enricher reads the gate rather than restating it', () => {
   it('asks for the paid fields on exactly the tiers the gate allows', () => {
     for (const tier of ['free', 'trial', 'paid'] as const) {
       const allowed = isFeatureAllowed('confidence_score', tier)
-      const msg = buildUserMessage(plan, input, allowed)
+      const msg = buildUserMessage(plan, input, allowed, 'km')
       if (allowed) {
         expect(msg, `${tier}: gate allows confidence_score but the prompt forbids it`)
           .toContain('Include confidence_score')

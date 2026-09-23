@@ -1496,14 +1496,18 @@ export default function GeneratePlanScreen({
           <DifficultyCard band={meta.difficulty_band} note={meta.difficulty_note} alternatives={meta.prep_time_alternatives} />
           {meta.confidence_score != null && (
             <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '4px 16px 20px', margin: '16px 0' }}>
-              <ConfidenceBadge score={meta.confidence_score} risks={meta.confidence_risks} />
+              <ConfidenceBadge score={meta.confidence_score} risks={meta.confidence_risks?.map(r => convertDistanceString(r, preferredUnits) ?? r)} />
             </div>
           )}
 
           {meta.coach_intro && (
             <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', borderLeft: '3px solid var(--moss)', padding: '14px 16px', margin: '16px 0' }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.65 }}>
-                {meta.coach_intro}
+                {/* UNITS-PROSE-01 — model output is STORED in plan_json, so a
+                    plan enriched before the reader switched units still names
+                    kilometres. The prompt now speaks the reader's units, but
+                    every plan generated before that does not. */}
+                {convertDistanceString(meta.coach_intro, preferredUnits)}
               </div>
             </div>
           )}
@@ -1512,7 +1516,7 @@ export default function GeneratePlanScreen({
               co-exists with the paid coach_intro above. */}
           {meta.plan_intro && (
             <div style={{ margin: '16px 0' }}>
-              <PlanIntroCard text={meta.plan_intro} />
+              <PlanIntroCard text={convertDistanceString(meta.plan_intro, preferredUnits) ?? meta.plan_intro} />
             </div>
           )}
 

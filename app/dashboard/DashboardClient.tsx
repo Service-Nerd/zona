@@ -8701,7 +8701,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           first-plans — paid plans carry coach_intro instead and never this. */}
       {plan.meta.plan_intro && (
         <div style={{ padding: '16px 16px 0' }}>
-          <PlanIntroCard text={plan.meta.plan_intro} />
+          <PlanIntroCard text={convertDistanceString(plan.meta.plan_intro, preferredUnits) ?? plan.meta.plan_intro} />
         </div>
       )}
 

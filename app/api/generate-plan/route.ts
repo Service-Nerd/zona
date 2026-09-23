@@ -93,6 +93,16 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const tier = await getUserTier(user.id)
+    // UNITS-PROSE-01 — ONE read of the runner's units for the whole route.
+    // ADR-015's amendment makes the AI layer a display surface, so the three
+    // AI calls below (§118 offer copy, free intro, enrichment) must all be told
+    // the same unit. Before this the §118 block read prefs on its own and the
+    // two enrichers were never told at all. A failed read falls back to km
+    // rather than blocking generation.
+    const displayUnits = await (async () => {
+      const c = createUserScopedClient(req)
+      return c ? (await getUserDisplayPrefs(c, user.id)).units : ('km' as const)
+    })()
     const guard = await guardAiRequest(req, user.id, 'generate-plan')
     if (!guard.ok) return guard.response
     // Name comes from the profile, not the request body — see
@@ -308,11 +318,7 @@ export async function POST(req: NextRequest) {
           // failed read falls back to km rather than blocking the offer,
           // because a refused runner getting NOTHING is the worse outcome and
           // is the whole point of §118.
-          const prefsClient = createUserScopedClient(req)
-          const prefs = prefsClient
-            ? await getUserDisplayPrefs(prefsClient, user.id)
-            : { units: 'km' as const }
-          const label = formatDistance(endsAtKm, prefs.units)
+          const label = formatDistance(endsAtKm, displayUnits)
           if (label) getRunning = {
             weeks,
             ends_at_km: Math.round(endsAtKm * 10) / 10,
@@ -386,7 +392,7 @@ export async function POST(req: NextRequest) {
           .eq('user_id', user.id)
 
         if ((count ?? 0) === 0) {
-          const intro = await generateFreeIntro(rulePlan, input, user.id)
+          const intro = await generateFreeIntro(rulePlan, input, user.id, displayUnits)
           if (intro) rulePlan.meta.plan_intro = intro
         }
       } catch (e) {
@@ -466,7 +472,7 @@ export async function POST(req: NextRequest) {
           // the AI must never see or touch foundation-week copy (§57;
           // ADR-020's own blast-radius table confirms this is correct by
           // design, not an oversight).
-          const result = await enrich(rulePlan, input, tier, user.id)
+          const result = await enrich(rulePlan, input, tier, user.id, displayUnits)
           // Re-attach foundation weeks the enricher never saw. Mirrors,
           // almost verbatim, what GeneratePlanScreen used to do client-side
           // at the final_plan merge point — now server-side, ahead of the

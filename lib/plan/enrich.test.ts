@@ -47,7 +47,7 @@ describe('enrich — outcome reporting (GEN-FIX-02)', () => {
     const spy = vi.fn()
     global.fetch = spy as unknown as typeof fetch
 
-    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial')
+    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial', null, 'km')
 
     expect(outcome).toEqual({ status: 'failed', reason: 'no_api_key' })
     expect(plan).toBe(RULE_PLAN)
@@ -57,7 +57,7 @@ describe('enrich — outcome reporting (GEN-FIX-02)', () => {
   it('reports api_error on a non-2xx and returns the plan untouched', async () => {
     global.fetch = mockAnthropic('rate limited', false, 429) as unknown as typeof fetch
 
-    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial')
+    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial', null, 'km')
 
     expect(outcome.status).toBe('failed')
     if (outcome.status === 'failed') {
@@ -70,7 +70,7 @@ describe('enrich — outcome reporting (GEN-FIX-02)', () => {
   it('reports fetch_failed when the transport throws', async () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('ECONNRESET')) as unknown as typeof fetch
 
-    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial')
+    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial', null, 'km')
 
     expect(outcome.status).toBe('failed')
     if (outcome.status === 'failed') {
@@ -83,7 +83,7 @@ describe('enrich — outcome reporting (GEN-FIX-02)', () => {
   it('reports parse_error when the response is not JSON', async () => {
     global.fetch = mockAnthropic('Sure! Here is your plan:') as unknown as typeof fetch
 
-    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial')
+    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial', null, 'km')
 
     expect(outcome.status).toBe('failed')
     if (outcome.status === 'failed') expect(outcome.reason).toBe('parse_error')
@@ -93,7 +93,7 @@ describe('enrich — outcome reporting (GEN-FIX-02)', () => {
   it('reports schema_invalid when JSON parses but fails the schema', async () => {
     global.fetch = mockAnthropic(JSON.stringify({ meta: {}, weeks: 'not-an-array' })) as unknown as typeof fetch
 
-    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial')
+    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial', null, 'km')
 
     expect(outcome.status).toBe('failed')
     if (outcome.status === 'failed') expect(outcome.reason).toBe('schema_invalid')
@@ -107,7 +107,7 @@ describe('enrich — outcome reporting (GEN-FIX-02)', () => {
     })
     global.fetch = mockAnthropic(payload) as unknown as typeof fetch
 
-    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial')
+    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial', null, 'km')
 
     expect(outcome).toEqual({ status: 'applied' })
     expect(plan.weeks[0].label).toBe('Base — hold the zone')
@@ -131,7 +131,7 @@ describe('enrich — outcome reporting (GEN-FIX-02)', () => {
     })
     global.fetch = mockAnthropic(payload) as unknown as typeof fetch
 
-    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial')
+    const { plan, outcome } = await enrich(RULE_PLAN, INPUT, 'trial', null, 'km')
 
     expect(outcome).toEqual({ status: 'applied' })
     expect(plan.weeks[0].sessions!.mon!.coach_notes).toEqual(['Keep it in Zone 2. If HR climbs, walk.'])
@@ -147,7 +147,7 @@ describe('enrich — outcome reporting (GEN-FIX-02)', () => {
     })
     global.fetch = mockAnthropic(payload) as unknown as typeof fetch
 
-    const { plan } = await enrich(RULE_PLAN, INPUT, 'trial')
+    const { plan } = await enrich(RULE_PLAN, INPUT, 'trial', null, 'km')
 
     expect(plan.weeks[0].label).not.toBe(RULE_PLAN.weeks[0].label)
     expect(plan.weeks[0].theme).not.toBe(RULE_PLAN.weeks[0].theme)
