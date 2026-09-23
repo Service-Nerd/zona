@@ -6,6 +6,28 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — APP-SPACE-01 + ACTION-ROW-01 · we fixed the website and forgot the product
+
+**Shipped:** The app now uses the spacing scale we ruled for the site a day earlier, and the "Adjust your plan" tile has a chevron so you can tell it's a button.
+
+**Dev learning:** The founder sent two screenshots and said things were too close together. I'd swept exactly this problem on the marketing site the day before — measured 448 gaps, tokenised a scale, shipped it. So I measured the app: **`var(--space-*)` appeared 17 times in the marketing components and zero times in the app.** 578 hand-typed gaps, 25 distinct values, 13 of them off-scale. The site had 24 distinct values when we ruled it. **The product was in exactly the state the marketing page had been in, and the fix never crossed over.**
+
+Wave 4's own register row had warned about this in as many words: *"a token family nobody applies is the `surface=` failure repeated."* We wrote the warning and then did the thing.
+
+Two details I got wrong on the way. First, my sweep rounded ties **down** — 6px sits equidistant between 4 and 8 — which tightened the app's commonest off-scale gap, 74 of them, **on the day the complaint was that things are too close**. Second, and more interesting: the sweep couldn't have fixed the gap he actually pointed at. That one was 6px because the tile declared **no top margin at all**, and our own ruling register already says why a sweep misses that: *"a gap of zero is not a gap, it is an absent decision."*
+
+**Product/creator learning:** The second issue — "it's not clear you can click on it" — turned out to have a structural cause rather than being a judgement call. The chevron that marks a row as tappable was a **local `const` inside the Me screen's component**. Seven rows there used it. The Plan screen couldn't reach it, so when someone built the Adjust tile they reimplemented the row from memory and lost the chevron.
+
+**A pattern that is a local variable cannot travel.** The shape was agreed, it was rendering correctly, and there was simply nothing to import. That's a better explanation than "someone forgot", and it has a fix: make it a component.
+
+**AI-building learning:** A markup test went red on a change that preserved exactly what it guards — it asserted `/margin-top:8px/` and the new value is `var(--space-2)`, which **is** 8px. Third time today a test pinned a spelling instead of a guarantee. I'm starting to think the tell is any assertion containing a literal unit.
+
+**The honest bit:** Six things were raised. I shipped three and sent three back — dates, two charts on one screen, and the modal — because each of those was an impression nobody had measured yet, and the board's rule is to rule on the measurement. The dates one is the interesting refusal: there are **nine date formats across 22 sites with no owner**, one of them printing a raw ISO string, and the instruction was "follow the user preference". **There is no date preference.** That's a product decision before it's a design one, and guessing it from `preferred_units` would have been me inventing a rule.
+
+**Hook material:** We measured 448 gaps on our marketing site, built a spacing scale, swept it, and shipped. The next day the founder said the app felt cramped. The scale was used **17 times on the marketing components and zero times in the product**. Our own ruling had warned, a day earlier, that a token family nobody applies is a failure repeating itself.
+
+**Postable?:** yes
+
 ## 2026-09-23 — LONGRUNSHORT-RUNWALK-KEY-01 · I broke it at lunchtime and fixed it by teatime
 
 **Shipped:** A runner who is run-walking a marathon is no longer scored against the bar for runners who are running it.
