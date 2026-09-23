@@ -30,6 +30,11 @@ scripts/sql/
 
 # Coaching-review round packets are generated build artifacts (CI uploads them).
 coaching-review/*/generated-plans.md
+# COACH-MEASURE-PROTOCOL-01 — same class as the line above: a regenerable round
+# artifact (504 plans, ~530 lines). The COMMITTED round outputs are review.md,
+# backlog.md and post-fix-diff.md. Plan-level change detection is
+# `npm run verify:parity`, which hashes 5,994 cases — not a diff of these files.
+coaching-review/*/foundation-composed-plans.md
 .vitest-report.json
 
 # Generated content exports (regenerate with scripts/export-marketing-plans.ts)
