@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — COHORT-SERVED-01 · I read the engine's verdict as the product's answer
+**Shipped:** The cohort review now reports what the runner receives, not what the generator threw — and it corrects a number I had already given the founder.
+
+**Dev learning:** My table said `100% refused` for a marathoner running 4 km a week, and I reported that as "we turn them away, 85–100% of the time." The engine does throw. The route catches it and hands the runner a get-running plan, and the eligibility test for that is `effectiveStartKm > 0` — you have to run literally nothing to be excluded. **Nobody is turned away.** I had measured one layer below the product and read it as the product's behaviour.
+
+**The part that stings:** I found this exact failure mode that same morning — four of five harnesses calling `generateRulePlan` and stopping, so no board round had ever seen a foundation week. I wrote it up, filed it, ruled on it at a board sitting, and then made the same mistake again four hours later on a different feature. Knowing a failure class by name does not stop you committing it; only putting the layer inside the instrument does. So the instrument now calls the same two owners the route calls.
+
+**AI-building learning:** The founder pushed back — *"I thought we already did this, check the notes"* — and he was right. §118 had shipped three days earlier. The register even said so in one line: *"every refused cell now receives a Base Building plan."* I had read that register at the start of the day and still measured as though it were not true, because my harness disagreed with it and I believed my harness. **When the register and your measurement disagree, the measurement is the thing to check first.**
+
+**The honest bit:** while adding the column I found I had also given him a wrong number. I said 46% of the 4 km/week cohort reach the marathon door. That is the share of *grid cells*. The share of *runners* is 80.3% — every other figure in that table is weighted and that one was not, and I presented it alongside them as though it were. I only caught it because the new column produced 80.3% and I could not reconcile the two, which is a weak reason to catch something and the only one I had.
+
+**Hook material:** I diagnosed a "measuring one layer too low" bug in the morning, ruled on it at a board, and made the identical mistake on a different feature that afternoon.
+
+**Postable?:** yes — "knowing the failure class by name doesn't stop you committing it" is honest and generalises.
+
 ## 2026-09-23 — ONRAMP-STEP-UNITS-01 · a cap in different units from the bound it must satisfy
 **Shipped:** The base-build ramp now honours both the relative and the absolute long-run bound, and the two test corpora that each covered half the grid now cover it.
 
