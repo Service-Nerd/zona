@@ -281,6 +281,27 @@ goes through `TextField`. Replacing a native date input re-opens that.
 
 ---
 
+### ⚙️ `PLAN-SAVE-TWO-WRITER-01` — the sheet saves the rule plan over the server's enriched one
+
+Found during `PLAN-STREAM-OWNER-01` (2026-09-23), **pre-existing and unchanged by it.**
+
+The modify sheet takes `rule_plan` (correctly — ADR-006), and `acceptModify` then saves THAT via
+`savePlanForUser`. Meanwhile the route's `waitUntil` chain persists the **enriched** plan to the
+same row. **Two writers, one `plans` row, and whichever lands last wins** — which on a 39-second
+enrichment is usually the server, but not reliably.
+
+⚠️ **Do not "fix" it by making the sheet wait for `final_plan`.** That is the 38-second hold that
+`PLAN-STREAM-OWNER-01` just removed, and ADR-006 is explicit that the runner holds a complete plan
+before the model runs.
+
+The wizard already solved this: `coordRef.current.enrichmentArrived(merged)` is a coordinator that
+decides `patch` / `queue` / `ignore` based on whether the runner has saved yet. The sheet has no
+equivalent. Likely answer is to reuse that coordinator rather than invent a second one — this repo
+has paid for parallel implementations of one rule under five names.
+
+⚠️ **Measure before building:** confirm on a real save which write actually lands last, rather than
+reasoning it out. Same discipline as `ZERO-REJECTION-SERVED-01`.
+
 ### ⚙️ `STEP-SUBUNIT-ZERO-01` — a short recovery step reads `~0mi`
 
 Found in passing while fixing `PACE-UNITS-STEPS-01` (2026-09-23), **pre-existing and unchanged by

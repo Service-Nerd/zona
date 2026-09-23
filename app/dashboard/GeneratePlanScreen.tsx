@@ -12,6 +12,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { Plan, GeneratorInput, TrainingAge } from '@/types/plan'
 import GeneratingCeremony from '@/components/GeneratingCeremony'
 import { BRAND } from '@/lib/brand'
+import { readPlanStream } from '@/lib/planStream'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import SignOutLink from '@/components/shared/SignOutLink'
@@ -1120,21 +1121,11 @@ export default function GeneratePlanScreen({
       // Trial/paid: NDJSON stream — rule_plan first, then final_plan.
       // Setting the plan as soon as rule_plan arrives lets the ceremony
       // begin its reveal while the enricher is still running.
-      const reader = res.body!.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        buffer += decoder.decode(value, { stream: true })
-        let nl = buffer.indexOf('\n')
-        while (nl !== -1) {
-          const line = buffer.slice(0, nl).trim()
-          buffer = buffer.slice(nl + 1)
-          nl = buffer.indexOf('\n')
-          if (!line) continue
-          const msg = JSON.parse(line) as { type: 'rule_plan' | 'final_plan'; plan: Plan }
+      // PLAN-STREAM-OWNER-01 — the line-reading loop that used to sit here is
+      // now shared with the modify-plan sheet, which had hand-written a second
+      // consumer of this same stream and got it wrong. This caller still takes
+      // BOTH messages; the sheet stops at the first. No behaviour change here.
+      for await (const msg of readPlanStream(res)) {
           if (msg.type === 'rule_plan') {
             setPlan(applyFoundationIfNeeded(msg.plan))
             setRulePlanReady(true)   // preview reachable now; enricher streams on
@@ -1182,7 +1173,6 @@ export default function GeneratePlanScreen({
               void onPlanEnriched?.(merged)
             }
           }
-        }
       }
     } catch {
       setError('Could not reach the server. Check your connection.')

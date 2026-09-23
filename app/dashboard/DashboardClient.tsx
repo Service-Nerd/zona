@@ -18,6 +18,7 @@ import ReflectionInput from '@/components/training/ReflectionInput'
 // Calendar screen retired — CalendarOverlay.tsx renamed to .old.tsx (brand-product-alignment v2)
 import StravaPanel from '@/components/strava/StravaPanel'
 import { convertDistanceString, convertPaceString, formatPace } from '@/lib/format'
+import { readPlanStream } from '@/lib/planStream'
 import { upsertCompletion } from '@/lib/plan/completions'
 import { createClient } from '@/lib/supabase/client'
 import { trackEvent } from '@/lib/analytics'
@@ -330,14 +331,23 @@ export default function DashboardClient() {
       }
       // The free-tier path returns plain JSON; the enriched path streams NDJSON
       // and its FIRST message is the complete rule plan (ADR-006 — the runner
-      // always holds a full plan before enrichment). Taking that first message
-      // is correct and avoids holding the sheet open for the model.
+      // always holds a full plan before enrichment).
+      //
+      // 🔴 PLAN-STREAM-OWNER-01 — this used to read `await res.text()`, which
+      // does not resolve until the stream CLOSES, i.e. after enrichment. The
+      // comment here claimed it "avoids holding the sheet open for the model";
+      // it took the first message only after awaiting every message. Measured
+      // on production: a 38,924 ms enrich call the sheet sat through before it
+      // could use a plan the server had sent immediately.
+      //
+      // Now stops at `rule_plan` and lets the owner cancel the reader. Same
+      // plan object as before — only the wait is gone.
       const ct = res.headers.get('content-type') ?? ''
       let next: Plan | null = null
       if (ct.includes('ndjson')) {
-        const text = await res.text()
-        const first = text.split('\n').find(Boolean)
-        next = first ? (JSON.parse(first).plan as Plan) : null
+        for await (const msg of readPlanStream(res)) {
+          if (msg.type === 'rule_plan') { next = msg.plan; break }
+        }
       } else {
         next = ((await res.json()).plan as Plan) ?? null
       }
