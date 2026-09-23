@@ -221,9 +221,59 @@ Section gap (week → week): `28–32px`.
 ---
 
 
+### 22. ActionRow — the one pattern for "tap this to go and do something" (ACTION-ROW-01, 2026-09-23)
+
+```
+┌──────────────────────────────────────────┐
+│  Adjust your plan                     ›  │  ← 13px 500 --ink
+│  Days, time limits, injuries…            │  ← 12px --mute
+└──────────────────────────────────────────┘
+```
+
+`components/shared/ActionRow.tsx`. Title (the verb), optional subtitle (the **consequence**, never
+a restatement), and **always the chevron**. A real `<button>`, `min-height: 44px`.
+
+**The CONTAINER stays with the caller, deliberately.** Me groups several rows inside one card with
+hairline separators (`divider`); Plan has a single standalone card. Both are cards — what they share
+is the ROW.
+
+🔴 **WHY IT EXISTS, and the cause was structural rather than an oversight.** The founder, on the
+Plan screen: *"that is an action tile. It's not clear you can click on it. We have them under Me
+profile so we should have a standard pattern for these."* **The chevron was a local `const` inside
+the Me screen's component.** Seven rows there used it; the Plan screen could not reach it, so its
+tile shipped with **no affordance at all** — on a screen where every session row beside it carries
+one. ⚠️ **A pattern that is a local variable cannot travel.** The shape was agreed and rendering
+correctly in one place, nothing was available to reuse, and the second surface re-implemented it
+from memory and lost the part that makes it legible as a control. Gated by
+`components/shared/actionRow.markup.test.ts`.
+
 ### The spacing scale — SITE-WAVE-4, 2026-09-22
 
 **`--space-1…7` = `4 · 8 · 12 · 16 · 24 · 32 · 48`. 4px base. Never hand-type a gap above 5px.**
+
+🟢 **APPLIED TO THE APP 2026-09-23 (`APP-SPACE-01`), a day after the site.** Wave 4 swept the
+marketing site; measured the next day, `var(--space-*)` appeared **17 times in
+`components/marketing` and ZERO times in `app/dashboard` or `components/shared`** against **578
+hand-typed gaps** and **25 distinct values, 13 off-scale above 5px**. The site had **24 / 19** when
+it was ruled — **the app was in the state the site was in before the fix**, and Wave 4's own row had
+warned that *"a token family nobody applies is the `surface=` failure repeated."* Swept: **295
+tokenised with no visual change, 277 shifted, none by more than 4px (260 looser, 17 tighter).**
+
+⚠️ **THE TIE BREAKS UPWARD.** 6px is equidistant from 4 and 8, and the first cut of the sweep
+rounded DOWN — tightening the app's commonest off-scale gap, **74 of them**, on the day the
+complaint was that things are too close. Whitespace is a documented feature (*"restraint =
+progress"*), so a tie resolves in favour of more of it.
+
+⚠️ **BOTTOM CLEARANCE IS NOT A GAP.** Three `paddingBottom` values (120/120/80px) on
+`minHeight:100% / overflowY:auto` scroll containers are the room the fixed tab bar needs; snapping
+them to 48px would put content **under the nav**. They are declared exclusions in
+`lib/appSpacingScale.test.ts`, the mirror of Wave 4 excluding ≤5px as line-box artefacts: one end of
+the range is noise, the other is safe area, and **neither is spacing**.
+
+🔴 **AND THE SWEEP COULD NOT HAVE FIXED THE REPORTED CASE.** § 332 already said why: *"a gap of zero
+is not a gap, it is an **absent decision**."* The arc-to-tile gap read as 6px because the tile
+declared **no top margin at all** — `PlanArc`'s own trailing margin was the only thing there. That
+value is now declared (`--space-4`), not swept.
 
 **Found by the founder on a phone:** *"the space between sections or tiles then next text is
 inconsistent. e.g. the zone image then the next text is very close."* His exact case measured

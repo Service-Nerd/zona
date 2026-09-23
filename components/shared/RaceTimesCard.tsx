@@ -151,12 +151,12 @@ export function RaceTimesCard({
 
   return (
     <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '20px' }}>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '14px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-4)' }}>
         {copy.eyebrow}
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {[100, 75, 90, 80].map((w, i) => (
             <div key={i} style={{ height: '14px', background: 'var(--bg-soft)', borderRadius: '4px', width: `${w}%` }} />
           ))}
@@ -164,7 +164,7 @@ export function RaceTimesCard({
 
       ) : error || !data || data.state === 5 ? (
         <div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500, color: 'var(--ink-2)', marginBottom: '6px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500, color: 'var(--ink-2)', marginBottom: 'var(--space-2)' }}>
             {copy.empty.heading}
           </div>
           <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.6, margin: 0 }}>
@@ -175,7 +175,7 @@ export function RaceTimesCard({
       ) : (
         <>
           {/* ── Source label + confidence chip ───────────────────────── */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.45, flex: 1 }}>
               {data.label}
             </span>
@@ -217,9 +217,9 @@ export function RaceTimesCard({
               borderRadius: '10px',
               borderLeft: '3px solid var(--s-race)',
               padding: '12px 14px',
-              marginBottom: '14px',
+              marginBottom: 'var(--space-4)',
             }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
                 {eyebrow}
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', marginBottom: arc ? '14px' : '8px' }}>
@@ -347,7 +347,7 @@ export function RaceTimesCard({
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)' }}>
                     {toggleLabel}
                   </span>
-                  <span aria-hidden style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginLeft: '12px' }}>
+                  <span aria-hidden style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>
                     {distancesOpen ? '▴' : '▾'}
                   </span>
                 </button>
@@ -377,14 +377,14 @@ export function RaceTimesCard({
           {/* ── R32: recalibration nudge ─────────────────────────────── */}
           {showRecalNudge && copy.recal && (
             <div style={{
-              marginTop: '16px',
-              paddingTop: '14px',
+              marginTop: 'var(--space-4)',
+              paddingTop: 'var(--space-4)',
               borderTop: '1px solid var(--line)',
             }}>
               <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 10px' }}>
                 {copy.recal.body}
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
                 <button
                   onClick={onOpenBenchmark}
                   style={{

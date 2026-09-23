@@ -125,7 +125,7 @@ function MetricPair({
   muted?: boolean
 }) {
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
         color: muted ? 'var(--mute)' : 'var(--ink)',
@@ -156,23 +156,23 @@ function TrendCardSkeleton({ label = TREND_CARD_DEFAULTS.label }: { label?: stri
       boxShadow: 'var(--shadow-card)',   // v2 (design_handoff_v2)
     }}>
       {/* Eyebrow */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-5)' }}>
         <div style={{ height: '10px', width: '38%', background: 'var(--bg-soft)', borderRadius: '4px' }} />
         <div style={{ height: '10px', width: '28%', background: 'var(--bg-soft)', borderRadius: '4px' }} />
       </div>
       {/* Metric pair */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
         <div style={{ flex: 1, height: '44px', background: 'var(--bg-soft)', borderRadius: '6px' }} />
         <div style={{ width: '24px', height: '20px', background: 'var(--bg-soft)', borderRadius: '4px' }} />
         <div style={{ flex: 1, height: '44px', background: 'var(--bg-soft)', borderRadius: '6px' }} />
       </div>
       {/* Byline + gloss */}
-      <div style={{ borderTop: '1px solid var(--line)', paddingTop: '14px', position: 'relative', paddingLeft: '14px' }}>
+      <div style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--space-4)', position: 'relative', paddingLeft: '14px' }}>
         <div style={{ position: 'absolute', left: '8px', top: '14px', bottom: '0', width: '3px', background: 'var(--moss)', borderRadius: '2px', opacity: 0.3 }} />
-        <div style={{ marginBottom: '10px' }}>
+        <div style={{ marginBottom: 'var(--space-3)' }}>
           <CoachByline working role={label} />
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           <div style={{ height: '13px', width: '85%', background: 'var(--bg-soft)', borderRadius: '4px' }} />
           <div style={{ height: '13px', width: '60%', background: 'var(--bg-soft)', borderRadius: '4px' }} />
         </div>
@@ -208,7 +208,7 @@ function ExplanationSheet({
       {(close) => (
       <>
         <div style={{ padding: '0 20px 4px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 'var(--space-2)' }}>
             {eyebrow}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '24px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.15 }}>
@@ -216,7 +216,7 @@ function ExplanationSheet({
           </div>
         </div>
 
-        <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           {state === 'pending' ? (
             <>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
@@ -251,7 +251,7 @@ function ExplanationSheet({
           )}
         </div>
 
-        <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
+        <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: 'var(--space-2)' }}>
           <button
             onClick={close}
             style={{
@@ -307,23 +307,23 @@ export default function TrendCard(props: TrendCardProps) {
         background: 'var(--bg-soft)', border: '1px solid var(--line)',
         borderRadius: 'var(--radius-lg)', padding: '20px',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {props.label ?? TREND_CARD_DEFAULTS.label}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--mute)', opacity: 0.4, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>—</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: '6px' }}>earlier</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>earlier</div>
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '20px', color: 'var(--mute)', opacity: 0.3 }}>→</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--mute)', opacity: 0.4, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>—</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: '6px' }}>now</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>now</div>
           </div>
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', lineHeight: 1.5, marginBottom: '14px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', lineHeight: 1.5, marginBottom: 'var(--space-4)' }}>
           The receipt for your easy days. Months of same-effort runs, compared.
         </div>
         {props.onUpgrade && (
@@ -351,21 +351,21 @@ export default function TrendCard(props: TrendCardProps) {
             cursor: 'pointer',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               {props.label ?? TREND_CARD_DEFAULTS.label}
             </span>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>ⓘ</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--mute)', opacity: 0.5, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>—</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: '6px' }}>earlier</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>earlier</div>
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '20px', color: 'var(--mute)', opacity: 0.4 }}>→</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800, color: 'var(--mute)', opacity: 0.5, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>—</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: '6px' }}>now</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>now</div>
             </div>
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.5 }}>
@@ -420,7 +420,7 @@ export default function TrendCard(props: TrendCardProps) {
         }}
       >
         {/* Eyebrow */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {eyebrow}
           </span>
@@ -430,11 +430,11 @@ export default function TrendCard(props: TrendCardProps) {
         </div>
 
         {/* Metric pair: earlier → now */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
           <MetricPair value={String(earlier.value)} label={`${earlierMonth} avg`} />
           <div style={{
             fontFamily: 'var(--font-ui)', fontSize: '20px', fontWeight: 400,
-            color: 'var(--mute)', lineHeight: 1, marginTop: '12px', flexShrink: 0,
+            color: 'var(--mute)', lineHeight: 1, marginTop: 'var(--space-3)', flexShrink: 0,
           }}>
             →
           </div>
@@ -451,7 +451,7 @@ export default function TrendCard(props: TrendCardProps) {
         {paceNote && (
           <div style={{
             fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-            lineHeight: 1.45, marginTop: '-12px', marginBottom: '18px',
+            lineHeight: 1.45, marginTop: '-12px', marginBottom: 'var(--space-4)',
           }}>
             {paceNote}
           </div>
@@ -465,7 +465,7 @@ export default function TrendCard(props: TrendCardProps) {
             months are usable (`SPARKLINE_MIN_POINTS`) — two points are a
             straight segment between numbers already shown in 44pt. ── */}
         {spark && (
-          <div style={{ marginBottom: '20px' }}>
+          <div style={{ marginBottom: 'var(--space-5)' }}>
             <TrendSparkline
               spark={spark}
               // Moss only when the fall is an achievement. If pace explains the
@@ -483,7 +483,7 @@ export default function TrendCard(props: TrendCardProps) {
             trend reads as raw evidence with no second Kit voice. Interpretation
             folds into the one Kit read at the top of the screen. */}
         {!glossless && (
-          <div style={{ borderTop: '1px solid var(--line)', paddingTop: '14px', position: 'relative', paddingLeft: '14px' }}>
+          <div style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--space-4)', position: 'relative', paddingLeft: '14px' }}>
             {/* 3px moss left rail — AI-card companion (Pattern 16b) */}
             <div style={{
               position: 'absolute', left: '8px', top: '14px', bottom: '0',

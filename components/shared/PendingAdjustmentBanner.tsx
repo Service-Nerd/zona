@@ -80,7 +80,7 @@ export default function PendingAdjustmentBanner({
       />
 
       {/* Byline eyebrow */}
-      <div style={{ marginBottom: '10px' }}>
+      <div style={{ marginBottom: 'var(--space-3)' }}>
         <CoachByline color="warn" role={title} />
       </div>
 
@@ -92,7 +92,7 @@ export default function PendingAdjustmentBanner({
           fontWeight: 400,
           lineHeight: 1.55,
           color:      'var(--coach-ink)',
-          marginBottom: '14px',
+          marginBottom: 'var(--space-4)',
         }}
       >
         {children}
@@ -100,13 +100,13 @@ export default function PendingAdjustmentBanner({
 
       {/* RESHAPE-FIX-WAVE2A — Rule-engine diff (WHAT). No AIMark. */}
       {sessionsBefore && sessionsAfter && (
-        <div style={{ marginBottom: '14px' }}>
+        <div style={{ marginBottom: 'var(--space-4)' }}>
           <AdjustmentDiff sessionsBefore={sessionsBefore} sessionsAfter={sessionsAfter} units={units} />
         </div>
       )}
 
       {/* Actions */}
-      <div style={{ display: 'flex', gap: '8px' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
         {/* Primary — Confirm (hidden when onConfirm not provided, e.g. fitness_signal) */}
         {onConfirm && (
           <button

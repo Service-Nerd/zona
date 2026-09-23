@@ -71,14 +71,14 @@ export default function ModifyPlanConfirm({
       <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 700, color: 'var(--ink)' }}>
         Here is what changes
       </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px', marginBottom: '16px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px', marginBottom: 'var(--space-4)' }}>
         Nothing is saved until you accept.
       </div>
 
       {/* Plan-level. Absent when the shape did not move, rather than rendering
           three identical before/after pairs to prove nothing happened. */}
       {rows.length > 0 && (
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '14px 16px', marginBottom: '14px' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '14px 16px', marginBottom: 'var(--space-4)' }}>
           {rows.map((r, i) => (
             <div key={r.label} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: i < rows.length - 1 ? '10px' : 0 }}>
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)' }}>{r.label}</span>
@@ -98,7 +98,7 @@ export default function ModifyPlanConfirm({
       {resetsLoggedWeeks && (
         <div style={{
           background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '14px 16px',
-          marginTop: '14px', fontFamily: 'var(--font-ui)', fontSize: '13px',
+          marginTop: 'var(--space-4)', fontFamily: 'var(--font-ui)', fontSize: '13px',
           color: 'var(--coach-ink)', lineHeight: 1.55,
         }}>
           Moving the race starts a new block, so the weeks you have already logged stop counting
@@ -110,7 +110,7 @@ export default function ModifyPlanConfirm({
         onClick={onAccept}
         disabled={applying}
         style={{
-          width: '100%', padding: '15px', marginTop: '20px', borderRadius: 'var(--radius-md)',
+          width: '100%', padding: '15px', marginTop: 'var(--space-5)', borderRadius: 'var(--radius-md)',
           background: 'var(--moss)', border: 'none', cursor: applying ? 'wait' : 'pointer',
           opacity: applying ? 0.7 : 1,
           fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--card)',

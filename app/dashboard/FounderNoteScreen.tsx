@@ -34,7 +34,7 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
           color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
-          marginBottom: '14px',
+          marginBottom: 'var(--space-4)',
         }}>
           Why {BRAND.name} exists
         </div>
@@ -108,7 +108,7 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
           color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
-          marginBottom: '32px',
+          marginBottom: 'var(--space-6)',
         }}>
           {BRAND.brandStatement}
         </div>

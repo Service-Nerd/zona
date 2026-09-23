@@ -163,7 +163,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         <div style={{
           width: '56px', height: '56px', borderRadius: '50%',
           background: 'var(--moss)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', marginBottom: '24px',
+          justifyContent: 'center', marginBottom: 'var(--space-5)',
           fontSize: '26px',
         }}>✓</div>
         <h1 style={{
@@ -180,7 +180,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         <button
           onClick={onBack}
           style={{
-            marginTop: '36px', padding: '14px 32px',
+            marginTop: 'var(--space-6)', padding: '14px 32px',
             // S2 — dismiss is never the CTA colour.
             background: 'var(--bg-soft)', border: '1px solid var(--line)', borderRadius: '10px',
             fontFamily: 'var(--font-ui)', fontWeight: 600,
@@ -244,7 +244,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         <div style={{ height: '1px', background: 'var(--border-col)', margin: '24px 0' }} />
 
         {/* Feature / loss list — left accent, session card visual language */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           {items.map((f) => (
             <div
               key={f.name}
@@ -278,7 +278,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         <div style={{
           fontFamily: 'var(--font-ui)', fontWeight: 400,
           fontSize: '0.8125rem', color: 'var(--text-muted)',
-          lineHeight: 1.5, marginTop: '18px',
+          lineHeight: 1.5, marginTop: 'var(--space-4)',
         }}>
           {BRAND.hrRecommendation}
         </div>
@@ -302,10 +302,10 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
             exit price undercuts its own headline by £24, which teaches the
             runner the first two prices were theatre. A timeline states what
             happens. Copy lives in BRAND.PRICING, never here. */}
-        <div style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: 'var(--space-5)' }}>
           {PRICING.trialTimeline.map((row, i) => (
             <div key={row.day} style={{
-              display: 'flex', gap: '12px', alignItems: 'baseline',
+              display: 'flex', gap: 'var(--space-3)', alignItems: 'baseline',
               marginBottom: i < PRICING.trialTimeline.length - 1 ? '10px' : 0,
             }}>
               <span style={{
@@ -321,7 +321,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         </div>
 
         {/* Pricing — metric pair pattern */}
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
           <button
             onClick={() => handleSubscribe(false)}
             disabled={loading}
@@ -416,8 +416,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
             cancel any time in your Apple ID account settings.
           </p>
           <div style={{
-            marginTop: '10px',
-            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
+            marginTop: 'var(--space-3)',
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 'var(--space-3)',
           }}>
             <ExternalLink
               href="/terms"
@@ -448,7 +448,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
           onClick={() => handleSubscribe(true)}
           disabled={loading}
           style={{
-            marginTop: '20px', width: '100%', padding: '16px',
+            marginTop: 'var(--space-5)', width: '100%', padding: '16px',
             background: loading ? 'var(--border-col)' : 'var(--teal)',
             border: 'none', borderRadius: '10px',
             fontFamily: 'var(--font-ui)', fontWeight: 600,
@@ -465,7 +465,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         <button
           onClick={onBack}
           style={{
-            marginTop: '16px',
+            marginTop: 'var(--space-4)',
             background: 'none', border: 'none',
             fontFamily: 'var(--font-ui)', fontWeight: 400,
             fontSize: '0.875rem', color: 'var(--text-muted)',
@@ -486,7 +486,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
           <button
             onClick={onOpenRedeem}
             style={{
-              marginTop: '8px', alignSelf: 'center',
+              marginTop: 'var(--space-2)', alignSelf: 'center',
               background: 'none', border: 'none',
               fontFamily: 'var(--font-ui)', fontWeight: 400,
               fontSize: '0.8125rem', color: 'var(--text-muted)',
@@ -505,7 +505,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
               onClick={handleRestore}
               disabled={restoring}
               style={{
-                marginTop: '8px',
+                marginTop: 'var(--space-2)',
                 background: 'none', border: 'none',
                 fontFamily: 'var(--font-ui)', fontWeight: 400,
                 fontSize: '0.8125rem', color: 'var(--text-muted)',

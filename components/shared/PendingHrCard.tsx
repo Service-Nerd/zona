@@ -76,7 +76,7 @@ export default function PendingHrCard({ state, onRetry, isRetrying = false }: Pr
       {/* Skeleton metric row — hints at what's waiting. Three columns rather
        *  than PendingAnalysisCard's four: distance + pace are already known
        *  from the workout shell, only HR-derived metrics are missing. */}
-      <div style={{ display: 'flex', gap: '10px' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
         {SKELETON_LABELS.map(label => (
           <div key={label} style={{ flex: 1 }}>
             <div style={{

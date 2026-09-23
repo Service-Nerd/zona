@@ -642,6 +642,24 @@ answers in a line what three rounds of reasoning did not.
 
 ⛔ **Veto check:** Silvanto declined — no documented palette or type rule is regressed.
 
+## 6u. The plan surfaces — six findings from one screenshot pair (2026-09-23)
+
+| Decision | Status | Why |
+|---|---|---|
+| **`APP-SPACE-01` — the ruled spacing scale reaches the APP** | 🟢 **SHIPPED** | 🔴 **`SITE-WAVE-4` ruled `--space-1…7` and swept the SITE. Measured a day later: `var(--space-*)` appeared 17× in `components/marketing` and ZERO times in `app/dashboard` or `components/shared`** — against **578 hand-typed gaps, 25 distinct values, 13 off-scale >5px**. The site had **24 / 19** when ruled: **the app was in the state the site was in before the fix**, and Wave 4's own row had warned *"a token family nobody applies is the `surface=` failure repeated."* Swept **295 tokenised with no visual change, 277 shifted, none >4px** (260 looser, 17 tighter) |
+| **The tie breaks UPWARD** | 🟢 **SHIPPED — and the first cut got it wrong** | 6px is equidistant from 4 and 8; rounding DOWN tightened the app's **commonest** off-scale gap, **74 of them**, **on the day the complaint was crowding**. Whitespace is a documented feature, so a tie resolves in favour of more of it |
+| **Bottom clearance is NOT a gap** | 🟢 **DECLARED EXCLUSION** | Three `paddingBottom` values (120/120/80px) on `minHeight:100%/overflowY:auto` containers are the room the **fixed tab bar** needs; snapping to 48px puts content **under the nav**. The mirror of Wave 4 excluding ≤5px: one end of the range is noise, the other is safe area, **neither is spacing** |
+| **The reported gap was an ABSENT decision, not a wrong value** | 🟢 **SHIPPED** | § 332 said it already: *"a gap of zero is not a gap, it is an absent decision … a spacing audit is structurally blind to missing ones."* The arc-to-tile gap read 6px because the tile declared **no top margin at all**. **The sweep alone could not have fixed the thing that was reported** — the value is now declared (`--space-4`) |
+| **`ACTION-ROW-01` — one pattern, and it carries the chevron** | 🟢 **SHIPPED** | Founder: *"it's not clear you can click on it."* 🔴 **Cause was STRUCTURAL: the chevron was a local `const` inside the Me screen.** Seven rows used it; the Plan screen **could not reach it**, so its tile shipped with **no affordance**, beside session rows that all have one. 🥇 **A PATTERN THAT IS A LOCAL VARIABLE CANNOT TRAVEL.** `components/shared/ActionRow.tsx`; the CONTAINER stays with the caller (Me stacks rows in one card, Plan has a standalone one) |
+| **Dates** | ⚠️ **INSUFFICIENT EVIDENCE — SLT first** | **9 distinct formats, 22 hand-written sites, no owner, every one hardcodes `'en-GB'`**, plus **one raw ISO** (`starts 2026-12-07`) at `GeneratePlanScreen:1408`. 🔴 **There is no date or locale preference to follow** — `user_settings` carries only `preferred_units`/`preferred_metric`. *"Follow the user preference"* is a product decision before it is a design one: add one, or derive from units. **The raw ISO is a defect regardless** |
+| **Two charts on the plan preview** | ⚠️ **INSUFFICIENT EVIDENCE** | `PlanHeroMetrics` + `PlanArc`, plus a phase-colour strip and PLAN SHAPE cards. Collins: *"three encodings of one fact — collapse it."* Chair declined to collapse a reveal moment on a screenshot. **Settling artefact: what does each element tell the runner that the others do not?** |
+| **`ModifyPlanSheet` — "functional but a bit meh, doesn't line up"** | ⚠️ **INSUFFICIENT EVIDENCE** | A symptom, not a measurement. The board rules on geometry: **what is misaligned, in px, on which element.** Not taken |
+
+⚠️ **Three of the six were SHIPPED and three were NOT.** The three that shipped each had a number
+behind them before a seat spoke; the three that did not are the ones where the founder described an
+impression and nobody had yet measured it. **That split is the board's evidence rule working, not
+the board being slow.**
+
 ## 6m. Miles — the OPEN-LENS re-read (2026-09-22)
 
 Full document: `docs/competitor/miles-open-lens-review.md`. All 17 screenshots, **no item

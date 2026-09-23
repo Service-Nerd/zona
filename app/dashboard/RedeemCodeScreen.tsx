@@ -94,7 +94,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
               color: 'var(--moss)', letterSpacing: '0.1em', textTransform: 'uppercase',
-              marginBottom: '12px',
+              marginBottom: 'var(--space-3)',
             }}>
               You&rsquo;re in
             </div>
@@ -127,7 +127,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
             <button
               onClick={onBack}
               style={{
-                marginTop: '24px', width: '100%', padding: '16px',
+                marginTop: 'var(--space-5)', width: '100%', padding: '16px',
                 background: 'var(--moss)', color: 'var(--card)',
                 border: 'none', borderRadius: 'var(--radius-md)',
                 fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
@@ -142,7 +142,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
               color: 'var(--moss)', letterSpacing: '0.1em', textTransform: 'uppercase',
-              marginBottom: '12px',
+              marginBottom: 'var(--space-3)',
             }}>
               Charity access
             </div>
@@ -166,7 +166,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
               style={{
                 display: 'block', fontFamily: 'var(--font-ui)', fontSize: '10px',
                 fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em',
-                textTransform: 'uppercase', marginBottom: '8px',
+                textTransform: 'uppercase', marginBottom: 'var(--space-2)',
               }}
             >
               Your code
@@ -230,7 +230,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
 
             {error && (
               <div role="alert" style={{
-                marginTop: '12px', fontFamily: 'var(--font-ui)', fontSize: '14px',
+                marginTop: 'var(--space-3)', fontFamily: 'var(--font-ui)', fontSize: '14px',
                 lineHeight: 1.5, color: 'var(--danger)',
               }}>
                 {error}
@@ -241,7 +241,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
               onClick={handleRedeem}
               disabled={!code.trim() || loading}
               style={{
-                marginTop: '20px', width: '100%', padding: '16px',
+                marginTop: 'var(--space-5)', width: '100%', padding: '16px',
                 background: !code.trim() || loading ? 'var(--bg-soft)' : 'var(--moss)',
                 color: !code.trim() || loading ? 'var(--mute)' : 'var(--card)',
                 border: 'none', borderRadius: 'var(--radius-md)',
@@ -253,7 +253,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
             </button>
 
             <p style={{
-              marginTop: '18px', fontFamily: 'var(--font-ui)', fontSize: '13px',
+              marginTop: 'var(--space-4)', fontFamily: 'var(--font-ui)', fontSize: '13px',
               lineHeight: 1.55, color: 'var(--mute)',
             }}>
               No code? You do not need one to use {BRAND.name}. Every new account gets

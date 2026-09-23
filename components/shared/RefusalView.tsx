@@ -65,20 +65,20 @@ export default function RefusalView({
       {/* The refusal itself, in the CoachNoteBlock amber palette (pattern 9) —
           this IS coach voice. No alarm colour, no raw diagnostic string: the
           message arrives already brand-voiced from the route. */}
-      <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '20px', marginBottom: '16px' }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', marginBottom: '10px' }}>
+      <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '20px', marginBottom: 'var(--space-4)' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
           {isRefusal ? 'Not yet' : 'Something went wrong'}
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>
           {isRefusal ? message : (message ?? 'Something went wrong building the plan.')}
         </div>
         {isRefusal && alternatives.length > 0 && (
-          <div style={{ marginTop: '16px', borderTop: '1px solid var(--line)', paddingTop: '14px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', marginBottom: '10px' }}>
+          <div style={{ marginTop: 'var(--space-4)', borderTop: '1px solid var(--line)', paddingTop: 'var(--space-4)' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
               What would get you there
             </div>
             {alternatives.map((alt, i) => (
-              <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: i < alternatives.length - 1 ? '8px' : 0 }}>
+              <div key={i} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: i < alternatives.length - 1 ? '8px' : 0 }}>
                 <span aria-hidden style={{ color: 'var(--warn)', fontWeight: 700, lineHeight: 1.55 }}>·</span>
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>{alt}</span>
               </div>
@@ -97,13 +97,13 @@ export default function RefusalView({
         <div style={{
           position: 'relative', background: 'var(--card)', borderRadius: 'var(--radius-lg)',
           border: '1px solid var(--line)', padding: '18px 18px 18px 21px',
-          marginBottom: '16px', overflow: 'hidden',
+          marginBottom: 'var(--space-4)', overflow: 'hidden',
         }}>
           <span aria-hidden style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'var(--moss)' }} />
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', marginBottom: '8px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--moss)', marginBottom: 'var(--space-2)' }}>
             {offer!.title}
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.55, marginBottom: '10px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.55, marginBottom: 'var(--space-3)' }}>
             {offer!.line}
           </div>
           {/* The credibility sentence, and why it is not cut: it is the most
@@ -120,7 +120,7 @@ export default function RefusalView({
           runner said yes and the network did not; losing the card would make
           the failure read as a second refusal. */}
       {offerFailed && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', lineHeight: 1.55, marginBottom: '12px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', lineHeight: 1.55, marginBottom: 'var(--space-3)' }}>
           That did not go through. Try again.
         </div>
       )}

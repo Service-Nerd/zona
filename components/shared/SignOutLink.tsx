@@ -62,7 +62,7 @@ export default function SignOutLink({ disabled = false }: {
         // ends the session, on the one onboarding screen where the user already
         // HAS a plan to lose. Caught on /onboarding-preview; no test sees this.
         // A rule would be a decorative divider (banned), so it is space.
-        marginTop: '8px',
+        marginTop: 'var(--space-2)',
         fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
         // A disabled control must look unavailable. `cursor` alone changed
         // nothing a user could see.

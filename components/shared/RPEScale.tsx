@@ -80,7 +80,7 @@ export default function RPEScale({ value, onChange, hint }: Props) {
             fontWeight: 400,
             color: 'var(--mute)',
             lineHeight: 1.4,
-            marginBottom: '10px',
+            marginBottom: 'var(--space-3)',
           }}
         >
           {hint}

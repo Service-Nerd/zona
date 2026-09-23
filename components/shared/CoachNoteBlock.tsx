@@ -74,7 +74,7 @@ export default function CoachNoteBlock({
           display:      'flex',
           alignItems:   'center',
           gap:          '8px',
-          marginBottom: '10px',
+          marginBottom: 'var(--space-3)',
         }}
       >
         {aiGenerated

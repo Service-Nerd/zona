@@ -27,7 +27,7 @@ function FieldLabel({ children, optional }: { children: React.ReactNode; optiona
     <div style={{
       fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)',
       letterSpacing: '0.08em', textTransform: 'uppercase',
-      marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px',
+      marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
     }}>
       {children}
       {optional && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'none', letterSpacing: 0, opacity: 0.7 }}>optional</span>}
@@ -84,24 +84,24 @@ function UpdatedPaceResult({ plan, weeksUpdated, stravaConnected, units }: { pla
   const { meta } = plan
   const { easy, quality } = getPaceBands(plan, units)
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
       <div style={{
         background: 'var(--card)', borderRadius: '12px',
         border: '0.5px solid var(--moss)', borderLeft: '3px solid var(--moss)',
         padding: '16px',
       }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 'var(--space-3)' }}>
           Pace updated
         </div>
         {meta.vdot !== undefined && (
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
             <span style={{ fontFamily: 'var(--font-brand)', fontSize: '28px', fontWeight: 600, color: 'var(--moss)' }}>
               {meta.vdot}
             </span>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>VDOT</span>
           </div>
         )}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {[
             ...(easy    ? [{ label: 'Easy pace',    value: easy }]    : []),
             ...(quality ? [{ label: 'Quality pace', value: quality }] : []),
@@ -189,10 +189,10 @@ export default function BenchmarkUpdateScreen({
 
       {/* Header */}
       <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
-        <BackButton onClick={onBack} style={{ marginBottom: '20px' }} />
+        <BackButton onClick={onBack} style={{ marginBottom: 'var(--space-5)' }} />
 
-        <div style={{ marginBottom: '28px' }}>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', marginBottom: '6px' }}>
+        <div style={{ marginBottom: 'var(--space-6)' }}>
+          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', marginBottom: 'var(--space-2)' }}>
             Update pace targets.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
@@ -202,7 +202,7 @@ export default function BenchmarkUpdateScreen({
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
 
         {result ? (
           <UpdatedPaceResult plan={result.plan} weeksUpdated={result.weeksUpdated} stravaConnected={stravaConnected} units={units} />
@@ -212,7 +212,7 @@ export default function BenchmarkUpdateScreen({
             {/* Benchmark type selection */}
             <div>
               <FieldLabel>New benchmark</FieldLabel>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
                 <Chip
                   label="Recent race result"
                   active={benchmarkType === 'race'}
@@ -226,10 +226,10 @@ export default function BenchmarkUpdateScreen({
               </div>
 
               {benchmarkType === 'race' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                   <div>
                     <FieldLabel>Race distance</FieldLabel>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                       {BENCHMARK_DISTANCES.map(d => (
                         <Chip
                           key={d.value}
@@ -261,7 +261,7 @@ export default function BenchmarkUpdateScreen({
                     placeholder="e.g. 5.4"
                     min={1}
                   />
-                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '6px' }}>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: 'var(--space-2)' }}>
                     Run flat, no stops, 30 minutes. Record distance covered.
                   </div>
                 </div>

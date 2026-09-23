@@ -50,7 +50,7 @@ export default function CharityCohortCard({ partnerName, cohortSize }: CharityCo
       </div>
 
       {/* The number leads, matching the rest of the reveal family. */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px', marginBottom: '10px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--mute)' }}>
           One of
         </span>

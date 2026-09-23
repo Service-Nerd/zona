@@ -29,7 +29,7 @@ export function WeekGrid({
 }) {
   return (
     <div>
-      <div role="group" aria-label={ariaLabel} style={{ display: 'flex', gap: '6px' }}>
+      <div role="group" aria-label={ariaLabel} style={{ display: 'flex', gap: 'var(--space-2)' }}>
         {WEEK_DAYS.map(d => {
           const st = value[d]
           const on = st === 'run' || st === 'long'
@@ -62,7 +62,7 @@ export function WeekGrid({
           )
         })}
       </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '12px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: 'var(--space-3)' }}>
         Tap a day to add it. Tap a weekend day again to mark your long run.
       </div>
     </div>

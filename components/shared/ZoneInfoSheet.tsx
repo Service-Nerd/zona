@@ -31,7 +31,7 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
               color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase',
-              marginBottom: '6px',
+              marginBottom: 'var(--space-2)',
             }}>{copy.label}</div>
             <div style={{
               fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600,
@@ -49,7 +49,7 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
           </div>
 
           {/* Body — three lines, no headers. Voice does the work. */}
-          <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             <Line>{copy.what}</Line>
             <Line>{copy.feel}</Line>
             <Line>{copy.why}</Line>
@@ -61,7 +61,7 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
             padding: '14px 20px 20px',
             background: 'var(--card)',
             borderTop: '0.5px solid var(--line)',
-            marginTop: '8px',
+            marginTop: 'var(--space-2)',
           }}>
             <button onClick={close} style={{
               width: '100%', padding: '12px',

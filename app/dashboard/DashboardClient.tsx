@@ -108,6 +108,7 @@ const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: fa
 import { RecalibrationReadyTile, RecalibrationEntryScreen } from './RecalibrationTile'
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
+import ActionRow from '@/components/shared/ActionRow'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
 
@@ -2129,7 +2130,7 @@ export default function DashboardClient() {
         gap: '0',
       }}>
         {/* Brand wordmark — Wordmark component sources text from BRAND.name */}
-        <div style={{ marginBottom: '10px' }}>
+        <div style={{ marginBottom: 'var(--space-3)' }}>
           <Wordmark size="md" className="wordmark-splash" />
         </div>
 
@@ -2160,23 +2161,23 @@ export default function DashboardClient() {
         padding: '32px 24px calc(32px + env(safe-area-inset-bottom, 0px))',
       }}>
         {/* Brand wordmark — Wordmark component sources text from BRAND.name */}
-        <div style={{ marginBottom: '8px' }}>
+        <div style={{ marginBottom: 'var(--space-2)' }}>
           <Wordmark size="md" />
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 'var(--space-7)' }}>
           {BRAND.voiceAnchor}
         </div>
 
         {/* Welcome message */}
         <div style={{ width: '100%', maxWidth: '320px', textAlign: 'center' }}>
-          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px', marginBottom: '16px', lineHeight: 1.3 }}>
+          <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px', marginBottom: 'var(--space-4)', lineHeight: 1.3 }}>
             Your plan is ready.
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '12px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 'var(--space-3)' }}>
             {/* TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass. */}
             {BRAND.name} keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: '48px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 'var(--space-7)' }}>
             Train with intention. The rest follows.
           </div>
 
@@ -2909,7 +2910,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
       padding: '32px 24px calc(32px + env(safe-area-inset-bottom, 0px))',
     }}>
       {/* Brand mark — Wordmark component sources text from BRAND.name */}
-      <div style={{ marginBottom: '6px' }}>
+      <div style={{ marginBottom: 'var(--space-2)' }}>
         <Wordmark size="md" />
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
@@ -2918,17 +2919,17 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
 
       <div style={{ width: '100%', maxWidth: '340px' }}>
         {/* Headline */}
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.25, marginBottom: '6px' }}>
+        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.25, marginBottom: 'var(--space-2)' }}>
           {greeting} plan is set.
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '28px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 'var(--space-6)' }}>
           {totalWeeks} weeks. One session at a time.
         </div>
 
         {/* Race card */}
         {(raceName || raceDateStr) && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '14px', border: '0.5px solid var(--border-col)', padding: '16px', marginBottom: '12px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Goal race</div>
+          <div style={{ background: 'var(--card-bg)', borderRadius: '14px', border: '0.5px solid var(--border-col)', padding: '16px', marginBottom: 'var(--space-3)' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>Goal race</div>
             <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{raceName}</div>
             {raceDateStr && (
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -2940,7 +2941,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
 
         {/* First session card */}
         {firstSession && (
-          <div style={{ background: 'var(--card-bg)', borderRadius: '14px', border: `0.5px solid var(--border-col)`, borderLeft: `4px solid ${accent}`, padding: '14px 16px', marginBottom: '12px' }}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: '14px', border: `0.5px solid var(--border-col)`, borderLeft: `4px solid ${accent}`, padding: '14px 16px', marginBottom: 'var(--space-3)' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: accent, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>First session</div>
             <div style={{ fontFamily: 'var(--font-brand)', fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{firstSession.label}</div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '3px' }}>{firstSession.day}</div>
@@ -2960,8 +2961,8 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
             <>
               {/* Hold the zone eyebrow */}
               <div style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                marginBottom: '8px',
+                display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 <span style={{
                   width: '6px', height: '6px', borderRadius: '50%',
@@ -2979,26 +2980,26 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '24px', fontWeight: 800,
                 color: 'var(--ink)', letterSpacing: '-0.025em', lineHeight: 1.1,
-                marginBottom: '6px',
+                marginBottom: 'var(--space-2)',
               }}>
                 These are <span style={{ color: 'var(--moss)' }}>your zones.</span>
               </div>
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px',
-                color: 'var(--mute)', lineHeight: 1.55, marginBottom: '18px',
+                color: 'var(--mute)', lineHeight: 1.55, marginBottom: 'var(--space-4)',
               }}>
                 Every session tells you which one. Hold the line — that&apos;s the whole job.
               </div>
 
               {/* Zone list — 5 rows */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
                 {ZONE_DEFS.map(z => {
                   const isHome = z.zone === 2
                   const hr = zones?.find(zz => zz.zone === z.zone)
                   return (
                     <div key={z.zone} style={{
                       display: 'grid', gridTemplateColumns: '32px 1fr auto',
-                      gap: '12px', alignItems: 'center',
+                      gap: 'var(--space-3)', alignItems: 'center',
                       padding: '11px 13px',
                       background: 'var(--card)', border: '1px solid var(--line)',
                       borderLeft: isHome ? `3px solid ${z.colour}` : '1px solid var(--line)',
@@ -3015,7 +3016,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
                       }}>{z.zone}</div>
                       {/* Name + description */}
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                           <div style={{
                             fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
                             color: 'var(--ink)', letterSpacing: '-0.005em',
@@ -3054,7 +3055,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
                 border: '1px solid var(--moss-mid)',
                 borderRadius: 'var(--radius-md)',
                 padding: '12px 14px',
-                marginBottom: '24px',
+                marginBottom: 'var(--space-5)',
               }}>
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
@@ -3091,7 +3092,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
                   <div style={{
                     fontFamily: 'var(--font-ui)', fontSize: '11px',
                     color: 'var(--mute)', lineHeight: 1.55,
-                    marginBottom: '16px', textAlign: 'center',
+                    marginBottom: 'var(--space-4)', textAlign: 'center',
                   }}>
                     {msg}
                   </div>
@@ -3102,7 +3103,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontSize: '12px',
                   color: 'var(--mute)', lineHeight: 1.55,
-                  marginBottom: '16px', textAlign: 'center',
+                  marginBottom: 'var(--space-4)', textAlign: 'center',
                 }}>
                   Add your resting + max HR in Profile to see your personal ranges.
                 </div>
@@ -3226,19 +3227,19 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
       background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
       padding: '32px 24px calc(32px + env(safe-area-inset-bottom, 0px))',
     }}>
-      <div style={{ marginBottom: '6px' }}>
+      <div style={{ marginBottom: 'var(--space-2)' }}>
         <Wordmark size="md" />
       </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 'var(--space-7)' }}>
         {BRAND.voiceAnchor}
       </div>
 
       <div style={{ width: '100%', maxWidth: '340px' }}>
         {/* The ask — single sentence, BRAND-sourced. */}
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.25, marginBottom: '10px' }}>
+        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.25, marginBottom: 'var(--space-3)' }}>
           {BRAND.connect.ask}
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '32px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 'var(--space-6)' }}>
           {BRAND.connect.subline}
         </div>
 
@@ -3259,7 +3260,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             letterSpacing: '-0.01em',
             cursor: pending ? 'wait' : 'pointer',
             opacity: pending ? 0.7 : 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-3)',
           }}
         >
           {/* Adapted from AppleHealthConnectionRow icon — 24px white-on-moss
@@ -3277,7 +3278,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
         </button>
 
         {error && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.55, marginTop: '12px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.55, marginTop: 'var(--space-3)' }}>
             {error}
           </div>
         )}
@@ -3309,7 +3310,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             cheaper mistake is the shorter screen.
             ⚠️ **Do NOT swap it for a line naming injury history.** Explicitly
             rejected: same conversation, more alarming words. */}
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.55, marginTop: '16px', maxWidth: '340px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.55, marginTop: 'var(--space-4)', maxWidth: '340px' }}>
           {/* ⚠️ ExternalLink, not <a>. Caught by `externalLink.test.ts`: inside
               the Capacitor webview a bare href to a marketing page REPLACES the
               app and the runner has no way back. SFSafariViewController has its
@@ -3332,7 +3333,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             width: '100%',
             background: 'none', border: 'none',
             padding: '14px 0',
-            marginTop: '8px',
+            marginTop: 'var(--space-2)',
             minHeight: '44px',
             fontFamily: 'var(--font-ui)', fontSize: '13px',
             color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
@@ -3435,18 +3436,18 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
       background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
       padding: '32px 24px calc(32px + env(safe-area-inset-bottom, 0px))',
     }}>
-      <div style={{ marginBottom: '6px' }}>
+      <div style={{ marginBottom: 'var(--space-2)' }}>
         <Wordmark size="md" />
       </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '48px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 'var(--space-7)' }}>
         {BRAND.voiceAnchor}
       </div>
 
       <div style={{ width: '100%', maxWidth: '340px' }}>
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.25, marginBottom: '10px' }}>
+        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.4px', lineHeight: 1.25, marginBottom: 'var(--space-3)' }}>
           {BRAND.notify.ask}
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '32px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 'var(--space-6)' }}>
           {denied
             ? `Notifications are blocked. Go to Settings → ${BRAND.name} → Notifications to enable them.`
             : BRAND.notify.subline}
@@ -3466,7 +3467,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
               letterSpacing: '-0.01em',
               cursor: pending ? 'wait' : 'pointer',
               opacity: pending ? 0.7 : 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-3)',
             }}
           >
             {/* Bell icon — same roundel pattern as ConnectRunsScreen */}
@@ -3483,7 +3484,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
         )}
 
         {error && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.55, marginTop: '12px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.55, marginTop: 'var(--space-3)' }}>
             {error}
           </div>
         )}
@@ -3600,14 +3601,14 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
 
       {items === null ? (
         // Loading — static skeleton rows matching the row shape (no spinner).
-        <div aria-busy="true" style={{ padding: '8px 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div aria-busy="true" style={{ padding: '8px 16px 0', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {[0, 1, 2].map(i => (
             <div key={i} style={{
               background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)',
               padding: '13px 16px 14px 18px', minHeight: '64px',
             }}>
-              <div style={{ width: '38%', height: '9px', borderRadius: '3px', background: 'var(--bg-soft)', marginBottom: '10px' }} />
-              <div style={{ width: '70%', height: '11px', borderRadius: '3px', background: 'var(--bg-soft)', marginBottom: '7px' }} />
+              <div style={{ width: '38%', height: '9px', borderRadius: '3px', background: 'var(--bg-soft)', marginBottom: 'var(--space-3)' }} />
+              <div style={{ width: '70%', height: '11px', borderRadius: '3px', background: 'var(--bg-soft)', marginBottom: 'var(--space-2)' }} />
               <div style={{ width: '90%', height: '10px', borderRadius: '3px', background: 'var(--bg-soft)' }} />
             </div>
           ))}
@@ -3615,13 +3616,13 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
       ) : (today.length + earlier.length) === 0 ? (
         // Empty state — Pattern 8, Zonna voice.
         <div style={{ padding: '64px 32px', textAlign: 'center' }}>
-          <div style={{ marginBottom: '14px', display: 'flex', justifyContent: 'center' }}>
+          <div style={{ marginBottom: 'var(--space-4)', display: 'flex', justifyContent: 'center' }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--mute)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--ink)', marginBottom: 'var(--space-2)' }}>
             Nothing from Kit yet.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5, maxWidth: '260px', margin: '0 auto' }}>
@@ -3629,11 +3630,11 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
           </div>
         </div>
       ) : (
-        <div style={{ paddingBottom: '24px' }}>
+        <div style={{ paddingBottom: 'var(--space-5)' }}>
           {today.length > 0 && (
             <>
               <SectionLabel>Today</SectionLabel>
-              <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 {today.map(renderRow)}
               </div>
             </>
@@ -3641,7 +3642,7 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
           {earlier.length > 0 && (
             <>
               <SectionLabel>Earlier</SectionLabel>
-              <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                 {earlier.map(renderRow)}
               </div>
             </>
@@ -3665,7 +3666,7 @@ function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 16px', marginBottom: '8px', marginTop: '20px' }}>
+    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 16px', marginBottom: 'var(--space-2)', marginTop: 'var(--space-5)' }}>
       {children}
     </div>
   )
@@ -3857,13 +3858,13 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
         <div style={{ padding: '20px 24px 16px' }}>
           <div style={{
             fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 500,
-            color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: '10px',
+            color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: 'var(--space-3)',
           }}>
             {content.title}
           </div>
           <div style={{
             fontFamily: 'var(--font-ui)', fontSize: '13px', lineHeight: 1.7,
-            color: 'var(--text-muted)', marginBottom: '24px',
+            color: 'var(--text-muted)', marginBottom: 'var(--space-5)',
           }}>
             {content.body}
           </div>
@@ -3876,7 +3877,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
               fontFamily: 'var(--font-ui)', fontSize: '13px',
               letterSpacing: '0.08em', textTransform: 'uppercase',
               cursor: 'pointer', fontWeight: 500,
-              marginBottom: '16px',
+              marginBottom: 'var(--space-4)',
             }}
           >
             Got it
@@ -4439,7 +4440,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             owns the completion copy + voice anchor as the peak-end artefact
             once the runner has entered RPE; this row just acknowledges the
             save instantly so they know the action landed. */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--teal-soft)', border: '0.5px solid var(--teal-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2.5 7L5.5 10L11.5 4" stroke="var(--teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -4451,14 +4452,14 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: '4px' }}>
           How did that land?
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: 1.5 }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--space-5)', lineHeight: 1.5 }}>
           Effort and body state. That's all I need.
         </div>
 
         {/* RPE */}
-        <div style={{ marginBottom: '20px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Effort (RPE)</div>
-          <div style={{ display: 'flex', gap: '6px' }}>
+        <div style={{ marginBottom: 'var(--space-5)' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>Effort (RPE)</div>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
             {[1,2,3,4,5,6,7,8,9,10].map(n => {
               const isActive = rpe === n
               const col = rpeColour(n)
@@ -4482,9 +4483,9 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         </div>
 
         {/* Feel tags */}
-        <div style={{ marginBottom: '28px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Body state</div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ marginBottom: 'var(--space-6)' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>Body state</div>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
             {FATIGUE_TAGS.map(tag => {
               const isActive = fatigueTag === tag
               const tagColor = tag === 'Fresh' ? 'var(--session-green)' : tag === 'Fine' ? 'var(--accent)' : tag === 'Heavy' ? 'var(--amber)' : 'var(--coral)'
@@ -4515,7 +4516,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             card inside PostRunScreen instead. */}
         {rpe !== null && (
           <>
-            <div style={{ marginBottom: '12px' }}>
+            <div style={{ marginBottom: 'var(--space-3)' }}>
               <SessionCompleteCard
                 sessionType={session.type}
                 date={new Date()}
@@ -4530,7 +4531,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                 surface so a user-initiated iOS screenshot frames the card
                 cleanly. The route renders the same artefact at higher
                 fidelity (1080×1920 PNG via next/og). */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-5)' }}>
               <SaveImageButton weekN={weekN} sessionDay={session.key} />
             </div>
           </>
@@ -4546,7 +4547,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
 
         {/* Zonna response */}
         <div style={{
-          minHeight: '48px', marginBottom: '20px',
+          minHeight: '48px', marginBottom: 'var(--space-5)',
           opacity: reflectResponse ? 1 : 0,
           transform: reflectResponse ? 'translateY(0)' : 'translateY(6px)',
           transition: 'opacity 0.35s ease, transform 0.35s ease',
@@ -4584,7 +4585,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             Analysis fires when Done is pressed so RPE/fatigue land first. */}
         {hasPaidAccess && selectedActivity && (
           <div style={{
-            marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px',
+            marginTop: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
             justifyContent: 'center',
           }}>
             <AIMark size={10} color="var(--moss)" working />
@@ -4601,7 +4602,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
           <button
             onClick={onUpgrade}
             style={{
-              marginTop: '10px', width: '100%',
+              marginTop: 'var(--space-3)', width: '100%',
               background: 'none', border: 'none', padding: '8px 0',
               cursor: 'pointer', textAlign: 'center',
               fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)',
@@ -4622,11 +4623,11 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: '4px' }}>
           Skipped.
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '28px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--space-6)' }}>
           What got in the way?
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '28px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)', marginBottom: 'var(--space-6)' }}>
           {SKIP_REASONS.map(reason => {
             const isActive = skipReason === reason
             return (
@@ -4662,7 +4663,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         </div>
 
         <div style={{
-          minHeight: '48px', marginBottom: '20px',
+          minHeight: '48px', marginBottom: 'var(--space-5)',
           opacity: reflectResponse ? 1 : 0,
           transform: reflectResponse ? 'translateY(0)' : 'translateY(6px)',
           transition: 'opacity 0.35s ease, transform 0.35s ease',
@@ -4704,7 +4705,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
       {/* ── TOP BLOCK ── */}
       <div style={{ padding: '14px 18px 16px 18px', borderBottom: '1px solid var(--line)' }}>
         {/* Date + status */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', letterSpacing: '0.02em' }}>
             {session.day} · {session.date}
           </span>
@@ -4756,7 +4757,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
               aria-label={isInteractive ? `${rangeLabel} · tap to learn` : rangeLabel}
               style={{
                 display: 'block', width: '100%', textAlign: 'left',
-                marginBottom: '14px',
+                marginBottom: 'var(--space-4)',
                 background: 'var(--card)',
                 border: '1px solid var(--line)',
                 borderLeft: `3px solid ${config.color}`,
@@ -4768,8 +4769,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             >
               {/* Hold the zone eyebrow + ⓘ affordance */}
               <div style={{
-                display: 'flex', alignItems: 'center', gap: '8px',
-                marginBottom: '6px',
+                display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+                marginBottom: 'var(--space-2)',
               }}>
                 <span style={{
                   width: '6px', height: '6px', borderRadius: '50%',
@@ -4803,7 +4804,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
               {hrDisplay && (
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontSize: '12px',
-                  color: 'var(--mute)', marginBottom: '10px',
+                  color: 'var(--mute)', marginBottom: 'var(--space-3)',
                   fontVariantNumeric: 'tabular-nums',
                 }}>
                   {hrDisplay} bpm
@@ -4825,7 +4826,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '13px',
               color: 'var(--ink-2)', lineHeight: 1.5,
-              padding: '0 4px', marginBottom: '14px',
+              padding: '0 4px', marginBottom: 'var(--space-4)',
             }}>
               {voice}
             </div>
@@ -4835,17 +4836,17 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         {/* ── METRIC GRID ────────────────────────────────────────────
             2-up: Distance/Duration + Pace. HR tile removed — the prescription
             card above owns Zone + HR + ZoneBar (no more duplicate rendering). */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
           {/* Primary metric card with per-session toggle */}
           {(estimatedDistance || estimatedDuration) && ['easy','run','quality','intervals','hard','tempo','long','race','recovery'].includes(session.type) && (
             <div style={{ background: `${config.color}10`, borderRadius: '10px', padding: '10px 12px', border: `1px solid ${config.color}30` }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 {effectiveMetric === 'distance' ? 'Distance' : 'Duration'}
                 {isMetricCustom && (
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', background: 'var(--warn-bg)', color: 'var(--warn)', border: '1px solid var(--line)', borderRadius: '4px', padding: '1px 5px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>custom</span>
                 )}
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: config.color, lineHeight: 1, marginBottom: '6px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: config.color, lineHeight: 1, marginBottom: 'var(--space-2)' }}>
                 {effectiveMetric === 'distance'
                   ? <>{distanceIsEstimated ? '~' : ''}{formatDistance(estimatedDistance, preferredUnits, { noSuffix: true, exact: session.type === 'race' }) ?? '—'}<span style={{ fontSize: '11px', fontWeight: 400, color: config.color, opacity: 0.7 }}> {preferredUnits}</span></>
                   : <span style={{ fontSize: '18px' }}>{estimatedDuration ?? '—'}</span>
@@ -4872,7 +4873,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1 }}>~{paceBracket}</div>
               {paceSource === 'plan' && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', marginTop: '6px' }}>Pace target</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', marginTop: 'var(--space-2)' }}>Pace target</div>
               )}
             </div>
           )}
@@ -4923,11 +4924,11 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             const flag = completion?.coaching_flag as string | null | undefined
             return (
               <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--line)', background: 'var(--bg-soft)' }}>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
 
                   {/* Planned column */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Planned</div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 'var(--space-2)' }}>Planned</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                       {(estimatedDistance || estimatedDuration) && (
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)' }}>
@@ -4962,7 +4963,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                   {/* Actual column — metrics from strava_activities via linkedRun,
                       RPE from session_completions (user-entered, ADR-011) */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
                       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Actual</div>
                       {flag && (
                         <span style={{
@@ -5046,7 +5047,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             if (hasStructure) return null
             return (
               <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>What to do</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>What to do</div>
                 <div style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.7 }}>{session.detail}</div>
               </div>
             )
@@ -5141,7 +5142,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                sticky bar, which inverted the layout. */}
           {(isComplete || isSkipped) && (
             <div style={{ padding: '18px 18px 8px', borderTop: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 'var(--space-4)' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.2px' }}>
                   How did it feel?
                 </div>
@@ -5149,7 +5150,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
               </div>
 
               {/* RPE — RPEScale shared component */}
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: 'var(--space-5)' }}>
                 <RPEScale
                   value={rpe}
                   onChange={(n) => { setRpe(n); saveRPEFatigue(n, fatigueTag) }}
@@ -5159,8 +5160,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
 
               {/* Fatigue tags */}
               <div style={{ marginBottom: '4px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Body feeling</div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>Body feeling</div>
+                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                   {FATIGUE_TAGS.map(tag => {
                     const isActive = fatigueTag === tag
                     const tagColor = tag === 'Fresh' ? 'var(--moss)' : tag === 'Fine' ? 'var(--moss)' : tag === 'Heavy' ? 'var(--warn)' : 'var(--danger)'
@@ -5182,7 +5183,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             padding: '12px 18px 16px',
             background: 'var(--card)',
             borderTop: '1px solid var(--line)',
-            display: 'flex', gap: '8px', flexWrap: 'wrap',
+            display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap',
             borderRadius: '0 0 12px 12px',
           }}>
             {(() => {
@@ -5269,7 +5270,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                       formatRelativeTime(startDate),
                     ].filter(Boolean).join(' · ')
                     return (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', width: '100%' }}>
                         <button
                           onClick={handleMarkComplete}
                           style={{
@@ -5287,7 +5288,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                           {isHigh ? 'Log this run' : 'Looks like this one?'}
                         </button>
                         <div style={{
-                          display: 'flex', alignItems: 'center', gap: '6px',
+                          display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
                           padding: '0 4px',
                           fontFamily: 'var(--font-ui)', fontSize: '11px',
                           color: 'var(--mute)', lineHeight: 1.4,
@@ -5362,7 +5363,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                       <button onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px', background: 'var(--card-bg)', color: config.color, border: `0.5px solid ${config.color}40`, borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
                         Log manually
                       </button>
-                      <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                      <div style={{ display: 'flex', gap: 'var(--space-2)', width: '100%' }}>
                         <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '11px', fontFamily: 'var(--font-ui)', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
                           Skip
                         </button>
@@ -5371,7 +5372,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                   )
                 } else {
                   return (
-                    <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                    <div style={{ display: 'flex', gap: 'var(--space-2)', width: '100%' }}>
                       {/* RESHAPE-FIX-WAVE2B (Defect 10): non-run "Mark as done"
                           previously fired saveCompletion('complete') with no
                           activity / no RPE / no fatigue — producing a bare
@@ -5398,8 +5399,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
       {/* Strava log view */}
       {view === 'complete' && (
         <div style={{ padding: '16px 18px 24px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>Link an activity</div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>Optional — select from recent runs</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-4)' }}>Link an activity</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>Optional — select from recent runs</div>
           {loadingClaimed ? (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0' }}>Loading activities...</div>
           ) : claimedError ? (
@@ -5407,11 +5408,11 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             // for a real load error as for "no matches" — silent breakage was
             // unrecoverable by sight. Honest one-line says what happened and
             // points to the only meaningful next action (retry by reopening).
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', padding: '12px 0', marginBottom: '8px', lineHeight: 1.5 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', padding: '12px 0', marginBottom: 'var(--space-2)', lineHeight: 1.5 }}>
               Couldn&apos;t load activities. Tap Back, then try again.
             </div>
           ) : stravaRuns.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', maxHeight: '200px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', maxHeight: '200px', overflowY: 'auto' }}>
               {stravaRuns.slice(0, 20).map((run: any) => {
                 const isSelected = selectedActivity?.id === run.id
                 return (
@@ -5433,9 +5434,9 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
               })}
             </div>
           ) : (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: '8px' }}>No activities found near this session date</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: 'var(--space-2)' }}>No activities found near this session date</div>
           )}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer' }}>Back</button>
             {/* RESHAPE-FIX-WAVE2B (Defect 10): the 2026-06-26 incident's
                 phantom completion came from this exact button — tapped
@@ -5478,10 +5479,10 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
 
       {view === 'skip' && (
         <div style={{ padding: '16px 18px 24px' }}>
-          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 'var(--space-5)' }}>
             Skip it. It'll stay in your log.
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
             <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer' }}>Back</button>
             <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: 'var(--card-bg)', color: 'var(--text-secondary)', border: '1px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, opacity: saving ? 0.6 : 1 }}>
               {saving ? 'Saving...' : 'Mark as skipped'}
@@ -5906,7 +5907,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
   const labelStyle: React.CSSProperties = {
     fontFamily: 'var(--font-ui)', fontSize: '10px',
     color: 'var(--text-muted)', textTransform: 'uppercase',
-    letterSpacing: '0.08em', marginBottom: '8px',
+    letterSpacing: '0.08em', marginBottom: 'var(--space-2)',
   }
 
   return (
@@ -5916,7 +5917,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
         {/* ── REFLECT STEP — shown after save ── */}
         {savedStep ? (
           <div style={{ padding: '8px 0 16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
               <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--teal-soft)', border: '0.5px solid var(--teal-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path d="M2.5 7L5.5 10L11.5 4" stroke="var(--teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -5928,18 +5929,18 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               </div>
             </div>
 
-            <div style={{ height: '0.5px', background: 'var(--border-col)', marginBottom: '20px' }} />
+            <div style={{ height: '0.5px', background: 'var(--border-col)', marginBottom: 'var(--space-5)' }} />
 
             <div style={{ fontFamily: 'var(--font-brand)', fontSize: '19px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.3px', marginBottom: '4px' }}>
               How did that land?
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--space-5)' }}>
               Effort and body state. That's all I need.
             </div>
 
             {/* RPE */}
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Effort (RPE)</div>
+            <div style={{ marginBottom: 'var(--space-4)' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>Effort (RPE)</div>
               <div style={{ display: 'flex', gap: '5px' }}>
                 {[1,2,3,4,5,6,7,8,9,10].map(n => {
                   const active = rpe === n
@@ -5965,9 +5966,9 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             </div>
 
             {/* Feel tags */}
-            <div style={{ marginBottom: '20px' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Body state</div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ marginBottom: 'var(--space-5)' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>Body state</div>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {FATIGUE_TAGS.map(tag => {
                   const active = fatigueTag === tag
                   const tagColor = tag === 'Fresh' ? 'var(--session-green)' : tag === 'Fine' ? 'var(--accent)' : tag === 'Heavy' ? 'var(--amber)' : 'var(--coral)'
@@ -5995,7 +5996,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
 
             {/* Zonna response */}
             <div style={{
-              minHeight: '48px', marginBottom: '16px',
+              minHeight: '48px', marginBottom: 'var(--space-4)',
               opacity: reflectResponse ? 1 : 0,
               transform: reflectResponse ? 'translateY(0)' : 'translateY(6px)',
               transition: 'opacity 0.35s ease, transform 0.35s ease',
@@ -6032,7 +6033,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
         ) : (
           <>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
               <div>
                 <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{accumulate ? 'Add another effort' : isEdit ? 'Update your log' : 'Log a run'}</div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -6049,7 +6050,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               <div style={{
                 background: `color-mix(in srgb, ${sessionColour} 8%, transparent)`,
                 border: `0.5px solid color-mix(in srgb, ${sessionColour} 30%, transparent)`,
-                borderRadius: '10px', padding: '10px 14px', marginBottom: '20px',
+                borderRadius: '10px', padding: '10px 14px', marginBottom: 'var(--space-5)',
               }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: sessionColour, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '3px' }}>
                   Planned
@@ -6069,16 +6070,16 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             )}
 
             {/* Distance */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: 'var(--space-5)' }}>
               <div style={labelStyle}>Distance ({preferredUnits})</div>
               <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
                   <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '32px', textAlign: 'center' }}>{distWhole}</span>
                   <button onClick={() => setDistWhole(distWhole + 1)} style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--text-muted)', padding: '0 4px' }}>.</div>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px 8px' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
                   <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '16px', textAlign: 'center' }}>{distDecimal}</span>
                   <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
@@ -6089,7 +6090,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
 
             {/* Duration — shared wheel primitive (FORMS-PRIM-01), no keyboard,
                 no iOS zoom trap, one owner of the HH:MM:SS control. */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: 'var(--space-5)' }}>
               <div style={labelStyle}>Duration</div>
               <DurationPicker
                 hours={hours} mins={minutes} secs={seconds}
@@ -6102,7 +6103,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                 zone-discipline read in the coaching card. 16px font avoids the
                 iOS focus-zoom trap. */}
             {!accumulate && (
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: 'var(--space-5)' }}>
                 <div style={labelStyle}>Average HR <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6, fontSize: '10px' }}>optional · bpm</span></div>
                 <input
                   type="number"
@@ -6128,7 +6129,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             )}
 
             {/* Notes */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: 'var(--space-5)' }}>
               <div style={labelStyle}>Notes <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6, fontSize: '10px' }}>optional</span></div>
               <textarea
                 placeholder="Anything worth remembering?"
@@ -6342,12 +6343,12 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
     <div style={{ margin: '12px 12px 0' }}>
       <div style={{
         background: 'var(--card-bg)', borderRadius: '16px',
-        border: '0.5px solid var(--border-col)', padding: '20px 18px', marginBottom: '10px',
+        border: '0.5px solid var(--border-col)', padding: '20px 18px', marginBottom: 'var(--space-3)',
       }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '10px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 'var(--space-3)' }}>
           {copy.label}
         </div>
-        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: '8px', letterSpacing: '-0.3px' }}>
+        <div style={{ fontSize: '22px', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1.25, marginBottom: 'var(--space-2)', letterSpacing: '-0.3px' }}>
           {copy.headline}
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
@@ -6370,7 +6371,7 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{nextSession.detail}</div>
             )}
           </div>
-          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: getSessionColor(nextSession), flexShrink: 0, marginLeft: '12px' }} />
+          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: getSessionColor(nextSession), flexShrink: 0, marginLeft: 'var(--space-3)' }} />
         </div>
       )}
     </div>
@@ -6450,7 +6451,7 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
       border:       '1px solid var(--line)',
       padding:      '18px 20px 16px 22px',
       position:     'relative',
-      marginBottom: '16px',
+      marginBottom: 'var(--space-4)',
     }}>
       {/* 3px warn left rail — coaching-warning rail, NOT moss CTA rail.
           Same colour rule as the discipline ledger: rule-derived caution
@@ -6466,7 +6467,7 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
       }} />
 
       {/* Eyebrow + reason chips */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)', flexWrap: 'wrap' }}>
         <span style={{
           fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
           color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.12em',
@@ -6494,7 +6495,7 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
 
       {/* Two actions: ease (primary) + run-anyway (secondary).
           Override stays equally visible — restraint isn't enforced. */}
-      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
         <button
           onClick={ease}
           disabled={loading}
@@ -6577,7 +6578,7 @@ function ReadinessSteadyChip({ detail }: {
         border:       '1px solid var(--line)',
         borderRadius: 'var(--radius-md)',
         padding:      '10px 14px 10px 16px',
-        marginBottom: '8px',
+        marginBottom: 'var(--space-2)',
         cursor:       'pointer',
         textAlign:    'left',
         position:     'relative',
@@ -6593,7 +6594,7 @@ function ReadinessSteadyChip({ detail }: {
         background:   'var(--moss)',
         borderRadius: '2px',
       }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', justifyContent: 'space-between' }}>
         <span style={{
           fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
           color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.12em',
@@ -6606,7 +6607,7 @@ function ReadinessSteadyChip({ detail }: {
       </div>
       {expanded && (
         <div style={{
-          marginTop: '8px',
+          marginTop: 'var(--space-2)',
           fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)',
           lineHeight: 1.55,
           fontVariantNumeric: 'tabular-nums',
@@ -6747,27 +6748,27 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   }
 
   const backBtn = (
-    <BackButton onClick={onBack} style={{ marginBottom: '20px' }} />
+    <BackButton onClick={onBack} style={{ marginBottom: 'var(--space-5)' }} />
   )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
       <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
         {backBtn}
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
           Plan adjustment
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '8px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 'var(--space-2)' }}>
           Reshape plan
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: '28px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: 'var(--space-6)' }}>
           {status === 'loading' ? 'Checking your recent sessions for adjustment signals.' : `Here's what ${BRAND.name} found.`}
         </div>
       </div>
 
       <div style={{ flex: 1, padding: '0 20px 24px' }}>
         {status === 'loading' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <style>{`@keyframes zonna-shimmer { 0%,100%{opacity:.3} 50%{opacity:.6} }`}</style>
             {[1,2,3].map(i => (
               <div key={i} style={{ height: '64px', borderRadius: '12px', background: 'var(--line-strong)', animation: 'zonna-shimmer 1.4s ease-in-out infinite', animationDelay: `${i * 0.1}s` }} />
@@ -6792,7 +6793,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
               <button
                 onClick={onOpenBenchmark}
                 style={{
-                  width: '100%', marginTop: '12px', padding: '15px',
+                  width: '100%', marginTop: 'var(--space-3)', padding: '15px',
                   borderRadius: 'var(--radius-md)', background: 'var(--moss)',
                   border: 'none', cursor: 'pointer',
                   fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)',
@@ -6806,12 +6807,12 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
 
         {status === 'clean' && (
           <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: '14px', border: '1px solid var(--line)', padding: '20px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--moss-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--moss-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 'var(--space-3)' }}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M3 8l3.5 3.5L13 5" stroke="var(--moss)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', marginBottom: '6px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink)', marginBottom: 'var(--space-2)' }}>
               Plan looks good.
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
@@ -6822,10 +6823,10 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
 
         {status === 'error' && (
           <div style={{ background: 'var(--warn-bg)', borderRadius: '14px', padding: '20px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--warn)', marginBottom: '6px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--warn)', marginBottom: 'var(--space-2)' }}>
               Something went wrong.
             </div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: '16px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
               {error}
             </div>
             <button onClick={() => void analyse()} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--warn)', background: 'none', color: 'var(--warn)', fontFamily: 'var(--font-ui)', fontSize: '13px', cursor: 'pointer' }}>
@@ -7228,9 +7229,9 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
   const fitnessLevel = (plan.meta as any)?.fitness_level as string | undefined
 
   if (!overridesReady) return (
-    <div style={{ paddingBottom: '8px' }}>
+    <div style={{ paddingBottom: 'var(--space-2)' }}>
       <div style={{ padding: '16px 16px 6px' }}>
-        <div style={{ width: '180px', height: '28px', borderRadius: '6px', background: 'var(--border-col)', marginBottom: '8px' }} />
+        <div style={{ width: '180px', height: '28px', borderRadius: '6px', background: 'var(--border-col)', marginBottom: 'var(--space-2)' }} />
         <div style={{ width: '100px', height: '14px', borderRadius: '4px', background: 'var(--border-col)' }} />
       </div>
       <div style={{ margin: '12px', height: '60px', borderRadius: '12px', background: 'var(--border-col)' }} />
@@ -7324,7 +7325,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
   const { pct: zoneDisciplinePercent, hits: zoneDisciplineHits } = zoneDiscipline(analysisRows)
 
   return (
-    <div style={{ paddingBottom: '32px' }}>
+    <div style={{ paddingBottom: 'var(--space-6)' }}>
 
       {/* CONNECT-01 — one-shot reminder banner for users who skipped the
           ConnectRuns ceremony. Self-contained; renders null on the wrong
@@ -7343,9 +7344,9 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        gap: '6px',
+        gap: 'var(--space-2)',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           <Wordmark size="xs" className="wordmark-today" />
           {/* Moss dot with soft halo */}
           <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
@@ -7379,8 +7380,8 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          marginBottom: '12px',
+          gap: 'var(--space-2)',
+          marginBottom: 'var(--space-3)',
         }}>
           <span style={{
             fontFamily: 'var(--font-ui)',
@@ -7426,7 +7427,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 return firstName ? `${greeting}, ${firstName}` : greeting
               })()}
             </div>
-            <div style={{ lineHeight: 1, marginBottom: '12px' }}>
+            <div style={{ lineHeight: 1, marginBottom: 'var(--space-3)' }}>
               <span style={{
                 fontFamily: 'var(--font-ui)',
                 fontSize: '56px',
@@ -7464,7 +7465,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 fontSize: '14px',
                 color: 'var(--ink-2)',
                 lineHeight: 1.5,
-                marginBottom: '20px',
+                marginBottom: 'var(--space-5)',
               }}>
                 A few easy runs a week, nothing hard. Arrive at week one fresh.
               </div>
@@ -7486,7 +7487,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 return firstName ? `${greeting}, ${firstName}` : greeting
               })()}
             </div>
-            <div style={{ lineHeight: 1, marginBottom: '16px' }}>
+            <div style={{ lineHeight: 1, marginBottom: 'var(--space-4)' }}>
               {(heroMetric === 'distance' ? selectedSession.distance != null : selectedSession.duration == null) && selectedSession.distance != null ? (
                 <>
                   <span style={{
@@ -7560,7 +7561,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 return firstName ? `${greeting}, ${firstName}` : greeting
               })()}
             </div>
-            <div style={{ lineHeight: 1, marginBottom: '16px' }}>
+            <div style={{ lineHeight: 1, marginBottom: 'var(--space-4)' }}>
               <span style={{
                 fontFamily: 'var(--font-ui)',
                 fontSize: '56px',
@@ -7596,7 +7597,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
           }
           const msg = messages[trialDaysLeft as 1 | 2 | 3 | 4]
           return (
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: 'var(--space-4)' }}>
               <button
                 onClick={onUpgrade}
                 style={{
@@ -7604,7 +7605,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                   background: 'var(--card)', border: '1px solid var(--line)',
                   borderLeft: '3px solid var(--moss)',
                   borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)',
                 }}
               >
                 <div>
@@ -7627,7 +7628,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
             Voice aligned with UpgradeScreen trial-expired headline (TRIAL-NUDGE-01).
             Warn accent (not moss — this is not a nudge). Plan still runs. */}
         {trialDaysLeft === 0 && !hasPaidAccess && (
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: 'var(--space-4)' }}>
             <button
               onClick={onUpgrade}
               style={{
@@ -7635,7 +7636,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 background: 'var(--card)', border: '1px solid var(--line)',
                 borderLeft: '3px solid var(--warn)',
                 borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)',
               }}
             >
               <div>
@@ -7657,7 +7658,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
             Shown when the race week is in the past and no result logged yet.
             Priority order: pendingReshape card > prompt button > nothing. */}
         {pendingReshape && (
-          <div style={{ marginBottom: '16px', animation: 'zonna-fade-in 0.2s ease-out' }}>
+          <div style={{ marginBottom: 'var(--space-4)', animation: 'zonna-fade-in 0.2s ease-out' }}>
             <PostRaceReshapeCard
               state="live"
               reshapeId={pendingReshape.reshapeId}
@@ -7677,7 +7678,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         )}
 
         {showRacePrompt && !pendingReshape && (
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: 'var(--space-4)' }}>
             {hasPaidAccess ? (
               <button
                 onClick={() => onLogRaceResult?.()}
@@ -7723,7 +7724,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
             accept/decline. Rule-engine copy → NO AIMark. Recovery-green rail
             mirrors the Plan-screen seam. */}
         {showMaintTransition && (
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: 'var(--space-4)' }}>
             <div style={{
               position: 'relative',
               background: 'var(--card)', boxShadow: 'var(--shadow-card)',
@@ -7739,13 +7740,13 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
                 color: 'var(--s-recov)', letterSpacing: '0.12em', textTransform: 'uppercase',
-                marginBottom: '6px',
+                marginBottom: 'var(--space-2)',
               }}>
                 After the race
               </div>
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 800,
-                color: 'var(--ink)', letterSpacing: '-0.01em', marginBottom: '6px',
+                color: 'var(--ink)', letterSpacing: '-0.01em', marginBottom: 'var(--space-2)',
               }}>
                 {(() => {
                   const src = (plan.meta as any).source_race_name as string | undefined
@@ -7761,7 +7762,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
               {maintWeekCount > 0 && (
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
-                  color: 'var(--mute)', marginBottom: '14px', letterSpacing: '0.01em',
+                  color: 'var(--mute)', marginBottom: 'var(--space-4)', letterSpacing: '0.01em',
                 }}>
                   {maintDaysPerWeek} day{maintDaysPerWeek === 1 ? '' : 's'}/week · {maintWeekCount} week{maintWeekCount === 1 ? '' : 's'} · below your base, on purpose
                 </div>
@@ -7797,7 +7798,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
             debrief is present it owns the card instead (CoachByline + moss rail);
             never both marks at once — provenance stays unambiguous. */}
         {showMaintCard && (
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: 'var(--space-4)' }}>
             <div style={{
               position: 'relative',
               background: 'var(--card)', boxShadow: 'var(--shadow-card)',
@@ -7813,7 +7814,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                     position: 'absolute', left: '8px', top: '14px', bottom: '34px',
                     width: '3px', borderRadius: '2px', background: 'var(--moss)',
                   }} />
-                  <div style={{ marginBottom: '8px' }}>
+                  <div style={{ marginBottom: 'var(--space-2)' }}>
                     <CoachByline color="moss" role="Maintenance" />
                   </div>
                   <p style={{
@@ -7835,7 +7836,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                       <div style={{
                         fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
                         color: 'var(--s-recov)', letterSpacing: '0.12em', textTransform: 'uppercase',
-                        marginBottom: '6px',
+                        marginBottom: 'var(--space-2)',
                       }}>
                         After the race
                       </div>
@@ -7874,7 +7875,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
             "plan's eased to base running" announcement, and never asks for a
             racing decision while the runner is still repairing. */}
         {nextGoalData && (
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: 'var(--space-4)' }}>
             <NextGoalCard
               achievement={nextGoalData.achievement}
               options={nextGoalData.options}
@@ -7898,7 +7899,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
               onReverted={onAdjustmentReverted}
             />
           ) : (
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: 'var(--space-4)' }}>
               <AdjustmentBanner
                 adjustment={pendingAdjustment}
                 onConfirmed={onAdjustmentConfirmed}
@@ -7917,14 +7918,14 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         {hasPaidAccess && (() => {
           if (!coachNoteSettled) {
             return (
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: 'var(--space-5)' }}>
                 <div style={{
                   background: 'var(--warn-bg)',
                   borderRadius: '14px',
                   padding: '16px 18px',
                 }}>
-                  <div style={{ height: '8px', width: '48px', background: 'var(--warn)', opacity: 0.25, borderRadius: '4px', marginBottom: '12px' }} />
-                  <div style={{ height: '10px', background: 'var(--warn)', opacity: 0.12, borderRadius: '4px', marginBottom: '8px', animation: 'ai-mark-pulse 1.6s ease-in-out infinite' }} />
+                  <div style={{ height: '8px', width: '48px', background: 'var(--warn)', opacity: 0.25, borderRadius: '4px', marginBottom: 'var(--space-3)' }} />
+                  <div style={{ height: '10px', background: 'var(--warn)', opacity: 0.12, borderRadius: '4px', marginBottom: 'var(--space-2)', animation: 'ai-mark-pulse 1.6s ease-in-out infinite' }} />
                   <div style={{ height: '10px', width: '70%', background: 'var(--warn)', opacity: 0.12, borderRadius: '4px', animation: 'ai-mark-pulse 1.6s ease-in-out infinite' }} />
                 </div>
               </div>
@@ -7934,7 +7935,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
           const coachLabel = weekPhaseLabel ?? 'COACH'
           if (dailyCoachNote) {
             return (
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: 'var(--space-5)' }}>
                 <CoachNoteBlock label={coachLabel} aiGenerated onChipClick={onOpenCoach}>
                   {dailyCoachNote}
                 </CoachNoteBlock>
@@ -7943,7 +7944,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
           }
           if (heavyFatigue) {
             return (
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: 'var(--space-5)' }}>
                 <CoachNoteBlock label="COACH">
                   Heavy trend. {ruleNote ? `${ruleNote} ` : ''}Ease it back today.
                 </CoachNoteBlock>
@@ -7951,7 +7952,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
             )
           }
           return (
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: 'var(--space-5)' }}>
               <CoachNoteBlock label={coachLabel}>
                 {ruleNote}
               </CoachNoteBlock>
@@ -7979,8 +7980,8 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         return (
           <div style={{
             padding: '0 16px',
-            marginBottom: '12px',
-            display: 'flex', alignItems: 'center', gap: '8px',
+            marginBottom: 'var(--space-3)',
+            display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
           }}>
             <span style={{
               width: '6px', height: '6px', borderRadius: '50%',
@@ -8009,7 +8010,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: '10px',
+              marginBottom: 'var(--space-3)',
             }}>
               <span style={{
                 fontFamily: 'var(--font-ui)',
@@ -8062,7 +8063,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                   border:       '1px solid var(--line)',
                   borderRadius: 'var(--radius-lg)',
                   padding:      '16px 20px 16px 22px',
-                  marginBottom: '8px',
+                  marginBottom: 'var(--space-2)',
                   position:     'relative',
                 }}>
                   {/* 3px moss left rail — completion accent, no warn here.
@@ -8089,7 +8090,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                   </p>
                   {metric && (
                     <div style={{
-                      marginTop: '8px',
+                      marginTop: 'var(--space-2)',
                       fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
                       color: 'var(--ink-2)', fontVariantNumeric: 'tabular-nums',
                     }}>
@@ -8229,7 +8230,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
             {(() => {
               const dz = displayZonesForSession(selectedSession)
               if (!dz) return null
-              return <ZoneBar activeZones={dz.zones} style={{ marginTop: '10px' }} />
+              return <ZoneBar activeZones={dz.zones} style={{ marginTop: 'var(--space-3)' }} />
             })()}
 
             {/* Primary CTA — only on today's session if not yet done */}
@@ -8247,7 +8248,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                   })
                 }}
                 style={{
-                  marginTop: '10px',
+                  marginTop: 'var(--space-3)',
                   width: '100%',
                   padding: '14px',
                   background: 'var(--moss)',
@@ -8270,7 +8271,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
               <button
                 onClick={() => setShowManualLog(true)}
                 style={{
-                  marginTop: '8px',
+                  marginTop: 'var(--space-2)',
                   width: '100%',
                   padding: '10px',
                   background: 'none',
@@ -8309,7 +8310,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
        *  never came back to rate. One subtle row per missing RPE; tap routes
        *  to PostRunScreen so they can add it now. Capped at 3. */}
       {hasPaidAccess && missingRpeNudges.length > 0 && onOpenPostRun && (
-        <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {missingRpeNudges.map(nudge => {
             const distLabel = nudge.distKm != null
               ? `${nudge.distKm < 10 ? nudge.distKm.toFixed(1) : Math.round(nudge.distKm)}${preferredUnits === 'mi' ? 'mi' : 'K'}`
@@ -8561,7 +8562,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   }, [hasPaidAccess, currentWeekIndex, plan])
 
   return (
-    <div style={{ paddingBottom: '32px' }}>
+    <div style={{ paddingBottom: 'var(--space-6)' }}>
 
       {/* ── HEADER ───────────────────────────────────────────────── */}
       <ScreenHeader title="Your plan" />
@@ -8664,34 +8665,30 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           GUESSED inputs would silently change things the runner never asked
           to change. A row that cannot work is worse than no row. */}
       {onOpenModify && (
-        <div style={{ padding: '0 16px', marginBottom: '16px' }}>
-          <button
+        // ⚠️ THE TOP GAP IS DECLARED, NOT INHERITED (APP-SPACE-01). This wrapper
+        // carried a bottom margin and NO top margin, so the only thing between
+        // the arc and this tile was `PlanArc`'s own trailing 6px — the founder
+        // read it as "too close" and he was reading an ABSENT DECISION, not a
+        // small one. `design-rulings.md` § 332: *"a gap of zero is not a gap,
+        // it is an absent decision … a spacing audit finds wrong values and is
+        // structurally blind to missing ones."* Sweeping alone could not have
+        // fixed this.
+        <div style={{ padding: '0 16px', marginTop: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+          {/* ACTION-ROW-01 — the shared pattern, with the affordance. This was a
+              hand-rolled card with NO chevron, on a screen where every session
+              row beside it has one. The cause was structural: the chevron was a
+              local `const` inside the Me screen, so it could not travel here. */}
+          <ActionRow
             onClick={onOpenModify}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '14px 16px', background: 'var(--card)', borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left',
-            }}
-          >
-            <div>
-              {/* PLANVERB-01 — TWO VERBS, because there were two doors with one
-                  name. This row and the one on Me both read "Change your plan"
-                  and went to different places: this opens `ModifyPlanSheet`
-                  and keeps the plan; Me's opens the wizard, which ARCHIVES it.
-                  The subtitles carried the difference and the title is what a
-                  runner reads. Adjust = keep the plan. Start = replace it. */}
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4 }}>
-                Adjust your plan
-              </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-                Days, time limits, injuries or the race date. Without starting again.
-              </div>
-            </div>
-          </button>
+            title="Adjust your plan"
+            subtitle="Days, time limits, injuries or the race date. Without starting again."
+          />
+          </div>
         </div>
       )}
 
-      <div style={{ paddingTop: '12px' }}>
+      <div style={{ paddingTop: 'var(--space-3)' }}>
         <PlanCalendar
           weeks={plan.weeks}
           allOverrides={allOverrides}
@@ -8720,7 +8717,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
           `PLAN-NOTE-PLACEMENT-01` (whether the rationale belongs at the top at
           all) — that is a separate SLT question and bundling it would answer it
           by accident. */}
-      <div style={{ padding: '0 16px', marginBottom: '16px' }}>
+      <div style={{ padding: '0 16px', marginBottom: 'var(--space-4)' }}>
         <ZoneWeekBlock outcomes={zoneOutcomesThisWeek} locked={!hasPaidAccess} />
       </div>
 
@@ -8749,7 +8746,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
         return (
           <div style={{ padding: '16px 16px 0' }}>
             <SectionLabel>Why this plan</SectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
               {rationale.map((n, i) => (
                 <CoachNoteBlock key={i} label={n.label} variant="why">
                   {n.text}
@@ -8812,7 +8809,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                   width: '3px', borderRadius: '2px', background: 'var(--moss)',
                 }} />
                 {/* Eyebrow row: CoachByline (paid) or rule-engine label (free) + phase chip */}
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
                   {showByline ? (
                     <CoachByline
                       color="moss"
@@ -8835,7 +8832,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                   )}
                 </div>
                 {isLoading ? (
-                  <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                     <div style={{ height: '17px', width: '85%', borderRadius: '4px', background: 'var(--bg-soft)', opacity: 0.6 }} />
                     <div style={{ height: '13px', width: '70%', borderRadius: '4px', background: 'var(--bg-soft)', opacity: 0.4 }} />
                   </div>
@@ -8847,7 +8844,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
                       marginBottom: items.length > 0 ? '10px' : 0,
                     }}>{headline}</div>
                     {items.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
                         {items.map((item: string, i: number) => (
                           <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
                             {item}
@@ -8860,7 +8857,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
               </div>
               {/* Km target footer — mirrors PlanCoachingCard footer pattern */}
               {weeklyKmTarget > 0 && (
-                <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
                     {weeklyKmTarget}{preferredUnits} target
                   </span>
@@ -8906,7 +8903,7 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
   return (
     <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
       {/* Header */}
-      <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Week notes</span>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)', opacity: 0.6 }}>· Your training plan</span>
         {phaseCap && (
@@ -8926,7 +8923,7 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
           </div>
         )}
         {items.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             {items.map((item, i) => (
               <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.65 }}>
                 {item}
@@ -8937,7 +8934,7 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
       </div>
       {/* Distance footer — target + done together so the gap is visible */}
       {weeklyKm > 0 && (
-        <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
             {weeklyKm}{units} target
           </span>
@@ -9007,7 +9004,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
   return (
     <div>
       <ScreenHeader title="Your coach" sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`} />
-      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
 
         {/* KIT-TASTE-01 — free insight card / risk warning / empty-state hint.
             Sits above the locked report. Locked stats below stay locked. */}
@@ -9016,10 +9013,10 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
             background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)',
             borderLeft: '3px solid var(--moss)', padding: '16px 18px',
           }}>
-            <div style={{ marginBottom: '10px' }}>
+            <div style={{ marginBottom: 'var(--space-3)' }}>
               <CoachByline working />
             </div>
-            <div style={{ height: '14px', width: '70%', borderRadius: '4px', background: 'var(--bg-soft)', marginBottom: '8px' }} />
+            <div style={{ height: '14px', width: '70%', borderRadius: '4px', background: 'var(--bg-soft)', marginBottom: 'var(--space-2)' }} />
             <div style={{ height: '12px', width: '92%', borderRadius: '4px', background: 'var(--bg-soft)' }} />
           </div>
         )}
@@ -9037,7 +9034,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
               position: 'absolute', left: '8px', top: '16px', bottom: '16px',
               width: '3px', background: 'var(--moss)', borderRadius: '2px',
             }} />
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
               <CoachByline role="THIS WEEK" />
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
                 W{weekNum} of {totalWeeks}
@@ -9065,7 +9062,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
               position: 'absolute', left: '8px', top: '16px', bottom: '16px',
               width: '3px', background: 'var(--warn)', borderRadius: '2px',
             }} />
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 'var(--space-2)' }}>
               Worth a look
             </div>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink)', lineHeight: 1.55, margin: 0 }}>
@@ -9091,11 +9088,11 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
               color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
-              marginBottom: '12px',
+              marginBottom: 'var(--space-3)',
             }}>
               Example &mdash; not your data
             </div>
-            <div style={{ marginBottom: '10px' }}>
+            <div style={{ marginBottom: 'var(--space-3)' }}>
               <CoachByline role="EXAMPLE" />
             </div>
             <p style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3, margin: '0 0 8px' }}>
@@ -9107,7 +9104,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
             </p>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.55,
-              paddingTop: '12px', borderTop: '1px solid var(--line)',
+              paddingTop: 'var(--space-3)', borderTop: '1px solid var(--line)',
             }}>
               {insight.loggedCount === 0
                 ? 'Log a session to unlock your own weekly reading. RPE + fatigue is all Kit needs.'
@@ -9128,7 +9125,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
           opacity:      0.45,
           pointerEvents: 'none',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-3)' }}>
             <CoachByline />
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
               W{weekNum} of {totalWeeks}
@@ -9142,12 +9139,12 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
 
         {/* Locked report card — mirrors the paid CoachScreen weekly report card anatomy */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-          <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--mute)', opacity: 0.3 }} />
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>This week</span>
           </div>
           <div style={{ padding: '16px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600, color: 'var(--mute)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: '8px', opacity: 0.45 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 600, color: 'var(--mute)', letterSpacing: '-0.3px', lineHeight: 1.3, marginBottom: 'var(--space-2)', opacity: 0.45 }}>
               Your weekly coaching report.
             </div>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.7, margin: 0, opacity: 0.5 }}>
@@ -9155,7 +9152,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
             </p>
           </div>
           {/* Locked stats row */}
-          <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', gap: '16px' }}>
+          <div style={{ padding: '10px 16px', borderTop: '1px solid var(--line)', display: 'flex', gap: 'var(--space-4)' }}>
             {(['Zone discipline', 'Load ratio'] as const).map((label) => (
               <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
@@ -9176,7 +9173,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
             borderRadius: '10px',
             padding: '14px 16px',
             cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: '12px',
+            display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
           }}
         >
           <div style={{ flex: 1 }}>
@@ -9205,7 +9202,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
             borderRadius: '10px',
             padding: '14px 16px',
             cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: '12px',
+            display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
           }}
         >
           <div style={{ flex: 1 }}>
@@ -9223,7 +9220,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
 
         {/* Locked race projections stub — display only, not a CTA */}
         <div style={{ width: '100%', background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px', opacity: 0.5 }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)', opacity: 0.5 }}>
             Race projections
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', opacity: 0.25 }}>
@@ -9278,7 +9275,7 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
       onClick={onShare}
       disabled={busy}
       style={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)',
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
         // SHARE moment — promoted to filled-moss CTA per audit item #10.
         color: 'var(--card)',
@@ -9335,7 +9332,7 @@ function SaveImageButton({ weekN, sessionDay }: { weekN: number; sessionDay: str
       onClick={onSave}
       disabled={busy}
       style={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)',
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
         color: 'var(--moss)',
         background: 'var(--moss-soft)',
@@ -9382,7 +9379,7 @@ function LedgerCard({ ledger: ledgerProp }: { ledger?: LedgerSnapshot | null }) 
             color: 'var(--mute)', opacity: 0.4,
             fontVariantNumeric: 'tabular-nums', lineHeight: 1,
             letterSpacing: '-0.05em',
-            marginBottom: '8px',
+            marginBottom: 'var(--space-2)',
           }}>—</div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5 }}>
             weeks within the lines
@@ -9390,7 +9387,7 @@ function LedgerCard({ ledger: ledgerProp }: { ledger?: LedgerSnapshot | null }) 
         </>
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '44px', fontWeight: 800,
               color: ledger.weeksWithinLines === 0 ? 'var(--mute)' : 'var(--ink)',
@@ -9409,7 +9406,7 @@ function LedgerCard({ ledger: ledgerProp }: { ledger?: LedgerSnapshot | null }) 
               </span>
             )}
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: ledger.weeksWithinLines === 0 ? 'var(--ink-2)' : 'var(--mute)', lineHeight: 1.5, marginBottom: '14px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: ledger.weeksWithinLines === 0 ? 'var(--ink-2)' : 'var(--mute)', lineHeight: 1.5, marginBottom: 'var(--space-4)' }}>
             {ledger.weeksWithinLines === 0
               ? 'This week starts the count.'
               : 'weeks within the lines'}
@@ -9967,7 +9964,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
     <div>
       <ScreenHeader title="Your coach" sub={`W${weekNum} of ${totalWeeks}`} />
 
-      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '32px' }}>
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', paddingBottom: 'var(--space-6)' }}>
 
         {/* ── CO-ONE: THE ONE KIT READ ──────────────────────────────────
             Single authored synthesis. Replaces five previous standalone Kit
@@ -9997,13 +9994,13 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           }} />
 
           {/* Eyebrow — single byline + week counter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
             {consolidatedRead.hasAiContent ? (
               <CoachByline working={consolidatedRead.isLoading} color="moss" role="This week" />
             ) : (
               // Empty state: dimmed Kit identity, NO AIMark (Pattern 16
               // provenance honesty — empty line is hand-authored).
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', opacity: 0.45 }} aria-label={`${BRAND.coachName} · this week`}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', opacity: 0.45 }} aria-label={`${BRAND.coachName} · this week`}>
                 <span aria-hidden="true" style={{
                   width: '22px', height: '22px', borderRadius: '50%',
                   background: 'var(--moss)',
@@ -10029,7 +10026,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           </div>
 
           {stravaTokenFailed && !stravaLoading && (
-            <div style={{ marginBottom: '12px' }}>
+            <div style={{ marginBottom: 'var(--space-3)' }}>
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--ink-2)', opacity: 0.7 }}>
                 Strava connection expired. Reconnect in Profile.
               </span>
@@ -10037,7 +10034,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           )}
 
           {consolidatedRead.isLoading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
               {[85, 100, 70].map((w, i) => (
                 <div key={i} style={{ height: '13px', background: 'var(--moss-soft)', borderRadius: '4px', width: `${w}%` }} />
               ))}
@@ -10075,12 +10072,12 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           )}
 
           {error && (
-            <div style={{ marginTop: '10px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', opacity: 0.85 }}>
+            <div style={{ marginTop: 'var(--space-3)', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--danger)', opacity: 0.85 }}>
               {error}
             </div>
           )}
 
-          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ marginTop: 'var(--space-4)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
             {refreshBlocked && (
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', display: 'block', width: '100%', marginBottom: '4px' }}>
                 Already refreshed today.
@@ -10093,7 +10090,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               <button
                 onClick={consolidatedRead.cta.onClick}
                 style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)',
                   fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
                   color: 'var(--card)',
                   background: 'var(--moss)',
@@ -10112,7 +10109,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 onClick={generateReport}
                 disabled={loading || refreshBlocked}
                 style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)',
                   fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
                   color: 'var(--moss)',
                   background: 'var(--moss-soft)',
@@ -10269,7 +10266,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
             Numbers still follow the read: the read is the hero, these are the
             evidence, and there are two pieces of it now instead of four. */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
           {([
             {
               // ── A5 — SHAPE, NEVER SCORE (Design Board, app review) ────────
@@ -10305,7 +10302,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
           ] as const).map((m) => {
             const inner = (
               <>
-                <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div className="label-uppercase" style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   {m.label}
                   {m.onTap && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--moss)' }}>ⓘ</span>}
                 </div>
@@ -10316,7 +10313,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                   className={m.shape ? undefined : 'num-data'}
                   style={m.shape
                     ? { fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 700, color: m.valueColor, letterSpacing: '-0.2px', lineHeight: 1.25 }
-                    : { fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: m.valueColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: '6px' }}
+                    : { fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: m.valueColor, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px', lineHeight: 1, marginBottom: 'var(--space-2)' }}
                 >
                   {m.value}
                 </div>
@@ -10343,7 +10340,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             {(close) => (
             <>
               <div style={{ padding: '0 20px 4px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 'var(--space-2)' }}>
                   Load ratio
                 </div>
                 <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.15 }}>
@@ -10356,7 +10353,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 )}
               </div>
 
-              <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                 {[
                   'Compares this week\'s training load to your rolling average over the past four weeks. A ratio of 1.0 means you\'re doing exactly what your body is used to.',
                   'Under 0.8: you\'re doing less than normal, which is fine for recovery weeks. Between 0.8 and 1.3 is the safe build zone. Above 1.3 means this week is harder than your recent baseline.',
@@ -10366,7 +10363,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 ))}
               </div>
 
-              <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
+              <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: 'var(--space-2)' }}>
                 <button onClick={close} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
                   Close
                 </button>
@@ -10382,7 +10379,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
             {(close) => (
             <>
               <div style={{ padding: '0 20px 4px' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 'var(--space-2)' }}>
                   Zone discipline
                 </div>
                 <div style={{ fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.15 }}>
@@ -10395,7 +10392,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 )}
               </div>
 
-              <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ padding: '18px 20px 8px', display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                 {[
                   'Each session in your plan has a prescribed zone: Zone 2 for easy runs, Zone 3 for tempo, Zone 4–5 for intervals. Zone discipline measures how many of your completed sessions actually landed in that zone.',
                   'Running easy days too hard is the most common training mistake. It doesn\'t feel like much in the moment, but it blunts the aerobic benefit and leaves you too tired to push when the hard sessions arrive.',
@@ -10405,7 +10402,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 ))}
               </div>
 
-              <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: '8px' }}>
+              <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: 'var(--space-2)' }}>
                 <button onClick={close} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
                   Close
                 </button>
@@ -10772,7 +10769,7 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
 
   return (
     <div style={{ margin: '4px 0', background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: 'var(--space-3)' }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>Run notifications</div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '2px', lineHeight: 1.4 }}>
@@ -10822,7 +10819,7 @@ function DailyPushToggleRow({ enabled, onChange, disabled = false }: {
   const effectiveOn = enabled && !disabled
   return (
     <div style={{ margin: '4px 0', background: 'var(--card)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', opacity: disabled ? 0.55 : 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: 'var(--space-3)' }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>Morning training push</div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '2px', lineHeight: 1.4 }}>
@@ -10912,7 +10909,7 @@ function StravaConnectionRow() {
   return (
     <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--strava-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--strava)' }} />
           </div>
@@ -11047,7 +11044,7 @@ function ConnectRunsBanner() {
       background: 'var(--card)', boxShadow: 'var(--shadow-card)',
       border: '1px solid var(--line)',
       borderRadius: '14px',
-      display: 'flex', alignItems: 'flex-start', gap: '10px',
+      display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
     }}>
       <span aria-hidden="true" style={{
         position: 'absolute', left: '8px', top: '14px', bottom: '14px',
@@ -11183,7 +11180,7 @@ function AppleHealthConnectionRow({ onHRFound }: {
   return (
     <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
           <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'var(--moss-mid)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--moss)' }} />
           </div>
@@ -11334,7 +11331,7 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
   }
 
   return (
-    <div style={{ marginBottom: '12px' }}>
+    <div style={{ marginBottom: 'var(--space-3)' }}>
       <button onClick={handleClick} disabled={busy}
         style={{
           width: '100%', padding: '10px',
@@ -11347,7 +11344,7 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
         {busy ? 'Reading Apple Health…' : 'Use your Apple Health values'}
       </button>
       {err && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', textAlign: 'center' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
           {err}
         </div>
       )}
@@ -11421,7 +11418,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
   const labelStyle: React.CSSProperties = {
     fontFamily: 'var(--font-ui)', fontSize: '10px',
     color: 'var(--text-muted)', textTransform: 'uppercase',
-    letterSpacing: '0.08em', marginBottom: '6px', display: 'block',
+    letterSpacing: '0.08em', marginBottom: 'var(--space-2)', display: 'block',
   }
 
   return (
@@ -11438,7 +11435,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
       {/* Editable HR inputs */}
       <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
         <AppleHealthPrefillButton onPrefill={(r, m) => { if (r != null) setRhr(String(r)); if (m != null) setMhr(String(m)) }} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
           <div>
             <label style={labelStyle}>Resting HR</label>
             <TextField type="number" inputMode="numeric" placeholder="48" unit="bpm"
@@ -11451,12 +11448,12 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
           </div>
         </div>
         {showEstHint && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '12px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: 'var(--space-3)' }}>
             Max HR estimated from your age. Edit it if you&rsquo;ve tested your true max.
           </div>
         )}
         {maxIsFloored && !showEstHint && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', lineHeight: 1.5, marginBottom: '12px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', lineHeight: 1.5, marginBottom: 'var(--space-3)' }}>
             {mhrNum} bpm is below the age estimate ({guardedMax} bpm) — usually the highest your device happened to record, not your true max. Zones use {guardedMax}. If {mhrNum} really is your max, tap Save to confirm it.
           </div>
         )}
@@ -11475,14 +11472,14 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
 
       {/* Calculated zones — read only */}
       {zones.length > 0 && (
-        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {/* System intro — answers "what are my zones?" before the table answers "what are mine?" */}
           <div style={{
             fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
             color: 'var(--ink-2)', lineHeight: 1.55,
             padding: '4px 2px 10px',
             borderBottom: '0.5px solid var(--border-col)',
-            marginBottom: '6px',
+            marginBottom: 'var(--space-2)',
           }}>
             Five zones. Most of your running stays in Zone 2 — easy, conversational. Some of it pushes into Zone 3 (tempo) or Zone 4–5 (intervals). The grey middle is where amateurs go to stall. Tap a zone to learn more.
           </div>
@@ -11494,7 +11491,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
                 : 'Your zones · HRR method'}
           </div>
           {hrZoneMethod && hrZoneMethod !== 'karvonen' && hrAssumptionNote && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: 'var(--space-2)' }}>
               {hrAssumptionNote}
             </div>
           )}
@@ -11504,7 +11501,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
               onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)}
               style={{
                 display: 'grid', gridTemplateColumns: '24px 1fr auto',
-                alignItems: 'center', gap: '10px',
+                alignItems: 'center', gap: 'var(--space-3)',
                 padding: '9px 10px', borderRadius: '8px',
                 background: 'var(--bg)',
                 border: '0.5px solid var(--border-col)',
@@ -11582,15 +11579,15 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '16px 16px 8px' }}>
         <BackButton onClick={onBack} />
         <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
           Delete your account
         </div>
       </div>
 
-      <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
-        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', flex: 1 }}>
+        <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.55 }}>
             Your sessions, plan, and profile will be permanently removed.
           </div>
@@ -11599,7 +11596,7 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
           </div>
         </div>
 
-        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', cursor: 'pointer' }}>
           <div
             onClick={() => setChecked(c => !c)}
             style={{ width: '20px', height: '20px', borderRadius: '5px', border: `1.5px solid ${checked ? 'var(--coral)' : 'var(--border-col)'}`, background: checked ? 'var(--session-intervals-soft)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '1px', cursor: 'pointer' }}
@@ -11713,22 +11710,22 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
   }
 
   const backBtn = (
-    <BackButton onClick={onBack} style={{ marginBottom: '20px' }} />
+    <BackButton onClick={onBack} style={{ marginBottom: 'var(--space-5)' }} />
   )
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
       <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
         {backBtn}
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
           Your training
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '24px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 'var(--space-5)' }}>
           Plan history
         </div>
       </div>
 
-      <div style={{ flex: 1, padding: '0 20px 32px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ flex: 1, padding: '0 20px 32px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         {status === 'loading' && (
           <>
             <style>{`@keyframes ph-shimmer { 0%,100%{opacity:.3} 50%{opacity:.6} }`}</style>
@@ -11744,13 +11741,13 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
         )}
 
         {status === 'error' && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', textAlign: 'center', marginTop: '48px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', textAlign: 'center', marginTop: 'var(--space-7)' }}>
             Couldn&apos;t load plan history. Go back and try again.
           </div>
         )}
 
         {status === 'loaded' && plans.length === 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: '200px', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: '200px', gap: 'var(--space-2)' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', fontWeight: 600, color: 'var(--ink)' }}>
               No prior plans.
             </div>
@@ -11856,16 +11853,16 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       {/* Header — back arrow top-left (ui-patterns: back arrow always top-left) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '16px 16px 8px' }}>
         <BackButton onClick={onBack} />
         <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
           Contact support
         </div>
       </div>
 
-      <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: '20px', flex: 1 }}>
+      <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', flex: 1 }}>
         {/* Intro + expectation-setting (the anxiety-killer line) */}
-        <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', color: 'var(--ink)', lineHeight: 1.55 }}>
             Something not working, or a question about your plan? Tell us.
           </div>
@@ -11883,11 +11880,11 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
         </button>
 
         {/* Fallback — copy address (covers no-mail-client case) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
             No mail app set up? Copy the address and write to us from anywhere.
           </div>
-          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: '12px' }}>
+          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: 'var(--space-3)' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, userSelect: 'all', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {SUPPORT_EMAIL}
             </span>
@@ -12052,7 +12049,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
       {/* Header — tab destination, no back button */}
       <ScreenHeader title="Your profile" />
 
-      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '40px' }}>
+      <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', paddingBottom: '40px' }}>
 
         {/* Identity card — who is signed in, and on what.
             Lives in components/shared/IdentityCard.tsx so its missing-name
@@ -12088,9 +12085,9 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             const colour = state === 'stale' ? 'var(--warn)' : state === 'set' ? 'var(--moss)' : 'var(--mute)'
             const inner = (
               <>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>{label}</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: colour, flexShrink: 0 }} />
                     {value}
                   </span>
@@ -12138,9 +12135,9 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               {/* Recovery signals — no longer the last row now that injuries
                   sit beneath it. Same display-only treatment as before. */}
               <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>Recovery signals</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)' }}>
                     <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--moss)', flexShrink: 0, opacity: 0.4 }} />
                     Apple Health
                   </span>
@@ -12164,9 +12161,9 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 const colour = hasInjuries ? 'var(--warn)' : 'var(--moss)'
                 return (
                   <div style={{ padding: '12px 16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
                       <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>Injury flags</span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', textAlign: 'right', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', textAlign: 'right', maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: colour, flexShrink: 0 }} />
                         {displayList}
                       </span>
@@ -12211,7 +12208,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             product concept (zone discipline) sits prominently in MeScreen,
             not buried below settings. Per Hold-the-Zone audit. */}
         {!hrConfigured && (
-          <div style={{ background: 'var(--warn-bg)', borderRadius: '10px', border: '1px solid var(--line)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ background: 'var(--warn-bg)', borderRadius: '10px', border: '1px solid var(--line)', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
             <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--warn)', flexShrink: 0 }} />
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--coach-ink)', lineHeight: 1.5 }}>
               Set your resting and max HR below to see your training zones.
@@ -12249,7 +12246,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 {hasPlan ? 'A different race or goal. Replaces the plan you have.' : 'Choose a template or build a custom plan'}
               </div>
             </div>
-            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
+            <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
           </button>
           <button
             onClick={onOpenBenchmark}
@@ -12261,7 +12258,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 How fast. Pace targets calibrated from a recent race.
               </div>
             </div>
-            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
+            <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
           </button>
           <button
             onClick={() => setActiveSection('plan-history')}
@@ -12273,7 +12270,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 All the races you&apos;ve trained for.
               </div>
             </div>
-            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
+            <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
           </button>
         </div>
 
@@ -12326,7 +12323,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {/* Apple Health (iOS) is the primary v1 data source — runs, RHR, HRV, sleep, VO2 max.
             Strava remains an optional secondary import. */}
         <SectionLabel>Connections</SectionLabel>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           <AppleHealthConnectionRow
             onHRFound={(rhr, mhr) => onDeviceHRFound?.(rhr, mhr)}
           />
@@ -12338,7 +12335,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             sub-toggle is paid-only — it sends a push that costs a real APNs call
             per user per day, so it's gated on a subscription. */}
         <SectionLabel>Notifications</SectionLabel>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           <PushNotificationsRow onStatusChange={setPushSubscribed} />
           {hasPaidAccess && onDailyPushEnabledChange && (
             <DailyPushToggleRow
@@ -12381,7 +12378,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                       Tap to review and accept.
                     </div>
                   </div>
-                  <div style={{ color: 'var(--moss)', marginLeft: '12px' }}>{chevron}</div>
+                  <div style={{ color: 'var(--moss)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
                 </button>
               ) : (
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', background: 'var(--bg-soft)' }}>
@@ -12417,7 +12414,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                       <AdjustmentDiff sessionsBefore={c.sessions_before ?? []} sessionsAfter={c.sessions_after ?? []} units={preferredUnits} />
                       <button
                         onClick={() => dismissChange(c.id)}
-                        style={{ marginTop: '10px', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--mute)' }}
+                        style={{ marginTop: 'var(--space-3)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--mute)' }}
                       >
                         Got it
                       </button>
@@ -12427,7 +12424,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               )}
 
               {/* Auto-adjust toggle. */}
-              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', borderBottom: '1px solid var(--line)' }}>
+              <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-3)', borderBottom: '1px solid var(--line)' }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Auto-adjust</div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
@@ -12465,7 +12462,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
                   What we watch for
                 </div>
-                <div style={{ color: 'var(--mute)', marginLeft: '12px', transform: adjustmentsDisclosureOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>{chevron}</div>
+                <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)', transform: adjustmentsDisclosureOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>{chevron}</div>
               </button>
               {adjustmentsDisclosureOpen && (
                 <div style={{ padding: '0 16px 16px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.6 }}>
@@ -12492,7 +12489,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             <div style={{
               background: 'var(--card)', borderRadius: 'var(--radius-lg)',
               boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)',
-              padding: '14px 16px', marginBottom: '20px',
+              padding: '14px 16px', marginBottom: 'var(--space-5)',
             }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '3px' }}>
                 Full access, free
@@ -12545,7 +12542,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 Email support — a real person reads it.
               </div>
             </div>
-            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
+            <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
           </button>
           {/* ── P-14(a): THE PASSIVE REVIEW ROW ──────────────────────────
               We had NEITHER half of this: no passive row, no native prompt, no
@@ -12580,7 +12577,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4 }}>
               Leave a review
             </div>
-            <div style={{ color: 'var(--mute)', marginLeft: '12px' }}>{chevron}</div>
+            <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
           </ExternalLink>
           </>}
         </div>
@@ -12614,7 +12611,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             onClick={onOpenRedeem}
             style={{
               alignSelf: 'center',
-              marginTop: '16px',
+              marginTop: 'var(--space-4)',
               padding: '14px 16px',
               background: 'none',
               border: 'none',
@@ -12634,7 +12631,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             onClick={onOpenFounderNote}
             style={{
               alignSelf: 'center',
-              marginTop: '16px',
+              marginTop: 'var(--space-4)',
               padding: '14px 16px',
               background: 'none',
               border: 'none',
@@ -12691,7 +12688,7 @@ function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
   return (
     <div style={{
       position: 'relative',
-      marginTop: '12px',
+      marginTop: 'var(--space-3)',
       background: 'var(--card)', boxShadow: 'var(--shadow-card)',
       borderRadius: '14px',
       border: '1px solid var(--line)',
@@ -12701,24 +12698,24 @@ function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
         position: 'absolute', left: '8px', top: '14px', bottom: '14px',
         width: '3px', borderRadius: '2px', background: 'var(--moss)',
       }} />
-      <div style={{ marginBottom: '12px' }}>
+      <div style={{ marginBottom: 'var(--space-3)' }}>
         <CoachByline working role="Reading your run" onClick={onOpenCoach} />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400,
         color: 'var(--ink-2)', lineHeight: 1.55,
-        marginBottom: '14px',
+        marginBottom: 'var(--space-4)',
       }}>
         Analysing your run — usually takes 15–30 seconds.
       </div>
       {/* Skeleton metric row — hint at what's coming */}
-      <div style={{ display: 'flex', gap: '10px' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
         {['HR', 'Distance', 'Pace', 'Efficiency'].map(label => (
           <div key={label} style={{ flex: 1 }}>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
               color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em',
-              marginBottom: '6px',
+              marginBottom: 'var(--space-2)',
             }}>{label}</div>
             <div style={{
               height: '3px', background: 'var(--line)', borderRadius: '2px',
@@ -12736,18 +12733,18 @@ function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
 function LockedCoachingPreview({ onUpgrade, onOpenCoach }: { onUpgrade?: () => void; onOpenCoach?: () => void }) {
   return (
     <div style={{
-      marginTop: '12px',
+      marginTop: 'var(--space-3)',
       background: 'var(--bg-soft)',
       borderRadius: '14px',
       padding: '16px 18px',
       border: '1px solid var(--line)',
     }}>
-      <div style={{ marginBottom: '10px', opacity: 0.4 }}>
+      <div style={{ marginBottom: 'var(--space-3)', opacity: 0.4 }}>
         <CoachByline onClick={onOpenCoach} />
       </div>
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
-        color: 'var(--mute)', lineHeight: 1.55, marginBottom: '14px',
+        color: 'var(--mute)', lineHeight: 1.55, marginBottom: 'var(--space-4)',
       }}>
         Kit reads here. He needs your runs first — Strava or Apple Health.
       </div>
@@ -12769,12 +12766,12 @@ function LockedCoachingPreview({ onUpgrade, onOpenCoach }: { onUpgrade?: () => v
 function GaveUpCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
   return (
     <div style={{
-      marginTop: '12px',
+      marginTop: 'var(--space-3)',
       background: 'var(--bg-soft)',
       borderRadius: '14px',
       padding: '16px 18px',
     }}>
-      <div style={{ marginBottom: '8px', opacity: 0.4 }}>
+      <div style={{ marginBottom: 'var(--space-2)', opacity: 0.4 }}>
         <CoachByline onClick={onOpenCoach} />
       </div>
       <div style={{
@@ -13014,7 +13011,7 @@ export function RunFeedbackCard({
       {feedback && (
         <div style={{
           position: 'relative',
-          marginTop: '12px',
+          marginTop: 'var(--space-3)',
           background: 'var(--card)',
           borderRadius: '14px',
           border: '1px solid var(--line)',
@@ -13024,7 +13021,7 @@ export function RunFeedbackCard({
             position: 'absolute', left: '8px', top: '14px', bottom: '14px',
             width: '3px', borderRadius: '2px', background: 'var(--moss)',
           }} />
-          <div style={{ marginBottom: '10px' }}>
+          <div style={{ marginBottom: 'var(--space-3)' }}>
             <CoachByline color="moss" role="Read of your run" onClick={onOpenCoach} />
           </div>
           <div style={{
@@ -13039,7 +13036,7 @@ export function RunFeedbackCard({
        *  AI-VIS-01: the LLM paragraph used to live here too — provenance was muddy.
        *  Now split into a separate AI card below. */}
       <div style={{
-        marginTop: '8px',
+        marginTop: 'var(--space-2)',
         background: pal.bg,
         borderRadius: '14px',
         padding: '16px 18px',
@@ -13110,7 +13107,7 @@ export function RunFeedbackCard({
           <div>
             <div style={{
               display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
-              gap: '10px', marginBottom: '6px',
+              gap: 'var(--space-3)', marginBottom: 'var(--space-2)',
             }}>
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
@@ -13180,15 +13177,15 @@ export function RunFeedbackCard({
         {/* Expanded breakdown — one line per sub-score, derived from analysis row */}
         {!isManual && expanded && (
           <div style={{
-            marginTop: '14px',
-            paddingTop: '14px',
+            marginTop: 'var(--space-4)',
+            paddingTop: 'var(--space-4)',
             borderTop: `1px solid ${pal.rule}`,
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px',
+            gap: 'var(--space-3)',
           }}>
             {explanations.map(({ label, value, line }) => value !== undefined && (
-              <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+              <div key={label} style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-3)' }}>
                 <div style={{
                   fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
                   color: pal.label, opacity: 0.7,
@@ -13331,7 +13328,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
 
       {/* ── HEADER ROW ────────────────────────────────────────────── */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: '12px',
+        display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
         padding: '14px 16px 12px',
         borderBottom: `1px solid var(--line)`,
         position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
@@ -13392,7 +13389,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
               {isHealthKitSource && (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '5px',
-                  marginBottom: '8px',
+                  marginBottom: 'var(--space-2)',
                   fontFamily: 'var(--font-ui)', fontSize: '11px',
                   color: 'var(--mute)', letterSpacing: '0.02em',
                 }}>
@@ -13424,8 +13421,8 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
         {/* Up next — next scheduled session in the week, promoted above the unlink escape hatch (UX-POSTRUN-01) */}
         {nextSession && (hasPaidAccess || isComplete) && (
           <div style={{
-            marginTop: '8px', marginBottom: '4px',
-            display: 'flex', alignItems: 'center', gap: '10px',
+            marginTop: 'var(--space-2)', marginBottom: '4px',
+            display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
             padding: '10px 14px',
             background: 'var(--bg-soft)', borderRadius: '10px',
           }}>
@@ -13458,7 +13455,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
          *  because this now sits OUTSIDE the `analysis &&` IIFE that used to
          *  wrap it. `analysis` and `unlinkConfirm` are both SessionScreen-scope,
          *  which is what makes the move safe rather than a restructure. */}
-        {analysis && analysis.source !== 'manual' && <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {analysis && analysis.source !== 'manual' && <div style={{ marginTop: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {!unlinkConfirm && (
             <button
               onClick={() => setUnlinkConfirm(true)}
@@ -13473,7 +13470,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
             </button>
           )}
           {unlinkConfirm && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
                 Unlink this run?
               </span>
@@ -13507,7 +13504,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
           borderRadius: 'var(--radius-lg)',
           border: `1px solid var(--line)`,
           borderLeft: `3px solid ${color}`,
-          marginTop: '12px',
+          marginTop: 'var(--space-3)',
           overflow: 'hidden',
         }}>
           {isComplete && (
@@ -13888,7 +13885,7 @@ function PostRunScreen({
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '120px' }}>
       {/* ── HEADER ─────────────────────────────────────────────────── */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: '12px',
+        display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
         padding: '14px 16px 12px',
         position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
         borderBottom: '1px solid var(--line)',
@@ -13913,7 +13910,7 @@ function PostRunScreen({
               one screen in the app where the AI verdict is the focal payoff. */}
           {hasPaidAccess && (
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '6px',
+              display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
               marginTop: '4px',
               fontFamily: 'var(--font-ui)', fontSize: '12px',
               color: 'var(--mute)', lineHeight: 1.3,
@@ -13938,7 +13935,7 @@ function PostRunScreen({
         </div>
       </div>
 
-      <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
 
         {/* ── LINKED ACTIVITY CONFIRMATION ─────────────────────────── */}
         {displayActivity && (
@@ -13946,7 +13943,7 @@ function PostRunScreen({
             background: 'var(--bg-soft)',
             borderRadius: '12px',
             padding: '12px 14px',
-            display: 'flex', alignItems: 'center', gap: '10px',
+            display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
           }}>
             {/* source chip */}
             <div style={{
@@ -14015,20 +14012,20 @@ function PostRunScreen({
           </div>
           <div style={{
             fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-            marginBottom: '18px', lineHeight: 1.5,
+            marginBottom: 'var(--space-4)', lineHeight: 1.5,
           }}>
             Effort and body state. That&apos;s all I need.
           </div>
 
           {/* RPE 1–10 */}
-          <div style={{ marginBottom: '18px' }}>
+          <div style={{ marginBottom: 'var(--space-4)' }}>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)',
-              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
             }}>
               Effort (RPE)
             </div>
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
               {[1,2,3,4,5,6,7,8,9,10].map(n => {
                 const isActive = rpe === n
                 const col = rpeColour(n)
@@ -14062,11 +14059,11 @@ function PostRunScreen({
           <div>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)',
-              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px',
+              textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)',
             }}>
               Body state
             </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
               {FATIGUE_TAGS.map(tag => {
                 const isActive = fatigueTag === tag
                 const tagColor = tag === 'Fresh'  ? 'var(--moss)'
@@ -14110,7 +14107,7 @@ function PostRunScreen({
             sources differ. */}
         {rpe !== null && (
           <>
-            <div style={{ padding: '0 24px', marginBottom: '12px' }}>
+            <div style={{ padding: '0 24px', marginBottom: 'var(--space-3)' }}>
               <SessionCompleteCard
                 sessionType={session.type}
                 date={new Date()}
@@ -14172,7 +14169,7 @@ function PostRunScreen({
 
 function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 16px 12px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '16px 16px 12px' }}>
       <BackButton onClick={onBack} />
       <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>{title}</div>
     </div>
@@ -14181,7 +14178,7 @@ function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
 
 function InfoBox({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '16px 18px', fontSize: '13px', lineHeight: 1.8, color: 'var(--text-secondary)', marginBottom: '10px' }}>
+    <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '16px 18px', fontSize: '13px', lineHeight: 1.8, color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>
       {children}
     </div>
   )
@@ -14200,13 +14197,13 @@ function QuitTab({ quitDays, raceDistanceKm, onBack }: { quitDays: number | null
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
       <BackHeader title="Quit tracker" onBack={onBack} />
-      <div style={{ padding: '0 12px', paddingBottom: '32px' }}>
-        <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--teal-bg)', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px' }}>
+      <div style={{ padding: '0 12px', paddingBottom: 'var(--space-6)' }}>
+        <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--teal-bg)', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: 'var(--space-5)', marginBottom: 'var(--space-3)' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '3.5rem', color: 'var(--teal)', lineHeight: 1, fontWeight: 500 }}>{days}</div>
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--teal)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '4px' }}>Smoke-free days</div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}>Your aerobic capacity is recovering. The data will show it.</div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '10px' }}>
+            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
               {milestones.map(m => (
                 <div key={m.days} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? 'var(--teal-bg)' : 'var(--border-col)'}`, color: days >= m.days ? 'var(--teal)' : 'var(--text-secondary)' }}>
                   {m.label}

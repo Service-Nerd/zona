@@ -126,7 +126,7 @@ function Eyebrow({ label, meta }: { label: string; meta?: string }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: '16px',
+        marginBottom: 'var(--space-4)',
       }}
     >
       <span
@@ -228,8 +228,8 @@ function NumericStrip({ pct }: { pct: ZoneSlice }) {
       style={{
         display: 'flex',
         justifyContent: 'space-between',
-        gap: '10px',
-        marginTop: '18px',
+        gap: 'var(--space-3)',
+        marginTop: 'var(--space-4)',
       }}
     >
       {items.map((item) => (
@@ -320,7 +320,7 @@ export function ZoneRingsSkeleton({
       </div>
       <div
         style={{
-          marginTop: '18px',
+          marginTop: 'var(--space-4)',
           height: '32px',
           borderRadius: '4px',
           background: 'var(--bg-soft)',
@@ -352,7 +352,7 @@ export default function ZoneRings(props: Props) {
         </div>
         <div
           style={{
-            marginTop: '18px',
+            marginTop: 'var(--space-4)',
             fontFamily: 'var(--font-ui)',
             fontSize: '13px',
             fontWeight: 400,
@@ -364,7 +364,7 @@ export default function ZoneRings(props: Props) {
           Where your week actually went — by zone. Upgrade to unlock it.
         </div>
         {props.onUpgrade && (
-          <div style={{ marginTop: '14px', textAlign: 'center' }}>
+          <div style={{ marginTop: 'var(--space-4)', textAlign: 'center' }}>
             <button
               onClick={props.onUpgrade}
               style={{
@@ -407,7 +407,7 @@ export default function ZoneRings(props: Props) {
         </div>
         <div
           style={{
-            marginTop: '18px',
+            marginTop: 'var(--space-4)',
             fontFamily: 'var(--font-ui)',
             fontSize: '13px',
             fontWeight: 400,
@@ -421,7 +421,7 @@ export default function ZoneRings(props: Props) {
             : 'Nothing for the rings yet. A run with HR is all this needs.'}
         </div>
         {linkable && props.onConnect && (
-          <div style={{ marginTop: '14px', textAlign: 'center' }}>
+          <div style={{ marginTop: 'var(--space-4)', textAlign: 'center' }}>
             <button
               onClick={props.onConnect}
               style={{
@@ -459,7 +459,7 @@ export default function ZoneRings(props: Props) {
         </div>
         <div
           style={{
-            marginTop: '18px',
+            marginTop: 'var(--space-4)',
             fontFamily: 'var(--font-ui)',
             fontSize: '13px',
             fontWeight: 400,

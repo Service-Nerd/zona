@@ -137,7 +137,7 @@ export default function SessionCard({
           padding: '14px 12px 14px 14px',
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          gap: 'var(--space-3)',
           minWidth: 0,
         }}
       >

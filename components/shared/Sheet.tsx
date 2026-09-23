@@ -186,7 +186,7 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           background: 'var(--card)',
           borderRadius: '20px 20px 0 0',
           boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
-          paddingTop: '8px',
+          paddingTop: 'var(--space-2)',
           // S1 completeness — the panel now reaches the viewport's bottom edge,
           // so ITS content (the close bar the standing rule puts there) would
           // otherwise sit under the home indicator. The nav used to absorb this

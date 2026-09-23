@@ -108,7 +108,7 @@ export default function ModifyPlanSheet({
                 modal and the scroll. I don't like it."*
                 The moment an edit is pending the bottom bar arrives with
                 Apply, and the dismiss goes with it. */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 700, color: 'var(--ink)' }}>
                   Adjust your plan
@@ -147,7 +147,7 @@ export default function ModifyPlanSheet({
                         padding: '14px 16px',
                         borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none',
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
                           {/* A pending edit reads in MOSS. Not amber: amber is
                               coaching-warning voice and an unapplied edit is
                               not a warning. The dot plus the value darkening
@@ -165,7 +165,7 @@ export default function ModifyPlanSheet({
                         </div>
                         <div style={{
                           fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-                          lineHeight: 1.5, marginTop: '2px', marginBottom: '10px',
+                          lineHeight: 1.5, marginTop: '2px', marginBottom: 'var(--space-3)',
                         }}>{row.consequence}</div>
                         <RowControl
                           rowKey={row.key}
@@ -184,7 +184,7 @@ export default function ModifyPlanSheet({
             {resets && (
               <div style={{
                 background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '14px 16px',
-                marginTop: '16px', fontFamily: 'var(--font-ui)', fontSize: '13px',
+                marginTop: 'var(--space-4)', fontFamily: 'var(--font-ui)', fontSize: '13px',
                 color: 'var(--coach-ink)', lineHeight: 1.55,
               }}>
                 Moving the race starts a new block, so the weeks you have already logged stop
@@ -208,7 +208,7 @@ export default function ModifyPlanSheet({
                   onClick={onStartNewPlan}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    gap: '12px', padding: '14px 16px', textAlign: 'left',
+                    gap: 'var(--space-3)', padding: '14px 16px', textAlign: 'left',
                     background: 'none', borderRadius: 'var(--radius-lg)',
                     // M-3 (Design Board, Miles open-lens) — THE DASHED BORDER
                     // IS THE GRAMMAR FOR AN OPTION THAT BRANCHES rather than
@@ -252,7 +252,7 @@ export default function ModifyPlanSheet({
           <div style={{
             position: 'sticky', bottom: 0, background: 'var(--bg)',
             borderTop: '1px solid var(--line)', padding: '12px 20px',
-            marginTop: '20px',
+            marginTop: 'var(--space-5)',
           }}>
             {/* S2 (Design Board, app review 2026-09-22) — DISMISS IS NEVER THE
                 CTA COLOUR. This shipped as a full-width `--moss` button reading
@@ -271,7 +271,7 @@ export default function ModifyPlanSheet({
                     refusal is not an error state (§INV-DS-005). */}
                 {error && (
                   <div style={{
-                    marginBottom: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px',
+                    marginBottom: 'var(--space-3)', fontFamily: 'var(--font-ui)', fontSize: '13px',
                     lineHeight: 1.5, color: 'var(--warn)',
                   }}>
                     {error}
@@ -397,7 +397,7 @@ function RowControl({ rowKey, value, onChange }: {
       )
     case 'injury_history':
       return (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
           {['knee', 'shin', 'achilles', 'calf', 'itb', 'plantar'].map(inj => {
             const on = ((value as string[]) ?? []).includes(inj)
             return (

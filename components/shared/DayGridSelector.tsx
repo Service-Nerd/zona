@@ -39,7 +39,7 @@ export function DayGridSelector({
     <div
       role="group"
       aria-label={ariaLabel}
-      style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}
+      style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}
     >
       {DAY_GRID.map(({ key, label }) => {
         const active = value.includes(key)

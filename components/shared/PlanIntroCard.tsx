@@ -48,7 +48,7 @@ export default function PlanIntroCard({ text, onBylineClick }: PlanIntroCardProp
         }}
       />
 
-      <div style={{ marginBottom: '8px' }}>
+      <div style={{ marginBottom: 'var(--space-2)' }}>
         <CoachByline color="moss" role="Why this plan" onClick={onBylineClick} />
       </div>
 

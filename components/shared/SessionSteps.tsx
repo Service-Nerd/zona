@@ -60,12 +60,12 @@ const FONT = 'var(--font-ui)'
 function StepRowView({ num, dotColor, row }: { num: number | null; dotColor: string; row: StepRow }) {
   const isRest = row.kind === 'rest'
   return (
-    <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: '11px', padding: '11px 13px', borderTop: '1px solid var(--line)' }}>
+    <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)', padding: '11px 13px', borderTop: '1px solid var(--line)' }}>
       <span style={{ flex: 'none', width: '20px', textAlign: 'center', fontSize: '14px', fontWeight: 800, fontStyle: 'italic', color: 'var(--mute-2)', fontVariantNumeric: 'tabular-nums', background: 'var(--card)' }}>
         {num ?? ''}
       </span>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-        <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '9px', paddingTop: '1px' }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+        <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', paddingTop: '1px' }}>
           <span style={{ width: '9px', height: '9px', borderRadius: '50%', flex: 'none', background: isRest ? 'transparent' : dotColor, border: isRest ? '1.5px solid var(--mute-2)' : 'none' }} />
           <span style={{ fontSize: '13px', fontWeight: isRest ? 600 : 700, color: isRest ? 'var(--ink-2)' : 'var(--ink)' }}>{row.role}</span>
         </div>
@@ -85,9 +85,9 @@ function SectionCard({
   zoneStr: string; paceStr?: string | null; info?: () => void; children: React.ReactNode
 }) {
   return (
-    <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', marginTop: '10px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '8px 13px', background: tint(accent, tintPct) }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '7px', fontFamily: FONT, fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: accent }}>
+    <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', marginTop: 'var(--space-3)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)', padding: '8px 13px', background: tint(accent, tintPct) }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: FONT, fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: accent }}>
           {name}
           {info && (
             <button type="button" onClick={info} aria-label={`${name} · tap to learn`} style={{ all: 'unset', cursor: 'pointer', width: '15px', height: '15px', borderRadius: '50%', border: '1.2px solid currentColor', fontSize: '9.5px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: 0.75 }}>i</button>
@@ -147,7 +147,7 @@ export default function SessionSteps({
 
   return (
     <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ fontFamily: FONT, fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>Session structure</div>
+      <div style={{ fontFamily: FONT, fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>Session structure</div>
 
       {/* Warm-up */}
       <SectionCard name="Warm-up" accent="var(--moss)" tintPct={13} totalStr={wuTotal} zoneStr={structure.warmup.zone} paceStr={easyPaceStr}>
@@ -163,7 +163,7 @@ export default function SessionSteps({
           ? groups.map((g, gi) => (
               <React.Fragment key={gi}>
                 {g.repeat > 1 && (
-                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'baseline', gap: '9px', padding: '8px 13px 8px 44px', background: 'var(--bg-soft)' }}>
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', padding: '8px 13px 8px 44px', background: 'var(--bg-soft)' }}>
                     <span style={{ fontFamily: FONT, fontSize: '15px', fontWeight: 800, fontStyle: 'italic', color: mainAccent, fontVariantNumeric: 'tabular-nums' }}>{g.repeat}×</span>
                     <span style={{ fontFamily: FONT, fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--ink-2)' }}>{g.repeatLabel}</span>
                   </div>

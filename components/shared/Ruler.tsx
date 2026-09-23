@@ -86,7 +86,7 @@ export function Ruler({
   return (
     <div>
       {/* Readout — metric-pair. Muted until the user commits a value. */}
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 'var(--space-5)' }}>
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '52px', fontWeight: 800,
           color: touched ? 'var(--ink)' : 'var(--mute-2)',
@@ -96,7 +96,7 @@ export function Ruler({
           <span style={{ fontSize: '20px', fontWeight: 600, color: 'var(--mute)', letterSpacing: 0 }}> {unit}</span>
         </div>
         {caption && (
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 500, color: 'var(--mute)', marginTop: '6px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 500, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>
             {caption}
           </div>
         )}

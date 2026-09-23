@@ -67,12 +67,12 @@ export function ProfileSection({ firstName, lastName, email, onSave }: {
   const labelStyle: React.CSSProperties = {
     fontFamily: 'var(--font-ui)', fontSize: '10px',
     color: 'var(--mute)', textTransform: 'uppercase',
-    letterSpacing: '0.08em', marginBottom: '6px', display: 'block',
+    letterSpacing: '0.08em', marginBottom: 'var(--space-2)', display: 'block',
   }
 
   return (
-    <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+    <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
         <div>
           <label htmlFor={PROFILE_FIRST_NAME_FIELD_ID} style={labelStyle}>First name</label>
           {/* Placeholders are the PRODUCT's name standing in for a person's, so

@@ -182,7 +182,7 @@ export default function PullToRefresh({
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '6px',
+          gap: 'var(--space-2)',
           pointerEvents: 'none',
           overflow: 'hidden',
         }}

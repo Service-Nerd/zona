@@ -59,7 +59,7 @@ export default function MePlanCard({
   )
 
   const row = (name: string, key: string) => (
-    <div key={key} style={{ display: 'flex', gap: '8px', marginBottom: '6px' }}>
+    <div key={key} style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
       <span aria-hidden style={{ color: 'var(--moss)', fontWeight: 700, lineHeight: 1.5, flexShrink: 0 }}>·</span>
       <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.5 }}>{name}</span>
     </div>

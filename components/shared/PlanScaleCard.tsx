@@ -48,7 +48,7 @@ export default function PlanScaleCard({
           first cut set "About 780km" all at one weight and the value did not
           dominate, which is the rule ui-patterns states and the sibling card
           already demonstrated. */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px', marginBottom: '10px', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', marginBottom: 'var(--space-3)', flexWrap: 'wrap' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--mute)' }}>
           About
         </span>
@@ -71,7 +71,7 @@ export default function PlanScaleCard({
       {/* Dread lives in the unknown, so the worst day gets a number. Omitted
           entirely when the plan has no long run to name — never a half-sentence. */}
       {hardestRun && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', lineHeight: 1.6, marginTop: '10px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400, color: 'var(--mute)', lineHeight: 1.6, marginTop: 'var(--space-3)' }}>
           The longest single run is {hardestRun}
           {hardestMonth ? `, once, in ${hardestMonth}.` : ', once.'}
         </div>

@@ -54,7 +54,7 @@ export default function LoadShape({ ratio, color, label }: {
     <div
       role="img"
       aria-label={label ?? (ratio === null ? 'Not enough runs yet to show your load' : `Load ${ratio.toFixed(2)} times your recent normal`)}
-      style={{ position: 'relative', height: '10px', marginTop: '10px' }}
+      style={{ position: 'relative', height: '10px', marginTop: 'var(--space-3)' }}
     >
       {/* Track */}
       <div style={{

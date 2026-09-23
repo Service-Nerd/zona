@@ -53,7 +53,13 @@ describe('SignOutLink markup', () => {
     // Also found on the fixture page: on Connect Runs this sits directly under
     // that screen's own "Not now →", and at 375px the two read as a pair —
     // one skips a step, one ends the session. Space, not a divider (banned).
-    expect(html(React.createElement(SignOutLink))).toMatch(/margin-top:8px/)
+    // ⚠️ ASSERTS THE GAP, NOT ITS SPELLING (APP-SPACE-01, 2026-09-23). This read
+    // `/margin-top:8px/` and went red when the app was swept onto the ruled
+    // spacing scale — **the distance did not change**, `--space-2` IS 8px. A
+    // test pinned to a literal fails on a change that preserves exactly the
+    // thing it guards, which is the third time today a spelling stood in for a
+    // guarantee. Either form satisfies the rule this test carries.
+    expect(html(React.createElement(SignOutLink))).toMatch(/margin-top:(8px|var\(--space-2\))/)
   })
 
   it('uses tokens, never a hardcoded colour', () => {

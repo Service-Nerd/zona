@@ -323,7 +323,7 @@ function WizardInput({ value, onChange, placeholder, type = 'text', min, max }: 
 
 function FieldNote({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '8px' }}>
+    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: 'var(--space-2)' }}>
       {children}
     </div>
   )
@@ -331,7 +331,7 @@ function FieldNote({ children }: { children: React.ReactNode }) {
 
 function FieldLabel({ children, optional }: { children: React.ReactNode; optional?: boolean }) {
   return (
-    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 'var(--space-3)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
       {children}
       {optional && <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, opacity: 0.7, fontSize: '10px' }}>optional</span>}
     </div>
@@ -375,7 +375,7 @@ function PreviewPhaseStrip(
   return (
     <div>
       {foundationCount > 0 && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '6px', letterSpacing: '0.02em' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: 'var(--space-2)', letterSpacing: '0.02em' }}>
           Foundation Block · {foundationCount} {foundationCount === 1 ? 'week' : 'weeks'} before your plan
         </div>
       )}
@@ -411,7 +411,7 @@ function PreviewPhaseStrip(
           )
         })}
       </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'var(--space-2)' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
           {foundationCount > 0 ? 'Foundation' : 'Wk 1'}
         </span>
@@ -440,13 +440,13 @@ function PhaseSummaryCard({ phase, weeks, units }: { phase: string; weeks: Plan[
     : startW === endW ? `Week ${startW}` : `Weeks ${startW}–${endW}`
   return (
     <div style={{
-      display: 'flex', gap: '14px',
+      display: 'flex', gap: 'var(--space-4)',
       background: 'var(--card)',
       border: '1px solid var(--line)',
       borderLeft: `3px solid ${colour}`,
       borderRadius: 'var(--radius-md)',
       padding: '14px 16px',
-      marginBottom: '12px',
+      marginBottom: 'var(--space-3)',
     }}>
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '4px' }}>
@@ -469,8 +469,8 @@ function ConfidenceBadge({ score, risks }: { score: number; risks?: string[] }) 
   const colour = score >= 80 ? 'var(--moss)' : score >= 60 ? 'var(--warn)' : 'var(--danger)'
   const label  = score >= 80 ? 'High confidence' : score >= 60 ? 'Moderate confidence' : 'Lower confidence'
   return (
-    <div style={{ paddingTop: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '4px' }}>
+    <div style={{ paddingTop: 'var(--space-4)' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', marginBottom: '4px' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 800, color: colour }}>{score}</span>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: colour }}>{label}</span>
       </div>
@@ -503,7 +503,7 @@ function DifficultyCard({ band, note, alternatives }: {
         {note}
       </div>
       {band === 'very_demanding' && alternatives?.length ? (
-        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        <div style={{ marginTop: 'var(--space-3)', display: 'flex', flexDirection: 'column', gap: '5px' }}>
           {alternatives.map((alt, i) => (
             <div key={i} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
               {alt}
@@ -518,11 +518,11 @@ function DifficultyCard({ band, note, alternatives }: {
 // Teaser card shown to free users on the last free step
 function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
   return (
-    <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '16px 18px', marginTop: '24px' }}>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+    <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '16px 18px', marginTop: 'var(--space-5)' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 'var(--space-2)' }}>
         Unlock more personalisation
       </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: '14px' }}>
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
         Add terrain, injury history, hard session preferences, and training style. Your plan adapts to you — not a template.
       </div>
       <button
@@ -1400,7 +1400,7 @@ export default function GeneratePlanScreen({
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
         <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
           <BackBtn onClick={goBack} label="Adjust inputs" />
-          <div style={{ marginTop: '16px' }}>
+          <div style={{ marginTop: 'var(--space-4)' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
               {meta.race_name || 'Your plan'}
             </div>
@@ -1412,7 +1412,7 @@ export default function GeneratePlanScreen({
               count moves INTO the panel rather than being said twice: it was
               in the subtitle above, and two renderings of one figure is how
               they drift. */}
-          <div style={{ marginTop: '14px' }}>
+          <div style={{ marginTop: 'var(--space-4)' }}>
             <PlanHeroMetrics plan={plan} units={preferredUnits} canReshape={!!hasPaidAccess} />
           </div>
 
@@ -1430,7 +1430,7 @@ export default function GeneratePlanScreen({
               goes stale the moment a plan is reshaped, which is this repo's
               recorded stale-mid-pipeline class (and the same reason P-06(c)'s
               hero numbers are derived here too). */}
-          <div style={{ marginTop: '20px' }}>
+          <div style={{ marginTop: 'var(--space-5)' }}>
             <PlanArc
               totalWeeks={plan.weeks.length}
               currentWeek={1}
@@ -1455,7 +1455,7 @@ export default function GeneratePlanScreen({
               scrolling. Rendered ONLY here — it is not in planRationaleNotes, so
               there is no second copy lower down or on the Plan screen. */}
           {meta.uncovered_runway_note && meta.uncovered_runway_weeks != null && (
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: 'var(--space-4)' }}>
               <RunwayRevealCard weeks={meta.uncovered_runway_weeks} note={meta.uncovered_runway_note} />
             </div>
           )}
@@ -1466,7 +1466,7 @@ export default function GeneratePlanScreen({
           {(() => {
             const firstRun = firstRunOfPlan(weeks, preferredUnits, trainingAge)
             return firstRun ? (
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: 'var(--space-4)' }}>
                 <FirstRunCard {...firstRun} />
               </div>
             ) : null
@@ -1478,7 +1478,7 @@ export default function GeneratePlanScreen({
           {(() => {
             const scale = planScale(plan, preferredUnits)
             return scale ? (
-              <div style={{ marginBottom: '16px' }}>
+              <div style={{ marginBottom: 'var(--space-4)' }}>
                 <PlanScaleCard {...scale} />
               </div>
             ) : null
@@ -1488,7 +1488,7 @@ export default function GeneratePlanScreen({
               "you are not alone" lands after the plan has been made concrete,
               not before it. */}
           {charityCohort && (
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: 'var(--space-4)' }}>
               <CharityCohortCard {...charityCohort} />
             </div>
           )}
@@ -1524,8 +1524,8 @@ export default function GeneratePlanScreen({
             <PreviewPhaseStrip weeks={weeks} units={preferredUnits} />
           </div>
 
-          <div style={{ marginTop: '20px' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+          <div style={{ marginTop: 'var(--space-5)' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>
               Plan shape
             </div>
             {PHASES.map(phase => {
@@ -1538,7 +1538,7 @@ export default function GeneratePlanScreen({
 
         <div style={{ flexShrink: 0, background: 'var(--bg)', borderTop: '1px solid var(--line)', padding: '12px 20px calc(12px + env(safe-area-inset-bottom))' }}>
           {hasExistingPlan && !isSaving && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', marginBottom: '8px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center', marginBottom: 'var(--space-2)' }}>
               This replaces your current plan.
             </div>
           )}
@@ -1568,15 +1568,15 @@ export default function GeneratePlanScreen({
           <Sheet onClose={handleFoundationDismiss} ariaLabel="Foundation Block">
             {() => (
             <div style={{ padding: '6px 20px 24px' }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 800, color: 'var(--ink)', marginBottom: '6px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 800, color: 'var(--ink)', marginBottom: 'var(--space-2)' }}>
                 You've got some time.
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: '24px' }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 'var(--space-5)' }}>
                 Your plan doesn't start for a while. A Foundation Block can ease you in — easy runs only, no pressure.
               </div>
 
               {foundationAddStatus === 'error' && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', marginBottom: '10px' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
                   Couldn't add that. Try again.
                 </div>
               )}
@@ -1584,7 +1584,7 @@ export default function GeneratePlanScreen({
                 onClick={handleFoundationAddBlock}
                 disabled={foundationAddStatus === 'loading'}
                 style={{
-                  width: '100%', padding: '15px', marginBottom: '10px',
+                  width: '100%', padding: '15px', marginBottom: 'var(--space-3)',
                   borderRadius: 'var(--radius-md)', background: 'var(--moss)',
                   border: 'none', cursor: foundationAddStatus === 'loading' ? 'default' : 'pointer',
                   opacity: foundationAddStatus === 'loading' ? 0.7 : 1,
@@ -1596,7 +1596,7 @@ export default function GeneratePlanScreen({
               <button
                 onClick={handleFoundationDismiss}
                 style={{
-                  width: '100%', padding: '15px', marginBottom: '10px',
+                  width: '100%', padding: '15px', marginBottom: 'var(--space-3)',
                   borderRadius: 'var(--radius-md)', background: 'var(--bg-soft)',
                   border: '1px solid var(--line)', cursor: 'pointer',
                   fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 500, color: 'var(--ink)',
@@ -1659,11 +1659,11 @@ export default function GeneratePlanScreen({
         <ProgressLine total={realSteps.length} current={Math.max(0, realDone - 1)} />
         <div style={{ marginBottom: stepMeta.interstitial ? '20px' : '28px', marginTop: stepMeta.interstitial ? '28px' : 0 }}>
           {stepMeta.eyebrow && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>
               {stepMeta.eyebrow}
             </div>
           )}
-          <h1 style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: '8px', margin: '0 0 8px' }}>
+          <h1 style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 'var(--space-2)', margin: '0 0 8px' }}>
             {title}
           </h1>
           {subtitle && (
@@ -1718,7 +1718,7 @@ export default function GeneratePlanScreen({
         {stepMeta.optional && (
           <button
             onClick={skipStep}
-            style={{ width: '100%', textAlign: 'center', marginBottom: '8px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', padding: '8px' }}
+            style={{ width: '100%', textAlign: 'center', marginBottom: 'var(--space-2)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', padding: '8px' }}
           >
             Not sure, continue
           </button>
@@ -1769,7 +1769,7 @@ export default function GeneratePlanScreen({
 
       case 'teach-easy-day':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>
               Most runners push their easy days and coast their hard ones — so every run lands in the same tiring middle. Even elites spend about 80% of their time truly easy. Your easy runs build the engine. Let them.
             </p>
@@ -1782,7 +1782,7 @@ export default function GeneratePlanScreen({
       // ── Distance ───────────────────────────────────────────────────────────
       case 'distance':
         return (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
             {DISTANCES.map(d => {
               const locked = d.paid && !hasPaidAccess
               return (
@@ -1867,7 +1867,7 @@ export default function GeneratePlanScreen({
       // ── Race details ───────────────────────────────────────────────────────
       case 'race-details':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <div>
               <FieldLabel optional>Race name</FieldLabel>
               <WizardInput value={raceName} onChange={setRaceName} placeholder="e.g. London Marathon" />
@@ -1883,7 +1883,7 @@ export default function GeneratePlanScreen({
       // ── Goal ───────────────────────────────────────────────────────────────
       case 'goal':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <CardSelect
               label="Just finish."
               sub="Get to the line in one piece. That's the job."
@@ -1945,7 +1945,7 @@ export default function GeneratePlanScreen({
 
       case 'training-age':
         return (
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
             {TRAINING_AGE_CHIPS.map(c => (
               <Chip
                 key={c.value}
@@ -1959,7 +1959,7 @@ export default function GeneratePlanScreen({
 
       case 'recent-quality':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             {RECENT_QUALITY_OPTIONS.map(o => (
               <CardSelect
                 key={o.value}
@@ -1994,7 +1994,7 @@ export default function GeneratePlanScreen({
           : 'Based on your volume and history. Change it if we’ve read you wrong.'
 
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: '4px' }}>
               {whyLine}
             </div>
@@ -2048,7 +2048,7 @@ export default function GeneratePlanScreen({
       case 'benchmark':
         if (benchEstimateStatus === 'loading') {
           return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               {[85, 100, 60].map((w, i) => (
                 <div key={i} style={{ height: '18px', width: `${w}%`, borderRadius: '6px', background: 'var(--bg-soft)' }} />
               ))}
@@ -2069,8 +2069,8 @@ export default function GeneratePlanScreen({
           )
         }
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
               <Chip
                 label="Race result"
                 active={benchmarkType === 'race'}
@@ -2084,10 +2084,10 @@ export default function GeneratePlanScreen({
             </div>
 
             {benchmarkType === 'race' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                 <div>
                   <FieldLabel>Race distance</FieldLabel>
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                     {BENCHMARK_DISTANCES.map(d => (
                       <Chip
                         key={d.value}
@@ -2144,7 +2144,7 @@ export default function GeneratePlanScreen({
         const wi = weekPlanToInputs(weekPlan)
         const verdict = dayCountVerdict(wi.daysAvailable, thr ?? null, distKey, goal === 'time_target')
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <WeekGrid
               value={weekPlan}
               onChange={p => { setWeekPlan(p); setDayBudgets(b => pruneDayBudgets(b, p)) }}
@@ -2166,9 +2166,9 @@ export default function GeneratePlanScreen({
       // ── Weekday ceiling ──────────────────────────────────────────────────────
       case 'weekday-ceiling':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
             <div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                 {MAX_WEEKDAY_CHIPS.map(c => (
                   <Chip
                     key={c.key}
@@ -2203,7 +2203,7 @@ export default function GeneratePlanScreen({
       // ── Hard sessions (paid) ───────────────────────────────────────────────
       case 'hard-sessions':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             {([
               { value: 'avoid',   label: 'Avoid them.',    sub: 'Keep it aerobic. No intervals unless absolutely necessary.' },
               { value: 'neutral', label: 'Fine either way.', sub: 'Structure as the plan needs. No strong preference.' },
@@ -2218,7 +2218,7 @@ export default function GeneratePlanScreen({
       // ── Terrain (paid) ────────────────────────────────────────────────────
       case 'terrain':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <CardSelect label="Road." sub="Pavement, tracks, flat surfaces. Speed-focused." active={terrain === 'road'} onClick={() => setTerrain('road')} />
             <CardSelect label="Trail." sub="Off-road, elevation, technical terrain. Effort-focused." active={terrain === 'trail'} onClick={() => setTerrain('trail')} />
             <CardSelect label="Mixed." sub="Both. Adapt pace targets to the surface." active={terrain === 'mixed'} onClick={() => setTerrain('mixed')} />
@@ -2229,7 +2229,7 @@ export default function GeneratePlanScreen({
       case 'injuries':
         return (
           <div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
               {INJURIES.map(inj => (
                 <Chip
                   key={inj}
@@ -2255,7 +2255,7 @@ function BackBtn({ onClick, label }: { onClick: () => void; label?: string }) {
     <button
       onClick={onClick}
       style={{
-        display: 'flex', alignItems: 'center', gap: '6px',
+        display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
         background: 'none', border: 'none', cursor: 'pointer',
         color: 'var(--mute)', padding: '0 0 4px', marginBottom: '4px',
         minHeight: '44px',

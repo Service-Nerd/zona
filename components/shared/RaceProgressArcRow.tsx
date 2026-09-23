@@ -60,7 +60,7 @@ export function RaceProgressArcRow({ arc, copy }: { arc: RaceProgressArc; copy: 
       // the two look identical; with two (a finish-goal runner, the common
       // beginner case) space-between flings them to opposite edges and leaves
       // a hole in the middle of the card.
-      style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', gap: '10px' }}
+      style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', gap: 'var(--space-3)' }}
     >
       {arc.points.map((point, i) => {
         const isNow = point.key === 'now'
@@ -69,7 +69,7 @@ export function RaceProgressArcRow({ arc, copy }: { arc: RaceProgressArc; copy: 
             {i > 0 && (
               <span aria-hidden style={{
                 fontFamily: 'var(--font-ui)', fontSize: '15px', color: 'var(--mute)',
-                opacity: 0.45, alignSelf: 'center', paddingBottom: '18px', flexShrink: 0, margin: '0 -2px',
+                opacity: 0.45, alignSelf: 'center', paddingBottom: 'var(--space-4)', flexShrink: 0, margin: '0 -2px',
               }}>
                 &rsaquo;
               </span>

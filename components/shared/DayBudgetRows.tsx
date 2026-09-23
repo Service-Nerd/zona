@@ -65,7 +65,7 @@ export function DayBudgetRows({
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
         letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--mute)',
-        marginBottom: '10px',
+        marginBottom: 'var(--space-3)',
       }}>
         Different on some days?
       </div>
@@ -118,7 +118,7 @@ export function DayBudgetRows({
 
       <div style={{
         fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-        lineHeight: 1.5, marginTop: '10px',
+        lineHeight: 1.5, marginTop: 'var(--space-3)',
       }}>
         Tap a day to give it its own cap. Most people leave these alone.
       </div>

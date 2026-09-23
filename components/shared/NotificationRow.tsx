@@ -67,12 +67,12 @@ export function NotificationRow({ item, relativeTime, onClick }: {
       }} />
 
       {/* Eyebrow row: type label left, time + unread dot right */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '4px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-2)', marginBottom: '4px' }}>
         <span style={{
           fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
           letterSpacing: '0.08em', textTransform: 'uppercase', color: railColor,
         }}>{eyebrow}</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '7px', flexShrink: 0 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexShrink: 0 }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute-2)' }}>{relativeTime}</span>
           {unread && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--moss)' }} />}
         </span>

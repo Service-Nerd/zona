@@ -98,7 +98,7 @@ export default function SessionCompleteCard({
       {/* Top row — session chip on left, date on right. Pattern 6 chip. */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        gap: '8px', marginBottom: '20px',
+        gap: 'var(--space-2)', marginBottom: 'var(--space-5)',
       }}>
         <span style={{
           display: 'inline-block',
@@ -122,17 +122,17 @@ export default function SessionCompleteCard({
 
       {/* Hero metric stack — State A (% in zone) or State B (RPE / 10). */}
       {showZone ? (
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: 'var(--space-5)' }}>
           <div style={{
             fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
             color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase',
-            marginBottom: '8px',
+            marginBottom: 'var(--space-2)',
           }}>
             Time in zone
           </div>
           <div style={{
             display: 'flex', alignItems: 'baseline', gap: '4px',
-            marginBottom: '12px',
+            marginBottom: 'var(--space-3)',
             fontFamily: 'var(--font-ui)', letterSpacing: '-0.05em',
           }}>
             <span style={{
@@ -150,16 +150,16 @@ export default function SessionCompleteCard({
           <ZoneBar activeZone={zone!} height={5} showLabels />
         </div>
       ) : (
-        <div style={{ marginBottom: '20px' }}>
+        <div style={{ marginBottom: 'var(--space-5)' }}>
           <div style={{
             fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
             color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase',
-            marginBottom: '8px',
+            marginBottom: 'var(--space-2)',
           }}>
             Effort
           </div>
           <div style={{
-            display: 'flex', alignItems: 'baseline', gap: '6px',
+            display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)',
             marginBottom: fatigueTag ? '14px' : 0,
             fontFamily: 'var(--font-ui)', letterSpacing: '-0.05em',
           }}>
@@ -191,11 +191,11 @@ export default function SessionCompleteCard({
       )}
 
       {/* Hand-authored completion copy. No AIMark — rule-engine output. */}
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: 'var(--space-5)' }}>
         <div style={{
           fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 600,
           color: 'var(--ink)', letterSpacing: '-0.2px', lineHeight: 1.3,
-          marginBottom: '6px',
+          marginBottom: 'var(--space-2)',
         }}>
           {completionCopy.headline}
         </div>

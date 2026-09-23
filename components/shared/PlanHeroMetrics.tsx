@@ -70,7 +70,7 @@ export default function PlanHeroMetrics({
       background: 'var(--card)', borderRadius: 'var(--radius-lg)',
       border: '1px solid var(--line)', padding: '16px 18px',
     }}>
-      <div style={{ display: 'flex', gap: '14px' }}>
+      <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
         {metric(String(plan.weeks.length), 'weeks')}
         {metric(formatDistance(peakKm, units) ?? '—', 'biggest week')}
         {metric(formatDistance(totalKm, units) ?? '—', 'in total')}
@@ -83,7 +83,7 @@ export default function PlanHeroMetrics({
       {canReshape && RESHAPE_ROW && (
         <div style={{
           fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-          lineHeight: 1.55, marginTop: '14px', borderTop: '1px solid var(--line)', paddingTop: '12px',
+          lineHeight: 1.55, marginTop: 'var(--space-4)', borderTop: '1px solid var(--line)', paddingTop: 'var(--space-3)',
         }}>
           {RESHAPE_ROW.detail}
         </div>

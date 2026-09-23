@@ -184,7 +184,7 @@ export default function PlanArc({
           color: 'var(--mute)',
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
-          marginBottom: '6px',
+          marginBottom: 'var(--space-2)',
         }}
       >
         Wk {currentWeek} of {totalWeeks}
@@ -289,7 +289,7 @@ export default function PlanArc({
           carry: a reader can see that base is five weeks and taper is three.
           Segments flex by week count, so they line up with the ridge above. */}
       {segments.some(s => s.label) && (
-        <div style={{ display: 'flex', gap: '2px', marginTop: '6px' }}>
+        <div style={{ display: 'flex', gap: '2px', marginTop: 'var(--space-2)' }}>
           {segments.map(seg => {
             const lastWeek = seg.firstWeek + seg.weeks - 1
             const isPast = lastWeek < currentWeek

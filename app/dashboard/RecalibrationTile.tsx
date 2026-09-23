@@ -29,7 +29,7 @@ export function RecalibrationReadyTile({
   const card: CSSProperties = {
     boxSizing: 'border-box', width: '100%', background: 'var(--card)',
     border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '20px',
-    display: 'flex', flexDirection: 'column', gap: '14px', fontFamily: 'var(--font-ui)',
+    display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', fontFamily: 'var(--font-ui)',
   }
   const button: CSSProperties = {
     boxSizing: 'border-box', width: '100%', minHeight: '48px', padding: '0 16px',
@@ -44,7 +44,7 @@ export function RecalibrationReadyTile({
       <div style={{ font: '500 12px/1 var(--font-ui)', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--mute)' }}>
         {`Week ${weekN} · ${DAY_LABEL[sessionDay] ?? sessionDay} · ${distanceKm}K time trial`}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         <h2 style={{ margin: 0, font: '600 20px/1.3 var(--font-ui)', color: 'var(--ink)' }}>
           Your time trial is in.
         </h2>
@@ -85,7 +85,7 @@ export function RecalibrationEntryScreen({
   const screen: CSSProperties = {
     boxSizing: 'border-box', width: '100%', minHeight: '100%', background: 'var(--bg)',
     fontFamily: 'var(--font-ui)', padding: '16px 20px 28px',
-    display: 'flex', flexDirection: 'column', gap: '28px',
+    display: 'flex', flexDirection: 'column', gap: 'var(--space-6)',
   }
   const primary = (enabled: boolean): CSSProperties => ({
     boxSizing: 'border-box', width: '100%', minHeight: '52px', padding: '0 16px',
@@ -121,7 +121,7 @@ export function RecalibrationEntryScreen({
 
       {status === 'applied' ? (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             <div style={eyebrow}>{`${distanceKm}K · ${formatRecalTime(mins, secs)}`}</div>
             <h1 style={{ margin: 0, font: '600 26px/1.25 var(--font-ui)', color: 'var(--ink)' }}>Paces updated.</h1>
             <p style={{ margin: 0, font: '400 15px/1.5 var(--font-ui)', color: 'var(--ink-2)' }}>
@@ -137,14 +137,14 @@ export function RecalibrationEntryScreen({
         </>
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
             <div style={eyebrow}>Recovery week</div>
             <h1 style={{ margin: 0, font: '600 26px/1.25 var(--font-ui)', color: 'var(--ink)' }}>
               {`${distanceKm}K time trial`}
             </h1>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <label style={{ font: '500 14px/1 var(--font-ui)', color: busy ? 'var(--mute)' : 'var(--ink-2)' }}>
               Your time
             </label>
@@ -161,7 +161,7 @@ export function RecalibrationEntryScreen({
           </div>
 
           {busy ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }} aria-live="polite">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }} aria-live="polite">
               <p style={{ margin: 0, font: '400 15px/1.5 var(--font-ui)', color: 'var(--ink-2)' }}>Moving the rest of your plan.</p>
               <div style={skeletonBar('80%')} /><div style={skeletonBar('62%')} /><div style={skeletonBar('71%')} />
             </div>
@@ -175,7 +175,7 @@ export function RecalibrationEntryScreen({
             </p>
           )}
 
-          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
             <button type="button" disabled={!canConfirm} style={primary(canConfirm)}
               onClick={() => { if (inRange) onConfirm(seconds) }}>
               {busy ? 'Updating' : status === 'error' ? 'Try again' : 'Update my paces'}

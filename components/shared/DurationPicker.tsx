@@ -69,7 +69,7 @@ export function DurationPicker({
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: '6px', padding: '8px 0' }}>
+    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 'var(--space-2)', padding: '8px 0' }}>
       {showHours && (
         <>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

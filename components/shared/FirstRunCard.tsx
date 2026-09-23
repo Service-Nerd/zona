@@ -38,7 +38,7 @@ export default function FirstRunCard({ dayLabel, metric, effort, reassure }: Fir
       </div>
 
       {reassure && (
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: '6px' }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: 'var(--space-2)' }}>
           This is where it starts. It is meant to feel too easy.
         </div>
       )}

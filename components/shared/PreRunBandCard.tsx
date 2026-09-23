@@ -48,9 +48,9 @@ export default function PreRunBandCard(props: PreRunBandCardProps) {
         background:   'var(--bg-soft)',
         borderRadius: 'var(--radius-md)',
         padding:      '10px 14px',
-        marginBottom: '10px',
+        marginBottom: 'var(--space-3)',
       }}>
-        <div style={{ height: '9px', width: '55%', background: 'var(--line)', borderRadius: '3px', marginBottom: '8px', opacity: 0.6 }} />
+        <div style={{ height: '9px', width: '55%', background: 'var(--line)', borderRadius: '3px', marginBottom: 'var(--space-2)', opacity: 0.6 }} />
         <div style={{ height: '13px', width: '72%', background: 'var(--line)', borderRadius: '3px', opacity: 0.4 }} />
       </div>
     )
@@ -72,7 +72,7 @@ export default function PreRunBandCard(props: PreRunBandCardProps) {
       background:   'var(--bg-soft)',
       borderRadius: 'var(--radius-md)',
       padding:      '10px 14px',
-      marginBottom: '10px',
+      marginBottom: 'var(--space-3)',
     }}>
       <div style={{
         fontFamily:    'var(--font-ui)',

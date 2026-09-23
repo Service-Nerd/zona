@@ -47,7 +47,7 @@ export default function RunwayRevealCard({ weeks, note }: RunwayRevealCardProps)
       </div>
 
       {/* The number leads — bold metric, quiet context (design system). */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '7px', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '32px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', lineHeight: 1 }}>
           {weeks}
         </span>

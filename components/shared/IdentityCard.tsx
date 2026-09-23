@@ -16,7 +16,7 @@ import { BRAND } from '@/lib/brand'
 
 function Chevron() {
   return (
-    <span style={{ color: 'var(--mute)', display: 'inline-flex', marginLeft: '12px' }}>
+    <span style={{ color: 'var(--mute)', display: 'inline-flex', marginLeft: 'var(--space-3)' }}>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
         <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
@@ -38,7 +38,7 @@ export function IdentityCard({ initials, firstName, lastName, tierLabel, onAddNa
   const cardStyle: React.CSSProperties = {
     background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
     padding: '16px', border: '1px solid var(--line)',
-    display: 'flex', alignItems: 'center', gap: '14px',
+    display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
   }
 
   const inner = (
