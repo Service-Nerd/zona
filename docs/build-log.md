@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — COACH-MEASURE-PROTOCOL-01 · the protocol existed only as prose, and the prose was stale
+**Shipped:** `npm run review:coaching` — the whole coaching measurement protocol in one command, with a doctrine file that says what each step is for and what none of them can see.
+
+**Dev learning:** Eight measurement commands had accumulated. The register described the protocol as four of them, in a specific order, and that description went stale the moment two more existed — it named neither. Nobody noticed because the list was in a document and the running was done by hand, so the two could drift indefinitely without anything disagreeing out loud. **A protocol that lives as prose in one file and gets executed from memory in another is a memory test.** This repo already had the receipt: the coaching review loop itself went dormant for exactly this reason and had to be rebuilt around a CI trigger.
+
+**The worse finding was in CI.** The trigger that fires on every doctrine push ran **one step of the six**. It checks that every case still generates — which cannot see a fit-for-purpose move, a cohort band collapsing, a new coach objection, or a plan that is perfectly valid and does not build the runner. A doctrine change that moved any of those went green.
+
+**AI-building learning:** The scorecard prints what none of the six can see, at the end of every run, in the terminal. Not in a README, because nobody reads the README at the moment they read the result. A tool that only ever shows green ticks teaches you that green means "fine", when it means "the things this script looks at are fine" — and this repo has watched that exact substitution happen to its documentation audit twice.
+
+**Product/creator learning:** The doctrine file makes one distinction load-bearing: a rate can move because the **engine** moved, because the **definition** moved, or because the **population** moved, and only the first is progress. We had a worked example from the same day — the marathon went 78.7% to 89.8% with not one plan changed. Without that distinction written down, the next person reading the chart sees an eleven-point improvement.
+
+**The honest bit:** my first version of the fitness step's headline took the last line of that tool's output. That line is one arbitrary persona from a list, so the headline would have changed whenever someone reordered the list, and it would have looked like a result. A headline that moves when nothing moved is worse than no headline.
+
+**Hook material:** Our CI ran one step of a six-step review and reported it as the review.
+
+**Postable?:** yes — "your protocol is prose until something executes it" generalises to every runbook anyone has ever written.
+
 ## 2026-09-23 — ZERO-REJECTION-SERVED-01 · the scoreboard was counting a served runner as a dropout
 **Shipped:** The fit-for-purpose measure stops scoring a refused-but-served marathoner as a failure. Marathon 78.7% → 89.8%, whole product 92.5% → 96%, and not one plan changed.
 
