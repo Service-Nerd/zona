@@ -6,18 +6,63 @@ the submissions were not. Each sitting measured a different population with a
 different set of criteria and called the result the same thing. **This file
 fixes the criteria space so a sitting is comparable to the one before it.**
 
-Measured 2026-09-19. **Whole product: 95.3%**, up from **66.7%** at the start of the 2026-09-19
-build. Per distance: **5K 100%** · **10K 100%** · **HM 96.2%** ·
-**marathon 90.1%** · 50K 100% · 100K 100%. **Every distance is at or above the
-90% target.**
+## 🔴 THE BAR — a refusal is a FAILURE, not a pass
 
-**A correct refusal counts as fit for purpose**, and must earn it: §44's
-standard is *"not yet"*, never *"no"*. Gated — 100% of `BaseVolumeError`
-refusals name a next step.
+**`ZERO-REJECTION-01`, 2026-09-20.** The founder's standard, stated repeatedly:
 
-**The marathon is now the weakest at 90.1%**, and its remaining objection is
-`LONG-RUN-SHORT` (7.5%). ⚠️ **Its floor is the Coaching Board's hard
-condition:** two engine caps were vetoed for taking it out of target.
+> *"If someone comes to our platform and asks for a run, we can't just say no,
+> go away."*
+
+A designed refusal is scored **FAIL**. It is still a correct refusal, it still
+must name a next step (§44: *"not yet"*, never *"no"*), and `BaseVolumeError`
+refusals do — but naming a next step is not the same as serving the runner, and
+this rubric no longer pretends otherwise.
+
+**Measured 2026-09-23 — read from `lib/plan/__fixtures__/envelopeBaseline.json`,
+not from this paragraph:**
+
+| | whole | 5K | 10K | HM | marathon | 50K | 100K |
+|---|---|---|---|---|---|---|---|
+| **fit** | **92.5%** | 100% | 100% | 96.2% | **78.7%** | 100% | 100% |
+| refused | — | 0% | 0% | 0% | **12.4%** | 0% | 0% |
+| objections | — | — | — | DEGENERATE-WEEK 2.3%, WEEK1-LEAP 1.5% | LONG-RUN-SHORT 6.6%, WEEK1-LEAP 4.4%, BINGE-WEEK 0.7% | — | — |
+
+🔴 **The marathon is the only distance that refuses anyone, and it is the only
+distance below target.** One marathoner in eight is told no — and the marathon
+is the founder-priority distance and the charity channel.
+
+⚠️ **`WEEK1-LEAP` is FROZEN** (Hutchinson, 2026-09-20) — measured, found benign
+and relaxed three times in one day. Any further change needs adherence or
+injury data, not another corpus measurement.
+
+### ⚠️ The superseded bar, kept so old rounds stay readable
+
+**Do not score against this.** Until 2026-09-20 this file's first line read
+*"a correct refusal counts as fit for purpose"*, and reported:
+
+> Measured 2026-09-19. **Whole product: 95.3%** · 5K 100% · 10K 100% ·
+> **HM 96.2%** · **marathon 90.1%** · 50K 100% · 100K 100%. *"Every distance is
+> at or above the 90% target."*
+
+Same engine, same corpus — **only the accounting differed.** `ZERO-REJECTION-01`
+re-scored it: marathon **90.1% → 78.7%**, whole product **95.9% → 92.7%** (now
+92.5%). Every other distance was unchanged, because no other distance refuses.
+
+🔴 **THIS FILE TAUGHT THE OLD BAR FOR THREE DAYS AFTER IT WAS OVERTURNED.** It
+was written 2026-09-20 at **07:47**; the ruling landed at **16:34** the same
+afternoon and this file was never updated. The board sitting of 09-20 read it,
+scored refusals as passes, and recorded the marathon at 90.1% — which the
+sitting of 09-23 then had to decline to inherit (`RUBRIC-STALE-BAR-01`).
+
+⚠️ **The harm is the stale STANDARD, not the stale number.** This file's own
+opening says it exists so *"a sitting is comparable to the one before it"*. A
+rubric that silently changes what counts as success is the failure it was
+written to prevent, committed by the document itself.
+
+⚠️ **Nothing mechanical watches these figures.** `audit-docs.sh` does not compare
+them against `envelopeBaseline.json`, which is why the drift lasted three days
+and was found by hand. Until it does, **treat every number in this file as a
+claim to re-derive, not a fact** — `npm run measure:envelope` is the answer.
 
 ⚠️ **`WEEK1-LEAP` is FROZEN** (Hutchinson, 2026-09-20) — measured, found benign
 and relaxed three times in one day. Any further change needs adherence or
@@ -29,10 +74,22 @@ injury data, not another corpus measurement.
 |---|---|---|
 | **Constitution** | `validatePlan()` error-severity invariants | 115 codes |
 | **Coach objections** | `lib/plan/planQuality.ts` — "would a coach object?" | 7 predicates |
-| **Population** | `lib/plan/useCaseEnvelope.ts` — weighted, per distance | 9,216 marathon / 4,608 each other |
+| **Population** | `lib/plan/useCaseEnvelope.ts` — weighted, per distance | **10,752 marathon / 4,608 each other** (33,792 total; sampled at stride 29 → 1,166) |
 
-A plan is fit for purpose when it generates, carries **no error-severity
-violation** and **no coach objection**.
+A plan is fit for purpose when it **generates** (a refusal is a fail —
+`ZERO-REJECTION-01`), carries **no error-severity violation** and **no coach
+objection**.
+
+⚠️ **The population figure was ALSO stale** — this row read *9,216 marathon*
+until 2026-09-23; the grid is **10,752**. Two stale numbers in one file is not
+two mistakes, it is one missing mechanism.
+
+⚠️ **Coach objections have never been measured on a composed plan.**
+`audit-plan-quality.ts` calls `generateRulePlan` and stops, so `planQuality`'s 7
+predicates have never seen a foundation week — while any runner with a runway
+over 28 days gets one (`HARNESS-COMPOSE-GAP-01`, 2026-09-23). The error-severity
+half is now covered by `scripts/foundation-review-round.ts`; **this half is
+not.**
 
 ## 2. Findings that are REAL, with measured weight
 
