@@ -240,10 +240,33 @@ blocked.**
 
 | ref | question | the number |
 |---|---|---|
-| `MARA-LR-LOWBASE-01` | should the very-low-volume marathoner be refused rather than given a short-long-run plan? | `LONG-RUN-SHORT` 8 km/wk **100%**, 15 km/wk 70%, 0% above 35. An 8 km/wk knee-history runner gets a 16.5 km peak long run for 42.2 km. ⚠️ They are admitted *because* the injury cap lowers their peak, which makes §111's ratio pass |
+| `MARA-LR-SHAPE-SEAM-01` | for a knee-history marathoner at **8-12 km/wk**, what does the STANDARD (non-§117) path actually DELIVER if the adequacy refusal is bypassed? | The gate refuses on a **13 km run-walk projection**; the 2026-09-20 board table recorded that same cell **delivering 17 km on a standard plan**. Two shapes, one gate. If the standard path still delivers 17, a guard built for the run-walk shape is refusing a runner who would have received another — the *checker reads a different source from the producer* class. If it delivers 13, the refusal is simply right and the seam closes. ⚠️ **Not a proposal.** Two mechanisms in this area have been built and reverted (`RACE-ANCHOR-CV-OVERRIDE-01`), and `WEEK1-LEAP` is frozen against corpus-only arguments |
 | `ULTRA-LR-ADEQUACY-01` | what is the right long-run bar for 50K/100K? | none exists since `ULTRA-LR-BAR-01`; §24e's back-to-backs make a single longest run the wrong unit |
 | `S111-SUBFLOOR-VOLUME-01` | build a base-building plan type? | blocked on the charity's answer; runbook drafted, unsent |
 | `RACE-KEY-TWO-OWNERS-01` | collapse two `raceDistanceKey` ladders? | 88 diverging values, currently unreachable (the wizard's six distances all agree) |
+
+## Standing rulings — 2026-09-23, sitting 3 (`MARA-LR-LOWBASE-01`, re-opened and closed)
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **`MARA-LR-LOWBASE-01` — the filed question was ALREADY ANSWERED** | 🟢 **CLOSED. No change.** | 🔴 **It was ruled on 2026-09-20 as §80 Amendment 2 — *"CORRECT WITH AMENDMENT. The PLAN is right; the NOTE was wrong."*** It sat in `CoachingPrinciples.md` for three days while the OPEN table above still listed it unanswered. ⚠️ **The settled-ground scan is the only reason this sitting did not re-litigate a closed ruling** — the second time in eight days that reading the register first changed the answer (`MARATHON-READINESS-GAP-01` was the first). **Read the register before the plans.** |
+| **§117 Amendment 2's bound BECAME BINDING on 2026-09-23** | 🟢 **RECORDED — the amendment working as written** | Am.2 said the 17 km bound *"binds on nothing today and is a **guard against a future peak or runway change, which is exactly when it would otherwise have been discovered by a runner**."* **It binds now, three days later, on the knee/shin-history marathoner at 8-12 km/wk**, and it was found by a harness rather than by a runner. The refusal is §44-compliant and names the number: *"We would only get your longest run to about 13 km before race day, and you need at least 17 km behind you to get round a marathon."* `unserved 0%` — §118 serves them. **Willy: refusal correct, not tradeable.** |
+| **The cohort MOVED since the 09-20 ruling, in both directions** | ⚠️ **RECORDED, not ruled** | On the board's own fixture re-run: **healthy 8-12 km/wk went REFUSED → §117 run-walk plan at 19 km (44%)**, and **knee 8-12 km/wk went ADMITTED at 17 km → REFUSED**. 15/20/25/35 reproduce **exactly**. ⚠️ **Willy's observation, recorded:** §117 now rescues the *healthy* low-base runner and refuses the *injured* one — **the runner with less margin is the one who loses the plan.** |
+| **A load-aware or corpus-only relaxation of the 17 km bound** | 🔴 **NOT RE-PROPOSABLE from a corpus measurement** | McMillan's 17 km is §9's recorded structural finding and the position the founder took. `WEEK1-LEAP` was frozen on 09-20 for exactly this reason: *"any further change needs adherence or injury data, not another corpus measurement."* The same standard applies here. |
+
+⚠️ **NOTHING SHIPPED FROM THIS SITTING and that is the output.** No principle, numeric or invariant
+changed, because the ruling is that current behaviour is correct. The three artifacts are records.
+
+⚠️ **THE MEASUREMENT NEARLY REPORTED THE WRONG THING.** The first instrument took
+`max(distance_km)` across every session and reported **`42.2 km (100%)` on every row** — it was
+reading the RACE. `auditPlanQuality` already excludes it. **Read the owner's figure; do not
+recompute one beside it.**
+
+⚠️ **AND THE FIRST CROSS-FIXTURE COMPARISON WAS INVALID.** A 4-day/18-week fixture gave knee@15
+**16.0 km** against the board's 17 km, and reporting that as drift would have been the
+`MASTERS-COMPRESSED-BUILD-01` error again — a COMPOSITION difference read as an engine change.
+The board's own fixture (3 days, 29-week runway, `<6mo`) was reconstructed before anything was
+compared, and on it the ruled cells reproduce exactly.
 
 ## Standing rulings — 2026-09-22
 

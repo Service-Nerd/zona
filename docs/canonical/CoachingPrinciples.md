@@ -8344,6 +8344,24 @@ discovered by a runner.
 
 **Config.** `FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM = 17`. **Enforced by** `INV-PLAN-RUNWALK-ADEQUATE`.
 
+🟢 **UPDATE 2026-09-23 — THE BOUND IS NOW BINDING, AND IT BOUND EXACTLY AS THIS AMENDMENT
+PREDICTED.** Three days after it was written, the `MARA-LR-LOWBASE-01` re-sitting measured it
+refusing the **knee/shin-history marathoner at 8-12 km/week**, whose longest run projects to
+**13 km**: *"We would only get your longest run to about 13 km before race day, and you need at
+least 17 km behind you to get round a marathon."* §44-compliant, `unserved 0%` — §118 serves them.
+
+⚠️ **The sentence above said it would be "discovered by a runner". It was discovered by a
+harness**, which is the whole reason the bound was written when it bound on nothing.
+
+⚠️ **AND THE SAME CHANGE CUT BOTH WAYS.** On the 2026-09-20 board fixture, re-run: the **healthy**
+8-12 km/week runner went REFUSED → a §117 run-walk plan at **19 km (44%)**, while the **injured**
+one went admitted-at-17 km → **refused**. Willy, recorded: *"§117 now rescues the healthy low-base
+runner and refuses the injured one. The injured runner is the one with less margin, and they are
+the one who loses the plan."* **Recorded, not ruled** — the seam is filed as
+`MARA-LR-SHAPE-SEAM-01` with its settling artefact, because the refusal is computed on the
+**run-walk** projection while the runner would have received the **standard** shape, and nobody
+has yet measured what that shape delivers.
+
 ### Recorded, because it is a real trade and not a free win
 
 **Sims:** a lower-peak run-walk build is a **better** bone-stress profile than the 13 km/wk plan we would otherwise have given them — *and* **total exposure rises, because we are admitting runners we previously refused. Some will now be injured who would have been told no and done nothing.** That is a judgement the founder has made and is entitled to make; the board declines to pretend it is free.
