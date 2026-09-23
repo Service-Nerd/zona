@@ -681,6 +681,26 @@ weeks to a row of bars"* and *"the screen states ONE week count"*. A test that s
 and `toContain('<PlanArc')` passed against `<PlanArcX` — **the exact substring-bias flaw quoted in
 that file's own header, committed three lines after quoting it.**
 
+## 6w. `ModifyPlanSheet` — "I just don't like it", measured (2026-09-23)
+
+⚠️ **THE INPUT WAS AN IMPRESSION AND THE BOARD'S JOB WAS TO MEASURE IT, not to ask the founder for
+px.** Taking the measurement then **withdrew two of my own four findings** — which is the rule
+working against the person who invoked it.
+
+| Decision | Status | Why |
+|---|---|---|
+| **The day selector lays out on a fixed COLUMN COUNT** | 🟢 **SHIPPED** | It was `flex` + `flexWrap`: **six days on row one, "Sun" alone on row two.** Collins: *"'Sun' on its own line is the whole impression, in one row."* ⚠️ **Seven across is NOT AVAILABLE at 375pt** — 7 × 44px + 6 × 8px = **356px** against ~**307px** of card content width; **even at zero gap 7 × 44 = 308 > 307.** One row costs the **44px tap target**, which is not worth trading for tidiness. So the wrap is made **deliberate**: `repeat(4, minmax(0,1fr))` → **4 + 3**. **An orphan reads as a mistake; a balanced pair reads as a layout** |
+| **The dashed border is removed** | 🟢 **SHIPPED** | `1px dashed var(--line-strong)` on "Start a new plan" was **the only dashed border in the product** and read as *unfinished* rather than *optional*. The row's subtitle already carries that it replaces the plan (PLANVERB-01); the border was not the thing saying it |
+| **"Four corner radii in one sheet"** | 🔴 **WITHDRAWN — I over-called it** | Two of the four are `50%` on **a close button and a 6px dot** — both legitimately circles. The remaining pair is `--radius-md` on the Apply button against `--radius-lg` on cards, and **no convention exists to breach**: 27 `lg` vs 14 `md` across `components/shared`. **Not a defect** |
+| **"The injury chips orphan too"** | 🔴 **WITHDRAWN — I over-called it** | They are **variable-width** pills. Wrapping is what chips do, and forcing them into a grid would give equal columns to labels of very different lengths — **worse**. The day circles are different in kind: **seven equal items in a fixed set**, where 6 + 1 is unambiguously wrong |
+| **The race date input** | ⚠️ **DEFERRED to its own sitting** | It is the **only centred control and the only native one** on a sheet of six left-aligned segmented controls — the "doesn't line up". But replacing a native `<input type="date">` carries an iOS keyboard/zoom history already recorded in that file, and the chair will not rule on it **without a device** |
+| **Redesigning the sheet** | ⚠️ **NOT DONE, and offered explicitly** | The chair declined to redesign off two screenshots at the end of a long day, and told the founder plainly that three tidy-ups **may not make him like it** — if he wants a different sheet, that gets scoped, not polished |
+
+⚠️ **THE HONEST RESIDUAL, stated because the fixes are small and the complaint was not:** the sheet
+still has **four control species** — 6 × `SegmentedControl`, 2 wrapping chip rows, 1 native date
+input, 1 action row. **Two of those were ruled acceptable and one was deferred**, so the *"no single
+control vocabulary"* finding is **recorded and unresolved**, not fixed.
+
 ## 6m. Miles — the OPEN-LENS re-read (2026-09-22)
 
 Full document: `docs/competitor/miles-open-lens-review.md`. All 17 screenshots, **no item

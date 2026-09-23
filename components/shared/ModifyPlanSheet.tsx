@@ -218,7 +218,11 @@ export default function ModifyPlanSheet({
                     // setting, which is precisely the confusion PLANVERB-01
                     // exists to remove. No fill, so it does not compete with
                     // the eight rows that are the sheet's actual job.
-                    border: '1px dashed var(--line-strong)', cursor: 'pointer',
+                    // 🔴 THE ONLY DASHED BORDER IN THE PRODUCT, and it read as unfinished
+                    // rather than optional. Solid, matching every other card on this
+                    // sheet; the row's SUBTITLE already carries that this one replaces
+                    // the plan (PLANVERB-01), so the border was not the thing saying it.
+                    border: '1px solid var(--line-strong)', cursor: 'pointer',
                   }}
                 >
                   <span style={{ minWidth: 0 }}>

@@ -39,7 +39,28 @@ export function DayGridSelector({
     <div
       role="group"
       aria-label={ariaLabel}
-      style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}
+      // 🔴 A BALANCED GRID, NOT A WRAPPING FLEX ROW (2026-09-23).
+      //
+      // This was `flex` + `flexWrap`, which put **six days on row one and
+      // "Sun" alone on row two** — the founder's *"I just don't like it"*, in
+      // one row. Measured: 7 × 44px + 6 × 8px gaps = **356px** against roughly
+      // **307px** of content width inside the sheet's card at 375pt.
+      //
+      // ⚠️ SEVEN ACROSS IS NOT AVAILABLE AT THIS WIDTH, and that is the whole
+      // decision. Even at zero gap, 7 × 44 = **308px > 307px**. The only way to
+      // fit one row is to take the circles below the **44px minimum tap
+      // target**, which this repo asserts elsewhere and is not worth trading
+      // for tidiness.
+      //
+      // So the wrap is kept and made DELIBERATE: four then three, equal
+      // columns, rather than six then one. An orphan reads as a mistake; a
+      // balanced pair reads as a layout.
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+        justifyItems: 'center',
+        gap: 'var(--space-2)',
+      }}
     >
       {DAY_GRID.map(({ key, label }) => {
         const active = value.includes(key)
