@@ -22,6 +22,7 @@
     "icons:pwa": "node scripts/generate-pwa-icons.mjs",
     "verify:parity": "tsx scripts/verify-parity.ts",
     "check:db": "tsx scripts/check-db-drift.ts",
+    "purge:users": "tsx scripts/purge-users.ts",
     "cohort:shape": "tsx scripts/cohort-shape.ts",
     "prepare": "git config core.hooksPath .githooks || true",
     "measure:fitness": "tsx scripts/measure-plan-fitness.ts",

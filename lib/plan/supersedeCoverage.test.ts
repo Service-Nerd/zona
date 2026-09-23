@@ -25,10 +25,14 @@ const SCAN_DIRS = ['app', 'lib']
 /** Reads/writes that deliberately do NOT filter, each with the argument for it.
  *  An entry here is a DECISION, not a TODO. */
 const ALLOWED: { file: string; why: string }[] = [
-  {
-    file: 'app/api/delete-account/route.ts',
-    why: 'Deletes every row for the user regardless of plan. Filtering would orphan superseded rows past account deletion, which the privacy policy calls permanent.',
-  },
+  // app/api/delete-account/route.ts was allowlisted here with the reason
+  // "deletes every row for the user regardless of plan". IT DID NOT. It named
+  // three tables out of twenty-four and there was no foreign key behind it, so
+  // twenty-one tables survived every deletion (DB-USER-PURGE-01, 2026-09-23).
+  // The entry is gone rather than reworded because the route now names NO
+  // table: deletion is an ON DELETE CASCADE in the schema, so there is no chain
+  // here to exempt. Coverage moved to `npm run check:db`, which asks the
+  // database instead of trusting a sentence in an allowlist.
   {
     file: 'lib/coaching/reframeTier.ts',
     why: 'Counts how much history exists on a runner to choose the reframe data tier. That is a LIFETIME measure — a previous plan\'s logs are still signal about this runner, not noise.',

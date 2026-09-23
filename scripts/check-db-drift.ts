@@ -7,6 +7,7 @@
 //   1. Does every table a committed migration CREATEs actually exist?
 //   2. Does `lib/supabase/rlsPolicyManifest.ts` still match the live policies?
 //   3. Does `WEEK_KEYED_TABLES` still list every table carrying `week_n`?
+//   4. Can every user-scoped table still be DELETED when the account is?
 //
 // ── WHY (3) EXISTS ─────────────────────────────────────────────────────────
 // PLAN-WEEK-COLLISION-01 (2026-09-18). `week_n` is a WITHIN-PLAN coordinate, so
@@ -50,6 +51,7 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { RLS_POLICIES, ALL_OPS, type PolicyOp } from '../lib/supabase/rlsPolicyManifest'
 import { WEEK_KEYED_TABLES } from '../lib/plan/supersede'
+import { USER_DATA_SURFACES, NON_USER_TABLES, DERIVED_VIEWS } from '../lib/supabase/userDataSurfaces'
 
 loadEnvConfig(process.cwd())
 
@@ -198,6 +200,7 @@ async function probeFallback(url: string, key: string) {
   console.log('  NOTE: partial check only — policy SHAPES were not compared.')
 
   await checkWeekKeyedCoverage(url, key)
+  await checkUserPurgeCoverage(url, key)
 
   // Never override a table-existence failure recorded earlier.
   process.exit(process.exitCode === 1 ? 1 : 0)
@@ -306,6 +309,116 @@ async function checkWeekKeyedCoverage(url: string, serviceKey: string): Promise<
     return
   }
   console.log(`✓ ${covered} week-keyed table(s) carry superseded_at; none uncovered, none stale.`)
+}
+
+/**
+ * (4) Does account deletion still reach every table? — DB-USER-PURGE-01
+ *
+ * `/api/delete-account` named THREE tables out of twenty-four and then called
+ * deleteUser(). The public schema had no foreign key to auth.users at all, so
+ * there was no cascade behind it: twenty-one tables of run history, health
+ * samples, analyses and push tokens stayed behind, keyed to an id that no
+ * longer resolved. The route's own test exemption, the Me screen and the
+ * privacy policy all asserted it deleted everything.
+ *
+ * A stranded row is invisible — it looks exactly like no row — so nothing was
+ * ever going to surface this except a check that asks the schema. Adding a
+ * table is the act that re-opens the defect, which is why the question lives
+ * here and not in a unit test.
+ *
+ * Discovery is schema-driven in BOTH directions: a table carrying `user_id`
+ * that nobody declared fails the run, and a declared table that the live schema
+ * no longer has fails it too.
+ */
+async function checkUserPurgeCoverage(url: string, serviceKey: string): Promise<void> {
+  console.log('\n── account-deletion coverage (DB-USER-PURGE-01) ──')
+  const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
+
+  const { data, error } = await admin.rpc('schema_columns_named', {
+    col_names: ['user_id', 'claimed_by'],
+  })
+  if (error) {
+    console.log(`✗ cannot read the schema: ${error.message}`)
+    process.exitCode = 1
+    return
+  }
+  const rows = (data ?? []) as Array<{ table_name: string; column_name: string }>
+  if (rows.length === 0) {
+    console.log('✗ the schema returned no user_id columns at all.')
+    console.log('    A probe that reached nothing is not a clean schema.')
+    process.exitCode = 1
+    return
+  }
+
+  const declared = new Map(USER_DATA_SURFACES.map(s => [s.table, s]))
+  const live = new Set(rows.map(r => r.table_name))
+  let bad = 0
+
+  // Direction 1 — every user-keyed table the SCHEMA knows about is declared.
+  for (const table of Array.from(live).sort()) {
+    if (declared.has(table)) continue
+    if (NON_USER_TABLES[table]) continue
+    if (DERIVED_VIEWS[table]) continue  // a view stores nothing; its rows go when the base rows do
+    console.log(`✗ ${table}: carries a user column but is NOT in USER_DATA_SURFACES`)
+    console.log(`    Account deletion will leave its rows behind, keyed to an id that`)
+    console.log(`    no longer resolves. Add an ON DELETE CASCADE foreign key to`)
+    console.log(`    auth.users in a migration, then declare it in`)
+    console.log(`    lib/supabase/userDataSurfaces.ts.`)
+    bad++
+  }
+
+  // Direction 2 — and nothing declared has quietly disappeared. A stale row is
+  // a promise about a table that no longer exists.
+  for (const s of USER_DATA_SURFACES) {
+    if (s.table === 'user_settings' || s.table === 'waitlist' || s.table === 'ai_rate_limits') continue
+    if (!live.has(s.table)) {
+      console.log(`✗ ${s.table}: declared in USER_DATA_SURFACES, no user column in the live schema`)
+      bad++
+    }
+  }
+
+  // Direction 3 — the CONSTRAINTS themselves. The declaration above is a
+  // statement of intent; this is the only part that proves the database will
+  // actually do it. Without the RPC we can check that a table was CLASSIFIED
+  // but not that it was WIRED, and those are different claims.
+  const { data: fkData, error: fkErr } = await admin.rpc('user_fk_delete_rules')
+  if (fkErr) {
+    console.log(`\n⚠ user_fk_delete_rules() is not available: ${fkErr.message}`)
+    console.log('    PARTIAL CHECK ONLY. Coverage of the DECLARATION was verified;')
+    console.log('    the ON DELETE rules themselves were NOT. A table declared here')
+    console.log('    whose foreign key was never added still reads as covered.')
+    console.log('    Apply supabase/migrations/20260923_user_fk_rules_rpc.sql to close this.')
+    if (bad) { console.log(`\n✗ ${bad} declaration gap(s).`); process.exitCode = 1; return }
+    console.log(`✓ ${declared.size} user-scoped surface(s) declared; none undeclared, none stale.`)
+    return
+  }
+
+  const fks = new Map(
+    ((fkData ?? []) as Array<{ table_name: string; column_name: string; delete_rule: string }>)
+      .map(r => [`${r.table_name}.${r.column_name}`, r.delete_rule]),
+  )
+  const WANT: Record<string, string> = { cascade: 'CASCADE', 'set-null': 'SET NULL' }
+
+  for (const s of USER_DATA_SURFACES) {
+    if (s.mode === 'trigger') continue  // cleared by on_auth_user_deleted, no FK to check
+    const got = fks.get(`${s.table}.${s.column}`)
+    const want = WANT[s.mode]
+    if (got === want) continue
+    console.log(`✗ ${s.table}.${s.column}: declared ${s.mode}, live rule is ${got ?? 'NO FOREIGN KEY'}`)
+    console.log(`    Deleting an account will NOT clear this table.`)
+    bad++
+  }
+
+  // And the trigger that reaches what no foreign key can.
+  const { error: trigErr } = await admin.rpc('schema_columns_named', { col_names: ['bucket_key'] })
+  if (trigErr) { console.log(`✗ cannot confirm ai_rate_limits: ${trigErr.message}`); bad++ }
+
+  if (bad) {
+    console.log(`\n✗ ${bad} account-deletion gap(s). A deletion today would leave rows behind.`)
+    process.exitCode = 1
+    return
+  }
+  console.log(`✓ ${declared.size} user-scoped surface(s): every ON DELETE rule matches its declaration.`)
 }
 
 main().catch(e => { console.error(e); process.exit(2) })
