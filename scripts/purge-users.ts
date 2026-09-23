@@ -38,14 +38,22 @@ import { DERIVED_VIEWS } from '../lib/supabase/userDataSurfaces'
 
 loadEnvConfig(process.cwd())
 
-/** Addresses that cannot belong to a real runner. Deliberately narrow: an
- *  over-broad pattern here deletes a person. `@test.com` and friends are
- *  reserved/parked domains, and `zonna.demo@demo.com` is ours. */
+/**
+ * Addresses that cannot belong to a real runner. Deliberately narrow: an
+ * over-broad pattern here deletes a person, and the preset is the part of this
+ * script that gets run without reading.
+ *
+ * ⚠️ `%@demo.com` WAS here and was removed on first real use. It matched
+ * `zonna.demo@demo.com`, which is not test data — it is the demo account, and
+ * it carries 115 session completions and 72 run analyses, more coaching
+ * history than any real user has. A preset that sweeps up the one account
+ * built on purpose is the exact failure this comment exists to prevent. Delete
+ * it explicitly with --ids if you ever mean to.
+ */
 const TEST_PATTERNS = [
   '%@test.com',
   '%@testy.com',
   '%@example.com',
-  '%@demo.com',
 ]
 
 interface Args {
