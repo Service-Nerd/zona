@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — ONRAMP-STEP-UNITS-01 · a cap in different units from the bound it must satisfy
+**Shipped:** The base-build ramp now honours both the relative and the absolute long-run bound, and the two test corpora that each covered half the grid now cover it.
+
+**Dev learning:** A board amendment capped the per-run step at 1.5 km, absolute. The implementation satisfied it by reaching for an existing rule — §45's +20% long-run progression cap — which is relative. Those two are the same number at a 7.5 km long run and diverge either side of it. Below, the fix looks perfect. Above, the producer obeys one ratified rule while breaching another. 54 of 522 plans built for refused marathoners were over the line. **A cap measured in different units from the bound it must satisfy is not a cap** — this repo has written that sentence three times about floors, and I found it wearing a ceiling.
+
+**The corpus lesson is sharper than the bug.** The regression test said "36 of 36 generatable ramps clean" and it was true — of on-ramps, whose long runs never reach 7.5 km. A second test covered the generator that does reach it, but stopped at a volume below where it bites. **Two corpora that each cover half a grid do not cover the grid**, and nothing in either test could tell you that, because each one was green about its own half.
+
+**AI-building learning:** I made four instrument errors getting to this, and an assertion caught every one, not me. I used `distance_km ?? 0` on duration-anchored plans and invented a +3.8 km step that did not exist. I wrote a property test that mirrored the validator but dropped its deload exemption, so it was stricter than the rule it claimed to check — I deleted it rather than reconciling it, because a second copy of a rule is exactly what produced this defect. And I widened a corpus by raising weekly volume while leaving the longest run at 2 km, describing a runner doing 15 km a week over three runs whose longest is 2 — and nearly "fixed" the engine for them.
+
+**The honest bit:** I found a second conflict underneath and did not fix it. Below the session-count threshold a week splits evenly, so a lawful 10% weekly rise produces a per-run step of weekly/(runs x 10) — which means above `weekly > runs x 15` the two rules cannot both hold. It is unreachable by any runner the feature serves today. The temptation was to nudge one of the two numbers and make it all go green. Both are ratified and one person owns both, so I pinned it with a test that fails if it *stops* reproducing, and filed it.
+
+**Hook material:** Our fix satisfied the rule perfectly and broke it anyway, because the rule was in kilometres and the fix was in percent.
+
+**Postable?:** yes — "units drift between a guard and the thing it guards" is a clean, general engineering lesson.
+
 ## 2026-09-23 — REFUSAL-COHERENCE-01 · the refusal was computed from a rule that had not fired
 **Shipped:** A refusal that stops telling runners to reach a number they already exceed, and `npm run review:cohort` — the review's table, diffed, so the next round starts from a delta instead of a re-derivation.
 
