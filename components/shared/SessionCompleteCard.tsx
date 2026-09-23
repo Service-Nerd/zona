@@ -27,6 +27,7 @@ import type { FatigueTag } from '@/lib/coaching/completionVocab'
 import ZoneBar, { zoneNumberForType } from './ZoneBar'
 import { getSessionLabel } from '@/lib/session-types'
 import { BRAND } from '@/lib/brand'
+import { formatDate } from '@/lib/format'
 
 export interface SessionCompleteCardProps {
   /** Session type — drives the chip label, zone bar, and completion copy. */
@@ -52,12 +53,20 @@ export interface SessionCompleteCardProps {
 
 // Three-letter weekday + day + three-letter month — "Wed · 22 May". Short
 // and reads at thumbnail size in a screenshot.
-function formatDate(d: Date | string | null | undefined): string | null {
-  if (!d) return null
-  const date = typeof d === 'string' ? new Date(d) : d
-  if (Number.isNaN(date.getTime())) return null
-  return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
-    .replace(/^(\w+) /, '$1 · ')
+//
+// 🔴 THIS FUNCTION WAS CALLED `formatDate` AND SHADOWED THE OWNER. Migrating
+// this file to `lib/format.ts`'s `formatDate` rewrote its body into a call to
+// ITSELF — infinite recursion — and the ONLY reason that did not compile is
+// that the local took one argument and the owner takes two. Had the signatures
+// matched, it would have type-checked and hung at runtime.
+//
+// That is the *shadowed identifier* class from the debug catalogue, which is
+// recorded there as "valid identifier, invisible to tsc". Renamed, and the
+// null-guards deleted because the owner already does them.
+function completedOnLabel(d: Date | string | null | undefined): string | null {
+  const base = formatDate(d, 'weekday-short')
+  // "Wed 22 May" → "Wed · 22 May". The separator is this card's, not the owner's.
+  return base ? base.replace(/^(\w+) /, '$1 · ') : null
 }
 
 // Fatigue tag → token. Mirrors the chip palette in SessionPopupInner reflect
@@ -81,7 +90,7 @@ export default function SessionCompleteCard({
   fatigueTag,
   ledgerAdvancedThisWeek = false,
 }: SessionCompleteCardProps) {
-  const dateLabel = formatDate(date)
+  const dateLabel = completedOnLabel(date)
   const chipLabel = getSessionLabel(sessionType)
   const zone      = zoneNumberForType(sessionType)
   const showZone  = zonePct != null && zone != null

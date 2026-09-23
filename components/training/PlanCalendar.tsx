@@ -7,6 +7,7 @@ import { getSessionColor } from '@/lib/session-types'
 import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan/weekResolution'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
+import { formatDate } from '@/lib/format'
 
 interface Completion {
   session_day: string
@@ -67,7 +68,7 @@ function getWeekDates(weekStartDate: Date): Record<string, Date> {
 function formatDateRange(weekStartDate: Date): string {
   const end = new Date(weekStartDate)
   end.setDate(end.getDate() + 6)
-  return `${weekStartDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} – ${end.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
+  return `${formatDate(weekStartDate, 'short')} – ${formatDate(end, 'short')}`
 }
 
 const loadMoreStyle: React.CSSProperties = {
@@ -628,7 +629,9 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
       {DOW_ORDER.map((key, i) => {
         const s = effectiveSessions[key]
         const d = weekDates[key]
-        const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+        // `formatDate` returns null on an unparseable date rather than
+        // rendering "Invalid Date"; this row needs a string either way.
+        const displayDate = formatDate(d, 'short') ?? ''
         const isToday = key === todayDow && isCurrent
         const completion = s ? completionMap[s.originalDay ?? key] : undefined
         const isComplete = completion?.status === 'complete'
@@ -1158,7 +1161,7 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
             const offset = DAY_OFFSETS[raceDay] ?? 6
             const raceDate = new Date(weekStartDate)
             raceDate.setDate(raceDate.getDate() + offset)
-            return raceDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+            return formatDate(raceDate, 'weekday-short')
           })()}
           {week.label ? ` · ${week.label}` : ''}
         </div>

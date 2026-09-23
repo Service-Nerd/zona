@@ -8,6 +8,7 @@ import { formatDuration, hrColour, paceAtHR, getRuns } from '@/lib/strava'
 // `lib/strava.ts` had a fourth km-only copy of the rule; it is gone.
 import { formatDistance, formatPace } from '@/lib/format'
 import type { StravaActivity } from '@/types/plan'
+import { formatDate } from '@/lib/format'
 
 /** Seconds per km for a run — the rate `formatPace` converts for the reader. */
 const secPerKm = (r: { moving_time: number; distance: number }): number | null =>
@@ -56,7 +57,7 @@ export default function StravaPanel({ preloadedRuns, preloadedConnected, preload
     const weeksToRace = raceDate ? Math.max(0, Math.round((new Date(raceDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7))) : null
     const raceDesc = [raceName || '', raceDistanceKm ? `${raceDistanceKm}km` : ''].filter(Boolean).join(' ')
     const raceContext = raceDate
-      ? `${raceDesc || 'their target race'} on ${new Date(raceDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}${weeksToRace !== null ? ` (${weeksToRace} weeks away)` : ''}`
+      ? `${raceDesc || 'their target race'} on ${formatDate(raceDate, 'long')}${weeksToRace !== null ? ` (${weeksToRace} weeks away)` : ''}`
       : raceDesc || 'an upcoming race'
     const hrProfile = restingHR && maxHR
       ? `Resting HR ~${restingHR}, max HR ~${maxHR}. Priority: Zone 2 discipline (HR ≤${z2}).`
@@ -68,7 +69,7 @@ Athlete: ${hrProfile}
 
 Activity:
 - Name: ${run.name}
-- Date: ${new Date(run.start_date).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' })}
+- Date: ${formatDate(run.start_date, 'weekday-long')}
 - Distance: ${(run.distance/1000).toFixed(2)}km
 - Duration: ${formatDuration(run.moving_time)}
 - Avg HR: ${run.average_heartrate ?? 'not recorded'} bpm
@@ -177,7 +178,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
           const dur  = formatDuration(run.moving_time)
           const pace = formatPace(secPerKm(run), preferredUnits)
           const hr   = run.average_heartrate ? Math.round(run.average_heartrate) : null
-          const date = new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+          const date = formatDate(run.start_date, 'short')
           return (
             <div key={run.id} style={{
               background: 'var(--card-bg)', border: '0.5px solid var(--border-col)',
@@ -211,7 +212,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
                 <div style={{ fontFamily: "var(--font-ui)", fontSize: '11px', color: 'var(--teal)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '4px' }}>New activity</div>
                 <div style={{ fontFamily: "var(--font-brand)", fontSize: '16px', fontWeight: 500, color: 'var(--text-primary)' }}>{popup.name}</div>
                 <div style={{ fontFamily: "var(--font-ui)", fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  {new Date(popup.start_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {formatDate(popup.start_date, 'weekday-long')}
                 </div>
               </div>
               <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>&#x2715;</button>

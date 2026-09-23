@@ -22,15 +22,12 @@ import { BRAND } from '@/lib/brand'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { formatCodeInput, CODE_PREFIX } from '@/lib/charity/code'
 import BackButton from '@/components/shared/BackButton'
+import { formatDate } from '@/lib/format'
 
 function formatEnds(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString('en-GB', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    })
-  } catch {
-    return ''
-  }
+  // DATE-OWNER-01 — the try/catch is gone because `formatDate` returns null on
+  // an unparseable input rather than throwing or rendering "Invalid Date".
+  return formatDate(iso, 'long') ?? ''
 }
 
 export default function RedeemCodeScreen({ onBack, onRedeemed }: {

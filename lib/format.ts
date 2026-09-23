@@ -491,6 +491,77 @@ const MS_PER_DAY = 86_400_000
  * Returns null for a missing or unparseable date — never 0, which would read as
  * "race day" on a plan that has no race at all.
  */
+/**
+ * DATE-OWNER-01 — the single owner of every date a runner reads.
+ *
+ * ADR-015 made this file the sole owner of *"every time/distance/metric
+ * string"*. Dates were never brought under it. Measured 2026-09-23: **9
+ * distinct formats across 22 hand-written sites, no owner, every one
+ * hardcoding `'en-GB'`**, plus **one raw ISO string shown to a runner**
+ * (`starts 2026-12-07`).
+ *
+ * ⚠️ THIS IS NOT A LOCALISATION FIX, AND THE SLT DECLINED TO MAKE IT ONE.
+ * **Not one format was ambiguous** — every one names its month, so `24 Apr
+ * 2027` reads correctly to an American, merely in an unfamiliar order. The
+ * defect is that the app looked *assembled rather than designed*: one screen
+ * said `24 Apr 2027`, another `Mon 16 Nov`, a third `2026-12-07`.
+ *
+ * Fried, on adding the date preference the founder originally asked for:
+ * *"a new setting is permanent surface area — a preference, a migration, a
+ * Me-screen row and a branch in every call, to change WORD ORDER for people
+ * who can already read the date."* **No preference was built.** Recall the
+ * decision if we ship outside the anglosphere or a runner actually asks.
+ *
+ * ⚠️ DISPLAY ONLY. `plan_start` and `race_date` are ISO strings and remain so
+ * — they are storage keys and sort keys. Measured before building: **no
+ * formatted date is ever parsed back, persisted, sent, sorted or compared**
+ * (all 9 round-trip candidates are `new Date(iso).toLocale…`, one-way), and
+ * **no test asserts a date format**.
+ */
+export type DateStyle =
+  /** `24 Apr` — the workhorse. Within the current season, year is noise. */
+  | 'short'
+  /** `24 Apr 2026` — when the year genuinely disambiguates. */
+  | 'medium'
+  /** `24 April 2026` — a stated, consequential date: race day, grant expiry. */
+  | 'long'
+  /** `Mon 24 Apr` — a row the runner scans by weekday. */
+  | 'weekday-short'
+  /** `Monday 24 April` — a single date given weight. */
+  | 'weekday-long'
+  /** `Mon` — inside seven days, the weekday IS the date. */
+  | 'weekday-only'
+
+const DATE_STYLES: Record<DateStyle, Intl.DateTimeFormatOptions> = {
+  'short':         { day: 'numeric', month: 'short' },
+  'medium':        { day: 'numeric', month: 'short', year: 'numeric' },
+  'long':          { day: 'numeric', month: 'long',  year: 'numeric' },
+  'weekday-short': { weekday: 'short', day: 'numeric', month: 'short' },
+  'weekday-long':  { weekday: 'long',  day: 'numeric', month: 'long' },
+  'weekday-only':  { weekday: 'short' },
+}
+
+/**
+ * Format a date for a runner to read.
+ *
+ * ⚠️ `'en-GB'` IS DELIBERATE AND IS THE STATUS QUO, not a default that slipped
+ * in. All 22 previous sites hardcoded it; keeping it means this change alters
+ * **word order nowhere**. The moment a locale decision is actually made, it is
+ * made HERE, once, instead of in 22 places.
+ *
+ * Returns `null` on a missing or unparseable input — never a fabricated date
+ * and never "Invalid Date", which is what a bare `toLocaleDateString` renders.
+ */
+export function formatDate(
+  date: string | Date | null | undefined,
+  style: DateStyle = 'short',
+): string | null {
+  if (date == null) return null
+  const d = date instanceof Date ? date : new Date(date)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toLocaleDateString('en-GB', DATE_STYLES[style])
+}
+
 export function daysUntilRace(raceDate: string | Date | null | undefined, now: Date = new Date()): number | null {
   if (!raceDate) return null
   const d = raceDate instanceof Date ? raceDate : new Date(raceDate)

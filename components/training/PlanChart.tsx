@@ -1,6 +1,7 @@
 'use client'
 
 import type { Week } from '@/types/plan'
+import { formatDate } from '@/lib/format'
 
 interface Props { weeks: Week[] }
 
@@ -56,7 +57,7 @@ export default function PlanChart({ weeks }: Props) {
           const border = isDeload ? `1px solid var(--teal-30)` : undefined
 
           const d = new Date(w.date)
-          const label = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+          const label = formatDate(d, 'short')
 
           return (
             <div

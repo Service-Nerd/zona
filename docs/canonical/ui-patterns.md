@@ -221,32 +221,6 @@ Section gap (week → week): `28–32px`.
 ---
 
 
-### 22. ActionRow — the one pattern for "tap this to go and do something" (ACTION-ROW-01, 2026-09-23)
-
-```
-┌──────────────────────────────────────────┐
-│  Adjust your plan                     ›  │  ← 13px 500 --ink
-│  Days, time limits, injuries…            │  ← 12px --mute
-└──────────────────────────────────────────┘
-```
-
-`components/shared/ActionRow.tsx`. Title (the verb), optional subtitle (the **consequence**, never
-a restatement), and **always the chevron**. A real `<button>`, `min-height: 44px`.
-
-**The CONTAINER stays with the caller, deliberately.** Me groups several rows inside one card with
-hairline separators (`divider`); Plan has a single standalone card. Both are cards — what they share
-is the ROW.
-
-🔴 **WHY IT EXISTS, and the cause was structural rather than an oversight.** The founder, on the
-Plan screen: *"that is an action tile. It's not clear you can click on it. We have them under Me
-profile so we should have a standard pattern for these."* **The chevron was a local `const` inside
-the Me screen's component.** Seven rows there used it; the Plan screen could not reach it, so its
-tile shipped with **no affordance at all** — on a screen where every session row beside it carries
-one. ⚠️ **A pattern that is a local variable cannot travel.** The shape was agreed and rendering
-correctly in one place, nothing was available to reuse, and the second surface re-implemented it
-from memory and lost the part that makes it legible as a control. Gated by
-`components/shared/actionRow.markup.test.ts`.
-
 ### The spacing scale — SITE-WAVE-4, 2026-09-22
 
 **`--space-1…7` = `4 · 8 · 12 · 16 · 24 · 32 · 48`. 4px base. Never hand-type a gap above 5px.**
@@ -1772,6 +1746,28 @@ A grouped list of tappable rows inside a single card. Used in MeScreen for plan 
 - Primary label: `13px 500 --ink`, `var(--font-ui)`
 - Supporting detail: `12px 400 --mute`, `var(--font-ui)`
 - Chevron: `--mute` colour, `marginLeft: 12px`, right-aligned
+
+🟢 **NOW A COMPONENT — `components/shared/ActionRow.tsx` (ACTION-ROW-01, 2026-09-23).**
+
+🔴 **THIS PATTERN WAS ALREADY DOCUMENTED, IN THIS SECTION, INCLUDING THE CHEVRON — AND THE PLAN
+SCREEN SHIPPED WITHOUT ONE.** The founder: *"that is an action tile. It's not clear you can click
+on it. We have them under Me profile so we should have a standard pattern for these."* He was
+right, and the pattern he was pointing at is this one.
+
+**The cause was structural, not an oversight: the chevron existed only as a local `const` inside
+the Me screen's component.** Seven rows there used it; the Plan screen could not reach it, so its
+tile was re-implemented from the same prose you are reading and lost the part that makes it legible
+as a control.
+
+🥇 **A DOCUMENTED PATTERN WITH NO COMPONENT IS A PATTERN THAT GETS RE-IMPLEMENTED FROM MEMORY.**
+The prose said *"chevron, `marginLeft: 12px`, right-aligned"* and was correct the whole time. Prose
+cannot be imported.
+
+- `ActionRow` renders ONE row: title, optional subtitle, always the chevron, real `<button>`,
+  `min-height: 44px`.
+- **The CONTAINER stays with the caller.** Me stacks several rows in one card (`divider`); Plan has
+  a single standalone card. Both are this pattern — a one-row Action List Card.
+- Gated by `components/shared/actionRow.markup.test.ts`, falsified by removing the chevron.
 
 **Toggle variant** (for boolean settings like Auto-adjust):
 - Row has no chevron — replaced by a `44×26px` pill toggle

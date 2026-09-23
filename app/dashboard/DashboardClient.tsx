@@ -109,6 +109,7 @@ import { RecalibrationReadyTile, RecalibrationEntryScreen } from './Recalibratio
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
+import { formatDate } from '@/lib/format'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
 
@@ -2865,7 +2866,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
 }) {
   const raceName   = plan.meta.race_name || 'your race'
   const raceDate   = plan.meta.race_date ? new Date(plan.meta.race_date) : null
-  const raceDateStr = raceDate ? raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : null
+  const raceDateStr = raceDate ? formatDate(raceDate, 'long') : null
   const totalWeeks = plan.weeks.length
   const daysToRace = daysUntilRace(raceDate)
 
@@ -2882,7 +2883,9 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
       d.setDate(d.getDate() + DOW_KEYS.indexOf(key))
       if (d >= now) {
         firstSession = {
-          day: d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' }),
+          // `?? ''` — the owner returns null on an unparseable date where a
+          // bare toLocaleDateString rendered the string "Invalid Date".
+          day: formatDate(d, 'weekday-long') ?? '',
           label: s.label || getSessionLabel(s.type),
           type: s.type,
         }
@@ -3530,8 +3533,8 @@ function formatNotifTime(iso: string): string {
   if (min < 1) return 'just now'
   if (min < 60) return `${min}m`
   if (d.toDateString() === now.toDateString()) return `${Math.floor(min / 60)}h`
-  if (diffMs < 7 * 86400000) return d.toLocaleDateString('en-GB', { weekday: 'short' })
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  if (diffMs < 7 * 86400000) return formatDate(d, 'weekday-only') ?? ''
+  return formatDate(d, 'short') ?? ''
 }
 
 function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
@@ -5425,7 +5428,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                     <div>
                       <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{run.name}</div>
                       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {new Date(run.start_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} · {formatDistance(run.distance / 1000, preferredUnits, { exact: true })} {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''} · {run.source === 'apple_health' ? 'Apple Health' : 'Strava'}
+                        {formatDate(run.start_date, 'short')} · {formatDistance(run.distance / 1000, preferredUnits, { exact: true })} {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''} · {run.source === 'apple_health' ? 'Apple Health' : 'Strava'}
                       </div>
                     </div>
                     {isSelected && <span style={{ color: 'var(--teal)', fontSize: '16px' }}>✓</span>}
@@ -7026,7 +7029,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
   // the line the guard used to protect. Never rendered when the week is missing
   // — the guard below returns before any of it reaches the DOM.
   const weekStartDate = currentWeek ? parseLocalDate((currentWeek as any).date) : new Date()
-  const todayStr = now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  const todayStr = formatDate(now, 'short')
   const ws = (currentWeek as any)?.sessions ?? {}
 
   // Pre-start state: viewing the first plan week before its start date.
@@ -7057,7 +7060,9 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
     const s = effectiveWs[key]
     const originalDay = s?.originalDay ?? key
     const d = computeSessionDate(weekStartDate, key)
-    const displayDate = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+    // `?? ''` — the owner returns null on an unparseable date; this row's
+    // `date` field is a required string.
+    const displayDate = formatDate(d, 'short') ?? ''
     // Parse legacy free-text detail as fallback for hand-authored plans
     const parsed = s ? parseSessionDetail(s.detail ?? null) : {}
     return {
@@ -7457,7 +7462,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
               color: 'var(--mute)',
               marginBottom: daysToPlanStart > 3 ? '8px' : '20px',
             }}>
-              Plan begins {planStartDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}.
+              Plan begins {formatDate(planStartDate, 'weekday-long')}.
             </div>
             {daysToPlanStart > 3 && (
               <div style={{
@@ -8481,7 +8486,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
   }, [allCompletions, runAnalysisMap, weekNum])
   const raceName = (plan as any)?.meta?.race_name ?? ''
   const raceDate = (plan as any)?.meta?.race_date ? new Date((plan as any).meta.race_date) : null
-  const raceDateStr = raceDate ? raceDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null
+  const raceDateStr = raceDate ? formatDate(raceDate, 'medium') : null
   const daysToRace = daysUntilRace(raceDate)
 
   // Derive done weeks count and deload week numbers from plan
@@ -11692,9 +11697,10 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
 
   function formatRaceDate(dateStr: string | null): string {
     if (!dateStr) return ''
-    try {
-      return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-    } catch { return dateStr }
+    // DATE-OWNER-01 — the try/catch is gone: `formatDate` returns null on an
+    // unparseable input rather than throwing. Falling back to the raw string
+    // keeps the previous behaviour for a value we cannot parse.
+    return formatDate(dateStr, 'medium') ?? dateStr
   }
 
   function relativeTime(isoStr: string): string {
@@ -12040,7 +12046,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   const weekNum    = currentWeekIndex + 1
   const totalWeeks = plan.weeks.length
   const raceDateFormatted = plan?.meta?.race_date
-    ? new Date(plan.meta.race_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? formatDate(plan.meta.race_date, 'long')
     : null
 
   return (
@@ -12495,7 +12501,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 Full access, free
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-                Runs to {new Date(charityGrantEndsAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. Set your race date and it extends to a week after race day.
+                Runs to {formatDate(charityGrantEndsAt, 'long')}. Set your race date and it extends to a week after race day.
               </div>
             </div>
           </>

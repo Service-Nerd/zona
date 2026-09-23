@@ -18,7 +18,7 @@ import SignOutLink from '@/components/shared/SignOutLink'
 import { createEnrichSaveCoordinator } from '@/lib/plan/enrichSaveCoordinator'
 import { weekVolumeLabel } from '@/lib/plan/weekVolume'
 import { GENERATION_CONFIG, raceDistanceKey } from '@/lib/plan/generationConfig'
-import { convertDistanceString, formatDistance, formatDuration } from '@/lib/format'
+import { convertDistanceString, formatDate, formatDistance, formatDuration } from '@/lib/format'
 import { isPaidDistance } from '@/lib/plan/canUseFeature'
 import { PLAN_SIGNATURES } from '@/lib/plan/planSignatures'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
@@ -1405,7 +1405,9 @@ export default function GeneratePlanScreen({
               {meta.race_name || 'Your plan'}
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginTop: '4px' }}>
-              starts {meta.plan_start} · {formatDistance(meta.race_distance_km, preferredUnits, { exact: true })}
+              {/* DATE-OWNER-01 — this rendered the RAW ISO STRING (`2026-12-07`)
+                  to a runner, on the screen where they commit to a plan. */}
+              starts {formatDate(meta.plan_start, 'long')} · {formatDistance(meta.race_distance_km, preferredUnits, { exact: true })}
             </div>
           </div>
           {/* P-06(c) — the shape of the block, led by its numbers. The week
