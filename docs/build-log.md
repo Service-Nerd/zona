@@ -6,6 +6,21 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — DB-USER-PURGE-01 · the delete button deleted an eighth of the account
+**Shipped:** Account deletion now actually deletes the account, enforced by the database rather than by a list in a route — plus a repeatable purge tool for test data.
+
+**Dev learning:** The delete-account route named three tables. The app has twenty-four that hold a runner's data. I only found it because I went looking for foreign keys before writing anything, and the answer was that the entire public schema had **one** foreign key of any kind, and it wasn't to `auth.users`. So there was no cascade behind the route — no backstop, nothing catching the twenty-one tables it didn't name. Run history, health samples, push tokens: all still there, keyed to a user id that no longer resolved to anybody.
+
+**The thing that actually matters:** three separate places in the codebase asserted this worked. The route's own test exemption said it "deletes every row for the user regardless of plan". The Me screen promised "sessions, plan, and profile" — and `plans` wasn't one of the three. The privacy policy promised deletion "removes all associated data", which isn't marketing copy, it's a GDPR Article 17 claim. **Three descriptions of the same code, all confident, all wrong, none of them ever checked against the schema.**
+
+**AI-building learning:** The obvious fix was to add twenty-one delete statements to the route. That fix is correct for exactly as long as nobody adds table twenty-five, and the failure is silent — a stranded row looks identical to no row, so nothing would ever have told us. This repo already has that scar: `WEEK_KEYED_TABLES` shipped wrong on its first write, and its guard iterated the same list it was guarding. So the authority went into the schema instead: `ON DELETE CASCADE` on every user-scoped table, a trigger for the three stores no foreign key can reach, and **the route now names no tables at all**. If you ever need to add a `.delete()` there, the constraint is missing.
+
+**The honest bit:** I proved the cascade by building a throwaway account with ten rows across nine tables and deleting only its auth row. Everything went, except the one row I'd deliberately designed to survive anonymised. I did that because `deleteUser()` returning `ok` is precisely what the old route believed, and it was wrong for a year. Same reason the purge tool re-counts every table after it deletes instead of trusting the API's success response. And I said out loud what it still doesn't prove: one introspection helper couldn't be applied in this session, so the check verifies every table is **declared** but not that its foreign key is **wired** — and it prints that limitation rather than a tick.
+
+**Hook material:** The delete-account button deleted three tables out of twenty-four, and three different places in the codebase confidently documented it as deleting everything.
+
+**Postable?:** yes — "your delete button probably doesn't" plus the general point that a cleanup list in application code is a promise, while a foreign key is a mechanism.
+
 ## 2026-09-22 — DOC-CURRENCY-01 · the audit said ALL CLEAN and five entries were stale
 **Shipped:** Backlog, feature registry, contracts and build-log actually brought current — by checking them against git rather than by running the script that says they are fine.
 
