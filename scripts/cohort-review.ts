@@ -30,6 +30,8 @@ import { generateRulePlan } from '../lib/plan/ruleEngine'
 import { validatePlan } from '../lib/plan/invariants'
 import { isDesignedRefusal } from '../lib/plan/designedRefusal'
 import { auditPlanQuality } from '../lib/plan/planQuality'
+import { getRunningApplies, generateGetRunningPlan } from '../lib/plan/getRunningPlan'
+import { weeksBetweenLocal } from '../lib/plan/length'
 
 const BASELINE = join(__dirname, '..', 'lib', 'plan', '__fixtures__', 'cohortReviewBaseline.json')
 
@@ -48,28 +50,68 @@ interface BandRow {
   n: number
   refusedPct: number
   cleanPct: number
+  /** ⚠️ THE COLUMN THIS TABLE WAS MISSING — and its absence cost a wrong answer
+   *  to the founder twice in one day.
+   *
+   *  `refusedPct` is the ENGINE's verdict: `generateRulePlan` threw. It is NOT
+   *  what the runner receives. `/api/generate-plan` catches that throw and
+   *  offers a §118 get-running plan, and `getRunningApplies` is only
+   *  `effectiveStartKm > 0` — so in practice nobody is turned away.
+   *
+   *  Reading `100% refused` at 4 km/week as "we turn them away" is measuring one
+   *  layer below the product. That is the same error as the foundation-composition
+   *  gap found the same morning: a harness that stops at `generateRulePlan`
+   *  cannot see what the route does next. */
+  servedPct: number
+  /** Of the runners this band REFUSES, how many does the get-running plan build
+   *  far enough to reopen the race door (`endsAtKm >= min_base_km`)? The honest
+   *  half: a journey that does not reach the start line is still a journey, and
+   *  §118's `reaches_race_door` exists so the copy can say which. */
+  doorPct: number | null
   objections: Record<string, number>
 }
 type DistanceRows = Record<string, BandRow>   // keyed by weekly-km band
-type Report = { stride: number; byDistance: Record<string, DistanceRows> }
+/** Bumped whenever a COLUMN changes. An old baseline is incomparable, not
+ *  merely different, and comparing across shapes reads as a false 'unchanged'. */
+const REPORT_VERSION = 2
+type Report = { version?: number; stride: number; byDistance: Record<string, DistanceRows> }
 
 const pc = (x: number, t: number) => t ? +(x / t * 100).toFixed(1) : 0
 
 function measure(): Report {
   const byDistance: Record<string, DistanceRows> = {}
   for (const dist of DISTANCES) {
-    const bands: Record<string, { n: number; w: number; refused: number; clean: number; obj: Record<string, number> }> = {}
+    const bands: Record<string, { n: number; w: number; refused: number; clean: number
+      served: number; doorEligible: number; door: number; obj: Record<string, number> }> = {}
     for (const c of distanceEnvelope(dist).filter((_, i) => i % STRIDE === 0)) {
       const i = c.input as unknown as Record<string, number>
       const key = String(i.current_weekly_km)
-      const b = bands[key] ??= { n: 0, w: 0, refused: 0, clean: 0, obj: {} }
+      const b = bands[key] ??= { n: 0, w: 0, refused: 0, clean: 0, served: 0, doorEligible: 0, door: 0, obj: {} }
       b.n++; b.w += c.weight
       let plan
       try { plan = generateRulePlan(c.input, 'paid') }
       catch (e) {
         // A non-designed throw is a crash, not a refusal, and must not be
         // silently folded into the refusal rate.
-        if (isDesignedRefusal(e)) b.refused += c.weight
+        if (!isDesignedRefusal(e)) continue
+        b.refused += c.weight
+        // ── WHAT THE RUNNER ACTUALLY GETS ────────────────────────────────
+        // The route's §118 path, reproduced. Not a copy of its RULE — it calls
+        // the same two owners the route calls, so the two cannot drift.
+        if (!getRunningApplies(c.input)) continue
+        b.served += c.weight
+        const minBase = (e as { base?: { min_base_km?: number } }).base?.min_base_km
+        // Only a BaseVolumeError names a door. A prep-time or days refusal has
+        // no base target, so it is served but NOT door-eligible — counting it
+        // either way would be inventing a denominator.
+        if (typeof minBase !== 'number') continue
+        b.doorEligible += c.weight
+        try {
+          const ps = (i as unknown as Record<string, string>).plan_start ?? '2026-11-02'
+          const { endsAtKm } = generateGetRunningPlan(
+            c.input, ps, weeksBetweenLocal(ps, (i as unknown as Record<string, string>).race_date))
+          if (endsAtKm >= minBase) b.door += c.weight
+        } catch { /* unbuildable: served but does not reach the door */ }
         continue
       }
       const m = plan.meta as unknown as Record<string, unknown>
@@ -89,13 +131,16 @@ function measure(): Report {
         n: b.n,
         refusedPct: pc(b.refused, b.w),
         cleanPct: pc(b.clean, b.w),
+        // generated-successfully + offered-a-get-running-plan, over the band.
+        servedPct: pc((b.w - b.refused) + b.served, b.w),
+        doorPct: b.doorEligible > 0 ? pc(b.door, b.doorEligible) : null,
         objections: Object.fromEntries(
           Object.entries(b.obj).sort((x, y) => y[1] - x[1]).map(([c2, w]) => [c2, pc(w, b.w)])),
       }
     }
     byDistance[String(dist)] = rows
   }
-  return { stride: STRIDE, byDistance }
+  return { version: REPORT_VERSION, stride: STRIDE, byDistance }
 }
 
 // ── render ──────────────────────────────────────────────────────────────────
@@ -111,8 +156,8 @@ function render(now: Report, was: Report | null): boolean {
   for (const dist of Object.keys(now.byDistance)) {
     const label = dist === '42.2' ? 'MARATHON' : dist === '21.1' ? 'HALF MARATHON' : `${dist} km`
     console.log(`\n═══ ${label} ═══  (stride ${now.stride})\n`)
-    console.log('  km/wk │    n │ refused │    Δ │  clean │    Δ │ objections')
-    console.log('  ──────┼──────┼─────────┼──────┼────────┼──────┼───────────')
+    console.log('  km/wk │    n │ refused │    Δ │  clean │    Δ │ SERVED │ door │ objections')
+    console.log('  ──────┼──────┼─────────┼──────┼────────┼──────┼────────┼──────┼───────────')
     const prev = was?.byDistance[dist]
     for (const [band, row] of Object.entries(now.byDistance[dist])) {
       const p = prev?.[band]
@@ -131,7 +176,11 @@ function render(now: Report, was: Report | null): boolean {
       for (const gone of Object.keys(p?.objections ?? {})) {
         if (!(gone in row.objections)) { moved = true; console.log(`  ${band.padStart(5)} │ ${'CLEARED'.padStart(4)} │        │      │        │      │ ${gone} GONE (was ${p!.objections[gone]}%)`) }
       }
-      console.log(`  ${band.padStart(5)} │ ${String(row.n).padStart(4)} │ ${(row.refusedPct + '%').padStart(7)} │${dr} │ ${(row.cleanPct + '%').padStart(6)} │${dc} │ ${objs}`)
+      const ds = d(row.servedPct, p?.servedPct)
+      if (ds.trim() !== '·' && p) moved = true
+      const doorTxt = row.doorPct === null ? '   — ' : (row.doorPct + '%').padStart(5)
+      if (p && row.doorPct !== p.doorPct) moved = true
+      console.log(`  ${band.padStart(5)} │ ${String(row.n).padStart(4)} │ ${(row.refusedPct + '%').padStart(7)} │${dr} │ ${(row.cleanPct + '%').padStart(6)} │${dc} │ ${(row.servedPct + '%').padStart(6)} │${doorTxt} │ ${objs}`)
     }
     for (const gone of Object.keys(prev ?? {})) {
       if (!(gone in now.byDistance[dist])) { moved = true; console.log(`  ${gone.padStart(5)} │ BAND GONE from the envelope`) }
@@ -144,7 +193,17 @@ function render(now: Report, was: Report | null): boolean {
 const now = measure()
 const was: Report | null = existsSync(BASELINE) ? JSON.parse(readFileSync(BASELINE, 'utf8')) : null
 
-if (was && was.stride !== now.stride) {
+// ⚠️ THE COMPATIBILITY GUARDS MUST NOT BLOCK `--write`.
+// The first cut checked the version before honouring --write, so the only
+// command that can clear a version mismatch was refused BY the mismatch. A
+// guard that blocks its own remedy is a deadlock, not a safeguard.
+if (!WRITE && was && (was.version ?? 1) !== REPORT_VERSION) {
+  console.error(`✗ baseline is report v${was.version ?? 1}; this is v${REPORT_VERSION}. The columns changed.`)
+  console.error('  An old-shape baseline cannot be compared — re-baseline deliberately with --write')
+  console.error('  and say in the commit WHY the shape changed.')
+  process.exit(2)
+}
+if (!WRITE && was && was.stride !== now.stride) {
   console.error(`✗ stride ${now.stride} cannot be compared to a baseline taken at ${was.stride}.`)
   console.error('  Re-run without --stride, or re-baseline deliberately with --write.')
   process.exit(2)

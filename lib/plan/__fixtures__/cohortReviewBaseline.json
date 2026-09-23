@@ -1,4 +1,5 @@
 {
+ "version": 2,
  "stride": 7,
  "byDistance": {
   "42.2": {
@@ -6,12 +7,16 @@
     "n": 220,
     "refusedPct": 100,
     "cleanPct": 0,
+    "servedPct": 100,
+    "doorPct": 80.3,
     "objections": {}
    },
    "8": {
     "n": 219,
     "refusedPct": 85.8,
     "cleanPct": 4.5,
+    "servedPct": 100,
+    "doorPct": 99.6,
     "objections": {
      "LONG-RUN-SHORT": 9.7
     }
@@ -20,6 +25,8 @@
     "n": 220,
     "refusedPct": 35.4,
     "cleanPct": 15.5,
+    "servedPct": 100,
+    "doorPct": 100,
     "objections": {
      "LONG-RUN-SHORT": 44.2,
      "WEEK1-LEAP": 27,
@@ -30,6 +37,8 @@
     "n": 219,
     "refusedPct": 0,
     "cleanPct": 92.6,
+    "servedPct": 100,
+    "doorPct": null,
     "objections": {
      "WEEK1-LEAP": 3.4,
      "LONG-RUN-SHORT": 2,
@@ -40,18 +49,24 @@
     "n": 220,
     "refusedPct": 0,
     "cleanPct": 100,
+    "servedPct": 100,
+    "doorPct": null,
     "objections": {}
    },
    "50": {
     "n": 219,
     "refusedPct": 0,
     "cleanPct": 100,
+    "servedPct": 100,
+    "doorPct": null,
     "objections": {}
    },
    "70": {
     "n": 219,
     "refusedPct": 0,
     "cleanPct": 100,
+    "servedPct": 100,
+    "doorPct": null,
     "objections": {}
    }
   },
@@ -60,6 +75,8 @@
     "n": 165,
     "refusedPct": 0,
     "cleanPct": 60.3,
+    "servedPct": 100,
+    "doorPct": null,
     "objections": {
      "WEEK1-LEAP": 25,
      "DEGENERATE-WEEK": 14.6
@@ -69,18 +86,24 @@
     "n": 165,
     "refusedPct": 0,
     "cleanPct": 100,
+    "servedPct": 100,
+    "doorPct": null,
     "objections": {}
    },
    "32": {
     "n": 164,
     "refusedPct": 0,
     "cleanPct": 100,
+    "servedPct": 100,
+    "doorPct": null,
     "objections": {}
    },
    "50": {
     "n": 165,
     "refusedPct": 0,
     "cleanPct": 100,
+    "servedPct": 100,
+    "doorPct": null,
     "objections": {}
    }
   }
