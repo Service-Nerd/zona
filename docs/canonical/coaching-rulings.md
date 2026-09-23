@@ -91,14 +91,18 @@ Record: `docs/decisions/coaching-board-2026-09-20-miles-teardown-batch.md` ·
 
 ## How to re-run the review and compare like with like
 
-Four commands. Run them in this order; each answers a different question.
-
 ```bash
-npx tsx scripts/coaching-review-round.ts   # 1. generate today's 28 plans
-npm run measure:envelope                   # 2. fit-for-purpose, DIFFED vs baseline
-npm run audit:plans                        # 3. coach objections, diffed vs baseline
-npm run verify                             # 4. everything else, incl. both gates
+npm run review:coaching        # the whole protocol, in order, one scorecard
 ```
+
+⚠️ **OWNED BY `docs/canonical/coaching-measurement.md`. Do not restate it here.**
+
+🔴 **This section listed FOUR commands and went stale** the moment `review:cohort`
+and `measure:fitness` existed — it named neither, and it was the only written
+statement of the protocol. **A protocol written as prose in one document and
+executed by hand in a different order each time is a memory test, not a
+protocol.** The order now lives in `scripts/review-coaching.ts`, the reasoning in
+the doctrine file, and this line points at both.
 
 **What makes it apples-to-apples**, and every one of these is versioned in git:
 

@@ -82,7 +82,14 @@ jobs:
         id: gen
         env:
           NODE_ENV: production
-        run: npx tsx scripts/coaching-review-round.ts | tee round.out
+        # ⚠️ THE WHOLE PROTOCOL, NOT ONE STEP OF IT.
+        # This ran `coaching-review-round.ts` alone, which answers ONE of the six
+        # questions: does every case still generate. It cannot see a
+        # fit-for-purpose move, a cohort band collapsing, a new coach objection,
+        # or a plan that is valid and does not build the runner. A doctrine push
+        # that moved any of those went green here.
+        # Owner of the order: docs/canonical/coaching-measurement.md
+        run: npm run review:coaching | tee round.out
       - name: Flag that a board review is due
         if: always()
         run: |
@@ -92,7 +99,7 @@ jobs:
             echo ""
             echo "A doctrine file changed on main. The GENERATE step has run; the REVIEW step is yours:"
             echo ""
-            echo "1. Download the **coaching-review-${DATE}** artifact (or regenerate locally: \`NODE_ENV=production npx tsx scripts/coaching-review-round.ts\`)."
+            echo "1. Download the **coaching-review-${DATE}** artifact (or regenerate locally: \`npm run review:coaching\`)."
             echo "2. Run \`/coaching-board\` over \`generated-plans.md\`."
             echo "3. Commit the ruling to \`coaching-review/${DATE}/review.md\` + \`backlog.md\`."
             echo ""
