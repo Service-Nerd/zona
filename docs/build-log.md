@@ -6,6 +6,25 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — COMPLETION-TOMBSTONE-01 · the save worked, the row was already dead
+**Shipped:** Completing or skipping a session on a regenerated plan actually shows up. It has been silently failing for anyone who started a new plan since 17 September.
+
+**Dev learning:** The founder reported two sessions that wouldn't mark complete. The instinct is "the write is failing" — it wasn't. Both rows had been updated within a minute of the report, with exactly the right values. They were invisible because they carried a `superseded_at` stamp and had been **created five months earlier, on a different plan**.
+
+Three facts, each defensible alone. The unique key is `(user_id, week_n, session_day)`. Every read filters out superseded rows. Every write upserts on that key and none of them clears the stamp. But `week_n` is a *within-plan* coordinate — a new plan restarts at week 1 — so completing week 1 collided with the old plan's week 1, updated it in place, and inherited its tombstone. **A fix we shipped five days earlier closed the read side of exactly this hazard and left the write side open.** The write succeeded, so nothing errored, so nothing was logged.
+
+**The second defect was worse than the first.** The skip write only sets status and reason; everything else is inherited. So a session skipped *today for illness* was carrying an RPE of 3 from April — feeding a fabricated body-state signal into the fatigue triggers and the risk gate.
+
+**AI-building learning:** The cheap fix was to add `superseded_at: null` to the eight write sites. It would have worked, and it would have been wrong twice: it leaves the data merge intact, and it overwrites the old plan's history — the exact thing superseding exists to preserve. The right fix was to change what the constraint *claims*: not "one completion per user/week/day forever" but "at most one **live** completion, and any number of superseded ones". A partial unique index says that, and then the collision cannot happen rather than being recovered from.
+
+**The gate earned its place immediately.** I wrote it to stop a ninth call site, and it found four *existing* ones I'd missed — all server-side, none filtering the tombstone. One of them caught me mid-fix: `healthkitConsolidate` has two textually identical update blocks, and my edit had landed on the wrong one. I'd have shipped that believing it fixed.
+
+**The honest bit:** the typed helper refused to compile on a call passing `session_day: sessionDay`, where that value can be undefined. Every other use in that component guards it. The old untyped upsert accepted it, PostgREST dropped the key, the NOT NULL constraint rejected the row, and a bare `catch {}` swallowed it. That path had been quietly broken too, and I only found it because a type annotation made it impossible to ignore.
+
+**Hook material:** The user said "it won't save". It saved perfectly — onto a row that had been dead for five months.
+
+**Postable?:** yes — "your write succeeded and your read is right and the feature is still broken" is a good three-facts-each-correct story.
+
 ## 2026-09-23 — COACH-MEASURE-PROTOCOL-01 · the protocol existed only as prose, and the prose was stale
 **Shipped:** `npm run review:coaching` — the whole coaching measurement protocol in one command, with a doctrine file that says what each step is for and what none of them can see.
 
