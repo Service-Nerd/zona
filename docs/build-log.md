@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — UNITS-PROSE-01 phase 2 · the argument nothing read
+
+**Shipped:** If you read in miles, the AI coach is now told your plan in miles before it writes about it.
+
+**Dev learning:** Ten prompt builders in this codebase already call `promptDistanceFormatters`. Three didn't, and handed the model a raw kilometre figure with the unit hardcoded. Straightforward wiring — except that after I threaded `units` through the route and into `enrich()`, `enrich()` called `buildUserMessage(plan, input, wantPaidFields)` **without passing it on**. The argument was accepted, carried across a route boundary, and read by nothing.
+
+Nothing would have caught that. Typecheck was green, because the parameter had a `'km'` default. What caught it was deciding to make `units` **required** instead — at which point the compiler listed every call site including the dead one inside `enrich` itself. This repo has a name for the class (`LoadShape`'s `ariaLabel`: declared, destructured by nobody, passed by nobody) and a precedent for the fix (`decideTrialEmails` takes a required access argument because the dangerous default is *send*). Here the dangerous default is *km*.
+
+Then I wrote five tests and falsified them, and **the one that mattered passed when it should have failed**. I re-created the exact inert bug and every assertion stayed green, because they all call `buildUserMessage` directly and never go through `enrich`. A gate on a function is not a gate on its caller. The fix was to mock fetch and assert on the body actually POSTed to the model.
+
+**Product/creator learning:** The km path changed too, and I nearly treated that as a regression to avoid. The prompt used to say `42.195 km` while the wizard card says `42.2km`. Prompt and card disagreeing on a prescribed distance is the exact defect ADR-015's amendment was written for — it measured the disagreement at 50.4% of sessions. So matching the card *is* the fix, on both paths.
+
+Which then made me check the converter I shipped this morning, and it had the same flaw in the other direction: a note reading "9.9 mi" beside a card reading "10mi", because I'd used one-decimal precision throughout to protect sub-unit figures. It now calls `formatDistance` exactly as the card does and only falls back to a decimal when a whole unit would read zero.
+
+**AI-building learning:** A test went red on a table the route does not touch. `rlsCoverage.test.ts` picks routes by grepping the whole file for `createUserScopedClient` and extracts table usage the same way — so a **comment** I'd written explaining why the route deliberately avoids a user-scoped client was enough to pull it into the audit and report a `charity_codes` update that exists nowhere in the file.
+
+That is the fourth time this repo has recorded "bound the region, never grep the file", and the tempting fix is to reword the comment. The units guard's own header already says why that's wrong: a guard that fires on its own documentation teaches you to write around the guard, which is worse than a false negative. So I stripped comments in the test instead, and falsified it twice to prove it hadn't just gone blind.
+
+**The honest bit:** Three items today, and in every one my first instrument or my first gate was wrong in a way that looked like success. An empty plan corpus that refused every case. A Postgres regex matching a backspace character. And today two gates that couldn't fail — one testing the wrong layer, one blocked by a comment I'd written myself. The code changes were small. Establishing that any of it was true took the day.
+
+**Hook material:** I threaded a setting through an API route into a function that accepted it and never used it. Typecheck: green. Five tests: green. Re-creating the bug on purpose: still green — because every test called the inner function directly and the bug was in its caller. What found it was deleting a default value and letting the compiler list who wasn't answering.
+
+**Postable?:** yes
+
 ## 2026-09-23 — UNITS-PROSE-01 · the clean zero that was a broken regex
 
 **Shipped:** If you read in miles, the sentences on your plan now say miles. They never have.
