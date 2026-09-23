@@ -427,6 +427,14 @@ export const MUTATIONS: Mutation[] = [
   { name: 'drop volume_profile',       apply: p => { delete (p.meta as unknown as Poke).volume_profile } },
   { name: 'force volume_profile build', apply: p => { (p.meta as unknown as Poke).volume_profile = 'build' } },
   { name: 'drop constraint note',      apply: p => { delete (p.meta as unknown as Poke).volume_constraint_note } },
+  // §117 Am.4 — wakes INV-PLAN-RUNWALK-CAP-NOT-REDUCED. The rule fires when a
+  // plan carries BOTH §117's reduced peak and a §12 volume-capped injury
+  // history, which the engine now refuses to produce — so the only way to reach
+  // it is to construct the pairing the gate exists to prevent.
+  { name: 'reduced peak + capped injury', apply: p => {
+      (p.meta as unknown as Poke).finish_goal_run_walk = true
+      ;(p.meta as unknown as Poke).injury_history = ['knee']
+    } },
   { name: 'drop every meta note',      apply: p => { for (const k of Object.keys(p.meta as unknown as Poke)) if (/note|status|annotat/i.test(k)) delete (p.meta as unknown as Poke)[k] } },
   { name: 'drop vdot',                 apply: p => { delete (p.meta as unknown as Poke).vdot } },
   { name: 'vdot raw below anchor',     apply: p => { (p.meta as unknown as Poke).vdot = 1 } },
@@ -532,8 +540,16 @@ export const MUTATIONS: Mutation[] = [
   // ⚠️ The mutation is the defect the board named: a plan that PERMITS walking
   // without prescribing it. That is what §80 already did, and shipping it
   // again under §117's lower door is the door opened with nothing behind it.
+  //
+  // ⚠️ §117 Am.4 SPLIT THE FLAG AND THIS MUTATION HAD TO FOLLOW. The check used
+  // to key on `finish_goal_run_walk` (the PEAK was reduced); it now keys on
+  // `run_walk_prescribed` (the SESSIONS carry the interval), because a
+  // §12-capped runner gets the second without the first. Setting only the old
+  // flag left this invariant UNWAKEABLE, and the liveness gate said so on the
+  // same commit — which is the gate doing precisely its job.
   { name: 'claim a run-walk plan with no prescribed interval', apply: p => {
     ;(p.meta as unknown as Poke).finish_goal_run_walk = true
+    ;(p.meta as unknown as Poke).run_walk_prescribed = true
     for (const s of sessionsOf(p)) delete (s as unknown as Poke).run_walk_strategy
   } },
 

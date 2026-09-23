@@ -151,6 +151,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-USER-LEVEL-NO-UPWARD-TONNAGE',
   'INV-PLAN-FOUNDATION-BLOCK',
   'INV-PLAN-RUNWALK-PRESCRIBED',
+  'INV-PLAN-RUNWALK-CAP-NOT-REDUCED',
   'INV-PLAN-RUNWALK-ADEQUATE',
   'INV-PLAN-GET-RUNNING-BUILD-RATIO',
   'INV-PLAN-ONRAMP-CURVE-CLIMBS',
@@ -6077,6 +6078,41 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     }
   }
 
+  // INV-PLAN-RUNWALK-CAP-NOT-REDUCED — §117 amendment 4 (MARA-LR-SHAPE-SEAM-01).
+  //
+  // 🔴 A §12 VOLUME-CAPPED RUNNER MAY NOT BE GIVEN §117's REDUCED PEAK. The peak
+  // reduction exists to lower §111's door; their door is already open because
+  // the cap lowered their peak for them. They pay the reduction and receive
+  // nothing for it, and what they pay is their long run.
+  //
+  // MEASURED 2026-09-23, knee-history beginner, 3 days, 29-week runway: the
+  // delivered peak long run tracks §117's peak monotonically — 34→13km, 38→14,
+  // 42→15, 46→16, 50→17, 52→17, 56→19. At 34 they land BELOW §117 Am.2's own
+  // 17km bound and are refused; at the standard peak they get 17km, valid, the
+  // plan §80 Am.2 ruled correct.
+  //
+  // ⚠️ THE PRESCRIPTION IS NOT WITHDRAWN — `run_walk_prescribed` still covers
+  // them, and INV-PLAN-RUNWALK-PRESCRIBED still checks every session carries the
+  // interval. Only the PEAK reduction is refused.
+  {
+    const injuries = (plan.meta.injury_history ?? []).map(i => String(i).toLowerCase())
+    // ⚠️ Matches the producer's owner BY VALUE, not by a second copy of the
+    // logic — same reason and same two keywords as INV-PLAN-LR-SHORTFALL-CAUSE
+    // above: the checker cannot import the producer (circular).
+    const volumeCapped = injuries.some(i => i.includes('knee') || i.includes('shin'))
+    if (plan.meta.finish_goal_run_walk && volumeCapped) {
+      violations.push({
+        code: 'INV-PLAN-RUNWALK-CAP-NOT-REDUCED',
+        principle_ref: 'CoachingPrinciples §117 Am.4, §12',
+        severity: 'error',
+        week: 0,
+        message: `Plan carries §117's reduced peak AND a §12 volume-capped injury history (${injuries.join(', ')}). The reduction lowers §111's door, and this runner's door is already open — the cap lowered their peak for them. They keep the run-walk prescription and their own peak.`,
+        actual: 'finish_goal_run_walk with a volume-capped injury history',
+        expected: 'run_walk_prescribed only — the peak is not reduced',
+      })
+    }
+  }
+
   // INV-PLAN-RUNWALK-PRESCRIBED — §117 amendment 3.
   //
   // A finish-goal run-walk plan whose sessions carry no `run_walk_strategy` is
@@ -6096,7 +6132,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // runner is actually doing the thing the lower peak prepares them for. An
   // unstamped session is the door opened with nothing behind it.
   {
-    if (plan.meta.finish_goal_run_walk) {
+    if (plan.meta.run_walk_prescribed) {
       for (const w of plan.weeks) {
         for (const [day, s] of Object.entries(w.sessions)) {
           if (!s) continue

@@ -6580,7 +6580,24 @@ function buildRulePlanOnce(
   // would be circular. `weeksBetweenLocal` is peak-independent and is the
   // single owner of "how many weeks between these two dates".
   const runwayWeeks = weeksBetweenLocal(planStartIso, input.race_date)
-  const isRunWalk = runWalkApplies(input, standardLevelPeakKm, runwayWeeks)
+  // §117 Amendment 4 — THE PRESCRIPTION AND THE PEAK REDUCTION ARE SEPARATE.
+  //
+  // `runWalkApplies` is unchanged: it still answers "is this the §117 runner?".
+  // What changed is that a YES no longer automatically buys the lower peak.
+  //
+  // 🔴 §117's peak reduction exists to lower §111's door. For a runner whose
+  // door is ALREADY open — because §12's volume cap lowered their peak for them
+  // — it buys nothing and costs them their long run. Measured: 34→13km against
+  // 52→17km, and 13 is below §117 Am.2's own 17km adequacy bound, so the gate
+  // REFUSED a runner who would otherwise have received the plan §80 Am.2 ruled
+  // correct. Willy: "they pay the peak reduction and receive nothing for it."
+  //
+  // ⚠️ THE PRESCRIPTION STILL APPLIES TO THEM. McMillan's condition from Am.3
+  // is not weakened: "'run 40 minutes, walk if you need to' is a dare." They
+  // get the interval; they keep their peak.
+  const runWalkEligible = runWalkApplies(input, standardLevelPeakKm, runwayWeeks)
+  const runWalkVolumeCapped = hasVolumeCappedInjury(input)
+  const isRunWalk = runWalkEligible && !runWalkVolumeCapped
   const levelPeakKm = isRunWalk ? runWalkPeakKm() : standardLevelPeakKm
 
   const declaredUpward = declaredLevel !== undefined
@@ -8968,6 +8985,9 @@ function buildRulePlanOnce(
     // session-stamping pass later in this file reads this flag rather than
     // re-deriving the predicate, so the two can never disagree.
     ...(isRunWalk ? { finish_goal_run_walk: true } : {}),
+    // §117 Am.4 — stamped for BOTH shapes. `finish_goal_run_walk` means the
+    // peak was reduced; this means the sessions carry the interval.
+    ...(runWalkEligible ? { run_walk_prescribed: true } : {}),
     // §91 — the on-ramp credit, stamped because the INVARIANT cannot otherwise
     // see it. validatePlan runs twice on different objects: once here on the
     // bare plan (no foundation weeks exist yet) and again in
@@ -9309,6 +9329,12 @@ function buildRulePlanOnce(
         runWalkInadequateRefusal(assessBaseBuild(plan, input), input, peakLr))
     }
 
+  }
+
+  // §117 Am.4 — THE INTERVAL IS STAMPED ON BOTH SHAPES, and this pass moved out
+  // of the adequacy block above so it no longer depends on the peak having been
+  // reduced. A §12-capped runner keeps their peak AND gets the instruction.
+  if ((plan.meta as unknown as Record<string, unknown>).run_walk_prescribed) {
     for (const w of plan.weeks) {
       for (const [day, session] of Object.entries(w.sessions)) {
         if (session) (w.sessions as Record<string, unknown>)[day] = applyRunWalk(session)

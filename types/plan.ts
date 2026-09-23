@@ -729,6 +729,27 @@ export interface PlanMeta {
    * exists for. Read by `INV-PLAN-RUNWALK-PRESCRIBED`.
    */
   finish_goal_run_walk?: boolean
+  /**
+   * §117 Amendment 4 (MARA-LR-SHAPE-SEAM-01, 2026-09-23) — the run-walk
+   * PRESCRIPTION, unbundled from the PEAK REDUCTION.
+   *
+   * 🔴 §117 bundled two things: a lower peak (which lowers §111's door) and a
+   * run-walk instruction (which makes the lower peak honest). A runner with a
+   * §12 volume-capped injury history needs the SECOND and not the first —
+   * their door is already open, because the cap lowered their peak for them.
+   *
+   * MEASURED: for a knee-history beginner the delivered peak long run tracks
+   * §117's peak monotonically — 34→13km, 38→14, 42→15, 46→16, 50→17, 52→17,
+   * 56→19. At §117's peak of 34 they land at 13km, below the 17km bound, and
+   * are REFUSED. At the standard peak they get 17km, VALID, 0 errors — the
+   * plan §80 Am.2 ruled correct. **They paid the peak reduction and received
+   * nothing for it.**
+   *
+   * So: `finish_goal_run_walk` means THE PEAK WAS REDUCED.
+   * `run_walk_prescribed` means THE SESSIONS CARRY THE INTERVAL. The first
+   * implies the second; the second does not imply the first.
+   */
+  run_walk_prescribed?: boolean
   /** §79 Amendment 5 — WHY the intensity re-entry window opened. Stamped by the
    *  producer so `INV-PLAN-REENTRY-NOTE-MATCHES-CAUSE` can check the rendered
    *  copy against the cause without recomputing the predicate (a checker that

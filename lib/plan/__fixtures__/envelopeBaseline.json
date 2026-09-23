@@ -1,6 +1,6 @@
 {
  "stride": 29,
- "productFitPct": 96,
+ "productFitPct": 95.8,
  "byDistance": {
   "5": {
    "fitPct": 100,
@@ -72,21 +72,21 @@
    }
   },
   "42.2": {
-   "fitPct": 89.8,
+   "fitPct": 89.1,
    "fitPctPreCorrection": 78.7,
-   "servedRefusedPct": 12.4,
-   "doorPct": 90.7,
+   "servedRefusedPct": 11.7,
+   "doorPct": 90.2,
    "unservedRefusedPct": 0,
-   "refusedPct": 12.4,
+   "refusedPct": 11.7,
    "refusedWithoutNextStepPct": 0,
    "invalidPlans": 0,
    "objections": {
-    "LONG-RUN-SHORT": 6.6,
+    "LONG-RUN-SHORT": 7.3,
     "WEEK1-LEAP": 4.4,
     "BINGE-WEEK": 0.7
    },
    "watched": {
-    "DAYS-SHORT-SILENCED": 10.6,
+    "DAYS-SHORT-SILENCED": 10.9,
     "LONG-RUN-SHORT-RUNWALK": 0.5
    }
   }

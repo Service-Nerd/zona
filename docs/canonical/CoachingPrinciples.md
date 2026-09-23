@@ -8317,6 +8317,49 @@ race is **62%**, and the standard plan scores exactly 62% because it is sitting 
 2 km/week is 15× below the delivered peak and needs 25 weeks of base building before a block can
 start. **45.5% → 29.3% is what coaching can do. The remainder is a product decision.**
 
+### §117 Amendment 4 — the PRESCRIPTION is separable from the PEAK REDUCTION (Coaching Board 2026-09-23, MARA-LR-SHAPE-SEAM-01)
+
+**Ruling: CORRECT. The engine change ships; the fit rate FALLS and that is declared.**
+
+**The principle.** §117 bundles two things: a **lower peak**, which lowers §111's door, and a
+**run-walk instruction**, which makes the lower peak honest. A runner with a §12 volume-capped
+injury history (knee / shin splints) needs the **second and not the first** — their door is
+already open, because the cap lowered their peak for them. They may not be given the reduction.
+**They keep the prescription.**
+
+**The measurement.** Knee-history beginner, 3 days, 29-week runway. The delivered peak long run
+tracks §117's peak **monotonically**:
+
+| §117 peak | 34 (live) | 38 | 42 | 46 | 50 | 52 (standard) | 56 |
+|---|---|---|---|---|---|---|---|
+| delivered peak LR | **13 km** | 14 | 15 | 16 | 17 | **17 km** | 19 |
+
+At 34 they land **below §117 Am.2's own 17 km bound** and are **REFUSED**. At the standard peak
+they get **17 km, VALID, 0 error-severity violations** — the plan **§80 Amendment 2 ruled correct**
+(*"the PLAN is right; the NOTE was wrong"*), and which was **offered to nobody**. Willy: *"they pay
+the peak reduction and receive nothing for it, and what they pay is their long run. That is not a
+trade, it is a toll."*
+
+**The omission, not a contradiction.** §117 and all three prior amendments contain **zero mentions
+of injury, knee, shin, §12 or the cap**, and `runWalkApplies` gated on distance, goal, level, door
+and runway — never on injury history. The remedy follows **ADR-021's** precedent, which already
+gates a shortcut on *"NO injury history"*.
+
+**Measured effect, declared.** Marathon refusals at 8 km/wk **85.8% → 69.1% (−16.7pp)**;
+`LONG-RUN-SHORT` **+16.6pp** — a one-for-one conversion of refusals into plans. Every other band
+unchanged, half marathon unchanged, `neverBuildsPct` unmoved, `cohortShape` 19/19.
+
+🔴 **THE FIT RATE FELL: marathon 89.8% → 89.1%, product 96% → 95.8%.** Hutchinson, binding:
+*"The rate fell and the product improved. That is the correct sign, and it is the inverse of this
+morning's re-score — then the number rose and nobody was served differently; now the number falls
+and sixteen percentage points of a cohort get a plan. Declare the drop, do not disguise it."*
+**It was predicted before the measurement was taken.**
+
+**Config.** No new constant — the gate reuses `hasVolumeCappedInjury` (§12's own owner).
+**Enforced by** `INV-PLAN-RUNWALK-CAP-NOT-REDUCED`. **Stamping**: `finish_goal_run_walk` now means
+*the peak was reduced*; `run_walk_prescribed` means *the sessions carry the interval*. The first
+implies the second; the second does not imply the first.
+
 ### §117 Amendment 2 — the `LONG-RUN-SHORT` exemption is BOUNDED (Coaching Board 2026-09-20, chair-mandated at S116-FLOOR-VS-TARGET-01)
 
 **Principle.** A finish-goal run-walk plan whose peak long run falls below

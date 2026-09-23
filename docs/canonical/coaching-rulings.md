@@ -245,6 +245,25 @@ blocked.**
 | `S111-SUBFLOOR-VOLUME-01` | build a base-building plan type? | blocked on the charity's answer; runbook drafted, unsent |
 | `RACE-KEY-TWO-OWNERS-01` | collapse two `raceDistanceKey` ladders? | 88 diverging values, currently unreachable (the wizard's six distances all agree) |
 
+## Standing rulings — 2026-09-23, sitting 4 (`MARA-LR-SHAPE-SEAM-01`) — SHIPPED
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **§117's peak reduction may not be given to a §12 volume-capped runner** | 🟢 **SHIPPED — §117 Amendment 4** | The reduction exists to lower §111's door; their door is **already open** because the injury cap lowered their peak for them. **Isolated by sweeping the constant**: delivered peak LR tracks §117's peak monotonically — 34→**13km**, 38→14, 42→15, 46→16, 50→17, 52→**17**, 56→19. At 34 they fall below §117 Am.2's own 17 km bound and are REFUSED; at the standard peak they get **17 km, VALID, 0 errors** — the plan §80 Am.2 ruled correct and which was **offered to nobody**. ⚠️ §117 and all three prior amendments contain **ZERO mentions of injury, knee, shin, §12 or the cap** — an **omission, not a contradiction**. Remedy follows ADR-021's *"NO injury history"* precedent |
+| **The PRESCRIPTION is not withdrawn from them** | 🟢 **SHIPPED** | McMillan's Am.3 condition is untouched: `run_walk_prescribed` covers both shapes and `INV-PLAN-RUNWALK-PRESCRIBED` still requires the interval on every session. Verified in the build output: `prescribed=true, stamped=true`. **`finish_goal_run_walk` now means the PEAK was reduced; `run_walk_prescribed` means the SESSIONS carry the interval.** The first implies the second; the second does not imply the first |
+| **THE FIT RATE FELL, AND THAT IS THE CORRECT SIGN** | 🟢 **DECLARED, baselined under this ruling** | Marathon **89.8% → 89.1%**, product **96% → 95.8%**. Refusals at 8 km/wk **85.8% → 69.1% (−16.7pp)**; `LONG-RUN-SHORT` **+16.6pp** — **the two match one-for-one**, which is the arithmetic proof that refusals converted into plans and nothing else moved. `neverBuildsPct` unmoved, `cohortShape` 19/19, every other band and the half marathon unchanged. 🔴 **Hutchinson, binding:** *"The rate fell and the product improved. That is the inverse of this morning's re-score — then the number rose and nobody was served differently; now the number falls and sixteen percentage points of a cohort get a plan. **Declare the drop, do not disguise it.**"* ⚠️ **It was predicted before the measurement was taken** |
+| **My filed seam premise was WRONG** | ⚠️ **RECORDED** | `MARA-LR-SHAPE-SEAM-01` was filed as *"the refusal is computed on the run-walk projection while the runner would have received the standard shape."* The engine's own stamp says `isRunWalk = true` — they **are** on the run-walk shape. My probe reported `false` because I passed `standardPeakKm = 0` from an undefined error field. **Three instrument faults in this thread**, each caught before a seat spoke |
+
+⚠️ **THE LIVENESS GATE CAUGHT MY OWN CHANGE.** Re-keying `INV-PLAN-RUNWALK-PRESCRIBED` onto the new
+flag made it **unwakeable**, and `invariant:liveness` failed in the same commit and said so. The
+mutation was fixed rather than the rule baselined — the gate doing exactly what it was built for.
+
+🔻 **WHAT THIS DOES NOT FIX.** The marathon is still **89.1%** against a 90% target. Of the two
+remaining scored objections, `WEEK1-LEAP` (4.4pp) is **FROZEN** pending adherence or injury data,
+and `LONG-RUN-SHORT` (now larger) covers plans **§80 Am.2 already ruled correct** — so the open
+question is whether that objection still describes a failure. **That is a board question, not an
+engine one, and re-scoring it would move the number without serving a runner.**
+
 ## Standing rulings — 2026-09-23, sitting 3 (`MARA-LR-LOWBASE-01`, re-opened and closed)
 
 | Ruling | Status | May not be re-raised without |
