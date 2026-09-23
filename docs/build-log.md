@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — PACE-UNITS-STEPS-01 · I fixed the pace this morning and the founder still read km this evening
+
+**Shipped:** The step rows on a session (warm-up / reps / recovery / race-pace) now state pace in miles when the runner picks miles. This morning's fix only reached the pace tile above them.
+
+**Dev learning:** `targetClause()` returned `step.pace` straight out of the plan JSON, and the engine welds `/km` onto that string at GENERATION time. The same function's sibling, `formatDist`, had a units argument. So one half of the row was converted and the other half wasn't, and it printed `~0.1mi · 5:30–6:00 /km` — two units, one line. The real trap was one line below: `buildRow` hands the SAME `step.pace` to `paceMeanSecPerKm` to estimate the distance shown as the amount, and that is seconds-per-KM arithmetic by definition. The obvious fix — convert the field — would have silently wrecked every `~X mi` on the card. Convert at the point of DISPLAY, never at the source the arithmetic reads.
+
+**Product/creator learning:** A half-converted screen is worse than an unconverted one. Uniformly km is at least readable by someone who can do the maths; `mi` beside `/km` on the same line is a number nobody can act on. If a units migration can't reach a surface completely, it hasn't reached it.
+
+**AI-building learning:** The guard that should have caught this had already walked the exact rows, the same day, in the same file — for the raw-minutes rule, pinned at `units: 'km'`. I looked straight at the data and asked it a different question. And then my own new gate had a hollow assertion in it: the mixed-units check used `/\bmi\b/`, which can never match `0.1mi` because there's no word boundary between a digit and a letter. Only falsification found that — the test was green and meaningless. Sixth boundary/substring miss this week. I am starting to think "write the check, then break it" is not a discipline I apply often enough, it's the only thing standing between me and a green tick over a live defect.
+
+**The honest bit:** I shipped PACE-UNITS-01 this morning, wrote "62 sites filed" in the register, and reported it done. The founder found the rest of it by using the app. Worse: while verifying this, I discovered `npm run verify` had been exiting 1 on main all day — four slow tests from a ship of mine, unbaselined. Nobody noticed because every test PASSES and the run prints "3260 passed" four lines above the failure.
+
+**Hook material:** 36 of 38 step rows read `/km` to a miles user, beside an amount the same module had already converted to miles. And the guard that missed it had walked those exact rows earlier that day.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-23 — MODIFY-SHEET-01 · "I just don't like it" is a symptom, and measuring it cost me two findings
 
 **Shipped:** The day picker in Adjust-your-plan no longer leaves Sunday stranded on its own line.
