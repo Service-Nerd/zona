@@ -14,11 +14,11 @@
    "8": {
     "n": 219,
     "refusedPct": 69.1,
-    "cleanPct": 4.5,
+    "cleanPct": 14,
     "servedPct": 100,
     "doorPct": 99.5,
     "objections": {
-     "LONG-RUN-SHORT": 26.3
+     "LONG-RUN-SHORT": 16.9
     }
    },
    "15": {

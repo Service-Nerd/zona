@@ -245,6 +245,28 @@ blocked.**
 | `S111-SUBFLOOR-VOLUME-01` | build a base-building plan type? | blocked on the charity's answer; runbook drafted, unsent |
 | `RACE-KEY-TWO-OWNERS-01` | collapse two `raceDistanceKey` ladders? | 88 diverging values, currently unreachable (the wizard's six distances all agree) |
 
+## Standing rulings — 2026-09-23, sitting 5 (`LONG-RUN-SHORT` vs the finish-goal runner) — SHIPPED AS A CORRECTION
+
+| Ruling | Status | May not be re-raised without |
+|---|---|---|
+| **The exemption keys on *IS THE RUNNER RUN-WALKING*, not *WAS THE PEAK REDUCED*** | 🟢 **SHIPPED** | §117 Am.2 states the reason in its own words: **"55% of race distance is the bar for a plan built to RUN the race."** A runner run-walking the race is not running it, and how their PEAK was set is irrelevant to which bar applies. ⚠️ **THIS WAS CORRECT UNTIL §117 Am.4 AND I BROKE IT MYSELF, THE SAME DAY** — `finish_goal_run_walk` used to mean both things; Am.4 split them and left this line on the peak half |
+| **The exemption is BOUNDED in `planQuality`, not only by the invariant** | 🟢 **SHIPPED — Willy's condition** | §117 Am.2's finding was *"the exemption was correct; its BOUND was missing — an exemption without a bound is not a relaxation, it is a hole."* `INV-PLAN-RUNWALK-ADEQUATE` guards `finish_goal_run_walk` plans and **cannot see a prescribed-but-not-reduced one**, so the 17 km bound is applied at the objection too. Below 17 km the plan is **SCORED**, run-walk or not |
+| **DECLARED A CORRECTION, NEVER AN IMPROVEMENT** | 🟢 **RECORDED** | Marathon **89.1% → 89.5% (+0.4pp)**, product 95.8% → 95.9%. `LONG-RUN-SHORT-RUNWALK` (watched) **0.5% → 0.8%** — the exempted plans moved into the visible column, not out of sight. 🔴 **NO PLAN CHANGED. Not one runner trains differently.** Hutchinson's ZERO-REJECTION-SERVED-01 rule applied in full; `fitPctPreCorrection` carries the old figure. ⚠️ **It does NOT undo Am.4's cost** — the day nets 89.8 → 89.5, with **16.7pp of the low-base injured cohort newly served** |
+| **A load-aware or wholesale relaxation of the 55% bar** | 🔴 **NOT PROPOSED AND NOT RULED** | Group 2 — injured runners at 15–20 km/wk who are **NOT** run-walking — keep the scored objection. McMillan: *"the 55% bar applies and the objection is honest. Do not bundle them."* |
+
+⚠️ **FOUR INSTRUMENT FAULTS IN THIS THREAD, ALL CAUGHT BEFORE A SEAT SPOKE:** (1) `max(distance_km)`
+read the RACE as the long run (`42.2km/100%` on every row); (2) a `runWalkApplies` probe passed
+`standardPeakKm = 0` from an undefined error field and reported the gate FALSE when the engine's own
+stamp said true; (3) an effect estimate summed weights that print as 0 and returned **+0.73pp**
+against the owner's **+0.4pp**; (4) 🔴 **I told the board the headline would not move, having checked
+`cohortGrid` (no injury history) when the rate comes from `useCaseEnvelope` — which is 50% injured.**
+**Confidently stated, unverified, and wrong.**
+
+⚠️ **AND THE ENVELOPE GATE HAS A 0.6pp TOLERANCE** (`useCaseEnvelope.test.ts:235`). A 0.4pp move
+passes it. **"The suite is green" means the move was small, not that nothing moved** — the script's
+own comparison is the check that catches it, and a sub-0.6pp drift could accumulate across commits
+unobserved.
+
 ## Standing rulings — 2026-09-23, sitting 4 (`MARA-LR-SHAPE-SEAM-01`) — SHIPPED
 
 | Ruling | Status | May not be re-raised without |

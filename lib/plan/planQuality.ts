@@ -249,11 +249,38 @@ export function auditPlanQuality(plan: Plan, input: GeneratorInput): Finding[] {
   // ratified bound. If §117 plans need their own adequacy bar, that is a board
   // question and it is filed, not answered here.
   if (input.race_distance_km >= 42 && input.race_distance_km <= 43) {
-    const runWalk = !!(plan.meta as unknown as { finish_goal_run_walk?: boolean }).finish_goal_run_walk
+    // 🔴 THE EXEMPTION KEYS ON *IS THE RUNNER RUN-WALKING*, NOT ON *WAS THE PEAK
+    // REDUCED* (Coaching Board 2026-09-23, declared CORRECTION).
+    //
+    // §117 Am.2 states the reason in its own words: **"55% of race distance is
+    // the bar for a plan built to RUN the race."** A runner run-walking the
+    // race is not running it, and how their PEAK was set has nothing to do with
+    // which bar applies.
+    //
+    // ⚠️ THIS WAS CORRECT UNTIL §117 Am.4 AND I BROKE IT MYSELF, THE SAME DAY.
+    // `finish_goal_run_walk` used to mean both things at once. Am.4 split them —
+    // a §12 volume-capped runner now keeps their peak AND gets the interval —
+    // and this line was left keyed on the peak half, so a runner who IS
+    // run-walking was judged by the RUN bar.
+    //
+    // 🔴 DECLARED AS A CORRECTION, NEVER AN IMPROVEMENT (Hutchinson's binding
+    // rule, ZERO-REJECTION-SERVED-01). Measured effect: **+0.73pp** on the
+    // marathon — almost exactly the 0.7pp Am.4 had just cost. **No plan
+    // changes. Not one runner trains differently.** `fitPctPreCorrection`
+    // carries the old figure so the two can never be confused.
+    const meta = plan.meta as unknown as { run_walk_prescribed?: boolean }
+    const runWalk = !!meta.run_walk_prescribed
     const peakLR = Math.max(0, ...weeks.filter(w => w.type !== 'deload').flatMap(kmsIn))
-    if (runWalk && peakLR < input.race_distance_km * 0.55)
-      f.push({ code: 'LONG-RUN-SHORT-RUNWALK', watched: true, detail: `peak long run ${peakLR.toFixed(1)}km = ${(peakLR / input.race_distance_km * 100).toFixed(0)}% of race — §117 finish-goal shape, adequacy ruled by the board, NOT scored` })
-    else if (!runWalk && peakLR < input.race_distance_km * 0.55)
+    // ⚠️ AND IT IS BOUNDED HERE, NOT ONLY BY THE INVARIANT. §117 Am.2's whole
+    // finding was *"the exemption was correct; its BOUND was missing — an
+    // exemption without a bound is not a relaxation, it is a hole."*
+    // `INV-PLAN-RUNWALK-ADEQUATE` guards `finish_goal_run_walk` plans; it does
+    // not see a prescribed-but-not-reduced one, so the bound is applied here
+    // too. Below 17 km the plan is SCORED, run-walk or not. Willy's condition.
+    const adequate = peakLR >= G.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM
+    if (runWalk && adequate && peakLR < input.race_distance_km * 0.55)
+      f.push({ code: 'LONG-RUN-SHORT-RUNWALK', watched: true, detail: `peak long run ${peakLR.toFixed(1)}km = ${(peakLR / input.race_distance_km * 100).toFixed(0)}% of race — run-walk shape, adequacy ruled by the board, NOT scored` })
+    else if (peakLR < input.race_distance_km * 0.55)
       f.push({ code: 'LONG-RUN-SHORT', detail: `peak long run ${peakLR.toFixed(1)}km = ${(peakLR / input.race_distance_km * 100).toFixed(0)}% of race` })
   }
 
