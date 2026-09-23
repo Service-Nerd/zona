@@ -6,6 +6,24 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — PLAN-STREAM-OWNER-01 · the comment described the fix, the code did the opposite
+
+**Shipped:** Adjust-my-plan now previews in about a second instead of holding for the full AI enrichment and then erroring.
+
+**Dev learning:** `await res.text()` on a streaming response does not resolve until the stream CLOSES. The route sends the rule plan first *precisely* so the client can act immediately, and then awaits a ~39-second model call before closing. So the sheet was ignoring every message after the first — after waiting for all of them. Two consumers of one stream, hand-written twice, and only the wizard's `getReader()` version was right. Fixed with one async generator both consume, which also lets the early-stopping caller cancel the reader; that's only safe because someone had already moved the enrich→persist chain onto `waitUntil` for an unrelated reason.
+
+**Product/creator learning:** The runner's experience of this bug was "it's broken", but the *cause* was a promise the architecture already made and the UI quietly declined to collect. ADR-006 says you always hold a complete plan before the model runs. One screen wasn't taking it.
+
+**AI-building learning:** The comment three lines above the defect said "avoids holding the sheet open for the model." That is what made it invisible — reading the code *confirmed* the intended behaviour, because the sentence described the intent and the code described something else. I have now hit claim/computation mismatch enough times to say the tell out loud: when a comment asserts a *property* (fast, safe, single, never) rather than a *reason*, check the property. Also: my first instinct was to work the log file the founder handed me, and two of my conclusions from it were wrong. The bug pipeline exists for a reason and I skipped it.
+
+**The honest bit:** The founder had to tell me to run the debug process before I ran it. Before that I'd told them every completion write in production was failing — it wasn't, those 23505s are a deliberate concurrency arbiter — and that a table was missing, which it wasn't. Both wrong for the same reason: I inferred from artefacts instead of reading the code that produces them.
+
+**Hook material:** ops_events said 38,924 ms. That's how long a button said "Adjusting…" before telling the user to check their internet connection — on a message the server had already sent.
+
+**Postable?:** yes
+
+---
+
 ## 2026-09-23 — PACE-UNITS-STEPS-01 · I fixed the pace this morning and the founder still read km this evening
 
 **Shipped:** The step rows on a session (warm-up / reps / recovery / race-pace) now state pace in miles when the runner picks miles. This morning's fix only reached the pace tile above them.
