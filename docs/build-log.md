@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — COACH-REVIEW-2026-09-23 · the board had never been shown a foundation week
+**Shipped:** A coaching review round over 532 plans, and the discovery that four of the five harnesses feeding this board cannot see the thing a real runner actually gets.
+
+**Dev learning:** The board round calls `generateRulePlan` and stops. So does the fit-for-purpose measure, the coach-objection audit and the cohort grid. Only the property sweep calls `composePlanWithFoundation` — which is the function the live API calls, and the single owner of plan mutation after generation. So any runner with more than 28 days of runway gets a foundation block on the front of their plan, and no board sitting has ever looked at one.
+
+**The part that makes it a governance failure rather than a gap:** the invariant guarding those weeks reads a stamp that only the composer writes, and is deliberately silent when the stamp is missing. That silence is *correct* — firing without it would report the harness, not the plan. But it means the rule returned CLEAN in every harness that never composed. A green board round was not evidence of anything. I built the composing harness, ran 504 plans, and found zero violations: the engine was fine the whole time. The instrument was not.
+
+**Product/creator learning:** The canonical fit-for-purpose doc still teaches a standard the founder overturned nine hours after it was written. It says a correct refusal counts as fit for purpose, and quotes 95.3%. `ZERO-REJECTION-01` replaced that with the founder's own line — "if someone comes to our platform and asks for a run, we can't just say no, go away" — at 16:34 the same afternoon. The doc was written at 07:47. The previous sitting read it and recorded the marathon at 90.1%. It is actually 78.7% fit plus 12.4% refused. **A stale standard is more expensive than a stale number, because it changes what counts as success.**
+
+**AI-building learning:** I brought three findings to the board and the mandatory conflict scan killed one of them before any seat spoke — "is a note enough for 26 uncovered weeks" had been measured and settled eight days earlier, and the alternative had been rejected with numbers. That is the second consecutive sitting where reading the register first prevented me re-litigating a closed decision. The protocol exists because two sittings in one day did exactly that.
+
+**The honest bit:** I reported 27 plans in a board ruling. There were 28. I took the number from the previous round's header instead of counting today's output — in a repo whose own completion rule says to count the population from the code and never from a previous session's number. Small error, exactly the habit the rule names.
+
+**Hook material:** Four of our five test harnesses couldn't see the feature, and the rule meant to guard it reported "clean" in all four — because it reads a field those harnesses never write.
+
+**Postable?:** yes — "a check that is silent when it can't see anything will tell you everything is fine" generalises well past this repo.
+
 ## 2026-09-23 — DB-USER-PURGE-01 · the delete button deleted an eighth of the account
 **Shipped:** Account deletion now actually deletes the account, enforced by the database rather than by a list in a route — plus a repeatable purge tool for test data.
 
