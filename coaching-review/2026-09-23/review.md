@@ -1,6 +1,11 @@
 # Coaching review round — 2026-09-23 — RULING
 
-**531 plans**: 27 standard (7 canonical + 20 personas) + 504 foundation-composed.
+**532 plans**: 28 standard (7 canonical + 21 personas) + 504 foundation-composed.
+
+> ⚠️ **Counted, not carried.** An earlier draft of this file said 27 standard / 531 total,
+> taken from the 09-20 round's header rather than from today's output. Today's round
+> generated **28**. The 09-20 figure of 27 is that round's, and is left alone below
+> where it refers to that sitting.
 **0 error-severity violations. 19 refused by design.**
 
 Engine state: code byte-identical to production `5e5b38b` — the only commit since
@@ -22,8 +27,8 @@ objections **and** every constraint declared.
 
 | | standard round | foundation round |
 |---|---|---|
-| plans | 27 | 504 (486 composed) |
-| clean on every measure | **26** | **486** |
+| plans | 28 | 504 (486 composed) |
+| clean on every measure | **27** | **486** |
 | refused by design | **1** (M7) | **18** |
 | error-severity violations | **0** | **0** |
 | §76 uncovered-runway breaches | n/a — cannot occur | **0** |
@@ -178,7 +183,7 @@ unchanged and was not re-argued.
 
 ### On the plans: **CORRECT — fit for purpose, with one distance named**
 
-531 plans, 0 error-severity violations, every constraint declared, every §76 note
+532 plans, 0 error-severity violations, every constraint declared, every §76 note
 present. 5K, 10K, HM, 50K and 100K are at or above target and **this board is proud to
 hand them over**.
 
@@ -241,7 +246,7 @@ decide is not this board's.
 
 ## What this sitting does NOT prove
 
-- **Nothing ran on a device.** 531 plans generated in a harness. The standing gap.
+- **Nothing ran on a device.** 532 plans generated in a harness. The standing gap.
 - **The marathon refusal rate was not re-measured this round** — 12.4% is read from
   `measure:envelope` against the committed baseline, not independently derived.
 - **`foundation-review-round.ts` composes, but does not score coach objections.**
