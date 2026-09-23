@@ -18,6 +18,47 @@ must name a next step (§44: *"not yet"*, never *"no"*), and `BaseVolumeError`
 refusals do — but naming a next step is not the same as serving the runner, and
 this rubric no longer pretends otherwise.
 
+### ⚠️ AMENDED 2026-09-23 — `ZERO-REJECTION-SERVED-01`
+
+**A refusal that hands the runner a validated §118 get-running plan is EXCLUDED
+from the fit rate — neither pass nor fail.** It is reported beside it as a
+WATCHED quantity (`servedRefusedPct`), the mechanism already ratified for
+`DAYS-SHORT-SILENCED`.
+
+**Why the bar moved again, eight hours after the last time.** `ZERO-REJECTION-01`
+ruled a refusal a DROPOUT on 2026-09-20 at 16:34. **§118 shipped the same day.**
+Since then a refusal *does* lead to a plan: the route catches the throw and
+offers one, and `getRunningApplies` is only `effectiveStartKm > 0`. The rule was
+right; the world it described changed underneath it.
+
+🔴 **HUTCHINSON, BINDING — THIS IS A CORRECTION, NEVER AN IMPROVEMENT.** *"The
+engine did not get better. Nothing about the plans changed. If this board
+re-scores and the marathon reads ~91%, not one runner is served differently than
+they were yesterday."* `verify:parity` IDENTICAL and `review:cohort` unchanged on
+every band are the evidence. **A number that rises because its definition moved
+must never be readable as progress**, which is why `fitPctPreCorrection` is a
+field and `[was N%]` prints on every run.
+
+🔴 **IT DOES NOT CLEAR THE TARGET.** The marathon lands at **89.8%**, 0.2pp under
+90. **This correction does not sign the marathon off.**
+
+⚠️ **AND THE WHOLE PRODUCT IS NOW 96%, ABOVE ITS OWN 90-95% BAND.** The corrected
+metric puts the product over its stated target range. **That is a question about
+the target**, and it is open.
+
+| | whole | 5K | 10K | HM | marathon | 50K | 100K |
+|---|---|---|---|---|---|---|---|
+| **fit (corrected)** | **96.0%** | 100% | 100% | 96.2% | **89.8%** | 100% | 100% |
+| fit (pre-correction) | 92.5% | 100% | 100% | 96.2% | **78.7%** | 100% | 100% |
+| **SERVED** (watched, not scored) | — | 0% | 0% | 0% | **12.4%** | 0% | 0% |
+| unserved refusals (still FAIL) | — | 0% | 0% | 0% | **0%** | 0% | 0% |
+
+⚠️ **`door` IS REPORTED PER BAND, NEVER AVERAGED** (amendment 4, McMillan):
+**80.3%** at 4 km/week, **99.6%** at 8, **100%** at 15. *"80.3% and 100% are
+different promises and a single figure hides the runner who cannot get there."*
+`npm run review:cohort` is where they live. `measure:envelope`'s distance-level
+`door~ N% agg` is an aggregate and is **not** the promise.
+
 **Measured 2026-09-23 — read from `lib/plan/__fixtures__/envelopeBaseline.json`,
 not from this paragraph:**
 

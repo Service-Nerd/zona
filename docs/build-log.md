@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — ZERO-REJECTION-SERVED-01 · the scoreboard was counting a served runner as a dropout
+**Shipped:** The fit-for-purpose measure stops scoring a refused-but-served marathoner as a failure. Marathon 78.7% → 89.8%, whole product 92.5% → 96%, and not one plan changed.
+
+**Dev learning:** The board declined to sign off the marathon this morning at 78.7%, and the number it was reading counted a runner who receives a real, validated plan as a dropout. It was measuring which code path threw, not whether anyone was coached. The rule behind it was right when written — "a refusal must lead to a plan, not to advice" — and the feature that made it lead to a plan shipped **nine hours later the same day**. Nobody went back to the rule.
+
+**The conflict scan did the work, again.** §118's own ruling already said a raceless plan must not be scored by a race-shaped harness, and filed that as a known gap. What nobody had drawn was that the harness doesn't merely *fail to score* it — it scores it **FAIL**. The answer was half-written in the constitution and needed one more sentence. That's the second sitting running where reading the register first changed the outcome.
+
+**AI-building learning:** The dangerous version of this change is the one that just makes the number go up. So the correction carries its own opposite: `fitPctPreCorrection` is a field, not a footnote, and the report prints `[was 78.7%]` on every single run. The chair's words are in the code comment verbatim — *"the engine did not get better"* — because in six months the +11.1pp will be in a chart and the reason will not.
+
+**Product/creator learning:** It still doesn't clear the bar. 89.8% is 0.2 points under 90, and the honest read is that the correction moved the number without signing anything off. Meanwhile the whole product is now 96%, above its own 90–95% target band — so the corrected metric has put us *over* the range, which is a question about the target nobody has asked yet.
+
+**The honest bit:** I nearly broke one of the four amendments while implementing them. McMillan's condition was that the door rate is reported per band and never averaged, because 80.3% and 100% are different promises. I printed it at distance level, which is already an average — exactly the thing forbidden — and only caught it re-reading the ruling before committing. It now prints labelled as an aggregate with a pointer to where the real per-band numbers live.
+
+**Hook material:** Our scoreboard called a runner a dropout while the product was handing them a training plan, because the rule was written nine hours before the feature that fixed it.
+
+**Postable?:** yes — "a metric that measures which code path threw" is a sharp, general line.
+
 ## 2026-09-23 — COHORT-SERVED-01 · I read the engine's verdict as the product's answer
 **Shipped:** The cohort review now reports what the runner receives, not what the generator threw — and it corrects a number I had already given the founder.
 
