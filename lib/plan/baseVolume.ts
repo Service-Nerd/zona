@@ -138,7 +138,12 @@ export function assessBaseBuild(plan: Plan, input: GeneratorInput): BaseBuildAss
   return { applies, peakKm, currentKm, ratio, cap, minBaseKm, exceeded: ratio > cap }
 }
 
+/** Which rule produced the refusal. §111's ratio and §117's adequacy bound are
+ *  different failures and were sharing one message; see `runWalkInadequateRefusal`. */
+export type BaseVolumeCause = 'base-ratio' | 'runwalk-inadequate'
+
 export interface BaseVolumeResult {
+  cause: BaseVolumeCause
   message: string
   alternatives: string[]
   current_weekly_km: number
@@ -230,6 +235,61 @@ export function baseVolumeRefusal(
           : `Spend the next few weeks running easy to raise your base before the ${label} block begins.`,
       ]
   return {
+    cause: 'base-ratio',
+    message,
+    alternatives,
+    current_weekly_km: a.currentKm,
+    min_base_km: a.minBaseKm,
+    peak_km: a.peakKm,
+    ratio: a.ratio ?? Infinity,
+    cap: a.cap,
+  }
+}
+
+/**
+ * §117 Am.2 — the run-walk plan was BUILT and its longest run came in under
+ * `FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM`. Refusing is correct; the message it used
+ * to carry was not.
+ *
+ * 🔴 THE DEFECT THIS REPLACES. That throw reused `baseVolumeRefusal`, which
+ * computes its sentence from the BASE-VOLUME RATIO — a rule that did not fire
+ * here. Measured across the marathon envelope: **208 refusals, 11.1% of all
+ * BaseVolumeError refusals**, every one of them a runner at 8 km/week with a
+ * 4 km longest run, and every one told something arithmetically impossible:
+ *
+ *     "8 km a week is too low ... Get to about 7 km a week first."   (ratio 3.13, cap 4.0)
+ *
+ * The runner is ALREADY above the number they are told to reach, because that
+ * number is `ceil(peak / 4)` off a peak the §111 ratio never objected to. The
+ * reuse was deliberate and its reason was sound — one refusal TYPE, so
+ * `isDesignedRefusal` classifies it identically and there is no second shape to
+ * match on. **That is kept. Only the sentence changes: same type, true content.**
+ *
+ * ⚠️ NAMES BOTH LEVERS, because the measurement does not isolate one. These
+ * plans fail at every runway in the grid (12, 16, 20 and 30 weeks) and at every
+ * day count, so "give it more time" would be false advice on its own. What is
+ * true is that the plan tops out short, and the starting point is why.
+ */
+export function runWalkInadequateRefusal(
+  a: BaseBuildAssessment, input: GeneratorInput, peakLrKm: number,
+): BaseVolumeResult {
+  const distKey = raceDistanceKey(input.race_distance_km)
+  const label = distKey === 'MARATHON' ? 'marathon' : distKey === '50K' ? '50K' : distKey === '100K' ? '100K' : 'this distance'
+  const need = GENERATION_CONFIG.FINISH_GOAL_RUNWALK_MIN_PEAK_LR_KM
+  // ⚠️ "about N", "at least", "first" and "come back" each satisfy
+  // REFUSAL_NAMES_NEXT_STEP, which proves §44's obligation by matching PROSE.
+  // Reword with care: a more helpful sentence that matches none of its tokens
+  // scores as a dropout with no route back. That has already happened once.
+  const message =
+    `We would only get your longest run to about ${Math.round(peakLrKm)} km before race day, ` +
+    `and you need at least ${need} km behind you to get round a ${label}. ` +
+    `Build your base up first and come back: we will build the plan then.`
+  const alternatives = [
+    `Spend the next few months raising your weekly volume and your longest run, then generate this plan.`,
+    `Or choose a shorter distance for this race and come back to the ${label} next time.`,
+  ]
+  return {
+    cause: 'runwalk-inadequate',
     message,
     alternatives,
     current_weekly_km: a.currentKm,

@@ -30,7 +30,7 @@ const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.r
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
 import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
-import { assessBaseBuild, baseVolumeRefusal, BaseVolumeError } from './baseVolume'
+import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
 import { strideCarrierDay, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury } from './neuromuscular'
@@ -9296,10 +9296,17 @@ function buildRulePlanOnce(
       // runner sees one consistent message and `isDesignedRefusal` classifies
       // it identically. A second refusal shape for the same outcome is the
       // never-match-a-refusal-by-its-message trap.
-      // Already a finish goal here (§117 only builds finishers), so the probe
-      // short-circuits to false. Passed explicitly rather than defaulted so the
-      // reason is legible at the call site.
-      throw new BaseVolumeError(baseVolumeRefusal(assessBaseBuild(plan, input), input, false))
+      // §117 Am.2's own refusal, with §117's own reason. It used to reuse
+      // `baseVolumeRefusal`, whose sentence is computed from the §111 RATIO —
+      // a rule that has not fired here. Measured: 208 refusals, 11.1% of all
+      // BaseVolumeError refusals, every one telling a runner at 8 km/week to
+      // "get to about 7 km a week first".
+      //
+      // ⚠️ SAME ERROR TYPE, deliberately. The original comment's reason holds:
+      // one refusal shape, so `isDesignedRefusal` classifies both identically
+      // and nothing downstream matches on wording. Only the content changes.
+      throw new BaseVolumeError(
+        runWalkInadequateRefusal(assessBaseBuild(plan, input), input, peakLr))
     }
 
     for (const w of plan.weeks) {

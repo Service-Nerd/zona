@@ -1,0 +1,88 @@
+{
+ "stride": 7,
+ "byDistance": {
+  "42.2": {
+   "4": {
+    "n": 220,
+    "refusedPct": 100,
+    "cleanPct": 0,
+    "objections": {}
+   },
+   "8": {
+    "n": 219,
+    "refusedPct": 85.8,
+    "cleanPct": 4.5,
+    "objections": {
+     "LONG-RUN-SHORT": 9.7
+    }
+   },
+   "15": {
+    "n": 220,
+    "refusedPct": 35.4,
+    "cleanPct": 15.5,
+    "objections": {
+     "LONG-RUN-SHORT": 44.2,
+     "WEEK1-LEAP": 27,
+     "BINGE-WEEK": 0
+    }
+   },
+   "25": {
+    "n": 219,
+    "refusedPct": 0,
+    "cleanPct": 92.6,
+    "objections": {
+     "WEEK1-LEAP": 3.4,
+     "LONG-RUN-SHORT": 2,
+     "BINGE-WEEK": 2
+    }
+   },
+   "35": {
+    "n": 220,
+    "refusedPct": 0,
+    "cleanPct": 100,
+    "objections": {}
+   },
+   "50": {
+    "n": 219,
+    "refusedPct": 0,
+    "cleanPct": 100,
+    "objections": {}
+   },
+   "70": {
+    "n": 219,
+    "refusedPct": 0,
+    "cleanPct": 100,
+    "objections": {}
+   }
+  },
+  "21.1": {
+   "10": {
+    "n": 165,
+    "refusedPct": 0,
+    "cleanPct": 60.3,
+    "objections": {
+     "WEEK1-LEAP": 25,
+     "DEGENERATE-WEEK": 14.6
+    }
+   },
+   "20": {
+    "n": 165,
+    "refusedPct": 0,
+    "cleanPct": 100,
+    "objections": {}
+   },
+   "32": {
+    "n": 164,
+    "refusedPct": 0,
+    "cleanPct": 100,
+    "objections": {}
+   },
+   "50": {
+    "n": 165,
+    "refusedPct": 0,
+    "cleanPct": 100,
+    "objections": {}
+   }
+  }
+ }
+}
