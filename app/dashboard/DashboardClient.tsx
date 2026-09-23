@@ -5073,6 +5073,36 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                AI mark only when content came from the plan enricher
                (session.coach_notes). DB guidance fallback is hand-authored
                so no mark — provenance honesty. */}
+          {/* ── HOW TO RUN IT — §117's run-walk prescription ───────────
+              🔴 WRITTEN SINCE 2026-09-20 AND RENDERED NOWHERE UNTIL NOW.
+              `applyRunWalk` stamps `run_walk_strategy` onto every running
+              session of a finish-goal plan, `INV-PLAN-RUNWALK-PRESCRIBED`
+              asserts the stamp is present, and **zero files under app/ or
+              components/ ever read it** — no commit had ever touched it.
+
+              §117 Amendment 3 is the entire safety argument for admitting this
+              runner: the lower peak lowers §111's door, and *"that trade is
+              only honest if the runner is actually doing the thing the lower
+              peak prepares them for."* McMillan: *"'run 40 minutes, walk if you
+              need to' is a dare. '6 minutes running, 1 minute walking, ten
+              times' is a session."* A prescription the runner cannot read is
+              the first of those, not the second.
+
+              ⚠️ ABOVE "WHY THIS SESSION", DELIBERATELY. This is an INSTRUCTION,
+              not a rationale — CLAUDE.md's card hierarchy puts the prescription
+              above the why, and the block below this one makes exactly that
+              argument about its own placement.
+
+              ⚠️ NO AIMark. `runWalkStrategy()` is rule-engine copy from §117,
+              not model output. */}
+          {session.run_walk_strategy && (
+            <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
+              <CoachNoteBlock label="HOW TO RUN IT">
+                {session.run_walk_strategy}
+              </CoachNoteBlock>
+            </div>
+          )}
+
           {(session.coach_notes?.filter(Boolean).length > 0 || guidance) && (
             <div style={{ padding: '14px 18px', borderBottom: '0.5px solid var(--border-col)' }}>
               <CoachNoteBlock
