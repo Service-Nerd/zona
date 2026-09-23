@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-23 (last ship `5538bfb`, `UNITS-PROSE-01` phase 2) — PUSHED.** 3,216 tests · 360 files. 🔴 **THE WIRING WAS INERT AND THE COMPILER IS WHAT FOUND IT.** `enrich()` took a `units` argument and then called `buildUserMessage(plan, input, wantPaidFields)` **without it** — accepted, threaded through a route, read by NOTHING. Typecheck green, five tests green, and **re-creating the bug on purpose STAYED GREEN** because every test called the inner function directly and the bug was in its CALLER. Surfaced only by making `units` **REQUIRED** rather than defaulted to `'km'` (the dangerous default is km; `decideTrialEmails` takes its access argument for the same reason), then gated with an **end-to-end assertion on the body actually POSTed to the model**. 🥇 **A GATE ON A FUNCTION IS NOT A GATE ON ITS CALLER.** ⚠️ **The km path changed too, and that is the point** — the prompt said `42.195 km` while the card renders `42.2km` (BUG-KIT-DECIMALS-01, 50.4%). 🔴 **Phase 1 had introduced the same disagreement in prose** (`9.9 mi` beside `10mi`); the converter now calls `formatDistance` exactly as the card does. 🔴 **`rlsCoverage.test.ts` went RED on a table the route never touches** — its route SELECTION and table extractor both grep the whole file, so a **COMMENT** naming `createUserScopedClient` and `charity_codes` pulled the route into the audit and invented a violation. **FOURTH recording of 'bound the region, never grep the file'**; comments stripped, falsified both ways. Register 61 → 57. Earlier today: `UNITS-PROSE-01` phase 1 (a Postgres `\b` is a BACKSPACE), `UNITS-SUBUNIT-01` (the same-unit rule lived only in a test), `PACE-UNITS-01`, `COMPLETION-TOMBSTONE-01`, `COACH-MEASURE-PROTOCOL-01`, `ZERO-REJECTION-SERVED-01`, `COHORT-SERVED-01`, `ONRAMP-STEP-UNITS-01`, `REFUSAL-COHERENCE-01`, `REFUSAL-FINISH-ROUTE-01`, `COACH-REVIEW-2026-09-23`, `RUBRIC-STALE-BAR-01`, `DB-USER-PURGE-01`.
+**State at END of 2026-09-23 (last ship `23a989a`, `UNITS-DURATION-01`) — PUSHED. `UNITS-PROSE-01` CLOSED, all four phases.** 3,221 tests · 360 files. 🥇 **THE REGISTER LISTED ELEVEN DURATION SITES AND TEN CANNOT FIRE** — measured across 48,547 sessions, `sessionComposer` descriptions and `buildStepGroups` rows produced **ZERO** values ≥60, because a rep or a warm-up is minutes by construction. The one that could was **`amountStr`, the session-card header: 60+ raw minutes on 21,062 sessions (43.4%), max 172**, which ADR-015 says is `2h 52`. **One edit, not eleven, and only the measurement says so.** ⚠️ **One of the four 'remaining' sites needed NOTHING** — `planAdjustment`'s km note writes `coach_notes`, already converted at the read by phase 1. **The limiter**: three figures, **TWO KINDS**, three owners — ⚠️ **a blanket `/km`→`/mi` rename would have relabelled the RATE without converting it** (`15s/km` → `15s/mi` is not any rate). 🔴 **THIRD HOLLOW GATE OF THE DAY**: the rate test wrapped its assertions in an `if`, with a fixture naming `fadeSecPerKm` (it is `paceFadeSecPerKm`) at 15 against a threshold of 20 — function returned null, conditional swallowed it, breaking the conversion stayed GREEN. 🥇 **A CONDITIONAL ASSERTION IS AN ASSERTION THAT CAN DECLINE TO RUN.** ⚠️ **Two tests asserted a SPELLING and went red on correct changes** (`/4.0km short/`; `toContain('min')` vs `1h 17`). ⚠️ **Register 62 → 56 across the day is NOT the exposure** — survivors are mostly fallbacks behind the owner. Earlier: `UNITS-PROSE-01` ph2 (**the argument nothing read** — found by deleting a default), ph1 (**Postgres `\b` is a BACKSPACE**), `UNITS-SUBUNIT-01` (**the same-unit rule lived only in a test**), `PACE-UNITS-01`, `COMPLETION-TOMBSTONE-01`, `COACH-MEASURE-PROTOCOL-01`, `ZERO-REJECTION-SERVED-01`, `COHORT-SERVED-01`, `ONRAMP-STEP-UNITS-01`, `REFUSAL-COHERENCE-01`, `REFUSAL-FINISH-ROUTE-01`, `COACH-REVIEW-2026-09-23`, `RUBRIC-STALE-BAR-01`, `DB-USER-PURGE-01`.
 
 **Superseded state — 2026-09-23 (last ship `64dedad`, `COACH-MEASURE-PROTOCOL-01`) — PUSHED.** 3,142 tests · `review:coaching` **all six steps green**. 🆕 **`npm run review:coaching` — the WHOLE coaching measurement protocol, one command, one scorecard (~70s; `--fast` ~16s).** 🔴 **`coaching-rulings.md` listed FOUR of EIGHT commands as the protocol and went stale the moment `review:cohort` and `measure:fitness` existed — it named neither, and it was the ONLY written statement of it.** **Prose in one file, executed from memory in another, is a memory test not a protocol.** 🔴 **AND CI WAS RUNNING ONE STEP OF SIX** — blind to a fit-for-purpose move, a cohort band collapsing, a new coach objection, or a plan that is valid and does not build the runner. 🥇 **THE NEGATIVE SPACE PRINTS AT THE END OF EVERY RUN, not in a README** — a scorecard of green ticks is how *"all clear"* becomes *"the things this script looks at are fine"*. **Doctrine: `docs/canonical/coaching-measurement.md`** — a rate moves because the **ENGINE**, the **DEFINITION**, or the **POPULATION** moved, and **only the first is progress**. Earlier today: `ZERO-REJECTION-SERVED-01` (marathon 78.7% → **89.8%**, **still 0.2pp under target**, not one plan changed), `COHORT-SERVED-01`, `ONRAMP-STEP-UNITS-01`, `REFUSAL-COHERENCE-01`, `REFUSAL-FINISH-ROUTE-01`, `COACH-REVIEW-2026-09-23`, `RUBRIC-STALE-BAR-01`, `DB-USER-PURGE-01`.
 
@@ -186,7 +186,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ## ⚖️ FILED 2026-09-23 SHIPPING `PACE-UNITS-01`
 
-### ⚙️ `UNITS-PROSE-01` — **PHASES 1 + 2 SHIPPED 2026-09-23.** Runner-facing prose and AI prompts convert; two groups remain.
+### ✅ `UNITS-PROSE-01` — **CLOSED 2026-09-23.** All four phases shipped.
 
 🔴 **THE MEASUREMENT IN THE ORIGINAL FILING WAS WRONG AND IS CORRECTED.** It read: *"19 stored
 plans carry ZERO prose km... real but currently UNREALISED in production."* The production query
@@ -226,12 +226,28 @@ the card renders `42.2km`. Enricher output is stored, so `coach_intro`, `confide
 **end-to-end assertion on the POSTed body**, because the direct-call tests could not see the inert
 bug at all.
 
-**🔻 WHAT REMAINS — two groups:**
+**✅ PHASES 3 + 4 SHIPPED — `UNITS-DURATION-01`. THE ITEM IS CLOSED.**
 
-| Group | Why it is separate |
+| Group | Outcome |
 |---|---|
-| **`lib/coaching/limiter.ts` + `planAdjustment.ts`** | Analysis `reasoning` strings and adjustment coach-notes. Built per request; the route knows the units. ⚠️ `limiter.ts`'s two entries are **pace** (`s/km`, `m:ss/km`), not distance — `convertPaceString` territory, not `convertDistanceString` |
-| **The 11 DURATION-only entries** | ⚠️ **A DIFFERENT RULE.** `${duration_mins} min` is unit-independent but breaches ADR-015's `formatDuration` contract once the value reaches 60 (`90 min`, never `1h 30`). **Do not assume one fix serves both** |
+| **The 11 DURATION entries** | 🥇 **TEN OF THEM CANNOT FIRE.** Measured across 48,547 sessions: `sessionComposer`'s descriptions and `buildStepGroups`' rows produced **zero** values ≥60, because a rep or a warm-up is minutes by construction and ADR-015's rule only bites at 60. The one that could was **`amountStr`, the session-card header — 60+ raw minutes on 21,062 sessions (43.4%), max 172**, which ADR-015 says is `2h 52`. Fixed. **One edit, not eleven, and only the measurement says so** |
+| **`planAdjustment.ts`** | ⚠️ **The km note needed NOTHING** — it writes `coach_notes`, which phase 1 already converts at the read. Verified, not assumed. Its duration twin now obeys `formatDuration` |
+| **`limiter.ts`** | `reasoning` goes verbatim into the sessionFeedback prompt, so it is a display surface. Three figures, **two kinds**, three owners: `formatPaceDelta` (the RATE), `formatPace` (two clocks), `formatDistance` (the shortfall). ⚠️ **A blanket `/km`→`/mi` rename would have relabelled the rate without converting it** — `15s/km` → `15s/mi` is not any rate at all. `units` REQUIRED on `LimiterInputs`; both routes already read `displayUnits`, just *after* the call |
+
+⚠️ **THE REGISTER COUNT IS NOT THE EXPOSURE.** 62 → 56 across the whole day, which looks like
+almost nothing, while four live defects were fixed. Most survivors are **fallback** expressions
+behind the owner (`formatDuration(v) ?? \`${v} min\``), which still match the pattern.
+
+🔴 **THREE HOLLOW GATES TODAY, ALL CAUGHT ONLY BY FALSIFYING.** The last: a rate test wrapped in
+`if (r && /s\//.test(...))`, with a fixture naming `fadeSecPerKm` (it is `paceFadeSecPerKm`) and a
+value of 15 against a threshold of 20 — so the function returned null, the conditional swallowed
+it, and breaking the conversion left the test GREEN. **A conditional assertion is an assertion
+that can decline to run.** If a test needs an `if` to decide whether to assert, the first
+assertion should be that the branch was reached.
+
+⚠️ **TWO TESTS ASSERTED A SPELLING AND WENT RED ON CORRECT CHANGES**: `/4.0km short/` (pinned to a
+`toFixed(1)` in the producer) and `toContain('min')` standing in for "is a duration", which `1h 17`
+fails while being exactly right. Both now assert against the owner.
 
 ⚠️ **THE GATE'S NAMED BLIND SPOT: a companion figure with NO unit attached.** *"wants nearer 53"*,
 implicitly km, is invisible to a regex and survives conversion looking like a plain number. **Two
