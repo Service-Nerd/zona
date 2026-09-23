@@ -6,6 +6,26 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-23 — UNITS-SUBUNIT-01 · the rule that only existed in a test
+
+**Shipped:** If you read in miles, a short cool-down now says "5 min" instead of "~0mi".
+
+**Dev learning:** The filed RCA said this was rare and km-only. I measured before building: **39.7% of sessions in miles, and 3.7% in km too**. The RCA also blamed `formatDistance`, which turns out to fire **zero** times on real session distances. `apportionRoundedDistance` was the only live mechanism. Two wrong claims, both mine from the day before, both corrected in about four minutes of measurement. Building on the RCA as written would have produced a fix for a defect that wasn't there and missed 1,805 km sessions.
+
+My instrument was also wrong first: I got **zero sessions** out of 902 plans because I called `generateRulePlan(input, 'paid')` without the pinned-date arguments the harnesses pass. The grid's race dates are relative to a fixed `COHORT_PLAN_START` that is now five months in the past, so every case refused with "-11 weeks isn't enough". A clean zero from an empty measurement looks identical to a clean zero from a healthy system.
+
+**Product/creator learning:** The fix was obvious — show minutes — until I ran the existing test and it went red on an assertion I didn't know existed: **every section figure must be in the same unit**. That stopped the build, and it should have. But the settled-ground scan then found the thing that made the call: **that rule was never in `ui-patterns.md`**. The pattern document says the parts *sum*; it never says they share a kind. And its own shipped time-trial diagram renders `WARM-UP 10 min` next to a distance main set. The rule lived in a test, the constitution contradicted it, and the single shape that would have exposed the contradiction had been **carved out of the assertion** rather than examined.
+
+That carve-out is the tell, and I want to remember the shape of it: when a rule needs an exception for the one case that tests it, the exception is the finding.
+
+**AI-building learning:** I nearly settled this myself. I had a defensible argument that it was a defect fix restoring a documented pattern, which would have exempted me from the board. The thing that stopped me was the test going red — a mechanical objection, not a judgement call. Without it I'd have shipped a unilateral reversal of a rule I'd have told myself was an artefact. The board then agreed it *was* an artefact, so the outcome is identical and the process is not: one version has a register row explaining why the rule died, and the other has a silently deleted assertion that the next person restores.
+
+**The honest bit:** I wrote the first fix before finding the constraint, so the "build" happened twice. And the replacement check is stronger than what it replaced — a minutes part must have apportioned to *exactly* zero, so the fallback can't hide real ground — but I only thought of that framing because the old assertion made me justify removing it. Deleting it quietly would have left a weaker suite and I'd have called it a win.
+
+**Hook material:** A test asserted a rule for eighteen months. The rule was never in the spec. The spec's own diagram contradicted it. And the one case that proved it wrong had been explicitly excluded from the test — with a comment saying the assertion "correctly refuses" it. 39.7% of runners on miles were being told a real cool-down covered zero distance.
+
+**Postable?:** yes
+
 ## 2026-09-23 — PACE-UNITS-01 · the formatter was right and nobody could reach it
 
 **Shipped:** Switching to miles now converts the pace on your plan, not just the distance. It has never done so.
