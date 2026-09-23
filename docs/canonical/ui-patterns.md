@@ -561,13 +561,35 @@ Full screen. Back arrow top-left. Session opens into a dedicated screen — not 
 └─────────────────────────────┘
 
 [RPEScale]                 ← if session complete
+[CoachNoteBlock]           ← label "HOW TO RUN IT"  (only when session.run_walk_strategy)
 [CoachNoteBlock]           ← variant="why", label "WHY THIS SESSION"
 ```
 
 Zone order (canonical, INV-UI-005):
 1. Run type · Zone · HR target · Pace bracket · Distance + duration
 2. Session description
-3. Why / coach notes
+3. **How to run it** — the §117 run-walk interval, when the session carries one
+4. Why / coach notes
+
+**"HOW TO RUN IT" — the run-walk prescription (RUNWALK-VISIBLE-01, 2026-09-23).** Renders
+`session.run_walk_strategy` through the existing `CoachNoteBlock` (default variant, the `--warn-bg`
+contextual surface). **No new pattern and no new component** — which is why this shipped without a
+Design Board sitting.
+
+- **Above "WHY THIS SESSION", deliberately.** It is an INSTRUCTION, not a rationale, and the zone
+  order above puts the prescription before the why. The block below it makes exactly that argument
+  about its own placement.
+- **No `<AIMark />`.** `runWalkStrategy()` is rule-engine copy from §117, not model output.
+- 🔴 **WHY IT EXISTS: the field was written for three days and rendered NOWHERE.** `applyRunWalk`
+  stamped `run_walk_strategy` onto every running session of a finish-goal plan from 2026-09-20;
+  **zero files under `app/` or `components/` read it, and `git log -S` found zero commits ever.**
+  `INV-PLAN-RUNWALK-PRESCRIBED` was green throughout, because it asserts the stamp is in the plan
+  JSON and **cannot see a screen**. §117 Am.3's entire safety argument is that the walk break is
+  PRESCRIBED — McMillan: *"'run 40 minutes, walk if you need to' is a **dare**. '6 minutes running,
+  1 minute walking, ten times' is a **session**."* **We were shipping the dare.**
+- **Gated by `lib/plan/prescribedFieldsRendered.test.ts`**: every engine-written session field must
+  have a UI reader, and every RESERVED field must still have NO producer. ⚠️ Comments are stripped
+  before scanning, because the first cut of that gate was satisfied by **this block's own comment**.
 
 Reference: `DashboardClient.tsx` → `SessionPopupInner`
 
