@@ -123,6 +123,22 @@ const dayOptions: any[] = [
   { days_available: 4, days_cannot_train: [] },
   { days_available: 5, days_cannot_train: [] },
   { days_available: 6, days_cannot_train: [] },
+  // STRIDES-CHECKER-OWNER-01 coverage gap (2026-09-24): this grid varies
+  // `preferred_long_run_day` AND day availability, and still could not reach the
+  // shape that matters, because the two axes were never paired in the one
+  // combination that counts. EVERY weekday-scarce row above BLOCKS Saturday
+  // (so a 'sat' long run silently falls back to Sunday), and EVERY row that
+  // leaves Saturday free is weekday-rich (so a spare weekday carrier always
+  // exists once one weekday becomes quality). The two conditions the defect
+  // needs were mutually exclusive BY CONSTRUCTION — 14,253 plans green while a
+  // targeted grid found 14,140 error-severity violation weeks across 24.6% of
+  // plans, and the code was not even in SWEEP-BASELINE-01.
+  //
+  // These two rows leave Saturday FREE and the weekdays SCARCE, which is what a
+  // Saturday-long-run runner with a day job actually looks like. Varying an axis
+  // is not the same as reaching the interaction that axis participates in.
+  { days_available: 3, days_cannot_train: ['mon', 'tue', 'thu', 'fri'] },
+  { days_available: 4, days_cannot_train: ['mon', 'tue', 'thu'] },
 ]
 // §79 (2026-09-02) — `undefined` is a FIRST-CLASS value here, not padding.
 //
@@ -1274,7 +1290,21 @@ const BASELINE: Record<string, number> = {
   // count that falls is progress and the baseline should be lowered."
   'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': 0,
   'INV-PLAN-PEAK-OVER-BASE': 1,
-  'INV-PLAN-WEEK-1-2-LONG-CAP': 1,
+  // 1 -> 2 on 2026-09-24 (STRIDES-CHECKER-OWNER-01). ⚠️ **REVEALED, NOT
+  // CAUSED, and the distinction is the whole reason this line is allowed to go
+  // UP.** That commit changed one checker (§28's stride exemption) and added two
+  // day-sets that leave Saturday free while keeping weekdays scarce. The checker
+  // change cannot reach a §9/§113 long-run cap; the new day-sets can, and did.
+  // This is a PRE-EXISTING engine defect that no corpus had reached — the same
+  // thing SWEEP-AGE-01 above did for the masters cohort.
+  //
+  // 🔴 A RAISED BASELINE IS THE ONE MOVE THIS REGISTER IS MOST EASILY ABUSED FOR,
+  // so: it is NOT tracking a regression from this work, it is NOT re-rolled
+  // sampling noise (the seed is unchanged and the count moved because the grid
+  // reaches a shape it could not reach before), and it is NOT fixed. Filed for
+  // its own sitting — a week-2 long run above `longest_recent_run x 1.1` is a
+  // §113 readiness question, not a §28 one.
+  'INV-PLAN-WEEK-1-2-LONG-CAP': 2,
 
   // ── §121's invariant found a SECOND defect on its first sweep (2026-09-22) ──
   //
@@ -1295,6 +1325,18 @@ const BASELINE: Record<string, number> = {
   // PRESCRIBES, which is the Coaching Board's. Filed as `TAPER-OVER-PEAK-01`.
   // §121 itself is display-only and is unaffected: these plans read honestly and
   // are still shaped wrong.
+  //
+  // ⚠️ HELD AT 10 ON 2026-09-24 THOUGH THE RUN REPORTED 7 AND THE SCRIPT ASKED
+  // FOR IT TO BE LOWERED. STRIDES-CHECKER-OWNER-01 widened `dayOptions`, which
+  // re-partitions the 20,000 sampled inputs at the same seed, so three of these
+  // plans simply stopped being drawn. **Nothing was fixed.** Lowering to 7 would
+  // lock in a number that describes the sample rather than the engine, and the
+  // next grid change would fail the run for a defect nobody reintroduced. This
+  // repo has already made that mistake once in the other direction
+  // (SWEEP-INJURY-01, 2026-09-20: "The population did not change; the sample
+  // did. Never re-baseline to go green.") The rule "every count that falls is
+  // progress" holds only when the fall IS progress — verify which before moving
+  // this number.
   'INV-PLAN-RACE-NOT-VOLUME': 10,
 
   // ── §53 variety, ROTATION SPENDS A SHARED ROW (CB-BEGINNER-CATALOGUE-01, 2026-09-19) ──

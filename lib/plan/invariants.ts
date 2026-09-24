@@ -130,6 +130,7 @@ export const INVARIANT_CODES = [
   'INV-PLAN-TAPER-DELIVERED-DEPTH',
   'INV-PLAN-UNCOVERED-RUNWAY-DECLARED',
   'INV-PLAN-STRIDES-PRESENT',
+  'INV-PLAN-STRIDES-NO-CARRIER',
   'INV-PLAN-RACE-WEEK-SHAKEOUT-CAP',
   'INV-PLAN-VDOT-STALENESS-LADDER',
   'INV-PLAN-VO2MAX-FLOAT-IS-A-CEILING',
@@ -6586,29 +6587,68 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // §28 appends a note to an EXISTING easy run. A 2-day week is a long run
       // plus one other session, and a week whose only easy day sits the day
       // before the long run or the day after quality has nowhere legal to put
-      // them. Measured: 2,168 week-instances across the sweep, every one of them
-      // a week with no eligible day rather than an eligible day left unused.
-      // Demanding strides there would demand a session the principle never asks
-      // for — and §28's own wording ("appends ... to one midweek easy run")
+      // them. Demanding strides there would demand a session the principle never
+      // asks for — and §28's own wording ("appends ... to one midweek easy run")
       // presupposes the run exists.
-      const eligible = entries.filter(([d, sn]) => {
-        if (sn.type !== 'easy' || isLongRun(sn)) return false
-        const j = DAY_ORDER.indexOf(d)
-        const after = DAY_ORDER[j + 1], before = DAY_ORDER[j - 1]
-        if (after && w.sessions[after] && isLongRun(w.sessions[after]!)) return false
-        if (before && w.sessions[before]?.type === 'quality') return false
-        return true
-      })
-      if (stride.length === 0 && eligible.length === 0) continue
+      //
+      // 🔴 THE EXEMPTION USED TO RE-DERIVE THE PRODUCER'S PREDICATE BY HAND, AND
+      // IT WAS NARROWER THAN IT (STRIDES-CHECKER-OWNER-01, 2026-09-24).
+      //
+      // Not asserting "midweek (Wed preferred)" as a PLACEMENT rule is correct
+      // and stays — a preference is not a rule, and it diverges on 146,732
+      // week-instances. But the hand-rolled ELIGIBILITY test above dropped
+      // midweek too, so it counted a Sunday easy run as an eligible carrier that
+      // §28 never offers. The producer declined (correctly); the checker faulted
+      // it for declining.
+      //
+      // Trigger is `preferred_long_run_day: 'sat'`, which puts the long run on
+      // Saturday and leaves Sunday as the only easy day once the single
+      // available weekday becomes quality. Measured on a targeted grid:
+      // **14,140 violation week-instances across 2,040 plans (24.6%)**, up to 11
+      // consecutive build weeks in one plan — and error severity, so in dev/test
+      // this THROWS. Live example: plan `e49ea589` (9-week 5K, Wed/Sat/Sun),
+      // faulted on weeks 4-8.
+      //
+      // ⚠️ WHY NO HARNESS SAW IT. The property sweep varies
+      // `preferred_long_run_day` AND day availability — but every weekday-scarce
+      // day-set it carries BLOCKS Saturday, and every set that leaves Saturday
+      // free is weekday-rich. The two conditions the defect needs are mutually
+      // exclusive by construction, so 14,253 swept plans came back green and the
+      // code is not even in SWEEP-BASELINE-01. Corpus blindness, not a rule gap.
+      //
+      // `neuromuscular.ts` exists precisely to stop this ("the predicate lives
+      // here and BOTH sides call it") and `INV-PLAN-BEGINNER-NEUROMUSCULAR`
+      // already learned the lesson in this same file — "every exception I added
+      // was me re-deriving §28 by hand, which is this repo's most repeated
+      // defect class". That fix was never carried across to its twin. It is now.
+      const longDay = entries.find(([, sn]) => isLongRun(sn))?.[0]
+      const carrier = longDay
+        ? strideCarrierDay(w.sessions as never, longDay, normaliseDays(input.days_cannot_train))
+        : null
+      // §34 — the gap is RECORDED, not enforced. Silently exempting here would
+      // hand this runner one stride session in nine weeks with nothing saying so,
+      // which is how the gap stayed invisible in the first place.
+      if (stride.length === 0 && carrier === null) {
+        violations.push({
+          code: 'INV-PLAN-STRIDES-NO-CARRIER',
+          principle_ref: 'CoachingPrinciples §28',
+          severity: 'warn',
+          week: w.n,
+          message: `Week ${w.n} has no §28-eligible stride carrier, so it carries no neuromuscular stimulus. §28 offers strides on a MIDWEEK easy run; this week has none that is not the long run, the day before it, or the day after quality. The engine is correct to decline — the gap is the runner's, not the engine's (STRIDES-CHECKER-OWNER-01).`,
+          actual: 'no eligible midweek easy run',
+          expected: 'a midweek easy run to carry strides',
+        })
+        continue
+      }
       if (stride.length === 0) {
         violations.push({
           code: 'INV-PLAN-STRIDES-PRESENT',
           principle_ref: 'CoachingPrinciples §28',
           severity: 'error',
-          week: w.n,
-          message: `Week ${w.n} carries no stride note. §28 requires one from week ${GENERATION_CONFIG.STRIDES_FIRST_WEEK} on every non-deload, non-race week — 80 seconds of work for an adaptation that compounds across the build.`,
+          week: w.n, day: carrier ?? undefined,
+          message: `Week ${w.n} carries no stride note, and ${carrier} was an eligible carrier. §28 requires one from week ${GENERATION_CONFIG.STRIDES_FIRST_WEEK} on every non-deload, non-race week — 80 seconds of work for an adaptation that compounds across the build.`,
           actual: 'no strides',
-          expected: 'one midweek easy run carrying the stride note',
+          expected: `the stride note on ${carrier}`,
         })
         continue
       }

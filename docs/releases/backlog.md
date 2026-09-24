@@ -576,6 +576,51 @@ runner-facing notes with dev-only invariant text **in one file**, so a path-base
 wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
 own sentence — are untouched.
 
+### 🏃 `S28-WEEKEND-CARRIER-01` — a Saturday-long-run runner can get ONE stride session in nine weeks
+**Board: 🏃 COACHING BOARD.** Opened 2026-09-24 by `STRIDES-CHECKER-OWNER-01`, which fixed the
+CHECKER and deliberately did **not** decide this.
+
+**The question, and it is a prescription question:** §28 offers strides on *"one **midweek** easy
+run ... placed midweek (Wed preferred)"*. Wed is the preference; **midweek is the rule**. Should the
+placer extend to a **weekend easy run when no midweek one exists**?
+
+🔴 **The cohort is real and now measured.** `INV-PLAN-STRIDES-NO-CARRIER` (warn, shipped with the
+fix so the gap could not be silenced) fires on **12.8% of plans — 1,824 of 14,230** on the property
+sweep. The trigger is `preferred_long_run_day: 'sat'` plus a scarce weekday: the long run takes
+Saturday, the single available weekday becomes quality from the build phase on, and Sunday — the
+only easy run left — is not midweek, so §28 never offers it.
+
+**Live example, plan `e49ea589`** (9-week 5K, trains Wed/Sat/Sun). Weeks 1–2 precede
+`STRIDES_FIRST_WEEK`, week 3 is a deload, weeks 4–8 have no carrier. **The runner receives strides
+on exactly one session in the whole plan: the race-week shakeout.** ⚠️ A handed-over analysis of this
+plan reported *"weeks 1–3: strides yes"* — the stored plan shows no strides in weeks 1–3 either. The
+gap is larger than it was first described.
+
+**What the board must weigh**, and why this was not shipped as a defect fix:
+- §28's placement rules exist for a reason — **never the day before the long run** (heavy legs).
+  Sunday here is the day *after* the long run, which §28 does not bar, but the board has never ruled
+  on fast turnover on a post-long-run day for a 3-day runner whose week is already lopsided.
+- Willy's tissue-tolerance lens: this cohort is the one with the **fewest** running days and the
+  **highest** long-run share, i.e. the least neuromuscular exposure and the least recovery slack.
+- Sims / McMillan: does 80 seconds of strides on the back of a Saturday long run survive contact
+  with a real amateur's weekend?
+
+⚠️ **Do NOT ship the weekend fallback as a bug fix.** An RCA handed over on 2026-09-24 proposed
+exactly that, arguing *"midweek (Wed preferred) — preferred, not required ... faithful to the
+constitution, not a change to it."* That misreads §28: it makes **midweek** the preference when the
+text makes **Wed** the preference. Shipping it board-exempt would have been a prescription change
+wearing a defect fix's clothes.
+
+### ⚙️ `SWEEP-W1W2-LONG-CAP-01` — a week-2 long run above §113's readiness cap, revealed not caused
+**Board: 🏃 COACHING BOARD** (it is a §9/§113 question). Baselined in `SWEEP-BASELINE-01` meanwhile
+(`INV-PLAN-WEEK-1-2-LONG-CAP` 1 → 2).
+
+Surfaced 2026-09-24 when `STRIDES-CHECKER-OWNER-01` widened the property sweep's `dayOptions` with
+two rows that leave **Saturday free and the weekdays scarce** — a shape no corpus had ever built.
+**Pre-existing, not a regression:** that commit changed one checker (§28's stride exemption) and the
+grid; a stride checker cannot reach a long-run cap. Same class as `SWEEP-AGE-01` and the liveness
+debt — the defect was always there and the corpus could not reach it.
+
 ### 🏃 `TAPER-OVER-PEAK-01` — **RE-RULED 2026-09-22. CORRECT WITH AMENDMENT, not built.**
 **Board: 🏃 COACHING BOARD (re-sat; first ruling VACATED).** Baselined in `SWEEP-BASELINE-01` meanwhile.
 
