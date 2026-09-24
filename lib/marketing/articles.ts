@@ -341,6 +341,92 @@ export const MARKETING_ARTICLES: MarketingArticle[] = [
       ),
     ],
   },
+  {
+    // GTM-SEO-COMPARE-01 page 3 of 8. Problem-first rather than head-to-head:
+    // the query is commercial ("best running app for…") and the answer is mostly
+    // coaching, which is why it carries `principleRefs` despite not being a guide.
+    //
+    // ⚠️ COACHING BOARD, 2026-09-24, CORRECT WITH AMENDMENT (3). The SLT ruling
+    // recorded on `principleRefs` below says a claim no principle covers is a
+    // board item BEFORE it is a writing task, and its reason — a coaching claim
+    // "does not become a marketing surface because it lives at /guides" — cuts
+    // both ways: it does not stop being one because it lives at a comparison
+    // slug. Three claims here had no covering principle. The board's amendments
+    // are applied in the copy and named at each site.
+    kind: 'comparison',
+    slug: 'best-running-app-for-beginners',
+    metaTitle: `Best running app for beginners who go too hard`,
+    metaDescription:
+      `Most beginner runners run every session too hard. Here's why that stalls progress, what to do without an app, and which one actually helps.`,
+    ogTitle: `Best running app for beginners who go too hard`,
+    ogDescription:
+      `Most beginner runners run every session too hard. Here's why that stalls progress, what to do without an app, and which one actually helps.`,
+    h1: `Best running app for beginners who go too hard`,
+    lastUpdated: '24 September 2026',
+    lastUpdatedISO: '2026-09-24',
+    publishedISO: '2026-09-24',
+    // §1 (intensity distribution, counted in SESSIONS per CD-19), §12 (the easy
+    // ceiling — "a ceiling, not a band"), §30/INV-PLAN-EFFORT-OR-PACE (effort is
+    // an accepted prescription instrument, which is what makes the talk test
+    // doctrinally normal rather than a new idea).
+    principleRefs: ['§1', '§12', '§30'],
+    signature: `Written by Russ Shear, who built ${BRAND.name} after running 100km in July 2026 and walking the last 40 of it.`,
+    appStoreLinkText: `Get ${BRAND.name} on the App Store`,
+    hubSummary: `If every run feels the same, the fix isn't an app. Here's the fix, and where an app helps anyway.`,
+    body: [
+      p(`Most non-elite runners run every session at roughly the same effort. Not easy enough to recover from, not hard enough to make you fitter. If that's you, the honest fix isn't an app, it's running slower on your easy days than feels natural. An app can help you actually do that once you believe it's true. If you're completely new to running, the free NHS Couch to 5K app is still the right place to start, not a paid coaching app. If you've been running for months or years and your times haven't moved, a plan built around holding you back is more useful than a generic one, and that includes the app I built.`),
+
+      h2(`Why running everything at the same effort doesn't work`),
+      p(`Training adapts you in two different ways, and they need two different efforts to work.`),
+      // COACHING BOARD AMENDMENT 1 (Hutchinson). The submitted copy read "Easy
+      // running builds your aerobic base: capillaries, mitochondria" directly
+      // against the hard-running paragraph, which asserts a DIFFERENTIAL the
+      // evidence does not support: mitochondrial biogenesis is if anything more
+      // responsive to higher intensity. Easy running earns its place because it
+      // is volume you can recover from. The mechanism stays; the implied
+      // exclusivity goes.
+      p(`Easy running is how you accumulate volume you can actually recover from, and volume is what builds the aerobic engine: capillaries, mitochondria, the machinery that lets you run further without your heart rate climbing. It only works if it's genuinely easy, easy enough to leave you recovered for the next session, not just easy enough to feel virtuous.`),
+      p(`Hard running forces a specific adaptation: your body has to be pushed somewhere it doesn't want to go before it changes. That only works if it's genuinely hard, not the version of hard that's really just moderately uncomfortable.`),
+      p(`Run everything in the middle and you get the recovery cost of a hard session with the training effect of an easy one. It's the most common way beginners waste effort, and it doesn't feel like a mistake at the time. It feels like training.`),
+
+      h2(`What it's cost me`),
+      p(`My 10km PB is 48:30, set in autumn 2024. Two years on, it hasn't moved. Not because I stopped training. Because for a lot of that time, nearly every run sat in the same moderate zone: too hard to leave me properly recovered, not hard enough to force any real adaptation. Plenty of effort, not much signal.`),
+      p(`The aerobic base underneath all of that is genuinely stronger than it was two years ago. But a stronger engine with no top-end work and no real recovery either just means you can hold the same mediocre pace for longer. It doesn't move the number that matters.`),
+
+      h2(`What to do about it, no app required`),
+      p(`Slow your easy runs down until talking in full sentences is comfortable, not just possible. If you can't hold a conversation, it isn't an easy run, whatever the pace says.`),
+      p(`Stop judging a run by how hard it felt. Judge it by what kind of session it was supposed to be, and whether you delivered that specific thing.`),
+      // COACHING BOARD AMENDMENT 2 (Willy). The title recruits beginners and this
+      // instruction reaches them. A true beginner should not be adding a weekly
+      // hard session at all, and the opening paragraph already sends them to
+      // Couch to 5K. The instruction is scoped to the reader it is actually for.
+      p(`Once you're running regularly and comfortably, pick one session a week to actually push, and let every other run exist to support that one. Not to compete with it. If you're still building up to running continuously, skip this one entirely: consistency is the session.`),
+      // COACHING BOARD AMENDMENT 3 (Hutchinson). "Three or four weeks" is
+      // defensible as behaviour and indefensible as a physiological adaptation
+      // curve. Reworded so it reads as how long to withhold judgement, not as
+      // how long adaptation takes.
+      p(`Give it a month before you decide it isn't working, and judge it on whether the hard days feel genuinely hard again rather than on a single PB attempt. The instinct that moderate effort equals real progress takes a while to unlearn, mostly because slowing down doesn't feel like doing anything.`),
+      p(`None of that requires software. It requires being honest with yourself about effort on a run-by-run basis, which is harder than it sounds and is the actual reason apps exist in this category at all.`),
+
+      h2(`Where an app genuinely helps, and which ones`),
+      p(`If you're starting from zero, `,
+        { text: `Couch to 5K`, href: 'https://www.nhs.uk/better-health/get-active/get-running-with-couch-to-5k/' },
+        ` is free, well built, and not trying to sell you anything. There's no reason to pay for a beginner app when the NHS one is this good.`),
+      p(`Once you're past that stage and running consistently, the value of a coaching app is that it removes the daily negotiation with yourself over pace. `,
+        { text: `Runna`, href: '/runna-alternatives' },
+        ` is the best-resourced option in this category, adapts well, and works on either iOS or Android. I've written a longer, honest look at it and its alternatives if you want the full picture, including where it beats mine.`),
+      p(`${BRAND.name} is the narrower option. It's built specifically around the problem this page describes: not letting you drift into the grey zone on days that are supposed to be easy. `,
+        { text: `The full three-way comparison`, href: '/coopah-vs-runna' },
+        ` against Runna and Coopah covers pricing and platform support in detail if you're choosing between coaching apps specifically.`),
+
+      h2(`${BRAND.name}, briefly`),
+      // Pricing interpolated from BRAND.PRICING, never typed. Two surfaces
+      // quoting our own price is exactly how the Coopah figure ended up wrong on
+      // two pages at once (see COMPETITOR_FACTS).
+      p(`I built ${BRAND.name} after a 100km race went wrong for a reason that traces back to exactly this problem: not knowing when to hold back. It's ${PRICING.monthly.display} a month or ${PRICING.annual.display} a year, with a genuine free tier, not a trial that expires. iOS only, no Android, no Garmin workout export, built by one person.`),
+      p(`If the diagnosis above sounds like you, an app that's built to slow you down is worth trying before one that just logs how hard you went. Mine or someone else's.`),
+    ],
+  },
   // ── GUIDE 1 ────────────────────────────────────────────────────────────
   // SLT 2026-09-21: Claude drafts, the founder edits, supplies anything first
   // person, and READS IT END TO END before it ships. Nothing here is written

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { guideArticles, guidesArePublished, guidesSectionIsMature, guidesByIntent, shouldGroupGuides, GUIDE_INTENTS, GUIDES_MIN_TO_PUBLISH, GUIDES_SECTION_MATURE } from './articles'
+import { comparisonArticles, guideArticles, guidesArePublished, guidesSectionIsMature, guidesByIntent, shouldGroupGuides, GUIDE_INTENTS, GUIDES_MIN_TO_PUBLISH, GUIDES_SECTION_MATURE } from './articles'
 
 /**
  * W-01 — the guides shelf is gated in ONE place, and everything follows it.
@@ -116,10 +116,39 @@ describe('a guide cites the principles its claims rest on', () => {
         expect(ref, `${a.slug}: "${ref}"`).toMatch(/^§\d+[a-z]?$/)
   })
 
-  it('a comparison article does not need them, because prices are not coaching', () => {
-    // Guard against the rule quietly widening into the other kind, which would
-    // make it noise and get it switched off.
-    expect(() => guideArticles()).not.toThrow()
+  it('the rule is SCOPED to guides — a comparison without them is not flagged', () => {
+    // 🔴 THIS ASSERTION WAS HOLLOW UNTIL 2026-09-24. It read
+    // `expect(() => guideArticles()).not.toThrow()` under this exact title:
+    // a test named for comparisons and `principleRefs` that asserted neither,
+    // and would have passed in every possible state of both. Found while
+    // relying on this file to enforce a Coaching Board ruling.
+    //
+    // ⚠️ `hollowTestShapes.test.ts`, shipped the same morning, does NOT catch
+    // this shape — it lints `toContain` on source text and branches an earlier
+    // assertion made unreachable, not "the assertion is unrelated to the title".
+    // Recorded rather than papered over.
+    //
+    // What the rule actually is: guides MUST cite principles, comparisons MAY.
+    // Widening it to every article would make it noise and get it switched off,
+    // which is the failure this test was written to prevent.
+    const comparisonsWithout = comparisonArticles().filter(a => !a.principleRefs?.length)
+    expect(comparisonsWithout.length, 'fixture must contain a comparison with no principleRefs')
+      .toBeGreaterThan(0)
+    // The gate above flags only guides. Prove it by running the same predicate
+    // over comparisons and showing the rule does not reach them.
+    const flagged = guideArticles().filter(a => !a.principleRefs?.length)
+    expect(flagged).toEqual([])
+    for (const a of comparisonsWithout) expect(a.kind).toBe('comparison')
+  })
+
+  it('a comparison MAY carry them, and they are validated the same way', () => {
+    // GTM-SEO-COMPARE-01 page 3 carries `principleRefs` although it is a
+    // comparison: its body is mostly coaching, and the SLT ruling on the field
+    // turns on the CLAIM, not the URL. If a comparison names sections, they must
+    // still look like sections.
+    for (const a of comparisonArticles())
+      for (const ref of a.principleRefs ?? [])
+        expect(ref, `${a.slug}: "${ref}"`).toMatch(/^§\d+[a-z]?$/)
   })
 })
 
