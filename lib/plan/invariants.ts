@@ -10,7 +10,7 @@
 // logs in production (does not break the user).
 
 import type { Plan, GeneratorInput, Session, Week } from '@/types/plan'
-import { strideCarrierDay, hasHillRestrictingInjury } from './neuromuscular'
+import { strideCarrierDay, isDayAfterLongRun, hasHillRestrictingInjury } from './neuromuscular'
 import { normaliseDays } from './days'
 import { sessionFloorsFor } from './sessionFloors'
 import { qualityCeilingFor } from './qualityCeiling'
@@ -6664,6 +6664,23 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         })
       }
       const [day, sn] = stride[0]
+      // §28 Am.3 — WILLY'S BOUND, MECHANICALLY. Hills are refused on the day
+      // after the long run: §28 Am.1's own case for them is that they are
+      // ECCENTRIC-HEAVY, and the Am.3 fallback lands on this cohort's most
+      // fatigued easy day. Reads the coach NOTE, never the label — the enricher
+      // rewrites labels (D-17), which is the exact hole §28 Am.2 closed.
+      if (longDay && isDayAfterLongRun(day, longDay)
+          && /hill strides/i.test((sn.coach_notes ?? []).join(' '))) {
+        violations.push({
+          code: 'INV-PLAN-STRIDES-PRESENT',
+          principle_ref: 'CoachingPrinciples §28 Amendment 3',
+          severity: 'error',
+          week: w.n, day,
+          message: `Week ${w.n} places HILL strides on ${day}, the day after the long run. §28 Am.3 permits the flat 4×20s there and refuses hills — eccentric-heavy loading on already-fatigued tissue is the wrong stimulus, and Am.1 authorised hills on a FRESH midweek day.`,
+          actual: 'hill strides the day after the long run',
+          expected: 'flat strides (the alternation collapses to its safe arm)',
+        })
+      }
       if (sn.type !== 'easy') {
         violations.push({
           code: 'INV-PLAN-STRIDES-PRESENT',

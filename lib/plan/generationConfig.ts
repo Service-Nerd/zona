@@ -1579,6 +1579,34 @@ export const GENERATION_CONFIG = {
   // is unchanged; only the variety increases.
   BEGINNER_HILL_STRIDE_EVERY_N_WEEKS: 2,
 
+  // ── Stride carrier fallback (CoachingPrinciples §28 Amendment 3) ───────────
+  // When no MIDWEEK easy run is eligible, look at the remaining days rather than
+  // placing nothing. Midweek is still searched first and Wed is still preferred:
+  // this is a fallback, not a new target.
+  //
+  // §28's own WHY justifies EASY ("legs fresh enough to execute proper form")
+  // and says nothing about MIDWEEK. Measured: no carrier on 12.8% of plans
+  // (1,824/14,230), and on the live 9-week case the runner got strides on ONE
+  // session in nine weeks.
+  STRIDE_CARRIER_FALLBACK_ENABLED: true,
+
+  // 🔴 WILLY'S BOUND, AND IT IS WHY THE FALLBACK IS SAFE.
+  //
+  // The fallback day is almost always the day AFTER the long run — measured, of
+  // 17,434 carrier-less weeks, allowing any easy day recovers 10,410 (59.7%) and
+  // barring the post-long-run day recovers 0 (0.0%). So the fallback only ever
+  // lands on this cohort's most fatigued easy day, in the lowest-frequency,
+  // highest-long-run-share group in the product (§52 permits 60% of the week in
+  // one run).
+  //
+  // Flat 4×20s at 5K effort with full recovery is accepted there. HILL strides
+  // are not: §28 Am.1's case for them is that they are ECCENTRIC-HEAVY, which is
+  // the wrong loading on already-fatigued tissue, and they were authorised
+  // "dosed like §28's strides" on a FRESH midweek day. On a post-long-run
+  // carrier the alternation collapses to its safe arm — the same collapse §28
+  // Am.2 already applies for injury history.
+  STRIDE_POST_LONG_RUN_FLAT_ONLY: true,
+
   // ── Tune-up race callout (CoachingPrinciples §32) ──────────────────────────
   // Plans of this length or longer get a mid-build tune-up race suggestion.
   // Placed on the latest non-deload build week before peak. Optional — the

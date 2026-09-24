@@ -57,14 +57,37 @@ describe('STRIDES-CHECKER-OWNER-01 — the checker shares the producer predicate
     expect(errs).toEqual([])
   })
 
-  it('records the gap as a warn instead of silencing it (§34)', () => {
-    const plan = generateRulePlan(SAT_LONG_RUN, 'paid', PLAN_START)
-    const warns = validatePlan(plan, SAT_LONG_RUN)
+  it('records a genuine gap as a warn instead of silencing it (§34)', () => {
+    // ⚠️ THIS CASE USED `SAT_LONG_RUN` AND ASSERTED WEEKS [4..8] UNTIL 2026-09-24.
+    // §28 Amendment 3 (S28-WEEKEND-CARRIER-01) then gave that shape a Sunday
+    // carrier, so the warn correctly stopped firing on it and this assertion
+    // went red. That is the gate working: it was pinning the DEFECT's shape, and
+    // the board closed the defect. Re-anchored on a week that genuinely has no
+    // carrier under Am.3 — a WEEKEND-ONLY runner whose long run is Sunday, so
+    // Saturday is the day before it and Sunday IS it. Both of §28's absolute
+    // placement rules bind; no fallback can reach a day that does not exist.
+    // This is the 2-day case `neuromuscular.ts`'s header was written about.
+    const weekendOnly = {
+      ...SAT_LONG_RUN,
+      goal: 'finish', target_time: undefined,
+      current_weekly_km: 20, longest_recent_run_km: 8,
+      preferred_long_run_day: 'sun',
+      days_available: 2, days_cannot_train: ['mon', 'tue', 'wed', 'thu', 'fri'],
+    } as unknown as GeneratorInput
+    const plan = generateRulePlan(weekendOnly, 'paid', PLAN_START)
+    const warns = validatePlan(plan, weekendOnly)
       .filter(v => v.code === 'INV-PLAN-STRIDES-NO-CARRIER')
     expect(warns.length).toBeGreaterThan(0)
     expect(warns.every(v => v.severity === 'warn')).toBe(true)
-    // The weeks whose only weekday went to quality.
-    expect(warns.map(v => v.week)).toEqual([4, 5, 6, 7, 8])
+    // ...and it is a WARN, never an error: the engine is right to decline.
+    expect(validatePlan(plan, weekendOnly)
+      .filter(v => v.code === 'INV-PLAN-STRIDES-PRESENT')).toEqual([])
+  })
+
+  it('§28 Am.3 CLOSED the Saturday-long-run gap this file was written for', () => {
+    const plan = generateRulePlan(SAT_LONG_RUN, 'paid', PLAN_START)
+    expect(validatePlan(plan, SAT_LONG_RUN)
+      .filter(v => v.code === 'INV-PLAN-STRIDES-NO-CARRIER')).toEqual([])
   })
 
   it('the exemption tracks strideCarrierDay exactly — no week is exempted that has a carrier', () => {

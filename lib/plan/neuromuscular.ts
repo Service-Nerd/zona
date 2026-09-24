@@ -48,14 +48,49 @@ export function strideCarrierDay(
       blockedFromStrides.add(DAYS[(DAYS.indexOf(d) + 1) % 7]!)
     }
   }
-  for (const d of STRIDE_PREFERRED_DAYS) {
-    if (blocked.has(d) || blockedFromStrides.has(d)) continue
+  const eligible = (d: Day): boolean => {
+    if (blocked.has(d) || blockedFromStrides.has(d)) return false
     const s = sessions[d]
-    if (!s || s.type !== 'easy') continue
-    if (isLongRun(s) || isShakeout(s)) continue
-    return d
+    if (!s || s.type !== 'easy') return false
+    if (isLongRun(s) || isShakeout(s)) return false
+    return true
+  }
+  for (const d of STRIDE_PREFERRED_DAYS) {
+    if (eligible(d)) return d
+  }
+  // §28 Amendment 3 (Coaching Board 2026-09-24, S28-WEEKEND-CARRIER-01) —
+  // FALLBACK, NOT A NEW TARGET. Midweek is searched first above and Wednesday is
+  // still preferred; this only runs when midweek yielded nothing.
+  //
+  // §28's own WHY justifies EASY ("legs fresh enough to execute proper form")
+  // and gives no mechanism for MIDWEEK. Without this, 12.8% of plans
+  // (1,824/14,230) carry a week with no neuromuscular stimulus at all, and the
+  // live 9-week case got strides on ONE session in nine weeks.
+  //
+  // ⚠️ The day this returns is almost always the day AFTER the long run —
+  // measured, of 17,434 carrier-less weeks, allowing any easy day recovers
+  // 10,410 (59.7%) and barring the post-long-run day recovers 0 (0.0%). The
+  // board accepted FLAT strides there and refused HILL strides; that half of the
+  // ruling is enforced in `isHillStrideWeek`, which takes the carrier day.
+  if (!GENERATION_CONFIG.STRIDE_CARRIER_FALLBACK_ENABLED) return null
+  for (const d of DAYS) {
+    if (STRIDE_PREFERRED_DAYS.includes(d)) continue   // already tried
+    if (eligible(d)) return d
   }
   return null
+}
+
+/**
+ * §28 Am.3 — is this carrier the day AFTER the long run?
+ *
+ * ⚠️ SHARED BY THE PRODUCER AND THE CHECKER, deliberately. The whole reason this
+ * module exists is that `INV-PLAN-STRIDES-PRESENT` re-derived
+ * `strideCarrierDay`'s predicate by hand and diverged from it
+ * (STRIDES-CHECKER-OWNER-01, 2026-09-24). Adding a second predicate and writing
+ * it out twice would repeat the defect one function later.
+ */
+export function isDayAfterLongRun(day: Day, longDay: Day): boolean {
+  return day === DAYS[(DAYS.indexOf(longDay) + 1) % 7]
 }
 
 /**
@@ -97,17 +132,29 @@ export function hasHillRestrictingInjury(injuryHistory: readonly string[] | unde
  */
 export function isHillStrideWeek(
   weekN: number, fitnessLevel: string | undefined, injuryHistory?: readonly string[],
+  onPostLongRunDay = false,
 ): boolean {
   if (fitnessLevel !== 'beginner') return false
   if (hasHillRestrictingInjury(injuryHistory)) return false
+  // 🔴 §28 Am.3, WILLY'S BOUND — never hills on the day after the long run.
+  //
+  // §28 Am.1's case for hill strides is that they are ECCENTRIC-HEAVY ("it
+  // builds exactly the tissue stiffness that pure easy volume does not"), and
+  // they were authorised "dosed like §28's strides" on a FRESH midweek day. The
+  // Am.3 fallback lands on this cohort's most fatigued easy day, where that same
+  // eccentric loading is the wrong stimulus. The alternation collapses to its
+  // safe arm — the identical collapse §28 Am.2 applies for injury history — so
+  // the runner still gets flat strides, not nothing.
+  if (onPostLongRunDay && GENERATION_CONFIG.STRIDE_POST_LONG_RUN_FLAT_ONLY) return false
   return (weekN - GENERATION_CONFIG.STRIDES_FIRST_WEEK)
     % GENERATION_CONFIG.BEGINNER_HILL_STRIDE_EVERY_N_WEEKS === 0
 }
 
 export function neuromuscularNote(
   weekN: number, fitnessLevel: string | undefined, injuryHistory?: readonly string[],
+  onPostLongRunDay = false,
 ): string {
-  return isHillStrideWeek(weekN, fitnessLevel, injuryHistory)
+  return isHillStrideWeek(weekN, fitnessLevel, injuryHistory, onPostLongRunDay)
     ? '6×10s hill strides up a moderate gradient, walk back down. Not a hard session: short, fast, then recover fully.'
     : '4×20s strides at 5K effort, full recovery between.'
 }
@@ -133,9 +180,10 @@ export function neuromuscularNote(
  */
 export function neuromuscularLabel(
   baseLabel: string, weekN: number, fitnessLevel: string | undefined, injuryHistory?: readonly string[],
+  onPostLongRunDay = false,
 ): string {
   if (/\+ (strides|hill strides)/.test(baseLabel)) return baseLabel   // idempotent
-  const kind = isHillStrideWeek(weekN, fitnessLevel, injuryHistory) ? 'hill strides' : 'strides'
+  const kind = isHillStrideWeek(weekN, fitnessLevel, injuryHistory, onPostLongRunDay) ? 'hill strides' : 'strides'
   // Insert before the zone suffix so the existing "— Zone N" convention holds.
   const m = baseLabel.match(/^(.*?)(\s+—\s+Zone\s+.*)$/)
   return m ? `${m[1]} + ${kind}${m[2]}` : `${baseLabel} + ${kind}`

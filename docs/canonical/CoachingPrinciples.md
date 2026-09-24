@@ -2025,6 +2025,64 @@ prescription. Legislating it would have shipped a no-op.
 shared with `STRIDES_FIRST_WEEK`.
 **Enforced by** `INV-PLAN-BEGINNER-NEUROMUSCULAR`.
 
+### §28 Amendment 3 — when there is no midweek easy run, the strides move; hills do not (Coaching Board 2026-09-24, S28-WEEKEND-CARRIER-01)
+
+**The gap, measured.** `INV-PLAN-STRIDES-NO-CARRIER` (shipped with
+`STRIDES-CHECKER-OWNER-01` to record exactly this) fires on **12.8% of plans,
+1,824 of 14,230**. A runner with `preferred_long_run_day: 'sat'` and scarce
+weekdays loses their single midweek slot to a quality session from the build
+phase onward, and §28's midweek-only carrier then offers nothing. Live case,
+plan `e49ea589`: a 9-week 5K plan training Wed/Sat/Sun where the runner receives
+strides on **one session in nine weeks** — the race-week shakeout. Weeks 1–2
+precede `STRIDES_FIRST_WEEK`, week 3 is a deload, weeks 4–8 have no carrier.
+
+**§28's own WHY justifies EASY, and says nothing about MIDWEEK.** The section
+reads *"They belong on an easy day so the legs are fresh enough to execute
+proper form."* That is a physiological condition. *"Midweek (Wed preferred)"* is
+a scheduling convention with no stated mechanism behind it, and the invariant had
+already recorded that the preference diverges on **146,732 week-instances**.
+A convention that costs a cohort its entire neuromuscular stimulus is not load-bearing.
+
+**Principle.** The stride carrier is sought **midweek first, unchanged**. Only
+when no midweek easy run is eligible does the search fall back to the remaining
+days. Wednesday is still preferred; this adds a fallback, it does not move the
+target.
+
+🔴 **THE FALLBACK DAY IS ALMOST ALWAYS THE DAY AFTER THE LONG RUN, AND THAT IS
+THE WHOLE RULING.** Measured across the affected population: of 17,434
+carrier-less weeks, allowing any easy day recovers **10,410 (59.7%)**, and
+allowing any easy day **except** the day after the long run recovers **0 (0.0%)**.
+Every eligible weekend easy run in this cohort sits the day after the long run,
+because the other weekend day *is* the long run and the day before it is already
+barred. **There is no middle option** — the board either accepts strides on a
+post-long-run easy day or changes nothing.
+
+⚠️ **WILLY'S BOUND, BINDING: FLAT STRIDES ONLY, NEVER HILL STRIDES.** This is the
+lowest-frequency, highest-long-run-share cohort in the product — §52 permits 60%
+of the week in a single run — so the fallback day is their most fatigued easy day.
+Flat 4×20s at 5K effort with full recovery is accepted: 80 seconds, low impact per
+unit of stimulus, against a counterfactual of **zero** neuromuscular work for an
+entire build. **Hill strides are refused there.** §28 Am.1 authorised hills
+*"dosed like §28's strides"* on a fresh midweek day, and Willy's own case for them
+is that they are **eccentric-heavy** — which is precisely the wrong loading on
+already-fatigued tissue. On a post-long-run carrier the alternation collapses to
+its safe arm, exactly as §28 Am.2 made it collapse for injury history.
+
+**Not a relaxation of §28's absolute rules.** Never the day before the long run
+and never the day after a quality session both still hold, on every day the
+fallback considers.
+
+**Config.** `GENERATION_CONFIG.STRIDE_CARRIER_FALLBACK_ENABLED = true`,
+`GENERATION_CONFIG.STRIDE_POST_LONG_RUN_FLAT_ONLY = true`.
+**Enforced by** `INV-PLAN-STRIDES-NO-CARRIER` (the rate must fall) and
+`INV-PLAN-STRIDES-PRESENT` (a post-long-run carrier carrying a HILL stride note
+is an error).
+
+🔻 **Recorded, not fixed:** `STRIDE_PREFERRED_DAYS` still lives in
+`neuromuscular.ts` rather than `GENERATION_CONFIG`, so the coaching guard does not
+fire on edits to it — the same file-path bypass as `peakKmByLevel` before §106.
+Filed as `STRIDE-DAYS-CONFIG-01`.
+
 ### §28 Amendment 2 — hill strides yield to §21, and the label tells the truth (2026-09-19, CB-HILL-INJURY-01 / STRIDE-VISIBILITY-01)
 
 🔴 **A LIVE SAFETY DEFECT, shipped by §28 Amendment 1 on 2026-09-18 and closed

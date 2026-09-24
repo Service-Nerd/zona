@@ -33,7 +33,7 @@ import { validatePlan, copyClaimsIntensity, enforceViolations } from './invarian
 import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
-import { strideCarrierDay, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury } from './neuromuscular'
+import { strideCarrierDay, isDayAfterLongRun, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury } from './neuromuscular'
 import { effectiveStartKm } from './startVolume'
 import { weeksBetweenLocal } from './length'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
@@ -3850,14 +3850,19 @@ function buildWeekSessions(
     const carrier = strideCarrierDay(sessions, longDay, blocked)
     if (carrier) {
       const s = sessions[carrier]!
-      const note = neuromuscularNote(weekN, input.fitness_level, input.injury_history)
+      // §28 Am.3 — a carrier the Am.3 fallback found is almost always the day
+      // after the long run, and hills are refused there (Willy's bound). Passed
+      // as a STRUCTURAL fact from the shared predicate, never inferred from the
+      // note or label afterwards (D-17).
+      const postLR = isDayAfterLongRun(carrier, longDay)
+      const note = neuromuscularNote(weekN, input.fitness_level, input.injury_history, postLR)
       const e0 = s.coach_notes?.[0]
       const e1 = s.coach_notes?.[1]
       s.coach_notes = e0 && e1 ? [e0, e1, note] : e0 ? [e0, note] : [note]
       // STRIDE-VISIBILITY-01 (SLT) — the label names what the session contains.
       // Derived HERE, where "strides were placed" is a structural fact, never
       // re-parsed from the string afterwards (D-17).
-      if (s.label) s.label = neuromuscularLabel(s.label, weekN, input.fitness_level, input.injury_history)
+      if (s.label) s.label = neuromuscularLabel(s.label, weekN, input.fitness_level, input.injury_history, postLR)
     }
   }
 

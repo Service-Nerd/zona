@@ -21,6 +21,55 @@ memory.
 
 ---
 
+## S28-WEEKEND-CARRIER-01 — §28's midweek rule cost a cohort its whole neuromuscular stimulus (2026-09-24)
+
+**Ruled CORRECT WITH AMENDMENT.** §28 Amendment 3. Shipped with all three artifacts.
+
+**The question.** Should §28 place strides on a weekend easy run when no midweek one
+exists? Opened by `STRIDES-CHECKER-OWNER-01`, which fixed the CHECKER and deliberately
+left this to the board.
+
+🥇 **THE CONFLICT SCAN IS WHAT MADE IT RULEABLE.** §28's body says *"placed midweek
+(Wed preferred)"* — but its **WHY justifies only EASY** (*"legs fresh enough to execute
+proper form"*) and gives **no mechanism at all for MIDWEEK**. A convention with no stated
+mechanism, costing a cohort its entire stimulus, is not load-bearing. ⚠️ A handed-over RCA
+had argued the opposite way round — that *midweek* was the preference and *Wed* the rule —
+which inverts the text. **Read the WHY, not just the principle sentence.**
+
+🔴 **THE MEASUREMENT COLLAPSED THE OPTIONS TO TWO, AND THAT WAS THE RULING.** Of 17,434
+carrier-less weeks: allowing any easy day recovers **10,410 (59.7%)**; allowing any easy
+day **except the day after the long run** recovers **0 (0.0%)**. Every eligible weekend
+easy run in this cohort *is* the day after the long run, because the other weekend day is
+the long run and the day before it is already barred. **There was no middle option** — the
+board either accepted post-long-run strides or changed nothing.
+
+⚠️ **WILLY'S BOUND, BINDING: flat 4×20s yes, HILL strides never.** This is the
+lowest-frequency, highest-long-run-share cohort (§52 permits 60% of the week in one run),
+so the fallback lands on their most fatigued easy day. §28 Am.1's own case for hills is
+that they are **eccentric-heavy**, authorised *"dosed like §28's strides"* on a FRESH
+midweek day. The alternation collapses to its safe arm, exactly as §28 Am.2 does for
+injury history.
+
+🥇 **THE BOUND CLOSED A WIDER, PRE-EXISTING HAZARD THAN THE CASE THAT PROMPTED IT.**
+`verify:parity` moved **112 of 5,994 cases, every one `beginner` + `time_target`** — and
+**days=3 changed ZERO**, so none of them are the weekend fallback (the parity grid cannot
+reach that shape either). They are beginners with a **Monday** carrier and a **Sunday**
+long run on ordinary 4- and 5-day plans: `STRIDE_PREFERRED_DAYS` has always included
+Monday, so **these runners were already being prescribed eccentric hill strides the day
+after their long run** and no rule saw it. The weekend question surfaced a hazard that
+existed independently of it.
+
+**Measured after:** `INV-PLAN-STRIDES-NO-CARRIER` **12.8% → 9.0%** (1,824 → 1,286 plans).
+The residual is honest — a weekend-ONLY runner whose long run is Sunday has Saturday
+barred as the day before it and Sunday is the long run, so no day exists to fall back to.
+Recorded (§34), not enforced.
+
+🔻 **Filed, not fixed:** `STRIDE_PREFERRED_DAYS` still lives in `neuromuscular.ts`, not
+`GENERATION_CONFIG`, so the coaching guard does not fire on edits to it — the same
+file-path bypass as `peakKmByLevel` before §106. `STRIDE-DAYS-CONFIG-01`.
+
+---
+
 ## TAPER-RECAL-COLUMN-01 — §68 had never applied to anybody (2026-09-22)
 
 **Ruling: CORRECT WITH AMENDMENT.** Ship the table fix; §68 gains a recorded note that it
