@@ -17,6 +17,7 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { applyHrToPlan, computeZones } from './zones'
 import { isShakeout } from './sessionRole'
+import { hrBandFor } from './hrBand'
 import type { GeneratorInput } from '@/types/plan'
 
 const PLAN_START = '2026-04-27'
@@ -64,9 +65,20 @@ describe('PLAN-ZONE-VS-HRTARGET-01 — an HR correction reaches the sessions', (
     const z = computeZones(CORRECTED.mhr, CORRECTED.rhr)
     const plan = generateRulePlan(AT_GENERATION, 'paid', PLAN_START)
     const fixed = applyHrToPlan(plan as never, CORRECTED.rhr, CORRECTED.mhr) as never as typeof plan
+    // 🔴 THIS ASSERTION USED TO READ `for (const s of quality) expect(...).toBe(z.qualityHR)`
+    // AND IT IS HOW PLAN-VO2MAX-BAND-01 SHIPPED. A VO2max session is typed
+    // `quality` and takes the INTERVALS band, so that line asserted the bug as
+    // the requirement — and passed, only because this fixture is a 5K beginner
+    // plan that happens to contain no VO2max session. It now asks the band owner
+    // which band each session is in, exactly as the code under test does.
     const quality = fixed.weeks.flatMap(w => Object.values(w.sessions)).filter(s => s?.type === 'quality')
     expect(quality.length).toBeGreaterThan(0)
-    for (const s of quality) expect(s!.hr_target).toBe(z.qualityHR)
+    for (const s of quality) {
+      const band = hrBandFor(s as never)
+      if (band === 'intervals') expect(s!.hr_target).toBe(z.intervalsHR)
+      else if (band === 'quality') expect(s!.hr_target).toBe(z.qualityHR)
+      // band === null: unresolvable row, deliberately untouched by applyHrToPlan
+    }
     expect(fixed.meta.zone2_ceiling).toBe(z.zone2Ceiling)
   })
 

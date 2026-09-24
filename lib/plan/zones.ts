@@ -21,11 +21,12 @@
 // not, the extraction is wrong and nothing else in the change matters.
 
 import { GENERATION_CONFIG } from './generationConfig'
-// ⚠️ THE SINGLE OWNER of "is this a shakeout" (D-08/D-16). Reading `role` first,
-// never the label, because the enricher rewrites labels (D-17). A value-based
-// guess at which ceiling a session carried was the first cut here and it decided
-// nothing — it compared the OLD plan's number against the NEW zones.
-import { isShakeout } from './sessionRole'
+// ⚠️ THE SINGLE OWNER of "which HR band is this session in" (PLAN-VO2MAX-BAND-01).
+// This module used to answer that inline from `session.type`, and `isShakeout`
+// was imported here for the one case that got right. Both answers now live in
+// `hrBand.ts`, beside the reason — a second copy of a classifier is what put a
+// VO2max session in the threshold band on a live plan.
+import { hrBandFor } from './hrBand'
 
 export interface ZoneTargets {
   zone2Ceiling: number
@@ -151,24 +152,29 @@ export function applyHrToPlan<T extends {
     const sessions: Record<string, unknown> = {}
     for (const [day, s] of Object.entries(w.sessions)) {
       if (!s) { sessions[day] = s; continue }
-      // Only sessions the engine gives an HR band. A session with no hr_target
-      // never had one and must not acquire one here.
-      if (typeof s.hr_target !== 'string') { sessions[day] = s; continue }
+      // 🔴 THE BAND IS THE PRODUCER'S DECISION, NOT A GUESS FROM `type`
+      // (PLAN-VO2MAX-BAND-01, 2026-09-24). This branched on
+      // `s.type === 'quality'` and sent every VO2max session to the quality
+      // band, because a VO2max session IS typed quality — the type is the slot,
+      // the CATEGORY is the stimulus. It rewrote a live runner's
+      // "Zone 4–5" 157–182 bpm to "Zone 3" 145–156 bpm, twice.
+      // `hrBandFor` reads the stamped catalogue row, exactly as the generator
+      // does, and returns null for anything it cannot resolve.
+      const band = hrBandFor(s as never)
+      if (band === null) { sessions[day] = s; continue }
 
       // §84 — the zone string and the HR string are written TOGETHER, from the
       // same expression, exactly as `computeZones` pairs them at generation.
       // Authoring them apart is the defect §84 Am. was written for.
-      if (s.type === 'quality') {
+      if (band === 'quality') {
         sessions[day] = { ...s, zone: z.qualityZone, hr_target: z.qualityHR }
-      } else if (s.type === 'hard') {
+      } else if (band === 'intervals') {
         sessions[day] = { ...s, zone: z.intervalsZone, hr_target: z.intervalsHR }
-      } else if (isShakeout(s as never)) {
+      } else if (band === 'shakeout') {
         // §78's race-week shakeout — a Z1 ceiling, not Z2.
         sessions[day] = { ...s, hr_target: z.shakeoutHR }
-      } else if (s.type === 'easy') {
-        sessions[day] = { ...s, hr_target: z.easyHR }
       } else {
-        sessions[day] = s
+        sessions[day] = { ...s, hr_target: z.easyHR }
       }
     }
     return { ...w, sessions }
