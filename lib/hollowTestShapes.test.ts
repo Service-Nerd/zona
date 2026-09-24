@@ -120,6 +120,79 @@ export function deadAfterAssertHits(src: string): { line: number; subject: strin
   return hits
 }
 
+/**
+ * SHAPE 3 — an `it()` whose ONLY assertions are `.not.toThrow()` on a call that
+ * takes NO ARGUMENTS.
+ *
+ * 🔴 THE INCIDENT, 2026-09-24. `guidesGate.test.ts` carried this, under this title:
+ *
+ *     it('a comparison article does not need them, because prices are not coaching', () => {
+ *       expect(() => guideArticles()).not.toThrow()
+ *     })
+ *
+ * A test named for comparisons and `principleRefs`, asserting neither, in the
+ * file that enforces the Coaching Board's principle-citation rule. It would have
+ * passed in **every possible state** of the thing its title describes. Found only
+ * by opening the file to lean on it for a ruling.
+ *
+ * ⚠️ WHY ZERO-ARGUMENT IS THE WHOLE RULE, AND IT WAS MEASURED BEFORE IT WAS
+ * WRITTEN. The obvious heuristic — "the only assertion is `not.toThrow()`" —
+ * gives **18 hits in this repo and roughly 17 of them are correct tests**,
+ * because in this codebase THROWING IS THE DOMAIN SIGNAL: `generateRulePlan`
+ * throws on a designed refusal and on an error-severity violation, and
+ * `validateInputFields` throws on a rejected input. So "accepts a plausible
+ * runner", "ADMITS the same runner when the runway is long enough" and "the plan
+ * generates and validates" are all precisely expressed by `not.toThrow()`.
+ *
+ * The distinction is the ARGUMENT:
+ *
+ *   expect(() => f(x)).not.toThrow()   asserts something about `x`. It
+ *                                       discriminates: some inputs throw.
+ *   expect(() => f()).not.toThrow()    has no input. NOTHING VARIES, so it
+ *                                       cannot discriminate between the state
+ *                                       the title claims and its opposite.
+ *
+ * Measured across all 18: every legitimate one passes arguments, none is
+ * zero-arg. **0 false positives.** Same discipline as shape 1, which started at
+ * 50 hits with 27 wrong and was narrowed twice — a gate that cries wolf gets
+ * switched off, which this repo has recorded as equivalent to having no gate.
+ *
+ * ⚠️ The escape hatch covers the real exception: a zero-arg call reading module
+ * state the test itself mutated. Rare, and it must say so.
+ */
+export function vacuousNoThrowHits(src: string): { line: number; title: string; expr: string }[] {
+  const lines = src.split('\n')
+  const hits: { line: number; title: string; expr: string }[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const head = lines[i]!.match(/^(\s*)it(?:\.\w+)?\(\s*[`'"](.+?)[`'"]\s*,/)
+    if (!head) continue
+    const indent = head[1]!.length
+    let body = ''
+    let escaped = /hollow-ok:/.test(lines[i]!)
+    for (let j = i + 1; j < lines.length; j++) {
+      if (/^\s*\}\)/.test(lines[j]!) && (lines[j]!.match(/^\s*/)![0].length <= indent)) break
+      if (/hollow-ok:/.test(lines[j]!)) escaped = true
+      body += lines[j] + '\n'
+    }
+    if (escaped) continue
+    const expects = (body.match(/expect\(/g) ?? []).length
+    const noThrow = (body.match(/\.not\.toThrow\(/g) ?? []).length
+    if (expects === 0 || expects !== noThrow) continue
+    // exec loop, not matchAll — see `sourceTextVars` above: spreading a
+    // RegExpStringIterator needs `downlevelIteration`, which this tsconfig does
+    // not set (TS2802). The file says so and I wrote matchAll anyway.
+    const exprs: string[] = []
+    const re = /expect\(\s*\(\)\s*=>\s*([\s\S]*?)\)\s*\.not\.toThrow/g
+    let m: RegExpExecArray | null
+    while ((m = re.exec(body)) !== null) exprs.push(m[1]!.trim().replace(/\s+/g, ' '))
+    if (!exprs.length) continue
+    // A bare `f()` / `a.b()` with nothing between the parentheses.
+    if (!exprs.every(e => /^[\w.$]+\(\s*\)$/.test(e))) continue
+    hits.push({ line: i + 1, title: head[2]!, expr: exprs[0]! })
+  }
+  return hits
+}
+
 describe('GATE-FALSIFY-01 — hollow test shapes', () => {
   it('no positive toContain() of a bare identifier against source text', () => {
     const offenders: string[] = []
@@ -155,7 +228,21 @@ describe('GATE-FALSIFY-01 — hollow test shapes', () => {
    * — and `/ship`'s own § warns: *"falsify a new check against the incident that
    * caused it, not against a case you invent."*
    */
-  describe('FALSIFICATION — both detectors fire on the incidents that caused them', () => {
+  it('no it() whose only assertions are not.toThrow() on a zero-arg call', () => {
+    const offenders: string[] = []
+    for (const f of testFiles()) {
+      for (const h of vacuousNoThrowHits(readFileSync(f, 'utf8'))) {
+        offenders.push(`${f}:${h.line}  "${h.title}"  ->  expect(() => ${h.expr}).not.toThrow()`)
+      }
+    }
+    expect(offenders, offenders.length
+      ? `Hollow: a zero-arg call has no input, so this asserts nothing about the title's claim.\n`
+        + `${offenders.join('\n')}\n`
+        + `Assert the property the title names, or mark it \`// hollow-ok: <reason>\`.`
+      : '').toEqual([])
+  })
+
+  describe('FALSIFICATION — all three detectors fire on the incidents that caused them', () => {
     it('catches PLANVERB-01: toContain(onStartNewPlan) passing against onStartNewPlanX', () => {
       const incident = [
         `const SCREEN = readFileSync('x', 'utf8')`,
@@ -174,6 +261,54 @@ describe('GATE-FALSIFY-01 — hollow test shapes', () => {
         `if (got !== null) { expect(Date.parse(got)).toBeLessThan(before) }`,
       ].join('\n')
       expect(deadAfterAssertHits(incident)).toHaveLength(1)
+    })
+
+    it('catches the 2026-09-24 case: guidesGate.test.ts asserting nothing it was named for', () => {
+      const src = [
+        `  it('a comparison article does not need them, because prices are not coaching', () => {`,
+        `    expect(() => guideArticles()).not.toThrow()`,
+        `  })`,
+      ].join('\n')
+      const hits = vacuousNoThrowHits(src)
+      expect(hits).toHaveLength(1)
+      expect(hits[0]!.expr).toBe('guideArticles()')
+    })
+
+    it('does NOT fire on the 18 legitimate not.toThrow tests — throwing IS the domain signal', () => {
+      // Verbatim shapes from the repo. `generateRulePlan` throws on a designed
+      // refusal, `validateInputFields` on a rejected input, so "accepts" and
+      // "admits" are exactly what not.toThrow() expresses. All pass arguments.
+      const src = [
+        `  it('accepts a plausible runner', () => {`,
+        `    expect(() => validateInputFields(OK)).not.toThrow()`,
+        `  })`,
+        `  it('and still builds for a runner at the floor', () => {`,
+        `    expect(() => generateRulePlan(base({ longest_recent_run_km: 5 }), 'paid', START)).not.toThrow()`,
+        `  })`,
+        `  it('does not throw on junk', () => {`,
+        `    expect(() => schemaCodesFor(junk as never)).not.toThrow()`,
+        `  })`,
+      ].join('\n')
+      expect(vacuousNoThrowHits(src)).toEqual([])
+    })
+
+    it('does NOT fire when a real assertion sits alongside it', () => {
+      const src = [
+        `  it('builds, and the arc is right', () => {`,
+        `    expect(() => build()).not.toThrow()`,
+        `    expect(build().weeks).toHaveLength(12)`,
+        `  })`,
+      ].join('\n')
+      expect(vacuousNoThrowHits(src)).toEqual([])
+    })
+
+    it('honours the escape hatch for a zero-arg call over test-mutated state', () => {
+      const src = [
+        `  it('the fixture swap does not break the selector', () => {`,
+        `    expect(() => selector()).not.toThrow()   // hollow-ok: the module state is swapped in beforeEach`,
+        `  })`,
+      ].join('\n')
+      expect(vacuousNoThrowHits(src)).toEqual([])
     })
 
     it('does NOT fire on array membership — the 27 false positives that shaped the rule', () => {
