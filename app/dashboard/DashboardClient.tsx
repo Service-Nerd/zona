@@ -4,6 +4,7 @@ import { calendarDaysBetween } from '@/lib/dates'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan } from '@/lib/plan/modifyPlan'
+import { applyHrToPlan } from '@/lib/plan/zones'
 import MePlanCard from '@/components/shared/MePlanCard'
 import { useIsNative } from '@/lib/useIsNative'
 import ZoneWeekBlock from '@/components/shared/ZoneWeekBlock'
@@ -2639,7 +2640,9 @@ export default function DashboardClient() {
   // it even below the age estimate (genuine low-max athletes) instead of treating
   // it as a device floor.
   setMaxHRSource('user_confirmed')
-  const newZ2 = Math.round(rhr + 0.70 * (mhr - rhr))
+  // `newZ2` removed 2026-09-24 — it was a second copy of the Z2 boundary living
+  // in a React component, and the only reason it existed is that `computeZones`
+  // was private to `ruleEngine.ts`. `applyHrToPlan` owns it now.
   try {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -2651,7 +2654,17 @@ export default function DashboardClient() {
     //    §50: stamp the confirmed max + provenance so INV-PLAN-MAX-HR-NOT-BELOW-
     //    ESTIMATE-FLOOR reads a coherent state and the stale floor note clears.
     if (plan && plan !== EMPTY_PLAN) {
-      const updatedPlan = { ...plan, meta: { ...plan.meta, resting_hr: rhr, max_hr: mhr, zone2_ceiling: newZ2, hr_derived_max: mhr, hr_max_source: 'user_confirmed', hr_zone_method: 'karvonen', hr_assumption_note: undefined } }
+      // 🔴 PLAN-ZONE-VS-HRTARGET-01 — THIS USED TO UPDATE `meta` AND NOTHING ELSE.
+      //
+      // Every session's `hr_target` kept the band computed at generation, while
+      // the session-detail HEADER derives its bpm from `session.zone` + meta. One
+      // card therefore read "Zone 3 · 161–175 bpm" above a note saying
+      // "158–171 bpm" — measured on 6 of 22 live plans, every quality session.
+      // `applyHrToPlan` is the single owner that keeps meta and the sessions in
+      // step; it also sets `zone2_ceiling`, so the hand-rolled `newZ2` below is
+      // gone rather than left as a second copy of the Z2 boundary.
+      const withHr = applyHrToPlan(plan as never, rhr, mhr) as never as typeof plan
+      const updatedPlan = { ...withHr, meta: { ...withHr.meta, hr_derived_max: mhr, hr_max_source: 'user_confirmed', hr_zone_method: 'karvonen', hr_assumption_note: undefined } }
       setPlan(updatedPlan as any)
       // RESHAPE-FIX-WAVE1: savePlanForUser now throws on persistence failure.
       // This call is deliberately fire-and-forget (the resting-HR save above

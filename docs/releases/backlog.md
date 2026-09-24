@@ -614,39 +614,49 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
-### 🔴 `PLAN-ZONE-VS-HRTARGET-01` — a live plan shows two different HR bands on one card
-**Board: 🏃 COACHING BOARD** if the fix changes what is prescribed; ⚙️ no board if it is display
-only. **Route it at the RCA, not here.** Found 2026-09-24 while backfilling strides onto plan
-`e49ea589` — it was in the before/after violation delta and had nothing to do with strides.
+### ⚙️ `PLAN-RESTING-HR-ZERO-01` — three live plans have a resting HR of ZERO
+**Board: ⚙️ NO BOARD** to start; **🏃 COACHING BOARD if the fix changes which zone formula applies.**
+Found 2026-09-24 in the `PLAN-ZONE-VS-HRTARGET-01` backfill dry run.
 
-**All five quality sessions on that live plan fire `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` (error):**
+`939a5ada` (max 175), `3943a015` (189), `d6d4890b` (187) all carry
+`meta.resting_hr = 0`. **Zero is not a resting heart rate.** Karvonen makes the reserve
+`max - resting`, so a zero baseline makes the reserve the entire max and every band comes out
+wrong. All three still show two HR numbers on one card, and the backfill **correctly refused to
+touch them**: re-deriving from a zero baseline left two unchanged (7 → 7) and made one **worse**
+(2 → 6).
 
-```
-w4 wed "Continuous tempo"      zone "Zone 3" = 161–175 bpm  vs  hr_target 158–171 bpm
-w5 wed "5K-pace reps"          same
-w6 wed "5K-pace reps"          same
-w7 wed "5K-pace progression"   same
-w8 wed "Goal-pace sharpener"   same
-```
+**Likely source:** `lib/plan.ts:22` — `EMPTY_PLAN` defaults to `resting_hr: 0, max_hr: 0`. A plan
+built or patched from that shape inherits the zero rather than `undefined`.
 
-The session-detail header reads `session.zone` and the coach note reads `hr_target`, so **the
-runner sees two different HR bands on one card.** That is §84's exact failure and the invariant is
-doing its job.
+⚠️ **The distinction that matters:** `computeZones(mhr, rhr?)` branches on `rhr === undefined` to
+choose %MaxHR over Karvonen. **`0` is a number, so it takes the Karvonen branch with a zero
+baseline** — the worst of both. A runner with no resting HR should get the %MaxHR branch, which
+is §14's documented fallback. **Fix the producer of the 0 first**; repairing the three plans
+without that just refills the hole.
 
-🔴 **WHAT MAKES IT WORTH AN RCA RATHER THAN A SHRUG.** `fix(§84): the zone string is derived from
-the HR target, not authored beside it` landed **2026-09-04**. This plan was generated
-**2026-09-23 — nineteen days later** — and still has it. Meanwhile the **14,230-plan property
-sweep produces ZERO** of this code and it is not in `SWEEP-BASELINE-01`.
+### ⚙️ `PLAN-META-HR-DIVERGENCE-01` — `plan.meta` HR can drift from `user_settings`
+**Board: ⚙️ NO BOARD.** Found 2026-09-24 while fixing `PLAN-ZONE-VS-HRTARGET-01`; **founder ruled
+the two paths below are left alone for now.**
 
-**So the engine is not supposed to do this any more, and it did.** Either a path exists that
-bypasses the derivation, or the sweep cannot reach this runner's shape. Both are the class this
-repo keeps paying for, and the second is exactly what `STRIDES-CHECKER-OWNER-01` was this morning.
+There are **three** HR write paths, not two, and they update different subsets:
 
-⚠️ **Not fixed with the strides backfill, deliberately.** That was a founder-directed one-off with
-a measured zero-impact argument; this is a different defect with an unknown mechanism, and
-folding it in would be *"include it in the build"* becoming *"fix it without understanding it"*.
-**Run `/zona-debug` first.** The runner is `cf9f51f9`, plan `e49ea589`, and his `max_hr` /
-`resting_hr` are the obvious place to start given the bands differ by only 3–4 bpm.
+| path | `user_settings` | `plan.meta` | `session.hr_target` |
+|---|---|---|---|
+| Profile save (`DashboardClient:2654`) | ✅ | ✅ | ✅ **fixed 2026-09-24** |
+| Connect-watch, onboarding (`:2247`) | ✅ | ❌ | ❌ |
+| Reconnect from Me (`:2612`) | ✅ | ❌ | ❌ |
+
+⚠️ **The last two are DELIBERATE and their comments say so** — *"the plan may already have Tanaka
+zones baked in; updating user_settings here means all future coaching (and any re-generation) uses
+the real Karvonen values instead."* They never cause the card mismatch, because the plan stays
+internally consistent. **Wiring them would change a live plan's training zones during onboarding,
+against a documented decision and with no board** — and they write an `observed` max, which §50
+treats as a FLOOR, so pushing it in unguarded would drag zones DOWN.
+
+**What remains open** is the divergence itself: after either path, `user_settings` and `plan.meta`
+disagree about the same runner. ⚠️ `DashboardClient:1644` sets `maxHR` from `meta`, so the stale
+copy can win in the UI. Whoever picks this up: `resolveMaxHr()` must guard the max **before** it
+reaches `applyHrToPlan`.
 
 ### ⚙️ `TEST-LIVENESS-COVERAGE-01` — the mutation harness sees 5.9% of the test suite
 **Board: ⚙️ NO BOARD.** Found 2026-09-24 while building `GATE-FALSIFY-01 (c)`.

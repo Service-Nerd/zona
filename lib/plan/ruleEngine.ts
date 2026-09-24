@@ -34,6 +34,7 @@ import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolum
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
 import { strideCarrierDay, isDayAfterLongRun, neuromuscularNote, neuromuscularLabel, hasHillRestrictingInjury } from './neuromuscular'
+import { computeZones, type ZoneTargets } from './zones'
 import { effectiveStartKm } from './startVolume'
 import { weeksBetweenLocal } from './length'
 import { enforcePrepTime, enforceDaysAvailable, validateInputFields, coherentGoal, type PrepTimeAwareInput, type PrepTimeResult, type DaysAvailableResult } from './inputs'
@@ -65,17 +66,10 @@ type PhaseType = GeneratorPhase
 // FITNESS_RANK) now live in ./fitnessAssessment (single owner shared with the
 // wizard's level recommendation) and are imported at the top of this file.
 
-interface ZoneTargets {
-  zone2Ceiling: number
-  easyHR: string
-  shakeoutHR: string
-  qualityHR: string
-  /** §84 — the zone string that DESCRIBES `qualityHR`. Paired at construction. */
-  qualityZone: string
-  /** §84 — the zone string that DESCRIBES `intervalsHR`. Paired at construction. */
-  intervalsZone: string
-  intervalsHR: string
-}
+// ZoneTargets + computeZones now live in ./zones (single owner, CLIENT-SAFE,
+// shared with the dashboard's HR-correction path). Extracted 2026-09-24 —
+// PLAN-ZONE-VS-HRTARGET-01. Same reason as maxHrGuard and fitnessAssessment.
+
 
 interface PaceGuide {
   easyPaceStr:      string   // e.g. "6:00–7:15 /km"
@@ -257,54 +251,6 @@ export function applyVdotDiscount(rawVdot: number, b: BenchmarkInput, today: Dat
 // Easy ceiling = top of Z2. Quality (threshold) = Z3. Intervals (VO2max) = Z4–Z5.
 // Forward-compat: a future paid "zone method selector" feature swaps the table
 // based on user_settings.zone_method. See zone-rules.md.
-
-function computeZones(mhr: number, rhr?: number): ZoneTargets {
-  const Z = GENERATION_CONFIG.ZONES
-  if (rhr !== undefined) {
-    // Karvonen (HR Reserve) — more personalised
-    const hrr = mhr - rhr
-    const k = (pct: number) => Math.round(rhr + (pct / 100) * hrr)
-    const z1Top    = k(Z.Z1.karvonen_pct[1])  // top of Z1 → shakeout ceiling
-    const z2Top    = k(Z.Z2.karvonen_pct[1])  // top of Z2 → easy ceiling
-    const z3Low    = k(Z.Z3.karvonen_pct[0])  // Z3 low → quality low
-    const z3Top    = k(Z.Z3.karvonen_pct[1])  // Z3 top → quality high
-    const z4Low    = k(Z.Z4.karvonen_pct[0])  // Z4 low → intervals low
-    return {
-      zone2Ceiling: z2Top,
-      easyHR:       `< ${z2Top} bpm`,
-      shakeoutHR:   `< ${z1Top} bpm`,
-      qualityHR:    `${z3Low}–${z3Top} bpm`,
-      intervalsHR:  `${z4Low}–${mhr} bpm`,
-      // §84 Amendment (Coaching Board 2026-09-04) — the zone STRING is authored
-      // in the same expression as the HR string it describes, so the two cannot
-      // drift. They had: every threshold session read `zone: 'Zone 3–4'` beside
-      // `hr_target: qualityHR`, and qualityHR is z3Low–z3Top — Zone 3 ONLY. The
-      // display derives its band from the zone string and the coach note renders
-      // hr_target, so one card showed "145–172 bpm" above "Hold 145–158 bpm".
-      // §84's own Config paragraph asserted these were written "consistently";
-      // it was true for intervals and assumed for quality.
-      qualityZone:   'Zone 3',
-      intervalsZone: 'Zone 4–5',
-    }
-  }
-  // %MaxHR — used when resting HR not provided
-  const m = (pct: number) => Math.round((pct / 100) * mhr)
-  const z1Top = m(Z.Z1.maxhr_pct[1])
-  const z2Top = m(Z.Z2.maxhr_pct[1])
-  const z3Low = m(Z.Z3.maxhr_pct[0])
-  const z3Top = m(Z.Z3.maxhr_pct[1])
-  const z4Low = m(Z.Z4.maxhr_pct[0])
-  return {
-    zone2Ceiling: z2Top,
-    easyHR:       `< ${z2Top} bpm`,
-    shakeoutHR:   `< ${z1Top} bpm`,
-    qualityHR:    `${z3Low}–${z3Top} bpm`,
-    intervalsHR:  `${z4Low}–${mhr} bpm`,
-    // §84 Amendment — see the Karvonen branch above. Same pairing, same reason.
-    qualityZone:   'Zone 3',
-    intervalsZone: 'Zone 4–5',
-  }
-}
 
 // ─── HR zone fallback hierarchy (CoachingPrinciples §50, L-03) ────────────────
 // Four-level fallback. Composes with §55 (L-01) which rejects out-of-range
