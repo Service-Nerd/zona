@@ -167,6 +167,17 @@ export type OpsEventKind =
   // cost and a truncated error string. Never prompt text, never a name.
   | 'ai_call'
   | 'ai_call_failed'
+  // EMAIL-WAVE-0 (2026-09-24) — one row per email the programme attempts,
+  // INCLUDING the ones it chooses not to send. `detail.outcome` is
+  // sent | suppressed_unsubscribed | no_address | failed.
+  //
+  // WHY: 35 emails had gone out with no record that they existed, so the SLT
+  // sitting that approved the programme had to reconstruct reach from the
+  // `*_sent_at` stamp columns — which only two of the five emails have. A
+  // suppressed send is recorded deliberately: "we chose not to" and "it failed"
+  // are different facts, and a caller that cannot tell them apart will stamp a
+  // sent-column for an email nobody received.
+  | 'email_sent'
 
 /**
  * Record an internal ops event. Fire-and-forget by nature but awaitable, so a

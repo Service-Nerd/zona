@@ -70,3 +70,4 @@
 20260923_completion_live_key.sql
 20260924_claim_completion_no_log.sql
 20260924_charity_seat_stays_spent.sql
+20260924_email_consent.sql

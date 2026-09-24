@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { secretMatches } from '@/lib/security/secrets'
-import { sendEmail } from '@/lib/email/resend'
+import { sendToUser } from '@/lib/email/sendToUser'
 import { buildDay11Email, buildDay14Email, type RunSummary } from '@/lib/email/trialEmailTemplates'
 import { trialDayNumber, decideTrialEmails } from '@/lib/email/trialEmailWindow'
 import { resolveTier } from '@/lib/trial'
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
   const { data: allSettings, error } = await supabase
     .from('user_settings')
-    .select('id, is_admin, trial_started_at, trial_email_day11_sent_at, trial_email_day14_sent_at')
+    .select('id, is_admin, trial_started_at, trial_email_day11_sent_at, trial_email_day14_sent_at, email_unsubscribed_at, email_unsubscribe_token')
     .not('trial_started_at', 'is', null)
 
   if (error) {
@@ -133,9 +133,15 @@ export async function POST(req: NextRequest) {
       const run = await getRunSummary(supabase, settings.id)
 
       if (needsDay11) {
-        const { subject, html } = buildDay11Email(firstName, run)
-        const ok = await sendEmail({ to: email, subject, html })
-        if (ok) {
+        const { subject, html } = buildDay11Email(firstName, run, settings.email_unsubscribe_token)
+        // EMAIL-WAVE-0 — `sendToUser` owns suppression and the record. It returns
+        // an OUTCOME, not a boolean, so a suppressed send cannot stamp the column:
+        // that would silently skip the runner forever the day they resubscribe.
+        const outcome = await sendToUser({
+          userId: settings.id, to: email,
+          id: 'trial_day11', kind: 'transactional', subject, html,
+        })
+        if (outcome === 'sent') {
           day11Sent++
           await supabase
             .from('user_settings')
@@ -145,9 +151,12 @@ export async function POST(req: NextRequest) {
       }
 
       if (needsDay14) {
-        const { subject, html } = buildDay14Email(firstName, run)
-        const ok = await sendEmail({ to: email, subject, html })
-        if (ok) {
+        const { subject, html } = buildDay14Email(firstName, run, settings.email_unsubscribe_token)
+        const outcome = await sendToUser({
+          userId: settings.id, to: email,
+          id: 'trial_day14', kind: 'transactional', subject, html,
+        })
+        if (outcome === 'sent') {
           day14Sent++
           await supabase
             .from('user_settings')
