@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — CHARITY-SEAT-MIGRATION-APPLY-01 · I handed over a verification query that could not fail
+
+**Shipped:** the seat-stays-spent migration is live and verified; the migrations ledger records it.
+
+**Dev learning:** I could not apply the migration myself (CLI unlinked, sandbox refuses production writes), so I gave the founder a query to prove it had landed: `pg_get_functiondef(...) like '%charity_codes%'`, `false` means applied. It came back `true` and I nearly concluded the migration had failed. It hadn't — **my replacement function names `charity_codes` three times in its own explanatory comments** (*"charity_codes.claimed_at IS DELIBERATELY NOT CLEARED HERE"*), so that query returns `true` in both states. The corrected probe matches the **statement**, `~* 'update\s+public\.charity_codes'`, which the new body genuinely never contains.
+
+**Product/creator learning:** In the same exchange I misread *"no rows returned"* from the SQL editor as *"zero rows matched"*. It is what `UPDATE` without `RETURNING` always prints. So I told the founder a successful repair had failed, and then told them a successful migration might have failed, back to back — two wrong conclusions from two outputs I had not thought about carefully. **When you cannot run the command yourself, the quality of your verification instructions IS the quality of your work.**
+
+**AI-building learning:** This is the third hollow check I caught today — after a falsification case with unreachable code after its assertion, and a contracts audit that could only validate contracts that already existed. The pattern is identical every time: *the check passes for a reason other than the one in its name.* The two I caught in my own code I caught by mutation-testing. **This one I could not mutation-test, because it ran on someone else's machine — which is exactly why it was the one that got through.** A query handed to a human is untested code.
+
+**The honest bit:** the founder ran what I asked, reported accurately, and both of my readings of their results were wrong. They were right about the mechanism earlier too — the 2 → 1 count that I had waved off as a stale note turned out to be two shipped decisions cancelling each other out.
+
+**Hook material:** I wrote a test to prove my own migration had applied. It returned "true" — failure — because my migration's comments mentioned the table it had stopped touching. The check was reading my explanation of the fix and reporting it as the bug.
+
+**Postable?:** yes
+
 ## 2026-09-24 — CHARITY-CLAIM-RELEASE-01 · two correct decisions that cancelled each other out
 
 **Shipped:** deleting an account no longer hands a charity seat back to be redeemed again. (Migration written; the founder applies it.)
