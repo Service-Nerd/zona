@@ -27,6 +27,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
+import { secretMatches } from '@/lib/security/secrets'
 import { sendToUser } from '@/lib/email/sendToUser'
 import {
   buildConnectEmail, buildFirstReadEmail, buildDay11Email, buildDay14Email,
@@ -38,23 +39,80 @@ import {
 export const dynamic = 'force-dynamic'
 
 async function preview(req: NextRequest): Promise<NextResponse> {
-  const user = await getUserFromRequest(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
-  const { data } = await admin
-    .from('user_settings')
-    .select('is_admin, first_name, email_unsubscribe_token')
-    .eq('id', user.id)
-    .maybeSingle()
+  // ── TWO WAYS IN, AND THE SECOND ONE EXISTS BECAUSE THE FIRST DOES NOT WORK
+  //    FROM A BROWSER ─────────────────────────────────────────────────────────
+  //
+  // 🔴 This shipped user-auth only, with the instruction "open it in a browser
+  // while logged in". It returns 401 every time, and `getUserFromRequest`'s own
+  // doc comment says why: *"Reads the token from the Authorization header
+  // (client sends it explicitly because @supabase/ssr cookie sync to the server
+  // is unreliable)"*. Every in-app call goes through `authedFetch`, which sets
+  // that header. A browser address bar sets nothing.
+  //
+  // **The comment was there and I did not read it**, which is the same class as
+  // trusting a written assumption over the code.
+  //
+  // So `CRON_SECRET` is accepted too — the same shared-secret shape every other
+  // ops route uses (`/api/ops/plan-audit`, `send-trial`), triggerable with one
+  // curl and no UI. The user path stays for an in-app button later.
+  const bearer = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? null
+  const viaSecret = secretMatches(req.headers.get('x-cron-secret') || bearer, process.env.CRON_SECRET)
 
-  const row = data as { is_admin: boolean | null; first_name: string | null; email_unsubscribe_token: string } | null
+  // ⚠️ THE SECRET PATH STILL NEEDS A RECIPIENT, and it must be an ADMIN's
+  // address — not an argument. The secret proves the caller is us; it does not
+  // make an arbitrary `to` safe, and a route that accepts one is an open relay
+  // with our return-path on it.
+  // Named, not inferred: `typeof row` on a `let` initialised to null narrows to
+  // `never` inside the branches and the errors say nothing useful.
+  interface AdminRow {
+    is_admin: boolean | null
+    first_name: string | null
+    email_unsubscribe_token: string
+  }
+  let userId: string | null = null
+  let address: string | null = null
+  let row: AdminRow | null = null
+
+  if (viaSecret) {
+    const { data } = await admin
+      .from('user_settings')
+      .select('id, is_admin, first_name, email_unsubscribe_token')
+      .eq('is_admin', true)
+      .limit(1)
+      .maybeSingle()
+    const a = data as (AdminRow & { id: string }) | null
+    if (!a) return NextResponse.json({ error: 'No admin account' }, { status: 404 })
+    userId = a.id
+    row = a
+    const { data: u } = await admin.auth.admin.getUserById(a.id)
+    address = u?.user?.email ?? null
+  } else {
+    const user = await getUserFromRequest(req)
+    if (!user) {
+      return NextResponse.json({
+        error: 'Unauthorized',
+        // Say how, rather than leaving the caller to guess — this route 401'd
+        // silently once already.
+        hint: 'Send CRON_SECRET as `x-cron-secret`, or call from the app with an Authorization bearer token. A plain browser request cannot authenticate: the cookie session is not read server-side.',
+      }, { status: 401 })
+    }
+    const { data } = await admin
+      .from('user_settings')
+      .select('is_admin, first_name, email_unsubscribe_token')
+      .eq('id', user.id)
+      .maybeSingle()
+    row = data as AdminRow | null
+    userId = user.id
+    address = user.email ?? null
+  }
+
   if (!row?.is_admin) return NextResponse.json({ error: 'Admin only' }, { status: 403 })
-  if (!user.email) return NextResponse.json({ error: 'No address on this account' }, { status: 400 })
+  if (!address || !userId) return NextResponse.json({ error: 'No address on this account' }, { status: 400 })
 
   const name = row.first_name
   const tok  = row.email_unsubscribe_token
@@ -76,8 +134,8 @@ async function preview(req: NextRequest): Promise<NextResponse> {
   const results: Array<{ email: string; subject: string; outcome: string }> = []
   for (const [label, { subject, html }] of all) {
     const outcome = await sendToUser({
-      userId: user.id,
-      to: user.email,
+      userId,
+      to: address,
       id: 'preview',
       kind: 'transactional',
       // The label rides in the subject so eight near-identical emails are
@@ -90,7 +148,7 @@ async function preview(req: NextRequest): Promise<NextResponse> {
 
   const sent = results.filter(r => r.outcome === 'sent').length
   return NextResponse.json({
-    to: user.email,
+    to: address,
     sent,
     of: results.length,
     // ⚠️ Read this rather than the count. A suppressed or failed send is reported
