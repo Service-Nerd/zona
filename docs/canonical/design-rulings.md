@@ -1143,7 +1143,7 @@ Not this board's to close without him.
 |---|---|
 | **Is the fact row the right MESSAGE?** | Open since 2026-09-21. Dropping the price was recommended and deliberately **not** shipped: it touches W-05, and *a question is not an instruction* |
 | **The unreproduced "things aligned to the right" on mobile** | Needs a screenshot or a section name. Measured live, `scrollWidth === innerWidth` |
-| **Do CTA buttons earn elevation?** | 🔻 **OPEN — founder, 2026-09-24:** *"all our cta buttons [are] very flat visually"*, across app, site AND email. **Measured:** `--shadow-card` has **19 consumers**, `--shadow-lifted` has **ZERO**, and the only CTA class is a hover background swap — **the product elevates its cards and gives its buttons nothing**, so the button sits visually behind the card it is on. ⚠️ Email cannot use `box-shadow` (Outlook drops it), so any answer needs an email-safe equivalent. `CTA-FLAT-01` |
+| **Do CTA buttons earn elevation?** | ✅ **SAT 2026-09-24 — and the question was wrong.** The answer is a missing Button component; elevation is one of its properties. Ruled, not built: mock-ups first. `BUTTON-COMPONENT-01`. Original filing — founder, 2026-09-24: *"all our cta buttons [are] very flat visually"*, across app, site AND email. **Measured:** `--shadow-card` has **19 consumers**, `--shadow-lifted` has **ZERO**, and the only CTA class is a hover background swap — **the product elevates its cards and gives its buttons nothing**, so the button sits visually behind the card it is on. ⚠️ Email cannot use `box-shadow` (Outlook drops it), so any answer needs an email-safe equivalent. `CTA-FLAT-01` |
 | **Whether the week-2 deload notch is EXPLAINABLE to a runner who asks** | PLAN-ARC-V2 chose to make a known defect visible. §119's producer fix is now **URGENT, not deferred** — Hutchinson's reasoning governs over Traynor's "nobody is watching" |
 
 ---
@@ -1206,6 +1206,47 @@ does not substitute for the design ruling**, and they are recorded here as outst
 they are not built on the strength of a commercial approval alone. Full ruling:
 `docs/decisions/design-2026-09-24-email-programme-proposal.md`.
 
+
+---
+
+## 2026-09-24 — CTA-FLAT-01 · SHIP WITH AMENDMENT (4), **RULED AND DELIBERATELY NOT BUILT**
+
+**Trigger:** founder observation — *"I find all our cta buttons very flat visually"*, across app,
+site **and** email. Superseded by `BUTTON-COMPONENT-01`, which carries it forward with mock-ups.
+
+🔍 **Settled-ground scan changed the question before any seat spoke.** The item was filed asking
+whether the CTA should use the unused `--shadow-lifted` **or a new button-specific token**. The
+standing rule directly below no-chrome reads *"Elevation is `--shadow-card` / `--shadow-lifted`. Do
+not design a new elevation system"* (P-13 correction) — **the second option was already forbidden.**
+
+📐 **Measured.** `--shadow-card` **19 consumers** · **`--shadow-lifted` ZERO** · no shared `Button`
+component (`BackButton` is the only one) · **65 hand-rolled moss-background elements** · the one CTA
+class, `.cta-pill`, used by 4 files, declares `transition: transform` and **nothing ever uses it**.
+
+**The product elevates its cards and gives its buttons nothing**, so a moss button sits visually
+behind the card it is on.
+
+⚡ **Collins won the framing, recorded as such.** The item asked about a shadow; he and Zhuo
+independently reached the larger finding — **the absence of a Button component is the cause and
+elevation is one of its properties.** *"Sixty-five buttons and not one of them is ours."* Nobody
+defended the narrow version.
+
+**Ruling:** one `Button` component · primary takes **the existing `--shadow-lifted`**, no new token
+· a press state that **moves** (`translateY(1px)` on `:active`, riding `--motion-ui` so it collapses
+under reduced motion) · **email gets a 1px `--moss-deep` border, because Outlook drops
+`box-shadow`** · 44px minimum height (Wroblewski). No gradient, no glow, no bounce — W-11 stands.
+
+⛔ **Veto: none.** Silvanto declined and said why: *"a single named elevation token is not chrome.
+Chrome is what W-11 killed — texture over everything, changing no decision."*
+
+🔻 **NOT BUILT, at the founder's request the same day:** he wants **mock-ups before a ruling binds**,
+and a **revisit of the no-chrome rule with worked examples**. This row stands as the reasoning the
+mock-up round starts from, **not as a settled answer.** ⚠️ Recording a RULED-but-not-built outcome
+is the case `audit-docs.sh` § board rulings exists for — a ruling that edits no doctrine file trips
+no guard, and an unrecorded one gets re-proposed.
+
+⚠️ **What this does not settle:** nothing has been pressed on a device, and the 65 conversions are a
+migration this authorises but does not scope.
 
 ---
 
