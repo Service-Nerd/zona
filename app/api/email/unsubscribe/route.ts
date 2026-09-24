@@ -22,7 +22,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { BRAND } from '@/lib/brand'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
-import { EMAIL_COLORS as C } from '@/lib/email/emailTheme'
+import { EMAIL_COLORS as C, EMAIL_TYPE as T, emailWordmark } from '@/lib/email/emailTheme'
 
 // @public-route: the unsubscribe token IS the auth. Requiring a login to stop
 // receiving email is a dark pattern, and the reader may be on a device with no
@@ -41,9 +41,9 @@ function page(title: string, body: string, ok: boolean): NextResponse {
 <title>${BRAND.name}</title></head>
 <body style="margin:0;background:${C.bg};font-family:system-ui,-apple-system,sans-serif;">
 <div style="max-width:520px;margin:0 auto;padding:64px 24px;">
-  <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${C.moss};letter-spacing:.06em;text-transform:uppercase;">${BRAND.name}</p>
-  <h1 style="margin:16px 0 0;font-size:22px;font-weight:700;color:${C.ink};line-height:1.3;">${title}</h1>
-  <p style="margin:16px 0 0;font-size:16px;color:${C.ink2};line-height:1.6;">${body}</p>
+  <p style="margin:0 0 28px;">${emailWordmark(BRAND.name)}</p>
+  <h1 style="margin:0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">${title}</h1>
+  <p style="margin:16px 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">${body}</p>
 </div></body></html>`,
     { status: ok ? 200 : 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } },
   )

@@ -13,7 +13,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { EMAIL_COLORS } from './emailTheme'
+import { EMAIL_COLORS, EMAIL_TYPE, emailWordmark } from './emailTheme'
 
 const CSS = readFileSync('app/globals.css', 'utf8')
 
@@ -48,5 +48,62 @@ describe('EMAIL_COLORS mirrors globals.css', () => {
 
   it('the mirror map covers every colour — a new one cannot skip the check', () => {
     expect(Object.keys(MIRRORS).sort()).toEqual(Object.keys(EMAIL_COLORS).sort())
+  })
+})
+
+describe('EMAIL_TYPE mirrors the documented scale', () => {
+  const SCALE: Record<keyof typeof EMAIL_TYPE, string | null> = {
+    micro: '--fs-micro', eyebrow: '--fs-eyebrow', caption: '--fs-caption',
+    body: '--fs-body', lead: '--fs-lead', heading: '--fs-h4',
+    metric: '--fs-metric', metricLg: '--fs-metric-lg',
+    // The wordmark's brand size comes from Wordmark.tsx's SIZE_PX, not globals.
+    wordmark: null,
+  }
+
+  function px(token: string): number | null {
+    const m = CSS.match(new RegExp(`${token}\\s*:\\s*(\\d+)px\\s*;`))
+    return m ? Number(m[1]) : null
+  }
+
+  it('every step resolves to a real token', () => {
+    for (const [key, token] of Object.entries(SCALE)) {
+      if (!token) continue
+      expect(px(token), `${token} not found in globals.css`).not.toBeNull()
+    }
+  })
+
+  it('and EQUALS it — the scale cannot drift from the app', () => {
+    const drift: string[] = []
+    for (const [key, token] of Object.entries(SCALE)) {
+      if (!token) continue
+      const css = px(token)
+      const email = EMAIL_TYPE[key as keyof typeof EMAIL_TYPE]
+      if (css !== null && css !== email) drift.push(`${key}: email ${email}px vs ${token} ${css}px`)
+    }
+    expect(drift, 'the email type scale has drifted from the app').toEqual([])
+  })
+
+  it('the wordmark matches its spec, not a tracked-caps label', () => {
+    // 🔴 Silvanto's veto, mechanised. The five counts it was regressed on.
+    const mark = emailWordmark('Zonna')
+    expect(mark, 'weight').toContain('font-weight:800')
+    expect(mark, 'tracking must be NEGATIVE').toContain('letter-spacing:-0.03em')
+    expect(mark, 'never uppercased').not.toContain('text-transform:uppercase')
+    expect(mark, 'the name as written').toContain('>Zo')
+    // The NN-moss device: the double letter, and ONLY it, in moss.
+    expect(mark).toContain(`<span style="color:${EMAIL_COLORS.moss};">nn</span>`)
+  })
+
+  it('the double letter is DERIVED, so a rename carries the device', () => {
+    expect(emailWordmark('Vetra')).not.toContain(EMAIL_COLORS.moss)   // no double letter
+    expect(emailWordmark('Rossi')).toContain(`<span style="color:${EMAIL_COLORS.moss};">ss</span>`)
+  })
+
+  it('no email template hardcodes a font size', () => {
+    // The whole finding: 12 of 20 declarations were the same 16px because sizes
+    // were typed rather than chosen.
+    const tpl = readFileSync('lib/email/trialEmailTemplates.ts', 'utf8')
+    const literals = tpl.match(/font-size:\d+px/g) ?? []
+    expect(literals, `hardcoded sizes: ${literals.join(', ')}`).toEqual([])
   })
 })

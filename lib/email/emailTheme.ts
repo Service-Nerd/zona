@@ -42,3 +42,80 @@ export const EMAIL_COLORS = {
 } as const
 
 export type EmailColor = keyof typeof EMAIL_COLORS
+
+/**
+ * The type scale, mirrored from `globals.css` exactly as the colours are.
+ *
+ * 🔴 DESIGN BOARD, 2026-09-24: **"flat" had a measurable cause.** The emails used
+ * six sizes, only four of them on the documented scale, and **12 of 20
+ * declarations were the same 16px** — so eyebrow, fact and consequence all read
+ * identically and the reader felt it as indifference.
+ *
+ * That is the website defect again: Silvanto caught **170 hand-typed sizes with
+ * an H1:H2 step of 1.02×**. The rule and the token had never met, and here the
+ * surface had never adopted the scale at all.
+ *
+ * ⚠️ Silvanto corrected his own earlier ruling in the same sitting: *"'no
+ * decoration' was about email 1 having no data to dramatise. It was never a
+ * ruling that the emails should have no visual system. **Restraint is a hierarchy
+ * decision, not an absence of one.**"*
+ *
+ * Only the steps an email actually needs. `emailTheme.test.ts` asserts each is
+ * equal to its `--fs-*` token.
+ */
+export const EMAIL_TYPE = {
+  /** `--fs-micro` — the footer, and nothing else */
+  micro: 10,
+  /** `--fs-eyebrow` — tracked uppercase label above a fact */
+  eyebrow: 11,
+  /** `--fs-caption` — dates, meta */
+  caption: 12,
+  /** `--fs-body` — the consequence, the quieter half */
+  body: 14,
+  /** `--fs-lead` — the sentence that carries the message */
+  lead: 16,
+  /** `--fs-h4` — a heading that is words rather than a number */
+  heading: 21,
+  /** `--fs-metric` — a number that IS the heading */
+  metric: 26,
+  /** `--fs-metric-lg` — the one hero figure in the programme (first read) */
+  metricLg: 38,
+  /** The wordmark's brand-moment size (`Wordmark` size `md`). */
+  wordmark: 32,
+} as const
+
+/**
+ * The wordmark, as inline HTML.
+ *
+ * 🔴 SILVANTO EXERCISED HIS VETO ON THIS, AND NAMED THE RULE — the wordmark
+ * specification in `components/ui/Wordmark.tsx`, regressed on **five counts**:
+ * weight (800 → 600), tracking (−0.03em → **+0.06em**), case (as written →
+ * UPPERCASE), colour (ink with the **nn in moss** → all moss) and size (32 → 13).
+ *
+ * *"That NN-moss device is the only distinctive mark this brand owns, and the
+ * email replaced it with a generic tracked-uppercase label indistinguishable
+ * from any SaaS footer."*
+ *
+ * ⚠️ TEXT, NEVER AN IMAGE (Wroblewski). Mail clients block images by default, so
+ * a logo image renders as a broken box on first open for most readers. Inter 800
+ * with a coloured span is text and always renders.
+ *
+ * ⚠️ The double letter is DERIVED from `BRAND.name`, exactly as the component
+ * does it — so a rename carries the device with it instead of stranding a
+ * hardcoded "nn".
+ */
+export function emailWordmark(name: string, px: number = EMAIL_TYPE.wordmark): string {
+  const lower = name.toLowerCase()
+  let split: [string, string, string] | null = null
+  for (let i = 0; i < lower.length - 1; i++) {
+    if (lower[i] === lower[i + 1]) {
+      split = [name.slice(0, i), name.slice(i, i + 2), name.slice(i + 2)]
+      break
+    }
+  }
+  const base = `font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,sans-serif;`
+    + `font-weight:800;font-size:${px}px;letter-spacing:-0.03em;line-height:1;color:${EMAIL_COLORS.ink};`
+  if (!split) return `<span style="${base}">${name}</span>`
+  const [pre, accent, post] = split
+  return `<span style="${base}">${pre}<span style="color:${EMAIL_COLORS.moss};">${accent}</span>${post}</span>`
+}

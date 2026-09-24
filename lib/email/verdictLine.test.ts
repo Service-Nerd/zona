@@ -17,6 +17,7 @@
 import { describe, it, expect } from 'vitest'
 import { heldTheZone, buildFirstReadEmail, buildDay11Email, buildDay14Email, type RunSummary } from './trialEmailTemplates'
 import { ZONE_HELD_MAX_ABOVE_CEILING_PCT, ZONE_DRIFT_ABOVE_CEILING_PCT, TRIAL_SUMMARY_MIN_RUNS } from '@/lib/coaching/constants'
+import { EMAIL_TYPE } from './emailTheme'
 
 const TOK = '00000000-0000-4000-8000-000000000000'
 const run = (o: Partial<RunSummary> = {}): RunSummary => ({
@@ -89,12 +90,21 @@ describe('EMAIL-WAVE-3 — the First read email', () => {
   const SESSION = { weekN: 2, sessionDay: 'tue' }
 
   it('the numbers ARE the headline — larger than any other email H1', () => {
-    // Silvanto ruled the wow moment out of email 1 so it could land here. The
-    // distance is 40px; every other email's H1 is 22px. If that inverts, the
-    // ruling has been undone by a tidy-up.
+    // Silvanto ruled the wow moment out of email 1 so it could land here.
+    //
+    // ⚠️ ASSERTED AS A RELATIONSHIP, NOT A LITERAL. This pinned `font-size:40px`
+    // and broke the moment the emails adopted the documented scale (38px,
+    // `--fs-metric-lg`) — the test was protecting a number I had typed rather
+    // than the ruling. What the ruling protects is that the hero figure is the
+    // LARGEST thing in the programme; if that inverts in a tidy-up, this fails.
     const { html } = buildFirstReadEmail('Russ', run({ analysedRunCount: 1 }), TOK, SESSION)
-    expect(html).toContain('font-size:40px')
+    expect(html).toContain(`font-size:${EMAIL_TYPE.metricLg}px`)
+    expect(EMAIL_TYPE.metricLg).toBeGreaterThan(EMAIL_TYPE.heading)
     expect(html).toContain('8.2km')
+
+    // …and no other email reaches that size.
+    const day11 = buildDay11Email('Russ', run(), TOK).html
+    expect(day11).not.toContain(`font-size:${EMAIL_TYPE.metricLg}px`)
   })
 
   it('the subject is the runner, never the trial', () => {

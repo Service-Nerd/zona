@@ -1,5 +1,5 @@
 import { BRAND } from '@/lib/brand'
-import { EMAIL_COLORS as C } from './emailTheme'
+import { EMAIL_COLORS as C, EMAIL_TYPE as T, emailWordmark } from './emailTheme'
 import { ZONE_HELD_MAX_ABOVE_CEILING_PCT, TRIAL_SUMMARY_MIN_RUNS } from '@/lib/coaching/constants'
 import { ctaHref, type EmailCtaScreen, type CtaParams } from './ctaTargets'
 
@@ -76,9 +76,13 @@ function wrapper(content: string, unsubToken: string): string {
         <table width="100%" style="max-width:520px;background:${C.card};border-radius:12px;padding:40px 36px;">
           <tr>
             <td>
-              <p style="margin:0 0 4px 0;font-size:13px;font-weight:600;color:${C.moss};letter-spacing:0.06em;text-transform:uppercase;">${BRAND.name}</p>
+              <!-- Design Board 2026-09-24, Silvanto's VETO: this was 13px/600
+                   tracked uppercase in all-moss — the brand's own wordmark spec
+                   regressed on five counts. Live text, never an image, because
+                   mail clients block images by default. -->
+              <p style="margin:0 0 28px 0;">${emailWordmark(BRAND.name)}</p>
               ${content}
-              <p style="margin:40px 0 0 0;font-size:12px;color:${C.mute};line-height:1.6;">
+              <p style="margin:40px 0 0 0;font-size:${T.caption}px;color:${C.mute};line-height:1.6;">
                 You're receiving this because you're in a ${BRAND.name} trial.
                 Your email is never shared.
                 <br />
@@ -101,7 +105,7 @@ function wrapper(content: string, unsubToken: string): string {
 // `emailCtaTargets.test.ts` reads both sides so a link the handler ignores fails
 // the build rather than shipping inert.
 function ctaButton(label: string, screen: EmailCtaScreen, params?: CtaParams): string {
-  return `<a href="${ctaHref(screen, params)}" style="display:inline-block;margin-top:28px;padding:14px 28px;background:${C.moss};color:${C.card};text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;">${label}</a>`
+  return `<a href="${ctaHref(screen, params)}" style="display:inline-block;margin-top:28px;padding:14px 28px;background:${C.moss};color:${C.card};text-decoration:none;border-radius:8px;font-size:${T.body}px;font-weight:600;">${label}</a>`
 }
 
 export interface RunSummary {
@@ -132,23 +136,23 @@ export function buildDay11Email(firstName: string | null, run: RunSummary, unsub
     const countLine = run.analysedRunCount > 1
       ? ` ${BRAND.coachName} has read ${run.analysedRunCount} of your runs so far.`
       : ''
-    runPara = `<p style="margin:20px 0 0 0;font-size:16px;color:${C.ink};line-height:1.6;">
+    runPara = `<p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
       You ran ${km}km on ${run.dayName}. ${zoneLine}${countLine}
     </p>`
   } else if (run.analysedRunCount > 0) {
-    runPara = `<p style="margin:20px 0 0 0;font-size:16px;color:${C.ink};line-height:1.6;">
+    runPara = `<p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
       ${BRAND.coachName} has read ${run.analysedRunCount} of your runs so far.
     </p>`
   }
 
   const html = wrapper(`
-    <h1 style="margin:20px 0 0 0;font-size:22px;font-weight:700;color:${C.ink};line-height:1.3;">
+    <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
       ${run.actualLoadKm && run.dayName
         ? `${run.actualLoadKm.toFixed(1)}km on ${run.dayName}. Three days left.`
         : `3 days left${name}.`}
     </h1>
     ${runPara}
-    <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink2};line-height:1.6;">
+    <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
       After day 14, daily analysis and the Coach tab pause. Your plan stays.
     </p>
     ${ctaButton('Keep the coaching →', 'upgrade')}
@@ -186,14 +190,14 @@ export function buildConnectEmail(firstName: string | null, unsubToken: string):
   const subject = 'Nothing to read yet.'
 
   const html = wrapper(`
-    <h1 style="margin:20px 0 0 0;font-size:22px;font-weight:700;color:${C.ink};line-height:1.3;">
+    <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
       Nothing to read yet${name}.
     </h1>
-    <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink};line-height:1.6;">
+    <p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
       ${BRAND.name} reads your runs and tells you when you went too hard. Right now it has
       nothing to read, so it has nothing to say.
     </p>
-    <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink2};line-height:1.6;">
+    <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
       Connect Apple Health and the next run you do gets read.
     </p>
     ${ctaButton('Connect Apple Health →', 'connect')}
@@ -242,20 +246,20 @@ export function buildFirstReadEmail(
 
   const html = wrapper(`
     ${km && run.dayName ? `
-    <p style="margin:20px 0 0 0;font-size:13px;color:${C.mute};letter-spacing:0.04em;text-transform:uppercase;">
+    <p style="margin:20px 0 0 0;font-size:${T.eyebrow}px;color:${C.mute};letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">
       Your first run
     </p>
-    <h1 style="margin:6px 0 0 0;font-size:40px;font-weight:700;color:${C.ink};line-height:1.1;letter-spacing:-0.02em;">
+    <h1 style="margin:6px 0 0 0;font-size:${T.metricLg}px;font-weight:800;color:${C.ink};line-height:1;letter-spacing:-0.03em;">
       ${km}
     </h1>
-    <p style="margin:4px 0 0 0;font-size:16px;color:${C.ink2};line-height:1.5;">${run.dayName}</p>
+    <p style="margin:4px 0 0 0;font-size:${T.lead}px;color:${C.ink2};line-height:1.5;">${run.dayName}</p>
     ` : `
-    <h1 style="margin:20px 0 0 0;font-size:22px;font-weight:700;color:${C.ink};line-height:1.3;">
+    <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
       Your first run${name}. Read.
     </h1>`}
     ${zone ? `
-    <p style="margin:24px 0 0 0;font-size:16px;color:${C.ink};line-height:1.6;">${zone}</p>` : ''}
-    <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink2};line-height:1.6;">
+    <p style="margin:24px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">${zone}</p>` : ''}
+    <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
       That is the number ${BRAND.name} will hold you to. Every run from here gets read the same way.
     </p>
     ${ctaButton('See the full read →', 'post-run', session)}
@@ -281,27 +285,27 @@ export function buildDay14Email(firstName: string | null, run: RunSummary, unsub
     const countLine = run.analysedRunCount > 1
       ? ` ${BRAND.coachName} read ${run.analysedRunCount} sessions across your trial.`
       : ''
-    runPara = `<p style="margin:20px 0 0 0;font-size:16px;color:${C.ink};line-height:1.6;">
+    runPara = `<p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
       Last run: ${km}km on ${run.dayName}. ${zoneLine}${countLine}
     </p>`
   } else if (run.analysedRunCount > 0) {
-    runPara = `<p style="margin:20px 0 0 0;font-size:16px;color:${C.ink};line-height:1.6;">
+    runPara = `<p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
       ${BRAND.coachName} read ${run.analysedRunCount} ${run.analysedRunCount === 1 ? 'session' : 'sessions'} across your trial.
     </p>`
   }
 
   const html = wrapper(`
-    <h1 style="margin:20px 0 0 0;font-size:22px;font-weight:700;color:${C.ink};line-height:1.3;">
+    <h1 style="margin:20px 0 0 0;font-size:${T.heading}px;font-weight:700;color:${C.ink};line-height:1.25;letter-spacing:-0.01em;">
       ${run.analysedRunCount > 0
         ? `${run.analysedRunCount} ${run.analysedRunCount === 1 ? 'run' : 'runs'} read${name}.`
         : `Trial ends today${name}.`}
     </h1>
     ${runPara}
     ${run.analysedRunCount >= TRIAL_SUMMARY_MIN_RUNS ? `
-    <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink};line-height:1.6;">
+    <p style="margin:20px 0 0 0;font-size:${T.lead}px;color:${C.ink};line-height:1.6;">
       That is ${run.analysedRunCount} sessions of evidence about how you actually run, not how you meant to.
     </p>` : ''}
-    <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink2};line-height:1.6;">
+    <p style="margin:20px 0 0 0;font-size:${T.body}px;color:${C.ink2};line-height:1.6;">
       Daily analysis and the Coach tab pause from midnight. Your plan stays, and everything above stays true.
     </p>
     ${ctaButton('Keep the coaching →', 'upgrade')}
