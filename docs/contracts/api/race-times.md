@@ -20,6 +20,26 @@ surfaces: Coach (`variant="status"` — the canonical home), Benchmark entry
 | 4 | Derived from the runner's §13 fitness band (§109 Am.1) | `low` | **No** — nothing is measured, so an arc off it would show fabricated progress |
 | 5 | No signal | `null` | No |
 
+### What counts as a "qualifying aerobic run" (states 2 and 3)
+
+A logged run whose average HR sits inside the runner's Z2 band, with the band
+derived from `plan.meta` — `zone2_ceiling` when the plan carries it, else the
+ceiling from `computeZones`, and always the floor from `computeZones`.
+
+🔴 **`computeZones` IS THE OWNER AND THIS ROUTE MUST NOT RE-DERIVE THE BAND**
+(`PLAN-RESTING-HR-ZERO-01`, 2026-09-24). It used to compute
+`resting_hr + 0.60 × (max_hr − resting_hr)` inline — the **third** hand-written
+copy of Karvonen in the codebase — and did so **unguarded**. The engine wrote
+`resting_hr: 0` for any runner who never gave one, so the floor came out at
+`0 + 0.60 × max`: a 187 bpm runner got an "aerobic" floor of **112 bpm**, and
+essentially every run they had ever logged qualified and fed the VDOT estimate.
+`computeZones` handles the absent case with §14's %MaxHR fallback.
+
+⚠️ **`meta.resting_hr` is OPTIONAL and may be absent.** Since the same ship the
+engine omits the key rather than storing a zero, and `PlanSchema` rejects a
+non-positive value. Any consumer reading it must treat absent as "use %MaxHR",
+never as zero.
+
 ## Response — 200
 
 ```json
