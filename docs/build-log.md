@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — S28-WEEKEND-CARRIER-01 · the measurement collapsed the board's options to two
+
+**Shipped:** §28 Amendment 3 — strides fall back beyond midweek when no midweek easy run exists, with hill strides refused on the day after the long run.
+
+**Dev learning:** I nearly took this to the board as an open question with a range of options. Then I measured what each option would actually fix, and there was no range: allowing any easy day recovers 59.7% of carrier-less weeks; allowing any easy day *except the day after the long run* recovers **0.0%**. Every eligible weekend easy run in this cohort *is* the post-long-run day, because the other weekend day is the long run and the day before it is already barred. A board debate about "how far should we extend it" would have been a debate about an option that did not exist. **Measure what each choice fixes before framing the choice.**
+
+**Product/creator learning:** The change I shipped for the weekend runner moved 112 parity cases, and **none of them were weekend runners.** Every one was a beginner with a Monday carrier and a Sunday long run on an ordinary 4- or 5-day plan — `STRIDE_PREFERRED_DAYS` has always included Monday, so those runners were already being prescribed eccentric hill strides the day after their long run, and no rule was watching. The narrow question surfaced the broader hazard. That keeps happening: the bug you chase is rarely the worst thing you find.
+
+**AI-building learning:** The handed-over RCA that started all this argued §28's *"midweek (Wed preferred)"* meant midweek was the preference and Wednesday the rule, so extending to weekends was "faithful to the constitution". It is the other way round, and I only caught it by reading the section's **Why** rather than its principle sentence. The Why justified *easy* on physiological grounds and said nothing about *midweek* at all — which is what made the change legitimate, but for the opposite reason to the one I was handed. **An LLM quoting doctrine back at you can move the emphasis one word and invert the meaning.**
+
+**The honest bit:** my own regression test from three hours earlier went red, and it was right to. It asserted the gap warn fires on weeks 4–8 of the Saturday shape — it was pinning the *defect's* shape, and the board closed the defect. Re-anchoring it on a case that still genuinely has no carrier took longer than the fix. A test written around a bug has a shelf life.
+
+**Hook material:** Two options on the table. Option A fixes 59.7%. Option B fixes 0.0%. Not "less effective" — **zero**, out of 17,434 weeks. The safe-sounding compromise was a rounding error dressed as caution.
+
+**Postable?:** yes
+
 ## 2026-09-24 — STRIDES-CHECKER-OWNER-01 · the checker and the thing it checks disagreed about the same rule
 
 **Shipped:** §28's stride invariant stopped faulting plans the engine was correct to build, and the real coaching gap underneath it became visible instead of silent.
