@@ -6,6 +6,18 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — GATE-FALSIFY-01 shape 3 · the lint missed a hollow test on the day it shipped
+
+**Shipped:** the hollow-test lint now catches an assertion that has no input and therefore cannot fail.
+**Dev learning:** the shape was `expect(() => guideArticles()).not.toThrow()` under a title about comparisons and principle references. The naive rule — flag any test whose only assertion is `not.toThrow()` — finds 18 of these in the repo and about 17 are perfectly good tests, because in this codebase throwing IS the domain signal: the generator throws on a designed refusal, the input validator throws on a rejected input. "Accepts a plausible runner" is *exactly* `not.toThrow()`. What separates them is the argument. `f(x)` asserts something about x. `f()` asserts nothing, because nothing varies.
+**Product/creator learning:** this is the second time the value of the work was in measuring false positives before writing the rule rather than in the rule itself. Shape 1 started at 50 hits with 27 wrong. Shape 3 started at 18 with 17 wrong. Both times the first heuristic would have shipped a gate that cried wolf, and a gate that cries wolf gets switched off, which this repo has already recorded as identical to having no gate.
+**AI-building learning:** the best falsification I have run. Rather than construct a synthetic case, I put the actual hollow test back into the actual file and watched the lint name it by file, line, title and expression, then restored it. No argument about whether the fixture was representative: it was the incident.
+**The honest bit:** I wrote the detector with `matchAll`, which fails typecheck in this repo — and the function immediately above mine carries a comment explaining that exact error and why it uses an exec loop instead. I read that comment earlier in the session. Also: adding one test file tipped two unrelated borderline tests over the duration gate, which is a real finding rather than noise. They measure 1.6 seconds standalone and were sitting just under the line.
+**Hook material:** the obvious version of this rule flags 18 tests and 17 of them are correct. The whole fix is one word: arguments.
+**Postable?:** yes
+
+---
+
 ## 2026-09-24 — GTM-SEO-COMPARE-01 page 3 · the brief told me not to look
 
 **Shipped:** the third of eight comparison pages, and the first where the Coaching Board changed the copy.
