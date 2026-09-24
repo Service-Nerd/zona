@@ -118,6 +118,7 @@ restoring documented intent · build cost, tier and roadmap order (SLT).
 | `docs/canonical/screen-architecture.md` | What job each screen does |
 | `docs/canonical/design-rulings.md` | Their own ruling register. **62** rows |
 | `app/globals.css` | The token layer. **146** custom properties |
+| `docs/canonical/email-programme.md` | **Customer email: when we write to a runner, and why.** Added 2026-09-24 — until then **NOTHING owned email**, and two emails had shipped in which **22 of 30 recipients got a countdown with no fact in it**. **Sierra's seat stands as owner**, because the question the programme keeps failing is hers: is the runner getting better, or is the app asking for money? ⚠️ **Not yet a `design-guard.py` hard trigger** — doctrine without a guard is this repo's most-recorded failure, and that wiring is outstanding |
 
 Plus a **hard trigger on any new screen, shared component or marketing section** — there
 is no pattern for a surface that does not exist yet, so one is being authored whether or
