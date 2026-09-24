@@ -2078,10 +2078,13 @@ fallback considers.
 `INV-PLAN-STRIDES-PRESENT` (a post-long-run carrier carrying a HILL stride note
 is an error).
 
-🔻 **Recorded, not fixed:** `STRIDE_PREFERRED_DAYS` still lives in
-`neuromuscular.ts` rather than `GENERATION_CONFIG`, so the coaching guard does not
-fire on edits to it — the same file-path bypass as `peakKmByLevel` before §106.
-Filed as `STRIDE-DAYS-CONFIG-01`.
+✅ **`STRIDE-DAYS-CONFIG-01` CLOSED the same day.** `STRIDE_PREFERRED_DAYS` lived
+in `neuromuscular.ts` rather than `GENERATION_CONFIG`, so the days a runner may
+receive strides on were editable with **no board, no `configPrincipleSync` check and
+no trace** — the same file-path bypass `peakKmByLevel` had before §106. Moved into
+`GENERATION_CONFIG.STRIDE_PREFERRED_DAYS`; `neuromuscular.ts` re-exports it and
+remains the owner of the PREDICATE. Values identical, `verify:parity` IDENTICAL.
+⚠️ **The move proved itself: the coaching guard now fires on that edit, and did.**
 
 ### §28 Amendment 2 — hill strides yield to §21, and the label tells the truth (2026-09-19, CB-HILL-INJURY-01 / STRIDE-VISIBILITY-01)
 

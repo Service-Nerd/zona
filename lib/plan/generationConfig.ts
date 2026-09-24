@@ -1579,6 +1579,21 @@ export const GENERATION_CONFIG = {
   // is unchanged; only the variety increases.
   BEGINNER_HILL_STRIDE_EVERY_N_WEEKS: 2,
 
+  // ── Stride carrier days (CoachingPrinciples §28) ───────────────────────────
+  // The ORDER is the preference: Wed first, per §28's "midweek (Wed preferred)".
+  // Sat and Sun are absent on purpose — Sunday is the long run for most runners
+  // and Saturday is the day before it.
+  //
+  // 🔴 MOVED HERE FROM `neuromuscular.ts` 2026-09-24 (STRIDE-DAYS-CONFIG-01), AND
+  // THE REASON IS GOVERNANCE, NOT TIDINESS. While it lived in a non-doctrine file
+  // it was a coaching decision that `configPrincipleSync` could not see and
+  // `.claude/hooks/coaching-guard.py` did not fire on — so the days a runner may
+  // receive strides on were editable with no board, no principle check and no
+  // trace. That is the exact file-path bypass `peakKmByLevel` had before §106,
+  // where 18 numerics setting peak weekly volume sat outside every governance
+  // layer this project has.
+  STRIDE_PREFERRED_DAYS: ['wed', 'tue', 'thu', 'mon', 'fri'] as const,
+
   // ── Stride carrier fallback (CoachingPrinciples §28 Amendment 3) ───────────
   // When no MIDWEEK easy run is eligible, look at the remaining days rather than
   // placing nothing. Midweek is still searched first and Wed is still preferred:

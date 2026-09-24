@@ -21,9 +21,11 @@ import type { Day } from './days'
 import { GENERATION_CONFIG } from './generationConfig'
 import { isLongRun, isShakeout } from './sessionRole'
 
-/** DAY_ORDER-aligned. Sat and Sun are absent on purpose: Sunday is the long run
- *  for most runners and Saturday is the day before it. */
-export const STRIDE_PREFERRED_DAYS: readonly Day[] = ['wed', 'tue', 'thu', 'mon', 'fri']
+/** §28's preference order, re-exported from `GENERATION_CONFIG` so existing
+ *  callers keep one import. The VALUE moved to the config on 2026-09-24
+ *  (STRIDE-DAYS-CONFIG-01) so the coaching guard and `configPrincipleSync` can
+ *  both see it; this module remains the owner of the PREDICATE that uses it. */
+export const STRIDE_PREFERRED_DAYS: readonly Day[] = GENERATION_CONFIG.STRIDE_PREFERRED_DAYS
 
 const DAYS: readonly Day[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 
