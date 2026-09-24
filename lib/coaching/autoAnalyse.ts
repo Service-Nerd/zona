@@ -199,16 +199,24 @@ export async function claimAutoLink(
   supabase: any,
   completionRow: Record<string, unknown>,
 ): Promise<'won' | 'attached' | 'exists'> {
-  const insertRes = await supabase
-    .from('session_completions')
-    .insert(completionRow)
-    .select('week_n')
-    .maybeSingle()
+  // Claim the row ATOMICALLY via ON CONFLICT DO NOTHING (the
+  // `claim_session_completion` RPC targets the partial live index). Exactly one
+  // concurrent ingest inserts and returns `true`; the rest resolve to `false`
+  // WITHOUT raising a unique violation — so no benign 23505 reaches the Postgres
+  // error log. COMPLETION-CLAIM-NOLOG-01. The bare `.insert()` + catch-23505
+  // this replaced was correct but logged an ERROR on every routine auto-link.
+  const claimRes = await supabase.rpc('claim_session_completion', { p: completionRow })
 
-  if (!insertRes.error) return 'won'
+  if (claimRes.error) {
+    // Unexpected DB error — never push on uncertainty.
+    console.warn('[auto-analyse] claimAutoLink claim failed', claimRes.error.message)
+    return 'exists'
+  }
 
-  // 23505 = unique_violation → a row already exists for this session.
-  if (insertRes.error.code === '23505') {
+  if (claimRes.data === true) return 'won'
+
+  // A live row already exists for this session → attach the run onto it.
+  {
     const link = completionRow.strava_activity_id != null
       ? { strava_activity_id: completionRow.strava_activity_id }
       : { apple_health_uuid: completionRow.apple_health_uuid }
@@ -240,10 +248,6 @@ export async function claimAutoLink(
     const attached = Array.isArray(upd.data) ? upd.data.length > 0 : upd.data != null
     return attached ? 'attached' : 'exists'
   }
-
-  // Unexpected DB error — never push on uncertainty.
-  console.warn('[auto-analyse] claimAutoLink insert failed', insertRes.error.message)
-  return 'exists'
 }
 
 export function getInternalBaseUrl(): string {
