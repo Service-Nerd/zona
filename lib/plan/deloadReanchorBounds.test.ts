@@ -68,7 +68,7 @@ describe('SWEEP-W1W2-LONG-CAP-01 — the deload re-anchor respects §9/§113', (
     const plan = generateRulePlan(BREACH, 'free', PLAN_START)
     for (let i = 1; i < plan.weeks.length; i++) {
       const prev = plan.weeks[i - 1], curr = plan.weeks[i]
-      if (curr.type !== 'deload' || prev.type === 'deload' || curr.type === 'race') continue
+      if (curr.type !== 'deload' || prev.type === 'deload') continue
       const pk = Object.values(prev.sessions).find(s => s && isLongRun(s))?.distance_km
       const ck = Object.values(curr.sessions).find(s => s && isLongRun(s))?.distance_km
       if (pk == null || ck == null) continue
