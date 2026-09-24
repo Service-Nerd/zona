@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — SUBS-ORDERING-REVENUECAT-01 · the migration named both providers and only one got wired
+
+**Shipped:** the RevenueCat webhook now writes through the same ordering guard as Stripe, so replays are no-ops and a stale event cannot re-activate a cancelled subscription.
+
+**Dev learning:** The guard has existed since August. Its migration's opening sentence is *"Stripe **(and RevenueCat)** do not guarantee delivery order… could re-activate a cancelled subscription via the plain upsert."* Stripe was wired to it. RevenueCat was left doing the exact plain upsert the sentence describes as the hazard — for about five weeks, on the table `resolveTier` reads for every tier decision in the app. The interesting part is that nothing was hidden: the defect, the fix and the reasoning were all written down in one file, and the second half was never carried across.
+
+**Product/creator learning:** I found it writing a **contract**, not debugging. Documenting what a route promises forces you to read it against its sibling, and the difference was obvious the moment both were on the page. That is the argument for the other 17 uncontracted routes better than any I could make in the abstract — two real defects came out of writing three documents.
+
+**AI-building learning:** My first falsification case was hollow and I nearly shipped it. It asserted `toBeNull()` and then had an `if` block that could never execute — two checks by appearance, one in fact. I only caught it by running an actual mutation (make the function return `new Date().toISOString()` and see what goes red), which is the thing this repo keeps telling itself to do and which I keep having to be reminded to do by my own notes. Reading a test does not tell you whether it can fail.
+
+**The honest bit:** I was also building without invoking the `build` skill — the hook fires on the first message of a session and hadn't matched "yes", "do the two open items now", or "fix the revenuecat ordering bug". I was following the shape from memory and skipping its one required artefact, the written analysis block. The founder asked and I had to say so. A procedure that only runs when a regex matches is a procedure that runs sometimes.
+
+**Hook material:** The safety mechanism was written in August with a comment naming both payment providers. One of them was connected to it. The other spent five weeks doing precisely the thing the comment warned about, in the code path that decides whether a paying customer is a paying customer.
+
+**Postable?:** yes
+
 ## 2026-09-24 — CONTRACT-COVERAGE-01 · the audit said ALL CLEAN and was right about the wrong question
 
 **Shipped:** `audit-docs.sh` can now report an API route that has *no* contract, not just one whose contract went stale.
