@@ -24,6 +24,7 @@ import {
   deriveFitnessBaseline, weightedAerobicSpeed, type AerobicRun,
 } from '@/lib/coaching/fitnessBaseline'
 import { formatClockTime, formatClockTimeCoarse, formatElapsedDelta } from '@/lib/format'
+import { computeZones } from '@/lib/plan/zones'
 
 // Jack Daniels race VDOT utilisation fractions
 const RACE_FRACTIONS: { label: string; distanceKm: number; fraction: number }[] = [
@@ -375,8 +376,19 @@ export async function GET(req: NextRequest) {
     .or('hr_above_ceiling_pct.is.null,hr_above_ceiling_pct.lt.25')  // Z2-ish: ceiling exceeded <25% of time
     .order('start_date', { ascending: false })
 
-  const z2Ceiling = meta.zone2_ceiling ?? (meta.resting_hr + 0.70 * (meta.max_hr - meta.resting_hr))
-  const z2Floor   = meta.resting_hr + 0.60 * (meta.max_hr - meta.resting_hr)
+  // 🔴 THIS HAND-ROLLED THE KARVONEN Z2 BAND — the THIRD copy of that formula
+  // (PLAN-RESTING-HR-ZERO-01). `DashboardClient` carried a second; both existed
+  // because `computeZones` was private to `ruleEngine.ts` until 2026-09-24.
+  //
+  // It was also UNGUARDED: with `meta.resting_hr = 0` — which the engine used to
+  // write for any runner with no resting HR — the floor came out at
+  // 0 + 0.60 × max, so a 187 bpm runner got an "aerobic" floor of 112 and every
+  // easy run they had ever logged counted toward a VDOT estimate.
+  //
+  // `computeZones` is the owner and handles the absent case per §14.
+  const zones = computeZones(meta.max_hr, meta.resting_hr)
+  const z2Ceiling = meta.zone2_ceiling ?? zones.zone2Ceiling
+  const z2Floor   = zones.zone2Floor
 
   const aerobicRuns = (stravaRuns ?? []).filter(
     (r) =>

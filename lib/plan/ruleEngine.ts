@@ -6044,8 +6044,11 @@ export function applyRecalibration(
   const { vdot, discountPct } = applyVdotDiscount(rawVdot, benchmark, new Date())
 
   const mhr = plan.meta.max_hr
-  const rhr  = plan.meta.resting_hr > 0 ? plan.meta.resting_hr : undefined
-  const zones = computeZones(mhr, rhr)
+  // The `> 0 ? ... : undefined` guard that used to sit here has moved INTO
+  // `computeZones` (PLAN-RESTING-HR-ZERO-01). It was correct and it was in one
+  // place out of four — a judgement made where someone hit the problem rather
+  // than where both sides read it.
+  const zones = computeZones(mhr, plan.meta.resting_hr)
   const pace  = buildPaceFromVDOT(vdot, rawVdot)
 
   const updated: Plan = JSON.parse(JSON.stringify(plan))
@@ -8917,7 +8920,12 @@ function buildRulePlanOnce(
     plan_start:       anchoredStartIso,
     quit_date:        '',
 
-    resting_hr:    rhr ?? 0,
+    // 🔴 WAS `rhr ?? 0` — PLAN-RESTING-HR-ZERO-01. `?? 0` is not a default, it is
+    // an ASSERTION: that this runner's heart beats zero times a minute. Same
+    // family as SESSION-KM-01's `distance_km ?? 0`, which asserted a session
+    // covered no ground. Omitted now, so §14's %MaxHR branch applies and the plan
+    // passes PlanSchema instead of recording plan_schema_drift on every save.
+    ...(typeof rhr === 'number' && rhr > 0 ? { resting_hr: rhr } : {}),
     max_hr:        derivedMaxHR,
     zone2_ceiling: zones.zone2Ceiling,
 

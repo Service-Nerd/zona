@@ -29,6 +29,12 @@ import { isShakeout } from './sessionRole'
 
 export interface ZoneTargets {
   zone2Ceiling: number
+  /** Bottom of Z2. Added 2026-09-24 (PLAN-RESTING-HR-ZERO-01) because
+   *  `race-times` was deriving it by hand — the third copy of this formula —
+   *  and doing so UNGUARDED, so a stored `resting_hr: 0` gave a 187 bpm runner
+   *  an aerobic floor of 112. A caller that has to re-derive half a band is a
+   *  caller the owner has under-served. */
+  zone2Floor: number
   easyHR: string
   shakeoutHR: string
   qualityHR: string
@@ -42,17 +48,33 @@ export interface ZoneTargets {
 
 export function computeZones(mhr: number, rhr?: number): ZoneTargets {
   const Z = GENERATION_CONFIG.ZONES
-  if (rhr !== undefined) {
+  // 🔴 A NON-POSITIVE RESTING HR IS ABSENT, NOT A MEASUREMENT (PLAN-RESTING-HR-ZERO-01).
+  //
+  // §14: "Karvonen when the user's resting HR is KNOWN; %MaxHR when only max HR
+  // is known." A `0` is not known — but `0` IS a number, so the old
+  // `rhr !== undefined` test took the KARVONEN branch with a zero baseline. That
+  // makes the reserve the entire max HR and every band comes out wrong: measured
+  // on three live plans, re-deriving from it left two unchanged and made one
+  // WORSE. Falling through to %MaxHR is §14's own documented fallback.
+  //
+  // ⚠️ THE GUARD ALREADY EXISTED ON ONE READER — `ruleEngine.ts` wrote
+  // `plan.meta.resting_hr > 0 ? ... : undefined` where it hit the problem, and
+  // nowhere else. A judgement made at one call site is the producer/checker split
+  // this repo keeps paying for; it belongs here, where both sides read it.
+  const usable = typeof rhr === 'number' && Number.isFinite(rhr) && rhr > 0 ? rhr : undefined
+  if (usable !== undefined) {
     // Karvonen (HR Reserve) — more personalised
-    const hrr = mhr - rhr
-    const k = (pct: number) => Math.round(rhr + (pct / 100) * hrr)
+    const hrr = mhr - usable
+    const k = (pct: number) => Math.round(usable + (pct / 100) * hrr)
     const z1Top    = k(Z.Z1.karvonen_pct[1])  // top of Z1 → shakeout ceiling
+    const z2Low    = k(Z.Z2.karvonen_pct[0])  // bottom of Z2 → aerobic floor
     const z2Top    = k(Z.Z2.karvonen_pct[1])  // top of Z2 → easy ceiling
     const z3Low    = k(Z.Z3.karvonen_pct[0])  // Z3 low → quality low
     const z3Top    = k(Z.Z3.karvonen_pct[1])  // Z3 top → quality high
     const z4Low    = k(Z.Z4.karvonen_pct[0])  // Z4 low → intervals low
     return {
       zone2Ceiling: z2Top,
+      zone2Floor:   z2Low,
       easyHR:       `< ${z2Top} bpm`,
       shakeoutHR:   `< ${z1Top} bpm`,
       qualityHR:    `${z3Low}–${z3Top} bpm`,
@@ -72,12 +94,14 @@ export function computeZones(mhr: number, rhr?: number): ZoneTargets {
   // %MaxHR — used when resting HR not provided
   const m = (pct: number) => Math.round((pct / 100) * mhr)
   const z1Top = m(Z.Z1.maxhr_pct[1])
+  const z2Low = m(Z.Z2.maxhr_pct[0])
   const z2Top = m(Z.Z2.maxhr_pct[1])
   const z3Low = m(Z.Z3.maxhr_pct[0])
   const z3Top = m(Z.Z3.maxhr_pct[1])
   const z4Low = m(Z.Z4.maxhr_pct[0])
   return {
     zone2Ceiling: z2Top,
+    zone2Floor:   z2Low,
     easyHR:       `< ${z2Top} bpm`,
     shakeoutHR:   `< ${z1Top} bpm`,
     qualityHR:    `${z3Low}–${z3Top} bpm`,

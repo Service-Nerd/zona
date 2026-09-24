@@ -37,6 +37,7 @@ import { createClient } from '@supabase/supabase-js'
 import { readFileSync } from 'node:fs'
 import { applyHrToPlan } from '../lib/plan/zones'
 import { validatePlan } from '../lib/plan/invariants'
+import { PlanSchema } from '../lib/plan/schema'
 
 const CODE = 'INV-PLAN-DISPLAY-ZONE-MATCHES-WORK'
 
@@ -74,18 +75,57 @@ async function main(): Promise<number> {
     const input = (meta.generator_input ?? meta) as never
 
     const before = validatePlan(prior as never, input)
-    if (!before.some(v => v.code === CODE)) { skipped++; continue }
-    // ⚠️ `resting_hr: 0` IS NOT A RESTING HEART RATE, and the first cut of this
-    // script tried to use it. Karvonen from a zero baseline makes the reserve the
-    // whole max, so the bands come out meaningless — measured on the dry run:
-    // two plans re-derived to exactly the same wrong numbers (7 -> 7) and one got
-    // WORSE (2 -> 6) and was refused by the guard below. Three of 22 live plans
-    // carry it; `lib/plan.ts`'s EMPTY_PLAN default is `resting_hr: 0`, which is
-    // the likely source. Filed as PLAN-RESTING-HR-ZERO-01 — a plan with no real
-    // resting HR needs the %MaxHR branch, not a repaired Karvonen one, and that
-    // is a different fix from this one.
-    if (typeof rhr !== 'number' || typeof mhr !== 'number' || mhr <= 0 || rhr <= 0) {
-      console.log(`  ${row.id.slice(0, 8)}  SKIPPED — meta has no usable HR (resting=${rhr} max=${mhr})`)
+    const hasZeroRhr = typeof rhr === 'number' && rhr <= 0
+    // The zero-resting repair is independent of DISPLAY-ZONE: those plans are
+    // schema-INVALID whether or not the zone check fires.
+    if (!before.some(v => v.code === CODE) && !hasZeroRhr) { skipped++; continue }
+    // ⚠️ `resting_hr: 0` IS NOT A RESTING HEART RATE — AND THE SESSIONS ARE FINE.
+    //
+    // The first cut of this script tried to re-derive those plans and the refusal
+    // guard stopped it: two came back unchanged (7 -> 7) and one got WORSE
+    // (2 -> 6). Investigating why produced the real answer: at GENERATION the
+    // engine already called `computeZones(mhr)` with no resting HR, so those
+    // plans' sessions are CORRECT — they match the %MaxHR branch exactly, and so
+    // does `meta.zone2_ceiling`. The ONLY wrong thing is `meta.resting_hr = 0`,
+    // written by `rhr ?? 0`, which made the INVARIANT derive its expected band
+    // from a zero baseline. **The checker was wrong, not the plan.**
+    //
+    // So these are repaired by DELETING the lie, never by recomputing. Doing it
+    // here rather than in a second script because this is the same machinery:
+    // archive, validate, refuse on any new code.
+    //
+    // ⚠️ It does NOT clear their DISPLAY-ZONE violations, and it is not meant to.
+    // Those are `zone: "Zone 3–4"` against a Zone-3-only target — the ORIGINAL
+    // §84 defect, on plans predating the 2026-09-04 fix. Filed separately as
+    // PLAN-LEGACY-ZONE-STRING-01. What this does fix is that all three FAIL
+    // `PlanSchema` on exactly this field, and stop failing it.
+    if (typeof rhr !== 'number' || rhr <= 0) {
+      // No key at all is the CORRECT post-fix shape — nothing to strip, and a
+      // plan with no resting HR is not re-derivable anyway (it was already
+      // generated on §14's %MaxHR branch, which is what it should be on).
+      if (!('resting_hr' in meta)) { skipped++; continue }
+      const stripped = JSON.parse(JSON.stringify(prior)) as Record<string, unknown>
+      delete (stripped.meta as Record<string, unknown>).resting_hr
+      const afterStrip = validatePlan(stripped as never, input)
+      const grew = afterStrip.filter(v => !before.some(b => b.code === v.code && b.week === v.week))
+      const schemaWas = PlanSchema.safeParse(prior).success
+      const schemaNow = PlanSchema.safeParse(stripped).success
+      console.log(`  ${row.id.slice(0, 8)}  resting_hr=${rhr} -> REMOVED   schema ${schemaWas ? 'OK' : 'FAILS'} -> ${schemaNow ? 'OK' : 'FAILS'}   all violations ${before.length} -> ${afterStrip.length}`)
+      if (grew.length) { console.error(`      ✗ REFUSING — introduces ${grew.length} new violation(s)`); refused++; continue }
+      changed++
+      if (!apply) continue
+      const a = await sb.from('plan_archive').insert({
+        user_id: row.user_id, plan_json: prior,
+        race_name: (meta.race_name as string) ?? null, race_date: (meta.race_date as string) ?? null,
+      })
+      if (a.error) { console.error(`      ✗ archive failed, NOT writing: ${a.error.message}`); refused++; continue }
+      const u = await sb.from('plans').update({ plan_json: stripped }).eq('id', row.id)
+      if (u.error) { console.error(`      ✗ write failed: ${u.error.message}`); refused++; continue }
+      console.log('      ✓ archived and written')
+      continue
+    }
+    if (typeof mhr !== 'number' || mhr <= 0) {
+      console.log(`  ${row.id.slice(0, 8)}  SKIPPED — meta has no usable max HR (${mhr})`)
       skipped++; continue
     }
 

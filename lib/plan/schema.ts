@@ -141,7 +141,12 @@ export const PlanMetaSchema = z.object({
   plan_start:     z.string(),
   quit_date:      z.string(),
 
-  resting_hr:     z.number().positive(),
+  // PLAN-RESTING-HR-ZERO-01 — positive or ABSENT, never 0. This line already
+  // said `.positive()`, so the schema has always rejected the `rhr ?? 0` the
+  // engine wrote; three live plans failed on exactly this field. `.optional()`
+  // is what lets a runner with no resting HR have a SCHEMA-VALID plan instead of
+  // a lie that parses.
+  resting_hr:     z.number().positive().optional(),
   max_hr:         z.number().positive(),
   zone2_ceiling:  z.number().positive(),
 

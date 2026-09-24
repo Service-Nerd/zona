@@ -474,7 +474,13 @@ export interface PlanMeta {
   quit_date: string
 
   // HR profile
-  resting_hr: number
+  /** Optional — ABSENT when the runner has no resting HR, never 0.
+   *  §14 takes the %MaxHR branch when it is missing (PLAN-RESTING-HR-ZERO-01).
+   *  It was `resting_hr: number` (required) while `schema.ts` required it
+   *  POSITIVE — the type forced a value the schema forbade, and `rhr ?? 0` was
+   *  the only thing that satisfied both. It satisfied neither honestly: three
+   *  live plans failed PlanSchema on exactly this field. */
+  resting_hr?: number
   max_hr: number
   zone2_ceiling: number
 
