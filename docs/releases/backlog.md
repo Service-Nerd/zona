@@ -630,6 +630,19 @@ not move when the resting-HR key was stripped (32 → 32, 25 → 25, 40 → 40).
 the two defects share a surface and a violation code, so a count that fails to fall reads as a
 failed fix unless the residue is named in advance.
 
+**Two more legacy plans fail `PlanSchema` for unrelated shape drift** (measured against
+production 2026-09-24, after the resting-HR repair: **20 of 22 valid, 2 failing**):
+
+- `29bf01c9` (created 2026-04-23) — 11 sessions carry a `type` outside the current enum. Pre-R23.
+- `e916f15a` (created 2026-05-28) — `meta.handle` and `meta.charity` are `null` where the schema
+  says `z.string()`. ⚠️ **NOT live**: every current producer writes `''` (`lib/plan.ts:19/30`,
+  `ruleEngine.ts:8915/8919`), so no new plan can take this shape.
+
+🔴 **The reason none of this was ever noticed is that nothing parses a STORED plan back through
+`PlanSchema`.** The schema guards the generate path; a plan that drifts in the table is read by
+components that take what they find. That is the general form of this item, and it is worth more
+than the three zone strings: **a validator that only runs on write cannot see the table rot.**
+
 **Why it is not simply backfilled:** the live-plan policy (2026-08-20) is that engine fixes reach
 NEW plans only, and `applyHrToPlan` already repairs any plan whose runner touches their HR. The
 question for this item is whether a one-off repair of the remaining legacy zone STRINGS is worth
