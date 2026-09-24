@@ -693,24 +693,54 @@ to `lib/security/rateLimit.ts` when something else touches that area.
 declared surface **or a non-AI route**"* — that escape hatch already anticipated this, so nothing
 is failing, but the naming now understates what the module does.
 
-### ⚙️ `CONTRACT-BACKFILL-01` — write the 20 missing API route contracts
-**Board: ⚙️ NO BOARD.** Split from `CONTRACT-COVERAGE-01` (the GATE, shipped 2026-09-24).
+### 🅿️ `CONTRACT-BACKFILL-01` — write the 17 remaining API route contracts · **PARKED**
+**Board: ⚙️ NO BOARD.** Split from `CONTRACT-COVERAGE-01` (the gate, shipped 2026-09-24).
 
-The gate is closed: touching an uncontracted route now FAILS `audit-docs.sh`, and the
-standing debt prints on every run. **What remains is writing them — now 17 of 56**, after
-`webhooks/stripe`, `webhooks/revenuecat` and `charity/redeem` were written on 2026-09-24.
+🔻 **PARKED BY THE FOUNDER 2026-09-24: *"I don't want to carry on with contract work just yet."***
+Pick up at a later date. **Nothing is blocked by it** — the gate is closed, so the number cannot
+grow: touching an uncontracted route now FAILS `audit-docs.sh`, and the standing debt prints on
+every run.
 
-Four changed *after* `docs/contracts/api` was created on 2026-09-20 and are true misses:
-`strava/unlink-activity` (09-23), `recalibrate-taper` (09-22), `post-race-reshape` (09-20),
-`charity/redeem` (09-20). The rest predate the convention.
+**Why it is worth returning to.** The three payment-critical contracts written on 2026-09-24
+(`webhooks/stripe`, `webhooks/revenuecat`, `charity/redeem`) surfaced **two real defects** that
+every test, sweep and audit had been green over — `SUBS-ORDERING-REVENUECAT-01` (a webhook
+bypassing the ordering guard its own migration named it in) and `CHARITY-REDEEM-RATELIMIT-01` (a
+comment asserting a rate limit that did not exist). Both are now fixed. **Writing a contract is
+the cheapest code review available**: it forces *what does this promise*, *what does its sibling
+promise*, and *does the code actually do that*.
 
-✅ **The three payment-critical ones are done** (2026-09-24), and writing them surfaced two
-real defects — `SUBS-ORDERING-REVENUECAT-01` and `CHARITY-REDEEM-RATELIMIT-01`, both filed below.
-**That is the argument for the remaining 17**: the contract is where a claim gets checked against
-the code.
+**The 17, newest change first.** The four above the line changed **after** `docs/contracts/api`
+was created on 2026-09-20 and are true misses; the rest predate the convention.
 
-Not done in the sitting that found it: 20 contracts is a body of work, not a residual,
-and the gate stops the number growing meanwhile.
+```
+2026-09-23  /api/strava/unlink-activity
+2026-09-22  /api/recalibrate-taper
+2026-09-20  /api/post-race-reshape
+─────────── convention starts here (2026-09-20) ───────────
+2026-09-18  /api/recalibrate-hr
+2026-09-18  /api/pre-session-readiness
+2026-09-18  /api/email/send-trial
+2026-09-14  /api/webhooks/strava
+2026-09-14  /api/ops/strava-webhook-health
+2026-09-13  /api/ops/onboarding-integrity
+2026-09-13  /api/ops/onboarding-event
+2026-09-11  /api/wizard-benchmark-estimate
+2026-06-22  /api/health/samples
+2026-06-06  /api/strava/link-activity
+2026-06-03  /api/waitlist
+2026-06-03  /api/coaching/prerun-band
+2026-05-30  /api/post-race-reshape/revert
+2026-05-30  /api/post-race-reshape/confirm
+```
+
+⚠️ **Do not re-derive that list by filename** — several routes are documented inside a GROUPED
+contract (`strava-oauth.md` covers connect, callback and refresh), so a filename-only count reads
+29 of 56 against a true 17. `audit-docs.sh`'s `contracted()` is the single predicate; the list
+above came from it.
+
+**Suggested order when it is picked up:** `/api/webhooks/strava` first — it is the only
+device-independent auto-link path (`STRAVA-WEBHOOK-OBS-01`) and its external subscription state
+is already a recorded silent-failure class. Then the three true misses, then the ops routes.
 
 ### 🏃 `TAPER-OVER-PEAK-01` — **RE-RULED 2026-09-22. CORRECT WITH AMENDMENT, not built.**
 **Board: 🏃 COACHING BOARD (re-sat; first ruling VACATED).** Baselined in `SWEEP-BASELINE-01` meanwhile.
