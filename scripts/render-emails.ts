@@ -15,7 +15,7 @@
 //   npx tsx scripts/render-emails.ts --out DIR
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { buildDay11Email, buildDay14Email, type RunSummary } from '../lib/email/trialEmailTemplates'
+import { buildConnectEmail, buildDay11Email, buildDay14Email, type RunSummary } from '../lib/email/trialEmailTemplates'
 
 const arg = (n: string) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] : null }
 const out = arg('--out') ?? '/tmp/zonna-emails'
@@ -29,6 +29,8 @@ const WITH_RUN: RunSummary = { actualLoadKm: 8.2, hrInZonePct: 84, verdict: 'nai
 const NO_RUN: RunSummary = { actualLoadKm: null, hrInZonePct: null, verdict: null, analysedRunCount: 0, dayName: null }
 
 const cases = [
+  ['01-connect', buildConnectEmail('Russ', TOKEN)],
+  ['01-connect--no-name', buildConnectEmail(null, TOKEN)],
   ['04-3-days-left--with-run', buildDay11Email('Russ', WITH_RUN, TOKEN)],
   ['04-3-days-left--NO-run', buildDay11Email('Russ', NO_RUN, TOKEN)],
   ['05-trial-ends-today--with-run', buildDay14Email('Russ', WITH_RUN, TOKEN)],
@@ -45,8 +47,8 @@ writeFileSync(join(out, 'index.html'),
   `<!DOCTYPE html><meta charset="utf-8"><title>Zonna emails</title>
 <body style="font-family:system-ui;max-width:640px;margin:48px auto;padding:0 16px;background:#F3F0EB;">
 <h1 style="font-size:22px;">Zonna emails, as they render today</h1>
-<p style="color:#3D3A36;line-height:1.6;">Emails 4 and 5 only. Emails 1, 2 and 3 are approved but not built.
-Each is shown in <strong>both</strong> states, because 22 of 30 real recipients hit the second one.</p>
+<p style="color:#3D3A36;line-height:1.6;">Email 1 (Connect) and emails 4 and 5. Emails 2 and 3 are approved and not yet built.
+The trial emails are shown in <strong>both</strong> states, because 22 of 30 real recipients hit the empty one.</p>
 <ul style="line-height:2;">${index.join('')}</ul></body>`)
 
 console.log(`\n${cases.length} files + index.html in ${out}`)

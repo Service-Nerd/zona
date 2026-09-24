@@ -706,6 +706,27 @@ export default function DashboardClient() {
       window.history.replaceState({}, '', '/dashboard')
     }
 
+    // EMAIL-WAVE-1 — email CTA deep links (Design Board 2026-09-24, amendment 2).
+    //
+    // ⚠️ THE VOCABULARY IS SHARED, NOT RETYPED. `EMAIL_CTA_SCREENS` is the same
+    // list the email templates build their hrefs from, and
+    // `emailCtaTargets.test.ts` reads both sides — because the amendment exists
+    // precisely to stop a CTA that looks fixed and lands nowhere.
+    //
+    // `connect` is not a screen: the HealthKit flow is an overlay, so the link
+    // opens it over Today rather than routing. That is why it is handled here
+    // and not in the `screenParam` block below.
+    {
+      const emailScreen = params.get('screen')
+      if (emailScreen === 'upgrade') {
+        setScreen('upgrade')
+        window.history.replaceState({}, '', '/dashboard')
+      } else if (emailScreen === 'connect') {
+        setShowConnectRuns(true)
+        window.history.replaceState({}, '', '/dashboard')
+      }
+    }
+
     // Push-notification deep links.
     //   POST-RUN-01 — "Run linked": /dashboard?screen=post-run&weekN=14&sessionDay=tue
     //   HOOK-02     — "Kit noticed": /dashboard?screen=session&weekN=14&sessionDay=tue
