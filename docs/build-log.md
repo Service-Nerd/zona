@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — BINGE-BUCKET-CROSS-01 · the build was red because a plan got better
+
+**Shipped:** the plan-quality gate no longer reports an improvement as a regression.
+**Dev learning:** `auditPlanQuality` emits `BINGE-SEVERE-75` at >=75% and `BINGE-WEEK` below — two buckets, one predicate. The baseline comparator scored every code independently with `n > b`. So when my own long-run cap earlier in the day moved one beginner marathoner from 75% to 74%, the severe bucket went 20 -> 19, the mild one went 281 -> 282, and the build failed on the `+1`. The fix is to compare declared families by cumulative sum from the most severe down: every prefix must hold, so `severe -1, mild +1` passes and `severe -1, mild +2` still fails. Membership is declared, never inferred from a shared prefix — `DAYS-SHORT` and `DAYS-SHORT-SILENCED` share one and are not severities.
+**Product/creator learning:** the register is the point, not the green tick. I did not re-baseline. The debt is still 301 plans with a session over §52's share cap; what changed is that the gate can now read which direction it moved.
+**AI-building learning:** I nearly re-baselined it. That is the reflex — the number moved, declare a reason, write the new number. Doctrine in this repo says exactly that, and it would have been wrong here: re-baselining would have recorded "the deload cap made BINGE-WEEK worse" when it made a runner's plan better. **Before you declare a move, find the one case that moved and look at it.** Diffing the case list took ten minutes and turned "declare and re-baseline" into "the comparator is broken".
+**The honest bit:** it was red on main all day and I had run `npm run verify` more than once, reading the test line and not the exit code. That is the exact thing my own notes say to stop doing. It only surfaced because I piped to a file and echoed `$?` this time.
+**Hook material:** `npm run verify` exited 1 for eleven hours because a training plan improved by one percentage point and crossed a bucket boundary.
+**Postable?:** yes
+
+---
+
+## 2026-09-24 — PLAN-RESTING-HR-ZERO-01 · zero is not a number you measured
+
+**Shipped:** plans no longer record a resting heart rate of 0 for runners who never gave one, and the ten live plans that did have had the lie deleted.
+**Dev learning:** `resting_hr: rhr ?? 0`. That is the whole bug. `0` is a number, so every `rhr !== undefined` branch downstream took Karvonen with a zero baseline — reserve = the entire max HR. And `types/plan.ts` said `resting_hr: number` (required) while `schema.ts` said `.positive()`, so the type system was demanding a field the validator would reject at its default value. The producer had been writing schema-invalid data for months and the only reason nobody saw it is that nothing parsed a stored plan back through `PlanSchema`.
+**Product/creator learning:** the sessions were RIGHT. At generation the engine passed no resting HR at all, so the bands came out of the %MaxHR fallback correctly. The `0` was stamped into `meta` afterwards as a record of a number nobody had, and then the CHECKER read it and disagreed with a correct plan. That is the second producer/checker split in two days — yesterday's was the strides invariant re-deriving the producer's predicate. Both times the plan was fine and the thing verifying it was wrong.
+**AI-building learning:** I reported "3 live plans" and it is 10. The 3 was the subset that ALSO failed the display-zone check, because my script gated the resting-HR scan behind that filter. I had counted the population through a lens I forgot I was holding. Ungating it took one line. **Count the thing you are claiming, not the thing your current query happens to return.**
+**The honest bit:** `verify:parity` came back IDENTICAL across 5,994 cases and I nearly quoted it as evidence. Its grid pins `resting_hr: 55` on every single case, so the entire cohort this fix is about is outside it by construction. A clean parity run said nothing at all about the change, and it would have read like proof.
+**Hook material:** 10 of 22 live training plans were storing a resting heart rate of zero, and the schema that forbids it had been right since the day it was written.
+**Postable?:** yes
+
+---
+
 ## 2026-09-24 — PLAN-ZONE-VS-HRTARGET-01 · the bug was caused by the thing that fixes it
 
 **Shipped:** correcting your heart rate now updates your sessions, not just your profile — and the three-copies-of-one-truth problem underneath it has a single owner.
