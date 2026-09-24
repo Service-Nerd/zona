@@ -264,6 +264,18 @@ d=$(comm -3 /tmp/_a /tmp/_b | wc -l | tr -d ' ')
 say "  code=$(wc -l < /tmp/_a | tr -d ' ') doc=$(wc -l < /tmp/_b | tr -d ' ') orphans=$d"
 [ "$d" != "0" ] && { comm -3 /tmp/_a /tmp/_b | sed 's/^/    /'; fail=1; }
 
+# SINGLE OWNER of "is this route documented?" — used by BOTH the per-change arm
+# and the standing-debt count, so the two can never drift (the producer/checker
+# split this repo has paid for repeatedly).
+contracted() {
+  local rf="$1" nm rp
+  nm=$(printf '%s' "$rf" | sed -E 's#^app/api/##; s#/route\.tsx?$##; s#/#-#g')
+  [ -f "docs/contracts/api/${nm}.md" ] && return 0
+  rp=$(printf '%s' "$rf" | sed -E 's#^app/##; s#/route\.tsx?$##')
+  grep -rqF "$rp" docs/contracts/api/ 2>/dev/null && return 0
+  return 1
+}
+
 say "── CONTRACTS: changed API routes vs docs/contracts ──"
 # Touched = committed since SINCE **or** sitting uncommitted in the working tree.
 # Committed-only would flag a contract you are editing right now, which is how a
@@ -276,9 +288,43 @@ cfail=0
 for f in $(touched | grep -E '^app/api/.*/route\.tsx?$'); do
   name=$(printf '%s' "$f" | sed -E 's#^app/api/##; s#/route\.tsx?$##; s#/#-#g')
   c="docs/contracts/api/${name}.md"
-  [ -f "$c" ] || continue
+  # 🔴 `[ -f "$c" ] || continue` USED TO SIT HERE ALONE, AND IT MADE THIS CHECK
+  # STRUCTURALLY INCAPABLE OF REPORTING A MISSING CONTRACT (2026-09-24).
+  #
+  # It answered "did you update an EXISTING contract?" and never "does this route
+  # have one at all?", so a route with no contract was skipped in silence and could
+  # never fail. Measured when the founder asked whether the docs were up to date:
+  # **20 of 53 API routes had no contract anywhere**, four of them CHANGED since
+  # `docs/contracts/api` was created on 2026-09-20 — the exact case this check
+  # exists for, invisible to it on every push since.
+  #
+  # Same class as the website edge audit that collected elements CARRYING a
+  # max-width when the defect was the one MISSING it: a checker that iterates what
+  # exists cannot see what does not.
+  #
+  # ⚠️ "CONTRACTED" IS NOT "HAS A FILE NAMED AFTER IT". Several routes are
+  # documented inside a GROUPED contract — `strava-oauth.md` covers connect,
+  # callback and refresh. A filename-only test reports 29 of 56 missing against a
+  # true 20 of 53, and a check that false-fires on a correctly documented route is
+  # one that gets switched off. `contracted()` is the single predicate both arms
+  # use: its own file, or its path named in any contract.
+  if ! contracted "$f"; then
+    say "  MISSING contract for /$(printf '%s' "$f" | sed -E 's#^app/##; s#/route\.tsx?$##') (route changed, no contract names it)"; cfail=1; fail=1; continue
+  fi
+  [ -f "$c" ] || continue   # documented inside a grouped contract; nothing to stale-check
   touched | grep -qx "$c" || { say "  STALE $c (route changed, contract did not)"; cfail=1; fail=1; }
 done
+# Standing debt, REPORTED not failed: routes that predate the convention. A count
+# that must go DOWN — a debt register, not an amnesty (SWEEP-BASELINE-01's rule).
+# It does not fail the run because 20 legacy contracts cannot be written in one
+# sitting and a gate that blocks everything gets deleted rather than satisfied.
+# What DOES fail is the arm above: touch one of them and you write its contract.
+uncontracted=0; total=0
+for f in $(find app/api \( -name 'route.ts' -o -name 'route.tsx' \)); do
+  total=$((total+1))
+  contracted "$f" || uncontracted=$((uncontracted+1))
+done
+say "  standing debt: ${uncontracted} of ${total} API routes have no contract (CONTRACT-COVERAGE-01)"
 [ "$cfail" = "0" ] && say "  ok"
 
 say "── CONTRACTS: changed components vs docs/contracts/components ──"

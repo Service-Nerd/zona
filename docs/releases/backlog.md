@@ -584,6 +584,28 @@ runner-facing notes with dev-only invariant text **in one file**, so a path-base
 wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
 own sentence — are untouched.
 
+### ⚙️ `CONTRACT-COVERAGE-01` — 20 of 56 API routes have no contract
+**Board: ⚙️ NO BOARD.** Opened 2026-09-24 when the founder asked whether the documents,
+*including contracts*, were up to date. `audit-docs.sh` said ALL CLEAN and was correct
+within its scope — the scope was the problem.
+
+🔴 **THE CHECK COULD NOT REPORT A MISSING CONTRACT.** `[ -f "$c" ] || continue` sat at the
+top of the loop, so a route with no contract file was skipped in silence. It answered
+*"did you update an EXISTING contract?"* and never *"does this route have one?"* — the same
+class as the website edge audit that collected elements **carrying** a `max-width` when the
+defect was the one **missing** it. ✅ **Closed the same day:** a `contracted()` predicate now
+owns the question for both arms, touching an uncontracted route FAILS, and the standing debt
+prints on every run. Falsified against `/api/waitlist`.
+
+**What remains is writing them.** 20 routes, of which four changed *after* `docs/contracts/api`
+was created on 2026-09-20 (`strava/unlink-activity` 09-23, `recalibrate-taper` 09-22,
+`post-race-reshape` 09-20, `charity/redeem` 09-20) and are true misses; the rest predate the
+convention. ⚠️ **Payment-critical ones are in the list** — `webhooks/stripe`,
+`webhooks/revenuecat`, `charity/redeem`. Suggest those three first.
+
+Not done in the sitting that found it because 20 contracts is a body of work, not a residual,
+and the gate now stops the number growing.
+
 ### 🏃 `TAPER-OVER-PEAK-01` — **RE-RULED 2026-09-22. CORRECT WITH AMENDMENT, not built.**
 **Board: 🏃 COACHING BOARD (re-sat; first ruling VACATED).** Baselined in `SWEEP-BASELINE-01` meanwhile.
 
