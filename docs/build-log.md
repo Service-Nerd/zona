@@ -6,6 +6,18 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — PLAN-STORED-SCHEMA-DRIFT-01 · the check existed, it just asked one question
+
+**Shipped:** the daily audit over every stored plan now also parses the schema and checks HR bands.
+**Dev learning:** I filed this item myself yesterday as "nothing parses a stored plan back through PlanSchema, so every gate in the repo runs at generation". I opened the code to build it and `/api/ops/plan-audit` has been running `validatePlan` over every stored plan daily since 2026-09-03, on a GitHub Actions cron, and had fired that morning. The general form I had written was half wrong. The real gap was narrow and cheap: the daily read asked one question, and the two defects it missed each needed a different one. Adding them to the existing probe took a fraction of building the thing I had imagined.
+**Product/creator learning:** the thing I nearly built was a second, parallel probe. That is the exact duplication this codebase keeps paying for, and I would have written it because of a note I wrote myself. **Reuse-before-writing is not just for functions; it applies to your own filed items.**
+**AI-building learning:** the wiring bug is the one worth remembering. I added two new sources of findings and the route's "is this plan clean?" test still read `!errors.length` — so a plan with a schema break and no invariant error would have been silently treated as clean. My new probe would have been inert on exactly the case it was written for. Same failure class as the defect it was catching, reintroduced one line away from it, in the same commit. I found it by reading the branch after wiring, not from any test.
+**The honest bit:** three separate live-data defects this week and my instinct each time was to conclude something architectural and sweeping. Twice it was wrong. The first fix was "extract the owner", which was right. The second was "nothing reads the table", which was false. Measuring first would have taken ten minutes each time.
+**Hook material:** I filed a bug report saying a check didn't exist. It had been running daily for three weeks. It just wasn't asking the question I needed.
+**Postable?:** yes
+
+---
+
 ## 2026-09-24 — PLAN-VO2MAX-BAND-01 · I downgraded a real runner's interval session
 
 **Shipped:** the HR band a session sits in now has one owner, and the live plan I damaged is repaired.
