@@ -7204,12 +7204,49 @@ function buildRulePlanOnce(
     )
     if (currKm >= target - 0.01) continue   // already at or above: a deload never ADDS
     const precision = GENERATION_CONFIG.DISTANCE_ROUNDING_PRECISION_KM
-    const set = Math.max(
+    let set = Math.max(
       Math.floor(target / precision) * precision,
       sessionFloorsFor(input.longest_recent_run_km).long)
-    // Written on the axis the session already uses (§79/§80).
-    if (currLr.distance_km != null) currLr.distance_km = set
-    else currLr.duration_mins = Math.round(dur(set, pace.minPerKmEasy))
+
+    // 🔴 §9/§113 — WEEKS 1-2 KEEP THEIR OPENING CAP (SWEEP-W1W2-LONG-CAP-01,
+    // 2026-09-24). THIS PASS WAS OVERWRITING A CAP APPLIED THREE THOUSAND LINES
+    // EARLIER.
+    //
+    // `buildWeekSessions` clamps the week-1-2 long run to
+    // `longest_recent_run × WEEK_1_2_LONG_RUN_CAP_MULTIPLIER` and floor-rounds it
+    // so the post-round value can never exceed the cap. This pass then runs over
+    // the finished weeks and re-anchors a deload long run WITHOUT re-reading that
+    // cap, so the clamp was silently undone whenever week 2 is a deload.
+    //
+    // ⚠️ AND THE COMMENT ABOVE IS ONLY TRUE WHEN THE DELOAD IS SMALLER. `target`
+    // is `prevKm × (curr.weekly_km / prev.weekly_km)`, and that ratio EXCEEDS 1
+    // whenever the deload week delivers more than the week before it — measured
+    // on 3,344 week-instances of the cohort grid. On the traced case (60 km/wk
+    // over 3 days with a 30-minute weekday cap) week 1 delivers 22 km and the
+    // week-2 deload delivers 23, so a "deload never ADDS" pass raised a capped
+    // 13.0 km long run to 13.5 against a 13.2 ceiling. §113 would then have
+    // refused the runner for a leap this pass created — the identical shape as
+    // the floor override §113 Am.1 vetoed in 2026-09-18.
+    //
+    // Same defect class as the invariant's own history: an earlier decision
+    // undone by a later pass that never learned about it.
+    if (curr.n > 0 && curr.n <= 2 && input.longest_recent_run_km > 0) {
+      const earlyCap = input.longest_recent_run_km * GENERATION_CONFIG.WEEK_1_2_LONG_RUN_CAP_MULTIPLIER
+      set = Math.min(set, Math.floor(earlyCap / precision) * precision)
+    }
+    if (set <= currKm + 0.01) continue   // the cap left nothing to raise
+
+    // ⚠️ BOTH FIELDS, ALWAYS — the distance arm used to write `distance_km` and
+    // leave `duration_mins` describing the OLD distance. Measured: **44,852 of
+    // 67,348 fires** across 39,632 cohort plans left a session whose two fields
+    // disagree, understating the run by the time the raise added (~3 min on the
+    // traced case). `sessionKm` prefers `distance_km`, so the coaching stayed
+    // right and only the number the RUNNER READS was wrong — which is why
+    // nothing caught it. A session is anchored by distance OR duration; when
+    // both are set they must agree.
+    const newDur = Math.round(dur(set, pace.minPerKmEasy))
+    if (currLr.distance_km != null) { currLr.distance_km = set; currLr.duration_mins = newDur }
+    else currLr.duration_mins = newDur
     curr.weekly_km = sumWeeklyKm(curr.sessions, pace)
   }
 

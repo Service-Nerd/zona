@@ -572,7 +572,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
       "badge": "deload",
       "date": "2026-09-21",
       "label": "Build — recovery + benchmark",
-      "long_run_hrs": 1.3,
+      "long_run_hrs": 1.4,
       "n": 8,
       "phase": "build",
       "sessions": {
@@ -592,7 +592,7 @@ exports[`golden plans > P0-user-a-beginner-3d-hm-finish — full plan snapshot 1
         "sat": {
           "detail": null,
           "distance_km": 10.5,
-          "duration_mins": 79,
+          "duration_mins": 82,
           "hr_target": "< 146 bpm",
           "id": "w8-sat",
           "label": "Long run — Zone 2",
@@ -5970,7 +5970,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
       "badge": "deload",
       "date": "2026-09-21",
       "label": "Build — recovery + benchmark",
-      "long_run_hrs": 1.3,
+      "long_run_hrs": 1.4,
       "n": 8,
       "phase": "build",
       "sessions": {
@@ -6003,7 +6003,7 @@ exports[`golden plans > P4-experienced-5d-marathon-time-target — full plan sna
         "sun": {
           "detail": null,
           "distance_km": 15.5,
-          "duration_mins": 75,
+          "duration_mins": 86,
           "hr_target": "< 147 bpm",
           "id": "w8-sun",
           "label": "Long run — Zone 2",
@@ -7480,7 +7480,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
       "badge": "deload",
       "date": "2026-09-21",
       "label": "Build — recovery week",
-      "long_run_hrs": 0.8,
+      "long_run_hrs": 0.9,
       "n": 8,
       "phase": "build",
       "sessions": {
@@ -7500,7 +7500,7 @@ exports[`golden plans > P5-beginner-3d-hm-finish-no-benchmark-masters — full p
         "sun": {
           "detail": null,
           "distance_km": 7.5,
-          "duration_mins": 46,
+          "duration_mins": 53,
           "hr_target": "< 138 bpm",
           "id": "w8-sun",
           "label": "Long run — Zone 2",
@@ -9233,7 +9233,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
       "badge": "deload",
       "date": "2026-09-21",
       "label": "Build — recovery + benchmark",
-      "long_run_hrs": 1.3,
+      "long_run_hrs": 1.4,
       "n": 8,
       "phase": "build",
       "sessions": {
@@ -9266,7 +9266,7 @@ exports[`golden plans > P6-experienced-5d-marathon-finish — full plan snapshot
         "sun": {
           "detail": null,
           "distance_km": 14.5,
-          "duration_mins": 77,
+          "duration_mins": 82,
           "hr_target": "< 148 bpm",
           "id": "w8-sun",
           "label": "Long run — Zone 2",

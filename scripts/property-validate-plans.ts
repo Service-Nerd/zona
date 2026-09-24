@@ -1290,21 +1290,27 @@ const BASELINE: Record<string, number> = {
   // count that falls is progress and the baseline should be lowered."
   'INV-PLAN-TIME-TARGET-QUALITY-FLOOR': 0,
   'INV-PLAN-PEAK-OVER-BASE': 1,
-  // 1 -> 2 on 2026-09-24 (STRIDES-CHECKER-OWNER-01). ⚠️ **REVEALED, NOT
-  // CAUSED, and the distinction is the whole reason this line is allowed to go
-  // UP.** That commit changed one checker (§28's stride exemption) and added two
-  // day-sets that leave Saturday free while keeping weekdays scarce. The checker
-  // change cannot reach a §9/§113 long-run cap; the new day-sets can, and did.
-  // This is a PRE-EXISTING engine defect that no corpus had reached — the same
-  // thing SWEEP-AGE-01 above did for the masters cohort.
+  // 1 -> 2 on 2026-09-24, then **2 -> 0 the same day: FIXED, not re-sampled**
+  // (SWEEP-W1W2-LONG-CAP-01). The widened grid revealed it; the RCA found the
+  // mechanism and it is closed at the producer.
   //
-  // 🔴 A RAISED BASELINE IS THE ONE MOVE THIS REGISTER IS MOST EASILY ABUSED FOR,
-  // so: it is NOT tracking a regression from this work, it is NOT re-rolled
-  // sampling noise (the seed is unchanged and the count moved because the grid
-  // reaches a shape it could not reach before), and it is NOT fixed. Filed for
-  // its own sitting — a week-2 long run above `longest_recent_run x 1.1` is a
-  // §113 readiness question, not a §28 one.
-  'INV-PLAN-WEEK-1-2-LONG-CAP': 2,
+  // ADR-022's deload re-anchor ran over the finished weeks and re-anchored a
+  // deload long run WITHOUT re-reading the week-1-2 cap `buildWeekSessions` had
+  // applied 3,000 lines earlier — so a capped 13.0 km opening long run was
+  // raised to 13.5 against a 13.2 ceiling, and §113 would then have refused the
+  // runner for a leap this pass created. Identical shape to the floor override
+  // §113 Am.1 vetoed on 2026-09-18: an earlier decision undone by a later pass
+  // that never learned about it.
+  //
+  // ⚠️ Its guard comment said "a deload never ADDS" and that is only true when
+  // the deload is smaller — `target` is `prevKm × (curr.weekly/prev.weekly)`,
+  // and that ratio exceeds 1 whenever a deload week delivers more than the week
+  // before it (3,344 week-instances on the cohort grid).
+  //
+  // Lowered to 0 per this register's own rule — "every count that falls is
+  // progress and the baseline should be lowered to lock it in" — and it is
+  // genuinely progress here, verified by the RCA, not by a re-rolled sample.
+  'INV-PLAN-WEEK-1-2-LONG-CAP': 0,
 
   // ── §121's invariant found a SECOND defect on its first sweep (2026-09-22) ──
   //
