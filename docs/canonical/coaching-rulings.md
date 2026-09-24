@@ -382,3 +382,38 @@ coaching judgement with a number attached, never an outcome. **And nothing has
 run on a device.**
 | **`COACH-BEHIND-DAY-TWO-01` — §65 Amendment 1** | 🟢 **CORRECT WITH AMENDMENT, SHIPPED** | 09-22 | §65's implementation rule was honoured perfectly and **its purpose was not.** `daysDueByEndOfYesterday` is used correctly everywhere; today is never counted. But the Coach verdict then softened at `done / dueRef >= 0.7`, and **that ratio cannot be satisfied below FOUR sessions due** (`dueRef=1,2,3` → NEVER). `dueRef` never exceeds the week's planned sessions, so **for a three-day-a-week runner the softener could never fire — in any week, at any point in any plan. 29.0% of the cohort grid.** They miss one Tuesday and read amber, forever — and that is precisely the population §65 was written for (*"Zonna is for runners who already feel behind"*). **Ruling: a single outstanding session is never a judgement, at any session count.** ⚠️ **The precedent is this constitution's own, twice** — §1 CD-21 Am.1 (*"the ratio is not violated, it is **undefined**"*, Seiler) and `INV-PLAN-LR-MAX-WEEKLY-PCT` binding only above two runs. One outstanding session out of one due is not a ratio, it is an event. ⚠️ **ADDITIVE:** the 0.7 softener is untouched (2 of 7 behind is softened as before) and a three-day runner who does NONE of three still gets a real verdict. `BEHIND_VERDICT_MIN_SESSIONS = 2`; `lib/coaching/behindVerdict.test.ts` is **exhaustive over `dueRef` 1..7 × every `done`, not example-based** — ⚠️ **an example-based test would have passed the whole time** (`dueRef=5, done=4` works beautifully), because a reachability hole is only visible by enumerating the domain. Falsified three ways including setting the bound to **1**, at which the rule is inert. |
 | **`RACE-ANCHOR-CV-OVERRIDE-01` — the ruling's safety assumption FAILED measurement** | ⚠️ **RULED, BUILT, REVERTED same day** | 09-22 | The board adopted my argument that excluding a CV row from §22's goal-pace slot is safe because *"§22 already requires that distance to own a `race_specific` row, so the slot is filled rather than emptied"*. **Built and measured on the changed engine, as the board's own procedure requires: `neverBuildsPct` ROSE (healthy masters 18.6% → 18.8%, healthy standard 12.8% → 12.9%) — the one figure `CLAUDE.md` gives NO tolerance — the cohort lost 3 plans to refusal (9,671 → 9,668), and `segmentPricedDistance` found ZERO reps-scaled threshold sessions because the CV rows excluded WERE those sessions.** 🔴 **The guarantee is not a guarantee: §22 requires the distance to OWN the row; it does not follow that the row is ELIGIBLE for this runner, in this phase, at this volume, with this fitness rank and these resolvable anchors. I reasoned from the catalogue's contents to a runner's eligible set, and those are different objects.** Reverted, not re-baselined — three runners losing a plan is worse than 92 sessions carrying a mislabelled header. ⚠️ **TWO mechanisms have now failed at opposite ends**: exempting at override time empties §22's ownership arm (100 tests red), excluding at selection time empties the eligible set. **Do not re-propose either.** The settling artefact, which neither sitting has taken: **for each of the 92 sessions, what else was actually ELIGIBLE in that slot for that runner** — not what the catalogue owns, what the selector would have returned. If the answer is nothing, the deadlock belongs to the catalogue, not to §22 or §85. |
+
+## 2026-09-24 — `/best-running-app-for-beginners` physiology claims · CORRECT WITH AMENDMENT
+
+**Convened by:** the W-03 precedent plus the SLT ruling recorded on `MarketingArticle.principleRefs`
+— *"a guide may only assert what an existing principle already asserts, and it names the section. A
+claim no principle covers is a Coaching Board item BEFORE it is a writing task."* Its stated reason,
+that a coaching claim *"does not become a marketing surface because it lives at /guides"*, **cuts
+both ways: it does not stop being one because it lives at a comparison slug.** No doctrine file
+changed; the board was routed in analysis, not by a guard.
+
+**Conflict scan.** §12 is a **ceiling, not a band**, so the talk test is a different *instrument* for
+the same rule rather than a competing definition. §1 counts **sessions** (CD-19), so "one session a
+week to push" is arithmetically consistent at 3–4 runs. §30 and `INV-PLAN-EFFORT-OR-PACE` already
+establish effort as an accepted prescription instrument, which is what makes an RPE-style
+instruction doctrinally normal rather than a new idea. No conflicts.
+
+**Three claims had no covering principle, and three amendments were required:**
+
+| # | Seat | Claim as submitted | Ruling |
+|---|---|---|---|
+| 1 | Hutchinson | *"Easy running builds your aerobic base: capillaries, mitochondria"*, set against the hard-running paragraph | Asserts a **differential the evidence does not support** — mitochondrial biogenesis is if anything more responsive to higher intensity. Easy running earns its place because it is **volume you can recover from**. Mechanism kept, implied exclusivity removed |
+| 2 | Willy | *"Pick one session a week to actually push"* | The title recruits **beginners** and this instruction reaches them, while the page's own opening sends that reader to Couch to 5K. **Scoped** to the runner past that stage, with an explicit skip for those still building to continuous running |
+| 3 | Hutchinson | *"Give it three or four weeks before you decide it isn't working"* | Defensible as **behaviour**, indefensible as an **adaptation curve**. Reworded to read as how long to withhold judgement, and to judge on whether hard days feel hard again rather than on a PB attempt |
+
+**Not blocking, recorded:** Sims noted the page states its diagnosis as complete (*"the honest fix
+is running slower"*) while under-fuelling is the other common reason a plateau holds. Out of scope
+for this page; do not claim completeness elsewhere. Seiler and McMillan raised no objection —
+McMillan asked that the talk-test wording be kept **exactly** as written.
+
+**Artifacts.** No principle authored and no numeric: this ratifies existing §1/§12/§30 language on a
+new surface and changes nothing the engine prescribes. **Not mechanically checkable** — no test can
+tell whether prose matches the section it names; `principleRefs: ['§1','§12','§30']` records that
+somebody had to name one, which is the point at which the question gets asked at all. ⚠️ The gate
+that enforces it, `guidesGate.test.ts`, had a **hollow** comparison arm and was repaired in the same
+commit.

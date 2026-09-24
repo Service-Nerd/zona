@@ -6,6 +6,18 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — GTM-SEO-COMPARE-01 page 3 · the brief told me not to look
+
+**Shipped:** the third of eight comparison pages, and the first where the Coaching Board changed the copy.
+**Dev learning:** the handed-over build prompt named three things that do not exist — `COMPARISON_ARTICLES`, `lib/marketing/comparisons.ts`, `comparisonArticleJsonLd` — and explicitly said "the build architecture is locked, don't re-derive it or inspect the repo for it". Following that instruction literally produces a file that does not compile. The real names are `MARKETING_ARTICLES`, `articles.ts`, `marketingArticleJsonLd`. The instruction not to look was the expensive part, not the wrong names; the wrong names cost one grep. And the backlog's own "verify still open" line had carried the same dead filename since page 1, which is presumably where the brief got it.
+**Product/creator learning:** the page is a comparison by URL and a coaching guide by content, and the codebase already had a ruling for exactly that. A field on the article model records an SLT decision that a guide "does not become a marketing surface because it lives at /guides" — and the useful move was noticing that the sentence cuts both ways. It does not stop being a coaching surface because it lives at a commercial slug. Three claims on the page had no covering principle, so the board sat.
+**AI-building learning:** the board earned its place. It changed the mitochondria sentence, and it was right: the copy asserted that *easy* running builds mitochondria, set against a hard-running paragraph, which quietly claims a differential the evidence runs the other way on. That is the kind of error that reads as authoritative and is the exact thing a page about being honest with yourself cannot afford. Willy caught a second one nobody had noticed: the title recruits beginners and the advice tells them to add a hard session, two paragraphs after sending them to Couch to 5K.
+**The honest bit:** I then leaned on `guidesGate.test.ts` to enforce the ruling, opened it, and found the assertion for comparisons was `expect(() => guideArticles()).not.toThrow()` — a test named for comparisons and principle references that asserted neither and would pass in any state whatsoever. In the file that enforces the rule. My own hollow-test lint, shipped this morning, does not catch that shape.
+**Hook material:** the build brief said "don't inspect the repo", and three of the four identifiers it gave me had never existed.
+**Postable?:** yes
+
+---
+
 ## 2026-09-24 — PLAN-STORED-SCHEMA-DRIFT-01 · the check existed, it just asked one question
 
 **Shipped:** the daily audit over every stored plan now also parses the schema and checks HR bands.
