@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — STRIDES-CHECKER-OWNER-01 · the checker and the thing it checks disagreed about the same rule
+
+**Shipped:** §28's stride invariant stopped faulting plans the engine was correct to build, and the real coaching gap underneath it became visible instead of silent.
+
+**Dev learning:** An ops digest handed me a finished RCA with a code snippet in it. The snippet did not exist — no `stridePreferred` anywhere in the repo. The real owner was `strideCarrierDay()` in `lib/plan/neuromuscular.ts`. That one grep changed the entire diagnosis: the handed-over analysis blamed the *generator* and proposed extending strides to weekends; the actual defect was the *checker* re-deriving the generator's predicate and getting it wrong. Two opposite fixes, and the wrong one would have shipped a coaching change as a bug fix. The tell was in the file's own header comment, which described this exact divergence and said "the predicate lives here and BOTH sides call it" — one of the two invariants was wired to it, the other never was.
+
+**Product/creator learning:** The invariant was over-firing AND the runner was genuinely under-served, and those are different problems with different owners. Fixing only the checker would have been technically correct and would have silenced a real gap: the runner on the live plan gets strides on **one session in nine weeks**. So the fix ships with a `warn` that counts the gap (12.8% of plans) and the coaching question goes to the board with a number attached. "Make the alarm stop" and "fix the thing the alarm is about" are not the same job.
+
+**AI-building learning:** The handed-over RCA was fluent, well-structured, correctly identified the affected plan, and was wrong about the mechanism, wrong about the trigger, and wrong about its own justification — it argued extending to weekends was "faithful to the constitution, not a change to it", which inverts §28's text (it makes **midweek** the preference when the text makes **Wed** the preference). Confident, specific, internally consistent, and load-bearing-wrong in three places. The only thing that caught it was measuring: my first sweep across all 98 day patterns returned **zero** violations, which meant my inputs were wrong, not the report — and chasing that zero is what found the real trigger.
+
+**The honest bit:** I ran 4,494 plans and then 1,920 more of the exact reported shape and got zero violations both times, and briefly had the thought that the digest had hallucinated the whole thing. It hadn't. The missing variable was `preferred_long_run_day: 'sat'` — a real wizard input that neither the cohort grid nor my repro varied. With the long run on Sunday the invariant is silent; with it on Saturday it fires on 24.6% of plans. I also had to throw away my first falsification case because it silently selected the **race week** (exempt), so it failed for a fixture reason and looked like a code failure.
+
+**Hook material:** The property sweep varies `preferred_long_run_day`. It varies day availability. It has done both for weeks. It still could not see this, because **every weekday-scarce day-set it carries blocks Saturday, and every Saturday-free set is weekday-rich** — the two conditions the bug needs are mutually exclusive by construction. 14,253 plans, green, on a defect sitting in 24.6% of a shape it never built. Varying an axis is not the same as reaching the interaction that axis participates in.
+
+**Postable?:** yes
+
 ## 2026-09-23 — PLAN-STREAM-OWNER-01 · the comment described the fix, the code did the opposite
 
 **Shipped:** Adjust-my-plan now previews in about a second instead of holding for the full AI enrichment and then erroring.
