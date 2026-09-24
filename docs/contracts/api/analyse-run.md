@@ -124,3 +124,26 @@ No request or response shape changed.
   `15s/mi`, which is not any rate at all.
 - ⚠️ `units` is **required, not defaulted**: a rate restated in the wrong unit is silently wrong
   rather than obviously wrong.
+
+## EMAIL-WAVE-3 — the First-read email fires from here
+
+**After the upsert, and only then.** When `isFirstAnalysis` is true, the upsert
+succeeded, and this is not a `scores_only` re-score, the route calls
+`sendFirstReadEmail` (`lib/email/firstRead.ts`).
+
+| Guard | Why |
+|---|---|
+| **After the upsert** | Built from `analysisRow`, never a re-query: a read-back would race the write, and the numbers in the email must be the numbers stored |
+| **`!upsertRes.error`** | An email saying *"here is your first run, read"* about a row that did not persist taps through to nothing |
+| **`!scores_only`** | A re-score has no coach note to read |
+| **The stamp, not the count** | `isFirstAnalysis` is computed from `count === 0` **before** the upsert, so a retried or re-scored analysis can present as "first" more than once. `user_settings.first_read_email_sent_at` is what makes it once |
+| **Stamped only on `sent`** | A suppressed runner who later resubscribes must still receive their first read |
+
+⚠️ **The email never fails the analysis.** The whole call is wrapped and logged; a
+runner waiting on their run does not wait on an inbox.
+
+🔴 **`isFirstAnalysis` now has TWO consumers** — the AI prompt (its original job)
+and this trigger. Changing its definition changes who gets an email, which is not
+obvious from where it is computed.
+
+Full email contract: `docs/contracts/api/email.md`.
