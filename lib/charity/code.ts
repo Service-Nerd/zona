@@ -19,7 +19,17 @@ const GROUP_LEN = 4
 const GROUPS = 2
 
 /** 30^8 ≈ 6.6e11. With batches in the hundreds, guessing a live code is not a
- *  realistic attack; the redeem route is also rate-limited and authenticated. */
+ *  realistic attack; the redeem route is authenticated AND rate-limited
+ *  (`CHARITY_REDEEM_LIMIT`, wired 2026-09-24).
+ *
+ *  🔴 THIS SENTENCE CLAIMED A CONTROL THAT DID NOT EXIST (CHARITY-REDEEM-RATELIMIT-01).
+ *  Until 2026-09-24 it read "the redeem route is also rate-limited and
+ *  authenticated" — authenticated was true, rate-limited was FALSE: nothing in
+ *  the route, nothing in `middleware.ts`, and `AI_ROUTE_LIMITS` covers AI
+ *  surfaces only and never named charity. Found while writing the route's
+ *  contract. The sentence was the stated reason the codespace is considered
+ *  sufficient, so it was load-bearing. **A claim in a comment is not a
+ *  mechanism** — the fix was to build the mechanism, not soften the claim. */
 export function mintCode(random: () => number = Math.random): string {
   let body = ''
   for (let g = 0; g < GROUPS; g++) {
@@ -85,3 +95,17 @@ export function formatCode(normalised: string): string {
   const groups = normalised.match(/.{1,4}/g) ?? [normalised]
   return `${CODE_PREFIX}-${groups.join('-')}`
 }
+
+/** CHARITY-REDEEM-RATELIMIT-01 — per-user cap on redemption attempts.
+ *
+ *  Redeeming is a ONCE-PER-ACCOUNT action, so ten attempts an hour is far more
+ *  than a runner mistyping a code off a charity's email needs, and far less than
+ *  anything useful against a 30^8 codespace.
+ *
+ *  ⚠️ DEFENCE IN DEPTH, NOT THE PRIMARY CONTROL. The primary controls are auth
+ *  and the codespace; this exists so the justification above is true. It FAILS
+ *  OPEN for the same reason the AI limiter does, and the trade is sharper here:
+ *  a false denial blocks a runner redeeming a gift they were promised, which is
+ *  worse than the thing being prevented. */
+export const CHARITY_REDEEM_LIMIT = 10
+export const CHARITY_REDEEM_WINDOW_SECONDS = 3600

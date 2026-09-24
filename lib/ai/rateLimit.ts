@@ -28,11 +28,36 @@ export async function checkAiRateLimit(
   limit: number,
   windowSeconds: number,
 ): Promise<boolean> {
+  return checkRateLimit(`ai:${route}:${userId}`, limit, windowSeconds)
+}
+
+/**
+ * The same limiter, for routes that are not AI surfaces.
+ *
+ * ⚠️ THE RPC WAS ALWAYS GENERIC — `check_rate_limit(p_key, p_limit,
+ * p_window_seconds)` knows nothing about AI. Only the `ai:` key prefix and the
+ * wrapper's name were specific, so a second limiter for a non-AI route would
+ * have been a duplicate of infrastructure that already existed: the
+ * `DELOAD-OWNER-01` / `TIER-OWNER-01` / `OPS-AI-OWNER-01` class. `checkAiRateLimit`
+ * now delegates here and keeps owning the `ai:` prefix.
+ *
+ * 🔻 The module still lives under `lib/ai/` and is no longer AI-only. Moving it
+ * would touch every existing import for no behavioural gain; filed rather than
+ * done (`RATELIMIT-MODULE-PATH-01`).
+ *
+ * Callers pass the WHOLE key, including their own namespace prefix, so two
+ * features can never collide on a bare user id.
+ */
+export async function checkRateLimit(
+  key: string,
+  limit: number,
+  windowSeconds: number,
+): Promise<boolean> {
   try {
     // Cast: check_rate_limit is a custom RPC not present in the generated
     // Supabase types (this app had no .rpc() callers before).
     const { data, error } = await (client().rpc as any)('check_rate_limit', {
-      p_key: `ai:${route}:${userId}`,
+      p_key: key,
       p_limit: limit,
       p_window_seconds: windowSeconds,
     })

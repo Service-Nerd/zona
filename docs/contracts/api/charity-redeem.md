@@ -49,6 +49,7 @@ Already redeemed by **this** user — idempotent, and deliberately does **not** 
 | 409 | `claimed_at` already set | `That code has already been used.` |
 | 409 | Batch revoked | `That code is no longer active. Ask your charity for a new one.` |
 | 409 | Lost the claim race, or the one-grant-per-user index rejected it | `That code has already been used.` |
+| 429 | More than `CHARITY_REDEEM_LIMIT` attempts in the window | `Too many attempts. Wait a few minutes and try again.` |
 | 500 | Update errored | `Could not redeem that code. Try again.` |
 
 ⚠️ **The messages are deliberately specific** — *"already used"* vs *"not a code we recognise"*.
@@ -109,16 +110,27 @@ No migration was needed: `claimed_at` already records the fact and already survi
 - On account deletion the code is **released back to its batch, not deleted** — the batch keeps
   its record that a seat was used. See `delete-account.md`.
 
-### 🔴 Known gap: this route is NOT rate-limited
+### Rate limiting
 
-`lib/charity/code.ts` states the codespace is safe from guessing because *"the redeem route is
-also rate-limited and authenticated"*. **Authenticated is true. Rate-limited is not** — verified
-2026-09-24: no limiter in the route, none in `middleware.ts`, and `lib/ai/rateLimit.ts` /
-`AI_ROUTE_LIMITS` cover AI surfaces only and never name charity.
+**10 attempts per user per hour** (`CHARITY_REDEEM_LIMIT` / `CHARITY_REDEEM_WINDOW_SECONDS`,
+`lib/charity/code.ts`), via the shared `checkRateLimit()` on key `charity:redeem:<user_id>`.
+Exceeded → **429** `Too many attempts. Wait a few minutes and try again.`
 
-The exposure is bounded — an attacker needs a valid session, and 30⁸ is large — so this is a
-weakened assumption rather than an open door. But **the comment is the stated reason the
-codespace is considered sufficient**, and it is asserting a control that does not exist. A
-claim in a comment is not a mechanism.
+Checked **after** normalisation, so a blank submit does not spend an attempt, and **before** any
+DB read, so a caller cannot probe the codes table at speed.
 
-Filed as **`CHARITY-REDEEM-RATELIMIT-01`**.
+⚠️ **Defence in depth, not the primary control** — the primary controls are auth and the 30⁸
+codespace. It **fails open** if the limiter's own infrastructure is down, and that trade is
+sharper here than on the AI routes it was borrowed from: a false denial withholds a gift a
+runner was promised, which is worse than the thing being prevented.
+
+### History — the comment claimed this control before it existed (CHARITY-REDEEM-RATELIMIT-01)
+
+Until 2026-09-24 `lib/charity/code.ts` justified the codespace with *"the redeem route is also
+rate-limited and authenticated"*. **Authenticated was true; rate-limited was false** on every
+path since the feature shipped — nothing in the route, nothing in `middleware.ts`, and
+`AI_ROUTE_LIMITS` covers AI surfaces only and never named charity.
+
+Found while writing this contract. The sentence was **load-bearing** — it was the stated reason
+the codespace was considered sufficient — so the fix was to build the mechanism, not to soften
+the claim. **A claim in a comment is not a mechanism.**

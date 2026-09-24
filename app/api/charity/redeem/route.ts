@@ -18,7 +18,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getUserFromRequest } from '@/lib/supabase/getUserFromRequest'
-import { normaliseCode } from '@/lib/charity/code'
+import { normaliseCode, CHARITY_REDEEM_LIMIT, CHARITY_REDEEM_WINDOW_SECONDS } from '@/lib/charity/code'
+import { checkRateLimit } from '@/lib/ai/rateLimit'
 import { initialGrantExpiry } from '@/lib/charity/grantWindow'
 
 export async function POST(req: NextRequest) {
@@ -35,6 +36,21 @@ export async function POST(req: NextRequest) {
   const code = normaliseCode(body.code)
   if (!code) {
     return NextResponse.json({ error: 'Enter your code to continue.' }, { status: 400 })
+  }
+
+  // CHARITY-REDEEM-RATELIMIT-01 (2026-09-24) — `lib/charity/code.ts` justified the
+  // 30^8 codespace with "the redeem route is also rate-limited and authenticated".
+  // Authenticated was true; rate-limited was FALSE, on every path, since the
+  // feature shipped. The mechanism now exists rather than the claim being softened.
+  //
+  // Placed AFTER normalisation so a blank submit does not spend an attempt, and
+  // BEFORE any DB read so a caller cannot probe the codes table at speed.
+  // Fails open (see CHARITY_REDEEM_LIMIT) — a false denial withholds a gift.
+  if (!await checkRateLimit(`charity:redeem:${user.id}`, CHARITY_REDEEM_LIMIT, CHARITY_REDEEM_WINDOW_SECONDS)) {
+    return NextResponse.json(
+      { error: 'Too many attempts. Wait a few minutes and try again.' },
+      { status: 429 },
+    )
   }
 
   // Service role: charity_codes has no public read policy, because an

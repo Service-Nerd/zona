@@ -142,8 +142,9 @@ The iOS app is a Capacitor wrapper around the Vercel-hosted web app, not a stand
 
 > **Regression history (2026-08):** `HealthObserverPlugin` was never added to `fix-cap-config.mjs`'s re-add list (it only knew `SharedStorePlugin`), so every sync silently dropped it → background run-analysis push died → pushes only fired on app-open. Fixed by the single-source `local-ios-plugins.mjs` + verify gate above.
 
-**Native plugins still to add (see backlog):**
-- `@revenuecat/purchases-capacitor` — StoreKit 2 via RevenueCat (gated on RevenueCat setup)
+**Native plugins still to add (see backlog):** none outstanding.
+
+🔴 **This section listed `@revenuecat/purchases-capacitor` as "still to add" until 2026-09-24, and it had been INSTALLED AND WIRED for some time** — `^13.1.1` in `package.json`, imported by `app/dashboard/UpgradeScreen.tsx` (`Purchases.logIn`, `getOfferings`, `purchasePackage`), and present in the iOS plugin list. The line mattered: it read as *"the RevenueCat payment path is not live yet"* when real purchase events could reach `/api/webhooks/revenuecat`, which is exactly the judgement someone makes when deciding how urgent a webhook defect is. Found while assessing the blast radius of `SUBS-ORDERING-REVENUECAT-01`. **A doc that understates what is live is more dangerous than one that is merely out of date.**
 
 ---
 

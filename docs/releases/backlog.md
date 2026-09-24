@@ -586,18 +586,21 @@ runner-facing notes with dev-only invariant text **in one file**, so a path-base
 wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
 own sentence — are untouched.
 
-### ⚙️ `CHARITY-REDEEM-RATELIMIT-01` — a comment asserts a control that does not exist
-**Board: ⚙️ NO BOARD.** Found 2026-09-24 while writing `docs/contracts/api/charity-redeem.md`.
+### ⚙️ `RATELIMIT-MODULE-PATH-01` — the shared rate limiter still lives under `lib/ai/`
+**Board: ⚙️ NO BOARD.** Opened 2026-09-24 by `CHARITY-REDEEM-RATELIMIT-01`.
 
-`lib/charity/code.ts` justifies the 30⁸ codespace with *"the redeem route is also rate-limited
-and authenticated"*. **Authenticated is true; rate-limited is false** — verified: nothing in
-`app/api/charity/redeem/route.ts`, nothing in `middleware.ts`, and `lib/ai/rateLimit.ts` /
-`AI_ROUTE_LIMITS` cover AI surfaces only and never name charity.
+`check_rate_limit(p_key, p_limit, p_window_seconds)` was always generic — only the `ai:` key
+prefix and the wrapper's name were AI-specific. `checkRateLimit()` is now the shared owner and
+`/api/charity/redeem` is its first non-AI caller, but the module is still `lib/ai/rateLimit.ts`
+and the route limits still sit in `lib/ai/limits.ts` under the name `AI_ROUTE_LIMITS`.
 
-Exposure is bounded (a valid session is required, and 30⁸ is large), so this is a **weakened
-assumption rather than an open door** — but the sentence is the stated reason the codespace is
-considered sufficient. **A claim in a comment is not a mechanism.** Fix is either a limiter on
-the route or an honest correction to the comment; do not leave both as they are.
+**Deliberately not moved in the same change:** a rename touches every existing import for zero
+behavioural gain, and mixing it with a security fix would make the diff hard to review. Move it
+to `lib/security/rateLimit.ts` when something else touches that area.
+
+⚠️ Minor consequence today: `callAnthropic.test.ts` asserts *"every `AI_ROUTE_LIMITS` key is a
+declared surface **or a non-AI route**"* — that escape hatch already anticipated this, so nothing
+is failing, but the naming now understates what the module does.
 
 ### ⚙️ `CONTRACT-BACKFILL-01` — write the 20 missing API route contracts
 **Board: ⚙️ NO BOARD.** Split from `CONTRACT-COVERAGE-01` (the GATE, shipped 2026-09-24).

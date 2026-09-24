@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — CHARITY-REDEEM-RATELIMIT-01 + the CLAUDE.md line that understated what is live
+
+**Shipped:** the charity redeem route is actually rate-limited now, and CLAUDE.md no longer claims a live payment path is unbuilt.
+
+**Dev learning:** Two defects today were the same shape in different clothes: **a sentence asserting a control that did not exist.** `lib/charity/code.ts` justified a 30⁸ codespace with *"the redeem route is also rate-limited and authenticated"* — authenticated true, rate-limited false, on every path since the feature shipped. And `CLAUDE.md` listed `@revenuecat/purchases-capacitor` under *"Native plugins still to add"* while it was installed, imported and wired. Neither was caught by a test, because neither is the kind of thing a test looks at. The fix for the first was to **build the mechanism, not soften the claim** — the sentence was load-bearing, it was the stated reason the codespace was sufficient.
+
+**Product/creator learning:** The stale CLAUDE.md line was the more dangerous of the two. It read as *"the RevenueCat payment path is not live yet"*, which is exactly the judgement someone makes when deciding how urgent a webhook defect is. I nearly used it that way myself when assessing the blast radius — and then checked, and found `Purchases.purchasePackage` wired in `UpgradeScreen.tsx`. **A doc that understates what is live is worse than one that is merely out of date.**
+
+**AI-building learning:** I extracted a generic `checkRateLimit()` out of `checkAiRateLimit()` rather than writing a second limiter, which is the right DRY call and also the risky one: if the `ai:` prefix had moved or dropped, every existing AI limit would silently re-key and every user's window would reset to empty, with nothing failing. So the regression case asserts the exact key string, and I mutation-tested it — dropping the prefix turns it red. **Extracting a shared owner is a refactor whose failure mode is silent, so it needs a test that pins the old callers, not just the new one.**
+
+**The honest bit:** I answered "is anything broken?" without being able to check, because the Supabase connector had dropped mid-session. Then I noticed `.env.local` has the service-role key and I could have queried production directly all along. The answer took ninety seconds once I stopped treating a missing connector as a missing capability: **one subscription row, Stripe, healthy, zero RevenueCat rows** — so the ordering bug I had just fixed had never had anything to corrupt.
+
+**Hook material:** The comment said the route was rate-limited. It had never been rate-limited. It was the reason we believed the codespace was safe, and it was load-bearing for a security argument that nothing had ever checked — because no test reads a justification.
+
+**Postable?:** yes
+
 ## 2026-09-24 — SUBS-ORDERING-REVENUECAT-01 · the migration named both providers and only one got wired
 
 **Shipped:** the RevenueCat webhook now writes through the same ordering guard as Stripe, so replays are no-ops and a stale event cannot re-activate a cancelled subscription.
