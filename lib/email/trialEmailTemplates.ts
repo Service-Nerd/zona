@@ -1,7 +1,7 @@
 import { BRAND } from '@/lib/brand'
 import { EMAIL_COLORS as C } from './emailTheme'
 import { ZONE_HELD_MAX_ABOVE_CEILING_PCT, TRIAL_SUMMARY_MIN_RUNS } from '@/lib/coaching/constants'
-import { ctaHref, type EmailCtaScreen } from './ctaTargets'
+import { ctaHref, type EmailCtaScreen, type CtaParams } from './ctaTargets'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
@@ -100,8 +100,8 @@ function wrapper(content: string, unsubToken: string): string {
 // an inbox. The target is now a deep-link screen the app actually accepts, and
 // `emailCtaTargets.test.ts` reads both sides so a link the handler ignores fails
 // the build rather than shipping inert.
-function ctaButton(label: string, screen: EmailCtaScreen): string {
-  return `<a href="${ctaHref(screen)}" style="display:inline-block;margin-top:28px;padding:14px 28px;background:${C.moss};color:${C.card};text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;">${label}</a>`
+function ctaButton(label: string, screen: EmailCtaScreen, params?: CtaParams): string {
+  return `<a href="${ctaHref(screen, params)}" style="display:inline-block;margin-top:28px;padding:14px 28px;background:${C.moss};color:${C.card};text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;">${label}</a>`
 }
 
 export interface RunSummary {
@@ -197,6 +197,68 @@ export function buildConnectEmail(firstName: string | null, unsubToken: string):
       Connect Apple Health and the next run you do gets read.
     </p>
     ${ctaButton('Connect Apple Health →', 'connect')}
+  `, unsubToken)
+
+  return { subject, html }
+}
+
+// EMAIL-WAVE-3 — email 2, "First read". SLT tranche 3.
+//
+// 🔴 SUTHERLAND CALLED THIS THE ONLY THING NO COMPETITOR CAN DO, and the reason is
+// worth keeping next to the code: *"Every other running app can email you a
+// countdown. Only we can email you, unprompted, within an hour of your first run,
+// and tell you that you held the zone. That is costly signalling: it proves the
+// machine is actually running, on one person, before they have paid anything."*
+//
+// ⚠️ THE NUMBERS ARE THE HEADLINE, AND THAT IS THE DESIGN. Silvanto ruled the wow
+// moment out of email 1 precisely so it could land here: *"every device we have
+// for feeling needs data we do not have at that moment."* Here we have it. The
+// distance and the day are the largest thing in the email, larger than any other
+// email's H1, because this is the first moment the product stops being a claim.
+//
+// ⚠️ EVENT-TRIGGERED, NEVER DATED. It fires from `/api/analyse-run` when
+// `isFirstAnalysis` is true — a signal that route already computed. Wood's
+// requirement, recorded: *"our contact is tied to their behaviour. That is the
+// correct shape for everything we ever send."*
+//
+// §12 Am.2 governs the verdict line via `heldTheZone`, exactly as the trial
+// emails do. Missing HR degrades to silence, never a zero.
+export function buildFirstReadEmail(
+  firstName: string | null,
+  run: RunSummary,
+  unsubToken: string,
+  session: CtaParams,
+): { subject: string; html: string } {
+  const name = firstName ? `, ${firstName}` : ''
+  const km = run.actualLoadKm !== null ? `${run.actualLoadKm.toFixed(1)}km` : null
+  const held = heldTheZone(run)
+
+  // The subject is the runner's own run. Nothing about us, nothing about a trial.
+  const subject = held && run.dayName
+    ? `You held the zone on ${run.dayName}.`
+    : km && run.dayName ? `${km} on ${run.dayName}. Read.` : 'Your first run, read.'
+
+  const zone = verdictLine(run.verdict, run.hrInZonePct, run.hrAboveCeilingPct)
+
+  const html = wrapper(`
+    ${km && run.dayName ? `
+    <p style="margin:20px 0 0 0;font-size:13px;color:${C.mute};letter-spacing:0.04em;text-transform:uppercase;">
+      Your first run
+    </p>
+    <h1 style="margin:6px 0 0 0;font-size:40px;font-weight:700;color:${C.ink};line-height:1.1;letter-spacing:-0.02em;">
+      ${km}
+    </h1>
+    <p style="margin:4px 0 0 0;font-size:16px;color:${C.ink2};line-height:1.5;">${run.dayName}</p>
+    ` : `
+    <h1 style="margin:20px 0 0 0;font-size:22px;font-weight:700;color:${C.ink};line-height:1.3;">
+      Your first run${name}. Read.
+    </h1>`}
+    ${zone ? `
+    <p style="margin:24px 0 0 0;font-size:16px;color:${C.ink};line-height:1.6;">${zone}</p>` : ''}
+    <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink2};line-height:1.6;">
+      That is the number ${BRAND.name} will hold you to. Every run from here gets read the same way.
+    </p>
+    ${ctaButton('See the full read →', 'post-run', session)}
   `, unsubToken)
 
   return { subject, html }

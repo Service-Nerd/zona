@@ -488,6 +488,44 @@ const { units: displayUnits } = await getUserDisplayPrefs(serviceSupabase, userI
     console.error('[analyse-run] run_analysis upsert failed', upsertRes.error.message)
   }
 
+  // EMAIL-WAVE-3 — the First-read email. Event-triggered, never dated: this is
+  // the moment the product stops being a claim, and `isFirstAnalysis` is a signal
+  // this route ALREADY computed (line ~182) for the AI prompt.
+  //
+  // ⚠️ AFTER the upsert, and built from `analysisRow` rather than a re-query.
+  // Reading it back would race the write we just made, and the numbers in the
+  // email must be the numbers we just stored.
+  //
+  // ⚠️ A FAILED UPSERT MUST NOT SEND. An email saying "here is your first run,
+  // read" about a row that did not persist is worse than no email: the runner
+  // taps through to nothing.
+  const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+  if (isFirstAnalysis && !upsertRes.error && !scores_only) {
+    try {
+      const { sendFirstReadEmail } = await import('@/lib/email/firstRead')
+      await sendFirstReadEmail({
+        userId,
+        weekN: week_n,
+        sessionDay: dayKey,
+        run: {
+          // The row is a loose record, so each figure is narrowed here rather
+          // than cast wholesale: a cast would let a shape change reach the email
+          // silently, which is the class this build has been fixing all day.
+          actualLoadKm:      num(analysisRow.actual_load_km),
+          hrInZonePct:       num(analysisRow.hr_in_zone_pct),
+          hrAboveCeilingPct: num(analysisRow.hr_above_ceiling_pct),
+          verdict:           (analysisRow.verdict as string | null) ?? null,
+          analysedRunCount:  1,
+          dayName:           null,   // resolved from the activity date inside
+        },
+      })
+    } catch (err) {
+      // Silent by design, loud in ops. An email failure must never fail an
+      // analysis the runner is waiting for.
+      console.warn('[analyse-run] first-read email failed', err)
+    }
+  }
+
   // POST-RUN-01: removed. The link-time push from autoMatchAndAnalyse already
   // pulled the user into the Post-Run screen, where the analysis morphs from
   // pending → RunFeedbackCard in place. A second push 15–30s later was noise.

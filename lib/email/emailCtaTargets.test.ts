@@ -23,8 +23,23 @@ const TEMPLATES = readFileSync('lib/email/trialEmailTemplates.ts', 'utf8')
 
 describe('email CTA targets are accepted by the app', () => {
   it('the handler accepts every screen the emails can link to', () => {
-    const unhandled = EMAIL_CTA_SCREENS.filter(s => !new RegExp(`emailScreen === '${s}'`).test(CLIENT))
-    expect(unhandled, `DashboardClient does not handle: ${unhandled.join(', ')}`).toEqual([])
+    // ⚠️ `post-run` IS handled, by the POST-RUN-01 push block rather than the
+    // email block — it needs weekN + sessionDay and that parser already exists.
+    // Handling it twice would be two answers to one question. So the assertion
+    // is "the app resolves this param", not "the email block names it", and the
+    // two accepted shapes are listed rather than assumed.
+    const unhandled = EMAIL_CTA_SCREENS.filter(s =>
+      !new RegExp(`emailScreen === '${s}'`).test(CLIENT)
+      && !new RegExp(`screenParam === '${s}'`).test(CLIENT))
+    expect(unhandled, `DashboardClient resolves none of: ${unhandled.join(', ')}`).toEqual([])
+  })
+
+  it('a deep link that needs a session CARRIES one', () => {
+    // `post-run` without weekN/sessionDay resolves to nothing and the runner
+    // lands on Today wondering what we meant — the inert-CTA class again.
+    expect(ctaHref('post-run', { weekN: 4, sessionDay: 'tue' }))
+      .toBe(`${ctaHref('post-run').split('?')[0]}?screen=post-run&weekN=4&sessionDay=tue`)
+    expect(ctaHref('post-run')).not.toContain('weekN')
   })
 
   it('every href is a dashboard deep link, never the marketing homepage', () => {

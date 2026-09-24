@@ -15,7 +15,7 @@
 //   npx tsx scripts/render-emails.ts --out DIR
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { buildConnectEmail, buildDay11Email, buildDay14Email, type RunSummary } from '../lib/email/trialEmailTemplates'
+import { buildConnectEmail, buildFirstReadEmail, buildDay11Email, buildDay14Email, type RunSummary } from '../lib/email/trialEmailTemplates'
 
 const arg = (n: string) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] : null }
 const out = arg('--out') ?? '/tmp/zonna-emails'
@@ -34,6 +34,8 @@ const HOT: RunSummary = { actualLoadKm: 8.2, hrInZonePct: 84, hrAboveCeilingPct:
 const cases = [
   ['01-connect', buildConnectEmail('Russ', TOKEN)],
   ['01-connect--no-name', buildConnectEmail(null, TOKEN)],
+  ['02-first-read', buildFirstReadEmail('Russ', { ...WITH_RUN, analysedRunCount: 1 }, TOKEN, { weekN: 2, sessionDay: 'tue' })],
+  ['02-first-read--no-HR', buildFirstReadEmail('Russ', { ...WITH_RUN, analysedRunCount: 1, hrInZonePct: null, hrAboveCeilingPct: null, verdict: null }, TOKEN, { weekN: 2, sessionDay: 'tue' })],
   ['04-3-days-left--with-run', buildDay11Email('Russ', WITH_RUN, TOKEN)],
   ['04-3-days-left--HOT-above-ceiling', buildDay11Email('Russ', HOT, TOKEN)],
   ['04-3-days-left--NO-run', buildDay11Email('Russ', NO_RUN, TOKEN)],

@@ -15,7 +15,7 @@
  * accusation needs only the ceiling. A compliment needs both.
  */
 import { describe, it, expect } from 'vitest'
-import { heldTheZone, buildDay11Email, buildDay14Email, type RunSummary } from './trialEmailTemplates'
+import { heldTheZone, buildFirstReadEmail, buildDay11Email, buildDay14Email, type RunSummary } from './trialEmailTemplates'
 import { ZONE_HELD_MAX_ABOVE_CEILING_PCT, ZONE_DRIFT_ABOVE_CEILING_PCT, TRIAL_SUMMARY_MIN_RUNS } from '@/lib/coaching/constants'
 
 const TOK = '00000000-0000-4000-8000-000000000000'
@@ -82,5 +82,47 @@ describe('the trial summary needs enough runs to be a comparison', () => {
     const none = buildDay14Email('Russ', run({ analysedRunCount: 0, actualLoadKm: null, hrInZonePct: null, hrAboveCeilingPct: null, verdict: null, dayName: null }), TOK)
     expect(none.subject).toBe('Fourteen days, no runs read.')
     expect(none.html).not.toContain('sessions of evidence')
+  })
+})
+
+describe('EMAIL-WAVE-3 — the First read email', () => {
+  const SESSION = { weekN: 2, sessionDay: 'tue' }
+
+  it('the numbers ARE the headline — larger than any other email H1', () => {
+    // Silvanto ruled the wow moment out of email 1 so it could land here. The
+    // distance is 40px; every other email's H1 is 22px. If that inverts, the
+    // ruling has been undone by a tidy-up.
+    const { html } = buildFirstReadEmail('Russ', run({ analysedRunCount: 1 }), TOK, SESSION)
+    expect(html).toContain('font-size:40px')
+    expect(html).toContain('8.2km')
+  })
+
+  it('the subject is the runner, never the trial', () => {
+    expect(buildFirstReadEmail('Russ', run({ analysedRunCount: 1 }), TOK, SESSION).subject)
+      .toBe('You held the zone on Tuesday.')
+    // Not "welcome", not "your trial", not us.
+    const s = buildFirstReadEmail('Russ', run({ analysedRunCount: 1 }), TOK, SESSION).subject
+    expect(s.toLowerCase()).not.toContain('trial')
+    expect(s.toLowerCase()).not.toContain('welcome')
+  })
+
+  it('NO HR degrades to the distance, never to a verdict it cannot support', () => {
+    const noHr = buildFirstReadEmail('Russ',
+      run({ analysedRunCount: 1, hrInZonePct: null, hrAboveCeilingPct: null, verdict: null }), TOK, SESSION)
+    expect(noHr.subject).toBe('8.2km on Tuesday. Read.')
+    expect(noHr.html).not.toContain('held in zone')
+  })
+
+  it('the CTA opens THAT session, not a hub', () => {
+    const { html } = buildFirstReadEmail('Russ', run({ analysedRunCount: 1 }), TOK, SESSION)
+    expect(html).toContain('screen=post-run&weekN=2&sessionDay=tue')
+  })
+
+  it('survives a run with no distance at all', () => {
+    const bare = buildFirstReadEmail(null,
+      run({ analysedRunCount: 1, actualLoadKm: null, dayName: null, hrInZonePct: null, hrAboveCeilingPct: null, verdict: null }),
+      TOK, SESSION)
+    expect(bare.subject).toBe('Your first run, read.')
+    expect(bare.html).toContain('Your first run')
   })
 })

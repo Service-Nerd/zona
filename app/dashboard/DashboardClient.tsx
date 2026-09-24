@@ -717,6 +717,10 @@ export default function DashboardClient() {
     // opens it over Today rather than routing. That is why it is handled here
     // and not in the `screenParam` block below.
     {
+      // `post-run` is deliberately NOT handled here: the push deep-link block
+      // below already parses that exact shape (weekN + sessionDay) and resolves
+      // it once `plan` loads. Handling it twice would be two answers to one
+      // question, which is the duplication this codebase keeps paying for.
       const emailScreen = params.get('screen')
       if (emailScreen === 'upgrade') {
         setScreen('upgrade')

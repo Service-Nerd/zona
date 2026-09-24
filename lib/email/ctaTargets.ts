@@ -17,8 +17,17 @@
 // the build.
 
 /** The screens an email is allowed to send someone to. */
-export const EMAIL_CTA_SCREENS = ['connect', 'upgrade'] as const
+export const EMAIL_CTA_SCREENS = ['connect', 'upgrade', 'post-run'] as const
 export type EmailCtaScreen = (typeof EMAIL_CTA_SCREENS)[number]
+
+/**
+ * `post-run` needs a session to open, and the app ALREADY has a contract for it:
+ * `?screen=post-run&weekN=14&sessionDay=tue`, used by the POST-RUN-01 push since
+ * May. **Reusing it rather than inventing a weaker target** — the First-read
+ * email's reader is connected by definition, so `connect` would be nonsense and
+ * `today` would make them hunt for the run we just told them about.
+ */
+export interface CtaParams { weekN: number; sessionDay: string }
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
@@ -30,6 +39,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
  * else — which still beats the homepage by three steps. Universal Links make it
  * open natively; until they ship this is the honest best.
  */
-export function ctaHref(screen: EmailCtaScreen): string {
-  return `${BASE_URL}/dashboard?screen=${screen}`
+export function ctaHref(screen: EmailCtaScreen, params?: CtaParams): string {
+  const q = params ? `&weekN=${params.weekN}&sessionDay=${encodeURIComponent(params.sessionDay)}` : ''
+  return `${BASE_URL}/dashboard?screen=${screen}${q}`
 }
