@@ -6,6 +6,30 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — PLAN-VO2MAX-BAND-01 · I downgraded a real runner's interval session
+
+**Shipped:** the HR band a session sits in now has one owner, and the live plan I damaged is repaired.
+**Dev learning:** `applyHrToPlan`, which I wrote this morning, picked the band with `session.type === 'quality'`. The generator picks it with `catalogueRow.category === 'vo2max'`. A VO2max session IS typed quality — the type is the *slot* in the week, the category is the *stimulus* — so the two classifiers agreed on everything except precisely the sessions that mattered. When I ran the backfill against production it rewrote two sessions from "Zone 4–5" 157–182 bpm to "Zone 3" 145–156 bpm. And because the card's header derives bpm from `zone` while the coach note renders `hr_target`, and my function rewrote both, the result looked *more* consistent than before.
+**Product/creator learning:** the thing I keep re-learning is that a second copy of a classifier is not a style problem. This is the fourth named instance in this repo and the first I authored. The fix is not a special case for VO2max; it is that the question "which band is this session in" now exists in one place, reads the producer's own stamped `catalogue_id`, and returns null rather than guessing when it cannot tell.
+**AI-building learning:** the honest bit about verification. This shipped behind six unit tests, two mutation kills, `verify:parity` IDENTICAL across 5,994 cases and a fully green suite. None of it could see the bug: the unit fixture is a 5K beginner plan with no VO2max session in it, and the parity grid never calls the function at all. One of those tests actually asserted the bug as the requirement. **A test suite cannot catch a classifier disagreeing with a producer it never runs beside** — so the gate I wrote is not another unit test, it runs the predicate next to the generator over 400 real plans and asserts they never disagree, plus asserts the corpus actually contains the case that broke.
+**The honest bit:** I found it because the founder asked me to fix something else. I was measuring the population for a different item and the numbers did not match what I had filed. If I had trusted my own note — "3 plans, legacy zone strings" — I would have shipped a repair over the top of live damage I caused and never known.
+**Hook material:** six tests, two mutation kills, and 5,994 parity cases all green — while the function had already downgraded a real runner's VO2max session to threshold in production.
+**Postable?:** yes
+
+---
+
+## 2026-09-24 — PLAN-LEGACY-ZONE-STRING-01 · the repair that could not change a prescription
+
+**Shipped:** 16 wrong zone labels fixed on three live plans, and the two sessions I broke put back.
+**Dev learning:** design the repair so the bad outcome is impossible rather than checked for. The previous repair recomputed `hr_target` — which it did not need to do — and that is how it changed a prescription. This one reads the band the session already has and only rewrites the *label* describing it. It cannot alter what anyone is told to run, and that is a property of the code, not a promise in a comment.
+**Product/creator learning:** my filed note said "3 plans, the residue". Production said 6 plans and 28 sessions, of which 12 were perfectly correct and 16 were the actual defect. Twice in one day I had counted a population through a filter I had forgotten was there. Count from the data, every time, including when you were the one who wrote the note.
+**AI-building learning:** the most useful thing I built today refused to run. The restore pass tried to copy the pre-damage values out of `plan_archive`, and its guard said no. I nearly overrode it. The guard was right: the archived values were computed from an older max HR, so the archive was *itself* stale — restoring it would have re-introduced this morning's bug while fixing this afternoon's. A guard that blocks you is information, not an obstacle.
+**The honest bit:** three separate live-data defects this week were all found by someone happening to look. Every gate in this repo runs at generation time; nothing re-reads what is actually sitting in the table. That is now filed, and it is a bigger item than any of the three.
+**Hook material:** the backup I was going to restore from was wrong too — it would have fixed this afternoon's bug by reinstating this morning's.
+**Postable?:** yes
+
+---
+
 ## 2026-09-24 — BINGE-BUCKET-CROSS-01 · the build was red because a plan got better
 
 **Shipped:** the plan-quality gate no longer reports an improvement as a regression.
