@@ -614,6 +614,40 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
+### ⚙️ `HEALTHKIT-ASKED-VS-FLOWING-01` — the connect flag records that we ASKED, not that we can READ
+**Board: ⚙️ NO BOARD.** Found 2026-09-24 measuring reach for the Connect email. **RCA done, fix
+deliberately NOT built** — see the population below.
+
+`healthkit_connected_at` is written when `requestHealthKitAuth()` returns true, and that function
+returns `Array.isArray(status.readAuthorized)` — **true whenever the call succeeded**. Its own
+comment says so: *"HealthKit can't tell us if read access was actually granted (Apple's privacy
+model — silent denial reads as empty arrays)… treat the call succeeding as 'user saw the prompt and
+didn't bail out'."* **The code is correct and Apple's model is not negotiable. The column name is
+the lie**, and every consumer reads it as an outcome.
+
+`syncOnAppOpen()` is then fired-and-forgotten with a `console.warn`, so a user who granted nothing
+looks permanently connected and the Today connect banner never returns.
+
+⚠️ **THE ALARM WAS MOSTLY WRONG AND THAT IS WHY THIS IS NOT URGENT.** 8 of 16 connected users have
+zero activities, which reads like a broken pipeline. Measured:
+
+- **1 is `zonna.demo@demo.com`**, the demo account.
+- **7 of 8 have NO PLAN AT ALL.** They onboarded, connected, and never generated one. Not blocked: gone.
+- **1 (2026-09-23) has 16 `health_daily_samples` and 0 activities** — the pipeline demonstrably
+  works for them; they have not run.
+
+**Consequence for the email programme, and it is the real cost:** the Connect email targets
+`healthkit_connected_at IS NULL`, so **the people who tapped connect and granted nothing can never
+receive it** — the exact group it was written for.
+
+**The fix when it is worth doing:** add `healthkit_last_data_at`, set on first successful ingest,
+and derive one state every consumer reads — `asked` / `flowing` / `asked_but_silent`. Additive, one
+column, no board. 🔴 **The denial path itself cannot be verified from here** — it needs a device and
+a TestFlight build to confirm what a denying user actually produces.
+
+**Why it waits:** the population today is seven abandoned signups and a demo account. It matters at
+300 users, not 30.
+
 ### ⚙️ `PLAN-META-HR-DIVERGENCE-01` — `plan.meta` HR can drift from `user_settings`
 **Board: ⚙️ NO BOARD.** Found 2026-09-24 while fixing `PLAN-ZONE-VS-HRTARGET-01`; **founder ruled
 the two paths below are left alone for now.**
