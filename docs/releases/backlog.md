@@ -614,6 +614,39 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
+### 🏃 `EMAIL-WAVE-4-PATTERN-01` — the Pattern email, NOT BUILT, and the reason is the population
+**Board: 🏃 COACHING BOARD** (authors the bounded pattern set) then **🧭 DESIGN BOARD** (it has
+never seen the email). SLT-approved 2026-09-24 as tranche 4. **The conditional guide-link mechanism
+it depends on SHIPPED; the email did not.**
+
+🔴 **MEASURED 2026-09-24, and it is unambiguous.** The Pattern email needs **≥3 analysed runs with
+heart-rate data**. Every live run analysis, by user:
+
+| User | Live analyses | With HR ceiling data |
+|---|---|---|
+| **`zonna.demo@demo.com`** | **72** | 72 |
+| real user 2 | 3 | **0** |
+| real user 3 | 2 | **0** |
+| real user 4 | 1 | 1 |
+
+**The only account that qualifies is the demo account.** The population is zero.
+
+**Why that is a reason not to build, not a reason to build anyway.** Hutchinson's condition was
+that the pattern set must be **authored and bounded**, because *"an engine that can describe any
+pattern will eventually describe a coincidence as a finding, under a Zonna byline, in someone's
+inbox."* **On a corpus of one demo account you cannot tell a pattern from a coincidence even in
+principle.** Building it would mean authoring a coaching artifact against n=1, shipping an email
+that reaches nobody, and getting a green suite for it — the decorative class this repo has paid for
+five times (`--s-long`, `run_walk_strategy`, `SPECIFICITY_BY_PHASE`, §97's two inert gates,
+`ZONE_DISCIPLINE_BANDS`).
+
+**Unblock trigger:** ≥3 real users with ≥3 HR-carrying analyses each. Then the Coaching Board
+authors the pattern set against a corpus that can falsify it, and the Design Board sees the email.
+
+**Already built and waiting:** `lib/email/guideLink.ts` — the conditional link the founder asked
+for, *"so it would just work when the pages arrive"*. A missing guide **removes the paragraph**;
+it never degrades to a hub.
+
 ### ⚙️ `HEALTHKIT-ASKED-VS-FLOWING-01` — the connect flag records that we ASKED, not that we can READ
 **Board: ⚙️ NO BOARD.** Found 2026-09-24 measuring reach for the Connect email. **RCA done, fix
 deliberately NOT built** — see the population below.
