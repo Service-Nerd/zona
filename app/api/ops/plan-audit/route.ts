@@ -4,6 +4,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { findWeekCollisions, type LiveWeekRow } from '@/lib/ops/planWeekCollision'
 import { validateReshapedPlan } from '@/lib/plan/invariants'
+import { storedPlanCodes } from '@/lib/ops/storedPlanProbes'
 import type { Plan } from '@/types/plan'
 
 // GET/POST /api/ops/plan-audit — PLAN-AUDIT-01 daily constitutional audit.
@@ -124,11 +125,24 @@ export async function POST(req: NextRequest) {
       continue
     }
     checked++
-    const codes = Array.from(new Set(errors.map(v => v.code))).sort()
+    // PLAN-STORED-SCHEMA-DRIFT-01 — two questions this audit never asked, joined
+    // to the SAME per-user code set so PLAN-AUDIT-01's alert-on-transition rule
+    // covers them: a known-bad legacy plan reports once, a new break alerts the
+    // next morning. `validatePlan` alone was blind to both — `meta.resting_hr: 0`
+    // made 10 plans schema-invalid for months, and a VO2max session rewritten
+    // into the threshold band is self-CONSISTENT, which is all
+    // INV-PLAN-DISPLAY-ZONE-MATCHES-WORK asks.
+    const codes = storedPlanCodes(plan as never, errors.map(v => v.code))
     const prev = lastSeen.get(row.user_id)
     const now = JSON.stringify(codes)
 
-    if (!errors.length) {
+    // ⚠️ `codes.length`, NOT `errors.length`. This branch read `errors` until
+    // PLAN-STORED-SCHEMA-DRIFT-01, and the moment `codes` carried anything the
+    // invariants do not produce, a plan with a schema break and no invariant
+    // error would have taken the CLEAN path and never been reported. That is the
+    // same "the check reads a different source from the thing it reports" class
+    // the schema probe was added to catch — one line away from reintroducing it.
+    if (!codes.length) {
       // A plan that WAS flagged and is now clean: record the improvement once,
       // so a fix is as visible as a regression.
       if (prev && prev !== '[]') {
@@ -164,6 +178,10 @@ export async function POST(req: NextRequest) {
         // Foundation weeks (n <= 0) are the class no other server-side check
         // sees at all — call them out so triage starts in the right place.
         foundation_week_violations: errors.filter(v => (v.week ?? 1) <= 0).length,
+        // `sample` carries INVARIANT detail only — the schema and HR-band probes
+        // return codes with no week/day, and `codes` above is where they appear.
+        // Said explicitly so an empty sample beside a non-empty `codes` reads as
+        // "this finding came from a probe", not as a truncation bug.
         sample: errors.slice(0, 5).map(v => ({ code: v.code, week: v.week, day: v.day, message: v.message })),
         plan_updated_at: row.updated_at,
       },

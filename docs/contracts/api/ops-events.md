@@ -41,6 +41,32 @@ recordOpsEvent(kind: OpsEventKind, detail?: Record<string, unknown>, userId?: st
 **PLAN-AUDIT-01 (2026-09-03).** Runs `validateReshapedPlan` over every stored plan and records
 the ones breaching their own constitution.
 
+**PLAN-STORED-SCHEMA-DRIFT-01 (2026-09-24) — it now asks three questions, not one.**
+`lib/ops/storedPlanProbes.ts → storedPlanCodes()` is the single owner of a stored plan's code set:
+
+| Source | Code shape | The defect it exists for |
+|---|---|---|
+| `validateReshapedPlan` | `INV-PLAN-…` | the original probe |
+| `schemaCodesFor` — `PlanSchema` over the stored row | `SCHEMA:<path>` | `meta.resting_hr = 0` made **10 of 22 plans** schema-invalid on a `.positive()` rule that had been right since the day it was written, and **nothing ever parsed a stored plan**, so it was invisible for months |
+| `hrBandCodesFor` | `HR-ZONE-STRING-MISMATCH`, `HR-BAND-MISMATCH` | a VO2max session rewritten into the threshold band is **self-consistent**, so `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` passes it. Only comparing against the catalogue category finds it |
+
+⚠️ **`SCHEMA:` paths collapse every COORDINATE** — array indices *and* day keys — to `#`, so one
+broken field is one code. Uncollapsed, a plan with a bad `type` on eleven sessions produced four
+codes and the next plan produced a different four, which would defeat the transition rule below.
+Capped at 6 distinct paths plus a `SCHEMA:+N-more` counter; the count is never hidden.
+
+⚠️ **`sample` carries INVARIANT detail only.** The two probes return codes with no week or day, so
+an empty `sample` beside a non-empty `codes` means "this came from a probe", not a truncation bug.
+
+🔴 **The route's clean test reads `storedPlanCodes`, never `errors`.** It read `!errors.length`
+until this shipped, which meant a plan with a schema break and no invariant error would have taken
+the CLEAN path and never been reported — the same "the check reads a different source from the
+thing it reports" class the schema probe was added to catch. The merge is owned and tested so the
+emptiness test has nothing else to read.
+
+**First run against production (2026-09-24):** 2 of 22 plans flagged, both pre-R23/May legacy rows,
+one code each. Zero HR-band findings, because those were repaired the same day.
+
 **Auth:** `CRON_SECRET` via `Authorization: Bearer` or `x-cron-secret` (403 otherwise).
 **Schedule:** daily 07:45 UTC via GitHub Actions (`.github/workflows/ops-cron-plan-audit.yml`) —
 15 min after the reshape probe.
