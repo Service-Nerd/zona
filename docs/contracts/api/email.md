@@ -76,6 +76,32 @@ to people who had already subscribed.
   keyed on `verdictLine()` being non-empty — true for *"Close."* — so a runner 22% above
   the ceiling was subjected *"You held the zone."*
 
+## `GET|POST /api/email/preview`
+
+**Sends every email, in every state, to the authenticated admin's own address.**
+Exists because every board sitting on this programme ended on the same line:
+**nothing has ever been seen rendered in a real mail client.** A browser honours
+CSS Gmail strips and does not reflow a 520px table into a phone, so
+`scripts/render-emails.ts` cannot answer the question this route answers.
+
+- **Auth:** `getUserFromRequest`, then `is_admin`. **403 for any other user.**
+- **No `to` parameter, deliberately.** The address is resolved from the account.
+  A route taking an arbitrary recipient plus a shared secret is an open relay
+  with our return-path on it, and the blast radius is the sending domain.
+- **Goes through `sendToUser`, never `sendEmail`** — a preview that bypassed
+  suppression could mail an admin who had unsubscribed and would leave no record.
+  **A preview is a real email and obeys the same rules.**
+- Subjects are prefixed `[preview] <label> —` so eight near-identical emails are
+  tellable apart in an inbox. Previews only.
+- Returns a **per-email outcome**, not just a count: *"8 attempted"* and *"8
+  arrived"* are different facts.
+
+**Fixtures are shared** with the renderer (`lib/email/previewFixtures.ts`) so the
+email you approve and the email you receive cannot drift.
+`previewCoverage.test.ts` fails the build if a new email is never previewed, or if
+any email stops being previewed **in its empty state** — 22 of 30 real recipients
+hit one, and a preview showing only the happy path is how that shipped unnoticed.
+
 ## Templates
 
 `lib/email/trialEmailTemplates.ts`. Colours come from `EMAIL_COLORS`, which

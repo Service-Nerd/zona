@@ -21,26 +21,22 @@ const arg = (n: string) => { const i = process.argv.indexOf(n); return i >= 0 ? 
 const out = arg('--out') ?? '/tmp/zonna-emails'
 mkdirSync(out, { recursive: true })
 
-const TOKEN = '00000000-0000-4000-8000-000000000000'   // a shape-accurate example, never a real one
-
-// The two states every email has, because a template is only honest if BOTH are.
-// 22 of 30 real recipients hit the second one.
-const WITH_RUN: RunSummary = { actualLoadKm: 8.2, hrInZonePct: 84, hrAboveCeilingPct: 6, verdict: 'nailed', analysedRunCount: 9, dayName: 'Tuesday' }
-const NO_RUN: RunSummary = { actualLoadKm: null, hrInZonePct: null, hrAboveCeilingPct: null, verdict: null, analysedRunCount: 0, dayName: null }
-// §12 Am.2 — in the band but hot above the cap. The case that LOSES the praise
-// line, which is the whole point of the amendment. Up to 5 of 73 real runs.
-const HOT: RunSummary = { actualLoadKm: 8.2, hrInZonePct: 84, hrAboveCeilingPct: 22, verdict: 'close', analysedRunCount: 9, dayName: 'Tuesday' }
+// ⚠️ FIXTURES ARE SHARED WITH `/api/email/preview`. One set, so the email you
+// look at and the email you receive cannot drift apart.
+import {
+  RUN_CLEAN, RUN_HOT, RUN_NO_HR, RUN_NONE, PREVIEW_TOKEN as TOKEN, PREVIEW_SESSION,
+} from '../lib/email/previewFixtures'
 
 const cases = [
   ['01-connect', buildConnectEmail('Russ', TOKEN)],
   ['01-connect--no-name', buildConnectEmail(null, TOKEN)],
-  ['02-first-read', buildFirstReadEmail('Russ', { ...WITH_RUN, analysedRunCount: 1 }, TOKEN, { weekN: 2, sessionDay: 'tue' })],
-  ['02-first-read--no-HR', buildFirstReadEmail('Russ', { ...WITH_RUN, analysedRunCount: 1, hrInZonePct: null, hrAboveCeilingPct: null, verdict: null }, TOKEN, { weekN: 2, sessionDay: 'tue' })],
-  ['04-3-days-left--with-run', buildDay11Email('Russ', WITH_RUN, TOKEN)],
-  ['04-3-days-left--HOT-above-ceiling', buildDay11Email('Russ', HOT, TOKEN)],
-  ['04-3-days-left--NO-run', buildDay11Email('Russ', NO_RUN, TOKEN)],
-  ['05-trial-ends-today--with-run', buildDay14Email('Russ', WITH_RUN, TOKEN)],
-  ['05-trial-ends-today--NO-run', buildDay14Email('Russ', NO_RUN, TOKEN)],
+  ['02-first-read', buildFirstReadEmail('Russ', { ...RUN_CLEAN, analysedRunCount: 1 }, TOKEN, PREVIEW_SESSION)],
+  ['02-first-read--no-HR', buildFirstReadEmail('Russ', { ...RUN_NO_HR, analysedRunCount: 1 }, TOKEN, PREVIEW_SESSION)],
+  ['04-3-days-left--with-run', buildDay11Email('Russ', RUN_CLEAN, TOKEN)],
+  ['04-3-days-left--HOT-above-ceiling', buildDay11Email('Russ', RUN_HOT, TOKEN)],
+  ['04-3-days-left--NO-run', buildDay11Email('Russ', RUN_NONE, TOKEN)],
+  ['05-trial-ends-today--with-run', buildDay14Email('Russ', RUN_CLEAN, TOKEN)],
+  ['05-trial-ends-today--NO-run', buildDay14Email('Russ', RUN_NONE, TOKEN)],
 ] as const
 
 const index: string[] = []
