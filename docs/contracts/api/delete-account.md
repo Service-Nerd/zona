@@ -33,6 +33,9 @@ Empty body accepted.
   fails until a user-scoped table is both declared and wired.
 - Two stores survive deliberately, anonymised rather than deleted: `ops_events` (the AI spend
   ledger, `user_id` → NULL) and `charity_codes` (released back to its batch, not consumed).
+  🔴 **That release CONTRADICTS `GTM-CHARITY-07`, which three days earlier moved the redeem gate
+  onto `claimed_at` precisely BECAUSE it survives deletion** — closing redeem → delete →
+  re-redeem. The trigger nulls it, reopening that path. `CHARITY-CLAIM-RELEASE-01`.
   Three more are cleared by the `on_auth_user_deleted` trigger because no FK can reach them:
   `ai_rate_limits`, `charity_codes.claimed_at`, `waitlist`.
 - Apple App Store requirement — must be reachable from Me screen without authentication friction.

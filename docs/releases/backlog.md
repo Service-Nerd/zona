@@ -586,6 +586,48 @@ runner-facing notes with dev-only invariant text **in one file**, so a path-base
 wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
 own sentence — are untouched.
 
+### 💼 `CHARITY-CLAIM-RELEASE-01` — two shipped decisions cancel each other out, three days apart
+**Board: 💼 SLT** (it decides what a charity partner's seat cap means), then ⚙️ no board for the
+mechanism. Found 2026-09-24 when the founder explained a redemption count that had dropped 2 → 1.
+
+**`GTM-CHARITY-07` (2026-09-20)** moved the redeem gate from `claimed_by` to `claimed_at`
+*specifically because* `claimed_at` survives account deletion, closing **redeem → delete →
+re-redeem**. Its own words: *"THE SEAT IS SPENT WHEN IT WAS CLAIMED, NOT WHILE THE CLAIMANT STILL
+EXISTS… NO MIGRATION, AND THAT IS THE POINT."* It explicitly **rejected** a `released_at` /
+`claim_state` column as a second answer to a question the schema could already answer.
+
+**`DB-USER-PURGE-01` (2026-09-23)** then added `on_auth_user_deleted`, which does
+`update charity_codes set claimed_at = null where claimed_by = old.id`, arguing *"the batch cap
+stays spent on a runner who is gone."*
+
+🔴 **The later change silently reopened the exact path the earlier one closed.** Both arguments
+are sound in isolation, which is why neither author was wrong and why nothing caught it: no test
+asserts the interaction, and the two sit in a route and a migration that never reference each other.
+
+**Live, verified in production:** two of three codes read `claimed_by=NULL, claimed_at=NULL` with
+`expires_at` **still populated** — a half-cleared row that is redeemable again. Consequences:
+(a) a runner can hold a 90-day grant indefinitely by deleting and recreating an account;
+(b) a batch's redemption count silently refills — the *"drifts DOWN over a season"* symptom
+`GTM-CHARITY-07` named, now observed; (c) the row lies about itself, since `expires_at` outlives
+the claim it belonged to.
+
+⚠️ **Exposure today is near zero** — three codes, all on the `partner_name='TEST'` batch, and no
+real charity batch has ever been created. This is a correctness and doctrine problem to settle
+before a partner batch exists, not an incident.
+
+**The decision the SLT owns:** when a runner deletes their account, does the charity get the seat
+back? Both answers are defensible, and the mechanism follows from the answer:
+- *Seat returns* → clear `expires_at` too, and accept that a code can be re-redeemed by whoever
+  holds it (or re-mint it).
+- *Seat stays spent* → the trigger must not clear `claimed_at`, and `DB-USER-PURGE-01`'s concern
+  needs a different answer.
+- *Both* → the `released_at` column `GTM-CHARITY-07` rejected. ⚠️ **That rejection was correct
+  when it was made** and stopped being correct the moment `claimed_at` acquired a second meaning.
+
+⚠️ **Two contracts asserted the wrong half of this and were corrected in the same commit:**
+`charity-redeem.md` said *"the batch keeps its record that a seat was used"* — false — and
+`delete-account.md` described the release without noting it reverses `GTM-CHARITY-07`.
+
 ### ⚙️ `RATELIMIT-MODULE-PATH-01` — the shared rate limiter still lives under `lib/ai/`
 **Board: ⚙️ NO BOARD.** Opened 2026-09-24 by `CHARITY-REDEEM-RATELIMIT-01`.
 
