@@ -148,19 +148,19 @@ console.log(`\ntotal findings across all cohorts: ${grand}`)
 // visible rather than hidden. Re-baseline only with a declared reason.
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
+import { compareToBaseline } from '../lib/plan/qualityBaselineCompare'
 const BASELINE = join(process.cwd(), 'lib/plan/__fixtures__/planQualityBaseline.json')
 if (WRITE) {
   writeFileSync(BASELINE, JSON.stringify(summary, null, 2) + '\n')
   console.log(`\nbaseline written to ${BASELINE}`)
 } else if (existsSync(BASELINE)) {
   const base = JSON.parse(readFileSync(BASELINE, 'utf8')) as typeof summary
-  const worse: string[] = []
-  for (const [cohort, codes] of Object.entries(summary))
-    for (const [code, n] of Object.entries(codes)) {
-      if (code === 'generated') { if (n < (base[cohort]?.[code] ?? 0)) worse.push(`${cohort}/${code}: ${base[cohort][code]} -> ${n} (FEWER plans generated)`); continue }
-      const b = base[cohort]?.[code] ?? 0
-      if (n > b) worse.push(`${cohort}/${code}: ${b} -> ${n} (+${n - b})`)
-    }
+  // ⚠️ THE COMPARISON IS NOT A PER-CODE `n > b` AND HAS NOT BEEN SINCE
+  // BINGE-BUCKET-CROSS-01: `BINGE-SEVERE-75` and `BINGE-WEEK` are two severity
+  // buckets of ONE predicate, so a plan improving from 75% to 74% moved between
+  // them and read as a +1 regression. It failed the build on a better plan.
+  // `compareToBaseline` owns the rule and is tested; do not re-inline it.
+  const worse = compareToBaseline(summary, base)
   console.log(worse.length ? `\n✗ WORSE THAN BASELINE:\n  ${worse.join('\n  ')}` : '\n✓ no regression against the committed baseline')
   if (worse.length) process.exit(1)
 } else {
