@@ -6,7 +6,7 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-09-24 — EMAIL-WAVE-0, EMAIL-WAVE-1, EMAIL-WAVE-2, EMAIL-WAVE-3, EMAIL-WAVE-4, EMAIL-PREVIEW-01 · the whole email programme, and the two times the data inverted the brief
+## 2026-09-24 — EMAIL-WAVE-0, EMAIL-WAVE-1, EMAIL-WAVE-2, EMAIL-WAVE-3, EMAIL-WAVE-4, EMAIL-PREVIEW-01, EMAIL-BRAND-01 · the whole email programme, and the two times the data inverted the brief
 
 **Shipped:** consent and an unsubscribe path, the Connect email, both trial emails re-led, the First-read email, and the conditional guide link. The Pattern email deliberately not built.
 **Dev learning:** wave 3 was priced as the expensive one — the email has to arrive within an hour of a run and the cron is daily, so it "needed" an hourly trigger or a queue. It needed neither. `/api/analyse-run` has computed `isFirstAnalysis` from `count === 0` since the route was written, to soften the AI prompt. The email hangs off a signal that was already there. **The plumbing cost I had estimated was entirely a failure to read the route I was about to edit.**
@@ -16,6 +16,8 @@ it specific, no polish. The content system adds the voice.
 **Also shipped:** `/api/email/preview`, which sends all eight emails to the admin's own inbox — the first time any of this will have been seen in a real mail client, which every board sitting flagged and none could fix.
 **Hook material:** I refused to build the last email in the programme because the only account with enough data to trigger it is the demo account. And two of the checks I wrote for the preview were caught by tooling I had shipped the same morning: one hollow, one substring-biased.
 **Postable?:** yes
+
+**Coda, after the founder looked at them:** "the logo is not correct on any of them and they very flat visually." Both true, and both turned out to be countable rather than matters of taste — the wordmark was regressed on five specific counts against a component that already existed, and "flat" was 12 of 20 font-size declarations at the same value on a surface that had never adopted the 21-token type scale sitting in globals.css. Silvanto's veto got its first use. **The lesson I keep relearning: when someone says something looks wrong, there is usually a number behind it, and finding the number is faster than arguing about taste.**
 
 ---
 

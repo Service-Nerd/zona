@@ -1143,6 +1143,7 @@ Not this board's to close without him.
 |---|---|
 | **Is the fact row the right MESSAGE?** | Open since 2026-09-21. Dropping the price was recommended and deliberately **not** shipped: it touches W-05, and *a question is not an instruction* |
 | **The unreproduced "things aligned to the right" on mobile** | Needs a screenshot or a section name. Measured live, `scrollWidth === innerWidth` |
+| **Do CTA buttons earn elevation?** | 🔻 **OPEN — founder, 2026-09-24:** *"all our cta buttons [are] very flat visually"*, across app, site AND email. **Measured:** `--shadow-card` has **19 consumers**, `--shadow-lifted` has **ZERO**, and the only CTA class is a hover background swap — **the product elevates its cards and gives its buttons nothing**, so the button sits visually behind the card it is on. ⚠️ Email cannot use `box-shadow` (Outlook drops it), so any answer needs an email-safe equivalent. `CTA-FLAT-01` |
 | **Whether the week-2 deload notch is EXPLAINABLE to a runner who asks** | PLAN-ARC-V2 chose to make a known defect visible. §119's producer fix is now **URGENT, not deferred** — Hutchinson's reasoning governs over Traynor's "nobody is watching" |
 
 ---
