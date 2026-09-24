@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — GATE-FALSIFY-01 (b) · refusing the silence, and saying that is all it does
+
+**Shipped:** a commit that adds a new test file and never says how the check was made to go red now gets a prompt.
+
+**Dev learning:** The measurement was the work again. Before writing a line I asked how often this would fire on real history: 1,050 commits, 245 adding a test, **172 of those already stating falsification**. That 70% changed the design — it told me the practice is largely followed and the hook is catching a residual, not nagging a habit nobody has. Had it come back at 10% I would have built something else, because a hook firing on 90% of test-adding commits gets switched off in a week and this repo has that failure recorded more than once.
+
+**Product/creator learning:** The honest-negative case is what makes it usable. *"Could not falsify: the route throws in test env"* silences the hook, exactly as `fix-test-check.py` accepts the same shape. A gate that punishes an honest answer trains people to write the magic word instead of the true one, and then you have a green tick with nothing behind it — which is the precise thing this item exists to stop.
+
+**AI-building learning:** I wrote down what the hook *cannot* do inside the hook itself: it refuses silence, it cannot verify the mutation ran. That distinction is why (b) is ranked below (a) on the item, and putting it in the docstring rather than the write-up means the next person to read the file gets the limitation before they get the reassurance. Nine of its twelve test cases assert the hook says **nothing** — the silent cases are the ones that decide whether a hook survives.
+
+**The honest bit:** building it surfaced that `fix-test-check.py` — the hook I was mirroring, whose entire subject is *"a fix with no test is worth a second look"* — is **the only one of eight hooks with no test file**. Seven others have between 12 and 72 cases. Filed rather than fixed, because it is a different hook and folding it in would be the scope creep the procedure exists to prevent.
+
+**Hook material:** The hook that says "you shipped a fix with no test" is the one fix in this repo with no test. Seven of its eight siblings have test suites, one of them with 72 cases.
+
+**Postable?:** yes
+
 ## 2026-09-24 — GATE-FALSIFY-01 (a) · the rule that was written down three times and enforced zero
 
 **Shipped:** a lint that fails the build on the two hollow test shapes this repo keeps writing, with all 19 existing instances fixed.

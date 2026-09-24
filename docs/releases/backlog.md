@@ -614,8 +614,28 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
-### ⚙️ `GATE-FALSIFY-01` — **(a) SHIPPED 2026-09-24. (b), (c), (d) remain.**
+### ⚙️ `HOOK-TEST-FIXTEST-01` — `fix-test-check.py` is the only hook with no tests
+**Board: ⚙️ NO BOARD.** Found 2026-09-24 while building `GATE-FALSIFY-01 (b)`, which mirrors it.
+
+**Seven of eight hooks carry a `.test.py`** — `backlog-touch`, `build-trigger` (29 cases),
+`coaching-guard` (56), `design-guard` (72), `guard-bash` (25), `ship-record-check`,
+`state-block-check`, and now `falsify-check` (12). **`fix-test-check.py` has none.**
+
+It is the hook whose whole subject is *"a fix with no test is worth a second look"*, and it is the
+one fix in the repo with no test. Both directions matter: the cases where it must stay SILENT are
+what stop it being disabled.
+
+### ⚙️ `GATE-FALSIFY-01` — **(a) and (b) SHIPPED 2026-09-24. (c) and (d) remain.**
 **Board: ⚙️ NO BOARD** (tooling).
+
+✅ **(b) Require the falsification to be RECORDED — DONE 2026-09-24.**
+`.claude/hooks/falsify-check.py`, wired in `settings.json` directly after the hook it mirrors.
+Prompts when a commit **ADDS** a new test file and the message never says how the check was made
+to go red. **An honest negative is a complete answer** — *"could not falsify: the route throws in
+test env"* silences it, exactly as `fix-test-check.py` accepts one. ⚠️ **It refuses the silence; it
+cannot verify the mutation ran.** Noise measured on real history first: of 1,050 commits since
+2026-09-01, 245 add a test, **172 (70%) already state falsification**, 73 would prompt — **7.0% of
+all commits**. 12 self-test cases, both directions, 9 of them asserting SILENCE.
 
 ✅ **(a) Lint the known hollow shapes — DONE.** `lib/hollowTestShapes.test.ts`, inside
 `npm run verify`. Catches a positive `toContain('<identifier>')` against source text (the 11
@@ -623,12 +643,7 @@ recorded substring misses) and a branch a preceding assertion has made unreachab
 existing occurrences fixed in the same commit, so it ships with ZERO baseline** rather than a
 debt register nobody reduces. Escape hatch `// hollow-ok: <reason>`.
 
-**Still open, and (b)/(d) are the weak options this repo distrusts:**
-
-**(b) Require the falsification to be RECORDED**, mirroring `fix-test-check.py`. A commit adding
-a `*.test.ts` should state how the check was made to go red. The hook cannot verify the mutation,
-but it can refuse the silence — and *"I could not falsify it because…"* is a complete answer,
-exactly as `fix-test-check.py` accepts one.
+**Still open:**
 
 **(c) `npm run falsify <source> <test> --mutate '<sed expr>'`** — automates the
 copy/mutate/run/restore loop done by hand: applies the mutation, asserts the named test goes
