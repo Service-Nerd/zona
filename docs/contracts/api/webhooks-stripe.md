@@ -92,6 +92,8 @@ returns 200 — Stripe must not be asked to retry an event that was correctly ig
   webhook, so the cookie client would have no identity and RLS would block the write.
 - `provider` is written as `'stripe'`, which is how `resolveTier` distinguishes a Stripe
   subscription from a RevenueCat one or a charity grant.
-- ⚠️ **The sibling route does NOT use this guard.** `/api/webhooks/revenuecat` still does the
-  plain upsert the migration was written to replace, and the migration's own first line names
-  both providers. See that contract's Notes and `SUBS-ORDERING-REVENUECAT-01`.
+- ✅ **The sibling route now uses this guard too** (`SUBS-ORDERING-REVENUECAT-01`, 2026-09-24).
+  `/api/webhooks/revenuecat` performed the plain upsert the migration was written to replace —
+  for as long as this one had the guard — even though the migration's own first line names both
+  providers. Both routes now call the RPC; RevenueCat resolves `p_event_at` from
+  `event_timestamp_ms` via `eventAtIso()`. If you add a **third** provider, wire it here too.

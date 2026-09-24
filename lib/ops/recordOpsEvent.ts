@@ -78,6 +78,17 @@ export type OpsEventKind =
   // we had lifted. Unhandled is still the correct BEHAVIOUR (we must not guess a
   // status), but it must be visible.
   | 'revenuecat_event_unhandled'
+  // SUBS-ORDERING-REVENUECAT-01 (2026-09-24) — a RevenueCat event carrying no
+  // usable `event_timestamp_ms`, so the ordering guard could not engage and the
+  // write behaved exactly as the old plain upsert did.
+  //
+  // ⚠️ THE POINT IS THAT A DISENGAGED GUARD MUST NOT BE SILENT. Passing null is
+  // the correct fallback (stamping `now()` would mark a STALE event as newest and
+  // defeat the guard on the exact delivery it exists to suppress), but "correct
+  // fallback" and "nobody can tell it happened" is how an inert check survives for
+  // months here. If this fires at any volume, the field name is wrong or RevenueCat
+  // changed their payload, and the guard is protecting nothing.
+  | 'revenuecat_event_no_timestamp'
   // SEC-08 sweep (2026-09-11) — the daily coach note's CACHE could not be read
   // or written. Found because `daily_coach_notes` did not exist in production
   // at all: the migration was committed AND recorded in the applied-migrations

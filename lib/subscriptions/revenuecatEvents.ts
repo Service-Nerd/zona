@@ -58,3 +58,28 @@ export const NON_EXPIRING_GRANT_YEARS = 5
 export function isGrantEvent(eventType: string): boolean {
   return eventType === 'NON_RENEWING_PURCHASE' || eventType === 'SUBSCRIPTION_EXTENDED'
 }
+
+/**
+ * SUBS-ORDERING-REVENUECAT-01 — the source event's timestamp, for the ordering guard.
+ *
+ * WHY IT LIVES HERE AND NOT IN THE ROUTE: same reason as `toStatus` above. vitest
+ * collects `lib/**` only, so a resolver written beside the route would never have
+ * run — and this one decides whether the guard engages at all.
+ *
+ * ⚠️ RETURNS null RATHER THAN `now()` WHEN THE FIELD IS ABSENT, DELIBERATELY.
+ * `apply_subscription_event` applies the write when either side's `last_event_at`
+ * is null, so null means "behave exactly as the old plain upsert did". Falling
+ * back to `now()` would be far worse than doing nothing: it would stamp a STALE
+ * event as the newest one and defeat the guard on precisely the delivery this
+ * exists to suppress.
+ *
+ * The route records `revenuecat_event_no_timestamp` when this returns null, because
+ * a guard that has silently stopped guarding is this repo's most repeated failure
+ * class and must not be inferred from a support email.
+ */
+export function eventAtIso(rc: { event_timestamp_ms?: unknown }): string | null {
+  const ms = rc?.event_timestamp_ms
+  if (typeof ms !== 'number' || !Number.isFinite(ms) || ms <= 0) return null
+  const d = new Date(ms)
+  return Number.isNaN(d.getTime()) ? null : d.toISOString()
+}

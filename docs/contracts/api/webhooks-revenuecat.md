@@ -34,6 +34,7 @@ missing, so the two guards agree.
 | `app_user_id` | Written as `subscriptions.user_id`. **Must be the Supabase user id** |
 | `expiration_at_ms` | Epoch ms → ISO. First choice for `current_period_end` |
 | `expires_date` | Fallback when `expiration_at_ms` is absent |
+| `event_timestamp_ms` | The SOURCE event's time, via `eventAtIso()` — drives the ordering guard |
 
 ## Status mapping
 
@@ -87,7 +88,7 @@ was written.
 | 503 | `REVENUECAT_WEBHOOK_SECRET` not configured (fail closed) |
 | 401 | `Authorization` header absent or does not match |
 | 400 | Body is not valid JSON, or has no `event` key |
-| 500 | `subscriptions` upsert failed |
+| 500 | `apply_subscription_event` returned an error |
 
 ## Observability
 
@@ -96,28 +97,55 @@ An unmapped `event.type` records `revenuecat_event_unhandled` via `recordOpsEven
 could fail leaving no trace at all. **If a charity runner reports a paywall they should not be
 seeing, look here first.**
 
+A missing `event_timestamp_ms` records `revenuecat_event_no_timestamp` — see the write section
+below for why null is the correct fallback and why it must still leave a trace.
+
 ## Notes
 
 - Uses the **service-role** client; bypasses RLS. Correct on a webhook — there is no session.
 - `provider` is written as `'revenuecat'`.
 
-### 🔴 This route bypasses the ordering guard its own migration was written for
+### The write — `apply_subscription_event`
 
-It writes with a plain `supabase.from('subscriptions').upsert(..., { onConflict: 'user_id' })`
-and **no event timestamp**, while `/api/webhooks/stripe` calls `apply_subscription_event`.
+**Never a plain upsert.** Same guard as `/api/webhooks/stripe`
+(`supabase/migrations/20260819_subscription_event_ordering.sql`): a conditional upsert in one
+statement, returning `TRUE` if applied and `FALSE` if suppressed as stale.
 
-The guard's migration (`20260819_subscription_event_ordering.sql`) opens:
+```
+apply_subscription_event(p_user_id=app_user_id, p_provider='revenuecat', p_status, p_period_end, p_event_at)
+```
+
+`p_event_at` comes from **`eventAtIso(rc)`** (`lib/subscriptions/revenuecatEvents.ts`), which
+reads `event.event_timestamp_ms`. The write applies only when
+`s.last_event_at <= excluded.last_event_at`, so a replayed delivery is a no-op and a stale
+event cannot re-activate a cancelled subscription or move `current_period_end` backwards.
+
+A suppressed event logs `stale/out-of-order event suppressed` and still returns 200 —
+RevenueCat must not be asked to retry an event that was correctly ignored.
+
+⚠️ **A missing or unusable `event_timestamp_ms` yields `null`, not `now()`.** The RPC applies
+when either side is null, so null means *"behave exactly as the old plain upsert did"* — a wrong
+field name degrades to the status quo rather than dropping a paying customer's write. `now()`
+would be far worse: it stamps a **stale** event as the newest and defeats the guard on precisely
+the delivery it exists to suppress. The route records **`revenuecat_event_no_timestamp`** when
+this happens, because a guard that has quietly stopped guarding is this repo's most repeated
+failure class. **If that event fires at any volume, the guard is protecting nothing.**
+
+### History — this route bypassed the guard written for it (SUBS-ORDERING-REVENUECAT-01)
+
+Until 2026-09-24 this route wrote with a plain
+`supabase.from('subscriptions').upsert(..., { onConflict: 'user_id' })` and **no event
+timestamp**, while `/api/webhooks/stripe` used the RPC. The guard's migration opens:
 
 > *"Stripe **(and RevenueCat)** do not guarantee delivery order. A stale
 > `customer.subscription.updated` arriving AFTER a `deleted` could re-activate a cancelled
 > subscription **via the plain upsert**."*
 
-It names both providers, was solved for one, and RevenueCat still performs the exact plain
-upsert the migration describes as the hazard. Consequences: a replayed delivery is **not** a
-no-op, and an out-of-order event **can** re-activate a cancelled subscription or move
-`current_period_end` backwards. `last_event_at` is never populated for this provider.
+It named both providers, was wired for one, and this route went on performing the exact upsert
+that sentence calls the hazard — the *"hazard solved for one transition, named but not solved
+for its twin"* class, with the twin named in the same sentence. Replays were not no-ops, an
+out-of-order event could re-activate a cancelled subscription, and `last_event_at` was never
+populated for this provider at all.
 
-This is the *"hazard solved for one transition, named but not solved for its twin"* class —
-here the twin is named in the same sentence. Filed as **`SUBS-ORDERING-REVENUECAT-01`**.
-Not fixed in the sitting that documented it: it changes what a paying customer's tier resolves
-to, so it wants its own change with its own regression test, not a drive-by edit.
+**Found while writing this contract.** Reading the route closely enough to write down what it
+promises is what surfaced it.

@@ -4,7 +4,7 @@
 // real paying customer.
 
 import { describe, it, expect } from 'vitest'
-import { toStatus, isGrantEvent, NON_EXPIRING_GRANT_YEARS } from './revenuecatEvents'
+import { toStatus, isGrantEvent, eventAtIso, NON_EXPIRING_GRANT_YEARS } from './revenuecatEvents'
 
 describe('toStatus — RevenueCat event mapping', () => {
   it.each([
@@ -56,5 +56,60 @@ describe('isGrantEvent — open-ended comps must not inherit the 30-day default'
     const grantDays = NON_EXPIRING_GRANT_YEARS * 365
     expect(grantDays).toBeGreaterThan(18 * 7)  // longest plan we ship
     expect(grantDays).toBeGreaterThan(30)      // and past the subscription default
+  })
+})
+
+/**
+ * SUBS-ORDERING-REVENUECAT-01 — the resolver that decides whether the ordering
+ * guard engages at all.
+ *
+ * The route used to write with a plain upsert while `/api/webhooks/stripe` went
+ * through `apply_subscription_event`. The guard's own migration names BOTH
+ * providers — "Stripe (and RevenueCat) do not guarantee delivery order… could
+ * re-activate a cancelled subscription via the plain upsert" — so this route was
+ * performing the exact write that sentence calls the hazard.
+ */
+describe('eventAtIso — the ordering guard engages, or says it did not', () => {
+  it('converts RevenueCat epoch millis to ISO', () => {
+    expect(eventAtIso({ event_timestamp_ms: 1_758_700_000_000 }))
+      .toBe(new Date(1_758_700_000_000).toISOString())
+  })
+
+  // ⚠️ THE IMPORTANT ONE. null makes `apply_subscription_event` apply the write —
+  // i.e. exactly the old plain-upsert behaviour — so a wrong field name degrades
+  // to the status quo instead of silently DROPPING a paying customer's write.
+  it('returns null when the field is absent, not a fabricated timestamp', () => {
+    expect(eventAtIso({})).toBeNull()
+    expect(eventAtIso({ event_timestamp_ms: undefined })).toBeNull()
+  })
+
+  it('refuses unusable values rather than producing an Invalid Date', () => {
+    for (const bad of [null, 'nonsense', NaN, Infinity, 0, -1, {}, []]) {
+      expect(eventAtIso({ event_timestamp_ms: bad as never }), String(bad)).toBeNull()
+    }
+  })
+
+  // 🔴 THE DESIGN CHOICE, ASSERTED AS A PROPERTY. `now()` was the obvious fallback
+  // and is the dangerous one: it stamps a STALE event as the newest, defeating the
+  // guard on precisely the delivery it exists to suppress. Determinism is what
+  // separates the two implementations — a clock fallback returns a DIFFERENT value
+  // on each call, and an earlier draft of this case asserted `toBeNull()` again
+  // followed by unreachable code, which is a gate that looks like two checks and
+  // is one. Mutation-verified: returning `new Date().toISOString()` here turns
+  // three cases in this file red.
+  it('is deterministic — the missing-timestamp path never reads the clock', () => {
+    const a = eventAtIso({})
+    const b = eventAtIso({})
+    expect(a).toBe(b)
+    expect(a).toBeNull()
+  })
+
+  // The guard's ordering semantics, expressed on the values this feeds it: a
+  // CANCELLATION at T2 followed by a late RENEWAL at T1 must be comparable, and
+  // T1 must sort before T2 so the RPC's `s.last_event_at <= excluded` suppresses it.
+  it('produces values that sort by real event time, so a late event reads as older', () => {
+    const cancelledAt = eventAtIso({ event_timestamp_ms: 2_000_000_000_000 })!
+    const staleRenewal = eventAtIso({ event_timestamp_ms: 1_000_000_000_000 })!
+    expect(staleRenewal < cancelledAt).toBe(true)
   })
 })

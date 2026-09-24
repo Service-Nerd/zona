@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { secretMatches } from '@/lib/security/secrets'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
-import { toStatus, isGrantEvent, NON_EXPIRING_GRANT_YEARS } from '@/lib/subscriptions/revenuecatEvents'
+import { toStatus, isGrantEvent, eventAtIso, NON_EXPIRING_GRANT_YEARS } from '@/lib/subscriptions/revenuecatEvents'
 
 // RevenueCat webhook docs: https://www.revenuecat.com/docs/integrations/webhooks
 // Authorization: header value compared against REVENUECAT_WEBHOOK_SECRET
@@ -59,22 +59,44 @@ export async function POST(req: NextRequest) {
           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       )
 
-  const { error } = await supabase
-    .from('subscriptions')
-    .upsert(
-      {
-        user_id: appUserId,
-        provider: 'revenuecat',
-        status,
-        current_period_end: expiresAt,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id' }
-    )
+  // 🔴 SUBS-ORDERING-REVENUECAT-01 (2026-09-24) — THIS USED TO BE A PLAIN UPSERT,
+  // AND THE GUARD IT NOW CALLS WAS WRITTEN FOR THIS ROUTE TOO.
+  //
+  // `20260819_subscription_event_ordering.sql` opens: "Stripe (AND REVENUECAT) do
+  // not guarantee delivery order. A stale `customer.subscription.updated` arriving
+  // AFTER a `deleted` could re-activate a cancelled subscription VIA THE PLAIN
+  // UPSERT." It named both providers, was wired for one, and this route went on
+  // performing the exact upsert that sentence describes as the hazard — so a
+  // replayed delivery was not a no-op, an out-of-order event could re-activate a
+  // cancelled subscription or move `current_period_end` backwards, and
+  // `last_event_at` was never populated for this provider at all.
+  //
+  // `subscriptions` is what `resolveTier` reads for every tier decision in the app,
+  // so the blast radius was a real customer's tier. Found while WRITING THE
+  // CONTRACT for this route — reading it closely enough to write down what it
+  // promises is what surfaced it.
+  const eventAt = eventAtIso(rc)
+  if (!eventAt) {
+    // Null is the correct fallback — it makes the RPC apply, i.e. exactly the old
+    // behaviour — but a guard that has quietly stopped guarding must leave a trace.
+    await recordOpsEvent('revenuecat_event_no_timestamp',
+      { event_type: rc.type }, appUserId ?? null)
+  }
+
+  const { data: applied, error } = await (supabase.rpc as any)('apply_subscription_event', {
+    p_user_id:    appUserId,
+    p_provider:   'revenuecat',
+    p_status:     status,
+    p_period_end: expiresAt,
+    p_event_at:   eventAt,
+  })
 
   if (error) {
-    console.error('[revenuecat webhook] upsert failed', error)
+    console.error('[revenuecat webhook] apply_subscription_event failed', error)
     return NextResponse.json({ error: 'DB write failed' }, { status: 500 })
+  }
+  if (applied === false) {
+    console.log('[revenuecat webhook] stale/out-of-order event suppressed', rc.type, appUserId)
   }
 
   return NextResponse.json({ received: true })
