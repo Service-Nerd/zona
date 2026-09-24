@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — GATE-FALSIFY-01 (a) · the rule that was written down three times and enforced zero
+
+**Shipped:** a lint that fails the build on the two hollow test shapes this repo keeps writing, with all 19 existing instances fixed.
+
+**Dev learning:** The most valuable part was not the detector, it was **measuring the false-positive rate before writing the rule**. The obvious heuristic — "this test file reads source, so `toContain` is substring-biased" — produced 50 hits of which **27 were wrong**, because `expect(fields).toContain('benchmark')` is array membership and the bias does not apply at all. Narrowing to *receiver assigned from `readFileSync`* took it to 23 with zero false; narrowing again to *positive assertions only* took it to 19. `.not.toContain` is the safe direction: substring bias makes a positive assertion too **weak** and a negative one too **strong**, and flagging the strong one would have added four false alarms. A gate that cries wolf gets deleted, which this repo already records as equivalent to having no gate.
+
+**Product/creator learning:** I fixed all 19 rather than baselining them. The debt-register pattern is right when the backlog is 27 invariants or 20 contracts; at 19 one-line changes it is just deferral with paperwork. The gate ships green with nothing behind it to forget.
+
+**AI-building learning:** My first cut of the second detector **false-fired on a file I had written that same morning** — `if (warned) expect(carrier).toBeNull()` followed by `if (carrier !== null) …`, where the second line is perfectly reachable because the assertion above it was guarded. I only found it by running the lint across the whole repo before shipping, which is the thing I would have skipped if I had trusted the three unit cases I had just written. **A detector's unit tests tell you it works on the cases you thought of.**
+
+**The honest bit:** this is the fourth hollow-check incident in one day and the first one where I built the gate instead of writing another note about it. The reason the class survived so long is visible in the file header: the rule existed in three documents, all of them true, none of them executable.
+
+**Hook material:** "Falsify any new check before trusting it green." Written in the engineering doc. Written in the build procedure. Written in the debugging procedure. Enforced in zero places, while the build-log accumulated 15 hollow checks, 23 inert ones and 11 substring misses.
+
+**Postable?:** yes
+
 ## 2026-09-24 — CHARITY-SEAT-MIGRATION-APPLY-01 · I handed over a verification query that could not fail
 
 **Shipped:** the seat-stays-spent migration is live and verified; the migrations ledger records it.
