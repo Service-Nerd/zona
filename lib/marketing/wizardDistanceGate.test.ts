@@ -30,7 +30,7 @@ const WIZ = readFileSync(join(process.cwd(), 'app/dashboard/GeneratePlanScreen.t
 describe('P-08(a) — the distance gate names both routes out of it', () => {
   it('reads the real wizard', () => {
     expect(WIZ).toContain("case 'distance':")
-    expect(WIZ).toContain('onOpenRedeem')
+    expect(WIZ).toMatch(/\bonOpenRedeem\b/)
   })
 
   it('there is exactly ONE redeem door in the wizard', () => {

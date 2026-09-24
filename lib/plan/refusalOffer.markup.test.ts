@@ -57,14 +57,14 @@ describe('P-15 — a refusal never terminates without a named next action', () =
   it('reads the real files, so nothing below can pass vacuously', () => {
     expect(SCREEN).toContain('<RefusalView')
     expect(VIEW).toContain('export default function RefusalView')
-    expect(ROUTE).toContain('getRunningApplies')
+    expect(ROUTE).toMatch(/\bgetRunningApplies\b/)
   })
 
   it('the client READS the offer the server already computes', () => {
     // It was computed, unit-formatted and attached for a full day while the
     // client read `payload.alternatives` and never `get_running`.
-    expect(SCREEN).toContain('get_running')
-    expect(SCREEN).toContain('errorOffer')
+    expect(SCREEN).toMatch(/\bget_running\b/)
+    expect(SCREEN).toMatch(/\berrorOffer\b/)
   })
 
   it('the offer renders ONLY on a refusal that carries one', () => {
@@ -93,7 +93,7 @@ describe('P-15 — a refusal never terminates without a named next action', () =
     // preview) is forty lines long and a copy would drift from it.
     expect(SCREEN).toContain('handleGenerate({ acceptBaseBuild: true })')
     expect(SCREEN).toContain('accept_base_build: true')
-    expect(ROUTE).toContain('accept_base_build')
+    expect(ROUTE).toMatch(/\baccept_base_build\b/)
     expect(ROUTE).toContain('acceptBaseBuild && getRunningApplies(input)')
   })
 
@@ -141,7 +141,7 @@ describe('P-15 — a refusal never terminates without a named next action', () =
   it('a failed acceptance keeps the offer on screen', () => {
     // The runner said yes and the network did not. Losing the card would make
     // the failure look like a second refusal.
-    expect(SCREEN).toContain('offerFailed')
+    expect(SCREEN).toMatch(/\bofferFailed\b/)
     expect(SCREEN).toContain('if (!opts?.acceptBaseBuild) setErrorOffer(null)')
   })
 })

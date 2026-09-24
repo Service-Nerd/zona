@@ -96,7 +96,7 @@ describe('P-02 — presentation and copy live where they belong', () => {
       expect(SHEET, `"${r.consequence}" is retyped in the sheet`).not.toContain(r.consequence)
       expect(SHEET, `"${r.label}" is retyped in the sheet`).not.toContain(`>${r.label}<`)
     }
-    expect(SHEET).toContain('MODIFIABLE_ROWS')
+    expect(SHEET).toMatch(/\bMODIFIABLE_ROWS\b/)
   })
 
   it('reuses AdjustmentDiff rather than building a second diff', () => {

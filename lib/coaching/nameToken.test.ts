@@ -94,7 +94,7 @@ describe('🔴 THE GUARD — no prompt builder may interpolate the name', () => 
 
   it('the plan enricher sends the token, not the name', () => {
     const src = readFileSync('lib/plan/enrich.ts', 'utf8')
-    expect(src).toContain('RUNNER_NAME_TOKEN')
+    expect(src).toMatch(/\bRUNNER_NAME_TOKEN\b/)
     expect(src).not.toContain('${input.athlete_name ?? \'Athlete\'}')
   })
 

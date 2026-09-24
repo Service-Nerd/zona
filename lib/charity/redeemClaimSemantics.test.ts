@@ -32,7 +32,7 @@ const SRC = readFileSync(join(process.cwd(), 'app/api/charity/redeem/route.ts'),
 
 describe('GTM-CHARITY-07 — the claim gate survives account deletion', () => {
   it('reads the real route, so the assertions cannot pass on an empty file', () => {
-    expect(SRC).toContain('charity_codes')
+    expect(SRC).toMatch(/\bcharity_codes\b/)
     expect(SRC).toContain('already been used')
   })
 

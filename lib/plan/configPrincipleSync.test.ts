@@ -117,7 +117,7 @@ describe('Configuration Singularity — every numeric points back to a principle
     // pass forever. Prove the source is real and the matching works.
     expect(keys.length).toBeGreaterThan(100)
     expect(PRINCIPLES.length).toBeGreaterThan(50_000)
-    expect(PRINCIPLES).toContain('EFFORT_GOVERNED_RECOVERY_SECS')   // added today, documented
+    expect(PRINCIPLES).toMatch(/\bEFFORT_GOVERNED_RECOVERY_SECS\b/)   // added today, documented
     expect(PRINCIPLES).not.toContain('A_KEY_THAT_DOES_NOT_EXIST')
   })
 

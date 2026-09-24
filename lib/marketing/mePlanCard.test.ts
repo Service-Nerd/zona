@@ -34,8 +34,8 @@ describe('P-12 — the plan card reads the gate-linked lists, never a retyped on
     // and it would sit outside BOTH guards that already cover these rows
     // (pricing.test.ts and pricingRowTruth.test.ts).
     expect(CARD).toContain("from '@/lib/marketing/pricing'")
-    expect(CARD).toContain('FREE_FEATURES')
-    expect(CARD).toContain('PAID_FEATURES')
+    expect(CARD).toMatch(/\bFREE_FEATURES\b/)
+    expect(CARD).toMatch(/\bPAID_FEATURES\b/)
   })
 
   it('does not restate a single feature name in the component', () => {
@@ -71,7 +71,7 @@ describe('P-12 — the plan card reads the gate-linked lists, never a retyped on
   })
 
   it('§3.1.2 reviewer reachability survives: Me still reaches the paywall', () => {
-    expect(CARD).toContain('onUpgrade')
+    expect(CARD).toMatch(/\bonUpgrade\b/)
     expect(CARD).toContain('View plans')
   })
 
@@ -125,6 +125,6 @@ describe('the trial-length claim stays consistent across surfaces', () => {
     // people to delete it. The card takes `trialDaysLeft` as a prop and must
     // never hardcode "14 days".
     expect(CARD).not.toMatch(new RegExp(`\\b${PRICING.trialDays}[- ]day`, 'i'))
-    expect(CARD).toContain('trialDaysLeft')
+    expect(CARD).toMatch(/\btrialDaysLeft\b/)
   })
 })

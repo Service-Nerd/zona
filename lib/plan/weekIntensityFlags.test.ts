@@ -101,11 +101,11 @@ describe('the prompt and the invariant describe the SAME predicates', () => {
   it('the prompt names both flags and separates the "sharpen" group', () => {
     // A prompt that mentions only one flag cannot express §27's claim table,
     // which asks quality-OR-benchmark for some words and quality-ONLY for others.
-    expect(enrichSrc).toContain('has_quality')
-    expect(enrichSrc).toContain('has_benchmark')
+    expect(enrichSrc).toMatch(/\bhas_quality\b/)
+    expect(enrichSrc).toMatch(/\bhas_benchmark\b/)
     // The overload flag replaced a RULE the model had to evaluate; the prompt
     // must state the flag and must tell it not to do the arithmetic itself.
-    expect(enrichSrc).toContain('is_overload_week')
+    expect(enrichSrc).toMatch(/\bis_overload_week\b/)
     expect(enrichSrc).toMatch(/Do NOT compare weekly_km/)
     expect(enrichSrc, 'the sharpen group is not separated from the quality-or-benchmark group')
       .toMatch(/sharpen[\s\S]{0,400}has_quality is true/)

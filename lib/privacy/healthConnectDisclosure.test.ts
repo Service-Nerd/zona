@@ -35,7 +35,7 @@ const SRC = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
 describe('CONSENT-DISCLOSURE-01 — the Health-connect disclosure holds', () => {
   it('the connect CTA still exists, so the test cannot pass by matching nothing', () => {
     expect(SRC).toContain('Connect Apple Health')
-    expect(SRC).toContain('connectHealthKit')
+    expect(SRC).toMatch(/\bconnectHealthKit\b/)
   })
 
   it('links the privacy policy at the connect moment', () => {

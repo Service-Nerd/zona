@@ -52,7 +52,7 @@ describe('reset dead ends — three causes, three answers', () => {
     // The old dead end's only control was "Back to sign in", which is where the
     // loop restarted. The resend form has to be ON this screen.
     const page = readFileSync('app/auth/reset/page.tsx', 'utf8')
-    expect(page).toContain('handleResend')
+    expect(page).toMatch(/\bhandleResend\b/)
     expect(page).toContain('sendPasswordReset(supabase, resendEmail)')
   })
 
