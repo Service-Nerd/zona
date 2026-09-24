@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — PLAN-ZONE-VS-HRTARGET-01 · the bug was caused by the thing that fixes it
+
+**Shipped:** correcting your heart rate now updates your sessions, not just your profile — and the three-copies-of-one-truth problem underneath it has a single owner.
+
+**Dev learning:** The root cause and the fix were the same fact. `computeZones` lived **private** inside `ruleEngine.ts`, a server module. The dashboard needed the same arithmetic when a runner corrects their HR, couldn't reach it, and hand-rolled `Math.round(rhr + 0.70 * (mhr - rhr))` inline. Once a boundary formula exists in two places, one of them stops being updated — and that is exactly what happened: `meta` moved, the sessions didn't, and a card ended up showing 161–175 bpm above 158–171. The fix wasn't "also update the sessions", it was "make the arithmetic reachable so there's only one of it."
+
+**Product/creator learning:** My analysis said two write paths. Reading them properly, there are **three**, and two of them deliberately never touch the plan — with comments saying why. I'd have quietly wired all three and reversed a documented decision while pushing an `observed` max (which §50 treats as a *floor*) into live plans. **I stopped mid-build and asked instead**, which is the difference between following the procedure and performing it.
+
+**AI-building learning:** Two guards I'd built earlier the same day paid for themselves within an hour. `npm run falsify` proved the new test actually catches the defect. And the backfill's refuse-on-new-violation guard **caught my own fix making a plan worse** — three plans carry `resting_hr: 0`, where Karvonen's reserve becomes the entire max; one went 2 → 6 violations and the script refused to write it. I would have shipped that.
+
+**The honest bit:** `0` is a number. `computeZones(mhr, rhr?)` branches on `rhr === undefined` to pick §14's %MaxHR fallback, so a stored `0` takes the **Karvonen** branch with a zero baseline — the worst of both. I only found it because the dry run printed numbers that didn't improve, and I looked instead of shrugging at "7 → 7".
+
+**Hook material:** A runner's card showed two different heart-rate ranges, six lines apart. The cause: one formula, written twice, because the original was in a file the screen couldn't import from.
+
+**Postable?:** yes
+
 ## 2026-09-24 — PLAN-STRIDES-BACKFILL-01 · fixing one runner's plan, and what the delta showed
 
 **Shipped:** the runner whose plan started the whole day now has strides in weeks 4–8 instead of one session in nine weeks.
