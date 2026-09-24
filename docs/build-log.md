@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — CHARITY-CLAIM-RELEASE-01 · two correct decisions that cancelled each other out
+
+**Shipped:** deleting an account no longer hands a charity seat back to be redeemed again. (Migration written; the founder applies it.)
+
+**Dev learning:** `GTM-CHARITY-07` moved a gate onto `claimed_at` *because that column survives account deletion*, and wrote "NO MIGRATION, AND THAT IS THE POINT" in the route. Three days later `DB-USER-PURGE-01` added a trigger that nulls `claimed_at` on deletion, with an equally sound argument: a charity's cap shouldn't stay spent on someone who's gone. **Both were right in isolation and together they were a bug.** Nothing caught it because no test asserts the interaction, and the two decisions live in a route comment and a migration comment that never reference each other. The only signal was a number: a redemption count that went 2 → 1.
+
+**Product/creator learning:** The founder spotted it, not me, and not from the code — from knowing that test users had been deleted and noticing the count didn't match. I had flagged the discrepancy as "worth a glance, probably a stale note". It wasn't. **Someone who knows what happened to the data can beat a code read.**
+
+**AI-building learning:** I wrote the contract for this route two hours earlier and put in it *"the batch keeps its record that a seat was used."* I took that straight from the route's own comment — which was true when written and had been falsified by a migration three days later. I had the migration open in the same session. **Reading two files and believing the one that agrees with you is the whole failure mode**, and writing it into a contract gave it a second life as documentation.
+
+**The honest bit:** I couldn't finish it. The Supabase CLI isn't linked and the sandbox refused the production data write — correctly, it's a live table. So this ships as code plus two SQL statements for the founder, and the migration is deliberately kept OUT of the applied-migrations ledger, because that ledger records what is applied and it isn't. Recording it would make the next session believe a database change that hasn't happened.
+
+**Hook material:** Two engineers, three days apart, each fixed a real problem in a way that recreated the other's. The first wrote "NO MIGRATION, AND THAT IS THE POINT." The second wrote a migration. Both comments are still in the codebase, and both are still correct about everything except each other.
+
+**Postable?:** yes
+
 ## 2026-09-24 — CHARITY-REDEEM-RATELIMIT-01 + the CLAUDE.md line that understated what is live
 
 **Shipped:** the charity redeem route is actually rate-limited now, and CLAUDE.md no longer claims a live payment path is unbuilt.

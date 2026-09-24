@@ -39,3 +39,4 @@ coaching-review/*/foundation-composed-plans.md
 
 # Generated content exports (regenerate with scripts/export-marketing-plans.ts)
 zonna-plans-export.*
+supabase/.temp/
