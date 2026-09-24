@@ -6,14 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
-## 2026-09-24 — EMAIL-WAVE-0, EMAIL-WAVE-1, EMAIL-WAVE-2, EMAIL-WAVE-3, EMAIL-WAVE-4 · the whole email programme, and the two times the data inverted the brief
+## 2026-09-24 — EMAIL-WAVE-0, EMAIL-WAVE-1, EMAIL-WAVE-2, EMAIL-WAVE-3, EMAIL-WAVE-4, EMAIL-PREVIEW-01 · the whole email programme, and the two times the data inverted the brief
 
 **Shipped:** consent and an unsubscribe path, the Connect email, both trial emails re-led, the First-read email, and the conditional guide link. The Pattern email deliberately not built.
 **Dev learning:** wave 3 was priced as the expensive one — the email has to arrive within an hour of a run and the cron is daily, so it "needed" an hourly trigger or a queue. It needed neither. `/api/analyse-run` has computed `isFirstAnalysis` from `count === 0` since the route was written, to soften the AI prompt. The email hangs off a signal that was already there. **The plumbing cost I had estimated was entirely a failure to read the route I was about to edit.**
 **Product/creator learning:** the measurement inverted the brief twice, and both times the wrong version was the one that felt obviously true. "22 of 30 have no logged run, so connecting is the friction" — 16 of 30 are connected and half of those have nothing. "verdictLine uses a band where §12 says ceiling, so it's wrong" — the harm that ruling protects against is 0 of 73, and the literal fix would have silenced the line for 71 of 73. Both premises were mine or the board's, both were stated confidently, and both took one query to falsify.
 **AI-building learning:** the Coaching Board vacated its own ruling from four hours earlier, and that is the system working rather than failing. What made it possible was taking the measurement *before* implementing rather than after. The output is §12 Amendment 2 — "a one-sided rule does not invert into one-sided praise" — which is a better principle than either sitting started with, and it only exists because the first ruling was wrong in a way the data could show.
 **The honest bit:** three hollow tests in one day, and the lint I shipped this morning caught none of the last two. The worst was mine: a hub-gate test reading `if (guidesArePublished()) return` — with the section open it returned immediately and asserted nothing, so deleting the gate from the source left the suite green. `npm run falsify` found it in nine seconds. A lint knows shapes; it cannot see a test that skips itself.
-**Hook material:** I refused to build the last email in the programme because the only account with enough data to trigger it is the demo account.
+**Also shipped:** `/api/email/preview`, which sends all eight emails to the admin's own inbox — the first time any of this will have been seen in a real mail client, which every board sitting flagged and none could fix.
+**Hook material:** I refused to build the last email in the programme because the only account with enough data to trigger it is the demo account. And two of the checks I wrote for the preview were caught by tooling I had shipped the same morning: one hollow, one substring-biased.
 **Postable?:** yes
 
 ---
