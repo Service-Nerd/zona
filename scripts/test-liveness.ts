@@ -298,6 +298,92 @@ const MUTATIONS: Mutation[] = [
 const only = process.argv.includes('--only')
   ? process.argv[process.argv.indexOf('--only') + 1] : null
 
+// ── AD-HOC MODE — GATE-FALSIFY-01 (c), 2026-09-24 ───────────────────────────
+//
+// `npm run falsify -- --test <t> --subject <s> --from <a> --to <b>`
+//
+// THE BATCH MODE ABOVE CANNOT REACH A TEST YOU JUST WROTE, and that is the case
+// that matters most. `SUBJECTS` is a DECLARED map — 22 of 373 test files, 5.9% —
+// so a new test is invisible to it by default, and `MUTATIONS` is a fixed battery
+// of operator flips. Neither reaches the three mutations run BY HAND on
+// 2026-09-24 alone: return the clock instead of null, drop the `ai:` key prefix,
+// revert a `toMatch` to `toContain`. All three were arbitrary literal edits to
+// files not in the map.
+//
+// ⚠️ THIS IS NOT A SECOND HARNESS. It reuses this file's mutate/run/restore
+// machinery — including the `finally` restore and the read-back verification —
+// because a second restore path is the one duplicate nobody survives: a harness
+// that can leave the repo mutated is worse than no harness.
+//
+// ⚠️ IT ASSERTS THE BASELINE IS GREEN FIRST. A mutation that "goes red" on a test
+// that was already red proves nothing, and checking it by hand is the step most
+// easily skipped. Exit 2 says the test was not green to begin with.
+//
+// Exit 0 = KILLED (the check is live). Exit 1 = SURVIVED (the check is HOLLOW).
+const adhoc = process.argv.includes('--adhoc') || process.argv.includes('--from')
+function arg(name: string): string | null {
+  const i = process.argv.indexOf(name)
+  return i >= 0 ? (process.argv[i + 1] ?? null) : null
+}
+
+function runAdhoc(): never {
+  const testFile = arg('--test')
+  const subject  = arg('--subject')
+  const from     = arg('--from')
+  const to       = arg('--to') ?? ''
+  if (!testFile || !subject || !from) {
+    console.error('usage: npm run falsify -- --test <file> --subject <file> --from <literal> [--to <literal>] [--all]')
+    console.error('  --to defaults to "" (deletion). Exit 0 = mutation KILLED, 1 = SURVIVED (hollow).')
+    process.exit(64)
+  }
+  const path = join(process.cwd(), subject)
+  if (!existsSync(path)) { console.error(`no such subject: ${subject}`); process.exit(64) }
+  const original = readFileSync(path, 'utf8')
+  if (!original.includes(from)) {
+    console.error(`--from not found in ${subject}: ${JSON.stringify(from)}`)
+    process.exit(64)
+  }
+
+  console.log(`baseline: ${testFile}`)
+  if (!runsGreen(testFile)) {
+    console.error('\n✗ the test is NOT GREEN before mutating — a red test cannot prove anything.')
+    process.exit(2)
+  }
+  console.log('  green.\n')
+
+  const mutated = process.argv.includes('--all')
+    ? original.split(from).join(to)
+    : original.replace(from, to)
+  if (mutated === original) { console.error('mutation changed nothing'); process.exit(64) }
+
+  let survived = false
+  try {
+    writeFileSync(path, mutated)
+    console.log(`mutating ${subject}: ${JSON.stringify(from)} -> ${JSON.stringify(to)}`)
+    console.log(`  ${mutationSite(original, mutated)}`)
+    survived = runsGreen(testFile)
+  } finally {
+    // ALWAYS restore, on any path — the same contract as the batch loop.
+    writeFileSync(path, original)
+    if (readFileSync(path, 'utf8') !== original) {
+      console.error(`\n!! FAILED TO RESTORE ${subject} — check git status before doing anything else`)
+      process.exit(3)
+    }
+    console.log(`  restored ${subject}`)
+  }
+
+  if (survived) {
+    console.log(`\n✗ SURVIVED — ${testFile} still passes with that mutation applied.`)
+    console.log('  The check does not cover this behaviour. That is a HOLLOW gate:')
+    console.log('  it passes for a reason other than the one in its name.')
+    process.exit(1)
+  }
+  console.log(`\n✓ KILLED — ${testFile} goes RED on that mutation. The check is live for it.`)
+  process.exit(0)
+}
+
+if (adhoc) runAdhoc()
+
 function runsGreen(testFile: string): boolean {
   try {
     execFileSync('npx', ['vitest', 'run', testFile, '--silent'],

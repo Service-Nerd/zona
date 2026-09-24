@@ -614,6 +614,26 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
+### ⚙️ `TEST-LIVENESS-COVERAGE-01` — the mutation harness sees 5.9% of the test suite
+**Board: ⚙️ NO BOARD.** Found 2026-09-24 while building `GATE-FALSIFY-01 (c)`.
+
+`scripts/test-liveness.ts` is the harness that turns tests red on purpose — the one built
+precisely to catch a green tick with nothing behind it. Its `SUBJECTS` map is **declared, not
+inferred**, which is deliberate and correct (*"a first-import-wins heuristic breaks silently the
+first time someone reorders an import block"*).
+
+🔴 **But nothing grows it, and nothing reports that it is not growing. 22 of 373 test files —
+5.9%.** All **five** test files added on 2026-09-24 are absent, including
+`lib/hollowTestShapes.test.ts`, the lint built that same day to catch hollow checks.
+
+**The harness against hollow tests is itself blind to 94% of the tests.** Same shape as the
+liveness debt and the corpus blindness: the instrument is sound and its population is not.
+
+**Options:** print the coverage figure on every run so the gap is visible (cheapest, and this
+repo's "negative space" habit); or fail when a test file imports from `lib/` and has no
+`SUBJECTS` entry, with a declared baseline for the 351. ⚠️ **The second is a 351-entry baseline
+and would need a real reason not to become an amnesty.**
+
 ### ⚙️ `HOOK-TEST-FIXTEST-01` — `fix-test-check.py` is the only hook with no tests
 **Board: ⚙️ NO BOARD.** Found 2026-09-24 while building `GATE-FALSIFY-01 (b)`, which mirrors it.
 
@@ -625,7 +645,7 @@ It is the hook whose whole subject is *"a fix with no test is worth a second loo
 one fix in the repo with no test. Both directions matter: the cases where it must stay SILENT are
 what stop it being disabled.
 
-### ⚙️ `GATE-FALSIFY-01` — **(a) and (b) SHIPPED 2026-09-24. (c) and (d) remain.**
+### ⚙️ `GATE-FALSIFY-01` — **(a), (b) and (c) SHIPPED 2026-09-24. (d) remains.**
 **Board: ⚙️ NO BOARD** (tooling).
 
 ✅ **(b) Require the falsification to be RECORDED — DONE 2026-09-24.**
@@ -643,12 +663,27 @@ recorded substring misses) and a branch a preceding assertion has made unreachab
 existing occurrences fixed in the same commit, so it ships with ZERO baseline** rather than a
 debt register nobody reduces. Escape hatch `// hollow-ok: <reason>`.
 
-**Still open:**
+✅ **(c) `npm run falsify` — DONE 2026-09-24, and it is NOT a new script.**
+🔴 **I filed (c) this morning without checking whether it existed. It did.**
+`scripts/test-liveness.ts` (458 lines) already mutates source, re-runs the test, reports
+KILLED/SURVIVED, restores in `finally`, verifies the restore and exits 3 if it fails. A second one
+would have been the `DELOAD-OWNER-01` class — filed by me, against my own lesson about checking
+provenance first.
 
-**(c) `npm run falsify <source> <test> --mutate '<sed expr>'`** — automates the
-copy/mutate/run/restore loop done by hand: applies the mutation, asserts the named test goes
-**RED**, restores. Turns a manual argument into a repeatable artifact. ⚠️ Done by hand three times
-on 2026-09-24 alone, which is the argument for it.
+**The gap that was actually real, measured:** `SUBJECTS` is a DECLARED test→source map —
+**22 of 373 test files, 5.9%** — so a test you just wrote is invisible to it; and `MUTATIONS` is a
+fixed battery of operator flips that cannot express an arbitrary edit. Neither reaches the three
+mutations run by hand that day. So `--adhoc` was added **to the existing script**, reusing its
+mutate/run/restore machinery rather than writing a second restore path, which is the one duplicate
+nobody survives.
+
+`npm run falsify -- --test <t> --subject <s> --from <literal> --to <literal> [--all]`.
+**Exit 0 KILLED · 1 SURVIVED (hollow) · 2 baseline was not green · 64 usage.** ⚠️ It asserts the
+test is GREEN before mutating — a mutation that "goes red" on an already-red test proves nothing,
+and that is the step most easily skipped by hand. All four exit paths verified, tree clean after
+each.
+
+**Still open:**
 
 **(d) Verification handed to a human** — not mechanically enforceable, so a written rule: prove
 the predicate distinguishes the two states **before sending it**, by running it against the

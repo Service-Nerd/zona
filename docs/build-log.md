@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — GATE-FALSIFY-01 (c) · I filed a duplicate of a tool I had already used
+
+**Shipped:** `npm run falsify` — an ad-hoc mutation run, added to the harness that already existed rather than beside it.
+
+**Dev learning:** I filed (c) that morning as *"`npm run falsify` … automates the copy/mutate/run/restore loop"*. `scripts/test-liveness.ts` has done exactly that since 2026-09-15 — 458 lines, mutate, re-run, KILLED/SURVIVED, restore in `finally`, verify the restore, exit 3 if it fails. **I had read that file's baseline output earlier in the same session.** The reuse step of the build procedure is what caught it, one command in: `grep` the npm scripts before writing a new one.
+
+**Product/creator learning:** The gap underneath was real but much narrower than what I filed, and only measuring found it. `SUBJECTS` is a **declared** test→source map — **22 of 373 files, 5.9%** — so the harness cannot see a test you wrote five minutes ago, and its mutation battery is operator flips that cannot express *"return the clock instead of null"*. The missing capability was one flag, not one script.
+
+**AI-building learning:** The temptation was to write the clean new tool, because a fresh 120-line script is more satisfying than a flag on someone else's 458-line file. That instinct is precisely how this repo ended up with the tier order written three times and fourteen copies of one Anthropic call. **The duplicate always looks like the tidier option at the moment you write it.**
+
+**The honest bit:** worse than filing it — I filed it against my own memory note, written weeks ago, that says three of three "new" items on 2026-09-15 were already in the backlog. I had the lesson, in writing, addressed to me, and still filed a duplicate.
+
+**Hook material:** I filed a backlog item to build a mutation-testing tool. The repo has had one since the 15th. I had run it earlier that same day and read its output.
+
+**Postable?:** yes
+
 ## 2026-09-24 — GATE-FALSIFY-01 (b) · refusing the silence, and saying that is all it does
 
 **Shipped:** a commit that adds a new test file and never says how the check was made to go red now gets a prompt.
