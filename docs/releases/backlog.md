@@ -586,47 +586,54 @@ runner-facing notes with dev-only invariant text **in one file**, so a path-base
 wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
 own sentence — are untouched.
 
-### 💼 `CHARITY-CLAIM-RELEASE-01` — two shipped decisions cancel each other out, three days apart
-**Board: 💼 SLT** (it decides what a charity partner's seat cap means), then ⚙️ no board for the
-mechanism. Found 2026-09-24 when the founder explained a redemption count that had dropped 2 → 1.
+### 🔻 `CHARITY-CLAIM-RELEASE-01` — RULED and BUILT, **awaiting the founder to run two SQL statements**
+**Board: 👤 FOUNDER — RULED 2026-09-24:** *"if a user deletes their account, no, they don't get
+the seat back."* Code and docs are done. **The migration is NOT applied and is deliberately NOT
+in `.claude/state/applied-migrations.txt`.**
 
-**`GTM-CHARITY-07` (2026-09-20)** moved the redeem gate from `claimed_by` to `claimed_at`
-*specifically because* `claimed_at` survives account deletion, closing **redeem → delete →
-re-redeem**. Its own words: *"THE SEAT IS SPENT WHEN IT WAS CLAIMED, NOT WHILE THE CLAIMANT STILL
-EXISTS… NO MIGRATION, AND THAT IS THE POINT."* It explicitly **rejected** a `released_at` /
-`claim_state` column as a second answer to a question the schema could already answer.
+**What was wrong.** `GTM-CHARITY-07` (09-20) moved the redeem gate to `claimed_at` *precisely
+because it survives deletion*, closing redeem → delete → re-redeem — and explicitly rejected a
+`released_at` column. `DB-USER-PURGE-01` (09-23) then added a trigger doing
+`set claimed_at = null`, arguing the cap should not stay spent on a runner who is gone. The later
+change silently reopened the earlier path. **Neither author was wrong in isolation**; no test
+asserts the interaction, and the two live in a route and a migration that never reference each other.
 
-**`DB-USER-PURGE-01` (2026-09-23)** then added `on_auth_user_deleted`, which does
-`update charity_codes set claimed_at = null where claimed_by = old.id`, arguing *"the batch cap
-stays spent on a runner who is gone."*
+**Built:** `supabase/migrations/20260924_charity_seat_stays_spent.sql` removes the
+`charity_codes` clear from `purge_user_side_channels()`. `ai_rate_limits` and `waitlist` still
+clear — both are genuinely keyed to the person.
 
-🔴 **The later change silently reopened the exact path the earlier one closed.** Both arguments
-are sound in isolation, which is why neither author was wrong and why nothing caught it: no test
-asserts the interaction, and the two sit in a route and a migration that never reference each other.
+🔴 **GDPR, stated because removing a line from an Art.17 path needs it:** after the change a
+deleted user's row keeps `claimed_at` and `expires_at`, both **timestamps**. `claimed_by` is
+still nulled by the FK, which is what carries identity. **No personal identifier survives** — the
+row says *"this seat was used on date X"*, the batch's record of its own capacity.
 
-**Live, verified in production:** two of three codes read `claimed_by=NULL, claimed_at=NULL` with
-`expires_at` **still populated** — a half-cleared row that is redeemable again. Consequences:
-(a) a runner can hold a 90-day grant indefinitely by deleting and recreating an account;
-(b) a batch's redemption count silently refills — the *"drifts DOWN over a season"* symptom
-`GTM-CHARITY-07` named, now observed; (c) the row lies about itself, since `expires_at` outlives
-the claim it belonged to.
+### 🔻 FOUNDER ACTION — run these in the Supabase SQL editor
 
-⚠️ **Exposure today is near zero** — three codes, all on the `partner_name='TEST'` batch, and no
-real charity batch has ever been created. This is a correctness and doctrine problem to settle
-before a partner batch exists, not an incident.
+**1. Apply the migration** — paste the contents of
+`supabase/migrations/20260924_charity_seat_stays_spent.sql`, then append its filename to
+`.claude/state/applied-migrations.txt` (or the SessionStart hook warns every session).
 
-**The decision the SLT owns:** when a runner deletes their account, does the charity get the seat
-back? Both answers are defensible, and the mechanism follows from the answer:
-- *Seat returns* → clear `expires_at` too, and accept that a code can be re-redeemed by whoever
-  holds it (or re-mint it).
-- *Seat stays spent* → the trigger must not clear `claimed_at`, and `DB-USER-PURGE-01`'s concern
-  needs a different answer.
-- *Both* → the `released_at` column `GTM-CHARITY-07` rejected. ⚠️ **That rejection was correct
-  when it was made** and stopped being correct the moment `claimed_at` acquired a second meaning.
+**2. Repair the two half-state rows.** Two TEST-batch codes read `claimed_by=NULL,
+claimed_at=NULL` with `expires_at` still populated — cleared by the old trigger, redeemable
+again, carrying an expiry from a claim that no longer exists:
 
-⚠️ **Two contracts asserted the wrong half of this and were corrected in the same commit:**
-`charity-redeem.md` said *"the batch keeps its record that a seat was used"* — false — and
-`delete-account.md` described the release without noting it reverses `GTM-CHARITY-07`.
+```sql
+update charity_codes set expires_at = null
+ where claimed_at is null and claimed_by is null and expires_at is not null;
+```
+
+⚠️ **Why this RELEASES them rather than restoring the claim, which looks like it contradicts the
+ruling.** `claimed_by` is already NULL and unrecoverable, so restoring would mean **inventing** a
+`claimed_at` inferred from `expires_at` — fabricating a record of a claim by nobody. Clearing is
+the only non-fabricating repair. These are `partner_name='TEST'` codes claimed by test users we
+purged as cleanup, not real runners exercising deletion, so the ruling is applied **going
+forward** and the test batch stays usable. **Say so if you want them restored instead** — it is
+one statement either way.
+
+⚠️ I could not run either myself: the Supabase CLI is not linked (OAuth needs an interactive
+session) and the production data write was refused by the sandbox as a shared-resource change.
+**Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
+has ever been created.
 
 ### ⚙️ `RATELIMIT-MODULE-PATH-01` — the shared rate limiter still lives under `lib/ai/`
 **Board: ⚙️ NO BOARD.** Opened 2026-09-24 by `CHARITY-REDEEM-RATELIMIT-01`.

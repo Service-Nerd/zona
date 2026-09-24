@@ -33,11 +33,14 @@ Empty body accepted.
   fails until a user-scoped table is both declared and wired.
 - Two stores survive deliberately, anonymised rather than deleted: `ops_events` (the AI spend
   ledger, `user_id` → NULL) and `charity_codes` (released back to its batch, not consumed).
-  🔴 **That release CONTRADICTS `GTM-CHARITY-07`, which three days earlier moved the redeem gate
-  onto `claimed_at` precisely BECAUSE it survives deletion** — closing redeem → delete →
-  re-redeem. The trigger nulls it, reopening that path. `CHARITY-CLAIM-RELEASE-01`.
-  Three more are cleared by the `on_auth_user_deleted` trigger because no FK can reach them:
-  `ai_rate_limits`, `charity_codes.claimed_at`, `waitlist`.
+  ⚠️ **"Released" now means the IDENTITY is released, not the seat** (`CHARITY-CLAIM-RELEASE-01`,
+  founder decision 2026-09-24: *"if a user deletes their account, no, they don't get the seat
+  back"*). The FK nulls `claimed_by`; `claimed_at` **stays**, so the code cannot be redeemed
+  again and the batch's count does not refill. Until 2026-09-24 the trigger also cleared
+  `claimed_at`, which reversed `GTM-CHARITY-07` and reopened redeem → delete → re-redeem.
+  Two more are cleared by the `on_auth_user_deleted` trigger because no FK can reach them:
+  `ai_rate_limits` and `waitlist`. **Not `charity_codes` — see the migration's own comment
+  before you add it back.**
 - Apple App Store requirement — must be reachable from Me screen without authentication friction.
 
 ## History

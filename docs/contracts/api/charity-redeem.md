@@ -107,13 +107,12 @@ No migration was needed: `claimed_at` already records the fact and already survi
 
 - One grant per user is enforced by a **partial unique index**; the `alreadyRedeemed` branch is
   the friendly path to the same rule, not a substitute for it.
-- 🔴 **On account deletion the code is RELEASED AND THE RECORD IS DESTROYED, and those two
-  halves contradict each other** (`CHARITY-CLAIM-RELEASE-01`). ⚠️ **This contract said "the batch
-  keeps its record that a seat was used" when it was written on 2026-09-24. That was FALSE** —
-  `on_auth_user_deleted` does `set claimed_at = null`, which is the only record of the claim.
-  Verified in production: two of three codes read `claimed_by=NULL, claimed_at=NULL` with
-  `expires_at` still populated — a half-cleared row that is **re-redeemable**. See the filed item;
-  do not rely on either reading until it is resolved.
+- **On account deletion the seat stays spent.** The FK nulls `claimed_by` (the identity);
+  `claimed_at` remains, so the redeem gate still refuses the code and the batch's count does not
+  refill. ⚠️ **This was briefly untrue:** `DB-USER-PURGE-01` (2026-09-23) cleared `claimed_at` in
+  `on_auth_user_deleted`, reversing `GTM-CHARITY-07` and reopening redeem → delete → re-redeem.
+  Corrected 2026-09-24 by founder decision — *"they don't get the seat back"*
+  (`CHARITY-CLAIM-RELEASE-01`). See `delete-account.md`.
 
 ### Rate limiting
 
