@@ -25,13 +25,17 @@ const TOKEN = '00000000-0000-4000-8000-000000000000'   // a shape-accurate examp
 
 // The two states every email has, because a template is only honest if BOTH are.
 // 22 of 30 real recipients hit the second one.
-const WITH_RUN: RunSummary = { actualLoadKm: 8.2, hrInZonePct: 84, verdict: 'nailed', analysedRunCount: 6, dayName: 'Tuesday' }
-const NO_RUN: RunSummary = { actualLoadKm: null, hrInZonePct: null, verdict: null, analysedRunCount: 0, dayName: null }
+const WITH_RUN: RunSummary = { actualLoadKm: 8.2, hrInZonePct: 84, hrAboveCeilingPct: 6, verdict: 'nailed', analysedRunCount: 9, dayName: 'Tuesday' }
+const NO_RUN: RunSummary = { actualLoadKm: null, hrInZonePct: null, hrAboveCeilingPct: null, verdict: null, analysedRunCount: 0, dayName: null }
+// §12 Am.2 — in the band but hot above the cap. The case that LOSES the praise
+// line, which is the whole point of the amendment. Up to 5 of 73 real runs.
+const HOT: RunSummary = { actualLoadKm: 8.2, hrInZonePct: 84, hrAboveCeilingPct: 22, verdict: 'close', analysedRunCount: 9, dayName: 'Tuesday' }
 
 const cases = [
   ['01-connect', buildConnectEmail('Russ', TOKEN)],
   ['01-connect--no-name', buildConnectEmail(null, TOKEN)],
   ['04-3-days-left--with-run', buildDay11Email('Russ', WITH_RUN, TOKEN)],
+  ['04-3-days-left--HOT-above-ceiling', buildDay11Email('Russ', HOT, TOKEN)],
   ['04-3-days-left--NO-run', buildDay11Email('Russ', NO_RUN, TOKEN)],
   ['05-trial-ends-today--with-run', buildDay14Email('Russ', WITH_RUN, TOKEN)],
   ['05-trial-ends-today--NO-run', buildDay14Email('Russ', NO_RUN, TOKEN)],

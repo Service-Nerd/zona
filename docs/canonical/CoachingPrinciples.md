@@ -1210,6 +1210,56 @@ missed `65% in zone / 26% above cap` case.
 
 ---
 
+
+### Amendment 2 — the ceiling rule governs ACCUSATION; praise needs both sides — added 2026-09-24 (Coaching Board, EMAIL-WAVE-2)
+
+**Principle.** A surface that **flags** a runner must measure time above the Z2 cap
+(Amendment 1). A surface that **congratulates** a runner must satisfy **both**: enough
+time in the band to have been an easy run, **and** little enough above the cap to have
+meant it. **A one-sided rule does not invert into one-sided praise.**
+
+**Config.** `ZONE_HELD_MAX_ABOVE_CEILING_PCT` (10) for praise, against
+`ZONE_DRIFT_ABOVE_CEILING_PCT` (20) for accusation. **Praise is deliberately stricter:
+it is harder to earn a compliment than to avoid a warning.**
+
+**Why, and it includes a ruling this board vacated the same day.** The trial emails send
+*"HR held in zone for most of it. That's the plan working."* on `hr_in_zone_pct >= 70` —
+a BAND, on a rule §12 makes a CEILING. The board ruled it **INCORRECT** in the morning,
+reading Amendment 1 as binding every surface that reports on a run.
+
+🔴 **The measurement vacated that ruling.** Across 73 analysed runs:
+
+| | |
+|---|---|
+| Under 70% in zone with **zero** time above the ceiling — the runner the ruling was written to protect | **0 of 73. The harm did not exist** |
+| `hr_above_ceiling_pct = 0` — held the cap perfectly | **0 of 73** |
+| Receive the line today | 71 of 73 |
+| `hr_above_ceiling_pct`: min / median / max | **3 / 8 / 33** |
+
+So the literal fix — measure above the ceiling instead — would have taken the sentence
+from 71 of 73 to **none**, because nobody holds the cap perfectly and expecting that
+misreads what a heart rate does on a hill (Seiler). **10 is read from the distribution,
+not chosen:** just above the median, separating 68 from 5.
+
+Hutchinson, recorded: *"I over-read my own amendment and the data caught it. I asserted a
+mechanism and called it a finding, which is the exact thing this seat exists to stop other
+people doing."* McMillan's condition stands with it: **a product that only praises
+perfection teaches people that easy running is unachievable**, which is the belief this
+product exists to dismantle.
+
+⚠️ **Missing HR is SILENCE, never a zero** (Sims, ADR-011 §5). An iPhone-only runner has no
+heart rate and must not read a sentence implying they failed a test they were never given.
+
+**Amendment 2 also sets `TRIAL_SUMMARY_MIN_RUNS` (8)** — the floor under any claim that a
+runner IMPROVED across a trial. McMillan: *"a three-run trial cannot support 'when you
+started'."* A comparison needs two halves. Measured: mean 11 runs in the first 14 days,
+range 3 to 20; eight clears 4 of 8 trial users, deliberately. Below it the email states the
+count and makes no comparison.
+
+**Not mechanically checkable by `validatePlan()`** — neither is a plan property. Enforced
+by `lib/email/verdictLine.test.ts`, falsified by removing the ceiling condition and by
+dropping the floor.
+
 ### Amendment 2 — what may be claimed PUBLICLY about the method — added 2026-09-21 (Coaching Board, W-03)
 
 **Principle.** On any public surface, Zonna may **describe the method**. It may not

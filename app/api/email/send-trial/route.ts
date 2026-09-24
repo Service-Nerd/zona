@@ -29,7 +29,7 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 async function getRunSummary(supabase: any, userId: string): Promise<RunSummary> {
   const { data: analyses } = await supabase
     .from('run_analysis')
-    .select('actual_load_km, hr_in_zone_pct, verdict, created_at')
+    .select('actual_load_km, hr_in_zone_pct, hr_above_ceiling_pct, verdict, created_at')
     .eq('user_id', userId)
     .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
     .order('created_at', { ascending: false })
@@ -38,6 +38,7 @@ async function getRunSummary(supabase: any, userId: string): Promise<RunSummary>
   const rows = (analyses ?? []) as Array<{
     actual_load_km: number | null
     hr_in_zone_pct: number | null
+    hr_above_ceiling_pct: number | null
     verdict: string | null
     created_at: string
   }>
@@ -46,6 +47,7 @@ async function getRunSummary(supabase: any, userId: string): Promise<RunSummary>
   return {
     actualLoadKm: latest?.actual_load_km ?? null,
     hrInZonePct: latest?.hr_in_zone_pct ?? null,
+    hrAboveCeilingPct: latest?.hr_above_ceiling_pct ?? null,
     verdict: latest?.verdict ?? null,
     analysedRunCount: rows.length,
     dayName: latest?.created_at ? DAY_NAMES[new Date(latest.created_at).getDay()] : null,

@@ -1,12 +1,54 @@
 import { BRAND } from '@/lib/brand'
 import { EMAIL_COLORS as C } from './emailTheme'
+import { ZONE_HELD_MAX_ABOVE_CEILING_PCT, TRIAL_SUMMARY_MIN_RUNS } from '@/lib/coaching/constants'
 import { ctaHref, type EmailCtaScreen } from './ctaTargets'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.zonna.run'
 
 
-function verdictLine(verdict: string | null, hrInZonePct: number | null): string {
-  if (hrInZonePct !== null && hrInZonePct >= 70) return "HR held in zone for most of it. That's the plan working."
+/**
+ * §12 Amendment 2 (Coaching Board, 2026-09-24) — PRAISE NEEDS BOTH SIDES.
+ *
+ * 🔴 This read `hrInZonePct >= 70` alone, and that is a BAND on a rule §12 makes a
+ * CEILING. The board ruled it INCORRECT this morning, then **vacated that ruling
+ * the same day on the measurement**: the runner it was written to protect (under
+ * 70% in zone, zero time above the cap) is **0 of 73**, and the literal fix would
+ * have silenced the line for **71 of 73**.
+ *
+ * The correction is narrower and it is the principle: **a one-sided rule does not
+ * invert into one-sided praise.** An accusation needs only the ceiling. A
+ * compliment needs the band AND the ceiling — enough time in Z2 to have been an
+ * easy run, and little enough above the cap to have meant it.
+ *
+ * ⚠️ MISSING HR IS SILENCE, NEVER A ZERO (Sims, ADR-011 §5). An iPhone-only runner
+ * has no heart rate at all, and must not read a sentence implying they failed a
+ * test they were never given.
+ */
+/**
+ * §12 Am.2's test, on its own, because TWO surfaces now ask it and they must not
+ * drift.
+ *
+ * 🔴 THEY ALREADY DID, FOR ABOUT FOUR MINUTES. The day-11 subject was keyed on
+ * `verdictLine(...)` being non-empty, which is true for "Close. Plan's doing its
+ * job." — so a runner **22% above the ceiling** got the subject *"You held the
+ * zone on Tuesday."* The sentence in the body and the sentence in the subject
+ * disagreed about the same run. Caught by rendering the HOT fixture, not by a
+ * test, and it is the claim/computation class this repo has recorded repeatedly.
+ */
+export function heldTheZone(run: { hrInZonePct: number | null; hrAboveCeilingPct: number | null }): boolean {
+  return run.hrInZonePct !== null
+    && run.hrInZonePct >= 70
+    && run.hrAboveCeilingPct !== null
+    && run.hrAboveCeilingPct <= ZONE_HELD_MAX_ABOVE_CEILING_PCT
+}
+
+function verdictLine(
+  verdict: string | null,
+  hrInZonePct: number | null,
+  hrAboveCeilingPct: number | null,
+): string {
+  const held = heldTheZone({ hrInZonePct, hrAboveCeilingPct })
+  if (held) return "HR held in zone for most of it. That's the plan working."
   if (verdict === 'nailed') return "Clean execution."
   if (verdict === 'close') return "Close. Plan's doing its job."
   return ''
@@ -14,7 +56,7 @@ function verdictLine(verdict: string | null, hrInZonePct: number | null): string
 
 // EMAIL-WAVE-0 — the unsubscribe link is built from the runner's own token, and
 // `wrapper` REQUIRES it. Optional would mean an email could render without one,
-// which is the state that made this wave tranche 0.
+// which is the state that made that wave tranche 0.
 export function unsubscribeUrl(token: string): string {
   return `${BASE_URL}/api/email/unsubscribe?t=${encodeURIComponent(token)}`
 }
@@ -65,6 +107,8 @@ function ctaButton(label: string, screen: EmailCtaScreen): string {
 export interface RunSummary {
   actualLoadKm: number | null
   hrInZonePct: number | null
+  /** §12 Am.2 — required for the praise line. Null means no HR, which is silence. */
+  hrAboveCeilingPct: number | null
   verdict: string | null
   analysedRunCount: number
   dayName: string | null  // e.g. "Tuesday"
@@ -73,12 +117,18 @@ export interface RunSummary {
 // GTM-10 — day 11, 3 days remaining
 export function buildDay11Email(firstName: string | null, run: RunSummary, unsubToken: string): { subject: string; html: string } {
   const name = firstName ? `, ${firstName}` : ''
-  const subject = '3 days left.'
+  // EMAIL-WAVE-2 — THE RUNNER LEADS, THE CLOCK FOLLOWS. This said "3 days left."
+  // with the runner's own run three lines down as a conditional paragraph. 22 of
+  // 30 recipients had no run, so for most people it was a countdown and a button.
+  // Where a verdict exists it is now the subject; where it does not, the honest
+  // line is the deadline and nothing dressed up around it.
+  const zone = verdictLine(run.verdict, run.hrInZonePct, run.hrAboveCeilingPct)
+  const subject = heldTheZone(run) && run.dayName ? `You held the zone on ${run.dayName}.` : '3 days left.'
 
   let runPara = ''
   if (run.actualLoadKm && run.dayName) {
     const km = run.actualLoadKm.toFixed(1)
-    const zoneLine = verdictLine(run.verdict, run.hrInZonePct)
+    const zoneLine = verdictLine(run.verdict, run.hrInZonePct, run.hrAboveCeilingPct)
     const countLine = run.analysedRunCount > 1
       ? ` ${BRAND.coachName} has read ${run.analysedRunCount} of your runs so far.`
       : ''
@@ -93,7 +143,9 @@ export function buildDay11Email(firstName: string | null, run: RunSummary, unsub
 
   const html = wrapper(`
     <h1 style="margin:20px 0 0 0;font-size:22px;font-weight:700;color:${C.ink};line-height:1.3;">
-      3 days left${name}.
+      ${run.actualLoadKm && run.dayName
+        ? `${run.actualLoadKm.toFixed(1)}km on ${run.dayName}. Three days left.`
+        : `3 days left${name}.`}
     </h1>
     ${runPara}
     <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink2};line-height:1.6;">
@@ -153,12 +205,17 @@ export function buildConnectEmail(firstName: string | null, unsubToken: string):
 // GTM-09 — day 14, trial ends today
 export function buildDay14Email(firstName: string | null, run: RunSummary, unsubToken: string): { subject: string; html: string } {
   const name = firstName ? `, ${firstName}` : ''
-  const subject = 'Your coaching pauses today.'
+  // EMAIL-WAVE-2 — ENDS ON WHAT THEY GAINED. This opened on what switches off.
+  // The subject now counts what we read, because that is the thing they built and
+  // it is true even when the number is zero.
+  const subject = run.analysedRunCount > 0
+    ? `Fourteen days, ${run.analysedRunCount} ${run.analysedRunCount === 1 ? 'run' : 'runs'} read.`
+    : 'Fourteen days, no runs read.'
 
   let runPara = ''
   if (run.actualLoadKm && run.dayName) {
     const km = run.actualLoadKm.toFixed(1)
-    const zoneLine = verdictLine(run.verdict, run.hrInZonePct)
+    const zoneLine = verdictLine(run.verdict, run.hrInZonePct, run.hrAboveCeilingPct)
     const countLine = run.analysedRunCount > 1
       ? ` ${BRAND.coachName} read ${run.analysedRunCount} sessions across your trial.`
       : ''
@@ -173,11 +230,17 @@ export function buildDay14Email(firstName: string | null, run: RunSummary, unsub
 
   const html = wrapper(`
     <h1 style="margin:20px 0 0 0;font-size:22px;font-weight:700;color:${C.ink};line-height:1.3;">
-      Trial ends today${name}.
+      ${run.analysedRunCount > 0
+        ? `${run.analysedRunCount} ${run.analysedRunCount === 1 ? 'run' : 'runs'} read${name}.`
+        : `Trial ends today${name}.`}
     </h1>
     ${runPara}
+    ${run.analysedRunCount >= TRIAL_SUMMARY_MIN_RUNS ? `
+    <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink};line-height:1.6;">
+      That is ${run.analysedRunCount} sessions of evidence about how you actually run, not how you meant to.
+    </p>` : ''}
     <p style="margin:20px 0 0 0;font-size:16px;color:${C.ink2};line-height:1.6;">
-      Daily analysis and the Coach tab pause from midnight. Your plan stays.
+      Daily analysis and the Coach tab pause from midnight. Your plan stays, and everything above stays true.
     </p>
     ${ctaButton('Keep the coaching →', 'upgrade')}
   `, unsubToken)

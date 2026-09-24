@@ -417,3 +417,48 @@ tell whether prose matches the section it names; `principleRefs: ['§1','§12','
 somebody had to name one, which is the point at which the question gets asked at all. ⚠️ The gate
 that enforces it, `guidesGate.test.ts`, had a **hollow** comparison arm and was repaired in the same
 commit.
+
+## 2026-09-24 — EMAIL-WAVE-2, the 🏃 lines in the trial emails · TWO SITTINGS, ONE VACATED
+
+**Trigger:** soft, qualified — the emails assert what a runner's training did, on a surface no
+board had seen. Artifacts: **§12 Amendment 2**, `ZONE_HELD_MAX_ABOVE_CEILING_PCT` (10) and
+`TRIAL_SUMMARY_MIN_RUNS` (8), `lib/email/verdictLine.test.ts`.
+
+### Sitting 1 — INCORRECT (vacated the same day)
+
+The board ruled `verdictLine`'s `hr_in_zone_pct >= 70` **INCORRECT**: §12 is a ceiling, §12 Am.1
+made the drift detector directional, and a band is the wrong instrument. Hutchinson's stated harm:
+*"a runner who finally ran genuinely easy gets no verdict line — we stay silent at the exact moment
+the product worked."*
+
+### 🔴 The measurement, taken before implementing, which falsified it
+
+| | |
+|---|---|
+| Runs under 70% in zone with **zero** time above the ceiling — the runner the ruling protects | **0 of 73. The harm did not exist** |
+| Runs with `hr_above_ceiling_pct = 0` | **0 of 73** |
+| Runs receiving the line today | 71 of 73 |
+| `hr_above_ceiling_pct`: min / median / max | **3 / 8 / 33** |
+
+**The literal fix would have taken the sentence from 71 of 73 to none.** And the 27% mislabelling
+that produced Am.1 was the R30 detector on a `< 60` band — **the other side of the distribution
+from this `>= 70` test.**
+
+### Sitting 2 — CORRECT WITH AMENDMENT, sitting 1 VACATED
+
+**§12 Am.1 governs accusation, not praise.** An accusation needs only the ceiling; a compliment
+needs the band AND the ceiling. `verdictLine` keeps `>= 70` and gains `hr_above_ceiling_pct <= 10`.
+**68 of 73 keep the line**; the up-to-5 who cleared the band while running hot lose it, which is the
+case §12 actually cares about.
+
+Hutchinson, recorded: *"I over-read my own amendment and the data caught it. I asserted a mechanism
+and called it a finding, which is the exact thing this seat exists to stop other people doing."*
+
+**Also ruled:** an improvement claim needs **8 analysed runs** (McMillan — *"a three-run trial
+cannot support 'when you started'"*), and a missing HR degrades to **silence, never a zero** (Sims,
+ADR-011 §5).
+
+⚠️ **Found while building, by rendering rather than by a test:** the day-11 subject was keyed on
+`verdictLine()` being non-empty, which is true for *"Close. Plan's doing its job."* — so a runner
+**22% above the ceiling** was subjected *"You held the zone on Tuesday."* The subject and the body
+disagreed about the same run. `heldTheZone()` is now the single predicate both ask.

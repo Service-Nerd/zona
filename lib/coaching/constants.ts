@@ -48,6 +48,46 @@ export const VERDICT_BANDS = {
 export const ZONE_DRIFT_ABOVE_CEILING_PCT = 20
 
 /**
+ * §12 Amendment 2 (Coaching Board, 2026-09-24) — the ceiling for PRAISE.
+ *
+ * 🔴 TWO THRESHOLDS, TWO JOBS, AND THE ASYMMETRY IS THE PRINCIPLE. `§12 Am.1`
+ * made the drift DETECTOR directional: an accusation must measure time above the
+ * cap, because that is where the fault is. This morning that was read as meaning
+ * every surface must use the same instrument, and `verdictLine()` — a sentence
+ * that CONGRATULATES a runner — was ruled INCORRECT for using a band.
+ *
+ * ⚠️ THE MEASUREMENT VACATED THAT RULING. Across 73 analysed runs: the runner the
+ * ruling was written to protect — under 70% in zone with **zero** time above the
+ * ceiling — is **0 of 73**. And nobody has ever held the cap perfectly, so the
+ * literal fix would have taken the verdict line from **71 of 73 to none**.
+ *
+ * **A one-sided rule does not invert into one-sided praise.** Accusation needs
+ * only the ceiling. Praise needs BOTH: enough time in the band to have been an
+ * easy run, and little enough above the cap to have meant it. So this is stricter
+ * than `ZONE_DRIFT_ABOVE_CEILING_PCT` and that is deliberate — it is harder to
+ * earn a compliment than to avoid a warning.
+ *
+ * **10 is read from the distribution, not chosen.** Measured: min 3, median 8,
+ * max 33. Ten sits just above the median and separates 68 runs from 5, which is a
+ * population boundary rather than a preference (Seiler). McMillan's condition is
+ * recorded with it: *a product that only praises perfection teaches people that
+ * easy running is unachievable*, which is the belief this product exists to
+ * dismantle.
+ */
+export const ZONE_HELD_MAX_ABOVE_CEILING_PCT = 10
+
+/**
+ * §12 Am.2 — the floor under any claim that a runner IMPROVED across their trial.
+ *
+ * McMillan: *"A three-run trial cannot support 'when you started'."* A comparison
+ * needs two halves and three runs is not two halves of anything. Measured across
+ * the 8 trial users who have runs: mean 11 in the first 14 days, range 3 to 20.
+ * **Eight clears 4 of them, deliberately** — below it the email states the count
+ * and makes no comparison, which is honest rather than flattering.
+ */
+export const TRIAL_SUMMARY_MIN_RUNS = 8
+
+/**
  * P-04 — the run count at which the weekly zone-compliance block is allowed to
  * pass a VERDICT rather than only report a count.
  *
