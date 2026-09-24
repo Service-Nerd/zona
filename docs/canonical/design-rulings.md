@@ -1147,6 +1147,54 @@ Not this board's to close without him.
 
 ---
 
+## 2026-09-24 — The customer email programme · SHIP WITH AMENDMENT (4)
+
+**Trigger:** hard. A surface with no pattern, no token entry and no ruling anywhere.
+**Decision note:** `docs/decisions/design-2026-09-24-email-programme.md`.
+
+🔍 **Settled-ground scan: NOTHING TOUCHED, and that is the first finding.** `design-rulings.md`
+had **zero rows on email**, `brand.md` has **no email voice section**, `ui-patterns.md` has no
+email pattern. The templates hardcode `#F3F0EB`, `#6B8E6B`, `#1A1A1A`, `#3D3A36`, `#8A857D` as
+literals, legal only because the pre-commit hex hook scopes to `app/` and `components/` and this
+lives in `lib/`. **The token layer and this surface have never met.**
+
+📐 **Measured in production, 2026-09-24.** 30 users, all on a trial. **15** day-11 emails sent,
+**20** day-14. **Only 8 of 30 have ANY logged activity**, and the run paragraph is the only
+personalised element in either email — so **22 of 30 received a countdown headline, one sentence
+about what they are losing, and a button.** ⚠️ **Five people received *"Your coaching pauses
+today"* as the first and only email Zonna has ever sent them.** Not measured: open and click rates
+(no instrumentation exists) and nothing has been seen rendered in a mail client.
+
+| Amendment | |
+|---|---|
+| **1. A first email that is not about money** | Triggered by the first analysed run, not a fixed day. **Does not send without one.** The only new email authorised |
+| **2. Day 11 leads with the runner, not the clock** | The verdict line becomes the headline where it exists; where it does not, the email says so honestly rather than padding |
+| **3. Day 14 ends on what they gained** | Runs read, easy days held, before any mention of what pauses |
+| **4. Fix the CTA target** | It points at the marketing homepage: **four steps, two of them guesses** |
+
+**⛔ Veto: NONE, and Silvanto said why** — hardcoded-but-correct palette values are a maintenance
+defect, not a regression against a documented rule, and a veto there would be the *"this feels
+wrong"* veto the chair should refuse. **His veto remains untested.**
+
+**⚡ Recorded disagreement, unresolved by the board:** Sierra holds that a day-11 email to a runner
+with no analysed runs **should not send at all** — it advertises that we have nothing. Wroblewski
+holds that silence then a cliff is worse. Neither could be settled: **no open or click data exists.**
+Sutherland resolved it at the SLT in Sierra's favour on a different argument (below).
+
+**🎪 Collins, recorded:** *"We send more emails about our billing than about their running —
+infinitely more, because the second number is zero."* Not a loss; it is the framing the ruling rests on.
+
+**↗️ Escalated to the SLT** (Zhuo carrying, ADR-023 §5) because amendments 1 and 3 change what a
+trial is worth. **SLT outcome: build differently, in two tranches** — see the decision note. The
+board's ruling was **not overturned**; it was split on sequencing and one amendment was blocked on
+a measurement that has since been taken.
+
+⚠️ **What this does not settle:** nothing here has been seen rendered in a real mail client, and
+every claim about effect is inference from content and reach, never from behaviour.
+
+
+---
+
 ## Maintenance
 
 **Every Design Board ruling appends here in the same commit as its decision note.** A
