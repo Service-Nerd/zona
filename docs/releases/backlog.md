@@ -614,6 +614,55 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
+### ⚙️ `GATE-FALSIFY-01` — a green check that was never proved able to go red
+**Board: ⚙️ NO BOARD** (tooling). Filed 2026-09-24 after three hollow checks in a single day.
+
+**This is the repo's most repeated self-inflicted defect and it has never had a gate of its own.**
+Counted in `docs/build-log.md`: **"hollow" × 15, "inert" × 23, "substring" × 11.** Doctrine already
+says *"falsify any new check before trusting it green"* — in `CLAUDE.md`, in the `build` skill's
+Phase 2, and in `zona-debug`'s exit criteria. **It is stated three times and enforced zero times**,
+which is the exact shape of every other rule this repo has had to mechanise.
+
+**The three from 2026-09-24, because the pattern is identical every time — *the check passes for a
+reason other than the one in its name*:**
+1. A falsification case asserting `expect(got).toBeNull()` followed by an `if (got !== null)` block
+   that **could never execute** — two checks by appearance, one in fact.
+2. `audit-docs.sh`'s contracts arm, which **could not report a missing contract at all**
+   (`[ -f "$c" ] || continue`) — it validated only contracts that already existed.
+3. A verification query handed to the founder to prove a migration had applied:
+   `pg_get_functiondef(...) like '%charity_codes%'`. **Returns `true` in both states**, because the
+   replacement function names the table three times in its own explanatory comments. I nearly
+   declared a good migration failed.
+
+⚠️ **#1 and #2 were caught by mutation. #3 was not, because it ran on someone else's machine** —
+which is precisely why it got through. **A verification step handed to a human is untested code.**
+
+**Ranked, buildable:**
+
+**(a) Lint the known hollow SHAPES in test files.** Mechanical, highest volume, do first.
+- Unreachable code after an assertion (`expect(x).toBeNull()` then `if (x !== null)`).
+- 🔴 **`toContain('<identifier>')` on source text — 11 recorded incidents.**
+  `toContain('onStartNewPlan')` passes against `onStartNewPlanX`. Require a word-boundary
+  `toMatch(/\bname\b/)` or an AST check. This alone would have caught the fifth substring miss
+  of 2026-09-22.
+
+**(b) Require the falsification to be RECORDED, mirroring `fix-test-check.py`.** A commit adding a
+`*.test.ts` should state how the check was made to go red. The hook cannot verify the mutation, but
+it can refuse the silence — and "I could not falsify it because…" is a complete answer, exactly as
+`fix-test-check.py` accepts one.
+
+**(c) `npm run falsify <source> <test> --mutate '<sed expr>'`** — automates the copy/mutate/run/restore
+loop done by hand today: applies the mutation, asserts the named test goes **RED**, restores. Turns
+a manual argument into a repeatable artifact.
+
+**(d) Verification handed to a human** — not mechanically enforceable, so it is a written rule:
+prove the predicate distinguishes the two states **before sending it**, by running it against the
+artifact locally. `grep -cE 'update\s+public\.charity_codes'` on the migration file would have
+caught #3 in one command.
+
+⚠️ **(b) and (d) are the weak options this repo distrusts** — a rule that holds only while someone
+remembers is not a rule. **(a) is the one that is actually a gate.** If only one gets built, build (a).
+
 ### ⚙️ `RATELIMIT-MODULE-PATH-01` — the shared rate limiter still lives under `lib/ai/`
 **Board: ⚙️ NO BOARD.** Opened 2026-09-24 by `CHARITY-REDEEM-RATELIMIT-01`.
 
