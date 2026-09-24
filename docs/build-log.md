@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — SWEEP-W1W2-LONG-CAP-01 + STRIDE-DAYS-CONFIG-01 · the rare symptom led to the common defect
+
+**Shipped:** a deload week can no longer raise the opening long run past its cap, and the pass that raises it now updates the duration it shows the runner.
+
+**Dev learning:** I went looking for a violation that fired on **2 plans in 14,230** and found one that fired on **44,852 sessions across 39,632**. The cap breach was real but rare: ADR-022's deload re-anchor re-anchors a deload long run over the finished weeks and never re-read the week-1-2 cap that `buildWeekSessions` applied 3,000 lines earlier. While tracing it I noticed `duration_mins` was 83 for a 13.5 km run — the value for the 13.0 km it *used* to be. The pass wrote one axis and left the other. `sessionKm` prefers `distance_km`, so every volume calculation stayed correct and the only thing that was wrong was **the number on the runner's screen**, understated by up to eleven minutes. That is precisely why nothing caught it: the defect was invisible to every check that reads the plan as data, because the plan-as-data was right.
+
+**Product/creator learning:** The fix moved 874 of 5,994 parity cases, and none of it is a prescription change — the golden snapshots show `duration_mins` only, with distance and weekly volume untouched. A 14.6% parity move that changes no coaching is an uncomfortable thing to look at, and the instinct is to distrust it. The golden plans being *full-plan* snapshots are what made it safe to read: four complete plans, one field changing.
+
+**AI-building learning:** I labelled one test case FALSIFICATION and it was not one. Pre-fix, every case in the file goes red for the same trivial reason — `generateRulePlan` throws in test env on an error-severity violation — so the case proves nothing about the mechanism. I renamed it GUARD and wrote down why. This repo has recorded hollow gates five or six times now, and the tell is always the same: a test that goes green for a reason other than the one in its name. The real fails-before was proving it by hand, reverting `ruleEngine.ts` alone and watching 4 red become 4 green.
+
+**The honest bit:** three wrong hypotheses before the right one. I blamed §9's ratio floor (1.25 × 5 km TT = 6.25, not 13.5 — the arithmetic killed it), then the weekday cap, then a rounding step. The trace took ninety seconds and I should have run it first. I also had to go and find the failing input via `SWEEP_EXPLAIN`, which exists for exactly this and which I had not used before — the sweep telling you a code fires twice is useless without the shape that fires it.
+
+**Hook material:** The comment directly above the bug said *"a deload never ADDS."* It adds whenever the deload week delivers more than the week before it, which happens on 3,344 week-instances of the cohort grid. The comment was not wrong when it was written; it was wrong about a case nobody had built yet.
+
+**Postable?:** yes
+
 ## 2026-09-24 — S28-WEEKEND-CARRIER-01 · the measurement collapsed the board's options to two
 
 **Shipped:** §28 Amendment 3 — strides fall back beyond midweek when no midweek easy run exists, with hill strides refused on the day after the long run.
