@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — CONTRACT-COVERAGE-01 · the audit said ALL CLEAN and was right about the wrong question
+
+**Shipped:** `audit-docs.sh` can now report an API route that has *no* contract, not just one whose contract went stale.
+
+**Dev learning:** The founder asked whether the docs were up to date, including contracts. The audit said ALL CLEAN. It was telling the truth — and it was structurally incapable of telling me the thing I actually wanted to know. One line did it: `[ -f "$c" ] || continue`, sitting at the top of the loop, so any route with no contract file was skipped in silence. The check could only ever ask *"did you update an existing contract?"*, never *"does this route have one?"* Twenty of fifty-six routes had none, and four of those had been changed **after** the contracts convention started — the exact case the check exists for, invisible on every push since it was written.
+
+**Product/creator learning:** My first cut of the fix counted by filename and reported 29 missing against a true 20, because several routes are documented inside a grouped contract (`strava-oauth.md` covers connect, callback and refresh). Shipping that would have meant the check crying wolf on correctly documented routes, which is how a gate gets switched off — this repo has the receipts on that. The fix was to give both arms one `contracted()` predicate so the per-change check and the debt count cannot drift apart.
+
+**AI-building learning:** I nearly answered "yes, docs are clean" from the audit output alone, which is exactly what CLAUDE.md tells me not to do and exactly what the file says has been wrong every previous time. The instruction I followed was *run the script* — but the real lesson underneath it is that a green check answers the question it was written to ask, not the question you just asked out loud. I only found this because I went and counted routes against contracts by hand after the script said clean.
+
+**The honest bit:** I also lost a few minutes to zsh quietly destroying my `PATH` because I named a loop variable `path` — in zsh that is tied to `$PATH`, so every subsequent `sed` and `wc` vanished with "command not found". The error looked like a broken environment, not like my own variable name.
+
+**Hook material:** The audit ran on every push for four days and said ALL CLEAN the whole time. Twenty of fifty-six API routes had no contract at all, including Stripe and RevenueCat webhooks. The check wasn't broken — it was answering *"did you update an existing contract?"* and I was hearing *"are the contracts complete?"*
+
+**Postable?:** yes
+
 ## 2026-09-24 — SWEEP-W1W2-LONG-CAP-01 + STRIDE-DAYS-CONFIG-01 · the rare symptom led to the common defect
 
 **Shipped:** a deload week can no longer raise the opening long run past its cap, and the pass that raises it now updates the duration it shows the runner.

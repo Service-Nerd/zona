@@ -132,7 +132,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-24 (last ship `6dd3c79`, `SWEEP-W1W2-LONG-CAP-01`).** 3,280 tests · 370 files · sweep exit 0 · `verify:parity` **874/5,994 CHANGED, duration only, declared**. 🥇 **I WENT LOOKING FOR A VIOLATION ON 2 PLANS IN 14,230 AND FOUND ONE ON 44,852 SESSIONS.** ADR-022's deload re-anchor re-anchored a deload long run **without re-reading the week-1-2 cap `buildWeekSessions` applied 3,000 lines earlier** (13.0 → 13.5 against a 13.2 ceiling; §113 would then have refused the runner **for a leap this pass created** — the shape §113 Am.1 vetoed). ⚠️ **Its own comment says *"a deload never ADDS"*** — true only when the deload is smaller, and **3,344 week-instances** deliver more than the week before. 🔴 **THE BIGGER DEFECT WAS INVISIBLE BECAUSE THE DATA WAS RIGHT:** the pass wrote `distance_km` and left `duration_mins` on the OLD distance — **44,852 of 67,348 fires across 39,632 plans**. `sessionKm` prefers distance, so every volume check stayed correct and the only wrong number was **the one on the runner's screen**, understated by up to **eleven minutes** (golden plans 79→82, 75→86, 46→53, 77→82). ⚠️ **I labelled a test FALSIFICATION and it was not one** — pre-fix every case goes red because `generateRulePlan` THROWS in test env. Renamed GUARD, reason written down; the real fails-before was proven by reverting `ruleEngine.ts` alone. Sweep `INV-PLAN-WEEK-1-2-LONG-CAP` **2 → 0, baseline lowered** (a real fix — unlike `INV-PLAN-RACE-NOT-VOLUME`, 7 vs baseline 10, deliberately **HELD** because the fall is re-partitioned sampling). ✅ Also `STRIDE-DAYS-CONFIG-01`: `STRIDE_PREFERRED_DAYS` moved into `GENERATION_CONFIG` — **the guard now fires on it, and did.**
+**State at END of 2026-09-24 (last ship `8aaba67`, `CONTRACT-COVERAGE-01`).** 3,280 tests · 370 files · sweep exit 0 · `verify:parity` **874/5,994 CHANGED, duration only, declared**. 🥇 **I WENT LOOKING FOR A VIOLATION ON 2 PLANS IN 14,230 AND FOUND ONE ON 44,852 SESSIONS.** ADR-022's deload re-anchor re-anchored a deload long run **without re-reading the week-1-2 cap `buildWeekSessions` applied 3,000 lines earlier** (13.0 → 13.5 against a 13.2 ceiling; §113 would then have refused the runner **for a leap this pass created** — the shape §113 Am.1 vetoed). ⚠️ **Its own comment says *"a deload never ADDS"*** — true only when the deload is smaller, and **3,344 week-instances** deliver more than the week before. 🔴 **THE BIGGER DEFECT WAS INVISIBLE BECAUSE THE DATA WAS RIGHT:** the pass wrote `distance_km` and left `duration_mins` on the OLD distance — **44,852 of 67,348 fires across 39,632 plans**. `sessionKm` prefers distance, so every volume check stayed correct and the only wrong number was **the one on the runner's screen**, understated by up to **eleven minutes** (golden plans 79→82, 75→86, 46→53, 77→82). ⚠️ **I labelled a test FALSIFICATION and it was not one** — pre-fix every case goes red because `generateRulePlan` THROWS in test env. Renamed GUARD, reason written down; the real fails-before was proven by reverting `ruleEngine.ts` alone. Sweep `INV-PLAN-WEEK-1-2-LONG-CAP` **2 → 0, baseline lowered** (a real fix — unlike `INV-PLAN-RACE-NOT-VOLUME`, 7 vs baseline 10, deliberately **HELD** because the fall is re-partitioned sampling). ✅ Also `STRIDE-DAYS-CONFIG-01`: `STRIDE_PREFERRED_DAYS` moved into `GENERATION_CONFIG` — **the guard now fires on it, and did.** ✅ **Also `CONTRACT-COVERAGE-01`:** asked whether the docs *including contracts* were current, `audit-docs.sh` said ALL CLEAN — and 🔴 **could not report a MISSING contract at all** (`[ -f "$c" ] || continue` skipped uncontracted routes in silence). **20 of 56 API routes have none**, four changed AFTER the 2026-09-20 convention, including **Stripe and RevenueCat webhooks**. Same class as the edge audit that collected elements **carrying** a property when the defect was the one **missing** it. Gate closed and falsified; `contracted()` owns the question for both arms so they cannot drift. Writing the 20 is `CONTRACT-BACKFILL-01`.
 
 **Superseded state — END of 2026-09-24 (last ship `efa8032`, `S28-WEEKEND-CARRIER-01`).** 3,276 tests · 369 files · sweep exit 0 · `verify:parity` **112/5,994 CHANGED, board-approved**. 🥇 **THE MEASUREMENT COLLAPSED THE BOARD'S OPTIONS TO TWO.** Of 17,434 carrier-less weeks, allowing any easy day recovers **10,410 (59.7%)**; allowing any easy day EXCEPT the day after the long run recovers **0 (0.0%)** — every eligible weekend easy run in this cohort IS the post-long-run day. **The safe-sounding compromise fixed nothing.** Board ruled **CORRECT WITH AMENDMENT** (§28 Am.3): carrier falls back beyond midweek, **Willy's bound — flat strides yes, HILL strides never** on the post-long-run day. 🥇 **IT CLOSED A WIDER, PRE-EXISTING HAZARD THAN THE CASE THAT PROMPTED IT** — all 112 parity moves are `beginner`, **days=3 moved ZERO**, so NONE are the weekend case: beginners with a **Monday** carrier and **Sunday** long run were already being prescribed eccentric hill strides the day after their long run, on ordinary 4–5-day plans, with no rule watching. 🔴 **§28's WHY justifies EASY and gives NO mechanism for MIDWEEK** — the handed-over RCA had that inverted. **Read the WHY, not the principle sentence.** Warn **12.8% → 9.0%**; `e49ea589` goes from **one stride session in nine weeks to six**. ⚠️ My own 3-hour-old test went red and was right to — it pinned the DEFECT's shape. 🔻 Filed: `STRIDE-DAYS-CONFIG-01`, `SWEEP-W1W2-LONG-CAP-01`.
 
@@ -584,27 +584,21 @@ runner-facing notes with dev-only invariant text **in one file**, so a path-base
 wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
 own sentence — are untouched.
 
-### ⚙️ `CONTRACT-COVERAGE-01` — 20 of 56 API routes have no contract
-**Board: ⚙️ NO BOARD.** Opened 2026-09-24 when the founder asked whether the documents,
-*including contracts*, were up to date. `audit-docs.sh` said ALL CLEAN and was correct
-within its scope — the scope was the problem.
+### ⚙️ `CONTRACT-BACKFILL-01` — write the 20 missing API route contracts
+**Board: ⚙️ NO BOARD.** Split from `CONTRACT-COVERAGE-01` (the GATE, shipped 2026-09-24).
 
-🔴 **THE CHECK COULD NOT REPORT A MISSING CONTRACT.** `[ -f "$c" ] || continue` sat at the
-top of the loop, so a route with no contract file was skipped in silence. It answered
-*"did you update an EXISTING contract?"* and never *"does this route have one?"* — the same
-class as the website edge audit that collected elements **carrying** a `max-width` when the
-defect was the one **missing** it. ✅ **Closed the same day:** a `contracted()` predicate now
-owns the question for both arms, touching an uncontracted route FAILS, and the standing debt
-prints on every run. Falsified against `/api/waitlist`.
+The gate is closed: touching an uncontracted route now FAILS `audit-docs.sh`, and the
+standing debt prints on every run. **What remains is writing them** — 20 of 56 routes.
 
-**What remains is writing them.** 20 routes, of which four changed *after* `docs/contracts/api`
-was created on 2026-09-20 (`strava/unlink-activity` 09-23, `recalibrate-taper` 09-22,
-`post-race-reshape` 09-20, `charity/redeem` 09-20) and are true misses; the rest predate the
-convention. ⚠️ **Payment-critical ones are in the list** — `webhooks/stripe`,
-`webhooks/revenuecat`, `charity/redeem`. Suggest those three first.
+Four changed *after* `docs/contracts/api` was created on 2026-09-20 and are true misses:
+`strava/unlink-activity` (09-23), `recalibrate-taper` (09-22), `post-race-reshape` (09-20),
+`charity/redeem` (09-20). The rest predate the convention.
 
-Not done in the sitting that found it because 20 contracts is a body of work, not a residual,
-and the gate now stops the number growing.
+⚠️ **Payment-critical ones are in the list** — `webhooks/stripe`, `webhooks/revenuecat`,
+`charity/redeem`. Suggest those three first.
+
+Not done in the sitting that found it: 20 contracts is a body of work, not a residual,
+and the gate stops the number growing meanwhile.
 
 ### 🏃 `TAPER-OVER-PEAK-01` — **RE-RULED 2026-09-22. CORRECT WITH AMENDMENT, not built.**
 **Board: 🏃 COACHING BOARD (re-sat; first ruling VACATED).** Baselined in `SWEEP-BASELINE-01` meanwhile.
