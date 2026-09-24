@@ -584,18 +584,58 @@ runner-facing notes with dev-only invariant text **in one file**, so a path-base
 wrong in both directions; and push-notification bodies — the *spoken word* half of the founder's
 own sentence — are untouched.
 
+### ⚙️ `SUBS-ORDERING-REVENUECAT-01` — RevenueCat bypasses the ordering guard written FOR it
+**Board: ⚙️ NO BOARD** (defect fix restoring documented intent). Found 2026-09-24 while writing
+`docs/contracts/api/webhooks-revenuecat.md`.
+
+`/api/webhooks/stripe` writes through `apply_subscription_event`, the conditional upsert that
+gates on the source event's timestamp. `/api/webhooks/revenuecat` still does a plain
+`.upsert(..., { onConflict: 'user_id' })` with **no event timestamp at all**.
+
+🔴 **The guard's own migration names both providers in its first sentence** —
+`20260819_subscription_event_ordering.sql`: *"Stripe **(and RevenueCat)** do not guarantee
+delivery order. A stale `customer.subscription.updated` arriving AFTER a `deleted` could
+re-activate a cancelled subscription **via the plain upsert**."* It was solved for one and the
+twin was never migrated, while performing the exact plain upsert the migration describes as the
+hazard.
+
+**Consequences today:** a replayed delivery is not a no-op; an out-of-order event can
+re-activate a cancelled subscription or move `current_period_end` backwards; `last_event_at` is
+never populated for this provider. `subscriptions` is what `resolveTier` reads for every tier
+decision, so the blast radius is a real customer's tier.
+
+Catalogue class: *hazard solved for one transition, named but not solved for its twin* — here
+the twin is named in the same sentence. **Wants its own regression test** (a stale event after a
+cancellation must not re-activate), not a drive-by edit.
+
+### ⚙️ `CHARITY-REDEEM-RATELIMIT-01` — a comment asserts a control that does not exist
+**Board: ⚙️ NO BOARD.** Found 2026-09-24 while writing `docs/contracts/api/charity-redeem.md`.
+
+`lib/charity/code.ts` justifies the 30⁸ codespace with *"the redeem route is also rate-limited
+and authenticated"*. **Authenticated is true; rate-limited is false** — verified: nothing in
+`app/api/charity/redeem/route.ts`, nothing in `middleware.ts`, and `lib/ai/rateLimit.ts` /
+`AI_ROUTE_LIMITS` cover AI surfaces only and never name charity.
+
+Exposure is bounded (a valid session is required, and 30⁸ is large), so this is a **weakened
+assumption rather than an open door** — but the sentence is the stated reason the codespace is
+considered sufficient. **A claim in a comment is not a mechanism.** Fix is either a limiter on
+the route or an honest correction to the comment; do not leave both as they are.
+
 ### ⚙️ `CONTRACT-BACKFILL-01` — write the 20 missing API route contracts
 **Board: ⚙️ NO BOARD.** Split from `CONTRACT-COVERAGE-01` (the GATE, shipped 2026-09-24).
 
 The gate is closed: touching an uncontracted route now FAILS `audit-docs.sh`, and the
-standing debt prints on every run. **What remains is writing them** — 20 of 56 routes.
+standing debt prints on every run. **What remains is writing them — now 17 of 56**, after
+`webhooks/stripe`, `webhooks/revenuecat` and `charity/redeem` were written on 2026-09-24.
 
 Four changed *after* `docs/contracts/api` was created on 2026-09-20 and are true misses:
 `strava/unlink-activity` (09-23), `recalibrate-taper` (09-22), `post-race-reshape` (09-20),
 `charity/redeem` (09-20). The rest predate the convention.
 
-⚠️ **Payment-critical ones are in the list** — `webhooks/stripe`, `webhooks/revenuecat`,
-`charity/redeem`. Suggest those three first.
+✅ **The three payment-critical ones are done** (2026-09-24), and writing them surfaced two
+real defects — `SUBS-ORDERING-REVENUECAT-01` and `CHARITY-REDEEM-RATELIMIT-01`, both filed below.
+**That is the argument for the remaining 17**: the contract is where a claim gets checked against
+the code.
 
 Not done in the sitting that found it: 20 contracts is a body of work, not a residual,
 and the gate stops the number growing meanwhile.
