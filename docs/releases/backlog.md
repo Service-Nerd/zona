@@ -614,6 +614,40 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
+### 🔴 `PLAN-ZONE-VS-HRTARGET-01` — a live plan shows two different HR bands on one card
+**Board: 🏃 COACHING BOARD** if the fix changes what is prescribed; ⚙️ no board if it is display
+only. **Route it at the RCA, not here.** Found 2026-09-24 while backfilling strides onto plan
+`e49ea589` — it was in the before/after violation delta and had nothing to do with strides.
+
+**All five quality sessions on that live plan fire `INV-PLAN-DISPLAY-ZONE-MATCHES-WORK` (error):**
+
+```
+w4 wed "Continuous tempo"      zone "Zone 3" = 161–175 bpm  vs  hr_target 158–171 bpm
+w5 wed "5K-pace reps"          same
+w6 wed "5K-pace reps"          same
+w7 wed "5K-pace progression"   same
+w8 wed "Goal-pace sharpener"   same
+```
+
+The session-detail header reads `session.zone` and the coach note reads `hr_target`, so **the
+runner sees two different HR bands on one card.** That is §84's exact failure and the invariant is
+doing its job.
+
+🔴 **WHAT MAKES IT WORTH AN RCA RATHER THAN A SHRUG.** `fix(§84): the zone string is derived from
+the HR target, not authored beside it` landed **2026-09-04**. This plan was generated
+**2026-09-23 — nineteen days later** — and still has it. Meanwhile the **14,230-plan property
+sweep produces ZERO** of this code and it is not in `SWEEP-BASELINE-01`.
+
+**So the engine is not supposed to do this any more, and it did.** Either a path exists that
+bypasses the derivation, or the sweep cannot reach this runner's shape. Both are the class this
+repo keeps paying for, and the second is exactly what `STRIDES-CHECKER-OWNER-01` was this morning.
+
+⚠️ **Not fixed with the strides backfill, deliberately.** That was a founder-directed one-off with
+a measured zero-impact argument; this is a different defect with an unknown mechanism, and
+folding it in would be *"include it in the build"* becoming *"fix it without understanding it"*.
+**Run `/zona-debug` first.** The runner is `cf9f51f9`, plan `e49ea589`, and his `max_hr` /
+`resting_hr` are the obvious place to start given the bands differ by only 3–4 bpm.
+
 ### ⚙️ `TEST-LIVENESS-COVERAGE-01` — the mutation harness sees 5.9% of the test suite
 **Board: ⚙️ NO BOARD.** Found 2026-09-24 while building `GATE-FALSIFY-01 (c)`.
 
