@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — PLAN-STRIDES-BACKFILL-01 · fixing one runner's plan, and what the delta showed
+
+**Shipped:** the runner whose plan started the whole day now has strides in weeks 4–8 instead of one session in nine weeks.
+
+**Dev learning:** The instinct was to regenerate his plan on the fixed engine. That turned out not to be merely riskier but **not reliably possible**: `plan_json.meta` does not store `days_cannot_train` or `preferred_long_run_day`, so his inputs cannot be reproduced — regeneration would have produced a *different* plan and called it a fix. Appending was the only option that preserves the plan he already has, and the note, the label and the eligible day all come from the engine's own owners so what he gets is byte-identical to what a new plan gets.
+
+**Product/creator learning:** "No negative impact" is a claim, and it has to be paid for in measurements. Zero completions; every affected session future-dated; plan_km identical before and after; `coach_notes` 1 of 3 with room; zero hill strides, barred twice over because plantar fasciitis is in `HILL_RESTRICTING_INJURIES` *and* Am.3 refuses hills after a long run. The one I nearly skipped was checking whether editing `plan_json` fires a notification — it doesn't, and I only know that because I looked rather than assumed.
+
+**AI-building learning:** The before/after violation delta is what earned its keep. I ran it to prove my edit changed nothing else, and it surfaced a defect that has nothing to do with strides: **all five of his quality sessions show "Zone 3 = 161–175 bpm" in the header while prescribing an `hr_target` of 158–171** — two different HR bands on one card. I would not have gone looking for that. **A diff you run to prove you broke nothing is also a free audit of everything you did not touch.**
+
+**The honest bit:** the §84 fix for exactly that defect landed on 2026-09-04, and his plan was generated on the 23rd — nineteen days later — while the 14,230-plan sweep produces zero of it. So either a path bypasses the fix or the corpus cannot reach his HR shape, and I do not know which. I filed it for `/zona-debug` rather than guessing, because folding it into a backfill would have been "include it in the build" turning into "fix it without understanding it".
+
+**Hook material:** I wrote a diff to prove my change had no side effects. It proved that, and it found a second bug on the same plan — one where the runner is shown 161–175 bpm and 158–171 bpm on the same card, from a defect supposedly fixed nineteen days before his plan existed.
+
+**Postable?:** yes
+
 ## 2026-09-24 — GATE-FALSIFY-01 (d) · the un-mechanisable half, made mostly mechanical
 
 **Shipped:** `npm run distinguish` — proves a verification predicate answers differently in the two states before it is handed to a human.
