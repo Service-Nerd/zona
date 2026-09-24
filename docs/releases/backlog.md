@@ -645,55 +645,37 @@ It is the hook whose whole subject is *"a fix with no test is worth a second loo
 one fix in the repo with no test. Both directions matter: the cases where it must stay SILENT are
 what stop it being disabled.
 
-### ⚙️ `GATE-FALSIFY-01` — **(a), (b) and (c) SHIPPED 2026-09-24. (d) remains.**
-**Board: ⚙️ NO BOARD** (tooling).
+### ✅ `GATE-FALSIFY-01` — **ALL FOUR SHIPPED 2026-09-24.** Moved to `feature-registry.md`.
+The hollow-check class now has gates. *"Falsify any new check before trusting it green"* was
+written in **three** documents and enforced in **zero**, while `docs/build-log.md` accumulated
+**hollow × 15, inert × 23, substring × 11**.
 
-✅ **(b) Require the falsification to be RECORDED — DONE 2026-09-24.**
-`.claude/hooks/falsify-check.py`, wired in `settings.json` directly after the hook it mirrors.
-Prompts when a commit **ADDS** a new test file and the message never says how the check was made
-to go red. **An honest negative is a complete answer** — *"could not falsify: the route throws in
-test env"* silences it, exactly as `fix-test-check.py` accepts one. ⚠️ **It refuses the silence; it
-cannot verify the mutation ran.** Noise measured on real history first: of 1,050 commits since
-2026-09-01, 245 add a test, **172 (70%) already state falsification**, 73 would prompt — **7.0% of
-all commits**. 12 self-test cases, both directions, 9 of them asserting SILENCE.
+✅ **(a)** `lib/hollowTestShapes.test.ts` — catches a positive `toContain('<identifier>')` against
+source text and a branch a preceding assertion made unreachable. **19 existing hits fixed, zero
+baseline.** Precision measured before the rule was written: 50 hits → 27 false → 19 real.
 
-✅ **(a) Lint the known hollow shapes — DONE.** `lib/hollowTestShapes.test.ts`, inside
-`npm run verify`. Catches a positive `toContain('<identifier>')` against source text (the 11
-recorded substring misses) and a branch a preceding assertion has made unreachable. **All 19
-existing occurrences fixed in the same commit, so it ships with ZERO baseline** rather than a
-debt register nobody reduces. Escape hatch `// hollow-ok: <reason>`.
+✅ **(b)** `.claude/hooks/falsify-check.py` — prompts when a commit **ADDS** a test and never says
+how it was made to go red. **An honest negative silences it.** Noise measured first: **7.0% of
+1,050 commits**, and **70% already complied**. 🔴 Falsifying it by hand found a false negative the
+12-case suite missed: the id `GATE-FALSIFY-01` contains *"FALSIFY"*, so every commit on this item
+silenced its own hook. Read from the body now, never the subject.
 
-✅ **(c) `npm run falsify` — DONE 2026-09-24, and it is NOT a new script.**
-🔴 **I filed (c) this morning without checking whether it existed. It did.**
-`scripts/test-liveness.ts` (458 lines) already mutates source, re-runs the test, reports
-KILLED/SURVIVED, restores in `finally`, verifies the restore and exits 3 if it fails. A second one
-would have been the `DELOAD-OWNER-01` class — filed by me, against my own lesson about checking
-provenance first.
+✅ **(c)** `npm run falsify` — 🔴 **filed as a new script without checking; `test-liveness.ts` had
+done mutation testing since 2026-09-15.** `--adhoc` added to it instead. Exit **0 KILLED · 1
+SURVIVED · 2 baseline-not-green · 64 usage.**
 
-**The gap that was actually real, measured:** `SUBJECTS` is a DECLARED test→source map —
-**22 of 373 test files, 5.9%** — so a test you just wrote is invisible to it; and `MUTATIONS` is a
-fixed battery of operator flips that cannot express an arbitrary edit. Neither reaches the three
-mutations run by hand that day. So `--adhoc` was added **to the existing script**, reusing its
-mutate/run/restore machinery rather than writing a second restore path, which is the one duplicate
-nobody survives.
+✅ **(d)** `npm run distinguish` — proves a verification predicate returns a **different** answer
+in the two states before it is handed to a human. Catches the real incident on the two real
+migration files. ⚠️ Its real work is forcing the predicate into the boolean it will actually be
+evaluated as: `grep -c x {}` gives 2 vs 3 and looks fine; `grep -q x {} && echo t || echo f` gives
+**t vs t**, which was the defect. Plus the two rules no tool can carry — `build` Phase 3 rule 4b,
+`zona-debug` exit criterion 5, and **`CLAUDE.md`: production is queryable from `.env.local`, so a
+missing MCP connector is not a missing capability.**
 
-`npm run falsify -- --test <t> --subject <s> --from <literal> --to <literal> [--all]`.
-**Exit 0 KILLED · 1 SURVIVED (hollow) · 2 baseline was not green · 64 usage.** ⚠️ It asserts the
-test is GREEN before mutating — a mutation that "goes red" on an already-red test proves nothing,
-and that is the step most easily skipped by hand. All four exit paths verified, tree clean after
-each.
-
-**Still open:**
-
-**(d) Verification handed to a human** — not mechanically enforceable, so a written rule: prove
-the predicate distinguishes the two states **before sending it**, by running it against the
-artifact locally. `grep -cE 'update\s+public\.charity_codes'` on the migration file would have
-caught the false positive in one command.
-
-⚠️ **What (a) does NOT prove:** only these two shapes are statically detectable. The general case
-— *a check that passes for a reason other than the one in its name* — is not caught, and both of
-the other two hollow checks from 2026-09-24 (`audit-docs.sh` unable to report a MISSING contract,
-and the verification query handed to the founder) would have sailed through this lint.
+⚠️ **What none of it proves:** only two shapes are statically detectable, and `distinguish` needs
+both artifacts on disk. A predicate about **live data** has no local before/after — for those,
+state what each outcome means **including what it returns if nothing happened**. *"No rows
+returned"* from an `UPDATE` is not *"zero rows matched"*, and that misread happened the same day.
 
 ### ⚙️ `RATELIMIT-MODULE-PATH-01` — the shared rate limiter still lives under `lib/ai/`
 **Board: ⚙️ NO BOARD.** Opened 2026-09-24 by `CHARITY-REDEEM-RATELIMIT-01`.

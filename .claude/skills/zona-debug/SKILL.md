@@ -229,6 +229,13 @@ A fix is not done until all of these are true or explicitly waived with a reason
 5. **Verification stated honestly** — what you proved, and what you could not.
    "Not visually confirmed, sits behind auth" is a complete answer. Claiming
    verification you didn't do is worse than the bug.
+   ⚠️ **And if you hand someone else a command to run, that command is untested
+   code.** Prove it answers DIFFERENTLY in the two states first — `npm run
+   distinguish` when both artifacts are local. A predicate that returns the same
+   thing either way is not a check, and on 2026-09-24 one nearly caused a good
+   migration to be reported as failed. **Exhaust your own routes before declaring
+   a question unanswerable**: `.env.local` holds the service-role key, so
+   production is readable from here even when an MCP connector has dropped.
 6. **Incident write-up** if it was Systemic and silent — `docs/incidents/<date>-<slug>/`.
    If it's a new failure class, **add it to the catalogue above in the same commit**.
    That loop is what stops this skill decaying into generic advice.

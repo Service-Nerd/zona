@@ -185,6 +185,17 @@ afterwards is a note that does not exist.
    while `audit-docs.sh` checked eight, so the rest were only ever caught after the fact.
 4. **`./scripts/audit-docs.sh`** — **run it, never answer "are the docs up to date?" from
    memory.** It has been answered from memory repeatedly and been wrong every time.
+4b. **HANDING A VERIFICATION STEP TO THE FOUNDER? IT IS UNTESTED CODE.** Prove the predicate
+   returns a DIFFERENT answer in the two states before sending it — `npm run distinguish --
+   --before <A> --after <B> --predicate '<cmd with {}>'` when both artifacts are on disk.
+   ⚠️ **Express it as the boolean it will actually be evaluated as**: `grep -c x {}` gives 2 vs 3
+   and looks fine where `grep -q x {} && echo t || echo f` gives **t vs t**, which was the real
+   defect. On 2026-09-24 a predicate handed over to prove a migration had applied returned the
+   same answer either way — because the new function named the table in its own explanatory
+   comments — and a GOOD migration was nearly declared failed. Hollow checks written in code get
+   caught by mutation; **one running on someone else's machine cannot be, which is why it is the
+   likeliest to survive.** For LIVE DATA there is no local before/after: say what each outcome
+   means, **including what it returns if nothing happened.**
 5. **A BOARD RULED?** A row in `design-rulings.md` / `coaching-rulings.md` in the **same
    commit** — **including a DON'T SHIP, a kill, or a RULED-but-not-built.** ⚠️ The guards fire on
    doctrine FILES, and a ruling can edit no file at all; `audit-docs.sh` § board rulings is what

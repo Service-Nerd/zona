@@ -35,7 +35,8 @@
     "audit:plan-shape": "tsx scripts/audit-plan-invariants.ts",
     "measure:envelope": "tsx scripts/measure-envelope.ts",
     "export:plans": "tsx scripts/export-marketing-plans.ts",
-    "falsify": "tsx scripts/test-liveness.ts --adhoc"
+    "falsify": "tsx scripts/test-liveness.ts --adhoc",
+    "distinguish": "tsx scripts/distinguish.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",

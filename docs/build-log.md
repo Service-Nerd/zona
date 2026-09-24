@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-24 — GATE-FALSIFY-01 (d) · the un-mechanisable half, made mostly mechanical
+
+**Shipped:** `npm run distinguish` — proves a verification predicate answers differently in the two states before it is handed to a human.
+
+**Dev learning:** I filed (d) as *"not mechanically enforceable, so it is a written rule"*. That was half right and I nearly let it stay a paragraph. The failure it comes from — handing over `pg_get_functiondef(...) like '%charity_codes%'` to prove a migration had applied, when the replacement function names that table three times in its own comments — **was testable all along, because both migration files were sitting on disk.** The un-mechanisable part is narrower than the item claimed: only a predicate about *live* data has no local before/after.
+
+**Product/creator learning:** The tool's actual value is not the comparison, it is forcing the predicate into the shape it will really be evaluated in. `grep -c charity_codes {}` returns 2 vs 3 and looks like a fine check; the boolean it stands in for returns **true vs true**. That is the same mistake as `toContain` vs `toMatch` from (a) — asserting something adjacent to the thing you mean and reading the pass as confirmation.
+
+**AI-building learning:** The most expensive line today was not the hollow predicate, it was telling the founder *"I can't check production, the Supabase connector dropped."* `.env.local` had the service-role key; the answer took ninety seconds once I stopped treating an absent MCP server as an absent capability. **CLAUDE.md had zero mentions of that** — so the omission was systemic, not a lapse, and it is now the first thing in the Supabase section.
+
+**The honest bit:** four sub-items, and two of them existed to fix mistakes I made in the same session that filed them. (c) was a duplicate of a tool I had already used that day. (d) exists because I handed over a check I had not tested. The gates are real, but nobody should mistake the productivity of the afternoon for the quality of the morning.
+
+**Hook material:** I wrote a check to prove my own migration had applied. It returned "failed" — because my migration's comments explained why it no longer touched the table it was named after. The check was reading my explanation of the fix and reporting it as the bug.
+
+**Postable?:** yes
+
 ## 2026-09-24 — GATE-FALSIFY-01 (c) · I filed a duplicate of a tool I had already used
 
 **Shipped:** `npm run falsify` — an ad-hoc mutation run, added to the harness that already existed rather than beside it.
