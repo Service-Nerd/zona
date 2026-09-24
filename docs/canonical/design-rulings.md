@@ -1192,6 +1192,19 @@ a measurement that has since been taken.
 ⚠️ **What this does not settle:** nothing here has been seen rendered in a real mail client, and
 every claim about effect is inference from content and reach, never from behaviour.
 
+**↩️ Follow-up, same day — the SLT approved the programme in a different ORDER and added a
+gate this board missed.** Wood moved the Connect email ahead of the First-read email on the
+measurement (**22 of 30 never reach the state First-read requires**), and the SLT found that
+**no email has an unsubscribe link, a `List-Unsubscribe` header, or a consent column** —
+35 sent on that basis. That is now tranche 0 and blocks everything. **Not an overturn:** no
+amendment of this board's was reversed.
+
+🔴 **Two emails in the founder's full proposal have NEVER been through this board** —
+*Connect* and *Pattern*, written after this sitting at the founder's request. **SLT approval
+does not substitute for the design ruling**, and they are recorded here as outstanding so
+they are not built on the strength of a commercial approval alone. Full ruling:
+`docs/decisions/design-2026-09-24-email-programme-proposal.md`.
+
 
 ---
 
