@@ -1,33 +1,26 @@
 import { describe, it, expect } from 'vitest'
 import { claimAutoLink } from './autoAnalyse'
 
-// Fake Supabase that enforces the session_completions unique constraint on
+// Fake Supabase that enforces the session_completions live-row uniqueness on
 // (user_id, week_n, session_day) and models the conditional attach-update.
-// This is the atomic arbiter claimAutoLink relies on to fire the push once.
-function makeFakeSupabase(seed: Record<string, any>[] = []) {
+// The atomic arbiter claimAutoLink relies on is now the `claim_session_completion`
+// RPC (ON CONFLICT DO NOTHING): exactly one concurrent caller inserts and gets
+// `true`, the rest get `false` WITHOUT raising 23505 — COMPLETION-CLAIM-NOLOG-01.
+function makeFakeSupabase(seed: Record<string, any>[] = [], opts: { rpcError?: any } = {}) {
   const key = (r: any) => `${r.user_id}|${r.week_n}|${r.session_day}`
   const store = new Map<string, any>(seed.map(r => [key(r), { ...r }]))
 
   class FakeQuery {
-    _op: 'insert' | 'update' | null = null
-    _row: any = null
     _patch: any = null
     _eq: Record<string, any> = {}
     _is: Record<string, any> = {}
     _neq: Record<string, any> = {}
-    insert(row: any) { this._op = 'insert'; this._row = row; return this }
-    update(patch: any) { this._op = 'update'; this._patch = patch; return this }
+    update(patch: any) { this._patch = patch; return this }
     select() { return this }
     eq(k: string, v: any) { this._eq[k] = v; return this }
     is(k: string, v: any) { this._is[k] = v; return this }
     neq(k: string, v: any) { this._neq[k] = v; return this }
     _resolve() {
-      if (this._op === 'insert') {
-        const k = key(this._row)
-        if (store.has(k)) return { data: null, error: { code: '23505', message: 'duplicate key' } }
-        store.set(k, { ...this._row })
-        return { data: { week_n: this._row.week_n }, error: null }
-      }
       // update — locate the single targeted row and apply is/neq guards
       const k = `${this._eq.user_id}|${this._eq.week_n}|${this._eq.session_day}`
       const row = store.get(k)
@@ -41,7 +34,22 @@ function makeFakeSupabase(seed: Record<string, any>[] = []) {
     then(onF: any, onR: any) { return Promise.resolve(this._resolve()).then(onF, onR) }
   }
 
-  return { from: (_t: string) => new FakeQuery(), _store: store }
+  return {
+    from: (_t: string) => new FakeQuery(),
+    // Atomic claim: DO NOTHING semantics. store.has/set run synchronously on
+    // call, so three Promise.all'd claims serialise to exactly one `true`.
+    rpc: (name: string, { p }: { p: any }) => {
+      if (name !== 'claim_session_completion') {
+        return Promise.resolve({ data: null, error: { code: '42883', message: 'no such fn' } })
+      }
+      if (opts.rpcError) return Promise.resolve({ data: null, error: opts.rpcError })
+      const k = key(p)
+      if (store.has(k)) return Promise.resolve({ data: false, error: null })
+      store.set(k, { ...p })
+      return Promise.resolve({ data: true, error: null })
+    },
+    _store: store,
+  }
 }
 
 const hkRow = () => ({
@@ -89,12 +97,7 @@ describe('claimAutoLink — link-time push fires exactly once', () => {
   })
 
   it('unexpected DB error → exists (never push on uncertainty)', async () => {
-    const sb = {
-      from: () => ({
-        insert() { return this }, select() { return this },
-        maybeSingle() { return Promise.resolve({ data: null, error: { code: '42P01', message: 'boom' } }) },
-      }),
-    }
+    const sb = makeFakeSupabase([], { rpcError: { code: '42P01', message: 'boom' } })
     expect(await claimAutoLink(sb as any, hkRow())).toBe('exists')
   })
 })

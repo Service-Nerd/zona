@@ -22,6 +22,20 @@ it specific, no polish. The content system adds the voice.
 
 **Postable?:** yes
 
+## 2026-09-24 — COMPLETION-CLAIM-NOLOG-01 · the error in the log was the system working
+
+**Shipped:** the auto-link claim no longer leaves a benign `duplicate key … session_completions_live_key` line in the Postgres error log every time a run links.
+
+**Dev learning:** The whole investigation turned on one Postgres fact: `ON CONFLICT DO UPDATE` does **not** raise 23505 under concurrency — Postgres serialises it. So a raw 23505 on that index could only come from a path that does a plain `INSERT` and *isn't* the completion RPC. There was exactly one: `claimAutoLink`, which deliberately inserts and catches 23505 as its "row already exists → attach instead" signal. By elimination the culprit was found before reading a single row of the runner's data. The catch is correct; the noise is that Postgres logs the violation at ERROR level regardless of whether the client swallows it.
+
+**Product/creator learning:** The founder's actual question was "was he able to log his session, is this an issue?" — not "explain the mechanism". Answer first: yes, his session completed, linked and analysed; today's seven errors changed nothing. The value of the fix isn't correctness (nothing was broken) — it's that a benign ERROR you'll re-question every single time is a real operational cost. It hides genuine errors and it wastes the founder's attention. That's the repo's own noise-gate doctrine applied to the database log instead of a hook.
+
+**AI-building learning:** "Believed resolved yesterday, recurring today" was a false scent. Yesterday's fix (COMPLETION-TOMBSTONE-01) didn't cause and didn't un-resolve this — it **renamed the constraint**, so 7 weeks of identical benign noise reappeared under a new name and looked new. Checking the age of the pattern (`git log -S`, 2026-08-06) is what separated "regression" from "the same hum, relabelled".
+
+**The honest bit:** The cheap read of the log was "production is throwing duplicate-key errors, something's broken." It took querying prod (RPC present, index present, old constraint dropped, runner's data clean) to establish that the loudest signal was the least informative one. A logged ERROR is not evidence of a user-facing failure, and I nearly treated it as one. The fix is `ON CONFLICT DO NOTHING` so the claim resolves silently — same atomicity, no line in the log to spook anyone next time.
+
+---
+
 ## 2026-09-24 — STRIDES-CHECKER-OWNER-01 · the checker and the thing it checks disagreed about the same rule
 
 **Shipped:** §28's stride invariant stopped faulting plans the engine was correct to build, and the real coaching gap underneath it became visible instead of silent.
