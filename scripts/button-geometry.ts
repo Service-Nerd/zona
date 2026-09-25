@@ -75,7 +75,13 @@ export function sizeFloors(css: string): Record<string, number> {
  */
 export function overlayTargets(css: string): Record<string, number> {
   const out: Record<string, number> = {}
-  for (const m of Array.from(css.matchAll(/\.((?:btn|icon-btn)--[a-z-]+)::after\s*\{([^}]*)\}/g))) {
+  // 🔴 ANY CLASS, WITH OR WITHOUT A MODIFIER — it was `(?:btn|icon-btn)--[a-z-]+`
+  // (2026-09-25). `.switch::after` carries a 44px hit area and matched neither
+  // half: wrong prefix AND no `--modifier`. Adding switches to the measured set
+  // without this would have reported a CORRECT 26px control as breaching the
+  // 44px floor — a false positive, which this repo records as the fastest way
+  // to get a gate switched off. Third population bug in this harness today.
+  for (const m of Array.from(css.matchAll(/\.([a-z][a-z0-9-]*(?:--[a-z-]+)?)::after\s*\{([^}]*)\}/g))) {
     const h = m[2]!.match(/height:\s*([0-9.]+)px/)
     if (h) out[m[1]!] = parseFloat(h[1]!)
   }
@@ -145,6 +151,13 @@ const num = (t: string, prop: string): number | null => {
  */
 function renderedClasses(tag: string, name: string): string {
   const explicitCls = tag.match(/className=[{"`']([^"`'}]*)/)?.[1] ?? ''
+  // 🔴 A `<Switch>` USAGE CARRIES NO GEOMETRY AT ALL, and that is the point of
+  // the component — but it meant the first cut measured all three as
+  // `{height: null}`, which the 44px floor arm SKIPS (`b.height !== null`).
+  // They were counted in the total and measured by nothing: a hollow entry that
+  // reads as covered. Third time today a check's population looked complete and
+  // was not. `.switch` is unconditional, so it is named here directly.
+  if (name === 'Switch') return `switch ${explicitCls}`
   if (name !== 'Button' && name !== 'IconButton') return explicitCls
   const prop = (p: string) => tag.match(new RegExp(p + '="([a-z-]+)"'))?.[1] ?? null
   if (name === 'Button') {
@@ -250,10 +263,10 @@ export function measureAll(): Record<string, Box> {
     // so it is better, not perfect — which is why the coverage arm below is
     // the actual defence: it fails when baseline entries stop matching at all.
     const seen: Record<string, number> = {}
-    for (const tag of ['button', 'a', 'Link', 'Button', 'IconButton']) {
+    for (const tag of ['button', 'a', 'Link', 'Button', 'IconButton', 'Switch']) {
       for (const { text } of tags(src, tag)) {
-        const onSystem = /className=[^\n]*\b(btn|icon-btn)\b/.test(text) ||
-                         tag === 'Button' || tag === 'IconButton'
+        const onSystem = /className=[^\n]*\b(btn|icon-btn|switch)\b/.test(text) ||
+                         tag === 'Button' || tag === 'IconButton' || tag === 'Switch'
         if (!onSystem) continue
         const n = (seen[tag] = (seen[tag] ?? 0) + 1)
         out[`${f}#${tag}${n}`] = boxOf(text, floors, padFromClass, tag, overlays)

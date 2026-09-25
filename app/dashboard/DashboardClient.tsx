@@ -113,6 +113,7 @@ import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
+import Switch from '@/components/ui/Switch'
 import IconButton from '@/components/ui/IconButton'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
@@ -10494,24 +10495,12 @@ function PushNotificationsRow({ onStatusChange }: { onStatusChange?: (subscribed
             {subtitle}
           </div>
         </div>
-        <Button variant="primary"
-          onClick={handleTap}
+        <Switch
+          checked={isOn}
+          onChange={handleTap}
           disabled={loading || status === 'checking' || status === 'denied'}
-          style={{
-            width: '44px', height: '26px', borderRadius: '13px', border: 'none',
-            cursor: (status === 'denied' || loading || status === 'checking') ? 'default' : 'pointer',
-            background: isOn ? 'var(--moss)' : 'var(--line)',
-            position: 'relative', flexShrink: 0, transition: 'background 0.2s',
-            opacity: status === 'denied' ? 0.5 : 1,
-          }}
-          aria-label="Toggle run notifications">
-          <div style={{
-            position: 'absolute', top: '3px',
-            left: isOn ? '21px' : '3px',
-            width: '20px', height: '20px', borderRadius: '50%',
-            background: 'white', transition: 'left 0.2s',
-          }} />
-        </Button>
+          ariaLabel="Run notifications"
+        />
       </div>
     </div>
   )
@@ -10547,23 +10536,16 @@ function DailyPushToggleRow({ enabled, onChange, disabled = false }: {
                 : 'Off. No morning reminder.'}
           </div>
         </div>
-        <Button variant="primary"
-          onClick={() => { if (!disabled) onChange(!enabled) }}
+        {/* ⚠️ `effectiveOn`, not `enabled`. The row is gated on push being on at
+            all, and renders OFF when it is not even if the stored preference
+            says on, so nobody is promised a push that cannot arrive. `Switch`
+            never derives this — the caller owns it (board amendment 2). */}
+        <Switch
+          checked={effectiveOn}
+          onChange={() => onChange(!enabled)}
           disabled={disabled}
-          style={{
-            width: '44px', height: '26px', borderRadius: '13px', border: 'none',
-            cursor: disabled ? 'default' : 'pointer',
-            background: effectiveOn ? 'var(--moss)' : 'var(--line)',
-            position: 'relative', flexShrink: 0, transition: 'background 0.2s',
-          }}
-          aria-label="Toggle morning training push">
-          <div style={{
-            position: 'absolute', top: '3px',
-            left: effectiveOn ? '21px' : '3px',
-            width: '20px', height: '20px', borderRadius: '50%',
-            background: 'white', transition: 'left 0.2s',
-          }} />
-        </Button>
+          ariaLabel="Morning training push"
+        />
       </div>
     </div>
   )
@@ -10933,28 +10915,6 @@ function AppleHealthConnectionRow({ onHRFound }: {
 
 // ── SMOKE TOGGLE ──────────────────────────────────────────────────────────
 
-function SmokeToggle({ enabled, quitDate, onChange }: {
-  enabled: boolean; quitDate: string; onChange: (enabled: boolean, date: string) => void
-}) {
-  const supabase = createClient()
-
-  async function toggle() {
-    const newEnabled = !enabled
-    const newDate = newEnabled && !quitDate ? new Date().toISOString().split('T')[0] : quitDate
-    onChange(newEnabled, newDate)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('user_settings').upsert({ id: user.id, smoke_tracker_enabled: newEnabled, quit_date: newEnabled ? newDate : null, updated_at: new Date().toISOString() })
-    } catch {}
-  }
-
-  return (
-    <div onClick={toggle} style={{ width: '44px', height: '26px', borderRadius: '13px', background: enabled ? 'var(--teal-bg)' : 'var(--border-col)', position: 'relative', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
-      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: enabled ? 'var(--teal)' : 'var(--text-secondary)', position: 'absolute', top: '3px', left: enabled ? '21px' : '3px', transition: 'left 0.2s, background 0.2s' }} />
-    </div>
-  )
-}
 
 // ── ME SCREEN ─────────────────────────────────────────────────────────────
 
@@ -11614,7 +11574,13 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   onUpgrade?: () => void
   hasPaidAccess?: boolean
   trialDaysLeft?: number | null
-  dynamicAdjustmentsEnabled?: boolean
+  /** ⚠️ REQUIRED, not optional (SWITCH-PRIMITIVE-01). It was `?: boolean` while
+   *  the parent has always passed it and the state defaults to TRUE — so an
+   *  `undefined` would have rendered the row's copy as "off" against a real
+   *  default of on, and `Switch` would have announced the wrong state to a
+   *  screen reader. `Switch.checked` being a required prop is what surfaced it:
+   *  the board made it required so the compiler stops exactly this. */
+  dynamicAdjustmentsEnabled: boolean
   onDynamicAdjustmentsChange?: (enabled: boolean) => void
   dailyPushEnabled?: boolean
   onDailyPushEnabledChange?: (enabled: boolean) => void
@@ -12112,22 +12078,11 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                       : `Plan stays fixed. ${BRAND.name} tracks data but won't suggest changes.`}
                   </div>
                 </div>
-                <button
-                  onClick={() => onDynamicAdjustmentsChange(!dynamicAdjustmentsEnabled)}
-                  style={{
-                    width: '44px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
-                    background: dynamicAdjustmentsEnabled ? 'var(--moss)' : 'var(--line)',
-                    position: 'relative', flexShrink: 0, transition: 'background 0.2s',
-                  }}
-                  aria-label="Toggle auto-adjust"
-                >
-                  <div style={{
-                    position: 'absolute', top: '3px',
-                    left: dynamicAdjustmentsEnabled ? '21px' : '3px',
-                    width: '20px', height: '20px', borderRadius: '50%',
-                    background: 'white', transition: 'left 0.2s',
-                  }} />
-                </button>
+                <Switch
+                  checked={dynamicAdjustmentsEnabled}
+                  onChange={() => onDynamicAdjustmentsChange(!dynamicAdjustmentsEnabled)}
+                  ariaLabel="Auto-adjust my plan"
+                />
               </div>
 
               {/* What we watch for — user-facing disclosure of trigger taxonomy.

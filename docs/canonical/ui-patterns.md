@@ -1786,9 +1786,58 @@ cannot be imported.
 - Gated by `components/shared/actionRow.markup.test.ts`, falsified by removing the chevron.
 
 **Toggle variant** (for boolean settings like Auto-adjust):
-- Row has no chevron — replaced by a `44×26px` pill toggle
-- Toggle on: `--moss` background; off: `--line` background
-- Thumb: `20×20px` white circle, `3px` inset, transitions with `left 0.2s`
+- Row has no chevron — replaced by a **`<Switch>`** (`components/ui/Switch.tsx`)
+- The **row stays with the caller**, exactly as it does for `ActionRow`. `ActionRow` cannot
+  host a switch: its whole row is a `<button>`, and a button cannot nest a button.
+
+> 🔴 **THESE FOUR BULLETS USED TO BE THE WHOLE SPEC, AND NOTHING IMPLEMENTED THEM**
+> (SWITCH-PRIMITIVE-01, Design Board 2026-09-25). They described a control — 44×26 pill,
+> `--moss` on / `--line` off, 20px white thumb at a 3px inset — while § Input Primitives
+> one thousand lines below said *"Never build a one-off input, toggle, chip, or time entry
+> inline."* **The document told you not to build it inline and gave you no other way to
+> build it**, so three call sites transcribed it by hand and a fourth (dead) copy drifted
+> onto `--teal-bg`/`--border-col` with a coloured thumb. Collins: *"the document
+> contradicted itself and we called it drift."*
+>
+> **The rule that came out of it, and it binds this whole file: a section that names a
+> control must name the component that implements it, or it is a sketch.**
+>
+> 🔴 What forced it: `BUTTON-ARCH-01` put two of these on `<Button>`, where
+> `.btn--regular`'s `min-height: 44px` **beats an inline `height: 26px`** — different
+> properties, so the inline style never competes. Measured 26px vs **47px**. The founder
+> saw it as *"run notification toggles look mis shaped"*. Silvanto named it a regression
+> against this section and declined to veto, because the component is the remedy.
+
+### 20a. Switch
+
+The boolean on/off control. `components/ui/Switch.tsx` is the **single owner**; every
+value lives in `.switch` in `globals.css` and none in a component.
+
+| | |
+|---|---|
+| Box | `44×26px`, `13px` radius. ⚠️ **No `min-height`, ever** — that is the original defect |
+| On / off | `--moss` / `--line` |
+| Thumb | `20×20px` white circle, `3px` inset, `left` on `--motion-ui` |
+| Tap target | **`::after`, 44px, invisible** — same mechanism as `.btn--inline-target`. A filled control cannot grow its target with padding, because padding paints |
+| State | `role="switch"` + `aria-checked`. **`checked` is a REQUIRED prop** |
+
+**`checked` is required because the state is announced.** None of the three live switches
+carried either attribute: a VoiceOver user heard *"Toggle run notifications, button"* and
+could not tell whether notifications were on — on the control deciding whether the product
+may speak to them at all. Same move as `IconButton.ariaLabel`: the compiler stops the next
+one, not a reviewer.
+
+**The caller passes the effective state; `Switch` never derives one.** `DailyPushToggleRow`
+is gated on push being enabled and renders OFF when it is not, even if the stored preference
+says on — deliberately, so nobody is promised a push that cannot arrive. A primitive that
+computed `checked && !disabled` would look identical and quietly own a product decision.
+
+**Two disabled grammars, kept apart.** The **control** dims for its own blocked state
+(permission denied, request in flight). The **container** dims when the whole row does not
+apply yet. Same seam `ActionRow` already draws.
+
+Gated by `components/ui/switch.markup.test.ts` — five arms, each falsified by a mutation
+verified to have landed.
 
 **Segmented selector variant** (for km/mi, distance/duration):
 - Small pill buttons, `10px` radius, `5px 12px` padding

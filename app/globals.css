@@ -1035,3 +1035,63 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   border-radius: 50%;
   background: none;
 }
+
+/* ── Switch — SWITCH-PRIMITIVE-01 (Design Board 2026-09-25) ────────────────
+ *
+ * The boolean on/off control. Geometry is `ui-patterns.md` § Switch, which has
+ * specified it since the ActionRow section was written and had no component
+ * behind it: 44x26 pill, `--moss` on / `--line` off, 20x20 white thumb at a
+ * 3px inset, `left` transition.
+ *
+ * 🔴 EVERY VALUE HERE WAS PREVIOUSLY TYPED INLINE, THREE TIMES, and a fourth
+ * copy sat in dead code using `--teal-bg`/`--border-col` legacy aliases with a
+ * coloured thumb. Three of the four agreed only by transcription.
+ *
+ * ⚠️ NO `min-height`, DELIBERATELY. `.btn--regular`'s `min-height: 44px` is
+ * what broke these controls: it beats an inline `height`, because they are
+ * different properties and the inline style never competes. The tap target is
+ * carried by the overlay below, NEVER by the painted box. Do not add one.
+ *
+ * ⚠️ `::after` IS THE 44px HIT AREA, and it is the mechanism this board ruled
+ * hours earlier for `.btn--inline-target` (the Apple Health chip): a filled
+ * control cannot grow its target with padding, because padding grows the paint
+ * too. `:1789` wants 26px and `:262` wants 44px; an invisible overlay is how
+ * both are true. It spans the full width and is centred, so the thumb can be
+ * missed by 9px in either direction and still land. */
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 44px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 13px;
+  background: var(--line);
+  cursor: pointer;
+  transition: background var(--motion-ui);
+}
+.switch--on { background: var(--moss); }
+.switch:disabled { cursor: default; opacity: 0.5; }
+.switch:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.switch::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
+.switch__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  transition: left var(--motion-ui);
+}
+.switch--on .switch__thumb { left: 21px; }

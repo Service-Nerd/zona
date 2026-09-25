@@ -1705,6 +1705,38 @@ silently, and no check could see it because none was asking.** ⚠️ **The cost
 look:** `btn--secondry` compiles and does nothing; `variant="secondry"` fails the build. Migrated 95
 + 4 + 2; now **app 143 component / 1 class (an anchor), site 0 / 3.**
 
+
+### SWITCH-PRIMITIVE-01 — the specification with no component (2026-09-25)
+
+| Ruling | |
+|---|---|
+| **A `Switch` primitive ships and owns every live switch** | 🟢 **SHIP WITH AMENDMENT** |
+
+**Four amendments:** (1) `checked` is a **required** prop — the state is announced, and
+`role="switch"`/`aria-checked` were absent from all three live switches; (2) the **caller**
+passes the effective state, so `DailyPushToggleRow`'s parent-gate survives by construction;
+(3) **two disabled grammars kept and named** — the control dims for its own blocked state,
+the container for row applicability; (4) **`SmokeToggle` deleted, not migrated** — zero call
+sites, residue of a feature `CLAUDE.md` records as removed from all UI in Phase 1.
+
+⛔ **Silvanto NAMED a regression against `ui-patterns.md` § ActionRow / Toggle variant and
+declined to veto**, on the grounds that the proposal is the remedy. Recorded as a named
+regression, not a block. **First time the veto seat has named a rule without exercising it.**
+
+🎪 **Collins, and it is the ruling's real content:** the other four "the thing already
+exists" findings this week (`.cta-pill`, `--accent`, `BackButton`, `TextField`) were
+primitives that existed and were **mis-scoped**. This was a **specification with no
+primitive at all**, sitting in the constitution, obeyed by whoever read it. **A section
+that names a control must name the component that implements it, or it is a sketch.**
+
+📐 **Measured before the sitting:** untouched switch **26px**, both converted **47px**. And
+the brief was wrong — `SmokeToggle` has **zero call sites**, so it was three live switches,
+not four. The board does not rule on the palette of unreachable code.
+
+⚠️ **Tap target:** `:262` (44px) and the 26px pill are both right; the invisible `::after`
+overlay is how, per `:1467`. **Not settled:** nothing has been touched on a device, and this
+governs the control that triggers the real APNs prompt.
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1
