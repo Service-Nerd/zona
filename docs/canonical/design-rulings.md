@@ -7,6 +7,38 @@ not after.
 
 ---
 
+
+## 2026-09-25 — TIME-INPUT-SECONDS-01 · SHIP WITH AMENDMENT
+
+**Should every time-entry field take seconds? Yes, and the decision leaves the call site.**
+`DurationPicker` was already the canonical shared control across six sites and already
+supported seconds — behind a prop defaulting to **false**, set at three and forgotten at
+three. **The drift § Form Fields & Pickers was written to end had survived as a prop.**
+
+🔴 **The three screens did not omit seconds, they FABRICATED them** (`` `${h}:${mm}:00` ``).
+Measured live before the board spoke: **12 of 12 stored times end `:00`** (4/4 targets,
+8/8 benchmarks). ⚠️ **And the error always runs FAST** — 11.8 sec/km at 5K, 5.9 at 10K,
+2.8 at HM — feeding every prescribed pace in a product built to stop people running too
+hard. Silvanto: the benchmark screen **displays** `1:45:28` and **refuses** `:28`, in the
+same scroll.
+
+**Amendment (Wroblewski's, and he did not move):** a target is an intention, not a fact, so
+the wizard's seconds wheel **defaults to `00`** — a runner with no view expresses none at
+zero cost. **Recorded as unsettled**; the evidence that would decide it cannot exist until
+this ships.
+
+**Veto:** none — Silvanto declined explicitly, first sitting he has, and the register
+should show the seat is narrow rather than dormant.
+
+**Routing:** flagged to the **Coaching Board**, not blocked on it — input precision changed,
+no prescription rule did, but the coaching seats should know their benchmarks have been
+optimistic by up to 11.8 sec/km. Same shape as §50's max-HR asymmetry.
+
+**Artifacts:** `ui-patterns.md` § *A time field always collects SECONDS* · the prop deleted
+from `DurationPicker` · `lib/timeInputSeconds.test.ts`, falsified both ways.
+
+---
+
 ## Why this file exists
 
 The Coaching Board learned this the expensive way and wrote it down:

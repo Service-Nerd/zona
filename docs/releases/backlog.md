@@ -350,6 +350,33 @@ Seiler's condition of approval and had only its long-run arm implemented.
 
 ---
 
+### ✅ `TIME-INPUT-SECONDS-01` — **RULED AND SHIPPED 2026-09-25.** Every time field takes seconds.
+
+**Design Board SHIP WITH AMENDMENT.** Full note:
+`docs/decisions/design-2026-09-25-time-input-seconds.md`.
+
+🔴 **The ask was "build one component" and the component already existed.** `DurationPicker`
+calls itself *"the canonical time/duration entry"*, is used by all six entry points, and
+already supported seconds — behind a `showSeconds` prop defaulting to **false**, set at three
+call sites and forgotten at three. **Building what was asked for would have produced a second
+component and fixed nothing.**
+
+🔴 **The three screens did not omit seconds, they FABRICATED them** — `` `${h}:${mm}:00` ``.
+Live data before the board ruled: **12 of 12 stored times end `:00`** (4/4 targets, 8/8
+benchmarks). ⚠️ **The error always runs FAST**: 11.8 sec/km at 5K, 5.9 at 10K, 2.8 at HM,
+feeding every prescribed pace in a product built to stop people running too hard.
+
+**Amendment (Wroblewski, unmoved):** a target is an intention, not a fact — the wizard's
+seconds wheel **defaults to `00`**. ⚠️ **Recorded as UNSETTLED**; the evidence that decides it
+cannot exist until this ships.
+
+**Shipped:** prop deleted rather than defaulted, so the compiler visited all six call sites ·
+seconds wired through the benchmark screen and both wizard pickers incl. draft persistence ·
+three `:00` fabrications removed · `'30:00'` for the fixed-protocol time trial kept and named.
+`lib/timeInputSeconds.test.ts`, falsified both ways. **verify exit 0 · 3,478 tests / 393 files.**
+
+⚠️ **Not felt on a device**, and a three-wheel control is more exposed to that than most.
+
 ### ✅ `RECALIBRATE-ZONES-COOKIE-CLIENT-01` — **SHIPPED 2026-09-25.** "No plan found." for a runner who had one.
 
 **Founder-reported, live user.** Duncan Bennett (trial) entered a half-marathon time on the

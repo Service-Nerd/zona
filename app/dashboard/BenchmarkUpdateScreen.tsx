@@ -142,6 +142,7 @@ export default function BenchmarkUpdateScreen({
   const [benchmarkDistKm, setBenchmarkDistKm] = useState<number | null>(null)
   const [benchHours, setBenchHours] = useState(0)
   const [benchMins, setBenchMins] = useState(0)
+  const [benchSecs, setBenchSecs] = useState(0)
   const [benchmarkTTDist, setBenchmarkTTDist] = useState('')
 
   const [loading, setLoading] = useState(false)
@@ -149,7 +150,7 @@ export default function BenchmarkUpdateScreen({
   const [result, setResult] = useState<{ plan: Plan; weeksUpdated: number } | null>(null)
 
   function canSubmit() {
-    if (benchmarkType === 'race') return benchmarkDistKm !== null && (benchHours > 0 || benchMins > 0)
+    if (benchmarkType === 'race') return benchmarkDistKm !== null && (benchHours > 0 || benchMins > 0 || benchSecs > 0)
     if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
     return false
   }
@@ -159,7 +160,11 @@ export default function BenchmarkUpdateScreen({
     setLoading(true)
     setError(null)
 
-    const benchTimeStr = `${benchHours}:${String(benchMins).padStart(2, '0')}:00`
+    // TIME-INPUT-SECONDS-01 — the runner's OWN seconds. This line read
+    // `...:00`, hardcoding a precision nobody entered: measured 8 of 8 stored
+    // benchmarks ended `:00`, and truncating to the minute makes a runner look
+    // up to 11.8 sec/km FASTER at 5K, which then sets every prescribed pace.
+    const benchTimeStr = `${benchHours}:${String(benchMins).padStart(2, '0')}:${String(benchSecs).padStart(2, '0')}`
     const benchmark: BenchmarkInput = benchmarkType === 'race'
       ? { type: 'race', distance_km: benchmarkDistKm!, time: benchTimeStr }
       : { type: 'tt_30min', distance_km: Number(benchmarkTTDist), time: '30:00' }
@@ -243,8 +248,9 @@ export default function BenchmarkUpdateScreen({
                   <div>
                     <FieldLabel>Finish time</FieldLabel>
                     <DurationPicker
-                      hours={benchHours} mins={benchMins}
+                      hours={benchHours} mins={benchMins} secs={benchSecs}
                       onHoursChange={setBenchHours} onMinsChange={setBenchMins}
+                      onSecsChange={setBenchSecs}
                       maxHours={9}
                     />
                   </div>

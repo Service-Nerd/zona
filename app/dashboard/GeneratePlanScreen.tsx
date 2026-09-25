@@ -622,6 +622,7 @@ export default function GeneratePlanScreen({
   // ── Step 4 — Target time ──────────────────────────────────────────────────
   const [targetHours, setTargetHours] = useState(0)
   const [targetMins,  setTargetMins]  = useState(0)
+  const [targetSecs,  setTargetSecs]  = useState(0)
 
   // ── Step 5 — Fitness ─────────────────────────────────────────────────────
   // Year of birth (not full DOB) — App Store Guideline 5.1.1 data minimisation.
@@ -645,6 +646,7 @@ export default function GeneratePlanScreen({
   const [benchmarkDistKm,  setBenchmarkDistKm]  = useState<number | null>(null)
   const [benchHours,       setBenchHours]       = useState(0)
   const [benchMins,        setBenchMins]        = useState(0)
+  const [benchSecs,        setBenchSecs]        = useState(0)
   const [benchmarkDate,    setBenchmarkDate]    = useState('')
   const [benchmarkTTDist,  setBenchmarkTTDist]  = useState('')
 
@@ -687,6 +689,7 @@ export default function GeneratePlanScreen({
       if (s.goal)            setGoal(s.goal)
       if (typeof s.targetHours === 'number') setTargetHours(s.targetHours)
       if (typeof s.targetMins  === 'number') setTargetMins(s.targetMins)
+      if (typeof s.targetSecs  === 'number') setTargetSecs(s.targetSecs)
       if (typeof s.birthYear === 'number') setBirthYear(s.birthYear)
       // New numeric form (Ruler); fall back to the pre-Ruler label bucket so a
       // draft saved mid-wizard before this shipped still restores its value.
@@ -702,6 +705,7 @@ export default function GeneratePlanScreen({
       if (s.benchmarkDistKm) setBenchmarkDistKm(s.benchmarkDistKm)
       if (typeof s.benchHours === 'number') setBenchHours(s.benchHours)
       if (typeof s.benchMins  === 'number') setBenchMins(s.benchMins)
+      if (typeof s.benchSecs  === 'number') setBenchSecs(s.benchSecs)
       if (s.benchmarkTTDist) setBenchmarkTTDist(s.benchmarkTTDist)
       if (s.benchmarkDate)   setBenchmarkDate(s.benchmarkDate)
       // New: single weekPlan. Back-compat: rebuild it from the pre-grid separate
@@ -731,17 +735,17 @@ export default function GeneratePlanScreen({
     try {
       sessionStorage.setItem(WIZARD_KEY, JSON.stringify({
         appStep, distanceKm, raceName, raceDate, goal,
-        targetHours, targetMins,
+        targetHours, targetMins, targetSecs,
         birthYear, weeklyKm, longestRun, restingHR, trainingAge, recentQuality, fitnessLevel,
-        benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
+        benchmarkType, benchmarkDistKm, benchHours, benchMins, benchSecs, benchmarkTTDist, benchmarkDate,
         weekPlan, maxWeekdayChip, dayBudgets,
         hardSessions, terrain, injuries,
       }))
     } catch {}
   }, [appStep, distanceKm, raceName, raceDate, goal,
-      targetHours, targetMins,
+      targetHours, targetMins, targetSecs,
       birthYear, weeklyKm, longestRun, restingHR, trainingAge, recentQuality,
-      benchmarkType, benchmarkDistKm, benchHours, benchMins, benchmarkTTDist, benchmarkDate,
+      benchmarkType, benchmarkDistKm, benchHours, benchMins, benchSecs, benchmarkTTDist, benchmarkDate,
       weekPlan, maxWeekdayChip, dayBudgets,
       hardSessions, terrain, injuries])
 
@@ -882,7 +886,7 @@ export default function GeneratePlanScreen({
       case 'distance':       return distanceKm !== null
       case 'race-details':   return raceDate !== ''
       case 'goal':           return goal !== null
-      case 'target-time':    return targetHours > 0 || targetMins > 0
+      case 'target-time':    return targetHours > 0 || targetMins > 0 || targetSecs > 0
       case 'weekly-volume':  return weeklyKm !== null
       case 'longest-run':    return longestRun !== null
       // training-age + birth-year are optional (App Store 5.1.1 — year of birth
@@ -892,7 +896,7 @@ export default function GeneratePlanScreen({
       case 'your-level':     return true  // pre-selected to the recommendation
       case 'birth-year':     return true
       case 'benchmark':
-        if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0))
+        if (benchmarkType === 'race')     return !!(benchmarkDistKm && (benchHours > 0 || benchMins > 0 || benchSecs > 0))
         if (benchmarkType === 'tt_30min') return benchmarkTTDist !== ''
         return true
       case 'your-week': {
@@ -939,9 +943,10 @@ export default function GeneratePlanScreen({
     const weeklyKmVal   = weeklyKm   ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.WEEKLY_KM_ANCHOR
     const longestRunVal = longestRun ?? GENERATION_CONFIG.WIZARD_VOLUME_RULER.LONGEST_RUN_KM_ANCHOR
     const targetTimeStr = goal === 'time_target' && (targetHours > 0 || targetMins > 0)
-      ? `${targetHours}:${String(targetMins).padStart(2, '0')}:00` : undefined
+      // TIME-INPUT-SECONDS-01 — the runner's own seconds, not a fabricated :00.
+      ? `${targetHours}:${String(targetMins).padStart(2, '0')}:${String(targetSecs).padStart(2, '0')}` : undefined
     const benchTimeStr  = benchHours > 0 || benchMins > 0
-      ? `${benchHours}:${String(benchMins).padStart(2, '0')}:00` : undefined
+      ? `${benchHours}:${String(benchMins).padStart(2, '0')}:${String(benchSecs).padStart(2, '0')}` : undefined
     // The one engine touch: derive the schedule fields from the week grid.
     //
     // UX-WIZARD-01 step 1 — `max_weekday_mins` is now derived HERE too, rather
@@ -1860,8 +1865,9 @@ export default function GeneratePlanScreen({
           <div>
             <FieldLabel>Target time</FieldLabel>
             <DurationPicker
-              hours={targetHours} mins={targetMins}
+              hours={targetHours} mins={targetMins} secs={targetSecs}
               onHoursChange={setTargetHours} onMinsChange={setTargetMins}
+              onSecsChange={setTargetSecs}
               maxHours={23}
             />
             <FieldNote>Be honest. Optimistic targets make bad training plans.</FieldNote>
@@ -2056,8 +2062,9 @@ export default function GeneratePlanScreen({
                 <div>
                   <FieldLabel>Finish time</FieldLabel>
                   <DurationPicker
-                    hours={benchHours} mins={benchMins}
+                    hours={benchHours} mins={benchMins} secs={benchSecs}
                     onHoursChange={setBenchHours} onMinsChange={setBenchMins}
+                    onSecsChange={setBenchSecs}
                     maxHours={9}
                   />
                 </div>

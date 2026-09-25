@@ -230,7 +230,6 @@ export default function RaceResultSheet({
               onHoursChange={setFinishH}
               onMinsChange={setFinishM}
               onSecsChange={setFinishS}
-              showSeconds
             />
           </div>
 

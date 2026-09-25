@@ -6145,7 +6145,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               <div style={labelStyle}>Duration</div>
               <DurationPicker
                 hours={hours} mins={minutes} secs={seconds}
-                maxHours={12} showSeconds
+                maxHours={12}
                 onHoursChange={setHours} onMinsChange={setMinutes} onSecsChange={setSeconds}
               />
             </div>

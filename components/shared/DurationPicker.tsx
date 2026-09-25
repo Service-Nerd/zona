@@ -4,10 +4,29 @@
 // enters a finish time, target time, or duration: the wizard (target + benchmark
 // time), the benchmark recalibration screen, and the race-result sheet.
 //
-// Interaction is now scroll WHEELS (three WheelPicker columns hrs : min : sec),
-// not the old +/- steppers — decided app-wide 2026-08-30. The PUBLIC API is
-// unchanged (hours/mins/secs + on*Change, maxHours, showSeconds), so every
-// caller gets the wheel with no call-site change.
+// Interaction is scroll WHEELS (WheelPicker columns hrs : min : sec), not the
+// old +/- steppers — decided app-wide 2026-08-30.
+//
+// 🔴 SECONDS ARE NOT OPTIONAL (TIME-INPUT-SECONDS-01, Design Board 2026-09-25).
+// `showSeconds` was a per-caller prop defaulting to FALSE, and it was set at
+// three call sites and forgotten at three. That is the drift § Form Fields &
+// Pickers was written to end — *"the same quantities were collected 2-3
+// different ways across screens; these primitives end that drift"* — surviving
+// as a prop instead of as a component.
+//
+// Measured on live data before the board ruled: **12 of 12 stored times end
+// `:00`** (4 of 4 target times, 8 of 8 benchmarks). Not one runner had ever
+// recorded a real seconds value, because three screens could not accept one —
+// and those screens did not OMIT the seconds, they hardcoded `:00` into the
+// stored string. The app asserted a precision it never collected.
+//
+// ⚠️ THE DIRECTION OF THE ERROR IS WHY THIS MATTERED (Sierra). Truncating to the
+// minute always makes the runner look FASTER: worst case 11.8 sec/km at 5K, 5.9
+// at 10K, 2.8 at HM. Every prescribed pace derives from that benchmark, in a
+// product whose whole thesis is that people run their easy days too hard.
+//
+// The prop is GONE rather than defaulted to true, so no call site can turn it
+// off and the compiler visits every one of them.
 //
 // ui-patterns.md § Form Fields & Pickers → DurationPicker / WheelPicker.
 
@@ -31,22 +50,17 @@ export function DurationPicker({
   onMinsChange,
   onSecsChange,
   maxHours = 23,
-  showSeconds = false,
   showHours = true,
   maxMins = 90,
 }: {
   hours: number
   mins: number
-  /** Seconds — only used when showSeconds is true. */
-  secs?: number
+  /** Seconds. Always collected — see the header. */
+  secs: number
   onHoursChange: (v: number) => void
   onMinsChange: (v: number) => void
-  onSecsChange?: (v: number) => void
+  onSecsChange: (v: number) => void
   maxHours?: number
-  /** Adds a third column for seconds. Needed for short-race finish times
-   *  (a 5K is minutes:seconds, where seconds decide a PB). Off by default so
-   *  the wizard/benchmark target-time callers stay HH:MM. */
-  showSeconds?: boolean
   /** Drop the hours column for a minutes:seconds picker (a 5K/10K time trial
    *  is mm:ss, never hours). When false, `hours` is ignored and the minutes
    *  wheel runs 0..maxMins so a slow 10K past 59 min is still reachable. */
@@ -86,15 +100,11 @@ export function DurationPicker({
         <div style={unitStyle}>min</div>
       </div>
 
-      {showSeconds && (
-        <>
-          <span style={sepStyle}>:</span>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <WheelPicker values={secondValues} value={secs ?? 0} onChange={v => onSecsChange?.(v)} format={pad2} ariaLabel="seconds" />
-            <div style={unitStyle}>sec</div>
-          </div>
-        </>
-      )}
+      <span style={sepStyle}>:</span>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <WheelPicker values={secondValues} value={secs} onChange={onSecsChange} format={pad2} ariaLabel="seconds" />
+        <div style={unitStyle}>sec</div>
+      </div>
     </div>
   )
 }

@@ -150,7 +150,7 @@ export function RecalibrationEntryScreen({
             </label>
             <div style={{ opacity: busy ? 0.5 : 1, pointerEvents: busy ? 'none' : 'auto' }}>
               <DurationPicker
-                showHours={false} showSeconds maxMins={90}
+                showHours={false} maxMins={90}
                 hours={0} mins={mins} secs={secs}
                 onHoursChange={() => {}} onMinsChange={setMins} onSecsChange={setSecs}
               />

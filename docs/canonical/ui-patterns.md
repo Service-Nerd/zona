@@ -2316,7 +2316,7 @@ The canonical user-input controls. **Never build a one-off input, toggle, chip, 
 |---|---|---|
 | Free text, email, password, name, a precise number typed exactly (HR, TT distance) | Objective, typed | **TextField** |
 | A bounded number the runner *estimates* (weekly volume, longest run) | Continuous but stepped | **Ruler** |
-| A time — finish time, target time, duration | Objective, precise, ranged | **DurationPicker** (wheels) |
+| A time — finish time, target time, duration | Objective, precise, ranged | **DurationPicker** (wheels) — **always hrs : min : sec**, see below |
 | Effort / RPE | Subjective, low-precision | **RPEScale** (Pattern 13) |
 | One of 2–4 mutually-exclusive modes (km/mi, sign-in/up, distance/duration) | Toggle | **SegmentedControl** |
 | One (or several) of a larger set — injuries, training-age bands, benchmark type | Compact select | **Chip** |
@@ -2819,6 +2819,53 @@ Canonical examples: `GeneratingCeremony.tsx`, `GeneratePlanScreen.tsx`
 **AI-DEPTH-08 — post-race reshape flow.**
 
 Two components, one flow: (1) log the race result, (2) accept or reject the proposed plan reshape.
+
+### A time field always collects SECONDS *(Design Board 2026-09-25, TIME-INPUT-SECONDS-01)*
+
+**Rule.** `DurationPicker` renders hrs : min : sec. There is no prop to turn seconds
+off, and there is no call-site decision to make. `showHours={false}` remains, for a
+genuinely mm:ss quantity like a time trial.
+
+🔴 **Why: the drift this section was written to end had survived as a prop.** §Form
+Fields & Pickers exists because *"the same quantities were collected 2-3 different ways
+across screens; these primitives end that drift."* One component shipped — carrying a
+`showSeconds` prop that defaulted to **false**, was set at three call sites and forgotten
+at three.
+
+⚠️ **AND THE THREE SCREENS DID NOT OMIT SECONDS — THEY FABRICATED THEM.** They built the
+stored value as `` `${h}:${mm}:00` ``. Measured on live production data before the board
+ruled: **12 of 12 stored times end `:00`** — 4 of 4 target times, 8 of 8 benchmarks. Not
+one runner had ever recorded a real seconds value, because three screens could not accept
+one. **The app was asserting a precision it never collected.**
+
+⚠️ **The direction of the error is the finding.** Truncating to the minute always makes the
+runner look **faster**:
+
+| distance | worst-case pace error |
+|---|---|
+| **5K** | **11.8 sec/km** |
+| 10K | 5.9 sec/km |
+| HM | 2.8 sec/km |
+| Marathon | 1.4 sec/km |
+
+Every prescribed pace derives from that benchmark, in a product whose entire thesis is that
+people run their easy days too hard. Silvanto's observation carried the sitting: the
+benchmark screen **displays** `HM 1:45:28` and, eight hundred pixels below, **refused to
+accept** `:28`.
+
+⚠️ **RECORDED DISSENT — Wroblewski, not settled.** A **result** is a fact; a **target** is
+an intention, and nobody decides *"I want to run 1:54:37"*. Asking for seconds under
+*"what time are you aiming for?"* demands a precision the runner does not have. The chair's
+amendment answers it without overruling him: the wheel ships **defaulting to `00`**, so
+expressing no view costs nothing. **What would reopen it:** evidence that runners enter
+non-round targets — which cannot exist until this ships.
+
+**Exempt, and named so the exemption reads as a decision:** `'30:00'` for the 30-minute
+time trial is the **protocol**, not a runner-entered value.
+
+**Check:** `lib/timeInputSeconds.test.ts` — no call site passes `showSeconds`, every caller
+passes `secs`/`onSecsChange`, and **no screen builds an `H:MM:00` literal**. Falsified both
+ways.
 
 #### RaceResultSheet (`components/training/RaceResultSheet.tsx`)
 
