@@ -270,6 +270,62 @@ that is `INJURY-DELIVERED-COVERAGE-01`, still open.
 `['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
 names**. That gap has no harness.
 
+### 🏃 `DELOAD-LR-GROWS-01` — the "recovery" week is 27% bigger, and 100% of it is the long run
+
+**Investigated 2026-09-25 (third of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
+NOT noise. For the Coaching Board — and unlike the other two 2-day findings, THIS ONE HAS A
+LEVER.**
+
+`INV-PLAN-DELOAD-IS-A-REDUCTION` fires on **45.6% of 2-day plans** (12.3% plan-wide).
+Measured on 144 genuine 2-day plans: **53 of 288 deload transitions invert (18.4%)**.
+
+#### One mechanism, and it is unanimous
+
+| cause | share |
+|---|---|
+| **the long run GREW into the deload week** | **53 of 53 — 100%** |
+| anything else | 0 |
+
+Overshoot is small in km (median 2.0, max 3.0) and large in proportion. **The worst case is
+an 11 km week becoming a 14 km "recovery" week — 27% MORE — with the long run going
+6 → 9 km, a 50% jump, in the week the runner is told to recover.**
+
+That is §90's principle verbatim, on the surface §90 does not reach: *"a week the runner is
+told is easier must DELIVER less — the curve is not the promise."*
+
+#### The constitution already named this, and scoped the remedy away from these runners
+
+§2's own text (`CoachingPrinciples.md:205`):
+
+> *"That residual is the **same class as the deload-inversion** (`INV-PLAN-DELOAD-IS-A-REDUCTION`),
+> and it clears only when **DELOAD-INVERSION-01** makes placement track the curve."*
+
+`DELOAD-INVERSION-01`'s **curve** half shipped 2026-09-06 (curve inversions 12.8% → 0%). Its
+**delivered** half did not, and the Coaching Board scoped the delivered reconciliation to
+**injury runners only**. These are healthy 2-day runners, so nothing reaches them. **Third
+time today this exact scoping shape has produced a hole** (§90/§94's delivered arms; CB-1's
+<3-run exemption scoped to foundation weeks).
+
+#### 🔴 The narrow, answerable question
+
+**Nothing governs the long run's size INSIDE a deload week.** §3 governs the week's volume,
+§45/§47 govern long-run progression and peak step-backs, and §2857's *"a long run following
+a deload week may step back up to the pre-deload distance (within +5%)"* governs the week
+**after**. The week itself is ungoverned, and empirically the long run grows through it in
+100% of these cases.
+
+**For the board: should a deload week's long run be capped at the previous week's long run?**
+
+⚠️ **THIS IS A LEVER, and that distinguishes it from `LR-2DAY-LOPSIDED-01`.** There the
+remedies were genuinely exhausted. Here one rule with a clear mechanism would close 100% of
+the measured cases, and it does not fight §52 — §52 forbids deforming a **race-anchored**
+long run, and a deload is not a race-anchored week.
+
+⚠️ **The 2-day cohort is NOT the only shape.** A 4-day achilles marathon plan seen earlier
+today inverted at week 11 (32 → 33 km) with the long run **shrinking** 17 → 15 km — so the
+other sessions grew there. **A cap on the deload long run would not fix that one**, and any
+ruling should say which cases it closes and which it does not.
+
 ### 🏃 `LR-2DAY-LOPSIDED-01` — a 2-day runner gets 77% of their week in one run, and the remedies are spent
 
 **Investigated 2026-09-25 (second of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
