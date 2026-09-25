@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — BUTTON-COMPONENT-01 · the buttons looked flat, and they also failed contrast
+
+**Shipped:** One `Button` component, 41 controls converted across 17 files plus the email CTA, and every moss control that carries text now clears WCAG AA.
+
+**Dev learning:** The founder said "the CTAs look very flat". The cause wasn't a missing shadow, it was that there was no Button component at all: 212 `<button>` elements, 66 carrying `--moss`, 27 of them the same nine-line inline style object written out again from whatever was nearby. `--shadow-lifted` had been sitting in `globals.css` with ZERO consumers while `--shadow-card` had 19 — the product elevated its cards and gave its buttons nothing, so the moss button sat visually *behind* the card it was on. Nobody ever made a button decision; they made it 27 times.
+
+**Product/creator learning:** The real finding was underneath the one I was asked about. White on `--moss` is 3.68:1 and AA wants 4.5:1, so every primary CTA in the product failed contrast — and `A11Y-CONTRAST-01` had measured that exact failure months ago, shipped `--moss-strong` and `--moss-deep` to fix it, and then applied them to the **marketing** button only. 28 uses on the website. Zero in `app/dashboard`. Zero in `lib/email`. That reclassified the whole item from "polish when we get to it" to "has to ship", and it changed the staging argument: "convert nothing, let files be touched over time" is defensible when the cost is flatness and not when the cost is an accessibility failure.
+
+**AI-building learning:** Three of my own decisions were wrong and only measuring caught them. (1) The board's ruling quoted one button as its reference — uppercase, 13px — so I made `.btn` force uppercase. Then I counted: **33 of the 40 controls being converted were NOT uppercase.** The cited example was the minority, and I'd have restyled 33 buttons nobody asked me to touch, inside a build whose whole job was to change one thing. A single quoted example is not a population. (2) I gave the `soft` variant `--moss-strong` because that's the AA token — it's 4.36:1 on a moss-tinted ground, still failing. The gentlest-looking variant needs the strongest ink. (3) My own gate reported real offenders at wrong line numbers twice, because `^\s*//` matches `\n` in JS and swallowed the blank lines above every comment.
+
+**The honest bit:** I shipped a check yesterday for hollow test shapes and it caught a hollow assertion in *this* check — `toContain('mossStrong')` passes against `mossStrongX`. The email theme's mirror map also rejected two colours I'd added before they were real tokens. Both of those are guards written earlier in the week catching me this week, which is the argument for writing them, but it is not a comfortable way to find out. I also read a suite result as green because the exit code said 0 while the summary said `1 failed` — the same "read the line, not the exit code" mistake in reverse.
+
+**Hook material:** 3.68:1. That's the contrast of white text on our primary button, against WCAG's 4.5:1 minimum. The fix had been in the codebase for months — applied to the marketing site and never to the app. A test called `a11yContrast.test.ts` was green the entire time, and it wasn't wrong: it asserts the *token* is fine, which it is, and nothing had ever checked whether anything used it.
+
+**Postable?:** yes
+
 ## 2026-09-25 — TIME-INPUT-SECONDS-01 · asked to build a component that already existed
 
 **Shipped:** every time field in the app collects seconds, and the decision left the call site.
