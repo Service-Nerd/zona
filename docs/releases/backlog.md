@@ -270,6 +270,67 @@ that is `INJURY-DELIVERED-COVERAGE-01`, still open.
 `['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
 names**. That gap has no harness.
 
+### 🏃 `LR-2DAY-LOPSIDED-01` — a 2-day runner gets 77% of their week in one run, and the remedies are spent
+
+**Investigated 2026-09-25 (second of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
+NOT noise. For the Coaching Board.**
+
+`INV-PLAN-LR-MAX-WEEKLY-PCT` fires on **72.9% of 2-day plans** (5.9% plan-wide). It is
+`error` for a build plan and `warn` for maintenance — so every one of these is a
+maintenance plan, which matters: **§52's own remedy has already been applied and is spent.**
+
+Measured on genuine 2-day configurations (exactly five blocked days), 144 plans:
+
+| | |
+|---|---|
+| plans classifying `maintenance` | **144 of 144 (100%)** |
+| main weeks with ≤2 runs | **1,584 of 1,584 (100%)** |
+| weeks breaching the 60% cap | 243 (15.3%) |
+| breach fractions | median **63%**, p90 **72%**, max **77%** |
+
+#### 🔴 TWO RATIFIED POSITIONS COLLIDE HERE, and the measurement picks one
+
+**CB-1 (2026-09-03)** exempted weeks with <3 runs: *"a fraction of the week is only
+meaningful once the week has runs to distribute across… that is a SMALL week, not a
+LOPSIDED one, and §52's remedies are all inapplicable to it."* ⚠️ **Scoped to foundation
+weeks**, on the stated ground that *"main-week behaviour is owned by §52's maintenance
+classification"*. **For a 2-day runner that is 100% of main weeks, and maintenance is
+already applied** — so the owner CB-1 deferred to has nothing left to give.
+
+**Willy (2026-09-13)**, arguing against exempting maintenance: *"the tissue does not care
+that the plan is labelled maintenance, and one session carrying three-quarters of the load
+is more dangerous at low volume, not less."*
+
+**The measurement says Willy, not CB-1 — and it falsified my own hypothesis.** I expected
+the `CHARITY-CAP-ABSFLOOR-01` pattern (a percentage magnifying a clinically trivial number,
+cleared by an absolute floor, as §90 and §94 both gained). It is not that:
+
+| long run in the breaching week | share |
+|---|---|
+| under 10 km | **4.9%** |
+| 10–15 km | 55.6% |
+| 15–20 km | 34.6% |
+| 20 km+ | 4.9% |
+
+**95.1% are 10 km or more.** These are not small weeks. An absolute floor would clear
+almost none of them, and CB-1's "small week, not a lopsided one" does not describe them.
+
+#### The case that should decide it
+
+**A 20.0 km long run in a 26 km week — 77%.** Half-marathon goal, runner does **40 km/week**
+and can train two days. They can carry the volume; they cannot spread it. So the plan gives
+them 26 km and puts 20 of it in a single run.
+
+**For the board.** §52's three remedies are exhausted: maintenance is applied, volume is the
+runner's own constraint, and §52 forbids deforming a race-anchored long run (*"the race sets
+the long run; do not deform it"*). **So this cohort has no lever at all**, which is either
+an honest residual to declare or a sign that 2-day half-marathon training needs a different
+shape. ⚠️ **Do not answer by adding an absolute-km floor** — measured above, it does not fit.
+
+⚠️ **Related and NOT investigated:** the same runner does 40 km/week and is given 26.
+Whether that is §106's "a plan never peaks below where the runner already is" is a separate
+question, and `INV-PLAN-PEAK-NOT-BELOW-START` is itself acknowledged at 30.7%.
+
 ### 🏃 `STRIDES-2DAY-SILENT-GAP-01` — the 2-day runner loses their neuromuscular stimulus and is never told
 
 **Investigated 2026-09-25 (the first of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
