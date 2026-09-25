@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — OPS-TRIAL-CONV-01 · the conversion number was 3.2% and every point of it was us
+
+**Shipped:** the view behind the 1 January trial-to-paid gate now reports a real number. Applied by the founder, verified from here.
+**Dev learning:** the gate is 5%. The view said 3.2%. All of it — the single "conversion" in the whole database — was a `stripe` subscription row hand-created for the founder's own account back in April so he'd have full access. Not revenue, never was. Every other view resolves that user as `admin` and correctly reports zero paying customers. This one just counted rows.
+**Product/creator learning:** the part that stings is that we'd already found this. The charity migration five days earlier names `v_trial_conversion` **by name** in its own comment, explains that it would miscount comped runners, and then fixes a different view. The half that was written down got fixed; the half nobody had thought of — that the bias could run the *other* way, flattering us — was never looked for. **A defect you have described in prose is not a defect you have fixed, and describing it makes it feel handled.**
+**AI-building learning:** I kept the raw `converted` column rather than correcting it in place. A view that silently changes what an existing column means is worse than one that is visibly wrong, because anything already reading it gets a new answer to an old question without being told. The new column is the one the gate reads; the old one stays, and a gap of more than one between them now means something real has changed.
+**The honest bit:** my first SQL failed. I'd dry-run it as a `SELECT` against production, watched it return the right numbers, and handed it over describing it as tested. It was tested — as a query. As DDL it was never run at all, and `CREATE OR REPLACE VIEW` cannot reorder an existing column, so it died on **42P16** the moment the founder pasted it. **I have flagged exactly this gap in other people's checks twice this week: a rehearsal that skips the step that actually fails is not a rehearsal.** The second version was re-run in the real column order before I sent it.
+**Also:** I wrote the migration file after the fact and added it to the applied ledger. Applied DDL with no file in the repo is the silent-drift class the session-start hook exists to catch, and "the founder ran it in the editor" is not a record.
+**Hook material:** the trial conversion rate was 3.2% against a 5% target, and 100% of it was my own founder's comp account.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — DELOAD-LR-GROWS-01 · I recommended a fix, built it, measured it at zero, and did not ship it
 
 **Shipped:** nothing. A correction to my own filing, and the measurement that was blocking the biggest open question.

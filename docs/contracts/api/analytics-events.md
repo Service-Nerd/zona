@@ -55,7 +55,7 @@ trackEvent(supabase: SupabaseClient, userId: string | null, event: AnalyticsEven
 | View | Shape | Feeds |
 |---|---|---|
 | `v_paying_users` | single row: `paying_users int` | CA-07 |
-| `v_trial_conversion` | per-user: `user_id, trial_started_at, subscribed_at, sub_status, converted bool, days_trial_to_sub numeric` | MON-TRIAL-01 |
+| `v_trial_conversion` | per-user: `user_id, trial_started_at, subscribed_at, sub_status, converted bool, days_trial_to_sub numeric` **+ (OPS-TRIAL-CONV-01, 2026-09-25) `converted_real bool, is_admin bool, had_charity_grant bool, looks_like_test bool`** | MON-TRIAL-01 |
 | `v_hr_present_pct` | single row: `instrumented_runs, hr_present_runs, hr_absent_runs, hr_present_pct` | HR-SYNC-04 |
 | `v_coach_engagement` | per (`user_id`, `week`): `coach_opens, downstream_actions` | CO-ONE |
 
@@ -63,6 +63,7 @@ trackEvent(supabase: SupabaseClient, userId: string | null, event: AnalyticsEven
 
 - **`v_coach_engagement` is RAW** — it applies **no threshold**. The CO-ONE "3+ opens with zero downstream action across ≥10% of paid users" logic lives with the CO-ONE feature when built, not here (keeps coaching numerics out of infra — INV-CFG-003).
 - **Downstream action = a `session_completions` write**, bucketed on `updated_at` (the column the completion write path provably sets — `created_at` is not asserted by the repo). Extend the `actions` CTE if a broader definition is needed later.
+- 🔴 **`converted` is RAW and counts the founder's admin row; `converted_real` is the number the 1 January 5% gate reads (OPS-TRIAL-CONV-01).** The only `subscriptions` row in production is a hand-seeded `stripe` comp for the admin account, so the raw column reported **1 of 31 = 3.2%** against a 5% threshold. Verified after the fix: **`converted_real` 0, eligible denominator 28.** Both columns are kept — a view that silently changes an existing column's meaning is worse than one that is wrong visibly. Baseline query: `count(*) FILTER (WHERE converted_real) / count(*) FILTER (WHERE NOT is_admin AND NOT had_charity_grant AND NOT looks_like_test)`.
 - **`v_trial_conversion.subscribed_at` = `subscriptions.created_at`** — the closest honest "converted" timestamp we hold (when StoreKit/RevenueCat first granted entitlement). `trial_started_at` is the in-app 14-day reverse trial, not the Apple offer.
 - **`v_paying_users`** counts `admin_user_tiers.tier = 'premium'` — real payers, excluding `admin` (us).
 

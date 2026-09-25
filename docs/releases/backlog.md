@@ -905,7 +905,7 @@ contract lacks (both directions), and the snake_case union returning to `injury_
 routes with no contract at all) is untouched, and the other 41 documented contracts have
 not been checked for the same class — the pattern now exists for whoever sequences that.
 
-### ⚙️ `OPS-TRIAL-CONV-01` — `v_trial_conversion` counts the founder's admin row as a conversion
+### ✅ `OPS-TRIAL-CONV-01` — **APPLIED AND VERIFIED 2026-09-25.** `converted_real` 0, eligible 28.
 
 Live today: denominator **31**, numerator **1**, and that 1 is `russell.j.shear@gmail.com`
 (`is_admin`, hand-seeded `stripe` row, 2026-04-27, period end 2027-04-27). The view reports
@@ -917,7 +917,20 @@ admin, grant or test filter.
 **The 5% trial-to-paid gate is 1 January. At 30 users, one admin row is 3.2 points of a
 5-point threshold.**
 
-🔻 **FOUNDER ACTION — production DDL, run in the Supabase SQL editor:**
+✅ **APPLIED BY THE FOUNDER 2026-09-25 and verified from here, not taken on trust:** 4 of 4
+new columns present · `converted_real` **0** · `converted` (raw) **1**, kept deliberately ·
+eligible denominator **28** · **0 grants to `anon`/`authenticated`**, so the PII stays off the
+client. Recorded as `supabase/migrations/20260925_trial_conversion_real.sql` and added to
+`.claude/state/applied-migrations.txt`.
+
+⚠️ **THE SQL FAILED ON THE FIRST ATTEMPT AND THE REASON IS WORTH KEEPING.** I dry-ran the
+logic as a `SELECT`, which proved the joins and the arithmetic, and handed it over calling it
+tested. `CREATE OR REPLACE VIEW` cannot rename or reorder an existing column, so putting the
+new ones before `days_trial_to_sub` failed with **42P16**. **A rehearsal that skips the step
+that actually fails is not a rehearsal.** The corrected version appends, and was re-dry-run
+in the real column order before being handed over again.
+
+**The SQL as applied:**
 
 ```sql
 CREATE OR REPLACE VIEW public.v_trial_conversion AS
