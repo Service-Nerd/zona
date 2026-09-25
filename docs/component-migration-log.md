@@ -142,6 +142,35 @@ in. The last has **no `--danger-strong` to move to**, so it is filed as `DANGER-
 `IconButton` batch. 1 `--strava` brand fill and 1 `--ink` fill → neither is `secondary`.
 **Not verified:** no device.
 
+### 2026-09-25 · Regression — `BUTTON-REGRESSION-01`
+**Founder, mid-batch: *"We need to be regression testing this."*** He was right, and the measure is
+blunt: **of the 18 files converted that day, ONE had a render-level test**, and `Button.tsx` — the
+component 90 controls now depend on — had **none**. `buttonOwnership.test.ts` reads source text and
+asserts the markup names the right classes. That is a real check and it is the wrong question: it
+cannot see whether a button still fires, still disables, still carries its label.
+
+**Added:** `components/ui/button.markup.test.ts` (17 assertions, the component rendered via
+`renderToStaticMarkup`) and `components/shared/convertedButtons.markup.test.ts` (a converted screen).
+
+🔴 **THE CALL-SITE TEST WAS HOLLOW TWICE OVER AND ONLY MUTATION FOUND IT.**
+1. **The fixture never reached the button.** `showOffer = isRefusal && !!offer`, and every case
+   passed `offer: null`, so the branch holding one of the two converted controls never rendered.
+   Reverting that button to a hand-rolled style left the suite green.
+2. **The inline-style check skipped exactly the regression it guards** — it looped over buttons that
+   still carried `btn`, so a button that reverted COMPLETELY was excluded by the filter.
+
+⚠️ **And two mutations earlier in the same session did not COMPILE, which is not a surviving
+mutant — it is a broken experiment.** Every mutation now verifies it applied before the result is
+read. Three near-misses of that shape in one day.
+
+**Killed after the fix:** busy no longer disabling (the double-submit bug), `aria-busy` dropped,
+`className` replacing instead of merging, the default variant changing, an inline background
+creeping back, a converted button reverting, a `.btn` losing its size class.
+
+⚠️ **Named gap:** `DashboardClient`, `GeneratePlanScreen`, `UpgradeScreen` and the auth pages need
+Supabase, a plan, router context or a live session, so their conversions still rest on `tsc`, the
+ownership gate and the build. **Not covered, and not pretended otherwise.**
+
 ### Next batches — proposed, not ruled
 
 | # | Scope | Size | Blocked on |
