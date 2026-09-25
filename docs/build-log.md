@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+
+## 2026-09-25 — BUTTON-MIGRATION-03 · the check written to find primary CTAs was blind to primary CTAs
+**Shipped:** Nine more hand-rolled moss CTAs onto the shared `Button`, plus fixes to the two gates that could not see them.
+**Dev learning:** The ownership gate matched `color:\s*'var(--card)'` — the quote anchored directly after the colon. A real primary CTA expresses a disabled state, so its colours are ternaries: `color: hasData ? 'var(--card)' : 'var(--teal)'`. The check written to find primary CTAs was structurally blind to the ones that behave like primary CTAs. Widening it to read through a ternary found nine, including the wizard's Next button. Second, worse: `button-geometry.ts` keyed its baseline `file:line:tag` and the comparison skips any current key the baseline lacks — so inserting a single line re-keyed every control below it, every one was skipped, and the gate printed `moved: 0`. Falsified it: 145 of 145 baseline entries orphaned while the move arm stayed green.
+**Product/creator learning:** The founder said "there is also a save button at the bottom" and I did not check it. Every other control in that flow had moved. The one named out loud was the one missed — and it was the modal's primary action.
+**AI-building learning:** I verified a stash landed before trusting a before/after measurement, because a previous session had published a false measurement from a stash that silently did nothing. The check cost one line (`git diff --quiet`) and the first attempt DID fail — a newline-split pathspec — loudly rather than silently. Verify that your verification reached the change.
+**The honest bit:** I converted sixty-eight controls and reported the work done, twice, while nine live primary CTAs sat hand-rolled and failing AA — and the gate I had written and falsified said clean each time. The falsification I ran was against a case I invented, not against a control that expresses a disabled state.
+**Hook material:** 145 of 145 baseline controls orphaned, and the geometry gate printed "geometry moved: 0". Not "nothing moved" — no longer looking.
+**Postable?:** yes
+
 ## 2026-09-25 — SHEET-CLOSE-OWNER-01 · the drag pill that dragged nothing
 
 **Shipped:** Every sheet swipes down to close and shows one cross, and the Me-screen zone rows line up.
