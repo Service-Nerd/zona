@@ -96,11 +96,32 @@ Body: GeneratorInput
 
   // Profile (paid/trial only)
   hard_session_relationship?: 'avoid' | 'neutral' | 'love' | 'overdo'
-  injury_history?: ('achilles' | 'knee' | 'back' | 'shin_splints' | 'hip_flexor' | 'plantar_fasciitis')[]
+  injury_history?: string[]       // FREE-FORM, matched by keyword — NOT a closed union.
+                                  // The wizard sends its own labels: 'Achilles', 'Knee',
+                                  // 'Back', 'Hip', 'Shin splints', 'Plantar fasciitis'.
+                                  // `lib/plan/injuryScope.ts` matches separator- and
+                                  // case-insensitively and bidirectionally, so 'Hip' reaches
+                                  // the 'hip_flexor' rule and 'Shin splints' reaches
+                                  // 'shin_splints'. Unrecognised entries are ignored, never
+                                  // rejected — one typo must not cost the runner the other
+                                  // injuries they correctly declared.
+                                  // §12's VOLUME CAP is scoped to knee and shin-splint
+                                  // histories only; other entries drive hill exclusion
+                                  // (§ HILL_RESTRICTING_INJURIES) and the 120-minute long-run
+                                  // cap (back, plantar fasciitis).
   terrain?: 'road' | 'trail' | 'mixed'
   athlete_name?: string   // SERVER-OWNED — see "Athlete name" below. Anything sent here is overridden.
 
-  // Removed in R23 rebuild — `motivation_type`, `training_style`. Server ignores these fields if sent.
+  // R23 rebuild removed these from the WIZARD; the SERVER still accepts them.
+  // ⚠️ This line used to read "Server ignores these fields if sent" and that was
+  // false (CONTRACT-INJURY-VALUES-01, 2026-09-25): both are validated
+  // (`lib/plan/inputs.ts`), persisted into `meta.generator_input`, and
+  // `training_style` is interpolated into the AI enrichment prompt
+  // (`lib/plan/enrich.ts`). Nothing currently SENDS either — measured, no
+  // producer in `app/`, `components/` or `lib/` — so nothing is broken; but a
+  // client that sent one would reach the model.
+  training_style?: 'predictable' | 'variety' | 'minimalist' | 'structured'
+  motivation_type?: 'identity' | 'achievement' | 'health' | 'social'
 
   // ADR-020 Option A (2026-09-03) — the runner's choice on the Foundation
   // Block modal, shown only when meta.foundation_gap_class === 'choice' on a

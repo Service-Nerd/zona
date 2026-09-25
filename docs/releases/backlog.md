@@ -476,9 +476,7 @@ single-owner check. It also asserts the rule is **intact rather than disabled** 
 wed/thu/fri free, zero quality still fires. `verify` exit 0 · **3,424 tests / 388 files** ·
 `verify:parity` **IDENTICAL, 6,066 cases** — generation never moved, only the report on it.
 
-### ⚙️ `CONTRACT-INJURY-VALUES-01` — the generate-plan contract types values the wizard never sends
-
-**Filed 2026-09-25 during `RULEENGINE-HIP-COMMENT-01`. Not fixed.**
+### ✅ `CONTRACT-INJURY-VALUES-01` — **SHIPPED 2026-09-25.** The contract matches the API, and is now checked.
 
 `docs/contracts/api/generate-plan.md:99` declares:
 
@@ -497,10 +495,49 @@ product's.** Third surface. The engine now normalises, so nothing is broken at r
 but a contract is read by whoever writes the next client, and this one would send values
 that match nothing.
 
-Fix: document the wizard's strings, and say the matcher is separator- and case-insensitive
-(`lib/plan/injuryScope.ts`). ⚠️ **Decide whether the contract should also state the
-canonical keyword list** — it is a real question, not a formatting one, and `docs/contracts/`
-carries standing debt (`CONTRACT-COVERAGE-01`) that this should be sequenced against.
+#### What shipped
+
+🔴 **The union was wrong IN KIND, not in spelling.** `injury_history` is free-form by
+design — the engine keyword-matches through `lib/plan/injuryScope.ts`, separator- and
+case-insensitively — so correcting the six strings would still have misdescribed the API.
+It is now documented as `string[]`, naming the wizard's own labels and what each drives
+(§12's volume cap is knee/shin only; hills and the 120-minute long-run cap take the rest).
+
+🔴 **A SECOND FALSEHOOD IN THE SAME DOCUMENT, found in analysis.** It read *"Removed in
+R23 rebuild — `motivation_type`, `training_style`. Server ignores these fields if sent."*
+**Both are live:** validated (`inputs.ts`), persisted into `meta.generator_input`
+(`ruleEngine.ts:8981/8983`), and **`training_style` is interpolated into the AI enrichment
+prompt** (`enrich.ts:435`). ⚠️ **Measured: nothing currently sends either** — no producer
+anywhere in `app/`, `components/` or `lib/` — so nothing is broken; but a client that sent
+one would reach the model. Corrected, folded into this build.
+
+#### The gate, and the owner it reuses
+
+🥇 **`lib/plan/inputs.ts` already held the answer.** A function-local `enums` table — the
+values the request validator actually enforces — now **exported as `INPUT_ENUMS`** so the
+contract is CHECKED against it rather than hand-maintained beside it. Its own header
+records this exact class for a different field: *"two measurement grids in scripts/ had been
+passing `'occasionally'` and `'regularly'`, neither of which exists, and every plan
+generated cleanly."*
+
+**New pattern, agreed as architect:** *a contract's enumerated values are checked against
+the validator's own table, never hand-maintained.* `contractEnums.test.ts` — 16 assertions,
+one per enumerated field — is the first application. ⚠️ **`injury_history` is deliberately
+NOT in `INPUT_ENUMS`**: there is no closed set, and adding one would reject the wizard's own
+strings. The test asserts that absence explicitly, so the omission reads as a decision.
+
+⚠️ **THE GATE'S FIRST RED WAS ITS OWN PARSER** — `preferred_long_run_day?: 'sat' | 'sun'
+// … default 'sun'` harvested the comment's `'sun'` as a third value. Fixed by stripping
+the comment before parsing; recorded because a gate whose first failure is its own bug
+teaches everyone to distrust it.
+
+**Falsified three ways:** the contract dropping a value, the **validator** gaining one the
+contract lacks (both directions), and the snake_case union returning to `injury_history`.
+`verify` exit 0 · **3,440 tests / 389 files**.
+
+⚠️ **Scope: this covers ONE contract.** `CONTRACT-COVERAGE-01`'s standing debt (16 of 58
+routes with no contract at all) is untouched, and the other 41 documented contracts have
+not been checked for the same class — the pattern now exists for whoever sequences that.
 
 ### ⚙️ `OPS-TRIAL-CONV-01` — `v_trial_conversion` counts the founder's admin row as a conversion
 

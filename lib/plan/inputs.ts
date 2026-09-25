@@ -41,6 +41,36 @@ import { raceLabelFor } from './raceLabel'
  * plans. This guards the next path that does, and any stored `generator_input`
  * that acquired the shape another way.
  */
+/**
+ * THE VALUES THE API ACCEPTS, for every enumerated `GeneratorInput` field.
+ *
+ * Exported (CONTRACT-INJURY-VALUES-01, 2026-09-25) so `docs/contracts/api/
+ * generate-plan.md` can be CHECKED against it rather than hand-maintained
+ * beside it. The contract had documented `injury_history` as a closed
+ * snake_case union the wizard cannot produce, and had declared two live fields
+ * "ignored"; a contract nothing reads is a contract that rots, and this table is
+ * the only authority on the question it answers.
+ *
+ * ⚠️ `injury_history` is DELIBERATELY ABSENT. It is free-form: the engine
+ * keyword-matches through `lib/plan/injuryScope.ts`, separator- and
+ * case-insensitively, so there is no closed set to validate against. Adding one
+ * here would reject the wizard's own strings.
+ */
+export const INPUT_ENUMS: Record<string, readonly string[]> = {
+    goal:                    ['finish', 'time_target'],
+    fitness_level:           ['beginner', 'intermediate', 'experienced'],
+    user_declared_level:     ['beginner', 'intermediate', 'experienced'],
+    fitness_intensity_level: ['beginner', 'intermediate', 'experienced'],
+    max_hr_source:           ['observed', 'user_confirmed'],
+    recent_quality_training: ['none', 'occasional', 'regular'],
+    preferred_long_run_day:  ['sat', 'sun'],
+    training_style:          ['predictable', 'variety', 'minimalist', 'structured'],
+    hard_session_relationship: ['avoid', 'neutral', 'love', 'overdo'],
+    motivation_type:         ['identity', 'achievement', 'health', 'social'],
+    terrain:                 ['road', 'trail', 'mixed'],
+    foundation_decision:     ['add', 'skip', 'start_now'],
+  }
+
 export function coherentGoal(input: GeneratorInput): GeneratorInput {
   return input.goal === 'time_target' && !input.target_time
     ? { ...input, goal: 'finish' }
@@ -565,20 +595,7 @@ export function validateInputFields(input: GeneratorInput): void {
   // 'regularly', neither of which exists, and every plan generated cleanly.
   //
   // §55's own words: "reject nonsense values". D-04: failure is data.
-  const enums: Record<string, readonly string[]> = {
-    goal:                    ['finish', 'time_target'],
-    fitness_level:           ['beginner', 'intermediate', 'experienced'],
-    user_declared_level:     ['beginner', 'intermediate', 'experienced'],
-    fitness_intensity_level: ['beginner', 'intermediate', 'experienced'],
-    max_hr_source:           ['observed', 'user_confirmed'],
-    recent_quality_training: ['none', 'occasional', 'regular'],
-    preferred_long_run_day:  ['sat', 'sun'],
-    training_style:          ['predictable', 'variety', 'minimalist', 'structured'],
-    hard_session_relationship: ['avoid', 'neutral', 'love', 'overdo'],
-    motivation_type:         ['identity', 'achievement', 'health', 'social'],
-    terrain:                 ['road', 'trail', 'mixed'],
-    foundation_decision:     ['add', 'skip', 'start_now'],
-  }
+  const enums = INPUT_ENUMS
   for (const [field, allowed] of Object.entries(enums)) {
     const value = (input as unknown as Record<string, unknown>)[field]
     // Absent is valid for every one of these — the engine has a documented
