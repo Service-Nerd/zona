@@ -29,6 +29,33 @@ already decided what it is.
 
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
+### 🧭 `BUTTON-MIGRATION-02` — the other 178 controls, batch by batch
+**Board: 🧭 DESIGN BOARD** for the two new primitives; ⚙️ NO BOARD for batches 2 and 3.
+
+📒 **Rolling log: `docs/component-migration-log.md`.** Counts, breakdown, batch history and the
+next batches live there and are re-measured before each one. **Do not quote the numbers from here.**
+
+`BUTTON-COMPONENT-01` converted **41 of 219** controls — the moss ones, because those failed WCAG
+AA. The remaining 178 are unfinished work, not risk: they do not fail contrast, they are just still
+bespoke, so a button change still has to be made in more than one place.
+
+**Only ~100 of the 178 belong in `Button` at all.** ~43 neutral-surface → `secondary`, ~53
+text/link → `quiet`, 4 other filled. The rest are different primitives: **36 selected-state toggles
+(⛔ must NOT be swept in** — the moss active fill is the only selected affordance and the gate is
+falsified against them**)** and **15 icon-only controls needing an `IconButton`**.
+
+🔻 **The website is the biggest visible gap and the one that needs a ruling.** It uses `.cta-pill`,
+not `Button`, so **a button change still has to be made twice.** Not a straight swap: `.cta-pill`
+is on `<a>`/`<Link>` because site CTAs navigate, so unifying needs `Button` to render as an anchor
+(`as` prop vs a sibling `ButtonLink`) — a design decision, not a find-and-replace.
+
+⚠️ **Email is a third surface that can NEVER share code** (HTML string builder; Outlook drops
+`box-shadow`). It mirrors the contract by hand and the gate asserts its fill separately.
+
+⚠️ **Batch 3's assumption is unmeasured:** the 53 text buttons are not moss, so the gate says
+nothing about them. **Measure their contrast first** or the batch is an audit wearing a migration's
+clothes.
+
 ### 1. Where things stand
 
 **Everything is shipped, pushed and live.** 90 commits today, tree clean, nothing unpushed.
