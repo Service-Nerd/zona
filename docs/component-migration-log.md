@@ -171,13 +171,24 @@ creeping back, a converted button reverting, a `.btn` losing its size class.
 Supabase, a plan, router context or a live session, so their conversions still rest on `tsc`, the
 ownership gate and the build. **Not covered, and not pretended otherwise.**
 
+### 2026-09-25 · Batch 4 — `ICON-BUTTON-01`
+**Ruled and built.** `IconButton` extracted as the generalisation of `BackButton`, which becomes a
+thin wrapper. `ariaLabel` REQUIRED. `ModifyPlanSheet`'s close (a byte-for-byte duplicate of the
+documented spec) and `SessionSteps`' inline mark converted; 5 controls gained accessible names.
+
+📐 **My census was wrong twice, in the safe direction** — 14/7 reported, **12/5** true. Stripping
+`{...}` from a button body and calling the remainder "icon-only" counted two full-width LABELLED
+buttons as silent. The gate's classifier now skips any `{expression}` body.
+
+⚠️ **The stepper is a separate control** → `STEPPER-CONTROL-01` (names shipped, control did not).
+
 ### Next batches — proposed, not ruled
 
 | # | Scope | Size | Blocked on |
 |---|---|---|---|
 | ~~2~~ | ~~Neutral surface~~ | — | ✅ **DONE.** 14 converted; the rest were icons, brand fills or conditionals |
 | ~~3~~ | ~~Text/link~~ | — | ✅ **DONE** as `ghost`, not `quiet`. ⚠️ **The warning in this row paid off: 4 of them were failing AA** |
-| 4 | `IconButton` primitive, then migrate | ~15 | 🧭 **Design Board** — a new primitive |
+| ~~4~~ | ~~IconButton~~ | — | ✅ **DONE.** And it was not a new primitive — `BackButton` already was one |
 | ~~5~~ | ~~Website~~ | — | ✅ **DONE 2026-09-25.** Board ruled the classes, not the component |
 | — | Selected-state toggles | ~36 | ⛔ **Out of scope by rule.** Separate primitive, separate ruling |
 

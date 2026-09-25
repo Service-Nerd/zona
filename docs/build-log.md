@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — ICON-BUTTON-01 · the component we needed was already there, wearing the wrong name
+
+**Shipped:** `IconButton`, extracted as the generalisation of `BackButton`, with a required accessible name — plus names for the five controls that had none.
+
+**Dev learning:** I went looking for a missing primitive and found a misnamed one. `BackButton` was already a 44px circle on `--bg-soft` with a mandatory label and its own contract — it *was* the general icon button. But it carried the name of one of its uses, so nothing else could reuse it without calling a close button a back button. Thirteen controls got hand-rolled instead, and `ModifyPlanSheet`'s close turned out to be byte-for-byte the documented spec, typed out a second time. That's the third instance today of the same shape: the right thing existed and was scoped wrong. `.cta-pill` was the same story this morning.
+
+**Product/creator learning:** Five controls had no accessible name, and four of them are the distance stepper. A VoiceOver user on that screen hears "minus, plus, minus, plus" and has no way to know which number each one moves. That was the only part of the whole sitting that changes what a person can actually *do* — everything else was for us. Sierra's line in the room was the right one: don't let the tidy half carry the urgent half over the line. The names shipped independently of the component.
+
+**AI-building learning:** The brief I took to the board was wrong, twice, in the flattering direction. I said 14 icon controls with 7 unnamed. My classifier stripped `{...}` expressions out of each button's body and then called anything textless an icon control — so a full-width zone row and a disclosure header, both carrying plenty of text, came back as "silent icon controls". The truth was 12 and 5. Third measurement I've had to correct today, and the fix wasn't to make the classifier cleverer: the gate now treats any `{expression}` body as possibly-labelled and skips it. It's biased toward passing and it says so in the comment, which is better than being confidently wrong about a count I'm briefing a decision on.
+
+**The honest bit:** The refactor broke `backArrowOwner.test.ts`, which reads the 44px-circle spec out of `BackButton.tsx` — and my first instinct was to relax the assertion, because "the spec is still honoured, just elsewhere". That would have been the wrong move on a rule the register already records as *standing and ignored by half its instances*. I followed the values to the class that now owns them instead, kept every substitution, and added an assertion that `BackButton` still asks for the circle. The test failing was the system working.
+
+**Hook material:** We had 13 hand-rolled icon buttons because the component that did exactly what they needed was called `BackButton`. Nobody wants to render a back button as a close icon. A naming decision made once, quietly, cost thirteen reimplementations — and one of them was byte-for-byte identical to the documented spec.
+
+**Postable?:** yes
+
 ## 2026-09-25 — BUTTON-MIGRATION-02 · the next batch found the hole in this morning's gate
 
 **Shipped:** 90 of 217 controls now come from the shared button system, up from 41 — `secondary` ×14, `ghost` ×31, and two primary CTAs the gate had been completely blind to.

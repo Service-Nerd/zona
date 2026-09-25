@@ -58,3 +58,18 @@ The zone hint reads `{name} · tap to learn`. ⚠️ **It was `{name} — tap to
 founder's rule is no em dash in a sentence; a label separator is not a sentence, so it takes
 the **middot** the app already uses (`{raceName} · {date}`) rather than a colon. Guarded by
 `lib/marketing/noEmDashApp.test.ts`.
+
+---
+
+## ⚠️ The info affordance is an `IconButton` inline mark (`ICON-BUTTON-01`, 2026-09-25)
+
+The 15px ringed **i** beside the block name is `IconButton` with `inlineMark`. **Its glyph stays
+15px; its hit area is 44px**, grown with padding plus a compensating negative margin.
+
+🔴 **Why not simply enlarge it:** it sits inside a 12px uppercase label. At 44px it stops being an
+inline mark and becomes a button parked in a heading, breaking the line box. Silvanto: *"the visual
+is right and the target is wrong, and those are separable."* This is the **only** sanctioned route
+below 44px visually (`:262`, iOS HIG); anything else owes the full 44.
+
+Its `ariaLabel` is `` `${name} · tap to learn` `` — what the control does, never the glyph.
+

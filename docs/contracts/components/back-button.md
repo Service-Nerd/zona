@@ -19,6 +19,22 @@ type Props = {
 
 ---
 
+## ⚠️ As of 2026-09-25 this is a WRAPPER (`ICON-BUTTON-01`)
+
+**The prop interface above is unchanged and this contract stays valid.** What changed is where the
+appearance lives: `BackButton` now renders `IconButton` with `shape="circle"`, the chevron, and
+`ariaLabel` defaulting to `'Back'`. The 44px circle on `--bg-soft` is `.icon-btn--regular` +
+`.icon-btn--circle` in `globals.css`.
+
+🔴 **Why:** this component already WAS the general primitive and was carrying the name of one of its
+uses, so 13 other controls needing the same shape could not reuse it and were hand-rolled — one of
+them byte-for-byte this spec. See `ui-patterns.md` § 39.
+
+⚠️ `backArrowOwner.test.ts` still substitutes every value in (44px, 50%, `--bg-soft`, never moss), now
+against the class that owns it, plus an assertion that this component still asks for the circle shape.
+
+---
+
 ## Why this exists
 
 🔴 **`ui-patterns.md` has said *"back arrow top-left (44px circle, `--bg-soft` bg)"* for months,
