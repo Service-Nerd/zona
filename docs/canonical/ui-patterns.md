@@ -830,38 +830,38 @@ single owner**; `NAV_ITEMS` in `DashboardClient` is the single list.
 
 ---
 
-### 7a. Docked primary action (Today)
+### 7a. 🔴 Today's primary action does NOT dock — reverted, and why
 
-The screen's primary action pins above the nav until its own position in the flow clears
-it, then scrolls normally. `.today-action-dock` in `globals.css` is the whole mechanism.
+**`TODAY-CTA-CLEARANCE-01` shipped a `position: sticky` dock on Today's CTA and it was
+reverted within the hour.** The record stays because the next person will have the same
+idea for the same reason.
 
-> 🔴 **MEASURED ON THE FOUNDER'S DEVICE, NOT INFERRED** (TODAY-CTA-CLEARANCE-01, Design
-> Board 2026-09-25). His capture is 1206×2622 at 3.216× — a true **375×815pt** viewport.
-> *"Log this session"* had its top edge at **692.5pt**, is **48pt** tall, and the nav's top
-> edge is at **721.1pt**: **19.4pt — 40% of the screen's primary action — was behind the
-> nav at rest.** He reported it as *"the nav is cutting the log session button"*.
+**The problem was real and is still open.** Measured on the founder's device capture
+(1206×2622 at 3.216× = a true 375×815pt viewport): *"Log this session"* had its top edge
+at **692.5pt**, is 48pt tall, and the nav's top edge is at **721.1pt** — **19.4pt, 40% of
+the screen's primary action, behind the nav at rest.**
+
+🔴 **The dock cleared it and broke something worse.** A sticky element keeps its flow slot
+but paints at the pin position, so with Today's real content height the CTA pinned at
+**685–736** while the session card sat at **760–852** — *entirely below the fold*. The
+button floated over empty ground **167px above the card it refers to**. Founder: *"we've
+moved the log session button too close to the session with spacing. It looks awful."*
+
+> ⚠️ **THE RULE THAT CAME OUT OF IT: only a GLOBAL action may dock.** A form's submit, a
+> sheet's apply — buttons that mean *"finish this screen"* — can leave the flow, because
+> they refer to the screen. *"Log this session"* refers to **that card**, so it is part of a
+> sentence with the thing above it. **Detaching an action from its subject breaks the
+> sentence, and no amount of clearance is worth that.**
 >
-> ⚠️ **IT IS THE SAME BUTTON, NOT A NEW BAR, AND THAT IS WHY IT WAS ALLOWED.** Zhuo's
-> constraint: a fix that adds a permanent docked action bar answers a complaint about
-> furniture *by adding furniture*. `position: sticky` adds no height — the existing CTA is
-> pinned, then released.
->
-> ⚠️ **IT CANNOT DEPEND ON THE NAV RECEDING** (Wroblewski). NAV-FADE-01 is disabled under
-> `prefers-reduced-motion`, so those runners never get a recede. That is why this is a
-> separate ruling and shipped first.
->
-> 🔴 **`bottom: 0`, AND THE OBVIOUS VALUE IS THE BUG.** This shipped for ten minutes as
-> `calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px)` — *clear the nav, plus a gap* —
-> which reads as correct and **measured 83px of float above the nav** in a real scrollport.
-> A sticky offset resolves against the scroll container's **padding box**, and that
-> container already reserves `navHeight + 16` so content can scroll clear; adding the nav
-> again double-counts it. On device the float would have been **~118px**. Measured at
-> 375×812: `0` → **15px gap, 0px hidden**. **The clearance comes from the scroller's
-> reserve**, and that coupling is asserted rather than left implicit.
->
-> Verified in three states: at rest **0px hidden** (was 19.4), still docked mid-scroll,
-> un-docks at the end. Gated by `components/ui/todayActionDock.test.ts`, falsified against
-> the wrong offset and against the reserve being removed.
+> ⚠️ And the `bottom` value is a trap worth keeping written down even though the rule is
+> gone: a sticky offset resolves against the scroll container's **padding box**, and ours
+> reserves `navHeight + 16`, so the obvious `calc(var(--nav-h) + env(...) + 8px)` **double-
+> counts the nav** — measured at **83px of float** in a browser, ~118px on device. `0` was
+> the correct value. Neither fact rescues the approach.
+
+**Still owed:** clearance for the primary action at rest. The remaining levers are reducing
+what sits above it (the hierarchy-of-horizon question) or accepting the scroll — not
+docking.
 
 ### 8. Empty State
 

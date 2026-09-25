@@ -8065,17 +8065,21 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
             })()}
 
             {/* Primary CTA — only on today's session if not yet done.
-                🔴 DOCKED (TODAY-CTA-CLEARANCE-01). Measured on the founder's own
-                device capture (1206x2622 at 3.216x = a true 375x815pt viewport):
-                this button's top edge sat at 692.5pt, it is 48pt tall, and the
-                nav's top edge is at 721.1pt — so **19.4pt, 40% of the screen's
-                primary action, was behind the nav at rest**. `.today-action-dock`
-                pins it until its own flow position clears, then it scrolls
-                normally. It is the SAME button, not a new bar: a docked action
-                BAR would have answered a complaint about furniture by adding
-                furniture (Zhuo). */}
+                🔴 NOT DOCKED, AND THAT IS A MEASURED REVERSAL (TODAY-CTA-CLEARANCE-01,
+                reverted 2026-09-25 within the hour). `position: sticky` pinned this
+                button above the nav, which cleared it — and with Today's real content
+                height the pin lands at 685-736 while the session card is at 760-852,
+                **entirely below the fold**. The CTA floated over empty ground 167px
+                ABOVE the card it refers to. Founder: *"we've moved the log session
+                button too close to the session with spacing. It looks awful."*
+
+                ⚠️ THE LESSON IS ABOUT WHICH ACTIONS CAN DOCK. A sticky primary works
+                for a GLOBAL action — a form's submit, a sheet's apply — where the
+                button means "finish this screen". This one means "log THAT session",
+                so it is bound to the card above it, and detaching it breaks the
+                sentence. Clearance is still owed; docking is not the way to pay it. */}
             {selectedSession.today && !completions[selectedCompletionKey]?.status && (
-              <Button variant="primary" fullWidth className="today-action-dock"
+              <Button variant="primary" fullWidth
                 onClick={() => {
                   onOpenSession?.({
                     ...selectedSession,

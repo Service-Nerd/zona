@@ -547,6 +547,31 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
       `button whatever colour it is:\n${offenders.join('\n')}`).toEqual([])
   })
 
+  it('🔴 a moss LABEL passes AA in the STYLESHEET too, not only inline', () => {
+    // 🔴 THE GATE THAT COULD NOT SEE ITS OWN RULE. The arm above matches
+    // `color: 'var(--moss)'` as an INLINE STYLE. `NAV-SLIM-01` put
+    // `.nav-tab--active { color: var(--moss) }` in `globals.css` — **3.68:1 at
+    // 11px, below AA** — and nothing in this file could see it, because the rule
+    // moved to CSS and left its enforcement behind. Fifth population failure of
+    // 2026-09-25 and the first inside a stylesheet: four earlier ones were a
+    // hand-written consumer list, a floor arm that measured only compliant
+    // controls, a baseline keyed `file:line`, and a CTA check blind to a
+    // conditional colour.
+    //
+    // ⚠️ BOUND THE REGION: one declaration block at a time, never a whole-file
+    // grep. `--moss` stays correct as a FILL, a BORDER and a SELECTED state —
+    // the 3:1 graphics bar — so this binds only where it carries a LABEL, which
+    // is what `color:` means.
+    const css = fs.readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8')
+    const offenders: string[] = []
+    for (const m of Array.from(css.matchAll(/([.#][\w-]+(?:--[\w-]+)?)\s*\{([^}]*)\}/g))) {
+      if (/(?<![a-z-])color:\s*var\(--moss\)\s*;/.test(m[2]!)) {
+        offenders.push(`${m[1]} { color: var(--moss) } — 3.68:1, AA wants 4.5`)
+      }
+    }
+    expect(offenders, `moss as a TEXT colour in the stylesheet:\n${offenders.join('\n')}`).toEqual([])
+  })
+
   it('🔴 a control that lays itself out declares its own `display`', () => {
     // `.btn` sets `display: inline-flex`. That is right for a button and WRONG
     // for a row that lays itself out — and the conversion dropped `display` as

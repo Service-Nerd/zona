@@ -90,6 +90,28 @@ a scroll-position rule; or accepting it because the runner scrolls. ⚠️ **Mea
 scroll position on a real device first** — how often the CTA is actually clipped is the number
 nobody has, and this repo has twice ruled on an impression that a measurement then contradicted.
 
+
+### `TODAY-CTA-CLEARANCE-01` — RE-OPENED after a reverted fix 🧭 DESIGN BOARD
+**Shipped and reverted 2026-09-25**, same hour. `design-rulings.md` carries the full record.
+
+**The defect stands, measured:** 19.4pt — **40% of Today's primary action** — sits behind the
+nav at rest on a 375×815pt device.
+
+🔴 **What NOT to try again: `position: sticky`.** It cleared the nav and floated the button
+**167px above the session card it refers to**, because a sticky element paints at the pin while
+its subject stays in flow. **Only a global action may dock** — see `ui-patterns.md` § 7a.
+
+**Levers that remain, none costed:**
+1. **Reduce what sits above it.** Between the hero and the CTA: countdown, greeting, a huge
+   two-line hero, the coach card, the week strip, a zone eyebrow, a section label, a 10-run
+   band, the session card, a zone bar. That is Silvanto's hierarchy-of-horizon question and it
+   is a bigger ruling than this one.
+2. **Accept the scroll**, and let NAV-FADE-01 cover it — ⚠️ except under
+   `prefers-reduced-motion`, where there is no fade, which is exactly why this was ruled
+   separately in the first place.
+3. **Ask the founder the question nobody asked:** if the nav recedes, does the CTA still bother
+   him? The two complaints may be one.
+
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
 ### 🧭 `DESTRUCTIVE-WIRING-01` — a variant with zero uses, and two flows that need it

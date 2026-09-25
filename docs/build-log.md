@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-25 — TODAY-CTA-CLEARANCE-01 (reverted) · the fix was measured, correct, and wrong
+**Shipped:** A sticky dock for Today's CTA. Reverted within the hour.
+**Dev learning:** A `position: sticky` element keeps its flow slot but paints at the pin. So with Today's real content height the CTA pinned at 685–736 while its session card sat at 760–852 — below the fold. The button floated 167px above the thing it refers to. The rule that came out: **only a global action may dock.** A submit or an apply means "finish this screen" and can leave the flow; "Log this session" means "log THAT session" and is part of a sentence with the card above it.
+**Product/creator learning:** I measured the defect correctly (19.4pt, 40% of the primary action hidden), measured the fix correctly (0px hidden, verified in three scroll states), and still shipped something the founder called awful in under an hour — because I measured the thing I was fixing and not the thing beside it. Clearance was never the whole requirement; staying attached to its subject was an unstated one, and unstated requirements are still requirements.
+**AI-building learning:** My verification probe had short content, so the CTA never actually pinned in it. I measured the un-pinned case and called it verified. The founder's screen is taller. **A probe that cannot reach the failing state is not a probe** — the same shape as the falsification earlier today that reported zero failures because the file never loaded.
+**The honest bit:** Two self-inflicted wounds in one revert: my slice deleted the JSX guard and opening tag along with the comment (caught by tsc), and earlier my cleanup `git checkout` silently wiped the change I was mid-way through. Both were sloppy string surgery on a 13,000-line file.
+**Hook material:** Fixed a button that was 40% hidden. Shipped a button floating 167 pixels above the card it belongs to. Total elapsed: about an hour.
+**Postable?:** yes
+
+
 ## 2026-09-25 — TODAY-CTA-CLEARANCE-01 · the obvious CSS was wrong by 83px
 **Shipped:** Today's primary CTA docks above the nav instead of hiding 40% of itself behind it.
 **Dev learning:** A `position: sticky` bottom offset resolves against the scroll container's PADDING BOX, not the scrollport. Our scroller already reserves `navHeight + 16` so content can clear the nav, so writing the obvious `bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px)` double-counts the nav and floats the button 83px into the middle of the content — ~118px on a real device. `bottom: 0` is correct and looks like a mistake, which is why the comment is longer than the rule.

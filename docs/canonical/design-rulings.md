@@ -1828,6 +1828,34 @@ stylesheet. The arm now reads both surfaces.
 ⚠️ **Open, and nobody asked the founder:** if the CTA has clearance, does *"too big"* survive? That
 question is why ruling 3 was built alone.
 
+
+### TODAY-CTA-CLEARANCE-01 — 🔴 SHIPPED AND REVERTED THE SAME HOUR (2026-09-25)
+
+| Ruling | |
+|---|---|
+| The primary action docks above the nav | 🔴 **REVERTED. The defect it fixed is still open** |
+
+**What it fixed, measured:** 19.4pt — **40% of Today's primary action** — behind the nav at
+rest, on the founder's own 375×815pt capture.
+
+🔴 **What it broke, also measured:** a sticky element keeps its flow slot but paints at the pin,
+so with real content the CTA pinned at **685–736** while its session card sat at **760–852**,
+below the fold. **The button floated 167px above the thing it refers to.** Founder: *"it looks
+awful."*
+
+> ⚠️ **NEW RULE, and it is the useful output: only a GLOBAL action may dock.** A submit or an
+> apply means *"finish this screen"* and can leave the flow. *"Log this session"* means *"log
+> THAT session"* — it is bound to the card above it, and **detaching an action from its subject
+> breaks the sentence.** Clearance is not worth that.
+
+⚠️ **The board's ruling was right and my implementation was wrong**, and the distinction matters
+for the re-proposal: the seats ruled *"the primary action gets explicit clearance at rest"* and
+never specified sticky. **Reverting the mechanism does not reverse the ruling.**
+
+🥇 **Retained from the same commit and NOT reverted:** `.nav-tab--active` moved from `--moss`
+(3.68:1, below AA) to `--moss-strong`, and the moss-label gate now reads the **stylesheet** as
+well as inline styles — the fifth population failure of the day, and the first inside CSS.
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1
