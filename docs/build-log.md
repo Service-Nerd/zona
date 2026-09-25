@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — BUTTON-ARCH-01 + BUTTON-SYSTEM-01 · the repetition was never the problem
+
+**Shipped:** An architecture rule with a gate, 101 controls migrated to the component, and one hover rule across the variant family.
+
+**Dev learning:** The founder asked how to avoid changing things in a thousand places, and Zhuo's reframe was the useful one: *we already have change-once — one stylesheet, one component. What we don't have is a system you can predict.* Six variants carried three different hover grammars. Nobody changing `primary` had any way to know what should happen to the other five. That's the thing that makes a design system feel like a thousand places even when the CSS is genuinely in one.
+
+**Product/creator learning:** `destructive` has **zero uses** while delete-account and disconnect render as plain text. My instinct was that a variant nobody uses is redundant; Collins' read is better — it's a **gap in the product**, not a redundant variant. The variant is right and it hasn't been wired.
+
+**AI-building learning:** After a day of conversions the app was 68% classes and 32% component — the exact inverse of what the board had ruled, and I'd done it myself. Nothing forced it: adding a class to an existing `<button>` was the lowest-risk way to preserve geometry, so it happened 99 times and quietly became the architecture. **Safe beat correct, and no check could see it because no check was asking.** The rule is now four lines and a gate.
+
+**The honest bit:** migrating 95 buttons broke my own sanity check — it asserted "`<button>` elements > 100" and went red the moment most of them became `<Button>`. A floor on one spelling, failing because the codebase got better. I've written four checks today that were wrong about the thing they were checking, and every one of them looked fine until something moved.
+
+**Hook material:** I asked a design board to look at six button variants. They found three different hover behaviours, elevation on one of six, and one variant with zero uses. The fix wasn't new pixels — it was a single sentence: *a control with a fill darkens its fill, a control without one darkens its label.* One rule, and the other five variants stop being a lookup table.
+
+**Postable?:** yes
+
 ## 2026-09-25 — SESSION-ACTIONS-01 · my gate was keyed to one colour
 
 **Shipped:** One action-row grammar on the session screen, and two gates that catch the class my existing gate structurally could not.
