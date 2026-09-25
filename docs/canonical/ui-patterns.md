@@ -3312,7 +3312,29 @@ have turned 44 grey controls green and reversed that ruling while looking like a
 but `quiet` shipped first with 14 consumers and renaming call sites to fix a word is churn with no
 user impact. **The distinction that matters is ACCENT vs DE-EMPHASISED.**
 
-**Sizes:** `regular` 48px, `compact` 44px. Both clear the touch-target floor; compact steps the
+🔴 **A SIZE CLASS CARRIES THE FLOOR, NOT THE BOX** *(Design Board, `BUTTON-GEOMETRY-01`, 2026-09-25)*.
+`.btn--regular` / `.btn--compact` declare a **44px minimum** (`:262`) and a default; **every call site
+keeps its own padding, font-size, radius, width and height.** A conversion buys hover,
+`:focus-visible`, press, disabled and one owner for colour and elevation — **never a size.**
+
+⚠️ **Why this is a rule and not a preference.** These read `min-height: 48px` PLUS fixed padding,
+which is a **box wearing a minimum's syntax**: padding and line-height set the height, so the minimum
+never binds. Converting therefore replaced geometry — **20 of 32 controls changed height, -19px to
++4px** — and the founder found it by opening the app while four automated gates stayed green. 48 came
+from the **modal of a distribution**; an average is exactly what a design system must not encode.
+
+⚠️ **`npm run button:geometry` is the gate**, and a conversion is only done when it reports
+`geometry moved: 0`. Same declare-and-re-baseline idiom as `cohort:shape`.
+
+⚠️ **A control that must stay small keeps its visual and gains a 44px HIT AREA** via
+`.btn--inline-target` (`::after` overlay) — the Apple Health chip at 29px, four inline text links at
+32px. **Padding cannot do it for a FILLED control**, because padding grows the painted box; that is
+the difference from the icon inline mark, whose background is `none`.
+
+🔻 Whether a real two-size scale should exist, **derived from the roles buttons play rather than from
+a histogram**, is filed as `BUTTON-SIZE-SCALE-01` on a recorded board split.
+
+**Sizes:** `regular` and `compact`, both floored at 44px. Both clear the touch-target floor; compact steps the
 radius down with the height so the corner keeps the same curve rather than drifting to a pill.
 
 **States** are all in `.btn`: `:hover`, `:focus-visible`, `:active` (`translateY(1px)`), `:disabled`

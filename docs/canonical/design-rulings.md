@@ -1539,3 +1539,55 @@ including a role kept with its VALUE removed** — a role that announces nothing
 ⚠️ **What this does not settle: THE 22 TAPS STAY.** A runner logging a half-marathon by hand still
 taps twenty-two times. That is a real cost **accepted on the record**, pending a device.
 
+## 2026-09-25 — BUTTON-GEOMETRY-01 · SHIP WITH AMENDMENT (4)
+
+**Trigger:** the founder, looking at the app: *"the Connect to Apple button had changed size… colour
+and styling had changed but so too the size."*
+
+📐 **Measured: 32 converted controls, 20 moved >=4px** (-19 to +4), radii -10 to +4, **13 distinct
+heights collapsed to 2**. 🔴 **13 of the 32 were BELOW the documented 44px before any of this** — the
+conversion incidentally fixed thirteen standing `:262` violations. 🔴 **All 3 that SHRANK had made an
+explicit size decision**, two carrying the comment *"bigger than the 44pt min — primary ceremony
+CTA"*. **The only call sites that had reasoned about their own size were the ones overridden.**
+
+🔴 **`min-height: 48px` alone is a FLOOR; with fixed padding it is a BOX** (Wroblewski) — padding and
+line-height set the height so the minimum never binds. **48 came from the modal of a distribution**;
+`:262` says 44 and says minimum. ⚠️ **My own day's work was inconsistent with itself six hours
+apart**: `.icon-btn--regular` constrains a floor and says so in a comment; `.btn--regular` dictated a
+box.
+
+⚡ **A genuine split, recorded not merged.** Collins: *"thirteen distinct heights is not a design,
+it's sediment."* Wroblewski: *"one of those thirteen was 29px and deliberate, and you cannot tell
+which from a histogram."* **Chair gave Wroblewski this correction and Collins the next one** →
+`BUTTON-SIZE-SCALE-01`.
+
+⛔ **Veto: none** — Silvanto noted unprompted that geometry is outside his palette/type veto.
+
+**Ruling:** floor 44 not 48 · geometry returns to the call site · the three explicit decisions
+restored in full · **a geometry-parity harness ships with it and runs on the remaining conversions
+BEFORE they land**.
+
+✅ **BUILT.** Batch 4 result: **`controls 136 · geometry moved 0 · below the 44px floor 0`.**
+
+⚠️ **A STATED DEVIATION FROM AMENDMENT 1**, written into `globals.css` rather than slipped in: taken
+literally, dropping the class's padding leaves 98 controls unpadded with square corners — a worse
+regression on live users. An inline style beats a class, so default + call-site value **is** the
+floor-and-override the board asked for.
+
+⚠️ **A 49-FILE RESTORATION WAS ABANDONED MID-BUILD** on finding the verification was pairing the
+WRONG elements — reporting the board-sanctioned 15px inline mark as a regression. **Reverted rather
+than ship an unverifiable change to live users.**
+
+🔴 **AND THE FOUNDER REFUSED THE FALLBACK, CORRECTLY.** Offered "convert one file and you look at the
+screen", he asked *"why? don't understand why you would want that"*. It was asking a human to do QA a
+check should do — **and the reason it was offered is that the harness had a hole nobody had looked
+for. It never measured WIDTH**, which is what actually made the button huge. ⚠️ **The falsification
+that supposedly proved otherwise was itself false**: the mutation changed two things.
+
+**Artifacts:** pattern → `ui-patterns.md` § 38 · constant → `.btn--regular`/`.btn--compact` floors +
+`.btn--inline-target` · check → `scripts/button-geometry.ts` + `buttonGeometry.test.ts`,
+**falsified 6 ways**.
+
+⚠️ **What this does not settle:** nothing has been seen on a device, and the harness measures
+source-computed boxes, not rendered pixels.
+

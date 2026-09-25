@@ -50,6 +50,7 @@ PY
 | 2026-09-25 | **219** | **41** (19%) | **178** | `BUTTON-COMPONENT-01` shipped. Converted the **moss** controls only, because those were the ones failing WCAG AA. Everything else was out of scope for a contrast fix |
 | 2026-09-25 | **219** | **44** (20%) | **175** | `WEBSITE-BUTTON-UNIFY-01`. The 3 site CTAs adopted the `.btn` **classes** (not the component) and `.cta-pill` was deleted. **The site and the app now have one definition** |
 | 2026-09-25 | **217** | **90** (41%) | **127** | Batches 2 + 3. `secondary` ×14, `ghost` ×31, plus 2 CTAs the gate had been blind to. **`--accent: var(--moss)` — a legacy alias — bypassed the gate entirely; it now resolves the alias graph from the stylesheet** |
+| 2026-09-25 | **218** | **136** (62%) | **82** | Batch 4 + `BUTTON-GEOMETRY-01`. **`geometry moved: 0`** — every conversion keeps its call site's box. 39 of the 82 are selected-state toggles, ⛔ excluded by rule |
 
 ---
 
@@ -201,6 +202,25 @@ the routing existed in prose and was not being read.
 accepted on the record. A `type="number"` brings the iOS focus-zoom trap this file already warns
 about, and precedent `:767` is that the chair will not rule on that swap without a device.
 
+### 2026-09-25 · Batch 4 + the geometry regression
+🔴 **THE FOUNDER FOUND A DEFECT FOUR GATES MISSED.** *"The Connect to Apple button had changed size…
+colour and styling had changed but so too the size."* **20 of 32 converted controls had changed
+height** (-19px to +4px). `.btn--regular` was `min-height: 48px` PLUS fixed padding — a box wearing a
+minimum's syntax. **The three that SHRANK were the only three whose code had reasoned about its own
+size.**
+
+**New rule, and it is the one that makes this log meaningful:** a conversion keeps the call site's
+padding, font-size, radius, width and height, and drops only what `.btn` provides identically. It
+buys states and one owner for colour — **not a size**. Enforced by `npm run button:geometry`.
+
+**Batch 4 result:** `controls 136 · geometry moved 0 · below the 44px floor 0`.
+
+⚠️ **Five modelling bugs in that harness before it was trusted**, including that **it never measured
+WIDTH** — the thing that actually made the button huge. And the falsification that supposedly proved
+it caught `fullWidth` was itself false: the mutation changed two things.
+
+⚠️ **My estimate was wrong again:** ~68 remained convertible; measured, **32**.
+
 ### Next batches — proposed, not ruled
 
 | # | Scope | Size | Blocked on |
@@ -211,6 +231,8 @@ about, and precedent `:767` is that the chair will not rule on that swap without
 | ~~5~~ | ~~Website~~ | — | ✅ **DONE 2026-09-25.** Board ruled the classes, not the component |
 | — | Selected-state toggles | ~36 | ⛔ **Out of scope by rule.** Separate primitive, separate ruling |
 | 6 | Replace the distance stepper | 2 | ⚠️ **BLOCKED ON A DEVICE** (`STEPPER-CONTROL-01` (d)). 22 taps for a half-marathon, accepted on the record |
+| 7 | The remaining 30 'other' hand-rolled | ~30 | Each needs its own read — they are not one shape |
+| 8 | `BUTTON-SIZE-SCALE-01` — should a real two-size scale exist, derived from ROLE not a histogram | — | 🧭 Design Board, Collins leads. Filed by `BUTTON-GEOMETRY-01` |
 
 ✅ **Batch 3's recorded warning paid for itself.** It said: *"those text buttons are not moss, so the
 gate says nothing about them — measure their contrast before converting, or the batch will look like

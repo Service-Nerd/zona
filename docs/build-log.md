@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — BUTTON-GEOMETRY-01 · the founder looked at the app and found what four gates missed
+
+**Shipped:** A size class is now a floor rather than a box, the controls I resized are back, and a geometry harness gates every future conversion.
+
+**Dev learning:** `min-height: 48px` alone is a floor. `min-height: 48px` with `padding: 15px 20px` and `font-size: 14px` is a **box**, because padding and line-height set the height and the minimum never binds. I wrote a floor and shipped a box, and the syntax hid it from me. 20 of 32 converted controls changed height, −19px to +4px. The three that *shrank* were the only three whose code had reasoned about its own size — one carried the comment *"bigger than the 44pt min — primary ceremony CTA"* — so I overrode exactly the call sites that had made a decision and left alone the ones that hadn't.
+
+**Product/creator learning:** The founder found this by opening the app. `tsc`, the ownership gate, the render tests and 3,527 suite tests were green throughout, and correctly so: every one of them asks *"does this use the right owner?"* and none asks *"does it still render the same box?"* That's a new failure class — **a refactor that normalises a distribution** — and the tell is a commit that deletes many differing literals and adds one shared class.
+
+**AI-building learning:** I proposed converting one file and asking him to eyeball the screen. He asked why, and he was right: that's asking a human to do QA a check should do. The reason I reached for it is that I half-knew the harness had a hole and hadn't looked. I looked — **it never measured width**, which is what actually made the button huge. Worse, I'd "falsified" that arm by reinstating `fullWidth`, watching a test go red, and recording it as caught. It went red because the same edit removed two other classes. **A mutation that changes two things proves nothing about either.**
+
+**The honest bit:** Five modelling bugs in that harness before I trusted it — blind to component usages, content-box in a border-box app, summing inline padding with class padding (reporting a 50px control as 80px), a regex that broke when I put a comment above a declaration, and no width at all. I also abandoned a 49-file restoration mid-build when I realised my verification was pairing the wrong elements, and reverted it rather than ship something unverifiable to live users. And I renamed a class within an hour of shipping it, because I'd named it after its first use again — third time in one day.
+
+**Hook material:** My design system's button class said `min-height: 48px`. That reads like a minimum. It was a fixed size, because the padding underneath it set the height and the minimum could never bind. Twenty buttons changed size, four automated gates stayed green, and the founder found it by opening the app.
+
+**Postable?:** yes
+
 ## 2026-09-25 — STEPPER-CONTROL-01 · the board built less than I asked it to, and was right
 
 **Shipped:** The distance stepper now announces its value, the average-HR field uses `TextField`, and a `Stepper` primitive was declined.
