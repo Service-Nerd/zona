@@ -6,6 +6,18 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — DELOAD-LR-GROWS-01 · I recommended a fix, built it, measured it at zero, and did not ship it
+
+**Shipped:** nothing. A correction to my own filing, and the measurement that was blocking the biggest open question.
+**Dev learning:** I told the founder the deload inversion was the one to fix because it "had a lever" — cap the long run inside a deload week. I built the clamp. It changes **nothing**: 14 inversions before and after in the 2-day cohort, 178 before and after across a 2,894-plan grid, 5 plans differing at all. The pass I targeted only ever *reduces* a deload long run; it never raised these. **The long run growing is a symptom of a week that is already inverted, not its cause** — a bigger delivered week yields a bigger long-run share. I had measured a correlation and reported it as a mechanism, in a recommendation the founder acted on.
+**Product/creator learning:** and I ran the first counterfactual on `cohortGrid`, which contains no 2-day runners — the exact cohort the finding came from. So that run was meaningless before I read it, and it was the **second time today** I made that mistake. The lesson is not "check your grid"; it is that a grid is an argument about who matters, and picking one without re-reading its composition quietly changes the question you are answering.
+**AI-building learning:** the genuinely valuable thing came from the measurement I did instead. The unexplained 75% of `INV-PLAN-DELIVERED-RAMP` splits into easy volume (47.1%), long run (34.0%), the week gaining a session (25.2%) and quality (18.9%). **A third of the "not long-run-led" firings are mostly long run** — they just fall under the attribution threshold. So the label is a threshold artefact, which defeats the very amendment that required attribution. That is a better finding than the fix I set out to make.
+**The honest bit:** the right call was to ship nothing. A clamp that changes five plans out of three thousand and fixes zero inversions would have looked like progress in a commit message, passed every check, and left the defect exactly where it was — while retiring the backlog item that describes it. **A fix that does not work is worse than no fix, because it closes the ticket.**
+**Hook material:** I recommended the fix, built it, measured it at zero effect, and deleted it. The measurement I ran instead answered a question that had been open since the check was written.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — DELIVERED-RAMP-FALSE-DRIVER-01 · the message said it already knew, so nobody looked
 
 **Shipped:** the invariant computes its driver instead of asserting one that was false 98.6% of the time.

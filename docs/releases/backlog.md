@@ -360,10 +360,37 @@ unexplained warn in the product. Of its non-long-run-led firings, **276 of 280 (
 no V1 trim on the preceding week, so the cause is genuinely open. The old message asserted
 §100 and that is why nobody ever looked.
 
-**Until it is measured, whether 42.2% of half-marathons is an honest residual or a real
-defect is unknown.** ⚠️ **Do not re-derive the §100 answer** — it is falsified above.
-⚠️ **And do not assume it is my §94 Am. 2 widening**: measured HM healthy **48.1%** vs HM
-injured **45.7%**, so the rate pre-existed.
+⚠️ **Do not re-derive the §100 answer** — falsified above. ⚠️ **And do not assume it is
+§94 Am. 2's widening**: HM healthy **48.1%** vs HM injured **45.7%**, so the rate pre-existed.
+
+#### ✅ MEASURED 2026-09-25 — there is no single cause, and a third were misfiled
+
+512 non-long-run-led firings across a 3,000-plan sample, by **largest contributor** to the
+week-on-week rise:
+
+| largest contributor | share | total km added |
+|---|---|---|
+| **easy volume** | **47.1%** | 1,261 km |
+| **long run** | **34.0%** | 968 km |
+| the week gained a SESSION | 25.2% | — |
+| quality | 18.9% | 945 km |
+
+🔴 **34% are still LONG-RUN-driven — they simply fall below
+`DELIVERED_RAMP_LR_ATTRIBUTION_PCT`.** So "not long-run-led" is a threshold artefact for a
+third of them, and the true long-run share of this check is far higher than the 25% the
+attribution reports. **That is a finding about the threshold, not about the plans.**
+
+**The rest is ordinary building**: easy volume rising, and in a quarter of cases the week
+simply gaining a run. Nothing points at a single defect.
+
+**So the honest reading is that 42.2% of half-marathons is largely an HONEST RESIDUAL** —
+a delivered week rises because sessions are added and grown, which is what a build phase
+is. ⚠️ **That is a reading, not a ruling.** Two things a board should decide:
+
+1. **Is `DELIVERED_RAMP_LR_ATTRIBUTION_PCT` set too high?** A third of firings are mostly
+   long run and are not being told so, which defeats §94 Am. 1's purpose.
+2. **Should a week GAINING a session count as a ramp at all?** 25.2% of firings involve one,
+   and going from 3 runs to 4 is a structural change, not a volume spike.
 
 ### 🏃 `DELOAD-LR-GROWS-01` — the "recovery" week is 27% bigger, and 100% of it is the long run
 
@@ -401,7 +428,37 @@ told is easier must DELIVER less — the curve is not the promise."*
 time today this exact scoping shape has produced a hole** (§90/§94's delivered arms; CB-1's
 <3-run exemption scoped to foundation weeks).
 
-#### 🔴 The narrow, answerable question
+#### 🔴 CORRECTION 2026-09-25 — THE FIX I RECOMMENDED WAS WRONG, AND MEASURED WRONG
+
+**Attempted and NOT shipped.** I read the mechanism as *the long run growing into the
+deload* and proposed clamping the deload long-run target at the previous week's long run
+(`ruleEngine.ts:7128`, where `target = prevKm × (curr.weekly_km / prev.weekly_km)` and that
+ratio exceeds 1 on an inverted week — the code's own comment flags it).
+
+**Measured. It changes nothing:**
+
+| | inversions before | after the clamp |
+|---|---|---|
+| 2-day cohort | 14 (100% long-run-grew) | **14 — unchanged** |
+| 4-day cohort | 0 | 0 |
+| cohort + targeted grid (2,894 plans) | 178 | **178 — unchanged**; only 5 plans differ at all |
+
+**Why:** that pass only ever *reduces* a deload long run — `if (currKm >= target - 0.01)
+continue`. It never raised these. So **the long run growing is a SYMPTOM, not the cause**:
+the delivered week is already inverted, and the long run is a share of a bigger week.
+My original "100% of inversions are the long run growing" measured a correlation and I
+read it as a mechanism.
+
+⚠️ **AND I MEASURED THE FIX ON A GRID THAT EXCLUDES THE COHORT I DERIVED IT FROM.**
+`cohortGrid`'s `DAY_SETS` are 3/4/5 days; the finding came from 2-day runners. The first
+counterfactual run was therefore meaningless before I even read it. **Second time today**
+(see `STRIDES-2DAY-SILENT-GAP-01`'s own correction).
+
+**So the real root is the one the filing already named: `DELOAD-INVERSION-01`'s DELIVERED
+half**, which the Coaching Board scoped to injury runners. The delivered week inverts
+first; everything else follows. That is a producer change of real size, not a clamp.
+
+#### The narrow, answerable question — still open, now correctly attributed
 
 **Nothing governs the long run's size INSIDE a deload week.** §3 governs the week's volume,
 §45/§47 govern long-run progression and peak step-backs, and §2857's *"a long run following
@@ -409,12 +466,16 @@ a deload week may step back up to the pre-deload distance (within +5%)"* governs
 **after**. The week itself is ungoverned, and empirically the long run grows through it in
 100% of these cases.
 
-**For the board: should a deload week's long run be capped at the previous week's long run?**
+~~**Should a deload week's long run be capped at the previous week's long run?**~~
+**ANSWERED BY MEASUREMENT: NO — it would change nothing.** See the correction above.
 
-⚠️ **THIS IS A LEVER, and that distinguishes it from `LR-2DAY-LOPSIDED-01`.** There the
-remedies were genuinely exhausted. Here one rule with a clear mechanism would close 100% of
-the measured cases, and it does not fight §52 — §52 forbids deforming a **race-anchored**
-long run, and a deload is not a race-anchored week.
+**The real question for the board: should `DELOAD-INVERSION-01`'s delivered reconciliation
+extend beyond injury runners?** It is the same scoping shape as §90/§94 (closed today) and
+CB-1's foundation-only exemption. ⚠️ **Do not re-propose the long-run clamp** — it is
+measured at zero effect on 2-day, 4-day and the 2,894-plan grid.
+
+🔴 **I CLAIMED THIS WAS "A LEVER" AND IT IS NOT.** That claim rested on the long run being
+the cause; it is the symptom. The lever, if there is one, is the delivered reconciliation.
 
 ⚠️ **The 2-day cohort is NOT the only shape.** A 4-day achilles marathon plan seen earlier
 today inverted at week 11 (32 → 33 km) with the long run **shrinking** 17 → 15 km — so the
