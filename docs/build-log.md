@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — WEBSITE-BUTTON-UNIFY-01 · the board threw out my framing and was right
+
+**Shipped:** The marketing site's 3 CTAs now use the same `.btn` classes as the app, `.cta-pill` is deleted, and `Button.tsx` lost its `'use client'`.
+
+**Dev learning:** I took the question to the Design Board as *"should the site import `Button`, with an `as` prop or a `ButtonLink` for the anchor case?"* Not one seat argued for it. The shared unit is the **class layer**, not the component — `Button.tsx` is thirty lines of prop-spreading, and every pixel of the design is in `globals.css`. One place to change how a button looks was already `globals.css`; I'd been about to build a React abstraction to prove a point that CSS had already made. And the framing turned out to matter technically as well as tidily: two of the three site CTAs live in **server** components, so importing a `'use client'` component into them would have pushed a client boundary onto a static page. That's `BUNDLE-BOUNDARY-01` — the class that took this homepage 110 kB → 249 kB and 114 kB → 251 kB, both times with nothing visibly wrong.
+
+**Product/creator learning:** The measurement inverted the brief again. I'd told the founder the website was "the biggest visible gap" with ~14 controls. It's **3**, and two of the others were preview harnesses rendering app UI. But the smaller number made the finding *worse*, not better: `.cta-pill` only ever supplied hover/focus/press, so each of the 3 sites hand-typed its own font-size, padding, radius and label colour — and all three differed, one with a hardcoded `'white'`. Three buttons, three geometries, one shared hover. The site didn't have a button; it had three.
+
+**AI-building learning:** The value of a board sitting isn't the verdict, it's that it forces the question to be stated precisely enough to be wrong. I wrote the brief as an options list — (a) unify onto Button, (b) keep two places, (c) something else — and the answer was in (c), which I'd included as a formality. If I'd just implemented (a), which was the obvious one and the one I'd have picked, it would have typechecked, passed every test, and shipped a client boundary onto a static marketing page.
+
+**The honest bit:** The conversion introduced a defect that didn't exist before and I nearly didn't catch it: `btn--regular` is 48px tall with an 18px radius, and the waitlist input sitting beside it computes to 46px with a 14px corner. Two pixels and four pixels, in a side-by-side flex row. I only found it because I stopped to compute the input's box rather than assume the button slotted in. I also quoted a success condition ("distinct geometries 3 → 1") that I did not literally meet — there are still three declared variants, they just derive from one definition now. Reported it as measured rather than as promised.
+
+**Hook material:** I asked five designers whether our website should import our button component. None of them said yes. The shared thing was never the component — it was the 40 lines of CSS the component points at. Building the "obvious" abstraction would have tripled the JavaScript on a static marketing page, silently, and every test would have stayed green.
+
+**Postable?:** yes
+
 ## 2026-09-25 — BUTTON-COMPONENT-01 · the buttons looked flat, and they also failed contrast
 
 **Shipped:** One `Button` component, 41 controls converted across 17 files plus the email CTA, and every moss control that carries text now clears WCAG AA.
