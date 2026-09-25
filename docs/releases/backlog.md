@@ -350,6 +350,42 @@ Seiler's condition of approval and had only its long-run arm implemented.
 
 ---
 
+### ✅ `RECALIBRATE-ZONES-COOKIE-CLIENT-01` — **SHIPPED 2026-09-25.** "No plan found." for a runner who had one.
+
+**Founder-reported, live user.** Duncan Bennett (trial) entered a half-marathon time on the
+benchmark screen, tapped **Recalibrate paces**, and got *"No plan found."*
+
+**Root cause.** The route authenticates off the **Bearer** token (`getUserFromRequest`) and
+then read the plan with the **cookie** client. On native the cookie session never syncs to
+the server, so the read hits RLS with no session and returns nothing.
+
+🔴 **IT WAS A HALF-FIX SHIPPED A WEEK EARLIER, ON THIS EXACT ROUTE.**
+`AUTH-BEARER-MISSING-01` (2026-09-18) fixed the **client** half — `authedFetch` attaches the
+token because *"cookie sync is unreliable on native"*, and a bare fetch 401'd every paid
+recalibration. **The server half of that same sentence was never fixed.** So we corrected
+the symptom that had been reported (a 401) and left the one nobody had hit yet — which
+surfaces as a 404 telling the runner their plan does not exist.
+
+⚠️ **And the remedy already existed in three sibling routes.** `post-race-reshape` carries
+the fix *and the explanation verbatim*; `maintenance-block` and `recalibrate-hr` both use the
+service client. Swept all four plan-fetching routes: **`recalibrate-zones` was the only one
+left on the cookie client.** Fourth instance today of the same shape — a remedy applied to
+one case while its twin has the identical problem (§90/§94, CB-1's foundation-only
+exemption, DELOAD-INVERSION-01's delivered half).
+
+**Verified against the real plan, not inferred:** his `user_settings.plan_json` is NULL and
+his plan is one row in `plans`. Post-fix, `fetchPlanForUser` returns **12 weeks**, the
+recalibration applies to **12 weeks**, and paces move **5:33–6:38 → 6:12–7:24 /km**.
+
+**Guard:** `planRouteClient.test.ts` — every route calling `fetchPlanForUser` must import the
+service client and pass it in. ⚠️ **Deliberately a SOURCE check:** the failure only
+reproduces against a live RLS-enforcing database from a native client, which no unit test can
+stand up; what *is* mechanically checkable is that no such route reaches for the cookie
+client. Falsified — restoring it names the file and both arms go red.
+
+**Contract updated** (`docs/contracts/api/recalibrate-zones.md`): the 404 row now says what it
+means and what it used to mean.
+
 ### 🏃 `DELIVERED-RAMP-REAL-DRIVER-01` — what actually drives 98.6% of the firings is unknown
 
 **Filed 2026-09-25, separated from the message fix above. For the Coaching Board once

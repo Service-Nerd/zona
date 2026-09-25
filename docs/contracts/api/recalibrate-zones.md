@@ -37,7 +37,7 @@
 |--------|-----------|
 | 401 | No valid session |
 | 403 | Free tier |
-| 404 | No plan found |
+| 404 | No plan found — the runner genuinely has no plan. ⚠️ **Until 2026-09-25 this also fired for runners who DID have one** (`RECALIBRATE-ZONES-COOKIE-CLIENT-01`): the route authenticates off the Bearer token but read the plan with the cookie client, and on native the cookie session is absent, so the read hit RLS with no session and returned nothing. It now uses the service client and passes the gist/legacy fallback, so an un-migrated `plans` row self-heals rather than 404ing. |
 | 422 | Invalid or missing benchmark fields |
 | 500 | Unexpected server error |
 
