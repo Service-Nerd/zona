@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-25 — NAV-COLLAPSE-01 · the mock-up falsified the ruling that commissioned it
+**Shipped:** A three-variant nav prototype at `/nav-preview`, with a live readout. Nothing to the app.
+**Dev learning:** I ruled that a collapsing nav "gives back ~45pt of screen exactly when the runner is scrolling toward the action". Built it, measured it: the collapse changes **width** (343→76px), not **height** (74px in both states). It buys visual mass, not clearance. And the pill I was asked to build is **74px against the shipped bar's 60px** — it floats 12px off the edge plus borders, so the shape that was meant to answer "the nav is too big" makes it 14px worse.
+**Product/creator learning:** The founder sent two competitor screenshots and said "I like how this works". Measured: **5 of their 6 cards are empty, zero or unconnected states** — no workout, 0/3, connect health, needs more data, no runs. The screen he admired is calm because it has nothing to say. Put our real content in their layout and it is as dense as ours. The thing he was responding to is the *behaviour*, not the layout — and separating those two is most of what a design board is for.
+**AI-building learning:** My first variant comparison returned **identical numbers for all three variants**, which should have stopped me instantly — it's the same tell as every hollow check this week. The selector had grabbed the outer `inset: 0` wrapper instead of the chrome. I only caught it because three identical rows looked wrong, not because anything failed.
+**The honest bit:** I issued a board ruling with a number in its rationale and the number was wrong. The prototype I built to demonstrate the ruling is what disproved it. That is the system working, but it is also me asserting a measurement I had not taken — on a day where every single thing I got right came from measuring first.
+**Hook material:** Built a prototype to prove a design ruling. The prototype disproved the ruling. 343→76 wide, 74→74 tall.
+**Postable?:** yes
+
+
 ## 2026-09-25 — TODAY-CTA-CLEARANCE-01 (reverted) · the fix was measured, correct, and wrong
 **Shipped:** A sticky dock for Today's CTA. Reverted within the hour.
 **Dev learning:** A `position: sticky` element keeps its flow slot but paints at the pin. So with Today's real content height the CTA pinned at 685–736 while its session card sat at 760–852 — below the fold. The button floated 167px above the thing it refers to. The rule that came out: **only a global action may dock.** A submit or an apply means "finish this screen" and can leave the flow; "Log this session" means "log THAT session" and is part of a sentence with the card above it.
