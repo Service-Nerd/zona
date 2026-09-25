@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — BUTTON-MIGRATION-02 · the next batch found the hole in this morning's gate
+
+**Shipped:** 90 of 217 controls now come from the shared button system, up from 41 — `secondary` ×14, `ghost` ×31, and two primary CTAs the gate had been completely blind to.
+
+**Dev learning:** `--accent: var(--moss)`. It's a System B legacy alias that `globals.css` keeps on purpose, and two live primary CTAs used it with white text — the exact 3.68:1 contrast failure my gate was written to catch, and it matched neither arm. The check compared the token *name*; the producer used a different name for the same colour. The tempting fix is to add `--accent` to the pattern. The right fix is to stop maintaining a list at all: the gate now reads the `--x: var(--y)` alias graph out of the stylesheet and walks it transitively, so a legacy alias added next year is covered without anyone remembering. This repo has already written down that a checker sharing the producer's hand-written list is blind to that list in exactly the same way the producer is — I'd read that note and still shipped the list version.
+
+**Product/creator learning:** I nearly turned 44 grey buttons green. The obvious move was to convert every text button to the `quiet` variant, which is moss. But `design-rulings.md:456` says *dismiss is never `--moss`* — moss is the CTA colour, and spending the strongest colour in the system on *dismiss* teaches the opposite of what it means. So the de-emphasised buttons needed their own variant. The thing that saved it was the settled-ground scan, not my judgement: I'd have called it a tidy-up and reversed a ruling **while the diff looked like a migration**.
+
+**AI-building learning:** The warning I wrote to myself two hours earlier is what caught the real defect. When I filed the batch I wrote: *"those text buttons are not moss, so the gate says nothing about them — measure their contrast before converting, or the batch will look like a migration and quietly be an audit."* Measured: **4 of 51 were failing AA** — three `--warn` labels at 2.69:1 and a `--danger` at 4.36:1. Writing down the assumption is what made it get checked; without that line I'd have converted all 51 and moved on, and the contrast failures would have survived the migration that was supposedly cleaning them up.
+
+**The honest bit:** I've now found a hole in this gate twice in one day — wrong line numbers this morning (because `^\s*//` matches `\n` in JS and ate the blank lines above every comment), and the alias blindness this afternoon. Both were in a check I'd already falsified and called done. Falsifying against the defect you know about doesn't tell you about the one you don't. I also hit the `[...Map]` tsconfig trap that's documented in CLAUDE.md — second time this week.
+
+**Hook material:** My contrast test was green over two buttons that were failing contrast. Not because the test was wrong — because the CSS said `--accent` and the test said `--moss`, and `--accent: var(--moss)` was one line away in the same stylesheet. The fix was to stop hardcoding the list and read the alias graph instead.
+
+**Postable?:** yes
+
 ## 2026-09-25 — WEBSITE-BUTTON-UNIFY-01 · the board threw out my framing and was right
 
 **Shipped:** The marketing site's 3 CTAs now use the same `.btn` classes as the app, `.cta-pill` is deleted, and `Button.tsx` lost its `'use client'`.
