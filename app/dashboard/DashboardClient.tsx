@@ -8064,9 +8064,18 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
               return <ZoneBar activeZones={dz.zones} style={{ marginTop: 'var(--space-3)' }} />
             })()}
 
-            {/* Primary CTA — only on today's session if not yet done */}
+            {/* Primary CTA — only on today's session if not yet done.
+                🔴 DOCKED (TODAY-CTA-CLEARANCE-01). Measured on the founder's own
+                device capture (1206x2622 at 3.216x = a true 375x815pt viewport):
+                this button's top edge sat at 692.5pt, it is 48pt tall, and the
+                nav's top edge is at 721.1pt — so **19.4pt, 40% of the screen's
+                primary action, was behind the nav at rest**. `.today-action-dock`
+                pins it until its own flow position clears, then it scrolls
+                normally. It is the SAME button, not a new bar: a docked action
+                BAR would have answered a complaint about furniture by adding
+                furniture (Zhuo). */}
             {selectedSession.today && !completions[selectedCompletionKey]?.status && (
-              <Button variant="primary" fullWidth
+              <Button variant="primary" fullWidth className="today-action-dock"
                 onClick={() => {
                   onOpenSession?.({
                     ...selectedSession,

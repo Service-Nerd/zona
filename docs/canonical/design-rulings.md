@@ -1780,6 +1780,54 @@ vanity one. **Neither seat can win this from a document**, which is the whole re
 opaque nav**. Slimming returns 4px; the CTA being half-hidden at rest is a layout question about
 Today's bottom, and no seat ruled on it → `TODAY-CTA-CLEARANCE-01`.
 
+
+### TODAY-CTA-CLEARANCE-01 + NAV-FADE-01 + NAV-FLOAT-01 — the nav sitting, resumed (2026-09-25)
+
+The founder looked at `/nav-preview` on a device: *"Nav bar still looks too big on the app so we
+are cutting the log session button. I also really like the [pill]. Would be great if we could make
+it a bit opaque when scrolling then comes back when it's no[t]."* **Three requests in one sentence,
+ruled separately on purpose.**
+
+| # | Ruling | |
+|---|---|---|
+| **3** | **TODAY-CTA-CLEARANCE-01** — the primary action docks above the nav | 🟢 **SHIP — BUILT FIRST** |
+| **1** | **NAV-FADE-01** — the nav recedes on scroll, returns on scroll-stop | 🟢 SHIP WITH AMENDMENT — **not yet built** |
+| **2** | **NAV-FLOAT-01** — the pill | 🟢 SHIP **on brand grounds** — **not yet built** |
+| **4** | Nav height | 🔴 **NO CHANGE. 60px stands** |
+
+**Ruling 3, built.** Measured on his own capture (375×815pt): CTA top **692.5pt**, 48pt tall, nav
+top **721.1pt** — **19.4pt, 40% of the primary action, hidden at rest.** It is the SAME button
+pinned, **not a new bar**: a docked action bar would have answered a complaint about furniture by
+adding furniture (Zhuo). It **cannot depend on the recede**, because `prefers-reduced-motion`
+disables that (Wroblewski) — which is why it shipped first.
+
+🔴 **The obvious CSS was wrong by 83px and only a measurement found it.** See `ui-patterns.md` § 7a.
+
+**Ruling 1's amendment is load-bearing and must survive to the build:** *"a bit opaque"* must be
+**translucency + `backdrop-filter` blur with labels at FULL opacity**, never an opacity fade of the
+whole bar. Measured: a whole-bar fade gives **4.47:1 at 0.9** (already below AA), **3.63 at 0.8**,
+**2.98 at 0.7** (below even the 3:1 graphics bar); blur holds **≥5.23:1** worst case. The control
+**stays live while receded** (§ 6i: a nav icon under a sheet once dismissed instead of navigating).
+Idle threshold **150ms**. Must ride the reduced-motion tokens.
+
+**Ruling 2 ships on brand grounds and the register says so.** 📐 **Measured: a pill that is always
+visible gives back ~zero vertical space** — 91% of the width, same band. **The recede answers "too
+big"; the shape does not.** Collins: a full-width slab welded to the bottom is the most
+category-generic element in the product, and a nav that gets out of the way is costly signalling a
+competitor built on encouragement cannot ship. Sierra, recorded and unresolved: *"the 60→ is for the
+runner; the pill is for us"* — honoured as a preference, not recorded as a finding.
+
+⛔ **Silvanto confirmed last sitting's partial sustain of `ui-patterns.md:359`** — it governs the
+**shadow**, not the **shape** — and named a live regression instead of vetoing: `.nav-tab--active`
+was `--moss` at **3.68:1**, below AA at 11px, shipped by NAV-SLIM-01 four hours earlier. **Fixed
+here** to `--moss-strong`. ⚠️ **No gate could have caught it:** the moss-label arm reads
+`color: 'var(--moss)'` as an **inline style** and this lived in the **stylesheet** — *the rule moved
+to CSS and left its enforcement behind*. **Fifth population failure of the day**, first inside a
+stylesheet. The arm now reads both surfaces.
+
+⚠️ **Open, and nobody asked the founder:** if the CTA has clearance, does *"too big"* survive? That
+question is why ruling 3 was built alone.
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1
