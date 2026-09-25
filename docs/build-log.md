@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — RULEENGINE-HIP-COMMENT-01 · I measured 47%, it was wrong, and finding that out was the whole job
+
+**Shipped:** a comment that is true, and a test that keeps it true.
+**Dev learning:** the item looked like a stale comment and was one — but establishing that meant checking whether a rule had been lost. It had not: two commits on the same day in September, the first documenting a rule, the second deleting it, and nobody updated the first. The deleting commit even wrote *"Left in place it is a trap"* about the code it was removing. The comment was the same trap in prose, and it survived because prose has no call sites and nothing greps it.
+**Product/creator learning:** the deletion rested on a premise — *"base phase carries no quality for anyone"* — stated in a commit message. A premise in a commit message is not evidence, so I measured it. **I got 47%.** Nearly half of all plans appeared to carry quality in a base week, against doctrine that says base is all-easy in three separate places. That is a board-level finding and I was one paragraph from writing it up.
+**AI-building learning:** it was my predicate. I had counted `type === 'quality' || type === 'hard'`, and every single one of the 28,084 hits was the **5K time trial** — the deload-week recalibration benchmark, which is `type: 'hard'` by design and is not prescribed quality. Split by type, quality-in-base is **zero across 45,776 plans**. The premise holds, the deletion was right, and there is no board question. **The thing that saved it was checking the one offender in detail instead of trusting the aggregate** — and the first detailed check did not even reproduce, because my offender label printed four fields out of a grid that varies a dozen.
+**The honest bit:** two more self-inflicted ones in the same hour. `vitest` does not typecheck, so my first version of the new test was green in the suite and failed `tsc` — a trap another test file in this repo already carries a written warning about, which I had read this morning. And the suite has a duration gate that caught the test at 17.6 seconds; I had not known it existed, and my instinct was to raise the timeout, which is how a gate stops being a gate.
+**Also filed:** the API contract types `injury_history` as `hip_flexor`, `shin_splints` and friends — snake_case values the wizard has never sent. **Third surface of the same root in two days**, after the invariant predicate and the parity grid: the code's spelling written down as if it were the product's.
+**Hook material:** I measured a 47% doctrine breach, wrote none of it down, and spent the next twenty minutes proving my own number wrong. That was the work.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — PARITY-GRID-PRODUCT-VALUES-01 · the file had already ruled on my fix, two items ago
 
 **Shipped:** the parity grid sweeps the six injuries the wizard can actually send, and a gate that stops it drifting back.
