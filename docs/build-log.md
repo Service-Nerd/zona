@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — DELIVERED-RAMP-FALSE-DRIVER-01 · the message said it already knew, so nobody looked
+
+**Shipped:** the invariant computes its driver instead of asserting one that was false 98.6% of the time.
+**Dev learning:** the check had two branches. One computed whether the long run drove the rise. The other was a hardcoded sentence blaming a specific mechanism — a volume/quality trim handing its deficit forward — with no check that any such trim had happened. The trim stamps itself in `meta.rule_adjustments`, so it was always checkable. Checked: **4 of 280.** The other 276 had no trim on the preceding week at all.
+**Product/creator learning:** the cost was not that the sentence was wrong, it was that the sentence was *confident*. It pointed every investigation at §100, whose producer shipped two weeks ago and did not fire on those weeks. **The largest unexplained warn in the product has never been investigated because its own message claimed to have the answer.** A wrong "I don't know" costs nothing; a wrong "I know why" costs every future attempt.
+**AI-building learning:** the board had already required this and it was half-built. §94 Amendment 1 made driver attribution a condition of approval — two seats asked for it specifically so a quality-trim spike and a long-run spike could not read as one thing. The long-run arm got computed. The other got a string. **Half a condition reads as a met condition in every later review**, because the artifact exists and nobody re-checks which half.
+**The honest bit:** the useful discipline here was checking the consumer list *before* proposing the fix rather than after. This repo has a recorded incident where changing four strings for tone broke eight prose matchers across five files, so I grepped for tests matching this message first. There were none — which is what made "just fix the sentence" a safe claim rather than a hopeful one. Cheap to check, and I only did it because it had already gone wrong once.
+**Also:** I kept the real question separate rather than bundling it. What actually drives those 276 is still unknown, and I filed it as its own item with two dead ends already marked — it is not §100, and it is not my own §94 widening from this morning (healthy 48.1% vs injured 45.7%, so the rate pre-existed).
+**Hook material:** the check that flags a problem had a sentence explaining its own cause, and that sentence was wrong 98.6% of the time — which is why nobody had ever gone looking for the real one.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — S90-WITHIN-COHORT-RATE-01 · the gate enforcing "this fires too often" could not see two checks firing too often
 
 **Shipped:** NOISE-GATE-01 now reports each warn invariant's rate inside the cohort it governs, not only across every plan.
