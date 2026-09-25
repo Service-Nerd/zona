@@ -350,6 +350,44 @@ Seiler's condition of approval and had only its long-run arm implemented.
 
 ---
 
+### 🧭 `UI-PATTERNS-ENFORCEMENT-01` — 3,230 lines, 28 sections, ~10 guarded
+
+**Filed 2026-09-25 by the Design Board (UI-PATTERNS-REVIEW-01). Sierra's finding.**
+
+The board reviewed `ui-patterns.md` and agreed with its contents. The risk is not any
+individual rule — it is that **18 of 28 sections are held by whoever remembers**, in a
+document nobody can hold in working memory.
+
+**This repo's own record is that a rule held only by memory is not a rule** (the phrase
+appears in `configPrincipleSync`, in the filing rule, and in three build-log entries).
+⚠️ **The failure mode is silent**: a screen ships slightly wrong, nobody notices, and the
+document says it should have been right.
+
+**Not a request to write 18 tests.** The useful first move is a measurement nobody has
+taken: **of the unguarded sections, how many are actually being honoured today?** That
+separates "unenforced and fine" from "unenforced and already drifted", and only the second
+needs a gate.
+
+### 🧭 `UI-PATTERNS-MOMENTS-01` — the document describes components and almost no moments
+
+**Filed 2026-09-25 by the Design Board (UI-PATTERNS-REVIEW-01). Collins' finding, and he
+named it a gap rather than a fault.**
+
+3,230 lines of how things look. **One line on how a moment should land** — *"Highest-emotion
+moment — treat it as such"* (§ 1180, post-session).
+
+The moments the product actually turns on — **the plan arriving, the first run logged, the
+coach's verdict** — have components documented and no section saying what they should feel
+like. Silvanto's seat exists to ask whether a moment carrying weight has been given any,
+and the document has nowhere to put the answer.
+
+⚠️ **This is not a licence for ornament.** W-11 (paper grain) and the "wow as ornament" row
+are both standing kills, and Collins is himself on record: *"the wow in this product is the
+honesty."* The gap is that the doctrine has no vocabulary for emphasis, timing or weight —
+not that it lacks decoration.
+
+⚠️ **Nothing has been felt on a device**, which bears hardest on exactly this.
+
 ### ✅ `TIME-INPUT-SECONDS-01` — **RULED AND SHIPPED 2026-09-25.** Every time field takes seconds.
 
 **Design Board SHIP WITH AMENDMENT.** Full note:

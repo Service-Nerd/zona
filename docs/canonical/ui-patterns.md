@@ -67,7 +67,23 @@ Warm, grounded, athletic. No decoration for decoration's sake. Every element ear
 - **Bold metrics, quiet context** — large numbers, small muted labels underneath; value always dominates
 - **Type accent, not flood** — session colours appear as left borders, dots, or small chips; never as full card backgrounds
 - **Density with breathing room** — tight within a card, clear gaps between cards, generous padding inside
-- **No chrome** — no box shadows stacked on box shadows, no gradients, no decorative dividers
+- **No chrome** — no box shadows **stacked on** box shadows, no gradients, no decorative dividers
+
+> ⚠️ **WHAT "NO CHROME" DOES NOT SAY** *(Design Board 2026-09-25, UI-PATTERNS-REVIEW-01)*.
+> It is not a ban on shadow. It forbids **stacking** them. § Card Elevation below
+> **mandates** `--shadow-card` on primary cards — *"you feel it, you don't see it"* — and
+> `design-rulings.md` carries the standing rule **"Elevation is `--shadow-card` /
+> `--shadow-lifted`. Do not design a new elevation system."**
+>
+> 🔴 **This was being read as "everything must be flat", and that reading blocked work
+> for a month.** Measured at the sitting: `--shadow-card` has **20 consumers**;
+> **`--shadow-lifted` has ZERO** — a token authored for the raised state that never
+> reached a screen. The doctrine had already authorised the tool nobody was using.
+>
+> Likewise **motion is not banned.** Sheets animate enter and exit, `AIMark` pulses in
+> place of the banned spinner, and `globals.css` carries a `prefers-reduced-motion` block.
+> The one *"no motion"* is scoped to the **marketing sticky header** (Wood: *a sticky
+> header is structural, an animated one is decorative*) and does not generalise.
 - **Moss is the primary accent** — `--moss: #6B8E6B` for CTA, active states, completion signals
 - **Warn is coaching only** — `--warn: #B8853A` for coach voice blocks and adjustment banners exclusively
 

@@ -8,6 +8,45 @@ not after.
 ---
 
 
+
+## 2026-09-25 — UI-PATTERNS-REVIEW-01 · SHIP, no amendment. The doctrine was sound; the reading was wrong.
+
+Founder asked the board to review `ui-patterns.md` as a whole against the brand and the
+goal of wow moments, and specifically to revisit **"no chrome"**.
+
+🔴 **THE SITTING WAS BRIEFED ON A FALSE PREMISE AND THE REGISTER CAUGHT IT.** The brief
+said *"no chrome has never been board-ruled"*. It is row **:202**, 🟢 STANDING, transferred
+to this board **2026-09-22**. Recorded because it is exactly the stale-premise trap the
+skill warns about, and the scan is what stopped it.
+
+**Nothing needed revisiting.** "No chrome" forbids **stacked** shadows, gradient **on**
+gradient, and **decorative** dividers. It has never forbidden a shadow — § Card Elevation
+mandates one on 20 files, and row **:203** sanctions `--shadow-lifted` by name.
+**`--shadow-lifted` has ZERO consumers.** The doctrine had already authorised the tool
+nobody was using, and the reading of it blocked `BUTTON-COMPONENT-01` for a month.
+
+**Wroblewski:** motion is not banned either — sheets animate both ways, `AIMark` pulses,
+`prefers-reduced-motion` exists. The one *"no motion"* is scoped to the marketing header.
+**Second constraint in the same sitting that people believed in and does not exist.**
+
+**Ruling: SHIP, no amendment.** `BUTTON-COMPONENT-01` is **unblocked and needs no ruling** —
+it proceeds against existing doctrine. Two gaps filed rather than fixed:
+
+- **Sierra — enforcement.** 3,230 lines, 28 sections, **~10 guarded by a test**. The other
+  18 are held by whoever remembers, and this repo's record is that such a rule is not a
+  rule. `UI-PATTERNS-ENFORCEMENT-01`.
+- **Collins — moments.** The document describes components and almost no *moments*; one
+  line (*"Highest-emotion moment — treat it as such"*) in 3,230. Named as a gap, not a
+  fault. `UI-PATTERNS-MOMENTS-01`.
+
+**Veto:** none — Silvanto declined for the second consecutive sitting and asked for the
+declining to be recorded, so the seat reads as narrow rather than dormant.
+
+⚠️ **Unanimous, and recorded as such rather than dramatised**: the question had already
+been answered and misfiled.
+
+---
+
 ## 2026-09-25 — TIME-INPUT-SECONDS-01 · SHIP WITH AMENDMENT
 
 **Should every time-entry field take seconds? Yes, and the decision leaves the call site.**
