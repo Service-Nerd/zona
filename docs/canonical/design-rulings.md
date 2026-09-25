@@ -1686,3 +1686,53 @@ ways including one that must NOT fire**.
 ⚠️ **What this does not settle:** whether Match and Log should be one action, and whether demoting
 Skip changes behaviour — that is Wood's at the SLT if it does, and neither has been seen on a device.
 
+## 2026-09-25 — BUTTON-ARCH-01 + BUTTON-SYSTEM-01 · the architecture rule, and the family made predictable
+
+**Trigger:** founder — *"clear guidance on what architecture to use for what and a way to enforce it.
+We can't get in this shape again"*, then *"take all types of buttons to board… so that if and when we
+change again we do so simply and not in 1000s of places."*
+
+### BUTTON-ARCH-01 — architect ruling, no board needed
+
+**App → `<Button>`/`<IconButton>`. Site → `.btn` classes on `<a>`/`<Link>` (its CTAs NAVIGATE and a
+`<button>` inside an `<a>` swallows the click). Email → hand-mirrored (a string builder cannot
+import, and Outlook drops `box-shadow`).**
+
+🔴 After a day of conversions the app was **68% classes / 32% component** — the inverse of the
+board's own split. Nothing forced it: adding a class to an existing `<button>` was the lowest-risk
+way to preserve geometry, so it happened 99 times and became the architecture. **Safe beat correct,
+silently, and no check could see it because none was asking.** ⚠️ **The cost is the compiler, not the
+look:** `btn--secondry` compiles and does nothing; `variant="secondry"` fails the build. Migrated 95
++ 4 + 2; now **app 143 component / 1 class (an anchor), site 0 / 3.**
+
+### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
+
+📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1
+inverts), elevation on **one of six**, `soft` the only filled variant with **neither border nor
+elevation**, and `circle`/`square` on **two different grounds**. Usage: ghost 56 · primary 38 ·
+secondary 26 · quiet 11 · soft 3 · **destructive 0**.
+
+🧭 **Zhuo framed it:** *"structurally we already have change-once — one stylesheet, one component.
+What we don't have is a system you can predict."* 🎪 **Collins:** *"write the RULE, not the values —
+then the next person changing `primary` knows what to do with the other five without asking."*
+
+**Ruling:** the hover rule (**filled darkens its fill, unfilled darkens its label**) with
+`secondary` moved onto it · `soft` gains an edge · `square` matches `circle`'s ground · **elevation
+stays one step per `:242`, recorded so it is not re-proposed**.
+
+⚡ **Sierra vs Wroblewski, recorded:** Wroblewski's rule would flatten `destructive`'s hover
+inversion; Sierra defended it as deliberate — *"a delete button that fills red under your finger is
+telling you something the others do not need to."* **Chair took Sierra's**; Wroblewski accepted on
+condition it is the ONLY exception, and the check asserts that.
+
+⛔ **Veto: none** — Silvanto noted `:242` constrains the elevation question rather than opening it.
+
+🔻 **Filed:** `DESTRUCTIVE-WIRING-01` — 0 uses while delete-account and disconnect render as plain
+text. Collins: *"a gap in the product, not a redundant variant."*
+
+**Artifacts:** pattern → § variant family + § which to use · constants → `soft` border, `square`
+ground, `secondary` hover · checks → `buttonArchitecture.test.ts`, **falsified 5 ways**.
+
+⚠️ **What this does not settle:** `soft` (3) and `destructive` (0) are unvalidated in the product, and
+the hover rule is **reasoned, not observed** — nothing has been seen on a device.
+

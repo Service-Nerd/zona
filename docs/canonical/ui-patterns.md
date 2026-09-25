@@ -3312,6 +3312,40 @@ have turned 44 grey controls green and reversed that ruling while looking like a
 but `quiet` shipped first with 14 consumers and renaming call sites to fix a word is churn with no
 user impact. **The distinction that matters is ACCENT vs DE-EMPHASISED.**
 
+🔴 **THE VARIANT FAMILY, AND THE RULE THAT MAKES IT PREDICTABLE** *(Design Board, `BUTTON-SYSTEM-01`, 2026-09-25)*
+
+| Variant | Fill | Label | Edge | Elevation | Hover |
+|---|---|---|---|---|---|
+| `primary` | `--moss-strong` | `--card` | — | **`--shadow-lifted`** | fill darkens |
+| `secondary` | `--card` | `--ink-2` | `1px --line` | — | fill darkens |
+| `soft` | `--moss-soft` | `--moss-deep` | `1px --line` | — | fill darkens |
+| `quiet` | none | `--moss-strong` | — | — | label darkens |
+| `ghost` | none | `--mute` | — | — | label darkens |
+| `destructive` | `--card` | `--danger` | `1px --danger` | — | ⚠️ **inverts** |
+
+**THE HOVER RULE: a control with a FILL darkens its fill; a control without one darkens its LABEL.**
+
+🔴 **Why this is written down.** Six variants carried **three different hover grammars** and elevation
+existed on exactly one, so **a designer changing `primary` had no rule telling them what to do with
+the other five.** That is how *"change it once, not in a thousand places"* fails even when the CSS
+genuinely is in one place — **the repetition was never the problem; the unpredictability was.**
+
+⚠️ **`destructive` is the SINGLE named exception and it is deliberate** (Sierra): *"a delete button
+that fills red under your finger is telling you something the others do not need to. Consistency is a
+means, not the goal."* Wroblewski accepted it as the **only** one, and the check asserts it so a
+second cannot be added quietly.
+
+⚠️ **Elevation stays ONE STEP — `:242`, not a ladder.** Exactly one variant lifts: the one you are
+meant to press. Recorded so it is not re-proposed.
+
+⚠️ **Every filled variant has an edge — a border or an elevation.** `soft` had neither and was a
+coloured patch; it now carries `1px --line`. **Both icon shapes share `--bg-soft`**: an icon button
+sits *in* a surface, not on one.
+
+⚠️ **`soft` (3 uses) and `destructive` (0) are effectively unvalidated in the product.** Zero uses is
+a gap, not a redundant variant — delete-account and disconnect still render as plain text
+(`DESTRUCTIVE-WIRING-01`).
+
 🔴 **WHICH TO USE: COMPONENT OR CLASSES** *(architect ruling, `BUTTON-ARCH-01`, 2026-09-25)*.
 
 | Surface | Use | Why it cannot be the other |

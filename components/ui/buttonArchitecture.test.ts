@@ -105,3 +105,84 @@ describe('BUTTON-ARCH-01 — the app uses the component', () => {
     expect(header).toMatch(/<a[\s\S]*?className="[^"]*\bbtn\b/)
   })
 })
+
+/**
+ * BUTTON-SYSTEM-01 — the variant family is COHERENT, so a change to one has an
+ * obvious consequence for the rest.
+ *
+ * 🔴 WHY. Six variants carried THREE different hover grammars — three darkened
+ * the fill, two darkened the label, one inverted — and elevation existed on
+ * exactly one. A designer changing `primary` had no rule telling them what to do
+ * with the other five, which is how "change once, not in a thousand places"
+ * fails even when the CSS genuinely is in one place. **The repetition was never
+ * the problem; the unpredictability was.**
+ */
+const FILLED = ['primary', 'secondary', 'soft'] as const
+const UNFILLED = ['quiet', 'ghost'] as const
+
+function block(css: string, sel: string): string {
+  return css.match(new RegExp(sel.replace(/[.\-:()]/g, '\\$&') + '\\s*\\{([^}]*)\\}'))?.[1] ?? ''
+}
+
+describe('BUTTON-SYSTEM-01 — one hover rule', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+
+  it('reads the real variant blocks', () => {
+    expect(block(css, '.btn--primary')).toContain('background')
+    expect(block(css, '.btn--ghost')).toContain('color')
+  })
+
+  it('🔴 a FILLED variant darkens its FILL on hover', () => {
+    const offenders: string[] = []
+    for (const v of FILLED) {
+      const h = block(css, `.btn--${v}:hover:not(:disabled)`)
+      if (!/background:/.test(h)) offenders.push(`.btn--${v}:hover does not change its fill`)
+    }
+    expect(offenders, offenders.join('\n')).toEqual([])
+  })
+
+  it('🔴 an UNFILLED variant darkens its LABEL on hover', () => {
+    const offenders: string[] = []
+    for (const v of UNFILLED) {
+      const h = block(css, `.btn--${v}:hover:not(:disabled)`)
+      if (!/color:/.test(h)) offenders.push(`.btn--${v}:hover does not change its label`)
+      if (/background:\s*var/.test(h)) offenders.push(`.btn--${v}:hover grew a fill — it is unfilled`)
+    }
+    expect(offenders, offenders.join('\n')).toEqual([])
+  })
+
+  it('destructive is the ONE declared exception, and inverts', () => {
+    // Sierra: "a delete button that fills red under your finger is telling you
+    // something the others do not need to. Consistency is a means, not the
+    // goal." Wroblewski accepted it as the ONLY exception — asserted here so a
+    // second one cannot be added quietly.
+    const h = block(css, '.btn--destructive:hover:not(:disabled)')
+    expect(h, 'destructive stopped inverting').toMatch(/background:\s*var\(--danger\)/)
+    expect(h, 'destructive stopped flipping its label').toMatch(/color:\s*var\(--card\)/)
+  })
+
+  it('🔴 every FILLED variant has an edge: a border or an elevation', () => {
+    // `soft` was the only filled variant with neither — a coloured patch with
+    // no edge, while `primary` lifted and `secondary` bordered.
+    const offenders: string[] = []
+    for (const v of FILLED) {
+      const b = block(css, `.btn--${v}`)
+      if (!/border:/.test(b) && !/box-shadow:/.test(b)) offenders.push(`.btn--${v} has neither border nor elevation`)
+    }
+    expect(offenders, offenders.join('\n')).toEqual([])
+  })
+
+  it('elevation stays ONE STEP — :242, not a ladder', () => {
+    // Recorded so it is not re-proposed: `:242` says do not design a new
+    // elevation system. Exactly one variant lifts: the one you are meant to press.
+    const lifted = (['primary', 'secondary', 'quiet', 'ghost', 'soft', 'destructive'] as const)
+      .filter(v => /box-shadow:\s*var\(--shadow/.test(block(css, `.btn--${v}`)))
+    expect(lifted, 'elevation should be on exactly one variant').toEqual(['primary'])
+  })
+
+  it('icon shapes share one ground', () => {
+    expect(block(css, '.icon-btn--circle')).toMatch(/background:\s*var\(--bg-soft\)/)
+    expect(block(css, '.icon-btn--square')).toMatch(/background:\s*var\(--bg-soft\)/)
+  })
+})

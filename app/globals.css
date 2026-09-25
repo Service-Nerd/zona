@@ -881,7 +881,16 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 .btn--primary:active:not(:disabled) { transform: translateY(1px); box-shadow: var(--shadow-card); }
 
 .btn--secondary { background: var(--card); color: var(--ink-2); border: 1px solid var(--line); }
-.btn--secondary:hover:not(:disabled) { border-color: var(--moss-strong); color: var(--moss-deep); }
+/* 🔴 THE HOVER RULE (Design Board, BUTTON-SYSTEM-01, 2026-09-25):
+ * **a control with a FILL darkens its fill; a control without one darkens its
+ * LABEL.** Six variants carried THREE different hover grammars — three darkened
+ * the fill, two the label, and one inverted — so a designer changing `primary`
+ * had no rule telling them what to do with the other five. `secondary` was the
+ * odd one: it HAS a fill (`--card`) and changed its border and label instead.
+ * ⚠️ `destructive` is the SINGLE NAMED EXCEPTION and it is deliberate (Sierra):
+ * a delete button that fills red under your finger is telling you something the
+ * others do not need to. Consistency is a means, not the goal. */
+.btn--secondary:hover:not(:disabled) { background: var(--bg-soft); border-color: var(--moss-strong); }
 .btn--secondary:active:not(:disabled) { transform: translateY(1px); }
 
 /* Quiet — a label, not a surface. `--moss-strong` clears 4.5:1 on all three
@@ -899,7 +908,10 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
    `--moss-strong` on that is 4.36:1 — still under AA. `--moss-deep` is 5.73:1.
    The tinted ground eats more contrast than a flat one, so the variant that
    looks the gentlest needs the strongest ink. */
-.btn--soft { background: var(--moss-soft); color: var(--moss-deep); }
+/* ⚠️ A BORDER, because this was the ONLY FILLED VARIANT WITH NEITHER BORDER NOR
+ * ELEVATION — a coloured patch with no edge (Silvanto). `secondary` and
+ * `destructive` both carry `1px`; this closes the family. */
+.btn--soft { background: var(--moss-soft); color: var(--moss-deep); border: 1px solid var(--line); }
 .btn--soft:hover:not(:disabled) { background: var(--moss-mid); }
 .btn--soft:active:not(:disabled) { transform: translateY(1px); }
 
@@ -989,8 +1001,11 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 .icon-btn--circle { border-radius: 50%; background: var(--bg-soft); }
 .icon-btn--circle:hover:not(:disabled) { background: var(--line); }
 /* Square: steppers and inline controls sitting inside a bordered group. */
-.icon-btn--square { border-radius: var(--radius-sm); background: var(--card); }
-.icon-btn--square:hover:not(:disabled) { background: var(--bg-soft); }
+/* ⚠️ `--bg-soft`, MATCHING `circle`. Two grounds for one idea had no reason:
+ * `--bg-soft` is the inset ground and an icon button sits IN a surface, not on
+ * one (Silvanto, BUTTON-SYSTEM-01). */
+.icon-btn--square { border-radius: var(--radius-sm); background: var(--bg-soft); }
+.icon-btn--square:hover:not(:disabled) { background: var(--line); }
 /* Bare: no surface, for a glyph in a dense row (the notification bell, a
    move handle). Still 44px of target. */
 .icon-btn--bare { background: none; }

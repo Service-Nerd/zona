@@ -29,6 +29,17 @@ already decided what it is.
 
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
+### 🧭 `DESTRUCTIVE-WIRING-01` — a variant with zero uses, and two flows that need it
+**Board: 🧭 DESIGN BOARD** (it is a variant that exists and is unused, so this is wiring not design).
+
+`btn--destructive` is defined, documented and has **0 uses**, while **delete-account and disconnect
+render as plain text**. 🎪 Collins: *"that is a gap in the product, not a redundant variant — the
+variant is right and it hasn't been wired."*
+
+⚠️ **`:456`-adjacent:** destructive is `--card` + `--danger` border, never moss and never a filled
+red rectangle at rest. It **inverts on hover**, which is the family's one named exception
+(`BUTTON-SYSTEM-01`) and is deliberate — do not flatten it for symmetry.
+
 ### 🧭 `SESSION-ACTION-COLLAPSE-01` — are "Match a run" and "Log manually" one action?
 **Board: 🧭 DESIGN BOARD.** Collins leads. Filed by `SESSION-ACTIONS-01`, not settled by it.
 
