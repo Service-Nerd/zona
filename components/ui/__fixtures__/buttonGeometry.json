@@ -230,28 +230,28 @@
     "radius": null,
     "height": 44
   },
-  "app/dashboard/DashboardClient.tsx:12232:button": {
+  "app/dashboard/DashboardClient.tsx:12241:button": {
     "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,
     "height": 44
   },
-  "app/dashboard/DashboardClient.tsx:12425:button": {
+  "app/dashboard/DashboardClient.tsx:12434:button": {
     "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,
     "height": 44
   },
-  "app/dashboard/DashboardClient.tsx:12432:button": {
+  "app/dashboard/DashboardClient.tsx:12441:button": {
     "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,
     "height": 44
   },
-  "app/dashboard/DashboardClient.tsx:13273:button": {
+  "app/dashboard/DashboardClient.tsx:13282:button": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -343,34 +343,34 @@
     "height": 47
   },
   "app/dashboard/DashboardClient.tsx:11041:Button": {
+    "floor": 0,
+    "padY": 8,
+    "font": 11,
+    "radius": "8px",
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:11170:Button": {
     "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,
     "height": 47
   },
-  "app/dashboard/DashboardClient.tsx:11161:Button": {
+  "app/dashboard/DashboardClient.tsx:11703:Button": {
     "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,
     "height": 47
   },
-  "app/dashboard/DashboardClient.tsx:11694:Button": {
+  "app/dashboard/DashboardClient.tsx:12550:Button": {
     "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,
     "height": 47
   },
-  "app/dashboard/DashboardClient.tsx:12541:Button": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47
-  },
-  "app/dashboard/DashboardClient.tsx:13923:Button": {
+  "app/dashboard/DashboardClient.tsx:13932:Button": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -560,7 +560,7 @@
     "height": 47
   },
   "components/shared/SessionSteps.tsx:94:IconButton": {
-    "floor": null,
+    "floor": 0,
     "padY": null,
     "font": 9.5,
     "radius": "50%",

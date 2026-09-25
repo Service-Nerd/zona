@@ -802,6 +802,35 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .btn--full { width: 100%; }
 
+/* Inline chip — a small filled control sitting INSIDE a row, beside a label.
+ *
+ * 🔴 WHY IT IS NOT JUST `.btn--compact` (founder, 2026-09-25: *"the connect
+ * button next to Apple Health in me profile is still huge"*). The Apple Health
+ * connect chip was **29px** and lived in a `space-between` settings row. The
+ * conversion gave it `fullWidth` — which it never had — and a 47px height, so
+ * it stretched the row and doubled in height. Silvanto flagged exactly this
+ * control at the sitting: *"an inline Connect chip in a settings row, 11px
+ * uppercase — it sits in a line of text, like the info mark we protected this
+ * afternoon. We ruled that an inline mark keeps its visual and grows its hit
+ * area. We then did the opposite to a chip that is the same species."*
+ *
+ * ⚠️ PADDING CANNOT DO IT HERE, AND THAT IS THE DIFFERENCE FROM THE ICON INLINE
+ * MARK. That mark has `background: none`, so padding grows its target
+ * invisibly. A chip is FILLED — padding would grow the painted pill too. So the
+ * target is an invisible overlay: the pill keeps its 29px box and `::after`
+ * carries a 44px hit area centred on it. `:262` is met without the control
+ * changing size. */
+.btn--inline-chip { position: relative; min-height: 0; }
+.btn--inline-chip::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
+
 /* Sizes. Both clear the 44px touch target (Wroblewski's bound, ADR-023
    ruling). Compact steps the radius down with the height so the corner keeps
    the same visual curve instead of drifting towards a pill. */

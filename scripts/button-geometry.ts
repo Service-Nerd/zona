@@ -44,8 +44,29 @@ const ROOT = process.cwd()
 export function sizeFloors(css: string): Record<string, number> {
   const out: Record<string, number> = {}
   for (const m of Array.from(css.matchAll(/\.((?:btn|icon-btn)--[a-z-]+)\s*\{([^}]*)\}/g))) {
-    const mh = m[2]!.match(/min-height:\s*([0-9.]+)px/)
+    // `([0-9.]+)px` missed a bare `min-height: 0`, so `.btn--inline-chip`
+    // silently inherited `.btn--compact`'s 44 and read correct by accident.
+    const mh = m[2]!.match(/min-height:\s*([0-9.]+)(?:px)?\s*[;}]/)
     if (mh) out[m[1]!] = parseFloat(mh[1]!)
+  }
+  return out
+}
+
+/**
+ * A class whose `::after` carries an invisible hit area, and the height of it.
+ *
+ * ⚠️ WITHOUT THIS THE NUMBER IS RIGHT BY ACCIDENT. `.btn--inline-chip` paints a
+ * 29px pill and carries a 44px target on `::after`, because padding cannot grow
+ * a FILLED control's target without growing the pill. The harness first reported
+ * it as 44 only because `min-height: 0` has no `px` and the regex fell through
+ * to `.btn--compact`'s floor. Right answer, wrong mechanism — which is exactly
+ * the kind of coincidence that stops being true the next time someone edits it.
+ */
+export function overlayTargets(css: string): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const m of Array.from(css.matchAll(/\.((?:btn|icon-btn)--[a-z-]+)::after\s*\{([^}]*)\}/g))) {
+    const h = m[2]!.match(/height:\s*([0-9.]+)px/)
+    if (h) out[m[1]!] = parseFloat(h[1]!)
   }
   return out
 }
@@ -125,13 +146,15 @@ function renderedClasses(tag: string, name: string): string {
   return `icon-btn icon-btn--${shape} icon-btn--${inline ? 'inline-mark' : 'regular'} ${explicitCls}`
 }
 
-export function boxOf(tag: string, floors: Record<string, number>, padFromClass: Record<string, number> = {}, name = 'button'): Box {
+export function boxOf(tag: string, floors: Record<string, number>, padFromClass: Record<string, number> = {}, name = 'button', overlays: Record<string, number> = {}): Box {
   const cls = renderedClasses(tag, name)
   let floor: number | null = null
   let classPad = 0
+  let overlay = 0
   for (const c of cls.split(/\s+/)) {
     if (floors[c] !== undefined) floor = floors[c]!
     if (padFromClass[c] !== undefined) classPad += padFromClass[c]!
+    if (overlays[c] !== undefined) overlay = Math.max(overlay, overlays[c]!)
   }
 
   const explicit = num(tag, 'minHeight') ?? num(tag, 'height')
@@ -164,8 +187,10 @@ export function boxOf(tag: string, floors: Record<string, number>, padFromClass:
   const effPad = padY !== null ? padY : classPad
   const padBox = effPad * 2 + line          // what padding alone produces
   const declared = explicit ?? floor ?? null
-  const height = declared !== null ? Math.max(declared, padBox)
+  const painted = declared !== null ? Math.max(declared, padBox)
     : (padY !== null || classPad > 0) ? padBox : null
+  // The TARGET is what `:262` governs. An overlay can exceed the painted box.
+  const height = painted === null ? (overlay || null) : Math.max(painted, overlay)
 
   return { floor, padY, font, radius, height }
 }
@@ -174,6 +199,7 @@ export function measureAll(): Record<string, Box> {
   const css = readFileSync(join(ROOT, 'app/globals.css'), 'utf8')
   const floors = sizeFloors(css)
   const padFromClass = classPadY(css)
+  const overlays = overlayTargets(css)
   const files: string[] = []
   const walk = (dir: string) => {
     for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
@@ -195,7 +221,7 @@ export function measureAll(): Record<string, Box> {
         const onSystem = /className=[^\n]*\b(btn|icon-btn)\b/.test(text) ||
                          tag === 'Button' || tag === 'IconButton'
         if (!onSystem) continue
-        out[`${f}:${line}:${tag}`] = boxOf(text, floors, padFromClass, tag)
+        out[`${f}:${line}:${tag}`] = boxOf(text, floors, padFromClass, tag, overlays)
       }
     }
   }

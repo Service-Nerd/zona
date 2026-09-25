@@ -11038,7 +11038,16 @@ function AppleHealthConnectionRow({ onHRFound }: {
               {busy ? 'Saving...' : 'Disconnect'}
             </button>
           ) : (
-            <Button variant="primary" fullWidth onClick={connect} disabled={busy}>
+            <Button
+              variant="primary"
+              size="compact"
+              className="btn--inline-chip"
+              onClick={connect}
+              disabled={busy}
+              /* Its original box, restored: 29px in a space-between row. The
+                 44px target is `.btn--inline-chip`'s invisible overlay. */
+              style={{ padding: '8px 14px', fontSize: '11px', borderRadius: '8px', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+            >
               {busy ? 'Connecting...' : 'Connect'}
             </Button>
           )
