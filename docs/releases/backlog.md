@@ -270,7 +270,7 @@ that is `INJURY-DELIVERED-COVERAGE-01`, still open.
 `['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
 names**. That gap has no harness.
 
-### ⚙️ `DELIVERED-RAMP-FALSE-DRIVER-01` — the invariant names a cause that did not happen, 98.6% of the time
+### ✅ `DELIVERED-RAMP-FALSE-DRIVER-01` — **SHIPPED 2026-09-25.** The driver is computed, not asserted.
 
 **Investigated 2026-09-25 (last of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
 ⚙️ NO BOARD for the message fix — it restores §94 Amendment 1's documented intent. The
@@ -325,16 +325,45 @@ is not a broken probe returning zero.
 3. **§94 Am. 1's condition of approval is only half-met** — attribution was required so the
    two cases would not read as one thing, and the non-long-run case is not attributed at all.
 
-#### Fix
+#### What shipped
 
-**Small and low-risk:** stop asserting an uncomputed cause. Either compute it from
-`rule_adjustments` (the stamp exists) or say plainly that the driver is not the long run and
-is not yet attributed. ✅ **Checked: no test matches this prose**, so the
-`never-match-a-refusal-by-its-message` trap does not apply here.
+**Three branches, each computed.** `invariants.ts` now reads `plan.meta.rule_adjustments`
+(its first use of that field) and checks for a `V1-volume-quality-split` stamp on the
+previous week:
 
-⚠️ **The bigger question is separate and NOT answered:** what actually drives the 276? Until
-that is measured, whether 42.2% of half-marathons is an honest residual or a real defect is
-**unknown** — and the current message has been preventing anyone from asking.
+| branch | says |
+|---|---|
+| long-run-led | unchanged |
+| **trim-led, stamp present** | *"…confirmed against `meta.rule_adjustments`, **not assumed**"* |
+| **neither** | *"Driver **NOT ATTRIBUTED** … Do not read it as a §100 deficit hand-forward; that producer shipped 2026-09-11 and did not fire here"* — and names this item so triage has somewhere to go |
+
+**Rate, severity and threshold are untouched, and that is asserted rather than assumed:**
+`INV-PLAN-DELIVERED-RAMP` reads **27.2% (3873/14230)** before and after, in-cohort 42.2% of
+half-marathons. Only the sentence moved.
+
+**Falsified:** restoring the fixed string reds three tests and names **32 firings** that
+blame a V1 trim on a week carrying no such stamp. The test also guards its own corpus (>20
+firings) so it cannot pass vacuously.
+
+⚠️ **This completes §94 Amendment 1**, whose attribution requirement was McMillan's and
+Seiler's condition of approval and had only its long-run arm implemented.
+
+---
+
+### 🏃 `DELIVERED-RAMP-REAL-DRIVER-01` — what actually drives 98.6% of the firings is unknown
+
+**Filed 2026-09-25, separated from the message fix above. For the Coaching Board once
+measured.**
+
+`INV-PLAN-DELIVERED-RAMP` is **27.2% plan-wide and 42.2% of half-marathons** — the largest
+unexplained warn in the product. Of its non-long-run-led firings, **276 of 280 (98.6%)** have
+no V1 trim on the preceding week, so the cause is genuinely open. The old message asserted
+§100 and that is why nobody ever looked.
+
+**Until it is measured, whether 42.2% of half-marathons is an honest residual or a real
+defect is unknown.** ⚠️ **Do not re-derive the §100 answer** — it is falsified above.
+⚠️ **And do not assume it is my §94 Am. 2 widening**: measured HM healthy **48.1%** vs HM
+injured **45.7%**, so the rate pre-existed.
 
 ### 🏃 `DELOAD-LR-GROWS-01` — the "recovery" week is 27% bigger, and 100% of it is the long run
 

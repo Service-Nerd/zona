@@ -3875,9 +3875,39 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         const lrRiseKm = longKmOf(w) - longKmOf(prev)
         const longRunLed = totalAbsRiseKm > 0
           && (lrRiseKm / totalAbsRiseKm) * 100 > GENERATION_CONFIG.DELIVERED_RAMP_LR_ATTRIBUTION_PCT
+        // DELIVERED-RAMP-FALSE-DRIVER-01 (2026-09-25) — THE SECOND BRANCH WAS A
+        // FIXED STRING AND IT WAS FALSE 98.6% OF THE TIME.
+        //
+        // It read: "Typically a volume/quality-split trim held the previous week
+        // flat and handed its deficit forward (§100)." The trim stamps itself as
+        // `V1-volume-quality-split` in `meta.rule_adjustments`, so the claim was
+        // always checkable. Checked over 280 non-long-run-led firings: the
+        // previous week carried that stamp in **4 (1.4%)**, and carried nothing
+        // in **276 (98.6%)**.
+        //
+        // The cost was not cosmetic. It sent every triage to §100 — whose
+        // producer shipped 2026-09-11 (`ruleEngine.ts:5163`) and did not fire on
+        // those weeks — and it meant the real driver of the largest unexplained
+        // warn in the product had never been looked for, because the message
+        // said it already knew.
+        //
+        // ⚠️ §94 AMENDMENT 1 REQUIRED THIS. Attribution was McMillan's and
+        // Seiler's condition of approval, so "a code that reports a quality-trim
+        // spike and an aerobic long-run spike identically gets read as one
+        // thing" could not happen. The long-run arm was computed; this one was
+        // not. Half a condition is not a met condition.
+        //
+        // Three branches now, and the third says what is TRUE rather than what
+        // is likely: the rise is not long-run-led and no trim preceded it, so
+        // the driver is not attributed. Naming the open item gives triage
+        // somewhere to go instead of a dead end.
+        const prevWasTrimmed = (plan.meta.rule_adjustments ?? []).some(a =>
+          a.rule === 'V1-volume-quality-split' && (a.weeks_affected ?? []).includes(prev.n))
         const driver = longRunLed
           ? `The LONG RUN is driving it (${longKmOf(prev).toFixed(0)}→${longKmOf(w).toFixed(0)}km, +${lrRiseKm.toFixed(0)}km of the +${totalAbsRiseKm.toFixed(0)}km) — legal under §45, which permits +20% or +5km whichever is greater. The engine may not deform a race-anchored long run, so treat this as a week to take the easy days genuinely easy.`
-          : `Typically a volume/quality-split trim held the previous week flat and handed its deficit forward (§100).`
+          : prevWasTrimmed
+            ? `A volume/quality-split trim held week ${prev.n} flat and handed its deficit forward (§100) — confirmed against meta.rule_adjustments, not assumed.`
+            : `Driver NOT ATTRIBUTED: the rise is not long-run-led (${lrRiseKm.toFixed(0)}km of +${totalAbsRiseKm.toFixed(0)}km) and week ${prev.n} carries no V1 volume/quality-split trim. This is the majority case (98.6% when measured) and its cause is open — see DELIVERED-RAMP-FALSE-DRIVER-01. Do not read it as a §100 deficit hand-forward; that producer shipped 2026-09-11 and did not fire here.`
         if (breaches) {
           violations.push({
             code: 'INV-PLAN-DELIVERED-RAMP',
