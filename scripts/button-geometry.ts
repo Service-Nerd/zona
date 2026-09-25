@@ -35,6 +35,17 @@ export interface Box {
   radius: string | null
   /** Computed height: floor if it binds, else padY*2 + line-box. */
   height: number | null
+  /**
+   * 🔴 WIDTH, ADDED AFTER THE FOUNDER FOUND THE BUG THIS FILE MISSED.
+   * The Apple Health chip read "huge" mostly because the conversion gave it
+   * `fullWidth` — which it never had — and it stretched a `space-between` row.
+   * This harness measured height, padding, font and radius and **never width**,
+   * so the single most visible geometry change in the batch was outside it.
+   * The falsification that supposedly proved it caught `fullWidth` went red for
+   * an unrelated reason (removed size classes), and I read that as coverage.
+   * `'full'` = stretches, `'auto'` = intrinsic, or an explicit px.
+   */
+  width: string | null
 }
 
 const ROOT = process.cwd()
@@ -192,7 +203,11 @@ export function boxOf(tag: string, floors: Record<string, number>, padFromClass:
   // The TARGET is what `:262` governs. An overlay can exceed the painted box.
   const height = painted === null ? (overlay || null) : Math.max(painted, overlay)
 
-  return { floor, padY, font, radius, height }
+  const explicitW = tag.match(/width:\s*'([^']+)'/)?.[1] ?? null
+  const width = /\bfullWidth\b/.test(tag) || cls.split(/\s+/).includes('btn--full')
+    ? 'full' : explicitW ?? 'auto'
+
+  return { floor, padY, font, radius, height, width }
 }
 
 export function measureAll(): Record<string, Box> {
