@@ -270,6 +270,72 @@ that is `INJURY-DELIVERED-COVERAGE-01`, still open.
 `['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
 names**. That gap has no harness.
 
+### ⚙️ `DELIVERED-RAMP-FALSE-DRIVER-01` — the invariant names a cause that did not happen, 98.6% of the time
+
+**Investigated 2026-09-25 (last of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
+⚙️ NO BOARD for the message fix — it restores §94 Amendment 1's documented intent. The
+REAL cause of the firings is unknown and may need one.**
+
+`INV-PLAN-DELIVERED-RAMP` fires on **42.2% of half-marathon plans** (27.2% plan-wide).
+
+#### It is not mine, and it is not the long run
+
+**My §94 Am. 2 widening this morning did not cause it** — measured HM healthy **48.1%** vs
+HM injured **45.7%**, essentially identical. The rate pre-existed for healthy runners and
+injured runners joined at the same level.
+
+**And it is not the untrimmable case.** §94 Am. 1 made driver attribution a condition of
+approval (McMillan, Seiler) so *"a code that reports a quality-trim spike and an aerobic
+long-run spike identically"* could not happen. Using the check's own attribution:
+
+| driver | all plans | half-marathons |
+|---|---|---|
+| long-run-led — the engine has no lever | 25.0% | 33.7% |
+| **everything else** | **75.0%** | **66.3%** |
+
+Hutchinson's test at the §90 sitting was whether these are *"dominated by long-run-led rises
+the engine cannot trim, which would make them unactionable noise."* **They are not.**
+
+#### 🔴 But the other 75% are attributed by ASSERTION, and the assertion is false
+
+Only the long-run arm is **computed** (`lrRiseKm / totalAbsRiseKm` against
+`DELIVERED_RAMP_LR_ATTRIBUTION_PCT`). The other branch is a fixed string:
+
+> *"Typically a volume/quality-split trim held the previous week flat and handed its deficit
+> forward (§100)."*
+
+The trim stamps itself as `V1-volume-quality-split` in `meta.rule_adjustments` with
+`weeks_affected`, so the claim is checkable. Checked, on 280 non-long-run-led firings:
+
+| | |
+|---|---|
+| previous week **was** V1-trimmed — message TRUE | **4 (1.4%)** |
+| previous week re-anchored by §100's producer | 0 (0.0%) |
+| previous week had **NEITHER** — message unsupported | **276 (98.6%)** |
+
+⚠️ **The 4 true cases matter methodologically** — they prove the lookup works and the 98.6%
+is not a broken probe returning zero.
+
+#### What this costs
+
+1. **Triage is sent to the wrong place.** Anyone investigating is pointed at §100, whose
+   producer shipped 2026-09-11 (`ruleEngine.ts:5163`) and which did not fire on these weeks.
+2. **The real cause of 98.6% of firings has never been established**, because the message
+   said it already knew. This is the largest unexplained warn in the product.
+3. **§94 Am. 1's condition of approval is only half-met** — attribution was required so the
+   two cases would not read as one thing, and the non-long-run case is not attributed at all.
+
+#### Fix
+
+**Small and low-risk:** stop asserting an uncomputed cause. Either compute it from
+`rule_adjustments` (the stamp exists) or say plainly that the driver is not the long run and
+is not yet attributed. ✅ **Checked: no test matches this prose**, so the
+`never-match-a-refusal-by-its-message` trap does not apply here.
+
+⚠️ **The bigger question is separate and NOT answered:** what actually drives the 276? Until
+that is measured, whether 42.2% of half-marathons is an honest residual or a real defect is
+**unknown** — and the current message has been preventing anyone from asking.
+
 ### 🏃 `DELOAD-LR-GROWS-01` — the "recovery" week is 27% bigger, and 100% of it is the long run
 
 **Investigated 2026-09-25 (third of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
