@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — INJURY-GUARD-PREDICATE-01 · the comment said the two predicates matched, and it had been false for nine days
+
+**Shipped:** one leaf module owning §12's volume-cap scope, three restatements deleted, and a guard that fails the build if a fourth is written.
+**Dev learning:** I went in to fix one broken predicate and found three. All three were in the same file, all three restated the same rule, and **they disagreed with each other** — one tested `'shin_splints'` and missed the wizard's `'Shin splints'`, the other two tested `'shin'` and matched it by accident. Every one carried a comment giving the same justification: *"the checker cannot import the producer (circular)."* That is true of `ruleEngine.ts` and irrelevant, because a leaf module both sides import has no cycle. **Three people wrote down the reason a copy was unavoidable and none of them wrote down the alternative.**
+**Product/creator learning:** the reach number is the whole story. `INV-PLAN-BOUNCEBACK-BOUNDED` goes 8.7% → 17.5% and `INV-PLAN-INJURY-CAP-DELIVERED` 4.1% → 8.2% on a 14,230-plan sweep. Both exactly double, which is what you would predict when two of the seven injury values in the corpus are volume-capped and one of them was invisible. **1,843 plan-instances where a load guard for injured runners was silent.** Nothing about what the engine prescribes changed — `verify:parity` came back byte-identical over 5,994 cases. Only the checking changed, and the checking was half-off.
+**AI-building learning:** I nearly published a false measurement. My first before/after used `git stash push -- <paths>`, which silently did nothing because one of the files was untracked, so both runs were the fixed code and both printed 17.5%. The numbers looked plausible and stable, which is exactly what makes that failure dangerous — the only tell was `No stash entries found` in the middle of the output. **A comparison where both arms are the same arm produces a beautifully consistent result.** Redid it by reverting the single behavioural line.
+**The honest bit:** `verify:parity` returned IDENTICAL, and it could not have done otherwise — its grid uses `['knee']` and `['shin']`, neither of which the wizard can emit. The harness that exists to prove generation is unchanged is structurally blind to the exact value this defect lived in. `property-validate-plans.ts` had already been corrected for this; parity had not, and nobody noticed because a green parity run reads the same either way. Filed rather than folded in — it grows the grid by a third.
+**Also worth keeping:** `invariant:liveness` could never have caught this. Both invariants are *proven wakeable* — via `knee`. **Liveness proves a rule can fire. It does not prove it fires for the cohort it names, and we have no harness that asks that question.**
+**Hook material:** three copies of one rule, in one file, each with a comment explaining why the copy was necessary, and one of them had been quietly wrong for nine days.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — ops digest triage · three premises dissolved, and the real defect was under the one I was told not to fix
 
 **Shipped:** nothing. Four items investigated, five filed, one board brief ready for sign-off.
