@@ -46,8 +46,7 @@
  * Does this injury history include `keyword`?
  *
  * ⚠️ FIXED IN THE ENGINE 2026-09-16 — THREE OF THE SIX WIZARD VALUES NEVER
- * MATCHED, and the coaching rules behind them had therefore never fired for a
- * real runner. `GeneratePlanScreen` offers: Achilles · Knee · Back · Hip · Shin
+ * MATCHED. `GeneratePlanScreen` offers: Achilles · Knee · Back · Hip · Shin
  * splints · Plantar fasciitis. The keywords here are snake_case, and the old
  * body was a raw `i.toLowerCase().includes(keyword)`, so:
  *
@@ -56,6 +55,42 @@
  *   'Shin splints'       'shin_splints'        NO  — space vs underscore
  *   'Plantar fasciitis'  'plantar_fasciitis'   NO  — space vs underscore
  *   'Hip'                'hip_flexor'          NO  — different word
+ *
+ * ── WHAT THAT ACTUALLY COST, corrected 2026-09-25 (RULEENGINE-HIP-COMMENT-01) ─
+ *
+ * 🔴 THE ORIGINAL VERSION OF THIS NOTE LISTED THREE CASUALTIES AND ONE OF THEM
+ * WAS ALREADY WRONG WHEN IT SHIPPED. It read: "what silently did not apply:
+ * §12's injury volume cap for shin splints ..., **the no-quality-in-base rule
+ * for hip**, and the 120-minute long-run cap for plantar fasciitis."
+ *
+ *   · shin splints -> TRUE, and the most expensive of the three. §12's volume
+ *     cap, §90's delivered levers and §2's bounceback bounding all missed them.
+ *     (The VALIDATOR kept missing them for another nine days — that half was
+ *     only closed by INJURY-GUARD-PREDICATE-01, which is why this file exists.)
+ *   · plantar fasciitis -> TRUE. `ruleEngine.ts` caps their long run at 120
+ *     minutes, verified: a plantar/back marathon plan's longest session is 126
+ *     minutes against 207 for the same runner with no injury history.
+ *   · hip -> **FALSE, and misleading in two directions at once.**
+ *
+ * The hip rule was `if (hasInjury(input, 'hip_flexor') && phase === 'base')
+ * quality = false`, on an `allowQuality` the single call site never
+ * destructured. So the matcher was not what stopped it — **it could not have
+ * fired even spelled correctly.** `CB-HSR-AVOID-01` (895a668) deleted it hours
+ * after this note was written, and this note was not updated.
+ *
+ * ⚠️ MEASURED BEFORE BELIEVING THE DELETION'S OWN REASONING, because a premise
+ * in a commit message is not evidence. Across **45,776 generated plans** a base
+ * week carries **ZERO** `type: 'quality'` sessions. The 28,084 `type: 'hard'`
+ * sessions that DO appear there are **100% the 5K time trial** — §-sanctioned
+ * deload-week recalibration, not prescribed quality. So "no quality in base"
+ * genuinely could never subtract anything, and the rule is correctly gone.
+ * `baseIsAllEasy.test.ts` holds that premise shut; if it ever goes red, this
+ * deletion is worth re-opening as a Coaching Board question.
+ *
+ * ⚠️ DO NOT "RESTORE" THE SIBLING ACHILLES RULE either. §110 struck it down
+ * against §21, which prescribes SUBSTITUTION ("progression runs or flat tempo at
+ * equivalent intensity"), not removal. Wiring it back re-imposes exactly what
+ * the board removed.
  *
  * Separator-insensitive, and bidirectional so the wizard's shorter label matches
  * the more specific keyword ('Hip' -> 'hip_flexor'). The reverse direction needs

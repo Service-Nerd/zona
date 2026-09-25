@@ -320,21 +320,73 @@ second copy of that extraction is the exact fault this item is about. `verify-pa
 remembered. Falsified both ways: restoring `['knee'], ['shin']` names both offenders;
 dropping one injury names `Plantar fasciitis`.
 
-### ⚙️ `RULEENGINE-HIP-COMMENT-01` — a comment names a rule with no call site
+### ✅ `RULEENGINE-HIP-COMMENT-01` — **SHIPPED 2026-09-25.** Stale comment; no rule is missing.
 
-**Filed 2026-09-25 during `PARITY-GRID-PRODUCT-VALUES-01`. Not investigated.**
+**RCA (`/zona-debug`): two commits, one day.** `49a191a` (INJURY-MATCH-01, 2026-09-16)
+wrote the comment listing what the broken matcher skipped, including *"the
+no-quality-in-base rule for hip"* — **true when written**; the rule existed, added by
+`ca225cb`. Hours later `895a668` (CB-HSR-AVOID-01) **deliberately deleted it** and did not
+update the earlier comment. Class: **claim/computation mismatch, in prose.** The deleting
+commit warned *"Left in place it is a trap"* about the code; the comment was the same trap
+in English.
 
-`lib/plan/ruleEngine.ts:2323` lists what silently did not apply before the 2026-09-16
-matcher fix: *"…the **no-quality-in-base rule for hip**, and the 120-minute long-run cap
-for plantar fasciitis."* The plantar cap is real and verified (`ruleEngine.ts:2402`). **No
-`hasInjury(input, 'hip_flexor')` call site exists** — grepped; the only occurrences of
-`hip_flexor` in `lib/plan/` are that comment and the matcher's own doc block.
+**No rule is missing, and the deletion was right on all three of its stated grounds** — the
+call site only ever destructured `{ adjustedKm }` so it had never fired; the sibling
+Achilles rule had just been struck down by §110 against §21 (substitution, not removal);
+and hip's was unreachable because base carries no quality.
 
-Either the rule moved, or it was removed and the comment was not, or it never existed.
-⚠️ **Deliberately not guessed at.** §25's `race_pace_pct` was deleted on exactly this
-reasoning — *"read by nothing, therefore junk"* — while the principle ratifying it sat one
-section away. **"No call site" is evidence a consumer is missing, not that the rule is.**
-`['Hip']` is now swept by the parity grid either way, so a future change to it is visible.
+🔴 **I MEASURED THE THIRD GROUND RATHER THAN BELIEVING IT, AND MY FIRST MEASUREMENT WAS
+WRONG.** Counting `type === 'quality' || type === 'hard'` reported **47.04% of plans
+(21,532/45,776)** carrying quality in a base week — flatly contradicting §1's *"base phase
+is deliberately all-easy (§4/§5)"* and looking like a large live breach. Split by type:
+
+| in a base week, 45,776 plans | count |
+|---|---|
+| `type === 'quality'` | **0** |
+| `type === 'hard'` | 28,084 — **100% the 5K time trial** |
+
+The time trial is the §-sanctioned deload-week recalibration benchmark, not prescribed
+quality. **`hard` is not `quality`, and conflating them manufactures a defect that does not
+exist.** Had I not split it, a false 47% would have reached a board.
+
+**Shipped:** the corrected history lives in `injuryScope.ts` (the owner) and
+`ruleEngine.ts`'s wrapper points at it instead of carrying a second copy — the same
+duplication that caused this. **Gate:** `baseIsAllEasy.test.ts` holds the premise shut, so
+if base ever does carry quality the deletion becomes a Coaching Board question instead of
+silently mattering. Falsified three ways (time trial un-exempted · a real quality session in
+base · an empty corpus, which must not pass vacuously).
+
+⚠️ **Two process notes, both mine.** `vitest` does not typecheck — the first cut was green
+in the suite and failed `tsc` (TS2352), the exact trap `sendToUser.test.ts` already warns
+about. And the suite's **duration gate** caught it at 17.6 s; sampled by a coprime stride
+to 1,200 inputs (3 s isolated, ~5 s under contention) and baselined with a reason, beside
+`qualityAeroFallback.test.ts`, which is the same shape and dearer.
+
+### ⚙️ `CONTRACT-INJURY-VALUES-01` — the generate-plan contract types values the wizard never sends
+
+**Filed 2026-09-25 during `RULEENGINE-HIP-COMMENT-01`. Not fixed.**
+
+`docs/contracts/api/generate-plan.md:99` declares:
+
+```
+injury_history?: ('achilles' | 'knee' | 'back' | 'shin_splints' | 'hip_flexor' | 'plantar_fasciitis')[]
+```
+
+**`GeneratePlanScreen` sends `Achilles · Knee · Back · Hip · Shin splints · Plantar
+fasciitis`** — capitalised, space-separated, and `Hip` rather than `hip_flexor`. **Three of
+the six documented values can never arrive**, and the three that can are documented in the
+wrong case. The contract describes an API no client calls.
+
+⚠️ **This is the same root as `INJURY-GUARD-PREDICATE-01` and
+`PARITY-GRID-PRODUCT-VALUES-01`: the code's spelling written down as if it were the
+product's.** Third surface. The engine now normalises, so nothing is broken at runtime —
+but a contract is read by whoever writes the next client, and this one would send values
+that match nothing.
+
+Fix: document the wizard's strings, and say the matcher is separator- and case-insensitive
+(`lib/plan/injuryScope.ts`). ⚠️ **Decide whether the contract should also state the
+canonical keyword list** — it is a real question, not a formatting one, and `docs/contracts/`
+carries standing debt (`CONTRACT-COVERAGE-01`) that this should be sequenced against.
 
 ### ⚙️ `OPS-TRIAL-CONV-01` — `v_trial_conversion` counts the founder's admin row as a conversion
 

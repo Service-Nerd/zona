@@ -2305,32 +2305,12 @@ function hasVolumeCappedInjury(input: GeneratorInput): boolean {
 /**
  * Does the runner's injury history include `keyword`?
  *
- * ⚠️ FIXED 2026-09-16 — THREE OF THE SIX WIZARD VALUES NEVER MATCHED, and the
- * coaching rules behind them had therefore never fired for a real runner.
- *
- * `GeneratePlanScreen` offers: Achilles · Knee · Back · Hip · Shin splints ·
- * Plantar fasciitis. The keywords here are snake_case. The old body was a raw
- * `i.toLowerCase().includes(keyword)`, so:
- *
- *   wizard value         keyword               matched?
- *   'Knee' / 'Achilles' / 'Back'               yes
- *   'Shin splints'       'shin_splints'        NO  — space vs underscore
- *   'Plantar fasciitis'  'plantar_fasciitis'   NO  — space vs underscore
- *   'Hip'                'hip_flexor'          NO  — different word
- *
- * What silently did not apply: §12's INJURY VOLUME CAP for shin splints (and
- * with it §90's delivered levers and the §2 bounceback bounding), the
- * no-quality-in-base rule for hip, and the 120-minute long-run cap for plantar
- * fasciitis. Verified against the live engine: a plan for ['Shin splints'] was
- * byte-identical to a plan for [] and differed from ['shin_splints'].
- *
- * WHY NO TEST CAUGHT IT: every fixture used the CODE's spelling. The sweep sets
- * `['shin_splints']`, the parity grid `['shin']` — values the product cannot
- * produce. A green run is only ever safety for the inputs actually swept.
- *
- * Separator-insensitive, and bidirectional so the wizard's shorter label matches
- * the more specific keyword ('Hip' -> 'hip_flexor'). The reverse direction needs
- * >= 3 characters so a stray short value cannot match everything.
+ * ⚠️ THE FULL HISTORY LIVES IN `lib/plan/injuryScope.ts`, the single owner, and
+ * is NOT restated here. A second copy is how the version that used to sit at
+ * this spot went stale: it listed "the no-quality-in-base rule for hip" among
+ * what the pre-2026-09-16 matcher silently skipped, and `CB-HSR-AVOID-01`
+ * deleted that rule hours later without touching the sentence
+ * (RULEENGINE-HIP-COMMENT-01, 2026-09-25). Two writers of one fact, again.
  */
 function hasInjury(input: GeneratorInput, keyword: string): boolean {
   // Body moved to `lib/plan/injuryScope.ts` (INJURY-GUARD-PREDICATE-01) so the
