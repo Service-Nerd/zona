@@ -29,6 +29,21 @@ already decided what it is.
 
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
+### 🧭 `SESSION-ACTION-COLLAPSE-01` — are "Match a run" and "Log manually" one action?
+**Board: 🧭 DESIGN BOARD.** Collins leads. Filed by `SESSION-ACTIONS-01`, not settled by it.
+
+🎪 **Collins, on the record so the next sitting starts from it:** *"'Match a run' and 'Log manually'
+are the same intention — **I did this run** — differing only in whether we can find the data. That's
+a taxonomy problem wearing a layout problem's clothes. One primary: 'I did this'. Matching is the
+happy path inside it; logging manually is the fallback when there's nothing to match."*
+
+🧭 **Zhuo held it out of scope:** a flow redesign, not an ordering fix, and the founder asked about
+ordering. The ordering fix shipped; this did not.
+
+⚠️ **What it needs:** a decision about the FLOW, not the row. If Match and Log collapse, the session
+screen has one primary and a fallback inside it, which is a different screen from the one that
+shipped today.
+
 ### 🧭 `SHEET-CLOSE-OWNER-01` — `Sheet` should own its close, and a principle disagrees with both
 **Board: 🧭 DESIGN BOARD.**
 

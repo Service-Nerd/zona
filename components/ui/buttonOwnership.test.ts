@@ -438,6 +438,72 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
       `same context:\n${offenders.join('\n')}`).toEqual([])
   })
 
+  it('🔴 :240 — no session or phase colour fills a control', () => {
+    // `design-rulings.md` :240, STANDING: "Type accent, not flood. Session
+    // colour as left border, dot or chip; NEVER a full card background."
+    //
+    // 🔴 THIS RULE HAD NO MECHANICAL CHECK AND WAS BREACHED BY THREE PRIMARY
+    // CTAs. The session screen filled "Match a run", "Mark as done" and
+    // "Log without activity" with `config.color` — the session-TYPE colour — so
+    // the control the runner is learning to find was a different colour every
+    // day, depending on whether today was easy, quality or intervals. Silvanto
+    // exercised the veto naming this row (SESSION-ACTIONS-01, 2026-09-25).
+    //
+    // Tokens are read from the stylesheet, never listed here: a ninth session
+    // colour added tomorrow is covered without anyone remembering.
+    const css = fs.readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8')
+    const accents = Array.from(css.matchAll(/^\s*(--(?:s|phase)-[a-z0-9-]+):/gm)).map(m => m[1]!)
+    expect(accents.length, 'no session/phase colour tokens found — the scan is broken').toBeGreaterThan(5)
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      const rel = path.relative(ROOT, f)
+      if (rel.includes('preview')) continue
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      for (const { line, text } of buttonTags(src)) {
+        const bg = text.match(/background(?:Color)?:\s*'?([^,}]+)/)
+        if (!bg) continue
+        const v = bg[1]!
+        // ⚠️ A CONDITIONAL FILL IS A SELECTED STATE, WHICH :240 PERMITS —
+        // "left border, dot or CHIP". The distance/duration toggle paints its
+        // ACTIVE segment with the session colour, and that is a chip, not a
+        // flood. Measured before trusting the rule: without this the gate fires
+        // on a legitimate affordance, and a check that cries wolf gets switched
+        // off (NOISE-GATE-01, recorded twice in this repo).
+        if (/\?/.test(v)) continue
+        if (accents.some(a => v.includes(a))) offenders.push(`${rel}:${line} fills with ${v.trim()}`)
+        // A variable named for the session's colour is the same breach by
+        // another route — `config.color` is how this actually shipped.
+        if (/\bconfig\.colou?r\b|\bsessionColou?r\b|\bz\.colour\b/.test(v)) {
+          offenders.push(`${rel}:${line} fills with ${v.trim()} (a session colour by variable)`)
+        }
+      }
+    }
+    expect(offenders, `:240 "type accent, not flood" — a session colour may be ` +
+      `a rail, dot or chip, never a control's fill:\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  it('🔴 a FILLED control is on the shared system, whatever colour it is', () => {
+    // 🔴 THE PROCESS GAP THE FOUNDER ASKED TO CLOSE. Every arm above keyed on
+    // `--moss`, so a CTA painted ANY other colour was invisible to this file —
+    // which is exactly how three `config.color` primaries shipped past it.
+    // A control with a solid fill and a light label is a button, whatever the
+    // fill, and it belongs to the system.
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      const rel = path.relative(ROOT, f)
+      if (rel.includes('preview') || rel.startsWith(path.join('components', 'ui'))) continue
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      for (const { line, text } of buttonTags(src)) {
+        if (/className=[^\n]*\b(btn|icon-btn)\b/.test(text)) continue
+        const filled = /background(?:Color)?:\s*'(var\(--[a-z0-9-]+\)|#[0-9A-Fa-f]{3,8})'/.test(text)
+        const lightLabel = /color:\s*'var\(--(card|card-bg)\)'|color:\s*'#[fF]{3,6}'|color:\s*'white'/.test(text)
+        if (filled && lightLabel) offenders.push(`${rel}:${line}`)
+      }
+    }
+    expect(offenders, `a filled control outside the shared system — it is a ` +
+      `button whatever colour it is:\n${offenders.join('\n')}`).toEqual([])
+  })
+
   it('the email CTA does not use the failing fill', () => {
     // Email cannot use box-shadow (Outlook drops it), so the ruling gives it a
     // 1px --moss-deep border instead. The FILL still owes AA either way.

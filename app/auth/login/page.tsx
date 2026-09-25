@@ -323,7 +323,7 @@ export default function LoginPage() {
 
           {/* Apple — Apple HIG requires equivalent prominence to other
               third-party sign-in. Black surface, white logo + text per HIG. */}
-          <button
+          <button className="btn btn--regular"
             onClick={signInWithApple}
             disabled={loading}
             style={{
@@ -331,10 +331,10 @@ export default function LoginPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
               background: 'var(--ink)',
               color: 'var(--card)',
-              border: 'none',
+              
               borderRadius: '10px',
               padding: '13px 16px',
-              fontFamily: 'var(--font-ui)',
+              
               fontSize: '14px', fontWeight: 500,
               cursor: loading ? 'default' : 'pointer',
               opacity: loading ? 0.5 : 1,

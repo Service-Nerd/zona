@@ -3312,6 +3312,27 @@ have turned 44 grey controls green and reversed that ruling while looking like a
 but `quiet` shipped first with 14 consumers and renaming call sites to fix a word is churn with no
 user impact. **The distinction that matters is ACCENT vs DE-EMPHASISED.**
 
+🔴 **ACTION-ROW GRAMMAR** *(Design Board, `SESSION-ACTIONS-01`, 2026-09-25)*.
+**Secondary on the LEFT, primary on the RIGHT, one size class per row, ratio 2:1.** Every row, no
+exceptions. A row that wants three equal buttons is telling you one of them belongs elsewhere.
+
+📐 **Why:** one screen carried four action rows with **four different grammars** — ratios 1:1:1, 2:1,
+1:2, 1:2; primary on the left in two rows and the right in the other two; `compact` sitting beside
+`regular` at 44px against 47px; and one row whose main action was `secondary`, so it had **no primary
+at all**. Wroblewski: *"a runner builds a motor habit for where the confirm button is and we break it
+within one screen."*
+
+🔴 **AND A SESSION COLOUR MAY NEVER FILL A CONTROL** — `design-rulings` `:240`, *"type accent, not
+flood… never a full card background"*. Three primary CTAs were filled with `config.color`, the
+session-TYPE colour, so **the control the runner is learning to find was a different colour every
+day** depending on whether today was easy, quality or intervals. Silvanto exercised the veto naming
+that row. The session colour stays on the rail; `--moss-strong` is the CTA.
+
+⚠️ **A CONDITIONAL fill is a selected state and `:240` permits it** — *"left border, dot or chip"*. A
+segmented toggle painting its active segment with the session colour is a chip, not a flood, and the
+check excludes it. Measured before the rule was trusted, because a check that cries wolf gets
+switched off.
+
 🔴 **WHICH VARIANT: A POSITIONAL RULE** *(Design Board, `GHOST-AFFORDANCE-01`, 2026-09-25)*.
 **A button that is one of the primary actions on its screen takes a SURFACE** (`secondary` where it
 is not the single CTA). **`ghost` is reserved for a control inside a sentence or a dense row** —

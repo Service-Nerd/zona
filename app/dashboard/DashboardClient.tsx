@@ -5293,14 +5293,19 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                   }
                   return (
                     <>
-                      <button onClick={handleMarkComplete} style={{ flex: 1, minWidth: '120px', background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600 }}>
-                        Match a run
-                      </button>
+                      {/* SESSION-ACTIONS-01 — one grammar: secondary LEFT,
+                          primary RIGHT, one size class, 2:1. `Skip` left the
+                          primary row: it is not a peer of "I did this"
+                          (Collins), and three equal-width buttons told the
+                          runner three outcomes were equally likely (Zhuo). */}
                       <button className="btn btn--secondary btn--regular" onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px' }}>
                         Log manually
                       </button>
+                      <button className="btn btn--primary btn--regular" onClick={handleMarkComplete} style={{ flex: 2, minWidth: '120px', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', borderRadius: '10px' }}>
+                        Match a run
+                      </button>
                       <div style={{ display: 'flex', gap: 'var(--space-2)', width: '100%' }}>
-                        <button className="btn btn--secondary btn--compact" onClick={() => setView('skip')} style={{ flex: 1 }}>
+                        <button className="btn btn--ghost btn--regular" onClick={() => setView('skip')} style={{ flex: 1 }}>
                           Skip
                         </button>
                       </div>
@@ -5315,11 +5320,11 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                           stub the engine couldn't distinguish from a real
                           session. Routes to reflect now; RPE chip-tap creates
                           the row with metadata via saveReflect. */}
-                      <button onClick={() => setView('reflect')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
-                        Mark as done
-                      </button>
-                      <button className="btn btn--secondary btn--compact" onClick={() => setView('skip')} style={{ flex: 1 }}>
+                      <button className="btn btn--ghost btn--regular" onClick={() => setView('skip')} style={{ flex: 1 }}>
                         Skip
+                      </button>
+                      <button className="btn btn--primary btn--regular" onClick={() => setView('reflect')} disabled={saving} style={{ flex: 2, fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', borderRadius: '10px' }}>
+                        Mark as done
                       </button>
                     </div>
                   )
@@ -5373,7 +5378,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: 'var(--space-2)' }}>No activities found near this session date</div>
           )}
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <button className="btn btn--secondary btn--compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
+            <button className="btn btn--secondary btn--regular" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
             {/* RESHAPE-FIX-WAVE2B (Defect 10): the 2026-06-26 incident's
                 phantom completion came from this exact button — tapped
                 with no activity selected, it wrote a bare stub the engine
@@ -5385,7 +5390,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             <button
               onClick={() => selectedActivity ? saveCompletion('complete', selectedActivity) : setView('reflect')}
               disabled={saving}
-              style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}
+              className="btn btn--primary btn--regular"
+              style={{ flex: 2, borderRadius: '10px', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase' }}
             >
               {saving ? 'Saving...' : (selectedActivity ? 'Confirm complete' : 'Log without activity')}
             </button>
@@ -5419,8 +5425,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             Skip it. It'll stay in your log.
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <button className="btn btn--secondary btn--compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
-            <button className="btn btn--secondary btn--regular" onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2 }}>
+            <button className="btn btn--secondary btn--regular" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
+            <button className="btn btn--primary btn--regular" onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2 }}>
               {saving ? 'Saving...' : 'Mark as skipped'}
             </button>
           </div>

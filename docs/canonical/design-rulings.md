@@ -1639,3 +1639,50 @@ independent grids.**
 ⚠️ **What this does not settle:** which of the remaining 55 ghosts are genuinely incidental. The rule
 is positional and applying it needs a judgement per control that nobody has made on a device.
 
+## 2026-09-25 — SESSION-ACTIONS-01 · SHIP WITH AMENDMENT (5), ⛔ VETO SUSTAINED
+
+**Trigger:** founder — *"when a session is open the button is match run, log manually and skip run…
+I want the design board's view on the experience here in terms of button ordering."*
+
+📐 **Measured: nine buttons, four rows, ONE screen.** Ratios **1:1:1 / 2:1 / 1:2 / 1:2**. Primary on
+the LEFT in two rows and the RIGHT in the other two. `compact` beside `regular` in the same row
+(44px against 47px). **One row had no primary at all** — its main action was `secondary`. And **3 of
+the 9 were not on the system: all three primaries**, each filled `config.color`.
+
+⛔ **VETO SUSTAINED — Silvanto, naming `:240`** (*"Type accent, not flood. Session colour as left
+border, dot or chip; never a full card background"*): *"a 47px filled button is a flood. And it does
+something worse than break a rule — the session colour MEANS the kind of session, so the control the
+runner is learning to find looks different every day."* Collins did not challenge it.
+
+🎓 **Sierra:** *"'Skip' beside 'Log manually' at equal weight quietly suggests skipping is a normal
+outcome. We are the app whose whole thesis is that people train too hard — that is not neutral, it is
+a nudge, and it was inherited from a flex value."*
+
+⚡ **Collins vs Zhuo, recorded not merged.** Collins: *"'Match a run' and 'Log manually' are the same
+intention — I did this run — differing only in whether we can find the data."* Zhuo: that is a flow
+redesign, not an ordering fix. **Filed as `SESSION-ACTION-COLLAPSE-01` with Collins' reasoning on the
+record so the next sitting starts from it.**
+
+**Ruling:** primaries become `--moss-strong` · secondary LEFT, primary RIGHT · one size class per row
+· one ratio 2:1 · Skip leaves the primary row to `ghost`.
+
+✅ **BUILT.** All four rows now read `secondary/ghost (flex 1) → primary (flex 2)`, all `regular`, no
+session-colour fills, one primary each.
+
+🔴 **AND THE PROCESS GAP IS THE REAL DELIVERABLE** (founder: *"prevented from happening in the future
+by our process"*). **`:240` had no mechanical check at all**, and `buttonOwnership.test.ts` keyed
+every arm on `--moss` — **so a CTA painted any other colour was invisible to it**, which is exactly
+how three `config.color` primaries shipped past it. Two new gates: *no session or phase colour fills
+a control* (tokens read from the stylesheet, so a ninth is covered without anyone remembering) and
+*a FILLED control is on the shared system, whatever colour it is*.
+
+**They found two more on their first run.** One was a false positive I narrowed — a selected-state
+toggle, which `:240` permits as a chip. The other was real: **Sign in with Apple**, black per Apple's
+HIG, filled and off the system; now on it with the HIG fill kept inline, exactly as Strava's is.
+
+**Artifacts:** pattern → § action-row grammar · constant → none new · checks → 2 arms, **falsified 3
+ways including one that must NOT fire**.
+
+⚠️ **What this does not settle:** whether Match and Log should be one action, and whether demoting
+Skip changes behaviour — that is Wood's at the SLT if it does, and neither has been seen on a device.
+
