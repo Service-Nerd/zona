@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — GHOST-AFFORDANCE-01 · 56% of the buttons had no surface
+
+**Shipped:** Primary actions get a surface, one label gets one treatment, and three layout defects from a device review.
+
+**Dev learning:** The founder said "Log manually does not look like a button". I counted: **74 of 131 controls — 56% — had no surface at all.** `ghost` had become the default variant not because anyone chose it but because it was the safest thing to convert a bare-looking button into. Collins' phrase for it is the one I'll keep: *absence dressed as restraint*. The rule that came out is positional — a primary action on its screen gets a surface, a control inside a sentence doesn't — because position is inspectable and importance isn't.
+
+**Product/creator learning:** He reported "sign out button is misaligned". It was **eleven** controls. My conversion dropped each call site's `justifyContent` as "owned by `.btn`" — but `.btn` sets `justify-content: center` and these are row-shaped, so their labels silently centred. "Sign out" ended up centred directly above a left-aligned "Delete account" in the same card, which is how he spotted it. The class was right and my sweep was wrong: the rule is that a control declaring its own alignment keeps it.
+
+**AI-building learning:** The board gave me a success condition — surfaceless below 50% — and I hit 51%. Reaching it would have meant sweeping ghosts the same ruling told me not to sweep. The two halves conflict, and the honest output is the number plus the conflict, not a sweep that technically satisfies a threshold. Same shape as the one-label-one-treatment rule, which is unmeetable alongside the positional rule as literally phrased, so the gate compares within a context and says so in its own comment.
+
+**The honest bit:** The zones on Me were "all over the place" and the cause was three characters: `auto` in `gridTemplateColumns: '32px 1fr auto'`. Each row is its own grid, so every row sized its HR column to its own content and the numbers started at a different x on every line. I'd assumed `tabular-nums` was doing the aligning — it aligns digits *within* a cell and can do nothing across independent grids.
+
+**Hook material:** More than half the buttons in my app had no surface at all. Not a design decision — the accumulated residue of always picking the safest conversion. The founder needed one sentence to spot what a variant census took to quantify: "Log manually does not look like a button."
+
+**Postable?:** yes
+
 ## 2026-09-25 — BUTTON-GEOMETRY-01 · the founder looked at the app and found what four gates missed
 
 **Shipped:** A size class is now a floor rather than a box, the controls I resized are back, and a geometry harness gates every future conversion.
