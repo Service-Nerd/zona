@@ -1856,6 +1856,70 @@ never specified sticky. **Reverting the mechanism does not reverse the ruling.**
 (3.68:1, below AA) to `--moss-strong`, and the moss-label gate now reads the **stylesheet** as
 well as inline styles — the fifth population failure of the day, and the first inside CSS.
 
+
+### TODAY-V2 · NAV-COLLAPSE-01 · NAV-FLOAT-01 — the Miles reference sitting (2026-09-25)
+
+The founder sent two competitor screenshots (Miles): *"I like how this works re nav bar… it moves
+the start run to below. I'm not saying we keep that but it's a good idea. I'm looking for my design
+board to be UX experts here and take the lead."*
+
+#### 📐 What the measurements said, including the one that inverts the obvious reading
+
+All captures 375×815pt, same device.
+
+| | |
+|---|---|
+| **Zonna says what today is at 79pt. Miles at 298pt** | **Zonna is 3.8× faster to the answer.** The hero IS the answer |
+| First white card: Miles 298pt (37% down), Zonna 607pt (74%) | ⚠️ **Confounded** — Zonna's card is confirmation, not revelation |
+| Miles's bars sample **rgb(255,255,255)** | **Opaque, not translucent.** *"A bit opaque"* is the founder's idea, not a thing he saw |
+| Miles's docked CTA is **"Start run"** | A **global** action — it **validates** TODAY-CTA-CLEARANCE-01's revert, it does not contradict it |
+| 🔴 **5 of 6 cards on the Miles screen are empty, zero or unconnected states** | *"No workout scheduled" · "0/3" · "Connect Apple Health" · "Needs more data" · "No runs in the last 7 days"* |
+
+🔴 **The screen he is admiring is empty.** It looks calm because it has nothing to say; ours carries a
+session, a coach note, a zone target and ten runs of history. **Put our content in their layout and it
+is as dense as ours.** Collins, on his own record for getting a competitor comparison wrong before:
+*"the layout is not what he is admiring — the behaviour is."*
+
+#### ⚖️ Rulings
+
+| # | | |
+|---|---|---|
+| 1 | **NAV-COLLAPSE-01** — nav collapses on scroll, expands on scroll-stop | 🟡 **SHIP ruling AMENDED BY MEASUREMENT — see below. Mock-up built, not shipped** |
+| 2 | **NAV-FLOAT-01** — the pill | 🟡 **SHIP stands on brand grounds, but it COSTS 14px. Founder to decide knowing that** |
+| 3 | **TODAY-V2** — the whole screen | 🔴 **INSUFFICIENT EVIDENCE. Needs its own sitting** |
+
+🔴 **THE CHAIR'S OWN RULING WAS WRONG AND THE MOCK-UP CAUGHT IT.** Ruling 1 was issued with the
+rationale *"it gives back ~45pt of screen exactly when the runner is scrolling toward the action."*
+**Measured in the prototype: the collapse changes WIDTH (343 → 76px), not HEIGHT (74px in both
+states).** It buys visual mass and content either side of it. **It buys no vertical clearance, so it
+is not the CTA fix the ruling claimed it was.** The ruling stands on the *feel* argument Silvanto
+made — chrome that knows whether you are orienting or committed — and **loses its clearance
+justification entirely.**
+
+🔴 **AND THE PILL COSTS 14px.** Bar **60px**; pill **74px**, because it floats 12px off the edge plus
+borders. On device: 94 vs 108. **The shape the founder likes makes the complaint he opened with
+measurably worse.** To break even, a floating pill's own height must be ~48px — which still clears
+the 44px target. **Not a reason to refuse it; a reason he decides holding the number.**
+
+#### TODAY-V2 preconditions (before any sitting)
+
+1. **Build and measure the worst-case Today** — hero + coach note + pending adjustment + session +
+   zone bar + CTA at 375×815. Zhuo's success condition: *what to run, and the way to log it, without
+   scrolling.* **22 conditional blocks can render on that screen and there is no priority order.**
+2. Every block between hero and action answers Sierra's test: *does the runner need this to run today
+   correctly?* Anything failing belongs on Plan or Coach.
+3. ⛔ **Out of scope before it starts:** the hero does not shrink (Silvanto); the coach note does not
+   become a tip or move below the action (Sierra).
+
+⚡ **Recorded, unresolved.** Silvanto vs Sierra on the hero: *"the one moment that feels like
+something"* against *"it costs 300pt and the runner still has to scroll to act."* Collins vs
+Wroblewski on how far the collapse goes — Collins wants the nav to vanish while reading, Wroblewski:
+*"a destination you cannot see is a destination you cannot reach."* Chair took Wroblewski for v1.
+
+⚠️ **Collins, recorded and uncomfortable:** *"we spent this session on buttons, toggles and 4px of
+nav, and not one of the 40 controls we fixed would have produced the sentence 'I like how this
+works'."*
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1
