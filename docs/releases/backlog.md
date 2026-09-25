@@ -270,6 +270,57 @@ that is `INJURY-DELIVERED-COVERAGE-01`, still open.
 `['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
 names**. That gap has no harness.
 
+### 🏃 `STRIDES-2DAY-SILENT-GAP-01` — the 2-day runner loses their neuromuscular stimulus and is never told
+
+**Investigated 2026-09-25 (the first of the four checks S90-WITHIN-COHORT-RATE-01 flagged).
+NOT a defect, NOT noise. A §34 honesty gap. For the Coaching Board.**
+
+`INV-PLAN-STRIDES-NO-CARRIER` fires on **74.2% of 2-day plans** (9.0% plan-wide, which is
+why it was invisible). Measured on genuine 2-day configurations — exactly five blocked days,
+so exactly two remain — **42.3% of all running weeks have no eligible carrier**, and
+`sat+sun` fires on **27 of 27 plans**.
+
+#### It is structurally unsatisfiable — there is no third case
+
+| shape of the carrier-less week | share | why no carrier |
+|---|---|---|
+| `LR=sun` · only other run `sat:easy` | 38% | the day BEFORE the long run — §28 bars it so the legs are fresh |
+| only other run is `quality` (tue/wed) | 62% | §28 needs an **easy** day; the week contains none |
+
+**100% of firings fall into those two.** A 2-day runner has exactly two runs: the long one
+and one other. If the other is quality there is no easy day; if it is easy and sits before
+the long run it is barred. **The engine could not have scheduled better.** This is Willy's
+own deciding test — *"the share of firings where a better arrangement was available"* — and
+for this cohort the answer is **0%**, mirroring §28 Amendment 3's finding that excluding the
+post-long-run day recovers 0.0%.
+
+⚠️ **So the check is CORRECT and should not be re-scoped.** Its own message already says so:
+*"The engine is correct to decline — the gap is the runner's, not the engine's."*
+
+#### 🔴 The actual finding: nothing tells the runner
+
+Every other structural limit in this engine pairs with an honesty obligation — §23
+maintenance, §34 residual, §40c shortfall, §52's note, ADR-022, and
+`uncovered_runway_note` for the pre-plan gap. **The carrier-less plan has none.** The gap is
+recorded in an ops warn nobody reads, and `plan.meta` carries no declaration.
+
+**For the board:** a 2-day runner training sat+sun receives **essentially no neuromuscular
+stimulus for the whole plan**, by construction, and the plan does not say so. §28 Am. 3's own
+live case (`e49ea589`) got strides on one session in nine weeks. Two questions: is that
+acceptable for this cohort, and if it is, does §34's honesty obligation require the plan to
+declare it as the other structural limits do?
+
+⚠️ **A HYPOTHESIS I HAD AND FALSIFIED, recorded so nobody re-runs it.** `hard_pref_note`
+reads *"the strides on your midweek run keep your legs quick"*, which looked like copy
+asserting something a 2-day plan cannot contain. **Measured: 162 of 216 2-day plans carry
+that note and ZERO of them lack strides entirely** — the race-week shakeout supplies one. The
+claim/computation mismatch is not there.
+
+⚠️ **My first measurement of this was wrong too**: two of three blocked-day sets left only
+ONE unblocked day, so 80% of the "carrier-less weeks" were single-run weeks of my own
+making. The table above is the re-run. **`days_available: 2` is not the same input as
+"five days blocked".**
+
 ### ✅ `S90-WITHIN-COHORT-RATE-01` — **RULED AND SHIPPED 2026-09-25.** The gate now measures where a check applies.
 
 **Coaching Board, two questions two answers:** ~56% IS the honest residual for
