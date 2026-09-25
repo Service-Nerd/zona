@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — S90-WITHIN-COHORT-RATE-01 · the gate enforcing "this fires too often" could not see two checks firing too often
+
+**Shipped:** NOISE-GATE-01 now reports each warn invariant's rate inside the cohort it governs, not only across every plan.
+**Dev learning:** the gate computed `n / generated`. Every check that governs one cohort was therefore divided by every plan it could never apply to. The moment the in-cohort report existed it found `INV-PLAN-STRIDES-NO-CARRIER` at **74.2% of two-day plans** and `INV-PLAN-LR-MAX-WEEKLY-PCT` at **72.9%** — both above the 71% figure the standard's author used as his worked example of noise, both reading 9.0% and 5.9% overall, and neither had ever tripped the gate built to catch exactly that.
+**Product/creator learning:** the board refused the obvious fix. "Let each check declare its cohort" needs hand-maintained metadata, and a check whose declared scope is wrong reports a confidently wrong rate — worse than no rate. So the axes are derived from the input and the gate reports the maximum across them: no metadata, nothing to go stale. **The obvious version would have shipped a new register for someone to forget to update, which this repo has a file explaining.**
+**AI-building learning:** and it reports rather than fails, on Seiler's objection, which I think is the most interesting thing in the sitting. A high in-cohort rate might be a *true description of that cohort* — if a check governs marathons and marathons are where the failure lives, a high rate is what marathon plans look like. A gate that forced a re-scope on that reading would delete real signal to protect its own threshold. So the obligation is to explain the number, not to make it go away.
+**The honest bit:** I brought a 925-plan grid to the board and it did not survive the real 14,230-plan sweep. My grid said the worst hidden check was `LARGEST-SESSIONS-SPACED` at 64.5% of marathons; the actual flagged set is entirely different and led by a **two-day-runner** cohort my grid never contained. The ruling holds — the mechanism was the point, not my numbers — but I argued it from figures that were wrong in their specifics. **"Measure on the sweep, not the cohort grid" is written in this repo and I did it anyway.** Also hit the documented `[...Map]` TypeScript trap for the second time today.
+**Left unsettled on purpose:** Willy thinks `LARGEST-SESSIONS-SPACED` is noise because its own message says "likely forced by available days". Seiler and McMillan think it is an accurate description of people who run long at the weekend. Nobody could settle it because the deciding measurement — how often a better arrangement was actually available — does not exist. Recorded as a disagreement rather than resolved into a consensus nobody held.
+**Hook material:** the check that enforces "this fires too often to be useful" could not see two checks firing at 74% and 73%, because it was dividing by every plan they did not apply to.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — INJURY-DELIVERED-COVERAGE-01 · declaring an injury removed a check, and the gate that caught me was one I did not know existed
 
 **Shipped:** §90 Am. 2 / §94 Am. 2 — every injury the wizard offers now has a delivered-volume check.
