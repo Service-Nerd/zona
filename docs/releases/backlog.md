@@ -194,6 +194,153 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 🟢 **ENGINE OPEN LIST, end of 2026-09-19:** ~~`PEAK-VS-DELIVERED-BUILD-01`~~ CLOSED (withdrawn — §23 legislates it, 100% compliance) · ~~`S111` metric anti-correlation~~ CLOSED (§114 took the hazard to 0.00%) · ~~`S52-LOPSIDED-BOUND-01`~~ CLOSED (negative result) · ~~`CAT-DEPTH-01`~~ **CLOSED — shipped 2026-09-19**. *(Device verification is founder-owned, untracked.)*
 
+## ⚖️ FILED 2026-09-25 — ops digest triage (four items, three premises false)
+
+Full investigation: `docs/decisions/ops-2026-09-25-digest-triage.md`.
+Board brief: `docs/decisions/coaching-2026-09-25-injury-delivered-coverage.md`.
+
+### 🏃 `INJURY-DELIVERED-COVERAGE-01` — five of six injuries get NO delivered-volume check
+
+**BOARD BRIEF READY FOR SIGN-OFF. Nothing implemented.**
+
+Two arms, each declining the case for a defensible reason, and the union leaves a hole:
+`INV-PLAN-DELIVERED-RAMP` (§94) is gated `if (healthy)` at `invariants.ts:3732`;
+`INV-PLAN-INJURY-CAP-DELIVERED` (§90/ADR-022) matches only `knee` / `shin_splints` at
+`invariants.ts:3516`. **Neither executes for Achilles, Back, Hip, Shin splints or Plantar
+fasciitis.**
+
+Measured on the current build, identical marathon input, injury value varied:
+
+| `injury_history` | delivered check runs | worst wk-on-wk | warnings fired |
+|---|---|---|---|
+| `[]` | yes (§94) | +23% | **4** |
+| `["Knee"]` | yes (§90) | +26% | 0 |
+| `["Achilles"]` / `["Hip"]` | **NONE** | +23% | 0 |
+| `["Back"]` / `["Plantar fasciitis"]` | **NONE** | **+36%** | 0 |
+| `["Shin splints"]` | **NONE** (and the producer *does* cap them) | +26% | 0 |
+
+🔴 **§94 was written because healthy runners had no delivered check — and its `if (healthy)`
+gate created the mirror hole for the cohort with more reason to be guarded. Declaring an
+injury currently REMOVES a load check that declaring nothing would have given you.**
+
+Three options in the brief (widen §90 · invert §94's gate · reuse the ratified
+`HILL_RESTRICTING_INJURIES` list). ⚠️ **`INJURY-GUARD-PREDICATE-01` must land first** — it
+changes the cost of two of them. ⚠️ **No option changes what the engine prescribes**, only
+what is reported, so `measure:fitness` is not the gate; the gate is how many plans each
+option newly warns on, which is **unmeasured**.
+
+### ⚙️ `INJURY-GUARD-PREDICATE-01` — `'Shin splints'` does not match `'shin_splints'`
+
+**RCA complete, fix NOT applied** (it is entangled with the board decision above; applying
+it in isolation changes which plans warn).
+
+`ruleEngine.ts`'s `hasInjury` was made separator-insensitive on **2026-09-16** precisely
+because three of six wizard values never matched. `bouncebackInjuryCapped` in
+`invariants.ts:3516-3519` was not — and **its own comment still claims the two agree**:
+*"Predicate matches the engine's injury-cap gate exactly."* False since 2026-09-16.
+
+| wizard value | producer caps | checker guards | agree |
+|---|---|---|---|
+| Knee | true | true | yes |
+| **Shin splints** | **true** | **false** | ***NO*** |
+
+**The engine caps a shin-splints runner's volume and the checker meant to verify that cap
+never looks.** Catalogue class: *checker reads a different source from the producer*.
+Fix: call `hasInjury` (or export it) rather than restating the predicate — D-16, no
+parallel semantics. Regression test must use the **product's** value `'Shin splints'`, not
+the code's.
+
+⚠️ `invariant:liveness` cannot catch this: both invariants are **proven wakeable** via
+`['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
+names**. That gap has no harness.
+
+### ⚙️ `OPS-TRIAL-CONV-01` — `v_trial_conversion` counts the founder's admin row as a conversion
+
+Live today: denominator **31**, numerator **1**, and that 1 is `russell.j.shear@gmail.com`
+(`is_admin`, hand-seeded `stripe` row, 2026-04-27, period end 2027-04-27). The view reports
+**3.2%**; the honest figure is **0%**. It also still counts charity-grant users as
+unconverted — the failure GTM-CHARITY-05 **named in its own migration comment** and then
+fixed only in `admin_user_tiers`. Confirmed against production with `pg_get_viewdef`: no
+admin, grant or test filter.
+
+**The 5% trial-to-paid gate is 1 January. At 30 users, one admin row is 3.2 points of a
+5-point threshold.**
+
+🔻 **FOUNDER ACTION — production DDL, run in the Supabase SQL editor:**
+
+```sql
+CREATE OR REPLACE VIEW public.v_trial_conversion AS
+SELECT
+  s.id                       AS user_id,
+  s.trial_started_at,
+  sub.created_at             AS subscribed_at,
+  sub.status                 AS sub_status,
+  (sub.user_id IS NOT NULL)  AS converted,          -- RAW, kept deliberately
+  -- A view that silently changes its own meaning is worse than one that is wrong
+  -- in a way you can see. `converted_real` is the number the 5% gate reads.
+  (sub.user_id IS NOT NULL
+     AND NOT COALESCE(s.is_admin, false))  AS converted_real,
+  COALESCE(s.is_admin, false)              AS is_admin,
+  (g.claimed_by IS NOT NULL)               AS had_charity_grant,
+  (u.email ILIKE '%test%' OR u.email ILIKE '%demo%') AS looks_like_test,
+  CASE WHEN sub.created_at IS NOT NULL AND s.trial_started_at IS NOT NULL
+    THEN round(extract(epoch FROM (sub.created_at - s.trial_started_at)) / 86400.0, 2)
+  END AS days_trial_to_sub
+FROM public.user_settings s
+JOIN auth.users u ON u.id = s.id
+LEFT JOIN public.subscriptions sub ON sub.user_id = s.id
+LEFT JOIN public.charity_codes  g  ON g.claimed_by = s.id
+WHERE s.trial_started_at IS NOT NULL;
+
+REVOKE ALL ON public.v_trial_conversion FROM anon, authenticated;
+```
+
+**After applying**, the baseline query becomes
+`count(*) FILTER (WHERE converted_real) / count(*) FILTER (WHERE NOT is_admin AND NOT had_charity_grant AND NOT looks_like_test)`.
+⚠️ **What each outcome means:** on the CURRENT view `converted_real` does not exist and the
+query errors — that is the "not applied" signal. After applying it returns **0 of 28**. It
+does not return 1; if it does, someone has genuinely subscribed.
+
+Also needs: a `adminViewTierParity`-style test that reads the migration and fails when the
+arms drift from `lib/trial.ts`, and `docs/contracts/api/analytics-events.md` updated in the
+same commit.
+
+### ⚙️ `OPS-AUDIT-FW-COUNT-01` — `foundation_week_violations` counts plan-level violations
+
+`app/api/ops/plan-audit/route.ts`: `errors.filter(v => (v.week ?? 1) <= 0).length`.
+Foundation weeks carry **negative** `n`; `week: 0` is the codebase's *plan-level,
+no-specific-week* convention with **60 emit sites** (`invariants.ts:882` states it).
+
+Measured over the live fleet: the field reports **50**; genuine foundation-week violations
+(`week < 0`) are **1**; the other **49** are plan-level. **98% of what it reports is not a
+foundation week**, and the two plans the digest cited contain **no foundation weeks at all**.
+
+Fix: report `plan_level_violations` (`week === 0`) and `foundation_week_violations`
+(`week < 0`) separately. A field whose name states a cohort and whose arithmetic counts a
+different one misleads every reader — it already has.
+
+⚠️ **No live gap underneath it.** Swept 41,472 grid inputs × 4 pre-plan runways →
+**158,528 composed plans, 79,264 carrying foundation weeks, 0 error violations.** ADR-020's
+server-side composition is working.
+
+### ⚙️ `OPS-AUDIT-CADENCE-DOC-01` — the 07:45 cron actually lands 12:04–14:33
+
+The audit has run **nine consecutive days, exactly once each, no gaps** (summary events
+under `detail.source='plan-audit-summary'`, recorded on every run including clean ones).
+The digest's *"ran once and has not run since"* was true only within one calendar day.
+
+Scheduled `45 7 * * *`; actual landings **12:04–14:33 UTC**, mean lag ≈ 5 h, range
+4 h 19 m – 6 h 48 m. GitHub Actions best-effort scheduling on free runners — not a fault,
+but it is why nobody recognised the run.
+
+**Recommendation: do NOT add a post-deploy run.** One plan has been created since the last
+audit; the audit reads *stored plans*, not the build, so it cannot speak to a build nobody
+exercised. Two cheaper fixes: (1) record the lag in the workflow header; (2) the daily
+digest should compare `plan-audit-summary` against the **previous day** rather than asking
+"did it run today" — a cloud-routine change, not repo code.
+
+---
+
 ## ⚖️ FILED 2026-09-23 SHIPPING `PACE-UNITS-01`
 
 ### ✅ `UNITS-PROSE-01` — **CLOSED 2026-09-23.** All four phases shipped.
