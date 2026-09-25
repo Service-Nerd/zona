@@ -2221,14 +2221,7 @@ export default function DashboardClient() {
 
           <button
             onClick={dismissWelcome}
-            style={{
-              width: '100%', padding: '16px',
-              background: 'var(--accent)', color: 'var(--card)',
-              border: 'none', borderRadius: '14px',
-              fontFamily: 'var(--font-ui)', fontSize: '13px',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer', fontWeight: 500,
-            }}
+            className="btn btn--primary btn--regular btn--full"
           >
             Let's go
           </button>
@@ -3776,16 +3769,9 @@ function MissedSessionSheet({
         {/* Skip reason buttons */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
           {SKIP_REASONS.map(reason => (
-            <button
+            <button className="btn btn--secondary btn--regular"
               key={reason}
-              onClick={() => onSkip(reason)}
-              style={{
-                padding: '12px 10px', borderRadius: 10,
-                border: '0.5px solid var(--line)', background: 'var(--bg-soft)',
-                fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500,
-                color: 'var(--ink)', cursor: 'pointer', textAlign: 'left',
-              }}
-            >
+              onClick={() => onSkip(reason)}>
               {reason}
             </button>
           ))}
@@ -3797,13 +3783,8 @@ function MissedSessionSheet({
           I actually ran it →
         </Button>
 
-        <button
-          onClick={close}
-          style={{
-            width: '100%', padding: '10px 0', background: 'transparent', border: 'none',
-            fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer',
-          }}
-        >
+        <button className="btn btn--ghost btn--compact btn--full"
+          onClick={close}>
           Dismiss
         </button>
       </div>
@@ -3879,15 +3860,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
           </div>
           <button
             onClick={dismiss}
-            style={{
-              width: '100%', padding: '16px',
-              background: 'var(--accent)', color: 'var(--card)',
-              border: 'none', borderRadius: '14px',
-              fontFamily: 'var(--font-ui)', fontSize: '13px',
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              cursor: 'pointer', fontWeight: 500,
-              marginBottom: 'var(--space-4)',
-            }}
+            className="btn btn--primary btn--regular btn--full" style={{ marginBottom: 'var(--space-4)' }}
           >
             Got it
           </button>
@@ -4608,15 +4581,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
 
         {/* Upgrade nudge — free users only, shown after logging a session manually */}
         {!hasPaidAccess && onUpgrade && (
-          <button
-            onClick={onUpgrade}
-            style={{
-              marginTop: 'var(--space-3)', width: '100%',
-              background: 'none', border: 'none', padding: '8px 0',
-              cursor: 'pointer', textAlign: 'center',
-              fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)',
-            }}
-          >
+          <button className="btn btn--ghost btn--compact btn--full"
+            onClick={onUpgrade} style={{ marginTop: 'var(--space-3)' }}>
             Upgrade to unlock zone coaching.{' '}
             <span style={{ color: 'var(--moss)' }}>→</span>
           </button>
@@ -4870,7 +4836,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                 ))}
               </div>
               {isMetricCustom && (
-                <button onClick={() => updateSessionMetric(null)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--warn)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
+                <button onClick={() => updateSessionMetric(null)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--warn-strong)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
                   Reset to global
                 </button>
               )}
@@ -5369,11 +5335,11 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                       <button onClick={handleMarkComplete} style={{ flex: 1, minWidth: '120px', background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600 }}>
                         Match a run
                       </button>
-                      <button onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px', background: 'var(--card-bg)', color: config.color, border: `0.5px solid ${config.color}40`, borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500 }}>
+                      <button className="btn btn--secondary btn--regular" onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px' }}>
                         Log manually
                       </button>
                       <div style={{ display: 'flex', gap: 'var(--space-2)', width: '100%' }}>
-                        <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '11px', fontFamily: 'var(--font-ui)', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                        <button className="btn btn--ghost btn--compact" onClick={() => setView('skip')} style={{ flex: 1 }}>
                           Skip
                         </button>
                       </div>
@@ -5391,7 +5357,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                       <button onClick={() => setView('reflect')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
                         Mark as done
                       </button>
-                      <button onClick={() => setView('skip')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer' }}>
+                      <button className="btn btn--ghost btn--compact" onClick={() => setView('skip')} style={{ flex: 1 }}>
                         Skip
                       </button>
                     </div>
@@ -5446,7 +5412,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: 'var(--space-2)' }}>No activities found near this session date</div>
           )}
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer' }}>Back</button>
+            <button className="btn btn--ghost btn--compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
             {/* RESHAPE-FIX-WAVE2B (Defect 10): the 2026-06-26 incident's
                 phantom completion came from this exact button — tapped
                 with no activity selected, it wrote a bare stub the engine
@@ -5492,8 +5458,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             Skip it. It'll stay in your log.
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <button onClick={() => setView('detail')} style={{ flex: 1, background: 'none', color: 'var(--text-muted)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer' }}>Back</button>
-            <button onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2, background: 'var(--card-bg)', color: 'var(--text-secondary)', border: '1px solid var(--border-col)', borderRadius: '12px', padding: '14px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500, opacity: saving ? 0.6 : 1 }}>
+            <button className="btn btn--ghost btn--compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
+            <button className="btn btn--secondary btn--regular" onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2 }}>
               {saving ? 'Saving...' : 'Mark as skipped'}
             </button>
           </div>
@@ -6566,20 +6532,8 @@ function ReadinessSteadyChip({ detail }: {
   if (lines.length === 0) return null
 
   return (
-    <button
-      onClick={() => setExpanded(v => !v)}
-      style={{
-        width:        '100%',
-        background:   'var(--card)',
-        border:       '1px solid var(--line)',
-        borderRadius: 'var(--radius-md)',
-        padding:      '10px 14px 10px 16px',
-        marginBottom: 'var(--space-2)',
-        cursor:       'pointer',
-        textAlign:    'left',
-        position:     'relative',
-      }}
-    >
+    <button className="btn btn--secondary btn--regular btn--full"
+      onClick={() => setExpanded(v => !v)} style={{ marginBottom: 'var(--space-2)', position:     'relative' }}>
       {/* 3px moss left rail — same coaching-surface rule as elsewhere */}
       <div style={{
         position:     'absolute',
@@ -6818,7 +6772,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
               {error}
             </div>
-            <button onClick={() => void analyse()} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--warn)', background: 'none', color: 'var(--warn)', fontFamily: 'var(--font-ui)', fontSize: '13px', cursor: 'pointer' }}>
+            <button onClick={() => void analyse()} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--warn)', background: 'none', color: 'var(--warn-strong)', fontFamily: 'var(--font-ui)', fontSize: '13px', cursor: 'pointer' }}>
               Try again
             </button>
           </div>
@@ -6828,7 +6782,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
       {(status === 'clean' || status === 'error') && (
         <div style={{ flexShrink: 0, padding: '12px 20px calc(12px + env(safe-area-inset-bottom))', borderTop: '1px solid var(--line)', background: 'var(--bg)' }}>
           {/* S2 — dismiss is never the CTA colour. */}
-          <button onClick={onBack} style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--bg-soft)', border: '1px solid var(--line)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--ink-2)' }}>
+          <button className="btn btn--secondary btn--regular btn--full" onClick={onBack}>
             Back
           </button>
         </div>
@@ -7671,16 +7625,8 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         {showRacePrompt && !pendingReshape && (
           <div style={{ marginBottom: 'var(--space-4)' }}>
             {hasPaidAccess ? (
-              <button
-                onClick={() => onLogRaceResult?.()}
-                style={{
-                  width: '100%', padding: '14px 16px',
-                  background: 'var(--card)',
-                  border: '1.5px solid var(--moss)',
-                  borderRadius: '14px', cursor: 'pointer', textAlign: 'left',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}
-              >
+              <button className="btn btn--secondary btn--regular btn--full"
+                onClick={() => onLogRaceResult?.()}>
                 <div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '3px' }}>
                     Race done
@@ -7762,10 +7708,8 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 onClick={onSeeMaintPlan} style={{ marginBottom: '4px' }}>
                 See the plan
               </Button>
-              <button
-                onClick={onAckMaintTransition}
-                style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer', padding: '8px 0', width: '100%' }}
-              >
+              <button className="btn btn--ghost btn--compact btn--full"
+                onClick={onAckMaintTransition}>
                 Got it
               </button>
             </div>
@@ -7840,10 +7784,8 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                   </p>
                 </>
               )}
-              <button
-                onClick={onDismissMaintCard}
-                style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer', padding: '4px 0', width: '100%' }}
-              >
+              <button className="btn btn--ghost btn--compact btn--full"
+                onClick={onDismissMaintCard}>
                 Dismiss
               </button>
             </div>
@@ -8235,23 +8177,8 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
 
             {/* Manual log — secondary, shown for today or past sessions */}
             {(selectedSession.today || selectedSession.rawDate < now) && (
-              <button
-                onClick={() => setShowManualLog(true)}
-                style={{
-                  marginTop: 'var(--space-2)',
-                  width: '100%',
-                  padding: '10px',
-                  background: 'none',
-                  border: `1px solid var(--line)`,
-                  borderRadius: 'var(--radius-md)',
-                  fontFamily: 'var(--font-ui)',
-                  fontSize: '12px',
-                  fontWeight: 500,
-                  color: 'var(--mute)',
-                  letterSpacing: '0.04em',
-                  cursor: 'pointer',
-                }}
-              >
+              <button className="btn btn--ghost btn--compact btn--full"
+                onClick={() => setShowManualLog(true)} style={{ marginTop: 'var(--space-2)' }}>
                 Log manually
               </button>
             )}
@@ -8283,7 +8210,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
               ? `${nudge.distKm < 10 ? nudge.distKm.toFixed(1) : Math.round(nudge.distKm)}${preferredUnits === 'mi' ? 'mi' : 'K'}`
               : 'run'
             return (
-              <button
+              <button className="btn btn--secondary btn--regular btn--full"
                 key={`${nudge.weekN}-${nudge.dayKey}`}
                 onClick={() => onOpenPostRun({
                   session: { ...nudge.session, key: nudge.dayKey, day: nudge.dayName, weekN: nudge.weekN },
@@ -8293,20 +8220,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                     name: nudge.stravaActivityName,
                     km:   nudge.distKm,
                   } : null,
-                })}
-                style={{
-                  display:      'flex',
-                  alignItems:   'center',
-                  gap:          '10px',
-                  width:        '100%',
-                  background:   'var(--bg-soft)',
-                  border:       'none',
-                  borderRadius: '12px',
-                  padding:      '12px 14px',
-                  cursor:       'pointer',
-                  textAlign:    'left',
-                }}
-              >
+                })}>
                 <span aria-hidden="true" style={{
                   width: '6px', height: '6px', borderRadius: '50%',
                   background: 'var(--moss)', flexShrink: 0,
@@ -10276,7 +10190,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               </div>
 
               <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: 'var(--space-2)' }}>
-                <button onClick={close} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                <button className="btn btn--secondary btn--regular btn--full" onClick={close}>
                   Close
                 </button>
               </div>
@@ -10315,7 +10229,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               </div>
 
               <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: 'var(--space-2)' }}>
-                <button onClick={close} style={{ width: '100%', padding: '12px', background: 'var(--bg-soft)', border: 'none', borderRadius: '10px', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', cursor: 'pointer', letterSpacing: '0.04em' }}>
+                <button className="btn btn--secondary btn--regular btn--full" onClick={close}>
                   Close
                 </button>
               </div>
@@ -10835,14 +10749,7 @@ function StravaConnectionRow() {
 
         {!isLoading && (
           connected ? (
-            <button onClick={disconnect} disabled={disconnecting} style={{
-              background: 'none', border: '0.5px solid var(--border-col)',
-              borderRadius: '8px', padding: '6px 12px',
-              fontFamily: 'var(--font-ui)', fontSize: '11px',
-              color: 'var(--text-muted)', letterSpacing: '0.06em',
-              textTransform: 'uppercase', cursor: 'pointer',
-              opacity: disconnecting ? 0.6 : 1,
-            }}>
+            <button className="btn btn--ghost btn--compact" onClick={disconnect} disabled={disconnecting}>
               {disconnecting ? 'Disconnecting...' : 'Disconnect'}
             </button>
           ) : (
@@ -11106,14 +11013,7 @@ function AppleHealthConnectionRow({ onHRFound }: {
 
         {!isLoading && (
           connected ? (
-            <button onClick={disconnect} disabled={busy} style={{
-              background: 'none', border: '0.5px solid var(--border-col)',
-              borderRadius: '8px', padding: '6px 12px',
-              fontFamily: 'var(--font-ui)', fontSize: '11px',
-              color: 'var(--text-muted)', letterSpacing: '0.06em',
-              textTransform: 'uppercase', cursor: 'pointer',
-              opacity: busy ? 0.6 : 1,
-            }}>
+            <button className="btn btn--ghost btn--compact" onClick={disconnect} disabled={busy}>
               {busy ? 'Saving...' : 'Disconnect'}
             </button>
           ) : (
@@ -12308,10 +12208,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                         {c.summary}
                       </div>
                       <AdjustmentDiff sessionsBefore={c.sessions_before ?? []} sessionsAfter={c.sessions_after ?? []} units={preferredUnits} />
-                      <button
-                        onClick={() => dismissChange(c.id)}
-                        style={{ marginTop: 'var(--space-3)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--mute)' }}
-                      >
+                      <button className="btn btn--ghost btn--compact"
+                        onClick={() => dismissChange(c.id)} style={{ marginTop: 'var(--space-3)' }}>
                         Got it
                       </button>
                     </div>
@@ -12503,41 +12401,15 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             the gate a fortnight later. Quiet register: most users have no code
             and this must not read like a discount prompt. */}
         {onOpenRedeem && (
-          <button
-            onClick={onOpenRedeem}
-            style={{
-              alignSelf: 'center',
-              marginTop: 'var(--space-4)',
-              padding: '14px 16px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-ui)',
-              fontSize: '12px',
-              fontWeight: 400,
-              color: 'var(--mute)',
-            }}
-          >
+          <button className="btn btn--ghost btn--compact"
+            onClick={onOpenRedeem} style={{ alignSelf: 'center', marginTop: 'var(--space-4)' }}>
             Have a charity code? →
           </button>
         )}
 
         {onOpenFounderNote && (
-          <button
-            onClick={onOpenFounderNote}
-            style={{
-              alignSelf: 'center',
-              marginTop: 'var(--space-4)',
-              padding: '14px 16px',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'var(--font-ui)',
-              fontSize: '12px',
-              fontWeight: 400,
-              color: 'var(--mute)',
-            }}
-          >
+          <button className="btn btn--ghost btn--compact"
+            onClick={onOpenFounderNote} style={{ alignSelf: 'center', marginTop: 'var(--space-4)' }}>
             A note from the founder →
           </button>
         )}
@@ -13377,14 +13249,8 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
               >
                 {unlinking ? 'Unlinking…' : 'Yes, unlink'}
               </button>
-              <button
-                onClick={() => setUnlinkConfirm(false)}
-                style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '11px',
-                  color: 'var(--mute)', background: 'none', border: 'none',
-                  padding: 0, cursor: 'pointer',
-                }}
-              >
+              <button className="btn btn--ghost btn--compact"
+                onClick={() => setUnlinkConfirm(false)}>
                 Cancel
               </button>
             </div>

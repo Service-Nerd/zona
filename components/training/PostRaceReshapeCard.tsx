@@ -99,10 +99,8 @@ function Locked({ onUpgrade, onDismiss }: { onUpgrade: () => void; onDismiss: ()
         Unlock post-race reshape
       </Button>
 
-      <button
-        onClick={onDismiss}
-        style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer', padding: '4px 0', width: '100%' }}
-      >
+      <button className="btn btn--ghost btn--compact btn--full"
+        onClick={onDismiss}>
         Dismiss
       </button>
     </div>
@@ -198,11 +196,9 @@ function Live({
       </button>
 
       {/* Dismiss link */}
-      <button
+      <button className="btn btn--ghost btn--compact btn--full"
         onClick={onDismiss}
-        disabled={confirming}
-        style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer', padding: '4px 0', width: '100%' }}
-      >
+        disabled={confirming}>
         Keep my plan as-is →
       </button>
     </div>

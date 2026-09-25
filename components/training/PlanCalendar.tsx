@@ -740,16 +740,8 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             )}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={cancelPendingMove}
-              style={{
-                flex: 1, padding: '10px 14px',
-                background: 'none', border: '1px solid var(--line)',
-                borderRadius: '10px', cursor: 'pointer',
-                fontFamily: 'var(--font-ui)', fontSize: '11px',
-                color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase',
-              }}
-            >
+            <button className="btn btn--ghost btn--compact"
+              onClick={cancelPendingMove} style={{ flex: 1 }}>
               Cancel
             </button>
             <Button variant="primary"

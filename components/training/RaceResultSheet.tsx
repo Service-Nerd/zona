@@ -336,15 +336,9 @@ export default function RaceResultSheet({
             {submitting ? 'Checking plan…' : 'Log result'}
           </button>
 
-          <button
+          <button className="btn btn--ghost btn--compact"
             onClick={handleLogOnly}
-            disabled={!outcome || submitting}
-            style={{
-              background: 'none', border: 'none', cursor: outcome ? 'pointer' : 'default',
-              fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)',
-              padding: '4px 0', opacity: outcome ? 1 : 0.4,
-            }}
-          >
+            disabled={!outcome || submitting}>
             Log result only, keep my plan →
           </button>
         </div>

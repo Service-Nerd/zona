@@ -49,6 +49,7 @@ PY
 |---|---|---|---|---|
 | 2026-09-25 | **219** | **41** (19%) | **178** | `BUTTON-COMPONENT-01` shipped. Converted the **moss** controls only, because those were the ones failing WCAG AA. Everything else was out of scope for a contrast fix |
 | 2026-09-25 | **219** | **44** (20%) | **175** | `WEBSITE-BUTTON-UNIFY-01`. The 3 site CTAs adopted the `.btn` **classes** (not the component) and `.cta-pill` was deleted. **The site and the app now have one definition** |
+| 2026-09-25 | **217** | **90** (41%) | **127** | Batches 2 + 3. `secondary` ×14, `ghost` ×31, plus 2 CTAs the gate had been blind to. **`--accent: var(--moss)` — a legacy alias — bypassed the gate entirely; it now resolves the alias graph from the stylesheet** |
 
 ---
 
@@ -116,16 +117,45 @@ system now.
 **Result:** 44 / 219. Gate +3 arms, each falsified to red. Suite 3,488 green. Bundle unchanged.
 **Not verified:** no device, no Lighthouse run after the change, nothing measured at 320px.
 
+### 2026-09-25 · Batches 2 + 3 — `BUTTON-MIGRATION-02`
+**Scope:** neutral-surface → `secondary` (14) and de-emphasised text → `ghost` (31).
+**Result:** 90 / 217 on the shared system, up from 44.
+
+🔴 **The gate I shipped this morning had a hole, found by doing the next batch.** `--accent` is a
+System B legacy alias for `--moss`, and **two live primary CTAs painted themselves `var(--accent)`
+with white text** — the identical 3.68:1 failure — matching neither arm, because the check compared
+the token NAME while the producer used a different name for the same colour. The fix is not a second
+hardcoded list: **the alias graph is now read from `globals.css`**, so a legacy alias added tomorrow
+is covered without anyone remembering.
+
+🔴 **A new variant was required by a standing ruling, not chosen.** `:456` says *dismiss is never
+`--moss`*. 44 de-emphasised text buttons are `--mute`; converting them to `quiet` (moss) would have
+turned 44 grey controls green and reversed that ruling **while looking like a migration**. Hence
+`ghost`.
+
+📐 **Four text buttons were failing AA and nobody had asked:** three `--warn` labels at **2.69:1**
+(fixed to `--warn-strong`, 4.53:1) and one `--danger` at **4.36:1** on the `--bg-soft` row it sits
+in. The last has **no `--danger-strong` to move to**, so it is filed as `DANGER-TEXT-CONTRAST-01`
+(palette addition = Design Board) and baselined with its reason.
+
+**Declined, correctly:** 3 circular (`borderRadius: 50%`) and 8 fixed-`44px` controls → the
+`IconButton` batch. 1 `--strava` brand fill and 1 `--ink` fill → neither is `secondary`.
+**Not verified:** no device.
+
 ### Next batches — proposed, not ruled
 
 | # | Scope | Size | Blocked on |
 |---|---|---|---|
-| 2 | Neutral surface → `variant="secondary"` | ~43 | nothing. The variant exists |
-| 3 | Text/link → `variant="quiet"` | ~53 | nothing. ⚠️ Check each one's colour first: these are NOT moss (the gate is green), so contrast is unproven, not known-good |
+| ~~2~~ | ~~Neutral surface~~ | — | ✅ **DONE.** 14 converted; the rest were icons, brand fills or conditionals |
+| ~~3~~ | ~~Text/link~~ | — | ✅ **DONE** as `ghost`, not `quiet`. ⚠️ **The warning in this row paid off: 4 of them were failing AA** |
 | 4 | `IconButton` primitive, then migrate | ~15 | 🧭 **Design Board** — a new primitive |
 | ~~5~~ | ~~Website~~ | — | ✅ **DONE 2026-09-25.** Board ruled the classes, not the component |
 | — | Selected-state toggles | ~36 | ⛔ **Out of scope by rule.** Separate primitive, separate ruling |
 
-⚠️ **Batch 3 carries an unmeasured assumption and it is written here so it is not forgotten:** those
-53 text buttons are not moss, so `buttonOwnership.test.ts` says nothing about them. **Measure their
-contrast before converting**, or the batch will look like a migration and quietly be an audit.
+✅ **Batch 3's recorded warning paid for itself.** It said: *"those text buttons are not moss, so the
+gate says nothing about them — measure their contrast before converting, or the batch will look like
+a migration and quietly be an audit."* Measured: **4 of 51 were failing AA.** Writing the assumption
+down is what made it get checked.
+
+⚠️ **The remaining 127 are now mostly NOT Button's job** — icon-only controls, selected-state
+toggles, and one-off surfaces. The next real primitive is `IconButton` (🧭 Design Board).

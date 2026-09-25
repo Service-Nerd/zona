@@ -3267,7 +3267,8 @@ the **marketing** button (28 uses on the site, **0** in `app/dashboard`, **0** i
 |---|---|---|---|
 | `primary` | `--moss-strong` | `--card` | **One per screen.** Carries `--shadow-lifted` |
 | `secondary` | `--card` + `--line` border | `--ink-2` | The alternative action |
-| `quiet` | none | `--moss-strong` | A label, not a surface |
+| `quiet` | none | `--moss-strong` | A label, not a surface: an **accent** text action (unlock, upgrade) |
+| `ghost` | none | `--mute` | A **de-emphasised** text action: skip, cancel, dismiss, not now |
 | `soft` | `--moss-soft` | **`--moss-deep`** | The moss-tinted pill (3 uses) |
 | `destructive` | `--card` + `--danger` border | `--danger` | **Modal confirmations only** |
 
@@ -3276,6 +3277,15 @@ quoted `DashboardClient:3171` as the reference button; it is uppercase at 13px w
 and the first cut of `.btn` forced both. Counting the population actually being converted, **33 of
 40 were not uppercase** and 14px was the modal size. **The cited example was the minority**, and
 generalising from it would have restyled 33 controls nobody asked to change.
+
+🔴 **`quiet` and `ghost` are two variants because a standing ruling requires it, not because two
+looked nicer.** `design-rulings.md` `:456` — *"dismiss is never `--moss`. `--moss` is the CTA colour;
+spending the strongest colour in the system on DISMISS teaches the opposite of what it means."*
+**44 de-emphasised text buttons in the app are `--mute`**, and collapsing them into `quiet` would
+have turned 44 grey controls green and reversed that ruling while looking like a migration.
+⚠️ **The names read backwards and it is not worth fixing:** "quiet" describes the mute one better,
+but `quiet` shipped first with 14 consumers and renaming call sites to fix a word is churn with no
+user impact. **The distinction that matters is ACCENT vs DE-EMPHASISED.**
 
 **Sizes:** `regular` 48px, `compact` 44px. Both clear the touch-target floor; compact steps the
 radius down with the height so the corner keeps the same curve rather than drifting to a pill.

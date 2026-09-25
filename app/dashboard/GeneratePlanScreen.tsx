@@ -472,7 +472,7 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
       </div>
       <button
         onClick={onUpgrade}
-        style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--warn)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--warn-strong)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
       >
         Upgrade to personalise →
       </button>
@@ -1546,15 +1546,8 @@ export default function GeneratePlanScreen({
                 disabled={foundationAddStatus === 'loading'}>
                 {foundationAddStatus === 'loading' ? 'Adding…' : 'Add Foundation Block'}
               </Button>
-              <button
-                onClick={handleFoundationDismiss}
-                style={{
-                  width: '100%', padding: '15px', marginBottom: 'var(--space-3)',
-                  borderRadius: 'var(--radius-md)', background: 'var(--bg-soft)',
-                  border: '1px solid var(--line)', cursor: 'pointer',
-                  fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 500, color: 'var(--ink)',
-                }}
-              >
+              <button className="btn btn--secondary btn--regular btn--full"
+                onClick={handleFoundationDismiss} style={{ marginBottom: 'var(--space-3)' }}>
                 Start plan as-is
               </button>
             </div>
@@ -1669,10 +1662,8 @@ export default function GeneratePlanScreen({
             copy SITE-WIDE — the "app-side exception" CLAUDE.md refers to does
             not exist in that section. A comma. */}
         {stepMeta.optional && (
-          <button
-            onClick={skipStep}
-            style={{ width: '100%', textAlign: 'center', marginBottom: 'var(--space-2)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', padding: '8px' }}
-          >
+          <button className="btn btn--ghost btn--compact btn--full"
+            onClick={skipStep} style={{ marginBottom: 'var(--space-2)' }}>
             Not sure, continue
           </button>
         )}
@@ -2205,15 +2196,8 @@ export default function GeneratePlanScreen({
 
 function BackBtn({ onClick, label }: { onClick: () => void; label?: string }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
-        background: 'none', border: 'none', cursor: 'pointer',
-        color: 'var(--mute)', padding: '0 0 4px', marginBottom: '4px',
-        minHeight: '44px',
-      }}
-    >
+    <button className="btn btn--ghost btn--compact"
+      onClick={onClick} style={{ marginBottom: '4px' }}>
       <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
           <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

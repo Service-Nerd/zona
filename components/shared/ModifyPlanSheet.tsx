@@ -296,14 +296,8 @@ export default function ModifyPlanSheet({
                     ? 'Rebuilding your plan…'
                     : `Apply ${pending.length} change${pending.length === 1 ? '' : 's'}`}
                 </button>
-                <button
-                  onClick={() => setEdits({})}
-                  style={{
-                    width: '100%', padding: '12px', marginTop: '4px', minHeight: '44px',
-                    background: 'none', border: 'none', cursor: 'pointer',
-                    fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--mute)',
-                  }}
-                >
+                <button className="btn btn--ghost btn--compact btn--full"
+                  onClick={() => setEdits({})} style={{ marginTop: '4px' }}>
                   Discard changes
                 </button>
             </>

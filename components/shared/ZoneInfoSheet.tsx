@@ -63,14 +63,7 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
             borderTop: '0.5px solid var(--line)',
             marginTop: 'var(--space-2)',
           }}>
-            <button onClick={close} style={{
-              width: '100%', padding: '12px',
-              background: 'var(--bg-soft)',
-              border: 'none', borderRadius: '10px',
-              fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-              color: 'var(--ink)', cursor: 'pointer',
-              letterSpacing: '0.04em',
-            }}>Close</button>
+            <button className="btn btn--secondary btn--regular btn--full" onClick={close}>Close</button>
           </div>
         </>
       )}

@@ -281,15 +281,8 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <button
-            onClick={() => { setForgot(false); setError(null); setMessage(null) }}
-            style={{
-              marginTop: '14px', width: '100%',
-              background: 'none', border: 'none',
-              fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-              cursor: 'pointer', padding: '4px 0',
-            }}
-          >
+          <button className="btn btn--ghost btn--compact btn--full"
+            onClick={() => { setForgot(false); setError(null); setMessage(null) }} style={{ marginTop: '14px' }}>
             ← Back to sign in
           </button>
 
@@ -365,24 +358,9 @@ export default function LoginPage() {
               input (`RedeemCodeScreen.tsx`), which is white on white for the
               same reason. Google's own light-theme branding wants exactly this
               shape too — white surface, visible stroke. */}
-          <button
+          <button className="btn btn--secondary btn--regular btn--full"
             onClick={signInWithGoogle}
-            disabled={loading}
-            style={{
-              width: '100%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-              background: 'var(--card)',
-              color: 'var(--ink)',
-              border: '1px solid var(--line-strong)',
-              borderRadius: '10px',
-              padding: '13px 16px',
-              fontFamily: 'var(--font-ui)',
-              fontSize: '14px', fontWeight: 500,
-              cursor: loading ? 'default' : 'pointer',
-              opacity: loading ? 0.5 : 1,
-              transition: 'opacity 0.15s',
-            }}
-          >
+            disabled={loading}>
             {!loading && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src="/google-logo.svg" width="18" height="18" alt="" />

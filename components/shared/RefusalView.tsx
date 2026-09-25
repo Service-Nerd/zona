@@ -140,10 +140,8 @@ export default function RefusalView({
             onClick={onAccept}>
             Start base building
           </Button>
-          <button
-            onClick={onAdjust}
-            style={{ width: '100%', padding: '14px', marginTop: '4px', minHeight: '44px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--mute)' }}
-          >
+          <button className="btn btn--ghost btn--compact btn--full"
+            onClick={onAdjust} style={{ marginTop: '4px' }}>
             Adjust my answers
           </button>
         </>

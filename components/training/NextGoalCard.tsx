@@ -45,16 +45,9 @@ export default function NextGoalCard({ achievement, options, onPick, onDismiss }
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
         {options.map(opt => (
-          <button
+          <button className="btn btn--secondary btn--regular btn--full"
             key={opt.kind}
-            onClick={() => onPick(opt)}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
-              width: '100%', textAlign: 'left',
-              background: 'var(--bg-soft)', border: '0.5px solid var(--line)', borderRadius: '12px',
-              padding: '12px 14px', cursor: 'pointer',
-            }}
-          >
+            onClick={() => onPick(opt)}>
             <span style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
               <span style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--ink)' }}>
@@ -75,10 +68,8 @@ export default function NextGoalCard({ achievement, options, onPick, onDismiss }
         ))}
       </div>
 
-      <button
-        onClick={onDismiss}
-        style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer', padding: '4px 0', width: '100%' }}
-      >
+      <button className="btn btn--ghost btn--compact btn--full"
+        onClick={onDismiss}>
         Not yet
       </button>
     </div>

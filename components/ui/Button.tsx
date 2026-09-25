@@ -60,7 +60,7 @@ import React from 'react'
  * stylesheet is the paint.
  */
 
-export type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'soft' | 'destructive'
+export type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'ghost' | 'soft' | 'destructive'
 export type ButtonSize = 'regular' | 'compact'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

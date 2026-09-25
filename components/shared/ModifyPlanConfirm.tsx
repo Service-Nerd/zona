@@ -111,15 +111,9 @@ export default function ModifyPlanConfirm({
         onClick={onAccept} busy={applying} style={{ marginTop: 'var(--space-5)' }}>
         {applying ? 'Saving…' : 'Accept and save'}
       </Button>
-      <button
+      <button className="btn btn--ghost btn--compact btn--full"
         onClick={onCancel}
-        disabled={applying}
-        style={{
-          width: '100%', padding: '14px', marginTop: '4px', minHeight: '44px',
-          background: 'none', border: 'none', cursor: 'pointer',
-          fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--mute)',
-        }}
-      >
+        disabled={applying} style={{ marginTop: '4px' }}>
         Keep my current plan
       </button>
     </div>

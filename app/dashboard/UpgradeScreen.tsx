@@ -462,17 +462,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         </button>
 
         {/* Free path — always visible */}
-        <button
-          onClick={onBack}
-          style={{
-            marginTop: 'var(--space-4)',
-            background: 'none', border: 'none',
-            fontFamily: 'var(--font-ui)', fontWeight: 400,
-            fontSize: '0.875rem', color: 'var(--text-muted)',
-            cursor: 'pointer', textDecoration: 'underline',
-            padding: '4px 0',
-          }}
-        >
+        <button className="btn btn--ghost btn--compact"
+          onClick={onBack} style={{ marginTop: 'var(--space-4)' }}>
           Stay with the free plan →
         </button>
 
@@ -483,17 +474,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
             let me prove it" — not a second purchase option. Web and native
             both, unlike Restore: a code is not an Apple purchase. */}
         {onOpenRedeem && (
-          <button
-            onClick={onOpenRedeem}
-            style={{
-              marginTop: 'var(--space-2)', alignSelf: 'center',
-              background: 'none', border: 'none',
-              fontFamily: 'var(--font-ui)', fontWeight: 400,
-              fontSize: '0.8125rem', color: 'var(--text-muted)',
-              cursor: 'pointer', textDecoration: 'underline',
-              padding: '4px 0',
-            }}
-          >
+          <button className="btn btn--ghost btn--compact"
+            onClick={onOpenRedeem} style={{ marginTop: 'var(--space-2)', alignSelf: 'center' }}>
             Have a charity code?
           </button>
         )}
@@ -501,20 +483,9 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         {/* Restore Purchases — iOS only, required by App Store guideline 3.1.1 */}
         {Capacitor.isNativePlatform() && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <button
+            <button className="btn btn--ghost btn--compact"
               onClick={handleRestore}
-              disabled={restoring}
-              style={{
-                marginTop: 'var(--space-2)',
-                background: 'none', border: 'none',
-                fontFamily: 'var(--font-ui)', fontWeight: 400,
-                fontSize: '0.8125rem', color: 'var(--text-muted)',
-                cursor: restoring ? 'default' : 'pointer',
-                textDecoration: 'underline',
-                padding: '4px 0',
-                opacity: restoring ? 0.5 : 1,
-              }}
-            >
+              disabled={restoring} style={{ marginTop: 'var(--space-2)' }}>
               {restoring ? 'Restoring…' : 'Restore Purchases'}
             </button>
             {restoreMsg && (

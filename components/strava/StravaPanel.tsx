@@ -216,7 +216,7 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
                   {formatDate(popup.start_date, 'weekday-long')}
                 </div>
               </div>
-              <button onClick={() => setPopup(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '20px', cursor: 'pointer' }}>&#x2715;</button>
+              <button className="btn btn--ghost btn--compact" onClick={() => setPopup(null)}>&#x2715;</button>
             </div>
             <div style={{ padding: '14px 18px', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', borderBottom: '0.5px solid var(--border-col)' }}>
               {[

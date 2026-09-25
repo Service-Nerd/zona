@@ -839,6 +839,28 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 .btn--soft:hover:not(:disabled) { background: var(--moss-mid); }
 .btn--soft:active:not(:disabled) { transform: translateY(1px); }
 
+/* Ghost — a DE-EMPHASISED text action: skip, cancel, dismiss, "not now".
+ *
+ * 🔴 THIS IS A SECOND TEXT VARIANT BECAUSE A STANDING RULING REQUIRES IT, NOT
+ * BECAUSE TWO LOOKED NICER. `design-rulings.md` :456 — *"dismiss is never
+ * `--moss`. `--moss` is the CTA colour; spending the strongest colour in the
+ * system on DISMISS teaches the opposite of what it means."* So the 44
+ * de-emphasised text buttons in the app cannot take `.btn--quiet`, which is
+ * moss. Collapsing them into one variant would have turned 44 grey controls
+ * green and reversed that ruling while looking like a migration.
+ *
+ * `--mute` clears AA on every ground (4.80 / 5.45 / 4.50) — it is the token
+ * `A11Y-CONTRAST-01` already corrected for exactly this job.
+ *
+ * ⚠️ NAMING, stated because it reads backwards. `quiet` is the MOSS text
+ * action (unlock, upgrade, see the full read) and shipped first with 14
+ * consumers; `ghost` is the MUTE one. "Quiet" describes the mute one better,
+ * and renaming 14 call sites to fix a word is churn with no user impact. The
+ * distinction that matters is ACCENT vs DE-EMPHASISED, and it is :456's. */
+.btn--ghost { background: none; color: var(--mute); box-shadow: none; }
+.btn--ghost:hover:not(:disabled) { color: var(--ink-2); }
+.btn--ghost:active:not(:disabled) { transform: translateY(1px); }
+
 /* Destructive — modal confirmations only (delete, disconnect). `--danger` is
    never used in the training UI. */
 .btn--destructive { background: var(--card); color: var(--danger); border: 1px solid var(--danger); }

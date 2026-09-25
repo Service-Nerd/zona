@@ -383,14 +383,8 @@ export function RaceTimesCard({
                   onClick={onOpenBenchmark}>
                   {copy.recal.cta}
                 </Button>
-                <button
-                  onClick={onDismissRecal}
-                  style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 400,
-                    color: 'var(--mute)', background: 'none', border: 'none',
-                    padding: '0', cursor: 'pointer',
-                  }}
-                >
+                <button className="btn btn--ghost btn--compact"
+                  onClick={onDismissRecal}>
                   {copy.recal.dismiss}
                 </button>
               </div>

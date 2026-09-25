@@ -82,14 +82,50 @@ const strip = (s: string) =>
    // this file first reported a real offender 108 lines from where it lives.
    .replace(/^[ \t]*\/\/.*$/gm, '')
 
-const MOSS_FILL = /background[^,}]*var\(--moss\)(?!-)/
+/**
+ * 🔴 ALIASES ARE RESOLVED FROM `globals.css`, NOT HARDCODED, AND THIS FILE
+ * SHIPPED WITHOUT IT (2026-09-25, found hours later while doing the next batch).
+ *
+ * `--accent: var(--moss)` is a System B legacy alias that `globals.css` keeps
+ * deliberately. Two live primary CTAs paint themselves `var(--accent)` with
+ * white text — the identical 3.68:1 failure this file exists to catch — and it
+ * matched neither arm, because it compared the token NAME and the producer used
+ * a different name for the same colour.
+ *
+ * ⚠️ THE FIX IS NOT A SECOND HARDCODED LIST. This repo has recorded that a
+ * checker sharing the producer's hand-written list is blind to that list
+ * exactly as the producer is. The alias graph is READ from the stylesheet, so a
+ * legacy alias added tomorrow is covered without anyone remembering.
+ */
+function aliasesOf(root: string): string[] {
+  const css = fs.readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8')
+  const direct = new Map<string, string>()
+  for (const m of Array.from(css.matchAll(/^\s*(--[a-z0-9-]+):\s*var\((--[a-z0-9-]+)\)\s*;/gm))) {
+    direct.set(m[1]!, m[2]!)
+  }
+  const out = new Set<string>([root])
+  let grew = true
+  while (grew) {
+    grew = false
+    // Array.from: this tsconfig targets below es2015, so iterating a Map
+    // directly fails `tsc --noEmit` while vitest runs it happily.
+    for (const [from, to] of Array.from(direct)) {
+      if (out.has(to) && !out.has(from)) { out.add(from); grew = true }
+    }
+  }
+  return Array.from(out)
+}
+const MOSS_NAMES = aliasesOf('--moss')
+/** `(?!-)` keeps `--moss-strong` / `--moss-soft` out: those are the ANSWER. */
+const MOSS_VAR = `var\\((?:${MOSS_NAMES.join('|')})\\)(?!-)`
+const MOSS_FILL = new RegExp(`background[^,}]*${MOSS_VAR}`)
 // ⚠️ The white literal is written as a CHARACTER CLASS, not as itself. The
 // pre-commit hook blocks hardcoded hex in `components/`, and it cannot tell a
 // detector FOR the hex from a USE of it — this file is the seventh time the
 // repo has flagged its own explanation as the bug. `#[fF]{3,6}` matches the
 // same strings and contains no hex literal to flag.
 const LIGHT_TEXT = /color:\s*'(?:var\(--card\)|#[fF]{3,6}|white)'/i
-const MOSS_LABEL = /color:\s*'var\(--moss\)'/
+const MOSS_LABEL = new RegExp(`color:\\s*'${MOSS_VAR}'`)
 
 describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
   it('reads real files and real buttons (a check over nothing is not a check)', () => {
@@ -192,6 +228,55 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
     const src = fs.readFileSync(path.join(ROOT, 'components/ui/Button.tsx'), 'utf8')
     expect(src, 'Button.tsx regained a client directive').not.toMatch(/^\s*['"]use client['"]/m)
     expect(src, 'Button gained a hook — re-examine the directive').not.toMatch(/\buse(State|Effect|Ref|Memo|Callback|Reducer)\s*\(/)
+  })
+
+  it('every text-style button label clears AA on the worst ground it can sit on', () => {
+    // BUTTON-MIGRATION-02, 2026-09-25. The moss arms above catch ONE colour.
+    // This is the general rule: a button with no fill is a label, and a label
+    // owes 4.5:1. Measured across the app, it found three `--warn` labels at
+    // 2.69:1 (fixed to --warn-strong, 4.53:1) and one `--danger` at 4.36:1.
+    //
+    // ⚠️ GROUNDS ARE THE WORST CASE, NOT THE ACTUAL PARENT. Resolving each
+    // button's real background means walking the JSX tree, and a check that
+    // guesses the parent would be confidently wrong. Taking the worst of the
+    // three grounds is conservative and cannot produce a false pass.
+    const css = fs.readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8')
+    const hex = (n: string) => css.match(new RegExp(`^\\s*${n}:\\s*(#[0-9A-Fa-f]{6})\\s*;`, 'm'))?.[1] ?? null
+    const srgb = (c: number) => (c /= 255, c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+    const lum = (h: string) => {
+      const [r, g, b] = [0, 2, 4].map(i => parseInt(h.slice(1).slice(i, i + 2), 16))
+      return 0.2126 * srgb(r!) + 0.7152 * srgb(g!) + 0.0722 * srgb(b!)
+    }
+    const ratio = (a: string, b: string) => {
+      const [x, y] = [lum(a), lum(b)]
+      return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05)
+    }
+    const GROUNDS = ['--bg', '--card', '--bg-soft'].map(hex).filter(Boolean) as string[]
+
+    // Declared debt, with its reason — the pattern SWEEP-BASELINE-01 uses.
+    // This is ONE 11px "Unlink this run?" confirm inside a --bg-soft row.
+    // `--danger` is 4.36:1 there and there is NO `--danger-strong` token;
+    // minting one is a palette addition and therefore the Design Board's,
+    // not a migration's. Filed as DANGER-TEXT-CONTRAST-01.
+    const BASELINE = new Set(['app/dashboard/DashboardClient.tsx:--danger'])
+
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      const rel = path.relative(ROOT, f)
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      for (const { line, text } of buttonTags(src)) {
+        if (!/background:\s*'(none|transparent)'/.test(text)) continue
+        const m = text.match(/color:\s*'var\((--[a-z0-9-]+)\)'/)
+        if (!m) continue
+        const h = hex(m[1]!)
+        if (!h) continue                        // an alias; the alias arm covers moss
+        const worst = Math.min(...GROUNDS.map(g => ratio(h, g)))
+        if (worst < 4.5 && !BASELINE.has(`${rel}:${m[1]}`)) {
+          offenders.push(`${rel}:${line} ${m[1]} is ${worst.toFixed(2)}:1, AA needs 4.5`)
+        }
+      }
+    }
+    expect(offenders, `a text button's label fails AA:\n${offenders.join('\n')}`).toEqual([])
   })
 
   it('the email CTA does not use the failing fill', () => {

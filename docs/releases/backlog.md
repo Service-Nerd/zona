@@ -29,6 +29,20 @@ already decided what it is.
 
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
+### 🧭 `DANGER-TEXT-CONTRAST-01` — `--danger` as a label is 4.36:1 on `--bg-soft`
+**Board: 🧭 DESIGN BOARD** — minting a token is a palette addition, which is Silvanto's veto scope.
+
+Found by `BUTTON-MIGRATION-02`'s general contrast arm. **One** button: the 11px *"Unlink this run?"*
+confirm in `DashboardClient.tsx`, inside a `--bg-soft` row. `--danger` `#B84545` measures **4.65 on
+`--bg`, 5.28 on `--card`, 4.36 on `--bg-soft`** — it fails only on the ground it actually sits on.
+
+⚠️ **There is no `--danger-strong`**, unlike `--warn-strong` and `--moss-strong`, so this is not a
+swap. `--danger` is also **not** in `a11yContrast.test.ts`'s `TEXT_TOKENS`, so the token layer has
+never claimed it was safe for text — the gap is real and was simply never asserted.
+
+**Baselined with its reason** in `buttonOwnership.test.ts`, keyed to file+token, so the same failing
+token in any other file still fails. Falsified: moving it to another file turns the gate red.
+
 ### 🧭 `BUTTON-MIGRATION-02` — the other 178 controls, batch by batch
 **Board: 🧭 DESIGN BOARD** for the two new primitives; ⚙️ NO BOARD for batches 2 and 3.
 
