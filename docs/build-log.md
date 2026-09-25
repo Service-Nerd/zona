@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — SHEET-CLOSE-OWNER-01 · the drag pill that dragged nothing
+
+**Shipped:** Every sheet swipes down to close and shows one cross, and the Me-screen zone rows line up.
+
+**Dev learning:** The shared `Sheet` primitive drew a drag pill at the top — the universal "you can swipe this away" affordance — and handled no touch events at all. It had been promising a gesture it didn't support since it was written, and every one of the six sheets inherited that promise. Adding the gesture was twenty lines. The part that needed thought was the guard: the drag only engages at `scrollTop <= 0`, or a runner scrolling back up through a long zone explanation dismisses it by accident.
+
+**Product/creator learning:** Six sheets, three different ways out: a bottom sticky full-width "Close", a top-right cross, and on two of them nothing but the scrim. The founder found it by tapping two Coach cards and getting a close button he'd already told me to replace. That's the third time today a thing every caller needs was left to each caller — `.cta-pill`, `BackButton`, and now this. The tell is always the same: a primitive exists, and the thing every consumer needs isn't in it.
+
+**AI-building learning:** He said the zones were still misaligned and I'd already "fixed" them. There were **two** zone lists and I'd fixed the other one. The one he was looking at was my own regression: the conversion dropped `display: grid` as "owned by `.btn`", and `.btn` sets `inline-flex`, so the grid columns were inert. Same root as the "sign out is misaligned" report two rounds earlier — and **the gate I wrote for that class couldn't see this one**, because it checked `textAlign` plus `justifyContent` and this row *had* a `justifyContent`. What it had lost was `display`. A check aimed at one symptom of a cause misses the others.
+
+**The honest bit:** my first attempt at that fix ran a `flexDirection` regex across the whole file and mangled 32 unrelated elements — the file didn't parse. Reverted in one command and redone by exact anchor, but it's a reminder that a regex edits by pattern, not by position, and will find things you didn't mean. Two existing tests also failed, correctly: they asserted ModifyPlanSheet renders its own cross, which is documented behaviour. The rule hasn't changed and now holds for every sheet, so both tests follow it to its new home.
+
+**Hook material:** Our sheet component drew a drag-to-dismiss pill and listened for no touch events. Six screens inherited a gesture that didn't exist. Nobody noticed because the pill *looks* right — and the only way to find it is to try to swipe, which no test does and which nothing in this codebase has ever run on a device.
+
+**Postable?:** yes
+
 ## 2026-09-25 — BUTTON-ARCH-01 + BUTTON-SYSTEM-01 · the repetition was never the problem
 
 **Shipped:** An architecture rule with a gate, 101 controls migrated to the component, and one hover rule across the variant family.
