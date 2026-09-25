@@ -328,15 +328,10 @@ export function RaceTimesCard({
 
             return (
               <div>
-                <button
+                <button className="btn btn--ghost btn--regular"
                   type="button"
                   onClick={() => setDistancesOpen(o => !o)}
-                  aria-expanded={distancesOpen}
-                  style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    width: '100%', minHeight: '44px', padding: '4px 0',
-                    background: 'none', border: 'none', cursor: 'pointer', font: 'inherit',
-                  }}
+                  aria-expanded={distancesOpen} style={{ width: '100%', minHeight: '44px', padding: '4px 0', background: 'none', font: 'inherit' }}
                 >
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)' }}>
                     {toggleLabel}

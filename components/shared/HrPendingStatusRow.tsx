@@ -108,24 +108,11 @@ export default function HrPendingStatusRow({ state, onRetry, isRetrying = false,
   // Fallback state with retry — render as a full-width button. Tap target
   // ≥ 44px high (HIG) via padding.
   return (
-    <button
+    <button className="btn btn--ghost btn--regular btn--inline-target"
       type="button"
       onClick={(e) => { e.stopPropagation(); void onRetry?.() }}
       onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        display:        'inline-flex',
-        alignItems:     'center',
-        background:     'none',
-        border:         'none',
-        padding:        '6px 0',
-        margin:         0,
-        cursor:         'pointer',
-        textAlign:      'left',
-        font:           'inherit',
-        color:          'inherit',
-        minHeight:      '32px',
-      }}
+      onMouseLeave={() => setHover(false)} style={{ background:     'none', padding:        '6px 0', margin:         0, textAlign:      'left', font:           'inherit', color:          'inherit', minHeight:      '32px' }}
       aria-label={FALLBACK_COPY}
     >
       {inner}

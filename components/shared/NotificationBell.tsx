@@ -13,16 +13,9 @@ export function NotificationBell({ unreadCount, onClick }: {
 }) {
   const hasUnread = unreadCount > 0
   return (
-    <button
+    <button className="btn btn--ghost btn--regular"
       onClick={onClick}
-      aria-label={hasUnread ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-      style={{
-        position: 'relative',
-        width: '44px', height: '44px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'transparent', border: 'none', cursor: 'pointer', padding: 0,
-        flexShrink: 0,
-      }}
+      aria-label={hasUnread ? `Notifications, ${unreadCount} unread` : 'Notifications'} style={{ position: 'relative', width: '44px', height: '44px', background: 'transparent', padding: 0, flexShrink: 0 }}
     >
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
         stroke="var(--ink-2)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">

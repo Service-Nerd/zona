@@ -802,7 +802,15 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .btn--full { width: 100%; }
 
-/* Inline chip — a small filled control sitting INSIDE a row, beside a label.
+/* Inline target — a control that keeps a SMALL VISUAL and carries a 44px HIT
+ * AREA. Two species use it: a filled chip beside a label, and an underlined
+ * text link inside a sentence.
+ *
+ * ⚠️ NAMED FOR THE MECHANISM, NOT ITS FIRST USE, DELIBERATELY. It shipped as
+ * `.btn--inline-target` and within the hour four inline text links needed exactly
+ * this and could not have reused a class called "chip" — the same mistake as
+ * `BackButton` (a primitive wearing one use's name, which produced 13
+ * hand-rolled copies) and `.cta-pill`, both recorded the same day.
  *
  * 🔴 WHY IT IS NOT JUST `.btn--compact` (founder, 2026-09-25: *"the connect
  * button next to Apple Health in me profile is still huge"*). The Apple Health
@@ -820,8 +828,8 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  * target is an invisible overlay: the pill keeps its 29px box and `::after`
  * carries a 44px hit area centred on it. `:262` is met without the control
  * changing size. */
-.btn--inline-chip { position: relative; min-height: 0; }
-.btn--inline-chip::after {
+.btn--inline-target { position: relative; min-height: 0; }
+.btn--inline-target::after {
   content: '';
   position: absolute;
   left: 0;

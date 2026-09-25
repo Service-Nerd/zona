@@ -78,7 +78,7 @@ export function DayBudgetRows({
           const v = budgets[d]
           const isOverride = v != null
           return (
-            <button
+            <button className="btn btn--ghost btn--regular"
               key={d}
               type="button"
               onClick={() => onChange(cycleDayBudget(budgets, d, values))}
@@ -93,15 +93,7 @@ export function DayBudgetRows({
                 isOverride
                   ? `${LABEL[d]}: ${labelFor(v)}, set for this day. Tap to change.`
                   : `${LABEL[d]}: same as your weekday cap. Tap to set a different cap.`
-              }
-              style={{
-                width: '100%', minHeight: '48px', padding: '12px 14px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: 'transparent', border: 'none',
-                borderTop: i === 0 ? 'none' : '1px solid var(--line)',
-                cursor: 'pointer', fontFamily: 'var(--font-ui)',
-                transition: 'background 0.15s',
-              }}
+              } style={{ width: '100%', minHeight: '48px', padding: '12px 14px', background: 'transparent', borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}
             >
               <span style={{ fontSize: '15px', color: 'var(--ink)' }}>{LABEL[d]}</span>
               <span style={{

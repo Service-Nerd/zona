@@ -132,23 +132,9 @@ export default function PendingAdjustmentBanner({
         )}
 
         {/* Ghost — Revert */}
-        <button
+        <button className="btn btn--ghost btn--regular"
           onClick={onRevert}
-          disabled={loading}
-          style={{
-            flex:         1,
-            padding:      '10px 0',
-            background:   'transparent',
-            border:       '1px solid var(--coach-line-strong)',
-            borderRadius: '100px',
-            fontFamily:   'var(--font-ui)',
-            fontSize:     '13px',
-            fontWeight:   500,
-            color:        'var(--coach-ink)',
-            cursor:       loading ? 'default' : 'pointer',
-            opacity:      loading ? 0.6 : 1,
-            transition:   'opacity 0.15s',
-          }}
+          disabled={loading} style={{ flex:         1, padding:      '10px 0', background:   'transparent', borderRadius: '100px', fontSize:     '13px', fontWeight:   500, color:        'var(--coach-ink)', cursor:       loading ? 'default' : 'pointer', opacity:      loading ? 0.6 : 1 }}
         >
           Revert
         </button>

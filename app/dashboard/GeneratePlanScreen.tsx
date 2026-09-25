@@ -470,9 +470,8 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
         Add terrain, injury history, hard session preferences, and training style. Your plan adapts to you — not a template.
       </div>
-      <button
-        onClick={onUpgrade}
-        style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--warn-strong)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+      <button className="btn btn--ghost btn--regular"
+        onClick={onUpgrade} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warn-strong)', background: 'none', padding: 0 }}
       >
         Upgrade to personalise →
       </button>
@@ -1792,14 +1791,8 @@ export default function GeneratePlanScreen({
                 the same action is how surfaces drift apart. */}
             {onOpenRedeem && (isOnboarding || !hasPaidAccess) && (
               <div style={{ gridColumn: '1/-1', marginTop: '2px' }}>
-                <button
-                  onClick={onOpenRedeem}
-                  style={{
-                    background: 'none', border: 'none', padding: '4px 0',
-                    fontFamily: 'var(--font-ui)', fontSize: '12px',
-                    color: 'var(--mute)', cursor: 'pointer',
-                    textDecoration: 'underline', textUnderlineOffset: '3px',
-                  }}
+                <button className="btn btn--ghost btn--regular"
+                  onClick={onOpenRedeem} style={{ padding: '4px 0', fontSize: '12px', textDecoration: 'underline', textUnderlineOffset: '3px' }}
                 >
                   Have a charity code?
                 </button>

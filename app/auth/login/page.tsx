@@ -380,17 +380,10 @@ export default function LoginPage() {
               exactly where the old "OR" rule stood, doing that rule's job as
               well as its own. That is why the divider is gone rather than
               stacked on top of it. */}
-          <button
+          <button className="btn btn--ghost btn--regular"
             onClick={() => { setEmailOpen(v => !v); setError(null); setMessage(null) }}
             aria-expanded={emailOpen}
-            aria-controls="email-auth"
-            style={{
-              margin: '20px 0', width: '100%',
-              background: 'none', border: 'none',
-              fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-              cursor: 'pointer', padding: '4px 0',
-              textDecoration: 'underline', textUnderlineOffset: '3px',
-            }}
+            aria-controls="email-auth" style={{ margin: '20px 0', width: '100%', fontSize: '12px', padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '3px' }}
           >
             {emailOpen ? 'Hide email sign in' : 'Use email instead'}
           </button>
@@ -469,15 +462,8 @@ export default function LoginPage() {
           </form>
 
           {mode === 'signin' && (
-            <button
-              onClick={() => { setForgot(true); setError(null); setMessage(null) }}
-              style={{
-                marginTop: '12px', width: '100%',
-                background: 'none', border: 'none',
-                fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-                cursor: 'pointer', padding: '4px 0',
-                textDecoration: 'underline', textUnderlineOffset: '3px',
-              }}
+            <button className="btn btn--ghost btn--regular"
+              onClick={() => { setForgot(true); setError(null); setMessage(null) }} style={{ marginTop: '12px', width: '100%', fontSize: '12px', padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '3px' }}
             >
               Forgot password?
             </button>

@@ -325,14 +325,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
           <button
             onClick={() => handleSubscribe(false)}
             disabled={loading}
-            className="card-primary"
-            style={{
-              flex: 1, textAlign: 'center',
-              background: 'var(--card-bg)',
-              border: '1px solid var(--border-col)',
-              borderRadius: '10px', padding: '16px 12px',
-              cursor: loading ? 'default' : 'pointer',
-            }}
+            className="card-primary" style={{ flex: 1, textAlign: 'center', background: 'var(--card-bg)', borderRadius: '10px', padding: '16px 12px', cursor: loading ? 'default' : 'pointer' }}
           >
             <div style={{
               fontFamily: 'var(--font-ui)', fontWeight: 700,
@@ -359,15 +352,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
           <button
             onClick={() => handleSubscribe(true)}
             disabled={loading}
-            className="card-primary"
-            style={{
-              flex: 1, textAlign: 'center',
-              background: 'var(--card-bg)',
-              border: '2px solid var(--teal)',
-              borderRadius: '10px', padding: '16px 12px',
-              cursor: loading ? 'default' : 'pointer',
-              position: 'relative',
-            }}
+            className="card-primary" style={{ flex: 1, textAlign: 'center', background: 'var(--card-bg)', borderRadius: '10px', padding: '16px 12px', cursor: loading ? 'default' : 'pointer', position: 'relative' }}
           >
             <div style={{
               position: 'absolute', top: '-11px', left: '50%',

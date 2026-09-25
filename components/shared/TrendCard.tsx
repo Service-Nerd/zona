@@ -253,14 +253,8 @@ function ExplanationSheet({
         </div>
 
         <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: 'var(--space-2)' }}>
-          <button
-            onClick={close}
-            style={{
-              width: '100%', height: '48px',
-              background: 'var(--bg-soft)', border: 'none',
-              borderRadius: 'var(--radius-lg)', cursor: 'pointer',
-              fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500, color: 'var(--ink)',
-            }}
+          <button className="btn btn--secondary btn--regular"
+            onClick={close} style={{ width: '100%', height: '48px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-lg)', fontSize: '14px', fontWeight: 500, color: 'var(--ink)' }}
           >
             Close
           </button>

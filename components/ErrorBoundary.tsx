@@ -84,19 +84,13 @@ export class ErrorBoundary extends React.Component<Props, State> {
           </Button>
 
           {this.state.message && (
-            <button
+            <button className="btn btn--ghost btn--regular"
               onClick={() => {
                 const detail = `${this.state.message}\n\n${this.state.stack}`.trim()
                 void navigator.clipboard?.writeText(detail)
                   .then(() => this.setState({ copied: true }))
                   .catch(() => { /* clipboard blocked — the message is on screen anyway */ })
-              }}
-              style={{
-                display: 'block', margin: '14px auto 0',
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-                textDecoration: 'underline', textUnderlineOffset: '3px',
-              }}
+              }} style={{ margin: '14px auto 0', fontSize: '12px', textDecoration: 'underline', textUnderlineOffset: '3px' }}
             >
               {this.state.copied ? 'Copied' : 'Copy details'}
             </button>

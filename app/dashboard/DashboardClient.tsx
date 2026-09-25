@@ -2875,16 +2875,13 @@ export default function DashboardClient() {
             {navItems.map(({ id, label, icon }) => {
               const active = screen === id
               return (
-                <button key={id} onClick={() => {
+                <button className="btn btn--ghost btn--regular" key={id} onClick={() => {
                   scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
                   setScreen(id)
                   setShowMore(false)
                   const seen = getSeenGuides()
                   if (!seen.has(id)) setGuideScreen(id)
-                }} style={{
-                  flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
-                  background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0',
-                }}>
+                }} style={{ flex: 1, flexDirection: 'column', gap: '3px', background: 'none', padding: '2px 0' }}>
                   {icon(active)}
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: active ? 'var(--accent)' : 'var(--text-muted)' }}>
                     {label}
@@ -3349,19 +3346,9 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             requires that the user CAN proceed without granting, not that the skip
             be hidden. Previously gated behind permissionAsked, so the first frame
             looked exit-less until the user had already tapped Connect. */}
-        <button
+        <button className="btn btn--ghost btn--regular"
           onClick={skip}
-          disabled={pending !== null}
-          style={{
-            width: '100%',
-            background: 'none', border: 'none',
-            padding: '14px 0',
-            marginTop: 'var(--space-2)',
-            minHeight: '44px',
-            fontFamily: 'var(--font-ui)', fontSize: '13px',
-            color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
-            cursor: pending ? 'default' : 'pointer',
-          }}
+          disabled={pending !== null} style={{ width: '100%', padding: '14px 0', marginTop: 'var(--space-2)', minHeight: '44px', fontSize: '13px', textDecoration: 'underline', textUnderlineOffset: '3px', cursor: pending ? 'default' : 'pointer' }}
         >
           {pending === 'skip' ? 'One sec…' : 'Connect later'}
         </button>
@@ -3499,18 +3486,9 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
           </div>
         )}
 
-        <button
+        <button className="btn btn--ghost btn--regular"
           onClick={skip}
-          disabled={pending !== null}
-          style={{
-            width: '100%', background: 'none', border: 'none',
-            padding: '14px 0',
-            marginTop: denied ? '0' : '8px',
-            minHeight: '44px',
-            fontFamily: 'var(--font-ui)', fontSize: '13px',
-            color: 'var(--text-muted)', textDecoration: 'underline', textUnderlineOffset: '3px',
-            cursor: pending ? 'default' : 'pointer',
-          }}
+          disabled={pending !== null} style={{ width: '100%', padding: '14px 0', marginTop: denied ? '0' : '8px', minHeight: '44px', fontSize: '13px', textDecoration: 'underline', textUnderlineOffset: '3px', cursor: pending ? 'default' : 'pointer' }}
         >
           {pending === 'skip' ? 'One sec…' : denied ? 'Continue without notifications.' : "Skip for now."}
         </button>
@@ -4837,7 +4815,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                 ))}
               </div>
               {isMetricCustom && (
-                <button onClick={() => updateSessionMetric(null)} style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--warn-strong)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
+                <button className="btn btn--ghost btn--regular" onClick={() => updateSessionMetric(null)} style={{ fontSize: '10px', color: 'var(--warn-strong)', background: 'none', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
                   Reset to global
                 </button>
               )}
@@ -5203,14 +5181,8 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                     {/* DS-07 Part B — stack a second activity onto a logged run
                         (e.g. hike + treadmill top-up = one session). */}
                     {isComplete && isRunType && (
-                      <button
-                        onClick={() => { setManualAccumulate(true); setShowManualModal(true) }}
-                        style={{
-                          flexBasis: '100%', background: 'none', border: 'none',
-                          fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
-                          cursor: 'pointer', padding: '6px 0',
-                          textDecoration: 'underline', textUnderlineOffset: '3px',
-                        }}
+                      <button className="btn btn--ghost btn--regular"
+                        onClick={() => { setManualAccumulate(true); setShowManualModal(true) }} style={{ flexBasis: '100%', fontSize: '12px', padding: '6px 0', textDecoration: 'underline', textUnderlineOffset: '3px' }}
                       >
                         + Add another effort
                       </button>
@@ -5289,41 +5261,20 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                           fontFamily: 'var(--font-ui)', fontSize: '11px',
                           color: 'var(--mute)',
                         }}>
-                          <button
-                            onClick={() => setView('complete')}
-                            style={{
-                              background: 'none', border: 'none', padding: '6px 0',
-                              fontFamily: 'inherit', fontSize: 'inherit',
-                              color: 'var(--mute)',
-                              cursor: 'pointer', textDecoration: 'underline',
-                              textUnderlineOffset: '3px', minHeight: '32px',
-                            }}
+                          <button className="btn btn--ghost btn--regular btn--inline-target"
+                            onClick={() => setView('complete')} style={{ padding: '6px 0', fontSize: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', minHeight: '32px' }}
                           >
                             Wrong one?
                           </button>
                           <span style={{ padding: '0 8px', color: 'var(--mute-2)' }}>·</span>
-                          <button
-                            onClick={() => setShowManualModal(true)}
-                            style={{
-                              background: 'none', border: 'none', padding: '6px 0',
-                              fontFamily: 'inherit', fontSize: 'inherit',
-                              color: 'var(--mute)',
-                              cursor: 'pointer', textDecoration: 'underline',
-                              textUnderlineOffset: '3px', minHeight: '32px',
-                            }}
+                          <button className="btn btn--ghost btn--regular btn--inline-target"
+                            onClick={() => setShowManualModal(true)} style={{ padding: '6px 0', fontSize: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', minHeight: '32px' }}
                           >
                             Log manually
                           </button>
                           <span style={{ padding: '0 8px', color: 'var(--mute-2)' }}>·</span>
-                          <button
-                            onClick={() => setView('skip')}
-                            style={{
-                              background: 'none', border: 'none', padding: '6px 0',
-                              fontFamily: 'inherit', fontSize: 'inherit',
-                              color: 'var(--mute)',
-                              cursor: 'pointer', textDecoration: 'underline',
-                              textUnderlineOffset: '3px', minHeight: '32px',
-                            }}
+                          <button className="btn btn--ghost btn--regular btn--inline-target"
+                            onClick={() => setView('skip')} style={{ padding: '6px 0', fontSize: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', minHeight: '32px' }}
                           >
                             Skip
                           </button>
@@ -5624,14 +5575,9 @@ function DateStrip({ sessions, completions, selectedKey, onSelect }: {
           const dateNum = s ? s.rawDate.getDate().toString() : ''
 
           return (
-            <button
+            <button className="btn btn--ghost btn--regular"
               key={key}
-              onClick={() => onSelect(key)}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px',
-                padding: '4px 2px', background: 'none', border: 'none',
-                cursor: 'pointer', borderRadius: '12px',
-              }}
+              onClick={() => onSelect(key)} style={{ flexDirection: 'column', gap: '3px', padding: '4px 2px', background: 'none', borderRadius: '12px' }}
             >
               {/* Day letter */}
               <span style={{
@@ -6497,19 +6443,9 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
           disabled={loading}>
           Ease the session
         </Button>
-        <button
+        <button className="btn btn--ghost btn--regular"
           onClick={runAnyway}
-          disabled={loading}
-          style={{
-            background:   'transparent',
-            color:        'var(--ink-2)',
-            border:       'none',
-            padding:      '0 12px',
-            minHeight:    '44px',
-            fontFamily:   'var(--font-ui)', fontSize: '13px', fontWeight: 500,
-            cursor:       loading ? 'default' : 'pointer',
-            opacity:      loading ? 0.5 : 1,
-          }}
+          disabled={loading} style={{ background:   'transparent', color:        'var(--ink-2)', padding:      '0 12px', minHeight:    '44px', fontSize: '13px', fontWeight: 500, cursor:       loading ? 'default' : 'pointer', opacity:      loading ? 0.5 : 1 }}
         >
           Run it anyway →
         </button>
@@ -6793,7 +6729,7 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
               {error}
             </div>
-            <button onClick={() => void analyse()} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid var(--warn)', background: 'none', color: 'var(--warn-strong)', fontFamily: 'var(--font-ui)', fontSize: '13px', cursor: 'pointer' }}>
+            <button className="btn btn--ghost btn--regular" onClick={() => void analyse()} style={{ padding: '8px 16px', borderRadius: '8px', background: 'none', color: 'var(--warn-strong)', fontSize: '13px' }}>
               Try again
             </button>
           </div>
@@ -7564,15 +7500,8 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
           const msg = messages[trialDaysLeft as 1 | 2 | 3 | 4]
           return (
             <div style={{ marginBottom: 'var(--space-4)' }}>
-              <button
-                onClick={onUpgrade}
-                style={{
-                  width: '100%', textAlign: 'left', padding: '14px 16px',
-                  background: 'var(--card)', border: '1px solid var(--line)',
-                  borderLeft: '3px solid var(--moss)',
-                  borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)',
-                }}
+              <button className="btn btn--secondary btn--regular"
+                onClick={onUpgrade} style={{ width: '100%', textAlign: 'left', padding: '14px 16px', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: 'var(--radius-md)', gap: 'var(--space-3)' }}
               >
                 <div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
@@ -7595,15 +7524,8 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
             Warn accent (not moss — this is not a nudge). Plan still runs. */}
         {trialDaysLeft === 0 && !hasPaidAccess && (
           <div style={{ marginBottom: 'var(--space-4)' }}>
-            <button
-              onClick={onUpgrade}
-              style={{
-                width: '100%', textAlign: 'left', padding: '14px 16px',
-                background: 'var(--card)', border: '1px solid var(--line)',
-                borderLeft: '3px solid var(--warn)',
-                borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)',
-              }}
+            <button className="btn btn--secondary btn--regular"
+              onClick={onUpgrade} style={{ width: '100%', textAlign: 'left', padding: '14px 16px', background: 'var(--card)', borderLeft: '3px solid var(--warn)', borderRadius: 'var(--radius-md)', gap: 'var(--space-3)' }}
             >
               <div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
@@ -9065,18 +8987,8 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
         </div>
 
         {/* Teaser card — same left-accent pattern as wizard teaser card */}
-        <button
-          onClick={onUpgrade}
-          style={{
-            width: '100%', textAlign: 'left',
-            background: 'var(--card)',
-            border: '1px solid var(--line)',
-            borderLeft: '3px solid var(--moss)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-          }}
+        <button className="btn btn--secondary btn--regular"
+          onClick={onUpgrade} style={{ width: '100%', textAlign: 'left', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: '10px', padding: '14px 16px', gap: 'var(--space-3)' }}
         >
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '3px' }}>
@@ -9094,18 +9006,8 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
         {/* SHARE-01 — free-tier upsell for the shareable weekly zone card.
             Distinct from the zone-discipline teaser above: that one sells
             the score, this one sells the share moment. Same upgrade target. */}
-        <button
-          onClick={onUpgrade}
-          style={{
-            width: '100%', textAlign: 'left',
-            background: 'var(--card)',
-            border: '1px solid var(--line)',
-            borderLeft: '3px solid var(--moss)',
-            borderRadius: '10px',
-            padding: '14px 16px',
-            cursor: 'pointer',
-            display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-          }}
+        <button className="btn btn--secondary btn--regular"
+          onClick={onUpgrade} style={{ width: '100%', textAlign: 'left', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: '10px', padding: '14px 16px', gap: 'var(--space-3)' }}
         >
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '3px' }}>
@@ -10011,14 +9913,10 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               // directly under the sentence that claims it, so the sheet moves
               // to what it explains. ZoneRings itself is untouched — the
               // marketing homepage renders it bare and must stay inert.
-              <button
+              <button className="btn btn--ghost btn--regular"
                 type="button"
                 onClick={() => setZoneDisciplineSheetOpen(true)}
-                aria-label="What counts as in-zone. Opens an explanation."
-                style={{
-                  display: 'block', width: '100%', padding: 0, textAlign: 'inherit',
-                  background: 'none', border: 'none', cursor: 'pointer', font: 'inherit',
-                }}
+                aria-label="What counts as in-zone. Opens an explanation." style={{ width: '100%', padding: 0, textAlign: 'inherit', background: 'none', font: 'inherit' }}
               >
                 <ZoneRings
                   chromeless
@@ -11041,11 +10939,11 @@ function AppleHealthConnectionRow({ onHRFound }: {
             <Button
               variant="primary"
               size="compact"
-              className="btn--inline-chip"
+              className="btn--inline-target"
               onClick={connect}
               disabled={busy}
               /* Its original box, restored: 29px in a space-between row. The
-                 44px target is `.btn--inline-chip`'s invisible overlay. */
+                 44px target is `.btn--inline-target`'s invisible overlay. */
               style={{ padding: '8px 14px', fontSize: '11px', borderRadius: '8px', letterSpacing: '0.06em', textTransform: 'uppercase' }}
             >
               {busy ? 'Connecting...' : 'Connect'}
@@ -11323,18 +11221,9 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
             </div>
           )}
           {zones.map(z => (
-            <button
+            <button className="btn btn--secondary btn--regular"
               key={z.zone}
-              onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)}
-              style={{
-                display: 'grid', gridTemplateColumns: '24px 1fr auto',
-                alignItems: 'center', gap: 'var(--space-3)',
-                padding: '9px 10px', borderRadius: '8px',
-                background: 'var(--bg)',
-                border: '0.5px solid var(--border-col)',
-                cursor: 'pointer', textAlign: 'left',
-                width: '100%',
-              }}>
+              onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)} style={{ gridTemplateColumns: '24px 1fr auto', gap: 'var(--space-3)', padding: '9px 10px', borderRadius: '8px', background: 'var(--bg)', textAlign: 'left', width: '100%' }}>
               {/* Zone number */}
               <div style={{
                 width: '24px', height: '24px', borderRadius: '50%',
@@ -12054,9 +11943,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 
         {/* Plan + benchmark actions — moved below zones */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-          <button
-            onClick={onOpenGenerate}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
+          <button className="btn btn--ghost btn--regular"
+            onClick={onOpenGenerate} style={{ width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}
           >
             <div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>
@@ -12074,9 +11962,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             </div>
             <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
           </button>
-          <button
-            onClick={onOpenBenchmark}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
+          <button className="btn btn--ghost btn--regular"
+            onClick={onOpenBenchmark} style={{ width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}
           >
             <div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>Race benchmark</div>
@@ -12278,9 +12165,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               {/* What we watch for — user-facing disclosure of trigger taxonomy.
                   SYNC RULE: keep in step with TriggerType in lib/coaching/planAdjustment.ts.
                   If you add or remove a trigger type, update this copy in the same commit. */}
-              <button
-                onClick={() => setAdjustmentsDisclosureOpen(o => !o)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+              <button className="btn btn--ghost btn--regular"
+                onClick={() => setAdjustmentsDisclosureOpen(o => !o)} style={{ width: '100%', padding: '14px 16px', background: 'none', textAlign: 'left' }}
                 aria-expanded={adjustmentsDisclosureOpen}
               >
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
@@ -12409,9 +12295,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {/* ── Careful Now — destructive account actions ───────── */}
         <SectionLabel>Careful Now</SectionLabel>
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-          <button
-            onClick={signOut}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', padding: '14px 16px', background: 'none', border: 'none', borderBottom: '1px solid var(--line)', cursor: 'pointer', textAlign: 'left' }}
+          <button className="btn btn--ghost btn--regular"
+            onClick={signOut} style={{ width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}
           >
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', fontWeight: 500 }}>Sign out</span>
           </button>
@@ -12838,24 +12723,11 @@ export function RunFeedbackCard({
         {/* Top row — score toggle (right-aligned), only when !isManual && score !== null */}
         {!isManual && score !== null && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
-            <button
+            <button className="btn btn--ghost btn--regular"
               type="button"
               onClick={() => setExpanded(e => !e)}
               aria-expanded={expanded}
-              aria-label={expanded ? 'Hide score breakdown' : 'Show score breakdown'}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                padding: '2px 4px',
-                margin: '-2px -4px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
-                color: pal.ink, opacity: 0.5,
-                fontVariantNumeric: 'tabular-nums',
-                cursor: 'pointer',
-              }}
+              aria-label={expanded ? 'Hide score breakdown' : 'Show score breakdown'} style={{ background: 'transparent', padding: '2px 4px', margin: '-2px -4px', gap: '4px', fontSize: '11px', fontWeight: 600, color: pal.ink, opacity: 0.5, fontVariantNumeric: 'tabular-nums' }}
             >
               {score}/100
               <span style={{
@@ -13251,14 +13123,8 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
          *  which is what makes the move safe rather than a restructure. */}
         {analysis && analysis.source !== 'manual' && <div style={{ marginTop: 'var(--space-2)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
           {!unlinkConfirm && (
-            <button
-              onClick={() => setUnlinkConfirm(true)}
-              style={{
-                fontFamily: 'var(--font-ui)', fontSize: '11px',
-                color: 'var(--mute)', background: 'none', border: 'none',
-                padding: 0, cursor: 'pointer', textDecoration: 'underline',
-                textDecorationColor: 'var(--line)',
-              }}
+            <button className="btn btn--ghost btn--regular"
+              onClick={() => setUnlinkConfirm(true)} style={{ fontSize: '11px', padding: 0, textDecoration: 'underline', textDecorationColor: 'var(--line)' }}
             >
               Unlink this run
             </button>
@@ -13268,14 +13134,9 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
               <span style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)' }}>
                 Unlink this run?
               </span>
-              <button
+              <button className="btn btn--ghost btn--regular"
                 onClick={handleUnlink}
-                disabled={unlinking}
-                style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 600,
-                  color: 'var(--danger)', background: 'none', border: 'none',
-                  padding: 0, cursor: unlinking ? 'default' : 'pointer',
-                }}
+                disabled={unlinking} style={{ fontSize: '11px', fontWeight: 600, color: 'var(--danger)', background: 'none', padding: 0, cursor: unlinking ? 'default' : 'pointer' }}
               >
                 {unlinking ? 'Unlinking…' : 'Yes, unlink'}
               </button>
@@ -13296,23 +13157,9 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
           overflow: 'hidden',
         }}>
           {isComplete && (
-            <button
+            <button className="btn btn--ghost btn--regular"
               onClick={() => setBriefOpen(o => !o)}
-              aria-expanded={briefOpen}
-              style={{
-                width: '100%',
-                background: 'transparent',
-                border: 'none',
-                padding: '14px 18px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                cursor: 'pointer',
-                borderBottom: briefOpen ? `1px solid var(--line)` : 'none',
-                fontFamily: 'var(--font-ui)',
-                color: 'var(--ink-2)',
-                minHeight: '44px',
-              }}
+              aria-expanded={briefOpen} style={{ width: '100%', background: 'transparent', padding: '14px 18px', borderBottom: briefOpen ? `1px solid var(--line)` : 'none', color: 'var(--ink-2)', minHeight: '44px' }}
             >
               <span style={{
                 fontSize: '10px', fontWeight: 700,

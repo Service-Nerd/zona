@@ -319,14 +319,9 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
                 <React.Fragment key={`later-${w.weekNum}`}>
                 {seam}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', animation: 'zonna-fade-in 0.18s ease-out' }}>
-                  <button
+                  <button className="btn btn--ghost btn--regular"
                     onClick={() => setExpandedLaterWeek(null)}
-                    aria-label="Collapse week"
-                    style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      width: '100%', padding: '0 4px',
-                      background: 'none', border: 'none', cursor: 'pointer',
-                    }}
+                    aria-label="Collapse week" style={{ width: '100%', padding: '0 4px', background: 'none' }}
                   >
                     <span style={{
                       fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
@@ -966,20 +961,10 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           //
           // Hit area is 44x44 (iOS HIG) with negative margins so the row height
           // is unchanged — the old pill was roughly 24px tall and under-sized.
-          <button
+          <button className="btn btn--ghost btn--regular"
             onClick={e => { e.stopPropagation(); onMoveIconTap() }}
             aria-label={`Move ${session?.label ?? 'session'}`}
-            title="Move this session"
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              width: '44px', height: '44px',
-              margin: '-11px -7px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--mute)',
-              fontSize: '16px', lineHeight: 1,
-            }}
+            title="Move this session" style={{ width: '44px', height: '44px', margin: '-11px -7px', fontSize: '16px', lineHeight: 1 }}
           >
             ↕
           </button>
