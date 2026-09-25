@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — PARITY-GRID-PRODUCT-VALUES-01 · the file had already ruled on my fix, two items ago
+
+**Shipped:** the parity grid sweeps the six injuries the wizard can actually send, and a gate that stops it drifting back.
+**Dev learning:** I filed this item yesterday with a cost estimate — *"a fourth injury cell grows the grid by ~33%, which is why it is its own item"* — and the estimate was wrong because the fix was wrong. `verify-parity.ts` had already ruled on exactly this shape: *"A NINTH CARTESIAN AXIS WOULD BE THE WRONG FIX — 4x on an already slow check."* It appended a focused block instead, and a later item followed the same pattern. **The file contained the answer to a question I had already written down as open.** Real cost: +1.2%, not +33%, and the main axis swap was free.
+**Product/creator learning:** I nearly oversold the defect. The obvious line is "the grid tested values the product can't emit, so it was blind" — but `['shin']` *does* volume-cap today, because the matcher is bidirectional, so a blunt revert would have been caught. The genuine blindness was two narrower things: **no value in the grid contained a space**, and **four of the six wizard injuries were absent entirely** — including the two that drive a 120-minute long-run cap. Getting that distinction right took ten minutes and is the difference between a true claim and a satisfying one.
+**AI-building learning:** I proved the new rows are *sensitive* rather than asserting it. Mutate only the plantar/back long-run cap, hash both grids: the old grid's rows come back byte-identical while the new rows change and a plantar-fasciitis runner's longest session goes 126 → 207 minutes. **The old grid would have reported IDENTICAL while an injury runner's cap was lifted by 81 minutes.** That is the whole argument for the change, and it is a measurement rather than a story.
+**The honest bit:** the gate went into the *existing* injury test file rather than a new one, and that was a decision I nearly got wrong. A new file would have needed its own copy of "read the six chips out of `GeneratePlanScreen.tsx`" — a second extraction of the same fact, which is precisely the fault this entire two-item thread is about. Writing the duplicate to guard against duplicates would have been a good joke and a bad commit.
+**Also:** a comment in `ruleEngine.ts` names a "no-quality-in-base rule for hip" that has no call site. **I did not delete it or act on it.** This repo deleted ratified doctrine once on exactly that reasoning — read by nothing, therefore junk — while the principle authorising it sat one section away. Filed instead.
+**Hook material:** I filed a to-do with a cost estimate, and the fix turned out to be one the file had already argued for, in a comment, twice.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — INJURY-GUARD-PREDICATE-01 · the comment said the two predicates matched, and it had been false for nine days
 
 **Shipped:** one leaf module owning §12's volume-cap scope, three restatements deleted, and a guard that fails the build if a fourth is written.
