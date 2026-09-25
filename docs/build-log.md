@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-25 — NAV-SLIM-01 · the founder asked many times and the answer was already written down
+**Shipped:** The bottom nav at its documented 60px, with the padding moved into the tab so the whole bar is tappable.
+**Dev learning:** `min-height` on a class beats an inline `height` — that is the second control this evening it broke. The nav tabs were `<Button variant="ghost">`, so `.btn--regular`'s 44px CTA tap floor set the bar's height at 64 when the content only wanted 43.4. `size="compact"` carries the same floor, so neither Button size can express chrome, which is the actual argument for a separate primitive. And the fix was not "take 4px off": the bar padded 10px above and below a 44px button, so only 69% of it was tappable. Moving the padding inside the tab took the bar DOWN 4px and the tap target UP 16px. Measured in a real DOM: 61px bar, 60×94 tab, 98% tappable.
+**Product/creator learning:** He said he had asked many times. `ui-patterns.md` § 7 has specified 60px and an 0.6875rem label for months. The request was never refused, it was never read. Sixth time in one day the finding was "the thing already exists".
+**AI-building learning:** The consumer check inverted my premise. I assumed slimming the app would diverge from the marketing screenshots; `PhoneShell.NAV_H = 60` and `PhoneFrame` already had the right tabs, so the website was correct and the app had drifted. Slimming closed a divergence. I would not have looked if the build skill did not make the app-and-website consumer check mandatory.
+**The honest bit:** One of my six falsifications reported zero failures and I nearly took that as "the arm is weak". It was my harness: the mutation swapped `<div>` for `<button>` and left the `</div>`, so the file never loaded, and `grep -c '×'` cannot see a suite that fails to import. A hollow check inside the tool I use to detect hollow checks. Also predicted the geometry baseline would lose 4 entries; it lost 1, because four rendered tabs are one source tag in a `.map()`.
+**Hook material:** 44 of 64 pixels tappable. The spec said 60. It had said 60 the whole time.
+**Postable?:** yes
+
+
 ## 2026-09-25 — SWITCH-PRIMITIVE-01 · the specification that had no component
 **Shipped:** A `Switch` primitive owning all three on/off toggles, after my own migration rendered two of them as squares.
 **Dev learning:** `min-height` on a class BEATS an inline `height`. They are different properties, so the inline style never competes — `.btn--regular`'s `min-height: 44px` turned a 44×26 pill into 44×47 and the absolutely-positioned thumb floated. The deeper one: `ui-patterns.md` described this control in four bullets and, a thousand lines below, said "never build a one-off toggle inline." It forbade the only available method. A section that names a control must name the component that implements it, or it is a sketch.
