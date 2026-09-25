@@ -22,6 +22,55 @@ memory.
 ---
 
 
+
+## 2026-09-25 — S90-WITHIN-COHORT-RATE-01 · the noise standard was measured against a denominator that hid it
+
+**Ruling: two questions, two answers.**
+
+**(1) `INV-PLAN-BOUNCEBACK-BOUNDED` at ~56% within knee/shin — CORRECT, the honest
+residual.** Willy defended it on mechanism (post-deload bounceback against pre-deload, for
+runners whose tissue is why the cap exists, at volumes where the absolute-km floor is a
+large share of the week). No seat dissented. The shipped acknowledgement stands.
+
+**(2) "NOISE-GATE-01 should measure per-cohort" — CORRECT WITH AMENDMENT, and the
+amendment is substantial.** ⚠️ **The board REFUSED "declare each check's cohort"** —
+Hutchinson: a check whose declared scope is wrong reports a confidently wrong rate, and
+hand-maintained metadata rots. Axes are **derived** from the input (injured · dist · goal ·
+level · days), the gate reports the **maximum** across them, and a 200-plan floor stops a
+small cohort producing a meaningless percentage. ⚠️ **It REPORTS; it does not fail the
+build** — Seiler's condition: a high in-cohort rate may be a *true description of that
+cohort*, and a gate forcing a re-scope on that reading would delete real signal.
+
+🔴 **IT FOUND TWO CHECKS ABOVE WILLY'S OWN 71% EXAMPLE, ON THE FIRST RUN:**
+
+| check | plan-wide | in-cohort |
+|---|---|---|
+| `INV-PLAN-STRIDES-NO-CARRIER` | 9.0% | **74.2% of 2-day plans** |
+| `INV-PLAN-LR-MAX-WEEKLY-PCT` | 5.9% | **72.9% of 2-day plans** |
+| `INV-PLAN-DELOAD-IS-A-REDUCTION` | 12.3% | 45.6% of 2-day plans |
+| `INV-PLAN-DELIVERED-RAMP` | 27.2% | 42.2% of half-marathons |
+
+Neither of the top two had ever tripped a gate built to enforce exactly that standard.
+
+⚠️ **RECORDED DISAGREEMENT, NOT SETTLED — `INV-PLAN-LARGEST-SESSIONS-SPACED`.** Willy: a
+check firing on a large share of a distance while its own message says *"Likely forced by
+available days"* reports the runner's calendar, not a defect — his 71% case. Seiler and
+McMillan: it is an accurate description of day-job runners, who put their two biggest
+sessions on adjacent weekend days, and deleting it loses a true signal. **What would settle
+it:** the share of firings where a better arrangement was available given the declared
+days. **That measurement does not exist and the board did not take it.**
+
+⚠️ **The submission's own grid did not survive the sweep.** A 925-plan grid predicted
+`LARGEST-SESSIONS-SPACED` at 64.5% of marathons as the worst case; on the real 14,230-plan
+sweep the flagged set is entirely different and led by a `days=2` cohort the grid did not
+contain. **Measure on the sweep, not the cohort grid** — recorded again.
+
+**Artifacts:** §1 Amendment (the standard is measured where a check applies) · no new
+numeric (`NOISE_THRESHOLD_PCT` reused, axes derived) · NOISE-GATE-01's in-cohort report —
+**not** a `validatePlan()` invariant, because this is a harness check and the board said so.
+
+---
+
 ## 2026-09-25 — INJURY-DELIVERED-COVERAGE-01 · the two delivered arms left four injuries covered by neither
 
 **Ruling: CORRECT WITH AMENDMENT (Option C).** §94's `INV-PLAN-DELIVERED-RAMP` now covers

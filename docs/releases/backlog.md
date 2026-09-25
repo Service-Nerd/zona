@@ -270,10 +270,25 @@ that is `INJURY-DELIVERED-COVERAGE-01`, still open.
 `['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
 names**. That gap has no harness.
 
-### 🏃 `S90-WITHIN-COHORT-RATE-01` — a check at Willy's noise level inside its own cohort, quiet plan-wide
+### ✅ `S90-WITHIN-COHORT-RATE-01` — **RULED AND SHIPPED 2026-09-25.** The gate now measures where a check applies.
 
-**Filed 2026-09-25 shipping `INJURY-DELIVERED-COVERAGE-01`. Pre-existing, NOT caused by that
-ruling. For the Coaching Board.**
+**Coaching Board, two questions two answers:** ~56% IS the honest residual for
+`INV-PLAN-BOUNCEBACK-BOUNDED` (Willy, unopposed); and the gate gains an **in-cohort report**
+— derived axes, maximum across them, **reports without failing the build**.
+
+🔴 **IT FOUND TWO CHECKS ABOVE WILLY'S OWN 71% EXAMPLE ON THE FIRST RUN:**
+`INV-PLAN-STRIDES-NO-CARRIER` **9.0% plan-wide → 74.2% of 2-day plans** and
+`INV-PLAN-LR-MAX-WEEKLY-PCT` **5.9% → 72.9%**. Neither had ever tripped a gate built to
+enforce exactly that standard.
+
+⚠️ **The board REFUSED "declare each check's cohort"** — metadata rots, and a wrong declared
+scope reports a confidently wrong rate. ⚠️ **Unsettled and recorded:**
+`INV-PLAN-LARGEST-SESSIONS-SPACED` (Willy: noise; Seiler/McMillan: a true description of
+day-job runners). ⚠️ **My 925-plan grid did not survive the 14,230-plan sweep** — it
+predicted a different worst case entirely.
+
+**Follow-on, not filed as work:** the four flagged checks now need explaining, which is what
+the report obliges. `STRIDES-NO-CARRIER` at 74.2% of 2-day plans is the one to look at first.
 
 `INV-PLAN-BOUNCEBACK-BOUNDED` fires on **56.5% of knee and shin plans** — and has since it
 was written. It read **17.5% plan-wide** only because it covered 2 of 7 cohorts, so it never

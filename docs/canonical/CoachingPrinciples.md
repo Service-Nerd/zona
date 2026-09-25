@@ -377,6 +377,66 @@ A returning runner is identified by the wizard inputs `training_age > 2 years` A
 
 ---
 
+### §1 Amendment — the noise standard is measured WHERE A CHECK APPLIES, not only plan-wide *(Coaching Board 2026-09-25, S90-WITHIN-COHORT-RATE-01)*
+
+**Principle.** Willy's standard — *"a check firing too widely is not a safety
+mechanism, it is noise, and noise gets suppressed, which is how a real violation
+gets missed later"* — is measured **in the cohort a check governs**, not only
+against every plan generated. NOISE-GATE-01 now reports both.
+
+🔴 **WHY: THE DENOMINATOR HID CHECKS AT THE EXACT LEVEL THE STANDARD NAMES.**
+The gate computed `n / generated`, so a check governing one cohort read diluted
+by every plan it could never apply to. Measured on the 14,230-plan sweep the
+moment the in-cohort report existed:
+
+| check | plan-wide | in the cohort it governs |
+|---|---|---|
+| `INV-PLAN-STRIDES-NO-CARRIER` | 9.0% | **74.2% of 2-day plans** |
+| `INV-PLAN-LR-MAX-WEEKLY-PCT` | 5.9% | **72.9% of 2-day plans** |
+| `INV-PLAN-DELOAD-IS-A-REDUCTION` | 12.3% | 45.6% of 2-day plans |
+| `INV-PLAN-DELIVERED-RAMP` | 27.2% | 42.2% of half-marathons |
+
+**Willy's own worked example of noise was 71%.** Two checks were above it, and
+neither had ever tripped a gate built to enforce exactly that.
+
+**It REPORTS; it does not fail the build.** Seiler's condition of approval: a high
+in-cohort rate may be a **true description of that cohort** rather than a broken
+instrument — if a check governs marathons and marathons are where the failure
+lives, a high rate is what marathon plans look like, and a gate that forced a
+re-scope on that reading would delete real signal. The obligation is to **explain**
+the number, not to suppress it.
+
+⚠️ **THE BOARD REFUSED "declare each check's cohort."** Hutchinson: a check whose
+declared scope is wrong reports a confidently wrong rate, and hand-maintained
+metadata rots — `configPrincipleSync` exists because a rule that holds only while
+someone remembers is not a rule. The axes are therefore **derived from the input**
+(injury status, distance class, goal, level, days), never configured, and the gate
+reports the maximum across them. A minimum cohort of 200 plans stops a small
+cohort producing a meaningless percentage.
+
+⚠️ **The "applicable cohort" is genuinely not self-evident, and that is why the
+maximum is reported rather than one chosen axis.** `INV-PLAN-BOUNCEBACK-BOUNDED`
+concentrates on injury (56.5% within knee/shin) **and** on distance (42.0% of
+marathons). Picking one axis gives a different answer from picking the other.
+
+**Sims, recorded:** `injured` is in the axis set deliberately. The cohorts where
+load checks matter most skew female, and dilution across a mostly-uninjured grid
+is the arithmetic that let "injury means knee" survive as long as it did (§90
+Am. 2, the same day).
+
+**Unresolved and deliberately not settled here — `INV-PLAN-LARGEST-SESSIONS-SPACED`.**
+Willy holds that a check firing on a large share of a distance while its own
+message says *"Likely forced by available days"* is reporting the runner's calendar
+rather than a defect. Seiler and McMillan hold that it is an accurate description
+of this population — day-job runners put their two biggest sessions on adjacent
+weekend days — and that deleting it loses a true signal. **What would settle it:**
+the share of firings where a better arrangement was actually available given the
+runner's declared days. That measurement does not exist.
+
+**Config.** No new numeric — `NOISE_THRESHOLD_PCT` (30) is reused and the axes are
+derived. **Enforcement.** Not a `validatePlan()` invariant: this is a harness
+check, in NOISE-GATE-01 itself.
+
 ### §2 Amendment 2 — the weekly ratio is a SCREEN; the per-run step is the confirmation (Coaching Board 2026-09-20, HM-WEEK1-PERRUN-01)
 
 **Principle.** The ratio arm of the week-1 rule fires only where the increase

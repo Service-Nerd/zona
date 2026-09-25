@@ -635,6 +635,36 @@ const scWarnPlansByCode = new Map<string, number>()
 // grid was invisible — the exact §94 INV-PLAN-DELIVERED-RAMP noise this gate exists
 // to catch. Per-code warn firing rate is now measured and threshold-gated below.
 const warnByCode = new Map<string, number>()
+// S90-WITHIN-COHORT-RATE-01 (Coaching Board 2026-09-25) — NOISE-GATE-01's
+// denominator is every generated plan, so a check that governs one cohort reads
+// diluted by every plan it could never apply to. Measured across all 19 warn
+// invariants: FIVE sat under the 30% threshold plan-wide while exceeding it
+// in-cohort, the worst being INV-PLAN-LARGEST-SESSIONS-SPACED at 27.5%
+// plan-wide against 64.5% of MARATHON plans.
+//
+// ⚠️ THE BOARD REFUSED "declare each check's cohort". Hutchinson: a check whose
+// declared scope is wrong reports a confidently wrong rate, and hand-maintained
+// metadata rots — `configPrincipleSync` exists because a rule that holds only
+// while someone remembers is not a rule. So these axes are DERIVED from the
+// input, never configured, and the gate reports the maximum across them.
+// `injured` is in the set at Sims's request: the cohorts where load checks
+// matter most skew female, and dilution across a mostly-uninjured grid is the
+// arithmetic that let "injury means knee" survive.
+const COHORT_AXES = ['injured', 'dist', 'goal', 'level', 'days'] as const
+type CohortAxis = typeof COHORT_AXES[number]
+/** plans per cohort value, and per (cohort value, warn code). */
+const cohortTotals = new Map<string, number>()
+const cohortWarns = new Map<string, number>()
+function cohortsOf(i: Record<string, unknown>): string[] {
+  const km = Number(i.race_distance_km) || 0
+  return [
+    `injured=${((i.injury_history as string[] | undefined) ?? []).length ? 'yes' : 'no'}`,
+    `dist=${km >= 42 ? 'marathon' : km >= 21 ? 'half' : km >= 10 ? '10k' : '5k'}`,
+    `goal=${String(i.goal ?? 'finish')}`,
+    `level=${String(i.fitness_level ?? 'unset')}`,
+    `days=${String(i.days_available ?? '?')}`,
+  ]
+}
 
 // SWEEP_EXPLAIN=<CODE> — dump the first few real examples of one violation code,
 // with the input that produced them. Added while triaging the baseline: knowing
@@ -1206,6 +1236,14 @@ for (const input of inputs) {
   const warnCodesThisPlan = Array.from(new Set(
     composed.violations.filter(v => v.severity === 'warn').map(v => v.code)))
   for (const code of warnCodesThisPlan) warnByCode.set(code, (warnByCode.get(code) ?? 0) + 1)
+  // S90-WITHIN-COHORT-RATE-01 — same counting rule (once per plan), per cohort.
+  for (const c of cohortsOf(input as unknown as Record<string, unknown>)) {
+    cohortTotals.set(c, (cohortTotals.get(c) ?? 0) + 1)
+    for (const code of warnCodesThisPlan) {
+      const k = `${code}|${c}`
+      cohortWarns.set(k, (cohortWarns.get(k) ?? 0) + 1)
+    }
+  }
 }
 
 console.log(`Inputs attempted:  ${attempted}  (${CORNERS.length} corner + ${SWEEP_N} sampled, seed ${SEED})`)
@@ -1767,6 +1805,44 @@ if (noiseRates.length > 0) {
   }
   console.log()
 }
+// ── S90-WITHIN-COHORT-RATE-01 — the in-cohort report ────────────────────────
+//
+// REPORTS AND FLAGS; DOES NOT FAIL THE BUILD. Seiler's condition of approval: a
+// high in-cohort rate can be a TRUE DESCRIPTION of a cohort rather than a broken
+// instrument — if a check governs marathons and marathons are where the failure
+// lives, 64.5% is what marathon plans look like. A gate that forced a re-scope on
+// that reading would delete real signal. So this prints a line and requires an
+// explanation; it does not exit non-zero.
+//
+// ⚠️ MINIMUM COHORT SIZE. A cohort of twelve plans produces a percentage that
+// means nothing and would bury the real ones.
+const MIN_COHORT_PLANS = 200
+{
+  const hidden: string[] = []
+  for (const { code, pct } of noiseRates) {
+    let best = pct, where = ''
+    // ⚠️ `Array.from`, not `[...cohortTotals]` — CLAUDE.md's documented TS trap,
+    // and the second time I have hit it today.
+    for (const [c, total] of Array.from(cohortTotals)) {
+      if (total < MIN_COHORT_PLANS) continue
+      if (!COHORT_AXES.some(a => c.startsWith(`${a}=`))) continue
+      const inCohort = ((cohortWarns.get(`${code}|${c}`) ?? 0) / total) * 100
+      if (inCohort > best) { best = inCohort; where = c }
+    }
+    if (where && pct <= NOISE_THRESHOLD_PCT && best > NOISE_THRESHOLD_PCT) {
+      hidden.push(`  ${code}: ${pct.toFixed(1)}% plan-wide but ${best.toFixed(1)}% of ${where} plans`)
+    }
+  }
+  if (hidden.length) {
+    console.log(`⚠️  NOISE-GATE-01 in-cohort — under ${NOISE_THRESHOLD_PCT}% overall, OVER it where the check applies:`)
+    hidden.forEach(h => console.log(h))
+    console.log('  Not a failure. §1 Amendment (2026-09-25): a high in-cohort rate may be a true')
+    console.log('  description of that cohort, not a mis-scoped check — but it must be EXPLAINED,')
+    console.log('  not absorbed. Willy\'s standard is measured where a check applies.')
+    console.log()
+  }
+}
+
 const noisy = noiseRates.filter(r => r.pct > NOISE_THRESHOLD_PCT && !(r.code in ACKNOWLEDGED_WARN_RATES))
 if (noisy.length > 0) {
   console.error(`✗ NOISE-GATE-01 — warn invariant(s) firing above ${NOISE_THRESHOLD_PCT}% of the grid:`)
