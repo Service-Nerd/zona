@@ -6,6 +6,18 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — INJURY-DELIVERED-COVERAGE-01 · declaring an injury removed a check, and the gate that caught me was one I did not know existed
+
+**Shipped:** §90 Am. 2 / §94 Am. 2 — every injury the wizard offers now has a delivered-volume check.
+**Dev learning:** the conflict scan found an unwritten assumption rather than a contradiction, which is the most dangerous kind. §94 excluded injury runners *"already covered, more strictly, by §90"*; §90 scoped itself *"5% for knee/shin"*. **Both sentences are true.** The hole is between them, and nobody wrote down that §90's cohort was narrower than the word "injury". Four of six injuries were checked by neither arm — so declaring an injury *removed* a load check that declaring nothing would have given you.
+**Product/creator learning:** the brief said the board could not rule without knowing how many plans each option would newly warn on, so I measured all three first. That killed Option A — the obvious one, and the brief's own first listed — because it left knee and shin at 10.2% while giving achilles 39.9%. The cohorts with the strongest tissue argument would have ended up the least watched. **You cannot see that from the option; you can only see it from the number.**
+**AI-building learning:** then `NOISE-GATE-01` fired, a mechanical enforcement of the exact standard the chair had invoked in the sitting, measured on 14,230 plans where I had measured on 1,478. The gate offers an acknowledgement escape hatch and says in its own header that acknowledgement *"is not amnesty"*. So I measured instead of using it, and the discriminator was clean: knee and shin **did not move** (56.5% before and after) while achilles and plantar joined at the same level. Coverage, not misfiring. **But the measurement revealed something better than the answer I was looking for** — that check has fired at ~56% inside its own cohort since it was written, and read 17.5% plan-wide only because it covered two cohorts out of seven. The gate measures plan-wide. **Any cohort-scoped warn can sit at the noise level inside the cohort it governs and read as perfectly quiet overall.** Filed for the board rather than absorbed.
+**The honest bit:** I wrote two tautologies into the regression test — `hasDeliveredCapInjury([i]) || true` and `filter(i => ... && false)` — assertions that pass in every state including the broken one. My own hollow-test lint did not catch them, because it reads expression shapes and cannot see a constant folded through a variable. **Fifth hollow shape of the day; the lint caught none of the last three.** And I then wrote a confident causal story into a duration baseline — "§94's arm now runs on twice the corpus, that's the 2x step change" — which measured out at ~2%, not 2x. Two plausible stories in one hour, both wrong, both killed in under five minutes by actually running the thing.
+**Hook material:** the rule said injured runners were already covered more strictly. It was true for two injuries out of six, and the sentence had been load-bearing for months.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — CONTRACT-INJURY-VALUES-01 · the last of four, and the only one nothing could have caught
 
 **Shipped:** the contract describes the API it documents, and a test now holds it to that.
