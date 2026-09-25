@@ -270,7 +270,7 @@ that is `INJURY-DELIVERED-COVERAGE-01`, still open.
 `['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
 names**. That gap has no harness.
 
-### ⚙️ `PARITY-GRID-PRODUCT-VALUES-01` — the parity grid sweeps injury values the wizard cannot emit
+### ✅ `PARITY-GRID-PRODUCT-VALUES-01` — **SHIPPED 2026-09-25.** The grid sweeps product values now.
 
 **Filed 2026-09-25 while shipping `INJURY-GUARD-PREDICATE-01`.**
 
@@ -286,8 +286,55 @@ Same class as `cohortGrid.ts:203`'s own note and `ruleEngine.ts:2322` (*"the swe
 `scripts/property-validate-plans.ts` was already fixed (its `injurySets` carries all six);
 parity was not.
 
-Fix: use the product's values. ⚠️ **Costs run time** — a fourth injury cell grows the grid
-by ~33%, which is why it is its own item rather than folded into the predicate fix.
+🔴 **THE FILING PROPOSED THE WRONG FIX AND THE FILE ITSELF SAYS SO.** "~33% more run time"
+assumed a wider cartesian axis; `PARITY-HSR-01` had already ruled that *"a ninth cartesian
+axis would be the wrong fix — 4x on an already slow check"* and appended a focused block
+instead, and `PARITY-DST-01` followed it. **Third application of the same pattern.**
+
+**As shipped:** the main axis swaps to the product's own strings at **zero cost** (still
+three values, and now one carries a space), plus a 72-row focused block for the four
+injuries the grid had **never** swept. **5,994 → 6,066 cases, +1.2%.**
+
+⚠️ **The blindness was narrower than "the values are wrong", and saying so matters.**
+`['shin']` *does* volume-cap today (the matcher is bidirectional), so a blunt revert of
+`hasInjury` would have been caught. What could not be: **no value in the grid contained a
+space**, and **four of six wizard injuries were absent entirely** — including the two that
+drive `ruleEngine.ts`'s **120-minute long-run cap** (back, plantar fasciitis).
+
+🥇 **SENSITIVITY PROVEN, not assumed.** Mutating only the plantar/back long-run cap:
+
+| grid row | baseline | mutated | longest session |
+|---|---|---|---|
+| `[]` (old grid) | `cef15da6a4e4` | `cef15da6a4e4` **unchanged** | 207 min |
+| `['shin']` (old grid) | `72cb4e02747c` | `72cb4e02747c` **unchanged** | 179 min |
+| `['Plantar fasciitis']` (new) | `0f20a46fcb94` | **`69729379b5c8`** | **126 → 207 min** |
+| `['Back']` (new) | `01f13e8dc8c6` | **`7669ef8ec85e`** | **126 → 207 min** |
+
+**The old grid would have reported IDENTICAL while an injury runner's long-run cap was
+lifted by 81 minutes.**
+
+**Gate:** four assertions added to `injuryScope.test.ts` — deliberately there rather than
+in a new file, because it already reads the six chips out of `GeneratePlanScreen.tsx` and a
+second copy of that extraction is the exact fault this item is about. `verify-parity.ts` is
+**not** in `npm run verify`, so a check inside the script would only run when someone
+remembered. Falsified both ways: restoring `['knee'], ['shin']` names both offenders;
+dropping one injury names `Plantar fasciitis`.
+
+### ⚙️ `RULEENGINE-HIP-COMMENT-01` — a comment names a rule with no call site
+
+**Filed 2026-09-25 during `PARITY-GRID-PRODUCT-VALUES-01`. Not investigated.**
+
+`lib/plan/ruleEngine.ts:2323` lists what silently did not apply before the 2026-09-16
+matcher fix: *"…the **no-quality-in-base rule for hip**, and the 120-minute long-run cap
+for plantar fasciitis."* The plantar cap is real and verified (`ruleEngine.ts:2402`). **No
+`hasInjury(input, 'hip_flexor')` call site exists** — grepped; the only occurrences of
+`hip_flexor` in `lib/plan/` are that comment and the matcher's own doc block.
+
+Either the rule moved, or it was removed and the comment was not, or it never existed.
+⚠️ **Deliberately not guessed at.** §25's `race_pace_pct` was deleted on exactly this
+reasoning — *"read by nothing, therefore junk"* — while the principle ratifying it sat one
+section away. **"No call site" is evidence a consumer is missing, not that the rule is.**
+`['Hip']` is now swept by the parity grid either way, so a future change to it is visible.
 
 ### ⚙️ `OPS-TRIAL-CONV-01` — `v_trial_conversion` counts the founder's admin row as a conversion
 

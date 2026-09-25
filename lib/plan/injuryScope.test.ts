@@ -149,3 +149,56 @@ describe('nobody restates §12 scope outside this module', () => {
     expect([...VOLUME_CAPPED_INJURY_KEYWORDS]).toEqual(['knee', 'shin_splints'])
   })
 })
+
+// ── THE GRIDS MUST SWEEP VALUES THE PRODUCT CAN EMIT ─────────────────────────
+//
+// PARITY-GRID-PRODUCT-VALUES-01. `verify-parity.ts` swept `['knee']` and
+// `['shin']` — neither is a string `GeneratePlanScreen` can send, and **no value
+// in that grid contained a space**, so every regression specific to the
+// multi-word wizard strings was invisible. It reported IDENTICAL over 5,994
+// cases on the very change that doubled two invariants' reach.
+//
+// ⚠️ THIS GUARD LIVES HERE RATHER THAN IN ITS OWN FILE ON PURPOSE. It needs the
+// wizard's six chips, `WIZARD_INJURIES` above already reads them out of the
+// screen, and a second copy of that extraction is the exact fault this whole
+// item is about. `verify-parity.ts` is NOT part of `npm run verify` (it needs a
+// baseline commit and makes worktrees), so a check inside that script would only
+// run when someone remembered — which this repo has recorded as equivalent to
+// no check at all.
+describe('verify-parity.ts sweeps injuries the wizard can actually emit', () => {
+  const SRC = readFileSync('scripts/verify-parity.ts', 'utf8')
+
+  /** Every `['...']` injury value in the two declared injury axes. */
+  const gridValues = (decl: string): string[] => {
+    const m = SRC.match(new RegExp(`const ${decl}: string\\[\\]\\[\\] = \\[([^\\n]*)\\]`))
+    if (!m) throw new Error(`${decl} not found in scripts/verify-parity.ts — did it move or change shape?`)
+    return Array.from(m[1].matchAll(/'([^']+)'/g)).map(x => x[1])
+  }
+
+  it('every injury value in the main grid is a product value', () => {
+    const offenders = gridValues('INJURIES').filter(v => !WIZARD_INJURIES.includes(v))
+    expect(offenders,
+      `verify-parity.ts INJURIES contains values GeneratePlanScreen cannot send: ${offenders.join(', ')}`,
+    ).toEqual([])
+  })
+
+  it('every injury value in the focused block is a product value', () => {
+    const offenders = gridValues('INJURY_EXTRA').filter(v => !WIZARD_INJURIES.includes(v))
+    expect(offenders,
+      `verify-parity.ts INJURY_EXTRA contains values GeneratePlanScreen cannot send: ${offenders.join(', ')}`,
+    ).toEqual([])
+  })
+
+  it('between them the two axes reach all six wizard injuries', () => {
+    const swept = new Set([...gridValues('INJURIES'), ...gridValues('INJURY_EXTRA')])
+    const missing = WIZARD_INJURIES.filter(v => !swept.has(v))
+    expect(missing, `never swept by verify-parity.ts: ${missing.join(', ')}`).toEqual([])
+  })
+
+  it('at least one swept value contains a SPACE — the blindness that let this through', () => {
+    const swept = [...gridValues('INJURIES'), ...gridValues('INJURY_EXTRA')]
+    expect(swept.some(v => v.includes(' ')),
+      'no multi-word injury value in the grid: a space-handling regression would be invisible',
+    ).toBe(true)
+  })
+})

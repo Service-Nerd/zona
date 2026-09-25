@@ -63,7 +63,37 @@ const RACE_DATES = ['2026-12-06', '2027-01-17', '2027-03-28']
 const DISTANCES = [5, 10, 21.1, 42.2, 50, 100]
 const LEVELS = ['beginner', 'intermediate', 'experienced'] as const
 const DAYS = [3, 4, 5]
-const INJURIES: string[][] = [[], ['knee'], ['shin']]
+// PARITY-GRID-PRODUCT-VALUES-01 (2026-09-25) — THE GRID SWEPT VALUES THE
+// PRODUCT CANNOT EMIT. This axis was `[[], ['knee'], ['shin']]`. The wizard
+// (`GeneratePlanScreen.tsx` → `INJURIES`) sends 'Achilles' · 'Knee' · 'Back' ·
+// 'Hip' · 'Shin splints' · 'Plantar fasciitis' — capitalised, and two of them
+// contain a SPACE.
+//
+// ⚠️ THE BLINDNESS IS NARROWER THAN "the values are wrong", and worth stating
+// precisely so the fix is not oversold. `['shin']` DOES volume-cap today, because
+// the matcher is bidirectional ('shin splints'.includes('shin')), so a blunt
+// revert of `hasInjury` would still have been caught here. What could NOT be
+// caught: **no value in this grid contained a space**, so every regression
+// specific to the multi-word wizard strings was invisible — which is the whole
+// 'Shin splints' family, and is exactly the defect INJURY-GUARD-PREDICATE-01
+// fixed while this file reported IDENTICAL.
+//
+// Swapped for the product's own strings at NO extra cost: still three values,
+// still 5,994 base rows, and now one of them carries a space.
+const INJURIES: string[][] = [[], ['Knee'], ['Shin splints']]
+
+// PARITY-INJURY-EXTRA — the four injuries this grid had NEVER swept.
+//
+// Not a wider cartesian axis: PARITY-HSR-01 ruled that "a ninth cartesian axis
+// would be the wrong fix — 4x on an already slow check", and PARITY-DST-01
+// followed it. Third application of the same pattern: append a focused block.
+//
+// These are not decorative values. `ruleEngine.ts` caps the long run at 120
+// MINUTES for back and plantar-fasciitis histories, and
+// `HILL_RESTRICTING_INJURIES` excludes hill sessions for achilles and plantar.
+// Both are real prescription levers that this file has never once exercised.
+// 72 rows on 5,994 (+1.2%).
+const INJURY_EXTRA: string[][] = [['Achilles'], ['Back'], ['Hip'], ['Plantar fasciitis']]
 const VOLUMES = [15, 30, 55]
 const TIERS = ['free', 'paid'] as const
 
@@ -134,6 +164,7 @@ const EXPECTED_ROWS =
   DAYS.length * INJURIES.length * VOLUMES.length * TIERS.length * GOALS.length
   + DISTANCES.length * LEVELS.length * GOALS.length * HSR_EXTRA.length
   + DISTANCES.length * LEVELS.length * DST_RACE_DATES.length          // PARITY-DST-01
+  + DISTANCES.length * LEVELS.length * INJURY_EXTRA.length            // PARITY-GRID-PRODUCT-VALUES-01
 
 /** Wall-clock / run-scoped fields. Present on both sides, different every run. */
 const STRIP_META = ['generated_at', 'created_at', 'updated_at']
@@ -213,6 +244,41 @@ async function probe(): Promise<void> {
             rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
           }
         }
+
+  // ── PARITY-INJURY-EXTRA block — the four wizard injuries the main grid has
+  // never carried. One race date / day count / volume / tier / goal, so the
+  // injury value is the only thing varying beside distance and level.
+  for (const race_distance_km of DISTANCES)
+    for (const fitness_level of LEVELS)
+      for (const injury_history of INJURY_EXTRA) {
+        const race_date = RACE_DATES[0]
+        const days_available = 4
+        const current_weekly_km = 30
+        const tier = 'paid'
+        const input = {
+          goal: 'finish', age: 40, resting_hr: 55, max_hr: 180,
+          preferred_long_run_day: 'sun',
+          race_date, race_distance_km, current_weekly_km,
+          longest_recent_run_km: Math.max(5, Math.round(current_weekly_km / 3)),
+          days_available, fitness_level, injury_history,
+        }
+        // `KEY_FIELDS` is positional and these injury values appear in no other
+        // block, so the key is unique without a prefix — same argument as DST.
+        const key = [race_distance_km, race_date, fitness_level, days_available,
+          injury_history.join('+'), current_weekly_km, tier, 'finish', 'unset'].join('|')
+        try {
+          const plan: any = generateRulePlan(input as any, tier as any, PLAN_START)
+          const stable = JSON.parse(JSON.stringify(plan))
+          for (const f of STRIP_META) {
+            if (stable?.meta) delete stable.meta[f]
+            delete stable[f]
+          }
+          rows.push(`${key}\tOK\t${createHash('sha256')
+            .update(JSON.stringify(stable)).digest('hex').slice(0, 16)}`)
+        } catch (e: any) {
+          rows.push(`${key}\tREFUSED\t${String(e?.message ?? e).replace(/\s+/g, ' ').slice(0, 140)}`)
+        }
+      }
 
   // ── PARITY-DST-01 block — tight runways that cross spring-forward.
   for (const race_distance_km of DISTANCES)
