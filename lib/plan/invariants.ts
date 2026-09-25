@@ -16,6 +16,7 @@ import { sessionFloorsFor } from './sessionFloors'
 import { qualityCeilingFor } from './qualityCeiling'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
+import { hasVolumeCappedInjuryHistory } from './injuryScope'
 import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
@@ -3511,12 +3512,15 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // when DELOAD-INVERSION-01 lands. Healthy runners are NOT checked — their
   // bounceback is unbounded by design (§2, confirmed on measurement).
   //
-  // Predicate matches the engine's injury-cap gate exactly (ruleEngine.ts:
-  // `hasInjury('knee') || hasInjury('shin_splints')`).
-  const bouncebackInjuryCapped = (input.injury_history ?? []).some(i => {
-    const s = i.toLowerCase()
-    return s.includes('knee') || s.includes('shin_splints')
-  })
+  // 🔴 THIS COMMENT USED TO SAY "Predicate matches the engine's injury-cap gate
+  // exactly" AND IT WAS FALSE FOR NINE DAYS (INJURY-GUARD-PREDICATE-01). The
+  // engine's `hasInjury` was made separator-insensitive on 2026-09-16 precisely
+  // because three of the six wizard values never matched; this restatement was
+  // not, so `'Shin splints'` — the string GeneratePlanScreen actually sends —
+  // never matched `'shin_splints'`. The engine capped those runners' volume and
+  // the two invariants below, which exist to VERIFY that cap, never looked.
+  // Now it does not restate the rule at all; it calls the owner.
+  const bouncebackInjuryCapped = hasVolumeCappedInjuryHistory(input.injury_history)
   if (bouncebackInjuryCapped) {
     for (let i = 2; i < plan.weeks.length; i++) {
       const bounce = plan.weeks[i]
@@ -6097,10 +6101,13 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // interval. Only the PEAK reduction is refused.
   {
     const injuries = (plan.meta.injury_history ?? []).map(i => String(i).toLowerCase())
-    // ⚠️ Matches the producer's owner BY VALUE, not by a second copy of the
-    // logic — same reason and same two keywords as INV-PLAN-LR-SHORTFALL-CAUSE
-    // above: the checker cannot import the producer (circular).
-    const volumeCapped = injuries.some(i => i.includes('knee') || i.includes('shin'))
+    // INJURY-GUARD-PREDICATE-01 — was a third restatement, justified by "the
+    // checker cannot import the producer (circular)". True of `ruleEngine.ts`,
+    // untrue of a leaf module both sides import. This arm matched
+    // `'Shin splints'` by luck (it tested `'shin'`, a substring); the §90 arm
+    // tested `'shin_splints'` and did not. Two copies of one rule disagreeing is
+    // the DELOAD-OWNER-01 fault, and it is why the owner now exists.
+    const volumeCapped = hasVolumeCappedInjuryHistory(injuries)
     if (plan.meta.finish_goal_run_walk && volumeCapped) {
       violations.push({
         code: 'INV-PLAN-RUNWALK-CAP-NOT-REDUCED',
@@ -7254,13 +7261,11 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       // Same volume, different long run — so volume is not the binding lever, and
       // the note said it was. §40c requires the note to name what actually binds.
       //
-      // ⚠️ The predicate matches the PRODUCER's single owner by value, not by a
-      // second copy of the logic: `hasVolumeCappedInjury` is knee || shin_splints
-      // (§12), and `meta.injury_history` carries the runner's raw values. Matching
-      // here is a substring test on the same two keywords because the checker
-      // cannot import the producer (circular — see fuellingNotes.ts's header).
+      // INJURY-GUARD-PREDICATE-01 — calls §12's owner rather than restating it.
+      // `meta.injury_history` carries the runner's RAW wizard values, which is
+      // exactly why a hand-rolled substring test was the wrong tool here.
       const injuries = (plan.meta.injury_history ?? []).map(i => String(i).toLowerCase())
-      const volumeCappedInjury = injuries.some(i => i.includes('knee') || i.includes('shin'))
+      const volumeCappedInjury = hasVolumeCappedInjuryHistory(injuries)
       if (blamesVolume && volumeCappedInjury) {
         violations.push({
           code: 'INV-PLAN-LR-SHORTFALL-CAUSE',

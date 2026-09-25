@@ -229,10 +229,18 @@ changes the cost of two of them. ⚠️ **No option changes what the engine pres
 what is reported, so `measure:fitness` is not the gate; the gate is how many plans each
 option newly warns on, which is **unmeasured**.
 
-### ⚙️ `INJURY-GUARD-PREDICATE-01` — `'Shin splints'` does not match `'shin_splints'`
+### ✅ `INJURY-GUARD-PREDICATE-01` — **SHIPPED 2026-09-25.** `'Shin splints'` now matches.
 
-**RCA complete, fix NOT applied** (it is entangled with the board decision above; applying
-it in isolation changes which plans warn).
+**Three restatements, not one.** `lib/plan/injuryScope.ts` is now the single owner of §12's
+volume-cap scope; `ruleEngine.ts` and all three `invariants.ts` sites call it.
+
+🥇 **REACH, MEASURED — the fix doubles both guards** on the 14,230-plan sweep:
+`INV-PLAN-BOUNCEBACK-BOUNDED` **8.7% → 17.5%** (1,234 → 2,490 plans) and
+`INV-PLAN-INJURY-CAP-DELIVERED` **4.1% → 8.2%** (585 → 1,172). **1,843 plan-instances
+where a §12 load guard was silent and now runs.** `verify:parity` IDENTICAL over 5,994
+cases — the producer is untouched, only the verification changed.
+
+⚠️ **Follow-up filed below:** `PARITY-GRID-PRODUCT-VALUES-01`.
 
 `ruleEngine.ts`'s `hasInjury` was made separator-insensitive on **2026-09-16** precisely
 because three of six wizard values never matched. `bouncebackInjuryCapped` in
@@ -246,13 +254,38 @@ because three of six wizard values never matched. `bouncebackInjuryCapped` in
 
 **The engine caps a shin-splints runner's volume and the checker meant to verify that cap
 never looks.** Catalogue class: *checker reads a different source from the producer*.
-Fix: call `hasInjury` (or export it) rather than restating the predicate — D-16, no
-parallel semantics. Regression test must use the **product's** value `'Shin splints'`, not
-the code's.
+**Fix as shipped:** a LEAF module both sides import — `ruleEngine.ts` imports
+`invariants.ts`, so the three copies' stated justification (*"the checker cannot import the
+producer (circular)"*) was right about the cycle and wrong about the conclusion. D-16,
+`deloadCadence.ts`'s pattern. `injuryScope.test.ts` reads the six chips **out of
+`GeneratePlanScreen.tsx`** rather than copying them, and fails the build if any file
+outside the owner hand-rolls the predicate. Both checks falsified: the pre-fix predicate
+turns 6 tests red, and a restatement put back into `invariants.ts` is named by file and
+line. ⚠️ **Scope deliberately NOT widened** — achilles/back/hip/plantar stay outside §12;
+that is `INJURY-DELIVERED-COVERAGE-01`, still open.
 
 ⚠️ `invariant:liveness` cannot catch this: both invariants are **proven wakeable** via
 `['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
 names**. That gap has no harness.
+
+### ⚙️ `PARITY-GRID-PRODUCT-VALUES-01` — the parity grid sweeps injury values the wizard cannot emit
+
+**Filed 2026-09-25 while shipping `INJURY-GUARD-PREDICATE-01`.**
+
+`scripts/verify-parity.ts:66` — `const INJURIES: string[][] = [[], ['knee'], ['shin']]`.
+Neither `'knee'` nor `'shin'` is a string `GeneratePlanScreen` can produce; the six chips
+are `Achilles · Knee · Back · Hip · Shin splints · Plantar fasciitis`. So the 5,994-case
+parity run is **structurally blind to the exact defect just fixed** — it returned
+`IDENTICAL` on a change that doubles two invariants' reach, which is correct (the producer
+did not move) but would also have been silent had the producer moved for `'Shin splints'`.
+
+Same class as `cohortGrid.ts:203`'s own note and `ruleEngine.ts:2322` (*"the sweep sets
+`['shin_splints']`, the parity grid `['shin']` — values the product cannot produce"*).
+`scripts/property-validate-plans.ts` was already fixed (its `injurySets` carries all six);
+parity was not.
+
+Fix: use the product's values. ⚠️ **Costs run time** — a fourth injury cell grows the grid
+by ~33%, which is why it is its own item rather than folded into the predicate fix.
 
 ### ⚙️ `OPS-TRIAL-CONV-01` — `v_trial_conversion` counts the founder's admin row as a conversion
 

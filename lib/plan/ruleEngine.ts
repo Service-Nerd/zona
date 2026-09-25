@@ -30,6 +30,7 @@ const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.r
 import { resolveMaxHr, tanakaMaxHR } from './maxHrGuard'
 import { assessFitness, fitnessFromVdot, fitnessFromVolume, FITNESS_RANK, type FitnessLevel } from './fitnessAssessment'
 import { validatePlan, copyClaimsIntensity, enforceViolations } from './invariants'
+import { hasInjuryKeyword, hasVolumeCappedInjuryHistory } from './injuryScope'
 import { assessBaseBuild, baseVolumeRefusal, runWalkInadequateRefusal, BaseVolumeError } from './baseVolume'
 import { assessLongRunReadiness, LongRunReadinessError } from './longRunReadiness'
 import { sessionFloorsFor, type SessionFloors } from './sessionFloors'
@@ -2294,7 +2295,11 @@ function applyRecalibrationTimeTrial(
  * would silently widen the cap's population.
  */
 function hasVolumeCappedInjury(input: GeneratorInput): boolean {
-  return hasInjury(input, 'knee') || hasInjury(input, 'shin_splints')
+  // INJURY-GUARD-PREDICATE-01 — delegates to `lib/plan/injuryScope.ts`, the leaf
+  // module `invariants.ts` can also import. The keyword list lives there so the
+  // producer and the four checkers cannot hold different ideas of §12's scope;
+  // one of them already did ('Shin splints' vs 'shin_splints').
+  return hasVolumeCappedInjuryHistory(input.injury_history)
 }
 
 /**
@@ -2328,12 +2333,10 @@ function hasVolumeCappedInjury(input: GeneratorInput): boolean {
  * >= 3 characters so a stray short value cannot match everything.
  */
 function hasInjury(input: GeneratorInput, keyword: string): boolean {
-  const norm = (t: string) => t.toLowerCase().replace(/[_\s]+/g, ' ').trim()
-  const k = norm(keyword)
-  return (input.injury_history ?? []).some(raw => {
-    const v = norm(raw)
-    return v.includes(k) || (v.length >= 3 && k.includes(v))
-  })
+  // Body moved to `lib/plan/injuryScope.ts` (INJURY-GUARD-PREDICATE-01) so the
+  // validator can call the same matcher without importing this file. This
+  // wrapper stays because ~20 call sites here hold a GeneratorInput, not a list.
+  return hasInjuryKeyword(input.injury_history, keyword)
 }
 
 function applyInjuryAdjustments(
