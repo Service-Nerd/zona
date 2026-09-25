@@ -27,18 +27,55 @@ import path from 'node:path'
 const ROOT = path.resolve(__dirname, '../..')
 const SHEET = fs.readFileSync(path.join(ROOT, 'components/shared/Sheet.tsx'), 'utf8')
 
-const CONSUMERS = [
-  'components/shared/ZoneInfoSheet.tsx',
-  'components/shared/ModifyPlanSheet.tsx',
-  'components/shared/TrendCard.tsx',
-  'components/training/RaceResultSheet.tsx',
-]
+/**
+ * 🔴 DERIVED, NEVER LISTED — and this file shipped with the list (2026-09-25).
+ *
+ * `CONSUMERS` was four hand-typed paths, chosen because their FILENAMES say
+ * "Sheet". `app/dashboard/DashboardClient.tsx` renders FOUR of the app's nine
+ * sheets and was not among them, so the two Coach sheets kept a sticky
+ * full-width "Close" bar and the Log-a-run sheet drew a SECOND cross — the
+ * exact defect this file exists to hold shut — while every arm below passed.
+ *
+ * ⚠️ THE PREDICATE WAS NEVER WRONG. `/>\s*Close\s*</` matches those bars
+ * exactly. It was never pointed at the file. **A check is its population as
+ * much as its predicate**, and a hand-written population is blind precisely
+ * where discovery would have found something. Same class as the `--accent`
+ * alias (the checker compared a token name the producer did not use) and
+ * TAP-TARGET-FLOOR-01 (the floor arm measured only the compliant population).
+ *
+ * The founder found it by tapping "This week's load" — after I had reported
+ * this item shipped and told him every sheet was covered.
+ */
+function consumers(): string[] {
+  const out: string[] = []
+  const walk = (dir: string) => {
+    for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`
+      if (e.isDirectory()) { if (e.name !== 'node_modules') walk(rel) }
+      else if (/\.tsx$/.test(e.name) && !e.name.includes('.test.')) {
+        const src = fs.readFileSync(path.join(ROOT, rel), 'utf8')
+        if (/from '(\.\/Sheet|@\/components\/shared\/Sheet)'/.test(src) && /<Sheet\b/.test(src)) out.push(rel)
+      }
+    }
+  }
+  walk('app'); walk('components')
+  return out
+}
 const blank = (m: string) => m.replace(/[^\n]/g, '')
 const strip = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/\{\/\*[\s\S]*?\*\/\}/g, blank)
    .replace(/^[ \t]*\/\/.*$/gm, '')
 
 describe('SHEET-CLOSE-OWNER-01', () => {
+  it('🔴 the consumer set is DISCOVERED and non-trivial', () => {
+    // A derived list that silently returns [] passes every arm below. It must
+    // find the sheets that actually exist, and `DashboardClient` by name —
+    // because that is the file the hand-written list left out.
+    const found = consumers()
+    expect(found.length, `sheet consumers found: ${found.join(', ')}`).toBeGreaterThanOrEqual(6)
+    expect(found).toContain('app/dashboard/DashboardClient.tsx')
+  })
+
   it('Sheet renders the close itself', () => {
     expect(SHEET, 'Sheet stopped rendering its own close').toMatch(/<IconButton[\s\S]{0,200}ariaLabel="Close"/)
   })
@@ -63,7 +100,7 @@ describe('SHEET-CLOSE-OWNER-01', () => {
 
   it('🔴 no sheet hand-rolls its own close', () => {
     const offenders: string[] = []
-    for (const f of CONSUMERS) {
+    for (const f of consumers()) {
       const p = path.join(ROOT, f)
       if (!fs.existsSync(p)) continue
       const src = strip(fs.readFileSync(p, 'utf8'))

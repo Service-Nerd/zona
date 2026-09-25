@@ -5948,7 +5948,6 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                     : isEdit ? 'Correct what you logged' : 'Manual entry · no Strava needed'}
                 </div>
               </div>
-              <IconButton onClick={close} ariaLabel="Close" shape="circle" icon={<span aria-hidden>✕</span>} />
             </div>
 
             {/* Session context strip — shown when opened from a planned session */}
@@ -10092,11 +10091,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 ))}
               </div>
 
-              <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: 'var(--space-2)' }}>
-                <Button variant="secondary" fullWidth  onClick={close}>
-                  Close
-                </Button>
-              </div>
             </>
             )}
           </Sheet>
@@ -10131,11 +10125,6 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
                 ))}
               </div>
 
-              <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: 'var(--space-2)' }}>
-                <Button variant="secondary" fullWidth  onClick={close}>
-                  Close
-                </Button>
-              </div>
             </>
             )}
           </Sheet>
