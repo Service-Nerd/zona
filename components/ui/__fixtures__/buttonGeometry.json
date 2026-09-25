@@ -1,0 +1,688 @@
+{
+  "app/auth/login/page.tsx:284:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/auth/login/page.tsx:361:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/auth/login/page.tsx:277:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/auth/login/page.tsx:462:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/auth/reset/page.tsx:166:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/auth/reset/page.tsx:220:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/charity-runners/page.tsx:212:a": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:2223:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:3773:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:3787:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:3862:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:4585:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:5339:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:5343:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:5361:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:5416:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:5462:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:5463:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:6053:button": {
+    "floor": 44,
+    "padY": null,
+    "font": 18,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:6062:button": {
+    "floor": 44,
+    "padY": null,
+    "font": 18,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:6066:button": {
+    "floor": 44,
+    "padY": null,
+    "font": 18,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:6076:button": {
+    "floor": 44,
+    "padY": null,
+    "font": 18,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:6556:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:6806:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:7649:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:7732:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:7808:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:8201:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:8234:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:10214:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:10253:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:10773:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:11037:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:12232:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:12425:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:12432:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:13273:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/DashboardClient.tsx:3162:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:3287:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": "12px",
+    "height": 52
+  },
+  "app/dashboard/DashboardClient.tsx:3480:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": "12px",
+    "height": 52
+  },
+  "app/dashboard/DashboardClient.tsx:3782:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:6495:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:6764:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:7728:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:8183:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:9176:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:9219:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:9964:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:9969:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:11041:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:11161:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:11694:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:12541:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:13923:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/DashboardClient.tsx:6021:IconButton": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/GeneratePlanScreen.tsx:1549:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/GeneratePlanScreen.tsx:1665:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/GeneratePlanScreen.tsx:2199:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/GeneratePlanScreen.tsx:1544:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/GeneratePlanScreen.tsx:1768:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/GeneratePlanScreen.tsx:2007:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "app/dashboard/RedeemCodeScreen.tsx:125:Button": {
+    "floor": 44,
+    "padY": 16,
+    "font": 15,
+    "radius": "var(--radius-md)",
+    "height": 50
+  },
+  "app/dashboard/UpgradeScreen.tsx:465:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/UpgradeScreen.tsx:477:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "app/dashboard/UpgradeScreen.tsx:486:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/ErrorBoundary.tsx:81:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/marketing/SiteHeader.tsx:136:a": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/marketing/WaitlistForm.tsx:108:button": {
+    "floor": null,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": null
+  },
+  "components/shared/BackButton.tsx:50:IconButton": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/shared/MePlanCard.tsx:104:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/shared/ModifyPlanConfirm.tsx:114:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/shared/ModifyPlanConfirm.tsx:110:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/shared/ModifyPlanSheet.tsx:296:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/shared/ModifyPlanSheet.tsx:122:IconButton": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/shared/RaceTimesCard.tsx:386:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/shared/RaceTimesCard.tsx:274:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/shared/RaceTimesCard.tsx:382:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/shared/RefusalView.tsx:143:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/shared/RefusalView.tsx:139:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/shared/RefusalView.tsx:149:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/shared/SessionSteps.tsx:94:IconButton": {
+    "floor": null,
+    "padY": null,
+    "font": 9.5,
+    "radius": "50%",
+    "height": 44
+  },
+  "components/shared/TrendCard.tsx:331:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/shared/ZoneInfoSheet.tsx:66:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/shared/ZoneRings.tsx:369:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/shared/ZoneRings.tsx:415:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/strava/StravaPanel.tsx:219:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/strava/StravaPanel.tsx:243:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/training/NextGoalCard.tsx:48:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/training/NextGoalCard.tsx:71:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/training/PlanCalendar.tsx:743:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/training/PlanCalendar.tsx:709:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/training/PlanCalendar.tsx:747:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/training/PlanCalendar.tsx:988:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/training/PostRaceReshapeCard.tsx:102:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/training/PostRaceReshapeCard.tsx:199:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/training/PostRaceReshapeCard.tsx:97:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  },
+  "components/training/RaceResultSheet.tsx:339:button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44
+  },
+  "components/training/RaceResultSheet.tsx:290:Button": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47
+  }
+}

@@ -3285,7 +3285,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             one with the same visual treatment (moss fill, full width). Do not
             change the ask copy above. */}
         <Button variant="primary" fullWidth
-          onClick={connectHealthKit} busy={pending !== null}>
+          onClick={connectHealthKit} busy={pending !== null} style={{ minHeight: '52px', borderRadius: '12px', letterSpacing: '-0.01em' }}>
           {/* Adapted from AppleHealthConnectionRow icon — 24px white-on-moss
               roundel containing the canonical moss dot. Reads as "Apple Health"
               identity on the button surface without needing Apple's marks. */}
@@ -3479,7 +3479,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
         {!denied && (
           <Button variant="primary" fullWidth
             onClick={enableNotifications}
-            disabled={pending !== null}>
+            disabled={pending !== null} style={{ minHeight: '52px', borderRadius: '12px', letterSpacing: '-0.01em' }}>
             {/* Bell icon — same roundel pattern as ConnectRunsScreen */}
             <span style={{
               width: '24px', height: '24px', borderRadius: '7px',

@@ -123,7 +123,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
               will not run out mid-training.
             </div>
             <Button variant="primary" fullWidth
-              onClick={onBack} style={{ marginTop: 'var(--space-5)' }}>
+              onClick={onBack} style={{ marginTop: 'var(--space-5)', padding: '16px', fontSize: '15px', borderRadius: 'var(--radius-md)' }}>
               Get started
             </Button>
           </>

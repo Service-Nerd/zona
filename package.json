@@ -36,7 +36,8 @@
     "measure:envelope": "tsx scripts/measure-envelope.ts",
     "export:plans": "tsx scripts/export-marketing-plans.ts",
     "falsify": "tsx scripts/test-liveness.ts --adhoc",
-    "distinguish": "tsx scripts/distinguish.ts"
+    "distinguish": "tsx scripts/distinguish.ts",
+    "button:geometry": "tsx scripts/button-geometry.ts"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",
