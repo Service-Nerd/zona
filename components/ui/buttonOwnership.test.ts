@@ -502,9 +502,45 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
       const src = strip(fs.readFileSync(f, 'utf8'))
       for (const { line, text } of buttonTags(src)) {
         if (/className=[^\n]*\b(btn|icon-btn)\b/.test(text)) continue
-        const filled = /background(?:Color)?:\s*'(var\(--[a-z0-9-]+\)|#[0-9A-Fa-f]{3,8})'/.test(text)
-        const lightLabel = /color:\s*'var\(--(card|card-bg)\)'|color:\s*'#[fF]{3,6}'|color:\s*'white'/.test(text)
-        if (filled && lightLabel) offenders.push(`${rel}:${line}`)
+        // 🔴 BOTH HALVES READ THROUGH A TERNARY, AND THEY DID NOT UNTIL
+        // 2026-09-25. The manual-log Save button — the one the founder named
+        // out loud, *"there is also a save button at the bottom"* — was a
+        // hand-rolled primary CTA and this arm was green over it, because both
+        // of its colours are CONDITIONAL: `background: hasData ? 'var(--teal)'
+        // : 'var(--teal-dim)'` and `color: hasData ? 'var(--card)' : …`. The
+        // old patterns anchored the quote directly after the colon, so a
+        // control that expresses a DISABLED STATE — which is exactly what a
+        // real primary CTA does — was invisible to the check written to find
+        // primary CTAs. ⚠️ `--teal` is also a legacy ALIAS of `--moss`, so it
+        // was doubly hidden; the alias graph is read elsewhere in this file for
+        // the same reason.
+        //
+        // ⚠️ THE LOOKBEHIND IS NOT TIDYING. Without it `color:` matches inside
+        // `borderColor:` and `backgroundColor:`, and now that the value may sit
+        // behind a ternary the match window is wide enough for that to produce
+        // a false positive on an ordinary bordered control.
+        const filled = /background(?:Color)?:\s*[^,\n]*?'(var\(--[a-z0-9-]+\)|#[0-9A-Fa-f]{3,8})'/.test(text)
+        const lightLabel = /(?<![A-Za-z])color:\s*[^,\n]*?('var\(--(?:card|card-bg)\)'|'#[fF]{3,6}'|'white')/.test(text)
+        if (!filled || !lightLabel) continue
+        // ⚠️ TWO NAMED EXCLUSIONS, BOTH BECAUSE THEY ARE A DIFFERENT SPECIES,
+        // and both filed rather than silently restyled here.
+        //
+        // 1. A SELECTED-STATE CHIP in a multi-select. This file's own header
+        //    protects the moss fill as the selected affordance — that is
+        //    `ui-patterns.md`'s only selected treatment and it is graphics, not
+        //    a CTA. Its white LABEL on moss is nonetheless a real 3.68:1, which
+        //    is the SAME finding as `DANGER-TEXT-CONTRAST-01` and is folded
+        //    into it; changing a selected state's appearance is a Design Board
+        //    question, not a defect fix.
+        // 2. A SEMANTIC AMBER CONFIRM on the pending-adjustment rail (ADR-012).
+        //    Converting it to `primary` would repaint it moss and delete the
+        //    meaning the amber carries. Same contrast item.
+        const SPECIES_EXEMPT = new Set([
+          'components/shared/ModifyPlanSheet.tsx',      // selected injury chip
+          'components/shared/PendingAdjustmentBanner.tsx', // amber confirm, ADR-012
+        ])
+        if (SPECIES_EXEMPT.has(rel)) continue
+        offenders.push(`${rel}:${line}`)
       }
     }
     expect(offenders, `a filled control outside the shared system — it is a ` +

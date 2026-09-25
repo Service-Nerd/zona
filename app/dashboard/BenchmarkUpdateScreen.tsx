@@ -10,6 +10,7 @@ import { TextField } from '@/components/shared/TextField'
 import { Chip } from '@/components/shared/Chip'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
 import BackButton from '@/components/shared/BackButton'
+import Button from '@/components/ui/Button'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -308,20 +309,16 @@ export default function BenchmarkUpdateScreen({
             Back to plan
           </button>
         ) : (
-          <button
-            onClick={canSubmit() && !loading ? handleRecalibrate : undefined}
-            disabled={!canSubmit() || loading}
-            style={{
-              width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
-              background: canSubmit() && !loading ? 'var(--moss)' : 'var(--moss-soft)',
-              color:      canSubmit() && !loading ? 'var(--card)' : 'var(--mute)',
-              border: 'none', cursor: canSubmit() && !loading ? 'pointer' : 'not-allowed',
-              fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-              transition: 'all 0.15s',
-            }}
+          <Button
+            onClick={handleRecalibrate}
+            disabled={!canSubmit()}
+            busy={loading}
+            busyLabel="Recalibrating…"
+            fullWidth
+            style={{ padding: '15px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}
           >
-            {loading ? 'Recalibrating…' : 'Recalibrate paces'}
-          </button>
+            Recalibrate paces
+          </Button>
         )}
       </div>
     </div>

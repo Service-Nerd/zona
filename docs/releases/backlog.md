@@ -27,6 +27,36 @@ already decided what it is.
 
 ---
 
+
+### `TAP-TARGET-FLOOR-01` — 18 hand-rolled controls are below the 44px tap floor, and the check cannot see them ⚙️ NO BOARD
+**Found 2026-09-25**, while converting nine more CTAs onto `Button`.
+
+`buttonGeometry.test.ts`'s floor arm asserts no control renders under 44px (`ui-patterns.md:262`,
+iOS HIG). It measures `measureAll()`, which **only returns controls already on the shared system**
+— so every hand-rolled `<button>`, the population most likely to violate the floor, was invisible
+to it. Measured with the filter dropped: **18 controls under 44px**, the smallest **18px**.
+
+Three were fixed incidentally by this session's conversions (ReflectionInput's submit at 38px,
+two in `DashboardClient` at 38 and 40). The remaining 15 include `SegmentedControl` (30px),
+`Chip` (37px), `ModifyPlanSheet` (28px), `PendingAdjustmentBanner` (36px) and two marketing links.
+
+⚠️ **Not all 15 are defects.** `.btn--inline-target` exists precisely because a small visual with a
+44px *hit area* is the correct answer for a chip in a settings row — so the fix per control is
+either "convert and let the floor apply" or "convert and give it an inline target", never a blanket
+height. Deciding that is a Design Board question per control; **finding them is not.**
+
+**Do:** measure off-system controls too, and either convert each or record an inline-target
+exemption. The gate should fail on a NEW sub-44px control regardless of whether it is on the system.
+
+### `DANGER-TEXT-CONTRAST-01` — extended 2026-09-25
+Two further instances, both excluded by name in `buttonOwnership.test.ts` with their reason rather
+than silently restyled, because both carry a **semantic** colour a conversion would delete:
+- `ModifyPlanSheet.tsx` injury chip — white label on `--moss` selected fill, **3.68:1**. The moss
+  fill is `ui-patterns.md`'s only selected affordance and is graphics (3:1), but its *label* is text.
+- `PendingAdjustmentBanner.tsx` confirm — white on `--warn` (#B8853A), ≈**3.1:1**. The amber is
+  ADR-012's pending-adjustment semantics; repainting it moss would remove the meaning.
+🧭 **DESIGN BOARD** — both are appearance changes to a semantic state, not defect fixes.
+
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
 ### 🧭 `DESTRUCTIVE-WIRING-01` — a variant with zero uses, and two flows that need it

@@ -238,12 +238,25 @@ export function measureAll(): Record<string, Box> {
     const src = readFileSync(join(ROOT, f), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, m => m.replace(/[^\n]/g, ''))
       .replace(/\{\/\*[\s\S]*?\*\/\}/g, m => m.replace(/[^\n]/g, ''))
+    // 🔴 KEYED BY ORDINAL, NOT BY LINE (2026-09-25). The key was
+    // `file:line:tag`, and the comparison skips any current key the baseline
+    // does not hold — so INSERTING ANYTHING re-keyed every control below it and
+    // the whole file silently dropped out of the check. It did not report a
+    // move; it reported nothing, which reads identically to "nothing moved".
+    // That is this repo's most-recorded failure shape, in the very harness
+    // written to stop a silent regression.
+    //
+    // ⚠️ An ordinal still shifts when a control is ADDED or REMOVED mid-file,
+    // so it is better, not perfect — which is why the coverage arm below is
+    // the actual defence: it fails when baseline entries stop matching at all.
+    const seen: Record<string, number> = {}
     for (const tag of ['button', 'a', 'Link', 'Button', 'IconButton']) {
-      for (const { line, text } of tags(src, tag)) {
+      for (const { text } of tags(src, tag)) {
         const onSystem = /className=[^\n]*\b(btn|icon-btn)\b/.test(text) ||
                          tag === 'Button' || tag === 'IconButton'
         if (!onSystem) continue
-        out[`${f}:${line}:${tag}`] = boxOf(text, floors, padFromClass, tag, overlays)
+        const n = (seen[tag] = (seen[tag] ?? 0) + 1)
+        out[`${f}#${tag}${n}`] = boxOf(text, floors, padFromClass, tag, overlays)
       }
     }
   }

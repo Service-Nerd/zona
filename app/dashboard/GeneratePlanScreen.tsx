@@ -1502,19 +1502,15 @@ export default function GeneratePlanScreen({
             </div>
           )}
           {onPlanSaved ? (
-            <button
+            <Button
               onClick={handleUsePlan}
-              disabled={isSaving}
-              style={{
-                width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
-                background: isSaving ? 'var(--moss-soft)' : 'var(--moss)',
-                border: 'none', cursor: isSaving ? 'wait' : 'pointer',
-                fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-                color: isSaving ? 'var(--mute)' : 'var(--card)', transition: 'all 0.15s',
-              }}
+              busy={isSaving}
+              busyLabel="Saving…"
+              fullWidth
+              style={{ padding: '15px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}
             >
-              {isSaving ? 'Saving…' : 'Use this plan'}
-            </button>
+              Use this plan
+            </Button>
           ) : (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center' }}>
               Preview only — save not available in this context
@@ -1665,20 +1661,14 @@ export default function GeneratePlanScreen({
             Not sure, continue
           </Button>
         )}
-        <button
-          onClick={canProceed() ? goNext : undefined}
+        <Button
+          onClick={goNext}
           disabled={!canProceed()}
-          style={{
-            width: '100%', padding: '15px', borderRadius: 'var(--radius-md)',
-            background: canProceed() ? 'var(--moss)' : 'var(--moss-soft)',
-            color:      canProceed() ? 'var(--card)'         : 'var(--mute)',
-            border: 'none', cursor: canProceed() ? 'pointer' : 'not-allowed',
-            fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-            transition: 'all 0.15s',
-          }}
+          fullWidth
+          style={{ padding: '15px', borderRadius: 'var(--radius-md)', fontSize: '15px' }}
         >
           {ctaLabel}
-        </button>
+        </Button>
 
         {/* ONBOARD-EXIT-01 — the escape, on EVERY step and only when trapped.
             The back button is hidden on step 0 during onboarding

@@ -320,21 +320,16 @@ export default function RaceResultSheet({
           marginTop: '20px',
           display: 'flex', flexDirection: 'column', gap: '10px',
         }}>
-          <button
+          <Button
             onClick={handleLogAndReshape}
             disabled={!canSubmit}
-            style={{
-              width: '100%', height: '50px',
-              background: canSubmit ? 'var(--moss)' : 'var(--bg-soft)',
-              border: 'none', borderRadius: '14px',
-              cursor: canSubmit ? 'pointer' : 'default',
-              fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-              color: canSubmit ? 'var(--card)' : 'var(--mute)',
-              transition: 'opacity 0.15s',
-            }}
+            busy={submitting}
+            busyLabel="Checking plan…"
+            fullWidth
+            style={{ height: '50px', padding: '0 20px', borderRadius: '14px', fontSize: '15px' }}
           >
-            {submitting ? 'Checking plan…' : 'Log result'}
-          </button>
+            Log result
+          </Button>
 
           <Button variant="ghost" size="compact" 
             onClick={handleLogOnly}

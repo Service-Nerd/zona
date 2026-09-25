@@ -52,6 +52,29 @@ describe('button geometry', () => {
     expect(moved, `geometry moved without a declared re-baseline:\n${moved.join('\n')}`).toEqual([])
   })
 
+  it('🔴 the baseline still MATCHES the app — coverage loss is not a pass', () => {
+    // 🔴 THE ARM THAT MAKES THIS FILE HONEST. The check above skips any control
+    // the baseline does not hold (`if (!was) continue`), which is right for a
+    // genuinely new button and catastrophic for a re-keyed one. The key WAS
+    // `file:line:tag`, so inserting a single line re-keyed every control below
+    // it, every one of them was skipped, and the gate printed `moved: []` — not
+    // because nothing moved, but because it was no longer looking. A harness
+    // that silently stops measuring is worse than no harness, because it is
+    // quoted as evidence. Found 2026-09-25, in this file, by converting nine
+    // more controls and watching coverage that should have dropped stay quiet.
+    //
+    // ⚠️ THIS IS THE FALSIFIABLE HALF: break the key format in
+    // `button-geometry.ts` and this arm goes red immediately, where the arm
+    // above stays green.
+    const now = measureAll()
+    const base = JSON.parse(readFileSync(BASELINE, 'utf8')) as Record<string, unknown>
+    const orphaned = Object.keys(base).filter(k => !(k in now))
+    const pct = orphaned.length / Math.max(1, Object.keys(base).length)
+    expect(pct, `${orphaned.length} of ${Object.keys(base).length} baseline controls ` +
+      `no longer match any control in the app — the check above is measuring ` +
+      `less than it claims:\n${orphaned.slice(0, 15).join('\n')}`).toBeLessThan(0.05)
+  })
+
   it('the size classes are floors the stylesheet actually declares', () => {
     const floors = sizeFloors(readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8'))
     expect(floors['btn--regular'], '.btn--regular lost its floor').toBe(44)

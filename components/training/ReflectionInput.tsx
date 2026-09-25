@@ -25,6 +25,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import AIMark from '@/components/shared/AIMark'
 import { REFRAME_TIER } from '@/lib/coaching/constants'
 import { messageForReframeRiskReason, type ReframeRiskReason } from '@/lib/coaching/reframeRiskGate'
+import Button from '@/components/ui/Button'
 
 // REFRAME-NOTE-LOSS-01 — the view decision lives in `ReflectionInput.logic.ts`
 // so it can be tested. 'saved' is the state that was missing: the note was
@@ -294,25 +295,17 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
           outline: 'none',
         }}
       />
-      <button
+      <Button
         onClick={handleSubmit}
         disabled={!submitEnabled}
+        fullWidth
         style={{
-          marginTop: '10px',
-          width: '100%', padding: '12px',
-          background: submitEnabled ? 'var(--moss)' : 'var(--bg)',
-          color: submitEnabled ? 'var(--card)' : 'var(--text-muted)',
-          border: submitEnabled ? 'none' : '0.5px solid var(--border-col)',
-          borderRadius: '12px',
-          fontFamily: 'var(--font-ui)', fontSize: '12px',
-          fontWeight: submitEnabled ? 600 : 400,
+          marginTop: '10px', padding: '12px', borderRadius: '12px', fontSize: '12px',
           letterSpacing: '0.06em', textTransform: 'uppercase',
-          cursor: submitEnabled ? 'pointer' : 'default',
-          transition: 'all 0.18s',
         }}
       >
         Read it back
-      </button>
+      </Button>
     </div>
   )
 }

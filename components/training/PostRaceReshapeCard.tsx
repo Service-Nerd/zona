@@ -178,22 +178,15 @@ function Live({
       )}
 
       {/* Accept CTA */}
-      <button
+      <Button
         onClick={handleAccept}
-        disabled={confirming}
-        style={{
-          width: '100%', height: '46px',
-          background: confirming ? 'var(--bg-soft)' : 'var(--moss)',
-          border: 'none', borderRadius: '12px',
-          fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
-          color: confirming ? 'var(--mute)' : 'var(--card)',
-          cursor: confirming ? 'default' : 'pointer',
-          transition: 'background 0.15s',
-          marginBottom: '8px',
-        }}
+        busy={confirming}
+        busyLabel="Updating plan…"
+        fullWidth
+        style={{ height: '46px', padding: '0 20px', borderRadius: '12px', marginBottom: '8px' }}
       >
-        {confirming ? 'Updating plan…' : 'Accept and update my plan'}
-      </button>
+        Accept and update my plan
+      </Button>
 
       {/* Dismiss link */}
       <Button variant="ghost" size="compact" fullWidth 

@@ -4532,19 +4532,17 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
           )}
         </div>
 
-        <button onClick={handleReflectDone} style={{
-          width: '100%', padding: '14px',
-          background: reflectResponse ? 'var(--teal)' : 'var(--bg)',
-          color: reflectResponse ? 'var(--card)' : 'var(--text-muted)',
-          border: reflectResponse ? 'none' : '0.5px solid var(--border-col)',
-          borderRadius: '12px',
-          fontFamily: 'var(--font-ui)', fontSize: '13px',
-          fontWeight: reflectResponse ? 600 : 400,
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-          cursor: 'pointer', transition: 'all 0.2s',
-        }}>
+        <Button
+          onClick={handleReflectDone}
+          variant={reflectResponse ? 'primary' : 'secondary'}
+          fullWidth
+          style={{
+            padding: '14px', borderRadius: '12px', fontSize: '13px',
+            letterSpacing: '0.06em', textTransform: 'uppercase',
+          }}
+        >
           {reflectResponse ? 'Done' : 'Skip for now'}
-        </button>
+        </Button>
 
         {/* Analysis hint — paid users with a linked Strava activity.
             Analysis fires when Done is pressed so RPE/fatigue land first. */}
@@ -4641,19 +4639,17 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
           )}
         </div>
 
-        <button onClick={onClose} style={{
-          width: '100%', padding: '14px',
-          background: reflectResponse ? 'var(--teal)' : 'var(--bg)',
-          color: reflectResponse ? 'var(--card)' : 'var(--text-muted)',
-          border: reflectResponse ? 'none' : '0.5px solid var(--border-col)',
-          borderRadius: '12px',
-          fontFamily: 'var(--font-ui)', fontSize: '13px',
-          fontWeight: reflectResponse ? 600 : 400,
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-          cursor: 'pointer', transition: 'all 0.2s',
-        }}>
+        <Button
+          onClick={onClose}
+          variant={reflectResponse ? 'primary' : 'secondary'}
+          fullWidth
+          style={{
+            padding: '14px', borderRadius: '12px', fontSize: '13px',
+            letterSpacing: '0.06em', textTransform: 'uppercase',
+          }}
+        >
           {reflectResponse ? 'Close' : 'Close without answering'}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -5162,26 +5158,17 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                 const isRpeSet = rpe != null
                 return (
                   <>
-                    <button
+                    <Button
                       onClick={isManualCompletion ? () => setShowManualModal(true) : handleMarkComplete}
+                      variant={isRpeSet ? 'primary' : 'secondary'}
                       style={{
-                        flex: 1,
-                        background: isRpeSet ? 'var(--moss)' : 'none',
-                        color:      isRpeSet ? 'var(--card)' : 'var(--text-muted)',
-                        border:     isRpeSet ? 'none'        : '0.5px solid var(--border-col)',
-                        borderRadius: '10px',
-                        padding: '13px',
-                        fontFamily: 'var(--font-ui)',
-                        fontSize: '12px',
-                        fontWeight: isRpeSet ? 600 : 400,
+                        flex: 1, borderRadius: '10px', padding: '13px', fontSize: '12px',
                         letterSpacing: isRpeSet ? '0.06em' : '0.04em',
                         textTransform: isRpeSet ? 'uppercase' : 'none',
-                        cursor: 'pointer',
-                        transition: 'background 0.18s ease, color 0.18s ease, letter-spacing 0.18s ease',
                       }}
                     >
                       Update log
-                    </button>
+                    </Button>
                     {/* DS-07 Part B — stack a second activity onto a logged run
                         (e.g. hike + treadmill top-up = one session). */}
                     {isComplete && isRunType && (
@@ -5222,22 +5209,17 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                     ].filter(Boolean).join(' · ')
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', width: '100%' }}>
-                        <button
+                        <Button
                           onClick={handleMarkComplete}
+                          variant={isHigh ? 'primary' : 'secondary'}
+                          fullWidth
                           style={{
-                            width: '100%',
-                            background: isHigh ? 'var(--moss)' : 'transparent',
-                            color: isHigh ? 'var(--card)' : 'var(--moss)',
-                            border: isHigh ? 'none' : '1px solid var(--moss)',
-                            borderRadius: '10px', padding: '13px',
-                            fontFamily: 'var(--font-ui)', fontSize: '12px',
+                            borderRadius: '10px', padding: '13px', fontSize: '12px',
                             letterSpacing: '0.06em', textTransform: 'uppercase',
-                            cursor: 'pointer', fontWeight: 600,
-                            minHeight: '44px',
                           }}
                         >
                           {isHigh ? 'Log this run' : 'Looks like this one?'}
-                        </button>
+                        </Button>
                         <div style={{
                           display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
                           padding: '0 4px',
@@ -5942,19 +5924,17 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               )}
             </div>
 
-            <button onClick={close} style={{
-              width: '100%', padding: '14px',
-              background: reflectResponse ? 'var(--teal)' : 'var(--bg)',
-              color: reflectResponse ? 'var(--card)' : 'var(--text-muted)',
-              border: reflectResponse ? 'none' : '0.5px solid var(--border-col)',
-              borderRadius: '12px',
-              fontFamily: 'var(--font-ui)', fontSize: '13px',
-              fontWeight: reflectResponse ? 600 : 400,
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              cursor: 'pointer', transition: 'all 0.2s',
-            }}>
+            <Button
+              onClick={close}
+              variant={reflectResponse ? 'primary' : 'secondary'}
+              fullWidth
+              style={{
+                padding: '14px', borderRadius: '12px', fontSize: '13px',
+                letterSpacing: '0.06em', textTransform: 'uppercase',
+              }}
+            >
               {reflectResponse ? 'Done' : 'Skip for now'}
-            </button>
+            </Button>
           </div>
         ) : (
           <>
@@ -6093,23 +6073,29 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             </div>
 
             {/* Save */}
-            <button
-              onClick={save}
-              disabled={saving || !hasData}
-              style={{
-                width: '100%', padding: '16px',
-                background: hasData ? 'var(--teal)' : 'var(--teal-dim)',
-                color: hasData ? 'var(--card)' : 'var(--teal)',
-                border: 'none', borderRadius: '14px',
-                fontFamily: 'var(--font-brand)', fontSize: '14px',
-                fontWeight: 600, letterSpacing: '-0.1px',
-                cursor: hasData ? 'pointer' : 'not-allowed',
-                opacity: saving ? 0.7 : 1,
-                transition: 'all 0.15s',
-              }}
-            >
-              {saving ? 'Saving…' : hasData ? `Save · ${distanceStr}${preferredUnits} · ${durationStr}` : 'Enter distance or duration'}
-            </button>
+            {/* ⚠️ THE FOUNDER NAMED THIS BUTTON AND I DID NOT CHECK IT (2026-09-25):
+                  *"there is also a save button at the bottom"*. It was still
+                  hand-rolled after every other control in this flow had moved,
+                  and `buttonOwnership.test.ts`'s "a FILLED control is on the
+                  shared system" arm could not see it for TWO reasons at once:
+                  it was filled with `--teal`, a legacy ALIAS of `--moss`, and
+                  its label colour was a CONDITIONAL rather than the literal
+                  `var(--card)` the arm matched. Both arms widened in the same
+                  commit. Geometry (16px padding, 14px radius) is preserved
+                  inline per BUTTON-GEOMETRY-01 — this is a colour change. */}
+              <Button
+                onClick={save}
+                fullWidth
+                disabled={!hasData}
+                busy={saving}
+                busyLabel="Saving…"
+                style={{
+                  padding: '16px', borderRadius: '14px',
+                  fontFamily: 'var(--font-brand)', letterSpacing: '-0.1px',
+                }}
+              >
+                {hasData ? `Save · ${distanceStr}${preferredUnits} · ${durationStr}` : 'Enter distance or duration'}
+              </Button>
           </>
         )}
       </div>
