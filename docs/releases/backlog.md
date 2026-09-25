@@ -362,6 +362,97 @@ about. And the suite's **duration gate** caught it at 17.6 s; sampled by a copri
 to 1,200 inputs (3 s isolated, ~5 s under contention) and baselined with a reason, beside
 `qualityAeroFallback.test.ts`, which is the same shape and dearer.
 
+### ⚙️ `BLOCKED-DAYS-CHECKER-SPELLING-01` — THE FOURTH SURFACE. The validator reads a spelling the wizard never sends.
+
+**Found 2026-09-25 by a bounded sweep for the root class, at the founder's instruction.
+Fix is one line at an existing single owner. NOT applied.**
+
+#### How the sweep was bounded, so "fourth and last" is a claim and not a hope
+
+The root class is **a user-supplied value that is a de-facto enum but is NOT a typed
+union** — because `tsc` polices every typed union, so a fixture using the wrong value
+fails the build. The vulnerable set is therefore exactly the loosely-typed ones.
+
+`GeneratorInput` has **31 fields**. Every enumerated one is a typed union
+(`'finish' | 'time_target'`, `'beginner' | 'intermediate' | 'experienced'`, `'avoid' |
+'neutral' | 'love' | 'overdo'`, …) **except two**:
+
+| field | type | status |
+|---|---|---|
+| `injury_history?` | `string[]` | the known root — **3 surfaces** (invariant predicate, parity grid, API contract) |
+| `days_cannot_train?` | `string[]` | 🔴 **the fourth** |
+
+`race_date` and `target_time` are `string` but are **formats, not enums**. The other
+user-supplied enumerated values live in `user_settings` and were checked against live
+data — `preferred_units` (km/mi), `preferred_metric` (distance/duration), `max_hr_source`
+(observed/user_confirmed/null) — **all clean, no drift.**
+
+#### The defect
+
+The wizard sends **full day names**: `GeneratePlanScreen.tsx:1039` maps through
+`FULL_BY_SHORT` → `'monday'`. Live data agrees — **11 of 13 stored plans** carry
+`["tuesday","thursday","saturday"]` and the like.
+
+`lib/plan/days.ts` is the documented single owner of the conversion and its header
+records the last time this bit (`foundationBlock` ignored every blocked day, found on a
+real plan 2026-09-03). **Every consumer normalises — except one:**
+
+```ts
+// lib/plan/invariants.ts:1972  — INV-PLAN-QUALITY-EXPECTED
+const blockedSet = new Set((input.days_cannot_train ?? []) as Day[])
+```
+
+A **cast**, not a conversion. `'monday'` is never equal to `'mon'`, so `blockedSet.has('mon')`
+is false, `anyEligibleUnblocked` is wrongly true, and an **`error`-severity** invariant
+fires on a plan that is correct.
+
+**Measured — identical runner, two spellings:**
+
+| `days_cannot_train` | plan produced | total errors | `INV-PLAN-QUALITY-EXPECTED` |
+|---|---|---|---|
+| `['mon','tue','wed','thu','fri']` — corpus | 0 quality, 0 sessions on blocked days | 1 | **0** |
+| `['monday',…,'friday']` — **wizard** | **identical** | 8 | **7 false positives** |
+
+The *engine* is correct in both (`ruleEngine.ts:806` normalises). Only the *checker* is wrong
+— the same "checker reads a different source from the producer" class as
+`INJURY-GUARD-PREDICATE-01`, and the mirror image of it: there the corpus spelling was the
+one that worked, here it is the only one that works.
+
+#### ⚠️ LATENT, NOT REALISED — and say so before anyone panics
+
+**`INV-PLAN-QUALITY-EXPECTED` has fired ZERO times across 85 live plan-audit events.**
+Blast radius, swept over distance × every subset of blocked weekdays × days_available:
+**3 of 420 cases diverge (0.7%)**, and all three are one shape — **all five weekdays
+blocked, `days_available: 2`**, i.e. a weekend-only runner. No current runner is in it.
+
+Same posture as `DB-USER-PURGE-01`: measured as harmless today, wrong by construction, and
+the cohort it breaks is one §1 CD-21 Amendment 1 explicitly treats as real and supported.
+
+#### Why no harness could see it
+
+`cohortGrid` uses `['tue','thu']`, `['tue']`, `[]` — **short codes only, and never all five
+weekdays**. So the corpus is blind twice over: wrong spelling, and it never reaches the
+shape that triggers it. `verify-parity` does not vary `days_cannot_train` at all.
+
+#### Fix
+
+One line — call the existing owner, as every other consumer does:
+
+```ts
+const blockedSet = normaliseDays(input.days_cannot_train)
+```
+
+Plus: a regression test using the **wizard's** spelling and the weekend-only shape; and
+add a full-name cell to `cohortGrid`'s `days_cannot_train` axis so the corpus can reach
+the spelling real runners send. ⚠️ **Adding a grid cell moves `cohortShape`'s baseline** —
+declare the number, do not re-baseline to go green.
+
+⚠️ **`parseBlockedDays` (`invariants.ts:650`) is a SECOND normaliser**, deliberate and
+correct (it handles both forms), justified in comment as *"kept local so the invariant
+catches any future drift"*. It is the same D-16 shape as the injury predicate but is **not**
+broken. Folding it into `days.ts` is a judgement call, not a defect fix — decide it with
+this item rather than separately.
+
 ### ⚙️ `CONTRACT-INJURY-VALUES-01` — the generate-plan contract types values the wizard never sends
 
 **Filed 2026-09-25 during `RULEENGINE-HIP-COMMENT-01`. Not fixed.**
