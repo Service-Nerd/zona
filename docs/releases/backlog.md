@@ -74,6 +74,22 @@ confident false "it doesn't exist" results from wrong-directory searches).
 **Do:** trace both to their last reader, remove the props, the state, and the `select` columns
 if genuinely unread. Small, and it removes a reason for someone to wonder what the feature was.
 
+
+### `TODAY-CTA-CLEARANCE-01` — the screen's one action is bisected by the nav 🧭 DESIGN BOARD
+**Found 2026-09-25** in the founder's own screenshot, while ruling NAV-SLIM-01. Filed by the
+board rather than fixed there: it is a layout question about Today's bottom, not a nav question.
+
+*"Log this session"* — the primary CTA, and the single thing the screen exists to make happen —
+renders **half-hidden behind the opaque bottom nav** at rest. Content scrolling under fixed chrome
+is correct by design; what is underneath here is the action.
+
+NAV-SLIM-01 returns 4px of it. That is not the fix.
+
+**Options the board did not choose between:** a sticky CTA that sits *above* the nav on Today only;
+a scroll-position rule; or accepting it because the runner scrolls. ⚠️ **Measure the resting
+scroll position on a real device first** — how often the CTA is actually clipped is the number
+nobody has, and this repo has twice ruled on an impression that a measurement then contradicted.
+
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
 ### 🧭 `DESTRUCTIVE-WIRING-01` — a variant with zero uses, and two flows that need it

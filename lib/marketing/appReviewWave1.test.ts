@@ -67,18 +67,37 @@ describe('S4 — the optional-step affordance does not lie', () => {
 
 describe('A4 — the safe area is background, not padding', () => {
   it('the bottom nav pads its content symmetrically', () => {
-    // Measured: `6px 0 max(12px, env(safe-area-inset-bottom))` gave 6px above
-    // the icons and 34px below on any iPhone with a home indicator —
+    // Measured at the time: `6px 0 max(12px, env(safe-area-inset-bottom))` gave
+    // 6px above the icons and 34px below on any iPhone with a home indicator —
     // asymmetric by 28px, the void the founder reported.
-    const src = strip(read(SHELL))
-    const i = src.indexOf("background: 'var(--nav-bg)'")
-    expect(i, 'the bottom nav declaration has moved — re-anchor this test').toBeGreaterThan(-1)
-    const decl = src.slice(i, i + 400)
-    const m = decl.match(/padding:\s*'(\d+)px 0 calc\((\d+)px \+ env\(safe-area-inset-bottom\)\)'/)
-    expect(m, `nav padding must be 'Npx 0 calc(Npx + env(safe-area-inset-bottom))', got: ${decl.slice(0, 160)}`).toBeTruthy()
-    expect(m![1], 'top and bottom content padding must match').toBe(m![2])
-    // The old shape spent the inset AS the padding rather than adding to it.
-    expect(decl).not.toMatch(/padding:[^']*'[^']*max\(\d+px, env\(safe-area-inset-bottom\)\)/)
+    //
+    // 🔴 THIS TEST FAILED ON NAV-SLIM-01 AND WAS RIGHT TO. It read the inline
+    // declaration in `DashboardClient`, and the nav's geometry moved into
+    // `.nav-bar` / `.nav-tab` in `globals.css` when the 44px CTA floor was
+    // taken off the chrome. **A4's RULE IS UNCHANGED — only its address is**,
+    // and the right response is to follow it there rather than relax it. Same
+    // move as `backArrowOwner.test.ts` when `BackButton` became `IconButton`,
+    // and as `modifyPlanSheet.markup` and `planVerb` earlier the same day.
+    //
+    // ⚠️ THE RULE IS NOW SATISFIED MORE COMPLETELY, WHICH IS WHY THE ASSERTION
+    // GOT STRONGER RATHER THAN WEAKER. The content padding is not merely
+    // symmetric, it is ZERO: the tab is the full `--nav-h` and centres its own
+    // content, so there is no top/bottom pair left to drift apart. The inset is
+    // still ADDED as the bar's reserved strip, never spent as padding.
+    const css = read('app/globals.css')
+    const bar = css.match(/\.nav-bar\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(bar, '.nav-bar has moved — re-anchor this test').not.toBe('')
+    const padding = bar.match(/padding:\s*([^;]*)/)?.[1]?.trim() ?? ''
+    expect(padding, 'the bar must declare its padding').not.toBe('')
+    // Additive, and zero above/below the content.
+    expect(padding, 'the bar pads its content again — that height is not tappable')
+      .toMatch(/^0\s+0\s+env\(safe-area-inset-bottom/)
+    // The old shape SPENT the inset as the padding instead of adding to it.
+    expect(padding).not.toMatch(/max\(\d+px,\s*env\(safe-area-inset-bottom\)\)/)
+    // And the tab, not the bar, carries the height — so symmetry is structural.
+    const tab = css.match(/\.nav-tab\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(tab).toMatch(/min-height:\s*var\(--nav-h\)/)
+    expect(tab).toMatch(/justify-content:\s*center/)
   })
 })
 

@@ -114,6 +114,7 @@ import ActionRow from '@/components/shared/ActionRow'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
+import NavTab from '@/components/ui/NavTab'
 import IconButton from '@/components/ui/IconButton'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
@@ -2839,55 +2840,27 @@ export default function DashboardClient() {
         // nav at the bottom. It has a back arrow, so it is the former.
         if (screen === 'redeem') return null
 
-        const navItems: { id: Screen; label: string; icon: (a: boolean) => React.ReactNode }[] = [
-          { id: 'today', label: 'Today', icon: (a) => <IconToday active={a} /> },
-          { id: 'plan',  label: 'Plan',  icon: (a) => <IconPlan  active={a} /> },
-          { id: 'coach', label: 'Coach', icon: (a) => <IconCoach active={a} /> },
-          { id: 'me',    label: 'Me',    icon: (a) => <IconMe    active={a} /> },
-        ]
         return (
-          <div ref={bottomNavRef} style={{
+          <div ref={bottomNavRef} className="nav-bar" style={{
             position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
             width: '100%', maxWidth: '480px',
-            display: 'flex', alignItems: 'center',
-            background: 'var(--nav-bg)', borderTop: '0.5px solid var(--border-col)',
-            // A4 (Design Board, app review 2026-09-22) — THE SAFE AREA IS
-            // BACKGROUND, NOT PADDING.
-            //
-            // This read `padding: '6px 0 max(12px, env(safe-area-inset-bottom))'`
-            // — 6px above the icons and, on any iPhone with a home indicator,
-            // **34px below**. Asymmetric by 28px, which is exactly the "lots of
-            // white space under the icons" the founder reported.
-            //
-            // `env(safe-area-inset-bottom)` exists so nothing sits UNDER the home
-            // indicator. It is the bar's own reserved strip; spending it as
-            // content padding pushes the labels up and leaves a void beneath
-            // them. The content now gets a balanced 10px top and bottom, and the
-            // inset is added on top of that as the strip it is.
-            //
-            // ⚠️ THE FOUNDER'S WORDS WERE "MOVE THE MENU DOWN" AND THAT IS NOT
-            // THE FIX. Moving the bar would push it under the indicator. The
-            // content moves down inside a bar that stays where it is.
-            padding: '10px 0 calc(10px + env(safe-area-inset-bottom))',
             zIndex: Z_LAYERS.nav,
           }}>
-            {navItems.map(({ id, label, icon }) => {
-              const active = screen === id
-              return (
-                <Button variant="ghost"  key={id} onClick={() => {
+            {NAV_ITEMS.map(({ id, label, icon }) => (
+              <NavTab
+                key={id}
+                label={label}
+                icon={icon(screen === id)}
+                active={screen === id}
+                onClick={() => {
                   scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior })
                   setScreen(id)
                   setShowMore(false)
                   const seen = getSeenGuides()
                   if (!seen.has(id)) setGuideScreen(id)
-                }} style={{ flex: 1, flexDirection: 'column', gap: '3px', background: 'none', padding: '2px 0' }}>
-                  {icon(active)}
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: active ? 'var(--accent)' : 'var(--text-muted)' }}>
-                    {label}
-                  </span>
-                </Button>
-              )
-            })}
+                }}
+              />
+            ))}
           </div>
         )
       })()}
@@ -2895,6 +2868,28 @@ export default function DashboardClient() {
     </div>
   )
 }
+
+/**
+ * NAV-SLIM-01 — the nav's SINGLE SOURCE OF TRUTH.
+ *
+ * 🔴 There were two renderers in this file and they had drifted. The real bar
+ * lists today/plan/coach/**me**; `GuideSheet`'s mirror listed
+ * today/plan/coach/**strava** — a tab removed from the nav in Phase 1
+ * (`CLAUDE.md`: *"Strava — Admin-only via URL, nav entry removed"*). So a sheet
+ * whose entire job is showing a runner WHERE a screen lives drew a nav that had
+ * not existed for months, and its `screen === id` test highlighted nothing when
+ * the guide fired for Me.
+ *
+ * ⚠️ Editing the string would have fixed today's symptom and left the mechanism.
+ * The marketing site's two replicas already had the right tabs AND the right
+ * 60px height, so the divergence was app-internal: two hand-maintained lists.
+ */
+const NAV_ITEMS: { id: Screen; label: string; icon: (active: boolean) => React.ReactNode }[] = [
+  { id: 'today', label: 'Today', icon: (a) => <IconToday active={a} /> },
+  { id: 'plan',  label: 'Plan',  icon: (a) => <IconPlan  active={a} /> },
+  { id: 'coach', label: 'Coach', icon: (a) => <IconCoach active={a} /> },
+  { id: 'me',    label: 'Me',    icon: (a) => <IconMe    active={a} /> },
+]
 
 // ── ORIENTATION SCREEN ────────────────────────────────────────────────────
 
@@ -3797,9 +3792,6 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
 
   if (!content) return null
 
-  const NAV_SCREENS: Screen[] = ['today', 'plan', 'coach', 'strava']
-  const NAV_LABELS: Record<string, string> = { today: 'Today', plan: 'Plan', coach: 'Coach', strava: 'Strava' }
-
   return (
     <>
       {/* Scrim */}
@@ -3850,29 +3842,14 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
           </Button>
         </div>
 
-        {/* Mirrored nav bar — sits at bottom to show position */}
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          borderTop: '0.5px solid var(--border-col)',
-          padding: '10px 0 4px',
-          background: 'var(--nav-bg)',
-        }}>
-          {NAV_SCREENS.map(id => {
-            const active = screen === id
-            return (
-              <div key={id} style={{
-                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-              }}>
-                {id === 'today'  && <IconToday  active={active} />}
-                {id === 'plan'   && <IconPlan   active={active} />}
-                {id === 'coach'  && <IconCoach  active={active} />}
-                {id === 'strava' && <IconStrava active={active} />}
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: active ? 'var(--accent)' : 'var(--text-muted)' }}>
-                  {NAV_LABELS[id]}
-                </span>
-              </div>
-            )
-          })}
+        {/* Mirrored nav bar — a PICTURE of the real nav, from the same source.
+            It listed `strava` (retired in Phase 1) and omitted `me`, so it
+            taught a nav that no longer existed. NavTab with no `onClick`
+            renders inert and aria-hidden: a mirror is not a control. */}
+        <div className="nav-bar">
+          {NAV_ITEMS.map(({ id, label, icon }) => (
+            <NavTab key={id} label={label} icon={icon(screen === id)} active={screen === id} />
+          ))}
         </div>
       </div>
     </>

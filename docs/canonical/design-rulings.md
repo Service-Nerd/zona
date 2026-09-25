@@ -1737,6 +1737,49 @@ not four. The board does not rule on the palette of unreachable code.
 overlay is how, per `:1467`. **Not settled:** nothing has been touched on a device, and this
 governs the control that triggers the real APNs prompt.
 
+
+### NAV-SLIM-01 / NAV-FLOAT-01 — the bottom nav (2026-09-25)
+
+| Ruling | |
+|---|---|
+| **NAV-SLIM-01 — the bar returns to its documented 60px, with the padding inside the tab** | 🟢 **SHIP** |
+| **NAV-FLOAT-01 — a floating, non-full-width pill nav** | 🟡 **INSUFFICIENT EVIDENCE — not a kill** |
+
+**NAV-SLIM-01.** Founder: the nav is too large, *asked many times*. The scan found the answer
+already written: `ui-patterns.md` § 7 said **60px** and **`0.6875rem`**; the code shipped **64px**
+and **12px** with a `0.5px` border against § 20's 1px rule. Cause: the tabs were
+`<Button variant="ghost">` and **`.btn--regular`'s 44px CTA tap floor governed the chrome**
+(content wants 43.4px). Both Button sizes carry that floor, so `NavTab` is its own primitive.
+
+⚠️ **The fix is not "take 4px off".** The bar padded 10px above and below a 44px button — 64px of
+bar, **44 tappable (69%)**. The padding moved **into** the tab. Measured in the DOM: bar **61px**,
+tab **60×94**, **98% tappable**. **Bar −4px, target +16px.**
+
+🥇 **The consumer check inverted the premise:** `PhoneShell.NAV_H = 60` and `PhoneFrame` already
+had the right tabs — **the marketing site was correct and the app had drifted.** Slimming closed a
+divergence. And `GuideSheet`'s mirror listed **`strava`** (tab retired in Phase 1) and omitted
+**`me`**: one `NAV_ITEMS` list now feeds both renderers, so it cannot drift again.
+
+**NAV-FLOAT-01 — deferred, with three named conditions**, and recorded so it is not re-proposed
+as new. ⛔ Silvanto **named `ui-patterns.md:359`** (*"chrome: a top hairline, not a floating card"*)
+and **declined to veto**; 🎪 Collins challenged that `:359` is settled ground at all — it was
+written about cards and never contemplated a floating nav — and the chair **sustained the challenge
+in part**: it governs the **shadow**, not the **shape**.
+
+| # | What would settle it |
+|---|---|
+| 1 | The two navs **side by side on a device**, 375pt, over scrolling content — **built: `/nav-preview`** |
+| 2 | **The shadow.** A pill needs separation, and *"you feel it, you don't see it"* is hardest to satisfy over content that MOVES. The preview toggles it |
+| 3 | **Hide-on-scroll.** Always-visible eats more content than the bar it replaced; hiding invents a second question — when does it come back? |
+
+⚡ **Recorded, unresolved:** Sierra — *"the 64→60 is for the runner; the pill is for us"*, worth
+doing, not a finding. Collins — looking like every other training app is a product problem, not a
+vanity one. **Neither seat can win this from a document**, which is the whole reason for condition 1.
+
+⚠️ **Filed, not ruled:** the founder's screenshot shows *"Log this session"* **bisected by the
+opaque nav**. Slimming returns 4px; the CTA being half-hidden at rest is a layout question about
+Today's bottom, and no seat ruled on it → `TODAY-CTA-CLEARANCE-01`.
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1

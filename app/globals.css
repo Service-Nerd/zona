@@ -1095,3 +1095,62 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   transition: left var(--motion-ui);
 }
 .switch--on .switch__thumb { left: 21px; }
+
+
+/* ── Bottom nav — NAV-SLIM-01 (Design Board 2026-09-25) ────────────────────
+ *
+ * 🔴 THE SPEC WAS ALREADY SLIMMER THAN THE CODE. `ui-patterns.md` § 7 has said
+ * "Height: 60px + safe area inset" and "Label: 0.6875rem" for months. The bar
+ * shipped at 64px with a 12px label and a 0.5px border, against § 20's "Always
+ * 1px borders not 0.5px". The founder asked for a slimmer nav repeatedly; the
+ * answer was written down before he first asked. Sixth time in one day that the
+ * finding is "the thing already exists and is not being read".
+ *
+ * 🔴 WHY 64 AND NOT 60: the tabs were `<Button variant="ghost">`, so
+ * `.btn--regular`'s `min-height: 44px` set the row height. The content only
+ * wants 43.4px (22 icon + 3 gap + 14.4 label + 4 padding). A CTA's tap floor
+ * was governing chrome. **A nav tab is not a call to action** — same finding as
+ * the Switch, four hours earlier, from the same property.
+ *
+ * ⚠️ THE PADDING LIVES IN THE TAB, NOT THE BAR, AND THAT IS THE POINT
+ * (Silvanto). The bar used to pad 10px above and below a 44px button: 64px of
+ * bar of which only 44 — **69%** — was tappable. Moving that 20px inside the
+ * tab makes the whole 60px a target. Net: the bar comes DOWN 4px and the tap
+ * target goes UP 16px. Shaving the padding instead would have kept the dead
+ * space and slimmed the wrong thing.
+ *
+ * ⚠️ `env(safe-area-inset-bottom)` IS ADDED, NEVER SPENT (A4, app review
+ * 2026-09-22). It is the bar's reserved strip, not content padding; spending it
+ * pushes the labels up and leaves a void beneath them, which is exactly the
+ * "lots of white space under the icons" reported then.
+ *
+ * 📐 iOS HIG tab bar is 49 + 34 safe = 83px. This was 98. */
+:root { --nav-h: 60px; }
+
+.nav-bar {
+  display: flex;
+  align-items: stretch;
+  background: var(--nav-bg);
+  border-top: 1px solid var(--line);
+  padding: 0 0 env(safe-area-inset-bottom, 0px);
+}
+
+.nav-tab {
+  flex: 1;
+  min-height: var(--nav-h);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 11px;          /* ui-patterns.md § 7 — 0.6875rem */
+  color: var(--mute);
+  transition: color var(--motion-ui);
+}
+.nav-tab--active { color: var(--moss); }
+.nav-tab:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }

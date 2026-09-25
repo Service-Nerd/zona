@@ -786,13 +786,47 @@ The header frame is now constant; the CONTENT column stays whatever each page ne
 
 ### 7. Navigation Bar (Bottom)
 
-Minimal. 4–5 tabs max.
+Minimal. 4–5 tabs max. **`components/ui/NavTab.tsx` + `.nav-bar` / `.nav-tab` are the
+single owner**; `NAV_ITEMS` in `DashboardClient` is the single list.
 
 - Background: `--card` with `border-top: 1px solid --line`
-- Active icon + label: `--moss`
-- Inactive: `--mute`
-- Label: `0.6875rem`, always visible (no icon-only nav)
-- Height: `60px` + safe area inset
+- Active icon + label: `--moss` · Inactive: `--mute`
+- Label: `0.6875rem` (11px), always visible (no icon-only nav)
+- Height: **`--nav-h: 60px`** + safe area inset
+- **The bar contributes NO vertical padding. The tab is the full 60px.**
+
+> 🔴 **THIS SPEC WAS ALREADY HERE AND THE CODE IGNORED IT** (NAV-SLIM-01, Design Board
+> 2026-09-25). The bar shipped at **64px** with a **12px** label and a **0.5px** border —
+> against this section's 60px and `0.6875rem`, and against § 20's *"Always `1px` borders
+> not `0.5px`"*. The founder asked for a slimmer nav **repeatedly**; the answer was written
+> down before he first asked. Sixth instance in one day of *the thing already exists and is
+> not being read*.
+>
+> 🔴 **WHY 64 AND NOT 60.** The tabs were `<Button variant="ghost">`, so `.btn--regular`'s
+> `min-height: 44px` set the row height. The content only wants **43.4px**. `size="compact"`
+> carries the same floor, so **neither Button size can express chrome** — which is why
+> `NavTab` is its own primitive. **44px is a CTA's tap floor (`:262`); a nav tab is not a
+> call to action.** Same property, same day, as the `Switch` defect.
+>
+> ⚠️ **THE PADDING LIVES IN THE TAB, AND THAT IS THE POINT** (Silvanto). The bar used to pad
+> 10px above and below a 44px button: 64px of bar, **44 of it tappable — 69%**. Measured in
+> the DOM after the change: bar **61px** (60 + border), tab **60×94**, **98% tappable**.
+> **The bar came DOWN 4px and the tap target went UP 16px.** Shaving the padding instead
+> would have passed a height check and made the nav worse.
+>
+> ⚠️ **TWO RENDERERS, ONE LIST.** `GuideSheet` mirrors the nav to show a runner where a
+> screen lives, and had drifted to **`strava`** — a tab removed in Phase 1 — while omitting
+> **`me`**, so it taught a nav that had not existed for months and highlighted nothing when
+> it fired for Me. Both now map `NAV_ITEMS`. A mirror renders `NavTab` **without `onClick`**:
+> inert and `aria-hidden`, because a picture of the nav is not four dead buttons.
+>
+> 🥇 **THE WEBSITE WAS RIGHT AND THE APP HAD DRIFTED.** `PhoneShell.NAV_H = 60` and
+> `PhoneFrame` already carried the correct tabs. Slimming **closed** a divergence rather
+> than creating one — the opposite of the assumption the build started from, and the
+> consumer check is what caught it.
+>
+> 📐 iOS HIG tab bar: 49 + 34 safe = 83px. This was **98**.
+> Gated by `components/ui/navTab.markup.test.ts` — six arms, each falsified.
 
 ---
 
