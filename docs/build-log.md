@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — SESSION-ACTIONS-01 · my gate was keyed to one colour
+
+**Shipped:** One action-row grammar on the session screen, and two gates that catch the class my existing gate structurally could not.
+
+**Dev learning:** The founder asked about button *ordering*. Counting the screen: nine buttons, four rows, four different ratios, primary on the left in two rows and the right in the other two, `compact` sitting beside `regular`, and one row whose main action was `secondary` — so it had no primary at all. Ordering was the symptom; there was no grammar.
+
+**Product/creator learning:** Three of the nine weren't on the system, and all three were the primaries, each filled with `config.color` — the session-type colour. Silvanto vetoed it naming `:240` and the reason is better than the rule: **the session colour means the kind of session, so the control the runner is learning to find was a different colour every day.** Blue on an easy day, amber on a quality day. That's the opposite of a system, and it had been shipping.
+
+**AI-building learning:** The founder asked for this to be *prevented by process*, and that forced the honest question: why didn't my gate catch it? Because every arm keyed on `var(--moss)`. **A CTA painted any other colour was structurally invisible to it.** I'd written a check for the defect I knew about and called it a check for the class. The new arm asks the general question — *is this filled control on the system, whatever colour it is* — and it immediately found Sign in with Apple sitting off the system in black.
+
+**The honest bit:** one of my falsifications didn't apply — a shell quoting error — and printed "0 failures", which I nearly recorded as the gate being fine. A mutation that doesn't apply is a broken experiment, not a surviving mutant. That's the third time today, and the only reason I caught it is that I've now made the harness print whether the mutation landed. I should have done that the first time.
+
+**Hook material:** My design-system gate had four arms and every one of them looked for the same colour. Three primary buttons painted a different colour walked straight past it — and they were painted the *session type* colour, so the button you tap to say "I ran" was blue on easy days and amber on hard ones.
+
+**Postable?:** yes
+
 ## 2026-09-25 — GHOST-AFFORDANCE-01 · 56% of the buttons had no surface
 
 **Shipped:** Primary actions get a surface, one label gets one treatment, and three layout defects from a device review.
