@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — CONTRACT-INJURY-VALUES-01 · the last of four, and the only one nothing could have caught
+
+**Shipped:** the contract describes the API it documents, and a test now holds it to that.
+**Dev learning:** the fix I filed was "correct the six strings", and it was wrong. `injury_history` is free-form by design — the engine keyword-matches, separator- and case-insensitively — so a corrected closed union would still have misdescribed the API, just less obviously. **The defect was the SHAPE, not the spelling**, and I only saw that because I went looking for what the route actually validates instead of editing the line I had already decided was wrong.
+**Product/creator learning:** going looking also found the answer already written. `lib/plan/inputs.ts` has held a table of exactly which values each enumerated field accepts since it was written — the validator's own list — and its header records this same class for a different field: *"two measurement grids had been passing 'occasionally' and 'regularly', neither of which exists, and every plan generated cleanly."* So the gate is not a new idea, it is exporting a const and comparing. **The third time this week the file I was about to change already contained the argument for how to change it.**
+**AI-building learning:** and it found a second lie in the same document. The contract says `motivation_type` and `training_style` were removed in R23 and are ignored if sent. Both are validated, both are persisted, and `training_style` is interpolated into the AI enrichment prompt. Nothing sends them today — I grepped every producer before writing that down — so nothing is broken. But "ignored" is the kind of false statement that only costs you when someone new believes it.
+**The honest bit:** the gate's first red was its own parser. `preferred_long_run_day?: 'sat' | 'sun' // … default 'sun'` — it harvested the comment's `'sun'` as a third value and reported a contract/validator disagreement that did not exist. Ten seconds to fix, but worth writing down: a check whose first failure is its own bug is a check people learn to skip.
+**Scope, said plainly:** this is one contract. Sixteen of fifty-eight routes still have no contract at all, and the other forty-one documented ones have not been checked for the same class. The pattern exists now; the sweep does not.
+**Hook material:** four surfaces of one root in two days, and the last one was a document — which is why nothing caught it. Nothing reads a contract.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — BLOCKED-DAYS-CHECKER-SPELLING-01 · the sweep had a bound, and the fourth surface was inside it
 
 **Shipped:** the validator reads the day spelling the product actually sends, and the corpus does too.
