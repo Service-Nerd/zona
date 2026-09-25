@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — RECALIBRATE-ZONES-COOKIE-CLIENT-01 · we fixed the half of the sentence that had been reported
+
+**Shipped:** a runner who has a plan can recalibrate again.
+**Dev learning:** a real user entered a half-marathon time, tapped the button, and was told *"No plan found."* His plan is sitting in the `plans` table. The route authenticates off the Bearer token and then read the plan with the cookie client — on native there is no cookie session server-side, so the read hits RLS, comes back empty, and the 404 fires.
+**Product/creator learning:** the part I keep thinking about is that we had already found this, on this route, eight days ago. `AUTH-BEARER-MISSING-01` fixed the client half — attach the Bearer, because *"cookie sync is unreliable on native"* — and that sentence has two halves. The client sends a token; the server then has to stop relying on a cookie. **We fixed the half that was producing a 401 because a 401 was what someone had reported, and left the half that produces a 404 because nobody had hit it yet.** The comment explaining the whole mechanism was sitting four lines above the call.
+**AI-building learning:** the remedy existed in three sibling routes, one of which carries the explanation verbatim. So the useful check was not "what is wrong here" but "who else does this, and what do they do differently" — a four-route sweep that took a minute and made the fix obvious. That is the fourth time today the answer was a remedy that existed and had not been carried across.
+**The honest bit:** the guard I shipped is a source check, not a behavioural one, and I want that on the record rather than implied. The failure needs a live RLS-enforcing database and a native client; no unit test can stand that up. What is mechanically checkable is that no plan-fetching route reaches for the cookie client, and that would have caught this one. Calling that "a regression test" without the caveat would be overclaiming.
+**Also:** verified on the runner's actual stored plan rather than a fixture — 12 weeks fetched, 12 updated, paces moving 5:33–6:38 to 6:12–7:24. A fixture would have proved the code path; his plan proved the bug.
+**Hook material:** the comment explaining exactly why this breaks was four lines above the line that broke, in a fix we shipped eight days earlier for the other half of the same sentence.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — OPS-TRIAL-CONV-01 · the conversion number was 3.2% and every point of it was us
 
 **Shipped:** the view behind the 1 January trial-to-paid gate now reports a real number. Applied by the founder, verified from here.
