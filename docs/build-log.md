@@ -6,6 +6,19 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — TIME-INPUT-SECONDS-01 · asked to build a component that already existed
+
+**Shipped:** every time field in the app collects seconds, and the decision left the call site.
+**Dev learning:** the brief was *"I want one component that has the same look and feel across the whole app"*, with an invitation to challenge the wording. The component exists. It opens by describing itself as *"the canonical time/duration entry"*, it is used by all six entry points, and it already supported seconds. **Building what was asked for would have produced a second canonical component and fixed nothing.** The word "component" was right for the thing and wrong for the problem: the problem was a prop, defaulting to off, that three call sites set and three forgot.
+**Product/creator learning:** and the screens were not *missing* the seconds. They were writing `:00` into the stored string. Twelve of twelve stored times in production end `:00`, which looked like a user preference and was actually the interface being incapable. **We had not failed to record a number; we had asserted one.**
+**AI-building learning:** the measurement that turned it from a tidy-up into a decision was the direction of the error. Truncating always rounds a runner *faster* — 11.8 sec/km at 5K — and every prescribed pace is derived from that benchmark, in a product whose entire argument is that people run too hard. Sierra put it better than the brief did: we were inventing a slightly better athlete and then coaching them.
+**The honest bit:** I deleted the prop rather than defaulting it to true, and that was the single best decision in the build. Defaulting would have left three call sites still passing an explicit value and three inheriting a new one, with nobody visiting either. Deleting it made the compiler name all six, and one of them turned out to need draft-persistence and step-predicate changes I would not have thought to look for.
+**Also:** the dissent stayed in. Wroblewski argued a target time is an intention, not a fact, and that a seconds wheel under *"what are you aiming for?"* demands precision nobody has. He did not move, so the chair converted his objection into the amendment — the wheel defaults to `00` — and the register records it as unsettled rather than answered. The evidence that would settle it cannot exist until this ships, which is a good reason to write that down rather than pretend consensus.
+**Hook material:** I was asked to build one component for consistency. It already existed, was already used everywhere, and already did the thing — behind a flag that half the screens forgot to set.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — RECALIBRATE-ZONES-COOKIE-CLIENT-01 · we fixed the half of the sentence that had been reported
 
 **Shipped:** a runner who has a plan can recalibrate again.
