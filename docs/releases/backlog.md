@@ -362,10 +362,11 @@ about. And the suite's **duration gate** caught it at 17.6 s; sampled by a copri
 to 1,200 inputs (3 s isolated, ~5 s under contention) and baselined with a reason, beside
 `qualityAeroFallback.test.ts`, which is the same shape and dearer.
 
-### ⚙️ `BLOCKED-DAYS-CHECKER-SPELLING-01` — THE FOURTH SURFACE. The validator reads a spelling the wizard never sends.
+### ✅ `BLOCKED-DAYS-CHECKER-SPELLING-01` — **SHIPPED 2026-09-25.** The fourth surface, closed.
 
-**Found 2026-09-25 by a bounded sweep for the root class, at the founder's instruction.
-Fix is one line at an existing single owner. NOT applied.**
+**Found by a bounded sweep, fixed the same day.** Three changes, one job: the cast became a
+conversion, a local mirror folded into the owner, and the corpus swapped to the wizard's
+spelling at **zero cost**.
 
 #### How the sweep was bounded, so "fourth and last" is a claim and not a hope
 
@@ -434,24 +435,46 @@ the cohort it breaks is one §1 CD-21 Amendment 1 explicitly treats as real and 
 weekdays**. So the corpus is blind twice over: wrong spelling, and it never reaches the
 shape that triggers it. `verify-parity` does not vary `days_cannot_train` at all.
 
-#### Fix
+#### What shipped
 
-One line — call the existing owner, as every other consumer does:
+**1. The cast became a conversion.** `normaliseDays(input.days_cannot_train)` — the owner
+`invariants.ts` was already importing at line 14.
 
-```ts
-const blockedSet = normaliseDays(input.days_cannot_train)
-```
+**2. The local mirror folded in, and its justification did not survive scrutiny.**
+`parseBlockedDays` was kept local *"so the invariant catches any future drift"* — an
+argument borrowed from `deloadCadence.test.ts`, where a checker mirroring a **rule** can
+catch the rule being wrong because it computes the answer independently. **A parser is not
+a rule.** A second copy of a lookup table cannot catch the first drifting; it can only
+disagree silently, which is the failure being fixed one screen away.
 
-Plus: a regression test using the **wizard's** spelling and the weekend-only shape; and
-add a full-name cell to `cohortGrid`'s `days_cannot_train` axis so the corpus can reach
-the spelling real runners send. ⚠️ **Adding a grid cell moves `cohortShape`'s baseline** —
-declare the number, do not re-baseline to go green.
+🥇 **AND THE MIRROR WAS ALREADY WEAKER THAN WHAT IT MIRRORED — proven before deleting it.**
+Compared across 18 inputs it agreed on 17 and **lost one**: `'  monday  '` normalised to
+nothing locally and to `mon` in the owner, because `normaliseDays` trims and the copy did
+not. Folding it in is a strict improvement, not a neutral refactor. The duplicate
+`FULL_TO_SHORT_DAY` table went with it.
 
-⚠️ **`parseBlockedDays` (`invariants.ts:650`) is a SECOND normaliser**, deliberate and
-correct (it handles both forms), justified in comment as *"kept local so the invariant
-catches any future drift"*. It is the same D-16 shape as the injury predicate but is **not**
-broken. Folding it into `days.ts` is a judgement call, not a defect fix — decide it with
-this item rather than separately.
+**3. The corpus now uses the wizard's spelling, at ZERO cost.** `cohortGrid`'s `DAY_SETS`
+read `['tue','thu']` / `['tue']`; they now read `['tuesday','thursday']` / `['tuesday']`.
+⚠️ **The filing predicted this would move `cohortShape`'s baseline and it does not** —
+measured: the two spellings produce byte-identical `weeks` and byte-identical `meta` apart
+from `meta.generator_input`, which echoes the raw input back for replay by design and which
+no baseline metric reads. `verify` confirms *"no regression against the committed
+baseline"*. **Swap, don't add** — the same reasoning as the parity grid's injury axis.
+
+⚠️ **The corpus still cannot reach the DIVERGING shape**, and that is deliberate: the cast
+only misreports when all five weekdays are blocked, and a 2-day weekend-only runner cannot
+generate cleanly under `NODE_ENV=test` (§110/§1 — zero quality is a genuine violation for
+them). That case lives in the regression test's **forged-plan** fixture instead, which is
+the pattern `userDeclaredLevel.test.ts` already records for the same reason.
+
+#### Verification
+
+`blockedDaysSpelling.test.ts`, 7 assertions, **falsified both ways**: restoring the cast
+turns three red and reports **44 violations against 37** with **7 false
+`INV-PLAN-QUALITY-EXPECTED`**; reintroducing a second lookup table is named by the
+single-owner check. It also asserts the rule is **intact rather than disabled** — with
+wed/thu/fri free, zero quality still fires. `verify` exit 0 · **3,424 tests / 388 files** ·
+`verify:parity` **IDENTICAL, 6,066 cases** — generation never moved, only the report on it.
 
 ### ⚙️ `CONTRACT-INJURY-VALUES-01` — the generate-plan contract types values the wizard never sends
 

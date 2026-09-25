@@ -96,10 +96,30 @@ const BENCHMARKS = [undefined, { type: 'race', distance_km: 5, time: '0:27:30', 
 /** §3's masters recovery cadence keys on age >= MASTERS_AGE_THRESHOLD (45). */
 const AGES = [35, 52] as const
 const LEVELS = ['beginner', 'intermediate', 'experienced'] as const
+// BLOCKED-DAYS-CHECKER-SPELLING-01 (2026-09-25) — THE WIZARD'S SPELLING, not the
+// code's. These cells read `['tue','thu']` and `['tue']`, which
+// `GeneratePlanScreen` cannot produce: it maps through `FULL_BY_SHORT` and sends
+// `'tuesday'` (confirmed on 11 of 13 stored plans). So the corpus exercised a
+// spelling no runner sends, and `invariants.ts` was CASTING rather than
+// converting — the checker was wrong for every real user and right for every
+// swept one.
+//
+// ⚠️ FREE, AND MEASURED RATHER THAN ASSUMED. The engine normalises
+// (`ruleEngine.ts:806`), so the two spellings produce byte-identical `weeks` and
+// byte-identical `meta` apart from `meta.generator_input`, which echoes the raw
+// input back for replay by design. No `cohortShape` or `planFitness` metric
+// reads that field, so no baseline moves — same swap-don't-add reasoning as the
+// parity grid's own injury axis.
+//
+// ⚠️ IT STILL DOES NOT REACH THE DIVERGING SHAPE. The cast only misreports when
+// ALL FIVE weekdays are blocked (3 of 420 swept cases), and no cell here does
+// that — a 2-day weekend-only runner cannot generate cleanly under NODE_ENV=test
+// (§110/§1: zero quality is a real violation for them), so it belongs in
+// `blockedDaysSpelling.test.ts`'s forged-plan fixture, not in this grid.
 const DAY_SETS = [
-  { days_available: 3, days_cannot_train: ['tue', 'thu'] },
+  { days_available: 3, days_cannot_train: ['tuesday', 'thursday'] },
   { days_available: 4, days_cannot_train: [] as string[] },
-  { days_available: 5, days_cannot_train: ['tue'] },
+  { days_available: 5, days_cannot_train: ['tuesday'] },
 ] as const
 /** `undefined` matters as much as a value — most runners never set a cap. */
 const CAPS = [30, 60, undefined] as const

@@ -278,10 +278,7 @@ const DAYS = ['mon','tue','wed','thu','fri','sat','sun'] as const
 type Day = typeof DAYS[number]
 
 const DAY_SET: Set<Day> = new Set(DAYS)
-const FULL_TO_SHORT_DAY: Record<string, Day> = {
-  monday: 'mon', tuesday: 'tue', wednesday: 'wed', thursday: 'thu',
-  friday: 'fri', saturday: 'sat', sunday: 'sun',
-}
+
 
 function dayGap(a: Day, b: Day): number {
   const ai = DAYS.indexOf(a), bi = DAYS.indexOf(b)
@@ -645,18 +642,21 @@ function paceFromVdot(vdot: number, fraction: number): number {
   return 1000 / v
 }
 
-// CoachingPrinciples §18 — accept short and full forms. Mirror of the engine
-// parser; kept local so the invariant catches any future drift.
-function parseBlockedDays(input: GeneratorInput): Set<Day> {
-  const s = new Set<Day>()
-  for (const d of input.days_cannot_train ?? []) {
-    const lower = String(d).toLowerCase()
-    if (DAY_SET.has(lower as Day)) { s.add(lower as Day); continue }
-    const short = FULL_TO_SHORT_DAY[lower]
-    if (short) s.add(short)
-  }
-  return s
-}
+// CoachingPrinciples §18 — blocked days come from `lib/plan/days.ts`, the
+// declared single owner, and are NOT re-parsed here.
+//
+// 🔴 THIS WAS A LOCAL MIRROR, justified in comment as "kept local so the
+// invariant catches any future drift" (BLOCKED-DAYS-CHECKER-SPELLING-01,
+// 2026-09-25). That argument is borrowed from `deloadCadence.test.ts`, where a
+// checker mirroring a RULE can catch the rule being wrong because it computes
+// the answer independently. **A PARSER IS NOT A RULE.** A second copy of a
+// lookup table cannot catch the first one drifting; it can only disagree with it
+// silently — which is the exact failure this commit fixes one screen away.
+//
+// ⚠️ AND THE MIRROR WAS ALREADY WEAKER THAN WHAT IT MIRRORED. Compared across 18
+// inputs it agreed on 17 and lost one: `'  monday  '` normalised to nothing here
+// and to `mon` in the owner, because `normaliseDays` trims and this did not.
+// Folding it in is a strict improvement, not a neutral refactor.
 
 // isLongRun / isShakeout now live in ./sessionRole (single owner). They read the
 // generator-stamped structural `role`, falling back to the label heuristic only
@@ -846,7 +846,7 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
     : undefined
   const minHoursQualLong = GENERATION_CONFIG.MIN_HOURS_BETWEEN_QUALITY_AND_LONG
   const minDaysQualLong = Math.ceil(minHoursQualLong / 24)
-  const blocked = parseBlockedDays(input)
+  const blocked = normaliseDays(input.days_cannot_train)
   // ADR-020 (2026-09-03) — count the MAIN plan only. Foundation weeks carry
   // n <= 0 and, per §57, "are never part of the main plan's periodisation arc".
   // Including them inflated `totalWeeks`, which shifted `halfWeek`, which moved
@@ -1969,7 +1969,18 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       const intentionallyDowngraded = !!w.quality_downgraded
       if (expectQuality && !intentionallyDowngraded) {
         const eligibleDays: Day[] = ['wed','thu','tue','mon','fri']
-        const blockedSet = new Set((input.days_cannot_train ?? []) as Day[])
+        // BLOCKED-DAYS-CHECKER-SPELLING-01 (2026-09-25) — THIS WAS A CAST, NOT A
+        // CONVERSION. `days_cannot_train` is free-form on the way in and the
+        // WIZARD SENDS FULL NAMES ('monday'), confirmed on 11 of 13 stored
+        // plans. `'monday' as Day` type-checks and never equals `'mon'`, so
+        // `blockedSet.has('wed')` was false for every real runner,
+        // `anyEligibleUnblocked` was wrongly true, and this ERROR-severity
+        // invariant fired on a plan that was correct. Measured: a weekend-only
+        // runner (all five weekdays blocked, 2 days available) reported 1 error
+        // in the corpus spelling and 8 in the wizard's — 7 of them false.
+        // The ENGINE was right throughout (`ruleEngine.ts:806` normalises); only
+        // the checker read the wrong thing.
+        const blockedSet = normaliseDays(input.days_cannot_train)
         const anyEligibleUnblocked = eligibleDays.some(d => !blockedSet.has(d))
         const qualityCount = placedRunning.filter(({ session }) => session.type === 'quality').length
         if (anyEligibleUnblocked && qualityCount === 0) {
