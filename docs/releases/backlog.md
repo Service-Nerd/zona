@@ -1534,6 +1534,38 @@ is right for the brand. I also want to revisit no chrome at the same time and ge
 **Supersedes `CTA-FLAT-01`**, which was the symptom. The board sat on it the same day and found
 something larger.
 
+#### ✅ MOCK-UPS DONE, DIRECTION CHOSEN — and the item changed class (2026-09-25)
+
+**Founder ruled: direction B.** Four directions drawn on the same real card, plus a five-rung chrome
+ladder with worked examples. Canvas: `claude.ai/artifact/QSzkbpvULg5HNnrHZitKBN`.
+
+| | Fill | Elevation | White on fill | Chrome? |
+|---|---|---|---|---|
+| A — as shipped | `--moss` | none | **3.68:1** | no |
+| **B — CHOSEN** | **`--moss-strong`** | **`--shadow-lifted`** | **5.48:1** | no |
+| C — lit top edge | `--moss-deep` | lifted + `inset` highlight | 7.21:1 | **YES** |
+| D — ink | `--ink` | lifted | 17.3:1 | no |
+
+🔴 **THIS IS NO LONGER A POLISH ITEM. WHITE ON `--moss` IS 3.68:1 AND THE LABEL IS 13px, SO EVERY
+PRIMARY CTA IN THE PRODUCT FAILS WCAG AA** (4.5:1 at that size). **That is not why the item was
+filed** — it was filed because the buttons look flat — and it is why the item now has to ship
+rather than ride along behind other work.
+
+⚠️ **`globals.css` ALREADY RECORDED THIS DEFECT AND ALREADY SHIPPED THE FIX, FOR A DIFFERENT
+SURFACE.** `A11Y-CONTRAST-01`'s own comment reads *"moss and amber AT AA, for anywhere they carry
+TEXT … the primary 'Get the app' button failed AA at 13.5px bold"*, and it added `--moss-strong`
+(5.48:1) and `--moss-deep` (7.21:1) for exactly this. **The marketing button was fixed; the 65 app
+buttons were not.** Same shape as the remedies applied to one case and not its twin recorded four
+times this week. **No new token, no open board question** — putting `--moss-strong` under white text
+is the documented purpose of the token, so this half is a defect fix restoring documented intent.
+
+⚠️ **C carried chrome and I did not label it when I presented the set.** `inset 0 1px 0
+rgba(255,255,255,.16)` is a third decorative layer faking a light source nothing else on the screen
+has — `ui-patterns.md:70` verbatim. Caught by the founder asking, not on the way in.
+
+**What the direction choice does NOT settle:** the press state, the 44px floor and the email border
+from the 2026-09-24 amendment are untouched by it, and the staging below is still unruled.
+
 #### What is actually wrong
 
 🔴 **There is no Button component. There are 65 hand-rolled moss rectangles.** A real one, from
@@ -1601,6 +1633,11 @@ properties.**
 
 The migration is the fix: **the component alone changes nothing visible.** Build it and convert
 nothing, and only new buttons get the treatment while the other 65 stay exactly as flat.
+
+🔴 **THE CONTRAST FINDING CHANGES THIS CALCULATION.** "Convert nothing and let files be touched over
+time" was a reasonable staging while the only cost was flatness. It is not reasonable while the
+uncoverted buttons **fail AA**, so the conversion is no longer cosmetic debt and cannot be left to
+whenever a file is next opened.
 
 Recommended staging (not ruled): the component plus **the surfaces a runner actually sees** —
 Today, Session, Upgrade, and the email CTA — with the remainder converted when a file is touched

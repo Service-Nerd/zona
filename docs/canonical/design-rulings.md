@@ -1319,6 +1319,21 @@ no guard, and an unrecorded one gets re-proposed.
 ⚠️ **What this does not settle:** nothing has been pressed on a device, and the 65 conversions are a
 migration this authorises but does not scope.
 
+✅ **MOCK-UP ROUND CLOSED 2026-09-25 — founder chose direction B**, which is this ruling's own
+answer: `--moss-strong` fill on `--shadow-lifted`. Four directions on a real card plus a five-rung
+chrome ladder with worked examples (`claude.ai/artifact/QSzkbpvULg5HNnrHZitKBN`). **The no-chrome
+revisit needed nothing overturned** — the ladder shows the rule bans a second authored effect, not
+depth, so rung 1 sits inside it and Silvanto's declined veto holds unchanged.
+
+🔴 **AND THE ROUND FOUND A DEFECT THE SITTING MISSED: white on `--moss` is 3.68:1 at 13px, so every
+primary CTA in the product FAILS WCAG AA.** The board sat on this button for a whole sitting, ruled
+on its elevation, its press state, its height and its email fallback, and **nobody measured its
+contrast** — while `globals.css` had carried `--moss-strong` and `--moss-deep` since
+`A11Y-CONTRAST-01`, authored for this exact failure on the marketing button. **A sitting about how a
+control looks did not ask whether its text could be read.** The fill choice is therefore a defect fix
+restoring documented intent, not a new palette decision, and `BUTTON-COMPONENT-01` moves from polish
+to must-ship.
+
 ---
 
 ## Maintenance
