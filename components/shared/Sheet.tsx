@@ -46,6 +46,7 @@
 'use client'
 
 import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react'
+import IconButton from '@/components/ui/IconButton'
 import { createPortal } from 'react-dom'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
 
@@ -105,6 +106,46 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
   onCloseRef.current = onClose
   const closingRef = useRef(false)
 
+  /**
+   * 🔴 SWIPE DOWN TO CLOSE (founder, 2026-09-25: *"I want ALL popups we have to
+   * be able to swipe down to close them as well as have the cross to close"*).
+   *
+   * ⚠️ THE DRAG PILL WAS ALREADY DRAWN AND DRAGGED NOTHING — a false affordance
+   * shipped in the primitive itself, promising a gesture the sheet did not
+   * support. Every sheet in the app inherited it.
+   *
+   * ⚠️ THE DRAG ONLY STARTS AT THE TOP OF THE SCROLL. A sheet whose body is
+   * scrolled mid-way must scroll, not dismiss — otherwise a runner reading a
+   * long zone explanation loses it trying to scroll back up. `scrollTop <= 0`
+   * is the whole guard, and it is why this is safe on a scrollable panel.
+   */
+  const dragStartY = useRef<number | null>(null)
+  const [dragY, setDragY] = useState(0)
+  const DISMISS_PX = 90
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const el = panelRef.current
+    if (!el || el.scrollTop > 0) { dragStartY.current = null; return }
+    dragStartY.current = e.touches[0]!.clientY
+  }, [])
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (dragStartY.current === null) return
+    const dy = e.touches[0]!.clientY - dragStartY.current
+    // Downward only: an upward pull is a scroll, not a dismiss.
+    setDragY(dy > 0 ? dy : 0)
+  }, [])
+
+  const onTouchEnd = useCallback(() => {
+    if (dragStartY.current === null) return
+    const dy = dragY
+    dragStartY.current = null
+    setDragY(0)
+    if (dy > DISMISS_PX) closeRef.current()
+  }, [dragY])
+
+  const closeRef = useRef<() => void>(() => {})
+
   // Animated dismiss: play the exit, then hand control back to the caller.
   const close = useCallback(() => {
     if (closingRef.current) return
@@ -113,6 +154,7 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
     setShown(false)
     window.setTimeout(() => onCloseRef.current(), EXIT_MS)
   }, [])
+  closeRef.current = close
 
   // Mount → portal target exists → run the enter animation on the next frame.
   useEffect(() => {
@@ -181,10 +223,15 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
         ref={panelRef}
         tabIndex={-1}
         onClick={e => e.stopPropagation()}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
         style={{
           width: '100%', maxWidth: `${maxWidth}px`,
           background: 'var(--card)',
           borderRadius: '20px 20px 0 0',
+          position: 'relative',
           boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
           paddingTop: 'var(--space-2)',
           // S1 completeness — the panel now reaches the viewport's bottom edge,
@@ -199,12 +246,30 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch',
           outline: 'none',
-          transform: shown ? 'translateY(0)' : 'translateY(100%)',
-          transition: transition ?? 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)',
+          transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
+          // No transition WHILE dragging: the panel must track the finger, then
+          // spring back or dismiss when it is released.
+          transition: dragY > 0 ? 'none' : (transition ?? 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)'),
         }}
       >
-        {/* Drag pill — the only chrome the primitive draws for you. */}
+        {/* Drag pill — and as of 2026-09-25 it actually drags. */}
         <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
+        {/* 🔴 THE CLOSE IS THE PRIMITIVE'S, NOT EACH SHEET'S (SHEET-CLOSE-OWNER-01).
+            Six sheets hand-rolled three different closes: a bottom full-width
+            "Close", a top-right cross, and nothing. A runner met a different
+            way out of each one. Same shape as `.cta-pill` and `BackButton` —
+            the third time a thing every caller needs was left to each caller. */}
+        <IconButton
+          onClick={close}
+          ariaLabel="Close"
+          shape="circle"
+          style={{ position: 'absolute', top: '10px', right: '12px', zIndex: 1 }}
+          icon={
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          }
+        />
         {typeof children === 'function' ? children(close) : children}
       </div>
     </div>,

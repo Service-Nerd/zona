@@ -38,8 +38,7 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
               sheets: mirrored nav bar at bottom, not top"*, and this makes the
               second of two sheets disagree with it — flagged for the board in
               that item rather than silently reversed here. */}
-          <div style={{ padding: '0 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-            <div style={{ minWidth: 0 }}>
+          <div style={{ padding: '0 20px 4px' }}>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
               color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -58,18 +57,6 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
                 {hrBand.lo}–{hrBand.hi} bpm
               </div>
             )}
-            </div>
-            <IconButton
-              onClick={onClose}
-              ariaLabel="Close"
-              shape="circle"
-              style={{ marginTop: '-6px', marginRight: '-6px' }}
-              icon={
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                  <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              }
-            />
           </div>
 
           {/* Body — three lines, no headers. Voice does the work. */}

@@ -99,9 +99,14 @@ describe('PLANVERB-01 — the two plan doors', () => {
 
   it('the sheet shows a bottom bar only when there is something to apply (R-5)', () => {
     const code = strip(SHEET)
-    expect(code, 'the act-in bar is gated on pending work').toMatch(/\{pending\.length > 0 && \(/)
-    expect(code, 'and the browse-state dismiss sits top-right').toMatch(/\{pending\.length === 0 && \(/)
-    // Falsifiable both ways: un-gate the bar, or delete the header dismiss.
+    expect(code, 'the act-in bar is gated on pending work').toMatch(/\{pending\.length > 0 && \(/)    // ⚠️ THE DISMISS MOVED TO `Sheet`, THE RULE DID NOT (SHEET-CLOSE-OWNER-01).
+    // Six sheets hand-rolled three different exits, so the primitive owns the
+    // close now and every sheet gets the same one, plus the swipe its drag pill
+    // had been promising since it was written. R-5's behaviour is unchanged and
+    // is now guaranteed for EVERY sheet rather than this one.
+    expect(readFileSync(join(process.cwd(), 'components/shared/Sheet.tsx'), 'utf8'),
+      'the browse-state dismiss must exist, in the primitive')
+      .toMatch(/ariaLabel="Close"/)
   })
 
   it('the sheet offers the wizard door that splitting the verbs closed', () => {

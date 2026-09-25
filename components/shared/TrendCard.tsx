@@ -252,12 +252,6 @@ function ExplanationSheet({
           )}
         </div>
 
-        <div style={{ position: 'sticky', bottom: 0, padding: '14px 20px 20px', background: 'var(--card)', borderTop: '0.5px solid var(--line)', marginTop: 'var(--space-2)' }}>
-          <Button variant="secondary" 
-            onClick={close} style={{ width: '100%', height: '48px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-lg)', fontSize: '14px', fontWeight: 500, color: 'var(--ink)' }}>
-            Close
-          </Button>
-        </div>
       </>
       )}
     </Sheet>

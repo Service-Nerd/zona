@@ -15,6 +15,7 @@ const strip = (s: string) => s
   .split('\n').filter(l => !l.trim().startsWith('//')).join('\n')
 
 const SHEET   = strip(readFileSync(join(process.cwd(), 'components/shared/ModifyPlanSheet.tsx'), 'utf8'))
+const SHEET_PRIMITIVE = readFileSync(join(process.cwd(), 'components/shared/Sheet.tsx'), 'utf8')
 const CONFIRM = strip(readFileSync(join(process.cwd(), 'components/shared/ModifyPlanConfirm.tsx'), 'utf8'))
 const DASH_RAW = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
 const DASH = strip(DASH_RAW)
@@ -75,8 +76,21 @@ describe('P-02 — presentation and copy live where they belong', () => {
     // primary in the resting state to be disabled.
     expect(SHEET, 'the act-in bar is gated on there being something to apply')
       .toContain('{pending.length > 0 && (')
-    expect(SHEET, 'the browse-state dismiss sits in the header')
-      .toContain('{pending.length === 0 && (')
+    // ⚠️ THE DISMISS MOVED TO `Sheet`, THE RULE DID NOT (SHEET-CLOSE-OWNER-01,
+    // 2026-09-25). This asserted the sheet renders its OWN top-right cross
+    // under `{pending.length === 0 && (`. Six sheets hand-rolled three
+    // different ways out, so `Sheet` now owns the close and every sheet gets
+    // the same one — plus swipe-down, which the drag pill had been promising
+    // and not delivering since it was written.
+    //
+    // 🔴 THIS TEST FAILING IS WHAT CAUGHT THAT, and the right response was to
+    // follow the rule to its new home, not to delete the assertion. The
+    // behaviour asserted — a browse state with a dismiss and no bottom bar —
+    // is unchanged and is now guaranteed for EVERY sheet rather than this one.
+    expect(SHEET_PRIMITIVE, 'the dismiss must exist for the browse state')
+      .toMatch(/<IconButton[\s\S]{0,200}ariaLabel="Close"/)
+    expect(SHEET, 'this sheet must not re-grow its own close')
+      .not.toContain('ariaLabel="Close"')
     expect(SHEET, 'and a pending state can still be abandoned').toContain('Discard changes')
     // The thing actually forbidden, stated directly rather than implied by a
     // ternary's presence: no `disabled` primary painted in the CTA colour

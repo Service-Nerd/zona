@@ -11211,7 +11211,14 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
           {zones.map(z => (
             <Button variant="secondary" 
               key={z.zone}
-              onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)} style={{ justifyContent: 'flex-start', gridTemplateColumns: '24px 1fr auto', gap: 'var(--space-3)', padding: '9px 10px', borderRadius: '8px', background: 'var(--bg)', textAlign: 'left', width: '100%' }}>
+              onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)} style={{ /* 🔴 `display: 'grid'` RESTORED. `.btn` sets `inline-flex`, so these
+                           grid columns were INERT and the HR ranges sat wherever each
+                           description happened to end — the founder's "numbers for the
+                           ranges are all over the place". `display` is LAYOUT and was
+                           wrongly dropped as owned by `.btn`, the same error as the
+                           centred "Sign out". Third column is FIXED so the ranges share
+                           one right edge across rows. */
+                         display: 'grid', gridTemplateColumns: '24px 1fr 64px', gap: 'var(--space-3)', alignItems: 'center', padding: '9px 10px', borderRadius: '8px', background: 'var(--bg)', textAlign: 'left', width: '100%' }}>
               {/* Zone number */}
               <div style={{
                 width: '24px', height: '24px', borderRadius: '50%',

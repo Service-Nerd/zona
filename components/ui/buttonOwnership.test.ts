@@ -511,6 +511,51 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
       `button whatever colour it is:\n${offenders.join('\n')}`).toEqual([])
   })
 
+  it('🔴 a control that lays itself out declares its own `display`', () => {
+    // `.btn` sets `display: inline-flex`. That is right for a button and WRONG
+    // for a row that lays itself out — and the conversion dropped `display` as
+    // "owned by .btn", so a zone row's `gridTemplateColumns` became INERT and
+    // its HR ranges sat wherever each description ended. The founder saw it
+    // twice: "sign out is misaligned" and "the numbers for the ranges are all
+    // over the place". Same root, two screens.
+    //
+    // ⚠️ The earlier arm checked `textAlign` + `justifyContent`. It could not
+    // see this one, because that row HAD a `justifyContent` — what it had lost
+    // was `display`. A check aimed at one symptom of a cause misses the others.
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      const rel = path.relative(ROOT, f)
+      if (rel.includes('preview')) continue
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      const re = /<(button|Button|IconButton)(?=[\s>])/g
+      let m: RegExpExecArray | null
+      while ((m = re.exec(src))) {
+        let i = re.lastIndex, depth = 0
+        while (i < src.length) {
+          const c = src[i]
+          if (c === '{') depth++
+          else if (c === '}') depth--
+          else if (c === '>' && depth === 0) break
+          i++
+        }
+        const t = src.slice(m.index, i + 1)
+        const onSystem = m[1] !== 'button' || /className=[^\n]*\b(btn|icon-btn)\b/.test(t)
+        if (!onSystem) continue
+        const line = src.slice(0, m.index).split('\n').length
+        if (/gridTemplate|gridColumn(?!s?:\s*')/.test(t) && !/display:\s*'grid'/.test(t)) {
+          offenders.push(`${rel}:${line} declares grid columns, but .btn's inline-flex wins`)
+        }
+        // ⚠️ NO `flexDirection` ARM, AND THAT IS MEASURED. `.btn` sets
+        // `inline-flex`, which IS a flex container — so `flexDirection: column`
+        // works perfectly on it. The first cut flagged two controls that were
+        // entirely correct. Only GRID properties are broken by inline-flex, so
+        // only grid is checked. A check that cries wolf gets switched off, which
+        // this repo records as equivalent to having no check.
+      }
+    }
+    expect(offenders, `a control's own layout is being overridden by .btn:\n${offenders.join('\n')}`).toEqual([])
+  })
+
   it('the email CTA does not use the failing fill', () => {
     // Email cannot use box-shadow (Outlook drops it), so the ruling gives it a
     // 1px --moss-deep border instead. The FILL still owes AA either way.
