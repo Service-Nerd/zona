@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-25 — TODAY-CTA-CLEARANCE-01 · the obvious CSS was wrong by 83px
+**Shipped:** Today's primary CTA docks above the nav instead of hiding 40% of itself behind it.
+**Dev learning:** A `position: sticky` bottom offset resolves against the scroll container's PADDING BOX, not the scrollport. Our scroller already reserves `navHeight + 16` so content can clear the nav, so writing the obvious `bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px)` double-counts the nav and floats the button 83px into the middle of the content — ~118px on a real device. `bottom: 0` is correct and looks like a mistake, which is why the comment is longer than the rule.
+**Product/creator learning:** He said "the nav is too big" and what he meant was "the nav is eating the button". Those are different fixes. Measuring his screenshot — 1206×2622 at 3.216×, so a true 375×815pt viewport — gave the actual number: CTA top 692.5pt, 48pt tall, nav top 721.1pt, 19.4pt hidden. The board built the smaller fix first specifically to find out whether the bigger complaint survives it.
+**AI-building learning:** I wrote CSS that was obviously right, and it was wrong by 83px. The only reason I caught it was building a throwaway probe page and measuring in a real scrollport instead of trusting the rule. Every single thing I got right today came from measuring; almost everything I got wrong came from reasoning about what the code should do.
+**The honest bit:** My own cleanup `git checkout` reverted the file and silently deleted the dock I had just added. It was caught by an assertion I had put in the cleanup command for exactly that reason — which is the first time today one of my guards caught me rather than the other way round. Also: I corrected a figure mid-answer, having told the founder "under half visible" when the measured number was 60% visible.
+**Hook material:** The CSS said "clear the nav plus a gap". It measured 83 pixels of float. The fix was `bottom: 0`.
+**Postable?:** yes
+
+
 ## 2026-09-25 — NAV-SLIM-01 · the founder asked many times and the answer was already written down
 **Shipped:** The bottom nav at its documented 60px, with the padding moved into the tab so the whole bar is tappable.
 **Dev learning:** `min-height` on a class beats an inline `height` — that is the second control this evening it broke. The nav tabs were `<Button variant="ghost">`, so `.btn--regular`'s 44px CTA tap floor set the bar's height at 64 when the content only wanted 43.4. `size="compact"` carries the same floor, so neither Button size can express chrome, which is the actual argument for a separate primitive. And the fix was not "take 4px off": the bar padded 10px above and below a 44px button, so only 69% of it was tappable. Moving the padding inside the tab took the bar DOWN 4px and the tap target UP 16px. Measured in a real DOM: 61px bar, 60×94 tab, 98% tappable.
