@@ -57,6 +57,23 @@ than silently restyled, because both carry a **semantic** colour a conversion wo
   ADR-012's pending-adjustment semantics; repainting it moss would remove the meaning.
 🧭 **DESIGN BOARD** — both are appearance changes to a semantic state, not defect fixes.
 
+
+### `SMOKE-PLUMBING-01` — dead plumbing survived the dead component ⚙️ NO BOARD
+**Found 2026-09-25**, deleting `SmokeToggle` under SWITCH-PRIMITIVE-01.
+
+The component had **zero call sites** and went. Its plumbing did not: `smokeTrackerEnabled`
+and `quitDays` are still fetched from `user_settings`, held in `DashboardClient` state, and
+threaded as props into `TodayScreen`. `CLAUDE.md` records the smoke tracker as *"Removed from
+all UI surfaces"* in Phase 1, so this has been carrying a column and two props through the
+render tree for months with nothing rendering them.
+
+⚠️ **Check what `TodayScreen` does with them before deleting** — "no UI" and "no consumer" are
+different claims, and a negative grep is not proof of absence (this repo has recorded two
+confident false "it doesn't exist" results from wrong-directory searches).
+
+**Do:** trace both to their last reader, remove the props, the state, and the `select` columns
+if genuinely unread. Small, and it removes a reason for someone to wonder what the feature was.
+
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
 ### 🧭 `DESTRUCTIVE-WIRING-01` — a variant with zero uses, and two flows that need it

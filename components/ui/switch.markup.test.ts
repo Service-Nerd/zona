@@ -92,6 +92,25 @@ describe('SWITCH-PRIMITIVE-01', () => {
     expect(offenders, `a switch built inline instead of using <Switch>:\n${offenders.join('\n')}`).toEqual([])
   })
 
+  it('🔴 the parent-gated row passes the EFFECTIVE state, not the preference', () => {
+    // Board amendment 2, given a mechanism rather than a comment. `/ship`'s gate
+    // box 3: two subsystems compose over the same data. `DailyPushToggleRow`
+    // computes `effectiveOn = enabled && !disabled` so the row reads OFF when
+    // push itself is off, even if the stored preference says on — nobody is
+    // promised a push that cannot arrive. If a later edit passes `enabled`
+    // instead, the switch silently starts announcing a state the product cannot
+    // honour, and NOTHING else in this suite would notice: same component, same
+    // markup, one identifier different.
+    const src = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    const fn = src.slice(src.indexOf('function DailyPushToggleRow'))
+    const body = fn.slice(0, fn.indexOf('\n}\n'))
+    expect(body, 'DailyPushToggleRow no longer derives an effective state').toMatch(/const effectiveOn = enabled && !disabled/)
+    expect(body, 'the gated row must pass effectiveOn, never the raw preference')
+      .toMatch(/checked=\{effectiveOn\}/)
+    expect(body, 'passing `enabled` announces a push that cannot arrive')
+      .not.toMatch(/checked=\{enabled\}/)
+  })
+
   it('🔴 every live switch is on the primitive, and there are three', () => {
     // A population arm, because TODAY three separate gates read clean while
     // pointed at incomplete sets (sheetClose's hand-written CONSUMERS, the 44px
