@@ -6,6 +6,22 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — STEPPER-CONTROL-01 · the board built less than I asked it to, and was right
+
+**Shipped:** The distance stepper now announces its value, the average-HR field uses `TextField`, and a `Stepper` primitive was declined.
+
+**Dev learning:** I took "build a Stepper" to the board and the pattern file had already answered it. § Ruler says, in as many words, *"Not for a precise typed number (HR, a TT distance you know exactly) — that's `TextField`."* A logged run's distance is read off a watch. So the right move was to author nothing and route the two fields at the control that exists. That is the fourth time today the answer was "the thing already exists" — `.cta-pill`, `--accent`, `BackButton`, and now `TextField`.
+
+**Product/creator learning:** The stepper had `aria-label`s on its buttons — I added them myself that morning — and the value was still silent. "Decrease whole distance" tells you what the button *does*; nothing told you what the number *became*. `role="spinbutton"` belongs on the readout, not the buttons, and that distinction is the whole fix. A VoiceOver user could press `+` and have no way to confirm the number they'd just set. Sierra's ranking was the right one: the tap count makes the app annoying, the silence makes it unusable.
+
+**AI-building learning:** The most useful output of the sitting was a refusal. I'd have built the `Stepper` — it's a clean, obvious component, it would have passed every check, and it would have been a fifth numeric control on a product that already has four and a documented rule for choosing between them. The board also refused the *other* obvious move: swapping the stepper for a number input. Not because it's wrong, but because a `type="number"` brings the iOS focus-zoom trap that this very file carries a comment about four lines below the stepper, and nothing here has ever run on a device. Twenty-two taps to log a half-marathon is a real cost, and it's now accepted on the record rather than quietly fixed into a worse problem.
+
+**The honest bit:** Three numeric-entry mechanisms in one modal, inside a single scroll — a `+/−` stepper, a wheel, and a raw `<input>` with nine inline styles. I'd been in that file four times today and hadn't noticed until I counted. Collins' line is the one I'd keep: *the pattern file is good and it is not being read.* So the fix wasn't another component, it was a routing table — one table saying which numeric control for which job, because the routing already existed in prose and nobody was finding it.
+
+**Hook material:** I asked a design board to approve a component. They told me not to build it, pointed at a sentence already in our own pattern file, and then refused to let me build the obvious alternative either — because it would have traded 22 taps for an iOS keyboard bug we've hit before and can't test for. The best thing I shipped that hour was a table.
+
+**Postable?:** yes
+
 ## 2026-09-25 — ICON-BUTTON-01 · the component we needed was already there, wearing the wrong name
 
 **Shipped:** `IconButton`, extracted as the generalisation of `BackButton`, with a required accessible name — plus names for the five controls that had none.

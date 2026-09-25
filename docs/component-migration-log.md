@@ -182,6 +182,25 @@ buttons as silent. The gate's classifier now skips any `{expression}` body.
 
 ⚠️ **The stepper is a separate control** → `STEPPER-CONTROL-01` (names shipped, control did not).
 
+### 2026-09-25 · Batch 5 — `STEPPER-CONTROL-01` (b)+(c)
+**A ruling that correctly built LESS than was asked.** A `Stepper` primitive was **declined** —
+`ui-patterns.md` § Ruler already routes a precise known number to `TextField`, so a fifth numeric
+control would have been the day's mis-scoping in reverse.
+
+**Shipped:** the distance readouts became `role="spinbutton"` with `aria-valuenow` (**the role
+belongs on the VALUE, not the buttons** — the labels added hours earlier described the buttons and
+the result was still silent), a live region on the total, the four buttons onto `.icon-btn--square`,
+four legacy aliases resolved, and the average-HR field off a raw `<input>` onto `TextField`.
+
+🎪 **Collins, recorded:** *"the FOURTH time today the answer is 'the thing already exists' —
+`.cta-pill`, `--accent`, `BackButton`, now `TextField`. The pattern file is good and it is not being
+read."* Hence a **routing table** in `ui-patterns.md`: which numeric control, in one table, because
+the routing existed in prose and was not being read.
+
+🔻 **NOT built, and it needs a device:** replacing the stepper. **22 taps to log a half-marathon**,
+accepted on the record. A `type="number"` brings the iOS focus-zoom trap this file already warns
+about, and precedent `:767` is that the chair will not rule on that swap without a device.
+
 ### Next batches — proposed, not ruled
 
 | # | Scope | Size | Blocked on |
@@ -191,6 +210,7 @@ buttons as silent. The gate's classifier now skips any `{expression}` body.
 | ~~4~~ | ~~IconButton~~ | — | ✅ **DONE.** And it was not a new primitive — `BackButton` already was one |
 | ~~5~~ | ~~Website~~ | — | ✅ **DONE 2026-09-25.** Board ruled the classes, not the component |
 | — | Selected-state toggles | ~36 | ⛔ **Out of scope by rule.** Separate primitive, separate ruling |
+| 6 | Replace the distance stepper | 2 | ⚠️ **BLOCKED ON A DEVICE** (`STEPPER-CONTROL-01` (d)). 22 taps for a half-marathon, accepted on the record |
 
 ✅ **Batch 3's recorded warning paid for itself.** It said: *"those text buttons are not moss, so the
 gate says nothing about them — measure their contrast before converting, or the batch will look like
