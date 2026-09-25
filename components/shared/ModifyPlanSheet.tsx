@@ -278,16 +278,9 @@ export default function ModifyPlanSheet({
                     {error}
                   </div>
                 )}
-                <button
+                <button className="btn btn--primary btn--regular btn--full"
                   onClick={busy ? undefined : () => onApply(applyEdits(base, edits), resets)}
-                  disabled={busy}
-                  style={{
-                    width: '100%', padding: '14px', borderRadius: 'var(--radius-md)',
-                    background: busy ? 'var(--moss-soft)' : 'var(--moss)', border: 'none',
-                    cursor: busy ? 'progress' : 'pointer',
-                    fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
-                    color: busy ? 'var(--mute)' : 'var(--card)',
-                  }}
+                  disabled={busy} style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: busy ? 'var(--moss-soft)' : 'var(--moss)', cursor: busy ? 'progress' : 'pointer', fontSize: '14px', fontWeight: 600, color: busy ? 'var(--mute)' : 'var(--card)' }}
                 >
                   {busy
                     ? 'Rebuilding your plan…'

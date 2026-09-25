@@ -10693,10 +10693,10 @@ function StravaConnectionRow() {
                 return
               }
               window.location.href = url
-            }} disabled={!userId} style={{
+            }} disabled={!userId} className="btn btn--inline-target" style={{
               background: 'var(--strava)', color: 'var(--card)',
-              border: 'none', borderRadius: '8px', padding: '8px 14px',
-              fontFamily: 'var(--font-ui)', fontSize: '11px',
+              borderRadius: '8px', padding: '8px 14px',
+              fontSize: '11px',
               letterSpacing: '0.06em', textTransform: 'uppercase',
               cursor: userId ? 'pointer' : 'default',
               opacity: userId ? 1 : 0.5,
@@ -11182,15 +11182,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
             {mhrNum} bpm is below the age estimate ({guardedMax} bpm) — usually the highest your device happened to record, not your true max. Zones use {guardedMax}. If {mhrNum} really is your max, tap Save to confirm it.
           </div>
         )}
-        <button onClick={handleSave} disabled={!valid}
-          style={{
-            width: '100%', padding: '11px',
-            background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)',
-            border: `0.5px solid ${saved ? 'var(--moss-mid)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`,
-            borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed',
-            fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.08em',
-            textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted)',
-          }}>
+        <button className="btn btn--primary btn--regular btn--full" onClick={handleSave} disabled={!valid} style={{ padding: '11px', background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)', border: `0.5px solid ${saved ? 'var(--moss-mid)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`, borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted)' }}>
           {saved ? 'Saved' : 'Save HR data'}
         </button>
       </div>

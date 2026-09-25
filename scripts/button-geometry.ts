@@ -159,14 +159,21 @@ function renderedClasses(tag: string, name: string): string {
 
 export function boxOf(tag: string, floors: Record<string, number>, padFromClass: Record<string, number> = {}, name = 'button', overlays: Record<string, number> = {}): Box {
   const cls = renderedClasses(tag, name)
+  // 🔴 RESOLVE BY CSS SOURCE ORDER, NOT CLASSNAME ORDER. Equal-specificity
+  // class selectors are decided by which is declared LAST in the stylesheet —
+  // not by the order the author happened to type them in `className`. Reading
+  // the className left-to-right reported `.btn--inline-target`'s `min-height:0`
+  // as winning when `.btn--compact`'s 44px actually did, so this file said 29px
+  // while the device showed 44px and the founder saw the difference.
+  // `floors` is built by iterating the stylesheet, so its key order IS source
+  // order: the last matching key wins.
+  const present = new Set(cls.split(/\s+/))
   let floor: number | null = null
   let classPad = 0
   let overlay = 0
-  for (const c of cls.split(/\s+/)) {
-    if (floors[c] !== undefined) floor = floors[c]!
-    if (padFromClass[c] !== undefined) classPad += padFromClass[c]!
-    if (overlays[c] !== undefined) overlay = Math.max(overlay, overlays[c]!)
-  }
+  for (const c of Object.keys(floors)) if (present.has(c)) floor = floors[c]!
+  for (const c of Object.keys(padFromClass)) if (present.has(c)) classPad = padFromClass[c]!
+  for (const c of Object.keys(overlays)) if (present.has(c)) overlay = overlays[c]!
 
   const explicit = num(tag, 'minHeight') ?? num(tag, 'height')
 

@@ -802,7 +802,39 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 .btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .btn--full { width: 100%; }
 
-/* Inline target — a control that keeps a SMALL VISUAL and carries a 44px HIT
+
+/* Sizes. Both clear the 44px touch target (Wroblewski's bound, ADR-023
+   ruling). Compact steps the radius down with the height so the corner keeps
+   the same visual curve instead of drifting towards a pill. */
+/* 🔴 THE FLOOR IS 44, NOT 48 (Design Board, BUTTON-GEOMETRY-01, 2026-09-25 —
+ * reversing a value I chose silently that morning).
+ *
+ * 48 came from the MODAL OF A DISTRIBUTION. `:262` says 44 and says MINIMUM;
+ * an average is exactly what a design system must not encode (Zhuo), and
+ * `.icon-btn--regular` — written six hours later the same day — already got
+ * this right with a floor and a comment saying why.
+ *
+ * ⚠️ THE DEFAULTS STAY, AND THAT IS A STATED DEVIATION FROM AMENDMENT 1. Taken
+ * literally, "loses fixed padding / font-size / border-radius" leaves 98
+ * controls with no padding and square corners until each call site supplies
+ * one — a worse regression than the one being fixed, shipped to live users.
+ * An inline style beats a class, so default + call-site value IS the
+ * floor-and-override the board asked for: a button that expressed no view gets
+ * the default, one that made a decision keeps it. */
+.btn--regular { min-height: 44px; padding: 15px 20px; border-radius: var(--radius-lg); font-size: 14px; }
+.btn--compact { min-height: 44px; padding: 12px 16px; border-radius: var(--radius-md); font-size: 12px; }
+
+/* ⚠️ DECLARED AFTER THE SIZE CLASSES ON PURPOSE, AND IT WAS NOT AT FIRST.
+ * `.btn--inline-target` and `.btn--compact` are both single-class selectors, so
+ * SOURCE ORDER decides. Declared above them, `.btn--compact`'s
+ * `min-height: 44px` won and the Apple Health chip rendered 44px tall against
+ * the Strava chip's 29px — the founder saw it on the device as *"still looks
+ * fat compared to the strava connect one"*, and `button-geometry.ts` reported
+ * `floor: 0` because it resolved by CLASSNAME order rather than CSS order.
+ * **An eye beat the harness.** Moving the block below the size classes is the
+ * whole fix; do not move it back.
+ *
+ * Inline target — a control that keeps a SMALL VISUAL and carries a 44px HIT
  * AREA. Two species use it: a filled chip beside a label, and an underlined
  * text link inside a sentence.
  *
@@ -839,26 +871,6 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   transform: translateY(-50%);
 }
 
-/* Sizes. Both clear the 44px touch target (Wroblewski's bound, ADR-023
-   ruling). Compact steps the radius down with the height so the corner keeps
-   the same visual curve instead of drifting towards a pill. */
-/* 🔴 THE FLOOR IS 44, NOT 48 (Design Board, BUTTON-GEOMETRY-01, 2026-09-25 —
- * reversing a value I chose silently that morning).
- *
- * 48 came from the MODAL OF A DISTRIBUTION. `:262` says 44 and says MINIMUM;
- * an average is exactly what a design system must not encode (Zhuo), and
- * `.icon-btn--regular` — written six hours later the same day — already got
- * this right with a floor and a comment saying why.
- *
- * ⚠️ THE DEFAULTS STAY, AND THAT IS A STATED DEVIATION FROM AMENDMENT 1. Taken
- * literally, "loses fixed padding / font-size / border-radius" leaves 98
- * controls with no padding and square corners until each call site supplies
- * one — a worse regression than the one being fixed, shipped to live users.
- * An inline style beats a class, so default + call-site value IS the
- * floor-and-override the board asked for: a button that expressed no view gets
- * the default, one that made a decision keeps it. */
-.btn--regular { min-height: 44px; padding: 15px 20px; border-radius: var(--radius-lg); font-size: 14px; }
-.btn--compact { min-height: 44px; padding: 12px 16px; border-radius: var(--radius-md); font-size: 12px; }
 
 /* Primary — the one per screen. `--moss-strong` (5.48:1 with white) on the
    already-authored `--shadow-lifted`, which had ZERO consumers before this
