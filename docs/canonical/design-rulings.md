@@ -1488,3 +1488,54 @@ text leaves the gate silent, which is the exact false positive my own census mad
 reader announces is read from source, not from a VoiceOver pass on a device, and this repo has never
 verified anything on one.
 
+## 2026-09-25 — STEPPER-CONTROL-01 · SPLIT: 🔴 DON'T SHIP (a) · 🟢 SHIP (b)(c) · ⚠️ INSUFFICIENT EVIDENCE (d)
+
+**Question:** should there be a `Stepper` primitive for the manual run log's distance entry?
+
+📐 **Measured.** Two stepper pairs, both in `ManualRunModal`, both for distance — **not a pattern,
+one screen**. Tap cost counted: `5.2 km` = **7 taps**, `10.5` = **15**, **a 21.1 km long run = 22**,
+from zero, with no keyboard route. 🔴 **Three numeric-entry mechanisms in ONE modal**, inside one
+scroll: a `+/−` stepper, a **wheel** (`DurationPicker`), and a **raw `<input type="number">` with
+nine inline styles** for average HR — which is not even `TextField`. 🔴 **And the value change was
+announced to nobody**: no `aria-valuenow`, no `role`, no live region. The `aria-label`s added hours
+earlier say what each BUTTON does; press `+` and the result was silent.
+
+**The settled ground answered (a) before the board did.** § Ruler reads *"Not for a precise typed
+number (HR, a TT distance you know exactly) — **that's `TextField`**"*. A logged run's distance is
+read off a watch.
+
+🎪 **Collins named the pattern and lost the timing, recorded as such:** *"this is the FOURTH time
+today the answer has been 'the thing already exists' — `.cta-pill`, `--accent`, `BackButton`, now
+`TextField`. That is not four coincidences, it is a system whose parts are findable by the person who
+wrote them and nobody else. The pattern file is good and it is not being read."* He pushed to collapse
+all three mechanisms now and **accepted the device constraint rather than arguing past it**. He would
+be moved by a device: *"get it in a hand and I'll take the swap the same afternoon."*
+
+📱 **Wroblewski set the bound that decided (d):** *"I'd rather ship a 22-tap control that talks than
+a 2-tap control that traps the keyboard."* A `type="number"` brings the iOS numeric keyboard and the
+focus-zoom trap **this very file carries a comment about, four lines below the stepper**. Precedent
+`:767` — the race-date input — is that the chair **will not rule on a native-input swap without a
+device**, and it applies here with the same force.
+
+🎓 **Sierra ranked the two halves and the ruling followed her:** *"the tap count makes the app
+annoying; the SILENCE makes it unusable — press `+` and a VoiceOver user gets nothing back, they
+cannot confirm the number they just set. That does not need a device."*
+
+⛔ **Veto: none.**
+
+**Ruling:** **(a) DON'T SHIP a `Stepper`** — not permanent; reopens if (d) proves wrong on a device ·
+**(b) SHIP** the announcement + alias cleanup · **(c) SHIP** the HR field onto `TextField` ·
+**(d) INSUFFICIENT EVIDENCE** on replacing the stepper itself; what settles it is **the modal in a
+hand on iOS**.
+
+✅ **(b) and (c) BUILT the same day.** `role="spinbutton"` + `aria-valuenow`/`min`/`max`/`valuetext`
+on the two readouts (**the role belongs on the VALUE, not the buttons**), a live region on the
+combined total, the four stepper buttons onto `.icon-btn--square`, and `--card-bg` / `--text-primary`
+/ `--text-muted` / `--border-col` resolved to real tokens. **Artifacts:** pattern → `ui-patterns.md`
+§ Which numeric control (the routing table, written because *the routing already existed in prose and
+was not being read*) · no new token · checks → `buttonOwnership.test.ts` +2 arms, **falsified 3 ways
+including a role kept with its VALUE removed** — a role that announces nothing.
+
+⚠️ **What this does not settle: THE 22 TAPS STAY.** A runner logging a half-marathon by hand still
+taps twenty-two times. That is a real cost **accepted on the record**, pending a device.
+

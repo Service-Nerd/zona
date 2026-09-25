@@ -6048,20 +6048,35 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             {/* Distance */}
             <div style={{ marginBottom: 'var(--space-5)' }}>
               <div style={labelStyle}>Distance ({preferredUnits})</div>
-              <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '0.5px solid var(--line)', overflow: 'hidden' }}>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
-                  <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} aria-label="Decrease whole distance" style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '32px', textAlign: 'center' }}>{distWhole}</span>
-                  <button onClick={() => setDistWhole(distWhole + 1)} aria-label="Increase whole distance" style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} aria-label="Decrease whole distance" className="icon-btn icon-btn--square icon-btn--regular" style={{ border: '0.5px solid var(--line)', fontSize: '18px' }}>−</button>
+                  <span
+                    role="spinbutton"
+                    aria-label="Whole distance"
+                    aria-valuenow={distWhole}
+                    aria-valuemin={0}
+                    aria-valuetext={`${distWhole} ${preferredUnits}`}
+                    style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--ink)', minWidth: '32px', textAlign: 'center' }}
+                  >{distWhole}</span>
+                  <button onClick={() => setDistWhole(distWhole + 1)} aria-label="Increase whole distance" className="icon-btn icon-btn--square icon-btn--regular" style={{ border: '0.5px solid var(--line)', fontSize: '18px' }}>+</button>
                 </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--text-muted)', padding: '0 4px' }}>.</div>
+                <div aria-hidden style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--mute)', padding: '0 4px' }}>.</div>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
-                  <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} aria-label="Decrease distance decimal" style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                  <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '16px', textAlign: 'center' }}>{distDecimal}</span>
-                  <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} aria-label="Increase distance decimal" style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} aria-label="Decrease distance decimal" className="icon-btn icon-btn--square icon-btn--regular" style={{ border: '0.5px solid var(--line)', fontSize: '18px' }}>−</button>
+                  <span
+                    role="spinbutton"
+                    aria-label="Distance decimal"
+                    aria-valuenow={distDecimal}
+                    aria-valuemin={0}
+                    aria-valuemax={9}
+                    aria-valuetext={`point ${distDecimal}`}
+                    style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--ink)', minWidth: '16px', textAlign: 'center' }}
+                  >{distDecimal}</span>
+                  <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} aria-label="Increase distance decimal" className="icon-btn icon-btn--square icon-btn--regular" style={{ border: '0.5px solid var(--line)', fontSize: '18px' }}>+</button>
                 </div>
               </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
+              <div aria-live="polite" style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
             </div>
 
             {/* Duration — shared wheel primitive (FORMS-PRIM-01), no keyboard,
@@ -6081,21 +6096,26 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             {!accumulate && (
               <div style={{ marginBottom: 'var(--space-5)' }}>
                 <div style={labelStyle}>Average HR <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6, fontSize: '10px' }}>optional · bpm</span></div>
-                <input
+                {/* ⚠️ `TextField`, not a raw <input> (STEPPER-CONTROL-01 (c),
+                    Design Board 2026-09-25). This sat beside `DurationPicker`
+                    — a component that exists precisely so nobody hand-rolls a
+                    control — and was a bare <input> with nine inline styles.
+                    `ui-patterns.md` § Ruler names the routing in as many words:
+                    a precise number the runner KNOWS is `TextField`'s job.
+                    Silvanto: "that is not a redesign, it is using what we have."
+                    The 16px font that avoids the iOS focus-zoom trap is
+                    `TextField`'s, so the comment above is now its problem. */}
+                <TextField
                   type="number"
                   inputMode="numeric"
                   placeholder="—"
-                  value={avgHr ?? ''}
-                  onChange={e => {
-                    const v = parseInt(e.target.value, 10)
-                    setAvgHr(Number.isFinite(v) ? Math.min(240, Math.max(60, v)) : null)
-                  }}
-                  style={{
-                    width: '100%', background: 'var(--bg)',
-                    border: '0.5px solid var(--border-col)', borderRadius: '8px',
-                    padding: '12px', color: 'var(--text-primary)',
-                    fontFamily: 'var(--font-ui)', fontSize: '16px',
-                    outline: 'none', boxSizing: 'border-box',
+                  ariaLabel="Average heart rate in beats per minute"
+                  min={60}
+                  max={240}
+                  value={avgHr === null ? '' : String(avgHr)}
+                  onChange={v => {
+                    const n = parseInt(v, 10)
+                    setAvgHr(Number.isFinite(n) ? Math.min(240, Math.max(60, n)) : null)
                   }}
                 />
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>

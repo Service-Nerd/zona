@@ -2473,6 +2473,31 @@ Rules:
 
 **Deliberate non-consumer — `NextGoalCard`** (`components/training/NextGoalCard.tsx`): the post-race "what's next" goal ladder looks card-shaped but is **not** a CardSelect. It's an action/nav ladder — tapping a row navigates into the wizard, there is no persistent selected state — and it's race-themed (`--s-race` rail + inline `--s-race` target time + trailing → arrow), the opposite of CardSelect's moss radio language. Folding it in would need a nav-arrow + coloured-inline-value slot used by no other consumer, which is exactly the one-off bloat CardSelect avoids. It stays bespoke.
 
+### Which numeric control? *(Design Board 2026-09-25, `STEPPER-CONTROL-01`)*
+
+**One table, because the routing already existed in prose and was not being read.**
+
+| The runner… | Control |
+|---|---|
+| **estimates** a bounded quantity (weekly volume, longest recent run) | `Ruler` |
+| enters a **time or duration** | `DurationPicker` — every one, no exceptions (`FORMS-PRIM-01`) |
+| **knows** a precise number (HR, a logged distance, a TT distance) | **`TextField`** |
+| picks from a small discrete set | `Chip` / `SegmentedControl` / `CardSelect` |
+
+🔴 **THERE IS NO `Stepper`, AND THAT IS A RULING, NOT AN OMISSION.** One was proposed for the manual
+run log's distance and **declined**: § Ruler already routes *"a precise typed number… that's
+`TextField`"*, and authoring a fifth numeric control for one screen's two fields is the mis-scoping
+this system has hit repeatedly. ⚠️ **Not permanent** — it reopens if the swap proves wrong on a
+device.
+
+⚠️ **The manual run log still has a `+`/`−` stepper for distance and it is NOT the pattern.** It
+costs **22 taps to log a 21.1 km run** and starts at zero with no keyboard route. The board declined
+to swap it **blind**: a `type="number"` brings the iOS numeric keyboard and the focus-zoom trap this
+file already carries a comment about, and precedent `:767` (the race-date input) is that the chair
+will not rule on a native-input swap **without a device**. **The tap cost is accepted on the record,
+not overlooked.** What did ship: the value is now announced (`role="spinbutton"` + `aria-valuenow`
+on the readout, not the buttons) and the four legacy aliases are gone.
+
 ### Ruler (`components/shared/Ruler.tsx`)
 
 The canonical bounded/stepped numeric input — a horizontal draggable ruler with a large value readout above (metric-pair), tick marks, and a min→max scale. For a self-reported quantity the runner *estimates* rather than knows exactly: weekly volume, longest recent run.

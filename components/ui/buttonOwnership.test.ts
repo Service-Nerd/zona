@@ -335,6 +335,39 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
     expect(src, 'ariaLabel became optional').not.toMatch(/ariaLabel\?:/)
   })
 
+  it('🔴 no raw <input type="number"> outside TextField', () => {
+    // STEPPER-CONTROL-01 (c), 2026-09-25. `ManualRunModal` had a bare <input>
+    // with nine inline styles sitting BESIDE `DurationPicker` — a component
+    // that exists precisely so nobody hand-rolls a control. `ui-patterns.md`
+    // § Ruler names the routing: a precise number the runner KNOWS is
+    // `TextField`'s job. The 16px font that avoids the iOS focus-zoom trap is
+    // `TextField`'s to own, which is the concrete reason this matters.
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      const rel = path.relative(ROOT, f)
+      if (rel === path.join('components', 'shared', 'TextField.tsx')) continue
+      if (rel.includes('preview')) continue          // dev harnesses
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      for (const m of Array.from(src.matchAll(/<input(?=[\s>])[^>]*type="number"/g))) {
+        offenders.push(`${rel}:${src.slice(0, m.index).split('\n').length}`)
+      }
+    }
+    expect(offenders, `a raw numeric input outside TextField:\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  it('🔴 the distance stepper ANNOUNCES its value, not just its buttons', () => {
+    // The aria-labels added earlier today say what each BUTTON does. Pressing
+    // "+" changed the number and told a screen-reader user nothing about the
+    // RESULT — Sierra: "the tap count makes the app annoying; the silence makes
+    // it unusable." The role belongs on the value readout, not the buttons.
+    const src = strip(fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8'))
+    const spins = Array.from(src.matchAll(/role="spinbutton"/g))
+    expect(spins.length, 'the distance readouts lost their spinbutton role').toBe(2)
+    // A role with no value is a role that announces nothing.
+    expect((src.match(/aria-valuenow=\{dist(Whole|Decimal)\}/g) ?? []).length,
+      'a spinbutton with no aria-valuenow announces nothing').toBe(2)
+  })
+
   it('the email CTA does not use the failing fill', () => {
     // Email cannot use box-shadow (Outlook drops it), so the ruling gives it a
     // 1px --moss-deep border instead. The FILL still owes AA either way.
