@@ -204,17 +204,12 @@ export default function CharityRunnersPage() {
               rectangle, which read as two unrelated buttons that happened to be
               adjacent. Measured, not eyeballed. If the badge's shape ever
               changes, change this with it. */}
-          <a href="#code" className="cta-pill" style={{
-            display: 'inline-flex', alignItems: 'center', gap: 'var(--space-2)',
-            background: 'var(--moss-strong)', color: 'var(--card)',
-            // lineHeight 18px, not 1: the badge's content box is set by its
-            // 18px Apple icon, so matching font size alone still left this 4px
-            // shorter (34 vs 38). Matching the CONTENT height is what makes the
-            // two boxes agree.
-            fontSize: 'var(--fs-body)', fontWeight: 600, lineHeight: '18px',
-            textDecoration: 'none',
-            padding: '10px 18px', borderRadius: 'var(--radius-md, 8px)',
-          }}>
+          {/* lineHeight 18px, not 1: this sits beside an App Store badge whose
+              content box is set by its 18px Apple icon, so matching font size
+              alone still left it 4px shorter (34 vs 38). Matching the CONTENT
+              height is what makes the two boxes agree. It is the one property
+              `.btn` cannot own, because it is about the NEIGHBOUR. */}
+          <a href="#code" className="btn btn--primary btn--compact" style={{ lineHeight: '18px' }}>
             How to use your code <span aria-hidden style={{ opacity: 0.6 }}>&darr;</span>
           </a>
           <AppStoreBadge />

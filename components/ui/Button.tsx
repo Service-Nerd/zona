@@ -1,4 +1,12 @@
-'use client'
+// ⚠️ DELIBERATELY NOT `'use client'` (Design Board, WEBSITE-BUTTON-UNIFY-01,
+// 2026-09-25). This component uses no hook, no state and no browser API — it
+// spreads props onto a `<button>`. The directive was here out of habit, and it
+// was a live `BUNDLE-BOUNDARY-01` hazard: `SiteHeader.tsx` and
+// `app/charity-runners/page.tsx` are SERVER components, so the first person to
+// import this into a marketing page would have pushed a client boundary onto a
+// static page. That class has cost this repo 110 kB -> 249 kB and 114 kB ->
+// 251 kB, both times silently, both times found by measuring rather than by
+// looking. Every app importer is already a client component, so nothing moves.
 
 import React from 'react'
 

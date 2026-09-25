@@ -48,6 +48,7 @@ PY
 | Date | Total | Using a shared component | Hand-rolled | Notes |
 |---|---|---|---|---|
 | 2026-09-25 | **219** | **41** (19%) | **178** | `BUTTON-COMPONENT-01` shipped. Converted the **moss** controls only, because those were the ones failing WCAG AA. Everything else was out of scope for a contrast fix |
+| 2026-09-25 | **219** | **44** (20%) | **175** | `WEBSITE-BUTTON-UNIFY-01`. The 3 site CTAs adopted the `.btn` **classes** (not the component) and `.cta-pill` was deleted. **The site and the app now have one definition** |
 
 ---
 
@@ -73,26 +74,28 @@ their conversion. Migrating them is a *separate* decision about a *separate* pri
 
 ---
 
-## The website — the biggest visible gap
+## The website — ✅ RESOLVED 2026-09-25 (`WEBSITE-BUTTON-UNIFY-01`)
 
-**The site does not use `Button` at all.** It has its own `.cta-pill` class in `globals.css`
-(hover, `:focus-visible`, `:active`), used by 3 files, plus 6 inline-styled buttons and 2
-links-as-buttons.
+**The site and the app now share one definition: `.btn` in `globals.css`.** `.cta-pill` is deleted.
 
-`.cta-pill` is not wrong — it was its own reviewed answer (SLT 2026-09-21, the site had no hover
-state at all). But it means **a button change now has to be made twice**, which is the exact defect
-`BUTTON-COMPONENT-01` was built to end, surviving at the seam between the two surfaces.
+⚠️ **The board rejected the obvious answer and the reason is worth keeping.** The proposal was
+*"unify onto `Button` with an `as`/`ButtonLink`"*. No seat argued for it. **The shared unit is the
+CLASS layer, not the component** — `Button.tsx` is 30 lines of prop-spreading; the design is in the
+stylesheet. So the site writes `className="btn btn--primary btn--compact"` on its own `<a>`.
 
-⚠️ **Not a straight swap.** `.cta-pill` is applied to `<a>` and `<Link>`, not `<button>`, because the
-site's CTAs navigate. Unifying needs `Button` to render as an anchor (an `as` prop or a sibling
-`ButtonLink`), which is a real design decision, not a find-and-replace.
+🔴 **And that framing mattered technically.** `SiteHeader.tsx` and `app/charity-runners/page.tsx`
+are **server** components. Importing a `'use client'` component into them is `BUNDLE-BOUNDARY-01`
+— 110 kB → 249 kB and 114 kB → 251 kB, both silently. `Button.tsx` now carries **no directive** (it
+has no hook, no state, no browser API), so the trap is disarmed for whoever tries next.
 
-⚠️ **And email is a third surface that can never import the component** — it is an HTML string
-builder, and Outlook drops `box-shadow`. `ctaButton()` in `lib/email/trialEmailTemplates.ts` mirrors
-the contract by hand with a 1px `--moss-deep` border. **Three surfaces, and only two of them can
-ever share code.** The email one is kept honest by the gate asserting its fill separately.
+**Measured:** hand-typed visual properties on site CTAs **26 → 0**; `/charity-runners` First Load JS
+**96.8 kB → 96.8 kB**. ⚠️ Three *declared* variants remain (`compact+pill`, `compact`, `regular`) —
+from one definition instead of three hand-typed ones. The success condition was phrased "3 → 1" and
+**that literal number is not met**; recorded as measured.
 
----
+⚠️ **Email remains a third surface that can never share code** — an HTML string builder, and Outlook
+drops `box-shadow`. `ctaButton()` mirrors the contract by hand with a 1px `--moss-deep` border, and
+the gate asserts its fill separately.
 
 ## Batch log — append, never rewrite
 
@@ -103,6 +106,16 @@ ever share code.** The email one is kept honest by the gate asserting its fill s
 **Result:** 41 / 219 on the component. Gate green, suite 3,485 green, `audit-docs.sh` ALL CLEAN.
 **Not verified:** nothing pressed on a device.
 
+### 2026-09-25 · Batch 1b — `WEBSITE-BUTTON-UNIFY-01`
+**Scope:** the 3 marketing CTAs + `.cta-pill`.
+**Converted:** 3 to the `.btn` classes. `.cta-pill` deleted. `.btn--pill` added so the header's
+`999` radius is declared rather than inherited. `'use client'` removed from `Button.tsx`.
+**Also fixed, because the conversion caused it:** the waitlist input was 46px/14px beside a
+48px/18px button. **The input moved to match the button**, not the reverse — the button carries the
+system now.
+**Result:** 44 / 219. Gate +3 arms, each falsified to red. Suite 3,488 green. Bundle unchanged.
+**Not verified:** no device, no Lighthouse run after the change, nothing measured at 320px.
+
 ### Next batches — proposed, not ruled
 
 | # | Scope | Size | Blocked on |
@@ -110,7 +123,7 @@ ever share code.** The email one is kept honest by the gate asserting its fill s
 | 2 | Neutral surface → `variant="secondary"` | ~43 | nothing. The variant exists |
 | 3 | Text/link → `variant="quiet"` | ~53 | nothing. ⚠️ Check each one's colour first: these are NOT moss (the gate is green), so contrast is unproven, not known-good |
 | 4 | `IconButton` primitive, then migrate | ~15 | 🧭 **Design Board** — a new primitive |
-| 5 | Website: `Button` as an anchor, retire `.cta-pill` | ~14 | 🧭 **Design Board** — `as` prop vs `ButtonLink` is a real decision |
+| ~~5~~ | ~~Website~~ | — | ✅ **DONE 2026-09-25.** Board ruled the classes, not the component |
 | — | Selected-state toggles | ~36 | ⛔ **Out of scope by rule.** Separate primitive, separate ruling |
 
 ⚠️ **Batch 3 carries an unmeasured assumption and it is written here so it is not forgotten:** those

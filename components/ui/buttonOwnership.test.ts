@@ -129,6 +129,71 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
       `Use <Button variant="quiet"> (--moss-strong):\n${offenders.join('\n')}`).toEqual([])
   })
 
+  it('`.cta-pill` is gone: the site and the app have ONE button definition', () => {
+    // WEBSITE-BUTTON-UNIFY-01 (Design Board, 2026-09-25). `.cta-pill` was a
+    // correct SLT ruling in 2026-09 — the site had NO hover state at all — and
+    // `.btn` now carries its whole contract, so keeping it would be two
+    // definitions of one button. It had already drifted: it supplied only the
+    // three interaction states while each of its 3 call sites hand-typed its
+    // own font-size, padding, radius and label colour, and all three differed.
+    const css = fs.readFileSync(path.join(ROOT, 'app/globals.css'), 'utf8')
+    // ⚠️ A RULE, not a mention. This file and globals.css both EXPLAIN the
+    // deletion in prose, and a bare substring scan would flag the explanation
+    // as the bug — seventh time in this repo.
+    expect(css, 'a live .cta-pill rule is back').not.toMatch(/^\s*\.cta-pill[\s,{:]/m)
+
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      if (/className=[^\n]*\bcta-pill\b/.test(src)) offenders.push(path.relative(ROOT, f))
+    }
+    expect(offenders, `still applying the deleted class:\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  it('no marketing CTA hand-rolls a moss fill instead of using .btn', () => {
+    // The site is where the second definition lived, so it gets its own arm:
+    // an <a> or <button> under the marketing surfaces may not paint itself moss.
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      const rel = path.relative(ROOT, f)
+      const isSite = rel.startsWith(path.join('components', 'marketing')) ||
+        (rel.startsWith('app' + path.sep) && !rel.includes('dashboard') && !rel.includes('auth') &&
+         !rel.includes('preview'))
+      if (!isSite) continue
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      for (const tag of ['a', 'button']) {
+        const re = new RegExp('<' + tag + '(?=[\\s>])', 'g')
+        let m: RegExpExecArray | null
+        while ((m = re.exec(src))) {
+          let i = re.lastIndex, depth = 0
+          while (i < src.length) {
+            const c = src[i]
+            if (c === '{') depth++
+            else if (c === '}') depth--
+            else if (c === '>' && depth === 0) break
+            i++
+          }
+          const t = src.slice(m.index, i + 1)
+          if (/background[^,}]*var\(--moss/.test(t) && !/className=[^\n]*\bbtn\b/.test(t)) {
+            offenders.push(`${rel}:${src.slice(0, m.index).split('\n').length} <${tag}>`)
+          }
+        }
+      }
+    }
+    expect(offenders, `marketing CTA painting itself instead of using .btn:\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  it('Button carries no `use client`, so a server page can render it free', () => {
+    // BUNDLE-BOUNDARY-01. `SiteHeader.tsx` and `app/charity-runners/page.tsx`
+    // are SERVER components. Button uses no hook, no state and no browser API,
+    // so the directive bought nothing and would have pushed a client boundary
+    // onto a static page the first time anyone imported it. That class has cost
+    // this repo 110kB -> 249kB and 114kB -> 251kB, both times silently.
+    const src = fs.readFileSync(path.join(ROOT, 'components/ui/Button.tsx'), 'utf8')
+    expect(src, 'Button.tsx regained a client directive').not.toMatch(/^\s*['"]use client['"]/m)
+    expect(src, 'Button gained a hook — re-examine the directive').not.toMatch(/\buse(State|Effect|Ref|Memo|Callback|Reducer)\s*\(/)
+  })
+
   it('the email CTA does not use the failing fill', () => {
     // Email cannot use box-shadow (Outlook drops it), so the ruling gives it a
     // 1px --moss-deep border instead. The FILL still owes AA either way.

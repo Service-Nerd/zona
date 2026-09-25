@@ -3297,6 +3297,35 @@ correct as they are.** Converting them would reverse a standing rule while looki
 ⚠️ **Email is the same button by a different device.** Outlook drops `box-shadow`, so the email CTA
 carries a 1px `--moss-deep` border instead of elevation. The fill still owes AA either way.
 
+#### The site uses the CLASSES; the app uses the component *(WEBSITE-BUTTON-UNIFY-01, 2026-09-25)*
+
+**One place to change how a button looks is `globals.css`, and it always was.** `Button.tsx` is a
+convenience for the app — thirty lines of prop-spreading — not the home of the design. The marketing
+site therefore writes `className="btn btn--primary btn--compact"` on its own `<a>` or `<button>`
+rather than importing the component.
+
+🔴 **Two reasons, and the second is not stylistic.** `SiteHeader.tsx` and `app/charity-runners/page.tsx`
+are **server** components. Importing a client component into them pushes a client boundary onto a
+static page, which is `BUNDLE-BOUNDARY-01` — the class that took the homepage **110 kB → 249 kB** and
+**114 kB → 251 kB**, both times silently. `Button.tsx` therefore carries **no `'use client'`**: it
+uses no hook, no state and no browser API, so the directive bought nothing and armed that trap.
+
+**`.cta-pill` is deleted.** It was a correct SLT ruling in 2026-09 (the site had *no* hover state at
+all; Fried: a missing affordance, not a fidelity nicety) and `.btn` now carries its whole contract.
+⚠️ **The second definition had already drifted**, which is the real finding: it supplied only the
+three interaction states while each of its 3 call sites hand-typed its own font-size, padding, radius
+and label colour — and all three differed, one of them with a literal `'white'`. That is ruling
+`:457` (*"one CTA vocabulary"*) one level down. **The site did not have a button; it had three.**
+
+`.btn--pill` exists so the header's fully-round radius is a **declared choice** rather than an
+inherited literal (Silvanto: a compact nav pill is a considered shape, and unification must not
+flatten a choice into a default).
+
+⚠️ **Two inline properties survive on site CTAs and both are about the NEIGHBOUR, not the button:**
+`charity-runners` sets `lineHeight: 18px` to match the App Store badge's icon-driven content box, and
+the waitlist button sets `flex`. A property that exists because of what sits *beside* a control is
+not the control's own styling.
+
 **Mechanical check:** `components/ui/buttonOwnership.test.ts` reads the **producer** — the buttons
 themselves — which is the half `lib/a11yContrast.test.ts` structurally cannot see. That file asserts
 `white on --moss-strong >= 4.5`: true, and a fact about a *token*, which is why it stayed green over

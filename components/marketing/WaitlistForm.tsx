@@ -88,33 +88,29 @@ export function WaitlistForm() {
         style={{
           flex: '1 1 220px',
           minWidth: 0,
-          padding: '13px 16px',
+          // ⚠️ 14px padding and --radius-lg so this AGREES WITH THE BUTTON
+          // beside it (WEBSITE-BUTTON-UNIFY-01, 2026-09-25). It was 13px /
+          // --radius-md, which computed to 46px tall with a 14px corner against
+          // the button's 48px and 18px — a 2px and 4px mismatch in a
+          // side-by-side flex row. The button now carries the design system and
+          // this input is a one-off, so the one-off moves. 13+18+13+2 = 46;
+          // 14+18+14+2 = 48.
+          padding: '14px 16px',
           fontSize: 'var(--fs-body-lg)',
           fontFamily: 'var(--font-ui)',
           color: 'var(--ink)',
           background: 'var(--bg-soft)',
           border: '1px solid var(--line)',
-          borderRadius: 'var(--radius-md, 8px)',
+          borderRadius: 'var(--radius-lg)',
           outline: 'none',
         }}
       />
       <button
         type="submit"
         disabled={state === 'submitting'}
-        className="cta-pill"
-        style={{
-          flex: '0 0 auto',
-          padding: '13px 24px',
-          fontSize: 'var(--fs-body-lg)',
-          fontWeight: 600,
-          fontFamily: 'var(--font-ui)',
-          color: 'white',
-          background: 'var(--moss-strong)',
-          border: 'none',
-          borderRadius: 'var(--radius-md, 8px)',
-          cursor: state === 'submitting' ? 'default' : 'pointer',
-          opacity: state === 'submitting' ? 0.7 : 1,
-        }}
+        aria-busy={state === 'submitting' || undefined}
+        className={`btn btn--primary btn--regular${state === 'submitting' ? ' btn--busy' : ''}`}
+        style={{ flex: '0 0 auto' }}
       >
         {state === 'submitting' ? 'Adding…' : 'Notify me'}
       </button>

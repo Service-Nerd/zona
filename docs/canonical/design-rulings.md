@@ -1370,3 +1370,72 @@ that sentence is in `coaching-rulings.md` because the Coaching Board proved it.
 board or a stated exemption. It cannot check that this file was updated. That is the
 known hole, and it is the same hole `ship-record-check.py` was built to close on the
 feature registry.
+
+## 2026-09-25 — WEBSITE-BUTTON-UNIFY-01 · SHIP WITH AMENDMENT (3)
+
+**Question, from the founder:** *"a centralised place where we make changes so we don't have to
+repeat ourselves by making the same change in multiple places."* Should the marketing site use the
+app's `Button` instead of its own `.cta-pill`?
+
+📐 **Measured before the board spoke, and the brief's own number was wrong.** The site has **3** CTA
+call sites, not the 14 the backlog implied — the other two "website" moss buttons are preview
+harnesses rendering *app* UI. `.cta-pill` supplied **only** hover / `:focus-visible` / `:active`;
+every other property was hand-typed at each site, **and the three had already diverged**:
+
+| | font-size | padding | radius | label |
+|---|---|---|---|---|
+| SiteHeader | `--fs-sm` | 8px 14px | `999` | `--card` |
+| WaitlistForm | `--fs-body-lg` | 13px 24px | `--radius-md` | literal `'white'` |
+| charity-runners | `--fs-body` | 10px 18px | `--radius-md` | `--card` |
+
+**The site did not have a button; it had three sharing a hover.** That is row `:457` (*"one CTA
+vocabulary"* — four labels for one button in the wizard) one level down, and the divergence is the
+finding: *"two places"* is the mechanism that caused it.
+
+⚡ **The board rejected the brief's framing, and that is the ruling.** It offered *"unify onto
+`Button` with an `as`/`ButtonLink`"*. **No seat argued for it.** Wroblewski and Collins both held
+that the shared unit is the **class layer**, not the component — *"the component is 30 lines of
+prop-spreading; the design is in the stylesheet"* — so **one place to change the look is
+`globals.css`, and it already was.** Recorded because the brief proposed a component API and the
+board declined it.
+
+🔴 **And the framing mattered technically, not just tidily.** `SiteHeader.tsx` and
+`app/charity-runners/page.tsx` are **server** components while `Button.tsx` carried `'use client'`.
+Importing it would have pushed a client boundary onto a static page — `BUNDLE-BOUNDARY-01`, the
+class that cost **110 kB → 249 kB** and **114 kB → 251 kB**, both silently. Button uses no hook, no
+state, no browser API, so the directive bought nothing and armed the trap.
+
+**Ruling:** adopt the `.btn` classes on the site · add **`.btn--pill`** so the header's `999` radius
+is a declared choice rather than an inherited literal (Silvanto: a compact nav pill is a considered
+shape and unification must not flatten a choice into a default) · **remove `'use client'` from
+`Button.tsx`** · **delete `.cta-pill`**.
+
+⛔ **Veto: none.** Silvanto declined and said why: *"this converges the palette and the type scale
+rather than regressing them — it removes a hardcoded `'white'`."*
+
+🎓 **Sierra's bound, recorded:** this changes nothing for the runner and should not be dressed up as
+if it does. The honest benefit is second-order. Her one condition — that the header CTA, the only
+install route above the fold, must not get smaller or quieter — **holds: it is unchanged at compact
+size.**
+
+✅ **BUILT the same day.** Acceptance against Zhuo's success condition, stated before the build:
+**hand-typed visual properties on site CTAs 26 → 0**, and `/charity-runners` First Load JS
+**96.8 kB → 96.8 kB, unchanged.** ⚠️ **Her condition was phrased "distinct geometries 3 → 1" and
+that literal number is NOT met** — there are still three declared variants (`compact+pill`,
+`compact`, `regular`) — but they now derive from one definition instead of three hand-typed ones,
+which is what the condition was reaching for. **Reported as measured rather than as claimed.**
+
+⚠️ **One thing the conversion CAUSED and this build fixed:** `btn--regular` is 48px tall with an
+18px radius, and the waitlist input beside it computed to 46px with a 14px corner — a visible
+mismatch in a side-by-side row that did not exist before. The **input** moved to match, not the
+button: the button now carries the design system and the input is a one-off.
+
+**Artifacts:** pattern → `ui-patterns.md` § 38 (*the site uses the classes, the app uses the
+component*) · constant → `.btn--pill`, `.cta-pill` deleted · check → `buttonOwnership.test.ts`, three
+new arms, **each falsified to red** (a live `.cta-pill` rule, the class reapplied in markup, a
+marketing CTA painting itself moss, and Button regaining the directive).
+
+⚠️ **What this does not settle:** nothing has been seen on a device, and no Lighthouse run was taken
+after the change. The ruling assumes the converged geometry reads correctly at 320px, which nobody
+has measured.
+

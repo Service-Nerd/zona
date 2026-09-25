@@ -711,29 +711,38 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   .fact-sep-mid { display: none; }
 }
 
-/* ── CTA pill: hover, focus and press (SLT 2026-09-21) ─────────────────────
+/* ── `.cta-pill` DELETED 2026-09-25 (Design Board, WEBSITE-BUTTON-UNIFY-01) ──
  *
- * There was NO hover state anywhere on the marketing site. Fried's framing:
- * that is not a fidelity nicety, it is a missing affordance — on a desktop a
- * button with no hover reads as not-a-button.
+ * It was an SLT ruling of 2026-09-21 and a correct one: the marketing site had
+ * NO hover state at all, and Fried's framing was that this is a missing
+ * affordance, not a fidelity nicety. Everything it did — hover, focus-visible,
+ * press on `--motion-ui` — `.btn` now does, so keeping it would be two
+ * definitions of one button.
  *
- * ⚠️ `:focus-visible` IS PART OF THIS, NOT AN EXTRA. Shipping hover alone
- * would hand the affordance to people with a pointer and withhold it from
- * everyone navigating by keyboard, which is the accessibility version of the
- * same defect. Both states use the same token so they cannot drift.
+ * 🔴 AND THE SECOND DEFINITION HAD ALREADY DRIFTED, WHICH IS THE ACTUAL FINDING.
+ * `.cta-pill` supplied only the three interaction states; every other property
+ * was hand-typed at each of its three call sites, and the three had diverged:
  *
- * The transition rides `--motion-ui`, which collapses to 0s inside the
- * `prefers-reduced-motion` block, so this needs no exception of its own. */
-.cta-pill {
-  transition: background var(--motion-ui), transform var(--motion-ui);
-}
-.cta-pill:hover { background: var(--moss-deep); }
-.cta-pill:focus-visible {
-  background: var(--moss-deep);
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-.cta-pill:active { transform: translateY(1px); }
+ *     site                 font-size        padding      radius          label
+ *     SiteHeader           --fs-sm          8px 14px     999             --card
+ *     WaitlistForm         --fs-body-lg     13px 24px    --radius-md     'white'
+ *     charity-runners      --fs-body        10px 18px    --radius-md     --card
+ *
+ * Three buttons, three geometries, one shared hover, and a hardcoded 'white'.
+ * That is ruling :457 (S3, "one CTA vocabulary" — four labels for one button in
+ * the wizard) one level down. The site did not have a button; it had three.
+ *
+ * ⚠️ THE SITE USES THE CLASSES, NOT THE REACT COMPONENT, AND THAT IS THE RULING.
+ * Two of the three hosts are SERVER components; importing a client component
+ * into them is the BUNDLE-BOUNDARY-01 trap. The design lives here, in the
+ * stylesheet — `Button.tsx` is a convenience for the app, not the home of the
+ * design. One place to change the look is this file, and it already was. */
+
+/* Pill — the compact nav CTA's fully-round radius, DECLARED rather than
+   inherited. Silvanto: 999 on the header is a considered nav-pill shape, not a
+   leftover, and unification must not flatten a choice into a default. Naming it
+   is what makes it a choice on the record. */
+.btn--pill { border-radius: 999px; }
 
 /* ── Button — BUTTON-COMPONENT-01 (Design Board 2026-09-24, direction B) ────
  *

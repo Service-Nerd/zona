@@ -135,17 +135,8 @@ export function SiteHeader({ current = null }: { current?: SiteSection }) {
           {/* The single button in the chrome, and the only colour in it. */}
           <a
             href={BRAND.appStore.url}
-            className="cta-pill"
-            style={{
-              fontSize: 'var(--fs-sm)',
-              fontWeight: 700,
-              color: 'var(--card)',
-              background: 'var(--moss-strong)',
-              padding: '8px 14px',
-              borderRadius: 999,
-              textDecoration: 'none',
-              whiteSpace: 'nowrap',
-            }}
+            className="btn btn--primary btn--compact btn--pill"
+            style={{ whiteSpace: 'nowrap' }}
           >
             Get the app
           </a>
