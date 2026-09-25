@@ -125,6 +125,12 @@
       "title": "holds across the cohort and targeted grids",
       "ms": 4970,
       "reason": "RULEENGINE-HIP-COMMENT-01, 2026-09-25. A CORPUS assertion of the same shape as qualityAeroFallback above, and cheaper: §4/§5's \"base is all-easy\" is the premise CB-HSR-AVOID-01 deleted a hip-flexor rule on, and a premise believed in a commit message is not a measured one. ALREADY SAMPLED DOWN ONCE: the full 45,776-plan grid measured 17,630 ms, so it walks a coprime stride over 1,200 inputs — a slice would be worse than slow, because a corpus walked from its head is the \"debt was the SAMPLE, not the rules\" failure this repo has recorded three times. It cannot shrink much further: the assertion carries a floor of 20 early-onset plans, and that cohort is 6.7% of the grid, so a much smaller sample would stop reaching the one mechanism that could actually break the premise."
+    },
+    {
+      "file": "lib/marketing/revealShape.test.ts",
+      "title": "on REAL plans, the annotated week is NEVER the peak (Wood, binding)",
+      "ms": 1829,
+      "reason": "2026-09-25. The TWIN of the revealShape entry above, and baselined for the same reason: both generate real plans to make a claim about real plans, which is the point of them. It measured 1,200 ms and sat under the reporting line until four test files were added on 2026-09-25 (INJURY-GUARD-PREDICATE-01, BLOCKED-DAYS-CHECKER-SPELLING-01, RULEENGINE-HIP-COMMENT-01, CONTRACT-INJURY-VALUES-01) and suite CONTENTION pushed it to 1,829 ms. Standalone the whole 6-test file runs in 1.21 s, so this is ~600 ms of work reported at 3x under load — not a regression in the test. Recorded rather than silenced: if the suite keeps growing, this pair is where the next contention shows up first."
     }
   ]
 }
