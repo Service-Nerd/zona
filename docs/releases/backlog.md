@@ -29,6 +29,21 @@ already decided what it is.
 
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
+### 🧭 `SHEET-CLOSE-OWNER-01` — `Sheet` should own its close, and a principle disagrees with both
+**Board: 🧭 DESIGN BOARD.**
+
+Two sheets, two closes: `ModifyPlanSheet` had a top-right `IconButton` cross, `ZoneInfoSheet` had a
+bottom sticky full-width "Close". The founder asked for the standardised cross and it was applied —
+but **each sheet still hand-rolls its own**, which is the `.cta-pill` / `BackButton` shape a third time.
+
+🔴 **AND `CLAUDE.md` § UI Principles says a third thing:** *"Slide-up sheets: mirrored nav bar at
+bottom, not top."* `ModifyPlanSheet` already broke it; `ZoneInfoSheet` now does too. **The principle,
+the two implementations and the founder's instruction are three different answers**, which is why
+this is filed rather than settled in a defect fix.
+
+**What it needs:** `Sheet` renders the close itself, and the board rules whether the standard is a
+top cross or a bottom bar — then `CLAUDE.md` is amended to match, or the cross is reverted.
+
 ### 🧭 `BUTTON-SIZE-SCALE-01` — should a button size scale exist at all?
 **Board: 🧭 DESIGN BOARD.** Collins leads. Filed by `BUTTON-GEOMETRY-01`, not settled by it.
 

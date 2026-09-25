@@ -1591,3 +1591,51 @@ that supposedly proved otherwise was itself false**: the mutation changed two th
 ⚠️ **What this does not settle:** nothing has been seen on a device, and the harness measures
 source-computed boxes, not rendered pixels.
 
+## 2026-09-25 — GHOST-AFFORDANCE-01 · SHIP WITH AMENDMENT (3)
+
+**Trigger:** founder device review — *"Log manually does not look like a button… Skip doesn't look
+like a button… apply changes and discard changes look flat."*
+
+📐 **Measured, 131 variant-carrying controls:** ghost **63 (48%)** · primary 35 · secondary 19 ·
+quiet 11 · soft 3. 🔴 **74 of 131 — 56% — had NO SURFACE AT ALL.** And **6 labels carried more than
+one treatment**, three of them **three** each (*Log manually*, *Got it*, *Skip*).
+
+🎪 **Collins named it:** *"Fifty-six percent of your buttons have no surface. That is not restraint,
+it is ABSENCE DRESSED AS RESTRAINT. `ghost` at 63 uses is the default because it was the safest
+conversion, not because anyone chose it — converted-by-timidity and called a system."*
+📱 **Wroblewski set the rule's basis:** positional, because position is inspectable and importance is
+not. 🎓 **Sierra's exception, accepted:** some ghosts *should* be invisible, and they are **named**
+rather than discovered.
+
+**Ruling:** a primary action on its screen takes a surface · `ghost` reserved for in-sentence /
+dense-row · one label, one treatment. ⛔ **Veto: none** — `secondary` is existing tokens.
+
+✅ **BUILT.** 6 controls restyled (**only the ones named** — the other 57 ghosts were re-read, not
+swept), 5 labels converged, `Got it` moved off `primary` because `:456` says a dismiss is never moss.
+
+🔴 **THE SUCCESS CONDITION WAS NOT MET AND IS REPORTED AS SUCH.** Zhuo's was *"surfaceless controls
+fall below 50%"*; the result is **51%** (66 of 130). **Reaching it would have required sweeping
+ghosts the same ruling declined to sweep** — the two halves conflict, and the number is reported
+rather than the sweep taken.
+
+⚠️ **AND THE BUILD FOUND A REGRESSION THE FOUNDER HAD ALREADY SEEN HALF OF.** He reported *"sign out
+button is misaligned"*; it was **11 controls**, not one. The conversion dropped each call site's
+`display`/`alignItems`/`justifyContent` as *"owned by `.btn`"* — but `.btn` sets
+`justify-content: center` and these are ROW-shaped, so their labels silently centred. *"Sign out"*
+centred directly above a left-aligned *"Delete account"* in the same card. **The class is right and
+the sweep was wrong**, so the rule is *a control that declares its own alignment keeps it*, gated.
+
+**Also fixed from the same review:** the zone sheet's close is now the standardised `IconButton`
+cross (⚠️ `CLAUDE.md` § UI Principles says *"mirrored nav bar at bottom, not top"* and this makes the
+second of two sheets disagree with it — flagged in `SHEET-CLOSE-OWNER-01`, not silently reversed);
+and the Me zone rows had `gridTemplateColumns: '32px 1fr auto'` **per row**, so each sized its HR
+column independently and the numbers started at a different x on every line — *"all over the place"*
+— now a fixed 72px track. **`tabular-nums` aligns digits within a cell; it cannot align cells across
+independent grids.**
+
+**Artifacts:** pattern → § 38 (the positional rule) · constant → none new · checks →
+`buttonOwnership.test.ts` +2 arms (one-label-one-treatment, left-alignment), **both falsified**.
+
+⚠️ **What this does not settle:** which of the remaining 55 ghosts are genuinely incidental. The rule
+is positional and applying it needs a judgement per control that nobody has made on a device.
+

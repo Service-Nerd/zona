@@ -3312,6 +3312,29 @@ have turned 44 grey controls green and reversed that ruling while looking like a
 but `quiet` shipped first with 14 consumers and renaming call sites to fix a word is churn with no
 user impact. **The distinction that matters is ACCENT vs DE-EMPHASISED.**
 
+🔴 **WHICH VARIANT: A POSITIONAL RULE** *(Design Board, `GHOST-AFFORDANCE-01`, 2026-09-25)*.
+**A button that is one of the primary actions on its screen takes a SURFACE** (`secondary` where it
+is not the single CTA). **`ghost` is reserved for a control inside a sentence or a dense row** —
+marked with `.btn--inline-target`.
+
+⚠️ **The rule is POSITIONAL because position is inspectable and importance is not** (Wroblewski).
+Sierra's exception stands: a genuinely incidental action may stay surfaceless, but it is **named**,
+not discovered.
+
+📐 **Why:** the founder, on a device — *"Log manually does not look like a button. Skip doesn't look
+like a button."* Measured, **74 of 131 controls (56%) had no surface at all.** `ghost` had become the
+default because it was the safest conversion, not because anyone chose it (Collins: *"absence dressed
+as restraint"*). Same class as the site shipping with no hover state, where the SLT ruled *"a missing
+affordance, not a fidelity nicety."*
+
+**One label, one treatment — within a context.** `:457` below the wizard. ⚠️ **The two halves of the
+ruling conflict as literally phrased**, and that is recorded rather than resolved: the same label
+legitimately appears in a sentence and as a button, so the gate compares within a context and
+`inline-target` is the marker.
+
+⚠️ **`secondary`, never moss, for a de-emphasised action** — `:456`, *dismiss is never `--moss`*.
+That is why "Got it" moved off `primary`: it was wrong on its own terms, not merely inconsistent.
+
 🔴 **A SIZE CLASS CARRIES THE FLOOR, NOT THE BOX** *(Design Board, `BUTTON-GEOMETRY-01`, 2026-09-25)*.
 `.btn--regular` / `.btn--compact` declare a **44px minimum** (`:262`) and a default; **every call site
 keeps its own padding, font-size, radius, width and height.** A conversion buys hover,

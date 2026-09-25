@@ -3041,7 +3041,16 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
                   const hr = zones?.find(zz => zz.zone === z.zone)
                   return (
                     <div key={z.zone} style={{
-                      display: 'grid', gridTemplateColumns: '32px 1fr auto',
+                      // ⚠️ A FIXED THIRD TRACK, NOT `auto` (founder, device review
+                      // 2026-09-25: the zones "are all over the place"). Each row
+                      // is its OWN grid, so `auto` sized the HR column to that
+                      // row's content — `128–142` against `—` against a 2-digit
+                      // value — and the numbers started at a different x on every
+                      // line while the description column changed width to match.
+                      // `tabular-nums` aligns digits WITHIN a cell; it cannot
+                      // align cells ACROSS independent grids. 72px holds the
+                      // widest real value at 13px with room to spare.
+                      display: 'grid', gridTemplateColumns: '32px 1fr 72px',
                       gap: 'var(--space-3)', alignItems: 'center',
                       padding: '11px 13px',
                       background: 'var(--card)', border: '1px solid var(--line)',
@@ -3839,7 +3848,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
           </div>
           <button
             onClick={dismiss}
-            className="btn btn--primary btn--regular btn--full" style={{ marginBottom: 'var(--space-4)' }}
+            className="btn btn--secondary btn--regular btn--full" style={{ marginBottom: 'var(--space-4)' }}
           >
             Got it
           </button>
@@ -4815,7 +4824,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                 ))}
               </div>
               {isMetricCustom && (
-                <button className="btn btn--ghost btn--regular" onClick={() => updateSessionMetric(null)} style={{ fontSize: '10px', color: 'var(--warn-strong)', background: 'none', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
+                <button className="btn btn--ghost btn--regular" onClick={() => updateSessionMetric(null)} style={{ justifyContent: 'flex-start', fontSize: '10px', color: 'var(--warn-strong)', background: 'none', padding: '4px 0 0', textDecoration: 'underline', textAlign: 'left' }}>
                   Reset to global
                 </button>
               )}
@@ -5291,7 +5300,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                         Log manually
                       </button>
                       <div style={{ display: 'flex', gap: 'var(--space-2)', width: '100%' }}>
-                        <button className="btn btn--ghost btn--compact" onClick={() => setView('skip')} style={{ flex: 1 }}>
+                        <button className="btn btn--secondary btn--compact" onClick={() => setView('skip')} style={{ flex: 1 }}>
                           Skip
                         </button>
                       </div>
@@ -5309,7 +5318,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                       <button onClick={() => setView('reflect')} disabled={saving} style={{ flex: 2, background: config.color, color: 'var(--card)', border: 'none', borderRadius: '10px', padding: '13px', fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}>
                         Mark as done
                       </button>
-                      <button className="btn btn--ghost btn--compact" onClick={() => setView('skip')} style={{ flex: 1 }}>
+                      <button className="btn btn--secondary btn--compact" onClick={() => setView('skip')} style={{ flex: 1 }}>
                         Skip
                       </button>
                     </div>
@@ -5364,7 +5373,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: 'var(--space-2)' }}>No activities found near this session date</div>
           )}
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <button className="btn btn--ghost btn--compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
+            <button className="btn btn--secondary btn--compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
             {/* RESHAPE-FIX-WAVE2B (Defect 10): the 2026-06-26 incident's
                 phantom completion came from this exact button — tapped
                 with no activity selected, it wrote a bare stub the engine
@@ -5410,7 +5419,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             Skip it. It'll stay in your log.
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <button className="btn btn--ghost btn--compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
+            <button className="btn btn--secondary btn--compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</button>
             <button className="btn btn--secondary btn--regular" onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2 }}>
               {saving ? 'Saving...' : 'Mark as skipped'}
             </button>
@@ -7501,7 +7510,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
           return (
             <div style={{ marginBottom: 'var(--space-4)' }}>
               <button className="btn btn--secondary btn--regular"
-                onClick={onUpgrade} style={{ width: '100%', textAlign: 'left', padding: '14px 16px', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: 'var(--radius-md)', gap: 'var(--space-3)' }}
+                onClick={onUpgrade} style={{ justifyContent: 'flex-start', width: '100%', textAlign: 'left', padding: '14px 16px', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: 'var(--radius-md)', gap: 'var(--space-3)' }}
               >
                 <div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
@@ -7525,7 +7534,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         {trialDaysLeft === 0 && !hasPaidAccess && (
           <div style={{ marginBottom: 'var(--space-4)' }}>
             <button className="btn btn--secondary btn--regular"
-              onClick={onUpgrade} style={{ width: '100%', textAlign: 'left', padding: '14px 16px', background: 'var(--card)', borderLeft: '3px solid var(--warn)', borderRadius: 'var(--radius-md)', gap: 'var(--space-3)' }}
+              onClick={onUpgrade} style={{ justifyContent: 'flex-start', width: '100%', textAlign: 'left', padding: '14px 16px', background: 'var(--card)', borderLeft: '3px solid var(--warn)', borderRadius: 'var(--radius-md)', gap: 'var(--space-3)' }}
             >
               <div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
@@ -7651,7 +7660,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 onClick={onSeeMaintPlan} style={{ marginBottom: '4px' }}>
                 See the plan
               </Button>
-              <button className="btn btn--ghost btn--compact btn--full"
+              <button className="btn btn--secondary btn--compact btn--full"
                 onClick={onAckMaintTransition}>
                 Got it
               </button>
@@ -8120,7 +8129,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
 
             {/* Manual log — secondary, shown for today or past sessions */}
             {(selectedSession.today || selectedSession.rawDate < now) && (
-              <button className="btn btn--ghost btn--compact btn--full"
+              <button className="btn btn--secondary btn--compact btn--full"
                 onClick={() => setShowManualLog(true)} style={{ marginTop: 'var(--space-2)' }}>
                 Log manually
               </button>
@@ -8988,7 +8997,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
 
         {/* Teaser card — same left-accent pattern as wizard teaser card */}
         <button className="btn btn--secondary btn--regular"
-          onClick={onUpgrade} style={{ width: '100%', textAlign: 'left', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: '10px', padding: '14px 16px', gap: 'var(--space-3)' }}
+          onClick={onUpgrade} style={{ justifyContent: 'flex-start', width: '100%', textAlign: 'left', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: '10px', padding: '14px 16px', gap: 'var(--space-3)' }}
         >
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '3px' }}>
@@ -9007,7 +9016,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
             Distinct from the zone-discipline teaser above: that one sells
             the score, this one sells the share moment. Same upgrade target. */}
         <button className="btn btn--secondary btn--regular"
-          onClick={onUpgrade} style={{ width: '100%', textAlign: 'left', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: '10px', padding: '14px 16px', gap: 'var(--space-3)' }}
+          onClick={onUpgrade} style={{ justifyContent: 'flex-start', width: '100%', textAlign: 'left', background: 'var(--card)', borderLeft: '3px solid var(--moss)', borderRadius: '10px', padding: '14px 16px', gap: 'var(--space-3)' }}
         >
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '3px' }}>
@@ -11182,7 +11191,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
             {mhrNum} bpm is below the age estimate ({guardedMax} bpm) — usually the highest your device happened to record, not your true max. Zones use {guardedMax}. If {mhrNum} really is your max, tap Save to confirm it.
           </div>
         )}
-        <button className="btn btn--primary btn--regular btn--full" onClick={handleSave} disabled={!valid} style={{ padding: '11px', background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)', border: `0.5px solid ${saved ? 'var(--moss-mid)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`, borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted)' }}>
+        <button className="btn btn--secondary btn--regular btn--full" onClick={handleSave} disabled={!valid} style={{ padding: '11px', background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)', border: `0.5px solid ${saved ? 'var(--moss-mid)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`, borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted)' }}>
           {saved ? 'Saved' : 'Save HR data'}
         </button>
       </div>
@@ -11215,7 +11224,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
           {zones.map(z => (
             <button className="btn btn--secondary btn--regular"
               key={z.zone}
-              onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)} style={{ gridTemplateColumns: '24px 1fr auto', gap: 'var(--space-3)', padding: '9px 10px', borderRadius: '8px', background: 'var(--bg)', textAlign: 'left', width: '100%' }}>
+              onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)} style={{ justifyContent: 'flex-start', gridTemplateColumns: '24px 1fr auto', gap: 'var(--space-3)', padding: '9px 10px', borderRadius: '8px', background: 'var(--bg)', textAlign: 'left', width: '100%' }}>
               {/* Zone number */}
               <div style={{
                 width: '24px', height: '24px', borderRadius: '50%',
@@ -11936,7 +11945,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         {/* Plan + benchmark actions — moved below zones */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <button className="btn btn--ghost btn--regular"
-            onClick={onOpenGenerate} style={{ width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}
+            onClick={onOpenGenerate} style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}
           >
             <div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>
@@ -11955,7 +11964,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
           </button>
           <button className="btn btn--ghost btn--regular"
-            onClick={onOpenBenchmark} style={{ width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}
+            onClick={onOpenBenchmark} style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}
           >
             <div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>Race benchmark</div>
@@ -12117,7 +12126,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                         {c.summary}
                       </div>
                       <AdjustmentDiff sessionsBefore={c.sessions_before ?? []} sessionsAfter={c.sessions_after ?? []} units={preferredUnits} />
-                      <button className="btn btn--ghost btn--compact"
+                      <button className="btn btn--secondary btn--compact"
                         onClick={() => dismissChange(c.id)} style={{ marginTop: 'var(--space-3)' }}>
                         Got it
                       </button>
@@ -12158,7 +12167,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                   SYNC RULE: keep in step with TriggerType in lib/coaching/planAdjustment.ts.
                   If you add or remove a trigger type, update this copy in the same commit. */}
               <button className="btn btn--ghost btn--regular"
-                onClick={() => setAdjustmentsDisclosureOpen(o => !o)} style={{ width: '100%', padding: '14px 16px', background: 'none', textAlign: 'left' }}
+                onClick={() => setAdjustmentsDisclosureOpen(o => !o)} style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', textAlign: 'left' }}
                 aria-expanded={adjustmentsDisclosureOpen}
               >
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.4 }}>
@@ -12288,7 +12297,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         <SectionLabel>Careful Now</SectionLabel>
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <button className="btn btn--ghost btn--regular"
-            onClick={signOut} style={{ width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}
+            onClick={signOut} style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}
           >
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', fontWeight: 500 }}>Sign out</span>
           </button>

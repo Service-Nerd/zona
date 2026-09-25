@@ -112,7 +112,7 @@ export default function HrPendingStatusRow({ state, onRetry, isRetrying = false,
       type="button"
       onClick={(e) => { e.stopPropagation(); void onRetry?.() }}
       onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)} style={{ background:     'none', padding:        '6px 0', margin:         0, textAlign:      'left', font:           'inherit', color:          'inherit', minHeight:      '32px' }}
+      onMouseLeave={() => setHover(false)} style={{ justifyContent: 'flex-start', background:     'none', padding:        '6px 0', margin:         0, textAlign:      'left', font:           'inherit', color:          'inherit', minHeight:      '32px' }}
       aria-label={FALLBACK_COPY}
     >
       {inner}

@@ -7,6 +7,7 @@
 'use client'
 
 import Sheet from './Sheet'
+import IconButton from '@/components/ui/IconButton'
 import { ZONE_COPY, type ZoneCopy } from '@/lib/coaching/zoneCopy'
 import type { ZoneKey } from '@/lib/coaching/zoneRules'
 
@@ -26,8 +27,19 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
     <Sheet onClose={onClose} ariaLabel={copy.name}>
       {(close) => (
         <>
-          {/* Header */}
-          <div style={{ padding: '0 20px 4px' }}>
+          {/* Header. ⚠️ THE CLOSE IS THE STANDARDISED CROSS (founder, device
+              review 2026-09-25) — the same `IconButton shape="circle"` as
+              `ModifyPlanSheet`. This sheet had a bottom full-width "Close"
+              while its sibling had a top cross, so two sheets disagreed about
+              how to leave them. 🔻 The real fix is that `Sheet` should OWN its
+              close rather than each sheet hand-rolling one — filed as
+              `SHEET-CLOSE-OWNER-01`, the same shape as `.cta-pill` and
+              `BackButton`. ⚠️ `CLAUDE.md` § UI Principles says *"slide-up
+              sheets: mirrored nav bar at bottom, not top"*, and this makes the
+              second of two sheets disagree with it — flagged for the board in
+              that item rather than silently reversed here. */}
+          <div style={{ padding: '0 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+            <div style={{ minWidth: 0 }}>
             <div style={{
               fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
               color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -46,6 +58,18 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
                 {hrBand.lo}–{hrBand.hi} bpm
               </div>
             )}
+            </div>
+            <IconButton
+              onClick={onClose}
+              ariaLabel="Close"
+              shape="circle"
+              style={{ marginTop: '-6px', marginRight: '-6px' }}
+              icon={
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                  <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              }
+            />
           </div>
 
           {/* Body — three lines, no headers. Voice does the work. */}
@@ -55,16 +79,6 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
             <Line>{copy.why}</Line>
           </div>
 
-          {/* Bottom close — mirrored nav per CLAUDE.md UI principles */}
-          <div style={{
-            position: 'sticky', bottom: 0,
-            padding: '14px 20px 20px',
-            background: 'var(--card)',
-            borderTop: '0.5px solid var(--line)',
-            marginTop: 'var(--space-2)',
-          }}>
-            <button className="btn btn--secondary btn--regular btn--full" onClick={close}>Close</button>
-          </div>
         </>
       )}
     </Sheet>

@@ -286,7 +286,7 @@ export default function ModifyPlanSheet({
                     ? 'Rebuilding your plan…'
                     : `Apply ${pending.length} change${pending.length === 1 ? '' : 's'}`}
                 </button>
-                <button className="btn btn--ghost btn--compact btn--full"
+                <button className="btn btn--secondary btn--compact btn--full"
                   onClick={() => setEdits({})} style={{ marginTop: '4px' }}>
                   Discard changes
                 </button>

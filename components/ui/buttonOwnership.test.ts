@@ -368,6 +368,76 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
       'a spinbutton with no aria-valuenow announces nothing').toBe(2)
   })
 
+  it('🔴 a left-aligned control is not centred by `.btn`', () => {
+    // GHOST-AFFORDANCE-01, 2026-09-25. `.btn` sets `justify-content: center`,
+    // and the conversion dropped each call site's `display`/`alignItems`/
+    // `justifyContent` as "owned by .btn". For a ROW-shaped control that is
+    // wrong: 11 controls silently centred, and the founder saw one of them —
+    // "Sign out" centred above a left-aligned "Delete account" in the same card.
+    //
+    // ⚠️ THE CLASS IS RIGHT AND THE SWEEP WAS WRONG. Centring is correct for a
+    // button; these are rows. So the rule is not "stop centring", it is "a
+    // control that declares its own alignment must keep it".
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      const rel = path.relative(ROOT, f)
+      if (rel.includes('preview')) continue
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      for (const { line, text } of buttonTags(src)) {
+        if (!/className="[^"]*\bbtn\b/.test(text)) continue
+        const wantsLeft = /textAlign:\s*'left'/.test(text)
+        const hasOwn = /justifyContent:\s*'/.test(text)
+        if (wantsLeft && !hasOwn) offenders.push(`${rel}:${line}`)
+      }
+    }
+    expect(offenders, `left-aligned but centred by .btn — give it its own ` +
+      `justifyContent:\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  it('one label, one treatment — within a context', () => {
+    // `:457` (S3, "one CTA vocabulary") applied below the wizard. The founder
+    // met "Log manually" looking like three different things and "Got it" like
+    // three. GHOST-AFFORDANCE-01, 2026-09-25.
+    //
+    // ⚠️ THE BOARD'S TWO HALVES CONFLICT AS LITERALLY PHRASED, and this is where
+    // it shows. Its success condition was "no label carries more than one
+    // treatment", but it ALSO ruled a POSITIONAL rule: a control in a sentence
+    // stays `ghost`, one that is a primary action on its screen takes a surface.
+    // The same label legitimately appears in both — "Log manually" is a link
+    // inside a sentence on one screen and a button on another. So the rule is
+    // one treatment per CONTEXT, and `inline-target` is the context marker.
+    // Recorded rather than resolved in favour of one half.
+    const byLabel = new Map<string, Map<string, string[]>>()
+    for (const f of sourceFiles()) {
+      const rel = path.relative(ROOT, f)
+      if (rel.includes('preview')) continue
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      for (const { line, text } of buttonTags(src)) {
+        const cm = text.match(/className="([^"]*)"/)
+        if (!cm || !/\bbtn\b/.test(cm[1]!)) continue
+        const v = cm[1]!.split(/\s+/).find(c => /^btn--(primary|secondary|quiet|ghost|soft|destructive)$/.test(c))
+        if (!v) continue
+        const close = src.indexOf('</button>', src.indexOf(text))
+        let label = src.slice(src.indexOf(text) + text.length, close).replace(/<[^>]*>/g, '')
+        label = label.replace(/\{[^}]*\?\s*'([^']*)'\s*:\s*'([^']*)'[^}]*\}/, '$2').trim()
+        if (!label || label.length > 28 || /[{}]/.test(label)) continue
+        const ctx = /inline-target/.test(cm[1]!) ? 'inline' : 'standalone'
+        const key = `${label} [${ctx}]`
+        if (!byLabel.has(key)) byLabel.set(key, new Map())
+        const m = byLabel.get(key)!
+        if (!m.has(v)) m.set(v, [])
+        m.get(v)!.push(`${rel}:${line}`)
+      }
+    }
+    const offenders: string[] = []
+    for (const [key, variants] of Array.from(byLabel)) {
+      if (variants.size <= 1) continue
+      offenders.push(`${key}: ${Array.from(variants.keys()).join(' / ')}`)
+    }
+    expect(offenders, `a label rendered with more than one treatment in the ` +
+      `same context:\n${offenders.join('\n')}`).toEqual([])
+  })
+
   it('the email CTA does not use the failing fill', () => {
     // Email cannot use box-shadow (Outlook drops it), so the ruling gives it a
     // 1px --moss-deep border instead. The FILL still owes AA either way.

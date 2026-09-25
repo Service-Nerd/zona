@@ -89,7 +89,7 @@ export function ProfileSection({ firstName, lastName, email, onSave }: {
         <label htmlFor={PROFILE_EMAIL_FIELD_ID} style={labelStyle}>Email</label>
         <TextField id={PROFILE_EMAIL_FIELD_ID} type="email" value={email} onChange={() => {}} readOnly />
       </div>
-      <button className="btn btn--primary btn--regular btn--full"
+      <button className="btn btn--secondary btn--regular btn--full"
         onClick={handleSave}
         disabled={!isDirty || !isValid || saving} style={{ padding: '11px', background: saved || (isDirty && isValid) ? 'var(--moss-soft)' : 'var(--bg)', border: `1px solid ${saved || (isDirty && isValid) ? 'var(--moss-mid)' : 'var(--line)'}`, borderRadius: '8px', cursor: isDirty && isValid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved || (isDirty && isValid) ? 'var(--moss)' : 'var(--mute)' }}
       >
