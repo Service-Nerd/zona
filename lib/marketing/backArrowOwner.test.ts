@@ -68,16 +68,39 @@ describe('UI-BACKARROW-01 — one owner for the back arrow', () => {
   })
 
   it('the owner draws the DOCUMENTED arrow: 44px circle on --bg-soft', () => {
+    // ⚠️ THE SPEC MOVED, THE RULE DID NOT (ICON-BUTTON-01, 2026-09-25). This
+    // used to read the four values out of `BackButton.tsx` itself. `BackButton`
+    // is now a thin wrapper over `IconButton`, because the finding was that it
+    // already WAS the general primitive carrying the name of one of its uses —
+    // so 13 other controls needing the same 44px circle could not reuse it and
+    // were hand-rolled.
+    //
+    // 🔴 THIS TEST FAILING IS WHAT CAUGHT THAT REFACTOR, and the right response
+    // was to follow the spec to where it now lives, NOT to soften the assertion.
+    // Every value is still substituted in: 44px, 50%, --bg-soft, and never moss
+    // — the rule is unchanged, only its address is.
     const src = readFileSync(join(process.cwd(), OWNER), 'utf8')
-    // Substituting each value in, because a rule read past rather than read is
-    // how `since === recoveryFreq - 3` degenerated to `since === 0` unnoticed.
-    expect(src).toMatch(/width:\s*'44px'/)
-    expect(src).toMatch(/height:\s*'44px'/)
-    expect(src).toMatch(/borderRadius:\s*'50%'/)
-    expect(src).toMatch(/background:\s*'var\(--bg-soft\)'/)
-    // It is navigation, not a CTA: never the accent, never moss.
+    const css = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8')
+
+    // The wrapper asks for the circle shape and nothing else about appearance.
+    expect(src, 'BackButton stopped delegating to IconButton').toMatch(/<IconButton\b/)
+    expect(src, 'BackButton must ask for the circle shape').toMatch(/shape="circle"/)
+
+    // …and the circle is 44px on --bg-soft, in the class that now owns it.
+    const circle = css.match(/\.icon-btn--circle\s*\{([^}]*)\}/)?.[1] ?? ''
+    const regular = css.match(/\.icon-btn--regular\s*\{([^}]*)\}/)?.[1] ?? ''
+    expect(circle, '.icon-btn--circle not found in globals.css').not.toBe('')
+    expect(regular, '.icon-btn--regular not found in globals.css').not.toBe('')
+    expect(regular).toMatch(/min-width:\s*44px/)
+    expect(regular).toMatch(/min-height:\s*44px/)
+    expect(circle).toMatch(/border-radius:\s*50%/)
+    expect(circle).toMatch(/background:\s*var\(--bg-soft\)/)
+
+    // It is navigation, not a CTA: never the accent, never moss — asserted on
+    // BOTH halves now, since either could reintroduce it.
     expect(src).not.toMatch(/var\(--moss/)
     expect(src).not.toMatch(/var\(--accent/)
+    expect(circle).not.toMatch(/var\(--(moss|accent)/)
   })
 
   it('every screen with a back arrow imports the owner', () => {

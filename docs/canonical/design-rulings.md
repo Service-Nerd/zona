@@ -1439,3 +1439,52 @@ marketing CTA painting itself moss, and Button regaining the directive).
 after the change. The ruling assumes the converged geometry reads correctly at 320px, which nobody
 has measured.
 
+## 2026-09-25 — ICON-BUTTON-01 · SHIP WITH AMENDMENT (4)
+
+📐 **Measured, and the brief I brought was WRONG in the safe direction — twice.** I told the board
+**14** icon-only controls with **7** unnamed. The classifier stripped `{...}` from each button's body
+and then called anything textless an icon control, so **two FULL-WIDTH LABELLED buttons** — a zone
+row and a disclosure header — came back as "silent icon controls". **The truth is 12 and 5.** Third
+measurement correction in a day; the gate's own classifier now treats any `{expression}` body as
+possibly-labelled and skips it, biased toward passing and saying so.
+
+🔴 **THE FINDING WAS A NAMING ERROR, NOT A MISSING COMPONENT.** `BackButton` already *was* this
+primitive — 44px circle, `--bg-soft`, required label, own contract — carrying the name of **one of
+its uses**. Nothing else could reuse it without calling a close button a back button, so 13 controls
+were hand-rolled; `ModifyPlanSheet`'s close was **byte-for-byte the documented spec, written out
+again**. Collins: *"a taxonomy error at the naming layer produced 13 hand-rolled controls."* Same
+shape as `.cta-pill` earlier the same day — the right thing existed and was mis-scoped.
+
+🔴 **5 of 12 had no accessible name**: one truly silent SVG, four the distance stepper, where a
+screen-reader user hears *"minus, plus, minus, plus"* with nothing to say which number each moves.
+🎓 **Sierra's bound, and it was honoured:** *"that is the only part of this sitting that changes what
+a person can do — don't let the tidy half carry the urgent half over the line."* The names shipped
+independent of the primitive.
+
+**Ruling:** `IconButton` is a **generalisation of `BackButton`**, not a new primitive, and
+`BackButton` becomes a thin wrapper · **`ariaLabel` is REQUIRED** so the compiler, not a reviewer, is
+the enforcement (`:860` records the 44px rule as standing **and ignored by half its instances** —
+what a rule with no mechanism looks like) · **`SessionSteps` keeps its 15px visual and gains a 44px
+hit area** via padding + negative margin (Silvanto: *"the visual is right and the target is wrong,
+and those are separable"*) · **the stepper is out of scope** and files as `STEPPER-CONTROL-01`
+(Wroblewski: *"the right pixels and the wrong control"*).
+
+⛔ **Veto: none.** Silvanto declined — *"no palette or type rule is regressed; this converges
+geometry and adds names."*
+
+✅ **BUILT the same day.** 🥇 **A GUARD CAUGHT THE REFACTOR AND THE RIGHT ANSWER WAS TO FOLLOW THE
+SPEC, NOT SOFTEN THE TEST.** `backArrowOwner.test.ts` asserts the 44px circle on `--bg-soft` by
+reading `BackButton.tsx`; the wrapper moved those values into `.icon-btn--circle`, so it went red.
+Every value is still substituted in, now against the class that owns it, plus a new assertion that
+`BackButton` still asks for the circle shape.
+
+**Artifacts:** pattern → `ui-patterns.md` § 39 · constant → `.icon-btn` + three shapes + the
+inline-mark exception · checks → `buttonOwnership.test.ts` (2 arms) and `iconButton.markup.test.ts`
+(rendered, 9 assertions incl. *BackButton still draws the documented arrow through the wrapper*).
+**Falsified 7 ways**, including one arm that must NOT fire: a labelled full-width button with JSX
+text leaves the gate silent, which is the exact false positive my own census made.
+
+⚠️ **What this does not settle: NOBODY HAS HEARD THESE CONTROLS.** Every claim about what a screen
+reader announces is read from source, not from a VoiceOver pass on a device, and this repo has never
+verified anything on one.
+

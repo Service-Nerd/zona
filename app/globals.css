@@ -873,3 +873,79 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
    live label sits. */
 .btn:disabled { cursor: not-allowed; background: var(--bg-soft); color: var(--mute); box-shadow: none; border-color: transparent; transform: none; }
 .btn--busy { cursor: progress; opacity: 0.7; }
+
+/* ── IconButton — ICON-BUTTON-01 (Design Board 2026-09-25) ──────────────────
+ *
+ * 🔴 THE FINDING WAS A NAMING ERROR, NOT A MISSING COMPONENT. `BackButton`
+ * already was this primitive — 44px, circle, `--bg-soft`, a required label —
+ * but it carried the name of ONE of its uses. Everything else that needed the
+ * same shape could not reuse it, because reusing it would have meant calling a
+ * close button a back button, so 13 controls were hand-rolled instead.
+ * `ModifyPlanSheet`'s close is `44 / 44 / 50% / --bg-soft`: byte-for-byte
+ * `BackButton`'s documented spec, written out again. Same shape as `.cta-pill`
+ * earlier the same day — the right thing existed and was mis-scoped.
+ *
+ * 🔴 AND 7 OF THE 14 HAD NO ACCESSIBLE NAME. One was truly silent (an SVG);
+ * six announced a bare glyph — "minus, plus, minus, plus" on the distance
+ * stepper, with nothing to say which number each moves. `ariaLabel` is a
+ * REQUIRED prop on the component so the compiler, not a reviewer, is what
+ * stops the next one.
+ *
+ * Three shapes, declared rather than accumulated. The measured population had
+ * `50%` x3, `8px` x5 and NO radius at all x5 — five controls that were a glyph
+ * with a hit area, invisible as controls until tapped (Collins: "decide whether
+ * an icon button has a surface, do not leave five of them undecided").
+ *
+ * ⚠️ `--bg-soft` and `--card` FILLS, never `--card-bg`. That legacy alias was
+ * in the measured population, and the alias class is what hid two failing CTAs
+ * from `buttonOwnership.test.ts` earlier the same day. */
+.icon-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  background: none;
+  transition: background var(--motion-ui), transform var(--motion-ui);
+}
+.icon-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.icon-btn:active:not(:disabled) { transform: translateY(1px); }
+.icon-btn:disabled { cursor: not-allowed; color: var(--mute); transform: none; }
+
+/* The 44px floor is `:262`, standing, iOS HIG — and `:860` records it as
+   MEASURABLY IGNORED (6 of 12 back arrows obeyed, two were 36px). It is a
+   min-width/height rather than a fixed size so a larger glyph cannot shrink
+   the target below it. */
+.icon-btn--regular { min-width: 44px; min-height: 44px; }
+
+/* Circle: the back arrow, the sheet close. A surface that says "control". */
+.icon-btn--circle { border-radius: 50%; background: var(--bg-soft); }
+.icon-btn--circle:hover:not(:disabled) { background: var(--line); }
+/* Square: steppers and inline controls sitting inside a bordered group. */
+.icon-btn--square { border-radius: var(--radius-sm); background: var(--card); }
+.icon-btn--square:hover:not(:disabled) { background: var(--bg-soft); }
+/* Bare: no surface, for a glyph in a dense row (the notification bell, a
+   move handle). Still 44px of target. */
+.icon-btn--bare { background: none; }
+.icon-btn--bare:hover:not(:disabled) { color: var(--moss-deep); }
+
+/* ⚠️ THE INLINE-MARK EXCEPTION, and it is narrow BY CONSTRUCTION.
+ * `SessionSteps`' 15px ringed "i" sits inside a 12px uppercase label. At 44px
+ * it stops being an inline mark and becomes a button parked in a heading: it
+ * breaks the line box and shoves the type around. Silvanto: "the visual is
+ * right and the target is wrong, and those are separable."
+ * So the GLYPH stays 15px and the HIT AREA is grown with padding plus a
+ * compensating negative margin — the runner sees 15px and taps 44. This is the
+ * only sanctioned way to be under 44px visually, and the check enforces that
+ * anything claiming it carries this class. */
+.icon-btn--inline-mark {
+  min-width: 0;
+  min-height: 0;
+  padding: 14.5px;
+  margin: -14.5px;
+  border-radius: 50%;
+  background: none;
+}

@@ -279,6 +279,62 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
     expect(offenders, `a text button's label fails AA:\n${offenders.join('\n')}`).toEqual([])
   })
 
+  it('🔴 no icon-only control is unnamed: a glyph is not an accessible name', () => {
+    // ICON-BUTTON-01, 2026-09-25. Measured: 5 controls with no accessible name.
+    // One was truly silent (an SVG); four were the distance stepper, where a
+    // screen-reader user hears "minus, plus, minus, plus" with nothing to say
+    // which number each one moves.
+    //
+    // ⚠️ THE CLASSIFIER MUST NOT TREAT A JSX EXPRESSION AS EMPTY, AND MINE DID.
+    // The census I took to brief the board stripped `{...}` from each button's
+    // body and then called anything left textless an icon control. Two
+    // FULL-WIDTH LABELLED buttons — a zone row and a disclosure header — came
+    // back as "silent icon controls", so the brief said 14 and 7 when the truth
+    // was 12 and 5. Here a body containing ANY `{expression}` is treated as
+    // possibly-labelled and skipped: this check is biased toward passing, and
+    // says so, rather than being confidently wrong about the count.
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      if (f.endsWith(path.join('components', 'ui', 'IconButton.tsx'))) continue
+      const rel = path.relative(ROOT, f)
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      const re = /<button(?=[\s>])/g
+      let m: RegExpExecArray | null
+      while ((m = re.exec(src))) {
+        let i = re.lastIndex, depth = 0
+        while (i < src.length) {
+          const c = src[i]
+          if (c === '{') depth++
+          else if (c === '}') depth--
+          else if (c === '>' && depth === 0) break
+          i++
+        }
+        const tag = src.slice(m.index, i + 1)
+        const close = src.indexOf('</button>', i)
+        if (close === -1) continue
+        const body = src.slice(i + 1, close)
+        if (/aria-label/.test(tag)) continue
+        if (/\{/.test(body)) continue           // may render text — biased to pass
+        const text = body.replace(/<[^>]*>/g, '').trim()
+        const iconOnly = (/<svg/.test(body) && !text) || (!!text && text.length <= 2)
+        if (iconOnly) {
+          offenders.push(`${rel}:${src.slice(0, m.index).split('\n').length} renders ${text || 'an svg'} and no name`)
+        }
+      }
+    }
+    expect(offenders, `an icon-only control with no accessible name — a screen ` +
+      `reader announces a glyph or nothing:\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  it('IconButton cannot be constructed without a name', () => {
+    // The compiler is the enforcement, not a reviewer: `:860` records that the
+    // 44px-circle rule was standing AND ignored by half its instances, which is
+    // what a rule with no mechanism looks like.
+    const src = fs.readFileSync(path.join(ROOT, 'components/ui/IconButton.tsx'), 'utf8')
+    expect(src, 'ariaLabel became optional').toMatch(/\n\s*ariaLabel:\s*string\b/)
+    expect(src, 'ariaLabel became optional').not.toMatch(/ariaLabel\?:/)
+  })
+
   it('the email CTA does not use the failing fill', () => {
     // Email cannot use box-shadow (Outlook drops it), so the ruling gives it a
     // 1px --moss-deep border instead. The FILL still owes AA either way.

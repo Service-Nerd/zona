@@ -29,6 +29,22 @@ already decided what it is.
 
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
+### 🧭 `STEPPER-CONTROL-01` — the distance stepper is not four icon buttons
+**Board: 🧭 DESIGN BOARD** — a new control type.
+
+Split out of `ICON-BUTTON-01` by Wroblewski: *"that is not four icon buttons, it is two steppers, and
+a stepper has concerns an icon button doesn't — bounds, repeat-on-hold, and a value it announces.
+Forcing it through `IconButton` would give us the right pixels and the wrong control."*
+
+✅ **The urgent half already shipped**: all four now carry names (*"Increase whole distance"* etc.),
+so a screen-reader user no longer hears *"minus, plus, minus, plus"* with nothing to say which
+number each moves.
+
+🔻 **What is left is the control itself**: one `Stepper` owning value, bounds, the `−`/`+` pair and
+`aria-valuenow`, replacing two hand-rolled pairs in `DashboardClient`. ⚠️ It also still uses
+`--card-bg` and `--text-primary`, **legacy aliases** — the same class that hid two failing CTAs from
+`buttonOwnership.test.ts` on 2026-09-25.
+
 ### 🧭 `DANGER-TEXT-CONTRAST-01` — `--danger` as a label is 4.36:1 on `--bg-soft`
 **Board: 🧭 DESIGN BOARD** — minting a token is a palette addition, which is Silvanto's veto scope.
 

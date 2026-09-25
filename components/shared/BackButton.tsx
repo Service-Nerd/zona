@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import IconButton from '@/components/ui/IconButton'
 
 /**
  * BackButton — the one back arrow (UI-BACKARROW-01).
@@ -24,6 +25,13 @@ import type { CSSProperties } from 'react'
  * is a real visual delta on arrows that were already legal, and it is the
  * price of there being one answer.
  *
+ * ⚠️ AS OF 2026-09-25 THIS IS A WRAPPER, NOT A RIVAL (ICON-BUTTON-01). The
+ * finding was that this component already WAS the general primitive and was
+ * carrying the name of one of its uses, so 13 other controls that needed the
+ * same 44px circle could not reuse it and were hand-rolled. `IconButton` is
+ * that primitive; this passes the chevron and defaults the label to "Back".
+ * The spec below is unchanged and its contract stays valid.
+ *
  * `style` is merged, not replaced, and exists for the LAYOUT the call site
  * owns (`marginBottom`, a negative `marginLeft` inside a tile). It is
  * deliberately not a route to a different appearance: the container, size and
@@ -39,35 +47,22 @@ export default function BackButton({
   style?: CSSProperties
 }) {
   return (
-    <button
-      type="button"
+    <IconButton
       onClick={onClick}
-      aria-label={ariaLabel}
-      style={{
-        width: '44px',
-        height: '44px',
-        flexShrink: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 0,
-        border: 'none',
-        borderRadius: '50%',
-        background: 'var(--bg-soft)',
-        color: 'var(--ink)',
-        cursor: 'pointer',
-        ...style,
-      }}
-    >
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path
-          d="M13 4L7 10L13 16"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </button>
+      ariaLabel={ariaLabel}
+      shape="circle"
+      style={style}
+      icon={
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path
+            d="M13 4L7 10L13 16"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      }
+    />
   )
 }

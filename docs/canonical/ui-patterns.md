@@ -3340,3 +3340,50 @@ not the control's own styling.
 themselves — which is the half `lib/a11yContrast.test.ts` structurally cannot see. That file asserts
 `white on --moss-strong >= 4.5`: true, and a fact about a *token*, which is why it stayed green over
 all 42 failing controls. Its own header says it checks the tokens and not where they are used.
+
+### 39. IconButton — a control whose whole label is a glyph *(Design Board 2026-09-25, `ICON-BUTTON-01`)*
+
+`components/ui/IconButton.tsx` + `.icon-btn` in `globals.css`. `BackButton` is a **thin wrapper**
+over it and its contract is unchanged.
+
+🔴 **The finding was a NAMING ERROR, not a missing component.** `BackButton` already *was* this
+primitive — 44px, circle, `--bg-soft`, a required label, with its own contract — but it carried the
+name of **one of its uses**. Everything else needing that shape could not reuse it, because reusing
+it would have meant calling a close button a back button, so 13 controls were hand-rolled instead.
+`ModifyPlanSheet`'s close was `44 / 44 / 50% / --bg-soft`: byte-for-byte the documented spec, written
+out again. Collins: *"a taxonomy error at the naming layer produced 13 hand-rolled controls."*
+
+🔴 **And 5 of the 12 had no accessible name.** One was truly silent (an SVG); four were the distance
+stepper, where a screen-reader user hears *"minus, plus, minus, plus"* with nothing to say which
+number each one moves. **`ariaLabel` is a REQUIRED prop** — an icon button that cannot be named
+cannot be constructed, so the compiler stops the next one rather than a reviewer. `:860` records
+that the 44px rule was standing **and ignored by half its instances**, which is what a rule with no
+mechanism looks like.
+
+| Shape | Surface | Use |
+|---|---|---|
+| `circle` | `--bg-soft` | Back arrow, sheet close. A surface that says "control" |
+| `square` | `--card`, `--radius-sm` | Inside a bordered group (steppers) |
+| `bare` | none | A glyph in a dense row (notification bell, move handle) |
+
+**Every one takes `min-width`/`min-height` 44px** (`:262`, iOS HIG) — a minimum, not a fixed size, so
+a larger glyph cannot shrink the target below it.
+
+⚠️ **The inline-mark exception is narrow BY CONSTRUCTION and is the ONLY sanctioned way to be under
+44px visually.** `SessionSteps`' 15px ringed "i" sits inside a 12px uppercase label; at 44px it stops
+being an inline mark and becomes a button parked in a heading, breaking the line box. Silvanto: *"the
+visual is right and the target is wrong, and those are separable."* `inlineMark` keeps the glyph and
+grows the **hit area** with padding plus a compensating negative margin — **the runner sees 15px and
+taps 44.**
+
+⚠️ **A stepper is NOT an icon button** (Wroblewski). It has bounds, repeat-on-hold and a value it
+announces; forcing it through this primitive gives the right pixels and the wrong control. The four
+`+`/`−` controls keep their names and are filed as `STEPPER-CONTROL-01`.
+
+**Name what the control DOES**, in the runner's words — "Close", "Increase distance" — never the
+glyph, never a description of the icon.
+
+**Mechanical check:** `buttonOwnership.test.ts` (no unnamed icon-only control; `ariaLabel` cannot
+become optional) and `iconButton.markup.test.ts` (rendered, including that `BackButton` still draws
+the documented arrow through the wrapper).
+

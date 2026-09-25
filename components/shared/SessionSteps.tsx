@@ -14,6 +14,7 @@
 // Zonna terms: zones over pace-only targets, block totals, Warm Slate restraint.
 
 import React from 'react'
+import IconButton from '@/components/ui/IconButton'
 import type { SessionStructure } from '@/lib/plan/sessionComposer'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { buildStepGroups, resolveDisplayFigures, type StepRow } from '@/lib/plan/sessionSteps'
@@ -90,7 +91,18 @@ function SectionCard({
         <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: FONT, fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: accent }}>
           {name}
           {info && (
-            <button type="button" onClick={info} aria-label={`${name} · tap to learn`} style={{ all: 'unset', cursor: 'pointer', width: '15px', height: '15px', borderRadius: '50%', border: '1.2px solid currentColor', fontSize: '9.5px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: 0.75 }}>i</button>
+            <IconButton
+              onClick={info}
+              ariaLabel={`${name} · tap to learn`}
+              inlineMark
+              /* 15px VISUAL, 44px TARGET. `inlineMark` grows the hit area with
+                 padding plus a compensating negative margin, so the ringed "i"
+                 stays an inline mark inside a 12px uppercase label instead of
+                 becoming a button parked in a heading. Only sanctioned route
+                 below 44px visually (ICON-BUTTON-01, amendment 3). */
+              style={{ width: '15px', height: '15px', border: '1.2px solid currentColor', borderRadius: '50%', fontSize: '9.5px', fontWeight: 800, opacity: 0.75, color: 'inherit' }}
+              icon={<span aria-hidden>i</span>}
+            />
           )}
         </span>
         <span style={{ fontFamily: FONT, fontSize: '11px', fontWeight: 700, color: accent, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>

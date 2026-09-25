@@ -113,6 +113,7 @@ import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
+import IconButton from '@/components/ui/IconButton'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
 
@@ -6017,7 +6018,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                     : isEdit ? 'Correct what you logged' : 'Manual entry · no Strava needed'}
                 </div>
               </div>
-              <button onClick={close} style={{ background: 'var(--bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-muted)', fontSize: '14px', cursor: 'pointer', width: '44px', height: '44px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+              <IconButton onClick={close} ariaLabel="Close" shape="circle" icon={<span aria-hidden>✕</span>} />
             </div>
 
             {/* Session context strip — shown when opened from a planned session */}
@@ -6049,15 +6050,15 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               <div style={labelStyle}>Distance ({preferredUnits})</div>
               <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
-                  <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                  <button onClick={() => setDistWhole(Math.max(0, distWhole - 1))} aria-label="Decrease whole distance" style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '32px', textAlign: 'center' }}>{distWhole}</span>
-                  <button onClick={() => setDistWhole(distWhole + 1)} style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  <button onClick={() => setDistWhole(distWhole + 1)} aria-label="Increase whole distance" style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--text-muted)', padding: '0 4px' }}>.</div>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
-                  <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                  <button onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} aria-label="Decrease distance decimal" style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--text-primary)', minWidth: '16px', textAlign: 'center' }}>{distDecimal}</span>
-                  <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  <button onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} aria-label="Increase distance decimal" style={{ width: '44px', height: '44px', borderRadius: '8px', background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', color: 'var(--text-primary)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                 </div>
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>

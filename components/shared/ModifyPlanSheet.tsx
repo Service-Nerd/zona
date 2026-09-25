@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import IconButton from '@/components/ui/IconButton'
 import Sheet from './Sheet'
 import { DayGridSelector } from './DayGridSelector'
 import { SegmentedControl } from './SegmentedControl'
@@ -118,21 +119,17 @@ export default function ModifyPlanSheet({
                 </div>
               </div>
               {pending.length === 0 && (
-                <button
-                  type="button"
+                <IconButton
                   onClick={close}
-                  aria-label="Close"
-                  style={{
-                    width: '44px', height: '44px', flexShrink: 0, marginTop: '-6px', marginRight: '-10px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: 0, border: 'none', borderRadius: '50%',
-                    background: 'var(--bg-soft)', color: 'var(--ink)', cursor: 'pointer',
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                    <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </button>
+                  ariaLabel="Close"
+                  shape="circle"
+                  style={{ marginTop: '-6px', marginRight: '-10px' }}
+                  icon={
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  }
+                />
               )}
             </div>
 
