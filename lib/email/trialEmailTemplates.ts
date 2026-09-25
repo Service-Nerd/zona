@@ -105,7 +105,7 @@ function wrapper(content: string, unsubToken: string): string {
 // `emailCtaTargets.test.ts` reads both sides so a link the handler ignores fails
 // the build rather than shipping inert.
 function ctaButton(label: string, screen: EmailCtaScreen, params?: CtaParams): string {
-  return `<a href="${ctaHref(screen, params)}" style="display:inline-block;margin-top:28px;padding:14px 28px;background:${C.moss};color:${C.card};text-decoration:none;border-radius:8px;font-size:${T.body}px;font-weight:600;">${label}</a>`
+  return `<a href="${ctaHref(screen, params)}" style="display:inline-block;margin-top:28px;padding:14px 28px;background:${C.mossStrong};color:${C.card};border:1px solid ${C.mossDeep};text-decoration:none;border-radius:8px;font-size:${T.body}px;font-weight:600;">${label}</a>`
 }
 
 export interface RunSummary {

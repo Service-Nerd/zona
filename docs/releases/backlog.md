@@ -1526,7 +1526,7 @@ session) and the production data write was refused by the sandbox as a shared-re
 **Exposure meanwhile is near zero** — three codes, all on the TEST batch, no real partner batch
 has ever been created.
 
-### 🧭 `BUTTON-COMPONENT-01` — one Button, 65 hand-rolled CTAs, and a no-chrome revisit
+### ✅ `BUTTON-COMPONENT-01` — SHIPPED 2026-09-25 (one Button, 41 controls converted, AA cleared)
 **Board: 🧭 DESIGN BOARD — and this one needs MOCK-UPS before a ruling, not after.**
 Founder, 2026-09-24: *"I want to see mock ups and it needs to go via design for proposals of what
 is right for the brand. I also want to revisit no chrome at the same time and get some examples."*

@@ -13,6 +13,7 @@ import { Wordmark } from '@/components/ui/Wordmark'
 import { TextField } from '@/components/shared/TextField'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import ExternalLink from '@/components/shared/ExternalLink'
+import Button from '@/components/ui/Button'
 
 // NATIVE_AUTH_CALLBACK is the custom URL scheme registered in
 // ios/App/App/Info.plist. Google OAuth requires SFSafariViewController on iOS
@@ -273,21 +274,11 @@ export default function LoginPage() {
               autoComplete="email"
               value={email} onChange={setEmail}
             />
-            <button
+            <Button variant="primary" fullWidth
               type="submit"
-              disabled={loading || !email}
-              style={{
-                width: '100%', padding: '13px',
-                background: 'var(--moss)', color: 'var(--card)',
-                border: 'none', borderRadius: '10px',
-                fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
-                cursor: loading || !email ? 'default' : 'pointer',
-                opacity: loading || !email ? 0.5 : 1,
-                transition: 'opacity 0.15s',
-              }}
-            >
+              disabled={loading || !email}>
               {loading ? 'Sending…' : 'Send reset link'}
-            </button>
+            </Button>
           </form>
 
           <button
@@ -490,23 +481,13 @@ export default function LoginPage() {
                 </span>
               </label>
             )}
-            <button
+            <Button variant="primary" fullWidth
               type="submit"
-              disabled={loading || !email || !password || (mode === 'signup' && !ageConfirmed)}
-              style={{
-                width: '100%', padding: '13px',
-                background: 'var(--moss)', color: 'var(--card)',
-                border: 'none', borderRadius: '10px',
-                fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
-                cursor: loading || !email || !password || (mode === 'signup' && !ageConfirmed) ? 'default' : 'pointer',
-                opacity: loading || !email || !password || (mode === 'signup' && !ageConfirmed) ? 0.5 : 1,
-                transition: 'opacity 0.15s',
-              }}
-            >
+              disabled={loading || !email || !password || (mode === 'signup' && !ageConfirmed)}>
               {loading
                 ? (mode === 'signin' ? 'Signing in…' : 'Creating account…')
                 : (mode === 'signin' ? 'Sign in' : 'Create account')}
-            </button>
+            </Button>
           </form>
 
           {mode === 'signin' && (

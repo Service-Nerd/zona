@@ -18,6 +18,7 @@ import { TrendSparkline } from './TrendSparkline'
 import { buildTrendSparkline, type SparkBucket } from '@/lib/coaching/trendSparkline'
 import { paceContext } from '@/lib/coaching/trendSentence'
 import { formatPace } from '@/lib/format'
+import Button from '@/components/ui/Button'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -327,12 +328,10 @@ export default function TrendCard(props: TrendCardProps) {
           The receipt for your easy days. Months of same-effort runs, compared.
         </div>
         {props.onUpgrade && (
-          <button
-            onClick={props.onUpgrade}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--moss)' }}
-          >
+          <Button variant="quiet"
+            onClick={props.onUpgrade}>
             Unlock trend →
-          </button>
+          </Button>
         )}
       </div>
     )

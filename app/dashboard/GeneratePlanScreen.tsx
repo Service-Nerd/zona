@@ -46,6 +46,7 @@ import {
   defaultWeek, weekPlanToInputs, weekPlanFromLegacy, dayCountVerdict, pruneDayBudgets,
   type WeekPlan, type DayBudgets,
 } from '@/components/shared/WeekGrid.logic'
+import Button from '@/components/ui/Button'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1540,19 +1541,11 @@ export default function GeneratePlanScreen({
                   Couldn't add that. Try again.
                 </div>
               )}
-              <button
+              <Button variant="primary" fullWidth
                 onClick={handleFoundationAddBlock}
-                disabled={foundationAddStatus === 'loading'}
-                style={{
-                  width: '100%', padding: '15px', marginBottom: 'var(--space-3)',
-                  borderRadius: 'var(--radius-md)', background: 'var(--moss)',
-                  border: 'none', cursor: foundationAddStatus === 'loading' ? 'default' : 'pointer',
-                  opacity: foundationAddStatus === 'loading' ? 0.7 : 1,
-                  fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)',
-                }}
-              >
+                disabled={foundationAddStatus === 'loading'}>
                 {foundationAddStatus === 'loading' ? 'Adding…' : 'Add Foundation Block'}
-              </button>
+              </Button>
               <button
                 onClick={handleFoundationDismiss}
                 style={{
@@ -1781,9 +1774,9 @@ export default function GeneratePlanScreen({
                     runners in October. Putting both routes in the sentence
                     read BEFORE the tap serves both. */}
                 Marathon and longer need full access, which a charity code also gives you.{' '}
-                <button onClick={onUpgrade} style={{ background: 'none', border: 'none', color: 'var(--moss)', fontFamily: 'var(--font-ui)', fontSize: '12px', cursor: 'pointer', padding: 0 }}>
+                <Button variant="quiet" onClick={onUpgrade}>
                   Start free trial →
-                </button>
+                </Button>
               </div>
             )}
 
@@ -2020,13 +2013,11 @@ export default function GeneratePlanScreen({
           // 9a — the estimate is the frame title/subtitle; the only control here
           // is the escape to manual. "That's about right" is the sticky CTA.
           return (
-            <button
+            <Button variant="quiet"
               type="button"
-              onClick={() => setBenchMode('manual')}
-              style={{ background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--moss)', textAlign: 'left' }}
-            >
+              onClick={() => setBenchMode('manual')}>
               Let me adjust →
-            </button>
+            </Button>
           )
         }
         return (

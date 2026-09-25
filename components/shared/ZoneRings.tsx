@@ -27,6 +27,7 @@
 
 // Shape owned by the aggregate that produces it, not by this renderer.
 import type { ZoneSlice } from '@/lib/coaching/weeklyZoneAggregate'
+import Button from '@/components/ui/Button'
 export type { ZoneSlice }
 
 /** Shared by every state. */
@@ -365,21 +366,10 @@ export default function ZoneRings(props: Props) {
         </div>
         {props.onUpgrade && (
           <div style={{ marginTop: 'var(--space-4)', textAlign: 'center' }}>
-            <button
-              onClick={props.onUpgrade}
-              style={{
-                fontFamily: 'var(--font-ui)',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'var(--moss)',
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-              }}
-            >
+            <Button variant="quiet"
+              onClick={props.onUpgrade}>
               Unlock view →
-            </button>
+            </Button>
           </div>
         )}
       </Shell>
@@ -422,21 +412,10 @@ export default function ZoneRings(props: Props) {
         </div>
         {linkable && props.onConnect && (
           <div style={{ marginTop: 'var(--space-4)', textAlign: 'center' }}>
-            <button
-              onClick={props.onConnect}
-              style={{
-                fontFamily: 'var(--font-ui)',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: 'var(--moss)',
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-              }}
-            >
+            <Button variant="quiet"
+              onClick={props.onConnect}>
               Allow health access →
-            </button>
+            </Button>
           </div>
         )}
       </Shell>

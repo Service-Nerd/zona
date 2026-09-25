@@ -9,6 +9,7 @@ import { formatDuration, hrColour, paceAtHR, getRuns } from '@/lib/strava'
 import { formatDistance, formatPace } from '@/lib/format'
 import type { StravaActivity } from '@/types/plan'
 import { formatDate } from '@/lib/format'
+import Button from '@/components/ui/Button'
 
 /** Seconds per km for a run — the rate `formatPace` converts for the reader. */
 const secPerKm = (r: { moving_time: number; distance: number }): number | null =>
@@ -239,14 +240,9 @@ Give 3-4 sentences of direct coaching feedback. Flag if HR was too high. Note on
               </div>
             </div>
             <div style={{ padding: '12px 18px', borderTop: '0.5px solid var(--border-col)', textAlign: 'right' }}>
-              <button onClick={() => setPopup(null)} style={{
-                background: 'var(--moss)', color: 'var(--card)', border: 'none',
-                borderRadius: '8px', padding: '9px 22px',
-                fontFamily: "var(--font-ui)", fontSize: '13px',
-                letterSpacing: '0.08em', textTransform: 'uppercase', cursor: 'pointer', fontWeight: 500,
-              }}>
+              <Button variant="primary" onClick={() => setPopup(null)}>
                 Got it
-              </button>
+              </Button>
             </div>
           </div>
         </div>

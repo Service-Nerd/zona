@@ -3244,3 +3244,60 @@ Two scales, because one is not enough: plan-level before → after rows (**only 
 above the existing `AdjustmentDiff` for the week the runner is actually in. Everything is derived
 at render; nothing is stored, because a total written once goes stale at the next reshape.
 Reference: `components/shared/ModifyPlanConfirm.tsx`.
+
+### 38. Button — the one control that asks *(Design Board 2026-09-24, built 2026-09-25, `BUTTON-COMPONENT-01`)*
+
+`components/ui/Button.tsx` is the **single owner** of every control that asks a runner to do
+something. Styling lives in `globals.css` under `.btn`; the component is the vocabulary.
+
+🔴 **Why it exists.** The founder said the CTAs looked flat. The board measured and found something
+larger: **there was no Button component.** 66 `<button>` elements carried `var(--moss)`, 27 of them
+the primary-CTA shape, each one a nine-line inline style object written out again from whatever was
+nearby. `--shadow-lifted` was authored for a raised state and had **zero** consumers while
+`--shadow-card` had 19 — the product elevated its cards and gave its buttons nothing, so a moss
+button sat visually *behind* the card it was on.
+
+🔴 **And all 42 text-carrying moss controls failed WCAG AA.** White on `--moss` is **3.68:1**;
+`--moss` as a label is **3.24:1** on `--bg` and **3.04:1** on `--bg-soft`. AA wants 4.5:1, and
+nothing in this product reaches the 18.66px-bold large-text exemption. `A11Y-CONTRAST-01` had
+measured this exact failure and shipped `--moss-strong` / `--moss-deep` for it — then fixed only
+the **marketing** button (28 uses on the site, **0** in `app/dashboard`, **0** in `lib/email`).
+
+| Variant | Fill | Label | Use |
+|---|---|---|---|
+| `primary` | `--moss-strong` | `--card` | **One per screen.** Carries `--shadow-lifted` |
+| `secondary` | `--card` + `--line` border | `--ink-2` | The alternative action |
+| `quiet` | none | `--moss-strong` | A label, not a surface |
+| `soft` | `--moss-soft` | **`--moss-deep`** | The moss-tinted pill (3 uses) |
+| `destructive` | `--card` + `--danger` border | `--danger` | **Modal confirmations only** |
+
+⚠️ **Labels are SENTENCE CASE and the type is 14px, both measured rather than chosen.** The board
+quoted `DashboardClient:3171` as the reference button; it is uppercase at 13px with 0.08em tracking,
+and the first cut of `.btn` forced both. Counting the population actually being converted, **33 of
+40 were not uppercase** and 14px was the modal size. **The cited example was the minority**, and
+generalising from it would have restyled 33 controls nobody asked to change.
+
+**Sizes:** `regular` 48px, `compact` 44px. Both clear the touch-target floor; compact steps the
+radius down with the height so the corner keeps the same curve rather than drifting to a pill.
+
+**States** are all in `.btn`: `:hover`, `:focus-visible`, `:active` (`translateY(1px)`), `:disabled`
+(flat, never lifted — an elevated control that does nothing is a lie about affordance), and `busy`,
+which disables the button and sets `aria-busy` so a screen reader is told what the dimmed label
+says. Transitions ride `--motion-ui` and collapse under `prefers-reduced-motion`.
+
+⚠️ **`soft` takes `--moss-deep`, not `--moss-strong`, and that is measured.** `--moss-soft` resolves
+to `#E5E6DE` on `--bg`; `--moss-strong` on that is **4.36:1**, still under AA. The tinted ground eats
+more contrast than a flat one, so the gentlest-looking variant needs the strongest ink.
+
+⚠️ **NOT every moss button is this component.** 15 of the 66 use moss as the **selected** affordance
+(`WeekGrid`, `DayGridSelector`, `CardSelect`, `RPEScale`, `ZoneRings`). The moss active fill is the
+only selected affordance (§ CardSelect) and a fill is graphics at 3:1, not text at 4.5:1. **They are
+correct as they are.** Converting them would reverse a standing rule while looking like tidying.
+
+⚠️ **Email is the same button by a different device.** Outlook drops `box-shadow`, so the email CTA
+carries a 1px `--moss-deep` border instead of elevation. The fill still owes AA either way.
+
+**Mechanical check:** `components/ui/buttonOwnership.test.ts` reads the **producer** — the buttons
+themselves — which is the half `lib/a11yContrast.test.ts` structurally cannot see. That file asserts
+`white on --moss-strong >= 4.5`: true, and a fact about a *token*, which is why it stayed green over
+all 42 failing controls. Its own header says it checks the tokens and not where they are used.

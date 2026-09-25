@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { BRAND } from '@/lib/brand'
+import Button from '@/components/ui/Button'
 
 interface Props { children: React.ReactNode }
 interface State { hasError: boolean; message: string; stack: string; copied: boolean }
@@ -77,23 +78,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
               {this.state.message}
             </div>
           )}
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              background: 'var(--moss)',
-              color: 'var(--card)',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '12px 24px',
-              fontFamily: 'var(--font-ui)',
-              fontSize: '13px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              letterSpacing: '0.04em',
-            }}
-          >
+          <Button variant="primary"
+            onClick={() => window.location.reload()}>
             Reload
-          </button>
+          </Button>
 
           {this.state.message && (
             <button

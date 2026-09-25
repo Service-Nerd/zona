@@ -8,6 +8,7 @@ import { getCurrentWeekIndex, parseLocalDate } from '@/lib/plan/weekResolution'
 import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
 import { formatDate } from '@/lib/format'
+import Button from '@/components/ui/Button'
 
 interface Completion {
   session_day: string
@@ -705,20 +706,10 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
       })}
 
       {movingDay && !pendingMove && (
-        <button
-          onClick={abandonMove}
-          style={{
-            width: '100%', padding: '10px 14px',
-            background: 'var(--moss-soft)',
-            border: 'none', borderTop: '1px solid var(--moss-mid)',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-ui)', fontSize: '11px',
-            color: 'var(--moss)', letterSpacing: '0.06em', textTransform: 'uppercase',
-            textAlign: 'center',
-          }}
-        >
+        <Button variant="soft" fullWidth
+          onClick={abandonMove} style={{ borderTop: '1px solid var(--moss-mid)' }}>
           Cancel move
-        </button>
+        </Button>
       )}
 
       {/* RESHAPE-FIX-WAVE2C confirmation row. Pattern 10b (Move-confirmation
@@ -761,19 +752,10 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             >
               Cancel
             </button>
-            <button
-              onClick={confirmPendingMove}
-              style={{
-                flex: 2, padding: '10px 14px',
-                background: 'var(--moss)', border: 'none',
-                borderRadius: '10px', cursor: 'pointer',
-                fontFamily: 'var(--font-ui)', fontSize: '11px',
-                color: 'var(--card)', letterSpacing: '0.06em', textTransform: 'uppercase',
-                fontWeight: 600,
-              }}
-            >
+            <Button variant="primary"
+              onClick={confirmPendingMove} style={{ flex: 2 }}>
               {pendingMove.isSwap ? 'Swap them' : 'Move it'}
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -1011,12 +993,10 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           </button>
         )}
         {isMoving && (
-          <button
-            onClick={e => { e.stopPropagation(); onMoveIconTap() }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--moss)', fontSize: '16px', padding: '2px' }}
-          >
+          <Button variant="quiet"
+            onClick={e => { e.stopPropagation(); onMoveIconTap() }}>
             ✕
-          </button>
+          </Button>
         )}
       </div>
     </div>

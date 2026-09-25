@@ -112,6 +112,7 @@ import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
 import { formatDate } from '@/lib/format'
+import Button from '@/components/ui/Button'
 
 type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
 
@@ -3164,19 +3165,10 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
         })()}
 
         {/* CTA */}
-        <button
-          onClick={onDismiss}
-          style={{
-            width: '100%', padding: '16px',
-            background: 'var(--moss)', color: 'var(--card)',
-            border: 'none', borderRadius: 'var(--radius-lg)',
-            fontFamily: 'var(--font-ui)', fontSize: '13px',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            cursor: 'pointer', fontWeight: 600,
-          }}
-        >
+        <Button variant="primary" fullWidth
+          onClick={onDismiss}>
           I&apos;m ready
-        </button>
+        </Button>
 
         {/* ONBOARD-EXIT-01 — Orientation renders in front of the nav, so the
             Me screen (where sign-out lives) is unreachable from here. */}
@@ -3298,22 +3290,8 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             When Strava is approved, add a second equal-weight button BELOW this
             one with the same visual treatment (moss fill, full width). Do not
             change the ask copy above. */}
-        <button
-          onClick={connectHealthKit}
-          disabled={pending !== null}
-          style={{
-            width: '100%',
-            background: 'var(--moss)', color: 'var(--card)',
-            border: 'none', borderRadius: '12px',
-            padding: '14px 16px',
-            minHeight: '52px',  // bigger than the 44pt min — primary ceremony CTA.
-            fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
-            letterSpacing: '-0.01em',
-            cursor: pending ? 'wait' : 'pointer',
-            opacity: pending ? 0.7 : 1,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-3)',
-          }}
-        >
+        <Button variant="primary" fullWidth
+          onClick={connectHealthKit} busy={pending !== null}>
           {/* Adapted from AppleHealthConnectionRow icon — 24px white-on-moss
               roundel containing the canonical moss dot. Reads as "Apple Health"
               identity on the button surface without needing Apple's marks. */}
@@ -3326,7 +3304,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--card)' }} />
           </span>
           {pending === 'connect' ? 'Connecting…' : 'Connect Apple Health'}
-        </button>
+        </Button>
 
         {error && (
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.55, marginTop: 'var(--space-3)' }}>
@@ -3505,22 +3483,9 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
         </div>
 
         {!denied && (
-          <button
+          <Button variant="primary" fullWidth
             onClick={enableNotifications}
-            disabled={pending !== null}
-            style={{
-              width: '100%',
-              background: 'var(--moss)', color: 'var(--card)',
-              border: 'none', borderRadius: '12px',
-              padding: '14px 16px',
-              minHeight: '52px',
-              fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
-              letterSpacing: '-0.01em',
-              cursor: pending ? 'wait' : 'pointer',
-              opacity: pending ? 0.7 : 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-3)',
-            }}
-          >
+            disabled={pending !== null}>
             {/* Bell icon — same roundel pattern as ConnectRunsScreen */}
             <span style={{
               width: '24px', height: '24px', borderRadius: '7px',
@@ -3531,7 +3496,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
               🔔
             </span>
             {pending === 'enable' ? 'Setting up…' : 'Enable Notifications'}
-          </button>
+          </Button>
         )}
 
         {error && (
@@ -3827,17 +3792,10 @@ function MissedSessionSheet({
         </div>
 
         {/* I actually did it */}
-        <button
-          onClick={onDidIt}
-          style={{
-            width: '100%', padding: '13px 0', borderRadius: 100,
-            background: 'var(--moss)', border: 'none',
-            fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600,
-            color: 'var(--card)', cursor: 'pointer', marginBottom: 8,
-          }}
-        >
+        <Button variant="primary" fullWidth
+          onClick={onDidIt} style={{ marginBottom: 8 }}>
           I actually ran it →
-        </button>
+        </Button>
 
         <button
           onClick={close}
@@ -6547,24 +6505,11 @@ function TdReadyHero({ adjustment, onConfirmed, onReverted }: {
       {/* Two actions: ease (primary) + run-anyway (secondary).
           Override stays equally visible — restraint isn't enforced. */}
       <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center', flexWrap: 'wrap' }}>
-        <button
+        <Button variant="primary" fullWidth
           onClick={ease}
-          disabled={loading}
-          style={{
-            background:   'var(--moss)',
-            color:        'var(--card)',
-            border:       'none',
-            borderRadius: '22px',
-            padding:      '0 18px',
-            minHeight:    '44px',
-            fontFamily:   'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-            letterSpacing:'0.04em',
-            cursor:       loading ? 'default' : 'pointer',
-            opacity:      loading ? 0.5 : 1,
-          }}
-        >
+          disabled={loading}>
           Ease the session
-        </button>
+        </Button>
         <button
           onClick={runAnyway}
           disabled={loading}
@@ -6841,17 +6786,10 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
             </PendingAdjustmentBanner>
             {/* ENGINE-01: fitness_signal has no plan change — show benchmark CTA instead */}
             {adjustment.trigger_type === 'fitness_signal' && onOpenBenchmark && (
-              <button
-                onClick={onOpenBenchmark}
-                style={{
-                  width: '100%', marginTop: 'var(--space-3)', padding: '15px',
-                  borderRadius: 'var(--radius-md)', background: 'var(--moss)',
-                  border: 'none', cursor: 'pointer',
-                  fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, color: 'var(--card)',
-                }}
-              >
+              <Button variant="primary" fullWidth
+                onClick={onOpenBenchmark} style={{ marginTop: 'var(--space-3)' }}>
                 Update benchmark →
-              </button>
+              </Button>
             )}
           </>
         )}
@@ -7820,19 +7758,10 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                   {maintDaysPerWeek} day{maintDaysPerWeek === 1 ? '' : 's'}/week · {maintWeekCount} week{maintWeekCount === 1 ? '' : 's'} · below your base, on purpose
                 </div>
               )}
-              <button
-                onClick={onSeeMaintPlan}
-                style={{
-                  width: '100%', padding: '14px',
-                  background: 'var(--moss)', color: 'var(--card)',
-                  border: 'none', borderRadius: 'var(--radius-lg)',
-                  fontFamily: 'var(--font-ui)', fontSize: '13px',
-                  letterSpacing: '0.08em', textTransform: 'uppercase',
-                  cursor: 'pointer', fontWeight: 600, marginBottom: '4px',
-                }}
-              >
+              <Button variant="primary" fullWidth
+                onClick={onSeeMaintPlan} style={{ marginBottom: '4px' }}>
                 See the plan
-              </button>
+              </Button>
               <button
                 onClick={onAckMaintTransition}
                 style={{ background: 'none', border: 'none', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', cursor: 'pointer', padding: '8px 0', width: '100%' }}
@@ -8288,7 +8217,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
 
             {/* Primary CTA — only on today's session if not yet done */}
             {selectedSession.today && !completions[selectedCompletionKey]?.status && (
-              <button
+              <Button variant="primary" fullWidth
                 onClick={() => {
                   onOpenSession?.({
                     ...selectedSession,
@@ -8299,24 +8228,9 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                     weekN: weekNum,
                     weekTheme,
                   })
-                }}
-                style={{
-                  marginTop: 'var(--space-3)',
-                  width: '100%',
-                  padding: '14px',
-                  background: 'var(--moss)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-md)',
-                  fontFamily: 'var(--font-ui)',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: 'var(--card)',
-                  letterSpacing: '0.02em',
-                  cursor: 'pointer',
-                }}
-              >
+                }} style={{ marginTop: 'var(--space-3)' }}>
                 Log this session
-              </button>
+              </Button>
             )}
 
             {/* Manual log — secondary, shown for today or past sessions */}
@@ -9324,25 +9238,11 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
   }
 
   return (
-    <button
+    <Button variant="primary" fullWidth
       onClick={onShare}
-      disabled={busy}
-      style={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)',
-        fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-        // SHARE moment — promoted to filled-moss CTA per audit item #10.
-        color: 'var(--card)',
-        background: 'var(--moss)',
-        border: 'none',
-        borderRadius: '22px',
-        padding: '0 18px',
-        minHeight: '44px',  // iOS HIG tap-target minimum.
-        cursor: busy ? 'default' : 'pointer',
-        opacity: busy ? 0.7 : 1,
-      }}
-    >
+      disabled={busy}>
       {status ?? (busy ? 'Preparing…' : 'Share')}
-    </button>
+    </Button>
   )
 }
 
@@ -9381,24 +9281,10 @@ function SaveImageButton({ weekN, sessionDay }: { weekN: number; sessionDay: str
   }
 
   return (
-    <button
-      onClick={onSave}
-      disabled={busy}
-      style={{
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)',
-        fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-        color: 'var(--moss)',
-        background: 'var(--moss-soft)',
-        border: 'none',
-        borderRadius: '22px',
-        padding: '0 18px',
-        minHeight: '44px',  // iOS HIG tap-target minimum.
-        cursor: busy ? 'default' : 'pointer',
-        opacity: busy ? 0.7 : 1,
-      }}
-    >
+    <Button variant="soft"
+      onClick={onSave} busy={busy}>
       {status ?? (busy ? 'Preparing…' : 'Share')}
-    </button>
+    </Button>
   )
 }
 
@@ -10140,43 +10026,16 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
               // X-FIRSTRUN: pre-data primary action takes over the button slot.
               // No "Generate report" until there's data to generate from — the
               // empty state teaches the one next action that unblocks coaching.
-              <button
-                onClick={consolidatedRead.cta.onClick}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)',
-                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                  color: 'var(--card)',
-                  background: 'var(--moss)',
-                  border: 'none',
-                  borderRadius: '22px',
-                  padding: '0 18px',
-                  minHeight: '44px',
-                  cursor: 'pointer',
-                  letterSpacing: '0.04em',
-                }}
-              >
+              <Button variant="primary"
+                onClick={consolidatedRead.cta.onClick}>
                 {consolidatedRead.cta.label} →
-              </button>
+              </Button>
             ) : (
-              <button
-                onClick={generateReport}
-                disabled={loading || refreshBlocked}
-                style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)',
-                  fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                  color: 'var(--moss)',
-                  background: 'var(--moss-soft)',
-                  border: 'none',
-                  borderRadius: '22px',
-                  padding: '0 18px',
-                  minHeight: '44px',
-                  cursor: (loading || refreshBlocked) ? 'default' : 'pointer',
-                  opacity: (loading || refreshBlocked) ? 0.4 : 1,
-                }}
-              >
+              <Button variant="soft"
+                onClick={generateReport} busy={loading || refreshBlocked}>
                 {loading && <AIMark size={10} color="var(--moss)" working />}
                 {loading ? 'Generating' : (reportIsCurrent && weeklyReport?.headline ? 'Refresh' : 'Generate report')}
-              </button>
+              </Button>
             )}
             {reportIsCurrent && weeklyReport?.zone_discipline_score != null && (
               <ShareWeekButton weekN={weeklyReport.week_n} />
@@ -11258,16 +11117,9 @@ function AppleHealthConnectionRow({ onHRFound }: {
               {busy ? 'Saving...' : 'Disconnect'}
             </button>
           ) : (
-            <button onClick={connect} disabled={busy} style={{
-              background: 'var(--moss)', color: 'var(--card)',
-              border: 'none', borderRadius: '8px', padding: '8px 14px',
-              fontFamily: 'var(--font-ui)', fontSize: '11px',
-              letterSpacing: '0.06em', textTransform: 'uppercase',
-              cursor: busy ? 'wait' : 'pointer',
-              opacity: busy ? 0.6 : 1,
-            }}>
+            <Button variant="primary" fullWidth onClick={connect} disabled={busy}>
               {busy ? 'Connecting...' : 'Connect'}
-            </button>
+            </Button>
           )
         )}
       </div>
@@ -11385,17 +11237,9 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
 
   return (
     <div style={{ marginBottom: 'var(--space-3)' }}>
-      <button onClick={handleClick} disabled={busy}
-        style={{
-          width: '100%', padding: '10px',
-          background: 'var(--bg)',
-          border: '0.5px solid var(--moss)',
-          borderRadius: '8px', cursor: busy ? 'wait' : 'pointer',
-          fontFamily: 'var(--font-ui)', fontSize: '12px', letterSpacing: '0.06em',
-          color: 'var(--moss)', textAlign: 'center',
-        }}>
+      <Button variant="quiet" onClick={handleClick} disabled={busy}>
         {busy ? 'Reading Apple Health…' : 'Use your Apple Health values'}
-      </button>
+      </Button>
       {err && (
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
           {err}
@@ -11926,12 +11770,10 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
         </div>
 
         {/* Primary CTA — email */}
-        <button
-          onClick={handleEmail}
-          style={{ width: '100%', padding: '15px', background: 'var(--moss)', border: 'none', borderRadius: 'var(--radius-lg)', color: 'white', fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600, letterSpacing: '0.02em', cursor: 'pointer' }}
-        >
+        <Button variant="primary" fullWidth
+          onClick={handleEmail}>
           Email us
-        </button>
+        </Button>
 
         {/* Fallback — copy address (covers no-mail-client case) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
@@ -12803,13 +12645,9 @@ function LockedCoachingPreview({ onUpgrade, onOpenCoach }: { onUpgrade?: () => v
         Kit reads here. He needs your runs first — Strava or Apple Health.
       </div>
       {onUpgrade && (
-        <button onClick={onUpgrade} style={{
-          fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
-          color: 'var(--moss)', background: 'none', border: 'none',
-          padding: 0, cursor: 'pointer',
-        }}>
+        <Button variant="quiet" onClick={onUpgrade}>
           Unlock coaching →
-        </button>
+        </Button>
       )}
     </div>
   )
@@ -14195,27 +14033,10 @@ function PostRunScreen({
         {/* POST-RUN-02: terminus. Routes to SessionScreen for this session so
             the verdict (and the session card) is the natural resting state,
             not Today. Falls back to onBack when onDone isn't wired. */}
-        <button
-          onClick={onDone ?? onBack}
-          style={{
-            width: '100%',
-            padding: '14px',
-            background: 'var(--moss)',
-            color: 'var(--card)',
-            border: 'none',
-            borderRadius: '12px',
-            fontFamily: 'var(--font-ui)',
-            fontSize: '13px',
-            fontWeight: 600,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            transition: 'opacity 0.15s',
-            marginTop: '4px',
-          }}
-        >
+        <Button variant="primary" fullWidth
+          onClick={onDone ?? onBack} style={{ marginTop: '4px' }}>
           Done
-        </button>
+        </Button>
       </div>
     </div>
   )

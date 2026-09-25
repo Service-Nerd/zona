@@ -20,6 +20,9 @@ const CSS = readFileSync('app/globals.css', 'utf8')
 /** The token each email colour mirrors. */
 const MIRRORS: Record<keyof typeof EMAIL_COLORS, string> = {
   bg: '--bg', card: '--card', ink: '--ink', ink2: '--ink-2', mute: '--mute', moss: '--moss',
+  // BUTTON-COMPONENT-01 — the CTA fill and its border. This map is why they had
+  // to be real tokens rather than two more hexes typed into the email layer.
+  mossStrong: '--moss-strong', mossDeep: '--moss-deep',
 }
 
 function tokenValue(name: string): string | null {

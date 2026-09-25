@@ -734,3 +734,111 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   outline-offset: 2px;
 }
 .cta-pill:active { transform: translateY(1px); }
+
+/* ── Button — BUTTON-COMPONENT-01 (Design Board 2026-09-24, direction B) ────
+ *
+ * 🔴 WHY THIS EXISTS. There was no Button component. There were 66 hand-rolled
+ * moss rectangles, 27 of them the primary-CTA shape, each one nine lines of
+ * inline style describing what a green button looks like, written out again.
+ * Nobody ever made a button decision; they made it 27 times from whatever was
+ * nearby. That is why the buttons looked flat AND slightly different from
+ * each other.
+ *
+ * 🔴 AND THEY FAILED WCAG AA THE WHOLE TIME. White on `--moss` is 3.68:1 on
+ * `--card`; `--moss` as text is 3.24:1 on `--bg` and 3.04:1 on `--bg-soft`.
+ * AA wants 4.5:1 at every size this product uses (nothing here reaches the
+ * 18.66px-bold large-text exemption). `A11Y-CONTRAST-01` measured exactly this
+ * in 2026-09 and shipped `--moss-strong` / `--moss-deep` for it — and then
+ * fixed only the MARKETING button. `--moss-strong` had 28 uses on the site and
+ * ZERO in `app/dashboard` or `lib/email`.
+ *
+ * ⚠️ `lib/a11yContrast.test.ts` was green over all 42 failing controls, and was
+ * not wrong: it asserts `white on --moss-strong >= 4.5`, a true fact about a
+ * token the app never used, and its own header says it checks the TOKENS and
+ * not where they are used. A checker reading a different source from the
+ * producer. `buttonOwnership.test.ts` is the half that reads the producer.
+ *
+ * ⚠️ THE ACCENT DID NOT MOVE. `--moss` is still #6B8E6B and still correct as a
+ * FILL, a BORDER and a SELECTED state, where the bar is 3:1 for graphics. This
+ * is a text-contrast rule, so it binds only where moss carries a LABEL. Do not
+ * "tidy" the selected-state moss into `--moss-strong`: `ui-patterns.md` makes
+ * that active fill the only selected affordance, and it is not text.
+ *
+ * Interaction is `.cta-pill`'s contract, deliberately reused rather than
+ * reinvented: hover and `:focus-visible` together (shipping hover alone hands
+ * the affordance to pointer users and withholds it from keyboard users), and
+ * a press that MOVES. Transitions ride `--motion-ui`, which collapses to 0s in
+ * the `prefers-reduced-motion` block, so this needs no exception of its own. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  text-decoration: none;
+  /* ⚠️ SENTENCE CASE, AND THAT IS MEASURED, NOT PREFERRED. The board quoted
+     `DashboardClient:3171` as the reference button and it is UPPERCASE with
+     0.08em tracking — so the first cut of this file forced both. Counting the
+     buttons actually being converted: **33 of 40 were NOT uppercase.** The
+     cited example is the minority, and generalising from it would have
+     restyled 33 controls nobody asked to change. Sentence case is what the
+     product already does, and uppercase micro-type at 13px is the less legible
+     option for an audience `brand.md` puts at 25 to 65+. */
+  border: none;
+  cursor: pointer;
+  transition: background var(--motion-ui), transform var(--motion-ui),
+              box-shadow var(--motion-ui), border-color var(--motion-ui);
+}
+.btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.btn--full { width: 100%; }
+
+/* Sizes. Both clear the 44px touch target (Wroblewski's bound, ADR-023
+   ruling). Compact steps the radius down with the height so the corner keeps
+   the same visual curve instead of drifting towards a pill. */
+.btn--regular { min-height: 48px; padding: 15px 20px; border-radius: var(--radius-lg); font-size: 14px; }
+.btn--compact { min-height: 44px; padding: 12px 16px; border-radius: var(--radius-md); font-size: 12px; }
+
+/* Primary — the one per screen. `--moss-strong` (5.48:1 with white) on the
+   already-authored `--shadow-lifted`, which had ZERO consumers before this
+   while cards had 19: the product elevated its cards and gave its buttons
+   nothing, so a moss button sat visually BEHIND the card it was on. */
+.btn--primary { background: var(--moss-strong); color: var(--card); box-shadow: var(--shadow-lifted); }
+.btn--primary:hover:not(:disabled) { background: var(--moss-deep); }
+.btn--primary:active:not(:disabled) { transform: translateY(1px); box-shadow: var(--shadow-card); }
+
+.btn--secondary { background: var(--card); color: var(--ink-2); border: 1px solid var(--line); }
+.btn--secondary:hover:not(:disabled) { border-color: var(--moss-strong); color: var(--moss-deep); }
+.btn--secondary:active:not(:disabled) { transform: translateY(1px); }
+
+/* Quiet — a label, not a surface. `--moss-strong` clears 4.5:1 on all three
+   grounds (4.82 / 4.52 / 5.48); plain `--moss` cleared none of them. */
+.btn--quiet { background: none; color: var(--moss-strong); box-shadow: none; }
+.btn--quiet:hover:not(:disabled) { color: var(--moss-deep); }
+.btn--quiet:active:not(:disabled) { transform: translateY(1px); }
+
+/* Soft — the moss-tinted pill. An EXISTING product shape (3 uses: the profile
+   save, the report refresh, the abandon-move bar), kept rather than flattened
+   into `secondary`, because removing a shape the product already has would be a
+   design change and this build is a defect fix.
+   ⚠️ IT TAKES `--moss-deep`, NOT `--moss-strong`, AND THAT IS MEASURED.
+   `--moss-soft` is rgba(107,142,107,.10), which resolves to #E5E6DE on `--bg`.
+   `--moss-strong` on that is 4.36:1 — still under AA. `--moss-deep` is 5.73:1.
+   The tinted ground eats more contrast than a flat one, so the variant that
+   looks the gentlest needs the strongest ink. */
+.btn--soft { background: var(--moss-soft); color: var(--moss-deep); }
+.btn--soft:hover:not(:disabled) { background: var(--moss-mid); }
+.btn--soft:active:not(:disabled) { transform: translateY(1px); }
+
+/* Destructive — modal confirmations only (delete, disconnect). `--danger` is
+   never used in the training UI. */
+.btn--destructive { background: var(--card); color: var(--danger); border: 1px solid var(--danger); }
+.btn--destructive:hover:not(:disabled) { background: var(--danger); color: var(--card); }
+.btn--destructive:active:not(:disabled) { transform: translateY(1px); }
+
+/* Disabled is FLAT and never lifted: an elevated control that does nothing is
+   a lie about affordance. WCAG 1.4.3 exempts inactive components from the
+   contrast minimum, which is why `--mute` is correct here and nowhere that a
+   live label sits. */
+.btn:disabled { cursor: not-allowed; background: var(--bg-soft); color: var(--mute); box-shadow: none; border-color: transparent; transform: none; }
+.btn--busy { cursor: progress; opacity: 0.7; }

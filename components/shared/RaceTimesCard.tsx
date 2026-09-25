@@ -22,6 +22,7 @@ import { formatClockTime } from '@/lib/format'
 import { buildRaceProgressArc } from '@/lib/coaching/raceProgressArc'
 import { RaceProgressArcRow } from './RaceProgressArcRow'
 import { RACE_PROJECTIONS_COPY, type RaceProjectionsVariant } from './raceProjectionsCopy'
+import Button from '@/components/ui/Button'
 
 type TargetRace = {
   distanceKm:      number
@@ -270,17 +271,10 @@ export function RaceTimesCard({
                 {copy.bracket.body}
               </p>
               {onOpenBenchmark && (
-                <button
-                  onClick={onOpenBenchmark}
-                  style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                    color: 'var(--moss)', background: 'var(--moss-soft)',
-                    border: 'none', borderRadius: '20px', padding: '7px 14px',
-                    minHeight: '36px', cursor: 'pointer',
-                  }}
-                >
+                <Button variant="quiet"
+                  onClick={onOpenBenchmark}>
                   {copy.bracket.cta}
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -385,17 +379,10 @@ export function RaceTimesCard({
                 {copy.recal.body}
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                <button
-                  onClick={onOpenBenchmark}
-                  style={{
-                    fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600,
-                    color: 'var(--moss)', background: 'var(--moss-soft)',
-                    border: 'none', borderRadius: '20px', padding: '7px 14px',
-                    cursor: 'pointer',
-                  }}
-                >
+                <Button variant="quiet"
+                  onClick={onOpenBenchmark}>
                   {copy.recal.cta}
-                </button>
+                </Button>
                 <button
                   onClick={onDismissRecal}
                   style={{

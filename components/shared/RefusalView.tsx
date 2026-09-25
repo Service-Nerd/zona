@@ -1,5 +1,7 @@
 'use client'
 
+import Button from '@/components/ui/Button'
+
 /**
  * RefusalView — what a runner sees when the engine will not build the plan
  * they asked for.
@@ -134,12 +136,10 @@ export default function RefusalView({
           present in BOTH branches. 44px min-height keeps the iOS HIG target. */}
       {showOffer ? (
         <>
-          <button
-            onClick={onAccept}
-            style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--card)' }}
-          >
+          <Button variant="primary" fullWidth
+            onClick={onAccept}>
             Start base building
-          </button>
+          </Button>
           <button
             onClick={onAdjust}
             style={{ width: '100%', padding: '14px', marginTop: '4px', minHeight: '44px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--mute)' }}
@@ -148,12 +148,10 @@ export default function RefusalView({
           </button>
         </>
       ) : (
-        <button
-          onClick={onAdjust}
-          style={{ width: '100%', padding: '15px', borderRadius: 'var(--radius-md)', background: 'var(--moss)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--card)' }}
-        >
+        <Button variant="primary" fullWidth
+          onClick={onAdjust}>
           {isRefusal ? 'Adjust my answers' : 'Try again'}
-        </button>
+        </Button>
       )}
     </>
   )

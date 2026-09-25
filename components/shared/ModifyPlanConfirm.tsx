@@ -3,6 +3,7 @@
 import AdjustmentDiff from './AdjustmentDiff'
 import type { Plan } from '@/types/plan'
 import { formatDistance, type DistanceUnits } from '@/lib/format'
+import Button from '@/components/ui/Button'
 
 /**
  * P-02 — the diff a runner accepts before a parameter edit lands.
@@ -106,18 +107,10 @@ export default function ModifyPlanConfirm({
         </div>
       )}
 
-      <button
-        onClick={onAccept}
-        disabled={applying}
-        style={{
-          width: '100%', padding: '15px', marginTop: 'var(--space-5)', borderRadius: 'var(--radius-md)',
-          background: 'var(--moss)', border: 'none', cursor: applying ? 'wait' : 'pointer',
-          opacity: applying ? 0.7 : 1,
-          fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--card)',
-        }}
-      >
+      <Button variant="primary" fullWidth
+        onClick={onAccept} busy={applying} style={{ marginTop: 'var(--space-5)' }}>
         {applying ? 'Saving…' : 'Accept and save'}
-      </button>
+      </Button>
       <button
         onClick={onCancel}
         disabled={applying}

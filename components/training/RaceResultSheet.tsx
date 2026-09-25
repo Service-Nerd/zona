@@ -18,6 +18,7 @@ import { DurationPicker } from '@/components/shared/DurationPicker'
 import RPEScale from '@/components/shared/RPEScale'
 import { CardSelect } from '@/components/shared/CardSelect'
 import Sheet from '@/components/shared/Sheet'
+import Button from '@/components/ui/Button'
 
 // Parse a finish/target time string into h/m/s. 3 parts → H:MM:SS;
 // 2 parts → MM:SS (short-race convention, e.g. "21:48" = 21m 48s).
@@ -286,16 +287,10 @@ export default function RaceResultSheet({
 
           {/* ── Advanced section ───────────────────────── */}
           <div>
-            <button
-              onClick={() => setShowAdvanced(v => !v)}
-              style={{
-                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--moss)', fontWeight: 500,
-                display: 'flex', alignItems: 'center', gap: '4px',
-              }}
-            >
+            <Button variant="quiet"
+              onClick={() => setShowAdvanced(v => !v)}>
               {showAdvanced ? '⌃ Less' : '⌄ What worked / what broke'}
-            </button>
+            </Button>
 
             {showAdvanced && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '14px', animation: 'zonna-fade-in 0.15s ease-out' }}>

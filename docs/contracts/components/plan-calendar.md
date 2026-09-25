@@ -87,6 +87,10 @@ and so showed km to a miles runner.
 ## Rendering Contract
 
 - Past weeks are collapsed behind a "Load N past weeks" button. Shown when tapped.
+- Its three moss controls ("Load N past weeks", the move-confirm and the abandon-move bar) render
+  through `Button` (`variant="primary"` / `"soft"`), not hand-rolled styles — `BUTTON-COMPONENT-01`,
+  2026-09-25. The abandon-move bar keeps only its `borderTop` as layout; every visual property is
+  `.btn`'s. See `docs/contracts/components/button.md`.
 - Current week is determined by `week.type === 'current'`. Highlighted with teal left border.
 - Completed/deload_done weeks render at 50% opacity.
 - Sessions are rendered in `mon–sun` order regardless of plan JSON key order.

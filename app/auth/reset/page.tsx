@@ -8,6 +8,7 @@ import { Wordmark } from '@/components/ui/Wordmark'
 import { TextField } from '@/components/shared/TextField'
 import { sendPasswordReset, RESET_SENT_MESSAGE } from '@/lib/auth/sendPasswordReset'
 import { DEAD_END_COPY, isDeadEnd, type ResetPhase } from '@/lib/auth/resetDeadEnd'
+import Button from '@/components/ui/Button'
 
 // AUTH-RESET-01 — password reset landing.
 //
@@ -162,21 +163,11 @@ export default function ResetPasswordPage() {
                     autoComplete="email"
                     value={resendEmail} onChange={setResendEmail}
                   />
-                  <button
+                  <Button variant="primary" fullWidth
                     type="submit"
-                    disabled={resendState === 'sending' || !resendEmail}
-                    style={{
-                      width: '100%', padding: '13px',
-                      background: 'var(--moss)', color: 'var(--card)',
-                      border: 'none', borderRadius: '10px',
-                      fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
-                      cursor: resendState === 'sending' || !resendEmail ? 'default' : 'pointer',
-                      opacity: resendState === 'sending' || !resendEmail ? 0.5 : 1,
-                      transition: 'opacity 0.15s',
-                    }}
-                  >
+                    disabled={resendState === 'sending' || !resendEmail}>
                     {resendState === 'sending' ? 'Sending…' : 'Send a new link'}
-                  </button>
+                  </Button>
                 </form>
               )}
 
@@ -226,21 +217,11 @@ export default function ResetPasswordPage() {
                   autoComplete="new-password"
                   value={confirm} onChange={setConfirm}
                 />
-                <button
+                <Button variant="primary" fullWidth
                   type="submit"
-                  disabled={phase === 'saving' || !password || !confirm}
-                  style={{
-                    width: '100%', padding: '13px',
-                    background: 'var(--moss)', color: 'var(--card)',
-                    border: 'none', borderRadius: '10px',
-                    fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 500,
-                    cursor: phase === 'saving' || !password || !confirm ? 'default' : 'pointer',
-                    opacity: phase === 'saving' || !password || !confirm ? 0.5 : 1,
-                    transition: 'opacity 0.15s',
-                  }}
-                >
+                  disabled={phase === 'saving' || !password || !confirm}>
                   {phase === 'saving' ? 'Saving…' : 'Update password'}
-                </button>
+                </Button>
               </form>
 
               {error && (

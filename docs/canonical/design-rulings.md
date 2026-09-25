@@ -1334,6 +1334,30 @@ control looks did not ask whether its text could be read.** The fill choice is t
 restoring documented intent, not a new palette decision, and `BUTTON-COMPONENT-01` moves from polish
 to must-ship.
 
+✅ **BUILT 2026-09-25.** `components/ui/Button.tsx` + `.btn` in `globals.css` + § 38 in
+`ui-patterns.md` + `docs/contracts/components/button.md` + `buttonOwnership.test.ts`. **41 controls
+converted** across 17 files (27 primary-shape, 14 moss-label), plus the email CTA. Measured from
+code, not from the sitting's memory: **212 `<button>` elements, 66 carrying `--moss`, 27 the CTA
+shape** — the board's "65" held.
+
+⚠️ **A FIFTH VARIANT WAS ADDED AND IT IS A DEFECT FIX, NOT A DESIGN DECISION.** Three buttons are
+`--moss-soft` pills with moss labels. Flattening them into `secondary` would have *removed a shape
+the product already ships*, which is the larger change; `soft` keeps it and fixes its contrast.
+📐 **It takes `--moss-deep`, not `--moss-strong`, and only measuring caught that**: `--moss-soft`
+resolves to `#E5E6DE` on `--bg`, where `--moss-strong` is **4.36:1 — still under AA**. The gentlest
+variant needs the strongest ink, and the obvious token would have shipped a variant that still failed.
+
+⚠️ **THE RULING'S OWN REFERENCE BUTTON WAS THE MINORITY AND THE FIRST CUT COPIED IT.** The sitting
+quoted `DashboardClient:3171` — uppercase, 13px, 0.08em — so `.btn` forced uppercase. Counting the
+40 controls being converted: **33 were NOT uppercase**, and 14px was the modal size. Shipping the
+cited example's treatment would have restyled 33 buttons nobody asked to change, inside a build
+whose job was to change one thing. Corrected to sentence case at 14px before commit. **A single
+quoted example is not a population.**
+
+⚠️ **15 selected-state moss buttons were deliberately NOT converted** and the gate is falsified
+against them. A check that fired there would have demanded the reversal of the standing
+"moss active fill is the only selected affordance" rule while looking like tidying.
+
 ---
 
 ## Maintenance

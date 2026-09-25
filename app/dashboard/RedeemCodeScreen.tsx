@@ -23,6 +23,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import { formatCodeInput, CODE_PREFIX } from '@/lib/charity/code'
 import BackButton from '@/components/shared/BackButton'
 import { formatDate } from '@/lib/format'
+import Button from '@/components/ui/Button'
 
 function formatEnds(iso: string): string {
   // DATE-OWNER-01 — the try/catch is gone because `formatDate` returns null on
@@ -121,18 +122,10 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
               Once you set your race date it extends to a week after race day, so it
               will not run out mid-training.
             </div>
-            <button
-              onClick={onBack}
-              style={{
-                marginTop: 'var(--space-5)', width: '100%', padding: '16px',
-                background: 'var(--moss)', color: 'var(--card)',
-                border: 'none', borderRadius: 'var(--radius-md)',
-                fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
+            <Button variant="primary" fullWidth
+              onClick={onBack} style={{ marginTop: 'var(--space-5)' }}>
               Get started
-            </button>
+            </Button>
           </>
         ) : (
           <>

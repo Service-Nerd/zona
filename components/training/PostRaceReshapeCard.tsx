@@ -19,6 +19,7 @@ import { useState } from 'react'
 import CoachByline from '@/components/shared/CoachByline'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import type { Plan } from '@/types/plan'
+import Button from '@/components/ui/Button'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -93,17 +94,10 @@ function Locked({ onUpgrade, onDismiss }: { onUpgrade: () => void; onDismiss: ()
         Log your race result and Zonna will reshape your training plan around your recovery — adjusting the next few weeks so you don't come back too fast.
       </div>
 
-      <button
-        onClick={onUpgrade}
-        style={{
-          width: '100%', height: '46px',
-          background: 'var(--moss)', border: 'none', borderRadius: '12px',
-          fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--card)',
-          cursor: 'pointer', marginBottom: '8px',
-        }}
-      >
+      <Button variant="primary" fullWidth
+        onClick={onUpgrade} style={{ marginBottom: '8px' }}>
         Unlock post-race reshape
-      </button>
+      </Button>
 
       <button
         onClick={onDismiss}

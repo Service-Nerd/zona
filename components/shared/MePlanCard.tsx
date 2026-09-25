@@ -2,6 +2,7 @@
 
 import { FREE_FEATURES, PAID_FEATURES } from '@/lib/marketing/pricing'
 import { PRICING } from '@/lib/brand'
+import Button from '@/components/ui/Button'
 
 /**
  * P-12 — the plan card on Me.
@@ -100,16 +101,10 @@ export default function MePlanCard({
           }}>
             {PRICING.annual.perWeekDisplay} on the annual plan.
           </div>
-          <button
-            onClick={onUpgrade}
-            style={{
-              width: '100%', padding: '13px', borderRadius: 'var(--radius-md)',
-              background: 'var(--moss)', border: 'none', cursor: 'pointer',
-              fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 600, color: 'var(--card)',
-            }}
-          >
+          <Button variant="primary" fullWidth
+            onClick={onUpgrade}>
             View plans
-          </button>
+          </Button>
         </>
       )}
     </div>

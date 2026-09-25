@@ -37,8 +37,23 @@ export const EMAIL_COLORS = {
    *  is the authority (ADR-007). The stale table in `CLAUDE.md` is reported, not
    *  edited here. */
   mute: '#6D6963',
-  /** `--moss` — the eyebrow and the single CTA */
+  /** `--moss` — the eyebrow, and ONLY the eyebrow. See `mossStrong`. */
   moss: '#6B8E6B',
+  /** `--moss-strong` — the CTA FILL (BUTTON-COMPONENT-01, 2026-09-25).
+   *
+   *  🔴 The CTA filled with `moss` and labelled `card` for the whole life of the
+   *  email programme: white on #6B8E6B is **3.68:1** and WCAG AA wants 4.5:1 at
+   *  this size. `A11Y-CONTRAST-01` had already measured that exact failure on
+   *  the marketing button and shipped `--moss-strong` for it — and `lib/email`
+   *  had **zero** uses of it, the same remedy-applied-to-one-twin shape as the
+   *  66 app buttons this landed with.
+   *
+   *  ⚠️ Email cannot carry the app's elevation: Outlook drops `box-shadow`, so
+   *  the ruling gives the email CTA a 1px `mossDeep` border instead. Same
+   *  button by a different device, deliberately. */
+  mossStrong: '#557055',
+  /** `--moss-deep` — the CTA's border, and its hover in clients that support one. */
+  mossDeep: '#465D46',
 } as const
 
 export type EmailColor = keyof typeof EMAIL_COLORS
