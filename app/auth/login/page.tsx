@@ -281,10 +281,10 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <button className="btn btn--ghost btn--compact btn--full"
+          <Button variant="ghost" size="compact" fullWidth 
             onClick={() => { setForgot(false); setError(null); setMessage(null) }} style={{ marginTop: '14px' }}>
             ← Back to sign in
-          </button>
+          </Button>
 
           {error && (
             <div style={{
@@ -323,7 +323,7 @@ export default function LoginPage() {
 
           {/* Apple — Apple HIG requires equivalent prominence to other
               third-party sign-in. Black surface, white logo + text per HIG. */}
-          <button className="btn btn--regular"
+          <Button variant="primary" 
             onClick={signInWithApple}
             disabled={loading}
             style={{
@@ -340,14 +340,13 @@ export default function LoginPage() {
               opacity: loading ? 0.5 : 1,
               transition: 'opacity 0.15s',
               marginBottom: '10px',
-            }}
-          >
+            }}>
             {!loading && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src="/apple-logo.svg" width="16" height="16" alt="" style={{ filter: 'invert(1)', transform: 'translateY(-1px)' }} />
             )}
             {loading ? 'Redirecting...' : 'Continue with Apple'}
-          </button>
+          </Button>
 
           {/* Google — `--line-strong`, not `--line`, and 1px rather than 0.5px.
               This button's fill is `--card` and it sits ON a `--card` surface,
@@ -358,7 +357,7 @@ export default function LoginPage() {
               input (`RedeemCodeScreen.tsx`), which is white on white for the
               same reason. Google's own light-theme branding wants exactly this
               shape too — white surface, visible stroke. */}
-          <button className="btn btn--secondary btn--regular btn--full"
+          <Button variant="secondary" fullWidth 
             onClick={signInWithGoogle}
             disabled={loading}>
             {!loading && (
@@ -366,7 +365,7 @@ export default function LoginPage() {
               <img src="/google-logo.svg" width="18" height="18" alt="" />
             )}
             {loading ? 'Redirecting...' : 'Continue with Google'}
-          </button>
+          </Button>
 
           {/* UX-AUTH-02 — progressive disclosure. Everything below the toggle is
               the email path; it stays closed until the runner asks for it, and
@@ -380,13 +379,12 @@ export default function LoginPage() {
               exactly where the old "OR" rule stood, doing that rule's job as
               well as its own. That is why the divider is gone rather than
               stacked on top of it. */}
-          <button className="btn btn--ghost btn--regular"
+          <Button variant="ghost" 
             onClick={() => { setEmailOpen(v => !v); setError(null); setMessage(null) }}
             aria-expanded={emailOpen}
-            aria-controls="email-auth" style={{ margin: '20px 0', width: '100%', fontSize: '12px', padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '3px' }}
-          >
+            aria-controls="email-auth" style={{ margin: '20px 0', width: '100%', fontSize: '12px', padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
             {emailOpen ? 'Hide email sign in' : 'Use email instead'}
-          </button>
+          </Button>
 
           {emailOpen && (
           <div id="email-auth">
@@ -462,11 +460,10 @@ export default function LoginPage() {
           </form>
 
           {mode === 'signin' && (
-            <button className="btn btn--ghost btn--regular"
-              onClick={() => { setForgot(true); setError(null); setMessage(null) }} style={{ marginTop: '12px', width: '100%', fontSize: '12px', padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '3px' }}
-            >
+            <Button variant="ghost" 
+              onClick={() => { setForgot(true); setError(null); setMessage(null) }} style={{ marginTop: '12px', width: '100%', fontSize: '12px', padding: '4px 0', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
               Forgot password?
-            </button>
+            </Button>
           )}
           </div>
           )}

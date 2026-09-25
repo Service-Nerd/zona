@@ -319,10 +319,9 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
                 <React.Fragment key={`later-${w.weekNum}`}>
                 {seam}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', animation: 'zonna-fade-in 0.18s ease-out' }}>
-                  <button className="btn btn--ghost btn--regular"
+                  <Button variant="ghost" 
                     onClick={() => setExpandedLaterWeek(null)}
-                    aria-label="Collapse week" style={{ width: '100%', padding: '0 4px', background: 'none' }}
-                  >
+                    aria-label="Collapse week" style={{ width: '100%', padding: '0 4px', background: 'none' }}>
                     <span style={{
                       fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
                       color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -331,7 +330,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
                       fontFamily: 'var(--font-ui)', fontSize: '12px',
                       color: 'var(--mute)', lineHeight: 1,
                     }} aria-hidden>⌃</span>
-                  </button>
+                  </Button>
                   {renderWeek(w)}
                 </div>
                 </React.Fragment>
@@ -735,10 +734,10 @@ function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove,
             )}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn--ghost btn--compact"
+            <Button variant="ghost" size="compact" 
               onClick={cancelPendingMove} style={{ flex: 1 }}>
               Cancel
-            </button>
+            </Button>
             <Button variant="primary"
               onClick={confirmPendingMove} style={{ flex: 2 }}>
               {pendingMove.isSwap ? 'Swap them' : 'Move it'}
@@ -961,13 +960,12 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
           //
           // Hit area is 44x44 (iOS HIG) with negative margins so the row height
           // is unchanged — the old pill was roughly 24px tall and under-sized.
-          <button className="btn btn--ghost btn--regular"
+          <Button variant="ghost" 
             onClick={e => { e.stopPropagation(); onMoveIconTap() }}
             aria-label={`Move ${session?.label ?? 'session'}`}
-            title="Move this session" style={{ width: '44px', height: '44px', margin: '-11px -7px', fontSize: '16px', lineHeight: 1 }}
-          >
+            title="Move this session" style={{ width: '44px', height: '44px', margin: '-11px -7px', fontSize: '16px', lineHeight: 1 }}>
             ↕
-          </button>
+          </Button>
         )}
         {isMoving && (
           <Button variant="quiet"

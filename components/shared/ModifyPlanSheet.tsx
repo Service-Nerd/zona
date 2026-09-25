@@ -12,6 +12,7 @@ import {
   MODIFIABLE_ROWS, MODIFY_GROUP_LABELS, applyEdits, pendingKeys, editsResetLoggedWeeks,
   type ModifyGroup, type PlanEdits, type ModifiableKey,
 } from '@/lib/plan/modifyPlan'
+import Button from '@/components/ui/Button'
 
 /**
  * P-02 — the modify-plan sheet.
@@ -278,18 +279,17 @@ export default function ModifyPlanSheet({
                     {error}
                   </div>
                 )}
-                <button className="btn btn--primary btn--regular btn--full"
+                <Button variant="primary" fullWidth 
                   onClick={busy ? undefined : () => onApply(applyEdits(base, edits), resets)}
-                  disabled={busy} style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: busy ? 'var(--moss-soft)' : 'var(--moss)', cursor: busy ? 'progress' : 'pointer', fontSize: '14px', fontWeight: 600, color: busy ? 'var(--mute)' : 'var(--card)' }}
-                >
+                  disabled={busy} style={{ padding: '14px', borderRadius: 'var(--radius-md)', background: busy ? 'var(--moss-soft)' : 'var(--moss)', cursor: busy ? 'progress' : 'pointer', fontSize: '14px', fontWeight: 600, color: busy ? 'var(--mute)' : 'var(--card)' }}>
                   {busy
                     ? 'Rebuilding your plan…'
                     : `Apply ${pending.length} change${pending.length === 1 ? '' : 's'}`}
-                </button>
-                <button className="btn btn--secondary btn--compact btn--full"
+                </Button>
+                <Button variant="secondary" size="compact" fullWidth 
                   onClick={() => setEdits({})} style={{ marginTop: '4px' }}>
                   Discard changes
-                </button>
+                </Button>
             </>
           </div>
           )}

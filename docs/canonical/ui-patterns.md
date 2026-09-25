@@ -3312,6 +3312,27 @@ have turned 44 grey controls green and reversed that ruling while looking like a
 but `quiet` shipped first with 14 consumers and renaming call sites to fix a word is churn with no
 user impact. **The distinction that matters is ACCENT vs DE-EMPHASISED.**
 
+🔴 **WHICH TO USE: COMPONENT OR CLASSES** *(architect ruling, `BUTTON-ARCH-01`, 2026-09-25)*.
+
+| Surface | Use | Why it cannot be the other |
+|---|---|---|
+| **The app** | **`<Button>` / `<IconButton>`** — always | Nothing prevents it. `Button` carries **no `'use client'`**, so a server component can import it too |
+| **The marketing site** | **`.btn` classes** on `<a>` / `<Link>` | Its CTAs **navigate**. `Button` renders a `<button>`, and a `<button>` inside an `<a>` swallows the click |
+| **Email** | Hand-mirrored in `lib/email/` | An HTML string builder cannot import a component at all, and Outlook drops `box-shadow` |
+
+🔴 **WHY THIS IS WRITTEN DOWN RATHER THAN ASSUMED.** After a day of conversions the app was **68%
+classes / 32% component** — the inverse of what the board had ruled. Nothing forced it: adding a
+class to an existing `<button>` was the lowest-risk way to preserve geometry during a migration, so
+it happened 99 times and became the de-facto architecture. **Safe beat correct, silently.**
+
+⚠️ **The cost is not the look — it is the compiler.** The design lives in `globals.css` either way, so
+a visual change is one edit whichever you use. What classes lose is **type checking**:
+`btn--secondry` compiles, renders, and does nothing; `variant="secondry"` fails the build. They also
+cannot express behaviour — `busy` is a prop, and a class-based button hit exactly that limit.
+
+**Enforced by `buttonArchitecture.test.ts`:** a `<button>` element carrying `.btn` classes under
+`app/dashboard`, `app/auth` or `components/` fails. Use the component there.
+
 🔴 **ACTION-ROW GRAMMAR** *(Design Board, `SESSION-ACTIONS-01`, 2026-09-25)*.
 **Secondary on the LEFT, primary on the RIGHT, one size class per row, ratio 2:1.** Every row, no
 exceptions. A row that wants three equal buttons is telling you one of them belongs elsewhere.

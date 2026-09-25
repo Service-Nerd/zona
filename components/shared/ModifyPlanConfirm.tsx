@@ -111,11 +111,11 @@ export default function ModifyPlanConfirm({
         onClick={onAccept} busy={applying} style={{ marginTop: 'var(--space-5)' }}>
         {applying ? 'Saving…' : 'Accept and save'}
       </Button>
-      <button className="btn btn--ghost btn--compact btn--full"
+      <Button variant="ghost" size="compact" fullWidth 
         onClick={onCancel}
         disabled={applying} style={{ marginTop: '4px' }}>
         Keep my current plan
-      </button>
+      </Button>
     </div>
   )
 }

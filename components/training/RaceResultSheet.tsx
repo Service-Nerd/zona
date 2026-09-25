@@ -336,11 +336,11 @@ export default function RaceResultSheet({
             {submitting ? 'Checking plan…' : 'Log result'}
           </button>
 
-          <button className="btn btn--ghost btn--compact"
+          <Button variant="ghost" size="compact" 
             onClick={handleLogOnly}
             disabled={!outcome || submitting}>
             Log result only, keep my plan →
-          </button>
+          </Button>
         </div>
       </>
       )}

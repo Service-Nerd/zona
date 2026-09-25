@@ -131,8 +131,15 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
   it('reads real files and real buttons (a check over nothing is not a check)', () => {
     const files = sourceFiles()
     expect(files.length).toBeGreaterThan(50)
-    const total = files.reduce((n, f) => n + buttonTags(strip(fs.readFileSync(f, 'utf8'))).length, 0)
-    expect(total, 'no <button> elements parsed — the scanner is broken').toBeGreaterThan(100)
+    // ⚠️ COUNT BOTH SHAPES. This arm asserted `<button>` elements > 100 and went
+    // RED the moment BUTTON-ARCH-01 migrated 95 of them to `<Button>` — the
+    // sanity check failing because the codebase got BETTER. A floor on one
+    // spelling is a floor that breaks when the spelling is the thing you change.
+    const total = files.reduce((n, f) => {
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      return n + buttonTags(src).length + (src.match(/<(Button|IconButton)(?=[\s>])/g) ?? []).length
+    }, 0)
+    expect(total, 'no controls parsed — the scanner is broken').toBeGreaterThan(100)
   })
 
   it('no hand-rolled primary CTA: moss fill under a light label', () => {

@@ -470,11 +470,10 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
         Add terrain, injury history, hard session preferences, and training style. Your plan adapts to you — not a template.
       </div>
-      <button className="btn btn--ghost btn--regular"
-        onClick={onUpgrade} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warn-strong)', background: 'none', padding: 0 }}
-      >
+      <Button variant="ghost" 
+        onClick={onUpgrade} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warn-strong)', background: 'none', padding: 0 }}>
         Upgrade to personalise →
-      </button>
+      </Button>
     </div>
   )
 }
@@ -1545,10 +1544,10 @@ export default function GeneratePlanScreen({
                 disabled={foundationAddStatus === 'loading'}>
                 {foundationAddStatus === 'loading' ? 'Adding…' : 'Add Foundation Block'}
               </Button>
-              <button className="btn btn--secondary btn--regular btn--full"
+              <Button variant="secondary" fullWidth 
                 onClick={handleFoundationDismiss} style={{ marginBottom: 'var(--space-3)' }}>
                 Start plan as-is
-              </button>
+              </Button>
             </div>
             )}
           </Sheet>
@@ -1661,10 +1660,10 @@ export default function GeneratePlanScreen({
             copy SITE-WIDE — the "app-side exception" CLAUDE.md refers to does
             not exist in that section. A comma. */}
         {stepMeta.optional && (
-          <button className="btn btn--ghost btn--compact btn--full"
+          <Button variant="ghost" size="compact" fullWidth 
             onClick={skipStep} style={{ marginBottom: 'var(--space-2)' }}>
             Not sure, continue
-          </button>
+          </Button>
         )}
         <button
           onClick={canProceed() ? goNext : undefined}
@@ -1791,11 +1790,10 @@ export default function GeneratePlanScreen({
                 the same action is how surfaces drift apart. */}
             {onOpenRedeem && (isOnboarding || !hasPaidAccess) && (
               <div style={{ gridColumn: '1/-1', marginTop: '2px' }}>
-                <button className="btn btn--ghost btn--regular"
-                  onClick={onOpenRedeem} style={{ padding: '4px 0', fontSize: '12px', textDecoration: 'underline', textUnderlineOffset: '3px' }}
-                >
+                <Button variant="ghost" 
+                  onClick={onOpenRedeem} style={{ padding: '4px 0', fontSize: '12px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
                   Have a charity code?
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -2189,7 +2187,7 @@ export default function GeneratePlanScreen({
 
 function BackBtn({ onClick, label }: { onClick: () => void; label?: string }) {
   return (
-    <button className="btn btn--ghost btn--compact"
+    <Button variant="ghost" size="compact" 
       onClick={onClick} style={{ marginBottom: '4px' }}>
       <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
@@ -2197,6 +2195,6 @@ function BackBtn({ onClick, label }: { onClick: () => void; label?: string }) {
         </svg>
       </div>
       {label && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>{label}</span>}
-    </button>
+    </Button>
   )
 }

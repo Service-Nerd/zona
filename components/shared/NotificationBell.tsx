@@ -1,5 +1,7 @@
 'use client'
 
+import Button from '@/components/ui/Button'
+
 // NOTIF-01 — bell affordance on the Today wordmark row. A bell is justified
 // under the "no icons unless they carry unique meaning" rule — it's the
 // universally-understood notifications affordance with no compact text
@@ -13,10 +15,9 @@ export function NotificationBell({ unreadCount, onClick }: {
 }) {
   const hasUnread = unreadCount > 0
   return (
-    <button className="btn btn--ghost btn--regular"
+    <Button variant="ghost" 
       onClick={onClick}
-      aria-label={hasUnread ? `Notifications, ${unreadCount} unread` : 'Notifications'} style={{ position: 'relative', width: '44px', height: '44px', background: 'transparent', padding: 0, flexShrink: 0 }}
-    >
+      aria-label={hasUnread ? `Notifications, ${unreadCount} unread` : 'Notifications'} style={{ position: 'relative', width: '44px', height: '44px', background: 'transparent', padding: 0, flexShrink: 0 }}>
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
         stroke="var(--ink-2)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -31,6 +32,6 @@ export function NotificationBell({ unreadCount, onClick }: {
           border: '1.5px solid var(--bg)',
         }} />
       )}
-    </button>
+    </Button>
   )
 }

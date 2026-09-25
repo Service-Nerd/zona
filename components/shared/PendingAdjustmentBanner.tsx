@@ -19,6 +19,7 @@ import CoachByline from './CoachByline'
 import AdjustmentDiff from './AdjustmentDiff'
 import type { SessionLike } from '@/lib/coaching/diff/sessionDiff'
 import type { DistanceUnits } from '@/lib/format'
+import Button from '@/components/ui/Button'
 
 type Props = {
   /** Byline role line — default "PLAN ADJUSTED". Use coach voice (e.g. "MOVED YOUR TEMPO"). */
@@ -132,12 +133,11 @@ export default function PendingAdjustmentBanner({
         )}
 
         {/* Ghost — Revert */}
-        <button className="btn btn--ghost btn--regular"
+        <Button variant="ghost" 
           onClick={onRevert}
-          disabled={loading} style={{ flex:         1, padding:      '10px 0', background:   'transparent', borderRadius: '100px', fontSize:     '13px', fontWeight:   500, color:        'var(--coach-ink)', cursor:       loading ? 'default' : 'pointer', opacity:      loading ? 0.6 : 1 }}
-        >
+          disabled={loading} style={{ flex:         1, padding:      '10px 0', background:   'transparent', borderRadius: '100px', fontSize:     '13px', fontWeight:   500, color:        'var(--coach-ink)', cursor:       loading ? 'default' : 'pointer', opacity:      loading ? 0.6 : 1 }}>
           Revert
-        </button>
+        </Button>
       </div>
     </div>
   )

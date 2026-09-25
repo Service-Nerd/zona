@@ -19,6 +19,7 @@
 'use client'
 
 import type { NextGoalOption } from '@/lib/coaching/goalSequencing'
+import Button from '@/components/ui/Button'
 
 interface Props {
   /** Voice line: finish vs goal, e.g. "You ran 2:04:00 — 6:00 inside your goal." */
@@ -45,7 +46,7 @@ export default function NextGoalCard({ achievement, options, onPick, onDismiss }
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
         {options.map(opt => (
-          <button className="btn btn--secondary btn--regular btn--full"
+          <Button variant="secondary" fullWidth 
             key={opt.kind}
             onClick={() => onPick(opt)}>
             <span style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
@@ -64,14 +65,14 @@ export default function NextGoalCard({ achievement, options, onPick, onDismiss }
               </span>
             </span>
             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--mute)', flexShrink: 0 }} aria-hidden>→</span>
-          </button>
+          </Button>
         ))}
       </div>
 
-      <button className="btn btn--ghost btn--compact btn--full"
+      <Button variant="ghost" size="compact" fullWidth 
         onClick={onDismiss}>
         Not yet
-      </button>
+      </Button>
     </div>
   )
 }

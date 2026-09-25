@@ -23,6 +23,7 @@
 
 import { formatDuration } from '@/lib/format'
 import { cycleDayBudget, WEEKDAYS, type WeekPlan, type DayBudgets, type DayKey } from './WeekGrid.logic'
+import Button from '@/components/ui/Button'
 
 const LABEL: Record<DayKey, string> = {
   mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday',
@@ -78,7 +79,7 @@ export function DayBudgetRows({
           const v = budgets[d]
           const isOverride = v != null
           return (
-            <button className="btn btn--ghost btn--regular"
+            <Button variant="ghost" 
               key={d}
               type="button"
               onClick={() => onChange(cycleDayBudget(budgets, d, values))}
@@ -93,8 +94,7 @@ export function DayBudgetRows({
                 isOverride
                   ? `${LABEL[d]}: ${labelFor(v)}, set for this day. Tap to change.`
                   : `${LABEL[d]}: same as your weekday cap. Tap to set a different cap.`
-              } style={{ width: '100%', minHeight: '48px', padding: '12px 14px', background: 'transparent', borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}
-            >
+              } style={{ width: '100%', minHeight: '48px', padding: '12px 14px', background: 'transparent', borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}>
               <span style={{ fontSize: '15px', color: 'var(--ink)' }}>{LABEL[d]}</span>
               <span style={{
                 fontSize: '14px',
@@ -103,7 +103,7 @@ export function DayBudgetRows({
               }}>
                 {isOverride ? labelFor(v) : defaultLabel}
               </span>
-            </button>
+            </Button>
           )
         })}
       </div>

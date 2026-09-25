@@ -328,18 +328,17 @@ export function RaceTimesCard({
 
             return (
               <div>
-                <button className="btn btn--ghost btn--regular"
+                <Button variant="ghost" 
                   type="button"
                   onClick={() => setDistancesOpen(o => !o)}
-                  aria-expanded={distancesOpen} style={{ width: '100%', minHeight: '44px', padding: '4px 0', background: 'none', font: 'inherit' }}
-                >
+                  aria-expanded={distancesOpen} style={{ width: '100%', minHeight: '44px', padding: '4px 0', background: 'none', font: 'inherit' }}>
                   <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink-2)' }}>
                     {toggleLabel}
                   </span>
                   <span aria-hidden style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>
                     {distancesOpen ? '▴' : '▾'}
                   </span>
-                </button>
+                </Button>
                 {distancesOpen && rows}
               </div>
             )
@@ -378,10 +377,10 @@ export function RaceTimesCard({
                   onClick={onOpenBenchmark}>
                   {copy.recal.cta}
                 </Button>
-                <button className="btn btn--ghost btn--compact"
+                <Button variant="ghost" size="compact" 
                   onClick={onDismissRecal}>
                   {copy.recal.dismiss}
-                </button>
+                </Button>
               </div>
             </div>
           )}

@@ -24,6 +24,7 @@ import { authedFetch } from '@/lib/supabase/authedFetch'
 import { createClient } from '@/lib/supabase/client'
 import ExternalLink from '@/components/shared/ExternalLink'
 import BackButton from '@/components/shared/BackButton'
+import Button from '@/components/ui/Button'
 
 // Ordered by recurring value — Kit's daily read and the weekly zone score are the ongoing
 // proof of subscription value. AI plan generation is high at onboarding but low thereafter.
@@ -447,10 +448,10 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         </button>
 
         {/* Free path — always visible */}
-        <button className="btn btn--ghost btn--compact"
+        <Button variant="ghost" size="compact" 
           onClick={onBack} style={{ marginTop: 'var(--space-4)' }}>
           Stay with the free plan →
-        </button>
+        </Button>
 
         {/* GTM-CHARITY-04 — the gate door. This is the moment the comped runner
             who filed their charity's email away actually needs it: Kit has just
@@ -459,20 +460,20 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
             let me prove it" — not a second purchase option. Web and native
             both, unlike Restore: a code is not an Apple purchase. */}
         {onOpenRedeem && (
-          <button className="btn btn--ghost btn--compact"
+          <Button variant="ghost" size="compact" 
             onClick={onOpenRedeem} style={{ marginTop: 'var(--space-2)', alignSelf: 'center' }}>
             Have a charity code?
-          </button>
+          </Button>
         )}
 
         {/* Restore Purchases — iOS only, required by App Store guideline 3.1.1 */}
         {Capacitor.isNativePlatform() && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <button className="btn btn--ghost btn--compact"
+            <Button variant="ghost" size="compact" 
               onClick={handleRestore}
               disabled={restoring} style={{ marginTop: 'var(--space-2)' }}>
               {restoring ? 'Restoring…' : 'Restore Purchases'}
-            </button>
+            </Button>
             {restoreMsg && (
               <p style={{
                 fontFamily: 'var(--font-ui)', fontSize: '0.8125rem',

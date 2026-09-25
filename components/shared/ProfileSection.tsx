@@ -13,6 +13,7 @@ import type React from 'react'
 import { useState, useEffect } from 'react'
 import { BRAND } from '@/lib/brand'
 import { TextField } from '@/components/shared/TextField'
+import Button from '@/components/ui/Button'
 
 // Field ids, named once. Two jobs: pair each `<label>` with its input (the
 // labels were decorative text before, so a screen reader read the fields as
@@ -89,12 +90,11 @@ export function ProfileSection({ firstName, lastName, email, onSave }: {
         <label htmlFor={PROFILE_EMAIL_FIELD_ID} style={labelStyle}>Email</label>
         <TextField id={PROFILE_EMAIL_FIELD_ID} type="email" value={email} onChange={() => {}} readOnly />
       </div>
-      <button className="btn btn--secondary btn--regular btn--full"
+      <Button variant="secondary" fullWidth 
         onClick={handleSave}
-        disabled={!isDirty || !isValid || saving} style={{ padding: '11px', background: saved || (isDirty && isValid) ? 'var(--moss-soft)' : 'var(--bg)', border: `1px solid ${saved || (isDirty && isValid) ? 'var(--moss-mid)' : 'var(--line)'}`, borderRadius: '8px', cursor: isDirty && isValid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved || (isDirty && isValid) ? 'var(--moss)' : 'var(--mute)' }}
-      >
+        disabled={!isDirty || !isValid || saving} style={{ padding: '11px', background: saved || (isDirty && isValid) ? 'var(--moss-soft)' : 'var(--bg)', border: `1px solid ${saved || (isDirty && isValid) ? 'var(--moss-mid)' : 'var(--line)'}`, borderRadius: '8px', cursor: isDirty && isValid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved || (isDirty && isValid) ? 'var(--moss)' : 'var(--mute)' }}>
         {saving ? 'Saving...' : saved ? 'Saved' : 'Save profile'}
-      </button>
+      </Button>
     </div>
   )
 }
