@@ -6,6 +6,18 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-25 — BLOCKED-DAYS-CHECKER-SPELLING-01 · the sweep had a bound, and the fourth surface was inside it
+
+**Shipped:** the validator reads the day spelling the product actually sends, and the corpus does too.
+**Dev learning:** the useful part was bounding the sweep before running it. The class is "a user-supplied value that is a de-facto enum but is not a typed union" — because `tsc` polices every union, so a fixture with a wrong value fails the build. That turns "look everywhere" into a finite list: of 31 `GeneratorInput` fields, **two** qualify. One was the known injury root. The other was `days_cannot_train`, and it was broken. **A sweep without a criterion is a mood; with one it terminates.**
+**Product/creator learning:** the defect is the mirror image of the injury one. There the corpus spelling worked and the product's didn't; here the corpus spelling is the *only* one that works, because the corpus was the wrong spelling too. Identical runner, two spellings, same plan: 37 violations one way and 44 the other, seven of them an **error**-severity invariant blaming the engine for honouring the runner's own input. The engine was right the whole time. Only the report on it was wrong, which is exactly why nobody ever saw it.
+**AI-building learning:** I deleted a duplicate that carried a written justification, and I only earned that by testing it first. `parseBlockedDays` was "kept local so the invariant catches any future drift" — a real argument, borrowed from a real precedent in this repo. But that precedent is about mirroring a *rule*, where the checker computes the answer independently. **A parser is not a rule.** A second copy of a lookup table cannot catch the first one drifting; it can only disagree with it silently, which is the bug sitting one screen away. And when I diffed them across 18 inputs before deleting: they agreed on 17 and the copy **lost** one — `'  monday  '`, because the owner trims and the copy didn't. The mirror was already weaker than the thing it mirrored.
+**The honest bit:** my own filing predicted the corpus fix would move `cohortShape`'s baseline and told the reader to declare the number. It doesn't move it at all — swapping a cell's spelling is free, because the engine normalises and the only thing that differs is the raw input echoed back for replay. I wrote a warning about a cost I had not measured, which is the same species of error as the thing I was fixing. Also: my first test generated the weekend-only runner directly, and that runner legitimately throws under `NODE_ENV=test`, in **both** spellings — so the comparison could never run. The repo already had the answer written down (forge the plan, validate it directly) in a test whose comment explains exactly why.
+**Hook material:** four surfaces of one root in two days, and the fourth was found by asking what makes a value *unprotected* rather than by looking harder.
+**Postable?:** yes
+
+---
+
 ## 2026-09-25 — RULEENGINE-HIP-COMMENT-01 · I measured 47%, it was wrong, and finding that out was the whole job
 
 **Shipped:** a comment that is true, and a test that keeps it true.
