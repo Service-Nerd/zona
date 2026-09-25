@@ -16,7 +16,7 @@ import { sessionFloorsFor } from './sessionFloors'
 import { qualityCeilingFor } from './qualityCeiling'
 import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG, raceDistanceKey } from './generationConfig'
-import { hasVolumeCappedInjuryHistory } from './injuryScope'
+import { hasDeliveredCapInjury, hasVolumeCappedInjuryHistory } from './injuryScope'
 import { assessBaseBuild } from './baseVolume'
 import { PLAN_SIGNATURES } from './planSignatures'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
@@ -3531,7 +3531,19 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // never matched `'shin_splints'`. The engine capped those runners' volume and
   // the two invariants below, which exist to VERIFY that cap, never looked.
   // Now it does not restate the rule at all; it calls the owner.
-  const bouncebackInjuryCapped = hasVolumeCappedInjuryHistory(input.injury_history)
+  // §90 AMENDMENT 2 (Coaching Board 2026-09-25, INJURY-DELIVERED-COVERAGE-01) —
+  // the CHECKER's cohort is the load-bearing injuries, not §12's producer cohort.
+  //
+  // This read `hasVolumeCappedInjuryHistory` (knee/shin — §12's PRODUCER cap),
+  // and §94's arm below was gated `if (healthy)` because §94's own text excludes
+  // "injury-history runners (already covered, more strictly, by §90)". That
+  // sentence was true only for knee and shin. Measured: achilles, back, hip and
+  // plantar-fasciitis histories got 0.0% delivered coverage against 34.6% for
+  // the HEALTHY twin of the same runner — declaring an injury REMOVED a check.
+  //
+  // ⚠️ §12's producer cap is UNCHANGED and still knee/shin. This widens what is
+  // CHECKED, never what is prescribed; not one plan differs.
+  const bouncebackInjuryCapped = hasDeliveredCapInjury(input.injury_history)
   if (bouncebackInjuryCapped) {
     for (let i = 2; i < plan.weeks.length; i++) {
       const bounce = plan.weeks[i]
@@ -3744,8 +3756,17 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
   // is not permitted to trim. Measured against the TRIMABLE (non-long-run)
   // portion for that reason — the same basis §90 uses.
   {
-    const healthy = (input.injury_history ?? []).length === 0
-    if (healthy) {
+    // §94 AMENDMENT 2 (Coaching Board 2026-09-25, INJURY-DELIVERED-COVERAGE-01) —
+    // THIS ARM COVERS EVERY RUNNER. It was gated `if (healthy)` on §94's own
+    // exclusion: "injury-history runners (already covered, more strictly, by
+    // §90)". §90 covered knee and shin only, so four of the six injuries the
+    // wizard offers fell between the two arms and were checked by neither.
+    //
+    // 🔴 THE INVERSION IS THE POINT: §94 exists BECAUSE healthy runners had no
+    // delivered check, and its gate created the mirror hole for the cohort with
+    // more reason to be guarded. Where §90's tighter arm also applies, both run
+    // — that is deliberate, and it is what takes knee/shin from 10.2% to 20.4%.
+    {
       const capPct = GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT
       // Absorbs session-distance rounding and MIN_SESSION_DISTANCE granularity
       // on low-volume weeks, where one dropped easy km is a large percentage.

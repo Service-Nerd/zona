@@ -21,6 +21,49 @@ memory.
 
 ---
 
+
+## 2026-09-25 — INJURY-DELIVERED-COVERAGE-01 · the two delivered arms left four injuries covered by neither
+
+**Ruling: CORRECT WITH AMENDMENT (Option C).** §94's `INV-PLAN-DELIVERED-RAMP` now covers
+every runner; §90's `INV-PLAN-INJURY-CAP-DELIVERED` widens from knee/shin to the
+load-bearing injuries (`DELIVERED_CAP_INJURIES`). Where both apply, both run.
+Artifacts: §90 Am. 2 / §94 Am. 2 · `GENERATION_CONFIG.DELIVERED_CAP_INJURIES` · both
+invariants re-gated + `plan-invariants.md` rows. **Changes no prescription — not one plan
+differs; only which plans are reported.**
+
+🔴 **The conflict scan found an unwritten assumption, not a contradiction.** §94 excluded
+*"injury-history runners (already covered, more strictly, by §90)"* and §90 scoped itself
+*"5% for knee/shin"*. Both true; the gap was between them. **Declaring an injury removed a
+check**: achilles/back/hip/plantar sat at **0.0%** against **34.6%** for the healthy twin
+of the same runner.
+
+**Measured on 1,478 plans before ruling, because the brief said the board could not rule
+without it.** knee/shin 10.2% → 20.4% · achilles 0.0% → 43.8% · plantar 0.0% → 39.3% ·
+hip 0.0% → 34.6% · back 0.0% → 29.4%.
+
+⚠️ **Option A (widen §90 alone) was measured and REJECTED** — it left knee and shin at
+10.2% while giving achilles 39.9%, so the cohorts with the strongest tissue argument would
+have been the least watched. **Do not re-propose it.**
+
+⚠️ **43.8% is the top of the acceptable band and is written into the principle**, because
+§94's own first draft fired at 44.4% and was scoped down. Accepted on composition:
+healthy's 34.6% plus ~9pp from a deliberately tighter cap. *Reopens if* the extra ~9pp turn
+out to be dominated by long-run-led rises the engine may not trim.
+
+**Sims, recorded rather than summarised:** tendon and fascia stiffness are
+oestrogen-sensitive, so the cohort with the strongest case for the tighter achilles/plantar
+cap is disproportionately female — and it was the cohort receiving no check at all. The old
+scope was a default derived from a male-athlete framing in which "injury" means "knee".
+
+**`back` and `hip` stay OUT of the tight cap** — real, but not primarily volume-rate
+injuries (Willy). They are covered by §94's looser arm.
+
+**Architect amendment on the artifact:** `DELIVERED_CAP_INJURIES` is a **separate constant**
+from `HILL_RESTRICTING_INJURIES` despite identical members today. Different questions; a
+shared constant would make the next change to either silently move the other.
+
+---
+
 ## S28-WEEKEND-CARRIER-01 — §28's midweek rule cost a cohort its whole neuromuscular stimulus (2026-09-24)
 
 **Ruled CORRECT WITH AMENDMENT.** §28 Amendment 3. Shipped with all three artifacts.

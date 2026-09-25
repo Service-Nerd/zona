@@ -1671,6 +1671,39 @@ const NOISE_THRESHOLD_PCT = 30
 // exists so a high firing rate has to be argued rather than absorbed, so an
 // entry here is a claim that must stand up on its own.
 const ACKNOWLEDGED_WARN_RATES: Record<string, string> = {
+  // 35.2% (5012/14230), acknowledged 2026-09-25 — INJURY-DELIVERED-COVERAGE-01,
+  // §90 Amendment 2.
+  //
+  // 🔴 COVERAGE, NOT NOISE — AND THE MEASUREMENT IS THE ARGUMENT. The board
+  // widened §90's delivered cap from knee/shin to the load-bearing injuries, and
+  // this rate doubled (17.5% -> 35.2%). The discriminator is whether the check
+  // started misfiring WITHIN a cohort or simply began covering more of them.
+  // Measured per cohort, 1,478 plans:
+  //
+  //     knee            56.5%   unchanged — always inside this arm
+  //     shin splints    56.5%   unchanged
+  //     achilles        50.0%   NEW (was exempt)
+  //     plantar         51.7%   NEW (was exempt)
+  //     healthy/back/hip 0.0%   correctly outside the tight cap
+  //
+  // The cohorts that were already covered did not move. Two more joined at the
+  // same level. That is the check working exactly as the board intended.
+  //
+  // ⚠️ AND IT REVEALED SOMETHING THE DENOMINATOR WAS HIDING, which is the part
+  // worth keeping. This check has fired at ~56% WITHIN its cohort since it was
+  // written. It read 17.5% plan-wide only because it covered 2 of 7 cohorts, so
+  // it never approached this gate's 30% threshold and nobody looked. **This gate
+  // measures plan-wide; a check can be at Willy's noise level inside the cohort
+  // it governs and read as quiet overall.** My change did not create that — it
+  // made it visible. Filed as S90-WITHIN-COHORT-RATE-01 for the board, with the
+  // measurement, rather than absorbed here.
+  //
+  // ⚠️ NOT A PERMANENT ACCEPTANCE, on the same terms as the entry below it: if
+  // the board rules the within-cohort rate is mis-scoped, this acknowledgement
+  // goes with the re-scope.
+  'INV-PLAN-BOUNCEBACK-BOUNDED':
+    'Coverage, not noise: knee/shin unchanged at 56.5% while achilles (50.0%) and plantar (51.7%) joined the arm per §90 Am. 2. The ~56% WITHIN-cohort rate is pre-existing and was hidden by a plan-wide denominator — filed as S90-WITHIN-COHORT-RATE-01, not absorbed.',
+
   // 31.6% (5055/15973), acknowledged 2026-09-16.
   //
   // THE RATE DID NOT RISE — A MASKING BUG WAS REMOVED. It read 28.1% while

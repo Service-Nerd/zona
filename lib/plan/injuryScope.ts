@@ -42,6 +42,8 @@
 // producer holds the former and the checkers hold the latter, and a shape that
 // only one of them can supply is how the duplication started.
 
+import { GENERATION_CONFIG } from './generationConfig'
+
 /**
  * Does this injury history include `keyword`?
  *
@@ -121,4 +123,33 @@ export const VOLUME_CAPPED_INJURY_KEYWORDS = ['knee', 'shin_splints'] as const
  */
 export function hasVolumeCappedInjuryHistory(history: readonly string[] | null | undefined): boolean {
   return VOLUME_CAPPED_INJURY_KEYWORDS.some(k => hasInjuryKeyword(history, k))
+}
+
+/**
+ * Does §90's TIGHTER DELIVERED cap govern this runner? (§90 Amendment 2,
+ * Coaching Board 2026-09-25, INJURY-DELIVERED-COVERAGE-01.)
+ *
+ * 🔴 A DIFFERENT QUESTION FROM `hasVolumeCappedInjuryHistory`, and the difference
+ * is the whole ruling. §12's PRODUCER cap is knee/shin — that is what the engine
+ * applies to the volume curve, and this ruling does not touch it. This predicate
+ * is the CHECKER's cohort for the delivered week, which the board widened to the
+ * load-bearing injuries because tendon and bone respond to the RATE of load
+ * change.
+ *
+ * Measured at the sitting, 1,478 plans, share warned by either delivered arm:
+ *
+ *     healthy   34.6%      achilles  0.0% -> 43.8%
+ *     knee      10.2% -> 20.4%   back      0.0% -> 29.4%
+ *     shin      10.2% -> 20.4%   hip       0.0% -> 34.6%
+ *                                plantar   0.0% -> 39.3%
+ *
+ * ⚠️ 43.8% IS THE TOP OF THE ACCEPTABLE BAND and is recorded so nobody has to
+ * rediscover it: §94's own first draft fired at 44.4% and was scoped down before
+ * it shipped. It is accepted here because it decomposes as healthy's 34.6% plus
+ * ~9pp from a deliberately tighter cap — a tighter threshold that did not fire
+ * more often would not be tighter. **Anyone widening this list again starts from
+ * that number.**
+ */
+export function hasDeliveredCapInjury(history: readonly string[] | null | undefined): boolean {
+  return GENERATION_CONFIG.DELIVERED_CAP_INJURIES.some(k => hasInjuryKeyword(history, k))
 }

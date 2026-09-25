@@ -201,9 +201,9 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 Full investigation: `docs/decisions/ops-2026-09-25-digest-triage.md`.
 Board brief: `docs/decisions/coaching-2026-09-25-injury-delivered-coverage.md`.
 
-### 🏃 `INJURY-DELIVERED-COVERAGE-01` — five of six injuries get NO delivered-volume check
+### ✅ `INJURY-DELIVERED-COVERAGE-01` — **RULED AND SHIPPED 2026-09-25.** Option C.
 
-**BOARD BRIEF READY FOR SIGN-OFF. Nothing implemented.**
+**Coaching Board: CORRECT WITH AMENDMENT.** §94's arm covers every runner; §90's widens to the load-bearing injuries. Three artifacts landed: §90 Am. 2 / §94 Am. 2 · `DELIVERED_CAP_INJURIES` · both invariants re-gated.
 
 Two arms, each declining the case for a defensible reason, and the union leaves a hole:
 `INV-PLAN-DELIVERED-RAMP` (§94) is gated `if (healthy)` at `invariants.ts:3732`;
@@ -269,6 +269,33 @@ that is `INJURY-DELIVERED-COVERAGE-01`, still open.
 ⚠️ `invariant:liveness` cannot catch this: both invariants are **proven wakeable** via
 `['knee']`. Liveness proves a rule *can* fire; it cannot prove it fires **for the cohort it
 names**. That gap has no harness.
+
+### 🏃 `S90-WITHIN-COHORT-RATE-01` — a check at Willy's noise level inside its own cohort, quiet plan-wide
+
+**Filed 2026-09-25 shipping `INJURY-DELIVERED-COVERAGE-01`. Pre-existing, NOT caused by that
+ruling. For the Coaching Board.**
+
+`INV-PLAN-BOUNCEBACK-BOUNDED` fires on **56.5% of knee and shin plans** — and has since it
+was written. It read **17.5% plan-wide** only because it covered 2 of 7 cohorts, so it never
+approached NOISE-GATE-01's 30% threshold and nobody looked. Widening §90's cohort took the
+plan-wide figure to 35.2% and tripped the gate, which is how it surfaced.
+
+| cohort | rate |
+|---|---|
+| knee · shin splints | **56.5%** (unchanged by the ruling) |
+| achilles · plantar | 50.0% · 51.7% (newly covered) |
+| healthy · back · hip | 0.0% (outside the tight cap) |
+
+🔴 **THE GENERAL POINT IS WORTH MORE THAN THIS INSTANCE: NOISE-GATE-01 MEASURES PLAN-WIDE.**
+A check can fire at Willy's noise level *inside the cohort it governs* and read as quiet
+overall, purely because its cohort is a small share of the grid. **Every cohort-scoped warn
+invariant has this blind spot**, not just this one. The gate's own threshold note reasons
+entirely in plan-wide percentages.
+
+**For the board:** is ~56% the honest residual for an injury bounceback check, or is it
+mis-scoped? ⚠️ **Do not answer from the plan-wide number** — that is the number that hid it.
+⚠️ And the wider question — whether NOISE-GATE-01 should measure per-cohort where a check is
+cohort-scoped — is worth ruling on once rather than per invariant.
 
 ### ✅ `PARITY-GRID-PRODUCT-VALUES-01` — **SHIPPED 2026-09-25.** The grid sweeps product values now.
 

@@ -5567,8 +5567,12 @@ not on the **delivered** week the runner sees:
 
 1. **A deload week carries less than the week before it (§3).** A "recovery" week
    badged as such must deliver less volume than the week preceding it. Full stop.
-2. **An injury-history runner's week-on-week rise stays within §2's injury cap (5% for
-   knee/shin) at DELIVERY.** The cap is a promise about the load on healing tissue —
+2. **An injury-history runner's week-on-week rise stays within §2's injury cap (5%) at
+   DELIVERY.** ⚠️ **The CHECKER's cohort is `DELIVERED_CAP_INJURIES` (the
+   load-bearing injuries), not §12's producer cohort of knee/shin — see §90
+   Amendment 2, 2026-09-25.** This clause read "5% for knee/shin" and that scope,
+   combined with §94's matching exclusion, left four of the six wizard injuries
+   checked by neither arm. The cap is a promise about the load on healing tissue —
    it means nothing if it binds the curve but the placed sessions exceed it.
 
 **The gap.** The engine computes a volume *curve* (`buildVolumeSequence → volumes[]`)
@@ -6083,12 +6087,75 @@ half, not a substitute for it.
 **Excluded, each because another principle owns the question:** the post-deload
 bounceback (§2 — settled, and explicitly re-measured and left unbounded for
 healthy runners on 2026-09-06); deload weeks themselves (§90); taper (a planned
-drop); injury-history runners (already covered, more strictly, by §90); and
-foundation weeks (§57's own +10%).
+drop); ~~injury-history runners (already covered, more strictly, by §90)~~
+**load-bearing-injury runners (covered, more strictly, by §90 — see Amendment 2
+below, which corrects this clause)**; and foundation weeks (§57's own +10%).
 
 **Config.** `GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT` (10, unchanged —
 this ruling adds no numeric, it gives an existing one a second enforcement site).
 Enforced by `INV-PLAN-DELIVERED-RAMP` (`warn`, §34 declared AND exercised).
+
+### §94 Amendment 2 / §90 Amendment 2 — the two delivered arms left four injuries covered by neither *(Coaching Board 2026-09-25, INJURY-DELIVERED-COVERAGE-01)*
+
+**Ruling: CORRECT WITH AMENDMENT.** §94's arm now covers **every** runner; §90's
+tighter arm widens from knee/shin to the **load-bearing injuries**
+(`GENERATION_CONFIG.DELIVERED_CAP_INJURIES`). Where both apply, both run.
+
+🔴 **DECLARING AN INJURY REMOVED A CHECK.** §94 excluded injury-history runners
+*"already covered, more strictly, by §90"*, and §90's own text scopes itself
+*"5% for knee/shin"*. Both sentences were true; **the gap was between them**, and
+nobody wrote down that §90's cohort was narrower than the word "injury". Measured
+on 1,478 plans, share of plans warned by either delivered arm:
+
+| cohort | before | after |
+|---|---|---|
+| healthy | 34.6% | 34.6% |
+| knee · shin splints | 10.2% | **20.4%** |
+| achilles | **0.0%** | **43.8%** |
+| plantar fasciitis | **0.0%** | **39.3%** |
+| hip | **0.0%** | 34.6% |
+| back | **0.0%** | 29.4% |
+
+**Option A — widening §90 alone — was measured and rejected.** It left knee and
+shin at 10.2% while giving achilles 39.9%, so the two cohorts with the strongest
+tissue argument would have been the least watched. That is an artefact of §90
+measuring the trimable portion while §94 measures the whole week, and Willy
+refused it on that basis.
+
+⚠️ **43.8% IS THE TOP OF THE ACCEPTABLE BAND, and is recorded so the next person
+starts from the number.** §94's own first draft fired at **44.4%** and was scoped
+down before shipping, and §1 carries Willy's standard that a check firing too
+widely *"is not a safety mechanism — it is noise, and noise gets suppressed"*.
+Hutchinson accepted 43.8% on its **composition**: healthy's 34.6% plus ~9pp from a
+deliberately tighter cap. **A tighter threshold that did not fire more often would
+not be tighter.** *What would reopen it:* evidence that the extra ~9pp are
+dominated by long-run-led rises the engine may not trim, which would make them
+unactionable.
+
+**Sims, and it is not a footnote.** Tendon and fascia stiffness are
+oestrogen-sensitive, and peri- and post-menopausal runners show altered tendon
+mechanical properties and slower load adaptation. So the cohort with the strongest
+case for the tighter cap on achilles and plantar is disproportionately female —
+and it was the cohort receiving **no check at all**. The old scope was a default
+derived from a male-athlete framing in which "injury" means "knee".
+
+**`back` and `hip` are deliberately NOT under the tight cap.** Both are real and
+both are now covered, by §94's looser arm. Neither is primarily a volume-**rate**
+injury, and Willy declined to put them under §90 on that basis.
+
+⚠️ **THIS CHANGES NO PRESCRIPTION.** §12's producer cap remains knee/shin; the
+volume curve is untouched; **not one plan differs**. Only which plans are
+*reported* changes — which is why `measure:fitness` was not a gate on this ruling,
+stated explicitly rather than skipped.
+
+**Config.** `GENERATION_CONFIG.DELIVERED_CAP_INJURIES` — a **separate constant
+from `HILL_RESTRICTING_INJURIES`** despite identical members today. That list
+answers *"may this runner do hills"*; this one answers *"how fast may their
+delivered volume rise"*. Two questions with the same answer today; a shared
+constant would make the next change to either silently move the other.
+
+Enforced by `INV-PLAN-DELIVERED-RAMP` (§94) and `INV-PLAN-INJURY-CAP-DELIVERED`
+(§90), both unchanged in severity (`warn`, §34).
 
 **Amendment CHARITY-CAP-ABSFLOOR-01, 2026-09-13.** As for §90, the delivered ramp
 now requires the week-on-week rise to clear an absolute-km floor

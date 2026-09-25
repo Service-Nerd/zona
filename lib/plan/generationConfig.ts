@@ -1743,6 +1743,28 @@ export const GENERATION_CONFIG = {
   // symptom-free (gated by explicit user check-in — not yet implemented).
   HILL_RESTRICTING_INJURIES: ['knee', 'itb', 'achilles', 'shin', 'calf', 'plantar'] as readonly string[],
 
+  // ── §90 Amendment 2 — the delivered-volume cap's cohort (INJURY-DELIVERED-
+  // COVERAGE-01, Coaching Board 2026-09-25) ─────────────────────────────────
+  //
+  // Which injury histories get the TIGHTER delivered cap (§90's 5%) rather than
+  // §94's 10%. Load-bearing injuries whose binding constraint is the RATE of
+  // load change: tendon and bone respond to how fast volume moves, not only to
+  // how much of it there is.
+  //
+  // 🔴 A SEPARATE CONSTANT FROM `HILL_RESTRICTING_INJURIES` ON PURPOSE, and it is
+  // not an oversight that the members are identical today. That list answers
+  // "may this runner do hill repetitions"; this one answers "how fast may their
+  // delivered weekly volume rise". Two different questions that happen to have
+  // the same answer, and `lib/plan/injuryScope.ts` already carries a written
+  // warning against collapsing them — a shared constant would make the next
+  // change to either silently move the other.
+  //
+  // ⚠️ `back` and `hip` are DELIBERATELY ABSENT. Both are real, and both are now
+  // covered — by §94's looser delivered ramp, which this ruling extends to every
+  // runner. They are simply not primarily volume-RATE injuries, and Willy
+  // declined to put them under the tight cap on that basis.
+  DELIVERED_CAP_INJURIES: ['knee', 'itb', 'achilles', 'shin', 'calf', 'plantar'] as readonly string[],
+
   // Quality sessions per taper week. Last entry is always race week (= 0).
   // Length = total taper-phase weeks INCLUDING race week. Capped per
   // CoachingPrinciples §49 (taper duration). Length must be ≤ MAX_TAPER_PHASE_WEEKS.

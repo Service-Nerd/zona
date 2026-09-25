@@ -59,18 +59,6 @@
       "reason": "Generates a large plan corpus; the cost is the coverage."
     },
     {
-      "file": "lib/plan/refusalCoherence.test.ts",
-      "title": "100K: refuses nobody today, so there is no refusal to be incoherent",
-      "ms": 1678,
-      "reason": "Generates the 100K corpus to establish the premise its own title states. ⚠️ It is green because the set is EMPTY, so it proves the distance refuses nobody — not that refusals are coherent. If 100K ever starts refusing, this case becomes load-bearing without its title changing."
-    },
-    {
-      "file": "lib/plan/refusalCoherence.test.ts",
-      "title": "50K: refuses nobody today, so there is no refusal to be incoherent",
-      "ms": 1513,
-      "reason": "As the 100K case: an empty-set premise check over a generated corpus."
-    },
-    {
       "file": "lib/plan/lrFloorRounding.test.ts",
       "title": "no plan is told it missed the floor by less than one rounding step",
       "ms": 1180,
@@ -131,6 +119,24 @@
       "title": "on REAL plans, the annotated week is NEVER the peak (Wood, binding)",
       "ms": 1829,
       "reason": "2026-09-25. The TWIN of the revealShape entry above, and baselined for the same reason: both generate real plans to make a claim about real plans, which is the point of them. It measured 1,200 ms and sat under the reporting line until four test files were added on 2026-09-25 (INJURY-GUARD-PREDICATE-01, BLOCKED-DAYS-CHECKER-SPELLING-01, RULEENGINE-HIP-COMMENT-01, CONTRACT-INJURY-VALUES-01) and suite CONTENTION pushed it to 1,829 ms. Standalone the whole 6-test file runs in 1.21 s, so this is ~600 ms of work reported at 3x under load — not a regression in the test. Recorded rather than silenced: if the suite keeps growing, this pair is where the next contention shows up first."
+    },
+    {
+      "file": "lib/plan/refusalCoherence.test.ts",
+      "title": "50K: refuses nobody today, so there is no refusal to be incoherent",
+      "ms": 3297,
+      "reason": "2026-09-25, INJURY-DELIVERED-COVERAGE-01. Re-baselined as CONTENTION, and the causal story I first wrote was WRONG and measured out. §94's delivered arm now runs for injury plans too, and `useCaseEnvelope` (this file's corpus) is ~50% injured, so 'validatePlan got twice as expensive here' was the obvious explanation for the 2.1x step. Measured standalone, twice each way: 8.25 s with the amendment, 8.05 s without — **~2%, not 2x.** The amendment is not the cause. What is: six test files were added to the suite today and these two are CPU-bound plan sweeps that lose more than linearly under worker contention (the gate itself reported a 1.34x run load against a 2.1x move). Recorded this way rather than as a confident attribution, because a baseline reason nobody can check is how a real regression gets waved through later."
+    },
+    {
+      "file": "lib/plan/refusalCoherence.test.ts",
+      "title": "100K: refuses nobody today, so there is no refusal to be incoherent",
+      "ms": 3219,
+      "reason": "2026-09-25, INJURY-DELIVERED-COVERAGE-01. Re-baselined as CONTENTION, and the causal story I first wrote was WRONG and measured out. §94's delivered arm now runs for injury plans too, and `useCaseEnvelope` (this file's corpus) is ~50% injured, so 'validatePlan got twice as expensive here' was the obvious explanation for the 2.1x step. Measured standalone, twice each way: 8.25 s with the amendment, 8.05 s without — **~2%, not 2x.** The amendment is not the cause. What is: six test files were added to the suite today and these two are CPU-bound plan sweeps that lose more than linearly under worker contention (the gate itself reported a 1.34x run load against a 2.1x move). Recorded this way rather than as a confident attribution, because a baseline reason nobody can check is how a real regression gets waved through later."
+    },
+    {
+      "file": "lib/plan/sessionReconcile.test.ts",
+      "title": "warm-up + main-set + cool-down = session total (distance, mi)",
+      "ms": 1503,
+      "reason": "2026-09-25. Same cause as the refusalCoherence pair above: a borderline test pushed over the reporting line by the contention from six test files added today, not by anything in the test. ⚠️ THIS IS THE THIRD BASELINE ENTRY IN ONE DAY FOR THE SAME REASON — the suite has grown 383 -> 390 files and the borderline band is being consumed one test at a time. Filed as SUITE-CONTENTION-01: the next person should widen the worker pool or split the plan-sweep tests, not add a fourth entry."
     }
   ]
 }
