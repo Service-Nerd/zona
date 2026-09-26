@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — TWIN-SWEEP-01 · The rule found a ninth instance within a minute of being written
+**Shipped:** `/zona-debug` gains "the remedy was applied to one twin" as a catalogue class and as an exit criterion, plus a gate for the one shape that has now bitten three times.
+**Dev learning:** the sweep is cheap and I had never run it. One grep of `invariants.ts` for label reads returned 32 hits, and one of them — `INV-PLAN-PEAK-LR-ALTERNATION` — was the same race-pace label test I had fixed twenty minutes earlier. It fails in the opposite direction: a rename makes it go SILENT on an injury-load rule, and because `violationsIntroducedBy` only reports violations enrichment ADDS, a violation that DISAPPEARS is invisible. A check that stops checking leaves no trace.
+**Product/creator learning:** the founder asked me to put the lesson in a skill rather than a commit message, and that instruction is what produced the ninth find. A lesson in a build-log entry is a story; a lesson in the exit criteria of the skill I load for every bug is a step I have to perform.
+**AI-building learning:** I nearly wrote the gate to ban all 32 label reads. Most are legitimate — vo2max detection has its own precedent, zone reads are a different question — and a gate that fires on correct work gets switched off, which this repo records as equivalent to having no gate. Scoping it to race-pace cues made it enforceable. The narrow gate that holds beats the broad one that gets deleted.
+**The honest bit:** my first cut of the gate mis-scored a line whose guard was two lines above it, because I sliced a 220-character window backwards instead of reading lines. It reported a correct site as an offender. I only caught it because the number looked wrong — one offender, at the line I had just fixed.
+**Hook material:** wrote down "always check for the twin", ran it once, found a ninth twin in the same file.
+**Postable?:** yes
+
 ## 2026-09-26 — ENRICH-NOTE-FIDELITY-01 · "Why aren't you fixing the others"
 **Shipped:** the merge now stops the enricher deleting the fuelling note and inventing a strides instruction.
 **Dev learning:** `preserveStrideNote` already existed and already encoded the principle — an engine-authored note is prescription, not voice, so the merge re-attaches it when the model drops it. It enforced one half of the rule for one note. The fuelling note is engine-authored in exactly the same way and had nothing. And the inverse half — the model ADDING a prescription the engine never made — was not enforced at all, which is 32 of 33 failures.

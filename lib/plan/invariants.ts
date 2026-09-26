@@ -5901,9 +5901,21 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
         const lrKmCheck = sessionKmForCheck(lr)
         if (lrKmCheck == null) return false
         if (lrKmCheck + 0.01 < threshold) return false
-        const label = (lr.label ?? '').toLowerCase()
-        const hasRacePace = label.includes('pace') || label.includes(' mp') || label.startsWith('mp') || label.includes('hm-pace')
-        return hasRacePace
+        // 🔴 NINTH INSTANCE OF THE SAME SHAPE, found by the sweep that
+        // `RACE-SPECIFIC-LR-LABEL-01` added to `/zona-debug` — "grep for the
+        // shape of the fix, not the symptom".
+        //
+        // ⚠️ THIS ONE FAILS THE OTHER WAY, which is why nobody saw it. Its twin
+        // fired spuriously and cost a runner their AI coaching; this one goes
+        // SILENT: rename the long run and `hasRacePace` is false, `isPeakLevel`
+        // is false, and §47 stops reporting back-to-back peak long runs — an
+        // INJURY-LOAD rule. Latent rather than live, because the pre-enrich
+        // validation still sees canonical labels and `violationsIntroducedBy`
+        // only reports violations enrichment ADDS, never ones it hides. A check
+        // that quietly stops checking leaves no trace at all.
+        if (lr.lr_segment_pace) return true          // stamped: enricher-proof
+        const label = (lr.label ?? '').toLowerCase()  // legacy, pre-§107 plans
+        return label.includes('pace') || label.includes(' mp') || label.startsWith('mp') || label.includes('hm-pace')
       }
       const exceptionEligible = input.hard_session_relationship === 'love'
         && (input.injury_history ?? []).length === 0

@@ -166,6 +166,7 @@ Every entry is a real incident. Almost none presented as a crash.
 | **Untooled external subscription** | A feature depends on state held in a THIRD PARTY (a webhook subscription, an OAuth grant, a DNS/callback URL) that no repo code can see; it breaks silently and stays broken until a human notices the downstream effect | The Strava webhook subscription drives no-app auto-link. Its `callback_url` lives at Strava, not in the repo, with no script to view it and no ops_event on delivery — so when the www-canonical migration made the apex callback 307-redirect (Strava does not follow redirects; deletes the sub after repeated failures), auto-link died invisibly. Fix: build the inspection tool AND an ops_event/alert on the hit, so external state becomes observable (STRAVA-WEBHOOK-OBS-01, 2026-09-13) |
 | **A reserved field gains a producer** | A schema field exists with NO writer, deliberately — reserved for a future feature, and often SAID so in the registry. For as long as that holds, "nothing reads this" is CORRECT. Later something starts writing it, and the field's inertness silently flips from correct to broken. Tell: a registry line or code comment saying *"not populated yet"* that has quietly become false | `run_walk_strategy` arrived 2026-05-12 as schema-only (AI-DEPTH-07); the registry said *"Engine does not populate these yet."* On 2026-09-20 §117 gave it a producer and nobody added a reader: **0 files under `app/`/`components/` referenced run-walk, and `git log -S` found 0 commits EVER.** Meanwhile `INV-PLAN-RUNWALK-PRESCRIBED` was GREEN, because it asserts the stamp is in the plan JSON and cannot see a screen — so §117 Am.3's entire safety argument (*"an unstamped session is the door opened with nothing behind it"*) was satisfied on paper and invisible to the runner. ⚠️ **It is the INVERSE of declared-but-inert** (`LoadShape.ariaLabel`, decorative config), where a field has readers and no writer. Fix: render it, AND gate the class — assert a reserved field still has NO producer, so the next one fails the build instead of reaching a runner (PRESCRIBED-FIELD-REACH-01, 2026-09-23) |
 
+| **The remedy was applied to ONE TWIN** | A defect is diagnosed and fixed correctly — and the SAME defect, in a second place doing the same job, is left alone. Nothing looks again, because the fix exists: the commit, the test and the comment all say it is handled. Tell: the fix is a CHANGE OF MECHANISM (detect by X instead of Y, preserve note A, guard call-site B) rather than a value correction, and the codebase has more than one thing of that kind | **EIGHT recorded, three of them on 2026-09-26 alone.** `INV-PLAN-RACE-SPECIFIC-EXPOSURE` was moved off `label.includes('pace')` onto a stamped field, with a comment that **described the next incident in advance** — *“the old label test tripped on those rewrites and silently discarded the whole enriched plan, costing trial/paid users their AI voice”* — and `INV-PLAN-RACE-SPECIFIC-LONG-RUN`, **thirty lines from its own violation site**, kept the label test until a real trial user's 16-week HM plan shipped with no AI coaching. Same day: `preserveStrideNote` encoded *“an engine note is prescription, re-attach it”* for ONE note while the identically engine-authored `FUELLING_PRACTICE_NOTE` had none (20 of 33 events), and the inverse half — the model ADDING a prescription — was enforced nowhere (32 of 33). Earlier: `A11Y-CONTRAST-01` fixed the marketing button and left 28 app controls; `STEPPER-CONTROL-01 (c)` moved one field onto `TextField` and left a 13px textarea **eleven lines below it** trapping iOS. ⚠️ **It is the INVERSE of “the population excludes the cases at risk”**: there the check is short, here the FIX is short — and it is harder to see, because a fix that exists reads as a fix that is finished. Fix: when the remedy is a mechanism, **grep for the shape before closing**, and record the count you found |
 | **The checker's POPULATION excludes the cases at risk** | A check is correct, bounded, falsified — and pointed at a set that cannot contain the defect. It does not fire and does not error; it reports on a smaller world. Tell: the set is a HAND-WRITTEN LIST, or a filter that selects the already-compliant (`if (!onSystem) continue`, `if (!baselineHas(key)) continue`), or a key that changes when the file does | **Four times on 2026-09-25 alone, all in checks written that same week.** (1) `sheetClose.test.ts`'s `CONSUMERS` was four hand-typed paths picked because their FILENAMES say "Sheet" — it never looked at `DashboardClient`, which renders **four of the app's nine sheets**, so `SHEET-CLOSE-OWNER-01` shipped a sheet with TWO crosses top-right and the gate written for that exact defect stayed green. (2) `buttonGeometry`'s 44px floor arm reads `measureAll()`, which returns only controls ALREADY on the design system — i.e. structurally not the population that violates a floor; filter dropped, **18 hand-rolled controls were under 44px, smallest 18px**. (3) The same file's baseline was keyed `file:line`, and the comparison skips a key the baseline lacks — so inserting ONE LINE re-keyed every control below it, all were skipped, and it printed `moved: 0`: **not "nothing moved", no longer looking**, falsified at 145 of 145 orphaned while the move arm stayed green. (4) `buttonOwnership`'s filled-control arm anchored `color:` directly before the quote, and a REAL primary CTA expresses a disabled state — so its colours are TERNARIES, and the check written to find primary CTAs was blind to the nine that behaved like them. ⚠️ **It is the inverse of "checker reads a different source": there the VALUE is wrong, here the value is right and the SET is short.** Fix: derive the population from the code (walk for importers, read the alias graph, resolve the component's own classes), and add an arm that FAILS when the derived set shrinks or stops matching — an empty population passes every other arm in the file |
 
 **Search discipline:** a negative grep is not proof of absence. Twice in one
@@ -225,10 +226,25 @@ A fix is not done until all of these are true or explicitly waived with a reason
    is the whole defence — the bug had no symptom, so only a test can hold it shut.
 2. **Fixed at the single owner**, not locally. Five copies of the pace formatter
    existed because each was fixed where it was found.
-3. **Blast-radius dimensions addressed**, each named.
-4. **Docs updated in the same commit** — contracts, `plan-invariants.md`,
+3. 🔴 **SWEEP FOR THE TWIN — grep for the SHAPE of the fix, not the symptom.**
+   *“What else in this codebase has this shape?”* Ask it **before** closing, and
+   **state the number you found**, including zero.
+
+   This is the most-recorded survival class in the catalogue above — **eight
+   instances, three of them in a single day** — and it is invisible by
+   construction: a fix that exists reads as a fix that is finished, so nobody
+   looks again. The grep is usually one line, because the shape is literal:
+   `label.includes(` · the other call sites of the helper you just hardened · the
+   other members of the constant family you just preserved · the sibling invariant
+   twenty lines away.
+
+   ⚠️ **It only applies when the remedy is a MECHANISM** — detect by X instead of
+   Y, preserve note A, guard call-site B. A value correction has no twin, and
+   sweeping for one wastes the step.
+4. **Blast-radius dimensions addressed**, each named.
+5. **Docs updated in the same commit** — contracts, `plan-invariants.md`,
    `feature-registry.md`, backlog entry if one exists.
-5. **Verification stated honestly** — what you proved, and what you could not.
+6. **Verification stated honestly** — what you proved, and what you could not.
    "Not visually confirmed, sits behind auth" is a complete answer. Claiming
    verification you didn't do is worse than the bug.
    ⚠️ **And if you hand someone else a command to run, that command is untested
@@ -238,7 +254,7 @@ A fix is not done until all of these are true or explicitly waived with a reason
    migration to be reported as failed. **Exhaust your own routes before declaring
    a question unanswerable**: `.env.local` holds the service-role key, so
    production is readable from here even when an MCP connector has dropped.
-6. **Incident write-up** if it was Systemic and silent — `docs/incidents/<date>-<slug>/`.
+7. **Incident write-up** if it was Systemic and silent — `docs/incidents/<date>-<slug>/`.
    If it's a new failure class, **add it to the catalogue above in the same commit**.
    That loop is what stops this skill decaying into generic advice.
 
