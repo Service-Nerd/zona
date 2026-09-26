@@ -381,6 +381,50 @@ done
 [ "$sfail" = "0" ] && say "  ok"
 
 say ""
+say "── board rulings: a SHIP ruling has its PATTERN artifact ──"
+# ⚠️ THE THIRD ARTIFACT WAS THE ONE NOTHING CHECKED.
+#
+# ADR-023: every SHIP ruling lands THREE artifacts in one commit -- pattern,
+# token/constant, and a mechanical check made to go red. This audit already
+# catches a ruling with no register row. It has never caught a SHIP ruling with
+# no PATTERN, and on 2026-09-26 `LINK-HIERARCHY-01` shipped four clauses with
+# nothing in `ui-patterns.md` while the audit printed ALL CLEAN.
+#
+# Same shape as everything else found today: the check's list was short. It
+# looked at whether the RULING was recorded and never at whether the rule the
+# ruling produced was written where the next person would read it.
+pfail=0
+python3 - <<'PYEOF' || pfail=1
+import re, sys, pathlib
+rule = pathlib.Path('docs/canonical/design-rulings.md').read_text(encoding='utf-8')
+pat  = pathlib.Path('docs/canonical/ui-patterns.md').read_text(encoding='utf-8')
+# Pre-existing debt, declared so it is visible and cannot GROW. A reason each.
+BASELINE = {
+    'CTA-FLAT-01':              'ruled, not built -- founder wanted mock-ups first; no pattern to write yet',
+    'DESIGN-EMPTYSTATE-ART-01': 'website section, not an app component pattern',
+    'SITE-GROUND-ABOUT-01':     'website ground, governed by brand.md rather than ui-patterns',
+}
+missing = {}
+for m in re.finditer(r'^#{2,3}\s+(.*)$', rule, re.M):
+    h = m.group(1)
+    if 'SHIP' not in h.upper() or "DON'T SHIP" in h.upper():
+        continue
+    for i in set(re.findall(r'\b([A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+-\d+)\b', h)):
+        if i not in pat and i not in BASELINE:
+            missing[i] = h[:70]
+stale = [i for i in BASELINE if i in pat]
+if missing:
+    for i, h in sorted(missing.items()):
+        print(f"  MISSING PATTERN: {i} -- SHIP ruling with nothing in ui-patterns.md ({h})")
+if stale:
+    for i in stale:
+        print(f"  STALE BASELINE: {i} now has a pattern -- delete its BASELINE entry")
+if missing or stale:
+    sys.exit(1)
+print("  ok")
+PYEOF
+[ "$pfail" = 1 ] && fail=1
+
 say "── board rulings: a RULED item has a register row ──"
 # ⚠️ THE GAP THIS CLOSES, AND IT IS THE ONE THE FOUNDER KEEPS FINDING.
 #

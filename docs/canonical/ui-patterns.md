@@ -933,7 +933,7 @@ Guarded by `components/ui/screenHeader.markup.test.ts`, which asserts the **ruli
 set is exactly Plan and Coach) rather than a count, and derives its population by walking the
 tree rather than listing files.
 
-#### 🔴 `position: sticky` is not enough, and this is the trap
+#### 🔴 `position: sticky` is not enough, and this is the trap *(`STICKY-SCROLLER-01`)*
 
 A sticky element pins to its nearest ancestor with `overflow` other than `visible` — **including
 one that can never scroll.** This app had four boxes declaring `overflow-y: auto` with
@@ -3746,6 +3746,61 @@ not the control's own styling.
 themselves — which is the half `lib/a11yContrast.test.ts` structurally cannot see. That file asserts
 `white on --moss-strong >= 4.5`: true, and a fact about a *token*, which is why it stayed green over
 all 42 failing controls. Its own header says it checks the tokens and not where they are used.
+
+### 38a. Selectable row, and when the primary appears *(Design Board 2026-09-26, `LINK-HIERARCHY-01`)*
+
+A list the runner **picks from** — the activity picker on the link-a-run screen is the first — plus
+the rule for what the action row does while nothing is picked.
+
+| State | Ground | Edge |
+|---|---|---|
+| unselected | `--bg-soft` | `1px var(--chrome-edge)` |
+| **selected** | `--moss-soft` | `1px var(--moss-mid)` + a `✓` in `--moss-strong` |
+
+- It is a **`<button type="button">`**, never a `<div onClick>`, and carries **`aria-pressed`** —
+  a `✓` glyph announces nothing.
+- The ground is **never `--bg`**. 🔴 The first version painted `--bg` on `--bg`: **zero levels of
+  separation**, marked only by an 8% hairline, and the founder reported it as *"actually a button,
+  it's not clear."* It was not clear because it was not one.
+- The edge is **`--chrome-edge` (14%), not `--line` (8%)**, following `ICON-EDGE-01`: `--bg-soft`
+  alone is **7.7 levels** against the page ground, which that ruling measured as insufficient for a
+  control on the same day.
+
+#### 🔴 The primary EMERGES — it does not sit there waiting
+
+> **When a screen has a preferred action, the action row carries no primary until the runner takes
+> it.** The preferred action *is* the primary.
+
+📐 **Why this rule exists.** The runner tapped a green **MATCH A RUN** and landed on a screen whose
+loudest control said **LOG WITHOUT ACTIVITY**, with the run they came to link rendered as
+background. **The screen promoted the opposite of the action that reached it.** Now the CTA is
+`secondary` until a run is selected and `primary` after — `variant={selected ? 'primary' : 'secondary'}`.
+
+⚠️ **A row with no primary is normally a defect** — `SESSION-ACTIONS-01` flagged one. Here it is
+deliberate and the gate asserts it as such, because the primary is the **card above**, not a button
+in the row.
+
+⚠️ **Only where the preference is real.** On this screen it is doctrinal: ADR-011 makes HealthKit
+the SOR carrying the HR stream, a manual log carries none, and CLAUDE.md states the consequence —
+those runners *"get no HR-based coaching"*. **Linking is better coaching, not tidier data.** Do not
+apply this to a screen where the two outcomes are genuinely equal; that is just hiding a button.
+
+#### 📐 Action rows use `compact`, because `regular` wraps
+
+Measured at 375pt in a two-button row at `flex: 1` / `flex: 2`:
+
+| | height |
+|---|---|
+| `.btn--regular` | **74px, both labels on 2 lines** |
+| the same in sentence case, no tracking | **identical 74px** |
+| **`.btn--compact`** | **44px, 1 line** |
+
+`regular`'s `padding: 15px 20px` eats the width. **The founder's *"too big/fat"* was wrapping, and
+the cause is the size class — not the copy and not the uppercase, both of which were measured and
+cleared first.**
+
+⚠️ **This does NOT hold at 320pt** — still 62px and two lines. Reported as `ACTION-ROW-320-01`
+rather than claimed fixed; every currently supported iPhone is 375pt or wider.
 
 ### 39. IconButton — a control whose whole label is a glyph *(Design Board 2026-09-25, `ICON-BUTTON-01`)*
 
