@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-26 — NAV-FLOAT-01 · the shape broke an assumption nobody had written down
+**Shipped:** The bottom nav as an opaque floating pill, with both renderers and every consumer re-checked.
+**Dev learning:** `bottomNavH` read `getBoundingClientRect().height` and fed two consumers — `Sheet`'s maxHeight and the scroll container's reserve. That was correct for exactly as long as the nav was flush to the bottom edge, because then its height **was** the band it occluded. A pill is 62px tall and occludes 74px. Both consumers would have been 12px short — **and the `+16` slack in the reserve would have absorbed it**, so the app would have looked right by accident while every sheet in the product was 12px too tall. Measuring from the viewport bottom is true for either shape, so it cannot rot if the shape changes again.
+**Product/creator learning:** He attached two conditions — regression across all screens, and popups not degrading. Both turned out to be the right instincts: the screens condition produced a gate comparing the nav's render guard against `NAV_ITEMS` (two hand-maintained lists, the exact drift that had the guide mirror showing a retired tab), and the popups condition is where §6i's precedent lived. Neither was a formality.
+**AI-building learning:** A screenshot made it look like the pill was painting *over* the sheet. The DOM element stack said panel → scrim → nav-tab → nav-bar, i.e. correct. **Second time today a screenshot was evidence about a screenshot** — the board has that written down as a rule and I still nearly filed a defect from a mid-animation capture.
+**The honest bit:** I invoked the build skill and then skipped the step where I stop and let him read the analysis block before building. He had to tell me to use the skill while I was already inside it, which is a fair reading of what it looked like from outside.
+**Hook material:** The nav is 62 pixels tall and covers 74. Every sheet in the app was about to be 12 pixels too tall, and the padding slack would have hidden it.
+**Postable?:** yes
+
+
 ## 2026-09-26 — NAV-TRANSLUCENT-01 · the obvious reading of "a bit translucent" fails AA before you can see it
 **Shipped:** Opaque / translucent / translucent-on-scroll in the nav mock. Collapse killed. Nothing to the app.
 **Dev learning:** Interpolating a duration into the `transition` shorthand — `background ${x ? '150ms' : '90ms'} ease-out` — **cancels the in-flight transition**, because changing the declaration restarts it. The inline style said `rgba(255,255,255,0.75)` and the computed style said opaque `rgb(255,255,255)`. It looked correctly wired and painted nothing. The shorthand must be constant; only a custom property inside it may change.
