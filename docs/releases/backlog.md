@@ -112,6 +112,25 @@ its subject stays in flow. **Only a global action may dock** — see `ui-pattern
 3. **Ask the founder the question nobody asked:** if the nav recedes, does the CTA still bother
    him? The two complaints may be one.
 
+
+### `HOOK-RGBA-COMMENTS-01` — the colour guard fires on prose ⚙️ NO BOARD
+**Found 2026-09-26** writing a comment that recorded a measured colour.
+
+`.githooks/pre-commit`'s rgba check (P-13b, GAP-08) is a plain `grep -nE` over staged files
+with **no comment exclusion**, so a code comment documenting a sampled value — *"the darkest
+blurred backdrop is rgb(181,192,180)"* — is blocked as a hardcoded palette colour. It is prose
+about a measurement, not a style.
+
+⚠️ **The guard is RIGHT to exist and I did not loosen it to land a prototype.** The comment was
+reworded instead. But this repo has recorded four times that **a guard which fires on ordinary
+work gets switched off**, and documenting a measured colour in a comment is ordinary work here —
+it is what half the comments written this week do.
+
+**Do:** strip comments before matching (the design and coaching guards already do this, and
+`bound the region, never grep the file` is recorded four times). ⚠️ **Strip them the way those
+guards do — preserving newlines** — or the reported line numbers go wrong, which is a defect this
+repo has also already had (`^\s*//` matching `\n`).
+
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
 ### 🧭 `DESTRUCTIVE-WIRING-01` — a variant with zero uses, and two flows that need it

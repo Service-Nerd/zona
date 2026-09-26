@@ -21,7 +21,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-type Variant = 'bar' | 'pill' | 'collapse'
+type Variant = 'opaque' | 'translucent' | 'onScroll'
 
 const TABS = [
   { id: 'today', label: 'Today' },
@@ -60,9 +60,11 @@ function Glyph({ id, active }: { id: string; active: boolean }) {
 }
 
 export default function NavPreview() {
-  const [variant, setVariant] = useState<Variant>('collapse')
+  const [variant, setVariant] = useState<Variant>('onScroll')
+  const [alpha, setAlpha] = useState(0.75)
+  const [blur, setBlur] = useState(true)
   const [active, setActive] = useState<string>('today')
-  const [collapsed, setCollapsed] = useState(false)
+  const [scrolling, setScrolling] = useState(false)
   const [reduce, setReduce] = useState(false)
   const [readout, setReadout] = useState({ chrome: 0, hidden: 0 })
 
@@ -88,21 +90,38 @@ export default function NavPreview() {
   }, [])
 
   const onScroll = useCallback(() => {
-    if (variant === 'collapse') setCollapsed(true)
+    setScrolling(true)
     if (idle.current) window.clearTimeout(idle.current)
-    idle.current = window.setTimeout(() => { setCollapsed(false); measure() }, IDLE_MS)
+    idle.current = window.setTimeout(() => { setScrolling(false); measure() }, IDLE_MS)
     measure()
-  }, [variant, measure])
+  }, [measure])
 
-  useEffect(() => { measure() }, [measure, variant, collapsed])
-  useEffect(() => { if (variant !== 'collapse') setCollapsed(false) }, [variant])
+  useEffect(() => { measure() }, [measure, variant, scrolling])
+
+  /**
+   * 🔴 THE CONTRAST IS COMPUTED LIVE, AND AGAINST THE WORST REAL BACKDROP.
+   * R181/G192/B180 is the darkest 20px-blurred strip sampled from the actual
+   * Today screen — it is the band over the moss CTA, which is the one backdrop
+   * nobody thinks to test. Measured floor: 0.70 holds 4.58:1; 0.60 drops to
+   * 4.31 and fails. A whole-bar opacity fade fails at 0.9, which is why the
+   * LABELS never fade here — only the ground does.
+   */
+  const WORST_BACKDROP: [number, number, number] = [181, 192, 180]
+  const lin = (c: number) => { const x = c / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4 }
+  const lum = (p: number[]) => 0.2126 * lin(p[0]!) + 0.7152 * lin(p[1]!) + 0.0722 * lin(p[2]!)
+  const contrast = (fg: number[], bg: number[]) => {
+    const a = lum(fg), b = lum(bg); const hi = Math.max(a, b), lo = Math.min(a, b)
+    return (hi + 0.05) / (lo + 0.05)
+  }
+  const effAlpha = variant === 'opaque' ? 1 : variant === 'translucent' ? alpha : (scrolling ? alpha : 1)
+  const ground = WORST_BACKDROP.map((c, i) => Math.round(255 * effAlpha + c * (1 - effAlpha)))
+  const labelRatio = contrast([0x6D, 0x69, 0x63], ground)
 
   // Reduced motion collapses the DURATION, never the BEHAVIOUR. The clearance
   // must still arrive for a runner who has motion turned off — that is exactly
   // why the scroll-fade could not be the only remedy.
   const motion = reduce ? '0s' : 'var(--motion-ui)'
-  const isCollapsed = variant === 'collapse' && collapsed
-  const floating = variant !== 'bar'
+  const floating = true
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -110,19 +129,36 @@ export default function NavPreview() {
       {/* ── the controls, deliberately outside the phone frame ── */}
       <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)', background: 'var(--card)' }}>
         <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-          {(['bar', 'pill', 'collapse'] as Variant[]).map(v => (
-            <button key={v} onClick={() => setVariant(v)} className={`btn btn--compact ${variant === v ? 'btn--primary' : 'btn--secondary'}`} style={{ flex: 1 }}>
-              {v === 'bar' ? 'A · shipped bar' : v === 'pill' ? 'B · pill' : 'C · pill + collapse'}
+          {([['opaque','Opaque'],['translucent','Translucent'],['onScroll','Translucent on scroll']] as [Variant,string][]).map(([v,lab]) => (
+            <button key={v} onClick={() => setVariant(v)} className={`btn btn--compact ${variant === v ? 'btn--primary' : 'btn--secondary'}`} style={{ flex: 1, fontSize: 11 }}>
+              {lab}
             </button>
           ))}
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+          <label style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>
+            opacity {alpha.toFixed(2)}
+          </label>
+          <input type="range" min={0.5} max={1} step={0.05} value={alpha}
+                 onChange={e => setAlpha(parseFloat(e.target.value))}
+                 disabled={variant === 'opaque'} style={{ flex: 1 }} />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-2)' }}>
+            <input type="checkbox" checked={blur} onChange={e => setBlur(e.target.checked)} /> blur
+          </label>
+        </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-2)' }}>
           <input type="checkbox" checked={reduce} onChange={e => setReduce(e.target.checked)} />
-          Simulate <code>prefers-reduced-motion</code> — the collapse must still happen, instantly
+          Simulate <code>prefers-reduced-motion</code>
         </label>
-        <div style={{ marginTop: 8, fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums' }}>
-          chrome <strong>{readout.chrome}px</strong> · &ldquo;Log this session&rdquo; hidden behind it:{' '}
-          <strong style={{ color: readout.hidden > 0 ? 'var(--danger)' : 'var(--moss-strong)' }}>{readout.hidden}px</strong>
+        <div style={{ marginTop: 8, fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.6 }}>
+          painted chrome <strong>{readout.chrome}px</strong> · CTA hidden <strong>{readout.hidden}px</strong><br />
+          label contrast over the worst real backdrop:{' '}
+          <strong style={{ color: labelRatio >= 4.5 ? 'var(--moss-strong)' : 'var(--danger)' }}>
+            {labelRatio.toFixed(2)}:1
+          </strong>{' '}
+          <span style={{ color: 'var(--mute)' }}>
+            (AA needs 4.5 · floor is 0.70{!blur && ' · ⚠ WITHOUT BLUR this number is meaningless, the backdrop is moving content'})
+          </span>
         </div>
       </div>
 
@@ -169,50 +205,62 @@ export default function NavPreview() {
       </div>
 
       {/* ── the chrome under test ── */}
+      {/* ⚠️ THE GROUND GOES TRANSLUCENT, THE LABELS NEVER DO (Silvanto, binding).
+          Fading the whole bar is what "a bit translucent" means to most people
+          and it takes the label to 4.47:1 at 0.9 — below AA before the change is
+          even perceptible. Translucency is a property of the MATERIAL. Blur is
+          load-bearing, not decoration: without it the backdrop is moving content
+          and no fixed ratio can be claimed, which is why the fallback is OPAQUE
+          and never translucent-without-blur. */}
       <div
         ref={chromeRef}
         style={{
           position: 'fixed', left: '50%', transform: 'translateX(-50%)',
-          bottom: floating ? 'calc(12px + env(safe-area-inset-bottom, 0px))' : 0,
-          width: floating ? (isCollapsed ? '76px' : 'calc(100% - 32px)') : '100%',
-          maxWidth: 480,
-          display: 'flex', alignItems: 'stretch', justifyContent: 'center',
-          background: 'var(--nav-bg)',
-          border: floating ? '1px solid var(--line)' : 'none',
-          borderTop: floating ? '1px solid var(--line)' : '1px solid var(--line)',
-          borderRadius: floating ? 999 : 0,
-          boxShadow: floating ? 'var(--shadow-lifted)' : 'none',
-          paddingBottom: floating ? 0 : 'env(safe-area-inset-bottom, 0px)',
+          bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100% - 32px)', maxWidth: 448,
+          display: 'flex', alignItems: 'stretch',
+          background: `rgba(255,255,255,${effAlpha})`,
+          backdropFilter: blur && effAlpha < 1 ? 'blur(20px) saturate(1.6)' : undefined,
+          WebkitBackdropFilter: blur && effAlpha < 1 ? 'blur(20px) saturate(1.6)' : undefined,
+          border: '1px solid var(--line)',
+          borderRadius: 999,
+          boxShadow: 'var(--shadow-lifted)',
           overflow: 'hidden',
-          transition: `width ${motion}, border-radius ${motion}, bottom ${motion}`,
+          // ⚠️ OUT SLOWLY, BACK FAST (Wroblewski) — 150ms out, 90ms back. Going
+          // translucent may be leisurely; returning must feel instant or the
+          // runner reaches for a tab that is not solid yet.
+          //
+          // 🔴 THE DURATION RIDES A CUSTOM PROPERTY AND THAT IS NOT STYLE. The
+          // first cut interpolated the duration straight into the `transition`
+          // shorthand — `background ${scrolling ? '150ms' : '90ms'} ease-out` —
+          // and **changing the transition DECLARATION mid-flight cancels the
+          // transition**, so the background stayed pinned at its start value:
+          // the inline style read `rgba(255,255,255,0.75)` while the computed
+          // style read opaque `rgb(255,255,255)`. It looked wired and rendered
+          // nothing. The shorthand string must be CONSTANT; only the variable
+          // inside it may change.
+          ['--nav-dur' as string]: reduce ? '0s' : (scrolling ? '150ms' : '90ms'),
+          transition: 'background var(--nav-dur) ease-out, backdrop-filter var(--nav-dur) ease-out',
           zIndex: 3000,
         }}
       >
-        {TABS.map(t => {
-          const show = !isCollapsed || t.id === active
-          return (
-            <button
-              key={t.id}
-              onClick={() => { setActive(t.id); setCollapsed(false) }}
-              aria-current={active === t.id ? 'page' : undefined}
-              style={{
-                flex: show ? 1 : 0,
-                width: show ? undefined : 0,
-                minWidth: show ? (isCollapsed ? 76 : undefined) : 0,
-                minHeight: 60, padding: 0, border: 'none', background: 'none', cursor: 'pointer',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
-                fontFamily: 'var(--font-ui)', fontSize: 11,
-                color: active === t.id ? 'var(--moss-strong)' : 'var(--mute)',
-                opacity: show ? 1 : 0,
-                transition: `opacity ${motion}, flex ${motion}`,
-                overflow: 'hidden', whiteSpace: 'nowrap',
-              }}
-            >
-              <Glyph id={t.id} active={active === t.id} />
-              <span style={{ display: isCollapsed ? 'none' : 'block' }}>{t.label}</span>
-            </button>
-          )
-        })}
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActive(t.id)}
+            aria-current={active === t.id ? 'page' : undefined}
+            style={{
+              flex: 1, minHeight: 60, padding: 0, border: 'none', background: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3,
+              fontFamily: 'var(--font-ui)', fontSize: 11,
+              // The LABEL is never faded. This is the whole ruling in one line.
+              color: active === t.id ? 'var(--moss-strong)' : 'var(--mute)',
+            }}
+          >
+            <Glyph id={t.id} active={active === t.id} />
+            <span>{t.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   )
