@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-26 — SESSION-ACTUAL-SHAPE-01 · fixing one bug woke another that had been asleep for four months
+**Shipped:** The ACTUAL column reads the field names the object actually has, and formats through the owner.
+**Dev learning:** `NaN != null` is **true**. That single fact is why "NaNmi" rendered: the guard was a null check and the value was NaN. The cause was a shape mismatch — HealthKit rows are marshalled into Strava's API naming at four sites (`distance_m → distance`), and one consumer read the DB names off the renamed object. Written two days *after* the marshaller, so it was wrong from the first keystroke.
+**Product/creator learning:** The visible bug was the harmless one. Underneath it, `${actualDistKm}${preferredUnits}` put a kilometre number next to the user's unit label — **8.1mi for an 8.05 km run when the truth is 5.0 mi**, a 61% overstatement on every completed session, on the fallback path, silently. Nobody would ever have reported that, because it looks like a number.
+**AI-building learning:** He said "this happened when we fixed km/miles". I tested it against all four units commits and none touches the line — but his *instinct* that a fix caused it was right: `HK-ELEV-COLUMN-01` had loaded **zero HealthKit runs for three and a half months**, so the broken branch was unreachable and the correct fallback ran. Fixing that column woke a dead consumer. **Test the hypothesis, keep the instinct.**
+**The honest bit:** Two of my own checks bit me in fifteen minutes. The class gate fired on the comment documenting the defect — same class as the pre-commit colour guard blocking prose an hour earlier. Then the comment I wrote about stripping comments **terminated itself**, because the line-comment pattern it quoted contains a comment terminator. And `vitest` doesn't typecheck: six green tests, TS2352 in the build, second time today.
+**Hook material:** `NaN != null` is true. That's the whole bug. The other one — a 61% overstatement of every run — nobody could see.
+**Postable?:** yes
+
+
 ## 2026-09-26 — NAV-FLOAT-01 · the shape broke an assumption nobody had written down
 **Shipped:** The bottom nav as an opaque floating pill, with both renderers and every consumer re-checked.
 **Dev learning:** `bottomNavH` read `getBoundingClientRect().height` and fed two consumers — `Sheet`'s maxHeight and the scroll container's reserve. That was correct for exactly as long as the nav was flush to the bottom edge, because then its height **was** the band it occluded. A pill is 62px tall and occludes 74px. Both consumers would have been 12px short — **and the `+16` slack in the reserve would have absorbed it**, so the app would have looked right by accident while every sheet in the product was 12px too tall. Measuring from the viewport bottom is true for either shape, so it cannot rot if the shape changes again.
