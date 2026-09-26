@@ -2009,6 +2009,53 @@ which holds for either shape.
 
 📐 163 controls · geometry moved 0 · none under 44px · 3,573 tests.
 
+
+### NAV-PILL-FLUSH-01 (defect) + NAV-TRANSLUCENT-01 🔁 FOUNDER OVERRULE (2026-09-26)
+
+Founder, on the device: *"It is fully on the bottom and you can't see the edge. I thought this
+would be more hovering off the bottom. Also are the edges too round? And I actually think we
+should make it slightly translucent."*
+
+#### 🔴 The pill shipped as a slab, and every arm was green
+
+`NAV-FLOAT-01` added `.nav-bar--floating` and **left the flush bar's inline `bottom: 0`,
+`width: '100%'` and `maxWidth` on the element.** An inline style beats a class, so only the
+`border-radius` applied: a full-width flush bar with round corners.
+
+📐 Measured on his capture (375×815pt) against what the CSS declares:
+
+| | declared | rendered |
+|---|---|---|
+| gap below | 12 + safe-area | **0.9pt** |
+| side inset | 16 | **0.9pt** |
+| width | 343 | **372.8pt** |
+
+⚠️ **The existing arms asserted the CSS RULE EXISTS WITH THE RIGHT VALUES and never that those
+values WIN.** A rule that is overridden is decoration. **New arm: no inline style may set a
+property the class owns** — derived from the class's own declarations rather than a hand-written
+list, and falsified by restoring the exact shipped defect. After the fix: 343 wide, 12 below,
+16/16 inset.
+
+#### 🔁 The overrule
+
+**`NAV-TRANSLUCENT-01` was DON'T SHIP on a measurement. The founder has overruled it and it ships
+at `--nav-pill-alpha: 0.82`.** Recorded as an overrule, **not as the board changing its mind** —
+the measurement stands and is not withdrawn: white at 0.75 is 5 levels over `--bg`, 6 over a
+session card, 9 over the hero, 15 over amber, 19 over the moss CTA.
+
+⚠️ **What the measurement still binds, and this is why the arm survived rather than being
+deleted:** the **ground** goes translucent, the **labels** never do (fading the whole bar reaches
+4.47:1 at 0.9, below AA before it is perceptible); the floor is **0.70**; and **blur is
+load-bearing**, so translucency sits inside an `@supports` guard with an **opaque fallback** —
+never translucent-without-blur. All three are asserted and falsified.
+
+#### ⏳ Not answered: *"are the edges too round?"*
+
+**Deliberately not changed in the same commit.** `999px` is what he saw and approved in the
+mock — but that mock was correctly inset and the shipped version was not, so **the roundness he
+is questioning was seen on a shape that was wrong in two other dimensions.** Changing the radius
+now would move two variables at once. He looks at the corrected pill first.
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1

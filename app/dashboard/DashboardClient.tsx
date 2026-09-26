@@ -2854,10 +2854,22 @@ export default function DashboardClient() {
         // nav at the bottom. It has a back arrow, so it is the former.
         if (screen === 'redeem') return null
 
+        // 🔴 THE GEOMETRY LIVES IN THE CLASS, AND IT DID NOT FOR ONE RELEASE.
+        // `NAV-FLOAT-01` added `.nav-bar--floating` and left the flush bar's
+        // inline `bottom: 0` / `width: '100%'` / `maxWidth` in place. **An
+        // inline style beats a class**, so the pill shipped full-width and
+        // flush with only its border-radius applying — a slab with round
+        // corners. Measured on the founder's device: gap below **0.9pt**
+        // against a declared 12, side inset **0.9pt** against 16.
+        //
+        // ⚠️ Only `position` and `zIndex` stay here: `position` because the
+        // class is shared with the GuideSheet mirror, which is NOT fixed, and
+        // `zIndex` because it comes from the `Z_LAYERS` owner. Everything
+        // with a value in `globals.css` was removed, or the class is
+        // decoration.
         return (
           <div ref={bottomNavRef} className="nav-bar nav-bar--floating" style={{
-            position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
-            width: '100%', maxWidth: '480px',
+            position: 'fixed',
             zIndex: Z_LAYERS.nav,
           }}>
             {NAV_ITEMS.map(({ id, label, icon }) => (

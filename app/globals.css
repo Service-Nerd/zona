@@ -1197,6 +1197,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 .nav-bar--floating {
   left: 50%;
   transform: translateX(-50%);
+  /* ⚠️ These two were inline on the element and the class could not win. */
   width: calc(100% - 2 * var(--nav-pill-inset));
   max-width: 448px;
   bottom: calc(var(--nav-pill-lift) + env(safe-area-inset-bottom, 0px));
@@ -1207,5 +1208,35 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   /* The flush bar spent the safe-area inset as its own reserved strip. A pill
      sits ABOVE that strip instead, so it must not pad it a second time. */
   padding-bottom: 0;
+
+  /* 🔴 SLIGHTLY TRANSLUCENT — FOUNDER OVERRULE OF A BOARD DON'T SHIP, and the
+   * measurement that produced that ruling still stands and is not withdrawn.
+   *
+   * NAV-TRANSLUCENT-01 was killed because white at 0.75 measures **5 levels**
+   * over `--bg`, 6 over a session card, 9 over the hero — below perception on
+   * three of five backdrops — and only 15 over the amber coach card, 19 over the
+   * moss CTA. The board's conclusion was that it is not worth a per-frame
+   * `backdrop-filter`. **The founder has looked at it on a device and wants it
+   * anyway. That is his call and it is recorded as an overrule, not as the
+   * board changing its mind.**
+   *
+   * ⚠️ WHAT THE MEASUREMENT STILL BINDS: the GROUND goes translucent and the
+   * LABELS never do. Fading the whole bar reaches 4.47:1 at 0.9 — below AA
+   * before the change is perceptible. At `--nav-pill-alpha` with blur, the
+   * worst real backdrop holds **4.58:1 at 0.70** and 5.02 at 0.85. The token is
+   * the floor; do not go below it.
+   *
+   * ⚠️ BLUR IS LOAD-BEARING. Without it the backdrop is moving content and no
+   * ratio can be claimed, so a browser without `backdrop-filter` gets the
+   * OPAQUE fallback, never translucent-without-blur. */
+  background: var(--nav-bg);
 }
-:root { --nav-pill-inset: 16px; --nav-pill-lift: 12px; }
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .nav-bar--floating {
+    background: rgba(255, 255, 255, var(--nav-pill-alpha));
+    backdrop-filter: blur(20px) saturate(1.6);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  }
+}
+:root { --nav-pill-inset: 16px; --nav-pill-lift: 12px; --nav-pill-alpha: 0.82; }

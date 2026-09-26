@@ -103,10 +103,32 @@ describe('NAV-SLIM-01', () => {
     // ⚠️ The flush bar SPENT the safe-area inset as its own reserved strip. A
     // pill sits ABOVE that strip, so padding it again double-counts.
     expect(f).toMatch(/padding-bottom:\s*0/)
-    // 🔴 OPAQUE. A translucent value here reverses a ruling made on a
-    // measurement, and this is the arm that would have to be deleted to do it.
-    expect(f, 'the pill is opaque — NAV-TRANSLUCENT-01 was killed on the palette')
-      .not.toMatch(/backdrop-filter|rgba\(255/)
+    // 🔴 THIS ARM USED TO ASSERT THE PILL WAS OPAQUE, AND IT FAILED CORRECTLY
+    // WHEN THE FOUNDER OVERRULED THAT (2026-09-26). It is updated, not deleted —
+    // the board's measurement still stands and still binds the SHAPE of the
+    // translucency, it just no longer decides whether to have it.
+    //
+    // ⚠️ WHAT THE MEASUREMENT STILL BINDS, and this is the whole reason the arm
+    // survives: the GROUND goes translucent, the LABELS never do. Fading the
+    // whole bar reaches 4.47:1 at 0.9 — below AA before the change is
+    // perceptible. With blur and full-opacity labels the worst real backdrop
+    // (the band over the moss CTA) holds 4.58:1 at 0.70 and 5.02 at 0.85.
+    const alpha = parseFloat(CSS.match(/--nav-pill-alpha:\s*([0-9.]+)/)?.[1] ?? '0')
+    expect(alpha, 'the translucency must come from a token').toBeGreaterThan(0)
+    expect(alpha, 'below 0.70 the label drops under AA on the moss CTA backdrop')
+      .toBeGreaterThanOrEqual(0.70)
+
+    // ⚠️ BLUR IS LOAD-BEARING. Without it the backdrop is moving content and no
+    // ratio can be claimed, so translucency must be inside an @supports guard
+    // with an OPAQUE fallback — never translucent-without-blur.
+    expect(CSS, 'translucency must be gated on backdrop-filter support')
+      .toMatch(/@supports \(backdrop-filter[\s\S]*?\.nav-bar--floating\s*\{[^}]*backdrop-filter/)
+    expect(f, 'the un-supported fallback must be an opaque token')
+      .toMatch(/background:\s*var\(--nav-bg\)/)
+
+    // The labels themselves are never faded — that lives on `.nav-tab`.
+    expect(rule('.nav-tab'), 'a faded label is the version that fails AA')
+      .not.toMatch(/opacity/)
   })
 
   it('🔴 the nav publishes its OCCLUSION, not its element height', () => {
@@ -149,6 +171,35 @@ describe('NAV-SLIM-01', () => {
     const src = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
     expect(Array.from(src.matchAll(/nav-bar nav-bar--floating/g)).length,
       'the real bar and the GuideSheet mirror must both be pills').toBe(2)
+  })
+
+  it('🔴 NO INLINE STYLE OVERRIDES A PROPERTY THE CLASS OWNS', () => {
+    // 🔴 THE GAP THAT LET THE PILL SHIP AS A SLAB. NAV-FLOAT-01 added
+    // `.nav-bar--floating` and left the flush bar's inline `bottom: 0`,
+    // `width: '100%'` and `maxWidth` on the element. **An inline style beats a
+    // class**, so the pill rendered full-width and flush with only its
+    // border-radius applying. Measured on the founder's device: gap below
+    // **0.9pt** against a declared 12, side inset **0.9pt** against 16.
+    //
+    // ⚠️ AND THE EXISTING ARMS WERE ALL GREEN, because they assert the CSS RULE
+    // EXISTS WITH THE RIGHT VALUES and never that those values WIN. A rule that
+    // is overridden is decoration. This is the efficacy half.
+    const src = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    const css = rule('.nav-bar--floating')
+    // Properties the class sets, in the camelCase an inline style would use.
+    const owned = Array.from(css.matchAll(/^\s*([a-z-]+)\s*:/gm))
+      .map(m => m[1]!.replace(/-([a-z])/g, (_, c) => c.toUpperCase()))
+    const offenders: string[] = []
+    for (const m of Array.from(src.matchAll(/className="nav-bar nav-bar--floating"\s*style=\{\{([\s\S]*?)\}\}/g))) {
+      for (const prop of owned) {
+        if (new RegExp(`(^|[\\s,{])${prop}\\s*:`).test(m[1]!)) {
+          offenders.push(`inline \`${prop}\` overrides .nav-bar--floating`)
+        }
+      }
+      // `maxWidth` is not in the class by that name but caps the class's width.
+      if (/(^|[\s,{])maxWidth\s*:/.test(m[1]!)) offenders.push('inline `maxWidth` caps the class width')
+    }
+    expect(offenders, offenders.join('\n')).toEqual([])
   })
 
   it('🔴 the nav renders on EXACTLY the four screens it has tabs for', () => {
