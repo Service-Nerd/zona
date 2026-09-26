@@ -4857,12 +4857,35 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                   (completion?.strava_activity_id && r.id === completion.strava_activity_id)
                 )
               : null
-            const actualDistKm   = linkedRun
-              ? +(linkedRun.distance_m / 1000).toFixed(1)
-              : (completion?.strava_activity_km ?? null)
-            const actualAvgHr    = completion?.avg_hr ?? (linkedRun?.avg_hr as number | null | undefined) ?? null
-            const actualDuration = linkedRun?.moving_time_s
-              ? fmtDurationMins(Math.round((linkedRun.moving_time_s as number) / 60))
+            // 🔴 THE MARSHALLED SHAPE USES STRAVA'S NAMES, NOT THE DB'S
+            // (SESSION-ACTUAL-SHAPE-01). `preloadedRuns` rows are mapped out of
+            // `strava_activities` into a Strava-API-shaped object at FOUR sites:
+            // `distance_m -> distance` (metres), `moving_time_s -> moving_time`
+            // (seconds), `avg_hr -> average_heartrate`. This block read the DB
+            // names off the already-renamed object, so:
+            //   `undefined / 1000` -> NaN -> **"NaNmi" on screen**
+            //   `moving_time_s`    -> undefined -> the duration row silently gone
+            //   `avg_hr`           -> undefined, MASKED because `completion.avg_hr`
+            //                         is tried first, which is why HR looked fine
+            //
+            // ⚠️ `NaN != null` IS TRUE, which is how it rendered. The guard below
+            // is `Number.isFinite`, because a "not null" check cannot catch NaN —
+            // that is the whole mechanism, not a detail.
+            //
+            // ⚠️ LATENT SINCE 2026-06-08, ACTIVATED 2026-09-22. The consumer was
+            // written two days AFTER the marshaller and was wrong from the first
+            // keystroke, but `HK-ELEV-COLUMN-01` had this query asking for
+            // `total_elevation_gain` against a column called `elevation_gain`, so
+            // it loaded ZERO HealthKit runs for three and a half months:
+            // `linkedRun` was always undefined and the correct fallback ran.
+            // **Fixing that column woke a dead consumer.**
+            const actualDistM    = linkedRun ? (linkedRun.distance as number | undefined) : undefined
+            const actualDistKm   = Number.isFinite(actualDistM) ? (actualDistM as number) / 1000
+                                 : (completion?.strava_activity_km ?? null)
+            const actualAvgHr    = completion?.avg_hr ?? (linkedRun?.average_heartrate as number | null | undefined) ?? null
+            const actualMovingS  = linkedRun?.moving_time as number | undefined
+            const actualDuration = Number.isFinite(actualMovingS) && (actualMovingS as number) > 0
+              ? fmtDurationMins(Math.round((actualMovingS as number) / 60))
               : null
             const isZoneBreach = actualAvgHr != null && zone2Ceiling != null &&
               actualAvgHr > zone2Ceiling &&
@@ -4923,10 +4946,20 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                       )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      {(effectiveMetric === 'distance' ? actualDistKm : actualDuration) != null && (
+                      {/* 🔴 THROUGH `formatDistance`, THE OWNER (ADR-015). This read
+                          `${actualDistKm}${preferredUnits}` — a KILOMETRE value
+                          concatenated with the user's UNIT LABEL — while the Planned
+                          column two blocks above called `formatDistance` correctly.
+                          On the fallback path a miles user saw **8.1mi for an 8.05 km
+                          run**; the truth is 5.0 mi. A 61% overstatement, silently, on
+                          every completed session. The NaN was the visible half of
+                          this; the wrong number was the half nobody could see. */}
+                      {(effectiveMetric === 'distance'
+                        ? (actualDistKm != null ? formatDistance(actualDistKm, preferredUnits) : null)
+                        : actualDuration) != null && (
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)' }}>
                           {effectiveMetric === 'distance'
-                            ? `${actualDistKm}${preferredUnits}`
+                            ? formatDistance(actualDistKm as number, preferredUnits)
                             : actualDuration}
                         </span>
                       )}
