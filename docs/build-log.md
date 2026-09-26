@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-26 — NAV-TRANSLUCENT reverted · four rounds tuning the variable that could not move
+**Shipped:** The nav is opaque again. The preview now A/Bs the border instead.
+**Dev learning:** `--bg` sits *between* white and any AA-safe darker tint. So a fill lighter than the page ground vanishes on white cards, and a fill darker vanishes on the ground — **no single fill separates from both by more than ~10 levels**, and the label contrast caps how dark you can go (`--mute` hits 4.5:1 at `rgb(240,238,234)`). Meanwhile the **border** separates by 17 over the ground and 18 over a card, against both. The fill was never what made the pill read as an object.
+**Product/creator learning:** He overruled the board's DON'T SHIP, reasonably, assuming the effect would be visible. It wasn't. The board's measurement was right and his eye confirmed it — which is a better outcome than either of us being told we were right in advance. The cycle is recorded in the test file itself so round five doesn't happen.
+**AI-building learning:** I built two A/Bs comparing two values of the variable that can barely move, while the variable that actually works was identical in both. He kept saying "I can't see a difference" and I kept nudging the number instead of asking *which property is doing the work*. Four rounds.
+**The honest bit:** Two self-inflicted failures in the revert alone. My `@supports` removal took the wrong closing brace and left a stray `}` in globals.css — **tsc passed and 3,582 tests passed, because neither parses CSS**; only `npm run build` caught it. Then I ran that build while the dev server was live, which rewrote `.next` underneath it and 500'd the preview I was about to show him.
+**Hook material:** Spent four rounds tuning a fill that can move 10 levels, next to a border already doing 18.
+**Postable?:** yes
+
+
 ## 2026-09-26 — NAV-TRANSLUCENT-02 · I gave the board a number that measured the wrong thing
 **Shipped:** An A/B of the nav material in `/nav-preview`, plus the token. The tint itself has not shipped.
 **Dev learning:** I told the board "alpha alone cannot make the pill perceptible over our grounds" and briefed a whole sitting on it. I had compared the pill to **pure white** instead of to **the ground it sits on**. Corrected: white at 0.82 is **16 levels against the page ground and 0 against a white card**. It was never invisible — it is sharply visible on one surface and gone on the other, and the founder's capture happened to be over a card. The change is about consistency, not visibility, which is a different argument with a different justification.
