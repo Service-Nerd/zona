@@ -2388,6 +2388,36 @@ not delay input"* — is met at 71ms to arrival.
 ✅ **Verified:** closed is a 2px sliver at the card's own centre (462); open is **343×228** resting
 with its foot **26px behind the pill**; width matches the pill exactly.
 
+#### 🔴 Round 6 — "it still comes from the bottom" on a build that demonstrably did not
+
+**It was live and it WAS growing from the card** — verified on production: closed box **448×2 at
+y=445**, the tapped card's exact centre. **The origin was real and imperceptible, which is the same
+thing as absent.**
+
+📐 **The curve was the wrong SHAPE and my duration made it worse.**
+`cubic-bezier(0.18, 1.70, 0.40, 1)` reaches **90% in 16% of the duration**. At 360ms the entire
+**400px journey is over in 57ms**, and the remaining **303ms** is the panel oscillating in place at
+full size. The eye sees *"it appeared, then wobbled"* and the brain supplies the default story for a
+sheet: **it came from the bottom.**
+
+⚠️ **I PICKED 360ms BECAUSE THE PANEL ARRIVES IN 71ms** — optimising for *"no perceived lag"* on an
+animation whose entire purpose is that the runner **sees where it came from**.
+
+> **On an origin-anchored transition the number to optimise is TIME SPENT TRAVELLING, not time to
+> arrival.**
+
+| curve | 90% reached at | travel @420ms | then settling |
+|---|---|---|---|
+| old `wobble` | **16%** | **66ms** | 354ms |
+| **new `wobble`** `cubic-bezier(0.65, 0, 0.35, 1.55)` | **56%** | **235ms** | 185ms |
+
+Peak **111.8%** at 76%, settled by 99%. The old curve stays as **`pop`** so the difference is one
+tap away.
+
+🥇 **The founder's report was right and my verification was also right** — both describing different
+things. Measuring *that the origin is applied* is not the same as measuring *that it is visible*,
+and only one of those is the feature.
+
 ### LINK-HIERARCHY-01 — SHIP (4) · the screen argued with itself (2026-09-26)
 
 **Founder:** *"The buttons look too big/fat… the Run (Connect) above Log without activity is
