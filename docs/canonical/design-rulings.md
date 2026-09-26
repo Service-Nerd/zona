@@ -2304,6 +2304,27 @@ looking — `document.hidden` is true in this pane, `requestAnimationFrame` neve
 animates here to watch.** All four bugs were in the plumbing and none in the idea, which is the
 argument for the preview existing at all.
 
+#### 🔁 Round 3 — "I want it to become part of the pill, so it comes from the tip then goes back into it"
+
+📐 **Built and measured.** The sheet's foot now tucks **26px BEHIND** the pill: closed it is a 2px
+sliver whose bottom edge is the pill's tip (**738 = 738**); open it is **343×228 with its bottom at
+764**, under the pill. Foot **squared with no border** — two borders meeting would draw a seam
+through what is meant to be one object. `detached` (round 2) is kept alongside for comparison.
+
+🔴 **AND IT COLLIDES WITH A RECORDED RULING, WHICH IS THE POINT OF SHOWING IT.** For the pill to be
+part of the sheet it must be **lifted above the scrim** (z 4002 over the panel's 4001), and **S1
+(2026-09-22) covered the nav precisely because a visible dimmed nav was *"VISIBLE, DIMMED, AND
+LYING"*** — it offered four destinations and delivered one behaviour, and tapping "Plan" dismissed
+the sheet instead of navigating. **A BRIGHT nav makes that lie louder, not quieter.**
+
+**The question this puts to the founder:** if the pill is the sheet's foot, it is no longer a nav
+while the sheet is open. Either the tabs must work, or the pill must visibly stop being tabs for
+the duration. **Not decided here.**
+
+🔻 **Filed:** `SHEET-RAF-FALLBACK-01` — `Sheet.tsx:174` releases on a bare `rAF`, which does not fire
+while the document is hidden, leaving scrim-up and scroll-locked with no panel. Found because that
+is exactly the state this pane is permanently in, and it cost **four** verification attempts.
+
 ### LINK-HIERARCHY-01 — SHIP (4) · the screen argued with itself (2026-09-26)
 
 **Founder:** *"The buttons look too big/fat… the Run (Connect) above Log without activity is

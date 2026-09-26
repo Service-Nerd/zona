@@ -27,6 +27,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 type Origin = 'pill' | 'tap' | 'bottom'
 type Spring = 'none' | 'overshoot' | 'wobble'
 type Width  = 'pill' | 'full'
+type Join   = 'fused' | 'detached'
 
 const EASE: Record<Spring, string> = {
   none:      'cubic-bezier(0.32, 0.72, 0, 1)',
@@ -35,12 +36,14 @@ const EASE: Record<Spring, string> = {
 }
 
 const INSET = 16          // matches --nav-pill-inset
-const GAP   = 10          // breathing room between the sheet and the pill
+const GAP     = 10        // `detached`: breathing room above the pill
+const OVERLAP = 26        // `fused`: how far the sheet's foot tucks BEHIND the pill
 
 export default function SheetPreview() {
   const [origin, setOrigin] = useState<Origin>('pill')
   const [spring, setSpring] = useState<Spring>('overshoot')
   const [width,  setWidth]  = useState<Width>('pill')
+  const [join,   setJoin]   = useState<Join>('fused')
   const [ms, setMs] = useState(420)
   const [open, setOpen] = useState(false)
   const [shown, setShown] = useState(false)
@@ -49,11 +52,22 @@ export default function SheetPreview() {
   const panelRef = useRef<HTMLDivElement>(null)
   const fromRect = useRef<DOMRect | null>(null)
 
-  /** Where the panel rests: just above the pill when pill-width, else the floor. */
+  /**
+   * Where the panel rests.
+   *
+   * 🔴 `fused` — the founder's "become part of the pill". The panel's foot sits
+   * BEHIND the pill by `OVERLAP`, so there is no seam, no gap and no second
+   * border between them: the pill is simply the bottom of one object. Its
+   * bottom corners go square because they are hidden.
+   *
+   * `detached` is round 2 — a separate panel floating above the pill.
+   */
   const restBottom = () => {
     const pill = pillRef.current?.getBoundingClientRect()
     if (width === 'full' || !pill) return 0
-    return Math.round(window.innerHeight - pill.top + GAP)
+    return join === 'fused'
+      ? Math.round(window.innerHeight - pill.top - OVERLAP)
+      : Math.round(window.innerHeight - pill.top + GAP)
   }
 
   /**
@@ -100,7 +114,16 @@ export default function SheetPreview() {
     panel.style.transformOrigin = `center ${c.originY}`
     panel.style.transform = c.transform
     void panel.offsetHeight
-    requestAnimationFrame(() => {
+    // 🔴 rAF WITH A TIMEOUT FALLBACK, AND IT IS NOT A TEST CONVENIENCE.
+    // `requestAnimationFrame` does not fire while the document is hidden. In
+    // this browser pane `document.hidden` is permanently true, which is why the
+    // animation could never be watched here — but the real exposure is a sheet
+    // opened as the app backgrounds: `shown` never flips and the panel stays
+    // collapsed off-screen until something else re-renders it.
+    let released = false
+    const release = () => {
+      if (released) return
+      released = true
       panel.style.transition = `transform ${ms}ms ${EASE[spring]}`
       // 🔴 THE OPEN TRANSFORM IS SET HERE, and the rewrite forgot it — the panel
       // stayed collapsed at a 2px sliver forever and `ANIMATED` read false.
@@ -110,7 +133,10 @@ export default function SheetPreview() {
       // idea, which is the argument for building the preview before the ship.
       panel.style.transform = 'translateY(0px) scaleY(1)'
       setShown(true)
-    })
+    }
+    requestAnimationFrame(release)
+    const t = setTimeout(release, 50)
+    return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
@@ -139,16 +165,20 @@ export default function SheetPreview() {
   )
 
   const pillWidth = width === 'pill'
+  const fused     = pillWidth && join === 'fused'
+  const fusedOpen = fused && open
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', overflow: 'hidden', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ padding: '10px 16px', background: 'var(--card)', borderBottom: '1px solid var(--line)' }}>
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>Sheet origin · round 2</div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', marginTop: 3, lineHeight: 1.5 }}>
-          Pill-width makes the horizontal scale <strong>1</strong>, so the only movement is height —
-          it grows up out of the pill&rsquo;s top edge.
+          <strong>fused</strong> tucks the sheet&rsquo;s foot behind the pill so they are one object —
+          and lifts the pill above the scrim, which collides with ruling S1. Compare with
+          <strong> detached</strong>.
         </div>
         {seg('width',  width,  setWidth,  ['pill', 'full'] as const)}
+        {seg('join',   join,   setJoin,   ['fused', 'detached'] as const)}
         {seg('origin', origin, setOrigin, ['pill', 'tap', 'bottom'] as const)}
         {seg('spring', spring, setSpring, ['none', 'overshoot', 'wobble'] as const)}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
@@ -172,7 +202,15 @@ export default function SheetPreview() {
         ))}
       </div>
 
-      <div ref={pillRef} className="nav-bar nav-bar--floating" style={{ position: 'fixed', zIndex: 3000 }}>
+      {/* 🔴 THE PILL IS LIFTED ABOVE THE SCRIM WHILE FUSED, and this collides
+          with a recorded ruling. S1 (Design Board 2026-09-22) made the panel
+          COVER the nav precisely because a visible dimmed nav was "VISIBLE,
+          DIMMED, AND LYING": it offered four destinations and delivered one
+          behaviour, and tapping "Plan" dismissed the sheet instead of
+          navigating. A BRIGHT nav makes that lie louder, not quieter.
+          Surfaced in the preview rather than decided here. */}
+      <div ref={pillRef} className="nav-bar nav-bar--floating"
+           style={{ position: 'fixed', zIndex: fusedOpen ? 4002 : 3000 }}>
         {['Today', 'Plan', 'Coach', 'Me'].map((l, i) => (
           <button key={l} className="nav-tab" style={{ color: i === 0 ? 'var(--moss-strong)' : undefined }}>
             <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
@@ -200,17 +238,22 @@ export default function SheetPreview() {
             background: 'var(--card)',
             // Pill-width sheets are objects, so all four corners round and they
             // carry the pill's edge. Full-width keeps today's top-only radius.
-            borderRadius: pillWidth ? 22 : '20px 20px 0 0',
+            // Fused: the foot is hidden behind the pill, so square it and drop
+            // the bottom border — two borders meeting would draw a seam through
+            // what is meant to be one object.
+            borderRadius: !pillWidth ? '20px 20px 0 0' : fused ? '22px 22px 0 0' : 22,
             border: pillWidth ? '1px solid var(--chrome-edge)' : 'none',
+            borderBottom: fused ? 'none' : undefined,
             boxShadow: 'var(--shadow-lifted)',
             maxHeight: '64vh', overflow: 'hidden',
+            zIndex: 4001,
             willChange: 'transform',
           }}>
             {/* ⚠️ COUNTER-FADE, NOT COUNTER-SCALE. A `scaleY` distorts everything
                 inside it; the content fades in over the back half so the
                 squashed frames are the transparent ones. */}
             <div style={{
-              padding: '18px 18px 22px',
+              padding: fused ? `18px 18px ${22 + OVERLAP}px` : '18px 18px 22px',
               opacity: shown ? 1 : 0,
               transition: `opacity ${Math.round(ms * 0.45)}ms ease ${Math.round(ms * 0.35)}ms`,
             }}>

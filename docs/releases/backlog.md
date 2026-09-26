@@ -28,6 +28,21 @@ already decided what it is.
 ---
 
 
+### `SHEET-RAF-FALLBACK-01` — a sheet opened while the document is hidden never shows ⚙️ NO BOARD
+
+`Sheet.tsx:174` releases the enter animation with a bare
+`requestAnimationFrame(() => setShown(true))`. **rAF does not fire while
+`document.hidden` is true**, so a sheet that mounts in that window leaves `shown` false: the panel
+stays at `translateY(100%)`, **while the scrim is up and the body is scroll-locked.**
+
+⚠️ **It self-heals on return** — pending rAF callbacks fire when the document becomes visible — so
+the broken window is the one nobody is looking at. That is why it is filed rather than fixed.
+
+🔴 **Found the hard way.** `document.hidden` is permanently true in this repo's browser pane, and
+it is the reason **four successive verification attempts on `/sheet-preview` reported a sheet that
+had not opened**. The preview now releases with `rAF` **plus a 50ms timeout fallback**; `Sheet`
+does not. **Two lines, and it removes a state where the app looks broken and cannot be scrolled.**
+
 ### `ACTION-ROW-320-01` — the action rows still wrap at 320pt ⚙️ NO BOARD (measurement) · 🧭 DESIGN BOARD (answer)
 
 `LINK-HIERARCHY-01` moved both action rows to `.btn--compact` and they now render **44px, one line
