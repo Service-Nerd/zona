@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — SHEET-ORIGIN-01 · A preview that looked like it worked
+**Shipped:** `/sheet-preview` — three sheet origins and three springs, so the founder can judge his own brief against the alternative. Nothing ships from it.
+**Dev learning:** three separate bugs, all in measurement rather than in the thing measured. `getBoundingClientRect()` returns the *transformed* box, so measuring a panel that already carries `translateY(100%)` puts every translate 225px out. Clearing the transform to measure it starts a 380ms transition to none, so the next read is mid-flight and just as wrong. And the real one: `panelRef.current` is null on the render that computes the closed transform, so **all three origin variants were silently falling back to today's bottom slide** — the preview looked like it worked.
+**Product/creator learning:** the brief had a flaw worth naming. The runner never taps the nav pill; they tap a card. A sheet emerging from the pill is pretty and attributes itself to a control they did not touch. So the preview shows the asked-for version *and* the honest one, side by side, and the founder decides with both in front of him rather than only the one he described.
+**AI-building learning:** `document.hidden` is true in this browser pane, so `requestAnimationFrame` never fires and the animation genuinely cannot be seen here. I could easily have reported "built, looks good". Printing the transforms instead is what found all three bugs — and the third one would have survived any amount of looking, because the fallback animation is perfectly pleasant.
+**The honest bit:** two of my own gates caught this page, and one of them was wrong. The 44px floor caught a real 29px button. `stickyScroller` flagged `inset: '162px 0 0'` as an unconstrained scrollport — it isn't, `inset` pins top and bottom, and the gate I wrote this morning didn't know. Then the pattern-artifact check I added an hour ago demanded a pattern for this ruling because `'SHIP'` is a substring of `'nothing shipped'`. Two false positives in one day, in two checks I wrote the same day.
+**Hook material:** the preview demonstrating three different animations was showing the same one three times, and it looked fine.
+**Postable?:** yes
+
 ## 2026-09-26 — LINK-HIERARCHY-01 · The screen that argued with itself
 **Shipped:** the link-an-activity screen stops promoting the action we don't want, and its buttons stop wrapping.
 **Dev learning:** "the buttons look too big/fat" was wrapping, not padding. Measured at 375pt: `.btn--regular`'s `padding: 15px 20px` at `flex: 1` leaves too little room, both labels go to two lines, and a 44px floor renders 74px. I tested the obvious suspects first — sentence case instead of uppercase, no letter-spacing — and both measured **identical at 74px**. It was the size class. Guessing would have changed the copy and fixed nothing.

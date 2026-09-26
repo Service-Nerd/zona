@@ -407,7 +407,16 @@ BASELINE = {
 missing = {}
 for m in re.finditer(r'^#{2,3}\s+(.*)$', rule, re.M):
     h = m.group(1)
-    if 'SHIP' not in h.upper() or "DON'T SHIP" in h.upper():
+    H = h.upper()
+    # ⚠️ \bSHIP\b AS A WORD. The first cut used `'SHIP' in H`, which matched
+    # "nothing shipped" in an INSUFFICIENT-EVIDENCE heading and demanded a
+    # pattern for a ruling that deliberately built nothing. Found by the push
+    # hook within an hour of the check shipping -- the SECOND gate I wrote today
+    # to have a false positive on the day. A gate that cries wolf gets switched
+    # off, which this repo records as equivalent to having no gate.
+    if not re.search(r'\bSHIP\b', H):
+        continue
+    if any(v in H for v in ("DON'T SHIP", 'INSUFFICIENT EVIDENCE', 'KILLED', 'REVERTED', 'NOT BUILT')):
         continue
     for i in set(re.findall(r'\b([A-Z][A-Z0-9]+(?:-[A-Z0-9]+)+-\d+)\b', h)):
         if i not in pat and i not in BASELINE:
