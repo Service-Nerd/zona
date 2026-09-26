@@ -21,7 +21,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-type Variant = 'opaque' | 'translucent' | 'onScroll'
+type Variant = 'opaque' | 'translucent' | 'onScroll' | 'compare'
 
 const TABS = [
   { id: 'today', label: 'Today' },
@@ -113,7 +113,9 @@ export default function NavPreview() {
     const a = lum(fg), b = lum(bg); const hi = Math.max(a, b), lo = Math.min(a, b)
     return (hi + 0.05) / (lo + 0.05)
   }
-  const effAlpha = variant === 'opaque' ? 1 : variant === 'translucent' ? alpha : (scrolling ? alpha : 1)
+  const effAlpha = variant === 'opaque' ? 1 : variant === 'translucent' ? alpha
+                 : variant === 'compare' ? alpha
+                 : (scrolling ? alpha : 1)
   const ground = WORST_BACKDROP.map((c, i) => Math.round(255 * effAlpha + c * (1 - effAlpha)))
   const labelRatio = contrast([0x6D, 0x69, 0x63], ground)
 
@@ -129,7 +131,7 @@ export default function NavPreview() {
       {/* ── the controls, deliberately outside the phone frame ── */}
       <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)', background: 'var(--card)' }}>
         <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-          {([['opaque','Opaque'],['translucent','Translucent'],['onScroll','Translucent on scroll']] as [Variant,string][]).map(([v,lab]) => (
+          {([['opaque','Opaque'],['translucent','Translucent'],['onScroll','On scroll'],['compare','A/B']] as [Variant,string][]).map(([v,lab]) => (
             <button key={v} onClick={() => setVariant(v)} className={`btn btn--compact ${variant === v ? 'btn--primary' : 'btn--secondary'}`} style={{ flex: 1, fontSize: 11 }}>
               {lab}
             </button>
@@ -152,6 +154,7 @@ export default function NavPreview() {
         </label>
         <div style={{ marginTop: 8, fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1.6 }}>
           painted chrome <strong>{readout.chrome}px</strong> · CTA hidden <strong>{readout.hidden}px</strong><br />
+          pill right now: <strong>{effAlpha === 1 ? 'OPAQUE' : `translucent ${effAlpha.toFixed(2)}${blur ? ' + blur' : ' · NO BLUR'}`}</strong><br />
           label contrast over the worst real backdrop:{' '}
           <strong style={{ color: labelRatio >= 4.5 ? 'var(--moss-strong)' : 'var(--danger)' }}>
             {labelRatio.toFixed(2)}:1
@@ -163,7 +166,7 @@ export default function NavPreview() {
       </div>
 
       {/* ── the scrolling screen ── */}
-      <div ref={scrollRef} onScroll={onScroll} style={{ flex: 1, overflowY: 'auto', position: 'relative', padding: '0 20px', paddingBottom: 140 }}>
+      <div ref={scrollRef} onScroll={onScroll} style={{ flex: 1, overflowY: 'auto', position: 'relative', padding: '0 20px', paddingBottom: 26 }}>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: 'var(--mute)', padding: '18px 0 10px' }}>BASE · WEEK 1</div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 15, color: 'var(--ink-2)' }}>Good evening, Russ</div>
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: 58, fontWeight: 700, letterSpacing: '-2px', lineHeight: 1.02, color: 'var(--ink)', marginTop: 4 }}>
@@ -201,8 +204,60 @@ export default function NavPreview() {
 
         <button ref={ctaRef} className="btn btn--primary btn--regular btn--full" style={{ marginTop: 12 }}>Log this session</button>
         <button className="btn btn--secondary btn--compact btn--full" style={{ marginTop: 8 }}>Log manually</button>
-        <div style={{ height: 40 }} />
+        {/* 🔴 CONTENT MUST PASS *UNDER* THE PILL OR THERE IS NOTHING TO SEE
+            THROUGH IT. The first cut reserved 140px of bottom padding, so the
+            pill floated over empty `--bg` and every variant looked identical —
+            which is exactly what the founder reported. Measured: white at 0.75
+            over flat `--bg` is a **5-level** change (invisible); over the moss
+            CTA it is **19 levels** (obvious). The one backdrop that shows the
+            effect was the one the pill never sat over. Third time today a probe
+            could not reach the state it was built to demonstrate. */}
+        <div style={{ marginTop: 16, background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 14, padding: 16, boxShadow: 'var(--shadow-card)' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'var(--ink)' }}>Scroll on.</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--mute)', marginTop: 4, lineHeight: 1.5 }}>
+            Watch the pill as the green button and the amber coach card pass beneath it. Over flat
+            background there is nothing to see through — that is the palette, not the code.
+          </div>
+        </div>
+        <button className="btn btn--primary btn--regular btn--full" style={{ marginTop: 12 }}>A second green block, to scroll under</button>
+        <div style={{ marginTop: 12, background: 'var(--warn-bg)', borderLeft: '3px solid var(--warn)', borderRadius: 14, padding: '18px 16px', fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink)', lineHeight: 1.5 }}>
+          An amber block, to scroll under. Against this and the green, a translucent pill is a
+          15–19 level change. Against the page ground it is 5, which your eye reads as nothing.
+        </div>
+        <button className="btn btn--primary btn--regular btn--full" style={{ marginTop: 12 }}>And one more</button>
+        <div style={{ height: 120 }} />
       </div>
+
+      {/* 🔴 A/B MODE EXISTS BECAUSE A 19-LEVEL DIFFERENCE IS INVISIBLE FROM
+          MEMORY. The founder toggled opaque against translucent and reported
+          that neither did anything — and he was right about the experience even
+          though the CSS was correct: you cannot hold a near-white against
+          another near-white across a button press. Side by side over the SAME
+          backdrop it is obvious. **If a difference needs A/B to be seen at all,
+          that is itself the finding.** */}
+      {variant === 'compare' && (
+        <div style={{
+          position: 'fixed', left: '50%', transform: 'translateX(-50%)',
+          bottom: 'calc(86px + env(safe-area-inset-bottom, 0px))',
+          width: 'calc(100% - 32px)', maxWidth: 448,
+          display: 'flex', alignItems: 'stretch',
+          background: 'rgb(255,255,255)',
+          border: '1px solid var(--line)', borderRadius: 999,
+          boxShadow: 'var(--shadow-lifted)', overflow: 'hidden', zIndex: 3000,
+        }}>
+          {TABS.map(t => (
+            <div key={t.id} style={{
+              flex: 1, minHeight: 60, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 3,
+              fontFamily: 'var(--font-ui)', fontSize: 11,
+              color: active === t.id ? 'var(--moss-strong)' : 'var(--mute)',
+            }}>
+              <Glyph id={t.id} active={active === t.id} /><span>{t.label}</span>
+            </div>
+          ))}
+          <span style={{ position: 'absolute', right: 10, top: 4, fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--mute)' }}>OPAQUE</span>
+        </div>
+      )}
 
       {/* ── the chrome under test ── */}
       {/* ⚠️ THE GROUND GOES TRANSLUCENT, THE LABELS NEVER DO (Silvanto, binding).
@@ -261,6 +316,11 @@ export default function NavPreview() {
             <span>{t.label}</span>
           </button>
         ))}
+        {variant === 'compare' && (
+          <span style={{ position: 'absolute', right: 10, top: 4, fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--mute)' }}>
+            {alpha.toFixed(2)}
+          </span>
+        )}
       </div>
     </div>
   )
