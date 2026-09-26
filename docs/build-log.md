@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-26 — NAV-PILL-GEOMETRY-01 · the competitor answered the design question I was about to guess at
+**Shipped:** The pill sits 21pt off the bottom instead of 46, and the radius became a token.
+**Dev learning:** `calc(lift + env(safe-area-inset-bottom))` is the wrong mental model for a floating control. It reads as "clear the indicator, then lift a bit" and gives 12 + 34 = 46pt. The safe-area strip is where you must not put **content**; a floating control may tuck into its upper part — the indicator bar is only ~5pt of the 34. `max(lift, inset − tuck)` gives 21 with an indicator and 12 without.
+**Product/creator learning:** He said "still too round". I was one keystroke from dropping the radius to 20px. Instead I measured the competitor pill he'd said he liked: **it's a stadium too** — its curve insets 18.7pt where a stadium insets 17.7 and a 20pt radius only 11.3. The radius was never the difference. The gap was, by 25pt. A pill floating 46pt up reads as a detached lozenge; the same pill at 21pt reads as docked.
+**AI-building learning:** Twice now the reference screenshots have answered a question I was about to answer with taste. The habit that pays is: before changing a value someone objected to, measure the thing they said they liked.
+**The honest bit:** This is the third geometry defect I've shipped on one component in two days — the 48px floor, the inline override, and now adding the lift to the inset. Each was "obviously right" CSS and each was wrong on a device. The pattern is that I reason about the box model instead of measuring it.
+**Hook material:** He said the corners were too round. Measured the competitor's: same corners. The difference was 25 pixels of empty space underneath.
+**Postable?:** yes
+
+
 ## 2026-09-26 — NAV-PILL-FLUSH-01 · the rule existed, had the right values, and lost
 **Shipped:** The pill actually floats, and it is slightly translucent after the founder overruled the board.
 **Dev learning:** An inline style beats a class. I added `.nav-bar--floating` and left the flush bar's inline `bottom: 0`, `width: '100%'` and `maxWidth` on the same element — so the only declaration that applied was the one the inline styles did not mention, `border-radius`. It shipped as a full-width flush slab with round corners. **Every gate was green, because they assert the rule EXISTS with the right values and never that those values WIN.** A rule that is overridden is decoration, and that is now its own arm, with the property list derived from the class's own declarations rather than hand-written.
