@@ -4,6 +4,7 @@ import React from 'react'
 import fs from 'node:fs'
 import path from 'node:path'
 import NavTab from './NavTab'
+import { Z_LAYERS } from '../../lib/ui/zLayers'
 
 /**
  * NAV-SLIM-01 — Design Board, 2026-09-25. SHIP.
@@ -88,6 +89,81 @@ describe('NAV-SLIM-01', () => {
     expect(src, 'a second hand-written nav list is back').not.toMatch(/NAV_SCREENS|NAV_LABELS/)
     expect(src, "the nav must not list Strava — its tab was removed in Phase 1")
       .not.toMatch(/label: 'Strava'/)
+  })
+
+  it('🔴 the pill is geometry from TOKENS, and the float gap is not padding', () => {
+    // NAV-FLOAT-01 — Design Board, ruled SHIP twice. Opaque: NAV-TRANSLUCENT-01
+    // was killed ON THE PALETTE (white at 0.75 is a 5-level change over
+    // `--bg`), and NAV-COLLAPSE-01 killed permanently by the founder.
+    const f = rule('.nav-bar--floating')
+    expect(f, '.nav-bar--floating missing from globals.css').not.toBe('')
+    expect(f, 'the inset must come from a token, never a literal').toMatch(/var\(--nav-pill-inset\)/)
+    expect(f, 'the lift must come from a token, never a literal').toMatch(/var\(--nav-pill-lift\)/)
+    expect(f).toMatch(/border-radius:\s*999px/)
+    // ⚠️ The flush bar SPENT the safe-area inset as its own reserved strip. A
+    // pill sits ABOVE that strip, so padding it again double-counts.
+    expect(f).toMatch(/padding-bottom:\s*0/)
+    // 🔴 OPAQUE. A translucent value here reverses a ruling made on a
+    // measurement, and this is the arm that would have to be deleted to do it.
+    expect(f, 'the pill is opaque — NAV-TRANSLUCENT-01 was killed on the palette')
+      .not.toMatch(/backdrop-filter|rgba\(255/)
+  })
+
+  it('🔴 the nav publishes its OCCLUSION, not its element height', () => {
+    // 🔴 THE ASSUMPTION THE PILL BREAKS. `bottomNavH` fed `Sheet`'s maxHeight and
+    // the scroll container's reserve by reading
+    // `getBoundingClientRect().height` — correct for exactly as long as the nav
+    // was FLUSH, because then its height WAS the band it covered. The pill is
+    // 62px tall and occludes 74px. Measured in a browser: element 62, occlusion
+    // 74, float gap 12.
+    //
+    // ⚠️ AND THE `+16` SLACK IN THE RESERVE WOULD HAVE HIDDEN IT — the app would
+    // have looked right by accident while every Sheet was 12px too tall. That is
+    // worse than a visible break.
+    const src = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    const i = src.indexOf('const bottomNavRef')
+    const block = src.slice(i, i + 1400)
+    expect(block, 'the nav height must be measured from the viewport bottom')
+      .toMatch(/window\.innerHeight - r\.top/)
+    expect(block, 'reading the element height under-reserves by the float gap')
+      .not.toMatch(/const h = Math\.ceil\(node\.getBoundingClientRect\(\)\.height\)/)
+  })
+
+  it('🔴 a sheet still covers the pill — the popup seam (founder condition 2)', () => {
+    // § 6i / S1 ruled that slide-up sheets COVER the nav, and the measured
+    // finding there was that a nav icon under a sheet DISMISSED instead of
+    // navigating. A floating pill changes the geometry — inset and lifted — so
+    // the seam was re-verified in a browser: the scrim (z 4000) spans the pill
+    // (z 3000), the opaque panel paints over it, and a tap at the pill's centre
+    // lands on the scrim. Unchanged from the flush bar.
+    //
+    // This arm holds the INVARIANT that makes that true, since a DOM stack
+    // cannot be asserted from source.
+    expect(Z_LAYERS.sheet).toBeGreaterThan(Z_LAYERS.nav)
+    const sheet = fs.readFileSync(path.join(ROOT, 'components/shared/Sheet.tsx'), 'utf8')
+    expect(sheet, 'the scrim must span the viewport or it stops covering the nav')
+      .toMatch(/position: 'fixed', inset: 0, zIndex: Z_LAYERS\.sheet/)
+  })
+
+  it('🔴 BOTH renderers are pills — the guide mirror cannot drift again', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    expect(Array.from(src.matchAll(/nav-bar nav-bar--floating/g)).length,
+      'the real bar and the GuideSheet mirror must both be pills').toBe(2)
+  })
+
+  it('🔴 the nav renders on EXACTLY the four screens it has tabs for', () => {
+    // Founder's condition 1: "ensure it works whilst used on all of our screens."
+    // There are 15 screens in the router and 4 carry the nav. The guard and
+    // NAV_ITEMS are two hand-maintained lists of the same thing — the class of
+    // drift that made the GuideSheet mirror show a retired `strava` tab — so
+    // they are compared to each other rather than each being asserted alone.
+    const src = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    const items = Array.from(src.matchAll(/\{ id: '([a-z]+)',\s*label:/g)).map(m => m[1]).sort()
+    const guardLine = src.split('\n').find(l => l.includes('appReady && (screen ==='))
+    expect(guardLine, 'the nav render guard has moved — re-anchor this').toBeTruthy()
+    const guarded = Array.from(guardLine!.matchAll(/screen === '([a-z-]+)'/g)).map(m => m[1]).sort()
+    expect(items.length, 'NAV_ITEMS should carry four tabs').toBe(4)
+    expect(guarded, 'the render guard and NAV_ITEMS must name the same screens').toEqual(items)
   })
 
   it('🔴 the marketing replicas still encode the same height', () => {

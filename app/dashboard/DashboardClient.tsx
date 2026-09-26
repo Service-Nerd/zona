@@ -657,7 +657,21 @@ export default function DashboardClient() {
     bottomNavObserverRef.current = null
     if (!node) { setBottomNavH(null); return }
     const apply = () => {
-      const h = Math.ceil(node.getBoundingClientRect().height)
+      // 🔴 OCCLUSION, NOT ELEMENT HEIGHT (NAV-FLOAT-01). This read
+      // `getBoundingClientRect().height`, which was correct for exactly as long
+      // as the nav was FLUSH to the bottom edge — then its height WAS the band
+      // it covered. The floating pill is ~62px tall and sits 12px off the edge,
+      // so it occludes 74px while reporting 62. Every consumer — `Sheet`'s
+      // maxHeight and the scroll container's reserve — would under-reserve by
+      // the float gap.
+      //
+      // ⚠️ AND THE `+16` SLACK IN THE RESERVE WOULD HAVE ABSORBED IT, which is
+      // worse than a visible break: the app would have looked right by accident
+      // and `Sheet` would have been 12px too tall on every screen. Measuring
+      // from the viewport bottom is true for a flush bar AND a floating one, so
+      // this cannot drift again if the shape changes a third time.
+      const r = node.getBoundingClientRect()
+      const h = Math.ceil(window.innerHeight - r.top)
       if (h > 0) setBottomNavH(h)
     }
     apply()
@@ -2841,7 +2855,7 @@ export default function DashboardClient() {
         if (screen === 'redeem') return null
 
         return (
-          <div ref={bottomNavRef} className="nav-bar" style={{
+          <div ref={bottomNavRef} className="nav-bar nav-bar--floating" style={{
             position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
             width: '100%', maxWidth: '480px',
             zIndex: Z_LAYERS.nav,
@@ -3846,7 +3860,7 @@ function ScreenGuide({ screen, onDismiss }: { screen: Screen; onDismiss: () => v
             It listed `strava` (retired in Phase 1) and omitted `me`, so it
             taught a nav that no longer existed. NavTab with no `onClick`
             renders inert and aria-hidden: a mirror is not a control. */}
-        <div className="nav-bar">
+        <div className="nav-bar nav-bar--floating">
           {NAV_ITEMS.map(({ id, label, icon }) => (
             <NavTab key={id} label={label} icon={icon(screen === id)} active={screen === id} />
           ))}

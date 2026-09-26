@@ -1166,3 +1166,46 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 .nav-tab:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 
 
+
+
+/* ── Floating nav pill — NAV-FLOAT-01 (Design Board, ruled twice 2026-09-25/26)
+ *
+ * The bar lifts off the bottom edge and becomes a pill. Ruled **on brand
+ * grounds and recorded as such**: measured, it gives back no vertical space and
+ * makes the runner no better at running. It ships because a full-width slab
+ * welded to the bottom is the most category-generic element in the product, and
+ * a nav that visibly floats is costly signalling a competitor built on
+ * encouragement cannot copy (Collins). The founder used the mock and said he
+ * loved it; that is a preference the board chose to honour, not a finding.
+ *
+ * 🔴 OPAQUE, AND THAT IS A MEASURED DECISION, NOT A DEFAULT. NAV-TRANSLUCENT-01
+ * was killed **on the palette, not on the idea**: Warm Slate is a near-white
+ * ground with white cards, so white at 0.75 is a **5-level** change over the
+ * page ground, 6 over a session card, 9 over the hero — and only 15 over amber
+ * and 19 over the moss CTA. Below perception on three of five backdrops, and it
+ * needed an A/B mode before anyone could see it at all. `backdrop-filter` over
+ * a flat colour returns that flat colour unchanged. **Re-open only if the ground
+ * changes materially, or a device shows the per-frame cost is negligible.**
+ *
+ * ⚠️ `:359` ("chrome: a top hairline, not a floating card") GOVERNS THE SHADOW,
+ * NOT THE SHAPE — Silvanto's partial sustain, confirmed at two sittings. The
+ * shadow here is the system's `--shadow-lifted`, not a bespoke one.
+ *
+ * ⚠️ THE FLOAT GAP IS NOT PADDING. It shows page ground, which is the whole
+ * point of the shape. The nav's OCCLUSION is therefore taller than its element,
+ * and `bottomNavH` measures from the viewport bottom for exactly that reason. */
+.nav-bar--floating {
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2 * var(--nav-pill-inset));
+  max-width: 448px;
+  bottom: calc(var(--nav-pill-lift) + env(safe-area-inset-bottom, 0px));
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow-lifted);
+  overflow: hidden;
+  /* The flush bar spent the safe-area inset as its own reserved strip. A pill
+     sits ABOVE that strip instead, so it must not pad it a second time. */
+  padding-bottom: 0;
+}
+:root { --nav-pill-inset: 16px; --nav-pill-lift: 12px; }

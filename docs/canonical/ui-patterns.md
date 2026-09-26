@@ -794,6 +794,41 @@ single owner**; `NAV_ITEMS` in `DashboardClient` is the single list.
 - Label: `0.6875rem` (11px), always visible (no icon-only nav)
 - Height: **`--nav-h: 60px`** + safe area inset
 - **The bar contributes NO vertical padding. The tab is the full 60px.**
+- **It is a FLOATING PILL** (`.nav-bar--floating`): inset `--nav-pill-inset` each side, lifted
+  `--nav-pill-lift` off the bottom edge, `999px` radius, **opaque**, `--shadow-lifted`.
+
+> 🟢 **NAV-FLOAT-01 — ruled SHIP twice, and recorded as a preference the board is honouring
+> rather than a finding** (Sierra's distinction). Measured, it gives back no vertical space and
+> makes the runner no better at running. It ships because a full-width slab welded to the bottom
+> is the most category-generic element in the product, and a nav that visibly floats is costly
+> signalling a competitor built on encouragement cannot copy (Collins).
+>
+> 🔴 **OPAQUE, AND THAT IS MEASURED.** `NAV-TRANSLUCENT-01` was killed **on the palette, not on
+> the idea**: Warm Slate is a near-white ground, so white at 0.75 is **5 levels** over `--bg`, 6
+> over a session card, 9 over the hero — and only **15** over amber, **19** over the moss CTA.
+> Below perception on three of five backdrops, and it needed an A/B mode before it could be seen
+> at all. `backdrop-filter` over a flat colour returns that colour unchanged. **Re-open only if
+> the ground changes materially, or a device shows the per-frame cost is negligible.**
+> `NAV-COLLAPSE-01` is **killed permanently** — the founder rejected it and its own mock
+> falsified its rationale.
+>
+> 🔴 **THE FLOAT GAP IS NOT PADDING, AND THAT BREAKS AN ASSUMPTION.** For a flush bar, the
+> element's height WAS the band it occluded, and `bottomNavH` read
+> `getBoundingClientRect().height`. The pill is **62px tall and occludes 74px**. Every consumer —
+> `Sheet`'s `maxHeight` and the scroll container's reserve — would have under-reserved by 12px,
+> and **the `+16` slack in the reserve would have hidden it**: the app would have looked right by
+> accident while every sheet was 12px too tall. `bottomNavH` now measures **from the viewport
+> bottom**, which is true for a flush bar and a floating one alike.
+>
+> ⚠️ **Sheets over the pill: unchanged, and verified rather than assumed.** § 6i ruled sheets
+> cover the nav, and the measured finding there was that a nav icon under a sheet **dismissed
+> instead of navigating**. Re-checked in a browser with the pill: scrim `inset: 0` at z **4000**
+> spans the pill at z **3000**, the opaque panel paints over it, and a tap at the pill's centre
+> lands on the scrim. **The seam did not move.**
+>
+> Gated by `navTab.markup.test.ts` — **11 arms**, six falsified for this change alone, including
+> one that compares the nav's render guard against `NAV_ITEMS` so the two hand-maintained lists
+> cannot drift.
 
 > 🔴 **THIS SPEC WAS ALREADY HERE AND THE CODE IGNORED IT** (NAV-SLIM-01, Design Board
 > 2026-09-25). The bar shipped at **64px** with a **12px** label and a **0.5px** border —

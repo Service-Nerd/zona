@@ -1988,6 +1988,27 @@ painted nothing.** The shorthand must be constant; only a custom property inside
 > mock before the difference could be seen at all — **and a difference that needs A/B to be
 > perceived is evidence in that ruling, not a presentation problem.**
 
+
+### NAV-FLOAT-01 — BUILT (2026-09-26)
+
+The pill ships, opaque. `NAV-TRANSLUCENT-01` 🔴 killed on the palette; `NAV-COLLAPSE-01` 🔴 killed
+permanently. Full reasoning in the sitting above; this row records the build and the two conditions
+the founder attached.
+
+| Condition | Discharged |
+|---|---|
+| *"Regression tested… works whilst used on all of our screens"* | **15 screens enumerated from the router**; 4 carry the nav. A gate now compares the render guard against `NAV_ITEMS`, because they are two hand-maintained lists of the same thing — the class that made the guide mirror show a retired `strava` tab |
+| *"Make sure popups over it don't perform negatively"* | **Re-verified in a browser, not assumed.** Scrim `inset: 0` z **4000** spans the pill z **3000**; the opaque panel paints over it; a tap at the pill's centre lands on the scrim. § 6i's seam did not move |
+
+🔴 **The build found the assumption the shape breaks.** `bottomNavH` read
+`getBoundingClientRect().height`, which was correct only while the nav was FLUSH — then its height
+WAS its occlusion. The pill is **62px tall and occludes 74px**. `Sheet`'s `maxHeight` and the scroll
+reserve would both have been 12px short, **and the reserve's `+16` slack would have absorbed it** —
+the app looking right by accident while every sheet was wrong. Now measured from the viewport bottom,
+which holds for either shape.
+
+📐 163 controls · geometry moved 0 · none under 44px · 3,573 tests.
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1
