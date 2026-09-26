@@ -131,6 +131,41 @@ it is what half the comments written this week do.
 guards do — preserving newlines** — or the reported line numbers go wrong, which is a defect this
 repo has also already had (`^\s*//` matching `\n`).
 
+
+### `NAV-BLACK-LINE-01` — the untraced black line, now measured and narrowed ⚙️ NO BOARD
+**Reported 2026-09-26** (*"at the bottom there is a line of this open session screen, it looks bad"*).
+First recorded at the app review 2026-09-22: *"The black line above the nav. Untraced — it is not
+the nav's border."* No ruling was made on an unidentified artefact.
+
+📐 **Measured from the capture:** a **2-device-pixel, full-bleed, pure `rgb(0,0,0)`** row at
+**723.3pt** — 91.7pt from the bottom of an 815pt viewport.
+
+**What is now ELIMINATED, each by search rather than by reasoning:**
+- **Not our palette.** `--ink` is `#1A1A1A`; `--line` over `--bg` resolves to ~`(226,224,219)`.
+  Pure black appears **nowhere** in `app/` or `components/` (`#000`, `black`, `rgb(0,0,0)` — zero hits).
+- **Not a colourless border** falling back to `currentColor` — zero `border: Npx solid` with no colour.
+- **Not an `<hr>`** — none in the app.
+- 🔴 **Not persistent.** It appears in **1 of 8 device captures**, and **NOT in a capture of the
+  SAME screen one minute earlier.** It is transient.
+
+**The one state that differs in the capture that has it:** scrolled fully to the bottom, past the
+end of the card, into the scroll container's reserved padding.
+
+⚠️ **Current best hypothesis: a WKWebView scroll-boundary artefact, not a rendered element.**
+Stated as a hypothesis because **a native rendering effect cannot be diagnosed from this machine** —
+the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing in the CSS to fix.
+
+**The test that settles it, and what each outcome means:**
+1. Scroll the session screen to the very bottom and **overscroll (pull up past the end), then
+   release**. Watch that band.
+   - **Line appears on overscroll and fades** → confirmed scroll-boundary artefact. The fix is
+     native (`bounces`, or the scroll view's background), not CSS.
+   - **Line is there without overscrolling, persistently** → it IS an element, the elimination above
+     is wrong somewhere, and it needs Safari Web Inspector attached to the device to find it.
+   - **Cannot reproduce at all** → it was a one-frame capture artefact and there is nothing to fix.
+2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
+   the element. That is the only thing that will name it, and it takes a minute.
+
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
 ### 🧭 `DESTRUCTIVE-WIRING-01` — a variant with zero uses, and two flows that need it

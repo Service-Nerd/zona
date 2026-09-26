@@ -99,9 +99,30 @@ function SectionCard({
                  padding plus a compensating negative margin, so the ringed "i"
                  stays an inline mark inside a 12px uppercase label instead of
                  becoming a button parked in a heading. Only sanctioned route
-                 below 44px visually (ICON-BUTTON-01, amendment 3). */
-              style={{ width: '15px', height: '15px', border: '1.2px solid currentColor', borderRadius: '50%', fontSize: '9.5px', fontWeight: 800, opacity: 0.75, color: 'inherit' }}
-              icon={<span aria-hidden>i</span>}
+                 below 44px visually (ICON-BUTTON-01, amendment 3).
+
+                 🔴 THE RING LIVES ON THE GLYPH, NOT THE BUTTON, AND IT DID NOT.
+                 `width/height/border/borderRadius` were on the BUTTON, which is
+                 the element carrying `padding: 16.5px` to make the 44px target —
+                 and under `box-sizing: border-box` a border paints around the
+                 PADDED box. So the ring was drawn around the 44px hit area, not
+                 the 15px mark: a circle roughly 25pt across, overlapping the
+                 label beside it. Founder: *"the I icon looks weird."*
+
+                 ⚠️ SAME CLASS AS THE NAV PILL THE SAME MORNING — a visual
+                 property set on the element that also carries the geometry.
+                 **When the visual and the hit area are different sizes they must
+                 be different elements.** The button is now invisible and the
+                 glyph carries the ring. */
+              style={{ opacity: 0.75, color: 'inherit' }}
+              icon={
+                <span aria-hidden style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: '15px', height: '15px', boxSizing: 'border-box',
+                  border: '1.2px solid currentColor', borderRadius: '50%',
+                  fontSize: '9.5px', fontWeight: 800, lineHeight: 1,
+                }}>i</span>
+              }
             />
           )}
         </span>
