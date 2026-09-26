@@ -1920,6 +1920,58 @@ Wroblewski on how far the collapse goes — Collins wants the nav to vanish whil
 nav, and not one of the 40 controls we fixed would have produced the sentence 'I like how this
 works'."*
 
+
+### NAV-FLOAT-01 ✅ · NAV-TRANSLUCENT-01 ✅ · NAV-COLLAPSE-01 🔴 KILLED (2026-09-26)
+
+Founder, after using the mock: *"I think I love the pill. Don't like the collapse version though…
+can we see an opaque and translucent version. Would be good if it went a bit translucent when
+scrolling."*
+
+| Ruling | |
+|---|---|
+| **NAV-FLOAT-01** — the pill | 🟢 **SHIP.** On brand grounds, **recorded as a preference the board is honouring, not a finding** (Sierra's distinction) |
+| **NAV-TRANSLUCENT-01** — translucent while scrolling | 🟢 **SHIP WITH AMENDMENT** |
+| **NAV-COLLAPSE-01** — collapse on scroll | 🔴 **KILLED, PERMANENT** |
+
+**NAV-COLLAPSE-01 died twice, independently, which is why the kill is permanent.** The founder used
+it and rejected it; and the mock built to demonstrate it **falsified its own rationale** — the chair
+ruled it on *"gives back ~45pt exactly when the runner is scrolling toward the action"* and it
+changes **width (343 → 76px), not height (74px in both states)**. Not to be re-proposed without
+named new evidence. 📱 Wroblewski, on the record: *"I argued it was the piece worth building. Two
+independent falsifications of the same idea in one evening."*
+
+**NAV-TRANSLUCENT-01's amendment, and it is the whole ruling:**
+
+> 🔴 **THE GROUND GOES TRANSLUCENT. THE LABELS NEVER DO.** Fading the whole bar is what *"a bit
+> translucent"* means to most people and it reaches **4.47:1 at 0.9** — below AA **before the change
+> is even perceptible**. Translucency is a property of the **material**, not of the content on it.
+
+📐 **The floor is 0.70 and it is measured on the real screen.** Twenty-pixel-blurred backdrops
+sampled from the actual Today capture at five scroll positions; the darkest is the band **over the
+moss CTA** — the one backdrop nobody thinks to test. With blur, labels at full opacity:
+**1.00 → 5.45:1 · 0.85 → 5.02 · 0.70 → 4.58 · 0.60 → 4.31 FAILS.**
+
+⛔ **Silvanto, binding:** the floor is a **token**, not a literal, *"or someone will tune it to 0.5
+because it looks nicer over a white card"*. **Blur is load-bearing, not decoration** — without it the
+backdrop is moving content and no ratio can be claimed, so **the fallback is OPAQUE, never
+translucent-without-blur.** 📱 Wroblewski: **150ms out, 90ms back** — going translucent may be
+leisurely, returning must feel instant. 🎓 Sierra's boundary: **translucency must never become a
+signal** — it reflects the runner's gesture and nothing else.
+
+⚡ **Collins vs Silvanto, both satisfied rather than one losing:** Collins wanted the value chosen by
+eye *"where it reads as glass — don't ship the floor"*; Silvanto wanted it pinned at the measured
+minimum. **Chair: the token is the floor, the shipped value is chosen by looking and must be ≥ it.**
+
+⚠️ **The chair's cost case against the pill was overstated and is withdrawn.** *"It costs 14px"* is
+the **occluded** band (60 → 74). **Painted chrome is 60 → 62**, and 12px of the difference is the
+float gap, which is **transparent** — content shows through it and beside the pill. Two numbers
+answering two questions; the unflattering one was quoted as if it were the only one.
+
+🔴 **A build gotcha found only because the mock rendered nothing:** interpolating the duration into
+the `transition` shorthand **cancels the in-flight transition**. The inline style read the
+translucent value while the computed style read fully opaque — **it looked correctly wired and
+painted nothing.** The shorthand must be constant; only a custom property inside it may change.
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1

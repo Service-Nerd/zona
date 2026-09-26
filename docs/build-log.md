@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-26 — NAV-TRANSLUCENT-01 · the obvious reading of "a bit translucent" fails AA before you can see it
+**Shipped:** Opaque / translucent / translucent-on-scroll in the nav mock. Collapse killed. Nothing to the app.
+**Dev learning:** Interpolating a duration into the `transition` shorthand — `background ${x ? '150ms' : '90ms'} ease-out` — **cancels the in-flight transition**, because changing the declaration restarts it. The inline style said `rgba(255,255,255,0.75)` and the computed style said opaque `rgb(255,255,255)`. It looked correctly wired and painted nothing. The shorthand must be constant; only a custom property inside it may change.
+**Product/creator learning:** He asked for "a bit translucent". The literal implementation — fade the bar — hits 4.47:1 at 0.9, below AA *before the change is perceptible*. The version that works fades the **ground** and never the **labels**, and survives to 0.70. Same request, two implementations, one of them quietly illegible. Translating a feeling into a mechanism is the job.
+**AI-building learning:** I measured the floor against blurred crops of the **real** Today screenshot rather than a modelled backdrop, and the worst case turned out to be the band over the **moss CTA** — a backdrop I would never have thought to test if I'd been reasoning instead of sampling. The number that matters was in the one place I wasn't looking.
+**The honest bit:** I told him flatly "the pill costs 14px" and had to withdraw it. That's the occluded band; painted chrome is +2px and 12px of the difference is a transparent gap. I quoted the unflattering number as if it were the only one, against my own board's rule about naming the surface and the method.
+**Hook material:** "Make it a bit translucent." The obvious way to do that fails accessibility at 90% opacity — before your eye can tell it changed.
+**Postable?:** yes
+
+
 ## 2026-09-25 — NAV-COLLAPSE-01 · the mock-up falsified the ruling that commissioned it
 **Shipped:** A three-variant nav prototype at `/nav-preview`, with a live readout. Nothing to the app.
 **Dev learning:** I ruled that a collapsing nav "gives back ~45pt of screen exactly when the runner is scrolling toward the action". Built it, measured it: the collapse changes **width** (343→76px), not **height** (74px in both states). It buys visual mass, not clearance. And the pill I was asked to build is **74px against the shipped bar's 60px** — it floats 12px off the edge plus borders, so the shape that was meant to answer "the nav is too big" makes it 14px worse.
