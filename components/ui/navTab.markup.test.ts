@@ -99,7 +99,18 @@ describe('NAV-SLIM-01', () => {
     expect(f, '.nav-bar--floating missing from globals.css').not.toBe('')
     expect(f, 'the inset must come from a token, never a literal').toMatch(/var\(--nav-pill-inset\)/)
     expect(f, 'the lift must come from a token, never a literal').toMatch(/var\(--nav-pill-lift\)/)
-    expect(f).toMatch(/border-radius:\s*999px/)
+    // ⚠️ THE RADIUS MOVED TO A TOKEN and this arm followed it rather than being
+    // dropped. The founder asked twice whether the corners are too round, so the
+    // value has to be dial-able — but it must still come from a token, not a
+    // literal typed into the class.
+    expect(f).toMatch(/border-radius:\s*var\(--nav-pill-radius\)/)
+    expect(CSS, 'the radius token must be declared').toMatch(/--nav-pill-radius:\s*\S+/)
+    // 📐 And the GAP is the thing that was actually wrong: `calc(lift + inset)`
+    // put it 46pt up on a home-indicator iPhone against the reference's 21.
+    // `max()` tucks into the safe-area strip on devices that have one.
+    expect(f, 'adding the lift to the inset is the 46pt defect')
+      .not.toMatch(/calc\(var\(--nav-pill-lift\) \+ env/)
+    expect(f).toMatch(/bottom:\s*max\(var\(--nav-pill-lift\)/)
     // ⚠️ The flush bar SPENT the safe-area inset as its own reserved strip. A
     // pill sits ABOVE that strip, so padding it again double-counts.
     expect(f).toMatch(/padding-bottom:\s*0/)

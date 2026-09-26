@@ -1200,9 +1200,29 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   /* ⚠️ These two were inline on the element and the class could not win. */
   width: calc(100% - 2 * var(--nav-pill-inset));
   max-width: 448px;
-  bottom: calc(var(--nav-pill-lift) + env(safe-area-inset-bottom, 0px));
+  /* 🔴 max(), NOT ADDITION — and the addition is what put it 46pt up.
+   * `calc(lift + env(safe-area-inset-bottom))` reads as "clear the indicator,
+   * then lift a bit", and on a home-indicator iPhone that is 12 + 34 = **46pt**,
+   * nearly an inch of empty ground. The founder: *"quite far off the bottom."*
+   *
+   * 📐 MEASURED AGAINST THE REFERENCE HE LIKED. Miles's nav pill sits **21pt**
+   * from the bottom — INSIDE the 34pt safe-area strip, 12pt clear of the
+   * indicator bar itself, which is only ~5pt of the 34. The strip is where you
+   * must not put CONTENT; a floating control may tuck into its upper part.
+   *
+   * So: tuck `--nav-pill-tuck` up into the strip on a device that has one, and
+   * fall back to the plain lift on a device that does not.
+   *   home indicator : max(12, 34 - 13) = 21  ✅ matches the reference
+   *   no indicator   : max(12, 0 - 13)  = 12  ✅ */
+  bottom: max(var(--nav-pill-lift), calc(env(safe-area-inset-bottom, 0px) - var(--nav-pill-tuck)));
   border: 1px solid var(--line);
-  border-radius: 999px;
+  /* ⚠️ THE RADIUS IS A TOKEN BECAUSE THE FOUNDER HAS ASKED TWICE. 📐 Measured:
+   * Miles's pill — the reference he liked — IS a stadium too. Its curve insets
+   * 18.7pt two points below the top edge; a stadium at its 56pt height would
+   * inset 17.7, a 20pt radius only 11.3. **So the radius is not what differs;
+   * the GAP was** (21pt there against 46 here). The token exists so the answer
+   * can be dialled rather than argued. */
+  border-radius: var(--nav-pill-radius);
   box-shadow: var(--shadow-lifted);
   overflow: hidden;
   /* The flush bar spent the safe-area inset as its own reserved strip. A pill
@@ -1239,4 +1259,10 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
     -webkit-backdrop-filter: blur(20px) saturate(1.6);
   }
 }
-:root { --nav-pill-inset: 16px; --nav-pill-lift: 12px; --nav-pill-alpha: 0.82; }
+:root {
+  --nav-pill-inset: 16px;
+  --nav-pill-lift: 12px;
+  --nav-pill-tuck: 13px;
+  --nav-pill-alpha: 0.82;
+  --nav-pill-radius: 999px;
+}

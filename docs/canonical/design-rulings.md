@@ -2056,6 +2056,40 @@ mock — but that mock was correctly inset and the shipped version was not, so *
 is questioning was seen on a shape that was wrong in two other dimensions.** Changing the radius
 now would move two variables at once. He looks at the corrected pill first.
 
+
+### NAV-PILL-GEOMETRY-01 — the gap, and the roundness question answered by measuring the reference (2026-09-26)
+
+Founder: *"It's still too round and quite far off the bottom of the screen."*
+
+#### 🔴 The gap: I added the lift to the inset
+
+`calc(var(--nav-pill-lift) + env(safe-area-inset-bottom))` reads as *"clear the indicator, then
+lift a bit"* — and on a home-indicator iPhone that is **12 + 34 = 46pt**, nearly an inch of empty
+ground under the pill.
+
+📐 **Measured against the reference he said he liked.** Miles's nav pill sits **21pt** from the
+bottom — **inside** the 34pt safe-area strip, 12pt clear of the indicator bar, which is only ~5pt
+of the 34. **The strip is where you must not put CONTENT; a floating control may tuck into its
+upper part.** Now `max(lift, inset − tuck)`: **21pt** with an indicator, **12pt** without.
+
+#### ⏳ The roundness: measured, and it is not the radius
+
+| | Miles | Ours (before) |
+|---|---|---|
+| height | 56.1pt | 62pt |
+| **gap below** | **21pt** | **46pt** |
+| inset L/R | 19.6pt | 16pt |
+| corners | **stadium** | stadium |
+
+🔴 **Miles is a stadium too.** Its curve insets **18.7pt** two points below the top edge; a stadium
+at 56pt height would inset **17.7**, a 20pt radius only **11.3**. **So the radius is not what
+differed between the thing he liked and the thing he did not — the gap was, by 25pt.**
+
+**The radius is now `--nav-pill-radius`, a token, because he has asked twice** and the answer should
+be dialled rather than argued. ⚠️ **It is deliberately unchanged in this commit**: the gap moved
+25pt, which is the dominant term, and changing both at once would make the next report
+uninterpretable. Same reasoning as declining to change it last time — **one variable per look.**
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1
