@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — RACE-SPECIFIC-LR-LABEL-01 · The fix existed; it had been applied to one of two
+**Shipped:** an invariant stops identifying a session by a name the AI is allowed to change.
+**Dev learning:** `INV-PLAN-RACE-SPECIFIC-EXPOSURE` was moved off `label.includes('pace')` onto a stamped field, with a comment that describes this incident before it happened — "the old label test tripped on those rewrites and silently discarded the whole enriched plan, costing trial/paid users their AI voice." The long-run check, thirty lines from its own violation site, kept the label test. The remedy and the diagnosis were both already in the file.
+**Product/creator learning:** the ops digest called it n=1 and possibly a one-off. Production said something better: 33 enrichment failures since 2 Sep, 30 contained as partial reverts, and this code appears exactly once — as the only full revert. Rare and always fatal is a different problem from rare, and you cannot tell them apart without querying.
+**AI-building learning:** the second defect was worth more than the first. `week: 0` on a plan-level violation is never attributable, so the partial-revert containment that worked 30 times out of 31 could not engage. One badly-chosen constant turned a 1-week copy revert into a 16-week one. The blast-radius mechanism was fine; the input to it was not.
+**The honest bit:** I nearly read `stimulus` instead of `lr_segment_pace`, copying the precedent without checking that the race-specific long run goes through a different builder that never stamps stimulus. That would have fired on every time-target plan in the fleet. The thing that stopped it was opening the builder rather than trusting the pattern.
+**Hook material:** the comment explaining the bug was already in the file, thirty lines above the bug.
+**Postable?:** yes
+
 ## 2026-09-26 — SHEET-ORIGIN-01 · Reverted, and the docs were still claiming it was live
 **Shipped:** nothing. Reverted the sheet animation and corrected three documents that described it as current behaviour.
 **Dev learning:** `audit-docs.sh` printed ALL CLEAN while the feature registry said the feature shipped, `ui-patterns.md` documented it as the pattern, and nothing was re-opened in the backlog. `/ship` § Reverting a ship already says exactly what to do — move it back with a status note, never silently delete — and nothing checked that it had been done. A revert is the one moment where every record is simultaneously wrong, and it was the one moment nothing looked.

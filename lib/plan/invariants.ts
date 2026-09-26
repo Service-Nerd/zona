@@ -2150,16 +2150,47 @@ export function validatePlan(plan: Plan, rawInput: GeneratorInput): Violation[] 
       .flatMap(w => Object.values(w.sessions).filter((s): s is Session =>
         !!s && isLongRun(s)
       ))
+    // 🔴 STRUCTURAL, NOT THE LABEL — D-17, and this is the SECOND time this exact
+    // fix has been applied in this file. `INV-PLAN-RACE-SPECIFIC-EXPOSURE` (~900
+    // lines up) was moved off `label.includes('pace')` onto the stamped
+    // `stimulus` with a comment that describes today's incident in advance:
+    // *"the old label test tripped on those rewrites and silently discarded the
+    // whole enriched plan (post_enrich_invalid), costing trial/paid users their
+    // AI voice."* **This checker, thirty lines from its own violation site, was
+    // left on the label.**
+    //
+    // Observed 2026-09-26, a real trial user's 16-week sub-2:00 HM plan: the
+    // enricher renamed the peak long run, this fired, and because it carries a
+    // plan-level week it was UNATTRIBUTABLE — so `ENRICH-PARTIAL-01` could not
+    // contain it and **the runner lost AI coaching on all 16 weeks.** Measured
+    // across 33 enrichment failures since 2 Sep: this code appears ONCE, and it
+    // is the ONLY full revert. ~3% frequency, 100% fatality.
+    //
+    // ⚠️ `lr_segment_pace` IS THE SIGNAL AND IT WAS BUILT FOR THIS. §107 added it
+    // saying *"RECORD the segment this session prescribes — the note already
+    // states it; nothing machine-readable held it, so no invariant could check
+    // it."* Three invariants already read it. The enricher cannot write it:
+    // `EnrichedWeekSchema` exposes label, theme and coach_notes and nothing else.
+    //
+    // ⚠️ THE LABEL ARM STAYS AS A FALLBACK, for plans generated before §107
+    // stamped the field. Dropping it would fire this on every legacy plan in the
+    // fleet — the same reasoning `classifyStimulus` uses for its own heuristic.
     const hasRaceSpecific = peakLongRuns.some(s => {
-      const l = (s.label ?? '').toLowerCase()
+      if (s.lr_segment_pace) return true          // stamped: enricher-proof
+      const l = (s.label ?? '').toLowerCase()      // legacy, pre-§107 plans only
       return l.includes('pace') || l.includes(' mp') || l.startsWith('mp')
     })
     if (peakLongRuns.length > 0 && !hasRaceSpecific) {
+      // ⚠️ A REAL WEEK, NOT 0. Weeks are 1-indexed, so `week: 0` is never
+      // attributable and `attributableWeeks` escalates it to a FULL revert —
+      // which is how one code took down fifteen innocent weeks' copy. The peak
+      // phase is where the missing session belongs, and it is knowable here.
+      const firstPeakWeek = plan.weeks.find(w => w.phase === 'peak' && w.type !== 'deload')
       violations.push({
         code: 'INV-PLAN-RACE-SPECIFIC-LONG-RUN',
         principle_ref: 'CoachingPrinciples §25',
         severity: 'error',
-        week: 0,
+        week: firstPeakWeek?.n ?? 0,
         message: `Time-targeted ${distKey} plan: no peak long run with race-pace finish (all peak long runs are flat aerobic)`,
         actual: 0,
         expected: '≥ 1 race-specific long run',

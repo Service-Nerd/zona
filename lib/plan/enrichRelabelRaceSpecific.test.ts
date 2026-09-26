@@ -83,3 +83,113 @@ describe('A1 — race-specific exposure vs enricher relabeling', () => {
     expect(raceSpecErrs(plan).length).toBeGreaterThan(0)
   })
 })
+
+/**
+ * 🔴 THE TWIN, FOUND IN PRODUCTION ON 2026-09-26 — `INV-PLAN-RACE-SPECIFIC-LONG-RUN`.
+ *
+ * The fix above was applied to `INV-PLAN-RACE-SPECIFIC-EXPOSURE` and **not to the
+ * long-run check thirty lines from its own violation site**, which kept testing
+ * `label.includes('pace')`. Seventh "remedy applied to one twin" in this repo.
+ *
+ * 📐 A real trial user's 16-week sub-2:00 HM plan: the enricher renamed the peak
+ * long run, this fired, and because it carried `week: 0` — never attributable,
+ * weeks being 1-indexed — `ENRICH-PARTIAL-01` could not contain it and **the
+ * runner lost AI coaching on all sixteen weeks.**
+ *
+ * Measured over 33 `plan_enrich_failed` events since 2 Sep: this code appears
+ * ONCE and it is the ONLY full revert. **~3% frequency, 100% fatality.**
+ *
+ * `lr_segment_pace` is the signal and §107 built it for exactly this: *"RECORD
+ * the segment this session prescribes — nothing machine-readable held it, so no
+ * invariant could check it."*
+ */
+const HM_INPUT: GeneratorInput = {
+  race_date: '2027-01-17', race_distance_km: 21.1, goal: 'time_target', target_time: '1:59:00',
+  days_available: 4, age: 43, current_weekly_km: 40, longest_recent_run_km: 18,
+  resting_hr: 48, max_hr: 188, preferred_long_run_day: 'sun',
+  benchmark: { type: 'race', distance_km: 10, time: '0:48:30' },
+}
+
+function lrErrs(plan: Plan) {
+  return validatePlan(plan, HM_INPUT).filter(v => v.code === 'INV-PLAN-RACE-SPECIFIC-LONG-RUN')
+}
+
+describe('INV-PLAN-RACE-SPECIFIC-LONG-RUN vs enricher relabeling', () => {
+  it('the base time-targeted HM plan is clean', () => {
+    const errs = lrErrs(generateRulePlan(HM_INPUT, 'paid', PLAN_START))
+    expect(errs, errs.map(v => v.message).join('\n')).toHaveLength(0)
+  })
+
+  it('🔴 stays clean when the enricher renames the peak long run', () => {
+    // The production failure, reproduced. The enricher may rewrite `label`; it
+    // can never write `lr_segment_pace` (EnrichedWeekSchema exposes label, theme
+    // and coach_notes only). Before the fix this went red.
+    const plan = generateRulePlan(HM_INPUT, 'paid', PLAN_START)
+    let renamed = 0
+    for (const w of plan.weeks) {
+      for (const s of Object.values(w.sessions)) {
+        if (s && s.lr_segment_pace) { s.label = 'The long one'; renamed++ }
+      }
+    }
+    expect(renamed, 'expected a stamped race-specific long run to exist').toBeGreaterThan(0)
+    const errs = lrErrs(plan)
+    expect(errs, errs.map(v => v.message).join('\n')).toHaveLength(0)
+  })
+
+  it('🔴 STILL FIRES when the race-specific long run is genuinely absent', () => {
+    // The fix must not become a way to pass. Strip the stamp AND the label cue,
+    // which is what a plan with no race-pace long run actually looks like.
+    const plan = generateRulePlan(HM_INPUT, 'paid', PLAN_START)
+    let stripped = 0
+    for (const w of plan.weeks) {
+      for (const s of Object.values(w.sessions)) {
+        if (s && s.lr_segment_pace) {
+          delete (s as { lr_segment_pace?: string }).lr_segment_pace
+          s.label = 'Long run'
+          stripped++
+        }
+      }
+    }
+    expect(stripped).toBeGreaterThan(0)
+    expect(lrErrs(plan).length, 'a genuinely missing race-specific long run must still be caught')
+      .toBeGreaterThan(0)
+  })
+
+  it('🔴 names a REAL week, so a partial revert can contain it', () => {
+    // `week: 0` is never attributable (weeks are 1-indexed), so ENRICH-PARTIAL-01
+    // escalated to a FULL revert — one code took down fifteen innocent weeks.
+    const plan = generateRulePlan(HM_INPUT, 'paid', PLAN_START)
+    for (const w of plan.weeks) {
+      for (const s of Object.values(w.sessions)) {
+        if (s && s.lr_segment_pace) { delete (s as { lr_segment_pace?: string }).lr_segment_pace; s.label = 'Long run' }
+      }
+    }
+    const errs = lrErrs(plan)
+    expect(errs.length).toBeGreaterThan(0)
+    for (const v of errs) {
+      expect(v.week, 'week 0 is not a week and forces a full enrichment revert').toBeGreaterThan(0)
+      expect(plan.weeks.some(w => w.n === v.week),
+        'the named week must exist in the plan, or attributableWeeks still cannot use it').toBe(true)
+    }
+  })
+
+  it('🔴 legacy pre-§107 plans still pass on the label fallback', () => {
+    // Plans generated before §107 stamped `lr_segment_pace` carry only the label.
+    // Dropping the fallback would fire this on every legacy plan in the fleet.
+    const plan = generateRulePlan(HM_INPUT, 'paid', PLAN_START)
+    let legacy = 0
+    for (const w of plan.weeks) {
+      for (const s of Object.values(w.sessions)) {
+        if (s && s.lr_segment_pace) {
+          delete (s as { lr_segment_pace?: string }).lr_segment_pace
+          s.label = 'Long run with race-pace finish'   // what the old engine wrote
+          legacy++
+        }
+      }
+    }
+    expect(legacy).toBeGreaterThan(0)
+    const errs = lrErrs(plan)
+    expect(errs, 'the label arm must still recognise a legacy race-specific long run')
+      .toHaveLength(0)
+  })
+})
