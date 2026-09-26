@@ -27,7 +27,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 type Origin = 'pill' | 'tap' | 'bottom'
 type Spring = 'none' | 'overshoot' | 'wobble'
 type Width  = 'pill' | 'full'
-type Join   = 'fused' | 'detached'
+type Motion = 'slide' | 'grow'
 
 const EASE: Record<Spring, string> = {
   none:      'cubic-bezier(0.32, 0.72, 0, 1)',
@@ -43,7 +43,7 @@ export default function SheetPreview() {
   const [origin, setOrigin] = useState<Origin>('pill')
   const [spring, setSpring] = useState<Spring>('overshoot')
   const [width,  setWidth]  = useState<Width>('pill')
-  const [join,   setJoin]   = useState<Join>('fused')
+  const [motion, setMotion] = useState<Motion>('slide')
   const [ms, setMs] = useState(420)
   const [open, setOpen] = useState(false)
   const [shown, setShown] = useState(false)
@@ -52,48 +52,39 @@ export default function SheetPreview() {
   const panelRef = useRef<HTMLDivElement>(null)
   const fromRect = useRef<DOMRect | null>(null)
 
-  /**
-   * Where the panel rests.
-   *
-   * 🔴 `fused` — the founder's "become part of the pill". The panel's foot sits
-   * BEHIND the pill by `OVERLAP`, so there is no seam, no gap and no second
-   * border between them: the pill is simply the bottom of one object. Its
-   * bottom corners go square because they are hidden.
-   *
-   * `detached` is round 2 — a separate panel floating above the pill.
-   */
+  /** The panel rests with its foot behind the pill. The CLIP hides the rest. */
   const restBottom = () => {
     const pill = pillRef.current?.getBoundingClientRect()
     if (width === 'full' || !pill) return 0
-    return join === 'fused'
-      ? Math.round(window.innerHeight - pill.top - OVERLAP)
-      : Math.round(window.innerHeight - pill.top + GAP)
+    return Math.round(window.innerHeight - pill.top - OVERLAP)
   }
 
   /**
-   * The closed state. 🔴 `transform-origin: bottom` + `scaleY` ONLY — it grows
-   * UP from its own bottom edge, which is sitting on the pill. Round one scaled
-   * from the centre and grew both ways.
+   * 🔴 `slide` REPLACES THE SCALE, AND THE FOUNDER'S WORDS ARE WHY:
+   * *"it looks like it goes into a line when it retracts."* It did — a `scaleY`
+   * collapse ends at a 2px sliver **by definition**, so the panel squashes into
+   * a line instead of going anywhere.
+   *
+   * `slide` never scales. The panel keeps its full height and translates DOWN
+   * behind the pill, inside a clip whose bottom edge is the pill's top. Nothing
+   * distorts, nothing collapses: it simply descends into the pill and is gone.
+   * That is what "goes back into it" looks like.
+   *
+   * `grow` is kept only so the difference is visible.
    */
   const closed = (): { transform: string; originY: string } => {
     const panel = panelRef.current
-    if (!panel) return { transform: 'translateY(100%)', originY: 'center' }
-    if (origin === 'bottom') return { transform: 'translateY(100%)', originY: 'center' }
-
-    const src = origin === 'pill'
-      ? pillRef.current?.getBoundingClientRect()
-      : fromRect.current
+    if (!panel || origin === 'bottom') return { transform: 'translateY(100%)', originY: 'center' }
+    if (motion === 'slide') {
+      // 100% of its own height, straight down — the clip does the hiding.
+      return { transform: 'translateY(100%)', originY: 'center' }
+    }
+    const src = origin === 'pill' ? pillRef.current?.getBoundingClientRect() : fromRect.current
     if (!src) return { transform: 'translateY(100%)', originY: 'center' }
-
     const h = panel.offsetHeight
-    // The panel's laid-out bottom edge, in viewport coords.
     const bottomEdge = window.innerHeight - restBottom()
-    // Collapse to a sliver, then put that sliver on the origin's TOP edge
-    // (the founder's words: "from the top of the nav pill").
     const sy = Math.max(2 / h, 0.01)
-    const dy = origin === 'pill'
-      ? src.top - bottomEdge                       // the pill's top edge
-      : (src.top + src.height / 2) - bottomEdge    // a tapped card's middle
+    const dy = origin === 'pill' ? src.top - bottomEdge : (src.top + src.height / 2) - bottomEdge
     return { transform: `translateY(${Math.round(dy)}px) scaleY(${sy.toFixed(4)})`, originY: 'bottom' }
   }
 
@@ -165,7 +156,7 @@ export default function SheetPreview() {
   )
 
   const pillWidth = width === 'pill'
-  const fused     = pillWidth && join === 'fused'
+  const fused     = pillWidth
   const fusedOpen = fused && open
 
   return (
@@ -173,12 +164,11 @@ export default function SheetPreview() {
       <div style={{ padding: '10px 16px', background: 'var(--card)', borderBottom: '1px solid var(--line)' }}>
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>Sheet origin · round 2</div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', marginTop: 3, lineHeight: 1.5 }}>
-          <strong>fused</strong> tucks the sheet&rsquo;s foot behind the pill so they are one object —
-          and lifts the pill above the scrim, which collides with ruling S1. Compare with
-          <strong> detached</strong>.
+          <strong>slide</strong> never scales — the panel keeps its height and descends behind the
+          pill. <strong>grow</strong> is the old scale, kept so you can see why it read as a line.
         </div>
         {seg('width',  width,  setWidth,  ['pill', 'full'] as const)}
-        {seg('join',   join,   setJoin,   ['fused', 'detached'] as const)}
+        {seg('motion', motion, setMotion, ['slide', 'grow'] as const)}
         {seg('origin', origin, setOrigin, ['pill', 'tap', 'bottom'] as const)}
         {seg('spring', spring, setSpring, ['none', 'overshoot', 'wobble'] as const)}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
@@ -229,11 +219,22 @@ export default function SheetPreview() {
             position: 'absolute', inset: 0, background: 'var(--scrim)',
             opacity: shown ? 1 : 0, transition: `opacity ${ms}ms ease`,
           }} />
+          {/* 🔴 THE CLIP IS THE WHOLE TRICK for `slide`. Its bottom edge is the
+              pill's top, so a panel translated down by its own height is simply
+              GONE behind the pill — no squash, no sliver, nothing to read as a
+              line. `grow` needs no clip and gets none. */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0, top: 0,
+            bottom: pillWidth ? `${restBottom()}px` : 0,
+            overflow: motion === 'slide' ? 'hidden' : 'visible',
+            pointerEvents: 'none',
+          }}>
           <div ref={panelRef} style={{
+            pointerEvents: 'auto',
             position: 'absolute',
             left: pillWidth ? INSET : 0,
             right: pillWidth ? INSET : 0,
-            bottom: restBottom(),
+            bottom: 0,
             maxWidth: pillWidth ? 448 : 480, margin: '0 auto',
             background: 'var(--card)',
             // Pill-width sheets are objects, so all four corners round and they
@@ -264,6 +265,7 @@ export default function SheetPreview() {
               </div>
               <button onClick={close} className="btn btn--secondary btn--compact" style={{ width: '100%', marginTop: 18 }}>Close</button>
             </div>
+          </div>
           </div>
         </div>
       )}

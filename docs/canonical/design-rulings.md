@@ -2325,6 +2325,23 @@ the duration. **Not decided here.**
 while the document is hidden, leaving scrim-up and scroll-locked with no panel. Found because that
 is exactly the state this pane is permanently in, and it cost **four** verification attempts.
 
+#### 🔁 Round 4 — "it looks like it goes into a line when it retracts"
+
+🔴 **HE IS DESCRIBING THE TECHNIQUE, NOT THE GEOMETRY. A `scaleY` collapse ends at a sliver BY
+DEFINITION** — rounds 1–3 all squashed the panel into a 2px line on the way out, so it never went
+anywhere, it just got thin. Fused or detached made no difference because both used the same scale.
+
+**`slide` never scales.** The panel keeps its full height and translates **down behind the pill**,
+inside a **clip whose bottom edge sits 26px below the pill's top**. Nothing distorts and nothing
+collapses: it descends into the pill and is gone.
+
+📐 **Measured: 228px tall at closed, at open, AND mid-retract** — the height never changes. Top
+travels **764 → 536 → 768**. Clip bottom **764** against a pill top of **738**, `overflow: hidden`.
+
+⚠️ **It is also the cheaper animation** — one `translateY`, no scale, no counter-fade needed for the
+content, because the content is clipped rather than squashed. `grow` is kept in the preview only so
+the difference is visible.
+
 ### LINK-HIERARCHY-01 — SHIP (4) · the screen argued with itself (2026-09-26)
 
 **Founder:** *"The buttons look too big/fat… the Run (Connect) above Log without activity is
