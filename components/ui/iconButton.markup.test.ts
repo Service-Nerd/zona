@@ -111,3 +111,81 @@ describe('IconButton renders', () => {
     expect(offenders, offenders.join('\n')).toEqual([])
   })
 })
+
+/**
+ * ICON-EDGE-01 — Design Board, 2026-09-26. SHIP WITH AMENDMENT (3).
+ *
+ * Founder: *"The back arrows that we use and close cross — can we bring those
+ * inline with our nav bar visual? I.e. opaque, edge, contrast."*
+ *
+ * 📐 THE MEASUREMENT THAT MADE IT A DECISION RATHER THAN A PREFERENCE.
+ * `--bg-soft` separates from `--bg` by **7.7 levels** and from `--card` by 23.3,
+ * and **13 of the 15 circles sit on a header, which is `--bg`.** So on the
+ * ground that matters the surface was doing LESS than the warm nav tint the
+ * founder was shown and could not see (10 levels). The edge does **29.7 / 32.0**,
+ * against both grounds.
+ *
+ * ⚠️ AND IT FINISHES AN OLD RULING RATHER THAN MAKING A NEW ONE. `:191`:
+ * *"If a card needs emphasis, it is an inset: `--bg-soft` + ONE HAIRLINE."*
+ * This control shipped the inset and forgot the hairline.
+ *
+ * ⛔ NO ELEVATION — `:242` and `:359`. Collins argued for the nav's full grammar
+ * and LOST on the record: the nav is elevated because it floats above content
+ * and an icon button sits in a surface.
+ */
+describe('ICON-EDGE-01', () => {
+  const CSS = fs.readFileSync(path.resolve(__dirname, '../../app/globals.css'), 'utf8')
+  const rule = (sel: string) => CSS.match(new RegExp(`\\${sel}\\s*\\{([^}]*)\\}`))?.[1] ?? ''
+
+  it('🔴 a surfaced shape carries the shared chrome edge, and bare does not', () => {
+    for (const shape of ['circle', 'square']) {
+      expect(rule(`.icon-btn--${shape}`), `${shape} must carry the edge`)
+        .toMatch(/border:\s*1px solid var\(--chrome-edge\)/)
+      expect(rule(`.icon-btn--${shape}`), 'the fill does not change — :860 stands')
+        .toMatch(/background:\s*var\(--bg-soft\)/)
+    }
+    // ⛔ Wroblewski's condition. All five `bare` uses are inline controls in
+    // dense rows, where a surface is noise. An edge here would make it a third
+    // shape wearing the first one's clothes.
+    expect(rule('.icon-btn--bare'), 'bare is surfaceless BY DESIGN')
+      .toMatch(/border:\s*none/)
+    expect(rule('.icon-btn--bare')).not.toMatch(/var\(--chrome-edge\)/)
+  })
+
+  it('🔴 it is the SHARED token, not a literal and not a second weight', () => {
+    // The whole point of the rename: the nav, the pinned headers and these
+    // controls answer "this is chrome" the same way, so tuning it is one edit.
+    expect(CSS, 'the token must be declared').toMatch(/--chrome-edge:\s*rgba\([^)]+\)/)
+    for (const shape of ['circle', 'square']) {
+      expect(rule(`.icon-btn--${shape}`), 'a literal here re-forks what the rename just merged')
+        .not.toMatch(/border:\s*1px solid rgba\(/)
+    }
+    // And it must still be the same edge the nav uses — one weight, or the
+    // families drift again under the merged name, which is worse than two names.
+    const navEdge = rule('.nav-bar--floating').match(/border:\s*1px solid var\((--[\w-]+)\)/)?.[1]
+    expect(navEdge, 'the nav must draw its edge from the same token').toBe('--chrome-edge')
+  })
+
+  it('🔴 NO ELEVATION on an icon button — :242 / :359, and Collins predicted this', () => {
+    // He said someone would add the shadow in six weeks, so the ruling is a test
+    // rather than a sentence in a comment.
+    for (const shape of ['circle', 'square', 'bare']) {
+      expect(rule(`.icon-btn--${shape}`), `${shape}: elevation means floating ABOVE content; this sits IN a surface`)
+        .not.toMatch(/box-shadow/)
+    }
+    expect(rule('.icon-btn')).not.toMatch(/box-shadow/)
+  })
+
+  it('🔴 the 44px floor is untouched — the border paints INSIDE it', () => {
+    // `box-sizing: border-box` is app-wide, so a 1px border does not shrink the
+    // target. Asserted because this repo has TWICE shipped a visual property on
+    // the element that also carries the geometry (SESSION-INFO-MARK-01, and the
+    // ring before it).
+    expect(CSS, 'border-box is what makes this safe').toMatch(/box-sizing:\s*border-box/)
+    expect(rule('.icon-btn--regular')).toMatch(/min-width:\s*44px/)
+    expect(rule('.icon-btn--regular')).toMatch(/min-height:\s*44px/)
+    // A fixed width/height would let the border eat the target instead.
+    expect(rule('.icon-btn--regular'), 'a floor, never a fixed box')
+      .not.toMatch(/(^|[^-])\bwidth:\s*44px/)
+  })
+})

@@ -37,6 +37,17 @@
   /* ── Lines ───────────────────────────────────────────────────────── */
   --line:            rgba(26,26,26,0.08);   /* standard borders */
   --line-strong:     rgba(26,26,26,0.15);   /* stronger dividers */
+  /* The edge on CHROME: the nav pill, a pinned header, an icon button's surface.
+     Ink at 14% — `--line` is the same ink at 8% and the gates assert this is the
+     stronger of the two, so a revert to the hairline fails the build.
+     🔴 IT WAS `--nav-pill-edge` UNTIL 2026-09-26, AND THE NAME BLOCKED ITS OWN
+     REUSE. Three separate controls needed "the edge that says this is chrome"
+     and the token was called after the first one. Fourth time this repo has
+     recorded a name scoped to its first use getting in the way — `BackButton`,
+     `.cta-pill`, `.btn--inline-chip`, now this. ⚠️ NOT `--line-strong` above:
+     that is 15% and two levels away, but it means "divider", the scrollbar thumb
+     reads it, and sharing would move chrome whenever someone tunes a divider. */
+  --chrome-edge:     rgba(26,26,26,0.14);   /* the edge on chrome */
 
   /* ── Accent: Moss ────────────────────────────────────────────────── */
   --moss:            #6B8E6B;               /* primary CTA, active states */
@@ -997,18 +1008,54 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
    the target below it. */
 .icon-btn--regular { min-width: 44px; min-height: 44px; }
 
-/* Circle: the back arrow, the sheet close. A surface that says "control". */
-.icon-btn--circle { border-radius: 50%; background: var(--bg-soft); }
+/* 🔴 THE SURFACE WAS DOING ALMOST NOTHING WHERE MOST OF THESE LIVE
+ * (`ICON-EDGE-01`, Design Board 2026-09-26). Founder: *"the back arrows and close
+ * cross — can we bring those inline with our nav bar visual?"*
+ *
+ * 📐 MEASURED. `--bg-soft` separates from `--bg` by **7.7 levels** and from
+ * `--card` by 23.3. **Thirteen of the fifteen circles sit on a header, which is
+ * `--bg`** — so on the ground that matters the fill is doing LESS than the warm
+ * nav tint the founder looked at and could not see (10 levels). The edge does
+ * **29.7 and 32.0**, against both.
+ *
+ * ⚠️ AND THIS IS NOT A NEW IDEA — it finishes an old one. Ruling `:191` says in
+ * as many words: *"If a card needs emphasis, it is an inset: `--bg-soft` + ONE
+ * HAIRLINE."* This control shipped the inset and forgot the hairline.
+ *
+ * ⛔ NO ELEVATION, and Collins lost this one on the record. `:242` and `:359`
+ * both hold that elevation means floating ABOVE content — the nav floats, an
+ * icon button sits IN a surface. Written here because he predicted someone would
+ * add the shadow in six weeks.
+ *
+ * ⚠️ THE FILL DOES NOT CHANGE. `:860` ("44px circle, `--bg-soft`") stands.
+ *
+ * ⚠️ GEOMETRY MOVES ZERO. `box-sizing: border-box` is app-wide, so a 1px
+ * border paints INSIDE the 44px floor and the target does not shrink. Asserted,
+ * because this repo has twice shipped a border on the element carrying the
+ * geometry. */
+.icon-btn--circle {
+  border-radius: 50%;
+  background: var(--bg-soft);
+  border: 1px solid var(--chrome-edge);
+}
 .icon-btn--circle:hover:not(:disabled) { background: var(--line); }
 /* Square: steppers and inline controls sitting inside a bordered group. */
 /* ⚠️ `--bg-soft`, MATCHING `circle`. Two grounds for one idea had no reason:
  * `--bg-soft` is the inset ground and an icon button sits IN a surface, not on
  * one (Silvanto, BUTTON-SYSTEM-01). */
-.icon-btn--square { border-radius: var(--radius-sm); background: var(--bg-soft); }
+.icon-btn--square {
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  border: 1px solid var(--chrome-edge);
+}
 .icon-btn--square:hover:not(:disabled) { background: var(--line); }
 /* Bare: no surface, for a glyph in a dense row (the notification bell, a
-   move handle). Still 44px of target. */
-.icon-btn--bare { background: none; }
+   move handle). Still 44px of target.
+   ⛔ DELIBERATELY NO EDGE (`ICON-EDGE-01`). Wroblewski: all five uses are inline
+   controls inside dense rows, where a surface is noise rather than definition.
+   `bare` is surfaceless BY DESIGN; giving it an edge would make it a third
+   shape wearing the first one's clothes. */
+.icon-btn--bare { background: none; border: none; }
 .icon-btn--bare:hover:not(:disabled) { color: var(--moss-deep); }
 
 /* ⚠️ THE INLINE-MARK EXCEPTION, and it is narrow BY CONSTRUCTION.
@@ -1214,7 +1261,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  *   that on the nav; the founder, shown an A/B, could not see it.
  *
  *   the EDGE does 30 levels over the ground and 32 over a card, which is why
- *   `--nav-pill-edge` exists. Reused here deliberately: one answer to "this
+ *   `--chrome-edge` exists. Reused here deliberately: one answer to "this
  *   chrome has lifted off the page", so the header and the nav agree.
  *
  * ⚠️ AND "WHILE SCROLLING" IS THE WRONG STATE. A header keyed to MOTION goes
@@ -1241,7 +1288,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   transition: border-color var(--motion-ui);
 }
 
-.pinned-chrome--scrolled { border-bottom-color: var(--nav-pill-edge); }
+.pinned-chrome--scrolled { border-bottom-color: var(--chrome-edge); }
 
 /* ── Floating nav pill — NAV-FLOAT-01 (Design Board, ruled twice 2026-09-25/26)
  *
@@ -1308,7 +1355,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
    * would make the nav's edge move whenever someone tunes a divider. This is
    * the fifth time the pill's geometry has been dialled, which is why it owns
    * its tokens. */
-  border: 1px solid var(--nav-pill-edge);
+  border: 1px solid var(--chrome-edge);
   /* ⚠️ THE RADIUS IS A TOKEN BECAUSE THE FOUNDER HAS ASKED TWICE. 📐 Measured:
    * Miles's pill — the reference he liked — IS a stadium too. Its curve insets
    * 18.7pt two points below the top edge; a stadium at its 56pt height would
@@ -1353,7 +1400,4 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   --nav-pill-lift: 12px;
   --nav-pill-tuck: 13px;
   --nav-pill-radius: 999px;
-  /* Ink at 14%. `--line` is the same ink at 8%; the gate asserts this is the
-     stronger of the two, so a revert to `--line` fails the build. */
-  --nav-pill-edge: rgba(26,26,26,0.14);
 }

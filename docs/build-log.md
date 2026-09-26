@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — ICON-EDGE-01 · The surface that was doing nothing
+**Shipped:** the back arrow and the sheet close get the nav's edge, and the token gets a name that three families can share.
+**Dev learning:** I renamed `--nav-pill-edge` to `--chrome-edge` with a repo-wide string replace and it missed exactly one site — `alpha('nav-pill-edge')` in a test, where the name is *constructed* rather than written. A sweep sees strings, not intent. The test caught it, which is the only reason I know.
+**Product/creator learning:** the founder asked for "opaque, edge, contrast" and the measurement granted two of the three. `--bg-soft` separates from the page ground by 7.7 levels — less than the warm nav tint he'd looked at that morning and said he couldn't see. Thirteen of the fifteen circles sit on that ground. So the surface everyone assumed was doing the work was doing almost none of it, on the only ground that mattered.
+**AI-building learning:** the settled-ground scan did the real work again. Row `:191` already said the emphasis pattern is "an inset: `--bg-soft` + one hairline" — the control had shipped the inset and forgotten the hairline. That turned this from "a new visual decision the board must make" into "an unfinished ruling", which is a much smaller and much safer change. I'd have argued it on taste otherwise.
+**The honest bit:** while updating the pattern I found the doc's own shape table said `square` was `--card` while the code has said `--bg-soft` since BUTTON-SYSTEM-01. Same file, same section, stale against a ruling from two days ago — the `--surface-moss-wash` shape where the rule and the token live in different documents and never meet.
+**Hook material:** the button surface everyone could see was separating by 7.7 levels; the border nobody had is 29.7.
+**Postable?:** yes
+
 ## 2026-09-26 — STICKY-SCROLLER-01 · A scrollport that cannot scroll
 **Shipped:** the session and post-run headers actually pin now, and 210px of dead ground below every screen becomes 90.
 **Dev learning:** `position: sticky` resolves against the nearest ancestor with `overflow` other than `visible` — and that includes an ancestor that can never scroll. Four screens had `min-height: 100%; overflow-y: auto` inside the real scroller. `min-height` is not a height, so they could never overflow, so they never moved, so the headers pinned to nothing. The three screens where the idiom was deliberate all say `height: 100dvh`; someone copied the pattern minus the one declaration that made it work, and nothing in the name distinguished them.

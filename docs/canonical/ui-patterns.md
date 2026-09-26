@@ -796,7 +796,7 @@ single owner**; `NAV_ITEMS` in `DashboardClient` is the single list.
 - **The bar contributes NO vertical padding. The tab is the full 60px.**
 - **It is a FLOATING PILL** (`.nav-bar--floating`): inset `--nav-pill-inset` each side, lifted
   `--nav-pill-lift` off the bottom edge, `--nav-pill-radius` (999px), **opaque**,
-  `--shadow-lifted`, edge **`--nav-pill-edge`** (ink at 14%, NOT `--line`).
+  `--shadow-lifted`, edge **`--chrome-edge`** (ink at 14%, NOT `--line`).
 
 > 🟢 **NAV-FLOAT-01 — ruled SHIP twice, and recorded as a preference the board is honouring
 > rather than a finding** (Sierra's distinction). Measured, it gives back no vertical space and
@@ -921,7 +921,7 @@ back arrow and a title in a row — conflating them is a **retracted finding**
 1. **No fill works on this palette** — `--bg` sits between white and any AA-safe darker tint,
    so the best any fill manages is ~10 levels against one ground and 8 against the other. Four
    sittings proved it on the nav and the founder, shown an A/B, could not see it. The **edge**
-   does 30 / 32, which is why this reuses **`--nav-pill-edge`**: one answer to *"this chrome has
+   does 30 / 32, which is why this reuses **`--chrome-edge`**: one answer to *"this chrome has
    lifted off the page"*, so the header and the nav agree.
 2. **"While scrolling" is motion; the state is SCROLLED.** Keyed to motion, a header goes bare
    at a scroll-stop mid-page and collides with the content under it. Keyed to `scrollTop > 0`.
@@ -3748,11 +3748,37 @@ cannot be constructed, so the compiler stops the next one rather than a reviewer
 that the 44px rule was standing **and ignored by half its instances**, which is what a rule with no
 mechanism looks like.
 
-| Shape | Surface | Use |
-|---|---|---|
-| `circle` | `--bg-soft` | Back arrow, sheet close. A surface that says "control" |
-| `square` | `--card`, `--radius-sm` | Inside a bordered group (steppers) |
-| `bare` | none | A glyph in a dense row (notification bell, move handle) |
+| Shape | Surface | Edge | Use |
+|---|---|---|---|
+| `circle` | `--bg-soft` | `1px var(--chrome-edge)` | Back arrow, sheet close. A surface that says "control" |
+| `square` | `--bg-soft`, `--radius-sm` | `1px var(--chrome-edge)` | Inside a bordered group (steppers) |
+| `bare` | none | **none, deliberately** | A glyph in a dense row (notification bell, move handle) |
+
+⚠️ **This table said `square` was `--card` until 2026-09-26 and the code had said `--bg-soft` since
+`BUTTON-SYSTEM-01`** — Silvanto's ruling that *"an icon button sits IN a surface, not on one"*
+landed in `globals.css` and not here. Two grounds for one idea, in two documents, is the
+`--surface-moss-wash` shape.
+
+#### 🔴 The edge — `ICON-EDGE-01` (Design Board 2026-09-26)
+
+Founder: *"can we bring those inline with our nav bar visual? I.e. opaque, edge, contrast."*
+
+📐 **Measured: `--bg-soft` separates from `--bg` by 7.7 levels and from `--card` by 23.3, and
+13 of the 15 circles sit on a header, which is `--bg`.** On the ground that matters the surface was
+doing **less than the warm nav tint the founder could not see** (10 levels). The edge does
+**29.7 / 32.0**, against both.
+
+⚠️ **It finishes an old ruling.** `:191`: *"If a card needs emphasis, it is an inset: `--bg-soft` +
+**one hairline**."* This control shipped the inset and forgot the hairline.
+
+⛔ **NO ELEVATION**, and it is an arm of the gate rather than a sentence here, because Collins —
+who argued for the nav's full grammar and lost — predicted someone would add the shadow in six
+weeks. `:242` / `:359`: elevation means floating **above** content. The nav floats; an icon button
+sits **in** a surface.
+
+⚠️ **Geometry moves 0.** `box-sizing: border-box` is app-wide, so the 1px border paints **inside**
+the 44px floor. Verified in a browser at 44×44 on every shape. The floor stays a `min-width` /
+`min-height` rather than a fixed size for exactly this reason.
 
 **Every one takes `min-width`/`min-height` 44px** (`:262`, iOS HIG) — a minimum, not a fixed size, so
 a larger glyph cannot shrink the target below it.

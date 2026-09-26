@@ -52,7 +52,7 @@ unpins Plan and pins Notifications.
 ## Behaviour
 
 - **Opaque** (`--bg`). No fill separates from both grounds on this palette; see `NAV-EDGE-01`.
-- The **edge** (`--nav-pill-edge`) appears at `scrollTop > 0` and is absent at the top of the page.
+- The **edge** (`--chrome-edge`) appears at `scrollTop > 0` and is absent at the top of the page.
   The border is always present and starts `transparent`, so the height never jumps.
 - Keyed to **scrolled**, not *scrolling*: a motion-keyed header goes bare at a scroll-stop mid-page.
 - The scroll container is **found by walking up** for the first `overflow-y: auto | scroll`,

@@ -162,7 +162,7 @@ describe('SCREEN-HEADER-01', () => {
   it('🔴 the pinned header is OPAQUE and its EDGE is the nav\'s edge', () => {
     // 📐 The finding NAV-EDGE-01 paid four sittings for: no fill separates from
     // both grounds on this palette (best ~10 levels), the border does 30 and 32.
-    // The header reuses `--nav-pill-edge` so "this chrome has lifted off the
+    // The header reuses `--chrome-edge` so "this chrome has lifted off the
     // page" has ONE answer rather than two that drift.
     // ⚠️ THE RULE MOVED AND THIS ARM FOLLOWED IT rather than being dropped. The
     // behaviour is shared with the two pushed-screen headers now, so it lives on
@@ -177,7 +177,7 @@ describe('SCREEN-HEADER-01', () => {
     // height cannot jump by 1px on the first scroll event.
     expect(st).toMatch(/border-bottom:\s*1px solid transparent/)
     expect(rule('.pinned-chrome--scrolled'), 'the edge must be the nav\'s token, not a new literal')
-      .toMatch(/border-bottom-color:\s*var\(--nav-pill-edge\)/)
+      .toMatch(/border-bottom-color:\s*var\(--chrome-edge\)/)
   })
 
   it('🔴 renders the documented type, and the subtitle is optional', () => {

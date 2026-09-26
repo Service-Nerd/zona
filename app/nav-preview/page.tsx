@@ -82,7 +82,7 @@ export default function NavPreview() {
                  onChange={e => setAlpha(parseFloat(e.target.value))} style={{ flex: 1 }} />
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--mute)', marginTop: 4 }}>
-          NOW is <strong>14%</strong> — <code>--nav-pill-edge</code>, the shipped value. Slide the lower
+          NOW is <strong>14%</strong> — <code>--chrome-edge</code>, the shipped value. Slide the lower
           pill if it ever needs dialling again.
         </div>
       </div>

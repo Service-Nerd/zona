@@ -46,7 +46,7 @@ import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
  *      vanishes on the ground — best case ~10 levels. The nav spent four
  *      sittings proving it (NAV-TRANSLUCENT-01/02) and the founder, shown an
  *      A/B, said *"I don't see any difference."* The EDGE separates by 30 levels
- *      over the ground and 32 over a card, which is why `--nav-pill-edge` exists
+ *      over the ground and 32 over a card, which is why `--chrome-edge` exists
  *      and why this reuses it: one answer for "chrome has lifted off the page".
  *   2. **"While scrolling" is motion; the state that matters is SCROLLED.** A
  *      header keyed to motion goes bare at a scroll-stop mid-page and collides

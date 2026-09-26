@@ -2141,7 +2141,7 @@ The honest lever is the edge. `--line` is ink at **8%**; `/nav-preview` A/B'd it
 (8→30%) and the founder picked **14%**: *"i like 14% love it."* Unlike the tint, **he saw it on
 the first look** — 30 levels over the page ground and 32 over a card, against 17/18 at 8%.
 
-| | 8% (`--line`) | **14% (`--nav-pill-edge`)** |
+| | 8% (`--line`) | **14% (`--chrome-edge`)** |
 |---|---|---|
 | vs page ground | 17 lv | **30 lv** |
 | vs a white card | 18 lv | **32 lv** |
@@ -2184,7 +2184,7 @@ at scroll top, material whenever scrolled** — state, not motion.
 
 ⚠️ **And NAV-EDGE-01 above changes this item's premise:** a translucent header was to match a
 translucent nav, and the nav is opaque with an edge. **The header should be re-scoped as opaque +
-`--nav-pill-edge`'s sibling treatment before any seat speaks again.**
+`--chrome-edge`'s sibling treatment before any seat speaks again.**
 
 #### 📐 What the census found, which is not what the item was filed for
 
@@ -2214,7 +2214,7 @@ eyebrow **600 vs 700**, title **16px/700 vs 20px/800**.
 |---|---|
 | Owner | `components/ui/ScreenHeader.tsx` — app **and** website |
 | Pinned | **Plan and Coach only.** Me, Notifications, Strava are labels, and a label need not follow you down |
-| Material | **Opaque**, edge `--nav-pill-edge` revealed at `scrollTop > 0` |
+| Material | **Opaque**, edge `--chrome-edge` revealed at `scrollTop > 0` |
 | Z | `Z_LAYERS.screenHeader` (10) — the two hand-rolled headers had both guessed 10 |
 | Geometry | **moved 0** — values lifted verbatim from the private function |
 
@@ -2230,6 +2230,61 @@ MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolle
   visible change to 13 screens, so it is a ruling, not a migration.
 - **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
   header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
+
+### ICON-EDGE-01 — SHIP WITH AMENDMENT (3) · the back arrow and the close cross (2026-09-26)
+
+**Founder:** *"The back arrows that we use and close cross. Can we bring those inline with our nav
+bar visual? I.e. opaque, edge, contrast."*
+
+#### 📐 Measured, and the first number settles it
+
+| treatment | on a header (`--bg`) | on a sheet (`--card`) |
+|---|---|---|
+| **`--bg-soft` fill, as shipping** | **7.7 lv** | 23.3 lv |
+| the chrome edge at 14% | **29.7 lv** | **32.0 lv** |
+
+🔴 **7.7 levels is LESS than the warm nav tint the founder was shown and could not see** (10 lv),
+and **13 of the 15 circles sit on a header.** The same token gives 7.7 on one ground and 23.3 on
+the other — the `--bg`-sits-in-the-middle finding from `NAV-EDGE-01`, this time about fills.
+
+⚠️ **It finishes an old ruling rather than making a new one.** `:191`: *"If a card needs emphasis,
+it is an inset: `--bg-soft` + **one hairline**."* This control shipped the inset and forgot the
+hairline.
+
+**On contrast, pre-empted:** the **glyph** identifies the control at **14.37:1**. Fill (1.07) and
+edge (1.33) are *definition*, not identification, so WCAG 1.4.11 does not bind them — and `:374`
+already rules a ground token cannot clear 3:1 on its own ground by definition. **The nav's own
+edge does not clear it either.**
+
+#### ⚖️ Ruling
+
+1. `.icon-btn--circle` and `--square` gain `1px solid var(--chrome-edge)` · 2. **no elevation** ·
+3. **`bare` excluded** — all five uses are inline controls in dense rows where a surface is noise
+(Wroblewski). The **fill does not change**: `:860` stands.
+
+⚡ **Collins lost this one and it is recorded.** He argued for the nav's full grammar — fill, edge
+**and** elevation — and `:242` / `:359` both hold that elevation means floating *above* content,
+which the nav does and an icon button does not. His condition on accepting: *"then say so in the
+pattern, or someone adds the shadow in six weeks."* **It is an arm of the gate, not a sentence.**
+
+⛔ **Veto: none.** Nothing regresses; Silvanto's read was that the control shipped half of `:191`.
+
+#### 🔤 `--nav-pill-edge` → `--chrome-edge`
+
+**A name scoped to its first use blocks reuse — the fourth time this repo has recorded it**, after
+`BackButton`, `.cta-pill` and `.btn--inline-chip`. Three families now answer *"this is chrome"*
+with the same weight: the nav pill, a pinned header, an icon button's surface. ⚠️ **Not
+`--line-strong`** (15%, two levels away) — it means *divider*, the scrollbar thumb reads it, and
+sharing would move chrome whenever someone tunes a divider.
+
+🥇 **The rename by string-replace missed exactly one site and a test caught it** — `alpha('nav-pill-edge')`,
+where the name is **constructed** rather than written. A sweep sees strings, not intent.
+
+**Artifacts:** pattern → `ui-patterns.md` § 39 · token → `--chrome-edge` · check →
+`iconButton.markup.test.ts` § ICON-EDGE-01, **four arms, all falsified** (edge removed · edge
+re-forked to a literal · `bare` given a surface · Collins' shadow added).
+
+📐 **Verified in a browser: 44×44 on every shape, `box-sizing: border-box`, geometry moved 0.**
 
 ### 🔴 STICKY-SCROLLER-01 — the header on the screen it was RAISED against had never been sticky
 

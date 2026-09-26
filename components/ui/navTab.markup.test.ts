@@ -154,14 +154,18 @@ describe('NAV-SLIM-01', () => {
     // parses both alphas and compares them.
     const f = rule('.nav-bar--floating')
     expect(f, 'the edge must come from a token, never a literal')
-      .toMatch(/border:\s*1px solid var\(--nav-pill-edge\)/)
+      .toMatch(/border:\s*1px solid var\(--chrome-edge\)/)
 
     const alpha = (name: string) => {
       const m = CSS.match(new RegExp(`--${name}:\\s*rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*([\\d.]+)\\s*\\)`))
       expect(m, `--${name} must be declared as an rgba() so its alpha is readable`).not.toBeNull()
       return { rgb: [m![1], m![2], m![3]].join(','), a: parseFloat(m![4]) }
     }
-    const edge = alpha('nav-pill-edge')
+    // ⚠️ `--nav-pill-edge` became `--chrome-edge` (ICON-EDGE-01) once three
+    // families needed it. This line was the ONLY survivor of the rename, because
+    // the name is CONSTRUCTED here rather than written — a string replace over
+    // the repo could not see it, and the test caught what the sweep missed.
+    const edge = alpha('chrome-edge')
     const line = alpha('line')
 
     // Same ink, different weight — a differently-COLOURED edge would be a
