@@ -1168,6 +1168,65 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
 
 
 
+/* ── Screen header — SCREEN-HEADER-01 (Design Board) ───────────────────
+ *
+ * The TAB-ROOT header: title, optional subtitle, no back arrow. Owned by
+ * `components/ui/ScreenHeader.tsx`. ⚠️ NOT the pushed-screen header, which is a
+ * back arrow and a title in a row — conflating the two is a retracted finding
+ * (`design-rulings.md:858`).
+ *
+ * 🔴 THESE VALUES ARE NOT NEW. They are the ones the private function in
+ * `DashboardClient` has rendered all along, moved verbatim so geometry does not
+ * shift on any of the six call sites. `ui-patterns.md` § 2881 has specified
+ * `26px 800 --font-ui --ink` and this is the first time it is written once. */
+.screen-header { padding: 16px 16px 8px; }
+
+.screen-header__title {
+  font-family: var(--font-ui);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+}
+
+.screen-header__sub {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--mute);
+  margin-top: 3px;
+  letter-spacing: 0.04em;
+}
+
+/* 🔴 OPAQUE, AND THE EDGE IS WHAT ARRIVES — the brief said "translucent when
+ * scrolling" and both halves of that had to change.
+ *
+ *   the FILL cannot work on this palette. `--bg` sits BETWEEN white and any
+ *   AA-safe darker tint, so the best any single fill manages is ~10 levels
+ *   against one ground and 8 against the other. Four sittings went into proving
+ *   that on the nav; the founder, shown an A/B, could not see it.
+ *
+ *   the EDGE does 30 levels over the ground and 32 over a card, which is why
+ *   `--nav-pill-edge` exists. Reused here deliberately: one answer to "this
+ *   chrome has lifted off the page", so the header and the nav agree.
+ *
+ * ⚠️ AND "WHILE SCROLLING" IS THE WRONG STATE. A header keyed to MOTION goes
+ * bare at a scroll-stop mid-page and collides with whatever is under it. This is
+ * keyed to SCROLLED (`scrollTop > 0`), so at the top of the page the header is
+ * part of the page and from the first pixel of scroll it is a surface.
+ *
+ * The border is always present and starts TRANSPARENT, so the header's height
+ * never changes — a 1px box-model jump on the first scroll event would be a
+ * visible flinch on exactly the screens this is meant to calm. */
+.screen-header--sticky {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--motion-ui);
+}
+
+.screen-header--scrolled { border-bottom-color: var(--nav-pill-edge); }
+
 /* ── Floating nav pill — NAV-FLOAT-01 (Design Board, ruled twice 2026-09-25/26)
  *
  * The bar lifts off the bottom edge and becomes a pill. Ruled **on brand

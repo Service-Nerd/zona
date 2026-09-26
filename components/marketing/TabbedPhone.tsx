@@ -8,6 +8,7 @@ import ZoneRings from '@/components/shared/ZoneRings'
 import CoachByline from '@/components/shared/CoachByline'
 import PlanArc from '@/components/shared/PlanArc'
 import PlanCalendar from '@/components/training/PlanCalendar'
+import ScreenHeader from '@/components/ui/ScreenHeader'
 import { DEMO_ZONE_WEEK, DEMO_COACH_NOTE, DEMO_BLOCK, DEMO_RACE_ARC } from '@/lib/marketing/demoSurfaces'
 import { buildRaceProgressArc } from '@/lib/coaching/raceProgressArc'
 import { RaceProgressArcRow } from '@/components/shared/RaceProgressArcRow'
@@ -76,16 +77,15 @@ import { phaseDisplayLabel } from '@/lib/coaching/weekVoice'
 
 
 
-function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
-  // Reproduced from DashboardClient's own ScreenHeader, which is a private
-  // function there rather than a shared component. Same sizes, same tokens.
-  return (
-    <div style={{ padding: '16px 16px 8px' }}>
-      <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px' }}>{title}</div>
-      {sub && <div style={{ fontSize: 12, color: 'var(--mute)', marginTop: 3, letterSpacing: '0.04em' }}>{sub}</div>}
-    </div>
-  )
-}
+// 🔴 THE HAND-COPY IS GONE (SCREEN-HEADER-01). It lived here because the app's
+// ScreenHeader was a PRIVATE function in DashboardClient, and its comment
+// claimed "Same sizes, same tokens" — which was already false: the app pinned
+// `var(--font-ui)` on both lines and this copy pinned neither, inheriting
+// whatever the marketing page supplied.
+//
+// ⚠️ `realComponents.test.ts` exists for exactly this class and could not fire,
+// because its remedy is "import the real component" and the real component was
+// not importable. **A guard whose fix is unavailable is not a guard.**
 
 /**
  * PLAN — `PlanScreen` in DashboardClient: "Your plan", the race, the arc,

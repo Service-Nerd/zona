@@ -73,6 +73,7 @@ import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import Sheet, { NavHeightProvider } from '@/components/shared/Sheet'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
+import ScreenHeader from '@/components/ui/ScreenHeader'
 import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
@@ -3668,14 +3669,10 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
   )
 }
 
-function ScreenHeader({ title, sub }: { title: string; sub?: string }) {
-  return (
-    <div style={{ padding: '16px 16px 8px' }}>
-      <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-ui)', letterSpacing: '-0.5px' }}>{title}</div>
-      {sub && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '3px', letterSpacing: '0.04em' }}>{sub}</div>}
-    </div>
-  )
-}
+// ScreenHeader moved to `components/ui/ScreenHeader.tsx` (SCREEN-HEADER-01).
+// It was PRIVATE to this file, which is why `components/marketing/TabbedPhone`
+// hand-copied it for the website's phone stills — and why `realComponents.test.ts`,
+// whose entire remedy is "import the real component", could not fire on it.
 
 // ── Section label ─────────────────────────────────────────────────────────
 
@@ -8425,7 +8422,7 @@ function PlanScreen({ plan, stravaRuns, allOverrides, allCompletions, onOverride
     <div style={{ paddingBottom: 'var(--space-6)' }}>
 
       {/* ── HEADER ───────────────────────────────────────────────── */}
-      <ScreenHeader title="Your plan" />
+      <ScreenHeader title="Your plan" sticky />
 
       {/* ── THE RACE, ONCE ───────────────────────────────────────────────
           A3 (Design Board, sitting three): the race appeared TWICE on this
@@ -8863,7 +8860,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
 
   return (
     <div>
-      <ScreenHeader title="Your coach" sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`} />
+      <ScreenHeader title="Your coach" sub={firstName ? `${firstName} · W${weekNum} of ${totalWeeks}` : `W${weekNum} of ${totalWeeks}`} sticky />
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
 
         {/* KIT-TASTE-01 — free insight card / risk warning / empty-state hint.
@@ -9772,7 +9769,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
   return (
     <div>
-      <ScreenHeader title="Your coach" sub={`W${weekNum} of ${totalWeeks}`} />
+      <ScreenHeader title="Your coach" sub={`W${weekNum} of ${totalWeeks}`} sticky />
 
       <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', paddingBottom: 'var(--space-6)' }}>
 

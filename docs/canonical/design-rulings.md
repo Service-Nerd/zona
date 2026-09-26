@@ -2154,7 +2154,7 @@ exactly one arm red.
 sittings and could never have worked, while the variable that does work was **identical in every
 comparison shown to the founder**.
 
-### 🔜 SCREEN-HEADER-01 — RULED, NOT BUILT, AND UNTIL NOW NOT RECORDED
+### ✅ SCREEN-HEADER-01 — BUILT 2026-09-26 (and the record failure that preceded it)
 
 🔴 **This row exists because the ruling had no record at all.** It was ruled in conversation on
 2026-09-25 (**SHIP WITH AMENDMENT**), the build was deferred, and a repo-wide search on 2026-09-26
@@ -2178,6 +2178,58 @@ at scroll top, material whenever scrolled** — state, not motion.
 ⚠️ **And NAV-EDGE-01 above changes this item's premise:** a translucent header was to match a
 translucent nav, and the nav is opaque with an edge. **The header should be re-scoped as opaque +
 `--nav-pill-edge`'s sibling treatment before any seat speaks again.**
+
+#### 📐 What the census found, which is not what the item was filed for
+
+🔴 **The component already existed, and existed TWICE.** `DashboardClient:3671` had it as a
+**private** function; `components/marketing/TabbedPhone.tsx:79` hand-copied it for the website's
+phone stills, with a comment reading *"Same sizes, same tokens."*
+
+⚠️ **That comment was already false.** The app pinned `var(--font-ui)` on the title **and** the
+subtitle; the copy pinned neither and inherited whatever the marketing page supplied. Both
+resolve to Inter today (ADR-007), so nothing looked wrong — **the drift had already happened and
+was invisible.**
+
+🔴 **AND THE GUARD FOR THIS EXACT CLASS COULD NOT FIRE.** `realComponents.test.ts` exists because
+a marketing still said *"8 km"* where the app said *"8km"*, and its entire remedy is *"import the
+real component."* **The real component was private, so the only available method was the one the
+guard forbids.** Same shape as § Toggle describing a control with nothing implementing it while
+forbidding a one-off inline toggle. **A guard whose remedy is unavailable is not a guard.**
+
+⚠️ **My brief to the founder was wrong three ways and all three flattered the plan:** I said the
+primitive needed building (it existed), that there were 12 header rows (13 `BackButton` sites, of
+which 5 are rows), and that the two sticky headers were *"byte-identical twins"* — they are not:
+eyebrow **600 vs 700**, title **16px/700 vs 20px/800**.
+
+#### ⚖️ What shipped
+
+| | |
+|---|---|
+| Owner | `components/ui/ScreenHeader.tsx` — app **and** website |
+| Pinned | **Plan and Coach only.** Me, Notifications, Strava are labels, and a label need not follow you down |
+| Material | **Opaque**, edge `--nav-pill-edge` revealed at `scrollTop > 0` |
+| Z | `Z_LAYERS.screenHeader` (10) — the two hand-rolled headers had both guessed 10 |
+| Geometry | **moved 0** — values lifted verbatim from the private function |
+
+**"Translucent when scrolling" was corrected in both halves and the founder has the reasoning:**
+no fill separates from both grounds on this palette (NAV-EDGE-01's finding), and a header keyed to
+MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolled**.
+
+#### 🔻 Filed, not built
+
+- **`BACK-HEADER-OWNER-01`** — the pushed-screen header family: **13 back-arrow sites, FIVE
+  different title treatments** (22/700 brand · 18/500 brand · 16/700 ui · 20/800 ui · plus
+  arrow-above-title blocks), and **none of them is the documented 26/800**. Normalising is a
+  visible change to 13 screens, so it is a ruling, not a migration.
+- **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
+  header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
+
+🥇 **THE GATE'S DERIVED POPULATION FOUND TWO STICKY HEADERS I HAD NOT ACCOUNTED FOR** on its first
+run — including the website's own. I had typed `= 2`; walking the tree returned **4**. And my
+"class owns every pixel" arm was **hollow**, matching only the root element's inline style, so a
+`fontSize` on the title left it green — **the sixth instance of the short-population class this
+week, in a check written while commenting on that class.** Both fixed; five mutations now red.
+
 
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 

@@ -19,9 +19,20 @@ describe('Z_LAYERS stacking order', () => {
   })
 
   it('is a strictly increasing ladder (no two layers collide)', () => {
-    const order: (keyof typeof Z_LAYERS)[] = ['content', 'nav', 'sheet', 'guide']
+    const order: (keyof typeof Z_LAYERS)[] = ['content', 'screenHeader', 'nav', 'sheet', 'guide']
     for (let i = 1; i < order.length; i++) {
       expect(Z_LAYERS[order[i]]).toBeGreaterThan(Z_LAYERS[order[i - 1]])
     }
+
+    // 🔴 THE LIST ABOVE WAS HAND-WRITTEN, AND A HAND-WRITTEN POPULATION IS THE
+    // failure class this repo recorded five times in one day: the check is
+    // correct, bounded, falsifiable — and pointed at a set that cannot contain
+    // the defect. `screenHeader` was added to `Z_LAYERS` on 2026-09-26 and the
+    // ladder would have stayed green while never looking at it.
+    //
+    // So the list must be the WHOLE enum, and a new layer fails the build until
+    // someone says where in the order it belongs.
+    expect(new Set(order), 'a new Z_LAYER must be placed in the ladder above')
+      .toEqual(new Set(Object.keys(Z_LAYERS) as (keyof typeof Z_LAYERS)[]))
   })
 })

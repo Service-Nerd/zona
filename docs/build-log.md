@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — SCREEN-HEADER-01 · The guard whose remedy was unavailable
+**Shipped:** the tab-root header gets one owner shared by the app and the website, and pins on the two screens whose content keeps referring to what it names.
+**Dev learning:** `realComponents.test.ts` exists to stop marketing stills drifting from the app, and its whole remedy is "import the real component." The component was a private function in `DashboardClient`, so the website hand-copied it — and the copy's comment said "Same sizes, same tokens" while the app pinned `var(--font-ui)` on both lines and the copy pinned neither. A guard whose fix is unavailable is not a guard; it just relocates the blame.
+**Product/creator learning:** the brief was "translucent only when scrolling" and both halves had to change. No fill works on this palette, and a header keyed to MOTION goes bare at a scroll-stop mid-page and collides with the content under it. The state that matters is *scrolled*, not *scrolling* — and the thing that reveals it is the edge, not the fill, which the nav had just spent four rounds proving.
+**AI-building learning:** I briefed the founder twice on this item and was wrong three ways, all of them flattering: the primitive needed building (it existed), 12 header rows (13 sites, 5 of them rows), byte-identical twins (16px/700 vs 20px/800). I had described the work from memory of a conversation instead of from a census. The census took four commands.
+**The honest bit:** I wrote a comment in the new gate about hand-written populations being the week's recurring failure — and in the same file typed `LEGACY_STICKY_HEADERS = 2` from the two I knew about. Walking the tree returned four, including the website's own. Then my "class owns every pixel" arm turned out to read only the root element's inline style, so a `fontSize` on the title left it green. Sixth instance of the same class, in a check written while explaining that class.
+**Hook material:** the gate I wrote to catch short populations had a short population, and the mutation I ran to falsify it is the only reason I know.
+**Postable?:** yes
+
 ## 2026-09-26 — NAV-EDGE-01 · The variable I spent four rounds not changing
 **Shipped:** the floating nav pill's border goes from ink 8% to ink 14%, as a nav-owned token.
 **Dev learning:** the gate asserts a RELATION, not a value — same ink as `--line`, strictly greater alpha — because a literal `0.14` would pass just as happily if someone re-pointed the class at `--line`, which is the only way this actually breaks. Three mutations, each verified to have LANDED before its result was read (I shipped a falsification earlier this week that printed 0 failures because the mutation never applied, and a green mutation run is indistinguishable from a broken experiment unless you check).

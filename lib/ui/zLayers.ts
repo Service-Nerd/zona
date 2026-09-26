@@ -13,11 +13,16 @@
 // consumes `guide`. Nothing in app/ or components/ should hardcode a bottom
 // sheet z-index again.
 //
-// Ordering contract (asserted by the test): guide > sheet > nav > content.
+// Ordering contract (asserted by the test): guide > sheet > nav > screenHeader > content.
 
 export const Z_LAYERS = {
   /** In-flow screen content and the scroll container. */
   content: 0,
+  /** A pinned `ScreenHeader` (SCREEN-HEADER-01). Above the content it lets
+   *  scroll beneath it, and far BELOW the nav — a header is page furniture, not
+   *  an overlay, and a sheet or the nav must always paint over it. The two
+   *  hand-rolled sticky headers this replaces both guessed `10`. */
+  screenHeader: 10,
   /** The fixed bottom navigation bar (Today / Plan / Coach / Me). */
   nav: 3000,
   /** Every secondary slide-up sheet. MUST be above `nav` so the panel and its

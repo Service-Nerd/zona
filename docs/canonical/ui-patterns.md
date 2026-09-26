@@ -880,6 +880,59 @@ single owner**; `NAV_ITEMS` in `DashboardClient` is the single list.
 
 ---
 
+### 7b. Screen header (tab roots) — `components/ui/ScreenHeader.tsx`
+
+Title, optional subtitle, **no back arrow**. ⚠️ **NOT the pushed-screen header**, which is a
+back arrow and a title in a row — conflating them is a **retracted finding**
+(`design-rulings.md:858`), and `BackButton.tsx` carries the same warning.
+
+- Padding `16px 16px 8px` · title **`26px 800 var(--font-ui) var(--ink)`, `-0.5px`** ·
+  sub `12px var(--mute)`, `margin-top 3px`, `0.04em`
+- Classes `.screen-header` / `__title` / `__sub` own every pixel; the component owns the
+  contract. **The only inline style is `zIndex` from `Z_LAYERS.screenHeader`** — the same
+  split the nav uses
+- **Consumed by the app AND by `TabbedPhone` on the website.** One definition, both surfaces
+
+> 🔴 **IT WAS WRITTEN TWICE AND THE GUARD FOR THAT COULD NOT FIRE** (`SCREEN-HEADER-01`,
+> 2026-09-26). It was a **private** function in `DashboardClient`, so the website hand-copied
+> it with a comment reading *"Same sizes, same tokens"* — **already false**: the app pinned
+> `var(--font-ui)` on both lines, the copy pinned neither. `realComponents.test.ts` exists for
+> exactly this class and its whole remedy is *"import the real component"*. **The real
+> component was not importable, so the only available method was the one the guard forbids** —
+> the same shape as § Toggle describing a control with nothing implementing it.
+
+#### Sticky — which headers pin, and why
+
+> **A header persists when the content below it keeps referring to something the header names.**
+> Reference qualifies a header; position does not.
+
+| Screen | Pinned | Why |
+|---|---|---|
+| **Coach** | ✅ | The sub names the **week** every card below reports on |
+| **Plan** | ✅ | The title names the thing the week cards below belong to |
+| Me | ❌ | *"Your profile"* is a label; the settings never refer back to it |
+| Notifications | ❌ | A list. The title labels it and nothing below cites it |
+| Strava | ❌ | As above |
+| Today | — | Has no `ScreenHeader`; it leads with the hero |
+
+🔴 **OPAQUE, AND THE EDGE IS WHAT ARRIVES.** The brief was *"translucent when scrolling"* and
+**both halves had to change**:
+
+1. **No fill works on this palette** — `--bg` sits between white and any AA-safe darker tint,
+   so the best any fill manages is ~10 levels against one ground and 8 against the other. Four
+   sittings proved it on the nav and the founder, shown an A/B, could not see it. The **edge**
+   does 30 / 32, which is why this reuses **`--nav-pill-edge`**: one answer to *"this chrome has
+   lifted off the page"*, so the header and the nav agree.
+2. **"While scrolling" is motion; the state is SCROLLED.** Keyed to motion, a header goes bare
+   at a scroll-stop mid-page and collides with the content under it. Keyed to `scrollTop > 0`.
+
+⚠️ The border is **always present and starts transparent**, so the header's height cannot jump
+1px on the first scroll event — a flinch on the two screens this is meant to calm.
+
+Guarded by `components/ui/screenHeader.markup.test.ts`, which asserts the **ruling** (the pinned
+set is exactly Plan and Coach) rather than a count, and derives its population by walking the
+tree rather than listing files.
+
 ### 7a. 🔴 Today's primary action does NOT dock — reverted, and why
 
 **`TODAY-CTA-CLEARANCE-01` shipped a `position: sticky` dock on Today's CTA and it was
@@ -2893,7 +2946,7 @@ Every screen must honour these invariants before shipping. Check against this li
 
 | Signal | Canonical value | Common violation |
 |--------|----------------|-----------------|
-| ScreenHeader font | `26px 800 --font-ui --ink` | 22px/500 or `--font-brand` |
+| ScreenHeader font | `26px 800 --font-ui --ink` — **owned by `components/ui/ScreenHeader.tsx`, do not retype it** | 22px/500 or `--font-brand` |
 | Content horizontal padding | `0 16px` | `0 12px` in Me/Strava screens |
 | Card border | `1px solid var(--line)` | `0.5px solid var(--border-col)` |
 | Card radius | `var(--radius-lg)` | Hardcoded `12px` |
