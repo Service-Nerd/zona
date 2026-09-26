@@ -2360,6 +2360,34 @@ own centre returns that control, for all ten buttons and the slider.
 changes, and nothing warns you.** Same family as the nav's `calc(lift + inset)` and the double nav
 reserve: a value one place already owns, re-stated somewhere that cannot see it move.
 
+#### 🔁 Round 5 — the founder's combination, and a duration picked from the curve
+
+**Founder:** *"Try origin tap, grow, pill width, wobble and you pick the speed."*
+
+Defaults set: **width `pill` · motion `grow` · origin `tap` · spring `wobble` · 360ms.**
+
+⚠️ **He chose `grow`, the scale he rejected in round 4 — and with `tap` that is a different
+animation.** Growing from the **pill** collapsed to a line *away from where the runner was looking*.
+Growing from the **card they just touched** is a container transform: the sliver is at the point of
+interaction, which is where the eye already is.
+
+📐 **360ms, PICKED FROM THE CURVE RATHER THAN BY FEEL.** `wobble` is
+`cubic-bezier(0.18, 1.70, 0.40, 1)` — it overshoots to **114.3%** at 39% of the duration, first
+crosses 100% at **20%**, and settles within 1% at **87%**. At 360ms:
+
+| | |
+|---|---|
+| arrives | **71ms** — immediate, no perceived lag |
+| peaks | **140ms** — where the bounce is actually visible |
+| settles | **315ms** — under the ~350ms where a settle reads as lag rather than life |
+
+320ms was the alternative and is a touch quick for `tap`, which travels **~400px**. Below 260 the
+overshoot stops reading as weight and starts reading as a glitch. Wroblewski's condition — *"it must
+not delay input"* — is met at 71ms to arrival.
+
+✅ **Verified:** closed is a 2px sliver at the card's own centre (462); open is **343×228** resting
+with its foot **26px behind the pill**; width matches the pill exactly.
+
 ### LINK-HIERARCHY-01 — SHIP (4) · the screen argued with itself (2026-09-26)
 
 **Founder:** *"The buttons look too big/fat… the Run (Connect) above Log without activity is

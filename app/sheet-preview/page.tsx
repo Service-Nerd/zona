@@ -40,11 +40,25 @@ const GAP     = 10        // `detached`: breathing room above the pill
 const OVERLAP = 26        // `fused`: how far the sheet's foot tucks BEHIND the pill
 
 export default function SheetPreview() {
-  const [origin, setOrigin] = useState<Origin>('pill')
-  const [spring, setSpring] = useState<Spring>('overshoot')
+  const [origin, setOrigin] = useState<Origin>('tap')
+  const [spring, setSpring] = useState<Spring>('wobble')
   const [width,  setWidth]  = useState<Width>('pill')
-  const [motion, setMotion] = useState<Motion>('slide')
-  const [ms, setMs] = useState(420)
+  const [motion, setMotion] = useState<Motion>('grow')
+  /**
+   * 📐 360ms, PICKED FROM THE CURVE RATHER THAN BY FEEL. `wobble` is
+   * `cubic-bezier(0.18, 1.70, 0.40, 1)`: it overshoots to **114.3%** at 39% of
+   * the duration, first crosses 100% at **20%**, and settles within 1% at
+   * **87%**. At 360ms that is:
+   *
+   *   arrives  71ms  — immediate, no perceived lag
+   *   peaks   140ms  — where the bounce is actually visible
+   *   settles 315ms  — under the ~350ms where a settle starts reading as lag
+   *
+   * 320ms was the alternative and is a touch quick for the `tap` origin, which
+   * travels ~400px. Below 260 the overshoot stops reading as weight and starts
+   * reading as a glitch.
+   */
+  const [ms, setMs] = useState(360)
   const [open, setOpen] = useState(false)
   const [shown, setShown] = useState(false)
 
