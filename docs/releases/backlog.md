@@ -43,6 +43,31 @@ it is the reason **four successive verification attempts on `/sheet-preview` rep
 had not opened**. The preview now releases with `rAF` **plus a 50ms timeout fallback**; `Sheet`
 does not. **Two lines, and it removes a state where the app looks broken and cannot be scrolled.**
 
+### 🟡 `SHEET-ORIGIN-01` — REVERTED; blocked on one decision *(P1, filed 2026-09-26)* 🧭 DESIGN BOARD · 👤 FOUNDER
+
+🔴 **Shipped and reverted the same day** (`aa0dbb9d`). Founder: *“No that looks bad. It’s still
+not popping up from the pill.”* Sheets are back to full width, from the bottom, covering the nav.
+
+**Why it failed — and it is not the animation.** Resting the sheet ON the pill means it no longer
+COVERS the nav, so a **dimmed, visible nav pill sat below a floating panel**. **S1 killed exactly
+that** in September: *“VISIBLE, DIMMED, AND LYING”*. I flagged the conflict, deferred the decision,
+and shipped the half that creates the problem without the half that resolves it.
+
+🔒 **BLOCKED, and it is one question:** for a sheet to come out of the pill the pill must sit
+**above the scrim**, and then it is a nav that does not navigate.
+**(a)** the four tabs stay live while a sheet is open, or
+**(b)** the pill visibly stops being tabs — icons and labels fade to chrome, and it reads as the
+sheet’s foot. **Recommended: (b)** — it is what *“part of the pill”* means and it answers S1 rather
+than ignoring it.
+
+**Kept from the attempt** (all measured, all in `design-rulings.md`): pill width makes the entry's
+horizontal scale exactly **1** · the curve must **travel**, not front-load (`cubic-bezier(0.65, 0,
+0.35, 1.55)`, 90% at 56% of duration) · the origin is the **last control pressed** · a declarative
+style prop and an imperative style write **cannot both own a property**.
+
+⚠️ **Also unfixed:** the founder's screenshot shows **~145pt of empty white** below *Dismiss*
+before the sheet ends. Filed inside this item because it is the same panel.
+
 ### `ACTION-ROW-320-01` — the action rows still wrap at 320pt ⚙️ NO BOARD (measurement) · 🧭 DESIGN BOARD (answer)
 
 `LINK-HIERARCHY-01` moved both action rows to `.btn--compact` and they now render **44px, one line

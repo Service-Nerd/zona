@@ -1894,7 +1894,24 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 
 > ### Slide-up Sheet — the presentation contract (SHEET-PRESENT-01, shipped 2026-09-13)
 >
-> #### 🔁 SHEET-ORIGIN-01 (2026-09-26) — pill width, and it grows from what you pressed
+> #### 🔴 SHEET-ORIGIN-01 — REVERTED, NOT CURRENT BEHAVIOUR (2026-09-26)
+>
+> ⚠️ **EVERYTHING IN THIS SUB-SECTION IS DESCRIBED FOR THE NEXT ATTEMPT. IT IS NOT WHAT THE APP
+> DOES.** Sheets today are **full width, slide up from the bottom, and cover the nav** — exactly as
+> the contract above describes. Reverted at `aa0dbb9d` after the founder saw it: *“No that looks
+> bad.”*
+>
+> 🔴 **WHY IT FAILED, AND S1 HAD ALREADY SAID SO.** Resting the sheet ON the pill means it no
+> longer COVERS the nav — so a **dimmed, visible nav pill sat below a floating panel**, which is the
+> arrangement S1 killed as *“VISIBLE, DIMMED, AND LYING”*. The conflict was flagged and then **the
+> half that creates the problem shipped without the half that resolves it.**
+>
+> 🔜 **The blocking decision, unchanged:** for a sheet to come out of the pill, the pill must be
+> **above the scrim** — and then it is a nav that does not navigate. Either the tabs stay live, or
+> **the pill visibly stops being tabs for the duration**. Nothing should be built here until that is
+> answered.
+>
+> #### What was built, for whoever picks it up
 >
 > Founder, over six rounds: *"pop-ups should come out of the nav pill, be the width of the pill, and
 > go back into it, with a wobble."* Two corrections came out of the preview and **both are

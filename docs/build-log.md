@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — SHEET-ORIGIN-01 · Reverted, and the docs were still claiming it was live
+**Shipped:** nothing. Reverted the sheet animation and corrected three documents that described it as current behaviour.
+**Dev learning:** `audit-docs.sh` printed ALL CLEAN while the feature registry said the feature shipped, `ui-patterns.md` documented it as the pattern, and nothing was re-opened in the backlog. `/ship` § Reverting a ship already says exactly what to do — move it back with a status note, never silently delete — and nothing checked that it had been done. A revert is the one moment where every record is simultaneously wrong, and it was the one moment nothing looked.
+**Product/creator learning:** the founder's screenshot ended a debate I'd been losing for six rounds with numbers. A white panel floating above a dimmed grey nav pill — two objects, one visibly switched off. S1 had written that down in September and I shipped past it, having flagged it myself in round 3. A ruling you have read, named and deferred is not a ruling you have honoured.
+**AI-building learning:** I probably overrode the brief. Every message said "from the pill" — out of the nav pill, from the top of the pill, part of the pill, not popping up from the pill. The board argued tap-origin was more honest, I built that, and he picked it off a menu I wrote. His own words never changed once.
+**The honest bit:** the new check I wrote to stop this recurring was hollow on its first arm. It tested the whole registry row for the word "REVERTED" — and a reverted item's description always explains the revert, so it passed however the status cell read. I only found it because I falsified it. It also fired on a scope of `engine` matching "rule engine + AI enrichment" by substring, which is the bias this repo has recorded more than any other.
+**Hook material:** the audit said ALL CLEAN while three documents described a feature that had been removed from the app an hour earlier.
+**Postable?:** yes
+
 ## 2026-09-26 — SHEET-ORIGIN-01 · A preview that looked like it worked
 **Shipped:** `/sheet-preview` — three sheet origins and three springs, so the founder can judge his own brief against the alternative. Nothing ships from it.
 **Dev learning:** three separate bugs, all in measurement rather than in the thing measured. `getBoundingClientRect()` returns the *transformed* box, so measuring a panel that already carries `translateY(100%)` puts every translate 225px out. Clearing the transform to measure it starts a 380ms transition to none, so the next read is mid-flight and just as wrong. And the real one: `panelRef.current` is null on the render that computes the closed transform, so **all three origin variants were silently falling back to today's bottom slide** — the preview looked like it worked.

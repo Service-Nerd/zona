@@ -381,6 +381,55 @@ done
 [ "$sfail" = "0" ] && say "  ok"
 
 say ""
+say "── reverts: the records must not still claim it is live ──"
+# 🔴 THE GAP THIS CLOSES. `SHEET-ORIGIN-01` shipped and was reverted the same
+# day, and this audit printed ALL CLEAN while the feature registry described it
+# as shipped, `ui-patterns.md` documented it as the pattern, and nothing was
+# re-opened. A reader would have believed pill-width sheets were in the app.
+#
+# `/ship` § Reverting a ship already says: move the entry back to the backlog
+# with a status note, do NOT silently delete from the registry. Nothing checked
+# that it had been done.
+#
+# The rule: a `revert(SCOPE)` commit means that id must be marked reverted in the
+# registry AND re-opened in the backlog.
+vfail=0
+python3 - <<'PYEOF' || vfail=1
+import re, subprocess, sys, pathlib
+log = subprocess.run(['git','log','--pretty=format:%s'],capture_output=True,text=True).stdout.split('\n')
+ids = []
+for line in log:
+    m = re.match(r'revert\(([^)]+)\)', line)
+    if m and m.group(1) not in ids: ids.append(m.group(1))
+reg = pathlib.Path('docs/canonical/feature-registry.md').read_text(encoding='utf-8')
+bl  = pathlib.Path('docs/releases/backlog.md').read_text(encoding='utf-8')
+bad = []
+for i in ids:
+    # ⚠️ ANCHORED AT THE START OF THE FIRST CELL, and id-shaped only. The first
+    # cut used `i in cell`, which matched a scope of `engine` against the row
+    # "Plan generation — personalised (rule engine + AI enrichment)". Substring
+    # bias, the class this repo has recorded more than any other.
+    if not re.match(r'^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+-\d+$', i):
+        continue
+    row = next((l for l in reg.split('\n')
+                if l.strip().startswith('|') and l.split('|')[1].strip().startswith(i)), None)
+    if row is None:
+        continue   # never registered; nothing to correct
+    # 🔴 THE FIRST CELL, NOT THE WHOLE ROW. The first cut tested the row and
+    # was HOLLOW: a reverted item's DESCRIPTION always explains the revert, so
+    # "REVERT" was present however the status cell read. Falsified by blanking
+    # the status and watching it stay green. Same lesson `ship-record-check.py`
+    # already carries: assert STRUCTURE, not presence.
+    if 'REVERT' not in row.split('|')[1].upper():
+        bad.append(f"  {i}: registry row's FIRST CELL does not say REVERTED — a reader thinks it is live")
+    if not re.search(r'^###\s.*' + re.escape(i), bl, re.M):
+        bad.append(f"  {i}: reverted but not re-opened in the backlog (/ship § Reverting a ship)")
+if bad:
+    print("\n".join(bad)); sys.exit(1)
+print("  ok")
+PYEOF
+[ "$vfail" = 1 ] && fail=1
+
 say "── board rulings: a SHIP ruling has its PATTERN artifact ──"
 # ⚠️ THE THIRD ARTIFACT WAS THE ONE NOTHING CHECKED.
 #
