@@ -25,14 +25,34 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 
 type Origin = 'pill' | 'tap' | 'bottom'
-type Spring = 'none' | 'overshoot' | 'wobble'
+type Spring = 'none' | 'wobble' | 'pop'
 type Width  = 'pill' | 'full'
 type Motion = 'slide' | 'grow'
 
+/**
+ * 🔴 `wobble` WAS THE WRONG SHAPE OF CURVE AND IT IS WHY THE FOUNDER SAID
+ * *"it still comes from the bottom"* on a build that demonstrably grew from the
+ * card he tapped.
+ *
+ * 📐 The old `cubic-bezier(0.18, 1.70, 0.40, 1)` reaches **90% in 16% of the
+ * duration** — at 360ms the entire 400px journey is over in **57ms**, and the
+ * remaining **303ms** is the panel oscillating in place at full size. The origin
+ * is real and imperceptible. The eye sees "it appeared, then wobbled" and the
+ * brain supplies the default story for a sheet: it came from the bottom.
+ *
+ * ⚠️ MY DURATION PICK CAUSED IT. I chose 360ms because the panel *arrives* in
+ * 71ms — optimising for "no perceived lag" on an animation whose entire purpose
+ * is that the runner SEES where it came from.
+ *
+ * `wobble` is now a curve that TRAVELS before it bounces: 90% at 56% of the
+ * duration, peak 111.8% at 76%, settled by 99%. At 420ms that is 235ms of
+ * journey and 185ms of settle. `pop` keeps the old one so the difference is
+ * visible in one tap.
+ */
 const EASE: Record<Spring, string> = {
-  none:      'cubic-bezier(0.32, 0.72, 0, 1)',
-  overshoot: 'cubic-bezier(0.34, 1.40, 0.64, 1)',
-  wobble:    'cubic-bezier(0.18, 1.70, 0.40, 1)',
+  none:   'cubic-bezier(0.32, 0.72, 0, 1)',
+  wobble: 'cubic-bezier(0.65, 0.00, 0.35, 1.55)',
+  pop:    'cubic-bezier(0.18, 1.70, 0.40, 1)',
 }
 
 const INSET = 16          // matches --nav-pill-inset
@@ -45,20 +65,17 @@ export default function SheetPreview() {
   const [width,  setWidth]  = useState<Width>('pill')
   const [motion, setMotion] = useState<Motion>('grow')
   /**
-   * 📐 360ms, PICKED FROM THE CURVE RATHER THAN BY FEEL. `wobble` is
-   * `cubic-bezier(0.18, 1.70, 0.40, 1)`: it overshoots to **114.3%** at 39% of
-   * the duration, first crosses 100% at **20%**, and settles within 1% at
-   * **87%**. At 360ms that is:
+   * 📐 420ms, and the SECOND time this was picked from the curve — the first
+   * pick was wrong in an instructive way.
    *
-   *   arrives  71ms  — immediate, no perceived lag
-   *   peaks   140ms  — where the bounce is actually visible
-   *   settles 315ms  — under the ~350ms where a settle starts reading as lag
+   * 360ms was chosen because the panel *arrives* in 71ms. But `wobble` reached
+   * 90% in 57ms, so the journey from the card was invisible and only the
+   * in-place oscillation was left to see. **On an origin-anchored transition the
+   * number to optimise is TIME SPENT TRAVELLING, not time to arrival.**
    *
-   * 320ms was the alternative and is a touch quick for the `tap` origin, which
-   * travels ~400px. Below 260 the overshoot stops reading as weight and starts
-   * reading as a glitch.
+   * With the corrected curve at 420ms: **235ms of journey, 185ms of settle.**
    */
-  const [ms, setMs] = useState(360)
+  const [ms, setMs] = useState(420)
   const [open, setOpen] = useState(false)
   const [shown, setShown] = useState(false)
 
@@ -198,7 +215,7 @@ export default function SheetPreview() {
         {seg('width',  width,  setWidth,  ['pill', 'full'] as const)}
         {seg('motion', motion, setMotion, ['slide', 'grow'] as const)}
         {seg('origin', origin, setOrigin, ['pill', 'tap', 'bottom'] as const)}
-        {seg('spring', spring, setSpring, ['none', 'overshoot', 'wobble'] as const)}
+        {seg('spring', spring, setSpring, ['wobble', 'pop', 'none'] as const)}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
           <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', width: 46 }}>{ms}ms</span>
           <input type="range" min={220} max={800} step={20} value={ms}
