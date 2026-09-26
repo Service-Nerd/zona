@@ -43,6 +43,14 @@ interface SessionStepsProps {
 - **A sub-unit part shows its DURATION, never `~0` (UNITS-SUBUNIT-01, 2026-09-23).** A part that apportions to **zero whole units** renders `formatDuration(part.duration_mins)` instead of a distance. ⚠️ A 0.71 km cool-down is 0.44 of a mile; rounded to a whole unit it printed **`~0mi`**, telling the runner they cover no ground — measured on **19,275 sessions (39.7%) in miles and 1,805 (3.7%) in km**, cool-down in every mile case. **The sum survives by construction**: a part apportioned to 0 contributes 0, so SESSION-RECONCILE-01 cannot break. ⚠️ **Consumers must therefore expect a MIXED-KIND card** — minutes beside distances — which the time-trial shape above already produces. The same-unit assertion that forbade it lived only in a test, never in `ui-patterns.md`, and the one shape that disproved it had been carved out of it.
 - **Fallback** — when `derivedSet` is absent or not v2, the main set renders a single row from `structure.main.description`.
 - **Provenance** — all rule-engine output; **no `<AIMark />`** (ui-patterns.md Pattern 16).
+- 🔴 **The main-set ⓘ is a 15px VISUAL with a 44px TARGET, and the ring belongs to the GLYPH**
+  (`SESSION-INFO-MARK-01`, 2026-09-26). `IconButton inlineMark` carries `padding: 16.5px;
+  margin: -16.5px` to reach the 44px floor ICON-BUTTON-01 amendment 3 requires. Under
+  `box-sizing: border-box` **a border on that button paints around the PADDED box**, so
+  `border`/`width`/`height` on the button drew the ring at ~25pt across, overlapping the block
+  label. **When the visual and the hit area are different sizes they must be different
+  elements**: the button stays invisible, the icon span carries the circle. Gated by
+  `components/ui/iconButton.markup.test.ts`.
 
 ## Data owners
 

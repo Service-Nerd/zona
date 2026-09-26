@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-26 — SESSION-INFO-MARK-01 · the ring painted the hit area, and a line that is probably not there
+**Shipped:** The info mark's ring moved from the button onto the glyph. Plus a properly narrowed item for the mystery line.
+**Dev learning:** Under `box-sizing: border-box`, a border on an element that also carries padding paints around the **padded** box. The inline mark uses `padding: 16.5px; margin: -16.5px` to turn a 15px glyph into a 44px target — so putting the ring on the button drew it around the target. **When the visual and the hit area are different sizes, they must be different elements.** Third instance of that exact class in two days, after the nav pill's inline override and the CTA dock.
+**Product/creator learning:** He also reported a line at the bottom of the session screen. The app review had recorded the same thing four days earlier as "untraced" and declined to rule. Rather than guess at CSS, I searched: **pure black appears nowhere in the app**, no colourless border, no `<hr>`. Then the decisive one — it's in **1 of 8 device captures, and not in a capture of the same screen a minute earlier.** It's transient. Probably a WKWebView scroll-boundary artefact.
+**AI-building learning:** The most useful thing I did was compare eight screenshots for the same pixel signature. That took one script and eliminated a whole class of wrong fix. Cheap tests that can *disprove* the obvious explanation are worth more than careful reasoning about the likely one.
+**The honest bit:** I can't finish the line. A native rendering effect can't be diagnosed from this machine, and the honest output is a discriminating test with what each outcome means — not a CSS change to something that isn't in the CSS.
+**Hook material:** The mystery line is in one screenshot out of eight, and absent from the same screen a minute earlier. Pure black appears nowhere in the codebase.
+**Postable?:** maybe
+
+
 ## 2026-09-26 — NAV-PILL-GEOMETRY-01 · the competitor answered the design question I was about to guess at
 **Shipped:** The pill sits 21pt off the bottom instead of 46, and the radius became a token.
 **Dev learning:** `calc(lift + env(safe-area-inset-bottom))` is the wrong mental model for a floating control. It reads as "clear the indicator, then lift a bit" and gives 12 + 34 = 46pt. The safe-area strip is where you must not put **content**; a floating control may tuck into its upper part — the indicator bar is only ~5pt of the 34. `max(lift, inset − tuck)` gives 21 with an indicator and 12 without.
