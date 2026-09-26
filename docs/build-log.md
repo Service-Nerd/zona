@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-26 — NAV-PILL-FLUSH-01 · the rule existed, had the right values, and lost
+**Shipped:** The pill actually floats, and it is slightly translucent after the founder overruled the board.
+**Dev learning:** An inline style beats a class. I added `.nav-bar--floating` and left the flush bar's inline `bottom: 0`, `width: '100%'` and `maxWidth` on the same element — so the only declaration that applied was the one the inline styles did not mention, `border-radius`. It shipped as a full-width flush slab with round corners. **Every gate was green, because they assert the rule EXISTS with the right values and never that those values WIN.** A rule that is overridden is decoration, and that is now its own arm, with the property list derived from the class's own declarations rather than hand-written.
+**Product/creator learning:** He asked three things and I only answered two. "Are the edges too round?" is deliberately unanswered — 999px is what he approved in the mock, but that mock was correctly inset and the shipped version was not, so the roundness he is questioning was seen on a shape that was wrong in two other dimensions. Changing it in the same commit would move two variables at once and neither of us would learn anything.
+**AI-building learning:** He overruled a board ruling I had made on a measurement, and the right response was not to withdraw the measurement. The board said translucency is not perceptible on this palette; that is still true and still recorded. What the founder overruled is whether to have it anyway — and the measurement still binds the *shape* of it: ground translucent, labels never, floor 0.70, blur mandatory. The test that asserted "the pill is opaque" went red and got **updated, not deleted**.
+**The honest bit:** I measured his screenshot and found my own CSS losing on every dimension. Then, fixing it, I put a JSX comment directly after `return (` where JSX has not started and broke the file. Two self-inflicted wounds in one small change, both caught by machines rather than by me.
+**Hook material:** The CSS said 12 pixels. The device said 0.9. The test suite said everything was fine.
+**Postable?:** yes
+
+
 ## 2026-09-26 — SESSION-ACTUAL-SHAPE-01 · fixing one bug woke another that had been asleep for four months
 **Shipped:** The ACTUAL column reads the field names the object actually has, and formats through the owner.
 **Dev learning:** `NaN != null` is **true**. That single fact is why "NaNmi" rendered: the guard was a null check and the value was NaN. The cause was a shape mismatch — HealthKit rows are marshalled into Strava's API naming at four sites (`distance_m → distance`), and one consumer read the DB names off the renamed object. Written two days *after* the marshaller, so it was wrong from the first keystroke.
