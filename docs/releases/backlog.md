@@ -28,6 +28,30 @@ already decided what it is.
 ---
 
 
+### `BUTTON-GEOMETRY-BORDER-01` — the geometry harness never reads `border` ⚙️ NO BOARD
+
+`buttonGeometry.test.ts` models padding, className resolution, stylesheet order and width. **It
+does not parse `border` at all.**
+
+Under `box-sizing: border-box` that is correct for any control with a `min-height` / `min-width`
+floor — the border paints inside and the outer box cannot move. **It is wrong for a content-sized
+one**, where the border adds to the outer box.
+
+📐 **Measured 2026-09-26 — six classes carry `border: 1px` and are content-sized in their own
+block:** `.btn--secondary`, `.btn--soft`, `.btn--destructive`, `.icon-btn--circle`,
+`.icon-btn--square`, `.nav-bar--floating`. **Every one of them composes with a size class that
+floors**, so there is **no live exposure today** — `ICON-EDGE-01` added a border to two of them and
+a browser confirmed 44×44, `geometry moved: 0`.
+
+⚠️ **So the harness is right today and structurally blind.** The first bordered control written
+without a size class moves and it prints `moved: 0` — **which is the exact sentence this repo has
+already recorded as "not nothing moved, no longer looking"**. Sixth modelling gap found in this
+harness; the previous five were blind-to-components, content-box, summed padding, a comment-broken
+regex, and no width.
+
+**Found by running the `/build` consumer check AFTER shipping rather than before.** The check cost
+nothing this time and would have cost the whole item if one of those six had been unfloored.
+
 ### `BACK-HEADER-OWNER-01` — the pushed-screen header has no owner and five type treatments 🧭 DESIGN BOARD
 
 `SCREEN-HEADER-01` gave the TAB-ROOT header one owner. The **pushed-screen** header — back arrow
