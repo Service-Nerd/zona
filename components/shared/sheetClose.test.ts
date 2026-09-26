@@ -93,18 +93,9 @@ describe('SHEET-CLOSE-OWNER-01', () => {
   })
 
   it('the panel tracks the finger and springs back', () => {
-    // ⚠️ RE-POINTED, NOT RELAXED (SHEET-ORIGIN-01). The drag used to be
-    // declarative — `transform: translateY(${dragY}px)` in the render, with
-    // `dragY` in state. It had to become imperative, because a declarative
-    // style prop and an imperative style write cannot both own `transform`:
-    // React re-applies the prop on every render and silently threw away the
-    // origin animation. The BEHAVIOUR asserted here is unchanged.
-    expect(SHEET, 'the panel follows the finger').toMatch(/panel\.style\.transform = `translateY\(\$\{v\}px\)`/)
+    expect(SHEET).toMatch(/translateY\(\$\{dragY\}px\)/)
     // No transition WHILE dragging, or the panel lags the finger.
-    expect(SHEET, 'no transition mid-drag').toMatch(/panel\.style\.transition = 'none'/)
-    // …and it springs back to rest when the drag is released below the threshold.
-    expect(SHEET, 'spring-back on release')
-      .toMatch(/transform 0\.28s cubic-bezier\(0\.32, 0\.72, 0, 1\)/)
+    expect(SHEET).toMatch(/dragY\s*>\s*0\s*\?\s*'none'/)
   })
 
   it('🔴 no sheet hand-rolls its own close', () => {

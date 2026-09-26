@@ -45,11 +45,10 @@
 
 'use client'
 
-import { createContext, useContext, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createContext, useContext, useCallback, useEffect, useRef, useState } from 'react'
 import IconButton from '@/components/ui/IconButton'
 import { createPortal } from 'react-dom'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
-import { lastPressedRect } from '@/lib/ui/lastPressed'
 
 // ── Nav height ─────────────────────────────────────────────────────────────
 // The bottom nav measures itself (ResizeObserver in DashboardClient) and
@@ -70,24 +69,7 @@ export function useNavHeight(): number | null {
 }
 
 const NAV_FALLBACK_PX = 64
-/** SHEET-ORIGIN-01 — matches `--nav-pill-inset` / the pill's own geometry. */
-const PILL_INSET   = 16
-const PILL_MAXW    = 448
-/** How far the sheet's foot tucks BEHIND the pill so they read as one object. */
-const PILL_OVERLAP = 26
 const EXIT_MS = 280
-/**
- * 📐 PICKED FROM THE CURVE, AND THE FIRST PICK WAS WRONG IN AN INSTRUCTIVE WAY.
- * A front-loaded spring (`cubic-bezier(0.18, 1.70, 0.40, 1)`) reaches 90% in
- * **16% of the duration** — at 360ms the whole journey finished in 57ms and the
- * rest was oscillation in place, so the founder reported "it still comes from
- * the bottom" about a sheet that provably grew from his own tap.
- *
- * This curve reaches 90% at **56%**, peaks at **111.8%** at 76%, and settles by
- * 99%. At 420ms that is **235ms of travel and 185ms of settle.**
- */
-const ENTER_MS   = 420
-const ENTER_EASE = 'cubic-bezier(0.65, 0, 0.35, 1.55)'
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
@@ -127,43 +109,6 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
   const closingRef = useRef(false)
 
   /**
-   * 🔴 SHEET-ORIGIN-01 — the panel grows out of the control that opened it.
-   *
-   * Founder, over six rounds: sheets should come **out of the nav pill**, be
-   * **the width of the pill**, and **go back into it**. Two corrections came out
-   * of the preview and both are load-bearing:
-   *
-   *   1. **The runner never taps the pill** — they tap a card, a chip, an "i"
-   *      mark. Growing from the pill attributes the sheet to a control they did
-   *      not touch. So the origin is the **last pressed control**, and the
-   *      pill's top edge only when there isn't one.
-   *   2. **"It still comes from the bottom"** on a build that demonstrably grew
-   *      from the card. The origin was real and IMPERCEPTIBLE: the old curve
-   *      reached 90% in 57ms, so the journey was over before the eye could
-   *      follow it. **On an origin-anchored transition the number to optimise is
-   *      TIME SPENT TRAVELLING, not time to arrival.**
-   */
-  const originRef = useRef<DOMRect | null>(null)
-  const closedTransform = useCallback(() => {
-    const panel = panelRef.current
-    if (!panel) return 'translateY(100%)'
-    const src = originRef.current
-    const pill = { top: window.innerHeight - navH }
-    const h = panel.offsetHeight
-    // The panel's laid-out bottom edge in viewport coords. Derived, never
-    // measured: `getBoundingClientRect()` returns the TRANSFORMED box, and the
-    // panel is already transformed when this runs.
-    // ⚠️ MUST MATCH `marginBottom` ON THE PANEL EXACTLY. These are two
-    // statements of the same number and they disagreed on the first cut, which
-    // is the defect class this repo keeps recording. Derived from the same
-    // expression so they cannot drift.
-    const bottomEdge = window.innerHeight - Math.max(0, navH - PILL_OVERLAP)
-    const anchor = src ? src.top + src.height / 2 : pill.top
-    const sy = Math.max(2 / Math.max(h, 1), 0.01)
-    return `translateY(${Math.round(anchor - bottomEdge)}px) scaleY(${sy.toFixed(4)})`
-  }, [navH])
-
-  /**
    * 🔴 SWIPE DOWN TO CLOSE (founder, 2026-09-25: *"I want ALL popups we have to
    * be able to swipe down to close them as well as have the cross to close"*).
    *
@@ -177,8 +122,7 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
    * is the whole guard, and it is why this is safe on a scrollable panel.
    */
   const dragStartY = useRef<number | null>(null)
-  /** Imperative: a state-driven transform is what the render used to fight. */
-  const dragY = useRef(0)
+  const [dragY, setDragY] = useState(0)
   const DISMISS_PX = 90
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
@@ -195,28 +139,16 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
     if (dragStartY.current === null) return
     const dy = e.touches[0]!.clientY - dragStartY.current
     // Downward only: an upward pull is a scroll, not a dismiss.
-    const v = dy > 0 ? dy : 0
-    dragY.current = v
-    const panel = panelRef.current
-    if (panel) {
-      panel.style.transition = 'none'
-      panel.style.transform = `translateY(${v}px)`
-    }
+    setDragY(dy > 0 ? dy : 0)
   }, [])
 
   const onTouchEnd = useCallback(() => {
     if (dragStartY.current === null) return
-    const dy = dragY.current
+    const dy = dragY
     dragStartY.current = null
-    dragY.current = 0
-    if (dy > DISMISS_PX) { closeRef.current(); return }
-    // Spring back. Imperative, for the same reason the enter is.
-    const panel = panelRef.current
-    if (panel) {
-      panel.style.transition = reduce.current ? 'none' : 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)'
-      panel.style.transform = 'translateY(0px) scaleY(1)'
-    }
-  }, [])
+    setDragY(0)
+    if (dy > DISMISS_PX) closeRef.current()
+  }, [dragY])
 
   const closeRef = useRef<() => void>(() => {})
 
@@ -225,14 +157,6 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
     if (closingRef.current) return
     closingRef.current = true
     if (reduce.current) { onCloseRef.current(); return }
-    // 🔴 RETRACTS TO THE SAME PLACE IT CAME FROM. The founder's words were "goes
-    // back into it", and an exit that slides to the bottom while the entry grew
-    // from a card is two different stories about one object.
-    const panel = panelRef.current
-    if (panel) {
-      panel.style.transition = `transform ${EXIT_MS}ms ${ENTER_EASE}`
-      panel.style.transform = closedTransform()
-    }
     setShown(false)
     window.setTimeout(() => onCloseRef.current(), EXIT_MS)
   }, [])
@@ -244,31 +168,11 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
     setMounted(true)
   }, [])
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!mounted) return
     if (reduce.current) { setShown(true); return }
-    const panel = panelRef.current
-    if (!panel) { setShown(true); return }
-    originRef.current = lastPressedRect()
-    panel.style.transition = 'none'
-    panel.style.transformOrigin = 'center bottom'
-    panel.style.transform = closedTransform()
-    void panel.offsetHeight                       // paint the closed frame
-    // ⚠️ rAF WITH A TIMEOUT FALLBACK. rAF does not fire while the document is
-    // hidden, so a sheet mounting as the app backgrounds would leave `shown`
-    // false: scrim up, body scroll-locked, no panel (`SHEET-RAF-FALLBACK-01`).
-    let released = false
-    const release = () => {
-      if (released) return
-      released = true
-      panel.style.transition = `transform ${ENTER_MS}ms ${ENTER_EASE}`
-      panel.style.transform = 'translateY(0px) scaleY(1)'
-      setShown(true)
-    }
-    requestAnimationFrame(release)
-    const t = setTimeout(release, 50)
-    return () => clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const r = requestAnimationFrame(() => setShown(true))
+    return () => cancelAnimationFrame(r)
   }, [mounted])
 
   // Escape to dismiss, body-scroll lock, focus capture + restore. One effect so
@@ -330,19 +234,9 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchEnd}
         style={{
-          // 🔴 PILL WIDTH, and it is not decoration. Founder: "I'd want the pop
-          // ups to be the width of the pill too." Measured in the preview: at
-          // pill width the HORIZONTAL scale of the entry transform is exactly
-          // **1**, so the panel no longer squashes its own text on the way out
-          // and needs no counter-fade. The whole animation becomes one number.
-          width: `calc(100% - ${PILL_INSET * 2}px)`,
-          maxWidth: `${Math.min(maxWidth, PILL_MAXW)}px`,
+          width: '100%', maxWidth: `${maxWidth}px`,
           background: 'var(--card)',
-          // All four corners: a pill-width sheet is an OBJECT, not a drawer. The
-          // foot is hidden behind the pill so its radius never shows.
-          borderRadius: '22px 22px 0 0',
-          border: '1px solid var(--chrome-edge)',
-          borderBottom: 'none',
+          borderRadius: '20px 20px 0 0',
           position: 'relative',
           boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
           paddingTop: 'var(--space-2)',
@@ -354,16 +248,6 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           // navH is still consumed HERE even though the panel covers the nav:
           // it keeps a tall sheet's own content out of the home-indicator strip.
-          /* 🔴 THE PANEL RESTS ON THE PILL, NOT ON THE VIEWPORT FLOOR — and the
-           * first cut had this backwards. `margin-bottom: -26px` on a
-           * `align-items: flex-end` container pushed the panel 26px BELOW the
-           * screen edge, so it covered the pill completely instead of tucking
-           * its foot behind it. Measured: panel bottom 838 against a pill top of
-           * 738.
-           *
-           * It must be LIFTED by the nav's height and then pushed back down by
-           * the overlap: bottom = pill.top + PILL_OVERLAP. */
-          marginBottom: `${Math.max(0, navH - PILL_OVERLAP)}px`,
           maxHeight: `min(${maxHeightVh}vh, calc(100vh - ${navH}px - 24px))`,
           // 🔴 THE PANEL NO LONGER SCROLLS — ITS BODY DOES (SHEET-CLOSE-PIN-01).
           // The close was `position: absolute` inside the scrolling panel, and
@@ -382,22 +266,10 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           // is the scrolling element rather than the panel.
           overflow: 'hidden',
           outline: 'none',
-          /* 🔴 NO `transform` AND NO `transition` HERE, AND THIS IS THE DEFECT
-           * THAT SHIPPED. `SHEET-ORIGIN-01` added an imperative enter animation
-           * in a layout effect — and left these two declarative lines in place.
-           * The effect painted the closed frame at the tapped control, then
-           * `setShown(true)` re-rendered, React re-applied the `style` prop, and
-           * BOTH the transform and the 420ms curve were overwritten with
-           * `translateY(0)` and the old 0.28s bottom slide.
-           *
-           * So the origin was computed, painted for one frame, and then thrown
-           * away every time. The founder: *"pop ups are still coming from the
-           * bottom of screen rather than top of pill"* — on a build where every
-           * new value was verifiably in the production bundle.
-           *
-           * ⚠️ **A declarative style prop and an imperative style write cannot
-           * both own a property. React wins, on every render.** All three
-           * phases — enter, drag, exit — are imperative now. */
+          transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
+          // No transition WHILE dragging: the panel must track the finger, then
+          // spring back or dismiss when it is released.
+          transition: dragY > 0 ? 'none' : (transition ?? 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)'),
         }}
       >
         {/* Drag pill — and as of 2026-09-25 it actually drags.
