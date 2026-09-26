@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — LINK-HIERARCHY-01 · The screen that argued with itself
+**Shipped:** the link-an-activity screen stops promoting the action we don't want, and its buttons stop wrapping.
+**Dev learning:** "the buttons look too big/fat" was wrapping, not padding. Measured at 375pt: `.btn--regular`'s `padding: 15px 20px` at `flex: 1` leaves too little room, both labels go to two lines, and a 44px floor renders 74px. I tested the obvious suspects first — sentence case instead of uppercase, no letter-spacing — and both measured **identical at 74px**. It was the size class. Guessing would have changed the copy and fixed nothing.
+**Product/creator learning:** the founder asked "is it clear which buttons we prefer?" It was clear, and it was backwards. You tap a green MATCH A RUN and land on a screen whose loudest control is LOG WITHOUT ACTIVITY, with the run you came for rendered as a div in the exact colour of its own background. The fix is that the primary only appears once you've picked a run — the screen has no primary until you do the preferred thing, because the preferred thing IS the primary.
+**AI-building learning:** the settled-ground scan found that Collins had already filed this in September — "Match a run and Log manually are the same intention, differing only in whether we can find the data" — and it had been held out of scope because the founder asked about ordering that day. Reading the register turned a fresh design argument into a live item with a position already on the record.
+**The honest bit:** my first gate anchored on `setShowManualModal(true)` and `onClick={handleMarkComplete}` — both of which appear EARLIER on the same screen in other views, so it was grading controls this ruling never touched. Same population failure as five other checks this week, this time in the anchor rather than the set. I only caught it because it went red for the wrong reason.
+**Hook material:** the button that said "match a run" led to a screen whose biggest button said "log without activity", and the run itself was painted the same colour as the page.
+**Postable?:** yes
+
 ## 2026-09-26 — MANUAL-LOG-STEPPER-02 · A decision that shipped no code
 **Shipped:** nothing. The founder chose to keep the manual log's `+`/`−` distance steppers, and that is the deliverable.
 **Dev learning:** the job here was making sure the documents stop disagreeing with the product. The routing table said "a precise typed number is `TextField`'s", the distance is a precise number, and it now stays on steppers — so without an exception written *where the rule lives*, the next person reads the table and "fixes" a control the founder deliberately kept. Same shape as the `--surface-moss-wash` incident: the rule in one file, the behaviour in another, never meeting.

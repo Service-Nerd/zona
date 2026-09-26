@@ -252,7 +252,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 47,
+    "height": 44,
     "width": "auto"
   },
   "app/dashboard/DashboardClient.tsx#Button22": {
@@ -292,14 +292,14 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 47,
+    "height": 44,
     "width": "auto"
   },
   "app/dashboard/DashboardClient.tsx#Button27": {
     "floor": 44,
     "padY": null,
     "font": 12,
-    "radius": "10px",
+    "radius": null,
     "height": 44,
     "width": "auto"
   },
@@ -308,7 +308,7 @@
     "padY": null,
     "font": null,
     "radius": null,
-    "height": 47,
+    "height": 44,
     "width": "auto"
   },
   "app/dashboard/DashboardClient.tsx#Button29": {
@@ -864,14 +864,6 @@
     "width": "auto"
   },
   "app/dashboard/UpgradeScreen.tsx#Button3": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/nav-preview/page.tsx#Button1": {
     "floor": 44,
     "padY": null,
     "font": null,

@@ -28,6 +28,34 @@ already decided what it is.
 ---
 
 
+### `ACTION-ROW-320-01` — the action rows still wrap at 320pt ⚙️ NO BOARD (measurement) · 🧭 DESIGN BOARD (answer)
+
+`LINK-HIERARCHY-01` moved both action rows to `.btn--compact` and they now render **44px, one line
+at 375pt** — the founder's device. 🔴 **At 320pt they still wrap: 62px, two lines, all four
+buttons.**
+
+⚠️ **Reported rather than claimed fixed.** Wroblewski's standing lens is *"does the pattern hold
+at the small end: 320px"*, and it does not. 320pt is the original SE / iPhone 5; every currently
+supported iPhone is 375pt or wider, **so this is a documented bar we miss rather than a live defect
+on a shipping device.**
+
+**What it needs is a decision, not a tweak:** shorter labels (copy → founder), stacking the row
+full-width below some breakpoint (layout → board), or accepting 320 as out of support and saying so
+in `ui-patterns.md` so the lens stops asserting a bar we have chosen not to meet.
+
+### `MATCH-LIST-WINDOW-01` — the candidate list has no date filter 🏃 COACHING BOARD
+
+`stravaRuns.slice(0, 20)` — the activity picker offers the twenty most recent runs with **no
+proximity filter to the session's date**.
+
+📐 **From the founder's own capture:** a **20 Sep, 14 km** run offered as a candidate for a
+**Fri 25 Sep, 8 km easy** session. **Five days and six kilometres apart.**
+
+🔴 **Routed to the COACHING BOARD, not design.** Linking writes the completion the engine reads,
+so the window decides **what counts as having done a session** — that is prescription-adjacent, and
+picking a window (±1 day? ±3? distance-aware?) is a coaching judgement, not a layout one. Found
+while building `LINK-HIERARCHY-01`; **explicitly out of its scope and not guessed at.**
+
 ### `BUTTON-GEOMETRY-BORDER-01` — the geometry harness never reads `border` ⚙️ NO BOARD
 
 `buttonGeometry.test.ts` models padding, className resolution, stylesheet order and width. **It

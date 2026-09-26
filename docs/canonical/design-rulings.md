@@ -2231,6 +2231,63 @@ MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolle
 - **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
   header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
 
+### LINK-HIERARCHY-01 — SHIP (4) · the screen argued with itself (2026-09-26)
+
+**Founder:** *"The buttons look too big/fat… the Run (Connect) above Log without activity is
+actually a button, it's not clear… is it clear which buttons we prefer the user to select? Ideally
+we want them to connect to a run right? **This is a real moment.**"*
+
+🔴 **THE SETTLED-GROUND SCAN FOUND COLLINS HAD ALREADY FILED THIS.**
+`SESSION-ACTION-COLLAPSE-01`, September: *"'Match a run' and 'Log manually' are the same intention
+— I did this run — differing only in whether we can find the data."* Zhuo held it out of scope
+because the founder had asked about **ordering**; he is now asking about the **flow**.
+
+#### 📐 Measured
+
+| | |
+|---|---|
+| **The "fat" is WRAPPING, and it is the size class** | `regular` → **74px, 2 lines**. Sentence case with no tracking → **identical 74px**. `compact` → **44px, 1 line** |
+| **The run row is not a button** | `<div onClick>` — no role, no `tabIndex`, no focus ring |
+| **Its fill separates from its ground by ZERO levels** | `--bg` painted on `--bg`, marked only by an 8% hairline |
+| **🔴 The hierarchy is inverted** | Tap green **MATCH A RUN** → land where the loudest control is **LOG WITHOUT ACTIVITY** |
+| ⚠️ Not asked, found anyway | The candidate list has **no date filter** — a 20 Sep / 14 km run offered for a 25 Sep / 8 km session |
+
+**The preference is doctrinal, not taste.** ADR-011: HealthKit is the SOR and carries the HR
+stream; a manual log carries none, and CLAUDE.md states the consequence — those runners *"get no
+HR-based coaching"*. **Linking is materially better COACHING.** Sierra's test is met.
+
+#### ⚖️ Ruling — SHIP (1)(2)(3)(4)
+
+1. Both action rows → `.btn--compact` · 2. the run row becomes a real `<button>` with `aria-pressed`
+· 3. it takes a surface — `--bg-soft` + **`--chrome-edge`**, `--moss-soft`/`--moss-mid` selected
+(`:240` permits a conditional fill) · 4. **the primary EMERGES only once a run is picked.**
+
+⚠️ **Before selection the row has NO PRIMARY, deliberately — the primary is the run card.**
+`SESSION-ACTIONS-01` flagged a primary-less row as a defect, so this one is asserted as intentional
+in the gate rather than left to be "fixed" later.
+
+⚠️ **Clause 3 uses `--chrome-edge` (14%), not `--line` (8%), and that FOLLOWS `ICON-EDGE-01`
+rather than choosing:** that ruling, the same morning, held that `--bg-soft`'s **7.7 levels** is not
+enough on its own for a control. Same evidence, same day, same answer.
+
+⛔ **Veto: none.** ↗️ **SLT not required** — Zhuo, who holds the seat: *"the preference is argued
+from coaching quality under ADR-011, not from the paid gate behind reflections. I'm not escalating
+a design decision that revenue did not drive."*
+
+🔴 **NOT BUILT, AND SAID SO:** **(5)** the date window → `MATCH-LIST-WINDOW-01`, routed to the
+**Coaching Board** because it decides what counts as completing a session · **(6)** collapsing Match
++ Log into one intention — Collins' item, the founder's "real moment", **mock-up before code**.
+
+⚠️ **320pt STILL WRAPS (62px, 2 lines) and is reported rather than claimed fixed** —
+`ACTION-ROW-320-01`. 375pt is the founder's device and every currently supported iPhone; 320 is a
+documented bar in Wroblewski's lens that we miss.
+
+🥇 **The gate caught itself:** its first cut anchored on `setShowManualModal(true)` and
+`onClick={handleMarkComplete}`, **both of which appear EARLIER on the same screen in other views**,
+so it graded controls this ruling never touched. The short-population class, this time in the
+ANCHOR. Falsified four ways **plus a deliberate no-op control edit that stayed green**, which is
+what shows the arms are keyed to the claim and not to "any change here".
+
 ### MANUAL-LOG-STEPPER-02 — 🔴 KEEP THE STEPPERS. Founder decision, 2026-09-26. The whole `STEPPER-CONTROL-01` family is now SETTLED.
 
 **Asked:** replace the manual log's `− 7 + . − 5 +` distance steppers with a typed `TextField`

@@ -5302,15 +5302,23 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                   }
                   return (
                     <>
+                          {/* 📐 `compact`, NOT `regular` (LINK-HIERARCHY-01). Measured at
+                              375pt: `regular`'s `padding: 15px 20px` at `flex: 1`
+                              leaves too little room, so BOTH labels wrapped to two
+                              lines and the row rendered **74px** against a 44px
+                              floor. `compact` puts each on one line at exactly 44.
+                              The founder: *"they look too big/fat"* — and it was
+                              the size class, not the copy and not the uppercase,
+                              which measured identical at 74px. */}
                       {/* SESSION-ACTIONS-01 — one grammar: secondary LEFT,
                           primary RIGHT, one size class, 2:1. `Skip` left the
                           primary row: it is not a peer of "I did this"
                           (Collins), and three equal-width buttons told the
                           runner three outcomes were equally likely (Zhuo). */}
-                      <Button variant="secondary"  onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px' }}>
+                      <Button variant="secondary" size="compact" onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px' }}>
                         Log manually
                       </Button>
-                      <Button variant="primary"  onClick={handleMarkComplete} style={{ flex: 2, minWidth: '120px', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', borderRadius: '10px' }}>
+                      <Button variant="primary" size="compact" onClick={handleMarkComplete} style={{ flex: 2, minWidth: '120px', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', borderRadius: '10px' }}>
                         Match a run
                       </Button>
                       <div style={{ display: 'flex', gap: 'var(--space-2)', width: '100%' }}>
@@ -5366,20 +5374,50 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
               {stravaRuns.slice(0, 20).map((run: any) => {
                 const isSelected = selectedActivity?.id === run.id
                 return (
-                  <div key={run.id} onClick={() => setSelectedActivity(isSelected ? null : run)} style={{
-                    background: isSelected ? 'var(--teal-soft)' : 'var(--bg)',
-                    border: `0.5px solid ${isSelected ? 'var(--teal-mid)' : 'var(--border-col)'}`,
-                    borderRadius: '12px', padding: '10px 12px', cursor: 'pointer',
+                  /* 🔴 (2) THIS WAS A `<div onClick>` — NOT A BUTTON AT ALL.
+                     No role, no tabIndex, no focus ring: invisible to the
+                     keyboard and to a screen reader. The founder: *"the Run
+                     (Connect) above Log without activity is actually a button.
+                     It's not clear."* It was not clear because it was not one.
+
+                     🔴 (3) AND ITS FILL SEPARATED FROM ITS GROUND BY **ZERO
+                     LEVELS** — `--bg` painted on `--bg`, marked only by an 8%
+                     hairline. `GHOST-AFFORDANCE-01` already forbids this: a
+                     primary action on its screen takes a surface, and on this
+                     screen picking a run IS the primary action.
+
+                     Now `--bg-soft` + a 1px hairline, which is ruling `:191`'s
+                     inset pattern verbatim, and `--moss-soft` / `--moss-mid`
+                     when selected.
+
+                     ⚠️ THE EDGE IS `--chrome-edge` (14%), NOT `--line` (8%), and
+                     that FOLLOWS settled ground rather than choosing. `ICON-EDGE-01`
+                     ruled THIS MORNING that `--bg-soft`'s 7.7 levels against the
+                     page ground is not enough on its own for a control — it is
+                     less than the nav tint the founder was shown and could not
+                     see. Same evidence, same day, same answer — a CONDITIONAL fill, which `:240` permits as
+                     a selected state. `aria-pressed` carries the selection,
+                     because a checkmark glyph announces nothing. */
+                  <button
+                    key={run.id}
+                    type="button"
+                    onClick={() => setSelectedActivity(isSelected ? null : run)}
+                    aria-pressed={isSelected}
+                    style={{
+                    width: '100%', textAlign: 'left', font: 'inherit', cursor: 'pointer',
+                    background: isSelected ? 'var(--moss-soft)' : 'var(--bg-soft)',
+                    border: `1px solid ${isSelected ? 'var(--moss-mid)' : 'var(--chrome-edge)'}`,
+                    borderRadius: '12px', padding: '10px 12px',
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   }}>
                     <div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500 }}>{run.name}</div>
+                      <div style={{ fontSize: '13px', color: 'var(--ink)', fontWeight: 500 }}>{run.name}</div>
                       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
                         {formatDate(run.start_date, 'short')} · {formatDistance(run.distance / 1000, preferredUnits, { exact: true })} {run.average_heartrate ? `· ${Math.round(run.average_heartrate)} bpm` : ''} · {run.source === 'apple_health' ? 'Apple Health' : 'Strava'}
                       </div>
                     </div>
-                    {isSelected && <span style={{ color: 'var(--teal)', fontSize: '16px' }}>✓</span>}
-                  </div>
+                    {isSelected && <span aria-hidden style={{ color: 'var(--moss-strong)', fontSize: '16px' }}>✓</span>}
+                  </button>
                 )
               })}
             </div>
@@ -5387,7 +5425,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0', marginBottom: 'var(--space-2)' }}>No activities found near this session date</div>
           )}
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <Button variant="secondary"  onClick={() => setView('detail')} style={{ flex: 1 }}>Back</Button>
+            <Button variant="secondary" size="compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</Button>
             {/* RESHAPE-FIX-WAVE2B (Defect 10): the 2026-06-26 incident's
                 phantom completion came from this exact button — tapped
                 with no activity selected, it wrote a bare stub the engine
@@ -5396,11 +5434,25 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                 no activity → route to reflect where RPE chip-tap creates
                 the row with body-state metadata. No path from this view
                 produces a bare stub now. */}
-            <Button variant="primary"
+            {/* 🔴 (4) THE HIERARCHY WAS INVERTED AND THE SCREEN ARGUED WITH ITSELF.
+                The runner taps a green **MATCH A RUN** and lands here, where the
+                loudest control said **LOG WITHOUT ACTIVITY** while the run they
+                came to link sat above as an invisible div. This screen promoted
+                the opposite of the action that reached it.
+
+                ⚠️ THE PREFERENCE IS DOCTRINAL, NOT TASTE. ADR-011: HealthKit is
+                the SOR and carries the HR stream; a manual log carries none, and
+                CLAUDE.md states the consequence — those runners "get no HR-based
+                coaching". Linking is materially better COACHING, not tidier data.
+
+                So the primary EMERGES once a run is picked. Before that the row
+                has no primary, deliberately: **the primary is the run card.**
+                ⚠️ `SESSION-ACTIONS-01` flagged a primary-less row as a defect —
+                this one is intentional and says so, so it is not "fixed" later. */}
+            <Button variant={selectedActivity ? 'primary' : 'secondary'} size="compact"
               onClick={() => selectedActivity ? saveCompletion('complete', selectedActivity) : setView('reflect')}
               disabled={saving}
-              
-              style={{ flex: 2, borderRadius: '10px', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              style={{ flex: 2, fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               {saving ? 'Saving...' : (selectedActivity ? 'Confirm complete' : 'Log without activity')}
             </Button>
           </div>
@@ -5433,7 +5485,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             Skip it. It'll stay in your log.
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-            <Button variant="secondary"  onClick={() => setView('detail')} style={{ flex: 1 }}>Back</Button>
+            <Button variant="secondary" size="compact" onClick={() => setView('detail')} style={{ flex: 1 }}>Back</Button>
             <Button variant="primary"  onClick={() => saveCompletion('skipped')} disabled={saving} style={{ flex: 2 }}>
               {saving ? 'Saving...' : 'Mark as skipped'}
             </Button>
