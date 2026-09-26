@@ -160,8 +160,22 @@ export default function SheetPreview() {
   const fusedOpen = fused && open
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', overflow: 'hidden', maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ padding: '10px 16px', background: 'var(--card)', borderBottom: '1px solid var(--line)' }}>
+    <div style={{
+      position: 'fixed', inset: 0, background: 'var(--bg)', overflow: 'hidden',
+      maxWidth: 480, margin: '0 auto',
+      // 🔴 FLEX, NOT A HARDCODED OFFSET. The scroll area was
+      // `position: absolute; inset: '186px 0 0'` — a magic number for the
+      // control panel's height, typed once and then invalidated twice by adding
+      // a control row. The panel grew past 186px, the scroll area covered its
+      // last two rows, and because the cards are BUTTONS they swallowed the
+      // taps: the founder could see the spring toggle and the slider and could
+      // not use them.
+      //
+      // ⚠️ A layout constant that encodes another element's height is wrong the
+      // moment that element changes, and nothing warns you. Flex derives it.
+      display: 'flex', flexDirection: 'column',
+    }}>
+      <div style={{ flexShrink: 0, padding: '10px 16px', background: 'var(--card)', borderBottom: '1px solid var(--line)' }}>
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>Sheet origin · round 2</div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', marginTop: 3, lineHeight: 1.5 }}>
           <strong>slide</strong> never scales — the panel keeps its height and descends behind the
@@ -178,7 +192,7 @@ export default function SheetPreview() {
         </div>
       </div>
 
-      <div style={{ position: 'absolute', inset: '186px 0 0', overflowY: 'auto', padding: '0 16px 150px' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 16px 150px' }}>
         {["This week's load", 'Hitting the zone', 'Why this session', 'Your training load balance'].map((t, i) => (
           <button key={i} onClick={e => openFrom(e.currentTarget)}
             style={{

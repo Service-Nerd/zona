@@ -2342,6 +2342,24 @@ travels **764 → 536 → 768**. Clip bottom **764** against a pill top of **738
 content, because the content is clipped rather than squashed. `grow` is kept in the preview only so
 the difference is visible.
 
+#### 🔴 The preview's own controls were unusable, and it was a magic number I invalidated myself
+
+**Founder:** *"You've give me sliders and toggles on the preview I can't use."*
+
+The scroll area was `position: absolute; inset: '186px 0 0'` — **a hardcoded offset for the control
+panel's height**, typed once and then invalidated **twice** by adding a control row (`join`, then
+`motion`). 📐 **Measured: the panel is 319px. The offset said 186.** So **133px of controls sat
+under the scroll area**, and because the cards are `<button>`s they swallowed every tap: the spring
+row and the slider were visible and dead.
+
+**Now `display: flex` with `flex: 1; min-height: 0` on the scroller** — the offset is derived and
+there is no number left to invalidate. Verified by hit test: `elementFromPoint` at each control's
+own centre returns that control, for all ten buttons and the slider.
+
+⚠️ **A layout constant that encodes another element's height is wrong the moment that element
+changes, and nothing warns you.** Same family as the nav's `calc(lift + inset)` and the double nav
+reserve: a value one place already owns, re-stated somewhere that cannot see it move.
+
 ### LINK-HIERARCHY-01 — SHIP (4) · the screen argued with itself (2026-09-26)
 
 **Founder:** *"The buttons look too big/fat… the Run (Connect) above Log without activity is
