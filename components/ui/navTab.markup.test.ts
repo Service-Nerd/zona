@@ -114,32 +114,31 @@ describe('NAV-SLIM-01', () => {
     // ⚠️ The flush bar SPENT the safe-area inset as its own reserved strip. A
     // pill sits ABOVE that strip, so padding it again double-counts.
     expect(f).toMatch(/padding-bottom:\s*0/)
-    // 🔴 THIS ARM USED TO ASSERT THE PILL WAS OPAQUE, AND IT FAILED CORRECTLY
-    // WHEN THE FOUNDER OVERRULED THAT (2026-09-26). It is updated, not deleted —
-    // the board's measurement still stands and still binds the SHAPE of the
-    // translucency, it just no longer decides whether to have it.
+    // 🔴 OPAQUE — AND THIS ARM HAS NOW BEEN THROUGH THE FULL CYCLE, which is
+    // why it is worth reading rather than trusting.
+    //   1. It asserted the pill was opaque (board: DON'T SHIP on a measurement).
+    //   2. It went red when the founder OVERRULED that, and was UPDATED to
+    //      assert the shape of the translucency instead.
+    //   3. He then looked at an A/B of the two materials and said *"I don't see
+    //      any difference."* **The board's original ruling is confirmed by the
+    //      eye rather than by arithmetic**, and the arm returns to opaque.
     //
-    // ⚠️ WHAT THE MEASUREMENT STILL BINDS, and this is the whole reason the arm
-    // survives: the GROUND goes translucent, the LABELS never do. Fading the
-    // whole bar reaches 4.47:1 at 0.9 — below AA before the change is
-    // perceptible. With blur and full-opacity labels the worst real backdrop
-    // (the band over the moss CTA) holds 4.58:1 at 0.70 and 5.02 at 0.85.
-    const alpha = parseFloat(CSS.match(/--nav-pill-alpha:\s*([0-9.]+)/)?.[1] ?? '0')
-    expect(alpha, 'the translucency must come from a token').toBeGreaterThan(0)
-    expect(alpha, 'below 0.70 the label drops under AA on the moss CTA backdrop')
-      .toBeGreaterThanOrEqual(0.70)
-
-    // ⚠️ BLUR IS LOAD-BEARING. Without it the backdrop is moving content and no
-    // ratio can be claimed, so translucency must be inside an @supports guard
-    // with an OPAQUE fallback — never translucent-without-blur.
-    expect(CSS, 'translucency must be gated on backdrop-filter support')
-      .toMatch(/@supports \(backdrop-filter[\s\S]*?\.nav-bar--floating\s*\{[^}]*backdrop-filter/)
-    expect(f, 'the un-supported fallback must be an opaque token')
-      .toMatch(/background:\s*var\(--nav-bg\)/)
-
-    // The labels themselves are never faded — that lives on `.nav-tab`.
-    expect(rule('.nav-tab'), 'a faded label is the version that fails AA')
-      .not.toMatch(/opacity/)
+    // 📐 THE DURABLE FINDING, so this is not re-proposed a fourth time: `--bg`
+    // sits BETWEEN white and any AA-safe darker tint. A fill lighter than the
+    // ground vanishes on cards; darker vanishes on the ground. Best case for
+    // ANY single fill is **10 levels vs the ground, 8 vs a card**; the absolute
+    // AA ceiling is 21 vs a card but **3** vs the ground. Ten levels is ~3%.
+    //
+    // ⚠️ And the fill was never the thing: the BORDER separates by **17 levels
+    // over the ground and 18 over a card**, against both, which is why an opaque
+    // pill with an edge reads perfectly well.
+    expect(f, 'the pill is opaque — no fill can separate from both grounds on this palette')
+      .not.toMatch(/backdrop-filter|rgba\(/)
+    expect(CSS, 'the translucency block is gone, not just unreferenced')
+      .not.toMatch(/@supports \(backdrop-filter[\s\S]{0,400}nav-bar--floating/)
+    expect(f, 'the fill is the opaque nav token').toMatch(/background:\s*var\(--nav-bg\)/)
+    // The labels are never faded — that survives every position above.
+    expect(rule('.nav-tab'), 'a faded label fails AA').not.toMatch(/opacity/)
   })
 
   it('🔴 the nav publishes its OCCLUSION, not its element height', () => {

@@ -2090,6 +2090,50 @@ be dialled rather than argued. ⚠️ **It is deliberately unchanged in this com
 25pt, which is the dominant term, and changing both at once would make the next report
 uninterpretable. Same reasoning as declining to change it last time — **one variable per look.**
 
+
+### NAV-TRANSLUCENT — 🔴 REVERTED TO OPAQUE, by the eye that overruled the board (2026-09-26)
+
+Founder, looking at the material A/B he asked for: ***"I don't see any difference."***
+
+**The board's original DON'T SHIP stands, and it is now confirmed by looking rather than by
+arithmetic.** The full cycle, recorded because it is the most useful thing here:
+
+| | |
+|---|---|
+| 1 | Board ruled **DON'T SHIP** on a measurement |
+| 2 | Founder **overruled** it; shipped at 0.82 |
+| 3 | He reported it looked opaque; measured, it was **invisible over cards** |
+| 4 | A warm tint proposed at 0.88, and put side by side he **could not see it** |
+| 5 | **Reverted to opaque.** Tokens removed — unused CSS is debt |
+
+#### 📐 The durable finding, so this is not re-proposed a fourth time
+
+🔴 **`--bg` sits BETWEEN white and any AA-safe darker tint.** A fill lighter than the ground
+vanishes on cards; a fill darker vanishes on the ground.
+
+| fill | vs page ground | vs a white card |
+|---|---|---|
+| white (shipped) | 16 lv | **0 lv** |
+| warm 0.88 (proposed) | 10 | 8 |
+| **darkest AA-safe** `rgb(240,238,234)` | **3** | 21 |
+
+**No single fill separates from both by more than ~10 levels**, and 10 levels is ~3% — below the
+threshold of perception through a blur on a phone. The **label** is the constraint: `--mute` hits
+4.5:1 at `rgb(240,238,234)`.
+
+⚠️ **AND THE FILL WAS NEVER WHAT MADE THE PILL READ AS AN OBJECT.** The **border** separates by
+**17 levels over the ground and 18 over a card** — against both, and roughly twice what the best
+fill can manage. **Four rounds were spent tuning the variable that cannot move while the one that
+works was identical in every comparison.**
+
+**Re-open only if the palette gains a ground that is not near-white.**
+
+#### 🔜 NAV-EDGE-01 — open, in the preview
+
+The honest lever is the edge. `--line` is ink at **8%**; `/nav-preview` now A/Bs it against a
+slider (8→30%). 12% gives 26/27 levels, 14% gives 30/32. **Founder to pick the number** — unlike
+the tint, this one is visible.
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1

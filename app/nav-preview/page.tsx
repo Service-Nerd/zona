@@ -1,28 +1,20 @@
-// NAV-TRANSLUCENT-02 — the A/B the founder asked for BEFORE the tint ships.
+// NAV-EDGE-01 — the A/B the founder asked for after the tint was abandoned.
 //
-// 🔴 THE WHOLE POINT IS THE SECOND GROUND. Measured from his device captures:
-// pure white at 0.82 is **16 levels** against the page ground (clearly visible)
-// and **0 levels** against a white card (completely invisible). His 10:37
-// capture had the pill over a card, which is why it read as "not translucent".
-// It was never an alpha problem — the material vanishes against half the
-// surfaces it crosses.
+// 🔴 WHY THE EDGE AND NOT THE FILL. Measured: `--bg` sits BETWEEN white and any
+// AA-safe darker tint, so a fill lighter than the ground vanishes on cards and a
+// fill darker vanishes on the ground. The best any single fill manages is **10
+// levels vs the ground and 8 vs a card** — ~3%, and the founder confirmed he
+// could not see it in the material A/B. **The BORDER separates by 17 levels over
+// the ground and 18 over a card, against BOTH, which is roughly twice what the
+// best fill can do.** The fill was never what made the pill read as an object.
 //
-// The proposed warm off-white (`--nav-material`, channels 250/249/246) at 0.88
-// measures **10 levels** against the ground and **8** against a card, with the
-// label holding **4.86:1** on the worst real backdrop (the blurred band over the
-// moss CTA). Same object, everywhere.
-//
-// ⚠️ A COOL tint would read better and was REJECTED BEFORE IT WAS PROPOSED:
-// it is a palette regression against ADR-007 and Silvanto would have vetoed it
-// by name. The measurement found the warm option that performs, so the veto
-// never had to fire.
-//
-// ⚠️ THIS SHIPS NOTHING. Both pills are drawn inline here rather than importing
-// `.nav-bar--floating`, so playing with it cannot move the app.
+// ⚠️ SHIPS NOTHING. Both pills are drawn inline rather than importing
+// `.nav-bar--floating`, so playing with it cannot move the app. The app's nav is
+// opaque with the border at its current 8%.
 
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import NavTab from '@/components/ui/NavTab'
 
 const TABS = [
@@ -30,14 +22,7 @@ const TABS = [
   { id: 'coach', label: 'Coach' }, { id: 'me', label: 'Me' },
 ] as const
 
-/** Both materials, so the comparison is a value not a vibe. */
-const MATERIALS = {
-  // ⚠️ The proposed value is read from its TOKEN, not typed here — otherwise the
-  // prototype and the thing it is proposing can drift, which is the whole class
-  // this repo keeps paying for.
-  current:  { tint: '255 255 255',            alpha: 0.82, name: 'NOW · white 0.82' },
-  proposed: { tint: 'var(--nav-material)',    alpha: 0.88, name: 'NEW · warm 0.88' },
-}
+const INK = '26, 26, 26'   // --ink's channels; --line is this at 0.08
 
 function Glyph({ active }: { active: boolean }) {
   const c = active ? 'var(--moss-strong)' : 'var(--mute)'
@@ -50,18 +35,16 @@ function Glyph({ active }: { active: boolean }) {
   )
 }
 
-function Pill({ m, bottom, badge }: { m: typeof MATERIALS.current; bottom: number; badge: string }) {
+function Pill({ alpha, bottom, badge }: { alpha: number; bottom: number; badge: string }) {
   return (
     <div style={{
       position: 'fixed', left: '50%', transform: 'translateX(-50%)',
       bottom: `calc(${bottom}px + env(safe-area-inset-bottom, 0px))`,
       width: 'calc(100% - 32px)', maxWidth: 448,
       display: 'flex', alignItems: 'stretch',
-      background: `rgb(${m.tint} / ${m.alpha})`,
-      backdropFilter: 'blur(20px) saturate(1.6)',
-      WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
-      border: '1px solid var(--line)', borderRadius: 999,
-      boxShadow: 'var(--shadow-lifted)', zIndex: 3000,
+      background: 'var(--nav-bg)',                    // OPAQUE, as shipped
+      border: `1px solid rgba(${INK}, ${alpha})`,
+      borderRadius: 999, boxShadow: 'var(--shadow-lifted)', zIndex: 3000,
     }}>
       {TABS.map((t, i) => (
         <NavTab key={t.id} label={t.label} icon={<Glyph active={i === 0} />} active={i === 0} onClick={() => {}} />
@@ -76,65 +59,49 @@ function Pill({ m, bottom, badge }: { m: typeof MATERIALS.current; bottom: numbe
 }
 
 export default function NavPreview() {
-  const scRef = useRef<HTMLDivElement>(null)
-  const [behind, setBehind] = useState<'page ground' | 'a white card'>('page ground')
-
-  // Report what is actually behind the lower pill, so the readout is measured
-  // rather than assumed — the same discipline as every other check this week.
-  const probe = useCallback(() => {
-    // ⚠️ SAMPLE THE LOWER PILL'S OWN CENTRE, because the readout names it.
-    // The first cut sampled `innerHeight - 120`, which is where the UPPER pill
-    // sits — a readout measuring a different element from the one it labels is
-    // the exact class this session has hit five times.
-    // Lower pill: bottom 12, height 62 -> centre at innerHeight - 43.
-    const y = window.innerHeight - 43
-    const el = document.elementsFromPoint(window.innerWidth / 2, y)
-      .find(e => e instanceof HTMLElement && (e as HTMLElement).dataset.ground)
-    setBehind(((el as HTMLElement | undefined)?.dataset.ground as 'page ground') ?? 'page ground')
-  }, [])
-  useEffect(() => { probe() }, [probe])
+  const [alpha, setAlpha] = useState(0.14)
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
       <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--line)', background: 'var(--card)' }}>
         <div style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>
-          Nav material · A/B
+          Nav edge · A/B
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--mute)', marginTop: 3, lineHeight: 1.5 }}>
-          Scroll so each pill crosses a <strong>white card</strong> and the <strong>page ground</strong>.
-          NOW disappears over cards; NEW should hold on both.
+          Both pills are <strong>opaque</strong> — the tint is gone. The only difference is the
+          border. Scroll so they cross a white card and the page ground.
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink)', marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>
-          behind the lower pill: <strong>{behind}</strong> ·{' '}
-          <span style={{ color: 'var(--mute)' }}>
-            NOW {behind === 'page ground' ? '16' : '0'} levels · NEW {behind === 'page ground' ? '10' : '8'}
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+          <label style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--ink-2)', whiteSpace: 'nowrap' }}>
+            NEW edge {Math.round(alpha * 100)}%
+          </label>
+          <input type="range" min={0.08} max={0.30} step={0.02} value={alpha}
+                 onChange={e => setAlpha(parseFloat(e.target.value))} style={{ flex: 1 }} />
+        </div>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--mute)', marginTop: 4 }}>
+          NOW is 8% — today&rsquo;s <code>--line</code>. Slide until the lower pill reads the way you want it.
         </div>
       </div>
 
-      <div ref={scRef} onScroll={probe} style={{ flex: 1, overflowY: 'auto', padding: '0 20px 40px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 40px' }}>
         {Array.from({ length: 10 }, (_, i) => (
           <div key={i}>
-            <div data-ground="a white card" style={{
+            <div style={{
               marginTop: 14, background: 'var(--card)', border: '1px solid var(--line)',
               borderRadius: 14, padding: '26px 16px', boxShadow: 'var(--shadow-card)',
               fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--ink)',
-            }}>
-              A white card — <strong>this</strong> is where the current pill vanishes
-            </div>
-            <div data-ground="page ground" style={{
+            }}>A white card</div>
+            <div style={{
               height: 150, display: 'flex', alignItems: 'center',
               fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--mute)',
-            }}>
-              Page ground — the current pill reads clearly here
-            </div>
+            }}>Page ground</div>
           </div>
         ))}
         <div style={{ height: 180 }} />
       </div>
 
-      <Pill m={MATERIALS.current}  bottom={86} badge="NOW" />
-      <Pill m={MATERIALS.proposed} bottom={12} badge="NEW" />
+      <Pill alpha={0.08}  bottom={86} badge="NOW" />
+      <Pill alpha={alpha} bottom={12} badge="NEW" />
     </div>
   )
 }

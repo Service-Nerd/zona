@@ -1229,56 +1229,35 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
      sits ABOVE that strip instead, so it must not pad it a second time. */
   padding-bottom: 0;
 
-  /* 🔴 SLIGHTLY TRANSLUCENT — FOUNDER OVERRULE OF A BOARD DON'T SHIP, and the
-   * measurement that produced that ruling still stands and is not withdrawn.
+  /* 🔴 OPAQUE — AND THIS IS THE THIRD AND FINAL POSITION, arrived at by the
+   * founder looking at an A/B and seeing nothing.
    *
-   * NAV-TRANSLUCENT-01 was killed because white at 0.75 measures **5 levels**
-   * over `--bg`, 6 over a session card, 9 over the hero — below perception on
-   * three of five backdrops — and only 15 over the amber coach card, 19 over the
-   * moss CTA. The board's conclusion was that it is not worth a per-frame
-   * `backdrop-filter`. **The founder has looked at it on a device and wants it
-   * anyway. That is his call and it is recorded as an overrule, not as the
-   * board changing its mind.**
+   * The board ruled DON'T SHIP on a measurement. He overruled it, reasonably,
+   * on the assumption the effect would be visible. It shipped at 0.82, then a
+   * warm tint was proposed at 0.88, and put side by side in `/nav-preview` he
+   * reported: *"I don't see any difference."* **He is right, and the board's
+   * original ruling is confirmed by the eye rather than by arithmetic.**
    *
-   * ⚠️ WHAT THE MEASUREMENT STILL BINDS: the GROUND goes translucent and the
-   * LABELS never do. Fading the whole bar reaches 4.47:1 at 0.9 — below AA
-   * before the change is perceptible. At `--nav-pill-alpha` with blur, the
-   * worst real backdrop holds **4.58:1 at 0.70** and 5.02 at 0.85. The token is
-   * the floor; do not go below it.
+   * 📐 WHY IT CANNOT BE MADE VISIBLE HERE, and this is the durable finding:
+   * `--bg` sits BETWEEN white and any AA-safe darker tint. A fill lighter than
+   * the ground vanishes on cards; a fill darker than it vanishes on the ground.
+   * Measured, the best any single fill manages is **10 levels vs the ground and
+   * 8 vs a card**, and the absolute AA ceiling (`rgb(240,238,234)`, where
+   * `--mute` hits 4.5:1) is **21 vs a card but only 3 vs the ground**. Ten
+   * levels is ~3% and is below the threshold of perception through a blur on a
+   * phone.
    *
-   * ⚠️ BLUR IS LOAD-BEARING. Without it the backdrop is moving content and no
-   * ratio can be claimed, so a browser without `backdrop-filter` gets the
-   * OPAQUE fallback, never translucent-without-blur. */
+   * ⚠️ AND THE FILL WAS NEVER WHAT MADE THE PILL READ AS AN OBJECT. The BORDER
+   * separates by **17 levels over the ground and 18 over a card** — roughly
+   * twice what the best fill can manage, and it works against both. That is why
+   * an opaque pill with an edge reads perfectly well. **Re-open only if the
+   * palette gains a ground that is not near-white.** */
   background: var(--nav-bg);
 }
 
-@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-  .nav-bar--floating {
-    background: rgba(255, 255, 255, var(--nav-pill-alpha));
-    backdrop-filter: blur(20px) saturate(1.6);
-    -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  }
-}
 :root {
   --nav-pill-inset: 16px;
   --nav-pill-lift: 12px;
   --nav-pill-tuck: 13px;
-  /* 🔴 THE NAV'S MATERIAL, AS CHANNELS SO IT COMPOSES WITH AN ALPHA
-   * (NAV-TRANSLUCENT-02). Pure white was **16 levels** against the page ground
-   * and **0** against a white card — sharply visible on one surface and gone on
-   * the other, which is why the founder read it as "not translucent" from a
-   * capture taken over a card. **It was never an alpha problem.** This warm
-   * off-white measures **10** against the ground and **8** against a card, with
-   * the label at **4.86:1** on the worst real backdrop.
-   *
-   * ⚠️ A COOL tint reads better and is NOT AVAILABLE: it is a palette regression
-   * against ADR-007 and the veto seat would have named it. The measurement found
-   * the warm option that performs, so the veto never had to fire.
-   *
-   * ⚠️ MATERIAL, NOT A GROUND. It may back CHROME only — never a content
-   * surface. That restriction ships with the token or it becomes
-   * `--surface-moss-wash` again. */
-  --nav-material: 250 249 246;
-  --nav-pill-alpha: 0.82;
   --nav-pill-radius: 999px;
 }
