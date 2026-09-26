@@ -101,6 +101,8 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
   const reduce = useRef(false)
 
   const panelRef = useRef<HTMLDivElement>(null)
+  /** The scrolling element. Separate from the panel since SHEET-CLOSE-PIN-01. */
+  const bodyRef = useRef<HTMLDivElement>(null)
   const prevFocusRef = useRef<Element | null>(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
@@ -124,7 +126,11 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
   const DISMISS_PX = 90
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
-    const el = panelRef.current
+    // 🔴 `bodyRef`, NOT `panelRef`. The scroller moved when the close was
+    // pinned, and the swipe-to-dismiss gate reads the scroller: left on the
+    // panel it would read a permanent 0 and the sheet would dismiss mid-scroll,
+    // which is the documented reason this gate exists at all.
+    const el = bodyRef.current
     if (!el || el.scrollTop > 0) { dragStartY.current = null; return }
     dragStartY.current = e.touches[0]!.clientY
   }, [])
@@ -243,8 +249,22 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           // navH is still consumed HERE even though the panel covers the nav:
           // it keeps a tall sheet's own content out of the home-indicator strip.
           maxHeight: `min(${maxHeightVh}vh, calc(100vh - ${navH}px - 24px))`,
-          overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch',
+          // 🔴 THE PANEL NO LONGER SCROLLS — ITS BODY DOES (SHEET-CLOSE-PIN-01).
+          // The close was `position: absolute` inside the scrolling panel, and
+          // an absolutely-positioned child of a scroll container scrolls WITH
+          // the content. Measured in a browser: **-500px after a 500px scroll**.
+          // So the one documented way out of a sheet left the screen the moment
+          // the runner scrolled, on ALL NINE sheets. Founder saw it on the
+          // manual log and it is visible in his capture.
+          //
+          // ⚠️ Same class as STICKY-SCROLLER-01 earlier today: an element that
+          // looks pinned and is not. There it was a scrollport that could never
+          // scroll; here it is a pinned thing inside the scrollport itself.
+          display: 'flex',
+          flexDirection: 'column',
+          // `hidden` so the body still clips to the 20px top corners now that it
+          // is the scrolling element rather than the panel.
+          overflow: 'hidden',
           outline: 'none',
           transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
           // No transition WHILE dragging: the panel must track the finger, then
@@ -252,8 +272,10 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           transition: dragY > 0 ? 'none' : (transition ?? 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)'),
         }}
       >
-        {/* Drag pill — and as of 2026-09-25 it actually drags. */}
-        <div style={{ width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
+        {/* Drag pill — and as of 2026-09-25 it actually drags.
+            ⚠️ It and the close now sit OUTSIDE the scrolling body, which is the
+            whole fix: they are chrome, and chrome does not scroll away. */}
+        <div style={{ flexShrink: 0, width: '36px', height: '4px', background: 'var(--line)', borderRadius: '2px', margin: '6px auto 18px' }} />
         {/* 🔴 THE CLOSE IS THE PRIMITIVE'S, NOT EACH SHEET'S (SHEET-CLOSE-OWNER-01).
             Six sheets hand-rolled three different closes: a bottom full-width
             "Close", a top-right cross, and nothing. A runner met a different
@@ -270,7 +292,20 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
             </svg>
           }
         />
-        {typeof children === 'function' ? children(close) : children}
+        {/* The scrolling body. ⚠️ Callers with a `position: sticky; bottom: 0`
+            bar (ModifyPlanSheet, RaceResultSheet, the manual log) stick to THIS
+            element now — they rode the panel before, and the behaviour is the
+            same because they are still inside the scroller. */}
+        <div
+          ref={bodyRef}
+          style={{
+            flex: 1, minHeight: 0,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {typeof children === 'function' ? children(close) : children}
+        </div>
       </div>
     </div>,
     document.body,

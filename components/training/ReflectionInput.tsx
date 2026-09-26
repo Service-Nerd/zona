@@ -19,6 +19,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { TextArea } from '@/components/shared/TextArea'
 import { viewForReframeResponse, viewForStoredReflection, type ReflectionView } from './ReflectionInput.logic'
 import { createClient } from '@/lib/supabase/client'
 import { authedFetch } from '@/lib/supabase/authedFetch'
@@ -275,25 +276,12 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
       }}>
         Tell me how that felt &middot; optional
       </div>
-      <textarea
+      <TextArea
         value={noteText}
-        onChange={e => setNoteText(e.target.value.slice(0, REFRAME_TIER.USER_NOTE_MAX_CHARS))}
+        onChange={v => setNoteText(v.slice(0, REFRAME_TIER.USER_NOTE_MAX_CHARS))}
+        ariaLabel="Tell the coach how that run felt"
         placeholder="Anything you want me to know about that run: how it felt, what was on your mind. I'll read it back."
         rows={4}
-        style={{
-          width: '100%', boxSizing: 'border-box',
-          padding: '12px 14px',
-          background: 'var(--bg)',
-          border: '0.5px solid var(--border-col)',
-          borderRadius: '12px',
-          fontFamily: 'var(--font-ui)',
-          // iOS auto-zooms inputs below 16px on focus and won't reset.
-          // Keep 16px on iOS HIG floor; visual weight is unchanged at body scale.
-          fontSize: '16px',
-          color: 'var(--text-primary)', lineHeight: 1.55,
-          resize: 'vertical',
-          outline: 'none',
-        }}
       />
       <Button
         onClick={handleSubmit}

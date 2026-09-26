@@ -51,6 +51,7 @@ import { planRationaleNotes } from '@/lib/plan/planRationale'
 import PendingAdjustmentBanner from '@/components/shared/PendingAdjustmentBanner'
 import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
 import { TextField } from '@/components/shared/TextField'
+import { TextArea } from '@/components/shared/TextArea'
 import { IdentityCard } from '@/components/shared/IdentityCard'
 import { ProfileSection, focusProfileNameField } from '@/components/shared/ProfileSection'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
@@ -6014,7 +6015,14 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
               <div style={labelStyle}>Distance ({preferredUnits})</div>
               <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '0.5px solid var(--line)', overflow: 'hidden' }}>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
-                  <IconButton onClick={() => setDistWhole(Math.max(0, distWhole - 1))} ariaLabel="Decrease whole distance" shape="square" style={{ border: '0.5px solid var(--line)', fontSize: '18px' }} icon={<span aria-hidden>−</span>} />
+                  {/* 🔴 THESE FOUR PASSED `border: '0.5px solid var(--line)'` INLINE,
+                      and an inline style beats a class — so `ICON-EDGE-01`'s
+                      `1px var(--chrome-edge)`, ruled and shipped the same day,
+                      never landed on them. It also broke § 20 ("always 1px, not
+                      0.5px"). NAV-PILL-FLUSH-01's lesson exactly: the gates
+                      assert a rule exists with the right values and never that
+                      those values WIN. Only the 18px glyph is the call site's. */}
+                  <IconButton onClick={() => setDistWhole(Math.max(0, distWhole - 1))} ariaLabel="Decrease whole distance" shape="square" style={{ fontSize: '18px' }} icon={<span aria-hidden>−</span>} />
                   <span
                     role="spinbutton"
                     aria-label="Whole distance"
@@ -6023,11 +6031,11 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                     aria-valuetext={`${distWhole} ${preferredUnits}`}
                     style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--ink)', minWidth: '32px', textAlign: 'center' }}
                   >{distWhole}</span>
-                  <IconButton onClick={() => setDistWhole(distWhole + 1)} ariaLabel="Increase whole distance" shape="square" style={{ border: '0.5px solid var(--line)', fontSize: '18px' }} icon={<span aria-hidden>+</span>} />
+                  <IconButton onClick={() => setDistWhole(distWhole + 1)} ariaLabel="Increase whole distance" shape="square" style={{ fontSize: '18px' }} icon={<span aria-hidden>+</span>} />
                 </div>
                 <div aria-hidden style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--mute)', padding: '0 4px' }}>.</div>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', padding: '14px 8px' }}>
-                  <IconButton onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} ariaLabel="Decrease distance decimal" shape="square" style={{ border: '0.5px solid var(--line)', fontSize: '18px' }} icon={<span aria-hidden>−</span>} />
+                  <IconButton onClick={() => setDistDecimal(Math.max(0, distDecimal - 1))} ariaLabel="Decrease distance decimal" shape="square" style={{ fontSize: '18px' }} icon={<span aria-hidden>−</span>} />
                   <span
                     role="spinbutton"
                     aria-label="Distance decimal"
@@ -6037,7 +6045,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                     aria-valuetext={`point ${distDecimal}`}
                     style={{ fontFamily: 'var(--font-ui)', fontSize: '28px', fontWeight: 500, color: 'var(--ink)', minWidth: '16px', textAlign: 'center' }}
                   >{distDecimal}</span>
-                  <IconButton onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} ariaLabel="Increase distance decimal" shape="square" style={{ border: '0.5px solid var(--line)', fontSize: '18px' }} icon={<span aria-hidden>+</span>} />
+                  <IconButton onClick={() => setDistDecimal(Math.min(9, distDecimal + 1))} ariaLabel="Increase distance decimal" shape="square" style={{ fontSize: '18px' }} icon={<span aria-hidden>+</span>} />
                 </div>
               </div>
               <div aria-live="polite" style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginTop: '4px', textAlign: 'center' }}>{distanceStr} {preferredUnits}</div>
@@ -6091,18 +6099,18 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             {/* Notes */}
             <div style={{ marginBottom: 'var(--space-5)' }}>
               <div style={labelStyle}>Notes <span style={{ textTransform: 'none', letterSpacing: 0, opacity: 0.6, fontSize: '10px' }}>optional</span></div>
-              <textarea
+              {/* 🔴 13px HERE WAS A LIVE iOS TRAP, and `TextField.tsx`'s own
+                  header had already written it down: below 16px iOS zooms the
+                  focused input and `maximum-scale=1` strands the runner zoomed
+                  in. It sat ELEVEN LINES below the Average HR field that
+                  `STEPPER-CONTROL-01 (c)` moved onto `TextField` for exactly
+                  that reason — the remedy applied to one twin. */}
+              <TextArea
                 placeholder="Anything worth remembering?"
+                ariaLabel="Notes about this run"
                 value={notes}
-                onChange={e => setNotes(e.target.value)}
+                onChange={setNotes}
                 rows={2}
-                style={{
-                  width: '100%', background: 'var(--bg)',
-                  border: '0.5px solid var(--border-col)', borderRadius: '8px',
-                  padding: '12px', color: 'var(--text-primary)',
-                  fontFamily: 'var(--font-ui)', fontSize: '13px',
-                  outline: 'none', resize: 'none', boxSizing: 'border-box',
-                }}
               />
             </div>
 

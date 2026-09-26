@@ -12,6 +12,7 @@
 'use client'
 
 import { useState } from 'react'
+import { TextArea } from '@/components/shared/TextArea'
 import type { RaceResult, Plan } from '@/types/plan'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { DurationPicker } from '@/components/shared/DurationPicker'
@@ -268,20 +269,12 @@ export default function RaceResultSheet({
             <label style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: '6px' }}>
               Notes <span style={{ fontWeight: 400, color: 'var(--mute)' }}>(optional)</span>
             </label>
-            <textarea
+            <TextArea
               value={notes}
-              onChange={e => setNotes(e.target.value)}
+              onChange={setNotes}
+              ariaLabel="Notes about the race"
               placeholder="What happened out there?"
               rows={3}
-              style={{
-                width: '100%', padding: '10px 12px', resize: 'vertical',
-                background: 'var(--bg-soft)',
-                border: '1px solid var(--line)',
-                borderRadius: '10px',
-                // 16px — see finish-time note: anything smaller triggers the iOS zoom trap.
-                fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink)',
-                lineHeight: 1.5, outline: 'none', boxSizing: 'border-box',
-              }}
             />
           </div>
 
@@ -355,20 +348,12 @@ function AdvancedField({
       <label style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', display: 'block', marginBottom: '5px' }}>
         {label}
       </label>
-      <textarea
+      <TextArea
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={onChange}
+        ariaLabel={label}
         placeholder={placeholder}
         rows={2}
-        style={{
-          width: '100%', padding: '9px 12px', resize: 'vertical',
-          background: 'var(--bg-soft)',
-          border: '1px solid var(--line)',
-          borderRadius: '10px',
-          // 16px — see finish-time note: anything smaller triggers the iOS zoom trap.
-          fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink)',
-          lineHeight: 1.5, outline: 'none', boxSizing: 'border-box',
-        }}
       />
     </div>
   )

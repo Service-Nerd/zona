@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — FORM-PRIMITIVES-01 + SHEET-CLOSE-PIN-01 · The screen had three bugs and one of them was mine
+**Shipped:** a `TextArea` primitive, the sheet close stops scrolling away, and four stepper buttons stop overriding a ruling from the same morning.
+**Dev learning:** `position: absolute` inside an `overflow-y: auto` element scrolls with the content. The sheet's close had been `absolute` in the panel, and the panel was the scroller — so the one documented way out of every sheet left the screen the moment you scrolled. Splitting panel from body then forced a second change I nearly missed: the swipe-to-dismiss gate reads `scrollTop` to decide whether to drag, and left on the panel it would have read a permanent 0 and dismissed the sheet mid-scroll on all nine.
+**Product/creator learning:** the founder said the manual log "can be a lot better from a UI and UX point of view". Three of the four things making it feel bad were defects, not design: a keyboard trap, a vanishing exit, and a border override. The redesign question — 22 taps to log a half-marathon — is real and still open, but it was not what was wrong.
+**AI-building learning:** the board ruling that blocked this in September said "what settles it is the modal in a hand on iOS". The founder's screenshot WAS that evidence, and I nearly treated it as a new request instead of a discharged condition. Reading the old ruling before starting is what turned "review this screen" into "one blocking condition is now met and three defects are measurable."
+**The honest bit:** the 0.5px inline borders overriding `ICON-EDGE-01` were mine, from this morning. I shipped a class-level edge and never checked whether call sites already passed an inline border — which beats a class. I had written that exact lesson into `NAV-PILL-FLUSH-01` five days ago. Also: my first migration script matched a 6-space anchor inside a 12-space one and would have replaced the wrong textarea; it aborted before writing only because the write came last.
+**Hook material:** four textareas, 9 of 13 styled properties in disagreement, and one of them was a 13px font that zooms iOS and traps you — eleven lines below a field that had been fixed for exactly that reason.
+**Postable?:** yes
+
 ## 2026-09-26 — ICON-EDGE-01 · The surface that was doing nothing
 **Shipped:** the back arrow and the sheet close get the nav's edge, and the token gets a name that three families can share.
 **Dev learning:** I renamed `--nav-pill-edge` to `--chrome-edge` with a repo-wide string replace and it missed exactly one site — `alpha('nav-pill-edge')` in a test, where the name is *constructed* rather than written. A sweep sees strings, not intent. The test caught it, which is the only reason I know.

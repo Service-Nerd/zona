@@ -2231,6 +2231,66 @@ MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolle
 - **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
   header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
 
+### MANUAL-LOG-REVIEW — SPLIT: 🟢 SHIP (1)(2)(3) · ⚠️ TO THE FOUNDER (4) (2026-09-26)
+
+**Founder:** *"This is the manual log screen which is a pop up. I think we can make this a lot
+better from a ui and ux point of view… We also need to ensure input field type/components etc are
+being reused and we have a standard approach across the platform."*
+
+🔴 **THE BLOCKING CONDITION ON `STEPPER-CONTROL-01 (d)` IS DISCHARGED.** That ruling read *"what
+settles it is the modal in a hand on iOS"*, and Collins: *"get it in a hand and I'll take the swap
+the same afternoon."* **The founder's screenshots are that evidence.** (a) reopens by its own terms.
+
+#### 📐 Four findings, all provable without a device
+
+| | |
+|---|---|
+| 🔴 **The Notes field triggers the iOS zoom trap** | **13px**, where `TextField.tsx`'s own header says below 16px iOS zooms and `maximum-scale=1` strands the runner. ⚠️ **Eleven lines below the field `STEPPER-CONTROL-01 (c)` fixed for that reason** |
+| 🔴 **The close ✕ scrolls away, on all nine sheets** | Panel is the scroller, close is `absolute` inside it. **−500px after a 500px scroll**, measured |
+| 🔴 **No `TextArea` primitive; four hand-rolled ones disagree on 9 of 13 properties** | 2 grounds · 3 radii · 4 paddings · 2 border weights · 2 `resize` values |
+| 🔴 **`ICON-EDGE-01` is already overridden here** | 4 steppers pass `border: '0.5px solid var(--line)'` **inline**, which beats the class — and breaks § 20 |
+
+#### The seats
+
+📱 **Wroblewski** — *"My own bound on (d) was 'I'd rather ship a 22-tap control that talks than a
+2-tap control that traps the keyboard.' **The 22-tap control traps the keyboard anyway**, one field
+below. That resolves (d) without a device: avoiding the trap is no longer a reason to keep the
+steppers."*
+
+🎓 **Sierra** — *"A runner logging a half-marathon taps twenty-two times and then loses the exit.
+The close is the control they need when they give up, and it leaves when they start scrolling."*
+
+✋ **Silvanto** — *"Four mechanisms in one scroll, and the screen never says which number it wants
+first. But **three of the four things that make this screen feel bad are bugs.** Fix them, then
+look again."* ⛔ **Veto: none.**
+
+🎪 **Collins** — *"Fifth time: `.cta-pill`, `--accent`, `BackButton`, `TextField`, now `TextArea`.
+I said the pattern file is good and not being read. **It is worse: the file does not have the part
+we keep needing.** A form system with a single-line field and no multi-line field is not a system."*
+
+🧭 **Zhuo (chair)** — *"Three are defects with a measurement each and ship now. Replacing the
+stepper is a genuine redesign and the founder asked for a review, so it goes back to him with the
+tap count, not into a commit."*
+
+#### ⚖️ Ruling
+
+**(1) 🟢 `TextArea` primitive, 16px locked · (2) 🟢 the close leaves the scroller · (3) 🟢 the
+inline borders come off · (4) ⚠️ replacing the stepper — TO THE FOUNDER**, with (d) discharged and
+the count standing at **22 taps for a half-marathon**.
+
+⚠️ **(1) MOVED ALL FOUR BOXES** — heights +15 / +2 / +6 / +8px, radii to 14px. The +15 is the font
+fix and is the point; the rest is one padding replacing four. **This is the
+"refactor that normalises a distribution" class, done deliberately and reported with numbers rather
+than claimed as zero.**
+
+⚠️ **(2) forced a second change that would have failed silently:** the swipe-to-dismiss gate reads
+the scroller's `scrollTop`, and left on the panel it would read a permanent **0** and dismiss every
+sheet mid-scroll. Verified in a browser — close pinned at 108 through 0 / 500 / end, sticky bottom
+bars intact.
+
+🔻 **Filed:** `SHEET-CONTRACT-01` — the most-used primitive in the app has **no contract** in
+`docs/contracts/components/`.
+
 ### ICON-EDGE-01 — SHIP WITH AMENDMENT (3) · the back arrow and the close cross (2026-09-26)
 
 **Founder:** *"The back arrows that we use and close cross. Can we bring those inline with our nav
