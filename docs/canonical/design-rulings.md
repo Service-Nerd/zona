@@ -2231,6 +2231,45 @@ MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolle
 - **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
   header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
 
+### MANUAL-LOG-STEPPER-02 — 🔴 KEEP THE STEPPERS. Founder decision, 2026-09-26. The whole `STEPPER-CONTROL-01` family is now SETTLED.
+
+**Asked:** replace the manual log's `− 7 + . − 5 +` distance steppers with a typed `TextField`
+(option A), the `Ruler` (B), or keep them (C). **Founder: "C".**
+
+⚫ **Nothing was built. That is the result, and the cost is recorded rather than softened:**
+**a runner logging a 21.1 km long run by hand taps twenty-two times.** `5.2 km` = 7 · `10.5` = 15.
+
+#### 🔴 This CLOSES a conditional that had been left open, and that is the point of the row
+
+`STEPPER-CONTROL-01` ruled **(a) DON'T SHIP a `Stepper` — not permanent; reopens if (d) proves
+wrong on a device** and **(d) INSUFFICIENT EVIDENCE**, blocked on *"the modal in a hand on iOS"*.
+
+| | |
+|---|---|
+| **(d)** | ✅ **DISCHARGED** — the founder photographed the modal on his iPhone |
+| **(a)'s reopening condition** | ✅ **FIRED, and the answer was KEEP** |
+| **The family** | 🟢 **SETTLED.** Do not re-propose replacing this control |
+
+⚠️ **AND THE ARGUMENT THAT ORIGINALLY SAVED THE STEPPERS DID NOT SURVIVE.** Wroblewski's bound was
+*"I'd rather ship a 22-tap control that talks than a 2-tap control that traps the keyboard."*
+`FORM-PRIMITIVES-01` found **the 22-tap control trapped the keyboard anyway**, one field below, at
+13px. **So the steppers are kept on the founder's preference, NOT on the board's reasoning** — that
+reasoning is void, and a future sitting must not cite it.
+
+🏪 **Collins would have taken the swap** (*"get it in a hand and I'll take the swap the same
+afternoon"*). He does not get it. **Recorded as a loss, second in one day.**
+
+#### ⚠️ What could reopen this, honestly
+
+**Nothing measurable, today.** There is no instrumentation on the manual-log flow — no
+start/abandon/complete events — so *"do people give up partway through logging a long run?"* cannot
+be answered, only argued. The recall trigger is therefore **a founder change of mind, or the first
+real analytics on that flow**. Stated plainly so the next sitting does not mistake a preference for
+a finding, in either direction.
+
+> This is the same shape as Traynor's stood-down seat: nobody is asking *"what happens to the
+> people who don't finish?"*, because nothing counts them.
+
 ### MANUAL-LOG-REVIEW — SPLIT: 🟢 SHIP (1)(2)(3) · ⚠️ TO THE FOUNDER (4) (2026-09-26)
 
 **Founder:** *"This is the manual log screen which is a pop up. I think we can make this a lot

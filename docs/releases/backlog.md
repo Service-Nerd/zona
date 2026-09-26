@@ -52,24 +52,6 @@ regex, and no width.
 **Found by running the `/build` consumer check AFTER shipping rather than before.** The check cost
 nothing this time and would have cost the whole item if one of those six had been unfloored.
 
-### `MANUAL-LOG-STEPPER-02` — 22 taps to log a half-marathon 🧭 DESIGN BOARD · 👤 FOUNDER
-
-`STEPPER-CONTROL-01 (d)` was **INSUFFICIENT EVIDENCE**, blocked on *"the modal in a hand on iOS"*.
-🔴 **That condition is now discharged** — the founder photographed it on his phone (2026-09-26) —
-and **(a) reopens by its own terms** (*"not permanent; reopens if (d) proves wrong on a device"*).
-
-📐 **The count, unchanged:** `5.2 km` = **7 taps** · `10.5` = **15** · **`21.1 km` = 22**, from
-zero, with no keyboard route.
-
-🔴 **AND WROBLEWSKI'S OWN BOUND NO LONGER HOLDS.** He set it as *"I'd rather ship a 22-tap control
-that talks than a 2-tap control that traps the keyboard."* **The 22-tap control trapped the keyboard
-anyway**, one field below, at 13px — fixed by `FORM-PRIMITIVES-01`. The trap was never avoided by
-keeping the steppers.
-
-⚠️ **This is the founder's call, not a defect.** It replaces the control on the screen he just
-photographed. Options: a `TextField` with `inputMode="decimal"` (2 taps, and the zoom trap is
-handled by the primitive's 16px lock) · the existing `Ruler` · keep the steppers and accept 22.
-
 ### `SHEET-CONTRACT-01` — the most-used primitive in the app has no contract ⚙️ NO BOARD
 
 `components/shared/Sheet.tsx` owns **nine** surfaces, the portal, the z-layer, the nav clearance,

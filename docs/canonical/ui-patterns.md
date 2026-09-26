@@ -2723,21 +2723,39 @@ Rules:
 |---|---|
 | **estimates** a bounded quantity (weekly volume, longest recent run) | `Ruler` |
 | enters a **time or duration** | `DurationPicker` — every one, no exceptions (`FORMS-PRIM-01`) |
-| **knows** a precise number (HR, a logged distance, a TT distance) | **`TextField`** |
+| **knows** a precise number (HR, a TT distance) | **`TextField`** |
+| **knows** a precise number — **the manual log's DISTANCE** | ⚠️ **`+`/`−` stepper, by founder decision.** The one documented exception; see below |
 | picks from a small discrete set | `Chip` / `SegmentedControl` / `CardSelect` |
 
 🔴 **THERE IS NO `Stepper`, AND THAT IS A RULING, NOT AN OMISSION.** One was proposed for the manual
 run log's distance and **declined**: § Ruler already routes *"a precise typed number… that's
 `TextField`"*, and authoring a fifth numeric control for one screen's two fields is the mis-scoping
-this system has hit repeatedly. ⚠️ **Not permanent** — it reopens if the swap proves wrong on a
-device.
+this system has hit repeatedly. ✅ **SETTLED 2026-09-26** — see the exception below.
 
-⚠️ **The manual run log still has a `+`/`−` stepper for distance and it is NOT the pattern.** It
-costs **22 taps to log a 21.1 km run** and starts at zero with no keyboard route. The board declined
-to swap it **blind**: a `type="number"` brings the iOS numeric keyboard and the focus-zoom trap this
-file already carries a comment about, and precedent `:767` (the race-date input) is that the chair
-will not rule on a native-input swap **without a device**. **The tap cost is accepted on the record,
-not overlooked.** What did ship: the value is now announced (`role="spinbutton"` + `aria-valuenow`
+#### ⚠️ The one exception, recorded so the table does not argue with the product
+
+**The manual run log keeps its `+`/`−` distance stepper.** By the table above it should be a
+`TextField`, and it is not. **Founder decision, 2026-09-26** (`MANUAL-LOG-STEPPER-02`), after the
+device evidence the board was waiting for arrived and he chose to keep it.
+
+🔴 **This paragraph exists because a rule in one document and different behaviour in the code is the
+`--surface-moss-wash` shape** — the next reader consults the routing table, sees a mismatch, and
+"fixes" a control the founder deliberately kept. **The exception is written where the rule is.**
+
+📐 **The accepted cost, stated not softened: 22 taps for a 21.1 km run** (`5.2` = 7, `10.5` = 15),
+from zero, with no keyboard route.
+
+⚠️ **The board's ORIGINAL reason for keeping it is void and must not be cited.** Wroblewski's bound
+was *"I'd rather ship a 22-tap control that talks than a 2-tap control that traps the keyboard"* —
+and `FORM-PRIMITIVES-01` found **the 22-tap control trapped the keyboard anyway**, one field below,
+at 13px. The steppers survive on **preference**, not on that argument.
+
+⚠️ **What reopens it: nothing measurable.** There is no instrumentation on the manual-log flow, so
+*"do people abandon a long-run entry partway?"* cannot be answered, only argued.
+
+⚠️ **The stepper's tap cost is accepted on the record, not overlooked** — see the exception above,
+which supersedes the "declined blind, pending a device" wording that stood here until 2026-09-26.
+**The device arrived and the answer was keep.** What did ship: the value is now announced (`role="spinbutton"` + `aria-valuenow`
 on the readout, not the buttons) and the four legacy aliases are gone.
 
 ### Ruler (`components/shared/Ruler.tsx`)

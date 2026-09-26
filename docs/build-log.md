@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — MANUAL-LOG-STEPPER-02 · A decision that shipped no code
+**Shipped:** nothing. The founder chose to keep the manual log's `+`/`−` distance steppers, and that is the deliverable.
+**Dev learning:** the job here was making sure the documents stop disagreeing with the product. The routing table said "a precise typed number is `TextField`'s", the distance is a precise number, and it now stays on steppers — so without an exception written *where the rule lives*, the next person reads the table and "fixes" a control the founder deliberately kept. Same shape as the `--surface-moss-wash` incident: the rule in one file, the behaviour in another, never meeting.
+**Product/creator learning:** the board parked this in September pending "the modal in a hand on iOS". The condition fired, and the answer was the opposite of what the board expected. A conditional ruling is only useful if someone actually closes it when the condition arrives — otherwise it sits as a permanent maybe.
+**AI-building learning:** the interesting bit is that the argument that originally saved the steppers turned out to be false. Wroblewski kept a 22-tap control specifically to avoid a keyboard trap, and the keyboard trap was already in the modal, one field below, the whole time. So the outcome is unchanged and the reasoning is void — and I had to write that down explicitly, because a future sitting citing the old reason would be citing something we disproved on the way to agreeing with it.
+**The honest bit:** I recommended A and the founder said C. Writing up a decision I argued against, without softening the cost or the recommendation, is the actual work. The 22 taps are in the registry, the pattern file and the ruling register, in those words.
+**Hook material:** the reason we kept the slow control was to avoid a bug that was already there.
+**Postable?:** maybe
+
 ## 2026-09-26 — FORM-PRIMITIVES-01 + SHEET-CLOSE-PIN-01 · The screen had three bugs and one of them was mine
 **Shipped:** a `TextArea` primitive, the sheet close stops scrolling away, and four stepper buttons stop overriding a ruling from the same morning.
 **Dev learning:** `position: absolute` inside an `overflow-y: auto` element scrolls with the content. The sheet's close had been `absolute` in the panel, and the panel was the scroller — so the one documented way out of every sheet left the screen the moment you scrolled. Splitting panel from body then forced a second change I nearly missed: the swipe-to-dismiss gate reads `scrollTop` to decide whether to drag, and left on the panel it would have read a permanent 0 and dismissed the sheet mid-scroll on all nine.
