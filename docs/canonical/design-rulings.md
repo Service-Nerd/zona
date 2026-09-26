@@ -2091,7 +2091,14 @@ be dialled rather than argued. ⚠️ **It is deliberately unchanged in this com
 uninterpretable. Same reasoning as declining to change it last time — **one variable per look.**
 
 
-### NAV-TRANSLUCENT — 🔴 REVERTED TO OPAQUE, by the eye that overruled the board (2026-09-26)
+### NAV-TRANSLUCENT-02 — 🔴 REVERTED TO OPAQUE, by the eye that overruled the board (2026-09-26)
+
+> ⚠️ **This heading read `NAV-TRANSLUCENT` (no `-02`) until 2026-09-26.** The registry row and the
+> build-log entry both carried the full id, so only the register disagreed — and the register is
+> what the settled-ground scan reads. `/ship` § THE DOCUMENTS names this exact trap: **one id,
+> everywhere**, because `ship-record-check.py` matches the commit's SCOPE and a near-miss is
+> invisible to it. Found by checking each id against all four surfaces by hand; `audit-docs.sh`
+> read ALL CLEAN over it.
 
 Founder, looking at the material A/B he asked for: ***"I don't see any difference."***
 
