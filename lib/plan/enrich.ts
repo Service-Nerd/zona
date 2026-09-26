@@ -7,6 +7,7 @@
 
 import type { Plan, GeneratorInput } from '@/types/plan'
 import { isTimeTrial } from './sessionRole'
+import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { EnrichedPlanSchema } from './schema'
 import type { Tier } from './ruleEngine'
 import { isFeatureAllowed } from './canUseFeature'
@@ -350,6 +351,30 @@ export async function enrich(
 // "every week" — only the merge can — so the model is asked AND the merge enforces.
 const STRIDE_NOTE_RE = /strides/i
 
+/**
+ * 🔴 THE RULE, STATED ONCE: **the enricher may add VOICE. It may not add or
+ * remove PRESCRIPTION.**
+ *
+ * `preserveStrideNote` below enforced half of that for one note. Two more
+ * failures, both measured in production on 2026-09-26 across 33
+ * `plan_enrich_failed` events, are the other halves of the same rule:
+ *
+ *   · **The fuelling note is deleted** — 20 of 33. `FUELLING_PRACTICE_NOTE` is
+ *     engine-authored (`ruleEngine:7354`) exactly like the stride line and had
+ *     **no preservation at all**. Eighth "remedy applied to one twin".
+ *   · **A strides instruction is INVENTED** — 32 of 33. *"Week 3 carries strides
+ *     on 2 runs (wed, fri). §28 places them on ONE easy run."* The engine placed
+ *     one; the enricher's prose put a second in front of the runner. As READ,
+ *     the plan now prescribes strides twice, so the invariant is right to fire.
+ *
+ * ⚠️ NOT A DOCTRINE CHANGE, WHICH IS WHY IT IS HERE AND NOT AT THE BOARD. §28
+ * still places strides on one easy run and §24e still demands the ratified
+ * fuelling string; this makes the merge stop breaking both. The board's question
+ * is whether a PARAPHRASE should ever be accepted — and with the exact string
+ * preserved, it no longer has to be asked under duress.
+ */
+const ENGINE_PRESCRIPTION_NOTES = [STRIDE_NOTE_RE] as const
+
 // Re-attach the engine's stride line when the enricher's rewrite dropped it. A
 // scalpel, not a freeze: the enriched VOICE is kept and only the one stride line
 // is restored — last, matching the engine's own convention (ruleEngine §4b) — and
@@ -360,13 +385,53 @@ function preserveStrideNote(
   enrichedNotes: [string, string?, string?],
 ): [string, string?, string?] {
   const strideLine = engineNotes?.find((n): n is string => !!n && STRIDE_NOTE_RE.test(n))
-  if (!strideLine) return enrichedNotes                                    // engine placed none here
   const notes = enrichedNotes.filter((n): n is string => !!n)
+
+  if (!strideLine) {
+    // 🔴 THE ENGINE PLACED NO STRIDES HERE, so neither may the enricher. It
+    // invented one in 32 of 33 measured enrichment failures, putting a second
+    // stride instruction in front of the runner and breaching §28's "ONE easy
+    // run". Drop only the offending lines; the rest of the voice survives.
+    const clean = notes.filter(n => !STRIDE_NOTE_RE.test(n))
+    if (clean.length === notes.length) return enrichedNotes      // nothing invented
+    // ⚠️ If EVERY note mentioned strides there is no voice left to keep, so fall
+    // back to the engine's own notes rather than hand the runner an empty card.
+    if (clean.length === 0) {
+      const eng = (engineNotes ?? []).filter((n): n is string => !!n).slice(0, 3)
+      return eng.length ? (eng as [string, string?, string?]) : enrichedNotes
+    }
+    return clean.slice(0, 3) as [string, string?, string?]
+  }
+
   if (notes.some(n => STRIDE_NOTE_RE.test(n))) return enrichedNotes        // model kept one
   const kept = notes.slice(0, 2)                                           // at most 2 voice notes, stride last
   return kept.length === 2 ? [kept[0], kept[1], strideLine]
        : kept.length === 1 ? [kept[0], strideLine]
        : [strideLine]
+}
+
+/**
+ * Re-attach an engine-authored note the enricher dropped. Same scalpel as the
+ * stride line: the enriched voice is kept, the prescription line is restored
+ * last, and the result never exceeds the schema's three notes.
+ *
+ * ⚠️ MATCHED BY EXACT STRING, deliberately. `INV-PLAN-LONG-SESSION-FUELLING-NOTE`
+ * asserts `n === FUELLING_PRACTICE_NOTE`, so a paraphrase fails it — restoring
+ * anything looser would satisfy this function and still trip the invariant.
+ */
+function preserveEngineNote(
+  engineNotes: readonly (string | undefined)[] | undefined,
+  enrichedNotes: [string, string?, string?],
+  matches: (n: string) => boolean,
+): [string, string?, string?] {
+  const line = engineNotes?.find((n): n is string => !!n && matches(n))
+  if (!line) return enrichedNotes
+  const notes = enrichedNotes.filter((n): n is string => !!n)
+  if (notes.some(matches)) return enrichedNotes
+  const kept = notes.slice(0, 2)
+  return kept.length === 2 ? [kept[0], kept[1], line]
+       : kept.length === 1 ? [kept[0], line]
+       : [line]
 }
 
 // Exported for testing — pure function of its inputs (no I/O). Builds the enrichment
@@ -442,7 +507,12 @@ ${JSON.stringify(slimWeeks, null, 0)}
 Return the enriched JSON object now.`
 }
 
-function mergePlan(
+// Exported for testing — pure function of its inputs (no I/O), matching the
+// convention `buildEnrichUserPrompt` already uses above. `ENRICH-NOTE-FIDELITY-01`
+// needed the merge itself under test: both defects it fixes are things the merge
+// does to the enricher's output, and neither is observable from the outside
+// without generating a plan and calling a model.
+export function mergePlan(
   original: Plan,
   enriched: ReturnType<typeof EnrichedPlanSchema.parse>,
   tier: Tier,
@@ -497,7 +567,15 @@ function mergePlan(
       if (es.label) session.label = es.label
       // §28 — keep the engine's stride line if the enricher's rewrite dropped it
       // (session.coach_notes still holds the engine notes at this point).
-      if (es.coach_notes) session.coach_notes = preserveStrideNote(session.coach_notes, es.coach_notes)
+      if (es.coach_notes) {
+        let notes = preserveStrideNote(session.coach_notes, es.coach_notes)
+        // §24e — the fuelling note is engine-authored PRESCRIPTION, exactly like
+        // the stride line, and had no preservation for a year. Dropped in 20 of
+        // 33 measured enrichment failures.
+        notes = preserveEngineNote(session.coach_notes, notes,
+          n => n === FUELLING_PRACTICE_NOTE || n.startsWith(ULTRA_FUELLING_PREFIX))
+        session.coach_notes = notes
+      }
     }
   }
 

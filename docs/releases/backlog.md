@@ -68,27 +68,6 @@ style prop and an imperative style write **cannot both own a property**.
 ⚠️ **Also unfixed:** the founder's screenshot shows **~145pt of empty white** below *Dismiss*
 before the sheet ends. Filed inside this item because it is the same panel.
 
-### `ENRICH-NOTE-FIDELITY-01` — the enricher strips and duplicates required notes 🏃 COACHING BOARD
-
-📐 **Measured on 33 `plan_enrich_failed` events since 2026-09-02** — not inferred:
-
-| code | events | what the enricher did |
-|---|---|---|
-| `INV-PLAN-STRIDES-PRESENT` | **32 of 33** | **ADDS** a strides mention to a second run — *“Week 3 carries strides on 2 runs (wed, fri). §28 places them on ONE easy run.”* |
-| `INV-PLAN-LONG-SESSION-FUELLING-NOTE` | 20 of 33 | rewrites `coach_notes` and drops the **exact-match** fuelling string |
-| `INV-PLAN-COPY-MATCHES-SESSIONS` | 20 of 33 | §27, the original `ENRICH-PARTIAL-01` case |
-
-⚠️ **`ENRICH-PARTIAL-01` contains all of it — 30 of 31 were partial reverts — which is exactly why
-nobody has looked.** Each one still costs the runner the coaching voice on the weeks it touches.
-
-🔴 **ROUTED TO THE COACHING BOARD, NOT TO ME.** §28's *“ONE easy run”* is a coaching rule, and
-whether the fuelling note must match a fixed string or may be **paraphrased** is a doctrine question
-about what the runner must be told, not a prompt tweak. Two plausible answers and they differ:
-tighten the prompt, or let the invariant accept a semantic match.
-
-⚠️ **The fuelling check is an exact string equality** (`n === FUELLING_PRACTICE_NOTE`). Any rewording
-fails it. That is either the point or a brittleness — the board owns which.
-
 ### `ACTION-ROW-320-01` — the action rows still wrap at 320pt ⚙️ NO BOARD (measurement) · 🧭 DESIGN BOARD (answer)
 
 `LINK-HIERARCHY-01` moved both action rows to `.btn--compact` and they now render **44px, one line

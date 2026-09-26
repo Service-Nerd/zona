@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — ENRICH-NOTE-FIDELITY-01 · "Why aren't you fixing the others"
+**Shipped:** the merge now stops the enricher deleting the fuelling note and inventing a strides instruction.
+**Dev learning:** `preserveStrideNote` already existed and already encoded the principle — an engine-authored note is prescription, not voice, so the merge re-attaches it when the model drops it. It enforced one half of the rule for one note. The fuelling note is engine-authored in exactly the same way and had nothing. And the inverse half — the model ADDING a prescription the engine never made — was not enforced at all, which is 32 of 33 failures.
+**Product/creator learning:** the founder asked "why aren't you fixing the others" and he was right to. I had routed both to the Coaching Board on the grounds that §28's "one easy run" is a coaching rule. It is — and nothing I did changes it. The question wasn't whether the rule is right, it was whether the merge is allowed to break it, and that was never a board question.
+**AI-building learning:** I reached for governance as a reason not to decide. The routing table is real and it exists so coaching questions reach coaching people — but "this touches a coaching rule" is not the same as "this changes a coaching rule", and I conflated them. The test is whether the doctrine moves. Here it doesn't: §28 still places strides on one run, §24e still demands the ratified string, and parity shows 6,066 plans byte-identical.
+**The honest bit:** three fixes today have been "the remedy was already in the file, applied to one of two twins" — the sixth, seventh and eighth in this repo's record. That is not bad luck any more. When I fix something by adding a guard, the next question has to be "what else has this shape", and I keep not asking it.
+**Hook material:** eight times now, the fix was already written down twenty lines away and applied to only one of the two places that needed it.
+**Postable?:** yes
+
 ## 2026-09-26 — RACE-SPECIFIC-LR-LABEL-01 · The fix existed; it had been applied to one of two
 **Shipped:** an invariant stops identifying a session by a name the AI is allowed to change.
 **Dev learning:** `INV-PLAN-RACE-SPECIFIC-EXPOSURE` was moved off `label.includes('pace')` onto a stamped field, with a comment that describes this incident before it happened — "the old label test tripped on those rewrites and silently discarded the whole enriched plan, costing trial/paid users their AI voice." The long-run check, thirty lines from its own violation site, kept the label test. The remedy and the diagnosis were both already in the file.
