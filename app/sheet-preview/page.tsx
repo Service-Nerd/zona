@@ -1,42 +1,47 @@
-// SHEET-ORIGIN-01 — the preview the founder asked for, before anything ships.
+// SHEET-ORIGIN-01 — the preview, round two.
 //
-// Founder: "I'd absolutely love it if all our pop-ups loaded as if they came out
-// of the nav pill, then retracted back into it when closing. Would be great if
-// we could make it wobble a little too. **I'd like to see it.**"
+// Founder, on round one: "Doesn't load from the top of the nav pill at all.
+// I'd want the pop ups to be the width of the pill too."
 //
-// 🔴 IT SHOWS THREE ORIGINS, NOT ONE, AND THAT IS THE BOARD'S DOING. The runner
-// never taps the nav pill — they tap a card, a chip, an "i" mark. A sheet that
-// emerges from the pill is pretty and attributes itself to a control the runner
-// did not touch. Silvanto: "a transition that names the wrong parent is a worse
-// lie than no transition." So: bottom (today) · pill (asked for) · the tapped
-// control (honest). The founder judges the brief against its alternative.
+// 🔴 THE TWO NOTES ARE ONE PROBLEM. Round one scaled the panel from the PILL'S
+// CENTRE, so it grew downward as well as up — off the bottom of the screen —
+// and because the panel was full-width against a 343px pill it also scaled
+// HORIZONTALLY, squashing its own text on the way out. Neither reads as "this
+// came out of the pill"; they read as "a squashed panel un-squashed".
 //
-// ⚠️ SHIPS NOTHING. The panel is drawn inline rather than importing `Sheet`, so
-// playing with it cannot move the app.
+// Make the sheet pill-width and the horizontal scale becomes exactly 1. Anchor
+// `transform-origin` to the BOTTOM edge and it grows upward only. Then the whole
+// animation is one number — height — which is what emerging from a thing looks
+// like.
 //
-// ⚠️ BUILT AGAINST `NAV-TRANSLUCENT-01`'s LESSON — "a mock that could not show
-// the effect it was built to show". That one floated over EMPTY GROUND, the one
-// backdrop where the effect was invisible. This opens over real cards with a
-// real pill in place, and the trigger is a control you actually tap, so the
-// tap-origin case has something true to animate from.
+// ⚠️ CONTENT MUST NOT SQUASH. A `scaleY` distorts everything inside it. The
+// content fades in over the back half instead, so the squashed frames are the
+// transparent ones. Cheap, compositor-friendly, and standard.
+//
+// ⚠️ SHIPS NOTHING. Drawn inline rather than importing `Sheet`.
 
 'use client'
 
 import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 
-type Origin = 'bottom' | 'pill' | 'tap'
+type Origin = 'pill' | 'tap' | 'bottom'
 type Spring = 'none' | 'overshoot' | 'wobble'
+type Width  = 'pill' | 'full'
 
 const EASE: Record<Spring, string> = {
-  none:      'cubic-bezier(0.32, 0.72, 0, 1)',    // what ships today
-  overshoot: 'cubic-bezier(0.34, 1.40, 0.64, 1)', // one pass beyond, settles
-  wobble:    'cubic-bezier(0.18, 1.70, 0.40, 1)', // further over, more visible
+  none:      'cubic-bezier(0.32, 0.72, 0, 1)',
+  overshoot: 'cubic-bezier(0.34, 1.40, 0.64, 1)',
+  wobble:    'cubic-bezier(0.18, 1.70, 0.40, 1)',
 }
+
+const INSET = 16          // matches --nav-pill-inset
+const GAP   = 10          // breathing room between the sheet and the pill
 
 export default function SheetPreview() {
   const [origin, setOrigin] = useState<Origin>('pill')
   const [spring, setSpring] = useState<Spring>('overshoot')
-  const [ms, setMs] = useState(380)
+  const [width,  setWidth]  = useState<Width>('pill')
+  const [ms, setMs] = useState(420)
   const [open, setOpen] = useState(false)
   const [shown, setShown] = useState(false)
 
@@ -44,44 +49,38 @@ export default function SheetPreview() {
   const panelRef = useRef<HTMLDivElement>(null)
   const fromRect = useRef<DOMRect | null>(null)
 
-  /** The closed transform: shrink the panel onto the origin's rect.
-   *
-   * 🔴 THE PANEL MUST BE MEASURED UNTRANSFORMED, and the first version was not.
-   * `getBoundingClientRect()` returns the TRANSFORMED box, and the panel already
-   * carries `translateY(100%)` when this runs — so every translate came out
-   * 225px short and the sheet would have flown to the wrong place. Caught by
-   * printing the rects rather than watching it, which is just as well: the
-   * browser pane is hidden here, `requestAnimationFrame` never fires, and the
-   * animation could not be seen at all. The numbers were the only witness. */
-  const closedTransform = (): string => {
+  /** Where the panel rests: just above the pill when pill-width, else the floor. */
+  const restBottom = () => {
+    const pill = pillRef.current?.getBoundingClientRect()
+    if (width === 'full' || !pill) return 0
+    return Math.round(window.innerHeight - pill.top + GAP)
+  }
+
+  /**
+   * The closed state. 🔴 `transform-origin: bottom` + `scaleY` ONLY — it grows
+   * UP from its own bottom edge, which is sitting on the pill. Round one scaled
+   * from the centre and grew both ways.
+   */
+  const closed = (): { transform: string; originY: string } => {
     const panel = panelRef.current
-    if (!panel || origin === 'bottom') return 'translateY(100%)'
-    const r = origin === 'pill' ? pillRef.current?.getBoundingClientRect() : fromRect.current
-    if (!r) return 'translateY(100%)'
-    // 🔴 DERIVED, NOT MEASURED, AND THAT IS THE SECOND FIX HERE.
-    // Attempt 1 read `getBoundingClientRect()` — which returns the TRANSFORMED
-    // box, and the panel already carries `translateY(100%)`, so every translate
-    // came out 225px short. Attempt 2 cleared `transform` before reading —
-    // which STARTS A 380ms TRANSITION to none, so the rect was still mid-flight
-    // and read the same wrong number.
-    //
-    // The panel is `left:0; right:0; bottom:0; margin:0 auto; maxWidth:480`
-    // inside a `position:fixed; inset:0`, so its laid-out box is derivable and
-    // needs no measurement at all: `offsetHeight` is transform-independent.
-    // ⚠️ Twice in a row the MEASUREMENT was the bug rather than the thing
-    // measured — worth remembering before trusting a rect on a moving element.
-    const pw = Math.min(480, window.innerWidth)
-    const p = {
-      left: (window.innerWidth - pw) / 2,
-      top: window.innerHeight - panel.offsetHeight,
-      width: pw,
-      height: panel.offsetHeight,
-    }
-    const sx = Math.max(r.width  / p.width,  0.05)
-    const sy = Math.max(r.height / p.height, 0.02)
-    const dx = (r.left + r.width  / 2) - (p.left + p.width  / 2)
-    const dy = (r.top  + r.height / 2) - (p.top  + p.height / 2)
-    return `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`
+    if (!panel) return { transform: 'translateY(100%)', originY: 'center' }
+    if (origin === 'bottom') return { transform: 'translateY(100%)', originY: 'center' }
+
+    const src = origin === 'pill'
+      ? pillRef.current?.getBoundingClientRect()
+      : fromRect.current
+    if (!src) return { transform: 'translateY(100%)', originY: 'center' }
+
+    const h = panel.offsetHeight
+    // The panel's laid-out bottom edge, in viewport coords.
+    const bottomEdge = window.innerHeight - restBottom()
+    // Collapse to a sliver, then put that sliver on the origin's TOP edge
+    // (the founder's words: "from the top of the nav pill").
+    const sy = Math.max(2 / h, 0.01)
+    const dy = origin === 'pill'
+      ? src.top - bottomEdge                       // the pill's top edge
+      : (src.top + src.height / 2) - bottomEdge    // a tapped card's middle
+    return { transform: `translateY(${Math.round(dy)}px) scaleY(${sy.toFixed(4)})`, originY: 'bottom' }
   }
 
   const openFrom = useCallback((el: HTMLElement | null) => {
@@ -89,27 +88,27 @@ export default function SheetPreview() {
     setOpen(true)
   }, [])
 
-  /* 🔴 THE ORIGIN NEVER APPLIED, AND THIS IS WHY. React renders `{open && …}`,
-   * and on THAT render `panelRef.current` is still null — so `closedTransform()`
-   * returned its `translateY(100%)` fallback every single time and all three
-   * variants were showing today's animation. The preview looked like it worked.
-   *
-   * ⚠️ It is not fixable in the render: the panel must EXIST to be measured, and
-   * the closed transform must be painted BEFORE the open one or there is nothing
-   * to transition from. So the first frame is driven imperatively in a layout
-   * effect — write the closed state with transitions off, force a reflow, then
-   * turn transitions on and release. This is what a real implementation has to
-   * do too, which is the whole point of building the preview first. */
+  // The panel must EXIST to be measured, and the closed frame must be painted
+  // before the open one. Round one set it in the render, where `panelRef` is
+  // still null — so every origin silently fell back to the bottom slide.
   useLayoutEffect(() => {
     if (!open) return
     const panel = panelRef.current
     if (!panel) return
+    const c = closed()
     panel.style.transition = 'none'
-    panel.style.transform = closedTransform()
-    panel.style.opacity = '0.4'
-    void panel.offsetHeight                       // flush the closed frame
+    panel.style.transformOrigin = `center ${c.originY}`
+    panel.style.transform = c.transform
+    void panel.offsetHeight
     requestAnimationFrame(() => {
-      panel.style.transition = `transform ${ms}ms ${EASE[spring]}, opacity ${Math.round(ms * 0.6)}ms ease`
+      panel.style.transition = `transform ${ms}ms ${EASE[spring]}`
+      // 🔴 THE OPEN TRANSFORM IS SET HERE, and the rewrite forgot it — the panel
+      // stayed collapsed at a 2px sliver forever and `ANIMATED` read false.
+      // FOURTH bug in this preview, and the fourth found by printing numbers
+      // rather than looking, because `document.hidden` is true in the pane so
+      // nothing animates to watch. All four were in the plumbing, never in the
+      // idea, which is the argument for building the preview before the ship.
+      panel.style.transform = 'translateY(0px) scaleY(1)'
       setShown(true)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,17 +117,17 @@ export default function SheetPreview() {
   const close = () => {
     const panel = panelRef.current
     if (panel) {
-      panel.style.transition = `transform ${ms}ms ${EASE[spring]}, opacity ${Math.round(ms * 0.6)}ms ease`
-      panel.style.transform = closedTransform()   // retracts to the SAME origin
-      panel.style.opacity = '0.4'
+      const c = closed()
+      panel.style.transition = `transform ${ms}ms ${EASE[spring]}`
+      panel.style.transform = c.transform     // retracts to the SAME place
     }
     setShown(false)
     setTimeout(() => setOpen(false), ms)
   }
 
   const seg = <T extends string>(label: string, value: T, set: (v: T) => void, opts: readonly T[]) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-      <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', width: 50, flexShrink: 0 }}>{label}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+      <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', width: 46, flexShrink: 0 }}>{label}</span>
       <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
         {opts.map(o => (
           <button key={o} onClick={() => set(o)}
@@ -139,24 +138,27 @@ export default function SheetPreview() {
     </div>
   )
 
+  const pillWidth = width === 'pill'
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', overflow: 'hidden', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ padding: '10px 16px', background: 'var(--card)', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>Sheet origin &amp; spring</div>
+        <div style={{ fontFamily: 'var(--font-brand)', fontSize: 15, fontWeight: 600, color: 'var(--ink)' }}>Sheet origin · round 2</div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', marginTop: 3, lineHeight: 1.5 }}>
-          <strong>pill</strong> is what you asked for. <strong>tap</strong> comes out of the control you
-          actually touched — the board&rsquo;s point is that the runner never taps the nav.
+          Pill-width makes the horizontal scale <strong>1</strong>, so the only movement is height —
+          it grows up out of the pill&rsquo;s top edge.
         </div>
-        {seg('origin', origin, setOrigin, ['bottom', 'pill', 'tap'] as const)}
+        {seg('width',  width,  setWidth,  ['pill', 'full'] as const)}
+        {seg('origin', origin, setOrigin, ['pill', 'tap', 'bottom'] as const)}
         {seg('spring', spring, setSpring, ['none', 'overshoot', 'wobble'] as const)}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', width: 50 }}>{ms}ms</span>
-          <input type="range" min={220} max={700} step={20} value={ms}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 11, color: 'var(--mute)', width: 46 }}>{ms}ms</span>
+          <input type="range" min={220} max={800} step={20} value={ms}
                  onChange={e => setMs(parseInt(e.target.value, 10))} style={{ flex: 1 }} />
         </div>
       </div>
 
-      <div style={{ position: 'absolute', inset: '162px 0 0', overflowY: 'auto', padding: '0 16px 150px' }}>
+      <div style={{ position: 'absolute', inset: '186px 0 0', overflowY: 'auto', padding: '0 16px 150px' }}>
         {["This week's load", 'Hitting the zone', 'Why this session', 'Your training load balance'].map((t, i) => (
           <button key={i} onClick={e => openFrom(e.currentTarget)}
             style={{
@@ -190,28 +192,35 @@ export default function SheetPreview() {
             opacity: shown ? 1 : 0, transition: `opacity ${ms}ms ease`,
           }} />
           <div ref={panelRef} style={{
-            position: 'absolute', left: 0, right: 0, bottom: 0,
-            maxWidth: 480, margin: '0 auto',
-            background: 'var(--card)', borderRadius: '20px 20px 0 0',
-            boxShadow: '0 -8px 24px rgba(0,0,0,0.12)',
-            maxHeight: '70vh', padding: '8px 18px 28px',
-            transformOrigin: 'center center',
-            // ⚠️ The OPEN state only. The closed first frame is written by the
-            // layout effect above, because the panel cannot be measured until it
-            // exists. Setting it here is what made every origin fall back.
-            ...(shown ? {
-              transform: 'translate(0,0) scale(1,1)',
-              opacity: 1,
-              transition: `transform ${ms}ms ${EASE[spring]}, opacity ${Math.round(ms * 0.6)}ms ease`,
-            } : {}),
+            position: 'absolute',
+            left: pillWidth ? INSET : 0,
+            right: pillWidth ? INSET : 0,
+            bottom: restBottom(),
+            maxWidth: pillWidth ? 448 : 480, margin: '0 auto',
+            background: 'var(--card)',
+            // Pill-width sheets are objects, so all four corners round and they
+            // carry the pill's edge. Full-width keeps today's top-only radius.
+            borderRadius: pillWidth ? 22 : '20px 20px 0 0',
+            border: pillWidth ? '1px solid var(--chrome-edge)' : 'none',
+            boxShadow: 'var(--shadow-lifted)',
+            maxHeight: '64vh', overflow: 'hidden',
+            willChange: 'transform',
           }}>
-            <div style={{ width: 36, height: 4, background: 'var(--line)', borderRadius: 2, margin: '6px auto 18px' }} />
-            <div style={{ fontFamily: 'var(--font-brand)', fontSize: 18, fontWeight: 600, color: 'var(--ink)' }}>Your training load balance</div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: 10 }}>
-              Easy days easy, hard days hard. Enough body here to see the panel move as a whole
-              object rather than a strip.
+            {/* ⚠️ COUNTER-FADE, NOT COUNTER-SCALE. A `scaleY` distorts everything
+                inside it; the content fades in over the back half so the
+                squashed frames are the transparent ones. */}
+            <div style={{
+              padding: '18px 18px 22px',
+              opacity: shown ? 1 : 0,
+              transition: `opacity ${Math.round(ms * 0.45)}ms ease ${Math.round(ms * 0.35)}ms`,
+            }}>
+              <div style={{ fontFamily: 'var(--font-brand)', fontSize: 18, fontWeight: 600, color: 'var(--ink)' }}>Your training load balance</div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6, marginTop: 10 }}>
+                Easy days easy, hard days hard. Enough body here to see the panel move as a whole
+                object rather than a strip.
+              </div>
+              <button onClick={close} className="btn btn--secondary btn--compact" style={{ width: '100%', marginTop: 18 }}>Close</button>
             </div>
-            <button onClick={close} className="btn btn--secondary btn--compact" style={{ width: '100%', marginTop: 18 }}>Close</button>
           </div>
         </div>
       )}

@@ -2280,6 +2280,30 @@ pins top AND bottom. **The gate I wrote this morning did not know that**, and a 
 gets switched off. Widened to accept `inset` and `top`+`bottom`, and **falsified afterwards** so it
 still catches a genuinely unconstrained one.
 
+#### 🔁 Round 2 — "doesn't load from the top of the nav pill at all. I'd want the pop ups to be the width of the pill too"
+
+🔴 **HIS TWO NOTES WERE ONE PROBLEM.** Round one scaled the panel from the pill's **centre**, so it
+grew downward as well as up — off the bottom of the screen — and because a **full-width** panel was
+scaling against a **343px** pill it also scaled **horizontally**, squashing its own text on the way
+out. Neither reads as *"this came out of the pill"*; both read as *"a squashed panel un-squashing"*.
+
+📐 **Make the sheet pill-width and the horizontal scale is exactly 1.** Anchor `transform-origin` to
+the **bottom** edge and it grows upward only. The whole animation becomes one number — height —
+which is what emerging from a thing looks like.
+
+| | |
+|---|---|
+| width | **343px, the pill's**, 16px inset, all four corners rounded, `--chrome-edge` |
+| closed | a **2px sliver whose bottom edge is exactly the pill's top edge** (738 = 738) |
+| open | 343×203, settling **above** the pill |
+| content | **fades in over the back half** — a `scaleY` distorts everything inside it, so the squashed frames are the transparent ones |
+
+⚠️ **A FOURTH PLUMBING BUG IN THE SAME PREVIEW:** the rewrite set the closed transform and **never
+set the open one**, so the panel stayed collapsed at 2px forever. Found by printing the box, not by
+looking — `document.hidden` is true in this pane, `requestAnimationFrame` never fires, and **nothing
+animates here to watch.** All four bugs were in the plumbing and none in the idea, which is the
+argument for the preview existing at all.
+
 ### LINK-HIERARCHY-01 — SHIP (4) · the screen argued with itself (2026-09-26)
 
 **Founder:** *"The buttons look too big/fat… the Run (Connect) above Log without activity is
