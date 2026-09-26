@@ -7,6 +7,16 @@ it specific, no polish. The content system adds the voice.
 ---
 
 
+## 2026-09-26 — NAV-TRANSLUCENT-02 · I gave the board a number that measured the wrong thing
+**Shipped:** An A/B of the nav material in `/nav-preview`, plus the token. The tint itself has not shipped.
+**Dev learning:** I told the board "alpha alone cannot make the pill perceptible over our grounds" and briefed a whole sitting on it. I had compared the pill to **pure white** instead of to **the ground it sits on**. Corrected: white at 0.82 is **16 levels against the page ground and 0 against a white card**. It was never invisible — it is sharply visible on one surface and gone on the other, and the founder's capture happened to be over a card. The change is about consistency, not visibility, which is a different argument with a different justification.
+**Product/creator learning:** "Make it more translucent" was the wrong lever and the right instinct. He could see something was off; the something was that the material behaves differently depending on what it crosses. A material that only exists over half your surfaces isn't a material.
+**AI-building learning:** The board ruled on my corrected figure, not my first one, because I re-measured before the seats spoke rather than after. That ordering is the only reason the ruling is sound — the same sitting run on the wrong number would have produced a defensible-looking ruling about a problem that didn't exist.
+**The honest bit:** Three mistakes in one small change, all caught by machines rather than me. The readout said "behind the lower pill" while sampling where the upper pill sits. The pre-commit hook blocked a hex in a comment, correctly. And my `git push` sat on its own line after a heredoc, so it ran even though the commit had been **blocked** — I told the founder "pushed" when nothing had been committed.
+**Hook material:** I briefed a five-person design board on a measurement that compared the wrong two things, and caught it only because I re-measured before they spoke.
+**Postable?:** yes
+
+
 ## 2026-09-26 — SESSION-INFO-MARK-01 · the ring painted the hit area, and a line that is probably not there
 **Shipped:** The info mark's ring moved from the button onto the glyph. Plus a properly narrowed item for the mystery line.
 **Dev learning:** Under `box-sizing: border-box`, a border on an element that also carries padding paints around the **padded** box. The inline mark uses `padding: 16.5px; margin: -16.5px` to turn a 15px glyph into a 44px target — so putting the ring on the button drew it around the target. **When the visual and the hit area are different sizes, they must be different elements.** Third instance of that exact class in two days, after the nav pill's inline override and the CTA dock.
