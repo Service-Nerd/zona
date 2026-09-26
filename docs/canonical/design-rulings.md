@@ -1972,6 +1972,22 @@ the `transition` shorthand **cancels the in-flight transition**. The inline styl
 translucent value while the computed style read fully opaque — **it looked correctly wired and
 painted nothing.** The shorthand must be constant; only a custom property inside it may change.
 
+> 🔴 **AMENDED SAME DAY — TRANSLUCENCY MAY NOT BE WORTH IT ON THIS PALETTE, AND THE BOARD SHOULD
+> RULE ON THAT BEFORE THE BUILD.** The founder used the mock and reported that opaque, translucent,
+> blur and reduced-motion all *"do nothing"*. The CSS was correct throughout; **the palette is the
+> cause.** Warm Slate is a near-white ground with white cards, so white at 0.75 measures:
+> **flat `--bg` 5 levels · session card 6 · hero 9 · coach card 15 · moss CTA 19.** Over most of
+> Today the effect is below the threshold of perception, and `backdrop-filter: blur()` over a flat
+> colour returns that flat colour unchanged.
+>
+> ⚠️ **This is very likely why Miles's bars sample `rgb(255,255,255)` — opaque.** The measurement
+> that looked like a curiosity now looks like the same conclusion reached by another team.
+>
+> **The open question for the board: is a 5-to-19-level effect, visible only over two of five
+> backdrops, worth a `backdrop-filter` on every scroll frame?** ⚠️ A/B mode had to be added to the
+> mock before the difference could be seen at all — **and a difference that needs A/B to be
+> perceived is evidence in that ruling, not a presentation problem.**
+
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 
 📐 **Measured:** six variants, **three different hover grammars** (3 darken the fill, 2 the label, 1
