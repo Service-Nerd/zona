@@ -74,6 +74,7 @@ import Sheet, { NavHeightProvider } from '@/components/shared/Sheet'
 import { DurationPicker } from '@/components/shared/DurationPicker'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
 import ScreenHeader from '@/components/ui/ScreenHeader'
+import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 import AIMark from '@/components/shared/AIMark'
 import CoachByline from '@/components/shared/CoachByline'
 import PlanIntroCard from '@/components/shared/PlanIntroCard'
@@ -11741,7 +11742,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
     : null
 
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
 
       {/* Header — tab destination, no back button */}
       <ScreenHeader title="Your profile" />
@@ -12955,16 +12956,33 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
     const initial = setTimeout(tick, 2500)
     return () => { cancelled = true; clearTimeout(initial) }
   }, [isAnalysisPending, sessionDay])
+
+  // Pinned header — see the header row below.
+  const { ref: pinRef, scrolled: pinScrolled } = useScrolledContainer(true)
+
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '120px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
 
       {/* ── HEADER ROW ────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-        padding: '14px 16px 12px',
-        borderBottom: `1px solid var(--line)`,
-        position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
-      }}>
+      {/* 🔴 THIS HEADER WAS NEVER STICKY. It carried `position: sticky; top: 0`
+          and pinned to the wrapper above, which declared `overflow-y: auto`
+          with `min-height: 100%` — a scrollport that can never scroll. Measured
+          in a browser: -800px after an 800px scroll. The founder asked for a
+          pinned header on THIS screen and the code already claimed to do it.
+
+          Behaviour now comes from `.pinned-chrome` + `useScrolledContainer`,
+          shared with `ScreenHeader`. The TYPOGRAPHY stays this screen's — the
+          two families diverge by 5 treatments and that needs a ruling
+          (`BACK-HEADER-OWNER-01`), not a sweep. */}
+      <div
+        ref={pinRef}
+        className={`pinned-chrome${pinScrolled ? ' pinned-chrome--scrolled' : ''}`}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+          padding: '14px 16px 12px',
+          zIndex: Z_LAYERS.screenHeader,
+        }}
+      >
         <BackButton onClick={onBack} />
 
         {/* Eyebrow + title */}
@@ -13479,15 +13497,23 @@ function PostRunScreen({
     ?? ((session.type === 'easy' || session.type === 'run') ? aerobicPace ?? null : null)
     ?? convertPaceString(goalPace, preferredUnits) ?? null
 
+  // Pinned header — see the header row below.
+  const { ref: pinRef, scrolled: pinScrolled } = useScrolledContainer(true)
+
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '120px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
       {/* ── HEADER ─────────────────────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
-        padding: '14px 16px 12px',
-        position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10,
-        borderBottom: '1px solid var(--line)',
-      }}>
+      {/* Same defect as SessionScreen's header, same fix — it pinned to an
+          inert scrollport and never moved. */}
+      <div
+        ref={pinRef}
+        className={`pinned-chrome${pinScrolled ? ' pinned-chrome--scrolled' : ''}`}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+          padding: '14px 16px 12px',
+          zIndex: Z_LAYERS.screenHeader,
+        }}
+      >
         <BackButton onClick={onBack} ariaLabel="Back to Today" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
@@ -13776,7 +13802,7 @@ function QuitTab({ quitDays, raceDistanceKm, onBack }: { quitDays: number | null
   ]
   const raceCtx = raceDistanceKm ? `a ${raceDistanceKm}km race` : 'your race'
   return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', overflowY: 'auto', paddingBottom: '80px' }}>
+    <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
       <BackHeader title="Quit tracker" onBack={onBack} />
       <div style={{ padding: '0 12px', paddingBottom: 'var(--space-6)' }}>
         <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--teal-bg)', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: 'var(--space-5)', marginBottom: 'var(--space-3)' }}>

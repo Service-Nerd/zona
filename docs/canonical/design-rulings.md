@@ -2224,6 +2224,56 @@ MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolle
 - **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
   header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
 
+### 🔴 STICKY-SCROLLER-01 — the header on the screen it was RAISED against had never been sticky
+
+**Founder, same day, looking at the session screen:** *"What about the open session screen? That's
+the one I raised it against."* **He is right, and the scoping was mine** — I classified that
+header as a different family and built Plan and Coach. The family call stands; leaving out the
+screen he asked for does not.
+
+🔴 **AND IT WAS WORSE THAN NOT-BUILT: THE CODE ALREADY CLAIMED TO DO IT.** The header carried
+`position: sticky; top: 0` and had **never once pinned.** Reproduced in a browser: **-800px after
+an 800px scroll.**
+
+**Mechanism.** A sticky element pins to its nearest ancestor with `overflow` other than `visible`
+— **including one that can never scroll.** Four screens wrapped themselves in
+`min-height: 100%; overflow-y: auto` inside the real scroller, which cannot overflow and therefore
+never moves. ⚠️ **The idiom was copied minus the declaration that made it work:** the three
+deliberate own-scroll-context screens use **`height: 100dvh`**.
+
+⚠️ **And it applied to my own hour-old `ScreenHeader`.** Its walk took the nearest
+`overflow-y: auto`, which is the spec's rule for sticky and wrong here. **Plan and Coach worked by
+luck** — neither has the wrapper; `MeScreen` does. My browser check used a container that really
+scrolled: *a probe that cannot reach the failing state* for the fourth time.
+
+#### 📐 The empty space: 210px, reserved twice
+
+`PullToRefresh` is handed `bottomNavH + 16` = **90px** and is the single owner of the nav reserve.
+The session and post-run screens each added a hardcoded **120px** for the same nav. Measured:
+**210px of dead ground → 90px.** Same class as the 46pt nav gap and the CTA dock that floated
+167px above its card.
+
+🔴 **THE SPACING GATE HAD BOTH AS DECLARED EXCLUSIONS WITH A FALSE REASON** —
+*"`paddingBottom` on a `minHeight:100% / overflowY:auto` scroll container — the room the fixed tab
+bar needs."* **Neither half was true.** They were not scroll containers, and the room is owned
+elsewhere. **A declared exception with a wrong reason is worse than no exception, because it looks
+examined**, and this one was read past every time the file was touched.
+
+#### ⚖️ What shipped
+
+`lib/ui/useScrolledContainer.ts` is the single owner of *"has the scroller behind me moved?"*, and
+its walk requires **`scrollHeight > clientHeight`** — declaring `auto` is not scrolling.
+`.pinned-chrome` / `.pinned-chrome--scrolled` is the single owner of the **behaviour**, shared by
+both header families. **They differ in TYPE, not in what pinning does**, and the type divergence
+stays `BACK-HEADER-OWNER-01`. Session and Post-run headers now pin and reveal the nav's edge.
+
+⚠️ **THE BLACK LINE IS A HYPOTHESIS, NOT A FIX.** `NAV-BLACK-LINE-01` was recorded as an untraced
+2-device-px full-bleed `rgb(0,0,0)` line appearing in 1 of 8 captures. The founder now places it
+*"at the bottom of that screen"* — which is where a **nested scroll container's edge** sat, and
+that container is now gone. **Plausible and unproven:** a native WKWebView artefact cannot be
+diagnosed from a desktop browser. If it survives, the nesting was not the cause and the item
+stands.
+
 🥇 **THE GATE'S DERIVED POPULATION FOUND TWO STICKY HEADERS I HAD NOT ACCOUNTED FOR** on its first
 run — including the website's own. I had typed `= 2`; walking the tree returned **4**. And my
 "class owns every pixel" arm was **hollow**, matching only the root element's inline style, so a

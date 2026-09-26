@@ -933,6 +933,29 @@ Guarded by `components/ui/screenHeader.markup.test.ts`, which asserts the **ruli
 set is exactly Plan and Coach) rather than a count, and derives its population by walking the
 tree rather than listing files.
 
+#### 🔴 `position: sticky` is not enough, and this is the trap
+
+A sticky element pins to its nearest ancestor with `overflow` other than `visible` — **including
+one that can never scroll.** This app had four boxes declaring `overflow-y: auto` with
+`min-height: 100%` and no height, inside the real scroller (`PullToRefresh`). **The session
+screen's header pinned to one of them and was never sticky at all**: measured in a browser,
+**-800px after an 800px scroll.**
+
+⚠️ **The idiom was copied minus the declaration that made it work.** The deliberate
+own-scroll-context screens use **`height: 100dvh`**; these used `min-height: 100%`. Nothing in
+the name distinguished them.
+
+**So the shared owner of the behaviour is `lib/ui/useScrolledContainer.ts`**, and its walk
+requires `scrollHeight > clientHeight` — declaring `auto` is not scrolling. Both header families
+consume it plus `.pinned-chrome`; they differ in **type**, not in what pinning does. Guarded by
+`lib/ui/stickyScroller.test.ts`.
+
+⚠️ **And the nav reserve is owned once.** `PullToRefresh` is handed `bottomNavH + 16`. Three
+screens added their own `120px`/`80px` for the same nav — **210px of dead ground**, reported by
+the founder as *"a lot of empty space."* Same class as the 46pt nav gap. The spacing gate had
+those paddings as **declared exclusions with a false reason** (*"scroll-container bottom
+clearance"* — they were not scroll containers), which is why nobody looked.
+
 ### 7a. 🔴 Today's primary action does NOT dock — reverted, and why
 
 **`TODAY-CTA-CLEARANCE-01` shipped a `position: sticky` dock on Today's CTA and it was

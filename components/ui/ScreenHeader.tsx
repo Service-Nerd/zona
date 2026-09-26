@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
 import { Z_LAYERS } from '@/lib/ui/zLayers'
+import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 
 /**
  * ScreenHeader — the tab-root header. Title, optional subtitle, NO back arrow.
@@ -55,6 +55,12 @@ import { Z_LAYERS } from '@/lib/ui/zLayers'
  * At the top of the page the header has no edge and reads as part of the page.
  * The moment anything has passed beneath it, the edge appears.
  *
+ * 🔴 MY FIRST CUT OF THE SCROLLER LOOKUP WAS WRONG AND WORKED BY LUCK. It took
+ * the nearest ancestor with `overflow-y: auto` — the spec's rule for sticky —
+ * and this app has four boxes that declare it and can never scroll. Plan and
+ * Coach have none of them, so it passed; `MeScreen` has one. The corrected walk
+ * lives in `useScrolledContainer`, shared with the pushed-screen headers.
+ *
  * ⚠️ `zIndex` is the ONE inline style here, and it comes from the `Z_LAYERS`
  * owner rather than the stylesheet — the same split the nav uses. Everything
  * else is `.screen-header` in `globals.css`.
@@ -71,42 +77,15 @@ export default function ScreenHeader({
    *  keeps referring to what the header names — see the ruling above. */
   sticky?: boolean
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    if (!sticky) return
-    const el = ref.current
-    if (!el) return
-
-    // ⚠️ THE SCROLLER IS NOT THE SAME ELEMENT ON EVERY SCREEN. `MeScreen` sets
-    // `overflowY: 'auto'` on its own root; `PlanScreen` does not and scrolls the
-    // document. An IntersectionObserver would need the right `root` per screen
-    // and silently observe nothing when it guessed wrong — so walk up and find
-    // the actual scroller, falling back to the document.
-    let node: HTMLElement | null = el.parentElement
-    let scroller: HTMLElement | Window = window
-    while (node) {
-      const oy = getComputedStyle(node).overflowY
-      if (oy === 'auto' || oy === 'scroll') { scroller = node; break }
-      node = node.parentElement
-    }
-
-    const read = () =>
-      setScrolled((scroller === window ? window.scrollY : (scroller as HTMLElement).scrollTop) > 0)
-
-    read()
-    scroller.addEventListener('scroll', read, { passive: true })
-    return () => scroller.removeEventListener('scroll', read)
-  }, [sticky])
+  const { ref, scrolled } = useScrolledContainer(sticky)
 
   return (
     <div
       ref={ref}
       className={[
         'screen-header',
-        sticky && 'screen-header--sticky',
-        sticky && scrolled && 'screen-header--scrolled',
+        sticky && 'pinned-chrome',
+        sticky && scrolled && 'pinned-chrome--scrolled',
       ].filter(Boolean).join(' ')}
       style={sticky ? { zIndex: Z_LAYERS.screenHeader } : undefined}
     >

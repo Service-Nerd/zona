@@ -1,12 +1,27 @@
 # `ScreenHeader` — contract
 
-`components/ui/ScreenHeader.tsx` · SCREEN-HEADER-01 (Design Board, 2026-09-26)
+**Component:** `components/ui/ScreenHeader.tsx`
+
+SCREEN-HEADER-01 (Design Board, 2026-09-26)
 
 The **tab-root** header: title, optional subtitle, **no back arrow**.
 
 ⚠️ **This is not the pushed-screen header.** That is a back arrow + title in a row and is a
 different family — conflating the two is a **retracted finding** (`design-rulings.md:858`), and
 `BackButton.tsx` carries the same warning. It has no owner yet: `BACK-HEADER-OWNER-01`.
+
+## Prop Interface
+
+```typescript
+interface ScreenHeaderProps {
+  /** The screen's name. `26px / 800 / var(--font-ui) / var(--ink)`. */
+  title: string
+  /** Secondary line. Omitted entirely when absent — no empty element. */
+  sub?: string
+  /** Pins the header while the screen scrolls. Default `false`. */
+  sticky?: boolean
+}
+```
 
 ## Props
 

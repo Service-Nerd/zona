@@ -1197,8 +1197,16 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   letter-spacing: 0.04em;
 }
 
-/* 🔴 OPAQUE, AND THE EDGE IS WHAT ARRIVES — the brief said "translucent when
- * scrolling" and both halves of that had to change.
+/* ── Pinned chrome — the ONE behaviour, shared by two header families ──────
+ *
+ * `.screen-header` (tab roots) and the pushed-screen headers (back arrow +
+ * title) are different FAMILIES with different typography — that divergence is
+ * `BACK-HEADER-OWNER-01` and needs a ruling. **What they pin is the same, so it
+ * is written once.** Two families sharing a behaviour is exactly how this file
+ * ended up with two `ScreenHeader`s.
+ *
+ * 🔴 OPAQUE, AND THE EDGE IS WHAT ARRIVES. The brief said "translucent when
+ * scrolling" and both halves had to change:
  *
  *   the FILL cannot work on this palette. `--bg` sits BETWEEN white and any
  *   AA-safe darker tint, so the best any single fill manages is ~10 levels
@@ -1216,8 +1224,16 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  *
  * The border is always present and starts TRANSPARENT, so the header's height
  * never changes — a 1px box-model jump on the first scroll event would be a
- * visible flinch on exactly the screens this is meant to calm. */
-.screen-header--sticky {
+ * visible flinch on exactly the screens this is meant to calm.
+ *
+ * 🔴 STICKY IS NOT ENOUGH ON ITS OWN, AND THAT IS WHY `useScrolledContainer`
+ * EXISTS. `position: sticky` resolves against the nearest element with
+ * `overflow` other than `visible` — **even one that can never scroll.** Four
+ * screens in this app declared `overflow-y: auto` with `min-height: 100%` and no
+ * height, and the session screen's header pinned to one of them, so it was never
+ * sticky at all. Those wrappers are gone; `stickyScroller.test.ts` stops them
+ * coming back. */
+.pinned-chrome {
   position: sticky;
   top: 0;
   background: var(--bg);
@@ -1225,7 +1241,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   transition: border-color var(--motion-ui);
 }
 
-.screen-header--scrolled { border-bottom-color: var(--nav-pill-edge); }
+.pinned-chrome--scrolled { border-bottom-color: var(--nav-pill-edge); }
 
 /* ── Floating nav pill — NAV-FLOAT-01 (Design Board, ruled twice 2026-09-25/26)
  *

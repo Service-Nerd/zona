@@ -35,15 +35,27 @@ const PROPS = '(?:marginTop|marginBottom|marginLeft|marginRight|gap|rowGap|colum
 /**
  * Declared exclusions, each with the reason it is not a spacing decision.
  *
- * ⚠️ BOTTOM CLEARANCE IS NOT A GAP. Three of these are `paddingBottom` on a
- * `minHeight:100% / overflowY:auto` scroll container — the room the fixed tab
- * bar needs. Snapping 120px to the scale's 48px would put content UNDER the
+ * ⚠️ BOTTOM CLEARANCE IS NOT A GAP — the room a fixed tab bar needs is safe
+ * area, not spacing, and snapping it to the scale would put content under the
  * nav. That is the mirror of Wave 4 excluding ≤5px as line-box artefacts: one
- * end of the range is noise, the other is safe area, and neither is spacing.
+ * end of the range is noise, the other is safe area.
+ *
+ * 🔴 THE 120px AND 80px ENTRIES WERE DELETED 2026-09-26, AND THEIR REASON HAD
+ * BEEN FALSE THE WHOLE TIME. It read *"`paddingBottom` on a `minHeight:100% /
+ * overflowY:auto` scroll container — the room the fixed tab bar needs."* Neither
+ * half held: those elements were **not scroll containers** (`min-height` with no
+ * height cannot overflow — see `stickyScroller.test.ts`), and the tab bar's room
+ * is owned by `PullToRefresh`, which is handed `bottomNavH + 16`. So the app was
+ * reserving the nav **twice**: 210px of dead ground, which the founder reported
+ * as *"a lot of empty space."*
+ *
+ * ⚠️ **A DECLARED EXCEPTION WITH A WRONG REASON IS WORSE THAN NO EXCEPTION**,
+ * because it looks examined. This one was read past every time the file was
+ * touched. The reason column is not decoration — when an entry is added, the
+ * claim in it has to be true, and when the code moves, the claim has to be
+ * re-read rather than the entry re-keyed.
  */
 const EXCLUDED: ReadonlyArray<{ file: string; value: number; reason: string }> = [
-  { file: 'app/dashboard/DashboardClient.tsx', value: 120, reason: 'scroll-container bottom clearance for the fixed tab bar' },
-  { file: 'app/dashboard/DashboardClient.tsx', value: 80,  reason: 'scroll-container bottom clearance for the fixed tab bar' },
   { file: 'app/dashboard/DashboardClient.tsx', value: 40,  reason: 'deliberate end-of-section rest, 8px off the scale' },
 ]
 

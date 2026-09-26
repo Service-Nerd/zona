@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — STICKY-SCROLLER-01 · A scrollport that cannot scroll
+**Shipped:** the session and post-run headers actually pin now, and 210px of dead ground below every screen becomes 90.
+**Dev learning:** `position: sticky` resolves against the nearest ancestor with `overflow` other than `visible` — and that includes an ancestor that can never scroll. Four screens had `min-height: 100%; overflow-y: auto` inside the real scroller. `min-height` is not a height, so they could never overflow, so they never moved, so the headers pinned to nothing. The three screens where the idiom was deliberate all say `height: 100dvh`; someone copied the pattern minus the one declaration that made it work, and nothing in the name distinguished them.
+**Product/creator learning:** the founder asked for a sticky header on the session screen. I built it on Plan and Coach, classified his screen as "a different family, out of scope", and told him so in a table. The family call was defensible and the scoping was still wrong — he asked for a thing on a screen and I shipped it on two other screens.
+**AI-building learning:** the same bug was in code I had written ninety minutes earlier. My scroll-container walk took the nearest `overflow-y: auto`, which is what the CSS spec uses for sticky, so it looked right. It worked on Plan and Coach purely because neither has the inert wrapper — MeScreen does. My browser verification had used a container that really scrolled. Fourth time in this repo that my probe could not reach the failing state.
+**The honest bit:** the spacing gate had both dead paddings as *declared exclusions*, with the reason "scroll-container bottom clearance for the fixed tab bar." Neither half was true — they were not scroll containers and the clearance is owned elsewhere. A wrong reason in an exclusion list is worse than no exclusion, because it reads as examined and everyone skips it. It had been skipped every time the file was touched.
+**Hook material:** the header had been declaring itself sticky since June and was -800px off-screen. Nothing threw, nothing logged, and the only symptom was a header scrolling away — which is exactly what a non-sticky header does.
+**Postable?:** yes
+
 ## 2026-09-26 — SCREEN-HEADER-01 · The guard whose remedy was unavailable
 **Shipped:** the tab-root header gets one owner shared by the app and the website, and pins on the two screens whose content keeps referring to what it names.
 **Dev learning:** `realComponents.test.ts` exists to stop marketing stills drifting from the app, and its whole remedy is "import the real component." The component was a private function in `DashboardClient`, so the website hand-copied it — and the copy's comment said "Same sizes, same tokens" while the app pinned `var(--font-ui)` on both lines and the copy pinned neither. A guard whose fix is unavailable is not a guard; it just relocates the blame.

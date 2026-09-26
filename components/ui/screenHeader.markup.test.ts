@@ -58,27 +58,23 @@ const SRC   = new Map(FILES.map(f => [f, fs.readFileSync(f, 'utf8')]))
  * this owner's. A SET, not a count — a count passes when one disappears and a
  * new one arrives.
  *
- * 🥇 THE DERIVED POPULATION FOUND TWO OF THESE FOUR THAT I HAD NOT ACCOUNTED
- * FOR, on its first run. I had written `= 2` from the two I knew about; walking
- * the tree returned four, including one on the WEBSITE. That is the whole
- * argument for deriving the set rather than typing it.
+ * 🥇 THE DERIVED POPULATION FOUND TWO OF THESE THAT I HAD NOT ACCOUNTED FOR on
+ * its first run, including one on the WEBSITE. I had typed `= 2`; walking the
+ * tree returned four. That is the whole argument for deriving the set.
  *
- * ⚠️ A DECLARED REASON IS NOT A FIXED PROBLEM. `BACK-HEADER-OWNER-01` is filed
- * against the first two: 13 back-arrow sites carry FIVE different title
- * treatments, and these two differ from each other (16px/700 vs 20px/800).
+ * 🔴 AND THE TWO PUSHED-SCREEN HEADERS HAVE LEFT THIS LIST — because they were
+ * never sticky. They carried `position: sticky; top: 0` inside a wrapper that
+ * declared `overflow-y: auto` with `min-height: 100%`, which is a scrollport
+ * that can never scroll: measured at **-800px after an 800px scroll**. They now
+ * share `.pinned-chrome` and `useScrolledContainer` with this owner. Their
+ * TYPOGRAPHY still diverges (5 treatments across 13 sites) and that is
+ * `BACK-HEADER-OWNER-01`, a ruling rather than a sweep.
  */
 const NOT_THIS_OWNER: Record<string, string> = {
-  'app/dashboard/DashboardClient.tsx:12966':
-    'PUSHED-screen header (Session detail) — back arrow + eyebrow + title + type chip. A ' +
-    'different family; `BackButton.tsx` and design-rulings.md:858 both record that ' +
-    'conflating the two is a RETRACTED finding. Filed as BACK-HEADER-OWNER-01.',
-  'app/dashboard/DashboardClient.tsx:13488':
-    'PUSHED-screen header (Post-run). Same family as above, and NOT a twin of it — ' +
-    'eyebrow 700 vs 600, title 20px/800 vs 16px/700.',
   'components/marketing/SiteHeader.tsx:91':
-    'The WEBSITE\'s own chrome: wordmark + section nav, not a screen title. It is a ' +
-    'different object and stays its own. ⚠️ It does carry its edge PERMANENTLY where the ' +
-    'app header now reveals one on scroll — filed as SITE-HEADER-EDGE-01.',
+    'The WEBSITE\'s own chrome: wordmark + section nav, not a screen title. A different ' +
+    'object, and it stays its own. \u26a0\ufe0f It carries its edge PERMANENTLY where the app now ' +
+    'reveals one on scroll — filed as SITE-HEADER-EDGE-01.',
   'app/wizard-preview/page.tsx:48':
     'Internal dev harness toolbar at /wizard-preview. Not a runner-facing surface.',
 }
@@ -168,8 +164,11 @@ describe('SCREEN-HEADER-01', () => {
     // both grounds on this palette (best ~10 levels), the border does 30 and 32.
     // The header reuses `--nav-pill-edge` so "this chrome has lifted off the
     // page" has ONE answer rather than two that drift.
-    const st = rule('.screen-header--sticky')
-    expect(st, '.screen-header--sticky missing from globals.css').not.toBe('')
+    // ⚠️ THE RULE MOVED AND THIS ARM FOLLOWED IT rather than being dropped. The
+    // behaviour is shared with the two pushed-screen headers now, so it lives on
+    // `.pinned-chrome` — the families differ in TYPE, not in what pinning does.
+    const st = rule('.pinned-chrome')
+    expect(st, '.pinned-chrome missing from globals.css').not.toBe('')
     expect(st, 'opaque — a translucent header was measured invisible on this palette')
       .toMatch(/background:\s*var\(--bg\)/)
     expect(st, 'a fill cannot separate from both grounds; do not reintroduce one')
@@ -177,7 +176,7 @@ describe('SCREEN-HEADER-01', () => {
     // The border exists at all times and starts transparent, so the header's
     // height cannot jump by 1px on the first scroll event.
     expect(st).toMatch(/border-bottom:\s*1px solid transparent/)
-    expect(rule('.screen-header--scrolled'), 'the edge must be the nav\'s token, not a new literal')
+    expect(rule('.pinned-chrome--scrolled'), 'the edge must be the nav\'s token, not a new literal')
       .toMatch(/border-bottom-color:\s*var\(--nav-pill-edge\)/)
   })
 
@@ -187,13 +186,13 @@ describe('SCREEN-HEADER-01', () => {
     expect(withSub).toContain('screen-header__sub')
     expect(bare, 'no subtitle means no empty element taking up space').not.toContain('screen-header__sub')
     // Unpinned by default: stickiness is opt-in per the ruling.
-    expect(bare).not.toContain('screen-header--sticky')
+    expect(bare).not.toContain('pinned-chrome')
     expect(renderToStaticMarkup(React.createElement(ScreenHeader, { title: 'Your plan', sticky: true })))
-      .toContain('screen-header--sticky')
+      .toContain('pinned-chrome')
     // ⚠️ SSR renders the UN-scrolled state, which is correct: a header that
     // arrived with an edge already drawn would be wrong at the top of the page.
     expect(renderToStaticMarkup(React.createElement(ScreenHeader, { title: 'Your plan', sticky: true })))
-      .not.toContain('screen-header--scrolled')
+      .not.toContain('pinned-chrome--scrolled')
   })
 
   it('🔴 ui-patterns\' documented type is what actually renders', () => {
