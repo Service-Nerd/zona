@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-26 — NAV-EDGE-01 · The variable I spent four rounds not changing
+**Shipped:** the floating nav pill's border goes from ink 8% to ink 14%, as a nav-owned token.
+**Dev learning:** the gate asserts a RELATION, not a value — same ink as `--line`, strictly greater alpha — because a literal `0.14` would pass just as happily if someone re-pointed the class at `--line`, which is the only way this actually breaks. Three mutations, each verified to have LANDED before its result was read (I shipped a falsification earlier this week that printed 0 failures because the mutation never applied, and a green mutation run is indistinguishable from a broken experiment unless you check).
+**Product/creator learning:** the founder said *"i like 14% love it"* on the first look. He had said *"I don't see any difference"* to every previous comparison. Same person, same screen, same palette — the difference was which variable I put on the slider.
+**AI-building learning:** I ran four sittings tuning the pill's FILL. The measurement that killed it — `--bg` sits between white and any AA-safe darker tint, so no fill separates from both grounds — also contained the answer, sitting in the same table: the BORDER separates by 17 and 18 levels against both. I had computed the winning number while arguing about the losing one, four times, and only wrote it down when I ran out of fills.
+**The honest bit:** every A/B I built compared two values of the variable that cannot move, and in all of them the variable that works was IDENTICAL on both pills. The founder kept telling me he could not see a difference, and he was reporting the truth about my experiment rather than about his eyes.
+**Hook material:** four rounds on the fill, one round on the border. The fill's best case is 10 levels of separation; the border's is 30.
+**Postable?:** yes
+
 
 ## 2026-09-26 — NAV-TRANSLUCENT reverted · four rounds tuning the variable that could not move
 **Shipped:** The nav is opaque again. The preview now A/Bs the border instead.

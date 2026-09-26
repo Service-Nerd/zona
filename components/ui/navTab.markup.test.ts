@@ -141,6 +141,36 @@ describe('NAV-SLIM-01', () => {
     expect(rule('.nav-tab'), 'a faded label fails AA').not.toMatch(/opacity/)
   })
 
+  it('🔴 NAV-EDGE-01 — the edge is STRONGER than a standard line, and stays that way', () => {
+    // 📐 WHY THIS ARM EXISTS AND THE TINT ONES DID NOT SURVIVE. Four rounds went
+    // into the pill's FILL and none of them could be seen, because `--bg` sits
+    // between white and any AA-safe darker tint: the best a fill manages is 10
+    // levels against the page ground and 8 against a card. The BORDER does 17
+    // and 18 at 8%, against both. The founder picked 14% off the slider.
+    //
+    // ⚠️ IT ASSERTS THE RELATION, NOT THE NUMBER. A literal `0.14` here would
+    // pass just as well if someone re-pointed the class at `--line`, and the
+    // whole failure mode is a silent revert to the standard hairline. So it
+    // parses both alphas and compares them.
+    const f = rule('.nav-bar--floating')
+    expect(f, 'the edge must come from a token, never a literal')
+      .toMatch(/border:\s*1px solid var\(--nav-pill-edge\)/)
+
+    const alpha = (name: string) => {
+      const m = CSS.match(new RegExp(`--${name}:\\s*rgba\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*([\\d.]+)\\s*\\)`))
+      expect(m, `--${name} must be declared as an rgba() so its alpha is readable`).not.toBeNull()
+      return { rgb: [m![1], m![2], m![3]].join(','), a: parseFloat(m![4]) }
+    }
+    const edge = alpha('nav-pill-edge')
+    const line = alpha('line')
+
+    // Same ink, different weight — a differently-COLOURED edge would be a
+    // palette change and Silvanto's veto, not a dial.
+    expect(edge.rgb, 'the edge is the same ink as every other line').toBe(line.rgb)
+    expect(edge.a, `the pill's edge (${edge.a}) must be stronger than --line (${line.a})`)
+      .toBeGreaterThan(line.a)
+  })
+
   it('🔴 the nav publishes its OCCLUSION, not its element height', () => {
     // 🔴 THE ASSUMPTION THE PILL BREAKS. `bottomNavH` fed `Sheet`'s maxHeight and
     // the scroll container's reserve by reading

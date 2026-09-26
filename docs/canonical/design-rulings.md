@@ -2128,11 +2128,56 @@ works was identical in every comparison.**
 
 **Re-open only if the palette gains a ground that is not near-white.**
 
-#### 🔜 NAV-EDGE-01 — open, in the preview
+#### ✅ NAV-EDGE-01 — SHIPPED at 14% (2026-09-26)
 
-The honest lever is the edge. `--line` is ink at **8%**; `/nav-preview` now A/Bs it against a
-slider (8→30%). 12% gives 26/27 levels, 14% gives 30/32. **Founder to pick the number** — unlike
-the tint, this one is visible.
+The honest lever is the edge. `--line` is ink at **8%**; `/nav-preview` A/B'd it against a slider
+(8→30%) and the founder picked **14%**: *"i like 14% love it."* Unlike the tint, **he saw it on
+the first look** — 30 levels over the page ground and 32 over a card, against 17/18 at 8%.
+
+| | 8% (`--line`) | **14% (`--nav-pill-edge`)** |
+|---|---|---|
+| vs page ground | 17 lv | **30 lv** |
+| vs a white card | 18 lv | **32 lv** |
+
+⚠️ **Deliberately NOT `--line-strong`, which is already 15% and two levels away.** That token
+means *"stronger divider"* and the scrollbar thumb reads it; sharing it would move the nav's edge
+whenever someone tunes a divider. The pill's geometry has now been dialled five times, which is
+why it owns its tokens.
+
+🔒 **The gate asserts the RELATION, not the number** (`navTab.markup.test.ts`): same ink as
+`--line`, strictly greater alpha. A literal `0.14` would survive the actual failure mode, which is
+a silent revert to the standard hairline. Falsified three ways — class re-pointed at `--line`,
+token weakened to 8%, edge painted moss — each mutation verified to have landed, each turning
+exactly one arm red.
+
+📐 **Cost of the four rounds that preceded it, stated once:** the fill was tuned in four separate
+sittings and could never have worked, while the variable that does work was **identical in every
+comparison shown to the founder**.
+
+### 🔜 SCREEN-HEADER-01 — RULED, NOT BUILT, AND UNTIL NOW NOT RECORDED
+
+🔴 **This row exists because the ruling had no record at all.** It was ruled in conversation on
+2026-09-25 (**SHIP WITH AMENDMENT**), the build was deferred, and a repo-wide search on 2026-09-26
+found the id **nowhere** — not here, not in the backlog, not in the roadmap. **This is the exact
+class `/ship` § THE DOCUMENTS names: a ruling that edits no doctrine file trips no guard.** Read
+what follows as a reconstruction from the sitting, not as a verified quotation of it.
+
+**The principle ruled:** *a header persists when the content below it keeps referring to something
+the header names.* Position does not qualify a header; reference does.
+
+**The amendment:** a `ScreenHeader` primitive owns all **12** header rows. Two of them
+(`DashboardClient:12969` and `:13491`) are already sticky and are hand-rolled twins — the same
+seven declarations typed twice. Only a **qualifying subset** becomes sticky, and the per-screen
+list goes to the founder before anything is pinned.
+
+⚠️ **The literal brief does not survive contact and the founder has not yet ruled on the
+correction.** *"Translucent only when scrolling"* means that at a scroll stop mid-page the header
+goes transparent and collides with the content beneath it. The correct behaviour is **transparent
+at scroll top, material whenever scrolled** — state, not motion.
+
+⚠️ **And NAV-EDGE-01 above changes this item's premise:** a translucent header was to match a
+translucent nav, and the nav is opaque with an edge. **The header should be re-scoped as opaque +
+`--nav-pill-edge`'s sibling treatment before any seat speaks again.**
 
 ### BUTTON-SYSTEM-01 — SHIP WITH AMENDMENT (4)
 

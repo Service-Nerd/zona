@@ -8,9 +8,12 @@
 // the ground and 18 over a card, against BOTH, which is roughly twice what the
 // best fill can do.** The fill was never what made the pill read as an object.
 //
+// ✅ SETTLED 2026-09-26: the founder picked **14%** off this slider and it
+// shipped. `NOW` below is that shipped value, not the old 8% hairline — a
+// preview whose baseline has gone stale is worse than no preview.
+//
 // ⚠️ SHIPS NOTHING. Both pills are drawn inline rather than importing
-// `.nav-bar--floating`, so playing with it cannot move the app. The app's nav is
-// opaque with the border at its current 8%.
+// `.nav-bar--floating`, so playing with it cannot move the app.
 
 'use client'
 
@@ -59,7 +62,7 @@ function Pill({ alpha, bottom, badge }: { alpha: number; bottom: number; badge: 
 }
 
 export default function NavPreview() {
-  const [alpha, setAlpha] = useState(0.14)
+  const [alpha, setAlpha] = useState(0.20)
 
   return (
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
@@ -79,7 +82,8 @@ export default function NavPreview() {
                  onChange={e => setAlpha(parseFloat(e.target.value))} style={{ flex: 1 }} />
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--mute)', marginTop: 4 }}>
-          NOW is 8% — today&rsquo;s <code>--line</code>. Slide until the lower pill reads the way you want it.
+          NOW is <strong>14%</strong> — <code>--nav-pill-edge</code>, the shipped value. Slide the lower
+          pill if it ever needs dialling again.
         </div>
       </div>
 
@@ -100,7 +104,7 @@ export default function NavPreview() {
         <div style={{ height: 180 }} />
       </div>
 
-      <Pill alpha={0.08}  bottom={86} badge="NOW" />
+      <Pill alpha={0.14}  bottom={86} badge="NOW" />
       <Pill alpha={alpha} bottom={12} badge="NEW" />
     </div>
   )

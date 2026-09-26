@@ -1215,7 +1215,25 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
    *   home indicator : max(12, 34 - 13) = 21  ✅ matches the reference
    *   no indicator   : max(12, 0 - 13)  = 12  ✅ */
   bottom: max(var(--nav-pill-lift), calc(env(safe-area-inset-bottom, 0px) - var(--nav-pill-tuck)));
-  border: 1px solid var(--line);
+  /* 🔴 THE EDGE IS THE ONLY LEVER THAT WORKS ON THIS PALETTE, and four rounds
+   * were spent on the one that does not. Measured against both grounds:
+   *
+   *   fill  — best any single fill manages is 10 levels vs the page ground and
+   *           8 vs a white card, because `--bg` sits BETWEEN white and any
+   *           AA-safe darker tint. The founder, shown an A/B: "I don't see any
+   *           difference." He was right.
+   *   edge  — 17 levels over the ground and 18 over a card AT 8%, against both.
+   *
+   * So the pill never read as an object because of its fill; it read because of
+   * its line. Founder picked 14% off the `/nav-preview` slider (30 levels over
+   * the ground, 32 over a card, roughly double the 8% it replaces).
+   *
+   * ⚠️ NOT `--line-strong`, WHICH IS ALREADY 15% AND TWO LEVELS AWAY. That
+   * token means "stronger divider" and the scrollbar thumb reads it; sharing it
+   * would make the nav's edge move whenever someone tunes a divider. This is
+   * the fifth time the pill's geometry has been dialled, which is why it owns
+   * its tokens. */
+  border: 1px solid var(--nav-pill-edge);
   /* ⚠️ THE RADIUS IS A TOKEN BECAUSE THE FOUNDER HAS ASKED TWICE. 📐 Measured:
    * Miles's pill — the reference he liked — IS a stadium too. Its curve insets
    * 18.7pt two points below the top edge; a stadium at its 56pt height would
@@ -1260,4 +1278,7 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   --nav-pill-lift: 12px;
   --nav-pill-tuck: 13px;
   --nav-pill-radius: 999px;
+  /* Ink at 14%. `--line` is the same ink at 8%; the gate asserts this is the
+     stronger of the two, so a revert to `--line` fails the build. */
+  --nav-pill-edge: rgba(26,26,26,0.14);
 }

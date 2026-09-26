@@ -795,7 +795,8 @@ single owner**; `NAV_ITEMS` in `DashboardClient` is the single list.
 - Height: **`--nav-h: 60px`** + safe area inset
 - **The bar contributes NO vertical padding. The tab is the full 60px.**
 - **It is a FLOATING PILL** (`.nav-bar--floating`): inset `--nav-pill-inset` each side, lifted
-  `--nav-pill-lift` off the bottom edge, `999px` radius, **opaque**, `--shadow-lifted`.
+  `--nav-pill-lift` off the bottom edge, `--nav-pill-radius` (999px), **opaque**,
+  `--shadow-lifted`, edge **`--nav-pill-edge`** (ink at 14%, NOT `--line`).
 
 > 🟢 **NAV-FLOAT-01 — ruled SHIP twice, and recorded as a preference the board is honouring
 > rather than a finding** (Sierra's distinction). Measured, it gives back no vertical space and
@@ -811,6 +812,20 @@ single owner**; `NAV_ITEMS` in `DashboardClient` is the single list.
 > the ground changes materially, or a device shows the per-frame cost is negligible.**
 > `NAV-COLLAPSE-01` is **killed permanently** — the founder rejected it and its own mock
 > falsified its rationale.
+>
+> 🔴 **THE EDGE IS THE ONLY LEVER THIS PALETTE HAS, AND FOUR ROUNDS WENT INTO THE OTHER ONE**
+> (`NAV-EDGE-01`, 2026-09-26). `--bg` sits BETWEEN white and any AA-safe darker tint, so a fill
+> lighter than the ground vanishes on cards and a darker one vanishes on the ground: the best any
+> single fill manages is **10 levels vs the ground and 8 vs a card**, and the founder, shown an
+> A/B of two materials, said *"I don't see any difference."* The **border** does **17 and 18 at
+> 8%** — against both, roughly double. It is now **14%** (30 / 32 levels), picked off the
+> `/nav-preview` slider. **The pill never read as an object because of its fill.**
+>
+> ⚠️ **It is NOT `--line-strong`, which is already 15% and two levels away.** That token means
+> "stronger divider" and the scrollbar thumb reads it; sharing it would move the nav's edge
+> whenever someone tunes a divider. Guarded by `navTab.markup.test.ts`, which asserts the
+> **relation** (same ink, stronger alpha than `--line`) rather than the number — a literal `0.14`
+> would survive the actual failure mode, which is a silent revert to the hairline.
 >
 > 🔴 **THE FLOAT GAP IS NOT PADDING, AND THAT BREAKS AN ASSUMPTION.** For a flush bar, the
 > element's height WAS the band it occluded, and `bottomNavH` read

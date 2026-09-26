@@ -28,6 +28,34 @@ already decided what it is.
 ---
 
 
+### `SCREEN-HEADER-01` — ruled, not built, and until 2026-09-26 not recorded anywhere 🧭 DESIGN BOARD
+
+🔴 **The record failure is the headline.** Ruled **SHIP WITH AMENDMENT** in conversation on
+2026-09-25; a repo-wide grep the next day found the id in **zero files**. A ruling that edits no
+doctrine file trips no guard — `/ship` § THE DOCUMENTS names exactly this class. Now carries a row
+in `design-rulings.md`; **read both as a reconstruction of the sitting, not a quotation of it.**
+
+**The principle ruled:** *a header persists when the content below it keeps referring to something
+the header names.* Reference qualifies a header, not position.
+
+**The build:** a `ScreenHeader` primitive owning all **12** header rows. Two are already sticky
+and are hand-rolled twins — `DashboardClient:12969` and `:13491`, the same seven declarations
+typed twice (`position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 10` + a
+`1px solid var(--line)` bottom + identical padding and gap). Only a qualifying subset gets pinned.
+
+⚠️ **TWO THINGS MUST GO BACK TO THE FOUNDER BEFORE ANY CODE.**
+1. **The per-screen qualifying list.** My read: Session definitely, Plan probably, the other ten
+   not. His call, not mine — pinning a header costs vertical space on a phone.
+2. **The literal brief does not survive contact.** *"Translucent only when scrolling"* means that
+   at a scroll stop mid-page the header goes transparent and collides with the content under it.
+   Correct behaviour is **transparent at scroll top, material whenever scrolled** — state, not
+   motion. He has not ruled on that correction.
+
+⚠️ **`NAV-EDGE-01` changed this item's premise on 2026-09-26.** The header was to be translucent
+*to match a translucent nav*, and the nav is now opaque with a 14% edge. **Re-scope to opaque +
+the same edge treatment before the board sits again**, or the sitting will rule on a dead premise
+— which this register exists to prevent.
+
 ### `TAP-TARGET-FLOOR-01` — 18 hand-rolled controls are below the 44px tap floor, and the check cannot see them ⚙️ NO BOARD
 **Found 2026-09-25**, while converting nine more CTAs onto `Button`.
 
