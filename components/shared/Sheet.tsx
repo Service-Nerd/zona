@@ -153,6 +153,10 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
     // The panel's laid-out bottom edge in viewport coords. Derived, never
     // measured: `getBoundingClientRect()` returns the TRANSFORMED box, and the
     // panel is already transformed when this runs.
+    // ⚠️ MUST MATCH `marginBottom` ON THE PANEL EXACTLY. These are two
+    // statements of the same number and they disagreed on the first cut, which
+    // is the defect class this repo keeps recording. Derived from the same
+    // expression so they cannot drift.
     const bottomEdge = window.innerHeight - Math.max(0, navH - PILL_OVERLAP)
     const anchor = src ? src.top + src.height / 2 : pill.top
     const sy = Math.max(2 / Math.max(h, 1), 0.01)
@@ -173,7 +177,8 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
    * is the whole guard, and it is why this is safe on a scrollable panel.
    */
   const dragStartY = useRef<number | null>(null)
-  const [dragY, setDragY] = useState(0)
+  /** Imperative: a state-driven transform is what the render used to fight. */
+  const dragY = useRef(0)
   const DISMISS_PX = 90
 
   const onTouchStart = useCallback((e: React.TouchEvent) => {
@@ -190,16 +195,28 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
     if (dragStartY.current === null) return
     const dy = e.touches[0]!.clientY - dragStartY.current
     // Downward only: an upward pull is a scroll, not a dismiss.
-    setDragY(dy > 0 ? dy : 0)
+    const v = dy > 0 ? dy : 0
+    dragY.current = v
+    const panel = panelRef.current
+    if (panel) {
+      panel.style.transition = 'none'
+      panel.style.transform = `translateY(${v}px)`
+    }
   }, [])
 
   const onTouchEnd = useCallback(() => {
     if (dragStartY.current === null) return
-    const dy = dragY
+    const dy = dragY.current
     dragStartY.current = null
-    setDragY(0)
-    if (dy > DISMISS_PX) closeRef.current()
-  }, [dragY])
+    dragY.current = 0
+    if (dy > DISMISS_PX) { closeRef.current(); return }
+    // Spring back. Imperative, for the same reason the enter is.
+    const panel = panelRef.current
+    if (panel) {
+      panel.style.transition = reduce.current ? 'none' : 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)'
+      panel.style.transform = 'translateY(0px) scaleY(1)'
+    }
+  }, [])
 
   const closeRef = useRef<() => void>(() => {})
 
@@ -208,6 +225,14 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
     if (closingRef.current) return
     closingRef.current = true
     if (reduce.current) { onCloseRef.current(); return }
+    // 🔴 RETRACTS TO THE SAME PLACE IT CAME FROM. The founder's words were "goes
+    // back into it", and an exit that slides to the bottom while the entry grew
+    // from a card is two different stories about one object.
+    const panel = panelRef.current
+    if (panel) {
+      panel.style.transition = `transform ${EXIT_MS}ms ${ENTER_EASE}`
+      panel.style.transform = closedTransform()
+    }
     setShown(false)
     window.setTimeout(() => onCloseRef.current(), EXIT_MS)
   }, [])
@@ -329,8 +354,16 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           // navH is still consumed HERE even though the panel covers the nav:
           // it keeps a tall sheet's own content out of the home-indicator strip.
-          // The foot tucks BEHIND the pill so there is no seam between them.
-          marginBottom: `-${PILL_OVERLAP}px`,
+          /* 🔴 THE PANEL RESTS ON THE PILL, NOT ON THE VIEWPORT FLOOR — and the
+           * first cut had this backwards. `margin-bottom: -26px` on a
+           * `align-items: flex-end` container pushed the panel 26px BELOW the
+           * screen edge, so it covered the pill completely instead of tucking
+           * its foot behind it. Measured: panel bottom 838 against a pill top of
+           * 738.
+           *
+           * It must be LIFTED by the nav's height and then pushed back down by
+           * the overlap: bottom = pill.top + PILL_OVERLAP. */
+          marginBottom: `${Math.max(0, navH - PILL_OVERLAP)}px`,
           maxHeight: `min(${maxHeightVh}vh, calc(100vh - ${navH}px - 24px))`,
           // 🔴 THE PANEL NO LONGER SCROLLS — ITS BODY DOES (SHEET-CLOSE-PIN-01).
           // The close was `position: absolute` inside the scrolling panel, and
@@ -349,10 +382,22 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
           // is the scrolling element rather than the panel.
           overflow: 'hidden',
           outline: 'none',
-          transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)',
-          // No transition WHILE dragging: the panel must track the finger, then
-          // spring back or dismiss when it is released.
-          transition: dragY > 0 ? 'none' : (transition ?? 'transform 0.28s cubic-bezier(0.32, 0.72, 0, 1)'),
+          /* 🔴 NO `transform` AND NO `transition` HERE, AND THIS IS THE DEFECT
+           * THAT SHIPPED. `SHEET-ORIGIN-01` added an imperative enter animation
+           * in a layout effect — and left these two declarative lines in place.
+           * The effect painted the closed frame at the tapped control, then
+           * `setShown(true)` re-rendered, React re-applied the `style` prop, and
+           * BOTH the transform and the 420ms curve were overwritten with
+           * `translateY(0)` and the old 0.28s bottom slide.
+           *
+           * So the origin was computed, painted for one frame, and then thrown
+           * away every time. The founder: *"pop ups are still coming from the
+           * bottom of screen rather than top of pill"* — on a build where every
+           * new value was verifiably in the production bundle.
+           *
+           * ⚠️ **A declarative style prop and an imperative style write cannot
+           * both own a property. React wins, on every render.** All three
+           * phases — enter, drag, exit — are imperative now. */
         }}
       >
         {/* Drag pill — and as of 2026-09-25 it actually drags.

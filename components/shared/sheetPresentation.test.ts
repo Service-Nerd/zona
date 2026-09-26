@@ -84,8 +84,19 @@ describe('Sheet primitive is the single owner of sheet presentation', () => {
       expect(src).toMatch(/width: `calc\(100% - \$\{PILL_INSET \* 2\}px\)`/)
       expect(src, 'the pill maxes at 448, so a wider sheet would not match it')
         .toMatch(/Math\.min\(maxWidth, PILL_MAXW\)/)
-      expect(src, 'the foot tucks behind the pill so no seam shows')
-        .toMatch(/marginBottom: `-\$\{PILL_OVERLAP\}px`/)
+      // 🔴 THE PANEL RESTS ON THE PILL, NOT ON THE VIEWPORT FLOOR. The first cut
+      // wrote `margin-bottom: -26px`, which on an `align-items: flex-end`
+      // container pushed the panel 26px BELOW the screen edge and covered the
+      // pill entirely — measured, panel bottom 838 against a pill top of 738.
+      // It must be lifted by the nav height and pushed back by the overlap.
+      expect(src, 'the foot tucks behind the pill; it does not sit under the screen')
+        .toMatch(/marginBottom: `\$\{Math\.max\(0, navH - PILL_OVERLAP\)\}px`/)
+      // ⚠️ The resting position and the transform's idea of it are TWO
+      // STATEMENTS OF ONE NUMBER, and they disagreed on the first cut. Same
+      // expression, both places, or the sheet grows from the wrong point.
+      const occurrences = (src.match(/Math\.max\(0, navH - PILL_OVERLAP\)/g) ?? []).length
+      expect(occurrences, 'the rest position and `closedTransform` must derive it identically')
+        .toBeGreaterThanOrEqual(2)
       expect(src, 'a pill-width sheet is an object and carries the chrome edge')
         .toMatch(/var\(--chrome-edge\)/)
     })
@@ -123,6 +134,31 @@ describe('Sheet primitive is the single owner of sheet presentation', () => {
       expect(ms, 'ENTER_MS must be declared').not.toBeNull()
       expect(Number(ms![1]), 'below ~380 the 235ms travel half disappears again')
         .toBeGreaterThanOrEqual(380)
+    })
+
+    it('🔴 the RENDER does not own transform — React wins over an imperative write', () => {
+      // 🔴 THIS IS THE DEFECT THAT SHIPPED AND REACHED THE FOUNDER. The enter
+      // animation moved into a layout effect and these two declarative lines
+      // stayed:
+      //     transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)'
+      //     transition: dragY > 0 ? 'none' : 'transform 0.28s …'
+      // The effect painted the closed frame at the tapped control, `setShown`
+      // re-rendered, React re-applied the style prop, and BOTH the origin and
+      // the 420ms curve were overwritten with the old bottom slide. Every new
+      // value was verifiably in the production bundle and none of them ran.
+      //
+      // ⚠️ A declarative style prop and an imperative style write cannot both
+      // own a property. React wins, on every render.
+      const panel = src.slice(src.indexOf('ref={panelRef}'))
+      const style = panel.slice(panel.indexOf('style={{'), panel.indexOf('}}\n      >'))
+      expect(style, 'transform belongs to the effect now, in all three phases')
+        .not.toMatch(/(^|[^-\w])transform:/)
+      expect(style, 'so does the transition')
+        .not.toMatch(/(^|[^-\w])transition:/)
+      // …and all three phases must actually set it.
+      expect(src, 'enter').toMatch(/panel\.style\.transform = 'translateY\(0px\) scaleY\(1\)'/)
+      expect(src, 'drag').toMatch(/panel\.style\.transform = `translateY\(\$\{v\}px\)`/)
+      expect(src, 'exit retracts to the SAME origin').toMatch(/panel\.style\.transform = closedTransform\(\)/)
     })
 
     it('🔴 reduced motion still skips the whole thing', () => {

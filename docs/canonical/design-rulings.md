@@ -2418,6 +2418,51 @@ tap away.
 things. Measuring *that the origin is applied* is not the same as measuring *that it is visible*,
 and only one of those is the feature.
 
+#### 🔴 It shipped broken, and the reason is the most useful thing here
+
+**Founder:** *"Pop ups are still coming from the bottom of screen rather than top of pill."* — on a
+build where **every new value was verifiably in the production bundle.**
+
+`SHEET-ORIGIN-01` moved the enter animation into a layout effect and **left the declarative lines in
+place**:
+
+```
+transform: shown ? `translateY(${dragY}px)` : 'translateY(100%)'
+transition: dragY > 0 ? 'none' : 'transform 0.28s …'
+```
+
+The effect painted the closed frame at the tapped control; `setShown(true)` re-rendered; React
+re-applied the style prop and **overwrote both the origin and the 420ms curve with the old bottom
+slide.** The origin was computed, painted for one frame, and thrown away — every time.
+
+> ⚠️ **A declarative style prop and an imperative style write cannot both own a property. React
+> wins, on every render.** All three phases — enter, drag, exit — are imperative now.
+
+#### 🔴 AND THE PREVIEW COULD NEVER HAVE CAUGHT IT, BY CONSTRUCTION
+
+`/sheet-preview` drew its own panel inline, **deliberately**, so that *"playing with it cannot move
+the app"*. That decision is exactly why a broken build reached the founder: **I verified the COPY and
+shipped the ORIGINAL.**
+
+> ⚠️ **A preview that does not import the thing it previews is testing a different program.**
+
+It imports the real `Sheet` now, and publishes a measured `NavHeightProvider` — without which it fell
+back to 64px and rested 10px off the app's position. **A harness that differs from the app by a magic
+fallback is the same trap one level down.**
+
+#### 📐 Two geometry errors the numbers caught
+
+| | |
+|---|---|
+| `margin-bottom: -26px` | On an `align-items: flex-end` container this pushed the panel **26px BELOW the screen edge**, covering the pill entirely — measured bottom **838** against a pill top of **738**. Now `navH - PILL_OVERLAP` |
+| The same number, twice | The rest position and `closedTransform`'s idea of it were **two statements of one number and disagreed**. Both derive from one expression now, and a gate counts the occurrences |
+
+✅ **Verified on the real component:** rest bottom **764 = pill top + 26** · width **343 = the
+pill's** · radius 22 · edge `rgba(26,26,26,0.14)` · closed sliver lands on the **tapped card**.
+
+⚠️ **Two tests re-anchored, not relaxed** — a radius value the ruling changed, and the drag transform
+moving from declarative to imperative. Both still assert the same behaviour.
+
 ### LINK-HIERARCHY-01 — SHIP (4) · the screen argued with itself (2026-09-26)
 
 **Founder:** *"The buttons look too big/fat… the Run (Connect) above Log without activity is
