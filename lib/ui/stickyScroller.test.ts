@@ -50,7 +50,19 @@ describe('STICKY-SCROLLER-01', () => {
         const declaresScroll = /overflowY:\s*'(auto|scroll)'/.test(obj)
         if (!declaresScroll) continue
         // A real scroller is HEIGHT-CONSTRAINED. `min-height` is not a height.
-        const constrained = /(^|[^-\w])height:\s*'/.test(obj) || /maxHeight:\s*'/.test(obj) || /\bflex:\s*1\b/.test(obj)
+        //
+        // ⚠️ `inset` AND `top`+`bottom` COUNT, and the first cut of this check
+        // did not know that — it flagged `position: absolute; inset: '162px 0 0'`,
+        // which pins top AND bottom and is as constrained as an explicit height.
+        // Found when a new preview page tripped it hours after it shipped. A
+        // gate that cries wolf gets switched off, which this repo records as
+        // equivalent to having no gate.
+        const constrained =
+          /(^|[^-\w])height:\s*'/.test(obj) ||
+          /maxHeight:\s*'/.test(obj) ||
+          /\bflex:\s*1\b/.test(obj) ||
+          /\binset:\s*'/.test(obj) ||
+          (/\btop:\s*/.test(obj) && /\bbottom:\s*/.test(obj))
         if (!constrained) {
           offenders.push(`${path.relative(ROOT, f)}:${src.slice(0, m.index).split('\n').length} — ${obj.trim().slice(0, 90)}`)
         }

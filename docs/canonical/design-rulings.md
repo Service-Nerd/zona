@@ -2231,6 +2231,55 @@ MOTION goes bare at a scroll-stop mid-page. It is opaque, and keyed to **scrolle
 - **`SITE-HEADER-EDGE-01`** — `SiteHeader.tsx:91` carries its edge **permanently** where the app
   header now reveals one on scroll. The two surfaces now disagree about what a pinned header does.
 
+### SHEET-ORIGIN-01 — ⚠️ INSUFFICIENT EVIDENCE · preview built, nothing shipped (2026-09-26)
+
+**Founder:** *"I'd absolutely love it if all our pop-ups loaded as if they came out of the nav pill,
+then retracted back into it when closing. Would be great if we could make it wobble a little too.
+**I'd like to see it.**"*
+
+#### 🔴 The brief has a flaw, and only the alternative makes it visible
+
+**The runner never taps the nav pill.** They tap a session card, a chip, an "i" mark. A sheet that
+emerges from the pill is pretty and **attributes itself to a control the runner did not touch.**
+
+✋ **Silvanto:** *"Origin-anchored is right and the origin is wrong. A transition that names the
+wrong parent is a worse lie than no transition."*
+🏪 **Collins:** *"Take the harder one. Coming out of the thing you touched is the version a
+competitor won't build; coming out of the nav is a screensaver."*
+📱 **Wroblewski:** two conditions — **it must not delay input**, and the drag-to-dismiss gate must
+not fight the spring.
+🎓 **Sierra:** *"It doesn't make the runner better and it doesn't need to. I'd only object if the
+wobble becomes the app's personality — this brand's personality is that it tells you the truth."*
+
+✅ **Reduced motion is ALREADY handled** (`Sheet` sets `transition: 'none'` and shows instantly). I
+suspected a defect there and checked before saying so — there is none.
+
+#### ⚖️ Ruling — INSUFFICIENT EVIDENCE, build the preview
+
+`/sheet-preview`: **three origins** (bottom · pill · tap) × **three springs** (none · overshoot ·
+wobble) × a 220–700ms slider, over real cards with a real pill. **Nothing ships from it.**
+⛔ **Veto: none.** ↗️ **SLT: not required.**
+
+🔴 **AND THE PREVIEW WAS BROKEN THREE WAYS BEFORE IT WAS HONEST — every one found by reading
+numbers rather than watching it, because `document.hidden` is true in this pane and
+`requestAnimationFrame` never fires, so the animation could not be seen at all:**
+
+| | |
+|---|---|
+| 1 | `getBoundingClientRect()` returns the **TRANSFORMED** box, and the panel already carried `translateY(100%)` — every translate was 225px short |
+| 2 | Clearing `transform` before measuring **starts a 380ms transition to none**, so the rect read the same wrong number |
+| 3 | 🔴 **The origin never applied at all.** `panelRef.current` is `null` on the render where the closed transform is computed, so **all three variants silently fell back to today's bottom slide.** The preview looked like it worked |
+
+**Now verified by geometry:** pill shrinks to **343×62, the pill exactly**; tap to **343×79 against
+the card's 343×80**; both land on their origin's centre.
+
+⚠️ **TWO OF MY OWN GATES CAUGHT THE PREVIEW, AND ONE OF THEM WAS WRONG.** The 44px floor caught a
+**29px** segmented button — a real violation, fixed. `stickyScroller` flagged
+`position: absolute; inset: '162px 0 0'` as an unconstrained scrollport, **which it is not**: `inset`
+pins top AND bottom. **The gate I wrote this morning did not know that**, and a gate that cries wolf
+gets switched off. Widened to accept `inset` and `top`+`bottom`, and **falsified afterwards** so it
+still catches a genuinely unconstrained one.
+
 ### LINK-HIERARCHY-01 — SHIP (4) · the screen argued with itself (2026-09-26)
 
 **Founder:** *"The buttons look too big/fat… the Run (Connect) above Log without activity is
