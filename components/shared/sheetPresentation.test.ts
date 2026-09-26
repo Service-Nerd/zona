@@ -59,9 +59,82 @@ describe('Sheet primitive is the single owner of sheet presentation', () => {
     // Same doctrine as A4: the safe-area inset is a reserved strip, ADDED, never
     // spent as content padding. Without this the close bar the standing rule
     // puts at the panel's bottom sits under the home bar.
-    const i = src.indexOf("borderRadius: '20px 20px 0 0'")
-    expect(i).toBeGreaterThan(-1)
-    expect(src.slice(i, i + 700)).toContain("paddingBottom: 'env(safe-area-inset-bottom, 0px)'")
+    // ⚠️ RE-ANCHORED, NOT RELAXED (SHEET-ORIGIN-01). This keyed off
+    // `borderRadius: '20px 20px 0 0'` — a VALUE the Design Board then changed to
+    // 22px when sheets became pill-width objects rather than drawers. The rule
+    // being asserted is the safe-area padding, which is unchanged; only the
+    // landmark moved. Anchored on the panel's shadow instead, which is not a
+    // number anyone is likely to rule on.
+    const i = src.indexOf("boxShadow: '0 -8px 24px")
+    expect(i, 'the panel block has moved — re-anchor this test').toBeGreaterThan(-1)
+    expect(src.slice(i, i + 900)).toContain("paddingBottom: 'env(safe-area-inset-bottom, 0px)'")
+  })
+
+  /**
+   * SHEET-ORIGIN-01 — six rounds of founder feedback, now in the primitive.
+   * "Pop-ups should come out of the nav pill, be the width of the pill, and go
+   * back into it." Two corrections came from the preview and both are load-bearing.
+   */
+  describe('SHEET-ORIGIN-01', () => {
+    it('🔴 the panel is PILL WIDTH, which is what makes the entry readable', () => {
+      // 📐 At pill width the entry transform's HORIZONTAL scale is exactly 1, so
+      // the panel stops squashing its own text and needs no counter-fade. The
+      // whole animation becomes one number. Full-width was the reason rounds 1-3
+      // looked like "a squashed panel un-squashing".
+      expect(src).toMatch(/width: `calc\(100% - \$\{PILL_INSET \* 2\}px\)`/)
+      expect(src, 'the pill maxes at 448, so a wider sheet would not match it')
+        .toMatch(/Math\.min\(maxWidth, PILL_MAXW\)/)
+      expect(src, 'the foot tucks behind the pill so no seam shows')
+        .toMatch(/marginBottom: `-\$\{PILL_OVERLAP\}px`/)
+      expect(src, 'a pill-width sheet is an object and carries the chrome edge')
+        .toMatch(/var\(--chrome-edge\)/)
+    })
+
+    it('🔴 it grows from the control the runner PRESSED, not from the pill', () => {
+      // The runner never taps the nav pill — they tap a card, a chip, an "i"
+      // mark. Growing from the pill attributes the sheet to a control they did
+      // not touch. The pill's top edge is the FALLBACK, not the default.
+      expect(src).toMatch(/lastPressedRect\(\)/)
+      expect(src, 'and the panel must actually be measured, not guessed')
+        .toMatch(/closedTransform/)
+    })
+
+    it('🔴 the curve TRAVELS before it bounces — this is the round-6 fix', () => {
+      // 📐 A front-loaded spring reaches 90% in 16% of its duration: at 360ms the
+      // journey finished in 57ms and the rest was oscillation in place, so the
+      // founder reported "it still comes from the bottom" about a sheet that
+      // provably grew from his own tap. The origin was real and IMPERCEPTIBLE.
+      //
+      // ⚠️ THE RULE: on an origin-anchored transition, optimise TIME SPENT
+      // TRAVELLING, not time to arrival. This curve is 90% at 56% of duration.
+      expect(src).toMatch(/ENTER_EASE\s*=\s*'cubic-bezier\(0\.65, 0, 0\.35, 1\.55\)'/)
+      // ⚠️ COMMENTS STRIPPED FOR THE NEGATIVE. `Sheet.tsx`'s own comment quotes
+      // the old curve to explain why it went — and the first cut of this arm
+      // matched that prose and failed. **Fifth time in this repo a guard has
+      // fired on the documentation of the defect it guards**, and a guard that
+      // does that gets switched off.
+      const blank = (m: string) => m.replace(/[^\n]/g, '')
+      const code = src
+        .replace(/\/\*[\s\S]*?\*\//g, blank)
+        .replace(/^[ \t]*\/\/.*$/gm, '')
+      expect(code, 'the front-loaded curve is what caused the report')
+        .not.toMatch(/cubic-bezier\(0\.18,/)
+      const ms = src.match(/ENTER_MS\s*=\s*(\d+)/)
+      expect(ms, 'ENTER_MS must be declared').not.toBeNull()
+      expect(Number(ms![1]), 'below ~380 the 235ms travel half disappears again')
+        .toBeGreaterThanOrEqual(380)
+    })
+
+    it('🔴 reduced motion still skips the whole thing', () => {
+      // The animation got more elaborate; the escape hatch must not get weaker.
+      expect(src).toMatch(/if \(reduce\.current\) \{ setShown\(true\); return \}/)
+    })
+
+    it('🔴 the release does not depend on rAF alone', () => {
+      // rAF does not fire while the document is hidden, which would leave the
+      // scrim up and the body scroll-locked with no panel.
+      expect(src).toMatch(/setTimeout\(release, \d+\)/)
+    })
   })
 
   it('a sheet covers the nav; it does NOT become a screen (Silvanto, binding)', () => {

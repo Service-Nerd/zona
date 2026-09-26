@@ -1894,6 +1894,36 @@ Four metric cells in a 2-column grid. Used on the Coach screen for Zone discipli
 
 > ### Slide-up Sheet — the presentation contract (SHEET-PRESENT-01, shipped 2026-09-13)
 >
+> #### 🔁 SHEET-ORIGIN-01 (2026-09-26) — pill width, and it grows from what you pressed
+>
+> Founder, over six rounds: *"pop-ups should come out of the nav pill, be the width of the pill, and
+> go back into it, with a wobble."* Two corrections came out of the preview and **both are
+> load-bearing**:
+>
+> | | |
+> |---|---|
+> | **Width** | `calc(100% - 32px)`, max **448** — the pill's. 📐 At pill width the entry transform's **horizontal scale is exactly 1**, so the panel stops squashing its own text and needs no counter-fade. **Full-width is why rounds 1–3 read as "a squashed panel un-squashing."** |
+> | **Foot** | `margin-bottom: -26px` — tucked **behind** the pill, squared, no bottom border, so no seam draws through what should be one object |
+> | **Origin** | the **last control the runner pressed** (`lib/ui/lastPressed.ts`), falling back to the pill's top edge. ⚠️ **The runner never taps the pill** — growing from it attributes the sheet to a control they did not touch |
+> | **Curve** | `cubic-bezier(0.65, 0, 0.35, 1.55)` at **420ms** |
+>
+> 🔴 **THE CURVE IS THE ROUND-6 LESSON AND IT GENERALISES.** The first spring reached **90% in 16%
+> of its duration** — at 360ms the journey was over in **57ms** and the rest was oscillation in
+> place. The founder reported *"it still comes from the bottom"* about a sheet that **provably grew
+> from his own tap**: the origin was real and **imperceptible**, which is the same thing as absent.
+>
+> > **On an origin-anchored transition, the number to optimise is TIME SPENT TRAVELLING, not time to
+> > arrival.** This curve is 90% at **56%** of duration — 235ms of journey, 185ms of settle.
+>
+> ⚠️ **Reduced motion still skips all of it**, and the release carries a timeout fallback because
+> `rAF` does not fire while the document is hidden.
+>
+> 🔜 **NOT SHIPPED, AND IT IS THE FOUNDER'S CALL:** for the sheet to look *fused* with the pill, the
+> pill must be lifted **above the scrim** — and **S1 covered the nav precisely because a visible
+> dimmed nav was "VISIBLE, DIMMED, AND LYING."** Either the tabs work while a sheet is open, or the
+> pill visibly stops being tabs. Until then the foot tucks behind a pill that stays under the scrim.
+
+>
 > **Every secondary surface arrives through one primitive: `components/shared/Sheet.tsx`. Never hand-roll a bottom sheet again.** Before this, seven copies each invented their own `zIndex`; five sat **below** the bottom nav (`zIndex: 3000`) — `ZoneInfoSheet`, both Coach stat sheets, `TrendCard`'s explainer, `MissedSessionSheet`, `ManualRunModal` (and, uncounted at filing, `GeneratePlanScreen`'s Foundation modal). Each was `position: fixed; inset: 0; alignItems: flex-end`, so the panel bottom and its own sticky close bar landed exactly where the nav paints. The sheet opened; the runner could not see the part that mattered. Founder-reported on device.
 >
 > **What the primitive owns, so no caller re-invents it:**
