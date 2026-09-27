@@ -2868,8 +2868,17 @@ with the reserve wired.
 the text is `aria-hidden`. A `<div onClick>` would restore it and is refused by `LINK-HIERARCHY-01`.
 Reported, not hidden; `BACK-HEADER-OWNER-01` owns the labelled-header question.
 
+### ✅ Item 2 BUILT the same day — `MODIFY-CONFIRM-01`
+
+All three clauses shipped. 🥇 **The state lift, not the arrow, was the fix:** `edits` was
+`useState` inside `ModifyPlanSheet`, which unmounts when the confirm screen opens, so a back
+arrow over it would have returned the runner to an **empty** sheet. ⚠️ **Found while building:
+`backArrowOwner.test.ts` anchors on `onClick={onBack}` literally**, so the wizard's `goBack`
+was invisible to it — the **third** guard in this area whose anchor decided what it could
+never see, after `iconButton.markup.test.ts`'s `<IconButton` tag anchor.
+
 ### ⚠️ What this sitting does not settle
 
-**Item 2 is ruled and unbuilt** — it needs `edits` lifted out of `ModifyPlanSheet`, which is a build,
+~~**Item 2 is ruled and unbuilt**~~ — BUILT, above. Originally recorded as unbuilt — it needs `edits` lifted out of `ModifyPlanSheet`, which is a build,
 not a conformance fix, and the founder has not chosen between all three clauses and the arrow alone.
 **Nothing here ran on a device.**

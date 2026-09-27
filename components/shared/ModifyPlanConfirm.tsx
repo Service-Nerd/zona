@@ -4,6 +4,7 @@ import AdjustmentDiff from './AdjustmentDiff'
 import type { Plan } from '@/types/plan'
 import { formatDistance, type DistanceUnits } from '@/lib/format'
 import Button from '@/components/ui/Button'
+import BackButton from '@/components/shared/BackButton'
 
 /**
  * P-02 — the diff a runner accepts before a parameter edit lands.
@@ -21,6 +22,17 @@ import Button from '@/components/ui/Button'
  * render — nothing is stored, because a total written once goes stale the
  * moment the plan is reshaped again.
  */
+/** A section label naming WHICH SCALE the block below reports on. */
+function ScaleLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
+      letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--mute)',
+      marginBottom: 'var(--space-2)',
+    }}>{children}</div>
+  )
+}
+
 export default function ModifyPlanConfirm({
   before,
   after,
@@ -28,6 +40,7 @@ export default function ModifyPlanConfirm({
   units,
   resetsLoggedWeeks,
   onAccept,
+  onBack,
   onCancel,
   applying,
 }: {
@@ -38,6 +51,9 @@ export default function ModifyPlanConfirm({
   units: DistanceUnits
   resetsLoggedWeeks: boolean
   onAccept: () => void
+  /** 🔴 Back to the sheet, edits INTACT (MODIFY-CONFIRM-01 clause 1). */
+  onBack: () => void
+  /** Discard. Genuinely destructive, and since clause 3 nothing else is. */
   onCancel: () => void
   applying: boolean
 }) {
@@ -51,6 +67,10 @@ export default function ModifyPlanConfirm({
   }
   const a = shape(before)
   const b = shape(after)
+
+  /** "Week 4 of 12" when the plan knows it, so "this week" is not ambiguous. */
+  const weekN = (before.weeks[weekIndex] as { n?: number } | undefined)?.n ?? weekIndex + 1
+  const weekLabel = `, week ${weekN} of ${a.weeks}`
 
   const sessionsOf = (p: Plan) => {
     const w = p.weeks[weekIndex] ?? p.weeks[0]
@@ -67,8 +87,14 @@ export default function ModifyPlanConfirm({
     rows.push({ label: 'In total', from: formatDistance(a.total, units) ?? '—', to: formatDistance(b.total, units) ?? '—' })
   }
 
+  const weekChanged = JSON.stringify(sessionsOf(before)) !== JSON.stringify(sessionsOf(after))
+
   return (
     <div style={{ padding: '0 20px 24px' }}>
+      {/* 🔴 CLAUSE 1 — `ux-principles.md:105`, "back arrow top-left; navigation
+          is always predictable and reversible". This screen had none, and its
+          only exit DISCARDED every edit. */}
+      <BackButton onClick={onBack} ariaLabel="Back to your changes" style={{ marginBottom: 'var(--space-4)' }} />
       <div style={{ fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 700, color: 'var(--ink)' }}>
         Here is what changes
       </div>
@@ -76,8 +102,11 @@ export default function ModifyPlanConfirm({
         Nothing is saved until you accept.
       </div>
 
-      {/* Plan-level. Absent when the shape did not move, rather than rendering
-          three identical before/after pairs to prove nothing happened. */}
+      {/* 🔴 CLAUSE 2 — NAME THE SCALE. These two blocks are different objects:
+          the card is the WHOLE PLAN, the day rows below are ONE WEEK. Nothing
+          said so, and the founder read them as one list: "is that across the
+          whole plan? it doesn't tell me a lot". */}
+      {rows.length > 0 && <ScaleLabel>Your whole plan</ScaleLabel>}
       {rows.length > 0 && (
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '14px 16px', marginBottom: 'var(--space-4)' }}>
           {rows.map((r, i) => (
@@ -94,7 +123,13 @@ export default function ModifyPlanConfirm({
 
       {/* The week the runner is actually in. Renders null when that week is
           unchanged, which is the component's own contract. */}
-      <AdjustmentDiff sessionsBefore={sessionsOf(before)} sessionsAfter={sessionsOf(after)} units={units} />
+      {weekChanged && <ScaleLabel>This week{weekLabel}</ScaleLabel>}
+      <AdjustmentDiff
+        sessionsBefore={sessionsOf(before)}
+        sessionsAfter={sessionsOf(after)}
+        units={units}
+        scopeLabel={`Changes to this week${weekLabel}`}
+      />
 
       {resetsLoggedWeeks && (
         <div style={{

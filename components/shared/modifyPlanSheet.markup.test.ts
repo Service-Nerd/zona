@@ -139,3 +139,70 @@ describe('P-02 — a refused edit reads as a coaching decision, not a fault', ()
     expect(DASH).toContain("setModifyError(data.error ?? 'That change could not be built into a plan.')")
   })
 })
+
+/**
+ * MODIFY-CONFIRM-01 — Design Board, 2026-09-27. The founder, on his own device:
+ * *"There is no back button top left… the message with mon, tues, wed, thurs.
+ * Is that across the whole plan? It doesn't tell me a lot."*
+ *
+ * 🔴 THE DEFECT UNDER THE MISSING ARROW WAS WORSE THAN THE MISSING ARROW.
+ * `edits` was `useState` INSIDE `ModifyPlanSheet`, and reaching the confirm
+ * screen unmounts that sheet. So the diff's only exit — "Keep my current plan"
+ * — **destroyed every edit**, and there was no other way back. Wanting to
+ * change one of two edits cost you both. His screenshot says "Apply 2 changes".
+ */
+describe('MODIFY-CONFIRM-01 — the diff is reversible and names its own scale', () => {
+  it('🔴 clause 1 — the sheet does NOT own `edits`; the caller does', () => {
+    // This is the whole fix. A back arrow over sheet-local state would return
+    // the runner to an EMPTY sheet, which is the same loss with extra steps.
+    expect(SHEET, 'edits went back to sheet-local state — the arrow is now a lie')
+      .not.toMatch(/useState<PlanEdits>/)
+    expect(SHEET).toMatch(/edits,\s*\n\s*onEditsChange,/)
+    expect(DASH, 'the caller must own the edits').toMatch(/const \[modifyEdits, setModifyEdits\] = useState<PlanEdits>/)
+  })
+
+  it('🔴 clause 1 — BACK returns to the sheet and does NOT clear the edits', () => {
+    // ⚠️ BOUND THE REGION. A fixed-width slice here ran past the end of the
+    // handler into the NEXT prop (`onCancel={clearModify}`) and failed on a
+    // string that was not in the expression under test. Same class this repo
+    // has recorded four times; caught by it firing on correct code.
+    const start = DASH.indexOf('onBack={() =>')
+    const onBack = DASH.slice(start, DASH.indexOf('}}', start) + 2)
+    expect(onBack, 'back must re-open the sheet').toContain('setModifyOpen(true)')
+    expect(onBack, '🔴 back must NOT discard — that was the defect').not.toContain('setModifyEdits')
+    expect(onBack, 'back must not call the discard owner either').not.toContain('clearModify')
+  })
+
+  it('🔴 clause 3 — DISCARD is the only thing that drops the edits, and it is one owner', () => {
+    expect(DASH).toMatch(/function clearModify\(\)/)
+    const fn = DASH.slice(DASH.indexOf('function clearModify()'), DASH.indexOf('function clearModify()') + 260)
+    expect(fn).toContain('setModifyEdits({})')
+    expect(DASH, '"Keep my current plan" is the discard').toMatch(/onCancel=\{clearModify\}/)
+  })
+
+  it('🔴 clause 2 — the two scales are named, because they are different objects', () => {
+    // The white card is the WHOLE PLAN (weeks.length / max / sum); the day rows
+    // are ONE WEEK (`p.weeks[weekIndex]`). They rendered adjacent with nothing
+    // between them, and the founder read them as one list.
+    expect(CONFIRM).toContain('Your whole plan')
+    expect(CONFIRM).toMatch(/This week\{weekLabel\}/)
+    expect(CONFIRM, 'the week must name itself, not say "this week" and stop')
+      .toMatch(/week \$\{weekN\} of \$\{a\.weeks\}/)
+  })
+
+  it('🔴 clause 2 — the accessible name is no longer a LIE about scope', () => {
+    const DIFF = strip(readFileSync(join(process.cwd(), 'components/shared/AdjustmentDiff.tsx'), 'utf8'))
+    expect(DIFF, 'aria-label was hardcoded "Plan changes" on ONE WEEK of data')
+      .not.toMatch(/aria-label="Plan changes"/)
+    expect(DIFF).toMatch(/aria-label=\{scopeLabel\}/)
+    expect(CONFIRM, 'the confirm screen must pass the scope it is actually showing')
+      .toMatch(/scopeLabel=/)
+  })
+
+  it('🔴 the back arrow is the OWNER, not a second hand-rolled one', () => {
+    // UI-BACKARROW-01. `backArrowOwner.test.ts` pins the import form; this pins
+    // that the control exists on this screen at all.
+    expect(CONFIRM).toMatch(/<BackButton\b/)
+    expect(CONFIRM).toMatch(/import BackButton from '@\/components\/shared\/BackButton'/)
+  })
+})

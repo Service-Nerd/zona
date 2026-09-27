@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import IconButton from '@/components/ui/IconButton'
 import Sheet from './Sheet'
 import { DayGridSelector } from './DayGridSelector'
@@ -49,6 +49,8 @@ export default function ModifyPlanSheet({
   onApply,
   hasPaidAccess,
   onStartNewPlan,
+  edits,
+  onEditsChange,
 }: {
   plan: Plan
   onClose: () => void
@@ -74,15 +76,28 @@ export default function ModifyPlanSheet({
    * is shared) and an always-on row pointing nowhere is worse than no row.
    */
   onStartNewPlan?: () => void
+  /**
+   * 🔴 CONTROLLED SINCE MODIFY-CONFIRM-01 (2026-09-27), AND THE REASON IS A DEFECT.
+   *
+   * `edits` was `useState` HERE. Opening the confirm screen unmounts this sheet,
+   * so every edit was destroyed the moment the runner reached the diff — and the
+   * diff's only exit was "Keep my current plan". **There was no non-destructive
+   * way back: wanting to change one of two edits cost you both.** The founder hit
+   * exactly this ("Apply 2 changes" in his screenshot).
+   *
+   * The back arrow the Design Board ruled is only real if the edits survive it,
+   * so ownership moves up to the caller, which outlives both surfaces.
+   */
+  edits: PlanEdits
+  onEditsChange: (next: PlanEdits) => void
 }) {
   const base = plan.meta?.generator_input as GeneratorInput
-  const [edits, setEdits] = useState<PlanEdits>({})
 
   const pending = useMemo(() => (base ? pendingKeys(base, edits) : []), [base, edits])
   const resets  = useMemo(() => editsResetLoggedWeeks(plan, edits), [plan, edits])
 
   const set = <K extends ModifiableKey>(k: K, v: PlanEdits[K]) =>
-    setEdits(e => ({ ...e, [k]: v }))
+    onEditsChange({ ...edits, [k]: v })
   const valueOf = <K extends ModifiableKey>(k: K): GeneratorInput[K] =>
     (k in edits ? edits[k] : base?.[k]) as GeneratorInput[K]
 
@@ -274,7 +289,7 @@ export default function ModifyPlanSheet({
                     : `Apply ${pending.length} change${pending.length === 1 ? '' : 's'}`}
                 </Button>
                 <Button variant="secondary" size="compact" fullWidth 
-                  onClick={() => setEdits({})} style={{ marginTop: '4px' }}>
+                  onClick={() => onEditsChange({})} style={{ marginTop: '4px' }}>
                   Discard changes
                 </Button>
             </>

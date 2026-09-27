@@ -3,7 +3,7 @@
 import { calendarDaysBetween } from '@/lib/dates'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
-import { canModifyPlan } from '@/lib/plan/modifyPlan'
+import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
 import { applyHrToPlan } from '@/lib/plan/zones'
 import MePlanCard from '@/components/shared/MePlanCard'
 import { useIsNative } from '@/lib/useIsNative'
@@ -290,6 +290,10 @@ export default function DashboardClient() {
   const [modifyOpen, setModifyOpen] = useState(false)
   /** The regenerated plan awaiting the runner's accept. Never auto-applied. */
   const [modifyPreview, setModifyPreview] = useState<{ next: Plan; resets: boolean } | null>(null)
+  /** MODIFY-CONFIRM-01 — owned HERE, not in the sheet. The sheet unmounts when
+   *  the confirm screen opens, so sheet-local state could not survive the one
+   *  journey it exists for. `clearModify()` is the single place they are dropped. */
+  const [modifyEdits, setModifyEdits] = useState<PlanEdits>({})
   // D4 (founder, app review) — WHERE THE SESSION WAS OPENED FROM.
   // `SessionScreen`'s onBack was hardcoded to 'today', and there is exactly one
   // render of it, so a session opened from Plan week 2 sent the runner to Today.
@@ -369,6 +373,12 @@ export default function DashboardClient() {
     }
   }
 
+  /** MODIFY-CONFIRM-01 — the ONLY place an in-progress modification is dropped.
+   *  Accept and discard both end here; the back arrow deliberately does not. */
+  function clearModify() {
+    setModifyPreview(null); setModifyOpen(false); setModifyEdits({}); setModifyError(null)
+  }
+
   /** Accept. ⚠️ Saves through `savePlanForUser`, never a direct write. */
   async function acceptModify() {
     if (!modifyPreview) return
@@ -378,7 +388,7 @@ export default function DashboardClient() {
       if (!user) { setModifyError('You are signed out. Sign in and try again.'); return }
       await savePlanForUser(user.id, modifyPreview.next, supabase)
       setPlan(modifyPreview.next)
-      setModifyPreview(null)
+      clearModify()
     } catch {
       setModifyError('Could not save that change. Try again.')
     } finally {
@@ -2436,7 +2446,12 @@ export default function DashboardClient() {
               resetsLoggedWeeks={modifyPreview.resets}
               applying={modifyBusy}
               onAccept={() => void acceptModify()}
-              onCancel={() => { setModifyPreview(null); setModifyError(null) }}
+              /* 🔴 BACK — returns to the sheet WITH THE EDITS INTACT. Before
+                 MODIFY-CONFIRM-01 there was no such route: the only exit
+                 discarded everything, so changing one of two edits cost both. */
+              onBack={() => { setModifyPreview(null); setModifyError(null); setModifyOpen(true) }}
+              /* Discard. Now genuinely destructive and nothing else is. */
+              onCancel={clearModify}
             />
             {modifyError && (
               <div style={{ padding: '0 20px 20px', fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--warn)', lineHeight: 1.55 }}>
@@ -2461,12 +2476,14 @@ export default function DashboardClient() {
             hasPaidAccess={!!hasPaidAccess}
             busy={modifyBusy}
             error={modifyError}
-            onClose={() => { setModifyOpen(false); setModifyError(null) }}
+            edits={modifyEdits}
+            onEditsChange={setModifyEdits}
+            onClose={clearModify}
             onApply={(next, resets) => void runModifyPreview(next, resets)}
             // PLANVERB-01 — the escape out of "adjust" into "start again".
             // Closes the sheet first: leaving it mounted behind the wizard
             // would put two plan-editing surfaces on screen at once.
-            onStartNewPlan={() => { setModifyOpen(false); setModifyError(null); setScreen('generate') }}
+            onStartNewPlan={() => { clearModify(); setScreen('generate') }}
           />
         )}
         {screen === 'plan' && !modifyPreview && <PlanScreen plan={plan} runAnalysisMap={runAnalysisMap} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} allCompletions={allCompletions} onOverrideChange={setAllOverrides} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('plan'); setScreen('session') }} overridesReady={overridesReady} preferredUnits={preferredUnits} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} onOpenModify={canModifyPlan(plan) ? () => setModifyOpen(true) : undefined} />}

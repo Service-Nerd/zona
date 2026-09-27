@@ -23,6 +23,18 @@ interface Props {
   /** User's preferred distance units — so the diff reads in the same units as
    *  the rest of the app (ADR-015 / INV-PREF-001). Defaults to 'km'. */
   units?: DistanceUnits
+  /**
+   * 🔴 THE ACCESSIBLE NAME, AND IT USED TO BE A LIE (MODIFY-CONFIRM-01, 2026-09-27).
+   *
+   * This was hardcoded `aria-label="Plan changes"` — on ONE WEEK's sessions.
+   * In `ModifyPlanConfirm` it renders directly beneath a card of WHOLE-PLAN
+   * totals, so a sighted reader had no boundary between two scales and a screen
+   * reader was told the wrong one outright.
+   *
+   * Callers name the scope they are actually passing. Default unchanged for the
+   * two pending-adjustment call sites, which are genuinely a week.
+   */
+  scopeLabel?: string
 }
 
 const DAY_LABEL: Record<string, string> = {
@@ -30,7 +42,7 @@ const DAY_LABEL: Record<string, string> = {
   fri: 'Fri', sat: 'Sat', sun: 'Sun',
 }
 
-export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 'km' }: Props) {
+export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 'km', scopeLabel = 'Changes to this week' }: Props) {
   const diff = computeSessionDiff(sessionsBefore, sessionsAfter)
   const changes = diff.filter(d => d.kind !== 'unchanged')
 
@@ -42,7 +54,7 @@ export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 
   return (
     <div
       role="list"
-      aria-label="Plan changes"
+      aria-label={scopeLabel}
       style={{
         display:      'flex',
         flexDirection:'column',
