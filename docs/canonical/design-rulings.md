@@ -2882,3 +2882,65 @@ never see, after `iconButton.markup.test.ts`'s `<IconButton` tag anchor.
 ~~**Item 2 is ruled and unbuilt**~~ — BUILT, above. Originally recorded as unbuilt — it needs `edits` lifted out of `ModifyPlanSheet`, which is a build,
 not a conformance fix, and the founder has not chosen between all three clauses and the arrow alone.
 **Nothing here ran on a device.**
+
+---
+
+## METRIC-TILE-01 — the session card's metric pair (2026-09-27)
+
+**Founder, on device:** *"This is on an open and closed session cards. One side is bigger than
+the other. I.e. est pace card is bigger than the distance."*
+
+### 📐 Two causes, and the one he could not see is a defect
+
+🔴 **A. THE DISTANCE TILE'S SURFACE HAD NEVER RENDERED — ON ANY SESSION, EVER.**
+
+```
+background: `${config.color}10`         ->  "var(--session-long)10"
+border: `1px solid ${config.color}30`   ->  "1px solid var(--session-long)30"
+```
+
+`SESSION_COLORS` values are **CSS variables**, not hex. Appending `10`/`30` makes a string the
+browser cannot parse, so it **drops both**. The tile was designed with a session-tinted fill and
+a coloured border and had **neither**. That is why it read as "no card" beside the pace tile's
+real `--line` hairline.
+
+⚠️ **Invisible by looking, because nothing errors** — the element renders, just bare.
+⚠️ **The correct idiom was already in the same file TEN times**, including **four lines above**
+one of the three broken sites: `color-mix(in srgb, X N%, transparent)`. **Two ways to tint a
+token lived side by side and only one worked**, with nothing at the call site to tell them apart.
+
+**B. The pace value is a SENTENCE rendered at number size.** `~5:53 /km or slower` is **19
+characters at 22px** in a half-width column with **~129px** of content width — about **1.8× what
+it has**, so it wrapped to two lines and grew the tile. The distance tile has always solved this:
+`10` at 22px, ` km` at 11px.
+
+### 🔍 Settled ground
+
+| Row | Bearing |
+|---|---|
+| **`:575` (A5)** | 🔴 *"the gate asserts the asymmetry so nobody makes them consistent"* — **a direct warning against the obvious move.** Heeded: the tiles are NOT symmetrised, and whether they should share a construction is left open |
+| **CD-11 / §12** | *"or slower"* is ratified coaching doctrine — *"never a ≤ symbol, which reads backwards for pace"*. **The words stay; only their SIZE moved.** Seam rule applied: design owns the encoding, coaching owns the meaning |
+
+### ⚖️ Ruling
+
+| # | | |
+|---|---|---|
+| 1 | `${cssVar}NN` → `color-mix()`, all three sites | 🟢 **SHIPPED** — defect fix, restores documented intent |
+| 2 | The metric and its qualifier take different sizes | 🟢 **SHIPPED** — `~5:53 /km` at 22px, `or slower` at 11px |
+| 3 | The redundant `Pace target` sub-line | 🟢 **SHIPPED** — it was the slot `or slower` moved into |
+| 4 | Should the two tiles share ONE construction? | 🔴 **INSUFFICIENT EVIDENCE** — `:575` warns against symmetry for its own sake, and clause 1 changes what the left tile looks like. **Decide after seeing it** |
+
+⛔ **Veto: none.**
+
+### 📦 Artifacts
+
+| | |
+|---|---|
+| **Pattern** | `docs/contracts/` — `splitPaceQualifier` documented beside its producer |
+| **Constant** | `splitPaceQualifier()` in `lib/plan/easyPaceCeiling.ts` — beside the function that APPENDS the qualifier, so the format has one owner |
+| **Check** | `cssVarAlpha.test.ts` (falsified against **both** real sites verbatim, and against its own explanatory prose) · `splitPaceQualifier.test.ts` (composed with the producer, so the two cannot drift) |
+
+### ⚠️ What this does not settle
+
+**Clause 4 is open, and clause 1 is why:** the founder is about to see a tinted distance tile
+that has never rendered. He may not like it. **Nothing here ran on a device.**

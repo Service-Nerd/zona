@@ -29,7 +29,7 @@ import ExternalLink from '@/components/shared/ExternalLink'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { fetchPlanFromUrl, fetchPlanForUser, savePlanForUser, DEFAULT_GIST_URL, EMPTY_PLAN, getCurrentWeek, getCurrentWeekIndex, isDatePastWeek, parseLocalDate } from '@/lib/plan'
 import { resolveEffectiveSessions } from '@/lib/plan/effectiveSessions'
-import { easyPaceAsCeiling } from '@/lib/plan/easyPaceCeiling'
+import { easyPaceAsCeiling, splitPaceQualifier } from '@/lib/plan/easyPaceCeiling'
 import { GENERATION_CONFIG } from '@/lib/plan/generationConfig'
 import { resolveMaxHr } from '@/lib/plan/maxHrGuard'
 import { isLongRun, coachingSessionType } from '@/lib/plan/sessionRole'
@@ -4800,7 +4800,19 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-2)' }}>
           {/* Primary metric card with per-session toggle */}
           {(estimatedDistance || estimatedDuration) && ['easy','run','quality','intervals','hard','tempo','long','race','recovery'].includes(session.type) && (
-            <div style={{ background: `${config.color}10`, borderRadius: '10px', padding: '10px 12px', border: `1px solid ${config.color}30` }}>
+            /* 🔴 CLAUSE 1 — THIS TILE HAD NO SURFACE AT ALL, ON EVERY SESSION.
+               `SESSION_COLORS` values are CSS VARIABLES (`var(--session-long)`),
+               so `${config.color}10` produced the literal string
+               "var(--session-long)10" — invalid CSS the browser drops. The fill
+               and the border were declared, reviewed, and never once painted.
+               The founder reported the symptom: *"one side is bigger than the
+               other"*, the right tile having a real hairline and this one none.
+
+               ⚠️ `color-mix()` is not a new idiom — it is used TEN times in this
+               file for exactly this, including four lines above one of the other
+               two broken sites. Two ways to tint a token lived side by side and
+               only one worked. */
+            <div style={{ background: `color-mix(in srgb, ${config.color} 6%, transparent)`, borderRadius: '10px', padding: '10px 12px', border: `1px solid color-mix(in srgb, ${config.color} 19%, transparent)` }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: config.color, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 {effectiveMetric === 'distance' ? 'Distance' : 'Duration'}
                 {isMetricCustom && (
@@ -4832,10 +4844,34 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
           {paceBracket && (
             <div style={{ background: 'var(--card)', borderRadius: '10px', padding: '10px 12px', border: '1px solid var(--line)' }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>Est. pace</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1 }}>~{paceBracket}</div>
-              {paceSource === 'plan' && (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', marginTop: 'var(--space-2)' }}>Pace target</div>
-              )}
+              {/* 🔴 CLAUSES 2 + 3 — A METRIC AND ITS QUALIFIER ARE NOT THE SAME
+                  SIZE. "~5:53 /km or slower" is 19 characters at 22px in a
+                  half-width column with ~129px of content width: about 1.8x what
+                  it has, so it wrapped and grew the tile. That wrap is the whole
+                  of *"one side is bigger than the other"*.
+
+                  ⚠️ THE WORDS STAY. "or slower" is CD-11 / §12 — a ceiling, and
+                  "never a ≤ symbol, which reads backwards for pace". Design owns
+                  its SIZE; coaching owns whether it is said. It is demoted into
+                  the slot "Pace target" used to occupy, which was redundant
+                  under a tile already labelled EST. PACE.
+
+                  The distance tile beside this one has always done exactly this:
+                  `10` at 22px, ` km` at 11px. */}
+              {(() => {
+                const split = splitPaceQualifier(paceBracket)
+                return (
+                  <>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1 }}>~{split?.value ?? paceBracket}</div>
+                    {split?.qualifier && (
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 400, color: 'var(--mute)', marginTop: 'var(--space-2)' }}>{split.qualifier}</div>
+                    )}
+                    {!split?.qualifier && paceSource === 'plan' && (
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--mute)', marginTop: 'var(--space-2)' }}>Pace target</div>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           )}
           {/* Duration tile for strength sessions (no zone, no pace) */}
@@ -5161,7 +5197,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                     const tagColor = tag === 'Fresh' ? 'var(--moss)' : tag === 'Fine' ? 'var(--moss)' : tag === 'Heavy' ? 'var(--warn)' : 'var(--danger)'
                     return (
                       <button key={tag} onClick={() => { const next = isActive ? null : tag; setFatigueTag(next); saveRPEFatigue(rpe, next) }}
-                        style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 18px', minHeight: '44px', borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--line)'}`, background: isActive ? `${tagColor}18` : 'transparent', color: isActive ? tagColor : 'var(--mute)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
+                        style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '10px 18px', minHeight: '44px', borderRadius: '20px', border: `1px solid ${isActive ? tagColor : 'var(--line)'}`, background: isActive ? `color-mix(in srgb, ${tagColor} 9%, transparent)` : 'transparent', color: isActive ? tagColor : 'var(--mute)', cursor: 'pointer', fontWeight: isActive ? 500 : 400, transition: 'all 0.12s' }}>
                         {tag}
                       </button>
                     )
