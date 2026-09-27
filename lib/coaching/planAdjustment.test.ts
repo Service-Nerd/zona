@@ -61,7 +61,8 @@ const baseInput = () => ({
   currentWeekN: 6,
   totalWeeks: 12, // 6 weeks remaining > TAPER_PROTECTION_WEEKS → guards open
   currentWeekSessions: longRunWeek(20),
-  actualKm: 40,
+  linkedKm: 40,
+  offPlanKm: 0,
   plannedKm: 40, // shadow load ~0
   priorWeeksKm: [40, 40, 40, 40], // acute:chronic ~1.0
   hrInZoneData: [], // zone discipline → null, zone_drift skipped

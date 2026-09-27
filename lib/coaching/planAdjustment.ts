@@ -69,7 +69,10 @@ export interface AdjustmentCheckInput {
   currentWeekN:     number
   totalWeeks:       number
   currentWeekSessions: Session[]
-  actualKm:         number
+  /** Runs matched to a prescribed session (LOG-OFFPLAN-01). Drives the ratio. */
+  linkedKm:         number
+  /** Runs the plan did not prescribe. Drives shadow load ONLY — never the ratio. */
+  offPlanKm:        number
   plannedKm:        number
   priorWeeksKm:     number[]
   // TRIGGER-AUDIT-01 — `aboveCeilingPct` added so the drift trigger can key on the
@@ -222,10 +225,23 @@ export function checkAdjustmentTriggers(input: AdjustmentCheckInput): ProposedAd
     return buildFatigueAdjustment(input, FATIGUE_ACCUMULATION_THRESHOLD)
   }
 
-  const ratio   = acuteChronicRatio(input.actualKm, input.priorWeeksKm)
+  // 🔴 LOG-OFFPLAN-01, AND THE SPLIT IS THE RULING. Coaching Board 2026-09-27.
+  //
+  // `acute_chronic_high` calls buildReduceVolumeAdjustment, which TRIMS easy and
+  // long sessions ~15% and only `requiresConfirmation` at LOAD_RATIO.flag — so
+  // below that it applies silently. Clause 2 forbids an off-plan run reaching it:
+  // the runner's own extra easy run must not shrink next week without them
+  // asking. The ratio therefore reads LINKED km only, exactly as before.
+  //
+  // `shadow_load` is the opposite and was ALREADY clause 2's shape before the
+  // board met: buildShadowLoadAdjustment copies sessionsBefore into
+  // sessionsAfter unchanged and says "Flagged — no auto-change applied". That is
+  // "raises the observation, not the adjustment", so it reads the TOTAL.
+  const totalKm = input.linkedKm + input.offPlanKm
+  const ratio   = acuteChronicRatio(input.linkedKm, input.priorWeeksKm)
   const zdScore = zoneDisciplineScore(input.hrInZoneData)
   const zdDrift = zoneDriftScore(input.hrInZoneData)
-  const shadow  = shadowLoadPct(input.actualKm, input.plannedKm)
+  const shadow  = shadowLoadPct(totalKm, input.plannedKm)
 
   if (ratio >= LOAD_RATIO.watch) {
     return buildReduceVolumeAdjustment(input, ratio)

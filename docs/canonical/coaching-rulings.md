@@ -554,3 +554,73 @@ ADR-011 §5).
 `verdictLine()` being non-empty, which is true for *"Close. Plan's doing its job."* — so a runner
 **22% above the ceiling** was subjected *"You held the zone on Tuesday."* The subject and the body
 disagreed about the same run. `heldTheZone()` is now the single predicate both ask.
+
+---
+
+## LOG-OFFPLAN-01 — off-plan runs enter the load model (2026-09-27)
+
+**Ruling: CORRECT WITH AMENDMENT.** Hutchinson chairing. Routed down by the Design Board,
+which was blocked on this before it could rule the shape of an off-plan logging entry point.
+
+**The question.** Does a run the plan did not prescribe enter the load model?
+
+| | |
+|---|---|
+| Already counted it | §58 cohort matching, the pace trend and the **pre-run HR band** — all read the activity log through `fetchRunHistory` with **no matched filter** |
+| Could never count it | `actual_load_km` lives on `run_analysis`, and `/api/analyse-run` **422s without `week_n` + `session_day`** |
+
+🔴 **So off-plan volume was VISIBLE TO FITNESS AND INVISIBLE TO LOAD** — the engine saw
+efficiency improving while its load rules stayed flat.
+
+### Ruled
+
+| # | Clause | Built? |
+|---|---|---|
+| 1 | Off-plan running contributes to actual weekly volume and shadow load — always | 🟢 **SHIPPED** |
+| 2 | It never reaches the acute:chronic ratio, which auto-trims below `LOAD_RATIO.flag` | 🟢 **SHIPPED** |
+| 3 | For the §2 injury cohort it is included in the cap **and the runner is told** | 🔴 **RULED, NOT BUILT — blocked on sample size** |
+
+🥇 **Clause 2 already existed in code and the sitting found it rather than inventing it.**
+`buildShadowLoadAdjustment` copies `sessionsBefore` into `sessionsAfter` unchanged and
+reports *"Flagged — no auto-change applied."* The two load triggers already split along the
+clause-1/clause-2 line; the build fed them the right two numbers.
+
+### 📐 Measured — and the profile inverted the expected answer
+
+Of runs that happened **while a plan existed**: **21 of 78 (26.9%) off-plan, 173 km of 848
+(20.4%)**. Against a same-person on-plan control they are **shorter** (median 7.5 vs 8.0 km)
+and **more disciplined** (median 68.8% vs 60.0% in Z2; mean Z4/5 **4.7 vs 7.3**).
+
+- **McMillan sustained** — this is ordinary easy volume, so reacting to it would be
+  disproportionate. Clause 2.
+- **Seiler's hypothesis WITHDRAWN** — he expected grey-zone drift; off-plan Z3 is **24.1%**
+  against on-plan **26.9%**. The drift is in the sessions we prescribe.
+- **Willy sustained on structure, softened on urgency** — 20.4% of real distance uncounted
+  means §2's 5% injury cap is *"applied to a number that is not their load"*. Still true.
+  But it is not a funnel into hidden hard training, so clause 3 states rather than acts.
+
+### ⚠️ The measurement that was wrong first — the durable part of this row
+
+**A raw count said 65% of runs were off-plan. 79% of those PREDATE their user's plan** —
+HealthKit history backfill imported on connect. Seven of nine accounts had never linked a
+run, and the "control" was **96% one person**. Separately the same physical run is ingested
+twice for **63 km, 4.2% of the log**.
+
+🔴 **Filter on `start_date >= plans.created_at` and de-duplicate before summing.** Both are
+now inside the owner, with the reason, because the naive figure was off by 2.4×.
+
+### 📦 Artifacts
+
+| | |
+|---|---|
+| **Principle** | §2 Amendment 4 |
+| **Numeric** | `DUPLICATE_ACTIVITY` (`lib/coaching/constants.ts`) |
+| **Mechanical check** | `offPlanLoad.test.ts` (7) + `weeklyActualLoad.test.ts` (17). ⚠️ **NOT a `validatePlan()` invariant** — a coaching-time rule reading `strava_activities` cannot be reached by a `Plan => Violation[]`, the `static` class, as for §112 |
+| **Owner** | `lib/coaching/weeklyActualLoad.ts`, replacing **five** hand-rolled sums |
+
+🔴 **INTRODUCES behaviour; does not restore it** — §68 Am.1's precedent, by name.
+
+### ↗️ Filed, not chased
+
+`RUN-ANALYSIS-ORPHAN-01` (88 of 145 `run_analysis` rows reference an activity id absent
+from the log) · `ACTIVITY-DUPLICATE-01` (the ingest-side duplicate) · clause 3's re-measure.

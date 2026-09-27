@@ -208,6 +208,76 @@ Returning to a volume held comfortably two weeks earlier is not a spike. Chronic
 
 **Board:** RAMP-BOUNCEBACK-01, 2026-09-06 — CORRECT WITH AMENDMENT (Willy-led, Hutchinson chairing); the healthy/injury split was set by measurement.
 
+### Amendment 4 — ACTUAL load includes running the plan did not prescribe (LOG-OFFPLAN-01, Coaching Board 2026-09-27)
+
+**Principle.** A run the plan did not prescribe **counts toward actual load**. It does
+**not** auto-trigger a reshape. Three clauses:
+
+1. **It contributes to actual weekly volume and to shadow load — always.** §2's own
+   rationale is about load *"relative to what the body is accustomed to"*. The body does
+   not distinguish prescribed kilometres from chosen ones, and a measurement that excludes
+   real running is not a measurement of load.
+2. **It never reaches the acute:chronic ratio.** That trigger calls
+   `buildReduceVolumeAdjustment`, which trims easy and long sessions ~15% and only
+   requires confirmation at `LOAD_RATIO.flag` — below that it applies silently. A runner's
+   own extra easy run must not shrink next week without them asking (McMillan, sustained:
+   *"do that twice and they stop logging, and then you have lost the data and the trust"*).
+3. **For the §2 injury cohort, off-plan volume is included in the cap and the runner is
+   told.** 🔴 **RULED CORRECT, NOT BUILT — blocked on sample size**, see below.
+
+**Why — the asymmetry, measured.** Off-plan runs were **visible to fitness and invisible
+to load**. §58 cohort matching, the pace trend and the **pre-run HR band** read the
+activity log through `fetchRunHistory` with no matched filter, so they already counted;
+`actual_load_km` lives on `run_analysis` and `/api/analyse-run` **422s without `week_n` +
+`session_day`**, so off-plan running could never reach it. The engine therefore saw
+efficiency improving while its load rules stayed flat — Hutchinson: *"the precise pattern
+that precedes an overuse injury, and we have built an instrument that renders it invisible
+while reporting confidence."*
+
+**Measured (production, 2026-09-27).** Of runs that happened **while a plan existed**,
+**21 of 78 (26.9%) were off-plan, carrying 173 km of 848 (20.4%)**. Against a same-person
+on-plan control they are **shorter** (median 7.5 vs 8.0 km; ≥10 km 19% vs 32%) and **more
+zone-disciplined** (median 68.8% vs 60.0% in Z2; mean Z4/5 **4.7 vs 7.3**). **So this is
+ordinary easy aerobic volume, not hidden hard training** — which is precisely why it
+belongs in the volume figure, and why clause 2's restraint is right.
+
+⚠️ **Seiler's hypothesis was NOT supported and is recorded as withdrawn.** He expected
+unprescribed runs to be the unstructured ones that drift to moderate. Off-plan Z3 is
+**24.1%** against on-plan **26.9%** — the grey-zone drift is in the sessions *we* prescribe.
+
+⚠️ **The first measurement handed to this board was WRONG and the correction is the
+durable part.** A raw count said 65% of runs were off-plan. **79% of those predate their
+user's plan** — HealthKit history backfill imported on connect. Seven of nine accounts had
+never linked a single run, and the "control" was 96% one person. **Filter on
+`start_date >= plans.created_at` before calling anything off-plan.** Separately, the same
+physical run is ingested twice (Strava + Connect) for **63 km, 4.2% of the log**, so raw
+rows must be de-duplicated before they are summed.
+
+**Config.** `DUPLICATE_ACTIVITY` (`WINDOW_MINS` 20, `DISTANCE_TOLERANCE_PCT` 3) in
+`lib/coaching/constants.ts`. No threshold numeric — clause 3 is what would need one.
+
+**Enforced by** `lib/coaching/offPlanLoad.test.ts` (the clause split) and
+`lib/coaching/weeklyActualLoad.test.ts` (the owner). ⚠️ **NOT by a `validatePlan()`
+invariant, and that is stated rather than left as an oversight:** this is a coaching-time
+rule reading `strava_activities`, so no `Plan => Violation[]` can reach it by
+construction — the `static` class the liveness baseline records, as for §112.
+
+🔴 **This INTRODUCES behaviour; it does not restore it.** §68 Amendment 1 is the governing
+precedent and the reasoning is identical: every load rule ratified to date was written and
+measured against an engine in which this volume was invisible.
+
+🔴 **CLAUSE 3 IS RULED AND UNBUILT.** Willy: *"a runner with a knee history whose real week
+is 27% above prescription is getting a 5% cap applied to a number that is not their load.
+The cap is not conservative; it is decorative."* The board sustained him, and the build
+stopped at clauses 1 and 2 because the evidence for a threshold is **n=21, 12 of them one
+runner, HR on 15**. The two worst-discipline off-plan runs in the set are *not* the
+founder's. **Re-measure before wiring it;** until then `INJURY_WEEKLY_INCREASE_CAP_PCT`
+reads linked volume only.
+
+**Board:** LOG-OFFPLAN-01, 2026-09-27 — CORRECT WITH AMENDMENT (Hutchinson chairing).
+Recorded disagreement: Willy vs McMillan on whether off-plan load should reach the cap
+silently; resolved by clause 3 stating it rather than applying it.
+
 ### Amendment 3 — the injury bounceback returns to pre-deload (PLAN-FITNESS-01, Coaching Board 2026-09-17)
 
 **Principle.** For an injury-history runner the post-deload week may return to the

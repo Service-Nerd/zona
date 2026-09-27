@@ -170,6 +170,24 @@ export const LOAD_RATIO = {
 export const BEHIND_VERDICT_MIN_SESSIONS = 2
 
 // Shadow load — actual vs planned
+/**
+ * LOG-OFFPLAN-01 — when two activity-log rows describe the SAME physical run.
+ *
+ * 🔴 MEASURED, NOT CHOSEN. On production 2026-09-27 the same run appears twice
+ * as "Run (Strava)" and "Run (Connect)" — once three times — for **63 km, 4.2%
+ * of the entire activity log**. Distances differ slightly between sources
+ * (29.2 km logged as 29.20 and 29.17), so exact equality does not collapse
+ * them; start times differ by seconds to minutes, never by a whole session.
+ *
+ * ⚠️ Deliberately TIGHT. A runner doing a genuine double day runs twice with
+ * hours between, far outside a 20-minute window. Widening this would start
+ * eating real volume, which is the opposite of what LOG-OFFPLAN-01 is for.
+ */
+export const DUPLICATE_ACTIVITY = {
+  WINDOW_MINS:            20,
+  DISTANCE_TOLERANCE_PCT: 3,
+} as const
+
 export const SHADOW_LOAD_THRESHOLD_PCT = 15  // >15% over plan triggers reflection
 
 // EF trend — aerobic efficiency decline

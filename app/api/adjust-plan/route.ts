@@ -6,6 +6,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { checkAdjustmentTriggers } from '@/lib/coaching/planAdjustment'
+import { fetchWeeklyLoad, priorWeeks, EMPTY_LOAD } from '@/lib/coaching/weeklyActualLoad'
 import { isLongRun } from '@/lib/plan/sessionRole'
 import { recordQualityDowngrade } from '@/lib/coaching/qualityDowngrade'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
 
   const DAY_ORDER: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
 
-  const [analysisRes, prevWeeksRes, adjustmentsThisWeekRes, existingPendingRes, completionsRes, lastResolvedAdjustmentRes] = await Promise.all([
+  const [analysisRes, adjustmentsThisWeekRes, existingPendingRes, completionsRes, lastResolvedAdjustmentRes] = await Promise.all([
     serviceSupabase
       .from('run_analysis')
       // ENGINE-01/02: week_n, pace_score, hr_above_ceiling_pct, distance_score added
@@ -127,13 +128,9 @@ export async function POST(req: NextRequest) {
       .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .order('created_at', { ascending: false })
       .limit(30),
-    serviceSupabase
-      .from('run_analysis')
-      .select('week_n, actual_load_km')
-      .eq('user_id', user.id)
-      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
-      .order('week_n', { ascending: false })
-      .limit(40),
+    // ⚠️ The prior-weeks `run_analysis` query that used to sit here is GONE.
+    // `fetchWeeklyLoad` answers the same question from the activity log, and
+    // leaving a second producer alive is how DELOAD-OWNER-01 happened.
     serviceSupabase
       .from('plan_adjustments')
       .select('id')
@@ -217,19 +214,34 @@ export async function POST(req: NextRequest) {
 
   // Build aggregates for trigger check
   const thisWeekAnalyses = analyses.filter((a: any) => a.session_day.startsWith(`week_${weekN}_`))
-  const thisWeekKm       = thisWeekAnalyses.reduce((s: number, a: any) => s + (a.actual_load_km ?? 0), 0)
   const plannedKm        = week.weekly_km ?? 0
 
-  const weekLoadMap: Record<number, number> = {}
-  ;(prevWeeksRes.data ?? []).forEach((r: any) => {
-    if (!weekLoadMap[r.week_n]) weekLoadMap[r.week_n] = 0
-    weekLoadMap[r.week_n] += r.actual_load_km ?? 0
-  })
-  const priorWeeksKm = Object.entries(weekLoadMap)
-    .filter(([n]) => Number(n) < weekN)
-    .sort(([a], [b]) => Number(b) - Number(a))
-    .slice(0, 4)
-    .map(([, km]) => km)
+  // 🔴 LOG-OFFPLAN-01 — the week's load now comes from the SINGLE OWNER, which
+  // reads the activity log rather than `run_analysis`. Five routes had hand-rolled
+  // this sum and they agreed only by accident; §68 Am.1 records one of them
+  // querying a table that has neither column, silently, for four months.
+  //
+  // The owner returns linked and off-plan SEPARATELY and the split is the board's
+  // ruling: the ratio (which auto-trims) reads LINKED, shadow load (which only
+  // flags) reads the total. `priorWeeks` defaults to linked for the same reason.
+  //
+  // ⚠️ A FETCH FAILURE MUST NOT READ AS "THE RUNNER DID NOTHING". An empty map
+  // here would mean zero load, a ratio of 1.0 and a shadow of 0 — every load
+  // trigger silently disarmed, which is §68 Am.1's failure exactly (an error
+  // destructured away, a feature applying to nobody for four months). So this
+  // refuses to decide rather than deciding on absent data.
+  let weeklyLoad
+  try {
+    weeklyLoad = await fetchWeeklyLoad(serviceSupabase, user.id, plan)
+  } catch (err) {
+    console.error('[adjust-plan] LOG-OFFPLAN-01 weekly load unavailable', err)
+    return NextResponse.json(
+      { error: 'Could not read this week\'s load. No adjustment was checked.' },
+      { status: 503 },
+    )
+  }
+  const thisWeek   = weeklyLoad.get(weekN) ?? EMPTY_LOAD
+  const priorWeeksKm = priorWeeks(weeklyLoad, weekN, 4)
 
   const hrInZoneData = thisWeekAnalyses.map((a: any) => ({
     hrInZonePct:  a.hr_in_zone_pct ?? null,
@@ -319,7 +331,8 @@ export async function POST(req: NextRequest) {
     currentWeekN:         weekN,
     totalWeeks:           plan.weeks.length,
     currentWeekSessions,
-    actualKm:             thisWeekKm,
+    linkedKm:             thisWeek.linkedKm,
+    offPlanKm:            thisWeek.offPlanKm,
     plannedKm,
     priorWeeksKm,
     hrInZoneData,

@@ -8,6 +8,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { getUserTier } from '@/lib/trial'
 import { isFeatureAllowed } from '@/lib/plan/canUseFeature'
 import { computeWeeklyReportData, pickSpotlightSession } from '@/lib/coaching/weeklyReport'
+import { fetchWeeklyLoad, priorWeeks, EMPTY_LOAD } from '@/lib/coaching/weeklyActualLoad'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { COACHING_RULE_ENGINE_VERSION } from '@/lib/coaching/constants'
 import { buildWeeklyReportPrompt } from '@/lib/coaching/prompts/weeklyReport'
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Fetch completions, run_analysis, and previous week's report in parallel
-  const [completionsRes, analysisRes, prevWeeksRes, prevReportRes] = await Promise.all([
+  const [completionsRes, analysisRes, prevReportRes] = await Promise.all([
     serviceSupabase
       .from('session_completions')
       // strava_activity_id + apple_health_uuid are needed so isVerifiedCompletion
@@ -156,13 +157,9 @@ export async function POST(req: NextRequest) {
       .eq('user_id', userId)
       .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
       .eq('week_n', weekN),
-    serviceSupabase
-      .from('run_analysis')
-      .select('week_n, actual_load_km')
-      .eq('user_id', userId)
-      .is('superseded_at', null)   // PLAN-WEEK-COLLISION-01: live plan only
-      .order('week_n', { ascending: false })
-      .limit(40),
+    // ⚠️ The prior-weeks `run_analysis` query that used to sit here is GONE —
+    // `fetchWeeklyLoad` is the single owner. A second producer left alive is
+    // exactly how DELOAD-OWNER-01 and §68 Am.1 happened.
     // AI-DEPTH-04: conversation memory — pull last week's headline + body so the
     // model can reference progress or repeat-issues. Null on week 1 or when the
     // previous report had a silent AI fallback (headline/body null).
@@ -179,26 +176,33 @@ export async function POST(req: NextRequest) {
 
   const completions     = completionsRes.data ?? []
   const analyses        = analysisRes.data ?? []
-  const prevRawWeeks    = prevWeeksRes.data ?? []
   // AI-DEPTH-04 — only pass when both fields are present. Partial reports
   // (one field null from silent AI fallback) aren't worth referencing.
   const previousReport  = prevReportRes.data?.headline && prevReportRes.data?.body
     ? { headline: prevReportRes.data.headline as string, body: prevReportRes.data.body as string }
     : null
 
-  // Aggregate weekly load from run_analysis
-  const weekLoadMap: Record<number, number> = {}
-  prevRawWeeks.forEach((r: any) => {
-    if (!weekLoadMap[r.week_n]) weekLoadMap[r.week_n] = 0
-    weekLoadMap[r.week_n] += r.actual_load_km ?? 0
-  })
-
-  const thisWeekKm    = analyses.reduce((s: number, r: any) => s + (r.actual_load_km ?? 0), 0)
-  const priorWeeksKm  = Object.entries(weekLoadMap)
-    .filter(([n]) => Number(n) < weekN)
-    .sort(([a], [b]) => Number(b) - Number(a))
-    .slice(0, 4)
-    .map(([, km]) => km)
+  // 🔴 LOG-OFFPLAN-01 — weekly load comes from the single owner now, not from a
+  // hand-rolled sum over `run_analysis`. Clause 1: the report states what the
+  // runner ACTUALLY ran, which includes runs the plan did not prescribe
+  // (measured: 20.4% of in-plan distance). `computeWeeklyReportData` adds
+  // linked + off-plan for `totalKmActual` and shadow load, and keeps the
+  // acute:chronic ratio on linked only, per clause 2.
+  //
+  // ⚠️ Same guard as `adjust-plan`: a report claiming 0 km because a query failed
+  // is worse than no report — the runner reads it as a week they did not train.
+  let weeklyLoad
+  try {
+    weeklyLoad = await fetchWeeklyLoad(serviceSupabase, userId, plan)
+  } catch (err) {
+    console.error('[weekly-report] LOG-OFFPLAN-01 weekly load unavailable', err)
+    return NextResponse.json(
+      { error: 'Could not read this week\'s load. No report was generated.' },
+      { status: 503 },
+    )
+  }
+  const thisWeek   = weeklyLoad.get(weekN) ?? EMPTY_LOAD
+  const priorWeeksKm  = priorWeeks(weeklyLoad, weekN, 4)
 
   const DAY_ORDER_REPORT = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
   const DAY_LABELS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -368,7 +372,8 @@ export async function POST(req: NextRequest) {
     sessionsCompleted,
     sessionsPlanned,
     sessionsPlannedToDate,
-    actualKm:         thisWeekKm,
+    linkedKm:         thisWeek.linkedKm,
+    offPlanKm:        thisWeek.offPlanKm,
     plannedKm,
     plannedKmToDate,
     priorWeeksKm,
@@ -447,7 +452,7 @@ export async function POST(req: NextRequest) {
     week_n:               weekN,
     sessions_completed:   sessionsCompleted,
     sessions_planned:     sessionsPlanned,
-    total_km_actual:      thisWeekKm,
+    total_km_actual:      reportDataWithRpe.totalKmActual,
     total_km_planned:     plannedKm,
     acute_chronic_ratio:  reportDataWithRpe.acuteChronicRatio,
     zone_discipline_score: reportDataWithRpe.zoneDisciplineScore,

@@ -28,6 +28,74 @@ already decided what it is.
 ---
 
 
+### `LOG-OFFPLAN-03` — clause 3: off-plan volume in the injury cap, blocked on sample size 🏃 COACHING BOARD
+
+**Ruled CORRECT by the board on 2026-09-27 and deliberately NOT built.** Willy: *"a runner
+with a knee history whose real week is 27% above prescription is getting a 5% cap applied to
+a number that is not their load. The cap is not conservative; it is decorative."*
+
+**The blocker is evidence, not design.** The profile behind clauses 1–2 is **n=21, 12 of them
+the founder, HR on 15**. The two worst-discipline off-plan runs in the set are *not* his, so
+the small non-founder sample leans the other way. A threshold set on that would be invented.
+
+**Unblocks when:** enough real runners with linked plans accrue to re-run the profile per
+cohort. Re-run the split in `lib/coaching/weeklyActualLoad.ts`'s header and compare
+injury-history runners against the rest. Until then `INJURY_WEEKLY_INCREASE_CAP_PCT` reads
+`linkedKm` only, asserted in `offPlanLoad.test.ts`.
+
+---
+
+### `LOG-OFFPLAN-02` — no way to log a run the plan did not prescribe 🧭 DESIGN BOARD
+
+**The Design Board is now unblocked on this** (it was waiting on the Coaching Board's
+clause 2, which ruled that an off-plan run is an *observation*, not an intervention — so a
+quiet entry point, not a floating `+`).
+
+**Measured:** on a rest day `showSessionHero = isRunDay || isStrengthDay` is false, so **no
+log control renders at all** — on a 3-day plan that is **4 of 7 days**. `ManualRunModal`
+always binds to a session slot (`const key = sessionKey ?? todayKey`), so it cannot express
+an unprescribed run even when it is reachable.
+
+⚠️ **The load model can already see these runs** since LOG-OFFPLAN-01 clauses 1–2 — they
+arrive via HealthKit/Strava ingest. This item is the **manual** path for a runner with no
+device, which ADR-011 §5 says exists and gets HR-less coaching.
+
+**Options the board left open:** (i) `+` FAB above the nav — ⚠️ nothing reserves its
+occlusion band, and `bottomNavH` is consumed by `Sheet`'s `maxHeight` and the scroll
+reserve; re-breaking that is the defect `NAV-FLOAT-01` just fixed · (ii) an entry on
+`RestDayCard` plus a row under the session — cheapest, no chrome · (iii) collapse the
+**seven** labels for one intention into one flow (Collins' `SESSION-ACTION-COLLAPSE-01`
+clause 6, *mock-up before code*).
+
+---
+
+### `RUN-ANALYSIS-ORPHAN-01` — 88 of 145 `run_analysis` rows point at activities that are not in the log ⚙️ NO BOARD
+
+**Found while measuring LOG-OFFPLAN-01, filed rather than chased.** 72 carry a
+`strava_activity_id`, 16 carry **neither id**, spanning 2026-05-04 → 2026-09-23 across three
+users — one of whom has **no rows in the activity log at all**.
+
+So `actual_load_km` was partly computed from activities the log cannot account for. **A
+second hole in the same denominator as LOG-OFFPLAN-01**, and unexplained: a purge would
+cascade, so these are not purge residue. Start by checking whether `unlink-activity` deletes
+the activity row while leaving the analysis.
+
+---
+
+### `ACTIVITY-DUPLICATE-01` — the same physical run is ingested twice ⚙️ NO BOARD
+
+**Measured on production 2026-09-27: 63 km, 4.2% of the entire activity log.** The same run
+appears as "Run (Strava)" and "Run (Connect)" minutes apart with distances differing by
+under 3%; one appears **three** times. A recent pair (2026-09-23, both "Manual run") suggests
+this is not purely historical.
+
+⚠️ **`weeklyActualLoad.ts` de-duplicates at READ time and that is not a fix** — it stops the
+load figure double-counting, which it would otherwise do on day one. The write-side question
+is whether `tryEnrichHealthKitRow` (ADR-011) is failing to consolidate, or whether these
+predate it. **SC-10's lesson applies: a masked read reads green.**
+
+---
+
 ### `SHEET-RAF-FALLBACK-01` — a sheet opened while the document is hidden never shows ⚙️ NO BOARD
 
 `Sheet.tsx:174` releases the enter animation with a bare

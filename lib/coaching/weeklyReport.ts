@@ -112,10 +112,14 @@ export interface WeeklyReportInput {
   sessionsCompleted:      number
   sessionsPlanned:        number
   sessionsPlannedToDate:  number       // sessions due by today (mid-week context)
-  actualKm:               number
+  /** Runs matched to a prescribed session (LOG-OFFPLAN-01). */
+  linkedKm:               number
+  /** Runs the plan did not prescribe. Clause 1: the report states what the
+   *  runner ACTUALLY ran, so this is added in below. */
+  offPlanKm:              number
   plannedKm:              number
   plannedKmToDate:        number       // km due by today (mid-week context)
-  priorWeeksKm:           number[]     // last 4 weeks actual, most-recent first
+  priorWeeksKm:           number[]     // last 4 weeks LINKED km, most-recent first
   sessionFlagCounts:      Record<CoachingFlag, number>
   hrInZoneData:           { hrInZonePct: number | null; actualLoadKm: number | null }[]
   efTrendPct:             number | null // % change vs baseline
@@ -135,15 +139,21 @@ export interface WeeklyReportData {
 
 /** Computes deterministic weekly report data. AI prompt templates consume this. */
 export function computeWeeklyReportData(input: WeeklyReportInput): WeeklyReportData {
-  const ratio   = acuteChronicRatio(input.actualKm, input.priorWeeksKm)
+  // LOG-OFFPLAN-01 — TWO figures, deliberately.
+  //   ratio  ← LINKED only. Clause 2: the acute:chronic trigger auto-trims, and
+  //            a runner's own extra easy run must not shrink next week.
+  //   shadow ← TOTAL. Clause 1: "actual load" is a measurement of what happened,
+  //            and excluding real running makes it wrong.
+  const totalKm = input.linkedKm + input.offPlanKm
+  const ratio   = acuteChronicRatio(input.linkedKm, input.priorWeeksKm)
   const zdScore = zoneDisciplineScore(input.hrInZoneData)
-  const shadow  = shadowLoadPct(input.actualKm, input.plannedKm)
+  const shadow  = shadowLoadPct(totalKm, input.plannedKm)
   const dominant = dominantFlag(input.sessionFlagCounts)
 
   return {
     sessionsCompleted:   input.sessionsCompleted,
     sessionsPlanned:     input.sessionsPlanned,
-    totalKmActual:       input.actualKm,
+    totalKmActual:       totalKm,
     totalKmPlanned:      input.plannedKm,
     acuteChronicRatio:   ratio,
     zoneDisciplineScore: zdScore,

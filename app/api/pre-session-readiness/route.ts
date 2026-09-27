@@ -128,7 +128,11 @@ export async function GET(req: NextRequest) {
     currentWeekN:        week.n,
     totalWeeks:          plan.weeks.length,
     currentWeekSessions: [todaySession],
-    actualKm:            0,
+    // LOG-OFFPLAN-01 — this route never exercises the load triggers (both zero,
+    // `priorWeeksKm` empty); it is here for the readiness path only. Split into
+    // the two named figures so it cannot silently acquire the old meaning.
+    linkedKm:            0,
+    offPlanKm:           0,
     plannedKm:           todaySession.distance_km ?? 0,
     priorWeeksKm:        [],
     hrInZoneData:        [],

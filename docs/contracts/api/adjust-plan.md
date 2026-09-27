@@ -87,6 +87,41 @@ caller believe none exists and the follow-up insert would violate the constraint
 
 Enforced by `lib/plan/supersedeCoverage.test.ts`.
 
+## Weekly load — LOG-OFFPLAN-01 (Coaching Board 2026-09-27)
+
+The week's load figure no longer comes from a hand-rolled sum over
+`run_analysis`. `lib/coaching/weeklyActualLoad.ts → fetchWeeklyLoad()` is the
+**single owner**, and it reads the **activity log** (`strava_activities`), which
+holds every ingested run whether or not it matched a prescribed session.
+
+It returns two figures per plan week, and **which trigger reads which is the
+board's ruling, not an implementation detail**:
+
+| Figure | Read by | Why |
+|---|---|---|
+| `linkedKm` | **acute:chronic ratio**, `priorWeeksKm` | `acute_chronic_high` calls `buildReduceVolumeAdjustment`, which trims easy and long sessions ~15% and only `requiresConfirmation` at `LOAD_RATIO.flag` — below that it applies **silently**. **Clause 2:** a runner's own extra easy run must not shrink next week without them asking |
+| `linkedKm + offPlanKm` | **shadow load**, `total_km_actual` | **Clause 1:** actual load is a measurement of what happened, and excluding real running makes it wrong. `buildShadowLoadAdjustment` copies `sessionsBefore` into `sessionsAfter` unchanged and reports *"Flagged — no auto-change applied"* — it was already clause 2's shape |
+
+**Measured on production 2026-09-27:** of runs that happened while a plan
+existed, **21 of 78 (26.9%) were off-plan, carrying 173 km of 848 (20.4%)**.
+Those runs are shorter and *more* zone-disciplined than prescribed ones
+(median 7.5 vs 8.0 km; 68.8% vs 60.0% in Z2), so this is ordinary aerobic
+volume, not hidden hard training.
+
+⚠️ **Two corrections folded into the owner, because the raw sum is wrong
+without them.** Runs that **predate the plan** are dropped (HealthKit history
+backfill — 79% of the naive figure), and rows describing the **same physical
+run ingested twice** are collapsed (63 km, 4.2% of the log).
+
+⚠️ **No request or response shape changes.** For a runner who logs only what was
+prescribed, `offPlanKm` is 0 and the route's output is byte-identical to before.
+
+⚠️ **Clause 3 is NOT implemented.** Including off-plan volume in §2's injury cap
+was ruled CORRECT and is blocked on sample size. The cap still reads `linkedKm`.
+
+Enforced by `lib/coaching/offPlanLoad.test.ts` and
+`lib/coaching/weeklyActualLoad.test.ts`.
+
 ## The Anthropic call — OPS-AI-OWNER-01 (2026-09-20)
 
 This route no longer calls Anthropic directly. It goes through
