@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import IconButton from '@/components/ui/IconButton'
+import Button from '@/components/ui/Button'
 
 /**
  * BackButton — the one back arrow (UI-BACKARROW-01).
@@ -43,13 +44,24 @@ import IconButton from '@/components/ui/IconButton'
  * inputs. Deleting it to conform would have been a design change smuggled in as
  * a conformance fix, so it is supported here instead.
  *
- * 🔴 THE CAPTION IS NOT A SECOND TAP TARGET, and that is a real change from the
- * copy it replaces. The wizard wrapped arrow AND text in one `<Button>`, so the
- * whole ~150px row was tappable; here the 44px circle is the control and the
- * text is `aria-hidden` beside it. A `<div onClick>` around both would restore
- * the area and is refused: LINK-HIERARCHY-01 ruled exactly that shape a defect
- * ("no role, no tabIndex, no focus ring"). The accessible name carries the
- * meaning instead — pass `ariaLabel` when the caption says more than "Back".
+ * 🔴 A CAPTIONED BACK ARROW IS ONE BUTTON, NOT A BUTTON BESIDE A LABEL.
+ *
+ * The first cut of `caption` rendered an `IconButton` with an `aria-hidden`
+ * span next to it, which shrank the tap target from the whole ~150px row to the
+ * 44px circle. Founder, asked directly: restore it. **He is right — that screen
+ * is where a runner decides whether to accept a plan, one-handed.**
+ *
+ * ⚠️ THE TWO OBVIOUS FIXES ARE BOTH WRONG, which is why this looks the way it
+ * does. A `<div onClick>` around both is the exact shape `LINK-HIERARCHY-01`
+ * ruled a defect ("no role, no tabIndex, no focus ring"). Two adjacent buttons
+ * sharing one handler makes a screen reader announce the same action twice.
+ *
+ * So the whole row is ONE `<button>`, and the circle is a `<span>` wearing the
+ * SHARED `.icon-btn` classes — not a hand-rolled one. That matters twice over:
+ * `ICON-EDGE-01`'s chrome edge arrives for free, and the hand-rolled-circle gate
+ * stays silent for the right reason (there is no inline geometry here to catch)
+ * rather than by luck. **Using the shared class IS the compliant path.**
+ *
  * The labelled-header question proper belongs to `BACK-HEADER-OWNER-01`.
  */
 export default function BackButton({
@@ -60,41 +72,50 @@ export default function BackButton({
 }: {
   onClick: () => void
   ariaLabel?: string
-  /** Optional text beside the arrow. A LABEL, not a target — see above. */
+  /** Optional text beside the arrow. Part of the SAME button — see above. */
   caption?: string
   style?: CSSProperties
 }) {
+  const chevron = (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+
+  if (caption) {
+    // ⚠️ `<Button>`, not a hand-written `<button className="btn">`.
+    // `buttonArchitecture.test.ts` caught that on the first cut and was right:
+    // the component owns the pseudo-states, and a copy drifts.
+    return (
+      <Button
+        variant="ghost"
+        size="compact"
+        onClick={onClick}
+        aria-label={ariaLabel}
+        style={{ gap: 'var(--space-3)', padding: '0', ...style }}
+      >
+        {/* The SHARED circle classes on a span: same 44px, same `--bg-soft`,
+            same `--chrome-edge`. A span cannot nest inside a button as a second
+            button, and the appearance stays owned by `globals.css`. */}
+        <span className="icon-btn icon-btn--circle icon-btn--regular" aria-hidden="true">
+          {chevron}
+        </span>
+        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>
+          {caption}
+        </span>
+      </Button>
+    )
+  }
+
   const button = (
     <IconButton
       onClick={onClick}
       ariaLabel={ariaLabel}
       shape="circle"
-      style={caption ? undefined : style}
-      icon={
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-          <path
-            d="M13 4L7 10L13 16"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      }
+      style={style}
+      icon={chevron}
     />
   )
 
-  if (!caption) return button
-
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', ...style }}>
-      {button}
-      <span
-        aria-hidden="true"
-        style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}
-      >
-        {caption}
-      </span>
-    </div>
-  )
+  return button
 }

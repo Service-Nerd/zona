@@ -74,6 +74,39 @@ describe('IconButton renders', () => {
     expect(m, 'the chevron path changed').toContain('M13 4L7 10L13 16')
   })
 
+  it('🔴 a CAPTIONED back arrow is ONE button, and the caption is inside it', () => {
+    // 🔴 THE REGRESSION THIS PINS. The first cut of `caption` rendered an
+    // IconButton with an `aria-hidden` span BESIDE it, which shrank the tap
+    // target from the whole ~150px row to the 44px circle. The founder asked
+    // for it back: that screen is where a runner decides whether to accept a
+    // plan, one-handed.
+    //
+    // ⚠️ ONE button, not two sharing a handler — two would make a screen reader
+    // announce the same action twice. And not a `<div onClick>`, which
+    // LINK-HIERARCHY-01 ruled a defect outright.
+    const m = html(React.createElement(BackButton, {
+      onClick: () => {}, ariaLabel: 'Adjust inputs', caption: 'Adjust inputs',
+    }))
+    // 🔴 THIS ASSERTION WAS HOLLOW ON ITS FIRST CUT AND FALSIFICATION CAUGHT IT.
+    // It counted `<button>` (still 1 when the caption sits OUTSIDE — a span is
+    // not a button) and `toContain('Adjust inputs</span>')` (true either way).
+    // Both passed against the exact regression this arm is named for. The
+    // property that matters is INSIDE-NESS, so read the button's own contents.
+    expect((m.match(/<button/g) ?? []).length, 'the caption must not be a second control').toBe(1)
+    const inner = m.slice(m.indexOf('>', m.indexOf('<button')) + 1, m.lastIndexOf('</button>'))
+    expect(inner, 'the caption must live INSIDE the button, or it is not tappable')
+      .toContain('Adjust inputs')
+    expect(m, 'the circle must come from the SHARED class, never hand-rolled')
+      .toMatch(/class="icon-btn icon-btn--circle icon-btn--regular"/)
+    expect(m, 'the chevron path changed').toContain('M13 4L7 10L13 16')
+  })
+
+  it('🔴 the UNCAPTIONED form is unchanged — it is the 13 other call sites', () => {
+    const m = html(React.createElement(BackButton, { onClick: () => {} }))
+    expect(classes(m)).toEqual(expect.arrayContaining(['icon-btn', 'icon-btn--circle', 'icon-btn--regular']))
+    expect(m).not.toContain('<span class="icon-btn')
+  })
+
   it('BackButton keeps its overridable label', () => {
     expect(html(React.createElement(BackButton, { onClick: () => {}, ariaLabel: 'Back to plan' })))
       .toContain('aria-label="Back to plan"')

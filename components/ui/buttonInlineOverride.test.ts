@@ -53,6 +53,14 @@ const OWNED = ['background', 'borderRadius', 'fontSize', 'padding', 'minHeight',
  * raise one. A new entry here needs a reason in the commit message.
  */
 const BASELINE: Record<string, number> = {
+  // ⚠️ ADDED 2026-09-27, hours after this register was frozen, and the reason is
+  // required by the rule above. `BackButton`'s captioned form is ONE button
+  // containing the shared circle span plus its label, so it must zero
+  // `.btn--compact`'s `padding: 12px 16px` — that padding around a 44px circle
+  // renders a 68px control where every other back arrow in the app is 44px.
+  // 🥇 The gate caught its own author within hours of shipping, which is the
+  // most useful thing it has done so far.
+  'components/shared/BackButton.tsx': 1,
   'app/auth/login/page.tsx': 1,
   'app/dashboard/BenchmarkUpdateScreen.tsx': 1,
   'app/dashboard/DashboardClient.tsx': 21,

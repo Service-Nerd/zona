@@ -52,7 +52,7 @@ Extracted from `FounderNoteScreen`, which was the conforming version.
 |---|---|
 | Container | **44×44 circle, `--bg-soft`, `--ink`.** Never the accent, never moss — it is navigation, not a CTA |
 | Glyph | 20px chevron, `currentColor` |
-| `caption` | Optional text beside the arrow, in a flex row. 🔴 **NOT a second tap target** — the 44px circle stays the only control and the caption is `aria-hidden`. Pass `ariaLabel` alongside it so the accessible name carries the caption's meaning |
+| `caption` | Optional text alongside the arrow, **inside the same button**. The whole row is one control and one accessible name. Pass `ariaLabel` to match |
 | `style` | **Layout only** — `marginBottom`, a negative `marginLeft` inside a tile, or a conditional `color` for a busy state. It is deliberately **not** a route to a different appearance |
 
 ⚠️ **This is NOT `ScreenHeader`.** That is title + subtitle with **no back arrow**, for tab roots.
@@ -75,10 +75,23 @@ affordance it carried**. `GeneratePlanScreen`'s plan preview showed a back arrow
 inputs. Dropping it to conform would have been a design change smuggled in as a
 conformance fix.
 
-🔴 **The tap area is genuinely smaller than the copy it replaces, and that is stated
-rather than hidden.** The wizard wrapped arrow AND text in one `<Button>`, so the whole
-~150px row was tappable. Here the 44px circle is the control and the caption is a label.
+🔴 **THE FIRST CUT SHRANK THE TAP TARGET AND THE FOUNDER ASKED FOR IT BACK.** It rendered an
+`IconButton` with an `aria-hidden` span beside it, taking the target from the whole ~150px row
+to the 44px circle. He is right: that screen is where a runner decides whether to accept a
+plan, one-handed.
 
-**A `<div onClick>` around both would restore the area and is refused** — `LINK-HIERARCHY-01`
-ruled exactly that shape a defect (*"no role, no tabIndex, no focus ring"*). The labelled
-pushed-screen header proper is `BACK-HEADER-OWNER-01`'s question, not this component's.
+⚠️ **The two obvious fixes are both wrong.** A `<div onClick>` around both is the exact shape
+`LINK-HIERARCHY-01` ruled a defect (*"no role, no tabIndex, no focus ring"*). Two adjacent
+buttons sharing a handler makes a screen reader announce the same action twice.
+
+**So the captioned form is ONE `<Button>`** containing a `<span>` wearing the **shared**
+`.icon-btn icon-btn--circle icon-btn--regular` classes. `ICON-EDGE-01`'s chrome edge arrives
+for free, and `handRolledCircle.test.ts` stays silent for the right reason — there is no inline
+geometry to catch — rather than by luck. **Using the shared class IS the compliant path.**
+
+⚠️ It zeroes `.btn--compact`'s padding, which is an argued entry in
+`buttonInlineOverride.test.ts`'s register: that padding around a 44px circle renders a 68px
+control where every other back arrow is 44px.
+
+The labelled pushed-screen header proper is `BACK-HEADER-OWNER-01`'s question, not this
+component's.
