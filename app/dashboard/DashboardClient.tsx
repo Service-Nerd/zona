@@ -4,6 +4,7 @@ import { calendarDaysBetween } from '@/lib/dates'
 import ModifyPlanSheet from '@/components/shared/ModifyPlanSheet'
 import ModifyPlanConfirm from '@/components/shared/ModifyPlanConfirm'
 import { canModifyPlan, type PlanEdits } from '@/lib/plan/modifyPlan'
+import { resolveAutoMatch } from '@/lib/coaching/sessionAutoMatch'
 import { applyHrToPlan } from '@/lib/plan/zones'
 import MePlanCard from '@/components/shared/MePlanCard'
 import { useIsNative } from '@/lib/useIsNative'
@@ -2132,26 +2133,12 @@ export default function DashboardClient() {
   const activeAutoMatch = useMemo<{ activity: any; confidence: 'high' | 'medium' } | null>(() => {
     if (!activeSessionData || !plan || plan === EMPTY_PLAN) return null
     if (!stravaRuns || !stravaRuns.length) return null
+    // LOG-ONE-INTENTION-01 — the SINGLE OWNER answers this now, so Today and
+    // the session screen cannot drift. The twelve lines that were here were
+    // about to be copied into TodayScreen, which is how a parallel classifier
+    // gets born.
     const week = (plan.weeks as any[] | undefined)?.find((w: any) => w.n === activeSessionData.weekN)
-    if (!week?.date) return null
-    const dayKey = activeSessionData.key as string
-    const offsets: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 }
-    const sessionDate = parseLocalDate(week.date)
-    sessionDate.setDate(sessionDate.getDate() + (offsets[dayKey] ?? 0))
-    try {
-      // findMatchCandidates is pure — safe to call client-side
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { findMatchCandidates } = require('@/lib/coaching/sessionMatch')
-      const candidates = findMatchCandidates(activeSessionData, sessionDate, stravaRuns)
-      const top = candidates[0]
-      if (!top) return null
-      if (top.confidence === 'high' || top.confidence === 'medium') {
-        return { activity: top.activity, confidence: top.confidence as 'high' | 'medium' }
-      }
-      return null
-    } catch {
-      return null
-    }
+    return resolveAutoMatch(activeSessionData, week?.date, activeSessionData.key as string, stravaRuns)
   }, [activeSessionData, plan, stravaRuns])
   const PACE_CACHE_KEY = 'rts_aerobic_pace_cache'
   const [cachedAerobicPace, setCachedAerobicPace] = useState<string | null>(() => {
@@ -5306,7 +5293,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                           <span style={{ padding: '0 8px', color: 'var(--mute-2)' }}>·</span>
                           <Button variant="ghost" className="btn--inline-target" 
                             onClick={() => setShowManualModal(true)} style={{ padding: '6px 0', fontSize: 'inherit', textDecoration: 'underline', textUnderlineOffset: '3px', minHeight: '32px' }}>
-                            Log manually
+                            Enter it manually
                           </Button>
                           <span style={{ padding: '0 8px', color: 'var(--mute-2)' }}>·</span>
                           <Button variant="ghost" className="btn--inline-target" 
@@ -5332,11 +5319,18 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                           primary row: it is not a peer of "I did this"
                           (Collins), and three equal-width buttons told the
                           runner three outcomes were equally likely (Zhuo). */}
-                      <Button variant="secondary" size="compact" onClick={() => setShowManualModal(true)} style={{ flex: 1, minWidth: '100px' }}>
-                        Log manually
-                      </Button>
-                      <Button variant="primary" size="compact" onClick={handleMarkComplete} style={{ flex: 2, minWidth: '120px', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', borderRadius: '10px' }}>
-                        Match a run
+                      {/* 🔴 LOG-ONE-INTENTION-01 — ONE button, not two.
+                          "Match a run" and "Log manually" were the same
+                          intention ("I did this run") differing only in whether
+                          we can find the data — Collins, September. The runner
+                          was being asked a question `handleMarkComplete` already
+                          answers: auto-match logs against it, no match opens the
+                          picker, and the picker now carries manual entry so
+                          nothing is lost by removing its sibling here.
+
+                          "run", not "session": the runner ran. */}
+                      <Button variant="primary" size="compact" onClick={handleMarkComplete} style={{ flex: 1, minWidth: '120px', fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase', borderRadius: '10px' }}>
+                        Log this run
                       </Button>
                       <div style={{ display: 'flex', gap: 'var(--space-2)', width: '100%' }}>
                         <Button variant="ghost"  onClick={() => setView('skip')} style={{ flex: 1 }}>
@@ -5470,9 +5464,23 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
               onClick={() => selectedActivity ? saveCompletion('complete', selectedActivity) : setView('reflect')}
               disabled={saving}
               style={{ flex: 2, fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-              {saving ? 'Saving...' : (selectedActivity ? 'Confirm complete' : 'Log without activity')}
+              {saving ? 'Saving...' : (selectedActivity ? 'Confirm complete' : 'Just mark it done')}
             </Button>
           </div>
+
+          {/* 🔴 LOG-ONE-INTENTION-01 — the manual-entry route MOVED here; it was
+              not deleted. Removing the standalone "Log manually" from the detail
+              view would otherwise strand the runner whose run never reached
+              HealthKit (ADR-011 §5) with no way to enter a distance at all —
+              "Just mark it done" records the session without one. That
+              population is real and this is the whole of what they lose if it
+              is missed, so it is a row rather than a rename. */}
+          {!selectedActivity && (
+            <Button variant="ghost" size="compact" fullWidth className="btn--inline-target"
+              onClick={() => setShowManualModal(true)} style={{ marginTop: 'var(--space-2)' }}>
+              Enter it manually
+            </Button>
+          )}
         </div>
       )}
 
@@ -5754,7 +5762,7 @@ function parseEffortCount(name?: string | null): number {
   return m ? parseInt(m[1], 10) : 1
 }
 
-function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins, loggedDistanceKm, isEdit, accumulate, existingTotalKm, existingEffortCount }: {
+function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins, loggedDistanceKm, isEdit, accumulate, existingTotalKm, existingEffortCount, offPlan = false }: {
   weekN: number
   sessionKey: string | null
   preferredUnits: 'km' | 'mi'
@@ -5776,6 +5784,24 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
   existingTotalKm?: number
   /** DS-07 Part B — efforts already counted on this session (default 1). */
   existingEffortCount?: number
+  /**
+   * 🔴 LOG-OFFPLAN-02 — a run the plan did not prescribe.
+   *
+   * Before this there was NO way to record one. `session_completions` is keyed
+   * `(user_id, week_n, session_day)` — a plan coordinate — so a run with no
+   * session day had no slot, and the save path's `sessionKey ?? todayKey`
+   * bound every manual log to a prescribed day whether or not one was meant.
+   * On a rest day `showSessionHero` is false, so no control rendered at all:
+   * **4 of 7 days on a 3-day plan.**
+   *
+   * In this mode the modal writes the ACTIVITY ROW ONLY — the same
+   * `/api/health/ingest` `source: 'manual'` call the session path already
+   * makes — and skips the completion and the scoring. That is not a shortcut:
+   * an off-plan run has no prescription to be scored against, and
+   * `LOG-OFFPLAN-01`'s owner reads exactly this shape as `offPlanKm`, so the
+   * run reaches actual load and shadow load and never the auto-trimming ratio.
+   */
+  offPlan?: boolean
 }) {
   // Edit pre-fills the logged distance (converted to the user's unit); first-log
   // pre-fills the planned distance (left raw). Accumulate starts at zero — the
@@ -5828,6 +5854,35 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
       const dist  = parseFloat(distanceStr)
       const distKm = preferredUnits === 'mi' ? dist * 1.60934 : dist
       const key   = sessionKey ?? todayKey
+      const durationSecs = hours * 3600 + minutes * 60 + seconds
+
+      // 🔴 LOG-OFFPLAN-02 — the activity log ONLY. No completion (there is no
+      // session to complete) and no scoring (there is no prescription to score
+      // against). ⚠️ AWAITED, not fire-and-forget: on the session path the
+      // completion is the durable record and the ingest is a supplement, so a
+      // dropped call loses enrichment. Here the ingest IS the record, and a
+      // silent failure would look exactly like a run that was never logged.
+      if (offPlan) {
+        const res = await authedFetch('/api/health/ingest', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source:          'manual',
+            // Unique per run, NOT per session — two off-plan runs on one day are
+            // two runs. The session path's `manual-w{n}-{day}` key is
+            // deliberately deterministic so a re-log upserts; that is the wrong
+            // semantic here and reusing it would silently overwrite the first.
+            manualUuid:      `manual-offplan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            startDate:       new Date().toISOString(),
+            distanceMeters:  Math.round(distKm * 1000),
+            durationSeconds: durationSecs,
+            avgHeartRate:    avgHr ?? undefined,
+            name:            notes || undefined,
+          }),
+        })
+        if (!res.ok) { setSaving(false); return }
+        setSavedStep(true)
+        return
+      }
 
       if (accumulate) {
         // DS-07 Part B — add this effort onto the existing logged total. Preserve
@@ -5928,7 +5983,34 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
       {(close) => (
       <div style={{ padding: '0 20px 24px' }}>
         {/* ── REFLECT STEP — shown after save ── */}
-        {savedStep ? (
+        {/* 🔴 LOG-OFFPLAN-02 — an off-plan run has NO reflect step, and that is a
+            correctness constraint rather than a trim. The chips below call
+            `saveReflect`, which upserts `session_completions` at
+            `sessionKey ?? todayKey` — on a rest day that would invent a
+            completion for a session the plan never prescribed, and on a run day
+            it would silently mark the prescribed session done because the
+            runner logged an EXTRA run. Both are the defect this item exists to
+            end. RPE without a prescription has nothing to be an effort
+            relative to; the run still reaches load via the activity row. */}
+        {savedStep && offPlan ? (
+          <div style={{ padding: '8px 0 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-4)' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--teal-soft)', border: '0.5px solid var(--teal-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M2.5 7L5.5 10L11.5 4" stroke="var(--teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.2px' }}>Logged.</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)' }}>{distanceStr}{preferredUnits} · {durationStr}</div>
+              </div>
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: 'var(--space-5)' }}>
+              It counts toward your week. Your plan is unchanged.
+            </div>
+            <Button variant="primary" fullWidth onClick={requestUnmount}>Done</Button>
+          </div>
+        ) : savedStep ? (
           <div style={{ padding: '8px 0 16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-5)' }}>
               <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--teal-soft)', border: '0.5px solid var(--teal-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -6371,13 +6453,27 @@ function getRestCopy(weekType?: string, weekPhase?: string, sessionType?: string
   }
 }
 
-function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, firstName }: {
+function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, firstName, onLogRun }: {
   session: SessionEntry | null
   nextSession: SessionEntry | null
   weekPhase?: string
   weekType?: string
   fitnessLevel?: string
   firstName?: string
+  /**
+   * 🔴 LOG-OFFPLAN-02 — a rest day had NO log control of any kind.
+   *
+   * `showSessionHero = isRunDay || isStrengthDay`, so on a rest day the whole
+   * session block — including its log buttons — never rendered. On a 3-day plan
+   * that is **4 of 7 days with no way to record a run.**
+   *
+   * ⚠️ IT IS `secondary`, NOT `primary`, AND THAT IS THE RULING NOT A TASTE.
+   * This card's job is to say "do nothing, it helps" (§ rest copy, and the
+   * brand's own voice example). A moss CTA here would argue with the sentence
+   * above it. `ui-patterns.md:3699` gives it a surface because it is a real
+   * action on this screen; `:456` keeps a de-emphasised action off moss.
+   */
+  onLogRun?: () => void
 }) {
   const isRestOrEmpty = !session || session.type === 'rest'
   const copy = getRestCopy(weekType, weekPhase, isRestOrEmpty ? undefined : session?.type, fitnessLevel, firstName)
@@ -6416,6 +6512,15 @@ function RestDayCard({ session, nextSession, weekPhase, weekType, fitnessLevel, 
           </div>
           <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: getSessionColor(nextSession), flexShrink: 0, marginLeft: 'var(--space-3)' }} />
         </div>
+      )}
+
+      {/* LOG-OFFPLAN-02. "a run", never "this run" — there is no session to
+          point at, and that one word is the whole distinction. */}
+      {onLogRun && (
+        <Button variant="secondary" size="compact" fullWidth
+          onClick={onLogRun} style={{ marginTop: 'var(--space-3)' }}>
+          Log a run
+        </Button>
       )}
     </div>
   )
@@ -6940,6 +7045,11 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
   // Completions for this week — derived from shared allCompletions prop
   const completions = allCompletions[weekNum] ?? {}
   const [showManualLog, setShowManualLog] = useState(false)
+  /** LOG-OFFPLAN-02 — a run the plan did not prescribe. Separate state from
+   *  `showManualLog` on purpose: that one logs THE SESSION, this one logs A RUN,
+   *  and collapsing them is how the modal would bind an off-plan run to a
+   *  prescribed day again. */
+  const [showOffPlanLog, setShowOffPlanLog] = useState(false)
 
   // MAINT-02 — AI weekly debrief for the viewed maintenance week (PAID; present
   // only when the enricher ran). Distinct from the rule-engine card copy so the
@@ -7163,6 +7273,23 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
   // currently mid-retry so the matching SessionCard renders the "Checking…"
   // copy. Single key — only one retry can be in flight at a time (matches
   // the throttle behaviour in retryHrFromUi).
+  /**
+   * 🔴 LOG-ONE-INTENTION-01 — Today answers "which run" ITSELF now.
+   *
+   * It could always have done: `stravaRuns` is already a prop and
+   * `resolveAutoMatch` is pure. Not asking is what produced TWO buttons —
+   * "Log this session" and "Log manually" — which are the same intention
+   * ("I did this run") differing only in whether we can find the data. Collins
+   * filed that in September; the founder hit it on his own device.
+   *
+   * ⚠️ ONE OWNER, not a copy of the session screen's `useMemo`. That copy was
+   * the obvious move and it is how a parallel classifier is born.
+   */
+  const todayAutoMatch = useMemo(() => {
+    if (!selectedSession?.today) return null
+    return resolveAutoMatch(selectedSession, (currentWeek as any)?.date, selectedSession.key, stravaRuns)
+  }, [selectedSession, currentWeek, stravaRuns])
+
   const [retryingForHrUuid, setRetryingForHrUuid] = useState<string | null>(null)
   const handleHrRetry = useCallback(async (uuid: string) => {
     setRetryingForHrUuid(uuid)
@@ -8212,28 +8339,45 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 button means "finish this screen". This one means "log THAT session",
                 so it is bound to the card above it, and detaching it breaks the
                 sentence. Clearance is still owed; docking is not the way to pay it. */}
-            {selectedSession.today && !completions[selectedCompletionKey]?.status && (
+            {/* 🔴 LOG-ONE-INTENTION-01 — ONE BUTTON. It was two: "Log this
+                session" (moss) and "Log manually" (white), which the founder
+                read as an unexplained choice — *"We have a Log manually CTA. Do
+                we actually need that? … It doesn't make that clear."*
+
+                They were never a choice. "Log manually" did not log an EXTRA
+                run; it logged the SAME prescribed session without a device.
+                So the question the runner was being asked — match or manual? —
+                is one the app can answer, and now does, above.
+
+                ⚠️ THE TAP COUNT DOES NOT GET WORSE FOR ANYONE, and that is the
+                condition this whole collapse turned on. No match goes STRAIGHT
+                to manual entry, exactly as "Log manually" did: one tap, same as
+                before. A match goes to the session screen, where the run is
+                named and confirmed. There is deliberately no "we could not find
+                a run" screen in between — that would tax the runner whose runs
+                never reach HealthKit (ADR-011 §5) for our failure to find them.
+
+                "run", not "session": the runner ran. `session` is the engine's
+                noun. */}
+            {(selectedSession.today || selectedSession.rawDate < now)
+              && !completions[selectedCompletionKey]?.status && (
               <Button variant="primary" fullWidth
                 onClick={() => {
-                  onOpenSession?.({
-                    ...selectedSession,
-                    rawDate: selectedSession.rawDate.toISOString(),
-                    completion: completions[selectedCompletionKey],
-                    isPast: false,
-                    isFuture: false,
-                    weekN: weekNum,
-                    weekTheme,
-                  })
+                  if (todayAutoMatch) {
+                    onOpenSession?.({
+                      ...selectedSession,
+                      rawDate: selectedSession.rawDate.toISOString(),
+                      completion: completions[selectedCompletionKey],
+                      isPast: false,
+                      isFuture: false,
+                      weekN: weekNum,
+                      weekTheme,
+                    })
+                    return
+                  }
+                  setShowManualLog(true)
                 }} style={{ marginTop: 'var(--space-3)' }}>
-                Log this session
-              </Button>
-            )}
-
-            {/* Manual log — secondary, shown for today or past sessions */}
-            {(selectedSession.today || selectedSession.rawDate < now) && (
-              <Button variant="secondary" size="compact" fullWidth 
-                onClick={() => setShowManualLog(true)} style={{ marginTop: 'var(--space-2)' }}>
-                Log manually
+                Log this run
               </Button>
             )}
           </>
@@ -8242,6 +8386,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         {/* Rest day — show RestDayCard */}
         {!showSessionHero && (
           <RestDayCard
+            onLogRun={() => setShowOffPlanLog(true)}
             session={selectedSession}
             nextSession={nextRunSession}
             weekPhase={(currentWeek as any).phase}
@@ -8323,6 +8468,19 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
           calendar (which shows completed/skipped state per session) and added a
           second, review-shaped job to a present-moment screen. Today's own
           completion still shows via the hero card's `done` state above. */}
+
+      {/* LOG-OFFPLAN-02 — no sessionKey, no sessionName, no planned distance.
+          The modal's `offPlan` branch writes the activity row and nothing else. */}
+      {showOffPlanLog && (
+        <ManualRunModal
+          weekN={weekNum}
+          sessionKey={null}
+          offPlan
+          preferredUnits={preferredUnits}
+          onClose={() => setShowOffPlanLog(false)}
+          onSaved={() => { setShowOffPlanLog(false); onManualSaved?.() }}
+        />
+      )}
 
       {/* Manual log modal */}
       {showManualLog && (

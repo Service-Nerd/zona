@@ -94,8 +94,17 @@ describe('LINK-HIERARCHY-01', () => {
       const open = SRC.lastIndexOf('<Button', i)
       return SRC.slice(open, i + needle.length)
     }
+    // ⚠️ RE-ANCHORED 2026-09-27 (LOG-ONE-INTENTION-01). The `minWidth: '100px'`
+    // anchor was the session row's SECONDARY — "Log manually" — and that button
+    // no longer exists: the row collapsed to one primary, because "Match a run"
+    // and "Log manually" were the same intention. The ruling this arm protects
+    // is UNCHANGED (a wrapped label is what "too big/fat" was, and `compact` is
+    // what fixes it); there is simply one row to grade instead of two.
+    //
+    // 🥇 THE TEST FAILED LOUDLY RATHER THAN PASSING ON AN EMPTY SET, which is
+    // the whole point of `tagAround`'s explicit anchor assertion — three other
+    // guards in this area quietly matched nothing when their anchor moved.
     for (const [what, needle] of [
-      ["the session row's secondary", "minWidth: '100px'"],
       ["the session row's primary",   "minWidth: '120px'"],
     ] as const) {
       expect(tagAround(needle), `${what}: a wrapped label is what "too big/fat" was`)
