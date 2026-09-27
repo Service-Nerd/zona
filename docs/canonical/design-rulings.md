@@ -2928,7 +2928,7 @@ it has**, so it wrapped to two lines and grew the tile. The distance tile has al
 | 1 | `${cssVar}NN` → `color-mix()`, all three sites | 🟢 **SHIPPED** — defect fix, restores documented intent |
 | 2 | The metric and its qualifier take different sizes | 🟢 **SHIPPED** — `~5:53 /km` at 22px, `or slower` at 11px |
 | 3 | The redundant `Pace target` sub-line | 🟢 **SHIPPED** — it was the slot `or slower` moved into |
-| 4 | Should the two tiles share ONE construction? | 🔴 **INSUFFICIENT EVIDENCE** — `:575` warns against symmetry for its own sake, and clause 1 changes what the left tile looks like. **Decide after seeing it** |
+| 4 | Should the two tiles share ONE construction? | 🟢 **CLOSED — NO CHANGE.** Founder looked at the corrected tile: *"Looks good."* The asymmetry stands, as `:575` anticipated |
 
 ⛔ **Veto: none.**
 
@@ -2942,5 +2942,9 @@ it has**, so it wrapped to two lines and grew the tile. The distance tile has al
 
 ### ⚠️ What this does not settle
 
-**Clause 4 is open, and clause 1 is why:** the founder is about to see a tinted distance tile
-that has never rendered. He may not like it. **Nothing here ran on a device.**
+⚠️ **"Looks good" is NO VISIBLE REGRESSION, NOT APPROVAL OF THE DESIGN** — the standing rule on
+reading the founder's verdicts. What it confirms is the thing that actually needed confirming:
+the tinted tile, seen for the first time, does not read as wrong. It does not ratify the
+two-construction split as a pattern, and `ui-patterns.md` gains nothing from it.
+
+⚠️ **Still not seen on a DEVICE** — this was looked at, not run on a phone.
