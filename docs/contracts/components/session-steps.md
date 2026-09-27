@@ -56,6 +56,25 @@ interface SessionStepsProps {
 
 - Display model: `buildStepGroups()` in `lib/plan/sessionSteps.ts` (pure, tested).
 - One-line string (notifications / calendar / fallback): `describeDerivedSet()` in `lib/plan/resolveMainSet.ts`.
+
+## Distance formatting — SESSION-DIST-UNITS-01 (2026-09-27)
+
+`formatDist` is `formatDistance(km, preferredUnits, { exact: true })`, and its `??` fallback is
+a bare em dash.
+
+🔴 **It used to be `` `${km}${preferredUnits}` `` — an UNCONVERTED km value wearing the
+reader's unit suffix.** It could only fire when `formatDistance` returns null (null/NaN input),
+so it could never have rendered a useful number anyway — it would have printed
+`"undefinedmi"`. It is fixed because it is the same shape as the six live sites a real user
+reported on 2026-09-27, where 11.44 km rendered as `"11.4mi"` to a runner who had run 7.1
+miles.
+
+⚠️ The em dash here is the app's **no-value placeholder** — typography, exempt from
+`brand.md` § Punctuation, which governs sentences a runner reads.
+
+Enforced by `lib/format.distanceSuffix.test.ts`.
+
+
 - Zone parsing + live HR band: `zonesFromZoneString` / `hrBandForZoneString` in `lib/coaching/zoneRules.ts`.
 
 Reference: `components/shared/SessionSteps.tsx`. Integration: `DashboardClient.tsx → SessionPopupInner`.
