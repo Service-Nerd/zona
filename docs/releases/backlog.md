@@ -45,6 +45,31 @@ injury-history runners against the rest. Until then `INJURY_WEEKLY_INCREASE_CAP_
 
 ---
 
+### `LOG-ONE-INTENTION-01` — one way to say "I ran" 🧭 DESIGN BOARD · 👤 FOUNDER (the verb)
+
+**Plan: `docs/decisions/log-one-intention-01-plan.md`.** Founder 2026-09-27: *"I want the full
+proper build done but in the right way."*
+
+**End goal:** the runner says "I ran"; the app answers "which run". **Seven strings exist today for
+one intention** — `Log this session` · `Log this run` · `Log manually` · `Match a run` ·
+`Log without activity` · `Looks like this one?` · `Wrong one?`
+
+🥇 **Most of the logic ALREADY EXISTS.** `handleMarkComplete()` already branches: auto-match → log
+against it; no match → picker. **The UI ignores the branch and offers the choice anyway.** This is
+deletion plus routing, not a new engine — and misreading it as a rebuild is why it has sat.
+
+**Phased:** 0 measure the hit rate (blocking) · 1 close the rest-day hole (`LOG-OFFPLAN-02`,
+ship now) · 2 one label per moment, copy only · 3 the collapse, behind a mock-up.
+
+🔴 **Phase 0 is not optional.** The premise is *"the app usually knows which run"* and it is
+currently **unmeasurable** — 6 real completions since 1 August; the only account with volume has
+111 completions and 0 links, and is seeded. Value is proportional to that rate.
+
+🔴 **Condition 2 is DEVICE-ONLY:** ingest and match are async inside `syncOnAppOpen`. If the runner
+opens and taps within two seconds, is the row there? Nothing has ever run on a device.
+
+---
+
 ### `LOG-OFFPLAN-02` — no way to log a run the plan did not prescribe 🧭 DESIGN BOARD
 
 **The Design Board is now unblocked on this** (it was waiting on the Coaching Board's
