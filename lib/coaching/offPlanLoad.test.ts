@@ -19,6 +19,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { checkAdjustmentTriggers } from './planAdjustment'
+import { bucketLoadByPlanWeek } from './weeklyActualLoad'
 import { computeWeeklyReportData } from './weeklyReport'
 import { LOAD_RATIO, SHADOW_LOAD_THRESHOLD_PCT } from './constants'
 import type { Session } from '@/types/plan'
@@ -110,6 +111,64 @@ describe('CLAUSE 1 — actual load is what the runner ran', () => {
   })
 })
 
+describe('COMPOSED — real activity rows through the owner into the triggers', () => {
+  // ⚠️ /ship pre-ship gate box 3. The arms above feed `linkedKm`/`offPlanKm` in
+  // by hand, which proves the TRIGGERS branch correctly and proves nothing about
+  // whether the OWNER produces those numbers from rows. Each subsystem being
+  // right in isolation does not make the composition right — that is how the
+  // shakeout invariant silently reverted enriched plans for months.
+  const plan = { weeks: [
+    { n: 5, date: '2026-09-07' }, { n: 6, date: '2026-09-14' },
+  ] } as any
+
+  const act = (date: string, km: number, id: string) => ({
+    start_date: `${date}T09:00:00.000Z`, distance_m: km * 1000,
+    activity_type: 'Run', sport_type: 'Run',
+    strava_activity_id: null, apple_health_uuid: id,
+  })
+
+  it('🔴 an unmatched row flows through as off-plan and reaches shadow load ONLY', () => {
+    const rows = [
+      act('2026-09-15', 40, 'linked-1'),   // prescribed, matched
+      act('2026-09-17', 24, 'nobody-saw'), // off-plan
+    ]
+    const load = bucketLoadByPlanWeek(plan, rows, new Set(['h:linked-1']))
+    const w6 = load.get(6)!
+    expect(w6).toEqual({ linkedKm: 40, offPlanKm: 24, totalKm: 64 })
+
+    const r = checkAdjustmentTriggers({
+      ...base(), linkedKm: w6.linkedKm, offPlanKm: w6.offPlanKm,
+    })
+    // 64 vs a 40 km chronic average would be 1.60 — above flag — if it counted.
+    expect(r?.trigger.type).toBe('shadow_load')
+    expect(r?.sessionsAfter).toEqual(r?.sessionsBefore)
+  })
+
+  it('🔴 a MANUALLY logged prescribed run is linked, not off-plan', () => {
+    // A manual log writes `session_completions` and never reaches `run_analysis`
+    // — production carries 207 such rows. If linkedKeys were built from
+    // run_analysis alone this run would read as off-plan and inflate shadow load.
+    const rows = [act('2026-09-15', 40, 'manual-1')]
+    const load = bucketLoadByPlanWeek(plan, rows, new Set(['h:manual-1']))
+    expect(load.get(6)).toEqual({ linkedKm: 40, offPlanKm: 0, totalKm: 40 })
+    expect(checkAdjustmentTriggers({ ...base(), linkedKm: 40, offPlanKm: 0 })).toBeNull()
+  })
+
+  it('🔴 backfill + duplicates together cannot manufacture a phantom adjustment', () => {
+    // The two real contaminations at once: a pre-plan run and a double ingest.
+    // Naively summed these are 30 + 40 + 40 = 110 km and every trigger fires.
+    const rows = [
+      act('2026-08-01', 30, 'backfill'),                       // predates the plan
+      act('2026-09-15', 40, 'dup-a'),                          // linked
+      { ...act('2026-09-15', 40, 'dup-b'), start_date: '2026-09-15T09:05:00.000Z' },
+    ]
+    const load = bucketLoadByPlanWeek(plan, rows, new Set(['h:dup-a']))
+    expect(load.get(6)).toEqual({ linkedKm: 40, offPlanKm: 0, totalKm: 40 })
+    expect(load.has(5)).toBe(false)
+    expect(checkAdjustmentTriggers({ ...base(), linkedKm: 40, offPlanKm: 0 })).toBeNull()
+  })
+})
+
 /**
  * 🥇 FALSIFICATION — broken for real, not asserted.
  *
@@ -121,6 +180,11 @@ describe('CLAUSE 1 — actual load is what the runner ran', () => {
  *    → "off-plan volume DOES reach shadow load" RED, "changes no session" RED.
  * D. `totalKmActual: totalKm` -> `input.linkedKm`
  *    → "the weekly report totals linked + off-plan" RED.
+ * F. COMPOSED: `linkedKeys` built from run_analysis only (dropping the
+ *    session_completions half) → "a MANUALLY logged prescribed run is linked" RED.
+ *    Verified by passing an empty linkedKeys set — 1 failed.
+ * G. COMPOSED: the pre-plan guard removed → "backfill + duplicates together" RED
+ *    (week 5 gains 30 km). Same mutation as F4 on the owner.
  * E. Control: `offPlanKm` left at 0 everywhere — all arms GREEN, which is what
  *    shows these are keyed to the split and not to "any change here".
  */
