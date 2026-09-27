@@ -179,8 +179,14 @@ export default function SessionSteps({
     ? (metric === 'distance' ? `${formatDuration(seg.duration_mins)} · ${racePacePace}` : racePacePace)
     : ''
 
+  // 🔴 SESSION-DIST-UNITS-01 — the `??` fallback used to be `${km}${preferredUnits}`,
+  // i.e. an UNCONVERTED km value wearing the reader's unit suffix. It only fires
+  // when `formatDistance` returns null (null/NaN input), so it could never
+  // render a useful number anyway — it would have printed "undefinedmi". A bare
+  // em dash is the app's no-value placeholder and is exempt from the em-dash
+  // rule as typography rather than prose.
   const groups = isV2DerivedSet(derivedSet)
-    ? buildStepGroups(derivedSet, { metric, units: preferredUnits, formatDist: (km) => formatDistance(km, preferredUnits, { exact: true }) ?? `${km}${preferredUnits}` })
+    ? buildStepGroups(derivedSet, { metric, units: preferredUnits, formatDist: (km) => formatDistance(km, preferredUnits, { exact: true }) ?? '—' })
     : null
 
   return (

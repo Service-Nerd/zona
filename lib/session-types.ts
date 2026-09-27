@@ -75,7 +75,34 @@ export function getSessionColor(session: ClassifiableSession | string): string {
   return SESSION_COLORS[session.type ?? ''] ?? 'var(--session-easy)'
 }
 
-/** Returns the display label for a session type. Defaults to the raw type string. */
-export function getSessionLabel(type: string): string {
-  return SESSION_LABELS[type] ?? type
+/**
+ * Returns the display label for a session.
+ *
+ * 🔴 SESSION-LABEL-LONGRUN-01 (2026-09-27) — THE TWIN OF `getSessionColor`, AND
+ * IT WAS LEFT BEHIND FOR FIFTEEN DAYS.
+ *
+ * `PLAN-LONGRUN-COLOUR-01` fixed the COLOUR above by taking the whole session
+ * and asking `isLongRun`, because the engine models a long run as `type:
+ * 'easy'` (so §52/§9 ratio rules treat it as aerobic volume). **The label
+ * function sitting directly beneath it kept the bare-type signature**, so
+ * `SESSION_LABELS['easy']` was the only answer it could give and **"Long run"
+ * was unreachable for every engine-generated plan** — exactly the sentence
+ * written about the colour, about the function twenty lines away.
+ *
+ * 📐 Found on a real user's post-run screen: the header read **"Easy run —
+ * Zone 2 · Sun"** while Kit's own prose two inches below read **"RPE 3 on a
+ * long run is honest"**. The title contradicted the body, on one screen, and
+ * the AI was the half that was right.
+ *
+ * Told apart by `isLongRun` — NOT by matching words in the label, which the
+ * enricher rewrites (D-17). A bare string is still accepted for call sites that
+ * genuinely hold only a type; those cannot detect a long run, by construction,
+ * and `sessionLabelReach.test.ts` holds that boundary.
+ */
+export function getSessionLabel(session: ClassifiableSession | string): string {
+  if (typeof session !== 'string') {
+    if (isLongRun(session)) return SESSION_LABELS.long!
+    return SESSION_LABELS[session.type ?? ''] ?? (session.type ?? '')
+  }
+  return SESSION_LABELS[session] ?? session
 }

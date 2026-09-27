@@ -2953,7 +2953,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
           // `?? ''` — the owner returns null on an unparseable date where a
           // bare toLocaleDateString rendered the string "Invalid Date".
           day: formatDate(d, 'weekday-long') ?? '',
-          label: s.label || getSessionLabel(s.type),
+          label: s.label || getSessionLabel(s),
           type: s.type,
         }
         break
@@ -4339,7 +4339,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
     && !!stravaLoading
 
   const color = getSessionColor(session)
-  const config = { color, label: getSessionLabel(session.type) }
+  const config = { color, label: getSessionLabel(session) }
 
   // Per-session metric values — session may come from TodayScreen (formatted) or raw plan object (unformatted)
   const rawDuration = session.duration ?? (session.duration_mins != null ? fmtDurationMins(Number(session.duration_mins)) : null)
@@ -5272,8 +5272,9 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
                     const km = typeof activity.distance === 'number'
                       ? activity.distance / 1000
                       : null
+                    // SESSION-DIST-UNITS-01 — km with a unit suffix, unconverted.
                     const distStr = km != null
-                      ? `${km.toFixed(1)}${preferredUnits === 'mi' ? 'mi' : 'km'}`
+                      ? (formatDistance(km, preferredUnits, { exact: true }) ?? null)
                       : null
                     const startDate = activity.start_date
                       ? new Date(activity.start_date)
@@ -6192,7 +6193,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                 <div style={{ fontFamily: 'var(--font-brand)', fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)' }}>{accumulate ? 'Add another effort' : isEdit ? 'Update your log' : 'Log a run'}</div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {accumulate
-                    ? `Adds to your ${(preferredUnits === 'mi' ? (existingTotalKm ?? 0) / 1.60934 : (existingTotalKm ?? 0)).toFixed(1)}${preferredUnits} so far`
+                    ? `Adds to your ${formatDistance(existingTotalKm ?? 0, preferredUnits, { exact: true }) ?? ''} so far`
                     : isEdit ? 'Correct what you logged' : 'Manual entry · no Strava needed'}
                 </div>
               </div>
@@ -6213,7 +6214,8 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                 </div>
                 {(plannedDistanceKm != null || plannedDurationMins != null) && (
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    {plannedDistanceKm != null ? `${plannedDistanceKm}${preferredUnits}` : ''}
+                    {/* SESSION-DIST-UNITS-01 — was the raw km with a unit suffix. */}
+                    {plannedDistanceKm != null ? (formatDistance(plannedDistanceKm, preferredUnits) ?? '') : ''}
                     {plannedDistanceKm != null && plannedDurationMins != null ? ' · ' : ''}
                     {plannedDurationMins != null ? fmtDurationMins(plannedDurationMins) : ''}
                     {' '}<span style={{ opacity: 0.6 }}>— edit below if different</span>
@@ -8182,7 +8184,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                   fontSize: '10px',
                   color: 'var(--mute-2)',
                 }}>
-                  {selectedSession.zone ?? getSessionLabel(selectedSession.type)}
+                  {selectedSession.zone ?? getSessionLabel(selectedSession)}
                 </span>
               )}
             </div>
@@ -8466,8 +8468,9 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
       {hasPaidAccess && missingRpeNudges.length > 0 && onOpenPostRun && (
         <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
           {missingRpeNudges.map(nudge => {
+            // SESSION-DIST-UNITS-01 — km with a "mi"/"K" suffix, unconverted.
             const distLabel = nudge.distKm != null
-              ? `${nudge.distKm < 10 ? nudge.distKm.toFixed(1) : Math.round(nudge.distKm)}${preferredUnits === 'mi' ? 'mi' : 'K'}`
+              ? (formatDistance(nudge.distKm, preferredUnits, { exact: true }) ?? 'run')
               : 'run'
             return (
               <Button variant="secondary" fullWidth 
@@ -9051,8 +9054,9 @@ function PlanCoachingCard({ plan, currentWeek, units = 'km', trackedKm }: {
   const ctx      = buildWeekVoiceContext(currentWeek, plan)
   const items    = getWeekVoiceItems(ctx)
 
+  // SESSION-DIST-UNITS-01 — km with a unit suffix, unconverted.
   const doneDisplay = trackedKm != null && trackedKm > 0
-    ? `${trackedKm.toFixed(1)}${units} done`
+    ? `${formatDistance(trackedKm, units, { exact: true }) ?? ''} done`
     : null
 
   return (
@@ -13168,7 +13172,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
   autoMatch?: { activity: any; confidence: 'high' | 'medium' } | null
 }) {
   const color = getSessionColor({ ...session, type: session.type ?? 'easy' })
-  const typeLabel = getSessionLabel(session.type ?? 'easy')
+  const typeLabel = getSessionLabel(session ?? 'easy')
   // Date display: "Tuesday · Week 14"
   const weekEyebrow = session.weekN ? `Week ${session.weekN}` : ''
   const dayEyebrow  = session.day ?? ''
@@ -13386,7 +13390,7 @@ function SessionScreen({ session, aiNotes, preloadedRuns, onBack, onSaved, prefe
               <div style={{
                 fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)',
               }}>
-                {nextSession.day} · {getSessionLabel(nextSession.type)}{nextSession.distanceKm ? ` · ${formatDistance(nextSession.distanceKm, preferredUnits, { exact: true })}` : ''}
+                {nextSession.day} · {getSessionLabel(nextSession)}{nextSession.distanceKm ? ` · ${formatDistance(nextSession.distanceKm, preferredUnits, { exact: true })}` : ''}
               </div>
             </div>
           </div>
@@ -13782,10 +13786,24 @@ function PostRunScreen({
     } catch {} finally { setSavingRPE(false) }
   }
 
+  // 🔴 SESSION-DIST-UNITS-01 — THIS IS THE LINE A REAL USER REPORTED.
+  // It printed KILOMETRES with a "mi" suffix: 11.44 km rendered as "11.4mi" on
+  // a runner who had run 7.1 miles. He read it, knew it was wrong, and
+  // concluded Kit's (correct) "0.4 miles short" was wrong too. **One
+  // unconverted string made an accurate coaching read look broken.**
+  // `formatDistance` is the sole owner of every distance string (ADR-015 /
+  // INV-FMT-001) and converts: formatDistance(11.44, 'mi') === '7mi'.
+  //
+  // ⚠️ `exact: true` BECAUSE THIS IS A MEASURED VALUE, NOT A PRESCRIBED ONE.
+  // The default rounds — correct for "your session is 8km", wrong for "you ran
+  // 7.1mi", and the line being replaced used `.toFixed(1)` for exactly that
+  // reason. Rounding 7.11 to "7mi" would be a smaller version of the same
+  // complaint. `promptFormat.ts` draws the same distinction for the AI layer:
+  // `fmtPlanned` rounds, `fmtDist` keeps the decimal.
   const distLabel = displayActivity?.km != null
-    ? `${displayActivity.km.toFixed(1)}${preferredUnits === 'mi' ? 'mi' : 'km'}`
+    ? (formatDistance(displayActivity.km, preferredUnits, { exact: true }) ?? '')
     : ''
-  const sessionLabel = getSessionLabel(session.type ?? 'easy')
+  const sessionLabel = getSessionLabel(session ?? 'easy')
   const dayLabel     = session.day ?? ''
   const weekLabel    = session.weekN ?? weekN
   // PACE-UNITS-01 — `goal_pace_per_km` is baked in km by its very name, so it
