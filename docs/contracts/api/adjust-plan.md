@@ -108,6 +108,8 @@ Those runs are shorter and *more* zone-disciplined than prescribed ones
 (median 7.5 vs 8.0 km; 68.8% vs 60.0% in Z2), so this is ordinary aerobic
 volume, not hidden hard training.
 
+⚠️ **That 26.9% counts runs after the plan ROW was created; the owner is stricter** — `isInsidePlanWeek` keeps only runs inside an actual plan WEEK, so it is an upper bound. On production today the shipped path sees **3 plan-weeks with any logged run and produces zero new `shadow_load` flags**, because 15 of 25 live plans have not reached their first week.
+
 ⚠️ **Two corrections folded into the owner, because the raw sum is wrong
 without them.** Runs that **predate the plan** are dropped (HealthKit history
 backfill — 79% of the naive figure), and rows describing the **same physical

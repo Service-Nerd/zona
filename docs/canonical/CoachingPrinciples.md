@@ -253,6 +253,21 @@ never linked a single run, and the "control" was 96% one person. **Filter on
 physical run is ingested twice (Strava + Connect) for **63 km, 4.2% of the log**, so raw
 rows must be de-duplicated before they are summed.
 
+⚠️ **THE PREVALENCE FIGURE AND THE SHIPPED BOUNDARY ARE NOT THE SAME TEST, and the
+difference is recorded rather than smoothed over.** The 26.9% / 20.4% above counts runs
+after the **plan ROW was created** (`start_date >= plans.created_at`). The shipped owner
+is stricter: `isInsidePlanWeek` keeps only runs inside an actual **plan WEEK**, so a run
+between generating a plan and its first Monday is dropped. **26.9% is therefore an upper
+bound on what the engine will count, not a description of it.**
+
+📐 **What the shipped path sees on production today: 3 plan-weeks contain any logged run —
+16 km linked, 35 km off-plan — and the change produces ZERO new `shadow_load` flags.**
+Not because the rule is inert, but because **15 of 25 live plans have not reached their
+first week yet**, so there is almost no overlap with logged history. The correct reading is
+*"armed, with nothing yet to act on"*, and it is the third time this item's headline number
+moved when the denominator was made honest. **Re-measure once plans have run for a few
+weeks; do not quote 26.9% as engine behaviour.**
+
 **Config.** `DUPLICATE_ACTIVITY` (`WINDOW_MINS` 20, `DISTANCE_TOLERANCE_PCT` 3) in
 `lib/coaching/constants.ts`. No threshold numeric — clause 3 is what would need one.
 
