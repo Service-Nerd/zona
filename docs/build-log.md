@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-27 — METRIC-TILE-01 · the card that was never there
+**Shipped:** The session card's distance tile got the surface it was always meant to have, and the pace value stopped wrapping.
+**Dev learning:** `SESSION_COLORS` holds CSS variables, not hex. So `` `${config.color}10` `` built the string `"var(--session-long)10"`, which no browser can parse, so the fill and border were silently dropped. **The tile has rendered bare on every session since the code was written.** Nothing errors — the element appears, just without its surface — so it is invisible to every check we have and to anyone reading the code, because the line *looks* like the alpha-hex trick that works on a literal. The correct idiom, `color-mix(in srgb, X N%, transparent)`, was already in the same file ten times, four lines above one of the broken sites.
+**Product/creator learning:** The founder reported "one side is bigger than the other". That was true and it had two causes: a value wrapping to two lines, and a card that had never existed. **He could only see the symptom of the second one.** Worth remembering when a report sounds like a spacing nit — the thing being described and the thing that is wrong are not always the same object.
+**AI-building learning:** My first version of the gate reported the fix's own explanatory comment as a live offender, because I did not strip comments. That is the third time this week a check has fired on prose describing the bug it guards. Then the pre-commit hook blocked the test's own negative case — a hardcoded hex inside an assertion that hex is *ignored*. Both are the same shape: **a check cannot tell the difference between the thing and a description of the thing, unless you make it.**
+**The honest bit:** I have now shipped a visual change the founder has never seen — the distance tile will appear tinted with a coloured border for the first time. That might be worse than the bare version. I flagged it as an open clause rather than pretending the fix is obviously right, but I did ship it before he looked.
+**Hook material:** "A card in our app was designed, reviewed, and shipped with a background and a border. It has never once rendered either. The string `var(--session-long)10` is not a colour, and no browser will tell you."
+**Postable?:** yes — "the card that was never there" is a clean one, and the CSS-variable trap is genuinely useful to other developers.
+
 ## 2026-09-27 — LOG-ONE-INTENTION-01 · the app was asking a question it could answer
 **Shipped:** One button to log a run, a rest day that can log one at all, and the seven strings for "I ran" collapsed to one verb.
 **Dev learning:** `handleMarkComplete()` already branched — auto-match logs against it, no match opens the picker. **The decision logic was built, correct, and ignored by the UI, which put the same choice in front of the runner anyway.** I had scoped this as "redesign the logging flow" and it was mostly deletion. The general version: before you build a decision, check whether the code already makes it and the interface is just not trusting it.
