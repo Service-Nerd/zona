@@ -13,6 +13,7 @@ back arrow. Any change to props must update this document in the same commit.
 type Props = {
   onClick: () => void
   ariaLabel?: string          // default 'Back'; override only when the destination is named
+  caption?: string            // optional text beside the arrow. A LABEL, never a second target
   style?: CSSProperties       // LAYOUT ONLY — merged, never replacing the container
 }
 ```
@@ -51,6 +52,7 @@ Extracted from `FounderNoteScreen`, which was the conforming version.
 |---|---|
 | Container | **44×44 circle, `--bg-soft`, `--ink`.** Never the accent, never moss — it is navigation, not a CTA |
 | Glyph | 20px chevron, `currentColor` |
+| `caption` | Optional text beside the arrow, in a flex row. 🔴 **NOT a second tap target** — the 44px circle stays the only control and the caption is `aria-hidden`. Pass `ariaLabel` alongside it so the accessible name carries the caption's meaning |
 | `style` | **Layout only** — `marginBottom`, a negative `marginLeft` inside a tile, or a conditional `color` for a busy state. It is deliberately **not** a route to a different appearance |
 
 ⚠️ **This is NOT `ScreenHeader`.** That is title + subtitle with **no back arrow**, for tab roots.
@@ -64,3 +66,19 @@ owner has to pick one size, and that is the price of there being one answer.
 
 `lib/marketing/backArrowOwner.test.ts` — no screen may hand-roll a back arrow; the owner must draw
 the documented 44px circle on `--bg-soft`; every caller must import it. Falsified two ways.
+
+## `caption` — BACKARROW-WIZARD-01 (2026-09-27)
+
+Added so the wizard's hand-rolled back arrow could be deleted **without deleting the
+affordance it carried**. `GeneratePlanScreen`'s plan preview showed a back arrow reading
+*"Adjust inputs"*, where "back" alone is ambiguous between the previous STEP and the
+inputs. Dropping it to conform would have been a design change smuggled in as a
+conformance fix.
+
+🔴 **The tap area is genuinely smaller than the copy it replaces, and that is stated
+rather than hidden.** The wizard wrapped arrow AND text in one `<Button>`, so the whole
+~150px row was tappable. Here the 44px circle is the control and the caption is a label.
+
+**A `<div onClick>` around both would restore the area and is refused** — `LINK-HIERARCHY-01`
+ruled exactly that shape a defect (*"no role, no tabIndex, no focus ring"*). The labelled
+pushed-screen header proper is `BACK-HEADER-OWNER-01`'s question, not this component's.

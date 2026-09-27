@@ -28,6 +28,33 @@ already decided what it is.
 ---
 
 
+### `MODIFY-CONFIRM-01` — "Here is what changes" has no way back, and its diff does not name its scale 🧭 DESIGN BOARD
+
+**Ruled SHIP (3 clauses) by the Design Board 2026-09-27. Not built — needs a founder decision
+between all three and the arrow alone.**
+
+🔴 **It stays a FULL SCREEN.** The founder asked whether it should return to the sheet with a cross;
+that would reverse `ux-principles.md:104` (*"no popups; modal overlays only for destructive
+confirmations, never for information"*) by name. A diff you are deciding on is the screen's one job.
+
+**The three clauses:**
+
+1. **Back arrow top-left** (`ux-principles.md:105`) — and it must return to the sheet **with edits
+   intact**. 🔴 **Today `onCancel` unmounts `ModifyPlanSheet`, whose `edits` are local `useState`,
+   so "Keep my current plan" is the ONLY exit and it discards everything — 2 edits in the founder's
+   own screenshot.** The arrow without lifting that state is decoration.
+2. **The two scales get a boundary and a name.** The white card is whole-plan (`weeks.length`,
+   `max`, `sum`); MON/TUE/WED/THU is **one week** (`p.weeks[weekIndex]`). Nothing on screen says so.
+   ⚠️ `AdjustmentDiff`'s accessible name is **`aria-label="Plan changes"` on one week's data** — a
+   screen reader is told the wrong scope outright. Fix in the same commit.
+3. **"Keep my current plan" becomes the DISCARD, not the escape.** Those were the same control, and
+   that was the defect.
+
+**Why it is not a conformance fix:** clause 1 requires lifting `edits` from `ModifyPlanSheet` into
+`DashboardClient`, which changes ownership of state across two components. That is a build.
+
+---
+
 ### `LOG-OFFPLAN-03` — clause 3: off-plan volume in the injury cap, blocked on sample size 🏃 COACHING BOARD
 
 **Ruled CORRECT by the board on 2026-09-27 and deliberately NOT built.** Willy: *"a runner

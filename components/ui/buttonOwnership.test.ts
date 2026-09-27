@@ -401,6 +401,40 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
       `justifyContent:\n${offenders.join('\n')}`).toEqual([])
   })
 
+  it('🔴 a FULL-WIDTH button takes a surface — the positional half of GHOST-AFFORDANCE-01', () => {
+    // 🔴 THE HALF THAT SHIPPED WITHOUT A CHECK. GHOST-AFFORDANCE-01 (2026-09-25)
+    // ruled TWO things: "one label, one treatment" — gated above — and a
+    // POSITIONAL rule, `ui-patterns.md:3699`: *"A button that is one of the
+    // primary actions on its screen takes a SURFACE (`secondary` where it is not
+    // the single CTA). `ghost` is reserved for a control inside a sentence or a
+    // dense row."* Only the first half got a gate.
+    //
+    // 📐 So ten `ghost` full-width buttons survived the sweep that was written to
+    // remove exactly them, including two steps of ONE flow disagreeing with each
+    // other — `ModifyPlanSheet`'s "Discard changes" was `secondary` while
+    // `ModifyPlanConfirm`'s "Keep my current plan", one tap later, was `ghost`.
+    // The founder reported that as "these do not have our standardised CTAs".
+    //
+    // ⚠️ `fullWidth` IS the positional signal, and it is chosen because it is
+    // INSPECTABLE where "importance" is not (Wroblewski's own condition on the
+    // ruling). A control inside a sentence is never full-width; if one ever must
+    // be, `.btn--inline-target` is the documented marker and it is honoured here.
+    const offenders: string[] = []
+    for (const f of sourceFiles()) {
+      const rel = path.relative(ROOT, f)
+      if (rel.includes('preview')) continue
+      const src = strip(fs.readFileSync(f, 'utf8'))
+      for (const m of Array.from(src.matchAll(/<Button\b(?:(?!<Button)[\s\S])*?>/g))) {
+        const tag = m[0]
+        if (!/\bfullWidth\b/.test(tag)) continue
+        if (!/variant="ghost"/.test(tag)) continue
+        if (/btn--inline-target/.test(tag)) continue
+        offenders.push(`${rel}:${src.slice(0, m.index!).split('\n').length} — full-width \`ghost\` owes a surface (ui-patterns.md:3699). Use \`secondary\`, or mark it \`btn--inline-target\` if it really sits in a sentence.`)
+      }
+    }
+    expect(offenders, offenders.join('\n')).toEqual([])
+  })
+
   it('one label, one treatment — within a context', () => {
     // `:457` (S3, "one CTA vocabulary") applied below the wizard. The founder
     // met "Log manually" looking like three different things and "Got it" like

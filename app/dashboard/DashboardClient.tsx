@@ -3788,7 +3788,7 @@ function MissedSessionSheet({
           I actually ran it →
         </Button>
 
-        <Button variant="ghost" size="compact" fullWidth 
+        <Button variant="secondary" size="compact" fullWidth 
           onClick={close}>
           Dismiss
         </Button>
@@ -4565,7 +4565,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
 
         {/* Upgrade nudge — free users only, shown after logging a session manually */}
         {!hasPaidAccess && onUpgrade && (
-          <Button variant="ghost" size="compact" fullWidth 
+          <Button variant="secondary" size="compact" fullWidth 
             onClick={onUpgrade} style={{ marginTop: 'var(--space-3)' }}>
             Upgrade to unlock zone coaching.{' '}
             <span style={{ color: 'var(--moss)' }}>→</span>
@@ -7808,7 +7808,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                   </p>
                 </>
               )}
-              <Button variant="ghost" size="compact" fullWidth 
+              <Button variant="secondary" size="compact" fullWidth 
                 onClick={onDismissMaintCard}>
                 Dismiss
               </Button>

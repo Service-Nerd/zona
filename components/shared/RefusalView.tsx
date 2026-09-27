@@ -140,7 +140,7 @@ export default function RefusalView({
             onClick={onAccept}>
             Start base building
           </Button>
-          <Button variant="ghost" size="compact" fullWidth 
+          <Button variant="secondary" size="compact" fullWidth 
             onClick={onAdjust} style={{ marginTop: '4px' }}>
             Adjust my answers
           </Button>

@@ -36,22 +36,40 @@ import IconButton from '@/components/ui/IconButton'
  * owns (`marginBottom`, a negative `marginLeft` inside a tile). It is
  * deliberately not a route to a different appearance: the container, size and
  * colour are this component's.
+ *
+ * ⚠️ `caption` (BACKARROW-WIZARD-01, 2026-09-27) exists because the wizard's
+ * hand-rolled copy had one — a back arrow reading "Adjust inputs" on the plan
+ * preview, where "back" alone is ambiguous between the previous STEP and the
+ * inputs. Deleting it to conform would have been a design change smuggled in as
+ * a conformance fix, so it is supported here instead.
+ *
+ * 🔴 THE CAPTION IS NOT A SECOND TAP TARGET, and that is a real change from the
+ * copy it replaces. The wizard wrapped arrow AND text in one `<Button>`, so the
+ * whole ~150px row was tappable; here the 44px circle is the control and the
+ * text is `aria-hidden` beside it. A `<div onClick>` around both would restore
+ * the area and is refused: LINK-HIERARCHY-01 ruled exactly that shape a defect
+ * ("no role, no tabIndex, no focus ring"). The accessible name carries the
+ * meaning instead — pass `ariaLabel` when the caption says more than "Back".
+ * The labelled-header question proper belongs to `BACK-HEADER-OWNER-01`.
  */
 export default function BackButton({
   onClick,
   ariaLabel = 'Back',
+  caption,
   style,
 }: {
   onClick: () => void
   ariaLabel?: string
+  /** Optional text beside the arrow. A LABEL, not a target — see above. */
+  caption?: string
   style?: CSSProperties
 }) {
-  return (
+  const button = (
     <IconButton
       onClick={onClick}
       ariaLabel={ariaLabel}
       shape="circle"
-      style={style}
+      style={caption ? undefined : style}
       icon={
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <path
@@ -64,5 +82,19 @@ export default function BackButton({
         </svg>
       }
     />
+  )
+
+  if (!caption) return button
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', ...style }}>
+      {button}
+      <span
+        aria-hidden="true"
+        style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}
+      >
+        {caption}
+      </span>
+    </div>
   )
 }

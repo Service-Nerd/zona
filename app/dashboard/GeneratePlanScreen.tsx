@@ -47,6 +47,7 @@ import {
   type WeekPlan, type DayBudgets,
 } from '@/components/shared/WeekGrid.logic'
 import Button from '@/components/ui/Button'
+import BackButton from '@/components/shared/BackButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1311,7 +1312,7 @@ export default function GeneratePlanScreen({
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
         <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-          {!isOnboarding && <BackBtn onClick={goBack} />}
+          {!isOnboarding && <BackButton onClick={goBack} />}
         </div>
         <div style={{ flex: 1, padding: '0 20px 24px' }}>
           <RefusalView
@@ -1336,7 +1337,7 @@ export default function GeneratePlanScreen({
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
         <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-          <BackBtn onClick={goBack} label="Adjust inputs" />
+          <BackButton onClick={goBack} ariaLabel="Adjust inputs" caption="Adjust inputs" />
           <div style={{ marginTop: 'var(--space-4)' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
               {meta.race_name || 'Your plan'}
@@ -1595,7 +1596,7 @@ export default function GeneratePlanScreen({
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
       {/* Header — back button + progress */}
       <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-        {!(isOnboarding && currentIdx === 0) && <BackBtn onClick={goBack} />}
+        {!(isOnboarding && currentIdx === 0) && <BackButton onClick={goBack} />}
         <ProgressLine total={realSteps.length} current={Math.max(0, realDone - 1)} />
         <div style={{ marginBottom: stepMeta.interstitial ? '20px' : '28px', marginTop: stepMeta.interstitial ? '28px' : 0 }}>
           {stepMeta.eyebrow && (
@@ -1656,7 +1657,7 @@ export default function GeneratePlanScreen({
             copy SITE-WIDE — the "app-side exception" CLAUDE.md refers to does
             not exist in that section. A comma. */}
         {stepMeta.optional && (
-          <Button variant="ghost" size="compact" fullWidth 
+          <Button variant="secondary" size="compact" fullWidth 
             onClick={skipStep} style={{ marginBottom: 'var(--space-2)' }}>
             Not sure, continue
           </Button>
@@ -2174,17 +2175,16 @@ export default function GeneratePlanScreen({
 }
 
 // ─── Back button ──────────────────────────────────────────────────────────────
-
-function BackBtn({ onClick, label }: { onClick: () => void; label?: string }) {
-  return (
-    <Button variant="ghost" size="compact" 
-      onClick={onClick} style={{ marginBottom: '4px' }}>
-      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--bg-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
-          <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-      {label && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)' }}>{label}</span>}
-    </Button>
-  )
-}
+//
+// 🔴 DELETED 2026-09-27 (BACKARROW-WIZARD-01). A private `BackBtn` lived here:
+// a 36px circle with a 16px glyph and no edge, against the shared owner's 44px
+// circle, 20px glyph and `--chrome-edge`. `ui-patterns.md:3086` has said
+// "`BackButton.tsx` is the single owner. Never hand-roll one" throughout.
+//
+// ⚠️ IT MISSED TWO REMEDIES IN A ROW, which is why this comment is here rather
+// than a silent deletion. `UI-BACKARROW-01` censused thirteen back arrows and
+// fixed them; `ICON-EDGE-01` gave all fifteen circles the chrome edge. This one
+// was in neither sweep, because `iconButton.markup.test.ts` scans for
+// `<IconButton` tags and a hand-rolled `<div>` circle is invisible to it. The
+// ninth "remedy applied to one twin". The gate that closes it is
+// `handRolledCircle.test.ts`.

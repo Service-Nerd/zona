@@ -2790,3 +2790,86 @@ ground, `secondary` hover · checks → `buttonArchitecture.test.ts`, **falsifie
 ⚠️ **What this does not settle:** `soft` (3) and `destructive` (0) are unvalidated in the product, and
 the hover rule is **reasoned, not observed** — nothing has been seen on a device.
 
+
+---
+
+## Founder device review — five items, 2026-09-27
+
+**Trigger:** founder screenshots (Today · Adjust-my-plan sheet · "Here is what changes" · wizard
+"How far?"): *"Do we actually need Log manually? … What about a plus icon that hovers above the nav
+bar? … There is no back button top left. … These do not have our standardised CTAs. … The back
+button doesn't seem consistent with rest of the app. Lets ensure we are using shared where we can."*
+
+### 🔍 The scan did most of the work
+
+| Row | Bearing |
+|---|---|
+| `LINK-HIERARCHY-01` clause (6) | 🔴 **Item 1 was already filed and deferred** — Collins: *"'Match a run' and 'Log manually' are the same intention."* Ruled **mock-up before code** |
+| `TODAY-CTA-CLEARANCE-01` | *"Only a GLOBAL action may dock"* — a `+` **is** global, so the revert does not kill it |
+| `NAV-FLOAT-01` / `NAV-PILL-GEOMETRY-01` | The nav is **already** a floating object occluding 74px, tucked to 21pt. That clearance is **spent** |
+| `ux-principles.md:104` | *"No popups. Modal overlays only for destructive confirmations. Never for information."* 🔴 **The founder's own alternative for item 2 would reverse this by name** |
+| `ui-patterns.md:3086` · `:3699` · `ICON-EDGE-01` | Items 3, 4 and 5 are **conformance to rules already written**, not new patterns |
+
+### ⚖️ Rulings
+
+| # | | |
+|---|---|---|
+| 1a | Keep "Log manually" | 🟢 **SHIP WITH AMENDMENT** — it is the HR-less path (ADR-011 §5); the label and rank are wrong |
+| 1b | The floating `+` | 🔴 **DON'T SHIP as put, not permanent** — three named conditions, none of them design |
+| 2 | "Here is what changes" | 🟢 **SHIP (3 clauses)** — stays a full screen; gains a back arrow that **preserves edits**; the two scales get a boundary |
+| 3 | The CTA pair | 🟢 **SHIP — one grammar** |
+| 4 | Wizard back button | ⚙️ **NOT THE BOARD'S** — a defect fix against `ui-patterns.md:3086`. **But the missing GATE is the board's** |
+| 5 | Shared components | 🟢 **SHIP as a standing rule + a debt register** |
+
+🔴 **THE PREMISE OF ITEM 1 WAS FACTUALLY WRONG, AND THAT WAS THE FINDING.** "Log manually" does not
+log an extra run — it passes `sessionKey`, pre-fills the **prescribed** distance, and writes
+`sessionKey ?? todayKey`. **Off-plan logging does not exist anywhere in the product**, and on a rest
+day `showSessionHero` is false so **no log control renders at all — 4 of 7 days on a 3-day plan.**
+Routed to the Coaching Board (`LOG-OFFPLAN-01`), which ruled an off-plan run an **observation, not
+an intervention** — which answers the shape: a quiet entry point, not a FAB. → `LOG-OFFPLAN-02`.
+
+### 📐 Measured
+
+| | |
+|---|---|
+| Wizard back button | **36px circle / 16px glyph / no edge** vs the owner's **44 / 20 / `--chrome-edge`**. Tap target still 44px via `Button size="compact"`, so **visual, not accessibility** — stated precisely because this register records a real defect dismissed as a capture artefact and the reverse |
+| 🔴 It missed **two** remedies | `UI-BACKARROW-01` censused 13 arrows; `ICON-EDGE-01` edged 15 circles. **Both were blind to it**, because `iconButton.markup.test.ts` anchors on `<IconButton` tags and a hand-rolled `<div>` circle is not one. **Ninth "remedy applied to one twin" — and the twin was hidden by the guard's own anchor** |
+| The CTA pair | **24 non-primary full-width buttons across FOUR treatments.** Two steps of ONE flow disagreed: `ModifyPlanSheet`'s "Discard changes" `secondary`, `ModifyPlanConfirm`'s "Keep my current plan" one tap later `ghost` |
+| 🔴 `GHOST-AFFORDANCE-01` shipped **half a gate** | It ruled two things and only "one label, one treatment" got a check. The **positional** half — *"a button that is one of the primary actions takes a SURFACE"* — had none, so **ten `ghost` full-widths survived the sweep written to remove them** |
+| Inline overrides | **35 of 143 `<Button>` (24.5%)** override the component's own properties. `padding` ×32, `borderRadius` ×25, `fontSize` ×23, **`background` ×16** |
+| The wizard's Continue | `padding 15px` (not `15px 20px`), radius **`--radius-md`** (that is `compact`'s), font-size **15px** — *a size that exists nowhere in the scale*. A hybrid the system cannot produce |
+| "Here is what changes" | The white card is **whole-plan**; MON/TUE/WED/THU is **one week**; nothing on screen says so, and `AdjustmentDiff`'s accessible name is **`"Plan changes"` on week data** |
+| 🔴 Its only exit destroys work | `onCancel` unmounts `ModifyPlanSheet`, whose `edits` are local `useState`. **"Keep my current plan" discards every edit — 2 of them in the founder's screenshot — and there is no other way back** |
+
+### ⛔ Veto check
+
+**None.** Silvanto declined on the `+`: *"crowding is not a palette or type regression, and I am not
+going to be the first to use this seat on a feeling."* The chair would have refused it as a
+preference.
+
+### ⚡ Recorded disagreement — Collins vs Wroblewski on the `+`, unresolved
+
+Collins: a `+` reads as *"add something that isn't there"*, exactly right for an off-plan run.
+Wroblewski: 🔴 **nothing reserves its occlusion band** — `bottomNavH` is measured from the viewport
+bottom and consumed by `Sheet`'s `maxHeight`, the scroll reserve and `PullToRefresh`; a second
+floating object re-breaks what `NAV-FLOAT-01` fixed five days ago in a comment reading *"this cannot
+drift again if the shape changes a third time."* **Neither moved.** Settles on a device prototype
+with the reserve wired.
+
+### 📦 Built 2026-09-27 (items 3, 4, 5)
+
+| Artifact | |
+|---|---|
+| **Pattern** | Already written — `ui-patterns.md:3086` (the single owner) and `:3699` (the positional rule). **Enforced, not authored** |
+| **Token / constant** | `BackButton`'s `caption` prop; `BASELINE` in `buttonInlineOverride.test.ts` |
+| **Mechanical check** | `handRolledCircle.test.ts` (new) · the positional arm in `buttonOwnership.test.ts` · `buttonInlineOverride.test.ts` (new) |
+
+⚠️ **The caption's tap area is smaller than the control it replaces** — the circle is the target and
+the text is `aria-hidden`. A `<div onClick>` would restore it and is refused by `LINK-HIERARCHY-01`.
+Reported, not hidden; `BACK-HEADER-OWNER-01` owns the labelled-header question.
+
+### ⚠️ What this sitting does not settle
+
+**Item 2 is ruled and unbuilt** — it needs `edits` lifted out of `ModifyPlanSheet`, which is a build,
+not a conformance fix, and the founder has not chosen between all three clauses and the arrow alone.
+**Nothing here ran on a device.**
