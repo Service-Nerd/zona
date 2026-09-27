@@ -58,6 +58,12 @@ one intention** — `Log this session` · `Log this run` · `Log manually` · `M
 against it; no match → picker. **The UI ignores the branch and offers the choice anyway.** This is
 deletion plus routing, not a new engine — and misreading it as a rebuild is why it has sat.
 
+**The verb is DECIDED (2026-09-27, founder delegated "fit with brand"):** **"Log this run"** when a
+session is prescribed, **"Log a run"** when there is none. 🔴 *Manually* / *Match* / *without
+activity* all name **our plumbing, not the runner's act** — that is the founder's *"doesn't make
+that clear"*, and "log" was never the problem. *"this"* vs *"a"* carries prescribed-vs-extra in one
+word. ⛔ Not *"I ran"*: the voice speaks **to** the runner, never as them.
+
 **Phased:** 0 measure the hit rate (blocking) · 1 close the rest-day hole (`LOG-OFFPLAN-02`,
 ship now) · 2 one label per moment, copy only · 3 the collapse, behind a mock-up.
 

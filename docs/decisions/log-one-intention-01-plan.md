@@ -88,7 +88,34 @@ Pure copy and hierarchy. Low risk, shippable alone, and it makes Phase 3's diff 
 - `LINK-HIERARCHY-01` already ruled the preference (linking is materially better coaching under
   ADR-011, because a manual log carries **no HR stream**), so the primary must be the linked path
   and the manual path must be visibly secondary — **not a peer**.
-- 👤 **FOUNDER owns the verb.** Locked-string territory. Candidate: *"Log today's run"* / *"I ran"*.
+- 👤 **THE VERB — decided 2026-09-27.** Founder: *"You chose to fit with brand."*
+
+  | When | Copy |
+  |---|---|
+  | A session is prescribed | **"Log this run"** |
+  | No session (rest day, an extra run) | **"Log a run"** |
+
+  🔴 **The word that had to die is "manually", not "log".** *Manually*, *Match*, and *without
+  activity* all describe **our plumbing**, not the runner's act. `brand.md` § What the voice is NOT
+  bans *"Based on your data…"* for the same underlying reason: **the runner should never have to
+  learn our internals to use a button.** That is the whole of the founder's complaint — *"It
+  doesn't make that clear"* — and "log" was never the problem.
+
+  **"session" → "run".** The runner ran. *Session* is the engine's noun, and `brand.md` § Tone
+  says **not vague, specific beats abstract**.
+
+  **"this" vs "a" carries the entire distinction in one word** — prescribed versus extra — with
+  nothing to explain. That is the `ux-principles.md` restraint rule doing the work a sentence
+  would otherwise have to.
+
+  ⛔ **NOT "I ran".** The voice speaks **to** the runner — *"Do nothing. It helps."*, *"Bit keen.
+  Ease it back."* It never ventriloquises them. First person would be a new grammar for the app.
+
+  ✅ **Both strings already exist in the codebase** — `Log this run` on three surfaces, `Log a run`
+  is `ManualRunModal`'s own title. This picks the survivors; it invents nothing.
+
+  ⚠️ **Not a `lib/brand.ts` value.** The locked strings are the taglines, `voiceAnchor` and
+  `coachName`; button copy is not parameterised and should not become so for this.
 
 ### Phase 3 — the collapse
 
