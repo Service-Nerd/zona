@@ -45,32 +45,46 @@ injury-history runners against the rest. Until then `INJURY_WEEKLY_INCREASE_CAP_
 
 ---
 
-### `RUN-ANALYSIS-ORPHAN-01` — 88 of 145 `run_analysis` rows point at activities that are not in the log ⚙️ NO BOARD
+### `LOAD-DEDUPE-MANUAL-01` — ✅ CLOSED 2026-09-27. The two filed items were both wrong, and the RCA found a third ⚙️ NO BOARD
 
-**Found while measuring LOG-OFFPLAN-01, filed rather than chased.** 72 carry a
-`strava_activity_id`, 16 carry **neither id**, spanning 2026-05-04 → 2026-09-23 across three
-users — one of whom has **no rows in the activity log at all**.
+🔴 **`RUN-ANALYSIS-ORPHAN-01` WAS NOT A DEFECT AND I FILED IT AS ONE.** I reported *"88 of 145
+`run_analysis` rows reference an activity id not in the log — a second hole in the same
+denominator"*. Measured properly:
 
-So `actual_load_km` was partly computed from activities the log cannot account for. **A
-second hole in the same denominator as LOG-OFFPLAN-01**, and unexplained: a purge would
-cascade, so these are not purge residue. Start by checking whether `unlink-activity` deletes
-the activity row while leaving the analysis.
+| | |
+|---|---|
+| 72 of 88 | **`zonna.demo@demo.com`**, all created 2026-06-02 in one batch by `scripts/seed-demo-account.mjs:178`, which writes `strava_activity_id: synthId` in a **synthetic `9000000xxx` range**. Real Strava ids in the log are 11 digits |
+| 16 of 88 | `strava_activity_id: null`, **by design** — `/api/analyse-run/manual:177` writes exactly that, because a manual log's activity row is keyed by `manual_uuid` |
+| the rest | early manual logs on the founder's account, Apr–Jun |
 
----
+**None of it is a hole in the load model.** ⚠️ **The tell was in my own first probe and I read
+past it: every orphan had `source: 'manual'`.** I filed on a join I had not validated.
 
-### `ACTIVITY-DUPLICATE-01` — the same physical run is ingested twice ⚙️ NO BOARD
+🔴 **`ACTIVITY-DUPLICATE-01` was 4 rows, not a systemic fault** — four April `apple_health` pairs
+(two HealthKit uuids for one workout, old data). **The fifth "duplicate" was my own dedup being
+wrong**, and that is the real defect:
 
-**Measured on production 2026-09-27: 63 km, 4.2% of the entire activity log.** The same run
-appears as "Run (Strava)" and "Run (Connect)" minutes apart with distances differing by
-under 3%; one appears **three** times. A recent pair (2026-09-23, both "Manual run") suggests
-this is not purely historical.
+**A manual log stamped `new Date()` — the moment it was TYPED, not when the run happened.** So
+two 7.5 km logs entered in one sitting for `week_1 mon` and `week_1 wed` carried the same
+timestamp and the same distance, and `dedupeRuns` collapsed them. **That silently deleted a real
+7.5 km from the week**, in the load model shipped the same morning — the exact opposite of what
+dedup is for.
 
-⚠️ **`weeklyActualLoad.ts` de-duplicates at READ time and that is not a fix** — it stops the
-load figure double-counting, which it would otherwise do on day one. The write-side question
-is whether `tryEnrichHealthKitRow` (ADR-011) is failing to consolidate, or whether these
-predate it. **SC-10's lesson applies: a masked read reads green.**
+**Fixed, both ends:**
+1. `dedupeRuns` never collapses rows with **different `manual_uuid`s**. The uuid is
+   `manual-w{n}-{day}`, deterministic per session, so this is **exact** where the rest of the
+   function is a heuristic. One-sided uuids still compare on time and distance, because that is
+   the cross-source duplicate the function exists for.
+2. `ManualRunModal` takes `sessionDate` and stamps **when the run happened**. A Monday run logged
+   on Wednesday was being filed into Wednesday — wrong for `bucketLoadByPlanWeek`'s plan-week
+   bucketing and for §58 cohort ordering. Falls back to now for an off-plan log, which genuinely
+   has no session to date from.
 
----
+⚠️ **The 4 real April duplicates are left in place** — historical, both rows are genuine
+HealthKit workouts, and the read side now handles them. Nothing is written to fix old rows.
+
+Falsified both directions: removing the guard restores the defect; over-applying it breaks the
+cross-source case.
 
 ### `SHEET-RAF-FALLBACK-01` — a sheet opened while the document is hidden never shows ⚙️ NO BOARD
 

@@ -57,6 +57,16 @@ export interface ActivityLogRow {
   sport_type:          string | null
   strava_activity_id:  number | string | null
   apple_health_uuid:   string | null
+  /**
+   * 🔴 LOAD-DEDUPE-MANUAL-01 — REQUIRED BY `dedupeRuns`, not decoration.
+   *
+   * A manual log's uuid is `manual-w{n}-{day}`, deterministic per SESSION. So
+   * two rows carrying DIFFERENT manual uuids are two different logged sessions
+   * by construction, whatever their timestamps say — and their timestamps lie
+   * (see below). Without this column the time+distance heuristic eats one of
+   * them and the week is under-counted.
+   */
+  manual_uuid?:        string | null
 }
 
 export interface WeeklyLoad {
@@ -106,6 +116,15 @@ export function dedupeRuns(rows: readonly ActivityLogRow[]): ActivityLogRow[] {
     const t = new Date(r.start_date).getTime()
     const d = r.distance_m ?? 0
     const dup = out.find(o => {
+      // 🔴 LOAD-DEDUPE-MANUAL-01 — TWO DIFFERENT MANUAL UUIDS ARE TWO DIFFERENT
+      // RUNS, FULL STOP. The uuid is `manual-w{n}-{day}`, deterministic per
+      // session, so this is exact where the rest of this function is a
+      // heuristic — and the heuristic is WRONG here, because a manual log
+      // stamps the moment it was ENTERED, not when the run happened. Measured
+      // on production: two 7.5 km logs entered in one sitting for `w1-mon` and
+      // `w1-wed` grouped as one run. **That silently deletes real volume from
+      // the load model**, which is the opposite of what this function is for.
+      if (o.manual_uuid && r.manual_uuid && o.manual_uuid !== r.manual_uuid) return false
       const od = o.distance_m ?? 0
       return Math.abs(new Date(o.start_date).getTime() - t) < DUPLICATE_ACTIVITY.WINDOW_MINS * 60_000
         && Math.abs(od - d) <= DUPLICATE_ACTIVITY.DISTANCE_TOLERANCE_PCT / 100 * Math.max(od, d, 1)
@@ -213,7 +232,7 @@ export async function fetchWeeklyLoad(
 
   const [actsRes, raRes, compRes] = await Promise.all([
     supabase.from('strava_activities')
-      .select('start_date, distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid')
+      .select('start_date, distance_m, activity_type, sport_type, strava_activity_id, apple_health_uuid, manual_uuid')
       .eq('user_id', userId)
       .gte('start_date', from.toISOString())
       .lt('start_date', to.toISOString()),

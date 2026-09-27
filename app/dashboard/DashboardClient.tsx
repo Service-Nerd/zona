@@ -5525,6 +5525,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
         <ManualRunModal
           weekN={weekN}
           sessionKey={session.key}
+          sessionDate={session.rawDate ?? null}
           preferredUnits={preferredUnits}
           onClose={() => { setShowManualModal(false); setManualAccumulate(false) }}
           onSaved={() => { setShowManualModal(false); setManualAccumulate(false); onSaved?.(); onClose() }}
@@ -5798,7 +5799,7 @@ function parseEffortCount(name?: string | null): number {
   return m ? parseInt(m[1], 10) : 1
 }
 
-function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins, loggedDistanceKm, isEdit, accumulate, existingTotalKm, existingEffortCount, offPlan = false }: {
+function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, sessionName, sessionType, plannedDistanceKm, plannedDurationMins, loggedDistanceKm, isEdit, accumulate, existingTotalKm, existingEffortCount, offPlan = false, sessionDate }: {
   weekN: number
   sessionKey: string | null
   preferredUnits: 'km' | 'mi'
@@ -5838,6 +5839,22 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
    * run reaches actual load and shadow load and never the auto-trimming ratio.
    */
   offPlan?: boolean
+  /**
+   * 🔴 LOAD-DEDUPE-MANUAL-01 — WHEN THE RUN HAPPENED, not when it was typed.
+   *
+   * The ingest call stamped `new Date().toISOString()`, so a Monday run logged
+   * on Wednesday was recorded as a Wednesday run. That is wrong for everything
+   * downstream that reads `start_date`: `bucketLoadByPlanWeek` can file it in
+   * the wrong PLAN WEEK, and the §58 cohort and pace trend order it wrongly.
+   *
+   * Measured on production: two 7.5 km logs entered in one sitting for
+   * `week_1 mon` and `week_1 wed` both carry the same timestamp, which is what
+   * made them look like one duplicated run.
+   *
+   * Optional, and falls back to now — an off-plan log genuinely has no session
+   * date, and a caller that cannot supply one must still be able to log.
+   */
+  sessionDate?: string | Date | null
 }) {
   // Edit pre-fills the logged distance (converted to the user's unit); first-log
   // pre-fills the planned distance (left raw). Accumulate starts at zero — the
@@ -5877,6 +5894,13 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
   }
 
   const todayKey = ['sun','mon','tue','wed','thu','fri','sat'][new Date().getDay()]
+  /** LOAD-DEDUPE-MANUAL-01 — when the RUN happened. `sessionDate` when the
+   *  caller knows it, else now (an off-plan log has no session to date from). */
+  const loggedAtIso = (() => {
+    if (!sessionDate) return new Date().toISOString()
+    const d = new Date(sessionDate)
+    return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString()
+  })()
   const distanceStr = `${distWhole}.${distDecimal}`
   const durationStr = `${hours > 0 ? hours + 'h ' : ''}${String(minutes).padStart(2, '0')}m${seconds > 0 ? ' ' + String(seconds).padStart(2, '0') + 's' : ''}`
   const hasData = distWhole > 0 || distDecimal > 0 || hours > 0 || minutes > 0 || seconds > 0
@@ -5908,7 +5932,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
             // deliberately deterministic so a re-log upserts; that is the wrong
             // semantic here and reusing it would silently overwrite the first.
             manualUuid:      `manual-offplan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            startDate:       new Date().toISOString(),
+            startDate:       loggedAtIso,
             distanceMeters:  Math.round(distKm * 1000),
             durationSeconds: durationSecs,
             avgHeartRate:    avgHr ?? undefined,
@@ -5964,7 +5988,8 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
           body: JSON.stringify({
             source:          'manual',
             manualUuid:      `manual-w${weekN}-${key}`,
-            startDate:       new Date().toISOString(),
+            // LOAD-DEDUPE-MANUAL-01 — the SESSION's date when we know it.
+            startDate:       loggedAtIso,
             distanceMeters:  Math.round(distKm * 1000),
             durationSeconds: durationS,
             avgHeartRate:    avgHr ?? undefined,
@@ -8523,6 +8548,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         <ManualRunModal
           weekN={weekNum}
           sessionKey={selectedSession?.today ? selectedSession.key : null}
+          sessionDate={selectedSession?.rawDate ?? null}
           preferredUnits={preferredUnits}
           onClose={() => setShowManualLog(false)}
           onSaved={() => { setShowManualLog(false); onManualSaved?.() }}

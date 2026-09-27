@@ -24,6 +24,7 @@ const run = (date: string, km: number, over: Partial<ActivityLogRow> = {}): Acti
   sport_type: 'Run',
   strava_activity_id: null,
   apple_health_uuid: `hk-${date}-${km}`,
+  manual_uuid: null,
   ...over,
 })
 
@@ -65,6 +66,40 @@ describe('dedupeRuns', () => {
       { ...run('2026-09-21', 5), start_date: '2026-09-21T18:00:00.000Z', apple_health_uuid: 'hk-pm' },
     ]
     expect(dedupeRuns(rows)).toHaveLength(2)
+  })
+
+  it('🔴 NEVER collapses two rows with DIFFERENT manual uuids (LOAD-DEDUPE-MANUAL-01)', () => {
+    // 📐 THE REAL PRODUCTION CASE. Two 7.5 km manual logs entered in one
+    // sitting, for `week_1 mon` and `week_1 wed`. Identical distance and
+    // near-identical timestamps — because a manual log used to stamp the moment
+    // it was TYPED, not when the run happened. The heuristic grouped them and
+    // **deleted a real 7.5 km from the week**, which is the opposite of what
+    // dedup is for. The uuid is deterministic per session, so this is exact.
+    const rows = [
+      run('2026-09-23', 7.5, { apple_health_uuid: null, manual_uuid: 'manual-w1-mon' }),
+      { ...run('2026-09-23', 7.5, { apple_health_uuid: null, manual_uuid: 'manual-w1-wed' }),
+        start_date: '2026-09-23T09:02:00.000Z' },
+    ]
+    expect(dedupeRuns(rows)).toHaveLength(2)
+  })
+
+  it('still collapses the SAME manual log ingested twice', () => {
+    const rows = [
+      run('2026-09-23', 7.5, { apple_health_uuid: null, manual_uuid: 'manual-w1-mon' }),
+      { ...run('2026-09-23', 7.5, { apple_health_uuid: null, manual_uuid: 'manual-w1-mon' }),
+        start_date: '2026-09-23T09:02:00.000Z' },
+    ]
+    expect(dedupeRuns(rows)).toHaveLength(1)
+  })
+
+  it('a manual row and a device row are still compared on time and distance', () => {
+    // Only ONE side carrying a uuid must not disable the heuristic — that is
+    // the cross-source duplicate this function exists for.
+    const rows = [
+      run('2026-09-23', 7.5, { apple_health_uuid: 'hk-x', manual_uuid: null }),
+      run('2026-09-23', 7.5, { apple_health_uuid: null, manual_uuid: 'manual-w1-mon' }),
+    ]
+    expect(dedupeRuns(rows)).toHaveLength(1)
   })
 
   it('does not collapse two runs of clearly different length at the same time', () => {
