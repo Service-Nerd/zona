@@ -65,6 +65,7 @@ import { useDisciplineLedger, type LedgerSnapshot } from '@/lib/coaching/useDisc
 import AttributionRow from '@/components/shared/AttributionRow'
 import { attributionAnswered, currentUserId, type UpgradeSource } from '@/lib/analytics'
 import { useTrackOnce } from '@/components/shared/useTrackOnce'
+import { useNavRecede } from '@/components/shared/useNavRecede'
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
@@ -621,6 +622,10 @@ export default function DashboardClient() {
   // 🔴 ONE OWNER. Nine call sites each doing `setScreen('upgrade')` plus a source
   // assignment is nine chances for the tenth to forget the second statement. This
   // is the DELOAD-OWNER-01 shape and the reason that item exists.
+  // NAV-FADE-01 — the bar recedes while scrolling, returns 150ms after it stops.
+  // The LOOK lives in `.nav-bar--receded`; reduced motion disables it in CSS, in
+  // one place, rather than being decided here as well.
+  const navReceded = useNavRecede()
   const [upgradeSource, setUpgradeSource] = useState<UpgradeSource | null>(null)
   const openUpgrade = (source: UpgradeSource) => { setUpgradeSource(source); setScreen('upgrade') }
   const [attributionResolved, setAttributionResolved] = useState(false)
@@ -2903,7 +2908,9 @@ export default function DashboardClient() {
         // with a value in `globals.css` was removed, or the class is
         // decoration.
         return (
-          <div ref={bottomNavRef} className="nav-bar nav-bar--floating" style={{
+          <div ref={bottomNavRef}
+            className={`nav-bar nav-bar--floating${navReceded ? ' nav-bar--receded' : ''}`}
+            style={{
             position: 'fixed',
             zIndex: Z_LAYERS.nav,
           }}>

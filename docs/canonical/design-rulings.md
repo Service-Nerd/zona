@@ -2978,3 +2978,38 @@ would be moved by scroll-depth data.
 session, styled inert*: both conditions hold at once.
 ⛔ **Veto: none exercised.** No palette or type regression; Silvanto's Moss condition is a
 condition, not a veto.
+
+### NAV-ACTIVE-LOZENGE-01 + NAV-FADE-01 — built 2026-09-28
+
+The founder sent two references (The Sun, WhatsApp): *"both are easy to tell what page has
+been selected. I also like how they are styled."*
+
+🔍 **The scan found most of it already ruled.** `NAV-FLOAT-01` (the floating pill) was ruled
+SHIP on 2026-09-25 **and is live** — the shape he was admiring is shipped. Nav height is
+settled at 60px. The pill's geometry has been dialled five times and was not reopened.
+**Only the selected-state treatment was a new question.**
+
+📐 **And the measurement turned an aesthetic request into a rule we were breaking.**
+`--moss-strong` active against `--mute` inactive is **1.00:1 — zero levels of greyscale
+separation**, identical luminance, hue the only signal. `ui-patterns.md` already ruled *"state
+must live in the label, never colour alone"* and carried a 6-site debt; the nav was a seventh.
+
+| Ruling | |
+|---|---|
+| **NAV-ACTIVE-LOZENGE-01** — the active tab gains a lozenge and a heavier label | 🟢 **SHIP WITH AMENDMENT — BUILT** |
+| **NAV-FADE-01** — the bar recedes on scroll | 🟢 **BUILT** (ruled 2026-09-25, unbuilt for three days) |
+
+⛔ **Veto considered and DECLINED, on the record.** Silvanto named the fill-vs-edge finding
+(*"re-open only if the palette gains a ground that is not near-white"*) and then **distinguished
+it**: that was a fill fighting **two** grounds, `--bg` and `--card`; the lozenge has **one**,
+because `--nav-bg` is `--card` = #FFFFFF. He named a **0.08 alpha ceiling** as a condition
+instead — past it the active label drops to 4.47:1, below AA.
+
+⚡ **Collins vs Silvanto on how far to push it.** Collins wanted the maximum readable lozenge;
+**Silvanto's cap held, because it is arithmetic rather than taste.** Collins accepted on
+condition the **weight change** ships with it — *"a lozenge alone is a smudge behind a word
+that looks the same"* — and the chair granted it.
+
+⚠️ **What it does not settle:** nothing has been seen on a device, and **the lozenge has not
+been measured against the receded, blurred bar** — when NAV-FADE-01 is receded the lozenge's
+ground stops being flat white. That is a re-measure, not a re-ruling.

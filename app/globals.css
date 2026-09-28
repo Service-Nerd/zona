@@ -1210,6 +1210,32 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  * left its enforcement behind** — the same population failure as the four
  * recorded earlier today. The arm now reads both surfaces. */
 .nav-tab--active { color: var(--moss-strong); }
+
+/* NAV-ACTIVE-LOZENGE-01 — the lozenge.
+ *
+ * ⚠️ A PSEUDO-ELEMENT, NOT PADDING OR A BORDER ON THE TAB. NAV-SLIM-01 moved the
+ * padding INTO the tab to take the target from 69% to 98% of the bar; insetting
+ * the tab itself would hand that back. The lozenge is drawn behind the content
+ * and the button's own box — the tap target — is untouched.
+ *
+ * ⚠️ AND THE WEIGHT PAIR IS NOT DECORATION. Collins' condition: a lozenge alone
+ * is a smudge behind a word that looks the same. The weights are declared as a
+ * PAIR so the delta cannot drift if someone tunes the base. */
+.nav-tab           { font-weight: 500; }
+.nav-tab--active   { font-weight: 600; }
+.nav-tab--active { position: relative; }
+.nav-tab--active::before {
+  content: '';
+  position: absolute;
+  /* Inset visually; the 60px target is the button, not this. */
+  inset: 8px 6px;
+  background: var(--nav-active-wash);
+  border-radius: 999px;   /* a stadium, echoing the pill it sits inside */
+  z-index: 0;
+}
+/* The content rides above the wash. Without this the icon and label paint
+ * underneath it and the lozenge reads as a smear. */
+.nav-tab--active > * { position: relative; z-index: 1; }
 .nav-tab:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 
 
@@ -1395,7 +1421,69 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
   background: var(--nav-bg);
 }
 
+/* NAV-FADE-01 (Design Board 2026-09-25, ruled SHIP WITH AMENDMENT, built 09-28)
+ * — the nav recedes while the runner scrolls and returns when they stop.
+ *
+ * 🔴 THE AMENDMENT IS THE WHOLE RULING AND IT IS LOAD-BEARING. The founder asked
+ * for *"a bit opaque"*. A whole-bar opacity fade was MEASURED and refused:
+ *     0.9 → 4.47:1   already below AA
+ *     0.8 → 3.63:1
+ *     0.7 → 2.98:1   below even the 3:1 graphics floor
+ * A translucent background WITH a backdrop blur holds **>=5.23:1 worst case**,
+ * because the labels never lose opacity — only the surface behind them does.
+ * So: the BACKGROUND becomes translucent and blurred. The content does not fade.
+ *
+ * ⚠️ IT STAYS LIVE WHILE RECEDED. `pointer-events` is deliberately untouched:
+ * § 6i records a nav icon under a sheet that DISMISSED instead of navigating, and
+ * a nav you can see but cannot press is worse than one that is simply there. */
+.nav-bar--floating.nav-bar--receded {
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: background var(--motion-ui), box-shadow var(--motion-ui);
+  box-shadow: none;
+}
+
+/* 🔴 REDUCED MOTION DISABLES THE RECEDE ENTIRELY — it does not merely shorten it.
+ * Wroblewski's condition on TODAY-CTA-CLEARANCE-01 was that the CTA "cannot
+ * depend on the recede, because prefers-reduced-motion disables that". Honouring
+ * the token collapse alone would still change the surface instantly under a
+ * runner who has asked for less movement; the honest reading is that the bar
+ * simply does not recede. */
+@media (prefers-reduced-motion: reduce) {
+  .nav-bar--floating.nav-bar--receded {
+    background: var(--nav-bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: var(--shadow-lifted);
+  }
+}
+
 :root {
+  /* NAV-ACTIVE-LOZENGE-01 (Design Board 2026-09-28) — the selected tab's wash.
+   *
+   * 🔴 THE MEASUREMENT THAT CAUSED IT: `--moss-strong` (#557055) active against
+   * `--mute` (#6D6963) inactive is **1.00:1 — ZERO levels of greyscale
+   * separation.** Their luminance is identical; the only difference between
+   * selected and unselected was HUE. In greyscale, or for a green-weak runner,
+   * the nav did not indicate the current page at all. `aria-current="page"` was
+   * present and correct, and 1.4.1 governs VISUAL presentation, so aria does not
+   * discharge it. `ui-patterns.md` already ruled *"state must live in the label,
+   * never colour alone"*.
+   *
+   * ⚠️ WHY A FILL WORKS HERE WHEN `.nav-bar--floating` PROVED ONE COULD NOT.
+   * That finding was measured against TWO grounds — a fill lighter than `--bg`
+   * vanishes on cards, darker vanishes on the ground, ceiling 10 levels. The
+   * lozenge sits on `--nav-bg` = `--card` = **#FFFFFF**: ONE known ground.
+   * Different arithmetic, and it was recomputed rather than assumed.
+   *
+   * 📐 THE WINDOW, and it has a hard ceiling:
+   *     0.06  #F1F1F1  14 levels   moss-strong 4.85:1  ✅  ← this
+   *     0.08  #EDEDED  18 levels   moss-strong 4.68:1  ✅  ceiling (Silvanto)
+   *     0.10  #E8E8E8  23 levels   moss-strong 4.47:1  ❌  below AA
+   * The references sample 15-18 levels. Past 0.08 the ACTIVE LABEL fails AA,
+   * which is the opposite of the point. `navActiveState.test.ts` holds the line. */
+  --nav-active-wash: rgba(26, 26, 26, 0.06);
   --nav-pill-inset: 16px;
   --nav-pill-lift: 12px;
   --nav-pill-tuck: 13px;

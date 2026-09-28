@@ -3951,3 +3951,51 @@ for destructive confirmations, never for information.
 above against rendered markup, because a design decision that lives in a comment while the
 markup says otherwise is this repo's recurring failure. Falsified three ways (Moss added, the
 44px target removed, a text field introduced).
+
+---
+
+## § 7 Amendment — the bottom nav's selected state (NAV-ACTIVE-LOZENGE-01, 2026-09-28)
+
+**The selected tab carries a lozenge and a heavier label. Colour is never the sole signal.**
+
+🔴 **The measurement that caused the amendment.** The active label was `--moss-strong`
+(#557055) and the inactive `--mute` (#6D6963). Their relative luminance is **0.1418 and
+0.1426 — 1.00:1, zero levels of greyscale separation.** The only difference between *"you
+are here"* and *"you are not"* was **hue**, so in greyscale, or for a green-weak runner, the
+nav did not indicate the current page at all. `aria-current="page"` was present and correct;
+**WCAG 1.4.1 governs visual presentation, so aria does not discharge it**, and this document
+already ruled *"state must live in the label, never colour alone"*.
+
+| Rule | Why |
+|---|---|
+| A lozenge behind the active tab, `--nav-active-wash` | The non-colour signal. **A pseudo-element, never padding or a border on the tab** — NAV-SLIM-01 took the tap target from 69% to 98% of the bar and insetting the tab would hand that back |
+| **0.08 alpha is a hard ceiling** | Measured: 0.06 → 14 levels, `--moss-strong` at **4.85:1**; 0.08 → 18 levels, **4.68:1**; **0.10 → 4.47:1, below AA.** Past the ceiling the active label fails, which is the opposite of the point |
+| The active label is **heavier**, and the pair is declared | Collins: *a lozenge alone is a smudge behind a word that looks the same.* Declaring both weights stops the delta drifting when someone tunes the base |
+| The label colours are **NOT** required to differ | They are still 1.00:1 and that is allowed once non-colour signals carry the state. A gate asserting the colours would fail on correct code |
+
+⚠️ **Why a fill works here when the floating bar's own fill provably could not.** That
+finding — *"a fill lighter than the ground vanishes on cards, darker vanishes on the ground,
+ceiling 10 levels"* — was measured against **two** grounds. The lozenge sits on `--nav-bg` =
+`--card` = **#FFFFFF**: one known ground. Different arithmetic, recomputed rather than
+assumed, and the reference apps sample 15–18 levels — inside the same window.
+
+## § 7b — the nav recedes while scrolling (NAV-FADE-01, ruled 2026-09-25, built 09-28)
+
+**Translucency plus a backdrop blur. Never an opacity fade of the bar.**
+
+📐 Measured: a whole-bar fade gives **4.47:1 at 0.9** (already below AA), **3.63 at 0.8**,
+**2.98 at 0.7** — below even the 3:1 graphics floor. A translucent background *with* a blur
+holds **≥5.23:1 worst case**, because the labels never lose opacity; only the surface behind
+them does.
+
+- **It stays pressable while receded.** `pointer-events` is untouched — § 6i records a nav
+  icon under a sheet that dismissed instead of navigating.
+- **`prefers-reduced-motion` disables the recede entirely**, not merely its transition.
+- **Returns 150ms after scrolling stops.** Not direction-aware: a direction-aware nav invents
+  the second question the board flagged (*"when does it come back?"*); *"when you stop"* needs
+  no threshold to argue about.
+- The **GuideSheet mirror never recedes** — it is a picture of the nav, not the nav.
+
+**Reference:** `.nav-tab--active` / `.nav-bar--receded` in `globals.css`,
+`components/shared/useNavRecede.ts`. **Check:** `components/ui/navActiveState.test.ts`,
+falsified four ways (lozenge removed, weights equalised, ceiling breached, whole-bar fade).
