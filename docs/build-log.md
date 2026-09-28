@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-28 — SUBS-RECONCILE-TRIAL-GATE-01 · the guard skipped exactly the people it was for
+**Shipped:** The entitlement re-check now runs for runners on a trial, which is every brand-new account, which is every charity runner.
+**Dev learning:** The guard was `if (hasPaidAccess) return`. Reasonable-looking, and written as a cost optimisation. But `hasPaidAccess` is `tier !== 'free'`, and every new account starts a 14-day reverse trial — so the check that exists to rescue runners with an unrecorded entitlement skipped **100% of the people who would ever need it.** The right question was never "does this runner have access?" but "is their access already explained by a recorded subscription?", and `resolveTier` already returns a `reason` that answers it exactly.
+**Product/creator learning:** The damage was deferred, which is the dangerous kind. The trial covers for the missing row for a fortnight. On day 15 the runner drops to free **holding a valid one-year entitlement, two weeks into a marathon block** — and would also get the "3 days left" email. Nobody would have connected that to a redemption made a fortnight earlier.
+**AI-building learning:** I found this because I'd shipped the observability an hour before. Previously an empty `ops_events` could mean "never ran" or "ran and found nothing"; once every outcome writes a row, empty can only mean the route was never called. **That narrowed it from a guess to a fact in one query.** Instrumentation you add while fixing bug two is how you find bug three.
+**The honest bit:** My own probe was wrong first. `user_settings` is keyed `id`, not `user_id`, so my query returned null, `resolveTier` read `free` instead of `trial`, and I spent a round pointed at the wrong mechanism. The table I was querying is in this codebase and I guessed its key instead of reading it. Third defect of the day and the third one where the population was the problem rather than the predicate.
+**Hook material:** The guard was written to save work for "the ~all of users for whom this already works". It excluded 100% of the users it was written for.
+**Postable?:** yes
+
 ## 2026-09-28 — SUBS-RECONCILE-RACE-01 · the fix existed; it had been applied to one twin
 **Shipped:** The entitlement check now waits until RevenueCat has associated the purchase with the runner's account, and records every outcome instead of only success.
 **Dev learning:** The app boots signed out for this journey, so RevenueCat gets an anonymous id and the Apple receipt attaches to *that*. `logIn` aliases it later, asynchronously, on `SIGNED_IN`. My reconcile effect fired the moment the dashboard mounted, lost that race, got a perfectly truthful "no entitlement", and never tried again. The subtle part: **awaiting `window.__rcReady` would not have fixed it** — that promise resolves when `configure` is done and the auth listener is *registered*, not when it has fired. It looks like the right thing to await and proves nothing.
