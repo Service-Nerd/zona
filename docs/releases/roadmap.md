@@ -287,7 +287,16 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > 📌 **FILED 2026-09-28 — observability + a red suite** (detail in `backlog.md`)
 > ✅ **`TEST-CLOCK-PREPTIME-01` SHIPPED 2026-09-28** — 4 files pinned to `PINNED_PLAN_START`; suite green
 > (421 files / 3,728 tests / 0 failed). **5 of the 9 were absent, not failing** — a file that could not be collected.
-> ✅ **`TEST-CLOCK-PINSWEEP-01` SHIPPED 2026-09-28** — all 19 converted, 68 call sites, across **four**
+> ✅ **`OPS-ATTRIB-01` + `OPS-ARTIFACT-REACH-01` + `OPS-FUNNEL-02` + `W-TRUST-01` SHIPPED 2026-09-28** —
+> attribution, the two artifacts instrumented, all nine paywall doors named, and one true trust sentence.
+> **P2:** `OPS-ARTIFACT-PLACEMENT-01` — 🧭 where the ledger and share card should live. **BLOCKED ON DATA by
+> design**: the SLT forbade touching their UX or marketing until the reach events accumulate. Do not convene
+> until `ledger_view` / `share_week_*` have real weeks behind them (measured 2026-09-28: **2 users** reached
+> the end of the chain).
+> **P3:** `SITE-SCROLL-DEPTH-01` — 🧭 the measurement that would settle the adaptation device. The board ruled
+> **INSUFFICIENT EVIDENCE** because there is **no site analytics at all**; Collins lost that ruling and it is
+> recorded as a loss. ⚠️ The app's `analytics_events` cannot serve it — the site is unauthenticated.
+> > ✅ **`TEST-CLOCK-PINSWEEP-01` SHIPPED 2026-09-28** — all 19 converted, 68 call sites, across **four**
 > pinned Mondays (one per file's own first commit, because a single week of runway can change plan length).
 > Register EMPTY and its emptiness now asserted; the gate forbids the class rather than tracking it.
 > ✅ **`OPS-SUBS-ALERT-01` SHIPPED 2026-09-28** — Q9 in the daily digest + a tested kind list in the repo.
