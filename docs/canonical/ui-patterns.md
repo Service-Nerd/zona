@@ -3940,6 +3940,7 @@ whole job is to take as little as possible and to be honest about whose benefit 
 | **Never returns once answered or dismissed** | An ask that reappears is a nag |
 | **Behaviour-triggered, never calendar-triggered** | `design-rulings.md:266`, applied beyond upgrade prompts |
 | **Displays no number** | Keeps it clear of `:208` (aggregating numbers) by construction rather than by argument |
+| **Spacing comes from `var(--space-1…7)`** (4·8·12·16·24·32·48), never a px literal | `APP-SPACE-01`. ⚠️ The first cut of this component shipped `gap: 6px` and `marginTop: 10px` and **CI caught it, not the local suite** — `appSpacingScale.test.ts` enumerates via `git ls-files`, so a brand-new untracked file is invisible to it. A tie breaks **upward**: whitespace is a documented feature |
 | **The copy names who benefits** | Sierra: *"this makes the runner no better at running, and I'd rather we admit that than dress it up."* |
 
 ⚠️ **It is an inline row, never a modal.** CLAUDE.md § UI Principles: no popups; modals are

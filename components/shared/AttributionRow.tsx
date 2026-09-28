@@ -89,8 +89,11 @@ export default function AttributionRow({ supabase, userId, onResolved }: {
       <div style={{
         display: 'flex',
         flexWrap: 'wrap',
-        gap: '6px',
-        marginTop: '10px',
+        // APP-SPACE-01: 6px is equidistant from 4 and 8 and the ruling breaks
+        // the tie UPWARD — whitespace is a documented feature.
+        gap: 'var(--space-2)',
+        // APP-SPACE-01: 10px is equidistant from 8 and 12; tie breaks upward.
+        marginTop: 'var(--space-3)',
       }}>
         {ATTRIBUTION_SOURCES.map(s => (
           <button
