@@ -387,6 +387,33 @@ deliberately documented as **clock-independent** for exactly this reason; these 
 clock-independent but changes what it generates each run; a pinned `planStart` keeps output
 stable but must be pinned *with* the race date. **Pick one and apply it to all four.**
 
+### 🔴 `OPS-SUBS-ALERT-01` — nothing ALERTS on a failed subscription write
+
+⚙️ **NO BOARD** (ops). **This is the half of `OPS-SUBS-TRACE-01` that was NAMED AND NOT
+CLOSED**, recorded here rather than ticked off in the registry.
+
+`OPS-SUBS-TRACE-01` makes a failed subscription write **queryable**. It does not make it
+**noticed**, and N-015 is explicit that a recorded ops event alone is insufficient — *nobody was
+reading it.* The pre-ship gate asks for "a surfaced signal that a sustained failure rate would
+trip", and there is none: `stripe_event_write_failed`, `stripe_event_unusable` and
+`revenuecat_event_write_failed` will sit in `ops_events` until somebody runs a query.
+
+⚠️ **The stakes are unusual for a telemetry item.** These three kinds only ever fire when a
+runner has PAID and the entitlement did not land. `resolveTier` reads `subscriptions`, so the
+runner keeps meeting a paywall they have bought their way past — the GTM-CHARITY-03 symptom
+("the runner we had comped still met the paywall") with money attached. It is also the one
+failure the founder cannot discover by using the app himself, because his own row is
+hand-seeded and `is_admin` resolves him `paid` regardless.
+
+**Shape of the fix (repo pattern already exists):** a probe module beside
+`lib/ops/stravaWebhookHealth.ts` + an `/api/ops/*` route the daily digest reads, so a non-zero
+count in the last 24h surfaces in the morning. ⚠️ **The digest is a CLOUD ROUTINE, not repo
+code** (see `project_daily_digest_routine.md` — editable via RemoteTrigger), so this item spans
+both and the routine half will not arrive by committing.
+
+**Do not close this by adding a query to a runbook.** "Remember to check" is what this repo
+records as equivalent to having no check.
+
 ### 🟡 `OPS-FUNNEL-02` — which DOOR did they come through?
 
 ⚙️ **NO BOARD** (instrumentation). `upgrade_view` fires from inside `UpgradeScreen`, so it
