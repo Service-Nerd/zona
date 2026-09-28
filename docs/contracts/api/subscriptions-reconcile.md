@@ -50,11 +50,40 @@ reconcile cannot move a subscription backwards past a newer event it raced. A **
 entitlement (null expiry) takes the `NON_EXPIRING_GRANT_YEARS` horizon rather than a 30-day
 default that would cut a charity runner off mid-block.
 
-Records `revenuecat_reconciled` on success — the only evidence the offer-code journey worked
+Records an ops event on **every** outcome (SUBS-RECONCILE-RACE-01, 2026-09-28):
+
+| Outcome | Ops kind | `detail` |
+|---|---|---|
+| Entitlement found and written | `revenuecat_reconciled` | `{ entitlement, expires_at, offer_code }` |
+| RevenueCat 404 | `revenuecat_reconcile_none` | `{ reason: 'unknown_to_revenuecat' }` |
+| No active entitlement | `revenuecat_reconcile_none` | `{ reason: 'no_active_entitlement' }` |
+| RevenueCat non-2xx / unreachable | `revenuecat_reconcile_failed` | `{ reason, status? , detail? }` |
+| `apply_subscription_event` errored | `revenuecat_reconcile_failed` | `{ reason: 'write_failed', detail }` |
+| Key unset | `revenuecat_reconcile_unconfigured` | see 503 above |
+
+🔴 **It previously recorded only success and a missing key.** So when the first real
+offer-code redemption left a runner on the free tier holding a valid one-year entitlement,
+`ops_events` was **empty** for that user, and there was no way to tell *"reconcile never
+ran"* from *"reconcile ran and RevenueCat said no"* — a client bug and a timing bug, with
+different fixes.
+
+⚠️ `entitled: false` is the correct answer for nearly every user, so that row is
+deliberately cheap. It exists to make the funnel countable, not to flag a problem.
 for a given runner — carrying `offer_code`, which is the **cohort key**. Null means *no
 cohort*, never a default one.
 
 ## Caller
+
+🔴 **The caller MUST await `window.__rcIdentify(userId)` first** (SUBS-RECONCILE-RACE-01).
+The offer-code journey boots this app signed out, so `Purchases.configure` runs with
+`appUserID: null` and the StoreKit receipt attaches to an **anonymous** RevenueCat id
+(measured: `$RCAnonymousID:67f168e69`). `logIn` aliases it to the Supabase id and
+`syncPurchases` forces RevenueCat to re-read the receipt. POSTing before that asks about a
+user id the purchase is not attached to yet, gets a truthful "no entitlement", and never
+retries within that mount.
+
+⚠️ **`__rcReady` is NOT sufficient** — it resolves when `configure` is done and the auth
+listener is *registered*, not when the `SIGNED_IN` handler has run.
 
 `DashboardClient`, **native only**, once per mount, and **only when the runner does not
 already have access** — so it costs nothing for the users whose webhook worked normally. On

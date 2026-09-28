@@ -132,6 +132,13 @@ export type OpsEventKind =
   // redeemed".
   | 'revenuecat_reconciled'
   | 'revenuecat_reconcile_unconfigured'
+  // SUBS-RECONCILE-RACE-01 (2026-09-28) — reconcile records EVERY outcome now.
+  // Before this the route logged only success and a missing API key, so an empty
+  // ops trail could not distinguish "never ran" (a client-side race) from "ran and
+  // RevenueCat said no" (a timing problem) — the two have different fixes, and the
+  // first real offer-code redemption presented as neither.
+  | 'revenuecat_reconcile_none'
+  | 'revenuecat_reconcile_failed'
   // SEC-08 sweep (2026-09-11) — the daily coach note's CACHE could not be read
   // or written. Found because `daily_coach_notes` did not exist in production
   // at all: the migration was committed AND recorded in the applied-migrations

@@ -167,10 +167,40 @@ export default function CapacitorBoot() {
 
         await Purchases.configure({ apiKey, appUserID: user?.id ?? null })
 
+        // 🔴 SUBS-RECONCILE-RACE-01 (2026-09-28) — IDENTIFY *AND SYNC THE
+        // RECEIPT*, and expose it so a caller can await it.
+        //
+        // The offer-code journey boots this app SIGNED OUT: the code is redeemed
+        // in the App Store before Zonna is even installed. So `configure` runs
+        // with `appUserID: null`, the StoreKit receipt attaches to an ANONYMOUS
+        // RevenueCat id, and that is the id the webhook carries — measured in
+        // production as `$RCAnonymousID:67f168e69`, arriving 21 seconds before the
+        // account it belonged to existed.
+        //
+        // `logIn` aliases that anonymous id onto the Supabase id, and
+        // `syncPurchases` forces RevenueCat to re-read the receipt and attach it
+        // to THIS id rather than waiting for its own cache to refresh. Without the
+        // sync, a server-side entitlement check can ask about a user id RevenueCat
+        // has not yet associated the purchase with, get a truthful "nothing", and
+        // conclude the runner is not entitled.
+        //
+        // ⚠️ `__rcReady` CANNOT CARRY THIS. It resolves once `configure` is done
+        // and the auth listener is *registered* — the `SIGNED_IN` logIn happens
+        // later, asynchronously. Awaiting `__rcReady` therefore proves nothing
+        // about identity, which is exactly the race `/api/subscriptions/reconcile`
+        // was losing. `__rcIdentify` is awaitable and idempotent.
+        const identify = async (uid: string) => {
+          await Purchases.logIn({ appUserID: uid }).catch(() => {})
+          await Purchases.syncPurchases().catch(() => {})
+        }
+        ;(window as any).__rcIdentify = identify
+
+        if (user?.id) await identify(user.id)
+
         // If app boots on the login screen, update RC identity once auth resolves
         supabase.auth.onAuthStateChange(async (event, session) => {
           if (event === 'SIGNED_IN' && session?.user) {
-            await Purchases.logIn({ appUserID: session.user.id }).catch(() => {})
+            await identify(session.user.id)
           } else if (event === 'SIGNED_OUT') {
             await Purchases.logOut().catch(() => {})
           }

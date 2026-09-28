@@ -653,6 +653,27 @@ export default function DashboardClient() {
     reconcileTried.current = true
     void (async () => {
       try {
+        // 🔴 SUBS-RECONCILE-RACE-01 — ASK ONLY ONCE REVENUECAT KNOWS WHO THIS IS.
+        //
+        // The first cut of this effect POSTed as soon as `appReady && userId`,
+        // which races the `SIGNED_IN` -> `Purchases.logIn` alias in CapacitorBoot.
+        // Losing that race means the server asks RevenueCat about a user id the
+        // purchase is not attached to yet, gets a truthful "no entitlement", and
+        // this effect never tries again (the ref below is per mount).
+        //
+        // ⚠️ THE REMEDY ALREADY EXISTED AND WAS APPLIED TO ONE TWIN. `UpgradeScreen`
+        // awaits `window.__rcReady` and re-runs `logIn` belt-and-braces before any
+        // RevenueCat call, and the lesson was written down as "don't remove". This
+        // effect, written in the same week, did neither. That is this repo's
+        // most-recorded survival class.
+        //
+        // `__rcIdentify` is the owner's awaitable version: logIn + syncPurchases,
+        // idempotent. `__rcReady` alone is NOT sufficient — it resolves when the
+        // auth listener is registered, not when it has fired.
+        await (window as unknown as { __rcReady?: Promise<void> }).__rcReady
+        await (window as unknown as { __rcIdentify?: (uid: string) => Promise<void> })
+          .__rcIdentify?.(userId)
+
         const res = await authedFetch('/api/subscriptions/reconcile', { method: 'POST' })
         const data = await res.json().catch(() => null)
         // Reload rather than patching tier in place: `resolveTier` is the single

@@ -64,22 +64,41 @@ export async function POST(req: NextRequest) {
     // error: they simply have no entitlement. Anything else is a failure to
     // check, which must not read as "not entitled".
     if (res.status === 404) {
+      await recordOpsEvent('revenuecat_reconcile_none',
+        { reason: 'unknown_to_revenuecat' }, user.id)
       return NextResponse.json({ entitled: false, reason: 'unknown to RevenueCat' })
     }
     if (!res.ok) {
+      await recordOpsEvent('revenuecat_reconcile_failed',
+        { reason: 'revenuecat_http', status: res.status }, user.id)
       return NextResponse.json(
         { error: `RevenueCat returned ${res.status}` }, { status: 502 },
       )
     }
     payload = await res.json()
   } catch (err) {
+    await recordOpsEvent('revenuecat_reconcile_failed',
+      { reason: 'revenuecat_unreachable', detail: (err as Error).message }, user.id)
     return NextResponse.json(
       { error: `RevenueCat unreachable: ${(err as Error).message}` }, { status: 502 },
     )
   }
 
+  // 🔴 EVERY OUTCOME LEAVES A ROW, AND THE ABSENCE OF ONE USED TO BE AMBIGUOUS.
+  //
+  // This route previously recorded only success and a missing API key. So when
+  // `tester1@test.com` ended up on the free tier holding a real one-year
+  // entitlement, `ops_events` was EMPTY for that user and there was no way to tell
+  // "reconcile never ran" from "reconcile ran and RevenueCat said no" — which are
+  // a client bug and a timing bug respectively, with different fixes.
+  //
+  // ⚠️ `entitled: false` IS THE COMMON AND CORRECT ANSWER for almost every user,
+  // so this row is deliberately cheap and carries no detail beyond the reason. It
+  // exists to make the offer-code funnel countable, not to flag a problem.
   const read = readEntitlement(payload)
   if (!read.entitled) {
+    await recordOpsEvent('revenuecat_reconcile_none',
+      { reason: 'no_active_entitlement' }, user.id)
     return NextResponse.json({ entitled: false })
   }
 
@@ -106,6 +125,8 @@ export async function POST(req: NextRequest) {
     })
 
   if (error) {
+    await recordOpsEvent('revenuecat_reconcile_failed',
+      { reason: 'write_failed', detail: error.message }, user.id)
     return NextResponse.json({ error: 'Could not record entitlement' }, { status: 500 })
   }
 

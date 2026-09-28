@@ -91,11 +91,19 @@ export function readEntitlement(
 /**
  * The offer code behind a product, when RevenueCat reports one.
  *
- * 📐 CONFIRMED IN REVENUECAT'S DOCS: the webhook and subscriber payloads carry an
- * `offer_code` field — "offer or promotion code used for the transaction" — so the
- * SPECIFIC code (e.g. the Make-A-Wish one) is available, not merely the offer.
- * That is what makes one-code-per-cohort tagging possible without minting a
- * separate offer per partner.
+ * 🔴 MEASURED 2026-09-28 AND THIS COMMENT USED TO OVERSTATE IT. It previously read
+ * "CONFIRMED IN REVENUECAT'S DOCS: the webhook and subscriber payloads carry an
+ * `offer_code` field". A real redemption was then inspected through
+ * `GET /v1/subscribers/{id}` and the `subscriptions` object carried **no
+ * `offer_code` key at all** — store, product, prices, dates, ownership, but not
+ * the code. So cohort tagging via THIS path returns null for every runner.
+ *
+ * The webhook's `event` object may still carry it; that is untested and must not
+ * be claimed until a real webhook payload has been read. Until then the cohort is
+ * countable from `revenuecat_reconciled` rows, not from the code itself.
+ *
+ * ⚠️ The shape stays and so does the read: it is optional in the type, costs
+ * nothing, and starts working the day RevenueCat includes it.
  *
  * Returns null when absent, and the caller must treat null as "no cohort", never
  * as a default cohort.
