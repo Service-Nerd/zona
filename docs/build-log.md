@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-28 — ZONES-SURFACE-01 · our own label was the competitor's word
+**Shipped:** A Training Zones screen under Me — HR and pace targets in one place, with the ceiling leading.
+**Dev learning:** The pace bands existed and were unreachable. `BUNDLE-BOUNDARY-01` bars the 6,000-line rule engine from a client bundle, so the component could not call `buildPaceFromVDOT` and the tempting move was to re-implement the VDOT fractions in the screen. The engine had already written down why that is wrong, beside the function: *"the second-copy-that-drifts class this repo has recorded FIVE times."* Extracting the derivation into a pure module took twenty minutes and left exactly one producer.
+**Product/creator learning:** The founder pointed at a competitor screen and the useful finding was about OURS. Their Z3 is called "Tempo". So was ours — **`ZONE_DEFS` labelled it "Tempo · Comfortably hard" while `CoachingPrinciples §1` is titled "Polarised training, protection from grey zone".** We were using the competitor's word for the exact band the product exists to keep people out of, and describing it approvingly. Nobody noticed because it reads fine until you put the constitution next to it.
+**AI-building learning:** I built a segmented control out of hand-rolled `<button>`s at about 35px, under the 44pt floor — and `buttonGeometry.test.ts` reported **zero** entries for the file, because it measures `Button` COMPONENTS. **The gate was green because the control was invisible to it.** That is the identical blind spot that shipped 18 under-floor controls in this repo three days ago. A green gate tells you about its population, not about your code.
+**The honest bit:** My first falsification did not land. I ran a `perl` substitution that silently failed, watched the test stay green, and nearly recorded that as "falsified". The second attempt asserted the mutation before running the test and it went red immediately. I have written the rule about this and still nearly published a hollow verification.
+**Hook material:** Our app had a heart-rate zone named after a session type that is never prescribed in it — and the name was the competitor's, for the one band our entire product exists to keep you out of.
+**Postable?:** yes
+
 ## 2026-09-28 — PROFILE-IDENTITY-01 · I shipped the defect the doc was written to prevent
 **Shipped:** The runner's first name is now edited in the card that displays it, the surname is gone, and the email is a value rather than a field.
 **Dev learning:** The pattern doc for this card carries a warning in a blockquote: a grey *"Your name"* in the name slot *"read as a value the app already held"*. I replaced the form field with an inline one and carried its placeholder across — `BRAND.name` — which was correct in a form where a "First name" LABEL sat above it and completely wrong with no label. **I reintroduced the exact defect the section exists to record, in the same change that rewrote the section.** Reading it did not stop me. Rendering it did, in about four seconds.
