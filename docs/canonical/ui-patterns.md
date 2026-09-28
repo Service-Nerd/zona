@@ -4117,3 +4117,68 @@ Apple's sheet is a modal and not a destructive confirmation, so it hit
 out OS-owned sheets, on the single ground that we control neither their content nor their
 dismissal. **A sheet we build is still bound**, and `Sheet.tsx` remains the only route
 for one that is ours.
+
+---
+
+## Training Zones screen (ZONES-SURFACE-01)
+
+**Ruled 2026-09-28. ⚠️ SPECIFIED, NOT YET BUILT** — this section is the spec the build
+follows, recorded now because a SHIP ruling owes its pattern whether or not the code
+lands the same day. Scope caveats: `docs/decisions/zones-surface-2026-09-28.md`.
+
+One screen, entered from **Me** by a row that **REPLACES** the existing zone rows.
+
+```
+┌───────────────────────────────────────┐
+│  [ Heart rate │ Pace ]                  │  ← only tabs the DATA supports
+│                                         │
+│  NOT ABOVE                              │  ← the CEILING leads, at display size
+│  145 bpm                                │
+│                                         │
+│  Z1 Recovery            ≤ 124 bpm       │  ← rows, quiet
+│  Z2 Easy              125–145 bpm       │
+│  Z3 The grey zone     146–160 bpm       │  ← OUR label. Never "Tempo"
+│  …                                      │
+└───────────────────────────────────────┘
+```
+
+### 🔴 The ceiling leads, and it has TWO equal forms
+
+*"Not faster than 13:12 /mi"* and *"Not above 145 bpm"* are **the same sentence in two
+units**, and the product's entire proposition is in it. Silvanto: the competitor
+reference elevates one number and it is the right one.
+
+⚠️ **THE HR FORM IS NOT A FALLBACK.** Measured across all 21 stored plans: **`meta.vdot`
+is present on 10 and absent on 11**, tracking `meta.benchmark` exactly. **52% of runners
+have no pace ceiling at all**, so treating HR as the degraded case would degrade the
+majority.
+
+### ⚠️ Never render an empty tab
+
+Wroblewski. The toggle offers **only** what the runner's data supports: no benchmark, no
+Pace tab; no HR data, no Heart rate tab. A tab full of estimates is worse than no tab.
+
+### 🔴 The labels are ours — Z3 is the GREY ZONE
+
+`INV-COACH-004`. The reference calls Z3 *"Tempo"*: a zone you aim for. Zonna's canonical
+five-zone model calls it the band this product exists to keep runners out of. **Importing
+their taxonomy would invert what we sell**, and a reference table that says plainly where
+*not* to live is the most on-brand object in the app — Collins, and the reason this screen
+is worth building rather than a settings page with our colours on it.
+
+### A beginner sees four bands and no apology
+
+`ZONES-BEGINNER-BANDS-01` (Coaching Board). `marathonPaceStr` / `hmPaceStr` are null for
+beginners — that null is **§24b's segment gate**, not a claim about what they can be told.
+The screen shows the four bands their engine produced and **nothing at all** where the
+other two would be: every candidate sentence is either a soft prescription they will act
+on, or a judgement. **Four bands that are all real beats six where two are apologies.**
+
+### Not on Coach
+
+`screen-architecture.md` puts *"Profile or settings"* in Coach's **does not belong**
+column, and **Coach is paid-only while this content is FREE**. Coach keeps
+zones-as-coaching (rings, discipline score, drift); this is zones-as-reference.
+
+**Consolidation, not addition:** fourteen surfaces already render zone information. This
+one replaces Me's rows rather than becoming the fifteenth.

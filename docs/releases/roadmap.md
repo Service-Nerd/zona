@@ -285,6 +285,7 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 ---
 
 ## 🔴 NOW — CRITICAL PATH: Make-A-Wish handover (SLT-sequenced 2026-09-11)
+- 🟡 **`ZONES-SURFACE-01`** — Training Zones under Me (HR / Pace toggle, ceiling leads, our labels). **Both boards have ruled**; build re-specified after measuring `meta.vdot` on 10 of 21 plans. 🧭🏃
 
 > 📌 **FILED 2026-09-28 — observability + a red suite** (detail in `backlog.md`)
 > ✅ **`TEST-CLOCK-PREPTIME-01` SHIPPED 2026-09-28** — 4 files pinned to `PINNED_PLAN_START`; suite green
