@@ -85,6 +85,10 @@ retries within that mount.
 ⚠️ **`__rcReady` is NOT sufficient** — it resolves when `configure` is done and the auth
 listener is *registered*, not when the `SIGNED_IN` handler has run.
 
+🔴 **AND THE CALLER MUST NOT GATE ON "DOES THIS RUNNER HAVE ACCESS?"** (`SUBS-RECONCILE-TRIAL-GATE-01`). The first cut read `if (hasPaidAccess) return`, and `hasPaidAccess` is `tier !== 'free'` — **every brand-new account is in a 14-day reverse trial**, so the guard was `true` for exactly the runners this route exists to rescue. Measured: a £0 one-year entitlement sat unrecorded while reconcile was skipped on two separate app opens. ⚠️ **The damage is DEFERRED, which is why it would not have been caught** — the trial masks the missing row for a fortnight, then the runner drops to free ~2 weeks into a marathon block.
+
+The right question is whether their access is **already explained by a recorded subscription**, which `resolveTier`'s `reason` answers. `lib/subscriptions/shouldReconcile.ts` owns the decision (pure, so it can be tested — the effect lives in `app/`, which `vitest` does not collect): **ask** for `trial`, `none` and `grant`; **skip** for `subscription` and `admin`. A charity `grant` still asks, because a granted runner may also have redeemed an Apple code.
+
 `DashboardClient`, **native only**, once per mount, and **only when the runner does not
 already have access** — so it costs nothing for the users whose webhook worked normally. On
 `entitled: true` it reloads rather than patching tier in place, because `resolveTier` is the

@@ -37,7 +37,8 @@ import { buildWeekVoiceContext, getWeekVoiceHeadline, getWeekVoiceItems, PHASE_L
 import { planArcSeries } from '@/lib/plan/weekVolume'
 import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
-import { resolveTier, TRIAL_DAYS } from '@/lib/trial'
+import { resolveTier, TRIAL_DAYS, type TierReason } from '@/lib/trial'
+import { shouldReconcile } from '@/lib/subscriptions/shouldReconcile'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, BEHIND_VERDICT_MIN_SESSIONS } from '@/lib/coaching/constants'
@@ -440,6 +441,9 @@ export default function DashboardClient() {
 
   // Paid access — default true to avoid flash of locked state during load
   const [hasPaidAccess, setHasPaidAccess] = useState(true)
+  // SUBS-RECONCILE-TRIAL-GATE-01 — `reason` distinguishes a trial from a recorded
+  // subscription, which `hasPaidAccess` cannot. Null until the tier resolves.
+  const [tierReason, setTierReason] = useState<TierReason | null>(null)
   // GTM-CHARITY-04 — ISO end date of a live charity grant, or null. Surfaced on
   // Me so the grant never lapses silently.
   const [charityGrantEndsAt, setCharityGrantEndsAt] = useState<string | null>(null)
@@ -642,14 +646,30 @@ export default function DashboardClient() {
   // app assert it would be a free subscription for anyone who can call an
   // endpoint.
   //
-  // Native only (there is no StoreKit on web), once per mount, and only when the
-  // runner does NOT already have access — so it costs nothing for the ~all of
-  // users for whom the webhook worked normally.
+  // Native only (there is no StoreKit on web), once per mount, and skipped when the
+  // runner's access is already explained by a recorded subscription — so it costs
+  // nothing for the ~all of users for whom the webhook worked normally.
+  //
+  // 🔴 SUBS-RECONCILE-TRIAL-GATE-01 — THE GUARD USED TO BE `if (hasPaidAccess) return`,
+  // AND IT EXCLUDED EXACTLY THE POPULATION THIS EXISTS FOR. `hasPaidAccess` is
+  // `tier !== 'free'`, and every brand-new account is in a 14-day reverse trial — so it
+  // was `true` for every charity runner who redeems a code and then signs up. Measured:
+  // `tester1@test.com` held a £0 one-year entitlement and reconcile was skipped on two
+  // separate app opens, leaving `subscriptions` and `ops_events` empty.
+  //
+  // The question is not "does this runner have access?" but "is their access already
+  // explained by a recorded subscription?" — which is what `resolveTier`'s `reason`
+  // answers, and what TIER-OWNER-01 added it for. The decision lives in
+  // `shouldReconcile` so it can be unit-tested; `vitest` cannot reach this file.
   const reconcileTried = useRef(false)
   useEffect(() => {
-    if (reconcileTried.current || !appReady || !userId) return
-    if (hasPaidAccess) return
-    if (!Capacitor.isNativePlatform()) return
+    if (!shouldReconcile({
+      appReady,
+      userId,
+      tierReason,
+      isNative: Capacitor.isNativePlatform(),
+      alreadyTried: reconcileTried.current,
+    })) return
     reconcileTried.current = true
     void (async () => {
       try {
@@ -671,8 +691,13 @@ export default function DashboardClient() {
         // idempotent. `__rcReady` alone is NOT sufficient — it resolves when the
         // auth listener is registered, not when it has fired.
         await (window as unknown as { __rcReady?: Promise<void> }).__rcReady
-        await (window as unknown as { __rcIdentify?: (uid: string) => Promise<void> })
-          .__rcIdentify?.(userId)
+        // `shouldReconcile` has already established userId is present; the local
+        // const is what lets the compiler see it.
+        const uid = userId
+        if (uid) {
+          await (window as unknown as { __rcIdentify?: (u: string) => Promise<void> })
+            .__rcIdentify?.(uid)
+        }
 
         const res = await authedFetch('/api/subscriptions/reconcile', { method: 'POST' })
         const data = await res.json().catch(() => null)
@@ -686,7 +711,7 @@ export default function DashboardClient() {
         // ~all of users who simply have no entitlement to find.
       }
     })()
-  }, [appReady, userId, hasPaidAccess])
+  }, [appReady, userId, tierReason])
   const [upgradeSource, setUpgradeSource] = useState<UpgradeSource | null>(null)
   const openUpgrade = (source: UpgradeSource) => { setUpgradeSource(source); setScreen('upgrade') }
   const [attributionResolved, setAttributionResolved] = useState(false)
@@ -1360,6 +1385,7 @@ export default function DashboardClient() {
           trialStartedAt,
         }, now)
 
+        setTierReason(reason)
         setCharityGrantEndsAt(reason === 'grant' ? charityExpiry : null)
         const paidAccess = tier !== 'free'
         setHasPaidAccess(paidAccess)
