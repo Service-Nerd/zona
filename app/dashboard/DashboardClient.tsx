@@ -122,7 +122,7 @@ import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
 import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/components/shared/PreferencesScreen'
-import { HEART_RATE_TITLE, HEART_RATE_SUB, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
+import { CONNECTIONS_TITLE, connectionsSubtitle, HEART_RATE_TITLE, HEART_RATE_SUB, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
 import { Chevron } from '@/components/shared/Chevron'
 import { TrainingZonesScreen } from '@/components/shared/TrainingZonesScreen'
 // PACE-BANDS-OWNER-01 — pure, and safe across BUNDLE-BOUNDARY-01 where `ruleEngine` is not.
@@ -443,7 +443,13 @@ export default function DashboardClient() {
   const [maxHRSource, setMaxHRSource] = useState<'observed' | 'user_confirmed' | null>(null)
   // X-FIRSTRUN: detect Apple Health connection state so we can render an
   // honest pre-data view ("Connect a source" vs "Set your HR" vs "Run one").
-  const [healthkitConnectedAt, setHealthkitConnectedAt] = useState<string | null>(null)
+  /** ⚠️ THREE states, not two (ME-ORDER-01). `undefined` = NOT YET LOADED, `null` = loaded
+   *  and not connected, string = connected. It was `string | null` initialised to `null`
+   *  and only ever SET when truthy, so "not connected" and "not loaded" were the same
+   *  value. That was harmless while the only reader asked `!!healthkitConnectedAt` — and
+   *  becomes a **false negative flashed on every open** the moment a row says
+   *  "No sources connected". A subtitle may not assert a negative it cannot know yet. */
+  const [healthkitConnectedAt, setHealthkitConnectedAt] = useState<string | null | undefined>(undefined)
   const [birthYear, setBirthYear] = useState<number | null>(null)
   const [firstName, setFirstName] = useState<string>('')
   const [lastName, setLastName] = useState<string>('')
@@ -1326,7 +1332,7 @@ export default function DashboardClient() {
         if (data?.resting_hr) setRestingHR(data.resting_hr)
         if (data?.max_hr) setMaxHR(data.max_hr)
         if (data?.max_hr_source === 'observed' || data?.max_hr_source === 'user_confirmed') setMaxHRSource(data.max_hr_source)
-        if (data?.healthkit_connected_at) setHealthkitConnectedAt(data.healthkit_connected_at)
+        setHealthkitConnectedAt(data?.healthkit_connected_at ?? null)   // ← null is now a LOADED answer
         // Prefer birth_year (post-migration source of truth). Fall back to the
         // year of legacy date_of_birth for rows where the backfill migration
         // hasn't run yet (dev environments). App Store 5.1.1 — App stores only
@@ -2773,7 +2779,11 @@ export default function DashboardClient() {
                   onOpenBenchmark={() => setScreen('benchmark')}
                   runAnalysisReady={runAnalysisReady}
                   disciplineLedger={disciplineLedger}
-                  onConnect={() => setScreen('me')}
+                  // 🔴 §5b.3 — TWO callers, not one. `onConnect` is used by the Coach
+                  // empty-state CTA ("Connect a source") AND by `ZoneRings`. Both used to
+                  // land on the Me INDEX, where the connection rows were. They are behind
+                  // a door now, so both open it.
+                  onConnect={() => { setMeOpenSection('connections'); setScreen('me') }}
                   restingHR={restingHR}
                   maxHR={effectiveMaxHR}
                   healthkitConnectedAt={healthkitConnectedAt}
@@ -2786,7 +2796,7 @@ export default function DashboardClient() {
             No UI path opens it for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
         {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} preferredUnits={preferredUnits} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR ?? undefined} maxHR={effectiveMaxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
+        {screen === 'me'       && <MeScreen openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} healthkitConnectedAt={healthkitConnectedAt} stravaConnected={stravaConnected} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
   // §50 (HR-MAX-01) — device reconnect from Settings. Fill only missing values;
   // tag a fresh device max 'observed' (a floor) so the guard rejects it below the
   // age estimate. Never clobber a user_confirmed value. Display refreshes via
@@ -11562,7 +11572,10 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
       // in iOS Settings. The Connections row above still shows "Connected"
       // because Supabase only tracks the first-grant moment — re-running the
       // connect flow re-prompts the system sheet and refreshes permission.
-      setErr('Couldn’t read from Apple Health. Reconnect in Connections below.')
+      // ⚠️ WAS "Reconnect in Connections below." — the SAME `below` that ME-DOORS-01 had
+      // to fix on the HR nudge. Connections is a door now, and this error is raised from
+      // behind a different door, so "below" pointed at nothing on screen.
+      setErr('Couldn’t read from Apple Health. Reconnect it under Connections.')
     } finally {
       setBusy(false)
     }
@@ -12068,11 +12081,17 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
   )
 }
 
-function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+function MeScreen({ openSection, onOpenSectionConsumed, healthkitConnectedAt, stravaConnected, plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
    *  by `onOpenSectionConsumed`, so a later visit to Me lands on the index as usual. */
   openSection?: string | null
   onOpenSectionConsumed?: () => void
+  /** ME-ORDER-01 — read for the Connections row's subtitle. ⚠️ These come from
+   *  `DashboardClient`, which already held both, NOT from the connection rows: those live
+   *  behind the door and do not mount until it is opened, so they cannot tell the index
+   *  anything. `undefined` = not loaded yet. */
+  healthkitConnectedAt?: string | null | undefined
+  stravaConnected?: boolean
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
@@ -12125,7 +12144,7 @@ function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete,
   recentChanges?: any[]
 }) {
   const signOut = useSignOut()
-  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'heart-rate' | 'plan-adjustments' | 'quit' | 'delete-account' | 'support' | 'plan-history'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'heart-rate' | 'plan-adjustments' | 'connections' | 'quit' | 'delete-account' | 'support' | 'plan-history'>('main')
 
   // ⚠️ BEFORE THE EARLY RETURNS. `MeScreen` returns early for every door, so a hook placed
   //   below one is a conditional hook — the React error 310 this repo has already shipped once.
@@ -12342,6 +12361,18 @@ function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete,
     </>
   )
 
+  // ME-ORDER-01 door 4 — Connections. ⚠️ The rows are UNCHANGED; only their home moved.
+  if (activeSection === 'connections') return (
+    <>
+      <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setActiveSection('main')} /></div>
+      <ScreenHeader title={CONNECTIONS_TITLE} sub="Where your runs come from" />
+      <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+        <AppleHealthConnectionRow onHRFound={(rhr, mhr) => onDeviceHRFound?.(rhr, mhr)} />
+        <StravaConnectionRow />
+      </div>
+    </>
+  )
+
   if (activeSection === 'preferences') return (
     <>
       <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setActiveSection('main')} /></div>
@@ -12413,6 +12444,16 @@ function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete,
           tierLabel={tierLabel}
           onSaveName={onSaveName}
         />
+
+        {/* ⚠️ NO HEADING (ME-ORDER-01). `Account` was a heading over ONE read-only row.
+            It announced a category and then declined to contain one (Sierra), so the
+            email now sits with the identity card it belongs to. */}
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', padding: '16px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink-2)' }}>Email</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--mute)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+            {profileEmail}
+          </span>
+        </div>
 
         {/* ── ME-ATHLETE — "What Kit knows about you" ──────────────────
             Read-only synthesis of the inputs the engine runs on. Surfaces
@@ -12489,7 +12530,11 @@ function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete,
               {row(
                 'Zones',
                 hrConfigured ? `Z2 ≤ ${z2Ceiling} · Max ${maxHR}` : 'Not set',
-                hrConfigured ? null : 'Set RHR and Max HR below. Your zones lock in.',
+                // 🔴 A THIRD STALE "below", found by sweeping for the SHAPE of the fix
+                // rather than the symptom. ME-DOORS-01 put the HR form behind the
+                // `Heart rate` door; this row still told the runner to set it "below",
+                // where there is now nothing. Names the door instead of a direction.
+                hrConfigured ? null : 'Set your heart rate under Setup. Your zones lock in.',
                 hrConfigured ? 'set' : 'unset',
                 hrConfigured ? onOpenZones : undefined,
               )}
@@ -12565,14 +12610,6 @@ function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete,
             🎪 Collins' deferred question, recorded rather than resolved: this makes
             FOUR section headers on Me. Whether the screen is four sections or two is a
             ruling nobody has taken. */}
-        <SectionLabel>Account</SectionLabel>
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', padding: '16px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink-2)' }}>Email</span>
-          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--mute)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-            {profileEmail}
-          </span>
-        </div>
-
         {/* ── Your training ──────────────────────────────────────── */}
         {/* Plan · HR data · display preferences — everything that shapes session cards */}
         <SectionLabel>Your training</SectionLabel>
@@ -12651,40 +12688,6 @@ function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete,
           </button>
         </div>
 
-        {/* ── Display ──────────────────────────────────────────────
-             🔴 A6 (Design Board, app review 2026-09-22) — THIS USED TO BE
-             UNLABELLED, INSIDE "Your training", and the comment justifying it
-             read "grouped with training since they affect session cards."
-
-             By that argument almost every setting belongs under training,
-             because almost everything here affects a session card. These two
-             controls decide how the app WRITES a number; they decide nothing
-             about the running. A section whose label does not describe its
-             contents is the flatness the founder was pointing at: he could see
-             the screen was sectioned and could not feel the sections. */}
-        {/* ME-DOORS-01 — Display and Notifications were two inline sections; they are
-            now one door. ⚠️ ONE screen for four controls, not two doors onto two: a door
-            onto two segmented controls is one more tap and an emptier screen. The ruling
-            owns the principle, the door count is implementation (backlog: ME-DOORS-01). */}
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-          <ActionRow
-            title={PREFERENCES_TITLE}
-            subtitle={PREFERENCES_SUBTITLE}
-            onClick={() => setActiveSection('preferences')}
-          />
-        </div>
-
-        {/* ── Connections ────────────────────────────────────────── */}
-        {/* Apple Health (iOS) is the primary v1 data source — runs, RHR, HRV, sleep, VO2 max.
-            Strava remains an optional secondary import. */}
-        <SectionLabel>Connections</SectionLabel>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          <AppleHealthConnectionRow
-            onHRFound={(rhr, mhr) => onDeviceHRFound?.(rhr, mhr)}
-          />
-          <StravaConnectionRow />
-        </div>
-
         {/* ME-DOORS-01 door 3 — Plan adjustments. ⚠️ PAID/TRIAL ONLY, and the gate stays on
             the ROW: a free runner sees no door at all rather than a door onto a locked room.
             ⚠️ The block moves as a call site, it is not extracted to a component — it reads
@@ -12704,33 +12707,43 @@ function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete,
         )}
 
 
-        {/* ── Charity access — GTM-CHARITY-04 ──────────────────────
-            The comped runner's own status. Exists because a silent expiry
-            turns a gift into a complaint (Traynor), and because without it
-            the ONLY place the end date appeared was the redemption screen
-            they saw once, weeks ago.
-
-            NOTE: no charity name here, deliberately. The SLT ruled we never
-            reflect the runner's charity back at them: the fundraising page and
-            the people watching are the extrinsic pressure that makes this
-            cohort overtrain. */}
-        {charityGrantEndsAt && (
-          <>
-            <SectionLabel>Your access</SectionLabel>
-            <div style={{
-              background: 'var(--card)', borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)',
-              padding: '14px 16px', marginBottom: 'var(--space-5)',
-            }}>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '3px' }}>
-                Full access, free
-              </div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-                Runs to {formatDate(charityGrantEndsAt, 'long')}. Set your race date and it extends to a week after race day.
-              </div>
-            </div>
-          </>
-        )}
+        {/* ── Setup ─────────────────────────────────────
+            🔴 I ARGUED FOR NO HEADING HERE AND THE RENDER PROVED ME WRONG. The board ruled
+            seven labels → five; I said four, on the reasoning that a heading governing one
+            row is not a heading and these are two single doors. But an UNLABELLED card
+            placed after a heading **inherits that heading** — `Preferences` and
+            `Connections` came out reading as part of `Your training`, which is the exact
+            defect this change was fixing one section up. The only unlabelled position that
+            reads as its own group is the top, before any heading, which the identity card
+            already occupies.
+            ⚠️ The rule survives intact, because the CARD holds TWO doors: a heading over
+            two items is a heading. What fails is my count, not the principle. */}
+        <SectionLabel>Setup</SectionLabel>
+        {/* ME-ORDER-01 — TWO DOORS, ONE CARD.
+            🔴 "A heading that governs one row is not a heading" (Collins): it is a category
+            pretending to be content. `Preferences` and `Connections` are single doors, so
+            they share an unlabelled card rather than taking a `SectionLabel` each. The
+            identity card above already establishes unlabelled cards on this screen.
+            ⚠️ `divider` is `ActionRow`'s own documented prop — *"when stacking rows inside
+            one card (Me)"* — and had NEVER been used in the app. Same shape as `ActionRow`
+            itself being created for Me and going unused. */}
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+          <ActionRow
+            title={PREFERENCES_TITLE}
+            subtitle={PREFERENCES_SUBTITLE}
+            onClick={() => setActiveSection('preferences')}
+            divider
+          />
+          {/* ⚠️ THE SUBTITLE CARRIES LIVE STATE, which is how Silvanto's objection is
+              answered without granting Connections an exception: a door hides a status the
+              runner wants at a glance, so the status rides the row. It returns NULL while
+              the profile is still loading rather than asserting a negative it cannot know. */}
+          <ActionRow
+            title={CONNECTIONS_TITLE}
+            subtitle={connectionsSubtitle(healthkitConnectedAt, !!stravaConnected)}
+            onClick={() => setActiveSection('connections')}
+          />
+        </div>
 
         {/* ── P-12: THE PLAN CARD (was a single "View plans" row) ─────────
             UPGRADE-ENTRY-01's §3.1.2 requirement is unchanged and still met:
@@ -12759,6 +12772,50 @@ function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete,
               onUpgrade={onUpgrade}
             />
           : null}
+
+        {/* ── Charity access — GTM-CHARITY-04 ──────────────────────
+            The comped runner's own status. Exists because a silent expiry
+            turns a gift into a complaint (Traynor), and because without it
+            the ONLY place the end date appeared was the redemption screen
+            they saw once, weeks ago.
+
+            NOTE: no charity name here, deliberately. The SLT ruled we never
+            reflect the runner's charity back at them: the fundraising page and
+            the people watching are the extrinsic pressure that makes this
+            cohort overtrain. */}
+        {charityGrantEndsAt && (
+          <>
+            <div style={{
+              background: 'var(--card)', borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)',
+              padding: '14px 16px', marginBottom: 'var(--space-5)',
+            }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '3px' }}>
+                Full access, free
+              </div>
+              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
+                Runs to {formatDate(charityGrantEndsAt, 'long')}. Set your race date and it extends to a week after race day.
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* GTM-CHARITY-04 — the day-one door. A runner whose charity gave them
+            a code can redeem it immediately instead of waiting to be stopped by
+            the gate a fortnight later. Quiet register: most users have no code
+            and this must not read like a discount prompt. */}
+        {/* ⚠️ MOVED OUT OF "Careful Now" (ME-ORDER-01). Redeeming a gift is not a
+            destructive action, and a runner whose charity gave them a code had to look
+            for it under a heading that means *this will hurt* (Sierra). It sits with
+            Subscription, beside the access it grants.
+            CHARITY-CODE-CONTROL-01 — KEPT at the founder's request. ⚠️ Wood's own
+            ruling calls Me "the lowest-frequency surface in the product", and the single
+            lifetime in-app redemption happened here. It stays because it is the only
+            placement a runner can return to on purpose once onboarding is behind them. */}
+        {onRecheckEntitlement && (
+          <RedeemCodeLink onAfterSheet={onRecheckEntitlement}
+            style={{ alignSelf: 'center', marginTop: 'var(--space-4)' }} />
+        )}
 
         {/* ── Support — in-app contact (FREE; SUPPORT-01) ──────── */}
         <SectionLabel>Support</SectionLabel>
@@ -12831,19 +12888,6 @@ function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete,
         {/* FOUNDER-01 — quiet footer link. Moved here from "Your profile"
             (where it competed with profile editing). Same register as
             About / Privacy / Terms — discoverable, doesn't compete. */}
-        {/* GTM-CHARITY-04 — the day-one door. A runner whose charity gave them
-            a code can redeem it immediately instead of waiting to be stopped by
-            the gate a fortnight later. Quiet register: most users have no code
-            and this must not read like a discount prompt. */}
-        {/* CHARITY-CODE-CONTROL-01 — KEPT at the founder's request. ⚠️ Wood's own
-            ruling calls Me "the lowest-frequency surface in the product", and the single
-            lifetime in-app redemption happened here. It stays because it is the only
-            placement a runner can return to on purpose once onboarding is behind them. */}
-        {onRecheckEntitlement && (
-          <RedeemCodeLink onAfterSheet={onRecheckEntitlement}
-            style={{ alignSelf: 'center', marginTop: 'var(--space-4)' }} />
-        )}
-
         {onOpenFounderNote && (
           <Button variant="ghost" size="compact" 
             onClick={onOpenFounderNote} style={{ alignSelf: 'center', marginTop: 'var(--space-4)' }}>

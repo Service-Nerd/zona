@@ -4373,6 +4373,46 @@ title once the card became the whole screen.**
 Dropping it would be a silent copy cut hiding inside a layout fix. Gate:
 `meDoorTitles.test.ts`, which derives the doors from the source rather than listing them.
 
+### 🔴 SECTION MEMBERSHIP IS POSITIONAL, AND NOTHING TYPES IT (ME-ORDER-01)
+
+A card on Me belongs to **the last `SectionLabel` above it**. Remove a heading, or insert a
+card, and everything after it silently re-parents. **This happened twice in one day**, both
+times passing `tsc` and the full suite:
+
+- `Plan adjustments` inherited `Connections` when its duplicated title was removed.
+- `Preferences` + `Connections`, built deliberately as an **unlabelled pair**, rendered as
+  part of `Your training`.
+
+> ⚠️ **AN UNLABELLED CARD PLACED AFTER A HEADING INHERITS THAT HEADING.** The only
+> unlabelled position that reads as its own group is **above the first heading**, which the
+> identity region occupies. There is no third option.
+
+**Two rules, both mechanically checked** (`meOrder.test.ts`):
+
+1. **`ME_SECTION_ORDER` is the order.** The screen and the gate read one list.
+2. **A heading governs at least two items.** *"A heading that governs one row is not a
+   heading"* (Collins) — it is a category pretending to be content. `Account` was a heading
+   over one read-only email row; it dissolved into the identity region.
+
+⚠️ **The count moved and the principle did not.** The board ruled seven labels → five; I
+argued four, on the grounds that two single doors need no heading. The render disproved it,
+and five was right. **The card holds two doors, so `Setup` governs two items and qualifies.**
+
+### ⚠️ A door's subtitle may not assert a negative it cannot know
+
+`Connections` shows live state so that hiding the rows does not hide the status
+(Silvanto). Its source state had **three** meanings in two values: `healthkitConnectedAt`
+was `string | null`, initialised `null`, and only ever *set* when truthy — so *"not
+connected"* and *"not loaded"* were the same value. Harmless while the only reader asked
+`!!`, and a **false negative flashed on every open** the moment a row says *"Not
+connected"*.
+
+**Unknown returns `null` and the row renders no subtitle.** *Empty means calm, not broken.*
+
+⚠️ **And match the sibling's LENGTH.** The first draft ran to 46 characters and wrapped to
+two lines beside `Heart rate`'s 36, which fits one. Caught by rendering it, not by reading
+it. Two lines on an index row is density, on a screen whose job is to be left.
+
 ### 🔴 The gate measures the INDEX, not the function
 
 `meIsAnIndex.test.ts` first bounded the whole `MeScreen` function — and because doors are

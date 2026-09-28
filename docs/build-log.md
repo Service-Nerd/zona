@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-28 — ME-ORDER-01 · the founder caught a ruling we made and never carried out
+**Shipped:** The Me index reordered, seven headings down to five, Connections turned into a door.
+**Dev learning:** The settled-ground scan answered half the question before the board opened. `screen-architecture.md` already said *"a door to data connections"* — we ruled it the same day and I didn't build it. He wasn't asking for a decision; he was catching one that had been made and dropped. **The register is only useful if you read it against what actually shipped**, and I'd read it against what I was about to write.
+**Product/creator learning:** My reason for leaving Connections alone was *"a door onto two rows is just a tap."* Then I measured: Strava hides itself for anyone who isn't an admin, so a real runner sees **one** row. The argument was wrong on its own terms and I'd never checked the number underneath it. **Every time I've defended a decision with a count this month, the count was the thing that was wrong.**
+**AI-building learning:** The board said five headings. I argued four, with what I thought was a better version of their own rule: a heading over one row isn't a heading, and these are two single doors, so no heading. Built it, rendered it, and the two doors came out reading as part of *Your training* — because **an unlabelled card placed after a heading inherits that heading.** That's the exact defect I was fixing one section up. The principle was right, my count was wrong, and the render is what told me.
+**The honest bit:** I wrote a check that reported *Careful Now* as holding one item. It holds two. My counter matched `<button` and missed `<Button`, which is the design-system component — so the predicate was right and the population was short, in a gate I'd written five minutes earlier. That is the same failure this codebase has recorded more times than any other, and I keep producing fresh instances of it inside the checks written to catch it.
+**Also:** the first version of the Connections subtitle would have lied. The state behind it couldn't tell *not connected* from *not loaded yet*, so the row would have flashed "Not connected" on every open before the profile arrived. And the sentence I wrote wrapped to two lines beside a sibling that fits one. Neither was visible in the code; both took ten seconds in a browser.
+**Hook material:** He didn't find a bug. He found a decision we'd made, written down, and not done.
+**Postable?:** yes
+
 ## 2026-09-28 — MOVE-IMPACT-GATE-01 · the rule existed twice and held neither time
 **Shipped:** A hook that asks, on any move-shaped commit, what the code moved away from. Plus the six questions it asks, in the build procedure.
 **Dev learning:** I went looking for why I'd skipped the downstream review and found I hadn't. The procedure has the step, and I'd answered it — "none". **Both the skill and my notes framed it as data flow: *where is this output consumed*, *what breaks if the shape changes*.** A move has no output and changes no shape. So the honest answer really was "none", and it was the answer to a question that didn't apply. **The failure wasn't discipline, it was the question.**

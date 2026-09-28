@@ -16,7 +16,8 @@ import { useState } from 'react'
 import { notFound } from 'next/navigation'
 import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/components/shared/PreferencesScreen'
 import ActionRow from '@/components/shared/ActionRow'
-import { HEART_RATE_TITLE, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
+import { HEART_RATE_TITLE, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB,
+  CONNECTIONS_TITLE, connectionsSubtitle, ME_SECTION_ORDER } from '@/components/shared/meDoors'
 
 export default function PreferencesPreview() {
   if (process.env.NODE_ENV === 'production') notFound()
@@ -28,9 +29,39 @@ export default function PreferencesPreview() {
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '24px 0 64px' }}>
       <div style={{ maxWidth: '420px', margin: '0 auto' }}>
 
+        {/* ME-ORDER-01 — every state of the Connections subtitle, which is the one
+            string on the index that can LIE. `undefined` must render no subtitle at all. */}
         <div style={{ padding: '0 16px 24px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            The three doors, as the index shows them
+            Connections, all four states
+          </div>
+          <div style={{ marginTop: 'var(--space-3)', background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
+            {([
+              ['still loading', undefined, false],
+              ['nothing connected', null, false],
+              ['Apple Health only', '2026-09-01T00:00:00Z', false],
+              ['both', '2026-09-01T00:00:00Z', true],
+            ] as [string, string | null | undefined, boolean][]).map(([label, hk, st], i, arr) => (
+              <ActionRow
+                key={label}
+                title={CONNECTIONS_TITLE}
+                subtitle={connectionsSubtitle(hk, st) ?? undefined}
+                onClick={() => {}}
+                divider={i < arr.length - 1}
+              />
+            ))}
+          </div>
+          <div style={{ marginTop: 'var(--space-2)', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
+            Row 1 is the loading state: no subtitle, because a negative it cannot know yet would be a lie.
+          </div>
+          <div style={{ marginTop: 'var(--space-5)', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Section order: {ME_SECTION_ORDER.join(' · ')}
+          </div>
+        </div>
+
+        <div style={{ padding: '0 16px 24px' }}>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            The doors, as the index shows them
           </div>
           <div style={{ marginTop: 'var(--space-3)', background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
             <ActionRow title={PREFERENCES_TITLE} subtitle={PREFERENCES_SUBTITLE} onClick={() => {}} divider />

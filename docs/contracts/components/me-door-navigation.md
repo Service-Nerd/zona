@@ -24,6 +24,9 @@ interface MeDoorNavigation {
   onOpenSectionConsumed?: () => void
   /** The origin travels with the request: the zones screen has two entry points. */
   onOpenZones?: (returnTo?: string) => void
+  /** ME-ORDER-01 — read ONLY for the Connections row's subtitle. `undefined` = not loaded. */
+  healthkitConnectedAt?: string | null | undefined
+  stravaConnected?: boolean
 }
 ```
 
@@ -38,6 +41,20 @@ and is cleared straight away.
 🔴 **It must be cleared.** An uncleared value would re-open that door the *next* time the
 runner visits Me from anywhere — an invisible sticky navigation state.
 
+## ⚠️ Why the connection state comes from above, not from the rows
+
+The `Connections` row's subtitle shows live state. It cannot read it from
+`AppleHealthConnectionRow`, because **that row is behind the door and does not mount until
+the door opens** — it can tell the index nothing. Both values already existed as
+`DashboardClient` state and are passed down read-only, so the index and the rows cannot
+disagree and there is no second owner of "is this connected?".
+
+🔴 **`undefined` is a third state and it matters.** `healthkitConnectedAt` was
+`string | null` initialised to `null` and only ever *set* when truthy, so *"not connected"*
+and *"not loaded"* were the same value. A subtitle saying *"Not connected"* would have
+flashed a false negative on every open. `connectionsSubtitle()` returns `null` for unknown
+and the row renders no subtitle at all.
+
 ## Where Back goes
 
 | From | Back returns to | Why |
@@ -45,6 +62,7 @@ runner visits Me from anywhere — an invisible sticky navigation state.
 | `reshape` | the `plan-adjustments` door | Its **only** entry point is that door |
 | `zones` opened from the `heart-rate` door | that door | `zonesReturnSection` carries the origin |
 | `zones` opened from the index `Zones` row | the index | No origin supplied, which is the default |
+| `onConnect` (Coach empty state **and** `ZoneRings`) | the `connections` door | **TWO callers**, both previously landing on the index |
 | every other door | the index | `setActiveSection('main')` |
 
 ⚠️ **The zones screen has TWO entries and one hardcoded back is wrong for one of them.**

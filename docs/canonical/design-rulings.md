@@ -3323,3 +3323,84 @@ the doors from source rather than listing them) ·
 in a browser via `/preferences-preview`; the three `activeSection` screens themselves live
 in `app/`, which vitest does not collect, so their wiring is held by tsc and by reading, not
 by a test.
+
+---
+
+## ME-ORDER-01 — 2026-09-28 — **SHIP WITH AMENDMENT**
+
+**The founder:** *"What about connections? That doesn't take us to another page. Also I want
+the design board to review the order of the page and the sections/categories."*
+
+🔴 **THE SETTLED-GROUND SCAN ANSWERED HALF THE QUESTION BEFORE THE BOARD OPENED.**
+`screen-architecture.md` § Me — ruled by this board the same day — already lists **"A door
+to data connections"** in its belongs-here column. **Connections-as-a-door was not a new
+proposal; it was an unexecuted part of `ME-PURPOSE-01`.** The founder was not asking for a
+decision, he was catching one that had been made and not carried out.
+
+⚠️ **And my architect call for leaving it was wrong on its own terms.** I reasoned *"a door
+onto two rows is just a tap"*. Measured: `StravaConnectionRow` *"removes itself silently
+when is_admin=false"* (DS-03), so a real runner sees **ONE row**. A heading over one row.
+
+### Measured at the sitting
+
+| | |
+|---|---|
+| Structure | **7 section labels, 3 doors, 4 inline items** |
+| `Connections`, real runner | **1 row** |
+| `Account` | a heading over **one read-only email row** |
+| `Plan adjustments` | rendered **under `Connections`** — a defect from removing its duplicate title |
+| `Careful Now` | held Sign out, Delete account **and redeem-a-code** |
+| `Your access` + `Subscription` | two adjacent headings, one subject |
+
+### The ruling
+
+**Five headings, each governing ≥2 items:** `Your training` · `Setup` · `Subscription` ·
+`Support` · `Careful Now`. Identity, the email row and *What Kit knows about you* sit above
+the first heading, unlabelled.
+
+- **Connections is a door**, and ⚠️ **its subtitle carries live state** — Silvanto's
+  objection (a door hides a status the runner wants at a glance) answered with
+  `ME-DOORS-01`'s own pattern rather than an exception.
+- **Order is a stated principle, not data:** *most likely reason you came first, account
+  lifecycle last, destructive last.* **We have no telemetry on why anyone opens Me and this
+  ruling does not pretend we do.**
+- `Plan adjustments` → `Your training`. `RedeemCodeLink` → `Subscription`: *a runner whose
+  charity gave them a code had to look for it under a heading that means this will hurt*
+  (Sierra). `Account` dissolves into the identity region.
+
+### 🔴 What the build found that the sitting could not
+
+**An unlabelled card placed after a heading INHERITS that heading.** I argued for four
+headings, on the rule that a heading governing one row is not a heading. Built that way,
+`Preferences` and `Connections` **rendered as part of `Your training`** — the same defect
+being fixed one section up. **The principle held; my count did not**, and the board's five
+was right. The card holds two doors, so `Setup` governs two items and qualifies.
+
+**A third stale `"below"`**, found by sweeping for the shape rather than the symptom:
+*"Set RHR and Max HR below"* in *What Kit knows about you*, pointing at a form
+`ME-DOORS-01` had already moved behind a door. Two were fixed that day; this was the twin.
+
+**`onConnect` had TWO callers, not one** — the Coach empty-state CTA and `ZoneRings`. The
+sitting named one.
+
+**The subtitle's source state could not tell "not connected" from "not loaded"** —
+`healthkitConnectedAt` was `string | null`, initialised `null`, set only when truthy. A row
+saying *"Not connected"* would have flashed a false negative on every open. Now three
+states; unknown renders no subtitle.
+
+**The first subtitle wrapped to two lines** beside a sibling that fits one. Caught by
+rendering, not by reading.
+
+### Artifacts
+
+1. **Pattern** — `ui-patterns.md` § *Section membership is positional* and § *A door's
+   subtitle may not assert a negative it cannot know*.
+2. **Constant** — `meDoors.ts`: `ME_SECTION_ORDER`, `MIN_ITEMS_PER_HEADING`,
+   `CONNECTIONS_TITLE`, `connectionsSubtitle()`.
+3. **Mechanical check** — `meOrder.test.ts`, 12 arms. **8 falsified**, one of which
+   ("Plan adjustments under Your training") needed its mutation rewritten because the first
+   attempt was a no-op that proved nothing.
+
+⚠️ **Recorded, unresolved:** Wroblewski's objection that the door is not worth its tap while
+Strava is admin-gated. It would be settled by Strava approval or by telemetry we do not
+collect. **Nothing here has been seen on a device.**
