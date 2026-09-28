@@ -100,6 +100,39 @@ seeing, look here first.**
 A missing `event_timestamp_ms` records `revenuecat_event_no_timestamp` — see the write section
 below for why null is the correct fallback and why it must still leave a trace.
 
+### OPS-SUBS-TRACE-01 (2026-09-28) — the success path leaves a row
+
+🔴 **Until this shipped, every kind this route could emit was a FAILURE branch, so a
+healthy webhook and an unreachable one were indistinguishable.** Measured in production
+on 2026-09-28: `ops_events` held 435 rows across 13 kinds and **not one came from this
+route**, while `subscriptions` held a single hand-seeded `stripe` row with
+`last_event_at = NULL`. No RevenueCat event has ever produced a row here.
+
+That is load-bearing: `resolveTier` reads `subscriptions` for every tier decision, and
+`v_trial_conversion` feeds the 1 January trial-to-paid gate. A first real purchase failing
+at the RPC returned 500 with nothing durable to find it by.
+
+| Outcome | Ops kind | `detail` |
+|---|---|---|
+| RPC ran | `revenuecat_event_received` | `{ provider, event_type, status, applied }` |
+| RPC errored (→ 500) | `revenuecat_event_write_failed` | `{ provider, event_type, status, message }` (truncated to 300 chars) |
+| No status mapping | `revenuecat_event_unhandled` | `{ provider, event_type }` |
+
+- **`_received` is a HEARTBEAT, recorded on every delivery** — same reasoning as
+  `strava_webhook_received` and `plan_enrich_server_saved`: a backstop nobody can see
+  firing is one nobody trusts.
+- ⚠️ **`detail.applied === false` IS NOT AN ERROR.** It is the SUBS-ORDERING-REVENUECAT-01
+  ordering guard suppressing a stale or replayed delivery, which previously only reached a
+  `console.log`. The guard can now be observed working.
+- The kind and detail are decided by **`lib/subscriptions/webhookTrace.ts`**, shared with
+  the Stripe route so the two cannot drift. It is pure and tested
+  (`webhookTrace.test.ts`); `app/**` is not collected by vitest, so a test beside this
+  route would never run.
+- Recording is **awaited**, not fire-and-forget: the 500 is what makes the provider retry,
+  and a trace that loses the race with the response is the one delivery you needed.
+- **Behavioural only, no PII and no payload.** `ops_events` deliberately survives account
+  deletion (anonymised via `ON DELETE SET NULL`), so anything put here outlives the account.
+
 ## Notes
 
 - Uses the **service-role** client; bypasses RLS. Correct on a webhook — there is no session.

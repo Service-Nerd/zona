@@ -1,9 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
+import { webhookTrace } from '@/lib/subscriptions/webhookTrace'
 
 // Stripe webhook docs: https://stripe.com/docs/webhooks
 // Signature verified via stripe.webhooks.constructEvent (timing-safe)
+//
+// OPS-SUBS-TRACE-01 (2026-09-28) — this route had NO durable telemetry of any kind:
+// four failure branches and the success path all reported via `console.error` /
+// nothing, so a dropped payment left no queryable row. Traces are decided by
+// `lib/subscriptions/webhookTrace.ts`, shared with the RevenueCat route so the two
+// cannot drift — instrumenting one twin is what TWIN-SWEEP-01 names.
+//
+// ⚠️ DELIBERATELY NOT TRACED: the non-subscription event types filtered out below.
+// Stripe sends many by design and a row per delivery would be noise, which
+// NOISE-GATE-01 says gets telemetry ignored. Only a SUBSCRIPTION event that we
+// could not act on is worth a row.
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not set')
@@ -49,18 +62,31 @@ export async function POST(req: NextRequest) {
   const subscription = event.data.object as Stripe.Subscription
   const status = toStatus(subscription.status)
 
-  if (!status) return NextResponse.json({ received: true })
+  if (!status) {
+    const t = webhookTrace('stripe', { result: 'unhandled', eventType: event.type })
+    await recordOpsEvent(t.kind, { ...t.detail, stripe_status: subscription.status },
+      subscription.metadata?.user_id ?? null)
+    return NextResponse.json({ received: true })
+  }
 
   // user_id stored as subscription metadata at checkout creation time
   const userId = subscription.metadata?.user_id
   if (!userId) {
+    // A REAL PAYMENT DROPPED. Stripe retries a 400 only briefly, so without a row
+    // here the only evidence was a console line nobody reads.
     console.error('[stripe webhook] subscription missing user_id metadata', subscription.id)
+    const t = webhookTrace('stripe',
+      { result: 'unusable', eventType: event.type, missing: 'user_id' })
+    await recordOpsEvent(t.kind, t.detail, null)
     return NextResponse.json({ error: 'Missing user_id in metadata' }, { status: 400 })
   }
 
   const periodEnd = subscription.items.data[0]?.current_period_end
   if (!periodEnd) {
     console.error('[stripe webhook] subscription missing current_period_end', subscription.id)
+    const t = webhookTrace('stripe',
+      { result: 'unusable', eventType: event.type, missing: 'current_period_end' })
+    await recordOpsEvent(t.kind, t.detail, userId)
     return NextResponse.json({ error: 'Missing period end' }, { status: 400 })
   }
   const currentPeriodEnd = new Date(periodEnd * 1000).toISOString()
@@ -80,11 +106,20 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error('[stripe webhook] apply_subscription_event failed', error)
+    const t = webhookTrace('stripe',
+      { result: 'write_failed', eventType: event.type, status, message: error.message ?? String(error) })
+    await recordOpsEvent(t.kind, t.detail, userId)
     return NextResponse.json({ error: 'DB write failed' }, { status: 500 })
   }
+
   if (applied === false) {
     console.log('[stripe webhook] stale/out-of-order event suppressed', subscription.id, event.id)
   }
+
+  // The HEARTBEAT. `applied: false` is the ordering guard working, not a failure.
+  const t = webhookTrace('stripe',
+    { result: 'received', eventType: event.type, status, applied: applied !== false })
+  await recordOpsEvent(t.kind, t.detail, userId)
 
   return NextResponse.json({ received: true })
 }

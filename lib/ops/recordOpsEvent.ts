@@ -89,6 +89,37 @@ export type OpsEventKind =
   // months here. If this fires at any volume, the field name is wrong or RevenueCat
   // changed their payload, and the guard is protecting nothing.
   | 'revenuecat_event_no_timestamp'
+  // OPS-SUBS-TRACE-01 (2026-09-28) — the subscription webhooks leave a trace on
+  // SUCCESS and on a failed write. Decided by `lib/subscriptions/webhookTrace.ts`,
+  // which both routes share so they cannot drift.
+  //
+  // 🔴 WHY: measured in production on 2026-09-28, `ops_events` held 435 rows across
+  // 13 kinds and NOT ONE came from either webhook, while `subscriptions` held a
+  // single hand-seeded `stripe` row with `last_event_at = NULL`. The only two kinds
+  // either route could emit were both FAILURE branches, so a healthy webhook and an
+  // unreachable one were indistinguishable — and `resolveTier` reads that table for
+  // every tier decision while `v_trial_conversion` feeds the 1 January trial-to-paid
+  // gate. A first real purchase failing at the RPC returned 500 with nothing here.
+  //
+  // `_received` is the HEARTBEAT and is recorded on every delivery deliberately,
+  // the same reasoning as `strava_webhook_received` and `plan_enrich_server_saved`:
+  // a backstop nobody can see firing is one nobody trusts. `detail.applied = false`
+  // is NOT an error — it is the SUBS-ORDERING-REVENUECAT-01 ordering guard
+  // suppressing a stale or replayed delivery, which previously only console.log'd.
+  | 'revenuecat_event_received'
+  | 'revenuecat_event_write_failed'
+  | 'revenuecat_event_unusable'
+  // The Stripe half. It had the IDENTICAL blindness plus two failure modes
+  // RevenueCat does not have — a subscription carrying no `user_id` metadata and one
+  // carrying no `current_period_end` were each rejected with a bare console.error,
+  // i.e. A REAL PAYMENT DROPPED WITH NO DURABLE RECORD. Stripe is the web purchase
+  // path and owns the only `subscriptions` row that exists, so instrumenting only
+  // RevenueCat would have been TWIN-SWEEP-01 exactly: a remedy applied to one twin
+  // reads as finished, so nobody looks at the other.
+  | 'stripe_event_received'
+  | 'stripe_event_write_failed'
+  | 'stripe_event_unhandled'
+  | 'stripe_event_unusable'
   // SEC-08 sweep (2026-09-11) — the daily coach note's CACHE could not be read
   // or written. Found because `daily_coach_notes` did not exist in production
   // at all: the migration was committed AND recorded in the applied-migrations

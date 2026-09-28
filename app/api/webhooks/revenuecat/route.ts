@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { secretMatches } from '@/lib/security/secrets'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { toStatus, isGrantEvent, eventAtIso, NON_EXPIRING_GRANT_YEARS } from '@/lib/subscriptions/revenuecatEvents'
+import { webhookTrace } from '@/lib/subscriptions/webhookTrace'
 
 // RevenueCat webhook docs: https://www.revenuecat.com/docs/integrations/webhooks
 // Authorization: header value compared against REVENUECAT_WEBHOOK_SECRET
@@ -44,8 +45,8 @@ export async function POST(req: NextRequest) {
     // But RECORD it: this branch used to be silent, which is how a comp grant
     // could fail with no trace at all. If a charity runner reports a paywall
     // they should not be seeing, look here first.
-    await recordOpsEvent('revenuecat_event_unhandled',
-      { event_type: rc.type }, rc.app_user_id ?? null)
+    const t = webhookTrace('revenuecat', { result: 'unhandled', eventType: rc.type })
+    await recordOpsEvent(t.kind, t.detail, rc.app_user_id ?? null)
     return NextResponse.json({ received: true })
   }
 
@@ -91,13 +92,26 @@ export async function POST(req: NextRequest) {
     p_event_at:   eventAt,
   })
 
+  // OPS-SUBS-TRACE-01 — both outcomes leave a durable row. Awaited, not
+  // fire-and-forget: the 500 below is what makes the provider retry, and a trace
+  // that loses the race with the response is the one delivery you needed.
   if (error) {
     console.error('[revenuecat webhook] apply_subscription_event failed', error)
+    const t = webhookTrace('revenuecat',
+      { result: 'write_failed', eventType: rc.type, status, message: error.message ?? String(error) })
+    await recordOpsEvent(t.kind, t.detail, appUserId ?? null)
     return NextResponse.json({ error: 'DB write failed' }, { status: 500 })
   }
+
   if (applied === false) {
     console.log('[revenuecat webhook] stale/out-of-order event suppressed', rc.type, appUserId)
   }
+
+  // The HEARTBEAT, recorded on every delivery. `applied: false` is the ordering
+  // guard working, not a failure — and until now it only ever reached a console.
+  const t = webhookTrace('revenuecat',
+    { result: 'received', eventType: rc.type, status, applied: applied !== false })
+  await recordOpsEvent(t.kind, t.detail, appUserId ?? null)
 
   return NextResponse.json({ received: true })
 }

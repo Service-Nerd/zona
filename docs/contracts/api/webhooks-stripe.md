@@ -66,6 +66,40 @@ unmapped status. **A 200 does not mean a row was written.**
 | 400 | Subscription has no `metadata.user_id`, or no `items.data[0].current_period_end` |
 | 500 | `apply_subscription_event` returned an error |
 
+## Observability (OPS-SUBS-TRACE-01, 2026-09-28)
+
+🔴 **This route had NO durable telemetry of any kind.** Four failure branches and the
+success path reported via `console.error` or nothing at all, so **a dropped payment left no
+queryable row.** Two of those branches are worse than the RevenueCat route's equivalents: a
+subscription carrying no `metadata.user_id` and one carrying no `current_period_end` were
+each rejected with a bare console line, and Stripe retries a 400 only briefly.
+
+⚠️ **Instrumenting only the RevenueCat route would have been TWIN-SWEEP-01** — a remedy
+applied to one twin reads as finished, so nobody looks at the other. Stripe is the **web**
+purchase path and owns the only `subscriptions` row that exists in production.
+
+| Outcome | Ops kind | `detail` |
+|---|---|---|
+| RPC ran | `stripe_event_received` | `{ provider, event_type, status, applied }` |
+| RPC errored (→ 500) | `stripe_event_write_failed` | `{ provider, event_type, status, message }` (truncated to 300 chars) |
+| Subscription status did not map | `stripe_event_unhandled` | `{ provider, event_type, stripe_status }` |
+| Acted-on event we cannot use (→ 400) | `stripe_event_unusable` | `{ provider, event_type, missing }` — `missing` is `user_id` or `current_period_end` |
+
+- **`_unusable` is deliberately NOT folded into `_unhandled`.** "We have no mapping for this
+  event" and "a real payment arrived that we could not apply" are different facts and lead
+  to different actions.
+- ⚠️ **NOT traced: the non-subscription event types filtered out before this point.** Stripe
+  sends many by design and a row per delivery would be noise, which NOISE-GATE-01 records as
+  the thing that gets telemetry ignored. Only a *subscription* event worth acting on is
+  recorded.
+- ⚠️ **`detail.applied === false` is not an error** — it is the ordering guard suppressing a
+  stale or replayed delivery, previously only a `console.log`.
+- Kind and detail come from **`lib/subscriptions/webhookTrace.ts`**, shared with the
+  RevenueCat route so the two cannot drift. Pure and tested (`webhookTrace.test.ts`);
+  `app/**` is not collected by vitest.
+- **Behavioural only, no PII and no payload** — `ops_events` survives account deletion
+  anonymised, so anything here outlives the account.
+
 ## The write — `apply_subscription_event`
 
 **Never a plain upsert.** The route calls the RPC in
