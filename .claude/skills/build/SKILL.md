@@ -91,6 +91,48 @@ Each named or explicitly **"none"**. Upstream: what feeds this. Downstream: what
 the shape changes — components, tests, docs, contracts (`docs/contracts/`), the marketing
 site, the OG image, notifications.
 
+### 5b. 🔴 IS THIS A MOVE? Then steps 4 and 5 do not apply and you must run THIS instead
+
+**Measured 2026-09-28 (`ME-DOORS-01`).** A ship was reported done and verified — full suite,
+production build, `audit-docs.sh` ALL CLEAN, nine arms falsified — and **five silent defects
+were already in the commit.** The founder found them with four words: *"up and downstream
+impact?"*
+
+⚠️ **Steps 4 and 5 are framed as DATA FLOW** — *"where is this output consumed"*, *"what
+breaks if the shape changes"*. **A relocation has no output and changes no shape**, so both
+steps read as not-applicable to the exact change that most needs them. They were answered,
+honestly, as "none". They were the wrong questions.
+
+> 🔴 **A RELOCATION MAKES CORRECT CODE WRONG WITHOUT TOUCHING IT.**
+> Every check you have written asks *"is the code I WROTE correct?"* When you move
+> something, the defects are in code you did **not** write.
+> **"Nothing else changed" is the reason to LOOK, not the reason not to.**
+
+**If this change moves, renames, re-parents or gates anything a runner reaches, answer all
+six in writing. "None" is a claim and must be checked, not assumed.**
+
+✅ **AND IT IS HOOKED, so it does not depend on you remembering it.**
+`.claude/hooks/move-impact-check.py` fires on a commit whose diff is move-shaped (a
+reachable file under `app/` or `components/` that both LOST ≥40 lines and GAINED ≥40, or a
+big deletion beside a new sibling) and asks these six. **Measured over 33 non-docs commits:
+5 fire, ALL of them genuine relocations, 0 false positives** — and it fires on `b35f1221`,
+the commit that shipped the five defects, which is how it was falsified. Advisory, never
+blocking. Tests: `python3 .claude/hooks/move-impact-check.test.py` — 14 cases, both
+directions.
+
+| # | Ask | How it failed, measured |
+|---|---|---|
+| 1 | **What navigates INTO it by anchor or id?** | `getElementById('me-hr-card')?.scrollIntoView()` — behind a door the element does not exist, `getElementById` returns **null**, the optional chain swallows it. **A control that does nothing, forever, with no error and no log.** Grep the anchor constant |
+| 2 | **What is reached ONLY from it?** | Its `onBack` now lands somewhere else. `reshape` returned to the index though its only entry was the moved block |
+| 3 | **What is reached from BOTH it and its old parent?** | One hardcoded back is right for one and wrong for the other. Reuse the existing return-to state, do not invent a second |
+| 4 | **What COPY names its old location?** | *"in Profile"*, *"below"*, *"under Me"*, and the marketing site. ⚠️ Note them; **do not rewrite founder copy to fit your layout** |
+| 5 | **Does it carry its own header?** | Two of three doors said their name **twice**, and **neither was wrong when written** — a card header that "parallels the row above" becomes a second title when the card becomes the screen |
+| 6 | **What ran on MOUNT?** | Behind a door it mounts later, or never. Check every consumer of the state it set |
+
+⚠️ **And the reason a passing suite is no comfort here:** a test written for the thing you
+moved asserts it **RENDERS**. None of them assert it **GOES** anywhere, or that anything
+still reaches it.
+
 ### 6. Route the questions — in analysis, not after
 | Question | Goes to |
 |---|---|
@@ -129,6 +171,7 @@ Significant → its own item, filed in the backlog with a board tag, before proc
 **Reuse:** [existing function reused or adapted, + blast radius] / [new, and why nothing fits]
 **Consumers:** [every read site — APP and WEBSITE] / "none"
 **Upstream:** […] **Downstream:** […]
+**Is it a MOVE?** no / yes → all six of 5b answered in writing, each named or checked-"none"
 **Routing:** Coaching Board / Design Board / SLT / none — and why
 **New pattern:** [agreed + where it lands] / none
 **Risks → mitigation:** […] / none
@@ -156,6 +199,11 @@ because…".** An unenforceable rule is a known risk, not an oversight.
 ### Regression
 **Prove the old behaviour still holds.** Run the affected suites. If you changed a
 producer, run everything that consumes it.
+
+🔴 **A MOVE NEEDS ITS OWN CHECK, and the suite cannot be it.** Every arm you have was
+written against the code in its old home and passes in the new one. Add an arm for what
+5b turned up — navigation, the duplicated header, the mount-time effect — and falsify it.
+**`ME-DOORS-01` shipped five silent defects under 3,872 green tests.**
 
 ⚠️ **Falsify any new check before trusting it green.** Break the thing it guards and watch
 it go red. This repo has shipped a green tick with nothing behind it more than once:

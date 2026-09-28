@@ -75,6 +75,15 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-docs-check.py\""
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/move-impact-check.py\""
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
