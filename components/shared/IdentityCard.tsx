@@ -54,6 +54,31 @@ export const IDENTITY_NAME_PLACEHOLDER = 'Add your name'
 
 type Mode = 'rest' | 'editing' | 'saving' | 'failed'
 
+/**
+ * 🔴 THE PENCIL, ADDED AFTER THE FOUNDER LOOKED AT IT: *"the name on me profile
+ * doesn't have a pencil so we don't know you can edit."*
+ *
+ * The board left this open deliberately. Silvanto asked for the bare field FIRST — *"a
+ * pencil beside an editable name is decoration explaining what the type should already
+ * say"* — and the chair recorded that it had not been seen on a device. It has now, and
+ * the bare version does not read as editable. **That is the evidence the ruling was
+ * waiting for, not an override of it.**
+ *
+ * ⚠️ IT APPEARS BESIDE A VALUE AND NEVER BESIDE THE PROMPT. **M-2 is Silvanto's own
+ * amendment** and licenses exactly this: an icon on a row that carries a current value.
+ * The empty state already says "Add your name", which is an instruction — a pencil there
+ * would explain a sentence that explains itself.
+ */
+function EditGlyph() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"
+      style={{ flexShrink: 0, color: 'var(--mute)' }}>
+      <path d="M11.5 2.5a1.4 1.4 0 0 1 2 2L5 13l-2.5.5L3 11l8.5-8.5Z"
+        stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
 export function IdentityCard({ initials, firstName, tierLabel, onSaveName }: {
   /** Already resolved by the caller — see the fallback chain in `profileInitials`. */
   initials: string
@@ -128,6 +153,7 @@ export function IdentityCard({ initials, firstName, tierLabel, onSaveName }: {
         }}>
           {IDENTITY_NAME_LABEL}
         </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
         <input
           id={IDENTITY_NAME_FIELD_ID}
           ref={inputRef}
@@ -146,7 +172,7 @@ export function IdentityCard({ initials, firstName, tierLabel, onSaveName }: {
           }}
           style={{
             ...nameType,
-            width: '100%', padding: '2px 6px', margin: '-2px -6px',
+            flex: 1, minWidth: 0, padding: '2px 6px', margin: '-2px -6px',
             background: 'transparent',
             border: '1px solid',
             borderColor: editing ? 'var(--moss-mid)' : 'transparent',
@@ -158,6 +184,10 @@ export function IdentityCard({ initials, firstName, tierLabel, onSaveName }: {
             cursor: editing ? 'text' : 'pointer',
           }}
         />
+        {/* Only beside a VALUE (M-2), and gone while editing — once the field is focused
+            the caret says what the pencil was there to say. */}
+        {!editing && firstName && <EditGlyph />}
+        </div>
         <div style={subType}>
           {mode === 'failed'
             ? <span style={{ color: 'var(--danger)' }}>{IDENTITY_SAVE_FAILED}</span>

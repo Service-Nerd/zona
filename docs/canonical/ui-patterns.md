@@ -3513,10 +3513,18 @@ Editing commits to the network. A Save button at least gives the runner somethin
 again; an inline field gives them nothing unless we build it. **A failed save REVERTS the
 value** rather than leaving a name on screen that is not the name we hold.
 
-⚠️ **The affordance is the field, not an icon.** The reference screen uses a pencil.
-Silvanto's condition: try the bare version first, because *"a pencil beside an editable
-name is decoration explaining what the type should already say."* **This has not been seen
-on a device**, so the pencil question is open rather than settled.
+🔴 **A PENCIL BESIDE A VALUE, AND NEVER BESIDE THE PROMPT — the open question, now
+CLOSED by the evidence it was waiting for.** Silvanto asked for the bare field first
+(*"a pencil beside an editable name is decoration explaining what the type should already
+say"*) and the chair recorded that it had not been seen. The founder looked: *"the name on
+me profile doesn't have a pencil so we don't know you can edit."* **The bare version does
+not read as editable.**
+
+⚠️ **It appears only where there IS a name.** `M-2` is Silvanto's own amendment and
+licenses an icon on a row carrying a current value — which is exactly this, and exactly
+not the empty state, where *"Add your name"* is already an instruction and a pencil would
+explain a sentence that explains itself. It also disappears the moment the field is
+focused: the caret then says what the pencil was there to say.
 
 **Initials are ONE letter, from every source.** `lib/profileInitials.ts` is the single
 owner: saved first name → `plan.meta.athlete` → the account's email → `'?'`. The email tail
@@ -4126,7 +4134,19 @@ for one that is ours.
 follows, recorded now because a SHIP ruling owes its pattern whether or not the code
 lands the same day. Scope caveats: `docs/decisions/zones-surface-2026-09-28.md`.
 
-One screen, entered from **Me** by a row that **REPLACES** the existing zone rows.
+One screen, entered from the **`Zones` row in "What Kit knows about you"** — the row near
+the top of Me that already states the values, given the same tappable treatment as
+`Benchmark` directly beneath it.
+
+🔴 **THE FIRST CUT PUT THE DOOR IN THE WRONG PLACE AND NOBODY FOUND IT.** It went beside
+the HR inputs, the FIFTH block down, nested under settings, because that is where the old
+zone rows lived. The founder looked at the shipped screen and reported *"I seen nothing
+done with hr zones and pace."*
+
+⚠️ **And that row is a surface the brief to the board UNDERCOUNTED.** The Design Board was
+told fourteen surfaces render zone information; this one was folded into a single
+file-level count and never named, so the consolidation argument was never applied to it.
+**One entry, on the row that already carries the value.**
 
 ```
 ┌───────────────────────────────────────┐

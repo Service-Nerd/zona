@@ -72,6 +72,20 @@ describe('PROFILE-IDENTITY-01 — the identity card renders', () => {
     expect(IDENTITY_NAME_PLACEHOLDER).toMatch(/name/i)
   })
 
+  // 🔴 THE FOUNDER'S VERDICT ON THE ONE QUESTION THE BOARD LEFT OPEN.
+  // Silvanto asked for the bare field first — "a pencil beside an editable name is
+  // decoration explaining what the type should already say" — and the chair recorded that
+  // it had not been seen. It was, and it did not read as editable: *"the name on me
+  // profile doesn't have a pencil so we don't know you can edit."*
+  //
+  // ⚠️ BESIDE A VALUE, NEVER BESIDE THE PROMPT. M-2 is Silvanto's own amendment and
+  // licenses an icon on a row carrying a current value. The empty state already says "Add
+  // your name"; a pencil there would explain a sentence that explains itself.
+  it('a name carries an edit glyph; the empty prompt does not', () => {
+    expect(card(), 'a name must look editable').toMatch(/<svg/)
+    expect(card({ firstName: '' }), 'the prompt explains itself').not.toMatch(/<svg/)
+  })
+
   it('the field is labelled for a screen reader', () => {
     const m = card()
     expect(m).toContain(`for="${IDENTITY_NAME_FIELD_ID}"`)

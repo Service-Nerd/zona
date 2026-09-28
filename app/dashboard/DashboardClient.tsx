@@ -11669,29 +11669,11 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
         </Button>
       </div>
 
-      {/* ZONES-SURFACE-01 (Design Board, 2026-09-28) — the five zone rows and their
-          per-zone sheet MOVED to the Training Zones screen, and this row is what replaced
-          them.
-
-          🔴 IT IS A REPLACEMENT, NOT AN ADDITION. Collins counted FOURTEEN surfaces
-          already rendering zone information and would not accept a fifteenth that
-          explains the other fourteen: *"that is not a screen, that is an admission."*
-          What stays here is the INPUT (resting and max HR) — settings, which is Me's job.
-          What left is the REFERENCE, which now has one home and gained the pace bands
-          that were previously unfindable outside a session card. */}
-      {zones.length > 0 && onOpenZones && (
-        <div style={{ padding: '4px 4px 12px' }}>
-          <ActionRow
-            title="Your zones"
-            subtitle={hrZoneMethod === 'karvonen'
-              ? 'Heart rate and pace targets · personalised from your HR data'
-              : hrZoneMethod
-                ? 'Heart rate and pace targets · age estimate'
-                : 'Heart rate and pace targets · HRR method'}
-            onClick={onOpenZones}
-          />
-        </div>
-      )}
+      {/* ZONES-SURFACE-01 — the five zone rows and their per-zone sheet moved to the
+          Training Zones screen. The ENTRY is the "Zones" row in "What Kit knows about
+          you", near the top of Me, which already states the values; a second door here,
+          five blocks down and nested under the HR inputs, was the first cut and nobody
+          found it. What stays in this section is the INPUT, which is Me's job. */}
 
       {/* Prompt if incomplete */}
       {zones.length === 0 && (rhr || mhr) && (
@@ -12277,11 +12259,23 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
                 What Kit knows about you
               </div>
 
+              {/* 🔴 THE ENTRY POINT FOR ZONES-SURFACE-01, AND THE FIRST CUT PUT IT IN THE
+                  WRONG PLACE. It went beside the HR inputs — the FIFTH block down, nested
+                  under settings — while this row, which already STATES the runner's zones,
+                  sits near the top of Me and is where anyone actually looks. The founder
+                  looked and reported seeing nothing done.
+
+                  ⚠️ AND IT IS A SURFACE MY OWN BRIEF UNDERCOUNTED. The Design Board was
+                  told FOURTEEN surfaces render zone information; this row was folded into
+                  a single file-level count and never named, so the consolidation argument
+                  was never applied to it. One entry, on the row that already carries the
+                  value — same treatment as Benchmark directly beneath. */}
               {row(
                 'Zones',
                 hrConfigured ? `Z2 ≤ ${z2Ceiling} · Max ${maxHR}` : 'Not set',
                 hrConfigured ? null : 'Set RHR and Max HR below. Your zones lock in.',
                 hrConfigured ? 'set' : 'unset',
+                hrConfigured ? onOpenZones : undefined,
               )}
 
               {row(
