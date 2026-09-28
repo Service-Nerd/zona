@@ -154,19 +154,48 @@ The user opens Session Detail from Today or Plan to read the full brief on a sin
 ---
 
 ### Me
-**Job: Your identity and configuration.**
+**Job: Find the thing you want to change, and go there.**
 
-The user opens Me to manage the things the app uses everywhere — their profile, benchmarks, data connections, and preferences. These are set-once inputs, not real-time coaching surfaces.
+**Me is an INDEX.** It lists what a runner can change and opens a screen for each.
+**Nothing lives on Me.** Every row is a **door**, not a room.
+
+🔴 **RULED 2026-09-28 (`ME-PURPOSE-01`), after the question was deferred THREE times.**
+This section previously read *"Job: your identity and configuration"* and then listed seven
+categories under it. **That is not a job, it is a drawer with a label** — and a job you
+cannot state in one sentence refuses nothing, which is why eight blocks accumulated without
+anyone deciding (Zhuo).
+
+⚠️ **MEASURED AT THE SITTING:** MeScreen was **780 lines**, **8 top-level blocks**, **11
+`onClick` handlers, 6 raw `<button>`s, 5 toggles** — and **ZERO `<ActionRow>` usages**.
+`ACTION-ROW-01` was created *because of Me* (*"we have them under Me profile so we should
+have a standard pattern for these"*) **and Me did not use it.** A pattern extracted from a
+screen that the screen never adopts is what a drawer looks like from the inside
+(Wroblewski).
+
+⚠️ **And this board's charter records the Coach screen's failure as "seven blocks, no
+subject". Me had EIGHT.** It went undiagnosed because Me is *supposed* to be a list of
+things — but a list is only tolerable when each row is a door (Silvanto).
 
 | Belongs here | Does not belong here |
 |---|---|
-| Name, race, distance, fitness level | Session-level coaching |
-| HR zones and benchmark pace | Weekly coaching synthesis |
-| Dist/duration display toggle | Zone rings or trend data |
-| Data connections (HealthKit, Strava) | Race projections |
-| Plan reshaping and overrides | Session schedule |
-| Subscription and account | |
-| Recent personalisation wins (zone score context) | |
+| A **door** to identity and account | 🔴 **Any control that is not a row** |
+| A **door** to HR zones and benchmark pace | Session-level coaching |
+| A **door** to display preferences | Weekly coaching synthesis |
+| A **door** to data connections | Zone rings or trend data |
+| A **door** to plan reshaping and overrides | Race projections |
+| A **door** to notifications | Session schedule |
+
+**The measure is time to the thing you came for** (Sierra). Nobody reads Me; they arrive
+having already decided, and the only question is how fast they can leave.
+
+⚠️ **THE RULE BINDS NOW; THE MOVES ARE STAGED.** Its immediate effect is that **nothing
+new may be added inline to Me** — that is what stops the drift while the rest is sequenced
+(Sierra's sequencing, taken over Collins' preference to move everything at once). Existing
+inline blocks are a **declared, non-growing baseline** in `meIsAnIndex.test.ts`.
+
+**The Training Zones screen (2026-09-28) is the precedent, not an exception:** a row on Me
+that opens a focused screen. ⚠️ `ZONES-INPUTS-01` stands — the HR form stays on Me until
+it gets **its own door**, which is not the same as relocating it into the zones screen.
 
 ---
 

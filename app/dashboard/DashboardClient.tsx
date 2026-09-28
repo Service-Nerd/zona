@@ -2901,7 +2901,15 @@ export default function DashboardClient() {
             <>
               <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setScreen('me')} /></div>
               <ScreenHeader title="Your zones" sub="Heart rate and pace targets" />
-              <TrainingZonesScreen zones={hrZones} pace={pace} units={preferredUnits} />
+              <TrainingZonesScreen zones={hrZones} pace={pace} units={preferredUnits}
+                sourceHr={restingHR && maxHR ? { resting: restingHR, max: maxHR } : null}
+                // ZONES-INPUTS-01 — the FORM stays on Me. This only navigates there,
+                // because the HR card is a set-once input and carries the Apple Health
+                // prefill, which is a connection action and belongs with `Connections`.
+                onEditHr={() => { setScreen('me'); requestAnimationFrame(() => {
+                  document.getElementById(HR_CARD_ANCHOR_ID)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                }) }}
+              />
             </>
           )
         })()}
@@ -11558,6 +11566,8 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
   )
 }
 
+export const HR_CARD_ANCHOR_ID = 'me-hr-card'
+
 function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZoneMethod, hrAssumptionNote, onOpenZones }: {
   restingHR: number | null
   maxHR: number | null
@@ -11630,7 +11640,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
   }
 
   return (
-    <div style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
+    <div id={HR_CARD_ANCHOR_ID} style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
 
       {/* Header — parallels Race benchmark row: title + sublabel framing */}
       <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>

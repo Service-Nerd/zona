@@ -7,6 +7,7 @@ import {
   ZONES_TAB_HR, ZONES_TAB_PACE, CEILING_LABEL_HR, CEILING_LABEL_PACE, TAB_MIN_HEIGHT_PX,
 } from './TrainingZonesScreen'
 import { buildPaceFromVDOT, bandCeiling } from '@/lib/plan/paceBands'
+import { HR_PROVENANCE_PREFIX, PROVENANCE_MIN_HEIGHT_PX } from './TrainingZonesScreen'
 
 // ZONES-SURFACE-01 (Design Board) + ZONES-BEGINNER-BANDS-01 (Coaching Board), 2026-09-28.
 //
@@ -89,6 +90,42 @@ describe('ZONES-SURFACE-01 — the toggle', () => {
   it('the hand-rolled tabs clear the 44pt floor', () => {
     expect(TAB_MIN_HEIGHT_PX).toBeGreaterThanOrEqual(44)
     expect(screen()).toContain(`min-height:${TAB_MIN_HEIGHT_PX}px`)
+  })
+})
+
+describe('ZONES-INPUTS-01 — provenance, not a form', () => {
+  // 🔴 THE SCREEN CLAIMED "personalised from your HR data" AND NEVER SHOWED THE DATA.
+  // The founder asked whether the HR inputs belong on Me. They do — set-once value, and
+  // the card carries the Apple Health prefill, which is a CONNECTION action. What was
+  // missing was the two numbers, which is what makes the table auditable: Sierra, a runner
+  // who sees them learns their zones come from two values and that one wrong value makes
+  // the whole table wrong.
+  it('shows the source values on the HR tab', () => {
+    const m = screen({ sourceHr: { resting: 51, max: 185 }, onEditHr: () => {} })
+    expect(m).toContain(HR_PROVENANCE_PREFIX)
+    expect(m).toContain('51')
+    expect(m).toContain('185')
+  })
+
+  // ⚠️ THE ARM THAT KEEPS THE RULING. The board refused to move the FORM: a once-ever
+  // input on a weekly-read screen is density, not disclosure (Silvanto), and moving it
+  // would relocate taps rather than reduce them (Wroblewski). If someone later "improves"
+  // this by making it editable in place, this fails.
+  it('renders NO input — the form stays on Me', () => {
+    const m = screen({ sourceHr: { resting: 51, max: 185 }, onEditHr: () => {} })
+    expect(m).not.toMatch(/<input/)
+  })
+
+  it('is a control, and looks like one', () => {
+    const m = screen({ sourceHr: { resting: 51, max: 185 }, onEditHr: () => {} })
+    expect(m).toMatch(/<svg/)  // CHEVRON-OWNER-01
+    expect(m).toContain(`min-height:${PROVENANCE_MIN_HEIGHT_PX}px`)
+  })
+
+  it('is absent on the Pace tab and when the values are unknown', () => {
+    expect(screen({ zones: null, sourceHr: { resting: 51, max: 185 }, onEditHr: () => {} }))
+      .not.toContain(HR_PROVENANCE_PREFIX)
+    expect(screen({ sourceHr: null })).not.toContain(HR_PROVENANCE_PREFIX)
   })
 })
 

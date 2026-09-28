@@ -39,6 +39,8 @@ import { useState } from 'react'
 import type React from 'react'
 import { convertPaceString } from '@/lib/format'
 import { bandCeiling, type PaceGuide } from '@/lib/plan/paceBands'
+// CHEVRON-OWNER-01 — the one affordance. A tappable row must not look static.
+import { Chevron } from '@/components/shared/Chevron'
 
 export type ZoneRow = {
   zone: number
@@ -52,10 +54,36 @@ export type ZoneRow = {
 /** The 44pt tap-target floor, as a named constant so the check can read the same value
  *  the component uses rather than a literal typed twice. */
 export const TAB_MIN_HEIGHT_PX = 44
+/** Same 44pt floor, same reason: hand-rolled, so the geometry gate cannot see it. */
+export const PROVENANCE_MIN_HEIGHT_PX = 44
 
 /** The two tabs, named once so the label and the state cannot drift. */
 export const ZONES_TAB_HR = 'Heart rate'
 export const ZONES_TAB_PACE = 'Pace'
+
+/**
+ * ZONES-INPUTS-01 (Design Board, 2026-09-28) — the provenance line.
+ *
+ * 🔴 THE FOUNDER ASKED WHETHER THE HR INPUTS BELONG ON ME. They do: they are a SET-ONCE
+ * value, `screen-architecture.md` § Me lists them under "belongs here", and the card
+ * carries the Apple Health prefill, which is a CONNECTION action that belongs where
+ * `Connections` lives. Moving the form here would not reduce taps (Wroblewski counted:
+ * it relocates them) and would put a once-ever form on a weekly-read screen — density,
+ * not disclosure (Silvanto).
+ *
+ * ⚠️ WHAT WAS ACTUALLY MISSING IS THIS LINE. The screen claims its zones are
+ * "personalised from your HR data" and never shows that data. Sierra: a runner who can
+ * see the two numbers learns that **their zones come from two values**, and that if one
+ * is wrong the whole table is wrong. That is transfer; a form would teach nothing.
+ *
+ * ⚠️ AND THE BRIEF THAT CONVENED THAT SITTING WAS WRONG, recorded so it is not repeated:
+ * it argued the HR inputs were "the same shape" as the runner's name (PROFILE-IDENTITY-01,
+ * "a value shown in one place and changed in another"). They are not. The name is ONE
+ * object, displayed and edited. HR is an INPUT that derives a DIFFERENT output — this
+ * screen shows five bands, not 51 and 185. Uncorrected, that analogy would have produced
+ * a unanimous wrong answer.
+ */
+export const HR_PROVENANCE_PREFIX = 'From'
 
 /** The ceiling's two forms. The same sentence in two units — never a fallback pair. */
 export const CEILING_LABEL_HR = 'Not above'
@@ -80,12 +108,16 @@ function paceRows(p: PaceGuide): { name: string; desc: string; band: string }[] 
   return rows.filter((r): r is { name: string; desc: string; band: string } => !!r.band)
 }
 
-export function TrainingZonesScreen({ zones, pace, units }: {
+export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: {
   /** HR zones, or null when resting/max HR are not both known. */
   zones: ZoneRow[] | null
   /** The guide the ENGINE built, or null when the runner has no benchmark. */
   pace: PaceGuide | null
   units: 'km' | 'mi'
+  /** The two values the HR zones are derived FROM. Provenance, never an input here. */
+  sourceHr?: { resting: number; max: number } | null
+  /** Navigates to the HR card on Me, which remains the one place they are edited. */
+  onEditHr?: () => void
 }) {
   const hasHr = !!zones && zones.length > 0
   const hasPace = !!pace
@@ -165,6 +197,26 @@ export function TrainingZonesScreen({ zones, pace, units }: {
             Your easy days sit under this. Going over is the thing that costs you.
           </p>
         </div>
+      )}
+
+      {/* Provenance, not a form. It sits between the ceiling and the rows because it
+          explains the numbers you are about to read. */}
+      {onHr && sourceHr && onEditHr && (
+        <button
+          onClick={onEditHr}
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 'var(--space-3)', width: '100%', minHeight: PROVENANCE_MIN_HEIGHT_PX,
+            padding: '12px 16px', background: 'none',
+            border: '1px solid var(--line)', borderRadius: 'var(--radius-md)',
+            cursor: 'pointer', textAlign: 'left',
+          }}
+        >
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-caption)', color: 'var(--mute)' }}>
+            {HR_PROVENANCE_PREFIX} {sourceHr.resting} resting · {sourceHr.max} max
+          </span>
+          <span style={{ color: 'var(--mute)', display: 'inline-flex' }}><Chevron /></span>
+        </button>
       )}
 
       <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>

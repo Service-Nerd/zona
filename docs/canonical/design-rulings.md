@@ -3178,3 +3178,66 @@ is present on 10 and absent on 11, tracking `meta.benchmark` exactly.** So the p
 the board ruled should LEAD the screen is unavailable to **52%** of runners, and the HR Z2
 ceiling must be its equal-status twin rather than a fallback. **The ruling stands; the
 build is re-specified in the backlog.**
+
+---
+
+## ZONES-INPUTS-01 — 2026-09-28 — **SHIP WITH AMENDMENT**
+
+**Founder:** *"This is still under me profile, should it be? Is it logical there?"* — the
+resting/max HR card, while the zones it generates now live on their own screen.
+
+**Ruled: the FORM stays on Me; the NUMBERS go to the zones screen.** A set-once input, listed
+under Me in `screen-architecture.md`, carrying the Apple Health prefill — a **connection**
+action that belongs where `Connections` lives. Moving it would relocate taps, not reduce them
+(Wroblewski), and put a once-ever form on a weekly-read screen: **density, not disclosure**
+(Silvanto). **No amendment to § Me.**
+
+⚠️ **What was missing was a provenance line.** The screen claimed *"personalised from your
+HR data"* and never showed the data. Sierra: seeing the two numbers teaches that **one wrong
+value makes the whole table wrong**. That is transfer; a form is not.
+
+🔴 **THE BRIEF THAT CONVENED THIS SITTING WAS WRONG, AND THE CHAIR CORRECTED IT BEFORE ANY
+SEAT SPOKE.** It argued the HR inputs were *"the same shape"* as the name (PROFILE-IDENTITY-01,
+*"a value shown in one place and changed in another"*). **They are not** — the name is ONE
+object displayed and edited; HR is an INPUT deriving a DIFFERENT output. **Uncorrected, that
+analogy would have produced a unanimous wrong answer**, which is the strongest argument yet
+for the evidence step preceding the seats.
+
+🎪 **Collins registered a standing objection to the SCOPE, not the ruling:** three sittings
+in a row have ended at *"that's the section-count question"*. **Taken** — `ME-PURPOSE-01`.
+
+**Does not settle:** nothing has been seen on a device.
+
+---
+
+## ME-PURPOSE-01 — 2026-09-28 — **SHIP WITH AMENDMENT**
+
+**Collins' question, deferred three times: what is the Me screen FOR?**
+
+🔴 **MEASURED:** MeScreen is **780 lines**, **8 top-level blocks**, **11 `onClick`
+handlers, 6 raw `<button>`s, 5 toggles** — and **ZERO `<ActionRow>` usages**. Its only call
+site in the entire codebase is not Me. ⚠️ **`ACTION-ROW-01` was created BECAUSE of Me**
+(*"we have them under Me profile so we should have a standard pattern for these"*) **and Me
+does not use it.**
+
+⚠️ **And this board's own charter records the Coach screen's failure as "seven blocks, no
+subject". Me has EIGHT.** We diagnosed it on Coach and never looked at Me, because Me is
+*supposed* to be a list of things.
+
+**Ruled: Me is the INDEX.** Its job is *"find the thing you want to change, and go there."*
+**Nothing lives on Me.** Each row is a **door**, not a room. Collins: Me accumulated because
+it is the only screen with no refusal — *"configuration"* refuses nothing.
+
+**Amendments:** (1) `screen-architecture.md` § Me rewritten, with *"any control that is not a
+row"* added to **does not belong**; (2) **the rule binds NOW, the moves are staged** — the
+immediate effect is that nothing new may be added inline (Sierra's sequencing, taken over
+Collins' preference to move everything at once); (3) every door uses `ActionRow`; (4) the
+Training Zones screen shipped today is **the precedent, not an exception**; (5) ⚠️
+`ZONES-INPUTS-01` stands — the HR form stays until it gets **its own door**, not a relocation.
+
+⚠️ **No disagreement on the diagnosis, which is itself uncomfortable:** five seats converged
+instantly on a question deferred three times, which suggests the deferrals were about appetite
+rather than doubt.
+
+**Does not settle:** which blocks become doors first, or whether `What Kit knows about you` is
+a door or the one thing that legitimately lives on an index.

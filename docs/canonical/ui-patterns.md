@@ -4118,6 +4118,27 @@ a different step for a free one. **"End of wizard" is not one screen.** Anchorin
 one place in this product where something is about to happen, and a prompt level with the
 CTA competes with that moment.
 
+### 🔴 Provenance, not a form (ZONES-INPUTS-01)
+
+The HR tab carries one quiet row: **`From 51 resting · 185 max`**, with a chevron that
+navigates to the HR card on Me. The founder asked whether the inputs belong on Me. **They
+do** — a set-once value, listed under Me in `screen-architecture.md`, and the card carries
+the Apple Health prefill, which is a **connection** action.
+
+⚠️ **What was missing was the two numbers.** The screen claimed its zones were
+*"personalised from your HR data"* and never showed that data. Sierra: a runner who can see
+them learns **their zones come from two values**, and that one wrong value makes the whole
+table wrong. A form would teach nothing.
+
+⚠️ **Never an input here.** A once-ever form on a weekly-read screen is density, not
+disclosure (Silvanto), and moving it would relocate taps rather than reduce them
+(Wroblewski). Guarded by an arm that fails if an `<input>` appears.
+
+🔴 **The brief that convened that sitting was WRONG and the correction is the lesson.**
+It argued the HR inputs were *"the same shape"* as the runner's name (PROFILE-IDENTITY-01).
+They are not: the name is ONE object displayed and edited; HR is an INPUT deriving a
+DIFFERENT output. Uncorrected, the analogy would have produced a unanimous wrong answer.
+
 ### The modal question
 
 Apple's sheet is a modal and not a destructive confirmation, so it hit
