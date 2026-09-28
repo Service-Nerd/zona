@@ -4202,3 +4202,30 @@ zones-as-coaching (rings, discipline score, drift); this is zones-as-reference.
 
 **Consolidation, not addition:** fourteen surfaces already render zone information. This
 one replaces Me's rows rather than becoming the fifteenth.
+
+---
+
+## Chevron (CHEVRON-OWNER-01)
+
+`components/shared/Chevron.tsx` is the **only** chevron. Import it; never redraw the path.
+
+🔴 **THIS IS `ACTION-ROW-01`'S OWN LESSON, FINISHED — AND IT TOOK THREE GOES.** That
+ruling exists because the chevron was a local `const` inside the Me screen, so the Plan
+screen could not reach it and its tile shipped with no affordance. Its comment:
+*"A PATTERN THAT IS A LOCAL VARIABLE CANNOT TRAVEL."*
+
+⚠️ **The remedy put it in `ActionRow.tsx` — as a local `const` inside `ActionRow.tsx`.**
+One level up, same trap, and **the Me screen's original copy was never removed**. Three
+copies coexisted. So when `DashboardClient`'s compact `row()` helper gained a tap target it
+could reach neither, and rendered a `<button>` styled **identically to the static `<div>`**.
+Five rows shipped that way, `Benchmark` among them, and the founder caught it in almost the
+same words he used the first time: *"it isn't obvious it's clickable. Don't we have a
+pattern for that already?"*
+
+**Two row shapes, one affordance.** `ActionRow` is title + subtitle + chevron; `row()` is
+label + value + state dot. Both are legitimate. What has to be shared is the **affordance**,
+not the row — which is why the chevron is its own module and not a prop on one of them.
+
+**Check:** `components/shared/chevronOwner.test.ts` — two arms, both falsified. One fails on
+a second copy of the path anywhere; the other fails when `row()` renders a tap target
+without it, which is the original defect rather than a duplicate of it.

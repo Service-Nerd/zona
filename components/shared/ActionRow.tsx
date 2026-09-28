@@ -21,6 +21,9 @@
  */
 
 import type { ReactNode } from 'react'
+// CHEVRON-OWNER-01 — was a local `const` here, which is the very trap this component's
+// own comment was written about. Extracted so `row()` and anything else can reach it.
+import { Chevron } from './Chevron'
 
 export interface ActionRowProps {
   /** The verb. What the runner is about to do. */
@@ -34,11 +37,6 @@ export interface ActionRowProps {
 }
 
 /** 16px chevron. `flexShrink: 0` so a long title never squashes the affordance. */
-const Chevron = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }} aria-hidden="true">
-    <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-  </svg>
-)
 
 export default function ActionRow({ title, subtitle, onClick, divider = false, ariaLabel }: ActionRowProps) {
   return (

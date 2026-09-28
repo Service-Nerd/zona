@@ -121,6 +121,7 @@ import { RecalibrationReadyTile, RecalibrationEntryScreen } from './Recalibratio
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
+import { Chevron } from '@/components/shared/Chevron'
 import { TrainingZonesScreen } from '@/components/shared/TrainingZonesScreen'
 // PACE-BANDS-OWNER-01 — pure, and safe across BUNDLE-BOUNDARY-01 where `ruleEngine` is not.
 import { buildPaceFromVDOT, type PaceGuide } from '@/lib/plan/paceBands'
@@ -12169,11 +12170,13 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
     : plan?.meta?.zone2_ceiling ?? null
   const hrConfigured = !!(restingHR && maxHR)
 
-  const chevron = (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-      <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  )
+  // 🔴 THIS WAS THE ORIGINAL LOCAL `const` — the exact variable `ACTION-ROW-01` was
+  // written about: *"the chevron was a local `const` inside the Me screen's component.
+  // Seven rows there used it; the Plan screen could not reach it."* It was never removed;
+  // `ActionRow` was built beside it with a SECOND local copy, and `row()` later shipped a
+  // tappable control with no affordance because it could reach neither. Three copies.
+  // `CHEVRON-OWNER-01` is the one home; the seven call sites below are unchanged.
+  const chevron = <Chevron />
 
   // Tier label: Trial / Pro / Free
   const tierLabel = hasPaidAccess
@@ -12244,9 +12247,17 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
               </>
             )
             const baseStyle: React.CSSProperties = { padding: '12px 16px', borderBottom: '1px solid var(--line)' }
+            // 🔴 THE CHEVRON IS THE WHOLE FIX. This returned a `<button>` styled
+            // IDENTICALLY to the static `<div>` — tappable and indistinguishable from a
+            // read-only row — and five rows shipped that way, `Benchmark` among them.
+            // The founder, twice now and in almost the same words: *"it's not clear you
+            // can click on it. We have them under Me profile so we should have a standard
+            // pattern for these."* `ACTION-ROW-01` IS that pattern; its chevron was a
+            // local `const` and could not travel here. `CHEVRON-OWNER-01` freed it.
             return onTap ? (
-              <button onClick={onTap} style={{ ...baseStyle, width: '100%', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer' }}>
-                {inner}
+              <button onClick={onTap} style={{ ...baseStyle, width: '100%', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>{inner}</div>
+                <div style={{ color: 'var(--mute)', display: 'inline-flex' }}><Chevron /></div>
               </button>
             ) : (
               <div style={baseStyle}>{inner}</div>
