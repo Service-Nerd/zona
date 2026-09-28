@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-28 — CHEVRON-OWNER-01 · the pattern existed, in three places, none reachable
+**Shipped:** One shared chevron, so a row you can tap stops looking exactly like a row you can't.
+**Dev learning:** `ACTION-ROW-01` was written weeks ago because the chevron was a local `const` in the Me screen and the Plan screen couldn't reach it. Its comment is emphatic: *"A PATTERN THAT IS A LOCAL VARIABLE CANNOT TRAVEL."* **The fix moved it into `ActionRow.tsx` as a local `const` inside `ActionRow.tsx`** and left the Me screen's copy in place. Three copies. So the next helper that needed one could reach neither and shipped five tappable rows with no affordance.
+**Product/creator learning:** The founder made the same complaint twice, weeks apart, in almost the same words — *"it's not clear you can click on it"*. Both times the diagnosis was right and both times the remedy was scoped to the thing in front of us rather than to the class. A ruling that fixes one caller isn't a ruling, it's a patch with a register row.
+**AI-building learning:** I wrote the gate expecting it to protect the future and **it failed on its first run**, on a copy that had been sitting there the whole time. That is the most useful thing a new check can do, and it only worked because the arm derives its population from `git ls-files` instead of a list I typed.
+**The honest bit:** I added the third copy. I wrote a chevron path into a new file having just read the comment explaining why you must never do that — the same shape as this morning, when I reintroduced the placeholder defect that §36 was written to prevent, in the commit that rewrote §36. Twice in one day I've been told the answer by a file I had open.
+**Hook material:** The rule said "a pattern that is a local variable cannot travel". The fix made it a local variable somewhere else. Nobody noticed for weeks because everything still rendered.
+**Postable?:** yes
+
 ## 2026-09-28 — ZONES-SURFACE-01 · our own label was the competitor's word
 **Shipped:** A Training Zones screen under Me — HR and pace targets in one place, with the ceiling leading.
 **Dev learning:** The pace bands existed and were unreachable. `BUNDLE-BOUNDARY-01` bars the 6,000-line rule engine from a client bundle, so the component could not call `buildPaceFromVDOT` and the tempting move was to re-implement the VDOT fractions in the screen. The engine had already written down why that is wrong, beside the function: *"the second-copy-that-drifts class this repo has recorded FIVE times."* Extracting the derivation into a pure module took twenty minutes and left exactly one producer.
