@@ -519,7 +519,7 @@ a query handed to a scheduled routine is untested code.
 check. If someone edits the routine and drops Q9, nothing fails. The repo guards the *definition*;
 it cannot guard the *prompt*.
 
-### 🟡 `OPS-FUNNEL-02` — which DOOR did they come through?
+### ✅ `OPS-FUNNEL-02` — SHIPPED 2026-09-28, with a gate born from breaking it
 
 ⚙️ **NO BOARD** (instrumentation). `upgrade_view` fires from inside `UpgradeScreen`, so it
 records *that* the paywall was seen but not *which* of the **nine** `setScreen('upgrade')` call
@@ -532,6 +532,37 @@ call site, whereas threading a `source` prop through nine giant JSX call sites i
 `source?: string` to `UpgradeScreen` and pass a literal at each site** — then the funnel can
 say whether the Coach teaser converts better than the Me screen, which is the question
 `design-rulings.md`'s killed merchandising screen could not be argued without.
+
+## ⚖️ FILED 2026-09-28 — after the attribution / trust / adaptation sitting
+
+### 🟡 `OPS-ARTIFACT-PLACEMENT-01` — where should the ledger and the share card live?
+
+🧭 **DESIGN BOARD** — **blocked on data, deliberately.** The SLT ruled that the UX and
+marketing of `LEDGER-01` / `SHARE-01` may not be touched until the reach chain is visible.
+`OPS-ARTIFACT-REACH-01` shipped the events that make it visible; **they now need real users
+over real weeks.**
+
+**Do not convene this sitting until `ledger_view`, `weekly_report_open`, `share_week_pressed`
+and `share_week_result` have accumulated.** The question it must answer is which step of the
+chain breaks: paid/trial → a generated weekly report → a report carrying an HR-derived
+`zone_discipline_score` → the button renders. **Measured 2026-09-28: only 2 users reached the
+end of it.**
+
+⚠️ **Wood will support relocating the ledger** (her own ruling calls Me *"the lowest-frequency
+surface in the product"*) and will **kill any celebration, notification or progress number**
+added to it. `LEDGER-01`'s shipped rules stand.
+
+### 🟡 `SITE-SCROLL-DEPTH-01` — the measurement that would settle the adaptation device
+
+🧭 **DESIGN BOARD** (ruled **INSUFFICIENT EVIDENCE** 2026-09-28). The board could not rule on
+showing adaptation because **there is no site analytics at all**, so nobody can say whether a
+visitor reaches the `W-02` journey section or `SameWeekTwice`. **Collins lost that ruling and
+it is recorded as a loss** — his point (the adaptation story is under-weighted) was not
+disproved, only unmeasurable.
+
+**What is needed:** scroll depth to the `W-02` section and to `SameWeekTwice` on the homepage.
+⚠️ **This is a marketing-site measurement and the app's `analytics_events` cannot serve it** —
+the site is unauthenticated, and `trackEvent` no-ops without a `userId`.
 
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 

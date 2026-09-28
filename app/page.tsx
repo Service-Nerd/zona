@@ -308,6 +308,18 @@ export default async function Home() {
           }}>
             {BRAND.hrRecommendation}
           </p>
+
+          {/* W-TRUST-01 (Design Board 2026-09-28) — the objection answered where it
+              occurs. Same treatment and same token as the line above, deliberately:
+              this is a practical note following the proof, not a second claim
+              competing with it. ONE SENTENCE, NOT A SECTION — the page has already
+              had two blocks killed for being a fourth telling of the same thing. */}
+          <p style={{
+            marginTop: 'var(--space-2)',
+            fontSize: 'var(--fs-sm)', color: 'var(--mute)',
+          }}>
+            {BRAND.stravaOptional}
+          </p>
         </div>
       </Section>
 

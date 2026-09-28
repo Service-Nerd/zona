@@ -123,6 +123,25 @@ export const BRAND = {
    * email exists yet — carry this line into the launch email when that ships.)
    */
   hrRecommendation: 'Works best with an Apple Watch or a heart-rate strap that syncs to Apple Health.',
+  // W-TRUST-01 (Design Board 2026-09-28) — the one trust claim that is TRUE today.
+  //
+  // Ruled SHIP WITH AMENDMENT: one sentence inside an EXISTING section, adjacent to
+  // hrRecommendation. Not a new section, no badges, no seals, no dark band
+  // (`design-rulings.md:189` — exactly one near-black section per marketing page).
+  //
+  // ⚠️ ACCESSIBILITY IS DELIBERATELY NOT CLAIMED. `design-rulings.md:856` records
+  // WCAG 1.4.1 carrying a measured debt of 6 sites, so a compliance claim would be
+  // the "full access" class of false live claim. Strava-optional is the only
+  // trust signal that survives its own audit (ADR-011 + DS-03).
+  //
+  // ⚠️ AND IT CLAIMS ONLY OPTIONALITY, never that Strava WORKS — the Strava
+  // application is currently Inactive (STRAVA-APP-INACTIVE), so "you don't need it"
+  // is true and "it works" would not be.
+  //
+  // Collins' framing, taken: say what you do NOT need. Wording follows brand.md's
+  // voice and is the founder's to adjust; that it exists and where it sits is the
+  // Design Board's.
+  stravaOptional: 'Strava is optional. Apple Health is enough.',
 
   /**
    * App Store presence (marketing site). `url` is empty until the app is approved

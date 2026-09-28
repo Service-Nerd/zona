@@ -17,7 +17,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
-import { trackEvent, purchaseOutcome, isUserCancelled } from '@/lib/analytics'
+import { trackEvent, purchaseOutcome, isUserCancelled, currentUserId, type UpgradeSource } from '@/lib/analytics'
 import { BRAND, PRICING } from '@/lib/brand'
 import { TRIAL_DAYS } from '@/lib/trial'
 import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFraming'
@@ -48,7 +48,10 @@ const LOSSES = [
   { name: 'The plan stops moving',           detail: "Miss a week, you're on your own." },
 ]
 
-export default function UpgradeScreen({ onBack, trialExpired = false, grantExpired = false, onOpenRedeem }: {
+export default function UpgradeScreen({ onBack, trialExpired = false, grantExpired = false, onOpenRedeem, source = null }: {
+  /** OPS-FUNNEL-02 — which door sent them here. Null only if a caller forgets,
+   *  which `upgradeSourceCoverage.test.ts` exists to prevent. */
+  source?: UpgradeSource | null
   onBack: () => void
   trialExpired?: boolean
   /** A charity grant ended. Takes precedence over `trialExpired`: a comped
@@ -81,12 +84,9 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
   async function funnelIds() {
     const supabase = createClient()
     if (funnelUserId) return { supabase, userId: funnelUserId }
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      return { supabase, userId: user?.id ?? null }
-    } catch {
-      return { supabase, userId: null }
-    }
+    // One owner for this resolution — see `currentUserId`. The inline copy that
+    // used to live here was the first of what would have been three.
+    return { supabase, userId: await currentUserId(supabase) }
   }
 
   // The paywall was SEEN. Fired from inside this component rather than at the nine
@@ -102,7 +102,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
       const { supabase, userId } = await funnelIds()
       if (cancelled) return
       if (userId) setFunnelUserId(userId)
-      trackEvent(supabase, userId, 'upgrade_view', { reason: framing, platform })
+      trackEvent(supabase, userId, 'upgrade_view', { reason: framing, platform , source })
     })()
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,7 +115,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
     // how "the sheet never opened" looks in the data, and that is a real outcome.
     const { supabase, userId } = await funnelIds()
     if (userId) setFunnelUserId(userId)
-    trackEvent(supabase, userId, 'upgrade_purchase_attempt', { annual, platform, reason: framing })
+    trackEvent(supabase, userId, 'upgrade_purchase_attempt', { annual, platform, reason: framing , source })
     try {
       if (Capacitor.isNativePlatform()) {
         // iOS native — RevenueCat StoreKit 2 purchase sheet.
@@ -150,7 +150,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         await Purchases.purchasePackage({ aPackage: pkg })
         // Webhook fires async and updates subscriptions table.
         // Show success state here — tier refreshes on next dashboard load.
-        trackEvent(supabase, userId, 'upgrade_purchase_result', { outcome: 'success', annual, platform })
+        trackEvent(supabase, userId, 'upgrade_purchase_result', { outcome: 'success', annual, platform, source })
         setSuccess(true)
       } else {
         // Web — Stripe Checkout (existing path).
@@ -163,11 +163,11 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         if (data.url) {
           // NOT a sale. The purchase completes on Stripe and only the webhook sees
           // the outcome; calling this success would inflate the conversion number.
-          trackEvent(supabase, userId, 'upgrade_purchase_result', { outcome: 'redirected', annual, platform })
+          trackEvent(supabase, userId, 'upgrade_purchase_result', { outcome: 'redirected', annual, platform, source })
           window.location.href = data.url
         } else {
           trackEvent(supabase, userId, 'upgrade_purchase_result',
-            { outcome: 'failed', annual, platform, stage: 'checkout_no_url' })
+            { outcome: 'failed', annual, platform, source, stage: 'checkout_no_url' })
           setError(data.error ?? 'Something went wrong. Try again.')
         }
       }
@@ -177,7 +177,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
       // from "it broke", and a funnel that cannot tell them apart sends someone
       // hunting a defect that does not exist.
       trackEvent(supabase, userId, 'upgrade_purchase_result',
-        { outcome: purchaseOutcome(err), annual, platform })
+        { outcome: purchaseOutcome(err), annual, platform, source })
       if (isUserCancelled(err)) return
       // eslint-disable-next-line no-console
       console.error('[upgrade] purchase failed', err)

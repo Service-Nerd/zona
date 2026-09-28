@@ -62,6 +62,9 @@ import SessionCard from '@/components/shared/SessionCard'
 import PendingHrCard from '@/components/shared/PendingHrCard'
 import SessionCompleteCard from '@/components/shared/SessionCompleteCard'
 import { useDisciplineLedger, type LedgerSnapshot } from '@/lib/coaching/useDisciplineLedger'
+import AttributionRow from '@/components/shared/AttributionRow'
+import { attributionAnswered, currentUserId, type UpgradeSource } from '@/lib/analytics'
+import { useTrackOnce } from '@/components/shared/useTrackOnce'
 import { getCompletionCopy } from '@/lib/coaching/completionCopy'
 import { classifyHrPending } from '@/lib/coaching/hrPending'
 import { useWidgetSync } from '@/lib/widget/useWidgetSync'
@@ -606,6 +609,23 @@ export default function DashboardClient() {
   // Auth user ID — stored for callbacks that need to write to user_settings
   const [userId, setUserId] = useState<string | null>(null)
 
+  // OPS-ATTRIB-01 — has this viewer already answered or skipped the attribution row?
+  //
+  // ⚠️ READ IN AN EFFECT, NOT A LAZY useState INITIALISER. The server has no
+  // localStorage, so an initialiser returns false there and possibly true on the
+  // client: a hydration mismatch. Starting false and correcting after mount can
+  // flash the row for one frame for someone who already answered — the cheaper of
+  // the two defects, and barely visible because it renders last on the screen.
+  // OPS-FUNNEL-02 — which door sent them to the paywall.
+  //
+  // 🔴 ONE OWNER. Nine call sites each doing `setScreen('upgrade')` plus a source
+  // assignment is nine chances for the tenth to forget the second statement. This
+  // is the DELOAD-OWNER-01 shape and the reason that item exists.
+  const [upgradeSource, setUpgradeSource] = useState<UpgradeSource | null>(null)
+  const openUpgrade = (source: UpgradeSource) => { setUpgradeSource(source); setScreen('upgrade') }
+  const [attributionResolved, setAttributionResolved] = useState(false)
+  useEffect(() => { if (attributionAnswered()) setAttributionResolved(true) }, [])
+
   // Global overrides — fetched once, shared across all screens
   const [allOverrides, setAllOverrides] = useState<{ week_n: number; original_day: string; new_day: string }[]>([])
   const [overridesReady, setOverridesReady] = useState(false)
@@ -734,7 +754,7 @@ export default function DashboardClient() {
       window.history.replaceState({}, '', '/dashboard')
     }
     if (params.get('strava') === 'upgrade') {
-      setScreen('upgrade')
+      openUpgrade('link_strava')
       window.history.replaceState({}, '', '/dashboard')
     }
 
@@ -755,7 +775,7 @@ export default function DashboardClient() {
       // question, which is the duplication this codebase keeps paying for.
       const emailScreen = params.get('screen')
       if (emailScreen === 'upgrade') {
-        setScreen('upgrade')
+        openUpgrade('link_email')
         window.history.replaceState({}, '', '/dashboard')
       } else if (emailScreen === 'connect') {
         setShowConnectRuns(true)
@@ -2402,7 +2422,15 @@ export default function DashboardClient() {
         paddingBottom={(bottomNavH ?? 88) + 16}
         disabled={!pullToRefreshEnabled}
       >
-        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={currentWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('today'); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); setScreen(hasPaidAccess ? 'recalibration' : 'upgrade') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
+        {screen === 'today'    && <TodayScreen plan={plan} weekIndex={currentWeekIndex} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} daysToRace={daysToRace} raceName={raceName} preferredMetric={preferredMetric} sessionMetricOverrides={sessionMetricOverrides} stravaRuns={stravaRuns ?? []} allOverrides={allOverrides} overridesReady={overridesReady} onOpenSession={(s: any) => { setActiveSessionData(s); setSessionOrigin('today'); setScreen('session') }} allCompletions={allCompletions} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} onManualSaved={refreshCompletions} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} firstName={firstName} pendingAdjustment={pendingAdjustment} readinessData={readinessData} onAdjustmentConfirmed={(p) => { setPlan(p); setPendingAdjustment(null) }} onAdjustmentReverted={(p) => { setPlan(p); setPendingAdjustment(null) }} trialDaysLeft={trialDaysLeft} onUpgrade={() => openUpgrade('today')} hasPaidAccess={hasPaidAccess} attributionRow={
+          // Behaviour-triggered by ruling: only once a plan exists. Never for an
+          // unknown user — trackEvent would no-op and the tap would be silently
+          // lost, which is worse than not asking at all.
+          !attributionResolved && userId && plan && plan !== EMPTY_PLAN
+            ? <AttributionRow supabase={supabase} userId={userId}
+                onResolved={() => setAttributionResolved(true)} />
+            : null
+        } recalTile={recalDue ? <RecalibrationReadyTile weekN={recalDue.week_n} sessionDay={recalDue.session_day} distanceKm={recalDistanceKm} tier={hasPaidAccess ? 'paid' : 'free'} onEnter={() => { setRecalStatus('idle'); hasPaidAccess ? setScreen('recalibration') : openUpgrade('recal_tile') }} /> : null} dailyCoachNote={dailyCoachNote} coachNoteSettled={coachNoteSettled} runAnalysisMap={runAnalysisMap} runAnalysisReady={runAnalysisReady} onOpenCoach={() => setScreen('coach')} onOpenPostRun={(data) => { setPostRunOrigin('today'); setActivePostRunData(data); setScreen('post-run') }} unreadNotifications={unreadNotifications} onOpenNotifications={() => { setUnreadNotifications(0); setScreen('notifications') }} showRacePrompt={showRacePrompt} pendingReshape={pendingReshape} nextGoalData={nextGoalData} onPickNextGoal={handlePickNextGoal} onDismissNextGoal={handleDismissNextGoal} showMaintCard={showMaintCard} onDismissMaintCard={handleDismissMaintCard} showMaintTransition={showMaintTransition} maintReengagement={inReengagementWindow} maintThemeLine={plan.weeks[currentWeekIndex]?.theme} onSeeMaintPlan={handleSeeMaintenancePlan} onAckMaintTransition={handleAckMaintenanceTransition} onLogRaceResult={() => setShowRaceResultSheet(true)} onReshapeAccepted={(updatedPlan) => { setPlan(updatedPlan); setPendingReshape(null) }} onReshapeDismissed={async () => {
                   // Stamp DB so the dismiss survives a page reload. Dismiss every
                   // pending row for this user, not just pendingReshape.reshapeId:
                   // historical pending rows from repeated test runs (the POST route
@@ -2493,7 +2521,7 @@ export default function DashboardClient() {
               // function, not inferred. Coach is the only screen that does this:
               // Today and Plan both take `plan` and guard internally, which is
               // why this presents as a Coach-only crash.
-              if (!currentWeek) return <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
+              if (!currentWeek) return <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => openUpgrade('coach_teaser_empty')} />
               const wn = (currentWeek as any)?.n ?? (getCurrentWeekIndex(plan.weeks) + 1)
               const comps = allCompletions[wn] ?? {}
               const wSessions = Object.entries((currentWeek as any).sessions ?? {})
@@ -2645,7 +2673,7 @@ export default function DashboardClient() {
                 />
               )
             })()
-          : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => setScreen('upgrade')} />
+          : <CoachTeaser plan={plan} firstName={firstName} onUpgrade={() => openUpgrade('coach_teaser')} />
         )}
         {/* Strava screen: defense-in-depth gate on isAdmin at the render boundary.
             No UI path opens it for non-admins, but the render gate prevents a future commit
@@ -2722,9 +2750,9 @@ export default function DashboardClient() {
     //    is better than blocking the HR save.
     void authedFetch('/api/recalibrate-hr', { method: 'POST' })
   } catch {}
-}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onOpenRedeem={() => { setRedeemReturnTo('me'); setScreen('redeem') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => setScreen('upgrade')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onOpenRedeem={() => { setRedeemReturnTo('me'); setScreen('redeem') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
-        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
+        {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('session')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
           // POST-RUN-02: terminus. Route to SessionScreen for this session
           // with the freshest completion merged in, so the verdict (which
@@ -2743,8 +2771,8 @@ export default function DashboardClient() {
           if (wN == null) return
           setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
-        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => setScreen('upgrade')} onOpenRedeem={() => { setRedeemReturnTo('generate'); setScreen('redeem') }} />}
-        {screen === 'upgrade'  && <UpgradeScreen trialExpired={trialExpired} grantExpired={hadCharityGrant && !hasPaidAccess} onOpenRedeem={() => { setRedeemReturnTo('upgrade'); setScreen('redeem') }} onBack={() => {
+        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('wizard')} onOpenRedeem={() => { setRedeemReturnTo('generate'); setScreen('redeem') }} />}
+        {screen === 'upgrade'  && <UpgradeScreen source={upgradeSource} trialExpired={trialExpired} grantExpired={hadCharityGrant && !hasPaidAccess} onOpenRedeem={() => { setRedeemReturnTo('upgrade'); setScreen('redeem') }} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
           setScreen(hasWizardDraft ? 'generate' : 'today')
@@ -7016,8 +7044,12 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
   )
 }
 
-function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile }: {
+function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRace, raceName, preferredMetric, sessionMetricOverrides, stravaRuns, allOverrides, overridesReady, onOpenSession, allCompletions, preferredUnits, zone2Ceiling, onManualSaved, restingHR, maxHR, aerobicPace, stravaLoading, firstName, pendingAdjustment, readinessData, onAdjustmentConfirmed, onAdjustmentReverted, trialDaysLeft, onUpgrade, hasPaidAccess, dailyCoachNote, coachNoteSettled, runAnalysisMap, runAnalysisReady, onOpenCoach, onOpenPostRun, unreadNotifications = 0, onOpenNotifications, showRacePrompt, pendingReshape, nextGoalData, onPickNextGoal, onDismissNextGoal, showMaintCard, onDismissMaintCard, showMaintTransition, maintReengagement, maintThemeLine, onSeeMaintPlan, onAckMaintTransition, onLogRaceResult, onReshapeAccepted, onReshapeDismissed, recalTile, attributionRow }: {
   recalTile?: React.ReactNode
+  /** OPS-ATTRIB-01 — passed as a NODE, the same shape as `recalTile`, so Today
+   *  does not need a Supabase client or the answered-state. Design Board
+   *  2026-09-28: renders LAST, below everything, because it is admin. */
+  attributionRow?: React.ReactNode
   plan: Plan
   /** A1 — the week Today RENDERS. Always the current week: there is no longer
    *  a setter, because Today does not navigate weeks (Plan does). */
@@ -8528,6 +8560,13 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
         </div>
       </div>
 
+      {/* ── ATTRIBUTION (OPS-ATTRIB-01) ───────────────────────────────────
+          LAST on the screen, by ruling. Silvanto: "today's job is the next
+          decision; this is admin." It sits below the closing voice moment
+          rather than interrupting it, and is visually inert so it cannot
+          compete with the Moss line above. */}
+      {attributionRow}
+
       {/* "Done this week" retrospective list removed — it duplicated the Plan
           calendar (which shows completed/skipped state per session) and added a
           second, review-shaped job to a present-moment screen. Today's own
@@ -9391,6 +9430,13 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
     if (busy) return
     setBusy(true)
     setStatus(null)
+    // OPS-ARTIFACT-REACH-01 — measured before this shipped: only TWO users can
+    // see this button at all, and nothing recorded whether it had ever been
+    // pressed. Fired BEFORE the platform sheet, so a sheet that never opens is
+    // still visible as an attempt with no result.
+    const sb = createClient()
+    const uid = await currentUserId(sb)
+    trackEvent(sb, uid, 'share_week_pressed', { week_n: weekN })
     try {
       const { shareWeeklyZoneCard } = await import('@/lib/share/shareWeeklyZoneCard')
       await shareWeeklyZoneCard({
@@ -9400,6 +9446,9 @@ function ShareWeekButton({ weekN }: { weekN: number }) {
           else if (s.kind === 'cancelled') setStatus(null)
           else if (s.kind === 'success')   setStatus(null)
           else if (s.kind === 'error')     setStatus(s.message || 'Share failed')
+          // `cancelled` is NOT a failure and must stay separable: a dismissed
+          // share sheet and a broken share lead to opposite conclusions.
+          trackEvent(sb, uid, 'share_week_result', { outcome: s.kind, week_n: weekN })
         },
       })
     } finally {
@@ -9653,6 +9702,23 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   const showPhaseCard = phaseJustChanged && !isRaceWindow
 
   // Local state — pre-seeded from DashboardClient pre-fetch, updated after generation
+  // OPS-ARTIFACT-REACH-01 — did either shipped restraint artifact get REACHED?
+  //
+  // 🔴 MEASURED BEFORE BUILDING: only TWO users can see the share button (it needs a
+  // CURRENT weekly report carrying a zone_discipline_score), and `analytics_events`
+  // held exactly ONE event type, so "are we making the most of LEDGER-01 / SHARE-01"
+  // was unanswerable. The SLT declined to touch their UX or marketing until these
+  // two events exist.
+  //
+  // ⚠️ `weekly_report_open` REPLACES wiring `weekly_reports.opened_at`, which EXISTS
+  // AND IS WRITTEN BY NOTHING. A dead column nearly got quoted as "0 reports opened"
+  // — a column nothing writes is not a measurement.
+  useTrackOnce('weekly_report_open', !!weeklyReport?.headline,
+    { week_n: weeklyReport?.week_n ?? null })
+  // Fires only on a RESOLVED snapshot: `disciplineLedger` is null while the hook
+  // behind it is still fetching, and "rendered a spinner" is not "saw the ledger".
+  useTrackOnce('ledger_view', !!disciplineLedger)
+
   const [localPhaseSummary,  setLocalPhaseSummary]  = useState<{ content: string; generated_at: string } | null>(
     cachedPhaseSummaryValid && phaseSummary ? { content: phaseSummary.content, generated_at: phaseSummary.generated_at } : null
   )

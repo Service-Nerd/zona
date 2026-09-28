@@ -52,6 +52,58 @@ trackEvent(supabase: SupabaseClient, userId: string | null, event: AnalyticsEven
 | `upgrade_view` | The Upgrade screen mounted (once per mount, ref-guarded) | `UpgradeScreen` `useEffect` |
 | `upgrade_purchase_attempt` | Subscribe tapped, **before** the store sheet opens | `UpgradeScreen.handleSubscribe` |
 | `upgrade_purchase_result` | The attempt resolved | `UpgradeScreen.handleSubscribe` |
+| `attribution_answered` | A source was tapped on the attribution row | `AttributionRow` |
+| `attribution_dismissed` | The row was skipped without answering | `AttributionRow` |
+| `weekly_report_open` | The weekly-report card rendered with a report in it | `CoachScreen` via `useTrackOnce` |
+| `ledger_view` | The discipline ledger rendered with a RESOLVED snapshot | `CoachScreen` via `useTrackOnce` |
+| `share_week_pressed` | Share tapped, **before** the platform sheet opens | `ShareWeekButton` |
+| `share_week_result` | How the share ended | `ShareWeekButton` `onStatus` |
+
+### Attribution (OPS-ATTRIB-01, 2026-09-28)
+
+`props.source` is one of `ATTRIBUTION_SOURCES` (`linkedin`, `instagram`, `tiktok`, `friend`,
+`charity`, `search`, `other`) — **a named constant, because this list is the vocabulary every
+future query groups by.** A seventh string typed into JSX would be invisible to the analysis.
+
+⚠️ **THE ANSWER LIVES ONLY IN `analytics_events`, and that is a decision.** The consistent
+choice was a 7th `user_settings` ask-once column (six already exist: `orientation_seen`,
+`push_permission_seen`, `connect_runs_seen`, and three `*_dismissed_at`). It was **rejected
+because DDL cannot be applied from the agent environment**, so it would have shipped a dead
+feature waiting on hand-run SQL. The purpose is an **aggregate** count, not a per-user lookup,
+and this table answers that. Suppression uses `localStorage` (`ATTRIBUTION_STORAGE_KEY`).
+**Accepted imperfection: a second device may ask once more.**
+
+⚠️ Every storage read and write is wrapped and **fails toward showing the row** — a row that
+reappears is recoverable; a thrown error on Today is not.
+
+### Artifact reach (OPS-ARTIFACT-REACH-01, 2026-09-28)
+
+🔴 **Measured before building: only TWO users can see the share button** (it needs a *current*
+weekly report carrying a `zone_discipline_score`), and this table held exactly **one** event
+type — so *"are we making the most of `LEDGER-01` / `SHARE-01`"* was unanswerable. The SLT
+declined to touch their UX or marketing until these events exist.
+
+⚠️ **`weekly_report_open` replaces wiring `weekly_reports.opened_at`, which exists and is
+written by nothing.** "0 reports opened" was nearly quoted as a measurement; a column nothing
+writes is not one.
+
+⚠️ `ledger_view` fires only on a **resolved** snapshot — "rendered a spinner" is not "saw the
+ledger".
+
+### Upgrade door attribution (OPS-FUNNEL-02, 2026-09-28)
+
+All three `upgrade_*` events now carry `props.source`, one of `UPGRADE_SOURCES`: `today`,
+`coach_teaser`, `coach_teaser_empty`, `me`, `session`, `wizard`, `recal_tile`, `link_email`,
+`link_strava`. The last two are **deep links, not in-app doors**, and are distinguished
+deliberately.
+
+🔴 **Routed through ONE owner, `openUpgrade(source)`** — nine call sites each doing
+`setScreen('upgrade')` plus a source assignment is nine chances for the tenth to forget the
+second statement. Gated by `lib/analytics/upgradeSourceCoverage.test.ts`, which asserts every
+source is used **exactly once** and that no bare `setScreen('upgrade')` survives outside the
+helper. **That gate exists because the first pass of this change broke all nine doors** — a
+regex substitution matched the explanatory comment that quoted the same string, shifting every
+label by two and making the helper call itself. `tsc` passed throughout.
 
 ### The upgrade funnel (OPS-FUNNEL-01, 2026-09-28)
 

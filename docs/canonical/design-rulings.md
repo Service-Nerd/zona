@@ -2948,3 +2948,33 @@ the tinted tile, seen for the first time, does not read as wrong. It does not ra
 two-construction split as a pattern, and `ui-patterns.md` gains nothing from it.
 
 ⚠️ **Still not seen on a DEVICE** — this was looked at, not run on a phone.
+
+---
+
+## 🧭 RULED 2026-09-28 — Design Board sitting: attribution, trust, and the adaptation device
+
+Convened by the founder's instruction to build the SLT's waves. One sitting, three items,
+shared settled-ground scan. **Measured before the seats spoke:** 27 accounts · 13 can reach
+paid surfaces · **only 2 users can see the share button** · `analytics_events` held **one**
+event type · homepage and `/pricing` mention the zone score, the ledger and the share card
+**zero** times · `weekly_reports.opened_at` is **written by nothing**.
+⚠️ **Not measured, and it decided item 3:** there is no site analytics, so nobody can say
+whether a visitor reaches the copy item 3 claims is unseen. ⚠️ **Nothing seen on a device.**
+
+| Item | Ruling | Why |
+|---|---|---|
+| **A one-tap attribution row** (`OPS-ATTRIB-01`) | 🟢 **SHIP WITH AMENDMENT** | Today, **below the session card**, rendering **last**, visually inert (`--mute`, no icon, **no Moss** — Silvanto: *"Moss gives it a weight it hasn't got"*), one tap to answer or dismiss, **zero typing** (Wroblewski: *"a free-text field is a keyboard outdoors"*), never returns, behaviour-triggered on a plan existing. Copy says it helps **us** (Sierra). **Not a modal** — CLAUDE.md § UI Principles. **Success condition stated before the design: 40% of new accounts within 30 days** |
+| **A Strava-optional trust line** (`W-TRUST-01`) | 🟢 **SHIP WITH AMENDMENT** | **One sentence inside an EXISTING section**, adjacent to `BRAND.hrRecommendation` — **not a new section**, no badges, no seals, no dark band (`:189`). 🔴 **ACCESSIBILITY IS NOT CLAIMED**: `:856` records WCAG 1.4.1 carrying a measured debt of **6 sites**, so a compliance claim would be the "full access" class of false live claim. Claims optionality only, never that Strava *works* — the application is Inactive |
+| **Showing adaptation** (the reshape hero) | 🟡 **INSUFFICIENT EVIDENCE** | The need is real — adaptation is claimed in `W-02` step 4 and `P-06(c)` and **shown nowhere**. But the DEVICE is the one `:195` already declined in favour of `SameWeekTwice` (W-04): *"the competitor device… proves flexibility by drawing a disrupted week reflowing. Ours proves the thing we actually sell."* **What would settle it: site analytics showing scroll depth to the `W-02` journey, plus whether `SameWeekTwice` is reached.** Neither exists. **No code shipped** |
+| **A milestone unlocked by discipline, shared as a card** (Kaevor #2) | 🔴 **DON'T SHIP — already built, twice** | `SHARE-01` (PAID) is already the shareable discipline card and `LEDGER-01` (FREE) the counter. Both shipped with rules this would reverse: *"no celebration of milestones"*, and `SHARE-01` is **grep-verified to contain zero `milestone` strings**. Also HR-gated, and **~73% of runs carry no HR stream** — a reward for owning a watch |
+| **"Next milestone + exactly how far away" on Today** (Kaevor #3) | 🔴 **DON'T SHIP — permanent** | `:208` verbatim: *"a cumulative total or % complete… FORBIDDEN — Wood, binding. The moment a number aggregates, it is a progress bar, the illusion-of-progress class in its purest form."* Adjacent kill: `UX-PROGRESS-01`. **May not be re-proposed without named new evidence** |
+
+⚡ **Recorded disagreement — Collins lost item 3, and it is recorded as a loss.** He holds
+that *"we adapt without shouting"* is the thing a competitor cannot copy and is currently
+the third-smallest sentence on the page — *"that is being quiet because it is safe."* The
+board's reason is the missing measurement, which is **not a rebuttal of his point**. He
+would be moved by scroll-depth data.
+⚡ **Silvanto vs Collins on item 1's placement** — inert versus seen. Resolved as *below the
+session, styled inert*: both conditions hold at once.
+⛔ **Veto: none exercised.** No palette or type regression; Silvanto's Moss condition is a
+condition, not a veto.

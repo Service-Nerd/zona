@@ -47,3 +47,78 @@ describe('purchaseOutcome', () => {
     expect(outcomes).not.toContain('success')
   })
 })
+
+// ── OPS-ATTRIB-01 ───────────────────────────────────────────────────────────
+import {
+  ATTRIBUTION_SOURCES, ATTRIBUTION_STORAGE_KEY,
+  attributionAnswered, markAttributionAnswered,
+} from './analytics'
+
+/** A minimal localStorage, plus the two hostile variants the real one has. */
+function stubStorage(mode: 'ok' | 'throws' | 'absent') {
+  const store = new Map<string, string>()
+  if (mode === 'absent') { delete (globalThis as any).window; return store }
+  ;(globalThis as any).window = {
+    localStorage: {
+      getItem: (k: string) => { if (mode === 'throws') throw new Error('blocked'); return store.get(k) ?? null },
+      setItem: (k: string, v: string) => { if (mode === 'throws') throw new Error('blocked'); store.set(k, v) },
+    },
+  }
+  return store
+}
+
+describe('ATTRIBUTION_SOURCES — the vocabulary every future query groups by', () => {
+  it('has unique ids and a label for every one', () => {
+    const ids = ATTRIBUTION_SOURCES.map(s => s.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const s of ATTRIBUTION_SOURCES) expect(s.label.length).toBeGreaterThan(0)
+  })
+
+  // Wroblewski's condition: one tap, zero typing. A source whose label asks the
+  // runner to specify something is a keyboard outdoors.
+  it('offers no free-text option', () => {
+    for (const s of ATTRIBUTION_SOURCES) {
+      expect(s.label.toLowerCase()).not.toContain('specify')
+      expect(s.label).not.toContain('…')
+    }
+  })
+
+  it('covers the channels that actually exist for Zonna', () => {
+    const ids = ATTRIBUTION_SOURCES.map(s => s.id)
+    // LinkedIn is the founder's own channel and charity is the Make-A-Wish route;
+    // if either is missing the whole point of the row is gone.
+    expect(ids).toContain('linkedin')
+    expect(ids).toContain('charity')
+  })
+})
+
+describe('attribution suppression — never throws, fails toward showing the row', () => {
+  it('is false before anything is stored, and true after', () => {
+    stubStorage('ok')
+    expect(attributionAnswered()).toBe(false)
+    markAttributionAnswered()
+    expect(attributionAnswered()).toBe(true)
+  })
+
+  it('writes exactly the exported key', () => {
+    const store = stubStorage('ok')
+    markAttributionAnswered()
+    expect(store.get(ATTRIBUTION_STORAGE_KEY)).toBe('1')
+  })
+
+  // THE DIRECTION THAT MATTERS. Private browsing throws on access; SSR has no
+  // window. Both must resolve to "not answered" — a row that reappears is
+  // recoverable, a thrown error on Today is not.
+  it('returns false rather than throwing when storage throws', () => {
+    stubStorage('throws')
+    expect(() => attributionAnswered()).not.toThrow()
+    expect(attributionAnswered()).toBe(false)
+    expect(() => markAttributionAnswered()).not.toThrow()
+  })
+
+  it('returns false rather than throwing when there is no window at all', () => {
+    stubStorage('absent')
+    expect(() => attributionAnswered()).not.toThrow()
+    expect(attributionAnswered()).toBe(false)
+  })
+})

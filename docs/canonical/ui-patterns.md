@@ -3921,3 +3921,32 @@ glyph, never a description of the icon.
 become optional) and `iconButton.markup.test.ts` (rendered, including that `BackButton` still draws
 the documented arrow through the wrapper).
 
+---
+
+## Inert ask row (OPS-ATTRIB-01, Design Board 2026-09-28)
+
+**A one-question ask that serves US, placed on a screen that serves the runner.**
+
+Use when the product needs an answer the runner gains nothing from giving. The pattern's
+whole job is to take as little as possible and to be honest about whose benefit it is.
+
+| Rule | Why |
+|---|---|
+| **Renders LAST on the screen** | It is admin. Silvanto: *"today's job is the next decision; this is admin."* It sits below the closing voice moment rather than interrupting it |
+| **Visually inert** — `--mute` label, `--line` borders, `--card` fill, **never `--moss`** | Moss is the CTA accent. On an ask row it claims a weight the row has not got |
+| **No icon, no glyph** | `ICON-RULE-01`: an icon earns its place by meaning or by location on a list of ≥ 8 rows. One row is neither |
+| **One tap to answer, one tap to dismiss, zero typing** | Wroblewski: a free-text field is a keyboard outdoors. A long-tail option is a *tap*, never a prompt |
+| **44px minimum on every control** | A 13px pill does not reach it on padding alone |
+| **Never returns once answered or dismissed** | An ask that reappears is a nag |
+| **Behaviour-triggered, never calendar-triggered** | `design-rulings.md:266`, applied beyond upgrade prompts |
+| **Displays no number** | Keeps it clear of `:208` (aggregating numbers) by construction rather than by argument |
+| **The copy names who benefits** | Sierra: *"this makes the runner no better at running, and I'd rather we admit that than dress it up."* |
+
+⚠️ **It is an inline row, never a modal.** CLAUDE.md § UI Principles: no popups; modals are
+for destructive confirmations, never for information.
+
+**Reference implementation:** `components/shared/AttributionRow.tsx`.
+**Mechanical check:** `components/shared/attributionRow.markup.test.ts` — asserts every rule
+above against rendered markup, because a design decision that lives in a comment while the
+markup says otherwise is this repo's recurring failure. Falsified three ways (Moss added, the
+44px target removed, a text field introduced).
