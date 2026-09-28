@@ -4250,3 +4250,44 @@ not the row — which is why the chevron is its own module and not a prop on one
 **Check:** `components/shared/chevronOwner.test.ts` — two arms, both falsified. One fails on
 a second copy of the path anywhere; the other fails when `row()` renders a tap target
 without it, which is the original defect rather than a duplicate of it.
+
+---
+
+## Me is an index (ME-PURPOSE-01)
+
+**Me lists what you can change and opens a screen for each. Nothing lives on Me.**
+Every row is a **door**, not a room. Screen job: `screen-architecture.md` § Me.
+
+🔴 **MEASURED AT THE SITTING:** MeScreen was **780 lines**, **8 top-level blocks**,
+**11 `onClick` handlers, 6 raw `<button>`s** — and **ZERO `<ActionRow>` usages**.
+⚠️ **`ACTION-ROW-01` was created BECAUSE of Me** (*"we have them under Me profile so we
+should have a standard pattern for these"*) **and Me did not use it.** Its only call site was
+elsewhere. **A pattern extracted from a screen that the screen never adopts is what a drawer
+looks like from the inside.**
+
+⚠️ **This board's charter records the Coach screen's failure as "seven blocks, no
+subject". Me had EIGHT** — undiagnosed because Me is *supposed* to be a list of things. A
+list is only tolerable when each row is a door.
+
+### The refusal is the point
+
+Collins: Me accumulated because it is the only screen with **no refusal** — *"configuration"*
+refuses nothing. The rule supplies one: **any control that is not a row does not belong.**
+Today, Plan and Coach can each say *"that doesn't belong here."* Now Me can too.
+
+### The measure
+
+**Time to the thing you came for** (Sierra). Nobody reads Me; they arrive having already
+decided, and the only question is how fast they can leave.
+
+### ⚠️ The rule binds now; the moves are staged
+
+Sierra's sequencing, taken over Collins' preference to move everything at once. The
+immediate effect is that **nothing new may be added inline**. Existing blocks are a
+**declared, non-growing baseline** in `meIsAnIndex.test.ts`, whose second arm fails if debt
+is paid down and the register is not lowered — because a baseline that only catches growth
+rots upward invisibly.
+
+**Precedent, not exception:** the Training Zones screen (2026-09-28) is a row on Me that
+opens a focused screen. ⚠️ `ZONES-INPUTS-01` stands: the HR form stays until it gets **its
+own door**, which is not the same as relocating it into the zones screen.

@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-28 — ZONES-INPUTS-01 + ME-PURPOSE-01 · a wrong analogy nearly got five unanimous votes
+**Shipped:** A provenance line on the zones screen, and a ruling that Me is an index.
+**Dev learning:** `ACTION-ROW-01` was created because of the Me screen — its comment quotes the founder saying *"we have them under Me profile so we should have a standard pattern for these"* — and when I measured, **Me had ZERO uses of it.** 780 lines, 8 blocks, 11 onClick handlers, 6 hand-rolled buttons. A pattern extracted from a screen that the screen never adopts is what a drawer looks like from the inside, and it explains every defect the founder found on Me today.
+**Product/creator learning:** The board's charter records the Coach screen's failure as *"seven blocks, no subject"*. **Me has eight.** We diagnosed it on one screen and never looked at the other, because Me is *supposed* to be a list of things. The fix wasn't visual: Me accumulated because it was the only screen with no refusal. *"Configuration"* refuses nothing. *"Every row is a door"* refuses a great deal.
+**AI-building learning:** I wrote the board brief and the brief was wrong. I argued the HR inputs were "the same shape" as the runner's name — a value shown in one place and changed in another. They aren't: the name is one object displayed and edited; HR is an input that derives a *different* output. I caught it in the evidence step, before the seats spoke. **Had I not, five seats would have agreed unanimously on a false premise and I'd have moved a form for a reason that doesn't exist.** The board is only as good as the brief, and I write the brief.
+**The honest bit:** I gave that sitting "5 toggles". The gate says 2 — mine was a line count with a wider regex that matched `Switch` inside unrelated identifiers. **Caught by the stale-baseline arm on the file's first run**, which I wrote to stop the register rotting upward and which instead caught the register being wrong on the way in. Second wrong number I've handed a board this month.
+**Hook material:** The pattern was created because of that screen. That screen used it zero times.
+**Postable?:** yes
+
 ## 2026-09-28 — CHEVRON-OWNER-01 · the pattern existed, in three places, none reachable
 **Shipped:** One shared chevron, so a row you can tap stops looking exactly like a row you can't.
 **Dev learning:** `ACTION-ROW-01` was written weeks ago because the chevron was a local `const` in the Me screen and the Plan screen couldn't reach it. Its comment is emphatic: *"A PATTERN THAT IS A LOCAL VARIABLE CANNOT TRAVEL."* **The fix moved it into `ActionRow.tsx` as a local `const` inside `ActionRow.tsx`** and left the Me screen's copy in place. Three copies. So the next helper that needed one could reach neither and shipped five tappable rows with no affordance.
