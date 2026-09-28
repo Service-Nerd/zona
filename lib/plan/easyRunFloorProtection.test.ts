@@ -3,6 +3,8 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0907 } from './__fixtures__/pinnedPlanStart'
 
 const FROZEN_NOW = new Date('2026-09-03T12:00:00Z')
 beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(FROZEN_NOW) })
@@ -39,7 +41,7 @@ const LOW_VOLUME_MARATHON: GeneratorInput = {
 
 describe('CoachingPrinciples §82 — easy-run floor protection', () => {
   it('holds a cap-shrunk easy run at the floor instead of below it, and declares the trade', () => {
-    const plan = generateRulePlan(LOW_VOLUME_MARATHON, 'trial')
+    const plan = generateRulePlan(LOW_VOLUME_MARATHON, 'trial', PINNED_PLAN_START_0907)
     const errors = validatePlan(plan, LOW_VOLUME_MARATHON).filter(v => v.severity === 'error')
     expect(errors).toEqual([])
 
@@ -69,7 +71,7 @@ describe('CoachingPrinciples §82 — easy-run floor protection', () => {
       ...LOW_VOLUME_MARATHON, race_distance_km: 5, race_date: '2027-01-01',
       current_weekly_km: 10, days_cannot_train: ['tuesday', 'thursday', 'saturday'],
     }
-    const plan = generateRulePlan(raceWeekInput, 'trial')
+    const plan = generateRulePlan(raceWeekInput, 'trial', PINNED_PLAN_START_0907)
     const raceWeek = plan.weeks[plan.weeks.length - 1]
     expect(raceWeek.type).toBe('race')
     const shakeoutOverCap = Object.values(raceWeek.sessions).some(

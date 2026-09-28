@@ -3,6 +3,8 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput, Plan } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START } from './__fixtures__/pinnedPlanStart'
 
 /**
  * §40b Amendment 3 / Coaching Board CB-TERRAIN-01 (2026-09-09).
@@ -37,7 +39,7 @@ describe('CB-TERRAIN-01 — terrain drives an effort-lead note, not a pace numbe
   for (const terrain of GENERATION_CONFIG.TERRAIN_EFFORT_GOVERNS) {
     it(`terrain '${terrain}' carries meta.terrain_effort_note and validates clean`, () => {
       const input = base(terrain)
-      const plan = generateRulePlan(input, 'paid')
+      const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START)
       expect(plan.meta.terrain_effort_note, 'effort-lead note stamped').toBeTruthy()
       // §40b: the note must NOT invent a pace number — it points to effort/HR + a road reference.
       expect(plan.meta.terrain_effort_note!.toLowerCase()).toContain('road reference')
@@ -47,14 +49,14 @@ describe('CB-TERRAIN-01 — terrain drives an effort-lead note, not a pace numbe
 
   it("terrain 'road' is the pace-anchor baseline — no note, no violation", () => {
     const input = base('road')
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START)
     expect(plan.meta.terrain_effort_note, 'road carries no effort-lead note').toBeFalsy()
     expect(noteViolations(plan, input)).toHaveLength(0)
   })
 
   it('the wired effect cannot silently vanish — a trail plan missing the note is an error', () => {
     const input = base('trail')
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START)
     const forged = structuredClone(plan)
     delete (forged.meta as unknown as Record<string, unknown>).terrain_effort_note
     const found = noteViolations(forged, input)

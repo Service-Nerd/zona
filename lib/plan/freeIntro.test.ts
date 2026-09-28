@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { generateFreeIntro } from './freeIntro'
 import { generateRulePlan } from './ruleEngine'
 import type { GeneratorInput } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 // CA-01 had no direct test despite a production caller (`/api/generate-plan`).
 //
@@ -20,7 +22,7 @@ const INPUT = {
   recent_quality_training: 'occasional',
 } as unknown as GeneratorInput
 
-const PLAN = generateRulePlan(INPUT, 'free')
+const PLAN = generateRulePlan(INPUT, 'free', PINNED_PLAN_START_0921)
 const reply = (text: string) => ({ ok: true, json: async () => ({ content: [{ text }] }) })
 
 describe('generateFreeIntro — failure is silent (ADR-006)', () => {

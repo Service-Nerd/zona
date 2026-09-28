@@ -3,6 +3,8 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput, Plan, Week } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0907 } from './__fixtures__/pinnedPlanStart'
 
 /**
  * §94 — §2 measured at delivery for healthy runners (CB-RAMP-02).
@@ -44,7 +46,7 @@ afterAll(() => { vi.useRealTimers() })
 describe('§94 — INV-PLAN-DELIVERED-RAMP', () => {
   it('FALSIFICATION — goes RED on a hand-inflated week above chronic load', () => {
     const input = tenK()
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0907)
 
     // Find a normal, non-taper week whose predecessor is also normal, and make
     // it obviously too big. Both must sit above current_weekly_km for §94 to
@@ -68,7 +70,7 @@ describe('§94 — INV-PLAN-DELIVERED-RAMP', () => {
     // on 70 km/wk given a conservative early block is not spiking anything, however
     // steep the week-on-week percentage looks.
     const input = tenK({ current_weekly_km: 70, longest_recent_run_km: 24, days_available: 5 })
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0907)
     const below = plan.weeks.filter(w => {
       const km = Object.values(w.sessions).reduce((a, s) => a + (s?.distance_km ?? 0), 0)
       return w.n >= 1 && km <= input.current_weekly_km
@@ -85,7 +87,7 @@ describe('§94 — INV-PLAN-DELIVERED-RAMP', () => {
     // The board built, measured and REJECTED a healthy bounceback cap. §94 must
     // not reintroduce it through the delivered door.
     const input = tenK()
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0907)
     for (const v of codes(plan, input, 'INV-PLAN-DELIVERED-RAMP')) {
       const i = plan.weeks.findIndex(w => w.n === v.week)
       const prev = plan.weeks[i - 1]
@@ -96,7 +98,7 @@ describe('§94 — INV-PLAN-DELIVERED-RAMP', () => {
 
   it('never fires for an injury-history runner — §90 owns them, more strictly', () => {
     const input = tenK({ injury_history: ['Left knee, posterior, recurring'] })
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0907)
     expect(codes(plan, input, 'INV-PLAN-DELIVERED-RAMP')).toHaveLength(0)
   })
 })
@@ -108,7 +110,7 @@ describe('§95 — INV-PLAN-DELOAD-PHASE-POSITION', () => {
     // case: the defect is MASKED, not repaired (SC-10's lesson), and a check
     // that has only ever been observed green proves nothing.
     const input = tenK()
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0907)
     expect(codes(plan, input, 'INV-PLAN-DELOAD-PHASE-POSITION'),
       'the shipped plan is clean').toHaveLength(0)
 
@@ -129,7 +131,7 @@ describe('§95 — INV-PLAN-DELOAD-PHASE-POSITION', () => {
 
   it('does not fire on a deload at position 3 or later', () => {
     const input = tenK()
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0907)
     const buildWeeks = plan.weeks.filter(w => w.n >= 1 && w.phase === 'build')
     if (buildWeeks.length < 3) return
     const thirdBuildWeek = buildWeeks[2].n
@@ -149,7 +151,7 @@ describe('§94 — the cap it enforces is the declared one', () => {
     // reading the threshold back out of a real violation message rather than by
     // asserting the constant against itself.
     const input = tenK()
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0907)
     const idx = plan.weeks.findIndex((w, i) =>
       i > 0 && w.n >= 1 && w.type === 'normal' && w.phase !== 'taper' &&
       plan.weeks[i - 1].type === 'normal' && plan.weeks[i - 1].n >= 1)

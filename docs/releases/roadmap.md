@@ -287,10 +287,9 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > 📌 **FILED 2026-09-28 — observability + a red suite** (detail in `backlog.md`)
 > ✅ **`TEST-CLOCK-PREPTIME-01` SHIPPED 2026-09-28** — 4 files pinned to `PINNED_PLAN_START`; suite green
 > (421 files / 3,728 tests / 0 failed). **5 of the 9 were absent, not failing** — a file that could not be collected.
-> **P1:** `TEST-CLOCK-PINSWEEP-01` — ⚙️ **19 MORE files are in the same class, GATED not fixed.**
-> `testClockIndependence.test.ts` fails on any NEW offender; the 19 are a declared baseline with measured
-> weeks-until-BLOCK (an upper bound). Convert from the top — each needs its OWN authoring Monday and its own
-> verification run, because pinning to `COHORT_PLAN_START` was tried and left 2 tests failing.
+> ✅ **`TEST-CLOCK-PINSWEEP-01` SHIPPED 2026-09-28** — all 19 converted, 68 call sites, across **four**
+> pinned Mondays (one per file's own first commit, because a single week of runway can change plan length).
+> Register EMPTY and its emptiness now asserted; the gate forbids the class rather than tracking it.
 > **P1:** `OPS-SUBS-ALERT-01` — ⚙️ nothing ALERTS on `*_event_write_failed` / `stripe_event_unusable`. These only
 > fire when a runner **has paid and the entitlement did not land**, and the founder cannot find it by using the
 > app (his row is hand-seeded and `is_admin`). Spans repo + the cloud digest routine.

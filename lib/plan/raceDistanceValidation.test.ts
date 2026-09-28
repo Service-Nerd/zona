@@ -3,6 +3,8 @@ import { generateRulePlan } from './ruleEngine'
 import { raceDistanceKey } from './generationConfig'
 import { InputFieldError } from './inputs'
 import type { GeneratorInput } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 // RACE-DIST-UNVALIDATED-01 — a missing race distance silently built an ULTRA.
 //
@@ -51,20 +53,20 @@ describe('RACE-DIST-UNVALIDATED-01', () => {
     // asserted on /race_distance_km/ and failed against a guard that was
     // working — the refusal-matching trap this repo has already recorded.
     let thrown: unknown
-    try { generateRulePlan(withDistance(km), 'paid') } catch (e) { thrown = e }
+    try { generateRulePlan(withDistance(km), 'paid', PINNED_PLAN_START_0921) } catch (e) { thrown = e }
     expect(thrown).toBeInstanceOf(InputFieldError)
     expect((thrown as InputFieldError).field).toBe('race_distance_km')
   })
 
   it('3. every distance the engine actually supports still generates', () => {
     for (const km of [5, 10, 21.1, 42.2, 50, 100]) {
-      const plan = generateRulePlan(withDistance(km), 'paid')
+      const plan = generateRulePlan(withDistance(km), 'paid', PINNED_PLAN_START_0921)
       expect(plan.weeks.length).toBeGreaterThan(0)
     }
   })
 
   it('4. no plan can ship a literal undefined or NaN in runner-facing copy', () => {
-    const plan = generateRulePlan(BASE, 'paid')
+    const plan = generateRulePlan(BASE, 'paid', PINNED_PLAN_START_0921)
     const text = JSON.stringify(plan)
     expect(text).not.toMatch(/undefined km/)
     expect(text).not.toMatch(/NaN/)

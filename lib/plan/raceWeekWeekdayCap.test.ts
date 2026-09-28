@@ -3,6 +3,8 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0907 } from './__fixtures__/pinnedPlanStart'
 
 /**
  * ENRICH-ATTRIB-01 / INV-PLAN-MAX-WEEKDAY-MINS — race week honours the runner's
@@ -57,7 +59,7 @@ describe('INV-PLAN-MAX-WEEKDAY-MINS — race week', () => {
     // generateRulePlan throws on error-severity violations under NODE_ENV=test,
     // so a regression fails here first. Asserted explicitly anyway, because the
     // throw is environment-dependent and this contract is not.
-    const plan = generateRulePlan(input, 'trial')
+    const plan = generateRulePlan(input, 'trial', PINNED_PLAN_START_0907)
     const errors = validatePlan(plan, input).filter(v => v.severity === 'error')
     expect(errors).toEqual([])
   })
@@ -67,7 +69,7 @@ describe('INV-PLAN-MAX-WEEKDAY-MINS — race week', () => {
     // the two constraints genuinely conflict and life-first must win.
     expect(GENERATION_CONFIG.RACE_WEEK_SHAKEOUT_MAX_MINS).toBeGreaterThan(30)
 
-    const plan = generateRulePlan(HYDE_PARK, 'trial')
+    const plan = generateRulePlan(HYDE_PARK, 'trial', PINNED_PLAN_START_0907)
     const raceWeek = plan.weeks[plan.weeks.length - 1]
     expect(raceWeek.type).toBe('race')
 
@@ -82,7 +84,7 @@ describe('INV-PLAN-MAX-WEEKDAY-MINS — race week', () => {
   })
 
   it('leaves the race itself uncapped — it is a fixed external event', () => {
-    const plan = generateRulePlan(NEW_YEAR_5K, 'trial')
+    const plan = generateRulePlan(NEW_YEAR_5K, 'trial', PINNED_PLAN_START_0907)
     const raceWeek = plan.weeks[plan.weeks.length - 1]
     const race = Object.values(raceWeek.sessions ?? {}).find(s => s?.type === 'race')
 
@@ -94,7 +96,7 @@ describe('INV-PLAN-MAX-WEEKDAY-MINS — race week', () => {
   it('keeps the stride note on the shortened shakeout', () => {
     // §30 — the shakeout exists for neuromuscular sharpness. Shortening it must
     // not silently drop the thing that makes it worth doing.
-    const plan = generateRulePlan(HYDE_PARK, 'trial')
+    const plan = generateRulePlan(HYDE_PARK, 'trial', PINNED_PLAN_START_0907)
     const raceWeek = plan.weeks[plan.weeks.length - 1]
     const notes = Object.values(raceWeek.sessions ?? {})
       .flatMap(s => s?.coach_notes ?? [])

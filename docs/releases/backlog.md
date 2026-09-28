@@ -410,7 +410,7 @@ marathon; the other three are **10K `time_target`** and fail through the
 **`warn_unacknowledged`** throw (`inputs.ts:238`), not the block (`:235`). Both messages are in
 the falsification output. A fix aimed only at the block path would have left three files red.
 
-### 🟡 `TEST-CLOCK-PINSWEEP-01` — the other NINETEEN files in the same class
+### ✅ `TEST-CLOCK-PINSWEEP-01` — SHIPPED 2026-09-28. All nineteen converted, register EMPTY.
 
 ⚙️ **NO BOARD** (test fixtures). **Gated, not fixed.** `lib/plan/testClockIndependence.test.ts`
 discovers every `lib/**/*.test.ts` that pairs an absolute `race_date` with a `planStart`-less
@@ -426,6 +426,27 @@ baseline; each needs **its own** authoring-Monday and **its own verification run
 
 ⚠️ **A DECLARED REASON IS NOT A FIXED PROBLEM.** The gate stops the class growing. Nothing in it
 schedules these 19, and 10 of them are inside 8 weeks of their own cliff on the pessimistic read.
+
+✅ **OUTCOME — all 19 converted, 68 call sites, register back to 0.** The baseline lived for
+exactly one commit, which is the only honest lifetime for debt nobody has scheduled: the reason
+was declared, then the problem was fixed.
+
+🥇 **FOUR MONDAYS, NOT ONE — AND THAT IS THE WHOLE LESSON REPEATED AT SMALLER SCALE.** Each file
+is pinned to `nextMonday()` as it was when that file was **first committed**
+(`git log --diff-filter=A`): **0907** (4 files) · **0914** (2) · **0921** (12) · **0928** (1).
+A single shared date would have been one line of code and the `COHORT_PLAN_START` mistake again —
+plan length is derived from weeks available, so **one week of runway can change the plan** and
+leave every assertion green against something other than what it was written for.
+
+**Verified:** 19 files / 126 tests pass · full suite **421 files / 3,729 tests / 0 failed** ·
+tsc 0 · build 0. **Falsified** by unpinning `deliveredRamp` (7 sites) — caught by both arms,
+named the file.
+
+**The gate is now stronger than a baseline check.** `CLOCK_DEPENDENT_BASELINE` is empty and its
+emptiness is **asserted**, so a future entry is a deliberate act with a written reason rather than
+a quiet way to go green. A second arm states the claim positively over the discovered corpus —
+every test carrying an absolute `race_date` passes a `planStart` — with a floor on the corpus size
+so it cannot pass vacuously.
 
 
 ### 🔴 `OPS-SUBS-ALERT-01` — nothing ALERTS on a failed subscription write

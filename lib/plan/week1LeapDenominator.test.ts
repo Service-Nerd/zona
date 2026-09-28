@@ -5,6 +5,8 @@ import { isDesignedRefusal } from './designedRefusal'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import { distanceEnvelope, DISTANCE_BANDS } from './useCaseEnvelope'
 import type { GeneratorInput } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 /**
  * WEEK1-FLOOR-SHORT-DIST-01 — Coaching Board 2026-09-20.
@@ -54,7 +56,7 @@ describe('WEEK1-FLOOR-SHORT-DIST-01', () => {
       // would go red rather than pass vacuously.
       for (const c of distanceEnvelope(d.value).filter((_, i) => i % 211 === 0)) {
         let plan
-        try { plan = generateRulePlan(c.input, 'paid') }
+        try { plan = generateRulePlan(c.input, 'paid', PINNED_PLAN_START_0921) }
         catch (e) { if (isDesignedRefusal(e)) continue; throw e }
         const declared = (c.input as unknown as { current_weekly_km: number }).current_weekly_km
         const w1 = plan.weeks.find(w => w.n === 1)?.weekly_km ?? 0
@@ -77,7 +79,7 @@ describe('WEEK1-FLOOR-SHORT-DIST-01', () => {
       training_age: '2-5yr', current_weekly_km: 8, longest_recent_run_km: 4,
       days_available: 3,
     })
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921)
     const w1 = plan.weeks.find(w => w.n === 1)?.weekly_km ?? 0
     expect(w1 / 8, 'fixture must be modest against DECLARED volume').toBeLessThanOrEqual(1.30)
     expect(auditPlanQuality(plan, input).map(o => o.code)).not.toContain('WEEK1-LEAP')
@@ -93,7 +95,7 @@ describe('WEEK1-FLOOR-SHORT-DIST-01', () => {
     let exceeded = 0
     for (const c of distanceEnvelope(21.1).filter((_, i) => i % 149 === 0)) {
       let plan
-      try { plan = generateRulePlan(c.input, 'paid') }
+      try { plan = generateRulePlan(c.input, 'paid', PINNED_PLAN_START_0921) }
       catch (e) { if (isDesignedRefusal(e)) continue; throw e }
       const longestEver = (c.input as unknown as { longest_recent_run_km: number }).longest_recent_run_km
       const w1 = plan.weeks.find(w => w.n === 1)

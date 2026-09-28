@@ -2,6 +2,8 @@ import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import type { GeneratorInput, Plan } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0907 } from './__fixtures__/pinnedPlanStart'
 
 /**
  * §96 — `overdo` is a brake, not a preference (CB-HSR-01, 2026-09-07).
@@ -48,7 +50,7 @@ const structure = (p: Plan) => JSON.stringify(p.weeks.map(w => ({
 })))
 
 const plan = (hsr: HSR, o: Partial<GeneratorInput> = {}) =>
-  generateRulePlan(input(hsr, o), 'paid')
+  generateRulePlan(input(hsr, o), 'paid', PINNED_PLAN_START_0907)
 
 beforeAll(() => { vi.useFakeTimers(); vi.setSystemTime(FROZEN_NOW) })
 afterAll(() => { vi.useRealTimers() })

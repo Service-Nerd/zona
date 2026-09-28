@@ -5,6 +5,8 @@ import { isDesignedRefusal } from './designedRefusal'
 import { GENERATION_CONFIG as G } from './generationConfig'
 import { distanceEnvelope } from './useCaseEnvelope'
 import type { GeneratorInput } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 /**
  * HM-WEEK1-PERRUN-01 (§2 Amendment 2) — Coaching Board 2026-09-20.
@@ -40,7 +42,7 @@ describe('HM-WEEK1-PERRUN-01', () => {
       training_age: '6-18mo', current_weekly_km: 10, longest_recent_run_km: 5,
       days_available: 3,
     })
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921)
     const w1 = plan.weeks.find(w => w.n === 1)!
     const runs = Object.values(w1.sessions ?? {}).filter(
       s => s && s.type !== 'rest' && s.type !== 'strength' && s.type !== 'cross-train').length

@@ -28,6 +28,8 @@ import { V1_SESSION_CATALOGUE, requiredPaceAnchors } from './sessionCatalogueDat
 import type { GeneratorInput, Plan } from '@/types/plan'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0928 } from './__fixtures__/pinnedPlanStart'
 
 const rowById = new Map(V1_SESSION_CATALOGUE.map(r => [r.id, r]))
 
@@ -50,7 +52,7 @@ function corpus(): Plan[] {
       benchmark: { type: 'race', time: '0:45:00', distance_km: 10 },
       acknowledged_prep_warning: true,
     } as unknown as GeneratorInput
-    try { plans.push(generateRulePlan(input, 'paid')) } catch { /* refused by design */ }
+    try { plans.push(generateRulePlan(input, 'paid', PINNED_PLAN_START_0928)) } catch { /* refused by design */ }
   }
   return plans
 }

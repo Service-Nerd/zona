@@ -3,6 +3,8 @@ import { savePlanForUser } from '../plan'
 import * as ops from '../ops/recordOpsEvent'
 import { generateRulePlan } from './ruleEngine'
 import type { GeneratorInput, Plan } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 // SAVE-VALIDATE-01 — THE GATE FOR THE GATE.
 //
@@ -55,7 +57,7 @@ describe('SAVE-VALIDATE-01 — savePlanForUser validates before it persists', ()
   afterEach(() => vi.restoreAllMocks())
 
   it('1. a genuine engine plan carries generator_input, so the guard is REACHABLE', () => {
-    const plan = generateRulePlan(BASE, 'paid')
+    const plan = generateRulePlan(BASE, 'paid', PINNED_PLAN_START_0921)
     expect(plan.meta?.generator_input).toBeTruthy()
     // and it survives the JSON round trip through `plan_json`
     const round = JSON.parse(JSON.stringify(plan)) as Plan
@@ -63,7 +65,7 @@ describe('SAVE-VALIDATE-01 — savePlanForUser validates before it persists', ()
   })
 
   it('2. an INVALID plan is refused in test rather than persisted', async () => {
-    const plan = generateRulePlan(BASE, 'paid')
+    const plan = generateRulePlan(BASE, 'paid', PINNED_PLAN_START_0921)
     // Break it the way a bad reshape would: invert the volume curve so a
     // week-on-week increase blows through §2's ramp cap.
     const broken = JSON.parse(JSON.stringify(plan)) as Plan
@@ -72,12 +74,12 @@ describe('SAVE-VALIDATE-01 — savePlanForUser validates before it persists', ()
   })
 
   it('3. a VALID plan saves untouched — the guard must never block a good save', async () => {
-    const plan = generateRulePlan(BASE, 'paid')
+    const plan = generateRulePlan(BASE, 'paid', PINNED_PLAN_START_0921)
     await expect(savePlanForUser('u1', plan, stubSupabase())).resolves.toBeUndefined()
   })
 
   it('4. a legacy plan with no generator_input is SKIPPED, not guessed at', async () => {
-    const plan = generateRulePlan(BASE, 'paid')
+    const plan = generateRulePlan(BASE, 'paid', PINNED_PLAN_START_0921)
     const legacy = JSON.parse(JSON.stringify(plan)) as Plan
     for (const w of legacy.weeks) w.weekly_km = (w.weekly_km ?? 0) * (w.n % 2 === 0 ? 4 : 1)
     delete (legacy.meta as unknown as Record<string, unknown>).generator_input
@@ -87,7 +89,7 @@ describe('SAVE-VALIDATE-01 — savePlanForUser validates before it persists', ()
   })
 
   it('5. an empty-weeks plan is skipped rather than validated into a false error', async () => {
-    const plan = generateRulePlan(BASE, 'paid')
+    const plan = generateRulePlan(BASE, 'paid', PINNED_PLAN_START_0921)
     const empty = JSON.parse(JSON.stringify(plan)) as Plan
     empty.weeks = []
     await expect(savePlanForUser('u1', empty, stubSupabase())).resolves.toBeUndefined()
@@ -100,7 +102,7 @@ describe('SCHEMA-LIVE-01 — the canonical schema runs on the live save path', (
 
   it('6. a conforming plan records NO drift event', async () => {
     const spy = vi.spyOn(ops, 'recordOpsEvent').mockResolvedValue(undefined)
-    await savePlanForUser('u1', generateRulePlan(BASE, 'paid'), stubSupabase())
+    await savePlanForUser('u1', generateRulePlan(BASE, 'paid', PINNED_PLAN_START_0921), stubSupabase())
     expect(spy.mock.calls.filter(c => c[0] === 'plan_schema_drift')).toHaveLength(0)
   })
 
@@ -110,7 +112,7 @@ describe('SCHEMA-LIVE-01 — the canonical schema runs on the live save path', (
     // silent in both cases. Break the shape the way PHASE-EMPTY-01 did — a
     // structural field the schema declares and the engine got wrong.
     const spy = vi.spyOn(ops, 'recordOpsEvent').mockResolvedValue(undefined)
-    const plan = JSON.parse(JSON.stringify(generateRulePlan(BASE, 'paid')))
+    const plan = JSON.parse(JSON.stringify(generateRulePlan(BASE, 'paid', PINNED_PLAN_START_0921)))
     delete (plan.meta as Record<string, unknown>).generator_input  // skip the validatePlan arm
     plan.weeks[0].sessions.tue = { type: 'not_a_session_type', label: 7, detail: null }
     await expect(savePlanForUser('u1', plan, stubSupabase())).resolves.toBeUndefined()

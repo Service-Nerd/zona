@@ -4,6 +4,8 @@ import { auditPlanQuality } from './planQuality'
 import { effectiveStartKm } from './startVolume'
 import { isDesignedRefusal } from './designedRefusal'
 import { distanceEnvelope } from './useCaseEnvelope'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 /**
  * WEEK1-LEAP-ABS-01 — a percentage rule needs an absolute floor.
@@ -32,7 +34,7 @@ describe('WEEK1-LEAP-ABS-01', () => {
       days_available: 3, injury_history: [], hard_session_relationship: 'neutral',
       recent_quality_training: 'occasional',
     } as never
-    const plan = generateRulePlan(tiny, 'paid')
+    const plan = generateRulePlan(tiny, 'paid', PINNED_PLAN_START_0921)
     const start = effectiveStartKm(tiny)
     const w1 = plan.weeks.find(w => w.n === 1)?.weekly_km ?? 0
     expect(w1 - start, 'fixture must actually be a SMALL absolute jump').toBeLessThanOrEqual(2)
@@ -50,7 +52,7 @@ describe('WEEK1-LEAP-ABS-01', () => {
       days_available: 4, injury_history: [], hard_session_relationship: 'neutral',
       recent_quality_training: 'occasional',
     } as never
-    const plan = generateRulePlan(big, 'paid')
+    const plan = generateRulePlan(big, 'paid', PINNED_PLAN_START_0921)
     const start = effectiveStartKm(big)
     const w1 = plan.weeks.find(w => w.n === 1)?.weekly_km ?? 0
     expect(w1 - start, 'fixture must be a LARGE absolute jump').toBeGreaterThan(2)
@@ -65,7 +67,7 @@ describe('WEEK1-LEAP-ABS-01', () => {
     for (const d of [21.1]) {
       for (const c of distanceEnvelope(d).filter((_, i) => i % 149 === 0)) {
         let plan
-        try { plan = generateRulePlan(c.input, 'paid') }
+        try { plan = generateRulePlan(c.input, 'paid', PINNED_PLAN_START_0921) }
         catch (e) { if (isDesignedRefusal(e)) continue; throw e }
         if (!auditPlanQuality(plan, c.input).some(o => o.code === 'WEEK1-LEAP')) continue
         flagged++
@@ -94,7 +96,7 @@ describe('ULTRA-LR-BAR-01 — the long-run bar is a MARATHON bar', () => {
     // 55% of 100 km is a 55 km training long run. Nobody prescribes that;
     // §24e prescribes back-to-backs. It fired on 46 of 48 sampled 100K plans.
     const input = mk(100, 65)
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921)
     expect(auditPlanQuality(plan, input).map(o => o.code)).not.toContain('LONG-RUN-SHORT')
   })
 
@@ -103,7 +105,7 @@ describe('ULTRA-LR-BAR-01 — the long-run bar is a MARATHON bar', () => {
     let flagged = false
     for (const c of distanceEnvelope(42.2).filter((_, i) => i % 149 === 0)) {
       let plan
-      try { plan = generateRulePlan(c.input, 'paid') }
+      try { plan = generateRulePlan(c.input, 'paid', PINNED_PLAN_START_0921) }
       catch (e) { if (isDesignedRefusal(e)) continue; throw e }
       if (auditPlanQuality(plan, c.input).some(o => o.code === 'LONG-RUN-SHORT')) { flagged = true; break }
     }
@@ -116,7 +118,7 @@ describe('ULTRA-LR-BAR-01 — the long-run bar is a MARATHON bar', () => {
     // a single longest run the wrong unit), and inventing one here to keep a
     // column populated is how a decorative check is born.
     const input = mk(50, 60)
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921)
     const codes = auditPlanQuality(plan, input).map(o => o.code)
     expect(codes).not.toContain('LONG-RUN-SHORT')
   })

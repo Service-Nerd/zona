@@ -14,6 +14,8 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput, Session } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 const mk = (extra: Record<string, unknown> = {}): GeneratorInput => ({
   race_distance_km: 10, race_date: '2027-03-14', goal: 'time_target',
@@ -26,7 +28,7 @@ const mk = (extra: Record<string, unknown> = {}): GeneratorInput => ({
 
 const gen = (extra: Record<string, unknown> = {}) => {
   const input = mk(extra)
-  const r = generateRulePlan(input, 'paid') as unknown as Record<string, unknown>
+  const r = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921) as unknown as Record<string, unknown>
   const plan = (r.plan ?? r) as ReturnType<typeof generateRulePlan> extends { plan: infer P } ? P : never
   return { input, plan: plan as never as { weeks: Array<{ n: number; phase: string; sessions?: Record<string, Session | undefined> }>; meta: Record<string, unknown> } }
 }
@@ -158,7 +160,7 @@ describe('§40c — a target that was never reachable is STATED, not absorbed', 
 
   it('declares the shortfall instead of shipping silently', () => {
     const input = unreachable()
-    const r = generateRulePlan(input, 'paid') as unknown as Record<string, unknown>
+    const r = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921) as unknown as Record<string, unknown>
     const plan = (r.plan ?? r) as { weeks: Array<{ n: number; weekly_km?: number; sessions?: Record<string, Session | undefined> }>; meta: Record<string, unknown> }
     const training = plan.weeks.filter(w => w.n >= 1
       && !Object.values(w.sessions ?? {}).some(s => s?.type === 'race'))
@@ -179,7 +181,7 @@ describe('§40c — a target that was never reachable is STATED, not absorbed', 
     // The lever here is runway and starting base, NOT the weekday cap — naming
     // the cap would be naming the wrong one, since the cap is not what stopped
     // this plan.
-    const note = String((generateRulePlan(unreachable(), 'paid') as unknown as { meta: Record<string, unknown> }).meta.peak_shortfall_note ?? '')
+    const note = String((generateRulePlan(unreachable(), 'paid', PINNED_PLAN_START_0921) as unknown as { meta: Record<string, unknown> }).meta.peak_shortfall_note ?? '')
     expect(note).toMatch(/more weeks before race day|higher base/i)
     expect(note).not.toMatch(/minute weekday ceiling/i)
   })
@@ -202,7 +204,7 @@ describe('GOAL-COHERENCE-01 — a time goal with no time is not a time goal', ()
   } as unknown as GeneratorInput)
 
   it('generates without throwing, and reports the goal it actually built', () => {
-    const plan = generateRulePlan(incoherent(), 'paid') as unknown as { meta: Record<string, unknown> }
+    const plan = generateRulePlan(incoherent(), 'paid', PINNED_PLAN_START_0921) as unknown as { meta: Record<string, unknown> }
     expect(plan.meta.goal).toBe('finish')
     expect(plan.meta.goal_pace_per_km).toBeUndefined()
   })
@@ -214,14 +216,14 @@ describe('GOAL-COHERENCE-01 — a time goal with no time is not a time goal', ()
     // producer had already corrected. This asserts the CHECKER's behaviour by
     // handing it the RAW input, which is what those callers do.
     const input = incoherent()
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921)
     const errors = validatePlan(plan, input).filter(v => v.severity === 'error')
     expect(errors).toHaveLength(0)
   })
 
   it('leaves a real time goal completely alone', () => {
     const input = { ...incoherent(), target_time: '0:45:00' } as GeneratorInput
-    const plan = generateRulePlan(input, 'paid') as unknown as { meta: Record<string, unknown> }
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921) as unknown as { meta: Record<string, unknown> }
     expect(plan.meta.goal).toBe('time_target')
     expect(plan.meta.goal_pace_per_km).toBeTruthy()
   })
@@ -238,7 +240,7 @@ describe('§110 / §40c — the note describes the PLAN, not the rule that ran',
   // not true.
   const avoidPlan = (extra: Record<string, unknown>) => {
     const input = mk({ hard_session_relationship: 'avoid', ...extra })
-    const r = generateRulePlan(input, 'paid') as unknown as Record<string, unknown>
+    const r = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921) as unknown as Record<string, unknown>
     const plan = (r.plan ?? r) as { weeks: Array<{ n: number; sessions?: Record<string, Session | undefined> }>; meta: Record<string, unknown> }
     const q = plan.weeks.filter(w => w.n >= 1)
       .flatMap(w => Object.values(w.sessions ?? {}).filter(Boolean) as Session[])

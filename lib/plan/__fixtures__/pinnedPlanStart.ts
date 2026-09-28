@@ -60,3 +60,36 @@
 
 /** The Monday these fixtures were written against. See the header for why. */
 export const PINNED_PLAN_START = '2026-09-14'
+
+// ── TEST-CLOCK-PINSWEEP-01 (2026-09-28) — the other nineteen files ───────────
+//
+// `TEST-CLOCK-PREPTIME-01` fixed the four that had already rotted and GATED the
+// class. This converts the rest. They were never broken; they were queued —
+// measured that day, 10 of 19 were inside eight weeks of their own §44 cliff.
+//
+// ⚠️ FOUR MONDAYS, NOT ONE, AND THAT IS NOT PEDANTRY. Plan length is derived from
+// the weeks available, so one week of runway can change the number of weeks and
+// therefore the whole plan. Pinning all nineteen to a single convenient date is
+// the `COHORT_PLAN_START` mistake at smaller scale: green, on a different plan.
+// Each constant below is `nextMonday()` as it was when those files were authored
+// (`git log --diff-filter=A`), so each fixture keeps generating what it was
+// written against.
+//
+//   0907 — easyRunFloorProtection · deliveredRamp · overdoBrake · raceWeekWeekdayCap
+//   0914 — lrSegmentRecorded · terrainEffortNote              (= PINNED_PLAN_START)
+//   0921 — longRunCapDurationAnchored · week1LeapAbsolute · frequencyConstraintNote
+//          · week1PerRunStep · week1LeapDenominator · longSessionFuelling
+//          · hardAverseFloor · copyStaleOnGeneration · freeIntro · planSaveValidate
+//          · raceDistanceValidation · reentryCauseAndShortfallBand
+//   0928 — sessionSizingAnchor
+//
+// ⚠️ PICK BY THE FILE'S OWN FIRST COMMIT, never by which one is nearest. If you
+// add a fixture, add its Monday here rather than borrowing one that happens to
+// pass — "it went green" is not evidence the plan is the one you meant to assert on.
+
+/** `nextMonday()` for files first committed 2026-09-01 … 09-07. */
+export const PINNED_PLAN_START_0907 = '2026-09-07'
+/** `nextMonday()` for files first committed 2026-09-15 … 09-21. */
+export const PINNED_PLAN_START_0921 = '2026-09-21'
+/** `nextMonday()` for files first committed 2026-09-22 … 09-28. */
+export const PINNED_PLAN_START_0928 = '2026-09-28'

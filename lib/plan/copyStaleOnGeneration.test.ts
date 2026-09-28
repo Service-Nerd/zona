@@ -4,6 +4,8 @@ import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
 import { distanceEnvelope, DISTANCE_BANDS } from './useCaseEnvelope'
 import type { GeneratorInput } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 /**
  * COPY-STALE-GEN-01 — a generated plan may not claim a session it does not have.
@@ -38,12 +40,12 @@ const CASE = {
 
 describe('COPY-STALE-GEN-01', () => {
   it('1. the exact case that shipped invalid now generates clean', () => {
-    const plan = generateRulePlan(CASE, 'paid')
+    const plan = generateRulePlan(CASE, 'paid', PINNED_PLAN_START_0921)
     expect(validatePlan(plan, CASE).filter(v => v.severity === 'error')).toEqual([])
   })
 
   it('2. no week claims a benchmark it does not contain', () => {
-    const plan = generateRulePlan(CASE, 'paid')
+    const plan = generateRulePlan(CASE, 'paid', PINNED_PLAN_START_0921)
     for (const w of plan.weeks) {
       const copy = `${w.label ?? ''} ${w.theme ?? ''}`.toLowerCase()
       if (!/benchmark|time trial/.test(copy)) continue
@@ -55,7 +57,7 @@ describe('COPY-STALE-GEN-01', () => {
   })
 
   it('3. recalibration_weeks names only weeks that hold a benchmark (§78)', () => {
-    const plan = generateRulePlan(CASE, 'paid')
+    const plan = generateRulePlan(CASE, 'paid', PINNED_PLAN_START_0921)
     for (const n of plan.meta.recalibration_weeks ?? []) {
       const w = plan.weeks.find(x => x.n === n)
       expect(w, `recalibration_weeks names week ${n}, which does not exist`).toBeTruthy()

@@ -31,10 +31,12 @@
 // Each file needs its own faithful date and its own verification run, which is
 // `TEST-CLOCK-PINSWEEP-01`, in margin order.
 //
-// So this gate does the one thing a baseline can honestly do: it stops the class
-// GROWING. Same shape as SWEEP-BASELINE-01 and the invariant-liveness baseline.
-// ⚠️ A DECLARED REASON IS NOT A FIXED PROBLEM — these 19 are still rotting, and
-// nothing here schedules them.
+// ✅ SWEPT 2026-09-28 (`TEST-CLOCK-PINSWEEP-01`). All 19 converted, 68 call sites,
+// across four different pinned Mondays. The register below is now EMPTY and its
+// emptiness is asserted — the gate no longer tolerates debt, it forbids it.
+// ⚠️ The baseline lived for ONE commit. That is the only honest lifetime for a
+// debt register nobody has scheduled: this repo records that a declared reason is
+// not a fixed problem, so the reason was declared and then the problem was fixed.
 
 import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync } from 'node:fs'
@@ -66,36 +68,21 @@ function offends(src: string): boolean {
 }
 
 /**
- * Known offenders, with the measured weeks-until-BLOCK at 2026-09-28 (upper
- * bound: the earliest `race_date` in the file paired against its longest
- * `race_distance_km`, which is not always a pairing that actually occurs).
- * Ordered by urgency — convert from the top.
+ * Known offenders. **EMPTY, AND THAT IS THE CORRECT STATE.**
  *
- * ⚠️ NEGATIVE margins are real but were NOT failing, which is the tell that the
- * pairing is pessimistic: those files reach §44 with a shorter distance, a
- * `finish` goal (warn reads as ok) or an acknowledged warning.
+ * It held 19 files for exactly one commit. `TEST-CLOCK-PINSWEEP-01` (2026-09-28)
+ * converted all of them — 68 call sites — each to `nextMonday()` as it was when
+ * that file was first committed, which is four different Mondays and deliberately
+ * not one (see `pinnedPlanStart.ts`: a single week of runway can change plan
+ * length, so a shared convenient date is the `COHORT_PLAN_START` mistake again).
+ *
+ * ⚠️ THE REGISTER STAYS, EMPTY, ON PURPOSE. It is the honest way to record a file
+ * that genuinely cannot be pinned yet, and its emptiness is asserted below — so
+ * the next entry is a deliberate act with a reason attached, not a quiet way to
+ * make this file green. A register that can only grow is one nobody trusts;
+ * this one has been to 19 and back to 0.
  */
-const CLOCK_DEPENDENT_BASELINE: Record<string, string> = {
-  'lib/plan/longRunCapDurationAnchored.test.ts': '50K 2026-12-27 — margin -3',
-  'lib/plan/lrSegmentRecorded.test.ts':          'marathon 2026-12-12 — margin -1',
-  'lib/plan/easyRunFloorProtection.test.ts':     'marathon 2027-01-01 — margin 2',
-  'lib/plan/terrainEffortNote.test.ts':          '10K 2026-12-06 — margin 2',
-  'lib/plan/deliveredRamp.test.ts':              '10K 2026-12-12 — margin 3',
-  'lib/plan/overdoBrake.test.ts':                '10K 2026-12-14 — margin 4',
-  'lib/plan/week1LeapAbsolute.test.ts':          'HM 2027-01-04 — margin 5',
-  'lib/plan/frequencyConstraintNote.test.ts':    'marathon 2027-01-25 — margin 6',
-  'lib/plan/raceWeekWeekdayCap.test.ts':         '5K 2027-01-01 — margin 8',
-  'lib/plan/week1PerRunStep.test.ts':            'HM 2027-01-25 — margin 8',
-  'lib/plan/week1LeapDenominator.test.ts':       '10K 2027-01-18 — margin 9',
-  'lib/plan/longSessionFuelling.test.ts':        '10K 2027-03-07 — margin 15',
-  'lib/plan/hardAverseFloor.test.ts':            '10K 2027-03-14 — margin 16',
-  'lib/plan/copyStaleOnGeneration.test.ts':      '100K 2027-05-30 — margin 19',
-  'lib/plan/freeIntro.test.ts':                  'HM 2027-04-18 — margin 19',
-  'lib/plan/planSaveValidate.test.ts':           'HM 2027-04-18 — margin 19',
-  'lib/plan/raceDistanceValidation.test.ts':     'HM 2027-04-18 — margin 19',
-  'lib/plan/reentryCauseAndShortfallBand.test.ts': 'marathon 2027-06-06 — margin 24',
-  'lib/plan/sessionSizingAnchor.test.ts':        'see file — no single earliest pairing',
-}
+const CLOCK_DEPENDENT_BASELINE: Record<string, string> = {}
 
 describe('TEST-CLOCK-PREPTIME-01 — no NEW wall-clock-dependent engine test', () => {
   const files = testFiles()
@@ -135,21 +122,19 @@ describe('TEST-CLOCK-PREPTIME-01 — no NEW wall-clock-dependent engine test', (
       .toEqual([])
   })
 
-  it('the four files fixed by TEST-CLOCK-PREPTIME-01 are clean and stay clean', () => {
-    const fixed = [
-      'lib/sessionColourReach.test.ts',
-      'lib/coaching/zoneSheetMatchesHeader.test.ts',
-      'lib/plan/hardPrefNote.test.ts',
-      'lib/plan/inputEffect.test.ts',
-    ]
-    for (const f of fixed) {
-      const src = readFileSync(f, 'utf8')
-      // Word-bounded, not `toContain`: a bare substring also passes against
-      // `PINNED_PLAN_STARTX`. `hollowTestShapes.test.ts` caught this exact line
-      // when this gate was written — the lint against substring bias flagged the
-      // gate written against clock bias, which is the system working.
-      expect(src, `${f} must import the pinned start`).toMatch(/\bPINNED_PLAN_START\b/)
-      expect(offends(src), `${f} regressed to a wall-clock fixture`).toBe(false)
-    }
+  it('every engine test with an absolute race_date passes a planStart', () => {
+    // The positive form of the same claim, asserted over the DISCOVERED corpus
+    // rather than a hand-kept list — a list is what let the original four rot.
+    const withAbsoluteDate = files.filter(f => ABSOLUTE_RACE_DATE.test(readFileSync(f, 'utf8')))
+    expect(withAbsoluteDate.length, 'corpus must actually contain dated fixtures').toBeGreaterThan(50)
+
+    const unpinned = withAbsoluteDate.filter(f => offends(readFileSync(f, 'utf8')))
+    expect(unpinned, 'pass the file\'s own pinned Monday as the 3rd argument').toEqual([])
+  })
+
+  it('the register is empty, and an entry is a deliberate act', () => {
+    expect(Object.keys(CLOCK_DEPENDENT_BASELINE),
+      'TEST-CLOCK-PINSWEEP-01 emptied this. Adding a row needs a reason in the value.')
+      .toEqual([])
   })
 })

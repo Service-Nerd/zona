@@ -3,6 +3,8 @@ import { generateRulePlan } from './ruleEngine'
 import { auditPlanQuality } from './planQuality'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 /**
  * FREQ-SILENCE-01 (§18 Amendment) — when weekly volume, not the runner's life,
@@ -39,14 +41,14 @@ const HIGH = mk({
 
 describe('FREQ-SILENCE-01', () => {
   it('1. a volume-constrained runner is told, and told the real numbers', () => {
-    const m = generateRulePlan(LOW, 'paid').meta as unknown as Record<string, string>
+    const m = generateRulePlan(LOW, 'paid', PINNED_PLAN_START_0921).meta as unknown as Record<string, string>
     expect(m.frequency_constraint_note).toBeTruthy()
     expect(m.frequency_constraint_note).toContain('6 days')     // what they asked for
     expect(m.frequency_constraint_note).toMatch(/uses 3/)        // what they get
   })
 
   it('2. an UNCONSTRAINED runner gets no note — it is not wallpaper', () => {
-    const m = generateRulePlan(HIGH, 'paid').meta as unknown as Record<string, string>
+    const m = generateRulePlan(HIGH, 'paid', PINNED_PLAN_START_0921).meta as unknown as Record<string, string>
     expect(m.frequency_constraint_note).toBeUndefined()
   })
 
@@ -55,7 +57,7 @@ describe('FREQ-SILENCE-01', () => {
       race_distance_km: 42.2, race_date: '2027-05-16', fitness_level: 'beginner',
       training_age: '6-18mo', current_weekly_km: 15, longest_recent_run_km: 7,
       days_available: 5,
-    }), 'paid')
+    }), 'paid', PINNED_PLAN_START_0921)
     const note = (plan.meta as unknown as Record<string, string>).frequency_constraint_note
     if (!note) return
     const counts = plan.weeks.filter(w => w.n > 0 && (w.phase === 'build' || w.phase === 'peak'))
@@ -82,7 +84,7 @@ describe('FREQ-SILENCE-01', () => {
   })
 
   it('5. a DECLARED shortfall is no longer a coach objection; an undeclared one still is', () => {
-    const plan = generateRulePlan(LOW, 'paid')
+    const plan = generateRulePlan(LOW, 'paid', PINNED_PLAN_START_0921)
     expect(auditPlanQuality(plan, LOW).map(o => o.code)).not.toContain('DAYS-SHORT')
     // Strip the declaration and the objection must come back — otherwise the
     // predicate was simply switched off rather than made conditional.

@@ -3,6 +3,8 @@ import { generateRulePlan } from './ruleEngine'
 import { validatePlan } from './invariants'
 import { isDesignedRefusal } from './designedRefusal'
 import type { GeneratorInput } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 // Coaching Board 2026-09-19 — two rulings from the plan-review round.
 //
@@ -36,7 +38,7 @@ const READY = mk({
 
 describe('F1 — §79 Am. 5: the re-entry note names the real cause', () => {
   it('1. a demonstrably-ready runner is NEVER told they are coming back', () => {
-    const m = generateRulePlan(READY, 'paid').meta as unknown as Record<string, string | undefined>
+    const m = generateRulePlan(READY, 'paid', PINNED_PLAN_START_0921).meta as unknown as Record<string, string | undefined>
     if (!m.intensity_reentry_omission_note) return   // window did not open: nothing to check
     expect(m.intensity_reentry_cause).toBe('early_onset')
     expect(m.intensity_reentry_omission_note).not.toMatch(/coming back/i)
@@ -53,7 +55,7 @@ describe('F1 — §79 Am. 5: the re-entry note names the real cause', () => {
         race_distance_km: km, fitness_level: 'experienced', training_age: ta,
         current_weekly_km: cwk, longest_recent_run_km: Math.round(Math.min(cwk * 0.45, km * 0.75)),
         days_available: 5, recent_quality_training: rq,
-      }), 'paid')
+      }), 'paid', PINNED_PLAN_START_0921)
       const m = plan.meta as unknown as Record<string, string | undefined>
       if (!m.intensity_reentry_omission_note) continue
       if (m.intensity_reentry_cause === 'early_onset') earlyOnset++
@@ -68,7 +70,7 @@ describe('F1 — §79 Am. 5: the re-entry note names the real cause', () => {
   })
 
   it('3. a note with no stamped cause is an error-severity violation', () => {
-    const plan = generateRulePlan(READY, 'paid')
+    const plan = generateRulePlan(READY, 'paid', PINNED_PLAN_START_0921)
     const m = plan.meta as unknown as Record<string, unknown>
     if (!m.intensity_reentry_omission_note) return
     delete m.intensity_reentry_cause
@@ -77,7 +79,7 @@ describe('F1 — §79 Am. 5: the re-entry note names the real cause', () => {
   })
 
   it('4. the invariant FIRES on the exact defect it was written for', () => {
-    const plan = generateRulePlan(READY, 'paid')
+    const plan = generateRulePlan(READY, 'paid', PINNED_PLAN_START_0921)
     const m = plan.meta as unknown as Record<string, unknown>
     if (!m.intensity_reentry_omission_note) return
     // Put the old copy back on an early-onset plan: this is the live defect.
@@ -100,7 +102,7 @@ describe('F2 — §44 Am.: a declared shortfall may not read comfortable', () =>
   })
 
   it('5. a plan declaring a shortfall reads demanding, and says why', () => {
-    const m = generateRulePlan(SHORTFALL, 'paid').meta as unknown as Record<string, string | undefined>
+    const m = generateRulePlan(SHORTFALL, 'paid', PINNED_PLAN_START_0921).meta as unknown as Record<string, string | undefined>
     expect(m.compression_classification).toBe('optimal')   // not the old arm
     const declared = m.long_run_shortfall_note || m.peak_shortfall_note || m.volume_shortfall_note
     expect(declared).toBeTruthy()
@@ -116,7 +118,7 @@ describe('F2 — §44 Am.: a declared shortfall may not read comfortable', () =>
       race_distance_km: 42.2, fitness_level: 'experienced', training_age: '5yr+',
       current_weekly_km: 70, longest_recent_run_km: 30, days_available: 5,
       recent_quality_training: 'regular',
-    }), 'paid')
+    }), 'paid', PINNED_PLAN_START_0921)
     const m = plan.meta as unknown as Record<string, string | undefined>
     const declared = m.long_run_shortfall_note || m.peak_shortfall_note || m.volume_shortfall_note
     let longest = 0
@@ -158,7 +160,7 @@ describe('F2 — §44 Am.: a declared shortfall may not read comfortable', () =>
           ...(goal === 'time_target'
             ? { target_time: km <= 5 ? '0:25:00' : km <= 10 ? '0:50:00' : km <= 21.1 ? '1:55:00' : '4:15:00' }
             : {}),
-        }), 'paid')
+        }), 'paid', PINNED_PLAN_START_0921)
       } catch (e) {
         if (isDesignedRefusal(e)) continue
         throw e
@@ -177,7 +179,7 @@ describe('F2 — §44 Am.: a declared shortfall may not read comfortable', () =>
   })
 
   it('8. the extended invariant fires on the exact defect', () => {
-    const plan = generateRulePlan(SHORTFALL, 'paid')
+    const plan = generateRulePlan(SHORTFALL, 'paid', PINNED_PLAN_START_0921)
     ;(plan.meta as unknown as Record<string, unknown>).difficulty_band = 'comfortable'
     const v = validatePlan(plan, SHORTFALL).filter(x => x.severity === 'error')
     expect(v.map(x => x.code)).toContain('INV-PLAN-DIFFICULTY-NEVER-FRONTS-UNSAFE')

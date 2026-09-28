@@ -26,6 +26,8 @@ import { GENERATION_CONFIG } from './generationConfig'
 import { sessionKmSelfPaced } from './sessionDistance'
 import { isLongRun } from './sessionRole'
 import type { GeneratorInput, Session } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 /** The M3 persona from the charity review packet — the worst case measured. */
 const m3 = (over: Record<string, unknown> = {}): GeneratorInput => ({
@@ -49,7 +51,7 @@ const longRuns = (plan: { weeks: Array<{ n: number; type?: string; sessions?: Re
 
 const gen = (over: Record<string, unknown> = {}) => {
   const input = m3(over)
-  const r = generateRulePlan(input, 'paid') as unknown as Record<string, unknown>
+  const r = generateRulePlan(input, 'paid', PINNED_PLAN_START_0921) as unknown as Record<string, unknown>
   return { input, plan: (r.plan ?? r) as { weeks: Array<{ n: number; type?: string; sessions?: Record<string, Session | undefined> }> } }
 }
 

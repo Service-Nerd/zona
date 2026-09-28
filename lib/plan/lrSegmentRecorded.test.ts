@@ -27,6 +27,8 @@ import { validatePlan } from './invariants'
 import { V1_SESSION_CATALOGUE } from './sessionCatalogueData'
 import { zoneStringFromZoneKeys, zonesFromZoneString } from '@/lib/coaching/zoneRules'
 import type { GeneratorInput, Plan, Session } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START } from './__fixtures__/pinnedPlanStart'
 
 const base = (o: Partial<GeneratorInput> = {}): GeneratorInput => ({
   race_date: '2026-12-12', race_distance_km: 5, goal: 'time_target',
@@ -44,20 +46,20 @@ const notesOf = (s: Session) => (s.coach_notes ?? []).filter(Boolean).join(' ')
 
 describe('§24b — segmented long runs are only prescribed when they can be paced', () => {
   it('a BEGINNER never receives a placeholder pace', () => {
-    const plan = generateRulePlan(base({ fitness_level: 'beginner' } as any), 'paid')
+    const plan = generateRulePlan(base({ fitness_level: 'beginner' } as any), 'paid', PINNED_PLAN_START)
     const bad = allSessions(plan).filter(s =>
       /at marathon pace: marathon pace|at HM pace: HM pace/.test(notesOf(s)))
     expect(bad).toEqual([])
   })
 
   it('a beginner gets a plain long run instead — not a broken segmented one', () => {
-    const plan = generateRulePlan(base({ fitness_level: 'beginner' } as any), 'paid')
+    const plan = generateRulePlan(base({ fitness_level: 'beginner' } as any), 'paid', PINNED_PLAN_START)
     const segmented = allSessions(plan).filter(s => s.zone === 'Zone 2–3')
     expect(segmented).toEqual([])
   })
 
   it('an INTERMEDIATE runner still gets the session, with real paces recorded', () => {
-    const plan = generateRulePlan(base({ fitness_level: 'intermediate' } as any), 'paid')
+    const plan = generateRulePlan(base({ fitness_level: 'intermediate' } as any), 'paid', PINNED_PLAN_START)
     const segmented = allSessions(plan).filter(s => s.zone === 'Zone 2–3')
     expect(segmented.length, 'intermediate must still receive §24b').toBeGreaterThan(0)
     for (const s of segmented) {
@@ -70,7 +72,7 @@ describe('§24b — segmented long runs are only prescribed when they can be pac
 
   it('FALSIFICATION — INV-PLAN-LR-SEGMENT-RECORDED goes RED on a segmented session with no recorded pace', () => {
     const input = base({ fitness_level: 'intermediate' } as any)
-    const plan = generateRulePlan(input, 'paid')
+    const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START)
     const idx = plan.weeks.findIndex(w =>
       Object.values(w.sessions ?? {}).some((s: any) => s && s.zone === 'Zone 2–3'))
     expect(idx, 'fixture must contain a §24b session').toBeGreaterThanOrEqual(0)
@@ -94,7 +96,7 @@ describe('§24b — segmented long runs are only prescribed when they can be pac
   it('the generated plan is clean under the new invariant', () => {
     for (const lvl of ['beginner', 'intermediate', 'experienced']) {
       const input = base({ fitness_level: lvl } as any)
-      const plan = generateRulePlan(input, 'paid')
+      const plan = generateRulePlan(input, 'paid', PINNED_PLAN_START)
       expect(
         validatePlan(plan, input).filter(v => v.code === 'INV-PLAN-LR-SEGMENT-RECORDED'),
         `${lvl} must be clean`,

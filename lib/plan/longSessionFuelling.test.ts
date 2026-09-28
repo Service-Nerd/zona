@@ -5,6 +5,8 @@ import { FUELLING_PRACTICE_NOTE, ULTRA_FUELLING_PREFIX } from './fuellingNotes'
 import { GENERATION_CONFIG } from './generationConfig'
 import { PLAN_PERSONAS, charityInput, CHARITY_PLAN_START } from './charityCohort'
 import type { GeneratorInput, Session } from '@/types/plan'
+// TEST-CLOCK-PINSWEEP-01 — pinned, or nextMonday() walks this fixture into §44.
+import { PINNED_PLAN_START_0921 } from './__fixtures__/pinnedPlanStart'
 
 // §24e Amendment (Coaching Board 2026-09-19, LONG-SESSION-FUEL-01).
 //
@@ -61,7 +63,7 @@ describe('§24e Am. — a long run long enough to need fuel says so', () => {
       days_available: 4, injury_history: [], hard_session_relationship: 'neutral',
       recent_quality_training: 'occasional',
     } as unknown as GeneratorInput
-    const plan = generateRulePlan(short, 'paid')
+    const plan = generateRulePlan(short, 'paid', PINNED_PLAN_START_0921)
     for (const s of peakLongRuns(plan)) {
       if ((s.duration_mins ?? 0) < THRESHOLD) {
         expect(fuelled(s), 'a sub-threshold long run must NOT carry the cue').toBe(false)
