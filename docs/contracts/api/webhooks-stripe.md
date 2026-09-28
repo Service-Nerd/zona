@@ -39,15 +39,25 @@ nothing** — that is the designed behaviour, not a gap.
 
 ## Status mapping
 
-`toStatus()`, local to the route.
+`stripeToStatus()` — **`lib/subscriptions/stripeEvents.ts`** since 2026-09-28. It was
+previously private to this route, where `vitest` (which collects `lib/**` only) could
+never reach it, so the billing path's most consequential decision had no test.
 
 | Stripe status | Written |
 |---|---|
 | `trialing` | `trialing` |
 | `active` | `active` |
 | `canceled` | `cancelled` *(note the spelling change — Stripe uses one `l`, the column uses two)* |
-| `unpaid`, `past_due`, `incomplete_expired` | `expired` |
+| `unpaid`, `incomplete_expired` | `expired` |
+| `past_due` | `null` → **no write** (SUBS-CANCELLATION-TIER-01 twin, 2026-09-28) |
 | anything else | `null` → **200, no write** |
+
+🔴 **`past_due` USED TO WRITE `expired`, REVOKING A CUSTOMER STRIPE WAS STILL BILLING.**
+`past_due` means the invoice failed and **Stripe is retrying**; the customer has paid for
+the period they are in. If the retries fail, Stripe moves to `unpaid` or `canceled`, both
+of which are handled. This is the same defect as `CANCELLATION` on the RevenueCat side,
+and the argument against it was already written in `revenuecatEvents.ts`'s `BILLING_ISSUE`
+comment. **It was found by a sweep for the shape of that fix, not by a report.**
 
 ## Response — 200
 

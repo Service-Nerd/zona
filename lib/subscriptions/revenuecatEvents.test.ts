@@ -13,7 +13,6 @@ describe('toStatus — RevenueCat event mapping', () => {
     ['UNCANCELLATION',        'active'],
     ['TRIAL_STARTED',         'trialing'],
     ['TRIAL_CONVERTED',       'active'],
-    ['CANCELLATION',          'cancelled'],
     ['EXPIRATION',            'expired'],
     ['NON_RENEWING_PURCHASE', 'active'],   // the comp path
     ['SUBSCRIPTION_EXTENDED', 'active'],
@@ -42,6 +41,23 @@ describe('toStatus — RevenueCat event mapping', () => {
     for (const unknown of ['BILLING_ISSUE', 'SUBSCRIPTION_PAUSED', 'SUBSCRIBER_ALIAS', 'WHAT_IS_THIS']) {
       expect(toStatus(unknown)).toBeNull()
     }
+  })
+
+  // 🔴 SUBS-CANCELLATION-TIER-01 (2026-09-28) — CANCELLATION MOVED TO null, AND
+  // THIS ROW USED TO SAY 'cancelled'.
+  //
+  // In Apple's vocabulary CANCELLATION means auto-renew was switched off. Access
+  // continues to `expires_date`; EXPIRATION is what ends it. Writing `cancelled`
+  // demoted a runner still inside a period they had paid for, because
+  // `resolveTier` grants paid only on ['trialing','active'].
+  //
+  // ⚠️ AND AN OFFER CODE WITH AUTO-RENEW OFF EMITS IT ON EVERY REDEMPTION — for
+  // `tester1@test.com` INITIAL_PURCHASE and CANCELLATION arrived in the SAME
+  // SECOND, so the newer one won. All 500 Make-A-Wish runners would have dropped
+  // to free about two minutes after redeeming.
+  it('CANCELLATION does not end access — only EXPIRATION does', () => {
+    expect(toStatus('CANCELLATION')).toBeNull()
+    expect(toStatus('EXPIRATION')).toBe('expired')
   })
 
   // Regression guard for the actual defect. Without the NON_RENEWING_PURCHASE

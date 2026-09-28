@@ -47,9 +47,25 @@ vitest only collects `lib/**`, so a mapping written beside the route would never
 | `NON_RENEWING_PURCHASE`, `SUBSCRIPTION_EXTENDED` | `active` — **comped access (GTM-CHARITY-03)** |
 | `TRIAL_STARTED` | `trialing` |
 | `TRIAL_CONVERTED` | `active` |
-| `CANCELLATION` | `cancelled` |
+| `CANCELLATION` | `null` → **no write** (SUBS-CANCELLATION-TIER-01, 2026-09-28) |
 | `EXPIRATION` | `expired` |
 | anything else | `null` → 200, **no write**, plus an `ops_event` |
+
+🔴 **`CANCELLATION` USED TO WRITE `cancelled`, AND IT WAS A LIVE TIER DEFECT.**
+In Apple's vocabulary CANCELLATION means *auto-renew was switched off*; access runs
+to `expires_date` and `EXPIRATION` is what ends it. `resolveTier` grants paid only on
+`['trialing','active']` (ADR-005), so the write demoted a runner still inside a period
+they had paid for.
+
+⚠️ **And an offer code created with auto-renew OFF emits it on every redemption.**
+Measured in production 2026-09-28: `INITIAL_PURCHASE` and `CANCELLATION` arrived in the
+same second, and `apply_subscription_event`'s guard is ordering-only, so the newer one
+won. All 500 Make-A-Wish runners would have dropped to free tier about two minutes after
+redeeming. Returning `null` is also safe: `resolveTier` independently requires
+`current_period_end > now`, so access still self-terminates at the period end.
+
+Gated by `lib/subscriptions/eventTierComposition.test.ts`, which composes
+`toStatus() → resolveTier()` for every event — the check neither unit test had.
 
 ⚠️ **The two grant rows are not decoration.** A promotional entitlement granted from the
 RevenueCat dashboard arrives as `NON_RENEWING_PURCHASE`, **not** as a subscription lifecycle

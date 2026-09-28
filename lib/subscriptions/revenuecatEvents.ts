@@ -65,8 +65,34 @@ export function toStatus(eventType: string): SubscriptionStatus | null {
     // `cancelled` or `expired` would revoke a paying customer mid-grace, and if
     // the retry fails Apple sends EXPIRATION, which IS handled. Falling through
     // to `null` records the event and changes nothing, which is exactly right.
+
+    // 🔴 CANCELLATION IS THE SAME SHAPE, AND MAPPING IT TO `cancelled` WAS A LIVE
+    // DEFECT (SUBS-CANCELLATION-TIER-01, measured in production 2026-09-28).
+    //
+    // In Apple's vocabulary CANCELLATION means **auto-renew was turned off**. It
+    // does NOT mean access ended: the runner keeps the entitlement until
+    // `expires_date`, and EXPIRATION is the event that ends it. But `resolveTier`
+    // grants paid only on `['trialing','active']` (ADR-005 line 39), so writing
+    // `cancelled` demoted a runner who was still inside a period they had paid
+    // for — or, for a charity offer code, been given.
+    //
+    // ⚠️ AND IT FIRED ON EVERY SINGLE OFFER-CODE REDEMPTION. An offer created
+    // with auto-renew OFF emits CANCELLATION ~2 minutes after the purchase:
+    // measured for `tester1@test.com`, INITIAL_PURCHASE and CANCELLATION arrived
+    // in the same second (15:39:49), so the newer CANCELLATION would have
+    // overwritten the active row via `apply_subscription_event` — whose guard is
+    // ORDERING-ONLY (`s.last_event_at <= excluded.last_event_at`) and so offers no
+    // protection here. All 500 Make-A-Wish runners would have dropped to free.
+    //
+    // 📐 Returning `null` is safe as well as correct: `resolveTier` independently
+    // requires `current_period_end > now`, so access still self-terminates at the
+    // period end even if EXPIRATION never arrives. Nothing is granted forever.
+    //
+    // ⚠️ `'cancelled'` STAYS in the union because STRIPE still writes it, and
+    // means something different there: Stripe's `canceled` status arrives when the
+    // subscription is actually over, not when renewal is switched off.
     case 'CANCELLATION':
-      return 'cancelled'
+      return null
     case 'EXPIRATION':
       return 'expired'
 

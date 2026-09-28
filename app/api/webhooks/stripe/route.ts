@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { webhookTrace } from '@/lib/subscriptions/webhookTrace'
+import { stripeToStatus } from '@/lib/subscriptions/stripeEvents'
 
 // Stripe webhook docs: https://stripe.com/docs/webhooks
 // Signature verified via stripe.webhooks.constructEvent (timing-safe)
@@ -21,18 +22,6 @@ import { webhookTrace } from '@/lib/subscriptions/webhookTrace'
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not set')
   return new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-03-25.dahlia' })
-}
-
-function toStatus(stripeStatus: Stripe.Subscription.Status): 'trialing' | 'active' | 'cancelled' | 'expired' | null {
-  switch (stripeStatus) {
-    case 'trialing':      return 'trialing'
-    case 'active':        return 'active'
-    case 'canceled':      return 'cancelled'
-    case 'unpaid':
-    case 'past_due':
-    case 'incomplete_expired': return 'expired'
-    default:              return null
-  }
 }
 
 export async function POST(req: NextRequest) {
@@ -60,7 +49,7 @@ export async function POST(req: NextRequest) {
   }
 
   const subscription = event.data.object as Stripe.Subscription
-  const status = toStatus(subscription.status)
+  const status = stripeToStatus(subscription.status)
 
   if (!status) {
     const t = webhookTrace('stripe', { result: 'unhandled', eventType: event.type })
