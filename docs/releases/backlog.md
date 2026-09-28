@@ -533,6 +533,45 @@ call site, whereas threading a `source` prop through nine giant JSX call sites i
 say whether the Coach teaser converts better than the Me screen, which is the question
 `design-rulings.md`'s killed merchandising screen could not be argued without.
 
+## ⚖️ FILED 2026-09-28 — `ME-DOORS-01`, executing ME-PURPOSE-01
+
+### 🟡 `ME-DOORS-01` — Me's inline blocks become doors
+
+🧭 **DESIGN BOARD — ruled `ME-PURPOSE-01`** (*"Me is the INDEX. Nothing lives on Me.
+Every row is a door, not a room."*). This item is the execution.
+
+**THREE doors, decided as architect on a measurement the board did not have.** The ruling
+was made on per-SCREEN totals (780 lines, 8 blocks, ZERO `ActionRow` uses — all correct).
+Measuring per BLOCK afterwards:
+
+| Block | Lines | Interactive controls |
+|---|---|---|
+| Display | 37 | **2** segmented controls |
+| Connections | 12 | **2**, and both are already `ConnectionRow` components |
+| Notifications | 19 | one nested toggle |
+| Plan adjustments | 117 | 1 button |
+| HR zones | ~160 | the form |
+
+🔴 **Five doors executed literally builds a screen whose entire content is two segmented
+controls** — one more tap, emptier screen. Wroblewski's own lens argues against that as
+hard as the ruling argues for it. **The 780 lines are not in these blocks**; they are in the
+top card, the identity card, `Your training` and the HR form.
+
+**So:** ① **Heart rate** (form + Apple Health prefill) · ② **Plan adjustments** ·
+③ **Preferences** (Display + Notifications, four controls, one coherent screen).
+**Connections stays** — already row-shaped, and a door in front of a native permission
+prompt is a tap for nothing.
+
+🥇 **REUSE: `activeSection` already IS the door mechanism.** Four Me sub-screens exist
+(`quit`, `delete-account`, `support`, `plan-history`), each an early return with `onBack`;
+`ActionRow`'s `divider` prop is documented *"when stacking rows inside one card (Me)"*. No
+new navigation is invented — a union is extended.
+
+⚠️ **Per the founder: regression after EACH screen, not once at the end**, standard
+patterns only (`ActionRow`, no hand-rolled controls), and `docs/contracts/` updated for any
+changed prop interface. `meIsAnIndex.test.ts` baselines lowered per screen — its stale arm
+fails if debt is paid and the register is not.
+
 ## ⚖️ FILED 2026-09-28 — the zones surface, RULED BY BOTH BOARDS and re-specified
 
 ### 🟡 `ZONES-SURFACE-01` — Training Zones under Me (HR / Pace)
