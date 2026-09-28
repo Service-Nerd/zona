@@ -3995,6 +3995,38 @@ them does.
   the second question the board flagged (*"when does it come back?"*); *"when you stop"* needs
   no threshold to argue about.
 - The **GuideSheet mirror never recedes** — it is a picture of the nav, not the nav.
+- 🔴 **While receded, BOTH labels repaint to `--ink-2`** (NAV-FADE-CONTRAST-01).
+
+### § 7b Amendment — the receded bar's labels darken (2026-09-28, same day)
+
+**The 2026-09-25 amendment's *"blur holds ≥5.23:1 worst case"* was measured against our own
+palette, not against content.** The bar is translucent, so its labels sit on whatever
+**scrolls beneath it**:
+
+| backdrop | active on lozenge | inactive |
+|---|---|---|
+| `--card` / `--bg` | 4.86 / 4.69 ✅ | 5.45 / 5.26 ✅ |
+| **moss CTA** | **3.58 ❌** | **4.00 ❌** |
+| `--ink` worst | 2.67 ❌ | 2.96 ❌ |
+
+The AA boundary is a backdrop of **grey 220 — a light grey** — and it is reachable today:
+`TODAY-CTA-CLEARANCE-01` was reverted, so the moss *"Log this session"* button is not docked
+and scrolls straight under the bar.
+
+⚠️ **Raising the opacity is not the fix.** AA over a moss CTA needs alpha **0.93**, which is
+an opaque bar — it answers *"a bit opaque"* by deleting the effect.
+
+✅ **The labels darken instead.** `--ink-2` clears AA over **every** backdrop — **5.51:1
+against the worst possible, 7.40 over a moss CTA** — with no change to blur or translucency.
+Under `prefers-reduced-motion` the recede is off, so the labels keep their resting colours; a
+colour shift with no visible cause is worse than no effect.
+
+🥇 **It is only available because of NAV-ACTIVE-LOZENGE-01.** The selected state no longer
+depends on colour — the lozenge and the weight carry it — so the receded state is free to
+repaint both labels without losing which tab you are on. **The two changes need each other.**
+
+⚠️ **The gate now measures the WORST POSSIBLE backdrop, not our grounds.** Scoping a contrast
+check to the surfaces we happen to ship is the error that let this through.
 
 **Reference:** `.nav-tab--active` / `.nav-bar--receded` in `globals.css`,
 `components/shared/useNavRecede.ts`. **Check:** `components/ui/navActiveState.test.ts`,

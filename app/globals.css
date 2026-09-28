@@ -1436,6 +1436,41 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  * ⚠️ IT STAYS LIVE WHILE RECEDED. `pointer-events` is deliberately untouched:
  * § 6i records a nav icon under a sheet that DISMISSED instead of navigating, and
  * a nav you can see but cannot press is worse than one that is simply there. */
+/* 🔴 NAV-FADE-CONTRAST-01 (2026-09-28, same day) — THE RECEDED BAR'S LABELS
+ * DARKEN, AND THIS IS A DEFECT FIX ON THE HOURS-OLD NAV-FADE-01.
+ *
+ * The 2026-09-25 amendment said a blurred, translucent bar "holds >=5.23:1 worst
+ * case". MEASURED AGAINST CONTENT rather than against our own palette, that is
+ * false: the bar is only translucent, so its labels sit on whatever scrolls
+ * beneath it.
+ *
+ *   backdrop        active label (on the lozenge)   inactive label
+ *   --card  white   4.86 ✅                          5.45 ✅
+ *   --bg            4.69 ✅                          5.26 ✅
+ *   moss CTA        3.58 ❌                          4.00 ❌
+ *   --ink   worst   2.67 ❌                          2.96 ❌
+ *
+ * The AA boundary is a backdrop of grey **220** — a LIGHT grey. And it is
+ * reachable today: TODAY-CTA-CLEARANCE-01 was reverted, so the moss "Log this
+ * session" button is not docked and scrolls straight under the bar.
+ *
+ * ⚠️ RAISING THE OPACITY IS NOT THE FIX. AA over a moss CTA needs alpha **0.93**,
+ * which is not a recede any more, it is an opaque bar — it would answer the
+ * founder's "a bit opaque" by removing the effect he asked for.
+ *
+ * ✅ SO THE LABELS DARKEN INSTEAD: `--ink-2` clears AA over EVERY backdrop
+ * (**5.51:1 against the worst possible, 7.40 over a moss CTA**) with no change to
+ * the blur or the translucency.
+ *
+ * 🥇 AND IT IS ONLY AVAILABLE BECAUSE OF NAV-ACTIVE-LOZENGE-01, SHIPPED HOURS
+ * EARLIER. The selected state no longer depends on colour — the lozenge and the
+ * weight carry it — so the receded state is free to repaint both labels without
+ * losing which tab you are on. The two changes need each other. */
+.nav-bar--floating.nav-bar--receded .nav-tab,
+.nav-bar--floating.nav-bar--receded .nav-tab--active {
+  color: var(--ink-2);
+}
+
 .nav-bar--floating.nav-bar--receded {
   background: rgba(255, 255, 255, 0.72);
   -webkit-backdrop-filter: blur(12px);
@@ -1451,6 +1486,11 @@ details[open] > summary > span[aria-hidden] { transform: rotate(45deg); }
  * runner who has asked for less movement; the honest reading is that the bar
  * simply does not recede. */
 @media (prefers-reduced-motion: reduce) {
+  /* The recede is OFF here, so the labels must not darken either — the surface
+   * never changes, and a colour shift with no visible cause is worse than no
+   * effect at all. */
+  .nav-bar--floating.nav-bar--receded .nav-tab        { color: var(--mute); }
+  .nav-bar--floating.nav-bar--receded .nav-tab--active { color: var(--moss-strong); }
   .nav-bar--floating.nav-bar--receded {
     background: var(--nav-bg);
     -webkit-backdrop-filter: none;

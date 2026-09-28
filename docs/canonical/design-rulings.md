@@ -3013,3 +3013,34 @@ that looks the same"* — and the chair granted it.
 ⚠️ **What it does not settle:** nothing has been seen on a device, and **the lozenge has not
 been measured against the receded, blurred bar** — when NAV-FADE-01 is receded the lozenge's
 ground stops being flat white. That is a re-measure, not a re-ruling.
+
+### NAV-FADE-CONTRAST-01 — the receded bar's labels darken (2026-09-28, hours after NAV-FADE-01)
+
+**A defect fix on an hours-old ship, found by running the check the previous ruling said it
+had not run.** That ruling closed with *"the lozenge has not been measured against the
+receded, blurred bar — a re-measure, not a re-ruling."* The founder asked for the re-measure.
+
+📐 **It failed.** The 2026-09-25 amendment claimed a blurred translucent bar *"holds ≥5.23:1
+worst case"*; that was measured against **our palette**, not against content. A translucent
+bar's labels sit on whatever scrolls beneath it: **3.58:1 over a moss CTA**, 2.67:1 worst
+case, with the AA boundary at a backdrop of **grey 220 — a light grey**. Reachable today,
+because `TODAY-CTA-CLEARANCE-01` was reverted and the moss *"Log this session"* button is not
+docked.
+
+⚠️ **And it was never the lozenge.** The INACTIVE label failed too (4.00 over a moss CTA).
+The lozenge costs ~0.4 of contrast by darkening its own ground; the receded **bar** was the
+defect.
+
+| Ruling | |
+|---|---|
+| Both labels repaint to `--ink-2` while receded | 🟢 **SHIP — defect fix, AA restored** |
+| Raise the bar's opacity instead | 🔴 **REJECTED — measured.** AA over a moss CTA needs **alpha 0.93**, which is an opaque bar: it answers *"a bit opaque"* by deleting the effect |
+
+🥇 **The fix was free, and only because of NAV-ACTIVE-LOZENGE-01 hours earlier.** The selected
+state stopped depending on colour, so the receded state became free to repaint both labels.
+**The two changes need each other**, which neither sitting predicted.
+
+⚠️ **The lasting output is the gate's scope, not the token.** `navActiveState.test.ts` now
+measures the **worst possible backdrop** rather than the grounds we happen to ship —
+scoping a contrast check to your own surfaces is what let this through, and it is this
+repo's population-failure class in a new place.

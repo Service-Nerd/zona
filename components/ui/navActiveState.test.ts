@@ -105,6 +105,45 @@ describe('NAV-FADE-01 — the bar recedes without going dead or unreadable', () 
     expect(receded()).not.toMatch(/pointer-events:\s*none/)
   })
 
+  // 🔴 NAV-FADE-CONTRAST-01 — THE ARM THAT WOULD HAVE CAUGHT THE DEFECT.
+  //
+  // The 2026-09-25 amendment claimed a blurred translucent bar "holds >=5.23:1
+  // worst case". That was measured against OUR PALETTE. The bar is translucent,
+  // so its labels actually sit on whatever SCROLLS BENEATH IT — and over a moss
+  // CTA the active label measured 3.58:1, with the AA boundary at a backdrop of
+  // grey 220, a LIGHT grey. Reachable today, because TODAY-CTA-CLEARANCE-01 was
+  // reverted and the moss "Log this session" button scrolls under the bar.
+  //
+  // ⚠️ SO THIS MEASURES THE WORST POSSIBLE BACKDROP, NOT OUR GROUNDS. Scoping a
+  // contrast check to the surfaces we happen to ship is the exact error that let
+  // the defect through, and it is this repo's population-failure class again.
+  it('the receded labels clear AA over the WORST possible backdrop', () => {
+    const css = CSS()
+    const barAlpha = Number(
+      css.match(/\.nav-bar--floating\.nav-bar--receded\s*\{[^}]*background:\s*rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*([\d.]+)/)?.[1],
+    )
+    expect(barAlpha, 'receded bar alpha not found').toBeGreaterThan(0)
+
+    const WHITE = [255, 255, 255]
+    const worst = hex(tokenHex(css, 'ink'))          // the darkest thing that can scroll under it
+    const surface = over(WHITE, barAlpha, worst)      // the translucent bar over it
+    const w = wash(css)
+    const lozenge = over(w.rgb, w.alpha, surface)     // the active tab's ground
+    const label = hex(tokenHex(css, 'ink-2'))         // what the receded state paints labels
+
+    expect(contrast(label, lozenge),
+      'the ACTIVE label on its lozenge, over the worst backdrop').toBeGreaterThanOrEqual(4.5)
+    expect(contrast(label, surface),
+      'the INACTIVE label on the bar, over the worst backdrop').toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('the receded state repaints BOTH labels, not just the inactive one', () => {
+    // The active label is --moss-strong at rest and must not stay moss while
+    // receded: over a moss CTA that is 3.58:1.
+    const css = CSS()
+    expect(css).toMatch(/\.nav-bar--floating\.nav-bar--receded \.nav-tab--active\s*\{[^}]*color:\s*var\(--ink-2\)/)
+  })
+
   it('prefers-reduced-motion disables the recede entirely', () => {
     const css = CSS()
     const rm = css.match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\}/g) ?? []
