@@ -26,6 +26,8 @@ import { createClient } from '@/lib/supabase/client'
 import ExternalLink from '@/components/shared/ExternalLink'
 import BackButton from '@/components/shared/BackButton'
 import Button from '@/components/ui/Button'
+import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
+import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
 
 // Ordered by recurring value — Kit's daily read and the weekly zone score are the ongoing
 // proof of subscription value. AI plan generation is high at onboarding but low thereafter.
@@ -48,7 +50,7 @@ const LOSSES = [
   { name: 'The plan stops moving',           detail: "Miss a week, you're on your own." },
 ]
 
-export default function UpgradeScreen({ onBack, trialExpired = false, grantExpired = false, onOpenRedeem, source = null }: {
+export default function UpgradeScreen({ onBack, trialExpired = false, grantExpired = false, onRecheckEntitlement, source = null }: {
   /** OPS-FUNNEL-02 — which door sent them here. Null only if a caller forgets,
    *  which `upgradeSourceCoverage.test.ts` exists to prevent. */
   source?: UpgradeSource | null
@@ -60,7 +62,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
   grantExpired?: boolean
   /** GTM-CHARITY-04 — opens the redeem screen. Optional so the component still
    *  renders anywhere it is mounted without the door. */
-  onOpenRedeem?: () => void
+  /** CHARITY-CODE-CONTROL-01 — re-checks entitlement after Apple's sheet closes. */
+  onRecheckEntitlement?: AfterSheet
 }) {
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState<string | null>(null)
@@ -520,11 +523,13 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
             because it is the same kind of action — "I already have access,
             let me prove it" — not a second purchase option. Web and native
             both, unlike Restore: a code is not an Apple purchase. */}
-        {onOpenRedeem && (
-          <Button variant="ghost" size="compact" 
-            onClick={onOpenRedeem} style={{ marginTop: 'var(--space-2)', alignSelf: 'center' }}>
-            Have a charity code?
-          </Button>
+        {/* CHARITY-CODE-CONTROL-01 — KEPT. The founder named the wizard and Me; he did
+            not ask for this one to go, and the board kept it because this is the
+            highest-intent surface in the product: the runner is at the paywall, which is
+            the moment a code is worth most. Now Apple's sheet, not our text field. */}
+        {onRecheckEntitlement && (
+          <RedeemCodeLink onAfterSheet={onRecheckEntitlement}
+            style={{ marginTop: 'var(--space-2)', alignSelf: 'center' }} />
         )}
 
         {/* Restore Purchases — iOS only, required by App Store guideline 3.1.1 */}

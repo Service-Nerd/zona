@@ -101,10 +101,14 @@ The job of each screen is defined in `docs/canonical/screen-architecture.md`. Th
 | **One job per screen** | Each screen has exactly one primary purpose. **No dashboards. No noise.** | "No multi-purpose dashboards" is the same rule, not a weaker one |
 | **Calm guidance, not alerts** | Information is presented; **the user decides when to act.** Inform, do not alarm | Both halves. "Inform, do not alarm" alone loses who holds the timing |
 | **Restraint = progress** | Whitespace, brevity and silence are features. **Empty means calm, not broken** | 🔴 The empty-state clause was dropped in two of the four copies |
-| **No popups** | All interactions navigate to a full screen. **Modal overlays only for destructive confirmations (delete, disconnect). Never for information** | 🔴 **`CLAUDE.md` omitted the exception entirely**, so modals read as banned outright. This is the divergence that justified the transfer |
+| **No popups** | All interactions navigate to a full screen. **Modal overlays only for destructive confirmations (delete, disconnect). Never for information.** ⚠️ **A modal presented and owned by the OPERATING SYSTEM is outside this rule** (CHARITY-CODE-CONTROL-01, 2026-09-28) | 🔴 **`CLAUDE.md` omitted the exception entirely**, so modals read as banned outright. This is the divergence that justified the transfer. ⚠️ **And the OS clause is an AMENDMENT BY RULING, not an exception someone approved once** |
 | **Back arrow top-left** | Navigation is always predictable and reversible | — |
 | **Slide-up sheets** | Mirrored nav bar at **bottom**, not top. Never a top-right Cancel | Consistent with mobile convention, and deliberately unlike the competitor's sheet (P-02) |
 | **No red in the training UI** | Red implies danger or failure. Amber for warnings, coral for high-intensity. `--danger` (`#B84545`) for form validation and error states **only** | 🔴 Existed in `brand.md` alone; absent from the other three copies |
+
+> ⚠️ **THE OS-SHEET CLAUSE, AND WHY IT IS NARROW.** Apple's subscription-code redemption sheet (`presentCodeRedemptionSheet()`) is a modal, is not a destructive confirmation, and therefore hit this rule head on. The Design Board amended the rule **by name** rather than approving one exception, on a single ground: **we control neither its content nor its dismissal**, so the rule cannot bind it. A sheet we build is still bound. If the next OS sheet arrives with an argument that sounds like this one, check that we genuinely do not own it — `components/shared/Sheet.tsx` remains the only route for a secondary surface that is ours.
+>
+> 🔴 **It is not a licence for a popup with a system-looking wrapper.** The measured precedent for that failure is the paper-grain overlay, which died because its only argument was that a competitor had one.
 
 ---
 

@@ -39,6 +39,8 @@ import { daysDueByEndOfYesterday } from '@/lib/coaching/dayBoundary'
 import { SESSION_COLORS, SESSION_LABELS, getSessionColor, getSessionLabel } from '@/lib/session-types'
 import { resolveTier, TRIAL_DAYS, type TierReason } from '@/lib/trial'
 import { shouldReconcile } from '@/lib/subscriptions/shouldReconcile'
+import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
+import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
 import { getCoachingFlag, type CoachingFlag } from '@/lib/coaching/coachingFlag'
 import { computeAerobicPace } from '@/lib/coaching/aerobicPace'
 import { ZONE_DRIFT_ABOVE_CEILING_PCT, LOAD_RATIO, BEHIND_VERDICT_MIN_SESSIONS } from '@/lib/coaching/constants'
@@ -662,6 +664,44 @@ export default function DashboardClient() {
   // answers, and what TIER-OWNER-01 added it for. The decision lives in
   // `shouldReconcile` so it can be unit-tested; `vitest` cannot reach this file.
   const reconcileTried = useRef(false)
+
+  // CHARITY-CODE-CONTROL-01 — ONE OWNER for "ask the server whether this runner holds
+  // an entitlement we never recorded", because there are now TWO callers: this effect on
+  // mount, and `RedeemCodeLink` the moment Apple's redemption sheet closes.
+  //
+  // 🔴 Apple's sheet returns `Promise<void>` — no success, no cancellation, no error — so
+  // the control cannot report anything without re-asking. Two copies of this routine is
+  // the DELOAD-OWNER-01 shape, and the repo has paid for it five times; it is one
+  // function used twice instead.
+  //
+  // Returns whether an entitlement was found, so a caller can show a state. The mount
+  // effect ignores the return value because a reload has already happened by then.
+  const runEntitlementRecheck = useCallback(async (): Promise<boolean> => {
+    try {
+      await (window as unknown as { __rcReady?: Promise<void> }).__rcReady
+      const uid = userId
+      if (uid) {
+        await (window as unknown as { __rcIdentify?: (u: string) => Promise<void> })
+          .__rcIdentify?.(uid)
+      }
+      const res = await authedFetch('/api/subscriptions/reconcile', { method: 'POST' })
+      const data = await res.json().catch(() => null)
+      if (res.ok && data?.entitled) {
+        // Reload rather than patching tier in place: `resolveTier` is the single owner
+        // and a second copy of "are they paid now?" here is the drift class
+        // TIER-OWNER-01 records.
+        window.location.reload()
+        return true
+      }
+      return false
+    } catch {
+      // Silent by design. A runner who is genuinely entitled still has the webhook and
+      // the next app open; an error toast here would alarm the ~all of users who simply
+      // have no entitlement to find.
+      return false
+    }
+  }, [userId])
+
   useEffect(() => {
     if (!shouldReconcile({
       appReady,
@@ -671,47 +711,10 @@ export default function DashboardClient() {
       alreadyTried: reconcileTried.current,
     })) return
     reconcileTried.current = true
-    void (async () => {
-      try {
-        // 🔴 SUBS-RECONCILE-RACE-01 — ASK ONLY ONCE REVENUECAT KNOWS WHO THIS IS.
-        //
-        // The first cut of this effect POSTed as soon as `appReady && userId`,
-        // which races the `SIGNED_IN` -> `Purchases.logIn` alias in CapacitorBoot.
-        // Losing that race means the server asks RevenueCat about a user id the
-        // purchase is not attached to yet, gets a truthful "no entitlement", and
-        // this effect never tries again (the ref below is per mount).
-        //
-        // ⚠️ THE REMEDY ALREADY EXISTED AND WAS APPLIED TO ONE TWIN. `UpgradeScreen`
-        // awaits `window.__rcReady` and re-runs `logIn` belt-and-braces before any
-        // RevenueCat call, and the lesson was written down as "don't remove". This
-        // effect, written in the same week, did neither. That is this repo's
-        // most-recorded survival class.
-        //
-        // `__rcIdentify` is the owner's awaitable version: logIn + syncPurchases,
-        // idempotent. `__rcReady` alone is NOT sufficient — it resolves when the
-        // auth listener is registered, not when it has fired.
-        await (window as unknown as { __rcReady?: Promise<void> }).__rcReady
-        // `shouldReconcile` has already established userId is present; the local
-        // const is what lets the compiler see it.
-        const uid = userId
-        if (uid) {
-          await (window as unknown as { __rcIdentify?: (u: string) => Promise<void> })
-            .__rcIdentify?.(uid)
-        }
-
-        const res = await authedFetch('/api/subscriptions/reconcile', { method: 'POST' })
-        const data = await res.json().catch(() => null)
-        // Reload rather than patching tier in place: `resolveTier` is the single
-        // owner and a second copy of "are they paid now?" here is the drift class
-        // TIER-OWNER-01 records.
-        if (res.ok && data?.entitled) window.location.reload()
-      } catch {
-        // Silent by design. A runner who is genuinely entitled still has the
-        // webhook and the next app open; an error toast here would alarm the
-        // ~all of users who simply have no entitlement to find.
-      }
-    })()
-  }, [appReady, userId, tierReason])
+    // SUBS-RECONCILE-RACE-01's sequencing now lives in `runEntitlementRecheck` above,
+    // because Apple's redemption sheet needs the identical routine the instant it closes.
+    void runEntitlementRecheck()
+  }, [appReady, userId, tierReason, runEntitlementRecheck])
   const [upgradeSource, setUpgradeSource] = useState<UpgradeSource | null>(null)
   const openUpgrade = (source: UpgradeSource) => { setUpgradeSource(source); setScreen('upgrade') }
   const [attributionResolved, setAttributionResolved] = useState(false)
@@ -2842,7 +2845,7 @@ export default function DashboardClient() {
     //    is better than blocking the HR save.
     void authedFetch('/api/recalibrate-hr', { method: 'POST' })
   } catch {}
-}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onOpenRedeem={() => { setRedeemReturnTo('me'); setScreen('redeem') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('session')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
@@ -2863,8 +2866,8 @@ export default function DashboardClient() {
           if (wN == null) return
           setRunAnalysisMap(prev => ({ ...prev, [wN]: { ...(prev[wN] ?? {}), [sessionDay]: row } }))
         }} preferredUnits={preferredUnits} zone2Ceiling={effectiveZone2Ceiling} hasPaidAccess={hasPaidAccess} onOpenCoach={() => setScreen('coach')} runAnalysis={(activePostRunData.weekN != null ? runAnalysisMap[activePostRunData.weekN]?.[activePostRunData.session?.key ?? ''] : null) ?? null} aerobicPace={aerobicPace} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} />}
-        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('wizard')} onOpenRedeem={() => { setRedeemReturnTo('generate'); setScreen('redeem') }} />}
-        {screen === 'upgrade'  && <UpgradeScreen source={upgradeSource} trialExpired={trialExpired} grantExpired={hadCharityGrant && !hasPaidAccess} onOpenRedeem={() => { setRedeemReturnTo('upgrade'); setScreen('redeem') }} onBack={() => {
+        {screen === 'generate' && <GeneratePlanScreen preferredUnits={preferredUnits} charityCohort={charityCohort} onBack={() => setScreen(plan && plan !== EMPTY_PLAN ? 'me' : 'today')} firstName={firstName} lastName={lastName} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onBirthYearSave={async (y) => { setBirthYear(y); if (userId) await supabase.from('user_settings').update({ birth_year: y, date_of_birth: null }).eq('id', userId) }} onPlanSaved={handlePlanSaved} onPlanEnriched={handlePlanEnriched} isOnboarding={!plan || plan === EMPTY_PLAN} hasExistingPlan={!!(plan && plan !== EMPTY_PLAN)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('wizard')} onRecheckEntitlement={runEntitlementRecheck} />}
+        {screen === 'upgrade'  && <UpgradeScreen source={upgradeSource} trialExpired={trialExpired} grantExpired={hadCharityGrant && !hasPaidAccess} onRecheckEntitlement={runEntitlementRecheck} onBack={() => {
           // Legacy key name — preserved to avoid wiping active user state. Future: migrate via key translation layer.
           const hasWizardDraft = typeof sessionStorage !== 'undefined' && !!sessionStorage.getItem('zona_wizard_draft')
           setScreen(hasWizardDraft ? 'generate' : 'today')
@@ -12060,7 +12063,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onOpenRedeem, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
@@ -12076,7 +12079,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   onOpenBenchmark?: () => void
   onOpenReshape?: () => void
   onOpenFounderNote?: () => void
-  onOpenRedeem?: () => void
+  onRecheckEntitlement?: AfterSheet
   /** GTM-CHARITY-04 — ISO end date of a live charity grant, or null. */
   charityGrantEndsAt?: string | null
   onUpgrade?: () => void
@@ -12744,11 +12747,13 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
             a code can redeem it immediately instead of waiting to be stopped by
             the gate a fortnight later. Quiet register: most users have no code
             and this must not read like a discount prompt. */}
-        {onOpenRedeem && (
-          <Button variant="ghost" size="compact" 
-            onClick={onOpenRedeem} style={{ alignSelf: 'center', marginTop: 'var(--space-4)' }}>
-            Have a charity code? →
-          </Button>
+        {/* CHARITY-CODE-CONTROL-01 — KEPT at the founder's request. ⚠️ Wood's own
+            ruling calls Me "the lowest-frequency surface in the product", and the single
+            lifetime in-app redemption happened here. It stays because it is the only
+            placement a runner can return to on purpose once onboarding is behind them. */}
+        {onRecheckEntitlement && (
+          <RedeemCodeLink onAfterSheet={onRecheckEntitlement}
+            style={{ alignSelf: 'center', marginTop: 'var(--space-4)' }} />
         )}
 
         {onOpenFounderNote && (

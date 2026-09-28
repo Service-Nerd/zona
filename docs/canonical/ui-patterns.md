@@ -4031,3 +4031,61 @@ check to the surfaces we happen to ship is the error that let this through.
 **Reference:** `.nav-tab--active` / `.nav-bar--receded` in `globals.css`,
 `components/shared/useNavRecede.ts`. **Check:** `components/ui/navActiveState.test.ts`,
 falsified four ways (lozenge removed, weights equalised, ceiling breached, whole-bar fade).
+
+---
+
+## Code redemption — `RedeemCodeLink`
+
+**Ruling:** CHARITY-CODE-CONTROL-01 (Design Board, 2026-09-28), SHIP WITH AMENDMENT.
+
+One control, one string, three placements. `components/shared/RedeemCodeLink.tsx` is the
+only in-app route to redeeming a code, and it calls **Apple's** redemption sheet.
+
+| | |
+|---|---|
+| **Label** | `REDEEM_CODE_LABEL` in `lib/subscriptions/redeemCode.ts`. Never a literal |
+| **Placements** | `REDEEM_CODE_PLACEMENTS` — the wizard's final CTA, Upgrade, Me |
+| **Treatment** | `Button variant="quiet"`, `--fs-caption`. Native only |
+| **Check** | `lib/subscriptions/redeemCodeUsage.test.ts` |
+
+### 🔴 The label must not name a programme
+
+It said *"Have a charity code?"*. Apple's sheet is generic — it redeems any offer code
+for the app — so the same control will serve ambassador and discount codes, and a label
+naming one programme is a label rewritten every time a programme is added.
+
+**Sierra's reason is the stronger one:** on the highest-intent screen in the product, a
+prompt that says *other people got this free* is a downsell feeling for the ~all of
+runners who have no code. Neutral and incurious is what a code-less runner reads past.
+
+### 🔴 The sheet tells us nothing, so the control is not finished at the sheet
+
+`presentCodeRedemptionSheet(): Promise<void>`. No success, no cancellation, no error.
+**Wroblewski's blocking condition:** without a re-check the sheet dismisses, the screen is
+unchanged, and the runner taps it again believing it failed.
+
+Every placement therefore passes `onAfterSheet`, which re-runs `__rcIdentify` then
+`POST /api/subscriptions/reconcile` — one owner, `runEntitlementRecheck` in
+`DashboardClient.tsx`, shared with the mount-time check.
+
+⚠️ **The test proves the prop is PASSED, not that the callback reconciles.** The
+callback lives under `app/`, which vitest does not collect.
+
+### ⚠️ Anchor to the final CTA, not to a named step
+
+`buildSteps()` appends `hard-sessions`, `terrain` and `injuries` **only when
+`hasPaidAccess`**, so the wizard's last step is `injuries` for a trial or paid runner and
+a different step for a free one. **"End of wizard" is not one screen.** Anchoring to
+`isLastStep` is tier-independent; a step name is not.
+
+**Beneath the CTA, not beside it** — Silvanto: the screen before the plan arrives is the
+one place in this product where something is about to happen, and a prompt level with the
+CTA competes with that moment.
+
+### The modal question
+
+Apple's sheet is a modal and not a destructive confirmation, so it hit
+`ux-principles.md` § No popups head on. The board **amended that rule by name** to carve
+out OS-owned sheets, on the single ground that we control neither their content nor their
+dismissal. **A sheet we build is still bound**, and `Sheet.tsx` remains the only route
+for one that is ours.

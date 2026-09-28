@@ -47,6 +47,8 @@ import {
   type WeekPlan, type DayBudgets,
 } from '@/components/shared/WeekGrid.logic'
 import Button from '@/components/ui/Button'
+import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
+import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
 import BackButton from '@/components/shared/BackButton'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -491,7 +493,7 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
 export default function GeneratePlanScreen({
   onBack, firstName: _firstName, lastName: _lastName, restingHR: initialRHR, maxHR: initialMHR,
   maxHrSource: initialMhrSource,
-  birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, onPlanEnriched, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade, onOpenRedeem,
+  birthYear: initialBirthYear, onBirthYearSave, onPlanSaved, onPlanEnriched, isOnboarding, hasExistingPlan, hasPaidAccess, onUpgrade, onRecheckEntitlement,
   preferredUnits = 'km',
   charityCohort,
 }: {
@@ -521,7 +523,8 @@ export default function GeneratePlanScreen({
   hasPaidAccess?: boolean
   onUpgrade?: () => void
   /** GTM-CHARITY-04 door 3 of 3. See the distance step. */
-  onOpenRedeem?: () => void
+  /** CHARITY-CODE-CONTROL-01 — re-checks entitlement after Apple's sheet closes. */
+  onRecheckEntitlement?: AfterSheet
 }) {
   // ── App-level step state ──────────────────────────────────────────────────
   const [appStep, setAppStep]   = useState<AppStep>('distance')
@@ -1671,6 +1674,28 @@ export default function GeneratePlanScreen({
           {ctaLabel}
         </Button>
 
+        {/* CHARITY-CODE-CONTROL-01 (Design Board, 2026-09-28) — founder: "at end of
+            wizard for setup but before plan".
+
+            ⚠️ ANCHORED TO `isLastStep`, NOT TO A NAMED STEP, and the board made that
+            an amendment rather than leaving it to taste. `buildSteps()` appends
+            `hard-sessions`, `terrain` and `injuries` ONLY when `hasPaidAccess`, so the
+            last step is `injuries` for a trial or paid runner and a different step for a
+            free one. "End of wizard" is not one screen, and a step name would put this
+            somewhere different depending on tier.
+
+            ⚠️ BENEATH the CTA, not beside it. Silvanto: the screen before the plan
+            arrives is the one place in this product where something is about to happen,
+            and a code prompt level with the CTA competes with that moment.
+
+            Hidden for an established paid runner: neither onboarding nor gated, so it
+            would be noise. */}
+        {isLastStep && onRecheckEntitlement && (isOnboarding || !hasPaidAccess) && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--space-3)' }}>
+            <RedeemCodeLink onAfterSheet={onRecheckEntitlement} />
+          </div>
+        )}
+
         {/* ONBOARD-EXIT-01 — the escape, on EVERY step and only when trapped.
             The back button is hidden on step 0 during onboarding
             (`!(isOnboarding && currentIdx === 0)`), so backing up from step 12
@@ -1742,51 +1767,30 @@ export default function GeneratePlanScreen({
                     and a charity runner's correct action is the code link two
                     lines below, on the screen they just left.
 
-                    ⚠️ A WORDING FIX, NOT A SECOND BUTTON. The redeem door is
-                    directly beneath this; adding another here would be two
-                    controls for one action and a third phrasing of the same
-                    string, which is how surfaces drift apart (the reason the
-                    existing door reuses the other two doors' wording).
+                    🔴 THIS SENTENCE USED TO SAY THE DOOR WAS "directly beneath
+                    this", AND CHARITY-CODE-CONTROL-01 MADE THAT FALSE. The
+                    founder moved the control to the end of the wizard, beneath
+                    the final CTA, so there is no code link on this screen at all
+                    any more. The sentence still names both routes, which is the
+                    point of P-08(a) — it is read BEFORE the tap that navigates
+                    away — but it must not imply proximity it no longer has.
+
+                    ⚠️ STILL NOT A SECOND BUTTON. One control, one string, and
+                    `REDEEM_CODE_LABEL` is now the mechanism rather than a comment
+                    asking the next person not to reword it.
 
                     ⚠️ The NAVIGATION IS LEFT ALONE deliberately. For the ~all
                     of users with no code, Upgrade IS the remedy, so making the
                     tile inert would break the majority case to serve 500
                     runners in October. Putting both routes in the sentence
                     read BEFORE the tap serves both. */}
-                Marathon and longer need full access, which a charity code also gives you.{' '}
+                Marathon and longer need full access, which a code also gives you.{' '}
                 <Button variant="quiet" onClick={onUpgrade}>
                   Start free trial →
                 </Button>
               </div>
             )}
 
-            {/* GTM-CHARITY-04 — the third redeem door. The SLT asked for three;
-                Me and Upgrade shipped, and this is the onboarding one.
-                Deliberately NOT a wizard step: a step is invasive for the ~all
-                of users who have no code, and Wood's objection to onboarding
-                friction is about steps, not about one muted line.
-
-                SHOWN ON DAY ONE TOO, not only once the paywall bites. A charity
-                runner arrives holding a code and full trial access, so the gate
-                above never renders for them; without this their access silently
-                depends on remembering to redeem before day 15. Redeeming early
-                costs them nothing, because `savePlanForUser` re-anchors the
-                grant to race date + 7 days as soon as they build a plan
-                (lib/charity/reanchor.ts, called from ADR-020's single writer).
-
-                Hidden for an established paid user: they are neither
-                onboarding nor gated, so it would be noise.
-
-                String is the one the other two doors use. A third phrasing for
-                the same action is how surfaces drift apart. */}
-            {onOpenRedeem && (isOnboarding || !hasPaidAccess) && (
-              <div style={{ gridColumn: '1/-1', marginTop: '2px' }}>
-                <Button variant="ghost" 
-                  onClick={onOpenRedeem} style={{ padding: '4px 0', fontSize: '12px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
-                  Have a charity code?
-                </Button>
-              </div>
-            )}
           </div>
         )
 

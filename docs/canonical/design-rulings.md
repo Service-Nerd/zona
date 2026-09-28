@@ -3044,3 +3044,55 @@ state stopped depending on colour, so the receded state became free to repaint b
 measures the **worst possible backdrop** rather than the grounds we happen to ship —
 scoping a contrast check to your own surfaces is what let this through, and it is this
 repo's population-failure class in a new place.
+
+---
+
+## CHARITY-CODE-CONTROL-01 — 2026-09-28 — **SHIP WITH AMENDMENT**
+
+**Change:** the in-app code control stops opening our Supabase code field and calls
+Apple's redemption sheet; the wizard instance moves from step one to the final CTA.
+
+🔴 **THE FOUNDER OVERTURNED THE SLT, AND PER ADR-023 THE OVERTURN IS RECORDED.**
+`CHARITY-CODE-MECHANISM-01` (SLT, same day) ruled *"remove all three doors and add
+nothing"*, with **Wood using her kill mandate** on structural grounds: an in-app field
+*"requires the runner to remember they hold a code and then locate where to type it —
+conscious willpower at the moment of lowest intent, which is why it has been used once."*
+The founder's instruction: *"I want the redeem code to be at end of wizard for setup but
+before plan and I want it on profile page."*
+
+⚠️ **And the placement ANSWERS Wood's objection, which the board recorded rather than
+glossing.** Her argument was about Me. At the end of the wizard the app **asks**, so
+nothing has to be remembered.
+
+**Six binding amendments:** (1) OS-owned sheets carved out of § No popups **by name**, not
+approved as an exception; (2) anchored to `isLastStep`, because the wizard's last step
+differs by tier; (3) a re-check after the sheet closes, since it returns `Promise<void>`
+— Wroblewski, blocking; (4) one shared programme-neutral string constant; (5) the Upgrade
+door **kept**, the founder having not asked for its removal and it being the
+highest-intent surface; (6) the P-08(a) sentence fixed, which said the code route was
+*"two lines below"* and became false when the control moved.
+
+⚠️ **M-5 RETIRED, NOT IMPLEMENTED.** It routed to the SLT and noted our redeem screen
+sits on Me, *"the lowest-frequency surface"*, while Miles puts it in onboarding. The SLT
+retired it as a dissolved premise — with Apple codes the main path needs no in-app door
+at all, because the runner redeems by URL before the app is installed. The founder then
+asked for roughly what M-5 proposed, so it is **revived by the founder, not by the board.**
+
+🎪 **COLLINS LOST, AND IT IS RECORDED AS A LOSS.** He argued the strongest version of
+the product never mentions codes at all — *"a control that exists because a competitor
+has one"* — and his measurement was undisputed: **both real redemptions bypassed the app
+entirely**, by URL, before it was installed. The founder's instruction overrides it.
+
+⛰️ **VETO NOT EXERCISED, AND SILVANTO SAID WHY.** No palette or type regression is
+present, and reaching the modal question through his seat would have stretched it. The
+chair concurred. His veto remains untested.
+
+🔴 **FOUNDER-OWNED COPY DEBT, DECLARED:** `/charity-runners` carries a three-step
+"If you have a code" section and **all three steps are now wrong** — download-then-redeem
+is the reverse of the real journey, there is no text field to type into, and *"your access
+stretches to cover race day"* is false of a flat-duration Apple code. **Not rewritten:**
+the SLT routed the page to the founder. Held at exactly one file by
+`redeemCodeUsage.test.ts` so it cannot grow.
+
+**Does not settle:** nobody has seen Apple's sheet on a device, so every judgement about
+how it feels — Silvanto's objection included — is unverified.

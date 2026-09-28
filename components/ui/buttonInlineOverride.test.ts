@@ -64,7 +64,10 @@ const BASELINE: Record<string, number> = {
   'app/auth/login/page.tsx': 1,
   'app/dashboard/BenchmarkUpdateScreen.tsx': 1,
   'app/dashboard/DashboardClient.tsx': 21,
-  'app/dashboard/GeneratePlanScreen.tsx': 4,
+  // CHARITY-CODE-CONTROL-01 (2026-09-28): 4 -> 3. The step-one redeem door was deleted
+  // and its replacement is `RedeemCodeLink`, which carries its own treatment, so one
+  // hand-styled inline Button left this file for good.
+  'app/dashboard/GeneratePlanScreen.tsx': 3,
   'app/dashboard/RedeemCodeScreen.tsx': 2,
   'components/shared/NotificationBell.tsx': 1,
   'components/shared/PendingAdjustmentBanner.tsx': 1,
