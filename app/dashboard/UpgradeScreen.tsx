@@ -15,8 +15,9 @@
 // words were wrong about something that runner would notice, and they are the
 // cohort a partner like Make-A-Wish sends us.
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { trackEvent, purchaseOutcome, isUserCancelled } from '@/lib/analytics'
 import { BRAND, PRICING } from '@/lib/brand'
 import { TRIAL_DAYS } from '@/lib/trial'
 import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFraming'
@@ -64,9 +65,57 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
   const [restoring, setRestoring] = useState(false)
   const [restoreMsg, setRestoreMsg] = useState<string | null>(null)
 
+  // OPS-FUNNEL-01 — framing is lifted above the handlers so the funnel records the
+  // SAME variant the screen renders, rather than re-deriving it from the booleans.
+  // Pure and props-only, so its position carries no behaviour.
+  const framing  = upgradeFraming({ trialExpired, grantExpired })
+  const ended    = isLossFraming(framing)
+  const platform = Capacitor.isNativePlatform() ? 'ios' : 'web'
+
+  const [funnelUserId, setFunnelUserId] = useState<string | null>(null)
+  const viewFired = useRef(false)
+
+  /** The client + user id for telemetry. Falls back to a fetch when the mount
+   *  effect has not resolved yet, so an early tap is still attributed;
+   *  `trackEvent` no-ops on a null id, so the null case is handled too. */
+  async function funnelIds() {
+    const supabase = createClient()
+    if (funnelUserId) return { supabase, userId: funnelUserId }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      return { supabase, userId: user?.id ?? null }
+    } catch {
+      return { supabase, userId: null }
+    }
+  }
+
+  // The paywall was SEEN. Fired from inside this component rather than at the nine
+  // `setScreen('upgrade')` call sites: one owner cannot be forgotten by the tenth,
+  // which is the duplication class this repo keeps paying for. The trade is that a
+  // single mount cannot say WHICH door — that is `props.source`, filed as a
+  // follow-up rather than threaded through nine giant JSX call sites in this build.
+  useEffect(() => {
+    if (viewFired.current) return
+    viewFired.current = true
+    let cancelled = false
+    void (async () => {
+      const { supabase, userId } = await funnelIds()
+      if (cancelled) return
+      if (userId) setFunnelUserId(userId)
+      trackEvent(supabase, userId, 'upgrade_view', { reason: framing, platform })
+    })()
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function handleSubscribe(annual: boolean) {
     setLoading(true)
     setError(null)
+    // BEFORE the store sheet, deliberately: an attempt with no matching result is
+    // how "the sheet never opened" looks in the data, and that is a real outcome.
+    const { supabase, userId } = await funnelIds()
+    if (userId) setFunnelUserId(userId)
+    trackEvent(supabase, userId, 'upgrade_purchase_attempt', { annual, platform, reason: framing })
     try {
       if (Capacitor.isNativePlatform()) {
         // iOS native — RevenueCat StoreKit 2 purchase sheet.
@@ -101,6 +150,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         await Purchases.purchasePackage({ aPackage: pkg })
         // Webhook fires async and updates subscriptions table.
         // Show success state here — tier refreshes on next dashboard load.
+        trackEvent(supabase, userId, 'upgrade_purchase_result', { outcome: 'success', annual, platform })
         setSuccess(true)
       } else {
         // Web — Stripe Checkout (existing path).
@@ -111,14 +161,24 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         })
         const data = await res.json()
         if (data.url) {
+          // NOT a sale. The purchase completes on Stripe and only the webhook sees
+          // the outcome; calling this success would inflate the conversion number.
+          trackEvent(supabase, userId, 'upgrade_purchase_result', { outcome: 'redirected', annual, platform })
           window.location.href = data.url
         } else {
+          trackEvent(supabase, userId, 'upgrade_purchase_result',
+            { outcome: 'failed', annual, platform, stage: 'checkout_no_url' })
           setError(data.error ?? 'Something went wrong. Try again.')
         }
       }
     } catch (err: any) {
-      // User tapped Cancel on the StoreKit sheet — not an error.
-      if (err?.userCancelled === true) return
+      // User tapped Cancel on the StoreKit sheet — not an error. Recorded all the
+      // same: "they opened the sheet and changed their mind" is a different fact
+      // from "it broke", and a funnel that cannot tell them apart sends someone
+      // hunting a defect that does not exist.
+      trackEvent(supabase, userId, 'upgrade_purchase_result',
+        { outcome: purchaseOutcome(err), annual, platform })
+      if (isUserCancelled(err)) return
       // eslint-disable-next-line no-console
       console.error('[upgrade] purchase failed', err)
       setError('Something went wrong. Please try again.')
@@ -146,7 +206,9 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
         setRestoreMsg('No active purchases found on this Apple ID.')
       }
     } catch (err: any) {
-      if (err?.userCancelled) return
+      // Was `err?.userCancelled` (truthy) while handleSubscribe used `=== true`:
+      // one rule, two predicates. Both now go through the single owner.
+      if (isUserCancelled(err)) return
       setRestoreMsg('Restore failed. Try again.')
     } finally {
       setRestoring(false)
@@ -195,10 +257,9 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
     )
   }
 
-  // Which story, decided by the tested rule rather than by a ternary here.
-  const framing  = upgradeFraming({ trialExpired, grantExpired })
-  const ended    = isLossFraming(framing)
-
+  // `framing` / `ended` are computed once at the top of the component (the funnel
+  // records the same variant the screen renders). Decided by the tested rule
+  // rather than by a ternary here.
   const items    = ended ? LOSSES : FEATURES
   // --warn / --moss, not the retired --amber / --teal aliases (ADR-007).
   const accent   = ended ? 'var(--warn)' : 'var(--moss)'

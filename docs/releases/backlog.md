@@ -359,6 +359,48 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
 
+## ⚖️ FILED 2026-09-28 — shipping `OPS-FUNNEL-01` + `OPS-SUBS-TRACE-01`
+
+### 🔴 `TEST-CLOCK-PREPTIME-01` — nine tests fail because the CLOCK moved, not the code
+
+⚙️ **NO BOARD** (test fixtures). **Main is RED today and will stay red, getting worse daily.**
+
+**Measured 2026-09-28, on a CLEAN tree** (stashed all work and re-ran — identical counts, so
+this is not from that day's build): **4 files, 9 tests failed, 11 passed.**
+`lib/plan/hardPrefNote.test.ts` (5), `lib/sessionColourReach.test.ts` (2),
+`lib/plan/inputEffect.test.ts` (2), `lib/coaching/zoneSheetMatchesHeader.test.ts` (collection
+error — 0 tests ran).
+
+**Cause:** the fixtures hardcode a future race date — `race_date: '2026-12-12'` with
+`race_distance_km: 42.2` — and every one of them throws in
+`enforcePrepTime` (`lib/plan/inputs.ts:232`). On 2026-09-12 that was 91 days out and fine; on
+2026-09-28 it is ~75 days and `validatePrepTime` now returns `block`/`warn`, so generation
+refuses before the test's actual subject is ever reached.
+
+🔴 **These tests are not wrong about the engine — they cannot REACH the engine any more.**
+The assertions they carry (`--s-long` reachability PLAN-LONGRUN-COLOUR-01, the hard-pref note,
+input-effect coverage, the zone-sheet/header match) are all now **unproven rather than failing**
+— the same "a green tick with nothing behind it" class inverted. Note that `cohort:shape` is
+deliberately documented as **clock-independent** for exactly this reason; these four are not.
+
+**Fix is a decision, not a patch:** a relative race date (`today + N days`) makes the test
+clock-independent but changes what it generates each run; a pinned `planStart` keeps output
+stable but must be pinned *with* the race date. **Pick one and apply it to all four.**
+
+### 🟡 `OPS-FUNNEL-02` — which DOOR did they come through?
+
+⚙️ **NO BOARD** (instrumentation). `upgrade_view` fires from inside `UpgradeScreen`, so it
+records *that* the paywall was seen but not *which* of the **nine** `setScreen('upgrade')` call
+sites sent them (Today tile, Coach teaser ×2, Me, Session, wizard, recalibration tile, and the
+two trial/grant-expired auto-routes).
+
+Deliberately left out of `OPS-FUNNEL-01`: firing from one owner cannot be forgotten by a tenth
+call site, whereas threading a `source` prop through nine giant JSX call sites in a
+7,800-line file in the same build is where a transcription error lands. **Add
+`source?: string` to `UpgradeScreen` and pass a literal at each site** — then the funnel can
+say whether the Coach teaser converts better than the Me screen, which is the question
+`design-rulings.md`'s killed merchandising screen could not be argued without.
+
 ## 🔴 START HERE TOMORROW (written end of 2026-09-21)
 
 ### 🧭 `DESTRUCTIVE-WIRING-01` — a variant with zero uses, and two flows that need it

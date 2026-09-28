@@ -49,6 +49,53 @@ trackEvent(supabase: SupabaseClient, userId: string | null, event: AnalyticsEven
 | Event | Fired when | Fired from |
 |---|---|---|
 | `coach_open` | User navigates into the Coach screen (once per `screen → 'coach'` transition) | `DashboardClient` `useEffect([screen, userId])` |
+| `upgrade_view` | The Upgrade screen mounted (once per mount, ref-guarded) | `UpgradeScreen` `useEffect` |
+| `upgrade_purchase_attempt` | Subscribe tapped, **before** the store sheet opens | `UpgradeScreen.handleSubscribe` |
+| `upgrade_purchase_result` | The attempt resolved | `UpgradeScreen.handleSubscribe` |
+
+### The upgrade funnel (OPS-FUNNEL-01, 2026-09-28)
+
+🔴 **WHY:** the 1 January trial-to-paid gate reads `v_trial_conversion`, which can report a
+**rate and nothing else**. Measured in production on 2026-09-28 this table held **192 rows of
+exactly one event type** (`coach_open`), so if that gate reads 0% the data could not
+distinguish *nobody reached the paywall* from *they reached it and left* from *they tried to
+buy and it failed*. The denominator was observable and the numerator was observable;
+everything between them was not. `design-rulings.md` names the same hole from the other side
+when the SLT killed the merchandising settings screen: *"we would be designing a funnel nobody
+has observed."*
+
+**Props**
+
+| Event | Props |
+|---|---|
+| `upgrade_view` | `{ reason, platform }` |
+| `upgrade_purchase_attempt` | `{ annual, platform, reason }` |
+| `upgrade_purchase_result` | `{ outcome, annual, platform }` + `stage` on a checkout failure |
+
+- `reason` is `upgradeFraming()`'s variant — `gain` \| `trial-ended` \| `grant-ended` —
+  **reused, not re-derived**, so the funnel records the same story the screen tells.
+- `platform` is `ios` \| `web`.
+- `outcome` is `success` \| `redirected` \| `cancelled` \| `failed`.
+
+⚠️ **`redirected` is not a sale.** On web the purchase completes on Stripe's domain and only
+the webhook observes the result, so recording the handoff as `success` would overstate
+conversion on exactly the number the gate reads. `success` is reserved for a StoreKit purchase
+that actually resolved.
+
+⚠️ **`cancelled` must stay separable from `failed`.** A dismissed StoreKit sheet counted as a
+broken purchase sends someone hunting a defect that does not exist. The rule lives in
+`lib/analytics.ts → isUserCancelled()` and is **strict** (`=== true`): it previously existed
+twice in `UpgradeScreen` with two different predicates (`=== true` in `handleSubscribe`,
+truthy in `handleRestore`) — one rule, two answers, the TIER-OWNER-01 class.
+
+⚠️ **`upgrade_view` fires from inside `UpgradeScreen`, not at the nine `setScreen('upgrade')`
+call sites** — one owner cannot be forgotten by the tenth. The trade is that a mount cannot
+say **which door** the runner came through; `props.source` is filed as a follow-up rather than
+threaded through nine call sites in one build.
+
+✅ **No migration needed** — `event` has no CHECK constraint and `props` is `jsonb`.
+✅ **`v_coach_engagement` is unaffected**: it filters `WHERE event = 'coach_open'`, so new
+event types cannot inflate the CO-ONE gate. Verified in `20260722_analytics_events.sql`.
 
 ## Report views (owner/service-role read only)
 
