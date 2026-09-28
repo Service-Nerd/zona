@@ -30,7 +30,36 @@ describe('profileInitials', () => {
 
   it('prefers the saved profile name over the plan and the email', () => {
     expect(profileInitials({ firstName: 'Russell', lastName: 'Shear', planAthlete: 'Someone Else', email: 'x@y.com' }))
-      .toBe('RS')
+      .toBe('R')
+  })
+
+  // 🔴 THE ARM THE BOARD REQUIRED, AND THE DEFECT IT WOULD HAVE CAUGHT.
+  //
+  // PROFILE-IDENTITY-01 retired last name from the profile. Left alone, this owner would
+  // have returned ONE letter from a saved first name and TWO from the `planAthlete`
+  // fallback — so the avatar changed shape depending on WHICH SOURCE HAPPENED TO FIRE,
+  // which no runner would report and everyone would feel. Sources are enumerated here so
+  // adding a fourth cannot quietly return two.
+  it('returns exactly ONE letter from every source', () => {
+    const fromEverySource = [
+      { firstName: 'Russell', lastName: 'Shear' },
+      { planAthlete: 'Ada Lovelace' },
+      { planAthlete: 'Anne Bonny Cormac Dubh' },
+      { email: 'test@test.com' },
+      {},
+    ]
+    for (const c of fromEverySource) {
+      expect(profileInitials(c), JSON.stringify(c)).toHaveLength(1)
+    }
+  })
+
+  // ⚠️ `lastName` is still ACCEPTED and deliberately ignored. Sign in with Apple hands
+  // us a surname on the very first authorization and never again, so we keep storing it
+  // while no longer asking for or showing it. This asserts it cannot leak back into the
+  // circle.
+  it('ignores a stored last name', () => {
+    expect(profileInitials({ firstName: 'Russell', lastName: 'Shear' }))
+      .toBe(profileInitials({ firstName: 'Russell' }))
   })
 
   it('works from a first name alone — what an email signup now captures', () => {
@@ -38,19 +67,19 @@ describe('profileInitials', () => {
   })
 
   it('reads the plan name when no profile name is saved', () => {
-    expect(profileInitials({ planAthlete: 'Ada Lovelace', email: 'x@y.com' })).toBe('AL')
+    expect(profileInitials({ planAthlete: 'Ada Lovelace', email: 'x@y.com' })).toBe('A')
   })
 
   it('tolerates a plan name with stray whitespace', () => {
-    expect(profileInitials({ planAthlete: '  Ada   Lovelace  ', email: 'x@y.com' })).toBe('AL')
+    expect(profileInitials({ planAthlete: '  Ada   Lovelace  ', email: 'x@y.com' })).toBe('A')
   })
 
-  it('caps at two letters', () => {
-    expect(profileInitials({ planAthlete: 'Anne Bonny Cormac Dubh' })).toBe('AB')
+  it('takes the first letter only, however many names there are', () => {
+    expect(profileInitials({ planAthlete: 'Anne Bonny Cormac Dubh' })).toBe('A')
   })
 
   it('uppercases whatever it finds', () => {
-    expect(profileInitials({ firstName: 'russell', lastName: 'shear' })).toBe('RS')
+    expect(profileInitials({ firstName: 'russell', lastName: 'shear' })).toBe('R')
     expect(profileInitials({ email: 'test@test.com' })).toBe('T')
   })
 })

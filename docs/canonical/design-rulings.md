@@ -3096,3 +3096,51 @@ the SLT routed the page to the founder. Held at exactly one file by
 
 **Does not settle:** nobody has seen Apple's sheet on a device, so every judgement about
 how it feels — Silvanto's objection included — is unverified.
+
+---
+
+## PROFILE-IDENTITY-01 — 2026-09-28 — **SHIP WITH AMENDMENT**
+
+**Change:** the runner's first name becomes editable in place in the identity card, the
+surname is retired, and the email becomes a read-only row under an `Account` label.
+
+**Founder instruction**, with two screenshots of a competitor profile as the reference:
+*"We don't need surname. Can we build similar to the other screenshot when first name is
+added and it's editable up there. this is where they put the email."*
+
+🔴 **THE SETTLED-GROUND SCAN FOUND TWO KILLED PATTERNS INSIDE THE REFERENCE ITSELF.**
+The screen being pointed at carries, directly beneath the name, a **week streak** and
+**three cumulative totals** (**M-6**, killed permanently — Wood: *a streak punishes the
+rest day this product defends, and a competitor shipping it is not evidence*), and below
+that a **merchandising wall with a price** (**M-7**, kill re-examined and STANDS).
+**Neither is imported.** Recorded in the register, in `ui-patterns.md` §36 and in a test,
+because the screenshot will be looked at again and the name treatment is the only part of
+it worth having.
+
+⚠️ **§36's missing-name pattern was REWRITTEN, not amended.** It was a tappable row with a
+chevron whose only job was to scroll to a first-name field further down the screen
+(`focusProfileNameField`). That field no longer exists, so the empty state is now the same
+field, empty. The helper and `ProfileSection` are deleted.
+
+**Six amendments:** (1) nothing imported from the reference but the name treatment;
+(2) surname leaves the UI and is **still stored**, because Apple hands us one on the first
+authorization and never again; (3) `profileInitials` returns **one letter from every
+source** — it would otherwise have returned one from a saved name and two from the plan
+fallback, so the circle changed shape depending on where the name came from; (4) **no Save
+button** (Wroblewski: *"the Save button is the tell"*), commit on blur or Enter;
+(5) **the failed save reverts and says so** — his blocking condition, because an inline
+field has no button to press again; (6) email under `Account`, as a value rather than a
+field.
+
+⛰️ **VETO NOT EXERCISED.** Silvanto asked for the bare field to be tried before a pencil
+is added — *"a pencil beside an editable name is decoration explaining what the type
+should already say"* — but declined to veto, since no palette or type rule is regressed.
+**The pencil question is open, not settled, and has not been seen on a device.**
+
+🎪 **COLLINS' SECTION-COUNT QUESTION IS DEFERRED, NOT RESOLVED.** Adding `Account` makes
+**four** section headers on Me. He asked whether the screen is four sections or two;
+nobody has ever ruled on it, and the chair declined to settle it inside a sitting about a
+name field. Recorded so it is not lost.
+
+**Does not settle:** the pencil, the section count, and whether inline editing feels right
+in the hand — nobody has seen it on a device.

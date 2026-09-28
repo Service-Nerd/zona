@@ -71,7 +71,6 @@ const BASELINE: Record<string, number> = {
   'app/dashboard/RedeemCodeScreen.tsx': 2,
   'components/shared/NotificationBell.tsx': 1,
   'components/shared/PendingAdjustmentBanner.tsx': 1,
-  'components/shared/ProfileSection.tsx': 1,
   'components/training/PostRaceReshapeCard.tsx': 1,
   'components/training/RaceResultSheet.tsx': 1,
   'components/training/ReflectionInput.tsx': 1,

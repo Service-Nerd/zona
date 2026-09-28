@@ -1,39 +1,98 @@
 'use client'
 
-// IdentityCard — the top card on the Me screen: who is signed in, and on what.
+// IdentityCard — the top card on the Me screen: who is signed in, on what tier,
+// and the one place the runner's name is both SHOWN and CHANGED.
 //
-// ui-patterns.md §20 (Action List Card) governs its MISSING-NAME state. With a
-// name it is a plain card. Without one it becomes a single tappable row with a
-// chevron, because the old behaviour was a grey "Your name" label: a dead
-// string that looked like a value the app already held, with nothing to tap.
-// A prompt you cannot act on is the §8 Empty State mistake in miniature.
+// PROFILE-IDENTITY-01 (Design Board, 2026-09-28), SHIP WITH AMENDMENT, on a founder
+// instruction with a competitor screenshot as the reference.
 //
-// Tapping focuses the real field further down the same screen (see
-// focusProfileNameField) — no modal, no extra screen for one input.
+// ── 🔴 WHAT THIS REPLACED, AND WHY IT WAS THE PROBLEM ───────────────────────
+// The name was DISPLAYED here and EDITED in a form card further down the same screen.
+// Zhuo: *"a value shown in one place and changed in another is the thing worth fixing."*
+// The old missing-name state was a tappable row whose only job was to scroll you to that
+// form (`focusProfileNameField`, now deleted). Editing in place removes the trip.
+//
+// ⚠️ NO SAVE BUTTON, AND THAT IS A RULING RATHER THAN A SIMPLIFICATION. Wroblewski:
+// *"the Save button is the tell — it exists because this is a FORM, and a form is the
+// right shape for three fields and the wrong shape for one."* Commit happens on blur or
+// Enter. Escape cancels.
+//
+// 🔴 THE ERROR STATE IS DESIGNED, NOT INHERITED, and it was his blocking condition.
+// Editing commits to the network. A Save button at least gives the runner something to
+// press again; an inline field gives them nothing unless we build it. So a failed save
+// REVERTS the value and says so, rather than leaving a typed name on screen that is not
+// the name we hold.
+//
+// ── ⚠️ WHAT WAS DELIBERATELY NOT TAKEN FROM THE REFERENCE ───────────────────
+// The competitor screen this borrows its name treatment from carries, directly beneath
+// the name, a **week streak and three cumulative totals**, and below that a merchandising
+// wall with a price. Both are already killed permanently:
+//   · **M-6** — a week streak or any cumulative total on the profile. Wood: a streak
+//     punishes the rest day this product defends, and a competitor shipping it is not
+//     evidence.
+//   · **M-7** — the merchandising profile, kill re-examined and STANDS.
+// Recorded here as well as in the register because the screenshot will be looked at
+// again, and the name treatment is the only part of it worth having.
 
 import type React from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { BRAND } from '@/lib/brand'
 
-function Chevron() {
-  return (
-    <span style={{ color: 'var(--mute)', display: 'inline-flex', marginLeft: 'var(--space-3)' }}>
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-        <path d="M6 3L11 8L6 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </span>
-  )
-}
+/** Named once so the label and the input cannot point at different elements. */
+export const IDENTITY_NAME_FIELD_ID = 'identity-first-name'
+/** The accessible label. Visually hidden: the card's shape is the label. */
+export const IDENTITY_NAME_LABEL = 'Your first name'
+/** Shown when the save fails. Short, no apology, says what happened to their typing. */
+export const IDENTITY_SAVE_FAILED = 'Could not save that. Your name is unchanged.'
+/** 🔴 AN INSTRUCTION, NOT A NAME, AND THE FIRST CUT GOT THIS WRONG.
+ *  It was `BRAND.name`, carried over from the old form field where a "First name" LABEL
+ *  sat above it and the placeholder only had to show the field's shape. There is no label
+ *  here, so a grey product name in the name slot reads as a value the app already holds —
+ *  which is precisely the failure §36 exists to record ("a grey 'Your name' ... it read as
+ *  a value the app already held"). Caught by rendering `/me-preview`, not by review. */
+export const IDENTITY_NAME_PLACEHOLDER = 'Add your name'
 
-export function IdentityCard({ initials, firstName, lastName, tierLabel, onAddName }: {
-  /** Already resolved by the caller — see the fallback chain in DashboardClient. */
+type Mode = 'rest' | 'editing' | 'saving' | 'failed'
+
+export function IdentityCard({ initials, firstName, tierLabel, onSaveName }: {
+  /** Already resolved by the caller — see the fallback chain in `profileInitials`. */
   initials: string
   firstName: string
-  lastName: string
   /** Trial / Pro / Free. */
   tierLabel: string
-  onAddName: () => void
+  /** Resolves false if the write failed. The card reverts and says so. */
+  onSaveName: (name: string) => Promise<boolean>
 }) {
-  const displayName = [firstName, lastName].filter(Boolean).join(' ')
+  const [mode, setMode] = useState<Mode>('rest')
+  const [draft, setDraft] = useState(firstName)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  // Set while committing so the blur that follows Enter cannot fire a second save.
+  const committing = useRef(false)
+
+  useEffect(() => { setDraft(firstName) }, [firstName])
+  useEffect(() => {
+    if (mode === 'editing') inputRef.current?.focus()
+  }, [mode])
+
+  async function commit() {
+    if (committing.current) return
+    const next = draft.trim()
+    if (next === firstName.trim()) { setMode('rest'); return }
+    if (!next) { setDraft(firstName); setMode('rest'); return }
+    committing.current = true
+    setMode('saving')
+    const ok = await onSaveName(next)
+    committing.current = false
+    if (ok) { setMode('rest'); return }
+    // Revert rather than leave a value on screen that is not the value we hold.
+    setDraft(firstName)
+    setMode('failed')
+  }
+
+  function cancel() {
+    setDraft(firstName)
+    setMode('rest')
+  }
 
   const cardStyle: React.CSSProperties = {
     background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)',
@@ -41,33 +100,72 @@ export function IdentityCard({ initials, firstName, lastName, tierLabel, onAddNa
     display: 'flex', alignItems: 'center', gap: 'var(--space-4)',
   }
 
-  const inner = (
-    <>
+  const nameType: React.CSSProperties = {
+    fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 500,
+    color: 'var(--ink)', lineHeight: 1.2,
+  }
+
+  const subType: React.CSSProperties = {
+    fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
+    marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+  }
+
+  const editing = mode === 'editing' || mode === 'saving'
+
+  return (
+    <div style={cardStyle}>
       <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--moss)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-brand)', fontSize: '16px', fontWeight: 600, color: 'var(--card)', flexShrink: 0 }}>
         {initials}
       </div>
+
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-brand)', fontSize: '17px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {displayName || 'Add your name'}
-        </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {displayName ? tierLabel : `${tierLabel} · ${BRAND.coachName} will use it.`}
+        {/* ⚠️ The input is ALWAYS rendered at the same size and position as the resting
+            text. Silvanto: "a name that jumps when you touch it is the thing people
+            remember about a screen." Only the border changes. */}
+        <label htmlFor={IDENTITY_NAME_FIELD_ID} style={{
+          position: 'absolute', width: '1px', height: '1px', overflow: 'hidden',
+          clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap',
+        }}>
+          {IDENTITY_NAME_LABEL}
+        </label>
+        <input
+          id={IDENTITY_NAME_FIELD_ID}
+          ref={inputRef}
+          value={draft}
+          readOnly={!editing}
+          disabled={mode === 'saving'}
+          placeholder={IDENTITY_NAME_PLACEHOLDER}
+          autoComplete="given-name"
+          enterKeyHint="done"
+          onChange={e => setDraft(e.target.value)}
+          onFocus={() => { if (mode !== 'saving') setMode('editing') }}
+          onBlur={() => { if (mode === 'editing') void commit() }}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.preventDefault(); void commit(); inputRef.current?.blur() }
+            if (e.key === 'Escape') { cancel(); inputRef.current?.blur() }
+          }}
+          style={{
+            ...nameType,
+            width: '100%', padding: '2px 6px', margin: '-2px -6px',
+            background: 'transparent',
+            border: '1px solid',
+            borderColor: editing ? 'var(--moss-mid)' : 'transparent',
+            borderRadius: 'var(--radius-sm)',
+            outline: 'none',
+            // ⚠️ The affordance is the field itself, not an icon. Silvanto asked for the
+            // bare version to be tried before a pencil is added, and it has not been seen
+            // on a device.
+            cursor: editing ? 'text' : 'pointer',
+          }}
+        />
+        <div style={subType}>
+          {mode === 'failed'
+            ? <span style={{ color: 'var(--danger)' }}>{IDENTITY_SAVE_FAILED}</span>
+            : firstName
+              ? tierLabel
+              : `${tierLabel} · ${BRAND.coachName} will use it.`}
         </div>
       </div>
-      {!displayName && <Chevron />}
-    </>
-  )
-
-  if (displayName) return <div style={cardStyle}>{inner}</div>
-
-  // The whole card is the tap target: 80px tall, well clear of the 44pt floor.
-  return (
-    <button
-      onClick={onAddName}
-      aria-label="Add your name"
-      style={{ ...cardStyle, width: '100%', textAlign: 'left', cursor: 'pointer', font: 'inherit', color: 'var(--ink)' }}
-    >
-      {inner}
-    </button>
+    </div>
   )
 }

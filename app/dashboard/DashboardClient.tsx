@@ -57,7 +57,6 @@ import ZoneRings, { ZoneRingsSkeleton } from '@/components/shared/ZoneRings'
 import { TextField } from '@/components/shared/TextField'
 import { TextArea } from '@/components/shared/TextArea'
 import { IdentityCard } from '@/components/shared/IdentityCard'
-import { ProfileSection, focusProfileNameField } from '@/components/shared/ProfileSection'
 import { SegmentedControl } from '@/components/shared/SegmentedControl'
 import PlanArc from '@/components/shared/PlanArc'
 import RPEScale from '@/components/shared/RPEScale'
@@ -2845,7 +2844,7 @@ export default function DashboardClient() {
     //    is better than blocking the HR save.
     void authedFetch('/api/recalibrate-hr', { method: 'POST' })
   } catch {}
-}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onProfileChange={async (fn: string, ln: string, em: string) => { setFirstName(fn); setLastName(ln); setProfileEmail(em); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, first_name: fn, last_name: ln, email: em, updated_at: new Date().toISOString() }) } catch {} }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('session')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
@@ -12063,7 +12062,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onProfileChange, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
@@ -12074,7 +12073,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
    *  provenance (a floor), distinct from onHRChange's user_confirmed manual save. */
   onDeviceHRFound?: (rhr: number | null, mhr: number | null) => void
   firstName: string; lastName: string; profileEmail: string
-  onProfileChange: (fn: string, ln: string, em: string) => void
+  /** PROFILE-IDENTITY-01 — resolves false if the write failed; the card reverts. */
+  onSaveName: (name: string) => Promise<boolean>
   onOpenGenerate?: () => void
   onOpenBenchmark?: () => void
   onOpenReshape?: () => void
@@ -12219,9 +12219,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         <IdentityCard
           initials={initials}
           firstName={firstName}
-          lastName={lastName}
           tierLabel={tierLabel}
-          onAddName={focusProfileNameField}
+          onSaveName={onSaveName}
         />
 
         {/* ── ME-ATHLETE — "What Kit knows about you" ──────────────────
@@ -12342,9 +12341,26 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
           )
         })()}
 
-        {/* ── Your profile ───────────────────────────────────────── */}
-        <SectionLabel>Your profile</SectionLabel>
-        <ProfileSection firstName={firstName} lastName={lastName} email={profileEmail} onSave={onProfileChange} />
+        {/* PROFILE-IDENTITY-01 — what used to be a three-field form card is now one
+            read-only row, because the name moved into the identity card above and the
+            surname was retired.
+
+            ⚠️ THE EMAIL WAS ALREADY READ-ONLY and this is not a downgrade. It is the
+            auth identity, owned by the OAuth provider; nothing in the app writes
+            `auth.users.email`, so an editable field would have changed a display string
+            and not the login. It is shown for orientation — "which account am I in?" —
+            which is a value, not a control, so it is deliberately NOT an `ActionRow`.
+
+            🎪 Collins' deferred question, recorded rather than resolved: this makes
+            FOUR section headers on Me. Whether the screen is four sections or two is a
+            ruling nobody has taken. */}
+        <SectionLabel>Account</SectionLabel>
+        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', padding: '16px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink-2)' }}>Email</span>
+          <span style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--mute)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+            {profileEmail}
+          </span>
+        </div>
 
         {/* ── Your training ──────────────────────────────────────── */}
         {/* Plan · HR data · display preferences — everything that shapes session cards */}

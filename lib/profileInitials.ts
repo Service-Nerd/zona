@@ -1,5 +1,12 @@
 /**
- * Avatar initials — the single owner of "what two letters go in the circle".
+ * Avatar initials — the single owner of "what letter goes in the circle".
+ *
+ * 🔴 ONE LETTER, FROM EVERY SOURCE (PROFILE-IDENTITY-01, Design Board 2026-09-28).
+ * It used to be up to two, and that was measurably INCONSISTENT once last name left the
+ * profile: a runner with a saved first name would get "R" while the `planAthlete`
+ * fallback still split a full name into "RS". **The circle changed shape depending on
+ * where the name happened to come from**, which nobody would ever see as a bug and
+ * everybody would see as sloppiness.
  *
  * Best source first: the saved profile name, then the name stamped on the plan,
  * then the account's own email.
@@ -23,18 +30,14 @@ export function profileInitials(input: {
   planAthlete?: string | null
   email?: string | null
 }): string {
-  const fromName = `${input.firstName?.trim()[0] ?? ''}${input.lastName?.trim()[0] ?? ''}`
-    .toUpperCase()
-    .slice(0, 2)
+  // `lastName` is still accepted and deliberately unused: Sign in with Apple hands us a
+  // surname on the very first authorization and never again, so we keep STORING it while
+  // no longer asking for it or showing it. Removing the parameter would invite a caller
+  // to stop passing what Apple gave us.
+  const fromName = (input.firstName?.trim()[0] ?? '').toUpperCase()
   if (fromName) return fromName
 
-  const fromPlan = (input.planAthlete ?? '')
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(w => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  const fromPlan = ((input.planAthlete ?? '').trim()[0] ?? '').toUpperCase()
   if (fromPlan) return fromPlan
 
   return input.email?.trim()[0]?.toUpperCase() || '?'

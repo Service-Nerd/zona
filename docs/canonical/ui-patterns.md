@@ -3466,56 +3466,84 @@ Reference: `RunFeedbackCard` in `app/dashboard/DashboardClient.tsx`.
 
 ### 36. Identity Card (Me screen)
 
-The top card on Me: who is signed in, and on what. Avatar + name + tier.
+The top card on Me: who is signed in, on what tier, and **the one place the name is both
+shown and changed**. Avatar + editable first name + tier.
 
 ```
-┌─────────────────────────────────────────┐
-│  (RS)   Russell Shear                   │  ← 17px 500 --ink, brand font
-│         Pro                             │  ← 12px 400 --mute
-└─────────────────────────────────────────┘
+┌───────────────────────────────────────┐
+│  (R)    Russell                         │  ← REST: a field with a transparent border
+│         Pro                             │
+└───────────────────────────────────────┘
 
-┌─────────────────────────────────────────┐
-│  (T)    Add your name              [›]  │  ← MISSING-NAME state: one tap target
-│         Trial · Kit will use it.        │
-└─────────────────────────────────────────┘
+┌───────────────────────────────────────┐
+│  (R)   [Russell│                      ] │  ← EDITING: --moss-mid border, same size
+│         Pro                             │     and position. Nothing reflows.
+└───────────────────────────────────────┘
+
+┌───────────────────────────────────────┐
+│  (T)    Zonna                           │  ← EMPTY: the same field, placeholder only
+│         Trial · Kit will use it.         │
+└───────────────────────────────────────┘
+
+┌───────────────────────────────────────┐
+│  (R)    Russell                         │  ← FAILED: value REVERTED, sub-line says so
+│         Could not save that. Your name…  │     in --danger
+└───────────────────────────────────────┘
 ```
 
 **Structure:**
 - Container: `--card`, `var(--radius-lg)`, `1px solid --line`, `var(--shadow-card)`, `16px` padding
-- Avatar: `48px` circle, `--moss` fill, initials in `var(--font-brand)` `16px 600`, `--card` text
-- Name: `var(--font-brand)` `17px 500 --ink`, single line, ellipsis
-- Sub-line: `var(--font-ui)` `12px 400 --mute`, single line, ellipsis
-- Chevron (missing-name state only): `--mute`, `marginLeft: 12px` — Pattern 20's chevron
+- Avatar: `48px` circle, `--moss` fill, **one** initial in `var(--font-brand)` `16px 600`, `--card` text
+- Name field: `var(--font-brand)` `17px 500 --ink`, full width, negative margin so the
+  padded input sits exactly where the resting text does
+- Sub-line: `var(--font-ui)` `12px 400 --mute`; `--danger` in the failed state
 
-**The missing-name state is the whole point of this pattern.** With a name the
-card is inert. Without one the entire card becomes a single `<button>` following
-**Pattern 20 (Action List Card)** — label, supporting detail, chevron — and taps
-through to the real first-name field further down the same screen. It does not
-open a sheet or a second screen: one input does not earn a navigation.
+🔴 **The name is edited HERE because it is displayed here.** Zhuo, ruling
+PROFILE-IDENTITY-01: *"a value shown in one place and changed in another is the thing
+worth fixing."* It previously lived in a three-field form further down the same screen,
+and the missing-name state was a tappable row whose only job was to scroll you to it.
 
-> **A prompt with nothing to tap is Pattern 8's mistake in miniature.** This card
-> previously rendered a grey `"Your name"` in the name slot: it read as a value
-> the app already held, it was not tappable, and on a test account the founder
-> could not tell whether the app knew his name or not. An empty state must either
-> resolve itself or say plainly that there is nothing to do — never sit in
-> between.
+⚠️ **NO SAVE BUTTON, and that is a ruling rather than a simplification.** Wroblewski:
+*"the Save button is the tell — it exists because this is a FORM, and a form is the right
+shape for three fields and the wrong shape for one."* Commit on blur or Enter; Escape
+cancels.
 
-**Initials never render blank.** `lib/profileInitials.ts` is the single owner:
-saved profile name → `plan.meta.athlete` → the account's email → `'?'`. The email
-tail is load-bearing, not a nicety (`plan.meta.athlete` is an empty *string*, so
-a `??` guard never fires). Regression-tested in `lib/profileInitials.test.ts`.
+🔴 **THE FAILED STATE IS DESIGNED, NOT INHERITED**, and it was his blocking condition.
+Editing commits to the network. A Save button at least gives the runner something to press
+again; an inline field gives them nothing unless we build it. **A failed save REVERTS the
+value** rather than leaving a name on screen that is not the name we hold.
 
-**Copy:** the sub-line names the tier, and in the missing-name state adds one
-short reason sourced from `BRAND.coachName`. No exclamation, no "Complete your
-profile!" — the runner is told what it is for and left to decide.
+⚠️ **The affordance is the field, not an icon.** The reference screen uses a pencil.
+Silvanto's condition: try the bare version first, because *"a pencil beside an editable
+name is decoration explaining what the type should already say."* **This has not been seen
+on a device**, so the pencil question is open rather than settled.
 
-**Harness:** `/me-preview` renders the real `IdentityCard` and `ProfileSection`
-across five states (no name, no name and no plan, first name only, full name,
-overflowing long name) plus a live profile form. 404s in production. Both sit
-behind auth, a plan and a tab, which is exactly how a hardcoded placeholder
-survived to production.
+**Initials are ONE letter, from every source.** `lib/profileInitials.ts` is the single
+owner: saved first name → `plan.meta.athlete` → the account's email → `'?'`. The email tail
+is load-bearing, not a nicety (`plan.meta.athlete` is an empty *string*, so a `??` guard
+never fires). 🔴 **It used to be up to two, and after the surname was retired that became
+measurably inconsistent** — one letter from a saved name, two from the plan fallback, so
+the circle changed shape depending on where the name came from.
 
-Reference: `components/shared/IdentityCard.tsx`, `components/shared/ProfileSection.tsx`.
+⚠️ **The surname is retired from the UI and still STORED.** Sign in with Apple hands us a
+surname on the very first authorization and never again. We stopped asking for it; a save
+that wrote `last_name: ''` would destroy it silently and irrecoverably. Guarded.
+
+**Email is a value, not a field.** It sits under an `Account` section label as a read-only
+row — it is the auth identity, owned by the OAuth provider, and nothing in the app writes
+`auth.users.email`. Deliberately **not** an `ActionRow`: it is not a control.
+
+🔴 **WHAT WAS NOT TAKEN FROM THE REFERENCE.** The competitor profile this borrowed the
+name treatment from carries a **week streak**, three **cumulative totals** and a
+**merchandising wall with a price**, all above anything about the person. **M-6** and
+**M-7** kill those permanently. Recorded here because the screenshot will be looked at
+again and the name treatment is the only part of it worth having.
+
+**Harness:** `/me-preview` renders the real `IdentityCard` across five states plus a live
+card **whose save always fails**, because that is the state nobody could otherwise see.
+404s in production.
+
+Reference: `components/shared/IdentityCard.tsx`, `components/shared/identityCard.markup.test.ts`.
 
 ---
 
