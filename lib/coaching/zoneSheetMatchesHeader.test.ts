@@ -24,6 +24,8 @@ import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from '@/lib/plan/ruleEngine'
 import { zoneKeyForZoneString, zoneForSessionType, zonesFromZoneString } from './zoneRules'
 import type { GeneratorInput, Session } from '@/types/plan'
+// TEST-CLOCK-PREPTIME-01 — pinned, or nextMonday() walks into §44's warn gate.
+import { PINNED_PLAN_START } from '@/lib/plan/__fixtures__/pinnedPlanStart'
 
 const input = (o: Partial<GeneratorInput> = {}): GeneratorInput => ({
   race_date: '2026-12-12', race_distance_km: 10, goal: 'time_target',
@@ -34,7 +36,7 @@ const input = (o: Partial<GeneratorInput> = {}): GeneratorInput => ({
 } as unknown as GeneratorInput)
 
 const sessionsOf = (i: GeneratorInput): Session[] =>
-  generateRulePlan(i, 'paid').weeks
+  generateRulePlan(i, 'paid', PINNED_PLAN_START).weeks
     .flatMap(w => Object.values(w.sessions ?? {}) as (Session | undefined)[])
     .filter((s): s is Session => !!s && s.type !== 'rest')
 

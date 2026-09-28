@@ -3,6 +3,10 @@ import { readFileSync } from 'node:fs'
 import { generateRulePlan } from './ruleEngine'
 import { generatorInputFields, assertParsedShape } from './sweepInputCoverage'
 import type { GeneratorInput, Plan } from '../../types/plan'
+// TEST-CLOCK-PREPTIME-01 — `TODAY` below pinned the RACE date; nothing pinned the
+// PLAN START, so the engine measured the window from the wall clock and the two
+// drifted apart until §44 refused. Both ends are pinned now.
+import { PINNED_PLAN_START } from './__fixtures__/pinnedPlanStart'
 
 /**
  * INPUT-EFFECT-01 — every `GeneratorInput` field must DO something.
@@ -289,7 +293,7 @@ function measure(field: string, spec: Spec): Outcome {
     const input = { ...BASE, ...(spec.baseline ?? {}), [field]: value } as GeneratorInput
     if (value === undefined) delete (input as unknown as Record<string, unknown>)[field]
     try {
-      const p = prescription(generateRulePlan(input, 'paid'))
+      const p = prescription(generateRulePlan(input, 'paid', PINNED_PLAN_START))
       // A blocked value that now generates cleanly means the defect is fixed.
       // Recorded, not silently absorbed — `blockedValues only shrink` reads this.
       if (block) blocked.push(`${JSON.stringify(value)} NOW GENERATES (${block.defect})`)
@@ -320,7 +324,7 @@ describe('INPUT-EFFECT-01 — every GeneratorInput field changes the delivered p
   }
 
   it('the baseline itself generates — otherwise every result below is meaningless', () => {
-    expect(() => generateRulePlan(BASE, 'paid')).not.toThrow()
+    expect(() => generateRulePlan(BASE, 'paid', PINNED_PLAN_START)).not.toThrow()
   })
 
   it('every declared field has a spec', () => {

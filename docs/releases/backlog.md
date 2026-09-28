@@ -361,7 +361,7 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 
 ## ⚖️ FILED 2026-09-28 — shipping `OPS-FUNNEL-01` + `OPS-SUBS-TRACE-01`
 
-### 🔴 `TEST-CLOCK-PREPTIME-01` — nine tests fail because the CLOCK moved, not the code
+### ✅ `TEST-CLOCK-PREPTIME-01` — SHIPPED 2026-09-28. Nine tests failed because the CLOCK moved.
 
 ⚙️ **NO BOARD** (test fixtures). **Main is RED today and will stay red, getting worse daily.**
 
@@ -386,6 +386,47 @@ deliberately documented as **clock-independent** for exactly this reason; these 
 **Fix is a decision, not a patch:** a relative race date (`today + N days`) makes the test
 clock-independent but changes what it generates each run; a pinned `planStart` keeps output
 stable but must be pinned *with* the race date. **Pick one and apply it to all four.**
+
+✅ **OUTCOME.** `generateRulePlan(input, tier, planStart?, catalogue?, todayOverride?)` already
+carried the seam — `planStart` and `todayOverride`, both documented *"never passed by production
+callers."* The four files simply never used it. All four now pass
+`PINNED_PLAN_START` (`lib/plan/__fixtures__/pinnedPlanStart.ts`) = **2026-09-14**, the Monday on
+or after each was authored (git: 09-08, 09-09, 09-12, 09-12), so the pin **reproduces the original
+prep window** instead of inventing one.
+
+🥇 **THE +9 TESTS RECONCILE EXACTLY, AND HALF OF THEM WERE NOT FAILING — THEY WERE ABSENT.**
+3,719 → 3,728: 4 from the new gate, **5 from `zoneSheetMatchesHeader.test.ts`, which reported
+"0 test" because it could not be COLLECTED.** A file that has silently stopped running looks
+exactly like a file with nothing to say, and it was guarding an 837-session defect (ZONE-SHEET-01).
+
+⚠️ **PINNING TO `COHORT_PLAN_START` WAS TRIED AND IS WRONG — MEASURED, NOT ASSUMED.** 2026-04-27
+puts these races 33 weeks out instead of 12–13, past §44's warn bound and into the long-runway
+and foundation paths: **2 tests still failed.** The convenient constant would have been green on
+a different plan. This is why the 19 files below were NOT swept in the same commit.
+
+🔴 **MY OWN FILING WAS WRONG ON THE MECHANISM AND THE FIX DEPENDED ON IT.** I recorded "hardcode
+`race_date: 2026-12-12` for a marathon and `enforcePrepTime` blocks". Only ONE of the four is a
+marathon; the other three are **10K `time_target`** and fail through the
+**`warn_unacknowledged`** throw (`inputs.ts:238`), not the block (`:235`). Both messages are in
+the falsification output. A fix aimed only at the block path would have left three files red.
+
+### 🟡 `TEST-CLOCK-PINSWEEP-01` — the other NINETEEN files in the same class
+
+⚙️ **NO BOARD** (test fixtures). **Gated, not fixed.** `lib/plan/testClockIndependence.test.ts`
+discovers every `lib/**/*.test.ts` that pairs an absolute `race_date` with a `planStart`-less
+`generateRulePlan(x, tier)` call and **fails on any NEW one**; the 19 existing are a declared
+baseline carrying each file's measured weeks-until-BLOCK. Both arms falsified (re-introducing the
+real incident, and a stale register row).
+
+⚠️ **The margins are an UPPER BOUND on risk, deliberately labelled as such**: each is the file's
+earliest `race_date` paired with its longest `race_distance_km`, a pairing that does not always
+occur — which is why two files read as already-negative while passing. Convert from the top of the
+baseline; each needs **its own** authoring-Monday and **its own verification run**, because the
+`COHORT_PLAN_START` experiment above proves a wrong pin is green-and-different.
+
+⚠️ **A DECLARED REASON IS NOT A FIXED PROBLEM.** The gate stops the class growing. Nothing in it
+schedules these 19, and 10 of them are inside 8 weeks of their own cliff on the pessimistic read.
+
 
 ### 🔴 `OPS-SUBS-ALERT-01` — nothing ALERTS on a failed subscription write
 
@@ -646,7 +687,7 @@ Status: 🔲 not started · 🔄 in progress · ❓ needs verification
 
 ---
 
-**State at END of 2026-09-28 (last ship `673c272d`, `OPS-FUNNEL-01`). Build 0 · tsc 0.** 🔴 **THE SUITE IS RED ON A CLEAN TREE AND IT IS THE CLOCK** — 9 tests / 4 files (`TEST-CLOCK-PREPTIME-01`): fixtures hardcode `race_date: 2026-12-12` for a marathon, `enforcePrepTime` now blocks at ~75 days, so four real assertions are **unproven rather than failing** and it worsens daily. **2 ships, both observability.** 🥇 **THE OPS ALARM WAS FALSE AND POINTED AT SOMETHING REAL.** A reverse trial has **no subscription row by design** and creates no Apple transaction, so `trialing = 0` is correct forever; the one "paying" row is the founder's hand-seeded `stripe` row with `is_admin = true`. **Real revenue 0; trials are HEALTHY — 27/27 carry `trial_started_at`, 12 in-window.** ✅ **`OPS-FUNNEL-01`** — `analytics_events` held **192 rows of ONE event type**, so a 0% gate could not separate *never saw it* from *bounced* from *purchase failed*. **`redirected` is deliberately not a sale.** 🥇 **The cancel rule existed TWICE in one file with two predicates** — one strict owner now. ✅ **`OPS-SUBS-TRACE-01`** — **435 ops rows, 13 kinds, none from either webhook**; every emittable kind was a FAILURE branch, so healthy and unreachable looked identical. **Stripe included** (two extra failure modes, each a real payment dropped with only a console line) — one twin is `TWIN-SWEEP-01`. ⚠️ **NAMED GAP, NOT CLOSED: nothing ALERTS on those rows** (`OPS-SUBS-ALERT-01`). 🔴 **Corrected my own reasoning mid-investigation** — "no ops events, therefore never fired" was wrong; the route records nothing on success. ⚠️ **The morning's purge moved the conversion denominator 28 → 24** (28 − 7 + 3), inflating any future rate ~29%. ⚠️ **Nothing has run on a device.**
+**State at END of 2026-09-28 (last ship `673c272d`, `OPS-FUNNEL-01`). Build 0 · tsc 0.** ✅ **THE RED SUITE IS FIXED — 421 files / 3,728 tests / 0 failed, tsc 0, build 0** (`TEST-CLOCK-PREPTIME-01`). Four files generated against `nextMonday()` with an absolute `race_date`, so the plan start walked into §44 one week per week; all four now pass the pinned `PINNED_PLAN_START` = **2026-09-14**, each file's own authoring Monday, which reproduces the original prep window rather than inventing one. 🥇 **THE +9 TESTS RECONCILE AND HALF WERE ABSENT, NOT FAILING** — 4 from the new gate, **5 from a file that reported "0 test" because it could not be COLLECTED**, guarding an 837-session defect. 🔴 **MY OWN FILING HAD THE MECHANISM WRONG AND THE FIX DEPENDED ON IT** — only ONE of the four is a marathon; the other three are 10K `time_target` failing through **`warn_unacknowledged`** (`inputs.ts:238`), not the block (`:235`). A fix aimed at the block alone would have left three red. ⚠️ **Pinning to `COHORT_PLAN_START` was TRIED and is wrong** — 33 weeks out, past §44's warn bound: **2 tests still failed.** The convenient constant is green on a different plan. 🔻 **19 MORE FILES ARE IN THE CLASS, GATED NOT FIXED** (`TEST-CLOCK-PINSWEEP-01`) — a new gate fails on any NEW offender, both arms falsified; the 19 are a declared baseline with measured margins (an upper bound). ⚠️ **The gate itself was caught by `hollowTestShapes.test.ts`** for a substring `toContain` — the lint against substring bias flagged the gate against clock bias. **2 ships, both observability.** 🥇 **THE OPS ALARM WAS FALSE AND POINTED AT SOMETHING REAL.** A reverse trial has **no subscription row by design** and creates no Apple transaction, so `trialing = 0` is correct forever; the one "paying" row is the founder's hand-seeded `stripe` row with `is_admin = true`. **Real revenue 0; trials are HEALTHY — 27/27 carry `trial_started_at`, 12 in-window.** ✅ **`OPS-FUNNEL-01`** — `analytics_events` held **192 rows of ONE event type**, so a 0% gate could not separate *never saw it* from *bounced* from *purchase failed*. **`redirected` is deliberately not a sale.** 🥇 **The cancel rule existed TWICE in one file with two predicates** — one strict owner now. ✅ **`OPS-SUBS-TRACE-01`** — **435 ops rows, 13 kinds, none from either webhook**; every emittable kind was a FAILURE branch, so healthy and unreachable looked identical. **Stripe included** (two extra failure modes, each a real payment dropped with only a console line) — one twin is `TWIN-SWEEP-01`. ⚠️ **NAMED GAP, NOT CLOSED: nothing ALERTS on those rows** (`OPS-SUBS-ALERT-01`). 🔴 **Corrected my own reasoning mid-investigation** — "no ops events, therefore never fired" was wrong; the route records nothing on success. ⚠️ **The morning's purge moved the conversion denominator 28 → 24** (28 − 7 + 3), inflating any future rate ~29%. ⚠️ **Nothing has run on a device.**
 
 **Prior — state at END of 2026-09-27 (last ship `887b10f8`, `SESSION-DIST-UNITS-01`). 3,708 tests / 418 files. Build 0 · tsc 0.** 🥇 **THE DAY'S LESSON: A CHECK'S ANCHOR DECIDES WHAT IT CAN NEVER SEE** — four guards in one area each anchored on something the next defect did not have (`<IconButton` tags · `onClick={onBack}` · `minWidth: '100px'`), and only the FOURTH failed loudly when its anchor moved. 🥇 **And `handleMarkComplete` ALREADY branched** — the decision logic for the whole collapse was built, correct, and ignored by the UI, which asked the runner anyway. **Before building a decision, check whether the code already makes it.** **5 ships across three threads.**  🏃 **`LOG-OFFPLAN-01` (clauses 1+2)** — a run the plan did not prescribe was **visible to fitness and invisible to load**; `weeklyActualLoad.ts` is now the single owner, replacing five hand-rolled sums, and its two figures ARE the ruling (`linkedKm` → the auto-trimming ratio, `linked + offPlanKm` → shadow load). 🧭 **`BACKARROW-WIZARD-01`** — the wizard's private 36px back button deleted, ten `ghost` full-width CTAs given a surface, three gates added. 🔴 **THE DAY'S PATTERN IS THAT A CHECK'S ANCHOR DECIDES WHAT IT CAN NEVER SEE** — two sweeps aimed at back arrows both missed one because they scanned for `<IconButton` tags and the defect was a `<div>`; `GHOST-AFFORDANCE-01` ruled two things and gated one, so ten violations survived the sweep written to remove them. 🔴 **AND I HANDED A BOARD A NUMBER WRONG BY 2.4×** — "65% of runs are off-plan", of which **79% predated the user's plan**; the tell was in my own per-user table. **Then two falsifications printed GREEN with the mutation never landed.** Every mutation now asserts it landed first. ⚠️ **Ruled and NOT built:** `MODIFY-CONFIRM-01` (needs `edits` lifted out of `ModifyPlanSheet` + a founder decision) · `LOG-OFFPLAN-02` (off-plan entry point) · `LOG-OFFPLAN-03` (injury cap, blocked on n=21). ⚠️ **`/api/pre-session-readiness` still has no contract** (pre-existing `CONTRACT-COVERAGE-01`). ⚠️ **Nothing has run on a device.**
 

@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { generateRulePlan } from './ruleEngine'
 import type { GeneratorInput, Plan } from '@/types/plan'
+// TEST-CLOCK-PREPTIME-01 — pinned, or nextMonday() walks into §44's warn gate.
+import { PINNED_PLAN_START } from './__fixtures__/pinnedPlanStart'
 
 /**
  * §96 / HSR-INERT-01 — the brand-routed honesty line for `hard_session_relationship: 'love'`.
@@ -27,7 +29,7 @@ const note = (p: Plan) => p.meta.hard_pref_note
 describe('HSR-INERT-01 — a sub-5yr+ `love` runner is told the preference is conditional', () => {
   for (const training_age of ['<6mo', '6-18mo', '2-5yr'] as const) {
     it(`love + ${training_age}: carries the honesty note`, () => {
-      const p = generateRulePlan(base({ hard_session_relationship: 'love', training_age }), 'paid')
+      const p = generateRulePlan(base({ hard_session_relationship: 'love', training_age }), 'paid', PINNED_PLAN_START)
       expect(note(p), 'note present for a love runner below 5yr+').toBeTruthy()
       // Forward-looking, honest even for a 2-5yr HM runner who got the recent-run stretch:
       // it names what is EARNED with experience, never claims the preference did nothing.
@@ -36,12 +38,12 @@ describe('HSR-INERT-01 — a sub-5yr+ `love` runner is told the preference is co
   }
 
   it('love + 5yr+: no note — the runner is already at the structural tier', () => {
-    const p = generateRulePlan(base({ hard_session_relationship: 'love', training_age: '5yr+' }), 'paid')
+    const p = generateRulePlan(base({ hard_session_relationship: 'love', training_age: '5yr+' }), 'paid', PINNED_PLAN_START)
     expect(note(p), '5yr+ love runner earns the effect, so no conditional note').toBeFalsy()
   })
 
   it('neutral + 2-5yr: no note — the line is specific to a discarded `love` preference', () => {
-    const p = generateRulePlan(base({ hard_session_relationship: 'neutral', training_age: '2-5yr' }), 'paid')
+    const p = generateRulePlan(base({ hard_session_relationship: 'neutral', training_age: '2-5yr' }), 'paid', PINNED_PLAN_START)
     expect(note(p)).toBeFalsy()
   })
 })

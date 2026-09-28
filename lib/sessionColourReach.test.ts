@@ -16,6 +16,8 @@ import { getSessionColor, SESSION_COLORS } from './session-types'
 import { generateRulePlan } from './plan/ruleEngine'
 import { isLongRun } from './plan/sessionRole'
 import type { GeneratorInput, Session } from '@/types/plan'
+// TEST-CLOCK-PREPTIME-01 — pinned, or nextMonday() walks into §44's block.
+import { PINNED_PLAN_START } from './plan/__fixtures__/pinnedPlanStart'
 
 const input = (o: Partial<GeneratorInput> = {}): GeneratorInput => ({
   race_date: '2026-12-12', race_distance_km: 42.2, goal: 'finish',
@@ -27,7 +29,7 @@ const input = (o: Partial<GeneratorInput> = {}): GeneratorInput => ({
 
 describe('PLAN-LONGRUN-COLOUR-01 — --s-long is reachable', () => {
   it('THE CLAIM — a real generated plan contains a session that resolves to the long colour', () => {
-    const plan = generateRulePlan(input(), 'paid')
+    const plan = generateRulePlan(input(), 'paid', PINNED_PLAN_START)
     const all = plan.weeks.flatMap(w => Object.values(w.sessions ?? {}) as (Session | undefined)[])
     const longs = all.filter(s => s && isLongRun(s)) as Session[]
     expect(longs.length, 'fixture must contain long runs at all').toBeGreaterThan(0)
@@ -39,7 +41,7 @@ describe('PLAN-LONGRUN-COLOUR-01 — --s-long is reachable', () => {
   })
 
   it('an ordinary easy run is still easy blue — the long colour has not eaten the type', () => {
-    const plan = generateRulePlan(input(), 'paid')
+    const plan = generateRulePlan(input(), 'paid', PINNED_PLAN_START)
     const all = plan.weeks.flatMap(w => Object.values(w.sessions ?? {}) as (Session | undefined)[])
     const plainEasy = all.filter(s => s && s.type === 'easy' && !isLongRun(s)) as Session[]
     expect(plainEasy.length).toBeGreaterThan(0)
