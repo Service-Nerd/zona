@@ -17,12 +17,29 @@ describe('toStatus — RevenueCat event mapping', () => {
     ['EXPIRATION',            'expired'],
     ['NON_RENEWING_PURCHASE', 'active'],   // the comp path
     ['SUBSCRIPTION_EXTENDED', 'active'],
+    // 🔴 CHARITY-OFFER-CODE-01 (2026-09-28) — THESE TWO MOVED OUT OF THE
+    // "does not understand" LIST BELOW, AND THE REVERSAL IS DELIBERATE.
+    //
+    // TRANSFER is the only event that can re-key a purchase made BEFORE the
+    // runner had an account: the receipt attaches to an anonymous RevenueCat id
+    // and `logIn` later aliases it. The alias itself fires SUBSCRIBER_ALIAS,
+    // which RevenueCat marks deprecated and does not send to new projects — so
+    // leaving TRANSFER unmapped meant a redeemed offer code could never reach
+    // the account that redeemed it. It fires for the DESTINATION user, who is
+    // the one now holding the entitlement.
+    ['TRANSFER',              'active'],
+    ['PRODUCT_CHANGE',        'active'],   // switched plan, still subscribed
   ] as const)('%s -> %s', (event, expected) => {
     expect(toStatus(event)).toBe(expected)
   })
 
   it('returns null for an event it does not understand, rather than guessing', () => {
-    for (const unknown of ['BILLING_ISSUE', 'PRODUCT_CHANGE', 'TRANSFER', 'SUBSCRIBER_ALIAS', 'WHAT_IS_THIS']) {
+    // ⚠️ BILLING_ISSUE STAYS NULL ON PURPOSE, and it is the interesting one: it
+    // opens Apple's GRACE PERIOD, during which the runner still has access and
+    // Apple keeps retrying. Mapping it to `cancelled` or `expired` would revoke a
+    // paying customer mid-grace; if the retry ultimately fails, EXPIRATION
+    // follows and that IS handled. SUBSCRIPTION_PAUSED is the same shape.
+    for (const unknown of ['BILLING_ISSUE', 'SUBSCRIPTION_PAUSED', 'SUBSCRIBER_ALIAS', 'WHAT_IS_THIS']) {
       expect(toStatus(unknown)).toBeNull()
     }
   })

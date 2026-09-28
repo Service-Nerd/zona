@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { secretMatches } from '@/lib/security/secrets'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
-import { toStatus, isGrantEvent, eventAtIso, NON_EXPIRING_GRANT_YEARS } from '@/lib/subscriptions/revenuecatEvents'
+import { toStatus, isGrantEvent, eventAtIso, isSupabaseAppUserId, NON_EXPIRING_GRANT_YEARS } from '@/lib/subscriptions/revenuecatEvents'
 import { webhookTrace } from '@/lib/subscriptions/webhookTrace'
 
 // RevenueCat webhook docs: https://www.revenuecat.com/docs/integrations/webhooks
@@ -51,6 +51,27 @@ export async function POST(req: NextRequest) {
   }
 
   const appUserId: string = rc.app_user_id
+
+  // 🔴 CHARITY-OFFER-CODE-01 — AN ANONYMOUS RevenueCat ID IS NOT A RETRYABLE ERROR.
+  //
+  // A runner who redeems an offer code BEFORE installing boots the app signed
+  // out, so `configure({ appUserID: null })` gives RevenueCat an anonymous id.
+  // The SDK then syncs the Apple receipt and fires INITIAL_PURCHASE carrying
+  // `$RCAnonymousID:...`. Passing that to `apply_subscription_event` makes
+  // Postgres answer **invalid input syntax for type uuid** — verified against the
+  // live database — the route 500s, RevenueCat retries, and EVERY RETRY FAILS
+  // IDENTICALLY because the id never becomes valid on its own.
+  //
+  // ⚠️ SO THIS ANSWERS 200, DELIBERATELY. There is nothing to retry: the same
+  // transaction arrives again, correctly keyed, the moment `logIn` aliases it —
+  // and `POST /api/subscriptions/reconcile` closes it even if that never comes.
+  // Returning 500 would keep a queue spinning on a delivery we can never act on.
+  if (!isSupabaseAppUserId(appUserId)) {
+    const t = webhookTrace('revenuecat',
+      { result: 'unusable', eventType: rc.type, missing: 'app_user_id_not_a_user' })
+    await recordOpsEvent(t.kind, { ...t.detail, app_user_id_shape: String(appUserId).slice(0, 24) }, null)
+    return NextResponse.json({ received: true, ignored: 'anonymous app_user_id' })
+  }
   const expiresAt: string = rc.expiration_at_ms
     ? new Date(rc.expiration_at_ms).toISOString()
     : rc.expires_date ?? (

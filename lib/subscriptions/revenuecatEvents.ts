@@ -35,6 +35,36 @@ export function toStatus(eventType: string): SubscriptionStatus | null {
       return 'trialing'
     case 'TRIAL_CONVERTED':
       return 'active'
+
+    // CHARITY-OFFER-CODE-01 (2026-09-28) — the two that the offer-code journey
+    // needs and the first nine did not cover.
+    //
+    // TRANSFER — "a transfer of transactions and entitlements was initiated
+    // between App User IDs", and RevenueCat fires it **for the destination user
+    // only**. The destination is the one who now holds the entitlement, so
+    // `active` is the correct read. This is the event that can re-key a purchase
+    // made before the runner had an account: the receipt first attaches to an
+    // ANONYMOUS RevenueCat id (the app boots signed out and configures with
+    // `appUserID: null`), and `logIn` later aliases it to the Supabase id.
+    //
+    // ⚠️ The alias itself used to fire `SUBSCRIBER_ALIAS`, which RevenueCat
+    // marks DEPRECATED and does not send to new projects — so TRANSFER is the
+    // only event that can carry that re-key, and handling it was the difference
+    // between a charity runner having access and not.
+    case 'TRANSFER':
+      return 'active'
+
+    // PRODUCT_CHANGE — they moved between plans (monthly <-> annual). Still
+    // subscribed; only the product changed.
+    case 'PRODUCT_CHANGE':
+      return 'active'
+
+    // ⚠️ BILLING_ISSUE AND SUBSCRIPTION_PAUSED ARE DELIBERATELY NOT MAPPED, and
+    // that is a decision rather than an omission. A billing issue opens Apple's
+    // GRACE PERIOD: the runner still has access and Apple retries. Mapping it to
+    // `cancelled` or `expired` would revoke a paying customer mid-grace, and if
+    // the retry fails Apple sends EXPIRATION, which IS handled. Falling through
+    // to `null` records the event and changes nothing, which is exactly right.
     case 'CANCELLATION':
       return 'cancelled'
     case 'EXPIRATION':
@@ -82,4 +112,32 @@ export function eventAtIso(rc: { event_timestamp_ms?: unknown }): string | null 
   if (typeof ms !== 'number' || !Number.isFinite(ms) || ms <= 0) return null
   const d = new Date(ms)
   return Number.isNaN(d.getTime()) ? null : d.toISOString()
+}
+
+/**
+ * Is this `app_user_id` one of OUR users, or one of RevenueCat's anonymous ids?
+ *
+ * 🔴 CHARITY-OFFER-CODE-01 — THE BUG THIS EXISTS FOR, MEASURED AGAINST PRODUCTION.
+ * A runner who redeems an offer code BEFORE installing hits this order:
+ *
+ *   1. app boots signed out -> `configure({ appUserID: null })` -> RevenueCat
+ *      uses an anonymous id, `$RCAnonymousID:...`
+ *   2. the SDK syncs the Apple receipt, sees the transaction for the first time,
+ *      and fires INITIAL_PURCHASE carrying THAT id
+ *   3. the route called `apply_subscription_event(p_user_id: '$RCAnonymousID:…')`
+ *      and Postgres answered **`invalid input syntax for type uuid`** — verified
+ *      by running it against the live database
+ *   4. the route returned 500, RevenueCat retried, and **every retry failed
+ *      identically**, because the id is still anonymous
+ *
+ * So the entitlement never landed and the runner had free access in an app they
+ * had a paid entitlement for at Apple.
+ *
+ * ⚠️ A NON-UUID IS NOT AN ERROR TO RETRY. It is a delivery we cannot act on YET —
+ * the same transaction arrives again, correctly keyed, once `logIn` aliases it.
+ * The route therefore answers 200 and records it, instead of 500-looping.
+ */
+export function isSupabaseAppUserId(id: unknown): id is string {
+  return typeof id === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 }

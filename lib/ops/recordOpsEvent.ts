@@ -120,6 +120,18 @@ export type OpsEventKind =
   | 'stripe_event_write_failed'
   | 'stripe_event_unhandled'
   | 'stripe_event_unusable'
+  // CHARITY-OFFER-CODE-01 (2026-09-28) — the server-side entitlement re-check.
+  //
+  // `_reconciled` is the SUCCESS case and is recorded on every grant, because it
+  // is the only evidence the offer-code journey worked for a given runner, and
+  // 500 Make-A-Wish codes are about to depend on it.
+  //
+  // `_unconfigured` fires when REVENUECAT_SECRET_API_KEY is absent. The route
+  // then refuses rather than granting: a reconcile that cannot verify must never
+  // hand out access, and silence there would be indistinguishable from "nobody
+  // redeemed".
+  | 'revenuecat_reconciled'
+  | 'revenuecat_reconcile_unconfigured'
   // SEC-08 sweep (2026-09-11) — the daily coach note's CACHE could not be read
   // or written. Found because `daily_coach_notes` did not exist in production
   // at all: the migration was committed AND recorded in the applied-migrations

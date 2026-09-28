@@ -626,6 +626,46 @@ export default function DashboardClient() {
   // The LOOK lives in `.nav-bar--receded`; reduced motion disables it in CSS, in
   // one place, rather than being decided here as well.
   const navReceded = useNavRecede()
+
+  // CHARITY-OFFER-CODE-01 — "I may hold an entitlement you never recorded."
+  //
+  // 🔴 THE JOURNEY 500 MAKE-A-WISH RUNNERS ARE ABOUT TO TAKE: code arrives by
+  // email -> redeemed in the App Store -> THEN the app is installed -> THEN an
+  // account is created. At redemption there is no Zonna account, so the
+  // entitlement attaches to an ANONYMOUS RevenueCat id; the webhook fires
+  // carrying it and the database refuses it (verified: "invalid input syntax for
+  // type uuid"). The alias that would re-key it fires SUBSCRIBER_ALIAS, which
+  // RevenueCat marks deprecated and does not send to new projects.
+  //
+  // ⚠️ THE CLIENT NEVER CLAIMS ENTITLEMENT — it asks to be re-checked. The route
+  // asks RevenueCat server-side with a secret the app never holds. Letting the
+  // app assert it would be a free subscription for anyone who can call an
+  // endpoint.
+  //
+  // Native only (there is no StoreKit on web), once per mount, and only when the
+  // runner does NOT already have access — so it costs nothing for the ~all of
+  // users for whom the webhook worked normally.
+  const reconcileTried = useRef(false)
+  useEffect(() => {
+    if (reconcileTried.current || !appReady || !userId) return
+    if (hasPaidAccess) return
+    if (!Capacitor.isNativePlatform()) return
+    reconcileTried.current = true
+    void (async () => {
+      try {
+        const res = await authedFetch('/api/subscriptions/reconcile', { method: 'POST' })
+        const data = await res.json().catch(() => null)
+        // Reload rather than patching tier in place: `resolveTier` is the single
+        // owner and a second copy of "are they paid now?" here is the drift class
+        // TIER-OWNER-01 records.
+        if (res.ok && data?.entitled) window.location.reload()
+      } catch {
+        // Silent by design. A runner who is genuinely entitled still has the
+        // webhook and the next app open; an error toast here would alarm the
+        // ~all of users who simply have no entitlement to find.
+      }
+    })()
+  }, [appReady, userId, hasPaidAccess])
   const [upgradeSource, setUpgradeSource] = useState<UpgradeSource | null>(null)
   const openUpgrade = (source: UpgradeSource) => { setUpgradeSource(source); setScreen('upgrade') }
   const [attributionResolved, setAttributionResolved] = useState(false)
