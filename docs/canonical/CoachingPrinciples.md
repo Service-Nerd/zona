@@ -1914,6 +1914,50 @@ Implemented in `buildWeekSessions()` peak-phase long-run sizing. The race-distan
 
 ---
 
+> 🔴 **Amendment 2026-09-28 (ZONES-BEGINNER-BANDS-01) — THE NULL BAND IS THIS
+> PRINCIPLE'S GATE, NOT A CLAIM ABOUT WHAT A BEGINNER CAN BE TOLD.**
+>
+> `marathonPaceStr` and `hmPaceStr` are null for `fitness === 'beginner'`
+> (`ruleEngine.ts:396`), and the code cites this section as the reason. That is
+> accurate about its PURPOSE: the enforcement note below gates segment selection on
+> `pace.marathonPaceStr && pace.hmPaceStr`, and `fiveKTenKPeakLongRunSession` **throws**
+> if the gate is removed. **The band is the switch.**
+>
+> ⚠️ **IT IS NOT A STATEMENT THAT A BEGINNER'S MARATHON PACE IS UNKNOWABLE.** It falls
+> out of the same VDOT as every other band, at ~79%. What this section decided is that a
+> beginner should not RUN a segment at it — a **load** decision (Willy), not an epistemic
+> one. The two have been wearing one variable, and a reader who finds the null while
+> working on a display will reasonably misread it as doctrine. Hence this note.
+>
+> 🔴 **DO NOT UN-NULL THOSE FIELDS TO SOLVE A DISPLAY PROBLEM.** Doing so silently
+> starts prescribing §24b segments to beginners: a load change arriving through a UI
+> ticket, on tissue that has not been loaded that way.
+>
+> **Ruled for the zones surface:** a beginner is shown the four bands their engine
+> produced and **nothing at all** where the other two would be. Every candidate sentence
+> fails — stating the pace is a soft prescription they will act on (Hutchinson: *"they
+> will run it"*), *"not earned yet"* is a judgement rather than information (Sims), and
+> *"not part of your plan"* invites the question it answers. **Four bands that are all
+> real beats six where two are apologies** (Seiler: *"six bands is a menu"*).
+>
+> ⚠️ **McMillan dissented and it is preserved**: refusing to answer *"what pace will I
+> run the marathon?"* is not neutral — they will look it up and find something worse with
+> no caveat attached. He accepted silence **only** on the condition that a projected race
+> pace, if ever built, gets its own surface and framing and comes back to this board
+> first. It is not a row in the zones list.
+>
+> ⚠️ **Sims' caveat, recorded not resolved:** §13 classifies fitness VDOT-first with a
+> **volume fallback**, which systematically classes lower-absolute-volume runners as
+> beginner. Women run lower absolute volume at the same relative fitness, so 'beginner'
+> here is not a neutral category.
+>
+> **Artifacts:** principle = this amendment · numeric = **none, structural** · invariant =
+> **not mechanically checkable in `validatePlan()`**, which sees plans and not screens;
+> the check belongs in the zones screen's markup test (a null band renders no row and no
+> explanatory string).
+
+---
+
 ## 24c. Long-run structure — build-phase Z2 ceiling (5K/10K, time-targeted)
 
 **Principle.** Build-phase long runs on time-targeted 5K and 10K plans carry a Z2-ceiling reminder in the session's coach notes — a brief emphasis on running at the top of Zone 2 rather than drifting above it. It is not a pace segment, carries no time target, and applies to the **whole run**, not a slice of it. **Engine copy:** `Zone 2 ceiling — if HR starts climbing, back off to a walk for 30 seconds before resuming.` (verified verbatim against `lib/` by DOC-CLAIM-01 — this is the exact drift that check exists to catch). Total session type remains `easy`; zone tag stays Z1–Z2.

@@ -639,3 +639,27 @@ weeks; do not quote 26.9% as engine behaviour.**
 
 `RUN-ANALYSIS-ORPHAN-01` (88 of 145 `run_analysis` rows reference an activity id absent
 from the log) · `ACTIVITY-DUPLICATE-01` (the ingest-side duplicate) · clause 3's re-measure.
+
+---
+
+## ZONES-BEGINNER-BANDS-01 — 2026-09-28 — **CORRECT WITH AMENDMENT**
+
+**Routed down by the Design Board** (ZONES-SURFACE-01): what does a beginner see where
+their marathon and HM pace bands would be?
+
+🔴 **THE PREMISE WAS CONFLATED, AND THAT IS THE FINDING.** §24b is the ONLY section
+naming `marathonPaceStr` / `hmPaceStr`, and it governs long-run **segments** on
+time-targeted **5K/10K** plans. Its enforcement gates selection on those very fields —
+**the band is the switch**. The engine then applies the null to every beginner regardless
+of distance, so **a beginner training for a MARATHON has no marathon pace band**,
+justified by a 5K/10K long-run rule. No principle governs the band itself.
+
+**Ruled:** four bands, and **silence** where the other two would be. Do not un-null the
+fields (Willy: un-nulling starts prescribing §24b segments to beginners — a load change
+arriving through a UI ticket). ⚠️ **McMillan dissented and it is preserved**: a projected
+race pace may be built, but on its own surface, with its own framing, returning here
+first. ⚠️ **Sims' §13 caveat recorded, not resolved.**
+
+**Artifacts:** §24b Amendment · numeric **none, structural** · invariant **not mechanically
+checkable in `validatePlan()`** — it is a display rule and the validator sees plans, not
+screens.

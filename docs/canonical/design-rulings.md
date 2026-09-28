@@ -3144,3 +3144,37 @@ name field. Recorded so it is not lost.
 
 **Does not settle:** the pencil, the section count, and whether inline editing feels right
 in the hand — nobody has seen it on a device.
+
+---
+
+## ZONES-SURFACE-01 — 2026-09-28 — **SHIP WITH AMENDMENT** (built: NO — see scope note)
+
+**Founder, with three competitor screenshots:** *"They put their hr zones under a sub menu
+which also does pace. Can we do that? Should we do that? Can we link off the coach page?"*
+
+**Ruled:** a consolidated zones surface **should** exist — *"what is my threshold pace?"* is
+unanswerable today while *"where are my HR zones?"* is already answered on Me (Zhuo). It
+lives **under Me**, entered by a row that **REPLACES** the existing zone rows rather than
+adding a fifteenth surface (Collins: **fourteen** surfaces already render zone
+information; *"that is not a screen, that is an admission"*).
+
+🔴 **NOT off Coach**, on two documented grounds: `screen-architecture.md` puts *"Profile
+or settings"* in Coach's **does not belong** column, and **Coach is paid-only while this
+content is FREE** — linking it there strands free runners from their own zones.
+
+**Amendments:** lead with the easy-pace **ceiling** at display size (Silvanto: the
+reference's own best instinct, and it states our proposition) · HR/Pace toggle defaulting
+to whichever the runner's data supports, **never an empty tab** (Wroblewski) · show the
+bands this runner's engine produced · 🔴 **the labels are OURS — Z3 is the GREY ZONE, not
+"Tempo"** (Collins, adopted; INV-COACH-004). Beginner-band question routed down and ruled:
+**ZONES-BEGINNER-BANDS-01**.
+
+🔴 **NOT BUILT, AND THE SCOPE MOVED ON MEASUREMENT TAKEN AFTERWARDS.** The brief told
+this board *"we already compute six pace bands"*. True of the **engine**; **not reachable
+from a client bundle** — `BUNDLE-BOUNDARY-01` forbids `lib/plan/ruleEngine` in the browser
+(*"generate on the server and pass data"*), and `/api/race-times`, which already owns the
+VDOT-resolution chain, is **PAID**. ⚠️ **And measured across all 21 stored plans: `meta.vdot`
+is present on 10 and absent on 11, tracking `meta.benchmark` exactly.** So the pace ceiling
+the board ruled should LEAD the screen is unavailable to **52%** of runners, and the HR Z2
+ceiling must be its equal-status twin rather than a fallback. **The ruling stands; the
+build is re-specified in the backlog.**

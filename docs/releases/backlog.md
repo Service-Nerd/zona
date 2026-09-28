@@ -533,6 +533,40 @@ call site, whereas threading a `source` prop through nine giant JSX call sites i
 say whether the Coach teaser converts better than the Me screen, which is the question
 `design-rulings.md`'s killed merchandising screen could not be argued without.
 
+## ⚖️ FILED 2026-09-28 — the zones surface, RULED BY BOTH BOARDS and re-specified
+
+### 🟡 `ZONES-SURFACE-01` — Training Zones under Me (HR / Pace)
+
+🧭 **DESIGN BOARD — SHIP WITH AMENDMENT** · 🏃 **COACHING BOARD — CORRECT WITH
+AMENDMENT** (`ZONES-BEGINNER-BANDS-01`). **Both rulings are done.** Full record:
+`docs/decisions/zones-surface-2026-09-28.md`.
+
+**Build, as ruled:** a zones screen entered from Me by a row that **REPLACES** the current
+zone rows (not a fifteenth zone surface — Collins counted **fourteen**). HR / Pace toggle.
+Leads with the **ceiling**. **Our labels: Z3 is the GREY ZONE.** A beginner sees four
+bands and **nothing** where marathon and HM would be. **Not off Coach** — `screen-architecture`
+excludes settings from Coach and Coach is **paid** while this is **FREE**.
+
+🔴 **RE-SPECIFIED AFTER THE RULINGS, ON A MEASUREMENT THE BOARDS DID NOT HAVE.** My
+brief said *"we already compute six pace bands"* — true of the ENGINE, false of the client:
+
+- `BUNDLE-BOUNDARY-01` forbids `lib/plan/ruleEngine` in a client bundle (*"generate on the
+  server and pass data"*), so `buildPaceFromVDOT` is not reachable from the screen.
+- `/api/race-times` already owns the five-state VDOT-resolution chain — **but it is PAID**,
+  and this content is FREE.
+- 🔴 **`meta.vdot` measured across ALL 21 stored plans: 10 present, 11 absent**, tracking
+  `meta.benchmark` exactly. **So the pace ceiling the board ruled should LEAD is unavailable
+  to 52% of runners**, and the HR Z2 ceiling is its **equal-status twin**, not a fallback.
+  *"Not above 145 bpm"* is the same sentence as *"not faster than 13:12"*.
+
+**Two decisions at build time:** (1) extract the band derivation into a pure module both
+the engine and the client import — **preferred**, because a second producer of pace bands
+is the duplication class this repo keeps paying for — or add a FREE route; (2) whether
+opening a PAID route's VDOT chain to a FREE surface needs the SLT (probably not, no tier
+changes).
+
+✅ **Already landed:** §24b Amendment, both register rows, the decision note.
+
 ## ⚖️ FILED 2026-09-28 — after the attribution / trust / adaptation sitting
 
 ### 🟡 `OPS-ARTIFACT-PLACEMENT-01` — where should the ledger and the share card live?
