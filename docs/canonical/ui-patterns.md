@@ -4291,3 +4291,49 @@ rots upward invisibly.
 **Precedent, not exception:** the Training Zones screen (2026-09-28) is a row on Me that
 opens a focused screen. ⚠️ `ZONES-INPUTS-01` stands: the HR form stays until it gets **its
 own door**, which is not the same as relocating it into the zones screen.
+
+### How a door is built (ME-DOORS-01, 2026-09-28)
+
+**Reuse, not invention: `activeSection` ALREADY is the door mechanism.** `MeScreen` has
+carried `'main' | 'quit' | 'delete-account' | 'support' | 'plan-history'` with early returns
+for as long as those screens have existed. A door extends that union; it does not add
+navigation. Three parts, no more:
+
+1. A value in the `activeSection` union.
+2. An early return above the index render: `if (activeSection === 'x') return (<><BackButton … /><ScreenHeader … />…</>)`.
+3. An `<ActionRow>` on the index whose `onClick` sets it.
+
+**The row's `subtitle` carries STATE, not a restatement.** `Heart rate → 51 / 185 bpm`, or
+`Not set, so your zones are estimated`. ⚠️ This is what lets a nudge survive the move: the
+amber card it replaced read *"Set your resting and max HR **below**"*, and `below` becomes
+false the instant the block is behind a door. A door that strands its own prompt has moved
+the control and lost the reason for it.
+
+**Labels are named once** (`meDoors.ts`, or the screen's own export). The row label and the
+screen title are the same string by definition — the runner taps a word and expects to
+arrive at it. Written twice they drift, and each surface still reads correctly alone.
+
+### ⚠️ THREE doors, not five, and the number is implementation
+
+The ruling owns the principle; the door count is architecture. Measured per BLOCK after the
+sitting (the sitting's numbers were per SCREEN, and correct):
+
+| Block | Contents | Door? |
+|---|---|---|
+| Display | 2 segmented controls | ✅ folded into **Preferences** |
+| Notifications | 1 toggle + 1 row | ✅ folded into **Preferences** |
+| Heart rate | a form, ~160 lines | ✅ its own door (`ZONES-INPUTS-01` satisfied) |
+| Plan adjustments | 111 lines, paid-gated | ✅ its own door |
+| Connections | already 2 `ConnectionRow`s | ❌ **already rows**; a door onto two rows is a tap |
+
+**A door onto two segmented controls is one more tap and an emptier screen** — Wroblewski's
+lens argues against that as hard as the ruling argues for it. The gate is on the row for a
+paid-only door: a free runner sees **no door**, never a door onto a locked room.
+
+### 🔴 The gate measures the INDEX, not the function
+
+`meIsAnIndex.test.ts` first bounded the whole `MeScreen` function — and because doors are
+rendered BY `MeScreen`, moving two sections behind one left every number identical. **The
+value was right and the population was wrong**, this repo's most-recorded check failure.
+The region now starts at the last early return, an arm asserts that anchor sits after every
+door, and a second arm proves what left the index is findable in one rather than deleted.

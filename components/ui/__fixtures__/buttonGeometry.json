@@ -585,11 +585,11 @@
   },
   "app/dashboard/DashboardClient.tsx#Button63": {
     "floor": 44,
-    "padY": 14,
+    "padY": null,
     "font": null,
     "radius": null,
-    "height": 45,
-    "width": "100%"
+    "height": 44,
+    "width": "auto"
   },
   "app/dashboard/DashboardClient.tsx#Button64": {
     "floor": 44,
@@ -601,11 +601,11 @@
   },
   "app/dashboard/DashboardClient.tsx#Button65": {
     "floor": 44,
-    "padY": null,
+    "padY": 14,
     "font": null,
     "radius": null,
-    "height": 44,
-    "width": "auto"
+    "height": 45,
+    "width": "100%"
   },
   "app/dashboard/DashboardClient.tsx#Button66": {
     "floor": 44,

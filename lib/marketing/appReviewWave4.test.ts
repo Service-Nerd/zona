@@ -93,14 +93,29 @@ describe('A8 — Session Detail leads with what you need mid-run', () => {
 })
 
 describe('A6 — Me is a settings screen whose sections describe themselves', () => {
-  it('the display toggles have their own section', () => {
-    // They sat unlabelled inside "Your training", justified by "they affect
-    // session cards" — by which argument almost everything here is training.
-    const i = SHELL.indexOf('<SectionLabel>Display</SectionLabel>')
-    expect(i).toBeGreaterThan(-1)
-    const after = SHELL.slice(i, i + 2000)
-    expect(after).toContain('ariaLabel="Distance units"')
-    expect(after).toContain('ariaLabel="Session display metric"')
+  // 🔴 SUPERSEDED IN MECHANISM, KEPT IN REQUIREMENT — ME-PURPOSE-01 (2026-09-28).
+  //
+  // A6 ruled these toggles must stop sitting unlabelled inside "Your training", justified
+  // by "they affect session cards", *by which argument almost everything here is training*.
+  // The remedy it chose was `<SectionLabel>Display</SectionLabel>` on the index.
+  //
+  // ME-PURPOSE-01 then ruled that **nothing lives on Me — every row is a door**, so the
+  // section label is gone and the controls sit behind `Preferences`. **A6's requirement is
+  // not weakened by that, it is strengthened**: the label became a whole screen with its
+  // own title and subtitle. What changed is where to look for it.
+  //
+  // ⚠️ This arm FAILED on the move, which is the only reason the collision was found —
+  // the settled-ground scan read `design-rulings.md` and not the tests that enforce it.
+  // Recorded in `design-rulings.md` as a supersession, not a reversal.
+  it('the display toggles are labelled — now by a screen, not a section', () => {
+    expect(SHELL, 'the index must not re-grow a Display section').not.toContain('<SectionLabel>Display</SectionLabel>')
+    const i = SHELL.indexOf('PREFERENCES_TITLE')
+    expect(i, 'the Preferences door is missing').toBeGreaterThan(-1)
+    const pref = readFileSync('components/shared/PreferencesScreen.tsx', 'utf8')
+    expect(pref).toContain('ariaLabel="Distance units"')
+    expect(pref).toContain('ariaLabel="Session display metric"')
+    // and the door is titled, so "unlabelled" cannot come back through the back door
+    expect(pref).toContain("PREFERENCES_TITLE = 'Preferences'")
   })
 
   it('🔴 "Plan" no longer labels the SUBSCRIPTION card', () => {

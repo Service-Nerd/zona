@@ -3241,3 +3241,59 @@ rather than doubt.
 
 **Does not settle:** which blocks become doors first, or whether `What Kit knows about you` is
 a door or the one thing that legitimately lives on an index.
+
+---
+
+## ME-DOORS-01 — 2026-09-28 — **EXECUTED** (no new ruling; `ME-PURPOSE-01` is the ruling)
+
+Three doors, not five, and the number is architecture rather than a re-reading of the
+ruling. The ruling owns the principle — *nothing lives on Me, every row is a door.* The
+door COUNT is implementation, decided as architect and measured per BLOCK, where the
+sitting's own numbers were per SCREEN and correct at that grain.
+
+| Block | Measured | Outcome |
+|---|---|---|
+| Display | 2 segmented controls | folded into **Preferences** |
+| Notifications | 1 toggle + 1 row | folded into **Preferences** |
+| Heart rate | a form, ~160 lines | **its own door** — discharges `ZONES-INPUTS-01`'s standing condition |
+| Plan adjustments | 111 lines, paid-gated | **its own door**, gate on the row |
+| Connections | already 2 `ConnectionRow`s | **left alone** — already rows |
+
+⚠️ **A door onto two segmented controls is one more tap and an emptier screen.**
+Wroblewski's lens argues against that as hard as the ruling argues for it.
+
+**Index surface, measured from the code before and after:** raw `<button>` **6 → 4**,
+inline toggles **2 → 0**, `<ActionRow>` uses **0 → 3**, index region **38,452 → 31,445 chars**.
+
+### 🔴 A6 (wave 4) is SUPERSEDED IN MECHANISM, KEPT IN REQUIREMENT
+
+A6 ruled the display toggles must stop sitting **unlabelled inside "Your training"**,
+justified by *"they affect session cards"* — by which argument almost everything on Me is
+training. Its remedy was `<SectionLabel>Display</SectionLabel>` on the index.
+`ME-PURPOSE-01` removes section labels from the index, so that specific remedy is gone.
+
+**A6's requirement is not weakened; it is strengthened** — the label became a whole screen
+with a title and a subtitle. What changed is where to look.
+
+⚠️ **This collision was found by a RED TEST, not by the settled-ground scan.** The scan read
+`design-rulings.md`, and A6's enforcement lives in `appReviewWave4.test.ts`. **A ruling's
+register entry and the check that holds it shut are two different registers**, and only one
+of them was on the list. The arm was rewritten to the superseding rule and falsified by
+re-adding the section label.
+
+### The three artifacts
+
+1. **Pattern** — `ui-patterns.md` § *How a door is built*: the `activeSection` union, the
+   early return, the `ActionRow`, and the rule that the row's subtitle carries **state**.
+2. **Constant** — `components/shared/meDoors.ts` (`HEART_RATE_TITLE`,
+   `HEART_RATE_UNSET_SUB`, `PLAN_ADJUSTMENTS_*`) + `PREFERENCES_TITLE` / `_SUBTITLE`.
+   The row label and the screen title are one string by definition.
+3. **Mechanical check** — `meIsAnIndex.test.ts` re-bounded onto the INDEX, register lowered
+   6→4 / 2→0, plus `preferencesScreen.markup.test.ts`. **Nine arms falsified**, including
+   one (`toContain('PreferencesScreen')`) that PASSED against `<PreferencesScreenXX` and had
+   to be bounded — the substring-bias class, third recorded instance.
+
+**What this does not prove:** nothing has run on a device. The doors were rendered at 375px
+in a browser via `/preferences-preview`; the three `activeSection` screens themselves live
+in `app/`, which vitest does not collect, so their wiring is held by tsc and by reading, not
+by a test.

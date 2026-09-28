@@ -22,16 +22,54 @@ import { readFileSync } from 'node:fs'
 // stays, and the register silently permits re-adding one. This repo has recorded that
 // exact failure in `buttonInlineOverride`.
 
+const SRC = () => readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+
+const INDEX_ANCHOR = 'const hasPlan = !!(plan?.meta?.race_name)'
+
+/**
+ * The INDEX, not the function.
+ *
+ * 🔴 THE FIRST VERSION OF THIS BOUNDED THE WHOLE `MeScreen` FUNCTION, AND THAT MADE THE
+ * REGISTER UNABLE TO RECORD THE ONE THING IT EXISTS TO RECORD. `activeSection`'s doors are
+ * rendered BY `MeScreen` — `if (activeSection === 'preferences') return (…)` sits inside the
+ * same function — so moving Display and Notifications behind a door left `toggles` at 2 and
+ * `rawButtons` at 6. Measured: identical before and after a move that emptied two sections
+ * off the index.
+ *
+ * That is this repo's most-recorded check failure, in its exact shape: **the value was right
+ * and the POPULATION was wrong.** A region that contains both the index and the rooms cannot
+ * tell you whether anything is still in the index.
+ *
+ * So the region is the index render only: everything from the last early return onward.
+ */
 const ME = () => {
-  const src = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+  const src = SRC()
   const start = src.indexOf('function MeScreen({')
   expect(start, 'MeScreen moved — re-anchor this gate').toBeGreaterThan(-1)
-  // Bound the region: MeScreen only, not the 12,000-line file. Ends at the next
-  // top-level function declaration.
   const after = src.slice(start + 20)
   const end = after.search(/\nfunction [A-Z]/)
   expect(end, 'could not bound MeScreen').toBeGreaterThan(-1)
-  return after.slice(0, end)
+  const fn = after.slice(0, end)
+  const at = fn.indexOf(INDEX_ANCHOR)
+  expect(at, 'the index anchor moved — re-anchor this gate').toBeGreaterThan(-1)
+  return fn.slice(at)
+}
+
+/**
+ * ⚠️ COMMENTS ARE NOT CONTROLS. The first count said **6** raw buttons and one of them was
+ * the word `<button` inside a comment explaining the chevron fix. A register whose number
+ * includes prose cannot be reconciled against the screen, and the discrepancy reads as a
+ * missing control rather than as a miscount.
+ */
+const stripComments = (s: string) =>
+  s.split('\n').filter(l => !l.trim().startsWith('//') && !l.trim().startsWith('*')).join('\n')
+
+/** Everything BEFORE the anchor: the doors MeScreen renders. Used only to prove the split. */
+const DOORS = () => {
+  const src = SRC()
+  const start = src.indexOf('function MeScreen({')
+  const fn = src.slice(start + 20)
+  return fn.slice(0, fn.indexOf(INDEX_ANCHOR))
 }
 
 /**
@@ -42,7 +80,7 @@ const ME = () => {
  */
 const INLINE_BASELINE = {
   /** `<button>` written by hand rather than reached through a pattern. */
-  rawButtons: 6,
+  rawButtons: 4,
   /** Toggles and switches sitting directly on the index.
    *  🔴 THE SITTING WAS TOLD **5** AND THE REAL FIGURE IS **2**. My evidence used
    *  `grep -cE 'Toggle|Switch|role="switch"'` — a LINE count with a wider pattern, which
@@ -54,18 +92,46 @@ const INLINE_BASELINE = {
    *  ⚠️ It was caught by the stale-baseline arm on this file's FIRST RUN — the arm
    *  written to stop the register rotting upward, catching the register being wrong on
    *  the way in. */
-  toggles: 2,
+  toggles: 0,
 }
 
 describe('ME-PURPOSE-01 — Me is an index, and the inline surface cannot grow', () => {
   it('the region is bounded and non-trivial', () => {
     const me = ME()
     expect(me.length).toBeGreaterThan(5000)
-    expect(me).toContain('HRZonesSection')
+    // ⚠️ THE SANITY ANCHOR MUST BE SOMETHING THAT STAYS. The first version anchored on
+    // `HRZonesSection`, which door 2 moved — so the arm guarding the region broke on the
+    // very change the register exists to record. `SectionLabel` and the identity card are
+    // the index's own furniture: the one declared exception and the screen's header.
+    expect(me).toContain('<SectionLabel>')
+    expect(me).toContain('What Kit knows about you')
+  })
+
+  // ⚠️ ASSERT THE ANCHOR. A check that depends on an anchor and does not assert it fails
+  // silently when the anchor moves — recorded 2026-09-27, four guards, one loud.
+  // The anchor must sit AFTER every `activeSection` early return, or a door's markup is
+  // back inside the measured region and the register stops meaning anything.
+  it('the anchor sits after every door', () => {
+    const doors = DOORS()
+    const me = ME()
+    expect(doors, 'the early returns are not before the anchor').toContain("activeSection === 'quit'")
+    expect(me, 'a door leaked into the index region').not.toContain('activeSection ===')
+  })
+
+  // 🔴 AND THE ARM THAT PROVES THE SPLIT IS REAL rather than an empty region passing
+  // every other arm. The controls that LEFT the index must be findable in a door.
+  it('what left the index is in a door, not deleted', () => {
+    // ⚠️ MATCH THE ELEMENT, NOT THE SUBSTRING. `toContain('PreferencesScreen')` passed
+    // against `<PreferencesScreenXX` during falsification — the substring survives any
+    // rename that EXTENDS the name, which is exactly what a bad refactor does. Third time
+    // this repo has recorded the class: bound the match, never grep the name.
+    expect(DOORS(), 'the Preferences door does not render the units control')
+      .toMatch(/<PreferencesScreen[\s/>]/)
+    expect(SRC(), 'the push rows were dropped rather than moved').toContain('PushNotificationsRow')
   })
 
   it('hand-rolled buttons do not grow', () => {
-    const n = (ME().match(/<button/g) ?? []).length
+    const n = (stripComments(ME()).match(/<button/g) ?? []).length
     expect(n, `raw <button> on Me: ${n}, baseline ${INLINE_BASELINE.rawButtons}. ` +
       'A new inline control on the index is exactly what ME-PURPOSE-01 forbids — ' +
       'add a door (ActionRow) and a screen instead.')
@@ -73,7 +139,7 @@ describe('ME-PURPOSE-01 — Me is an index, and the inline surface cannot grow',
   })
 
   it('inline toggles do not grow', () => {
-    const n = (ME().match(/Toggle|role="switch"/g) ?? []).length
+    const n = (stripComments(ME()).match(/Toggle|role="switch"/g) ?? []).length
     expect(n, `inline toggles on Me: ${n}, baseline ${INLINE_BASELINE.toggles}`)
       .toBeLessThanOrEqual(INLINE_BASELINE.toggles)
   })
@@ -82,8 +148,8 @@ describe('ME-PURPOSE-01 — Me is an index, and the inline surface cannot grow',
   it('a baseline that is no longer met must be LOWERED in the same commit', () => {
     const me = ME()
     const actual = {
-      rawButtons: (me.match(/<button/g) ?? []).length,
-      toggles: (me.match(/Toggle|role="switch"/g) ?? []).length,
+      rawButtons: (stripComments(me).match(/<button/g) ?? []).length,
+      toggles: (stripComments(me).match(/Toggle|role="switch"/g) ?? []).length,
     }
     const stale = Object.entries(INLINE_BASELINE)
       .filter(([k, v]) => actual[k as keyof typeof actual] < v)
