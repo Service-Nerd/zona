@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-28 — MOVE-IMPACT-GATE-01 · the rule existed twice and held neither time
+**Shipped:** A hook that asks, on any move-shaped commit, what the code moved away from. Plus the six questions it asks, in the build procedure.
+**Dev learning:** I went looking for why I'd skipped the downstream review and found I hadn't. The procedure has the step, and I'd answered it — "none". **Both the skill and my notes framed it as data flow: *where is this output consumed*, *what breaks if the shape changes*.** A move has no output and changes no shape. So the honest answer really was "none", and it was the answer to a question that didn't apply. **The failure wasn't discipline, it was the question.**
+**Product/creator learning:** The founder set this standard seventeen days ago. I know that because the note I wrote at the time ends with the line *"he should not have had to ask."* He asked again today. Writing down that someone shouldn't have to repeat themselves does not stop them having to repeat themselves — and the only thing in this codebase that has ever reliably changed my behaviour is something that fires.
+**AI-building learning:** I falsified the hook against history rather than against a fixture: it fires on the exact commit that shipped the five defects. Then I measured noise the same way — 80 commits, 33 non-docs, 5 fires, **all five genuine relocations, zero false positives.** One of them is the commit whose chevron this ship later broke, which means the gate would have pointed at the defect a day before it existed. That's a better argument for a check than any amount of reasoning about it.
+**The honest bit:** The negative cases took longer to write than the hook. A gate that fires on a normal feature commit gets switched off inside a week, and this repo has recorded that outcome twice already. So the test file is mostly a list of things that must stay silent: a new screen, a one-line fix, a big feature, dead-code removal, an engine refactor, churn one line under the threshold.
+**Hook material:** My note about it ended "he should not have had to ask." He asked again seventeen days later.
+**Postable?:** yes
+
 ## 2026-09-28 — ME-DOORS-01 downstream · five silent breaks in code the change never touched
 **Shipped:** The up/downstream review of the three new doors, and the five defects it found.
 **Dev learning:** **A relocation makes correct code wrong at a distance.** The worst one: a control I shipped the day before — the chevron on the zones screen that takes you to your HR inputs — did `setScreen('me')` and then `getElementById('me-hr-card').scrollIntoView()`. The HR card is now behind a door, so `getElementById` returned null, the optional chain swallowed it, and the chevron **did nothing**. No error, no log. An anchor scroll is a navigation dependency on layout, and a door breaks it without editing a character of it.
