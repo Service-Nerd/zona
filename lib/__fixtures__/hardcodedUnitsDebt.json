@@ -1,21 +1,21 @@
 {
   "item": "UNITS-PROSE-01",
   "recorded": "2026-09-23",
-  "reason": "PRODUCER-SIDE BY DESIGN, AND CONVERTED AT THE READ. These sites build a unit into a string at GENERATION or ANALYSIS time, where the reader's preference is not in scope. They are deliberately NOT fixed at the producer, for three reasons any one of which is sufficient: (1) 100% of generated plans and 19 of 19 stored plans already carry these strings, so a producer fix repairs none of them; (2) the units toggle is MUTABLE after generation, so baking miles is wrong for the runner who switches back; (3) the producer strings stay byte-identical, so section 44's REFUSAL_NAMES_NEXT_STEP and every other prose matcher keep passing - this repo broke 8 prose matchers across 5 files once by editing four refusal strings. The runner-facing READ sites are wired through lib/format.ts convertDistanceString: planRationaleNotes (the single owner of meta-note display), coach_notes in DashboardClient, the refusal message in GeneratePlanScreen, and GeneratingCeremony. Gated by lib/plan/prosePreference.test.ts. WHAT REMAINS, AND AN HONEST NOTE ON THE COUNT: after phases 1-4 most surviving entries are FALLBACK expressions behind the owner, not primary paths - `formatDuration(v) ?? `${v} min`` still matches this pattern, which is why the count moved 57 to 56 while four live defects were fixed. A count is not a measure of exposure here. Genuinely unwired: nothing runner-facing that has been measured as reachable. Ten of the eleven DURATION entries were measured UNREACHABLE at 60+ minutes across 48,547 sessions (`sessionComposer` descriptions and `buildStepGroups` rows produced ZERO) - a rep or a warm-up is minutes by construction, so they cannot breach ADR-015's 60-to-hours rule. The one that could was `amountStr`, the session-card header, at 21,062 of 48,547 sessions and a maximum of 172 raw minutes; it is fixed.",
-  "measured": "\ud83d\udd34 CORRECTED 2026-09-23. This field first read: '19 stored plans: 17 carry /km pace, ZERO carry prose km anywhere in the document. The class is REAL but currently UNREALISED in production.' THAT WAS WRONG, and the cause was the instrument, not the data: the production query used '\\d\\s*km\\b', and in Postgres POSIX regex \\b is a BACKSPACE CHARACTER, not a word boundary (\\y is). It matched nothing and returned a clean zero. Re-measured with \\y: ALL 19 of 19 stored plans carry prose km. 101 of 888 sessions carry it in runner-facing coach_notes, 16 of 19 plans in meta.notes, 7 in volume_constraint_note, 3 sessions in derived_set step lengths. Generated corpus agrees: 1,167 of 1,167 plans (100%). A clean zero from a broken pattern is indistinguishable from a clean zero from clean data.",
+  "reason": "PRODUCER-SIDE BY DESIGN, AND CONVERTED AT THE READ. These sites build a unit into a string at GENERATION or ANALYSIS time, where the reader's preference is not in scope. They are deliberately NOT fixed at the producer, for three reasons any one of which is sufficient: (1) 100% of generated plans and 19 of 19 stored plans already carry these strings, so a producer fix repairs none of them; (2) the units toggle is MUTABLE after generation, so baking miles is wrong for the runner who switches back; (3) the producer strings stay byte-identical, so section 44's REFUSAL_NAMES_NEXT_STEP and every other prose matcher keep passing - this repo broke 8 prose matchers across 5 files once by editing four refusal strings. The runner-facing READ sites are wired through lib/format.ts convertDistanceString: planRationaleNotes (the single owner of meta-note display), coach_notes in DashboardClient, the refusal message in GeneratePlanScreen, and GeneratingCeremony. Gated by lib/plan/prosePreference.test.ts. WHAT REMAINS, AND AN HONEST NOTE ON THE COUNT: after phases 1-4 most surviving entries are FALLBACK expressions behind the owner, not primary paths - `formatDuration(v) ?? `${v} min`` still matches this pattern, which is why the count moved 57 to 56 while four live defects were fixed. A count is not a measure of exposure here. Genuinely unwired: nothing runner-facing that has been measured as reachable. Ten of the eleven DURATION entries were measured UNREACHABLE at 60+ minutes across 48,547 sessions (`sessionComposer` descriptions and `buildStepGroups` rows produced ZERO) - a rep or a warm-up is minutes by construction, so they cannot breach ADR-015's 60-to-hours rule. The one that could was `amountStr`, the session-card header, at 21,062 of 48,547 sessions and a maximum of 172 raw minutes; it is fixed.  — 2026-09-28 (PACE-BANDS-OWNER-01): five entries RE-PATHED from lib/plan/ruleEngine.ts to lib/plan/paceBands.ts. The VDOT→band derivation was extracted so a client surface could call the producer instead of re-deriving it; the debt moved with the code and the COUNT IS UNCHANGED. Nothing was fixed and nothing was added.",
+  "measured": "🔴 CORRECTED 2026-09-23. This field first read: '19 stored plans: 17 carry /km pace, ZERO carry prose km anywhere in the document. The class is REAL but currently UNREALISED in production.' THAT WAS WRONG, and the cause was the instrument, not the data: the production query used '\\d\\s*km\\b', and in Postgres POSIX regex \\b is a BACKSPACE CHARACTER, not a word boundary (\\y is). It matched nothing and returned a clean zero. Re-measured with \\y: ALL 19 of 19 stored plans carry prose km. 101 of 888 sessions carry it in runner-facing coach_notes, 16 of 19 plans in meta.notes, 7 in volume_constraint_note, 3 sessions in derived_set step lengths. Generated corpus agrees: 1,167 of 1,167 plans (100%). A clean zero from a broken pattern is indistinguishable from a clean zero from clean data.",
   "count": 56,
   "entries": [
     {
       "file": "lib/coaching/limiter.ts",
-      "code": "reasoning:  `long run cut ${formatDistance(shortfall, inputs.units, { exact: true }) ?? `${shortfall.toFixed(1)}km`} short with RPE ${inputs.rpe} \u2014 fueling or pacing in the back half`,"
+      "code": "reasoning:  `long run cut ${formatDistance(shortfall, inputs.units, { exact: true }) ?? `${shortfall.toFixed(1)}km`} short with RPE ${inputs.rpe} — fueling or pacing in the back half`,"
     },
     {
       "file": "lib/coaching/planAdjustment.ts",
-      "code": "coach_notes: [`Trimmed to ${reduced}km \u2014 long runs have been finishing short. Build back to full distance when ready.`] as [string],"
+      "code": "coach_notes: [`Trimmed to ${reduced}km — long runs have been finishing short. Build back to full distance when ready.`] as [string],"
     },
     {
       "file": "lib/coaching/planAdjustment.ts",
-      "code": "coach_notes: [`Trimmed to ${formatDuration(reducedMins) ?? `${reducedMins} min`} \u2014 long runs have been finishing short. Build back to full time when ready.`] as [string],"
+      "code": "coach_notes: [`Trimmed to ${formatDuration(reducedMins) ?? `${reducedMins} min`} — long runs have been finishing short. Build back to full time when ready.`] as [string],"
     },
     {
       "file": "lib/plan/baseVolume.ts",
@@ -51,11 +51,11 @@
     },
     {
       "file": "lib/plan/foundationBlock.ts",
-      "code": "detail: `${floor1dp(longRunFinalKm).toFixed(1)}km easy \u2014 Zone 2 throughout. No exceptions.`,"
+      "code": "detail: `${floor1dp(longRunFinalKm).toFixed(1)}km easy — Zone 2 throughout. No exceptions.`,"
     },
     {
       "file": "lib/plan/foundationBlock.ts",
-      "code": "detail: `${floor1dp(eachKm).toFixed(1)}km easy \u2014 Zone 2. Conversational pace.`,"
+      "code": "detail: `${floor1dp(eachKm).toFixed(1)}km easy — Zone 2. Conversational pace.`,"
     },
     {
       "file": "lib/plan/longRunReadiness.ts",
@@ -67,11 +67,11 @@
     },
     {
       "file": "lib/plan/maintenance.ts",
-      "code": "detail: `${distKm.toFixed(1)}km easy \u2014 Zone 2 throughout. Conversational pace.`,"
+      "code": "detail: `${distKm.toFixed(1)}km easy — Zone 2 throughout. Conversational pace.`,"
     },
     {
       "file": "lib/plan/maintenance.ts",
-      "code": "detail: `${distKm.toFixed(1)}km easy with 4\u00d720s strides. Zone 2 bulk, strides feel easy-fast.`,"
+      "code": "detail: `${distKm.toFixed(1)}km easy with 4×20s strides. Zone 2 bulk, strides feel easy-fast.`,"
     },
     {
       "file": "lib/plan/resolveMainSet.ts",
@@ -86,24 +86,24 @@
       "code": "const durationText = (mins: number): string => formatDuration(mins) ?? `${Math.round(mins)} min`"
     },
     {
-      "file": "lib/plan/ruleEngine.ts",
-      "code": "return `${formatPace(fast)}\u2013${formatPace(slow)} /km`"
+      "file": "lib/plan/paceBands.ts",
+      "code": "return `${formatPace(fast)}–${formatPace(slow)} /km`"
     },
     {
-      "file": "lib/plan/ruleEngine.ts",
-      "code": "easyPaceStr:      `${formatPace(eFast)}\u2013${formatPace(eSlow)} /km`,"
+      "file": "lib/plan/paceBands.ts",
+      "code": "easyPaceStr:      `${formatPace(eFast)}–${formatPace(eSlow)} /km`,"
     },
     {
-      "file": "lib/plan/ruleEngine.ts",
-      "code": "qualityPaceStr:   `${formatPace(tFast)}\u2013${formatPace(tSlow)} /km`,"
+      "file": "lib/plan/paceBands.ts",
+      "code": "qualityPaceStr:   `${formatPace(tFast)}–${formatPace(tSlow)} /km`,"
     },
     {
-      "file": "lib/plan/ruleEngine.ts",
-      "code": "cvPaceStr:        `${formatPace(cvFast)}\u2013${formatPace(cvSlow)} /km`,"
+      "file": "lib/plan/paceBands.ts",
+      "code": "cvPaceStr:        `${formatPace(cvFast)}–${formatPace(cvSlow)} /km`,"
     },
     {
-      "file": "lib/plan/ruleEngine.ts",
-      "code": "intervalPaceStr:  `${formatPace(iFast)}\u2013${formatPace(iSlow)} /km`,"
+      "file": "lib/plan/paceBands.ts",
+      "code": "intervalPaceStr:  `${formatPace(iFast)}–${formatPace(iSlow)} /km`,"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
@@ -115,7 +115,7 @@
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "type: 'race', label: raceName ? `Race \u2014 ${raceName}` : `Race day \u2014 ${distKm} km`, detail: null,"
+      "code": "type: 'race', label: raceName ? `Race — ${raceName}` : `Race day — ${distKm} km`, detail: null,"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
@@ -123,15 +123,15 @@
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "`Middle ${Math.round(midPct * 100)}% (\u2248${midKm} km) at marathon pace: ${mpStr}. Controlled \u2014 not a tempo session.`,"
+      "code": "`Middle ${Math.round(midPct * 100)}% (≈${midKm} km) at marathon pace: ${mpStr}. Controlled — not a tempo session.`,"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "`Final ${Math.round(finalPct * 100)}% (\u2248${finalKm} km) at HM pace: ${hmStr}. This is the work. Exit feeling like you had more.`,"
+      "code": "`Final ${Math.round(finalPct * 100)}% (≈${finalKm} km) at HM pace: ${hmStr}. This is the work. Exit feeling like you had more.`,"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "`Negative-split finish \u2014 last ${Math.round(finalPct * 100)}% (\u2248${finalKm} km): go by feel, slightly faster than your easy pace. No pace target \u2014 proprioception, not pace.`,"
+      "code": "`Negative-split finish — last ${Math.round(finalPct * 100)}% (≈${finalKm} km): go by feel, slightly faster than your easy pace. No pace target — proprioception, not pace.`,"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
@@ -147,11 +147,11 @@
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "resolution:     `Re-anchored week${reanchored.length > 1 ? 's' : ''} ${reanchored.join(', ')} to \u00a72's ${capPct}% cap measured from delivered volume (now ${deliveredKm} km) by trimming easy runs; long run + quality preserved.`,"
+      "code": "resolution:     `Re-anchored week${reanchored.length > 1 ? 's' : ''} ${reanchored.join(', ')} to §2's ${capPct}% cap measured from delivered volume (now ${deliveredKm} km) by trimming easy runs; long run + quality preserved.`,"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "resolution:     `Incremented long run by ${incrementKm} km on weeks ${incrementedWeeks.join(', ')} (capped at race \u00d7 ${raceDistanceKm <= 21 ? GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_SHORT : GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_LONG}).`,"
+      "code": "resolution:     `Incremented long run by ${incrementKm} km on weeks ${incrementedWeeks.join(', ')} (capped at race × ${raceDistanceKm <= 21 ? GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_SHORT : GENERATION_CONFIG.LR_RACE_DISTANCE_MULT_LONG}).`,"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
@@ -159,7 +159,7 @@
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "? `${ULTRA_FUELLING_PREFIX}${cadence.min}\u2013${cadence.max} minutes, starting in the first hour. ` +"
+      "code": "? `${ULTRA_FUELLING_PREFIX}${cadence.min}–${cadence.max} minutes, starting in the first hour. ` +"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
@@ -171,7 +171,7 @@
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "return `Your weekday limit of ${durationText(input.max_weekday_mins)} is shaping this plan \u2014 peak week reaches ${Math.round(peakActual)}km where it would otherwise have gone to ${Math.round(peakIntent)}km, about ${Math.round(lostPct)}% less. Only the volume moves; the sessions and their balance don't. If you want it back, ${lever} is the lever.`"
+      "code": "return `Your weekday limit of ${durationText(input.max_weekday_mins)} is shaping this plan — peak week reaches ${Math.round(peakActual)}km where it would otherwise have gone to ${Math.round(peakIntent)}km, about ${Math.round(lostPct)}% less. Only the volume moves; the sessions and their balance don't. If you want it back, ${lever} is the lever.`"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
@@ -195,11 +195,11 @@
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "notes:        `Standard plan \u2014 ${input.race_distance_km}km, ${totalWeeks} weeks`,"
+      "code": "notes:        `Standard plan — ${input.race_distance_km}km, ${totalWeeks} weeks`,"
     },
     {
       "file": "lib/plan/ruleEngine.ts",
-      "code": "? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp \u2014 the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`"
+      "code": "? `Fresh-from-layoff start: week 1 begins at ${Math.round(GENERATION_CONFIG.FRESH_RETURN_START_FRACTION * 100)}% of your stated current weekly volume (${Math.round(volumes[0])} km vs ${input.current_weekly_km} km stated). Returning to running needs caution, not faster ramp — the engine prefers a small base to rebuild from. Volume grows at the standard ${GENERATION_CONFIG.MAX_WEEKLY_VOLUME_INCREASE_PCT}% per week.`"
     },
     {
       "file": "lib/plan/runWalkPlan.ts",
@@ -219,7 +219,7 @@
     },
     {
       "file": "lib/plan/sessionComposer.ts",
-      "code": "return `${m.duration_mins ?? '\u2014'} min progression: ${m.zone_start ?? 'Z2'} \u2192 ${m.zone_end ?? 'Z3'}.`"
+      "code": "return `${m.duration_mins ?? '—'} min progression: ${m.zone_start ?? 'Z2'} → ${m.zone_end ?? 'Z3'}.`"
     },
     {
       "file": "lib/plan/sessionSteps.ts",

@@ -121,13 +121,16 @@ import { RecalibrationReadyTile, RecalibrationEntryScreen } from './Recalibratio
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
+import { TrainingZonesScreen } from '@/components/shared/TrainingZonesScreen'
+// PACE-BANDS-OWNER-01 — pure, and safe across BUNDLE-BOUNDARY-01 where `ruleEngine` is not.
+import { buildPaceFromVDOT, type PaceGuide } from '@/lib/plan/paceBands'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
 import NavTab from '@/components/ui/NavTab'
 import IconButton from '@/components/ui/IconButton'
 
-type Screen = 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
+type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
 
 /**
  * Data passed to PostRunScreen — the destination screen for a Strava-linked
@@ -2844,7 +2847,7 @@ export default function DashboardClient() {
     //    is better than blocking the HR save.
     void authedFetch('/api/recalibrate-hr', { method: 'POST' })
   } catch {}
-}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} onOpenZones={() => setScreen('zones')} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('session')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
@@ -2875,6 +2878,32 @@ export default function DashboardClient() {
         {screen === 'recalibration' && <RecalibrationEntryScreen distanceKm={recalDistanceKm} status={recalStatus} onBack={() => { setRecalStatus('idle'); setScreen('today') }} onConfirm={handleRecalConfirm} />}
         {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} preferredUnits={preferredUnits} />}
         {screen === 'founder'   && <FounderNoteScreen onBack={() => setScreen('me')} />}
+        {/* ZONES-SURFACE-01 — a full screen, never a sheet (no-popups rule), entered from
+            Me. 🔴 NOT from Coach: `screen-architecture.md` puts "Profile or settings" in
+            Coach's does-not-belong column, and Coach is PAID while this content is FREE —
+            linking it there would strand free runners from their own zones.
+
+            ⚠️ The PaceGuide is rebuilt by calling the ENGINE'S OWN PRODUCER with the
+            engine's own recorded inputs (`meta.vdot_training_anchor`, `meta.vdot`), never
+            by re-deriving bands from VDOT fractions here — `ruleEngine.ts` records that as
+            "the second-copy-that-drifts class this repo has recorded FIVE times".
+            Measured: `meta.vdot` is present on 10 of 21 stored plans, so `pace` is null
+            for roughly half of runners and the screen shows HR only. */}
+        {screen === 'zones' && (() => {
+          const meta = plan?.meta as { vdot?: number; vdot_training_anchor?: number } | undefined
+          const raw = meta?.vdot
+          const anchor = meta?.vdot_training_anchor ?? raw
+          const pace: PaceGuide | null =
+            typeof raw === 'number' && typeof anchor === 'number' ? buildPaceFromVDOT(anchor, raw) : null
+          const hrZones = restingHR && maxHR ? calculateZones(restingHR, maxHR) : null
+          return (
+            <>
+              <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setScreen('me')} /></div>
+              <ScreenHeader title="Your zones" sub="Heart rate and pace targets" />
+              <TrainingZonesScreen zones={hrZones} pace={pace} units={preferredUnits} />
+            </>
+          )
+        })()}
         {/* GTM-CHARITY-04 — full screen, never a modal (no-popups rule). */}
         {screen === 'redeem'    && <RedeemCodeScreen onBack={() => setScreen(redeemReturnTo)} onRedeemed={(expiresAt: string | null) => { setHasPaidAccess(true); setTrialExpired(false); setTrialDaysLeft(null); setHadCharityGrant(true); setCharityGrantEndsAt(expiresAt) }} />}
         {screen === 'notifications' && <NotificationsScreen onBack={() => setScreen('today')} onNavigate={navigateFromNotificationUrl} onAllRead={() => setUnreadNotifications(0)} />}
@@ -11433,7 +11462,17 @@ function AppleHealthConnectionRow({ onHRFound }: {
 const ZONE_DEFS = [
   { zone: 1, name: 'Recovery',  pctMin: 50, pctMax: 60, colour: 'var(--session-recovery)', desc: 'Active recovery · warm-up · cool-down' },
   { zone: 2, name: 'Aerobic',   pctMin: 60, pctMax: 70, colour: 'var(--session-easy)',     desc: 'Aerobic base · conversational · fat burning' },
-  { zone: 3, name: 'Tempo',     pctMin: 70, pctMax: 80, colour: 'var(--session-quality)',  desc: 'Comfortably hard · 3-word sentences' },
+  // 🔴 WAS 'Tempo · Comfortably hard' UNTIL 2026-09-28 (ZONES-SURFACE-01, Design
+  // Board). `CoachingPrinciples §1` is titled "Polarised training — PROTECTION FROM
+  // GREY ZONE", and this row was labelling that exact band with the competitor's
+  // word and describing it neutrally. A zone the constitution exists to keep runners
+  // OUT of cannot be presented as one they are working towards.
+  //
+  // ⚠️ 'Tempo' was also doubly wrong here: tempo SESSIONS are prescribed at Z4
+  // threshold, so the app had a zone named after a session type that does not run in
+  // it. Renaming the ZONE does not touch session names — design owns the encoding,
+  // coaching owns the meaning, and the meaning (70–80% HRR) is unchanged.
+  { zone: 3, name: 'Grey zone', pctMin: 70, pctMax: 80, colour: 'var(--session-quality)',  desc: 'Neither easy nor hard · the one that costs you' },
   { zone: 4, name: 'Threshold', pctMin: 80, pctMax: 90, colour: 'var(--session-race)',     desc: 'Hard · sustained race effort' },
   { zone: 5, name: 'VO₂ Max',  pctMin: 90, pctMax: 100, colour: 'var(--coral)',            desc: 'Maximum effort · short intervals only' },
 ]
@@ -11518,7 +11557,7 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
   )
 }
 
-function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZoneMethod, hrAssumptionNote }: {
+function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZoneMethod, hrAssumptionNote, onOpenZones }: {
   restingHR: number | null
   maxHR: number | null
   /** §50 (HR-MAX-01) — provenance of the stored max, used to decide whether an
@@ -11530,6 +11569,8 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
   hrZoneMethod?: string | null
   /** From plan.meta.hr_assumption_note — human-readable explanation of the fallback. */
   hrAssumptionNote?: string | null
+  /** ZONES-SURFACE-01 — opens the Training Zones screen. */
+  onOpenZones?: () => void
 }) {
   // Smart default: most people have never tested their max HR, so a blank field
   // leaves zones unconfigured. Pre-fill an age estimate (Tanaka: 208 − 0.7×age —
@@ -11628,71 +11669,29 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
         </Button>
       </div>
 
-      {/* Calculated zones — read only */}
-      {zones.length > 0 && (
-        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          {/* System intro — answers "what are my zones?" before the table answers "what are mine?" */}
-          <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
-            color: 'var(--ink-2)', lineHeight: 1.55,
-            padding: '4px 2px 10px',
-            borderBottom: '0.5px solid var(--border-col)',
-            marginBottom: 'var(--space-2)',
-          }}>
-            Five zones. Most of your running stays in Zone 2 — easy, conversational. Some of it pushes into Zone 3 (tempo) or Zone 4–5 (intervals). The grey middle is where amateurs go to stall. Tap a zone to learn more.
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', color: 'var(--text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
-            {hrZoneMethod === 'karvonen'
-              ? 'Your zones · Personalised from HR data'
+      {/* ZONES-SURFACE-01 (Design Board, 2026-09-28) — the five zone rows and their
+          per-zone sheet MOVED to the Training Zones screen, and this row is what replaced
+          them.
+
+          🔴 IT IS A REPLACEMENT, NOT AN ADDITION. Collins counted FOURTEEN surfaces
+          already rendering zone information and would not accept a fifteenth that
+          explains the other fourteen: *"that is not a screen, that is an admission."*
+          What stays here is the INPUT (resting and max HR) — settings, which is Me's job.
+          What left is the REFERENCE, which now has one home and gained the pace bands
+          that were previously unfindable outside a session card. */}
+      {zones.length > 0 && onOpenZones && (
+        <div style={{ padding: '4px 4px 12px' }}>
+          <ActionRow
+            title="Your zones"
+            subtitle={hrZoneMethod === 'karvonen'
+              ? 'Heart rate and pace targets · personalised from your HR data'
               : hrZoneMethod
-                ? 'Your zones · Age estimate'
-                : 'Your zones · HRR method'}
-          </div>
-          {hrZoneMethod && hrZoneMethod !== 'karvonen' && hrAssumptionNote && (
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: 'var(--space-2)' }}>
-              {hrAssumptionNote}
-            </div>
-          )}
-          {zones.map(z => (
-            <Button variant="secondary" 
-              key={z.zone}
-              onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)} style={{ /* 🔴 `display: 'grid'` RESTORED. `.btn` sets `inline-flex`, so these
-                           grid columns were INERT and the HR ranges sat wherever each
-                           description happened to end — the founder's "numbers for the
-                           ranges are all over the place". `display` is LAYOUT and was
-                           wrongly dropped as owned by `.btn`, the same error as the
-                           centred "Sign out". Third column is FIXED so the ranges share
-                           one right edge across rows. */
-                         display: 'grid', gridTemplateColumns: '24px 1fr 64px', gap: 'var(--space-3)', alignItems: 'center', padding: '9px 10px', borderRadius: '8px', background: 'var(--bg)', textAlign: 'left', width: '100%' }}>
-              {/* Zone number */}
-              <div style={{
-                width: '24px', height: '24px', borderRadius: '50%',
-                background: z.colour + '18', border: `1.5px solid ${z.colour}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'var(--font-ui)', fontSize: '10px',
-                color: z.colour, fontWeight: 'bold', flexShrink: 0,
-              }}>{z.zone}</div>
-              {/* Name + desc */}
-              <div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500 }}>{z.name}</div>
-                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>{z.desc}</div>
-              </div>
-              {/* HR range */}
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: z.colour, whiteSpace: 'nowrap', textAlign: 'right' }}>
-                {z.minHR}–{z.maxHR}
-              </div>
-            </Button>
-          ))}
+                ? 'Heart rate and pace targets · age estimate'
+                : 'Heart rate and pace targets · HRR method'}
+            onClick={onOpenZones}
+          />
         </div>
       )}
-
-      {/* Zone education sheet — opened by tap on a zone row */}
-      {openZone && (() => {
-        const z = zones.find(zz => zz.zone === openZone)
-        if (!z) return null
-        const zoneKey = openZone === 1 ? 'Z1' : openZone === 2 ? 'Z2' : openZone === 3 ? 'Z3' : openZone === 4 ? 'Z4-5' : 'Z5'
-        return <ZoneInfoSheet zoneKey={zoneKey} hrBand={{ lo: z.minHR, hi: z.maxHR }} onClose={() => setOpenZone(null)} />
-      })()}
 
       {/* Prompt if incomplete */}
       {zones.length === 0 && (rhr || mhr) && (
@@ -12062,7 +12061,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
@@ -12080,6 +12079,8 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   onOpenReshape?: () => void
   onOpenFounderNote?: () => void
   onRecheckEntitlement?: AfterSheet
+  /** ZONES-SURFACE-01 — opens the Training Zones screen. */
+  onOpenZones?: () => void
   /** GTM-CHARITY-04 — ISO end date of a live charity grant, or null. */
   charityGrantEndsAt?: string | null
   onUpgrade?: () => void
@@ -12395,6 +12396,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
         )}
 
         <HRZonesSection
+          onOpenZones={onOpenZones}
           restingHR={restingHR}
           maxHR={maxHR}
           maxHrSource={maxHrSource}
