@@ -533,6 +533,23 @@ call site, whereas threading a `source` prop through nine giant JSX call sites i
 say whether the Coach teaser converts better than the Me screen, which is the question
 `design-rulings.md`'s killed merchandising screen could not be argued without.
 
+## ⚖️ FILED 2026-09-28 — `ME-SCREEN-CONTRACT-01`
+
+### 🟡 `ME-SCREEN-CONTRACT-01` — MeScreen has ~40 props and no contract
+
+⚙️ **NO BOARD** — documentation of an existing interface.
+
+`ME-DOORS-01` changed three of `MeScreen`'s props and found there is **no contract file for
+it at all**. `docs/contracts/components/me-door-navigation.md` documents the navigation
+surface only, and says so; the other ~40 props are undocumented.
+
+⚠️ **The cause is structural, not neglect:** `MeScreen` is a function inside
+`DashboardClient.tsx`, not its own module, so `componentContracts.test.ts` has no file to
+parse props from and the contract had to declare `**Component:** \`none\``. **Extracting
+MeScreen is what would make it contractable** — same root as `ME-ADJUSTMENTS-EXTRACT-01`.
+
+---
+
 ## ⚖️ FILED 2026-09-28 — two follow-ups found while building `ME-DOORS-01`
 
 ### 🟡 `ME-ADJUSTMENTS-EXTRACT-01` — Plan adjustments is a call site, not a component

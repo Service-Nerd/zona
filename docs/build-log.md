@@ -6,6 +6,15 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-28 — ME-DOORS-01 downstream · five silent breaks in code the change never touched
+**Shipped:** The up/downstream review of the three new doors, and the five defects it found.
+**Dev learning:** **A relocation makes correct code wrong at a distance.** The worst one: a control I shipped the day before — the chevron on the zones screen that takes you to your HR inputs — did `setScreen('me')` and then `getElementById('me-hr-card').scrollIntoView()`. The HR card is now behind a door, so `getElementById` returned null, the optional chain swallowed it, and the chevron **did nothing**. No error, no log. An anchor scroll is a navigation dependency on layout, and a door breaks it without editing a character of it.
+**Product/creator learning:** Two of the three doors shipped saying their own name twice — one of them verbatim. Neither was a mistake when written: the HR card's header comment literally says *"parallels Race benchmark row: title + sublabel framing"*, which was correct while it sat among other cards on a list. It became a second title the moment the card became the whole screen. And that is the ruling's own argument turned back on it: Me was reorganised because it made the runner sort things, and a screen that says its name twice has done exactly that, one level down.
+**AI-building learning:** I had reported this done. Full suite green, build green, docs audit clean, nine arms falsified, and **all five defects were already in the commit.** None of my checks could see them, because every one of them asked *"is the code I wrote correct?"* and the defects were in code I had not written. The founder's question was four words long and worth more than the entire green run.
+**The honest bit:** I only found the dead chevron because I went looking for what reads `HR_CARD_ANCHOR_ID`. If I had answered "yes, verified" — which is what I nearly did — it would have shipped, and it would have looked exactly like a working button forever. Its own test asserts the chevron **renders**. No test I had could assert it **goes** anywhere, and I wrote that test the day before.
+**Hook material:** Every check I had asked "is the code I wrote correct?" The bugs were all in code I didn't touch.
+**Postable?:** yes
+
 ## 2026-09-28 — ME-DOORS-01 · the gate I wrote for the ruling couldn't see the ruling happen
 **Shipped:** The first three doors off the Me index: Preferences, Heart rate, Plan adjustments. Raw buttons 6→4, inline toggles 2→0, ActionRow uses 0→3.
 **Dev learning:** I didn't build a navigation mechanism, because one was already there. `MeScreen` has carried `activeSection` — `'main' | 'quit' | 'delete-account' | 'support' | 'plan-history'` with early returns — for as long as those screens have existed. A door is three lines: a value in the union, an early return, an `ActionRow` that sets it. The reuse step in the build procedure is the whole reason I looked before writing, and it turned a screen-navigation feature into an edit.

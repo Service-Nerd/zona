@@ -9,6 +9,11 @@
 
 export const HEART_RATE_TITLE = 'Heart rate'
 
+/** ⚠️ RELOCATED, NOT REWRITTEN. This is the sublabel `HRZonesSection`'s own card header
+ *  carried before the card became a screen. Moving it to the door's `ScreenHeader` keeps
+ *  the words a runner reads identical while the title is said once. */
+export const HEART_RATE_SUB = 'How hard. Training zones set from your resting and max HR.'
+
 /** ⚠️ The unset state, and it is a NUDGE, not a label.
  *
  *  It replaces an amber card reading *"Set your resting and max HR BELOW to see your

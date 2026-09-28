@@ -122,7 +122,7 @@ import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
 import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/components/shared/PreferencesScreen'
-import { HEART_RATE_TITLE, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
+import { HEART_RATE_TITLE, HEART_RATE_SUB, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
 import { Chevron } from '@/components/shared/Chevron'
 import { TrainingZonesScreen } from '@/components/shared/TrainingZonesScreen'
 // PACE-BANDS-OWNER-01 — pure, and safe across BUNDLE-BOUNDARY-01 where `ruleEngine` is not.
@@ -410,6 +410,9 @@ export default function DashboardClient() {
   }
   const [showWelcome, setShowWelcome] = useState(false)
   const [screen, setScreen] = useState<Screen>('today')
+  /** ME-DOORS-01 — a request to open Me AT a door rather than at the index. Consumed once
+   *  by `MeScreen` and cleared, so returning to Me later lands on the index as usual. */
+  const [meOpenSection, setMeOpenSection] = useState<string | null>(null)
   const [showMe, setShowMe] = useState(false)
   const [showMore, setShowMore] = useState(false)
   const [activeSessionData, setActiveSessionData] = useState<any | null>(null)
@@ -466,6 +469,10 @@ export default function DashboardClient() {
    *  it (Me, Upgrade, and the onboarding wizard) and `onBack` used to be hard
    *  wired to Me, so redeeming from the wizard dropped a half-finished plan. */
   const [redeemReturnTo, setRedeemReturnTo] = useState<Screen>('me')
+  /** ME-DOORS-01 — the zones screen now has TWO entry points with two different correct
+   *  backs: the `Zones` row on the Me index, and the `heart-rate` door. Same shape as
+   *  `redeemReturnTo` above. Null means "back to the index", which is the index row's case. */
+  const [zonesReturnSection, setZonesReturnSection] = useState<string | null>(null)
 
   // PV2-H — recalibration prompt (the living plan). Status drives the entry screen.
   const [recalStatus, setRecalStatus] = useState<'idle' | 'confirming' | 'applied' | 'error'>('idle')
@@ -2779,7 +2786,7 @@ export default function DashboardClient() {
             No UI path opens it for non-admins, but the render gate prevents a future commit
             from accidentally exposing admin UI via state mutation or a new entry point. */}
         {screen === 'strava'   && isAdmin && <StravaScreen runs={stravaRuns} loading={stravaLoading} connected={stravaConnected} preferredUnits={preferredUnits} raceName={plan?.meta?.race_name} raceDate={plan?.meta?.race_date} raceDistanceKm={plan?.meta?.race_distance_km} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR ?? undefined} maxHR={effectiveMaxHR ?? undefined} />}
-        {screen === 'me'       && <MeScreen plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
+        {screen === 'me'       && <MeScreen openSection={meOpenSection} onOpenSectionConsumed={() => setMeOpenSection(null)} plan={plan} initials={initials} athlete={plan?.meta?.athlete ?? ''} quitDays={quitDays} smokeTrackerEnabled={smokeTrackerEnabled} quitDate={quitDate} onSmokeTrackerChange={(enabled: boolean, date: string) => { setSmokeTrackerEnabled(enabled); setQuitDate(date); if (enabled && date) { const days = Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000)); setQuitDays(days) } else { setQuitDays(null) } }} theme={theme} onThemeChange={() => { /* theme system retired — ADR-008 */ }} preferredUnits={preferredUnits} onUnitsChange={async (u: 'km' | 'mi') => { setPreferredUnits(u); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_units: u, updated_at: new Date().toISOString() }) } catch {} }} preferredMetric={preferredMetric} onMetricChange={async (m: 'distance' | 'duration') => { setPreferredMetric(m); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, preferred_metric: m, updated_at: new Date().toISOString() }) } catch {} }} restingHR={restingHR} maxHR={maxHR} maxHrSource={maxHRSource} birthYear={birthYear} onDeviceHRFound={async (rhr: number | null, mhr: number | null) => {
   // §50 (HR-MAX-01) — device reconnect from Settings. Fill only missing values;
   // tag a fresh device max 'observed' (a floor) so the guard rejects it below the
   // age estimate. Never clobber a user_confirmed value. Display refreshes via
@@ -2850,7 +2857,7 @@ export default function DashboardClient() {
     //    is better than blocking the HR save.
     void authedFetch('/api/recalibrate-hr', { method: 'POST' })
   } catch {}
-}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} onOpenZones={() => setScreen('zones')} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} onOpenZones={(returnTo?: string) => { setZonesReturnSection(returnTo ?? null); setScreen('zones') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('session')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
@@ -2879,7 +2886,7 @@ export default function DashboardClient() {
         }} />}
         {screen === 'benchmark' && plan && <BenchmarkUpdateScreen plan={plan} units={preferredUnits} stravaConnected={stravaConnected} onBack={() => setScreen('me')} onUpdated={(updatedPlan) => { setPlan(updatedPlan) }} />}
         {screen === 'recalibration' && <RecalibrationEntryScreen distanceKm={recalDistanceKm} status={recalStatus} onBack={() => { setRecalStatus('idle'); setScreen('today') }} onConfirm={handleRecalConfirm} />}
-        {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => setScreen('me')} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} preferredUnits={preferredUnits} />}
+        {screen === 'reshape'   && <ReshapeScreen plan={plan} onBack={() => { setMeOpenSection('plan-adjustments'); setScreen('me') }} onReshapeApplied={(updatedPlan) => { setPlan(updatedPlan); setPendingAdjustment(null); setScreen('today') }} onChecked={(foundChange) => { setLastAdjustmentCheckAt(new Date().toISOString()); setLastAdjustmentCheckFoundChange(foundChange) }} onOpenBenchmark={() => setScreen('benchmark')} preferredUnits={preferredUnits} />}
         {screen === 'founder'   && <FounderNoteScreen onBack={() => setScreen('me')} />}
         {/* ZONES-SURFACE-01 — a full screen, never a sheet (no-popups rule), entered from
             Me. 🔴 NOT from Coach: `screen-architecture.md` puts "Profile or settings" in
@@ -2901,16 +2908,23 @@ export default function DashboardClient() {
           const hrZones = restingHR && maxHR ? calculateZones(restingHR, maxHR) : null
           return (
             <>
-              <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setScreen('me')} /></div>
+              {/* ⚠️ BACK GOES WHERE YOU CAME FROM. Two entries since ME-DOORS-01: the `Zones`
+                  row on the index, and the `heart-rate` door. A single hardcoded `'me'`
+                  is correct for one of them and loses the runner's place in the other. */}
+              <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => { setMeOpenSection(zonesReturnSection); setScreen('me') }} /></div>
               <ScreenHeader title="Your zones" sub="Heart rate and pace targets" />
               <TrainingZonesScreen zones={hrZones} pace={pace} units={preferredUnits}
                 sourceHr={restingHR && maxHR ? { resting: restingHR, max: maxHR } : null}
                 // ZONES-INPUTS-01 — the FORM stays on Me. This only navigates there,
                 // because the HR card is a set-once input and carries the Apple Health
                 // prefill, which is a connection action and belongs with `Connections`.
-                onEditHr={() => { setScreen('me'); requestAnimationFrame(() => {
-                  document.getElementById(HR_CARD_ANCHOR_ID)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                }) }}
+                // 🔴 ME-DOORS-01 BROKE THIS AND IT FAILED SILENTLY. This used to
+                // `scrollIntoView` the HR card's anchor on Me. The card is now behind the
+                // `heart-rate` door, so `getElementById` returned null and the chevron did
+                // NOTHING — a control shipped the day before, whose test asserts it RENDERS
+                // and could not assert it GOES anywhere. A relocation makes correct code
+                // wrong without touching it.
+                onEditHr={() => { setMeOpenSection('heart-rate'); setScreen('me') }}
               />
             </>
           )
@@ -11644,13 +11658,11 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
   return (
     <div id={HR_CARD_ANCHOR_ID} style={{ background: 'var(--card-bg)', borderRadius: '12px', border: '0.5px solid var(--border-col)', overflow: 'hidden' }}>
 
-      {/* Header — parallels Race benchmark row: title + sublabel framing */}
-      <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
-        <div style={{ fontSize: '13px', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.55 }}>Heart rate zones</div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '1px' }}>
-          How hard. Training zones set from your resting and max HR.
-        </div>
-      </div>
+      {/* ⚠️ THE CARD'S OWN HEADER IS GONE (ME-DOORS-01). Its comment read *"parallels Race
+          benchmark row"* — correct while this card sat among other cards on the index, and a
+          SECOND TITLE once the card became the whole screen behind a door titled `Heart rate`.
+          The sublabel was not dropped: it is `HEART_RATE_SUB`, carried by the door's
+          `ScreenHeader`, so the words a runner reads are unchanged and the title is said once. */}
 
       {/* Editable HR inputs */}
       <div style={{ padding: '14px 16px', borderBottom: '0.5px solid var(--border-col)' }}>
@@ -12056,7 +12068,11 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
   )
 }
 
-function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+function MeScreen({ openSection, onOpenSectionConsumed, plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+  /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
+   *  by `onOpenSectionConsumed`, so a later visit to Me lands on the index as usual. */
+  openSection?: string | null
+  onOpenSectionConsumed?: () => void
   plan: Plan; initials: string; athlete: string; quitDays: number | null; smokeTrackerEnabled: boolean; quitDate: string
   onSmokeTrackerChange: (enabled: boolean, date: string) => void
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
@@ -12075,7 +12091,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   onOpenFounderNote?: () => void
   onRecheckEntitlement?: AfterSheet
   /** ZONES-SURFACE-01 — opens the Training Zones screen. */
-  onOpenZones?: () => void
+  onOpenZones?: (returnTo?: string) => void
   /** GTM-CHARITY-04 — ISO end date of a live charity grant, or null. */
   charityGrantEndsAt?: string | null
   onUpgrade?: () => void
@@ -12110,6 +12126,14 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
 }) {
   const signOut = useSignOut()
   const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'heart-rate' | 'plan-adjustments' | 'quit' | 'delete-account' | 'support' | 'plan-history'>('main')
+
+  // ⚠️ BEFORE THE EARLY RETURNS. `MeScreen` returns early for every door, so a hook placed
+  //   below one is a conditional hook — the React error 310 this repo has already shipped once.
+  useEffect(() => {
+    if (!openSection) return
+    setActiveSection(openSection as 'preferences' | 'heart-rate' | 'plan-adjustments')
+    onOpenSectionConsumed?.()
+  }, [openSection, onOpenSectionConsumed])
 
   // Push subscription state — bubbled up from PushNotificationsRow so we can
   // gate the dependent DailyPushToggleRow ("Morning training push" can't fire
@@ -12181,10 +12205,10 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
   if (activeSection === 'heart-rate') return (
     <>
       <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setActiveSection('main')} /></div>
-      <ScreenHeader title={HEART_RATE_TITLE} sub="Resting and max heart rate" />
+      <ScreenHeader title={HEART_RATE_TITLE} sub={HEART_RATE_SUB} />
       <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)' }}>
         <HRZonesSection
-          onOpenZones={onOpenZones}
+          onOpenZones={() => onOpenZones?.('heart-rate')}
           restingHR={restingHR}
           maxHR={maxHR}
           maxHrSource={maxHrSource}
@@ -12210,7 +12234,7 @@ function MeScreen({ plan, initials, athlete, quitDays, smokeTrackerEnabled, quit
        visible — without them users can't tell what they're paying for. */}
   {hasPaidAccess && onDynamicAdjustmentsChange && (
     <>
-      <SectionLabel>Plan adjustments</SectionLabel>
+
       <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
 
         {/* Last checked status — top of the card so the engine's activity is visible at a glance.

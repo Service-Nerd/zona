@@ -693,6 +693,9 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 
 ### 🏃 Product — SLT priority order (reviewed 2026-06-06; **re-topped 2026-08-06**)
 
+- ⚙️ `ME-SCREEN-CONTRACT-01` — **LATER.** `MeScreen` has ~40 props and no contract, because
+  it is a function inside `DashboardClient.tsx` rather than its own module. Only the
+  navigation surface is documented. Same root as the item below. `backlog.md`.
 - ⚙️ `ME-ADJUSTMENTS-EXTRACT-01` — **LATER.** Plan adjustments moved behind a door as a call
   site, not a component: it reads seven identifiers from `MeScreen`'s scope. The cost is that
   it has **no markup test** (vitest does not collect `app/`), where the Preferences door does.

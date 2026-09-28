@@ -3293,6 +3293,32 @@ re-adding the section label.
    one (`toContain('PreferencesScreen')`) that PASSED against `<PreferencesScreenXX` and had
    to be bounded — the substring-bias class, third recorded instance.
 
+### 🔴 ADDENDUM — the downstream review found FIVE defects the green suite did not
+
+Asked *"have we reviewed up and downstream impact?"*, the answer was no, and the review
+found five, **all silent, none in code the move edited**:
+
+| # | Defect | Why it survived |
+|---|---|---|
+| 1 | **A DEAD CONTROL.** `ZONES-INPUTS-01`'s provenance chevron scrolled to `#me-hr-card`, which is now behind a door: `getElementById` returned null, the optional chain swallowed it, the control did nothing | Its markup test asserts the chevron **renders**. Nothing could assert it **goes** anywhere |
+| 2 | `Plan adjustments` door showed a **verbatim duplicate** of its own title | No test rendered the door |
+| 3 | `Heart rate` door showed `Heart rate zones` under a header reading `Heart rate` | The card's header was **correct when written** — *"parallels Race benchmark row"* |
+| 4 | Back from `reshape` returned to the **index**, not the door it was opened from | Pre-existing `onBack` that the move invalidated |
+| 5 | The zones screen gained a **second entry point**; one hardcoded back is wrong for one of them | The second entry did not exist an hour earlier |
+
+> 🔴 **A RELOCATION MAKES CORRECT CODE WRONG WITHOUT TOUCHING IT.** Every one of these
+> passed tsc, the full suite and `audit-docs.sh`. **A move needs its own check**, and
+> "nothing else changed" is the reason to look, not the reason not to.
+
+⚠️ **Defects 2 and 3 are the ruling's own argument turned on itself** — `ME-PURPOSE-01`
+exists because Me made the runner sort things, and a screen that says its name twice has
+done it again one level down.
+
+Artifacts: `ui-patterns.md` § *A door changes where BACK means* and § *A door must say its
+name ONCE* · `meDoorNavigation.test.ts` (5 arms) + `meDoorTitles.test.ts` (3 arms, derives
+the doors from source rather than listing them) ·
+`docs/contracts/components/me-door-navigation.md`. **All 8 arms falsified.**
+
 **What this does not prove:** nothing has run on a device. The doors were rendered at 375px
 in a browser via `/preferences-preview`; the three `activeSection` screens themselves live
 in `app/`, which vitest does not collect, so their wiring is held by tsc and by reading, not

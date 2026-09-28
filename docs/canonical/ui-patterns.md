@@ -4330,6 +4330,49 @@ sitting (the sitting's numbers were per SCREEN, and correct):
 lens argues against that as hard as the ruling argues for it. The gate is on the row for a
 paid-only door: a free runner sees **no door**, never a door onto a locked room.
 
+### 🔴 A door changes where BACK means — and what an ANCHOR can reach
+
+**Three navigation breaks came from `ME-DOORS-01`, all silent, and none of the broken code
+was edited by the move.** Check these three before moving any block behind a door:
+
+1. **Anchor scrolls die.** `ZONES-INPUTS-01`'s provenance chevron did `setScreen('me')` then
+   `getElementById(HR_CARD_ANCHOR_ID)?.scrollIntoView(…)`. Behind a door the element does
+   not exist, `getElementById` returns **null**, and the optional chain swallows it: **no
+   error, no log, a control that does nothing.** Its markup test asserts the chevron
+   *renders* and cannot assert it *goes* anywhere.
+   > **An anchor scroll is a navigation dependency on layout.** Replace it with opening the
+   > door (`openSection`), never with a deeper anchor.
+2. **A screen reached only from a door must return TO that door.** `reshape`'s only entry is
+   the `plan-adjustments` door; `onBack={() => setScreen('me')}` dropped the runner at the
+   index having lost their place.
+3. **A screen reached from BOTH a door and the index needs a return-to.** The zones screen
+   gained a second entry, and one hardcoded back is correct for one of them and wrong for
+   the other. Use the `redeemReturnTo` shape already in `DashboardClient` — it exists for
+   exactly this — and pass the origin: `onOpenZones?.('heart-rate')`.
+
+**The mechanism:** `MeScreen` is conditionally rendered, so it **unmounts** between screens
+and `activeSection` resets to `'main'`. That is why Back lands on the index by default, and
+why `openSection` works — the request is held in `DashboardClient`, applied on mount, and
+**cleared immediately**. An uncleared value re-opens that door on the runner's next visit
+from anywhere: invisible sticky navigation. Contract: `docs/contracts/components/me-door-navigation.md`.
+
+### ⚠️ A door must say its name ONCE
+
+Two of the three doors shipped with a duplicate title, and **neither was wrong when it was
+written**: `Plan adjustments` carried a verbatim `<SectionLabel>Plan adjustments</SectionLabel>`,
+and `HRZonesSection`'s card header (`Heart rate zones`) sat under a `ScreenHeader` reading
+`Heart rate`. That header's own comment said *"parallels Race benchmark row: title +
+sublabel framing"* — **correct while the card sat among other cards on an index, and a second
+title once the card became the whole screen.**
+
+> **A relocation makes correct code wrong without touching it.** A move needs its own check;
+> a green suite says nothing about it.
+
+⚠️ **Relocate the sublabel, do not delete it.** The HR card's explanatory line became
+`HEART_RATE_SUB` on the door's `ScreenHeader`, so the words the runner reads are unchanged.
+Dropping it would be a silent copy cut hiding inside a layout fix. Gate:
+`meDoorTitles.test.ts`, which derives the doors from the source rather than listing them.
+
 ### 🔴 The gate measures the INDEX, not the function
 
 `meIsAnIndex.test.ts` first bounded the whole `MeScreen` function — and because doors are
