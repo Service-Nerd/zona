@@ -449,7 +449,7 @@ every test carrying an absolute `race_date` passes a `planStart` — with a floo
 so it cannot pass vacuously.
 
 
-### 🔴 `OPS-SUBS-ALERT-01` — nothing ALERTS on a failed subscription write
+### ✅ `OPS-SUBS-ALERT-01` — SHIPPED 2026-09-28. And the premise I filed it on was WRONG.
 
 ⚙️ **NO BOARD** (ops). **This is the half of `OPS-SUBS-TRACE-01` that was NAMED AND NOT
 CLOSED**, recorded here rather than ticked off in the registry.
@@ -475,6 +475,49 @@ both and the routine half will not arrive by committing.
 
 **Do not close this by adding a query to a runbook.** "Remember to check" is what this repo
 records as equivalent to having no check.
+
+🔴 **THE PREMISE WAS WRONG AND IT CHANGED THE DESIGN.** "Nothing alerts on these rows" is false.
+The digest's **Q4 is a GENERIC 24-hour feed** over `ops_events` with **no kind filter**, so
+`stripe_event_write_failed` was already reaching it. The real defect was narrower and nastier:
+
+1. it landed under **"engine health: constitutional findings"** — the wrong heading for a billing
+   failure, so it reads as an engine nit;
+2. Q4's columns are engine-shaped (`source`, `codes`, `reverted_weeks`, `foundation_hits`), and
+   **every field the trace records** (`provider`, `event_type`, `status`, `message`, `missing`)
+   **renders as `-`. The kind appeared; the diagnosis did not.**
+3. the window is **24 hours**, so a Saturday failure was invisible by Monday.
+
+✅ **SHIPPED — and deliberately NO probe and NO cron.** The rows already exist; a probe would
+re-read what the webhooks already wrote, and a second Vercel cron would consume `OPS-VERCEL-PLAN-01`
+budget for nothing. What was missing was a NAME for the set and a query that looks for it properly.
+
+**Repo half (versioned, tested, falsified):** `lib/ops/subscriptionHealth.ts` —
+`ENTITLEMENT_AT_RISK_KINDS` (severity-ordered: `_unusable` before `_write_failed`, because a 400 is
+retried only briefly and a 500 is retried properly), `AT_RISK_WINDOW_DAYS = 7`,
+`judgeEntitlementRisk()` and `remedyFor()`.
+🥇 **THE TEST THAT EARNS ITS KEEP DERIVES THE LIST RATHER THAN ASSERTING IT** — it walks
+`SUBSCRIPTION_PROVIDERS` (newly exported for exactly this: **a type union cannot be iterated**, so a
+test written against the type would keep passing while a third provider's failure kinds went
+unclassified) and asks `webhookTrace` what each provider can emit. Adding a provider now fails the
+build until its kinds are classified. Falsified three ways: a third provider, a dropped kind, and a
+benign heartbeat kind added to the list — each caught by 2–4 arms.
+
+**Digest half:** Q9 added to the routine (`trig_01P5snwo2k4reDGrX4Z3wkyC`), STEP 1 count EIGHT→NINE,
+STEP 2C THREE→FOUR probes, and **STEP 4's dashboard section Q6/Q7/Q8→Q6/Q7/Q8/Q9** — that last one
+was nearly missed, and without it the HTML dashboard he actually looks at would have omitted it.
+🥇 **Q9 SWITCHES OFF THE DIGEST'S OWN "age it against the running build" RULE, deliberately.**
+Everywhere else that rule correctly retires a fixed finding. **A LOST SALE IS STILL LOST AFTER THE
+CODE IS FIXED** — the row is still missing and the runner still locked out.
+
+**Verified, not assumed.** Live prompt read back **byte-identical** to the intended file (21,430
+chars), all three internal copies in sync, `cron`/`enabled`/`next_run_at`/`name` untouched. Q9 run
+against **production in both states**: 0 rows as-is, 2 after injecting one attributable and one
+unattributable row, correct columns, `worst` = `stripe_event_unusable`, then cleaned up to 0 —
+a query handed to a scheduled routine is untested code.
+
+⚠️ **What this does NOT close:** the surfacing lives in a cloud prompt, which no repo gate can
+check. If someone edits the routine and drops Q9, nothing fails. The repo guards the *definition*;
+it cannot guard the *prompt*.
 
 ### 🟡 `OPS-FUNNEL-02` — which DOOR did they come through?
 

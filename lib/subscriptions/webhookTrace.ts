@@ -37,6 +37,20 @@ import type { SubscriptionStatus } from '@/lib/subscriptions/revenuecatEvents'
 
 export type SubscriptionProvider = 'revenuecat' | 'stripe'
 
+/**
+ * The providers, enumerable at runtime.
+ *
+ * ⚠️ EXPORTED SO A THIRD PROVIDER CANNOT BE ADDED SILENTLY. A TYPE UNION CANNOT BE
+ * ITERATED, so a test written against the type would keep passing while a new
+ * provider's failure kinds went unclassified — and `subscriptionHealth.ts`'s
+ * `ENTITLEMENT_AT_RISK_KINDS` is what decides whether a paid-but-unentitled runner
+ * is ever surfaced. `subscriptionHealth.test.ts` walks THIS array, so adding a
+ * provider here fails the build until its `_write_failed` and `_unusable` kinds are
+ * classified as money-critical. Add the provider to this array in the same edit as
+ * the `KINDS` map below.
+ */
+export const SUBSCRIPTION_PROVIDERS: readonly SubscriptionProvider[] = ['revenuecat', 'stripe']
+
 /** What happened in the route. One variant per branch that must leave a trace. */
 export type WebhookOutcome =
   /** The RPC ran. `applied` is the ordering guard's verdict: false = a stale or

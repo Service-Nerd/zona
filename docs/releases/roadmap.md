@@ -290,9 +290,9 @@ iOS-only (US/UK/anglosphere). **🚀 LIVE ON THE APP STORE — v1.7 approved and
 > ✅ **`TEST-CLOCK-PINSWEEP-01` SHIPPED 2026-09-28** — all 19 converted, 68 call sites, across **four**
 > pinned Mondays (one per file's own first commit, because a single week of runway can change plan length).
 > Register EMPTY and its emptiness now asserted; the gate forbids the class rather than tracking it.
-> **P1:** `OPS-SUBS-ALERT-01` — ⚙️ nothing ALERTS on `*_event_write_failed` / `stripe_event_unusable`. These only
-> fire when a runner **has paid and the entitlement did not land**, and the founder cannot find it by using the
-> app (his row is hand-seeded and `is_admin`). Spans repo + the cloud digest routine.
+> ✅ **`OPS-SUBS-ALERT-01` SHIPPED 2026-09-28** — Q9 in the daily digest + a tested kind list in the repo.
+> 🔴 **The premise I filed it on was WRONG:** Q4 is a generic 24h feed and already carried the rows — but under
+> "engine health", with every diagnostic column blank, on a 24h window. No probe, no cron: the rows already exist.
 > **P2:** `OPS-FUNNEL-02` — ⚙️ door attribution for `upgrade_view` (a `source` prop across nine call sites), so the
 > funnel can say whether the Coach teaser converts better than Me.
 
