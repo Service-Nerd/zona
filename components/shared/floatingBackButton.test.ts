@@ -140,6 +140,26 @@ describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
     expect(group).not.toContain('<FloatingBackButton')
   })
 
+  it('the session detail header stays a pinned GROUP too', () => {
+    // 🥇 THIS ONE WAS ALREADY RIGHT — `SessionScreen` has pinned its header since the
+    // founder asked for it, and the comment above it records that the FIRST attempt only
+    // CLAIMED to: `position: sticky` against a wrapper declaring `overflow-y: auto` with
+    // `min-height: 100%`, a scrollport that can never scroll, measured at -800px after an
+    // 800px scroll. `stickyScroller.test.ts` guards that class from returning.
+    //
+    // What nothing guarded is the arrow being lifted OUT of the group — exactly what I
+    // did to the wizard before the founder caught it. Same arm, same reason.
+    const src = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+    const i = src.indexOf("className={`pinned-chrome")
+    expect(i, 'the session header is not pinned').toBeGreaterThan(-1)
+    const open = src.lastIndexOf('<div', i)
+    const close = src.indexOf('\n      </div>', i)
+    const group = src.slice(open, close)
+    expect(group, 'the arrow must stay inside the pinned group').toContain('<BackButton')
+    expect(group, 'and it must not float out of it').not.toContain('<FloatingBackButton')
+    expect(group, 'z-index from the owner, never a literal').toContain('Z_LAYERS.screenHeader')
+  })
+
   it('does not swallow taps across the top of the screen', () => {
     // A sticky FULL-WIDTH strip would sit over the whole top edge and eat taps meant for
     // the content behind it. The wrapper is the circle's size and nothing more.
