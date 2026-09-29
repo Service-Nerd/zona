@@ -206,7 +206,8 @@ export default function BenchmarkUpdateScreen({
           <div className="screen-header__title" style={{ marginBottom: 'var(--space-2)' }}>
             Update pace targets.
           </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
+          {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-SUBTITLE role, from its owner. */}
+          <div className="screen-header__sub">
             You&rsquo;ve done the work. Let&rsquo;s make sure your paces reflect it.
           </div>
         </div>

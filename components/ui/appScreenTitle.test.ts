@@ -110,6 +110,52 @@ describe('SUBPAGE-TYPE-SCALE-01 — pushed-screen titles come from the owner', (
     }
   })
 
+  it('the SUBTITLE role is documented too, and the doc matches the CSS', () => {
+    // 🔴 THE SUB ROLE SHIPPED ON EIGHT SCREENS AND WAS NEVER IN THE TABLE. It existed only
+    // in `globals.css`, so it could not be cited in review — and two screens duly hand-rolled
+    // a 13px and a 14px subtitle beside it. A role that lives only in a stylesheet is a role
+    // nobody can point at.
+    const css = readFileSync('app/globals.css', 'utf8')
+    const rule = /\.screen-header__sub\s*\{([^}]*)\}/.exec(css)?.[1] ?? ''
+    expect(rule, 'the sub role lost its size').toMatch(/font-size:\s*12px/)
+    expect(rule, 'the sub role lost its colour').toMatch(/var\(--mute\)/)
+    const doc = readFileSync('docs/canonical/ui-patterns.md', 'utf8')
+    expect(doc, 'the sub role is missing from the documented type scale')
+      .toMatch(/Screen subtitle \| `--font-ui` \| 400 \| 12px/)
+  })
+
+  it('🔴 no pushed screen hand-rolls a SUBTITLE beside the owner', () => {
+    // ⚠️ BOUNDED TO REAL SUBTITLES, and the bound is the point. A LEAD PARAGRAPH IS NOT A
+    // SUBTITLE: `Redeem` and `Upgrade` carry 15px `--ink-2` copy under their titles, which is
+    // Body/description doing its job, and forcing it to 12px `--mute` would be a regression.
+    // So this looks for the SHAPE of a subtitle — small, muted — directly after a title.
+    const offenders: string[] = []
+    for (const f of [...PUSHED, 'app/dashboard/DashboardClient.tsx', 'components/dashboard/MeScreen.tsx']) {
+      const src = code(readFileSync(f, 'utf8'))
+      for (const m of Array.from(src.matchAll(/className="screen-header__title"/g))) {
+        // 🔴 SEARCH FROM AFTER THE TITLE ELEMENT CLOSES, NOT FROM THE TITLE MATCH.
+        // The first cut looked for the next `style={{` after `className="screen-header__title"`
+        // — and a title that carries its OWN style attribute (`marginBottom`) matched itself.
+        // The arm then found no `fontSize` on it and skipped, so re-hand-rolling a 13px muted
+        // subtitle beside the owner passed. It was hollow, and the falsification caught it.
+        const closes = src.indexOf('</', m.index!)
+        if (closes < 0) continue
+        const nxt = src.indexOf('style={{', closes)
+        if (nxt < 0 || nxt - closes > 400) continue
+        const obj = src.slice(nxt + 8, src.indexOf('}}', nxt))
+        const px = /fontSize:\s*'(\d+)px'/.exec(obj)
+        const rem = /fontSize:\s*'([\d.]+)rem'/.exec(obj)
+        const size = px ? Number(px[1]) : rem ? Math.round(Number(rem[1]) * 16) : null
+        if (size === null) continue
+        const muted = /color:\s*'var\(--mute\)'/.test(obj)
+        if (size <= 14 && muted) {
+          offenders.push(`${f}: ${size}px muted line under a title — use className="screen-header__sub"`)
+        }
+      }
+    }
+    expect(offenders, offenders.join('\n')).toEqual([])
+  })
+
   it('scans a real corpus (an empty sweep is not a pass)', () => {
     const all = execSync("git ls-files 'app/**/*.tsx' 'components/**/*.tsx'", { encoding: 'utf8' })
       .trim().split('\n')

@@ -97,10 +97,26 @@ All type uses **Inter** only. `var(--font-ui)` and `var(--font-brand)` both reso
 |---|---|---|---|---|
 | Hero display | `--font-ui` | 800 | 56px | Today screen hero ("10km, slowly.") |
 | Screen title | `--font-ui` | 800 | 26px | Page headings ("Your plan", "Today") |
+| Screen subtitle | `--font-ui` | 400 | 12px, `0.04em`, `--mute` | The line under a screen title ("Heart rate and pace targets") |
 | Section label | `--font-ui` | 700 | 10px uppercase 0.08em | Eyebrows, category labels |
 | Card primary | `--font-ui` | 600 | 15px | Session name, main label |
 | Card secondary | `--font-ui` | 400 | 12px | Zone, type, supporting detail — `--mute` |
 | Body / description | `--font-ui` | 400 | 14px | Session description, coach note |
+
+> 🔴 **THE SCREEN-SUBTITLE ROW WAS MISSING UNTIL 2026-09-29, AND IT SHIPPED ON EIGHT SCREENS
+> THE WHOLE TIME.** `.screen-header__sub` has existed in `globals.css` and rendered on every
+> `ScreenHeader` since that component was written; it was simply never written into this
+> table. **This row documents what already ships — it authors nothing.**
+>
+> ⚠️ **That gap is not cosmetic: it is how the divergence happened.** `SUBPAGE-TYPE-SCALE-01`
+> found nine screens hand-rolling a title against a row that WAS documented. A role that is
+> documented can at least be pointed at; a role that lives only in a stylesheet cannot be
+> cited in review, and two screens duly hand-rolled a 13px and a 14px subtitle beside it.
+>
+> ⚠️ **A LEAD PARAGRAPH IS NOT A SUBTITLE, and the distinction is load-bearing.** `Redeem`
+> and `Upgrade` carry **15px `--ink-2`** copy under their titles. That is *Body / description*
+> doing its job on a celebration screen, and pushing it to 12px `--mute` in the name of
+> consistency would be a regression. **Consistency stops where the role changes.**
 | Metric large | `--font-ui` | 800 | 44px | RestraintCard percent, big stats |
 | Metric medium | `--font-ui` | 700 | 17px | Session card distance |
 | Metric small | `--font-ui` | 400 | 11px | Session card duration — `--mute-2` |

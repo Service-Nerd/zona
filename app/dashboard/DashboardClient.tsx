@@ -4004,7 +4004,8 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
         <div className="screen-header__title" style={{ marginBottom: 'var(--space-2)' }}>
           Reshape plan
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: 'var(--space-6)' }}>
+        {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-SUBTITLE role, from its owner. */}
+        <div className="screen-header__sub" style={{ marginBottom: 'var(--space-6)' }}>
           {status === 'loading' ? 'Checking your recent sessions for adjustment signals.' : `Here's what ${BRAND.name} found.`}
         </div>
         </div>
