@@ -6,6 +6,36 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — NOEMDASH-JSX-TEXT-01 · the doc was true and the rule was not being kept
+
+**Dev.** The app's em-dash guard scans string literals. Much of what a runner reads is JSX
+text between tags, which is not a literal, so the guard was correct about everything it
+looked at and blind to thirty-five shipped sentences.
+
+**The honest bit.** The reason it lasted is a sentence I could have written: `CLAUDE.md`
+said the guard covers *"every string literal under components/ and app/dashboard/"*. That
+was **exactly true**. It is also not the same claim as *"every sentence the runner reads"*,
+which is what the rule actually says. The doc described the mechanism, the rule described
+the intent, and nobody put the two side by side. That is the third time this month a
+documented description has quietly replaced the thing it described.
+
+**AI-building.** Two process failures inside one small build, both mine and both recorded.
+
+First, I ran `git checkout --` on the guard file to undo a falsification mutation, and the
+guard extension was not committed, so I deleted it. I noticed only because the test count
+fell from five to three. I have a feedback note titled "stage before you verify" and I had
+not staged. Redone, staged, then falsified using `git checkout-index` so the restore comes
+from the index rather than from HEAD.
+
+Second, one of the three falsifications had silently not applied at all. Shell escaping
+mangled the mutation, so the loosened exemption I thought I was testing was never written,
+and the test "passed". A mutation that does not apply proves nothing and looks exactly like
+success. Re-run from a heredoc with an asserted anchor, it goes red as it should.
+
+**Product.** Thirty-five sentences read better. "Set to your goal. Adjust to what you ran."
+"He needs your runs first: Strava or Apple Health." The en dashes in ranges survived, which
+was the thing most at risk from a careless sweep.
+
 ## 2026-09-29 — FAQ-01 · the page he asked for was the one thing I argued against
 
 **Dev.** The ask was a FAQ page plus a section in Support. The analysis said the page was

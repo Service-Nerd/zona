@@ -352,7 +352,7 @@ export default function ZoneRings(props: Props) {
             textAlign: 'center',
           }}
         >
-          Where your week actually went — by zone. Upgrade to unlock it.
+          Where your week actually went, by zone. Upgrade to unlock it.
         </div>
         {props.onUpgrade && (
           <div style={{ marginTop: 'var(--space-4)', textAlign: 'center' }}>

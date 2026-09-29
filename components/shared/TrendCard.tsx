@@ -237,7 +237,7 @@ function ExplanationSheet({
                 This is what zone discipline produces. Not faster runs. Lower heart rate for the same running.
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                Zonna requires at least a 4 bpm shift across 2 or more months before surfacing a trend — so when you see a number here, there&apos;s enough data to mean something.
+                Zonna requires at least a 4 bpm shift across 2 or more months before surfacing a trend, so when you see a number here, there&apos;s enough data to mean something.
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', fontWeight: 400, color: 'var(--ink-2)', lineHeight: 1.55 }}>
                 Pace is not held fixed, so it is shown alongside. If you were running

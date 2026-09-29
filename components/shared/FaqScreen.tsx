@@ -53,7 +53,11 @@ export default function FaqScreen({ onBack, onContact }: FaqScreenProps) {
               <summary style={{
                 listStyle: 'none', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                gap: '12px',
+                // 🔴 `gap: '12px'` here shipped in FAQ-01 and the suite was GREEN,
+                // because `appSpacingScale` reads `git ls-files` and this file was
+                // still UNTRACKED when I ran it. Second time in one build that an
+                // unstaged file hid something. 12px IS on the scale: --space-3.
+                gap: 'var(--space-3)',
                 // 🔴 44px minimum target, and it is the PADDING that earns it, not a
                 // height. BUTTON-GEOMETRY's floor arm was written because 18 hand-rolled
                 // controls sat under 44px; a summary is a hand-rolled control.

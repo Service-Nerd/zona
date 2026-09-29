@@ -327,7 +327,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
                     <span style={{
                       fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
                       color: 'var(--mute)', letterSpacing: '0.08em', textTransform: 'uppercase',
-                    }}>Later — still flexible</span>
+                    }}>Later, still flexible</span>
                     <span style={{
                       fontFamily: 'var(--font-ui)', fontSize: '12px',
                       color: 'var(--mute)', lineHeight: 1,

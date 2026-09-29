@@ -472,7 +472,7 @@ function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
         Unlock more personalisation
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>
-        Add terrain, injury history, hard session preferences, and training style. Your plan adapts to you — not a template.
+        Add terrain, injury history, hard session preferences, and training style. Your plan adapts to you, not a template.
       </div>
       <Button variant="ghost" 
         onClick={onUpgrade} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--warn-strong)', background: 'none', padding: 0 }}>
@@ -1518,7 +1518,7 @@ export default function GeneratePlanScreen({
             </Button>
           ) : (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', textAlign: 'center' }}>
-              Preview only — save not available in this context
+              Preview only. Save not available in this context
             </div>
           )}
         </div>
@@ -1532,7 +1532,7 @@ export default function GeneratePlanScreen({
                 You've got some time.
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 'var(--space-5)' }}>
-                Your plan doesn't start for a while. A Foundation Block can ease you in — easy runs only, no pressure.
+                Your plan doesn't start for a while. A Foundation Block can ease you in: easy runs only, no pressure.
               </div>
 
               {foundationAddStatus === 'error' && (
@@ -1722,7 +1722,7 @@ export default function GeneratePlanScreen({
       case 'teach-easy':
         return (
           <p style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink-2)', lineHeight: 1.7, margin: 0, maxWidth: '30ch' }}>
-            That&apos;s on purpose. Most runners live in a grey middle — too hard to recover, too easy to improve. We&apos;re going to pull those apart.
+            That&apos;s on purpose. Most runners live in a grey middle: too hard to recover, too easy to improve. We&apos;re going to pull those apart.
           </p>
         )
 
@@ -1730,7 +1730,7 @@ export default function GeneratePlanScreen({
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '16px', color: 'var(--ink-2)', lineHeight: 1.7, margin: 0 }}>
-              Most runners push their easy days and coast their hard ones — so every run lands in the same tiring middle. Even elites spend about 80% of their time truly easy. Your easy runs build the engine. Let them.
+              Most runners push their easy days and coast their hard ones, so every run lands in the same tiring middle. Even elites spend about 80% of their time truly easy. Your easy runs build the engine. Let them.
             </p>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--moss)', margin: 0 }}>
               {BRAND.voiceAnchor}
@@ -1941,12 +1941,12 @@ export default function GeneratePlanScreen({
             ))}
             {overrodeUp && (
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--warn)', lineHeight: 1.5, marginTop: '4px' }}>
-                Harder than your recent numbers suggest. You&rsquo;ll get the sessions — we still build your mileage up gently so you don&rsquo;t get hurt getting fit.
+                Harder than your recent numbers suggest. You&rsquo;ll get the sessions, and we still build your mileage up gently so you don&rsquo;t get hurt getting fit.
               </div>
             )}
             {overrodeDown && (
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, marginTop: '4px' }}>
-                More cautious than we&rsquo;d pick. Fine — nudge it up whenever you&rsquo;re ready.
+                More cautious than we&rsquo;d pick. Fine. Nudge it up whenever you&rsquo;re ready.
               </div>
             )}
             {!overrodeUp && !overrodeDown && rec.isReturning && (
@@ -2059,7 +2059,7 @@ export default function GeneratePlanScreen({
             {benchmarkType === null && (
               <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)', padding: '14px 16px' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
-                  Without a benchmark we use population estimates for your fitness level. Still works — just less personal.
+                  Without a benchmark we use population estimates for your fitness level. Still works, just less personal.
                 </div>
               </div>
             )}
@@ -2089,7 +2089,7 @@ export default function GeneratePlanScreen({
                 {verdict.hint}
               </div>
             )}
-            <FieldNote>Six is the cap, on purpose — a rest day does more than a seventh run would.</FieldNote>
+            <FieldNote>Six is the cap, on purpose: a rest day does more than a seventh run would.</FieldNote>
           </div>
         )
       }

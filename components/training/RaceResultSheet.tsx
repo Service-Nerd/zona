@@ -223,7 +223,7 @@ export default function RaceResultSheet({
             </label>
             {targetTime && (
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '2px' }}>
-                Set to your goal — adjust to what you ran.
+                Set to your goal. Adjust to what you ran.
               </div>
             )}
             <DurationPicker
@@ -247,7 +247,7 @@ export default function RaceResultSheet({
           {/* ── Intent: what you want from the weeks after (§75 Layer 5) ── */}
           <div>
             <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)', color: 'var(--ink-2)', marginBottom: '4px' }}>
-              No next race yet — what now?
+              No next race yet. What now?
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '10px' }}>
               Sets how much we keep you running while there’s nothing to chase.

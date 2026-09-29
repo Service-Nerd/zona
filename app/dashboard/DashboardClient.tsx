@@ -2365,7 +2365,7 @@ export default function DashboardClient() {
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 'var(--space-3)' }}>
             {/* TODO: brand voice review — sentences referencing the product name may benefit from rewording in a follow-up content polish pass. */}
-            {BRAND.name} keeps track of your sessions, adapts when things shift, and keeps you focused on what matters — finishing.
+            {BRAND.name} keeps track of your sessions, adapts when things shift, and keeps you focused on what matters: finishing.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 'var(--space-7)' }}>
             Train with intention. The rest follows.
@@ -3248,7 +3248,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
                 fontFamily: 'var(--font-ui)', fontSize: '13px',
                 color: 'var(--mute)', lineHeight: 1.55, marginBottom: 'var(--space-4)',
               }}>
-                Every session tells you which one. Hold the line — that&apos;s the whole job.
+                Every session tells you which one. Hold the line. That&apos;s the whole job.
               </div>
 
               {/* Zone list — 5 rows */}
@@ -3333,7 +3333,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
                   fontFamily: 'var(--font-ui)', fontSize: '13px',
                   color: 'var(--ink)', lineHeight: 1.5,
                 }}>
-                  Easy when it&apos;s easy. Hard when it&apos;s hard. The grey middle is where amateurs go to stall — and where most of your improvement is hiding.
+                  Easy when it&apos;s easy. Hard when it&apos;s hard. The grey middle is where amateurs go to stall, and where most of your improvement is hiding.
                 </div>
               </div>
 
@@ -4746,7 +4746,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
             <span style={{
               fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)',
             }}>
-              Done — your run gets analysed in the background.
+              Done. Your run gets analysed in the background.
             </span>
           </div>
         )}
@@ -5587,7 +5587,7 @@ function SessionPopupInner({ session, weekTheme, weekN, aiNotes, preloadedRuns, 
       {view === 'complete' && (
         <div style={{ padding: '16px 18px 24px' }}>
           <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--teal)', marginBottom: 'var(--space-4)' }}>Link an activity</div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>Optional — select from recent runs</div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: 'var(--space-2)' }}>Optional, select from recent runs</div>
           {loadingClaimed ? (
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--text-muted)', padding: '12px 0' }}>Loading activities...</div>
           ) : claimedError ? (
@@ -6396,7 +6396,7 @@ function ManualRunModal({ weekN, sessionKey, preferredUnits, onClose, onSaved, s
                     {plannedDistanceKm != null ? (formatDistance(plannedDistanceKm, preferredUnits) ?? '') : ''}
                     {plannedDistanceKm != null && plannedDurationMins != null ? ' · ' : ''}
                     {plannedDurationMins != null ? fmtDurationMins(plannedDurationMins) : ''}
-                    {' '}<span style={{ opacity: 0.6 }}>— edit below if different</span>
+                    {' · '}<span style={{ opacity: 0.6 }}>edit below if different</span>
                   </div>
                 )}
               </div>
@@ -8103,7 +8103,7 @@ function TodayScreen({ plan, weekIndex, quitDays, smokeTrackerEnabled, daysToRac
                 fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)',
                 lineHeight: '1.45', margin: '0 0 10px',
               }}>
-                Your body&apos;s still repairing — the plan&apos;s eased to base running while it does.
+                Your body&apos;s still repairing. The plan&apos;s eased to base running while it does.
               </p>
               {maintWeekCount > 0 && (
                 <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)',
@@ -9486,7 +9486,7 @@ function CoachTeaser({ plan, firstName, onUpgrade }: {
               Your weekly coaching report.
             </div>
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.7, margin: 0, opacity: 0.5 }}>
-              Log a few runs and we'll tell you exactly what's working — and what isn't.
+              Log a few runs and we'll tell you exactly what's working, and what isn't.
             </p>
           </div>
           {/* Locked stats row */}
@@ -11304,7 +11304,7 @@ function ConnectRunsBanner() {
           Still need your runs.
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-          Apple Health connects from the Me screen — takes about ten seconds.
+          Apple Health connects from the Me screen. Takes about ten seconds.
         </div>
       </div>
       <button
@@ -11464,7 +11464,7 @@ function AppleHealthConnectionRow({ onHRFound }: {
       </div>
       {!isLoading && !connected && (
         <div style={{ padding: '0 16px 12px', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-          {BRAND.name} reads your runs from Apple Health to coach you. Read-only — {BRAND.name} never writes to Apple Health.
+          {BRAND.name} reads your runs from Apple Health to coach you. Read-only: {BRAND.name} never writes to Apple Health.
         </div>
       )}
     </div>
@@ -11683,7 +11683,7 @@ function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZo
         )}
         {maxIsFloored && !showEstHint && (
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--warn)', lineHeight: 1.5, marginBottom: 'var(--space-3)' }}>
-            {mhrNum} bpm is below the age estimate ({guardedMax} bpm) — usually the highest your device happened to record, not your true max. Zones use {guardedMax}. If {mhrNum} really is your max, tap Save to confirm it.
+            {mhrNum} bpm is below the age estimate ({guardedMax} bpm), usually the highest your device happened to record, not your true max. Zones use {guardedMax}. If {mhrNum} really is your max, tap Save to confirm it.
           </div>
         )}
         <Button variant="secondary" fullWidth  onClick={handleSave} disabled={!valid} style={{ padding: '11px', background: saved ? 'var(--teal-dim)' : valid ? 'var(--accent-soft)' : 'var(--bg)', border: `0.5px solid ${saved ? 'var(--moss-mid)' : valid ? 'var(--accent-mid)' : 'var(--border-col)'}`, borderRadius: '8px', cursor: valid ? 'pointer' : 'not-allowed', fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase', color: saved ? 'var(--teal)' : valid ? 'var(--accent)' : 'var(--text-muted)' }}>
@@ -12058,7 +12058,7 @@ function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
 
         {/* Transparency — what gets attached (privacy honesty, brand stance) */}
         <div style={{ marginTop: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.6 }}>
-          We add your app version, platform, and account email to the message so we can help faster. You&apos;ll see it before you send — delete it if you&apos;d rather not.
+          We add your app version, platform, and account email to the message so we can help faster. You&apos;ll see it before you send. Delete it if you&apos;d rather not.
         </div>
       </div>
     </div>
@@ -12344,7 +12344,7 @@ function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitCon
         </Button>
         {adjustmentsDisclosureOpen && (
           <div style={{ padding: '0 16px 16px', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.6 }}>
-            Recovery signals before hard sessions — resting HR, HRV, sleep. Easy runs drifting above Zone 2. Load spiking against your recent weeks. Aerobic efficiency slipping over time. Long runs consistently finishing short. Missed or rearranged sessions. Quality sessions running faster than target at controlled effort — a signal your fitness may have moved. When something looks off, you&apos;ll get a notification and can review it here.
+            Recovery signals before hard sessions: resting HR, HRV, sleep. Easy runs drifting above Zone 2. Load spiking against your recent weeks. Aerobic efficiency slipping over time. Long runs consistently finishing short. Missed or rearranged sessions. Quality sessions running faster than target at controlled effort, a signal your fitness may have moved. When something looks off, you&apos;ll get a notification and can review it here.
           </div>
         )}
       </div>
@@ -12972,7 +12972,7 @@ function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
         color: 'var(--ink-2)', lineHeight: 1.55,
         marginBottom: 'var(--space-4)',
       }}>
-        Analysing your run — usually takes 15–30 seconds.
+        Analysing your run. Usually takes 15–30 seconds.
       </div>
       {/* Skeleton metric row — hint at what's coming */}
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
@@ -13010,7 +13010,7 @@ function LockedCoachingPreview({ onUpgrade, onOpenCoach }: { onUpgrade?: () => v
         fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
         color: 'var(--mute)', lineHeight: 1.55, marginBottom: 'var(--space-4)',
       }}>
-        Kit reads here. He needs your runs first — Strava or Apple Health.
+        Kit reads here. He needs your runs first: Strava or Apple Health.
       </div>
       {onUpgrade && (
         <Button variant="quiet" onClick={onUpgrade}>
@@ -14434,10 +14434,10 @@ function QuitTab({ quitDays, raceDistanceKm, onBack }: { quitDays: number | null
         </div>
         <InfoBox>
           <strong style={{ color: 'var(--text-secondary)' }}>What quitting does to your running:</strong><br /><br />
-          <span style={{ color: 'var(--accent)' }}>48 hours</span> — CO leaves bloodstream. O₂ delivery improves immediately.<br />
-          <span style={{ color: 'var(--accent)' }}>Week 1–2</span> — Resting HR starts dropping. Recovery improves noticeably.<br />
-          <span style={{ color: 'var(--accent)' }}>Week 3–4</span> — Aerobic efficiency measurably better. Zone 2 feels easier.<br />
-          <span style={{ color: 'var(--accent)' }}>Month 2+</span> — Cardiac drift reduces. That late-run HR creep? Less of it.<br /><br />
+          <span style={{ color: 'var(--accent)' }}>48 hours</span>: CO leaves bloodstream. O₂ delivery improves immediately.<br />
+          <span style={{ color: 'var(--accent)' }}>Week 1–2</span>: Resting HR starts dropping. Recovery improves noticeably.<br />
+          <span style={{ color: 'var(--accent)' }}>Week 3–4</span>: Aerobic efficiency measurably better. Zone 2 feels easier.<br />
+          <span style={{ color: 'var(--accent)' }}>Month 2+</span>: Cardiac drift reduces. That late-run HR creep? Less of it.<br /><br />
           <strong style={{ color: 'var(--text-secondary)' }}>Quitting while training for {raceCtx}. That's an upgrade.</strong>
         </InfoBox>
       </div>

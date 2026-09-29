@@ -660,39 +660,24 @@ which write the **canonical eyebrow** on aligned blocks — were counted as viol
 this register exists to prevent.** The blockers are now named per-label rather than as a
 single "needs a render".
 
-#### 🔴 `NOEMDASH-JSX-TEXT-01` — the app em-dash guard cannot see JSX text
+#### ✅ `NOEMDASH-JSX-TEXT-01` — SHIPPED 2026-09-29. The guard now reads JSX text
 
-⚙️ **NO BOARD** — a defect fix restoring documented intent (the founder's 2026-09-11
-no-em-dash rule, scope settled 2026-09-22: *"sentences the runner reads or hears"*).
+⚙️ **NO BOARD** — a defect fix restoring documented intent.
 
-**`noEmDashApp.test.ts` scans STRING LITERALS** — its `LIT` regex matches `'…'`, `"…"` and
-backticks. **A great deal of runner-facing copy is JSX text between tags**, which is not a
-literal and is therefore invisible to it.
+**35 runner-facing sentences fixed; the guard extended to JSX text nodes.** It scanned
+STRING LITERALS, and much runner-facing copy is text between tags, so it was correct about
+everything it looked at and blind to the rest.
 
-**Measured 2026-09-29: 56 lines carry an em dash outside a string literal** under
-`components/` and `app/dashboard/`. Many are trailing `//` comments (legitimately exempt),
-but a real runner-facing subset is there and shipped:
+🔴 **THE DOC IS WHY IT LASTED.** `CLAUDE.md` said the guard *"guards every string
+literal under `components/` and `app/dashboard/`"* — **exactly true, and not the same
+claim** as *"every sentence the runner reads"*, which is the rule. **The doc described the
+MECHANISM, the rule described the INTENT, nobody compared them.** Corrected in the same
+commit.
 
-| file | text |
-|---|---|
-| `RaceResultSheet.tsx` | *"Set to your goal — adjust to what you ran."* · *"No next race yet — what now?"* |
-| `PlanCalendar.tsx` | *"Later — still flexible"* |
-| `PostRaceReshapeCard.tsx` | *"…around your recovery — …"* |
-| `TrendCard.tsx` | *"…before surfacing a trend — …"* |
-| `ZoneRings.tsx` | *"Where your week actually went — by zone."* |
-| `DashboardClient.tsx` | *"Email support — a real person reads it."* (fixed in `FAQ-01`, which was editing that row anyway) |
-
-⚠️ **SAME CLASS AS EVERY OTHER POPULATION DEFECT THIS WEEK, AND IT IS IN A SHIPPED GUARD,
-NOT A NEW ONE.** The predicate is right; the SET is short. `CLAUDE.md` states the guard
-covers *"every string literal under `components/` and `app/dashboard/`"* — which is exactly
-true and exactly not the same claim as *"every sentence the runner reads"*, which is what
-the rule says. **The doc describes the mechanism; the rule describes the intent; nobody
-compared them.**
-
-**Fix:** extend the scanner to JSX text nodes, re-derive the exemptions (a bare `—`
-placeholder like `RPEScale`'s *"— / 10"* is typography and stays exempt), and correct
-`CLAUDE.md`'s description of the guard's scope in the same commit. Register the residue
-rather than hiding it.
+**Three declared JSX exemptions**, separate from the literal ones because they are a
+different kind of thing: a bare placeholder (`—`, `—:——`, `— / 10`) and a mark joining two
+interpolated VALUES (`{label} — {day}`, `{ratio}x — {label}`). **A separator is not a
+sentence**, which is the founder's own test.
 
 #### ✅ `MICRO-LABEL-BRAND-STAMP-01` — SHIPPED 2026-09-29. The brand stamp is an eyebrow
 

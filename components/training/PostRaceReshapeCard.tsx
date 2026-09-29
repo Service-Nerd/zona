@@ -92,7 +92,7 @@ function Locked({ onUpgrade, onDismiss }: { onUpgrade: () => void; onDismiss: ()
       </div>
 
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink-2)', lineHeight: 1.55, marginBottom: '16px' }}>
-        Log your race result and Zonna will reshape your training plan around your recovery — adjusting the next few weeks so you don't come back too fast.
+        Log your race result and Zonna will reshape your training plan around your recovery, adjusting the next few weeks so you don't come back too fast.
       </div>
 
       <Button variant="primary" fullWidth
