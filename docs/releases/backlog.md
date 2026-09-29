@@ -948,6 +948,27 @@ stop serving; it serves the last thing it managed to build.**
 ⚠️ **What remains genuinely open:** nothing from this item. The device questions belong to
 `ZONES-HR-SHEET-01`.
 
+#### 🔴 `ZONES-TAB-PIN-01` — the Heart rate / Pace tabs scroll away
+
+🧭 **DESIGN BOARD.** Found in the founder's device screenshots, 2026-09-29. **Flagged, not
+decided, and deliberately not built.**
+
+The zones screen's header pins (arrow, title, sub). The **Heart rate / Pace segmented control
+sits below it, inside `TrainingZonesScreen`, and scrolls away.** So a runner three zones down
+the list cannot switch unit without scrolling back to the top.
+
+⚠️ **Why it was not simply pinned too:** the band already carries an arrow, a 26px title and a
+sub. Adding a full-width segmented control makes it tall enough to be a screen of its own on a
+small phone — the shape Silvanto's 88vh rule exists to prevent elsewhere. **That is a trade,
+and a trade is a ruling.**
+
+**Options for the board:** pin the tabs with the header and accept the height · pin only the
+tabs and let the title scroll, since the control is what the screen is *for* · leave it and
+accept the scroll-back · collapse the title once scrolled so the band stays short.
+
+⚠️ **Measure before ruling:** the band's height at 375px and at 320px, with and without the
+tabs. **Nothing on this screen has been measured at 320px.**
+
 #### 🔴 `SUBPAGE-TYPE-SCALE-01` — sub-page headings, measured: 20 treatments, three families
 
 🧭 **DESIGN BOARD.** 👤 Founder: *"ensure the headings and sub heading of these sub pages are
