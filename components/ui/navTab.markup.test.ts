@@ -252,13 +252,29 @@ describe('NAV-SLIM-01', () => {
     // NAV_ITEMS are two hand-maintained lists of the same thing — the class of
     // drift that made the GuideSheet mirror show a retired `strava` tab — so
     // they are compared to each other rather than each being asserted alone.
+    // 🔴 THIS ARM HAD NEVER LOOKED AT THE NAV GUARD, AND PASSED FOR A YEAR ANYWAY.
+    // It anchored on the first line containing `appReady && (screen ===` and there is
+    // EXACTLY ONE such line in the hub: `pullToRefreshEnabled`. So an arm titled "the nav
+    // renders on exactly the four screens it has tabs for" was asserting the PULL-TO-REFRESH
+    // gate, and passed only because the two lists coincidentally matched. Found when
+    // `PTR-SUBPAGE-01` split that expression across two lines and this went red naming a
+    // screen the nav has nothing to do with.
+    //
+    // ⚠️ AND THE PREMISE WAS WRONG TOO: the nav has no four-screen expression. It renders
+    // by DEFAULT and is removed by early returns. So the honest check is the inverse — the
+    // screens that suppress the nav must not be screens that have a tab.
     const src = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
     const items = Array.from(src.matchAll(/\{ id: '([a-z]+)',\s*label:/g)).map(m => m[1]).sort()
-    const guardLine = src.split('\n').find(l => l.includes('appReady && (screen ==='))
-    expect(guardLine, 'the nav render guard has moved — re-anchor this').toBeTruthy()
-    const guarded = Array.from(guardLine!.matchAll(/screen === '([a-z-]+)'/g)).map(m => m[1]).sort()
     expect(items.length, 'NAV_ITEMS should carry four tabs').toBe(4)
-    expect(guarded, 'the render guard and NAV_ITEMS must name the same screens').toEqual(items)
+    const navRegion = src.slice(Math.max(0, src.indexOf('{NAV_ITEMS.map(') - 4000),
+                                src.indexOf('{NAV_ITEMS.map('))
+    const suppressed = Array.from(navRegion.matchAll(/if \(screen === '([a-z-]+)'\) return null/g))
+      .map(m => m[1])
+    expect(suppressed.length, 'the nav suppression guards have moved — re-anchor this')
+      .toBeGreaterThan(0)
+    const clash = suppressed.filter(s2 => items.includes(s2))
+    expect(clash, 'a screen both has a nav tab and suppresses the nav:\n' + clash.join('\n'))
+      .toEqual([])
   })
 
   it('🔴 the marketing replicas still encode the same height', () => {

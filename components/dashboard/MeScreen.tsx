@@ -707,7 +707,7 @@ async function hasServerSubscription(platform: 'ios' | 'web'): Promise<boolean> 
   }
 }
 
-export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, stravaConnected, plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, stravaConnected, plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, onActiveSectionChange, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
    *  by `onOpenSectionConsumed`, so a later visit to Me lands on the index as usual. */
   openSection?: string | null
@@ -745,6 +745,11 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   /** ZONES-SURFACE-01 — opens the Training Zones screen. */
   /** ZONES-HR-SHEET-01 — `editHr` opens the HR sheet on arrival, for the unset row. */
   onOpenZones?: (returnTo?: string, editHr?: boolean) => void
+  /** 🔴 PTR-SUBPAGE-01 — the hub gates pull-to-refresh on `screen`, and every door here
+   *  keeps `screen === 'me'`. So Common questions, Something broken, Plan history and Plan
+   *  adjustments all inherited a gesture the hub's own comment says detail screens must not
+   *  have. This reports the door so the hub can switch it off. */
+  onActiveSectionChange?: (section: string) => void
   /** GTM-CHARITY-04 — ISO end date of a live charity grant, or null. */
   charityGrantEndsAt?: string | null
   onUpgrade?: () => void
@@ -782,6 +787,8 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
 
   // ⚠️ BEFORE THE EARLY RETURNS. `MeScreen` returns early for every door, so a hook placed
   //   below one is a conditional hook — the React error 310 this repo has already shipped once.
+  useEffect(() => { onActiveSectionChange?.(activeSection) }, [activeSection, onActiveSectionChange])
+
   useEffect(() => {
     if (!openSection) return
     setActiveSection(openSection as 'preferences' | 'plan-adjustments')
