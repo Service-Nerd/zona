@@ -6,6 +6,38 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — ZONES-ZONE-SHEET-GONE-01 (part 2) · a shorthand reset a longhand, and he saw it before any check did
+
+**Dev.** The heart-rate zone rows look like the pace rows again.
+
+**The honest bit.** My fix for the missing popup shipped a second defect in the same lines.
+Making the row tappable meant making it a `<button>`, and I wrote the border declarations in
+the wrong order: set `borderTop`, then `border: 'none'` — which is a shorthand and resets it —
+then a `borderTopStyle` that re-enabled a top border at the browser's default width and
+`currentColor`. Hairlines on one tab, thick near-black bars on the other. The founder found it
+on a phone in about a minute, with two screenshots, which is roughly how long it took me to
+not notice while reading the same four lines.
+
+**The gate that exists for exactly this could not see it.** There is a check in this repo whose
+entire premise is *a conversion may change a button's colour, never its box*. It measures
+controls on the design system, and its own comment — in the very file I was editing — records
+that the hand-rolled buttons here are deliberately outside its population. So the absolute
+measurement was never going to fire. The fix was to stop trying to measure the right value and
+instead compare the twins: the two tabs render the same row, so they must declare the same
+border. That check is cheap, it has no magic numbers, and it would have failed instantly.
+
+**And I wrote a third character budget.** `slice(i, i + 900)` to bound the region, which went
+red the moment I added the comment explaining the defect, because the comment pushed the style
+past nine hundred bytes. Same mistake this morning on a different check, and the week before
+that on another. It is now brace-matched to the style object. A region measured in bytes is not
+a region, and apparently I need that written down more than once.
+
+**Worth recording separately:** this is the first time in this whole thread that anything was
+seen actually running. Every claim before it was tsc, a suite, a server-rendered DOM and a
+production deploy log.
+
+---
+
 ## 2026-09-29 — ZONES-ZONE-SHEET-GONE-01 · the comment said it had moved, and it had not
 
 **Dev.** Tapping a heart-rate zone opens its explainer again. It had stopped.
