@@ -159,6 +159,18 @@ The user opens Session Detail from Today or Plan to read the full brief on a sin
 **Me is an INDEX.** It lists what a runner can change and opens a screen for each.
 **Nothing lives on Me.** Every row is a **door**, not a room.
 
+> 🔴 **AMENDED 2026-09-29 (`LEDGER-PLACEMENT-01`), and it is an amendment rather than a
+> second exception.** The original rule was written **without the discipline ledger on
+> screen** — it had been stranded on the paid Coach screen since May, so no seat saw it.
+> When it came back, `Me` held a read-only card that is not a door and the rule had no room
+> for it.
+>
+> **Me may carry a read-only card that reports the runner's own state. It may not carry a
+> control that is not a door.**
+>
+> `What Kit knows about you` and the discipline ledger are **two instances of one rule, not
+> two exceptions.** An exception list of two is a rule that has not been written yet.
+
 🔴 **RULED 2026-09-28 (`ME-PURPOSE-01`), after the question was deferred THREE times.**
 This section previously read *"Job: your identity and configuration"* and then listed seven
 categories under it. **That is not a job, it is a drawer with a label** — and a job you

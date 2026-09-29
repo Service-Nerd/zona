@@ -18,6 +18,8 @@
 //
 // ui-patterns.md § Form Fields & Pickers → CardSelect.
 
+import { StatusBadge } from './StatusBadge'
+
 export function CardSelect({
   label,
   sub,
@@ -63,10 +65,10 @@ export function CardSelect({
       >
         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: active ? 700 : 500, color: active ? 'var(--moss)' : 'var(--ink)' }}>{label}</span>
         {sub && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>{sub}</span>}
+        {/* TIER-BADGE-01 — was a hand-rolled 9px/700/0.08em span. One of the two
+            divergent copies `StatusBadge` was created to absorb. */}
         {locked && lockLabel && (
-          <span style={{ position: 'absolute', top: '8px', right: '10px', fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.08em' }}>
-            {lockLabel}
-          </span>
+          <StatusBadge label={lockLabel} tone="held" style={{ position: 'absolute', top: '8px', right: '10px' }} />
         )}
       </button>
     )
@@ -93,7 +95,10 @@ export function CardSelect({
           </div>
         )}
       </div>
-      {lockLabel && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.08em', marginTop: '2px', flexShrink: 0 }}>{lockLabel}</span>}
+      {/* 🔴 THE TWIN, ELEVEN LINES OF PROPS FROM THE ONE I FIXED FIRST. `CardSelect` has
+          TWO layouts and each rolled its own lock label; I converted `tile` and the gate
+          caught `row` on its first run. Recorded class: the remedy applied to one twin. */}
+      {lockLabel && <StatusBadge label={lockLabel} tone="held" style={{ marginTop: '2px', flexShrink: 0 }} />}
     </button>
   )
 }

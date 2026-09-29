@@ -693,6 +693,9 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 
 ### 🏃 Product — SLT priority order (reviewed 2026-06-06; **re-topped 2026-08-06**)
 
+- 🧭 `MICRO-LABEL-DRIFT-01` — **NEXT.** 36 micro-label combinations across 171 uses
+  against ONE documented value, and the app has no type-scale check at all (`typeScale.test.ts`
+  is marketing-only). Measured at the `TIER-CHIP-01` sitting. `backlog.md`.
 - 🧭 `LEDGER-PLACEMENT-01` — **NEXT.** Where the discipline ledger belongs on Me. Restored
   as a defect fix to the position the registry specified; the founder asked for it *beside
   the tier chip*, and `ME-PURPOSE-01` says nothing lives on Me. Goes to the board with the

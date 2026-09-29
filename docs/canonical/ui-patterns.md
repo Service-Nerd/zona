@@ -2736,6 +2736,41 @@ Contained-track toggle for 2–4 mutually-exclusive options. One idiom for login
 <SegmentedControl value={units} onChange={setUnits} options={[{value:'km',label:'KM'},{value:'mi',label:'MI'}]} />
 ```
 
+### StatusBadge (`components/shared/StatusBadge.tsx`) — TIER-BADGE-01
+
+**The one micro-label that reports a STATE.** Not a control and not a selection.
+
+| | |
+|---|---|
+| **A BADGE** reports a state the runner is **in** | `PRO` · `GIFTED` · `PAID` (locked) · `PENDING` |
+| **An EYEBROW** labels a **region** | `This week` · `Mon · Week 3` |
+
+⚠️ **`Chip` was the wrong reuse and it is worth saying why:** `Chip` requires `onClick`
+and paints a moss fill when `active`. It is for *choosing*. A tier is not chosen.
+
+**Values are the documented Section label and may not be varied: 10px / 700 / uppercase /
+0.08em.** They live in `MICRO_LABEL`. ⚠️ That is Silvanto's binding amendment, not a
+preference — measured at the sitting, the app carries **36 distinct micro-label
+combinations across 171 uses**, and a shared component that codified a 37th would be *"the
+version that spreads"*. `MICRO-LABEL-DRIFT-01` carries the rest.
+
+**Tone is BINARY and carries no rank.** `held` = `--moss`, `none` = `--mute`. Size, weight
+and tracking are identical for every state and there is no fill (*type accent, not flood*).
+
+> 🔴 **THE MOMENT ANY STATE IS STYLED UP RELATIVE TO ANOTHER IT BECOMES CELEBRATION**
+> and the ruling is void (*Celebrating the peak week*, Wood, binding). `Free` is not a
+> lesser visual than `Pro`; it is the same label in a different colour, and the colour says
+> only whether access is currently **held**.
+
+⚠️ `--warn` is coaching-only and `--danger` errors-only, so neither is available here.
+
+**Tier vocabulary lives in `lib/tierBadge.ts`**, keyed on all five `TierReason` values —
+`Record<TierReason, …>`, so a new reason fails the build rather than falling back to
+"Free", which would tell someone with access that they have none. **A null reason renders
+NOTHING**: defaulting would flash `FREE` at a paying subscriber on every open.
+
+Guarded by `statusBadge.markup.test.ts` (14 arms, 7 falsified).
+
 ### Chip (`components/shared/Chip.tsx`)
 
 Stateless select-chip for choosing from a set. Single-select (caller tracks one active value) or multi-select (caller tracks a Set). `--moss` border + `--moss-soft` fill when active. Used for race distances, injuries, benchmark type, training-age bands.

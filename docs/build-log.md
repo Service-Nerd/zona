@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — TIER-BADGE-01 · he asked for colour and the measurement found a lie
+**Shipped:** A status badge on Me that tells five kinds of access apart instead of three.
+**Dev learning:** He asked whether we could "sing about" the Pro label and add colour by subscription type. The honest answer turned out to be that **the screen could not tell subscription types apart at all**. Three strings for five states, so a charity-comped runner, an admin and a paying subscriber all read the same word. Five hundred Make-A-Wish runners get codes this week. The value that would fix it was already sitting one component up, unpassed.
+**Product/creator learning:** Colour was the ask. Honesty was the finding. That happens often enough now that I've stopped treating a founder request as a spec and started treating it as a **pointer at a screen he's been looking at longer than I have**. He wasn't wrong that it looks flat. He just found it by feel and I found the reason by measuring.
+**AI-building learning:** I told the board "there is no status-badge primitive". **Two existed**, as inline spans, already drifted apart. I corrected it in the evidence step before the seats spoke, which is the second time this week that step has caught my own brief. Then measuring further turned up **36 distinct micro-label combinations across 171 uses** against one documented value, and a type-scale check that only governs the marketing site. The component had to pick a value and the question "which one is right?" had 36 answers.
+**The honest bit:** The new gate found a twin **inside the same file I had just edited** — `CardSelect` has two layouts, each with its own lock label, and I converted one and moved on. That is the failure mode I wrote a rule about three days ago. Writing the rule does not appear to help; the gate did.
+**Also:** I nearly narrowed the gate's regex when it reported three hits. Two were legitimately out of scope. Narrowing until it passes is how a green tick stops meaning anything, so they went into a declared register with reasons and an arm that fails if a declared exemption gets cleaned up and left in the list.
+**Hook material:** He asked if we could add some colour. The screen couldn't tell a gift from a purchase.
+**Postable?:** yes
+
 ## 2026-09-29 — LEDGER-REACH-01 · he asked for a feature we built in May and hid in June
 **Shipped:** The discipline ledger renders on Me again, ungated, for every tier.
 **Dev learning:** The founder described a feature in his own words — a counter of weeks spent inside your zones, restraint rather than gamification — and it already existed, shipped four months ago, with almost that exact sentence in its module header. Then a refactor moved its only render site onto the Coach screen, which is paid-only. A FREE feature, with free criteria that need no heart-rate data, that no free user could reach. **The commit that did it says "No change to data or computation." That was true. It was a change to who could see it.**

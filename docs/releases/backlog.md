@@ -533,6 +533,45 @@ call site, whereas threading a `source` prop through nine giant JSX call sites i
 say whether the Coach teaser converts better than the Me screen, which is the question
 `design-rulings.md`'s killed merchandising screen could not be argued without.
 
+## ⚖️ FILED 2026-09-29 — `MICRO-LABEL-DRIFT-01`
+
+### 🟡 `MICRO-LABEL-DRIFT-01` — 36 micro-label combinations against one documented value
+
+🧭 **DESIGN BOARD.** Named and measured at the `TIER-CHIP-01` sitting and deliberately
+NOT fixed there; the ruling says it needs its own item and the founder asked for it filed.
+
+**Measured** across every tracked `.tsx` under `components/` and `app/`, by size + weight +
+tracking:
+
+> **36 distinct combinations across 171 uses.** `ui-patterns.md` documents **one**:
+> *Section label, `--font-ui`, 700, 10px uppercase 0.08em.* The documented value accounts
+> for 44 uses directly, plus 20 where the regex did not capture the weight — so **at most
+> 64 of 171 conform, and at least 107 do not.**
+
+🔴 **AND NOTHING CHECKS IT.** `typeScale.test.ts` lives in `lib/marketing/` and governs
+the marketing site only. **The app has no type-scale check of any kind.** Same split this
+repo already recorded for the em-dash guard, where the doctrine, the doc and the check
+disagreed three ways for months.
+
+⚠️ **This is the app's version of the finding Silvanto caught on the website** — 170
+hand-typed sizes with an H1:H2 step of 1.02×, neither visible by looking. It was caught
+there because someone measured. Here it was caught because a new component had to choose a
+value and the question *"which one is correct?"* had 36 answers.
+
+**Two known-good exemptions to carry forward, already declared in
+`statusBadge.markup.test.ts`:**
+- `components/marketing/PhoneFrame.tsx` — a mockup of iOS chrome at mockup scale, already
+  exempted for that reason in `typeScale.test.ts`.
+- The **eyebrow** family (`This week`, `Mon · Week 3`) — an eyebrow labels a REGION, a badge
+  reports a STATE. Different jobs; the drift work must decide whether they share a scale.
+
+**Scope when picked up:** a canonical set (probably eyebrow + badge, not one), a token or
+constant per role, an app-side check with a declared debt register, and the 107 converted
+in waves rather than a sweep. ⚠️ **Do not "fix" this by widening the documented value to
+whatever is most common** — that ratifies the drift and calls it a decision.
+
+---
+
 ## ⚖️ FILED 2026-09-29 — two items from the LEDGER-REACH-01 round
 
 ### 🟡 `LEDGER-PLACEMENT-01` — where the discipline ledger belongs on Me

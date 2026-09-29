@@ -37,6 +37,9 @@
 import type React from 'react'
 import { useState, useRef, useEffect } from 'react'
 import { BRAND } from '@/lib/brand'
+import { StatusBadge } from './StatusBadge'
+import { tierBadgeFor } from '@/lib/tierBadge'
+import type { TierReason } from '@/lib/trial'
 
 /** Named once so the label and the input cannot point at different elements. */
 export const IDENTITY_NAME_FIELD_ID = 'identity-first-name'
@@ -79,15 +82,21 @@ function EditGlyph() {
   )
 }
 
-export function IdentityCard({ initials, firstName, tierLabel, onSaveName }: {
+export function IdentityCard({ initials, firstName, tierLabel, tierReason, onSaveName }: {
   /** Already resolved by the caller — see the fallback chain in `profileInitials`. */
   initials: string
   firstName: string
-  /** Trial / Pro / Free. */
+  /** ⚠️ LEGACY. Superseded by `tierReason`, which distinguishes all five states.
+   *  Kept only so `/me-preview` can drive the card without a resolver. */
   tierLabel: string
+  /** TIER-BADGE-01 — the resolved access reason. `null` while resolving: render nothing. */
+  tierReason?: TierReason | null
   /** Resolves false if the write failed. The card reverts and says so. */
   onSaveName: (name: string) => Promise<boolean>
 }) {
+  // ⚠️ `tierReason` is the real input. `tierLabel` survives ONLY so the fixture page can
+  // drive every state without standing up a tier resolver; a runner never takes that path.
+  const badge = tierBadgeFor(tierReason) ?? (tierLabel ? { label: tierLabel, tone: 'none' as const } : null)
   const [mode, setMode] = useState<Mode>('rest')
   const [draft, setDraft] = useState(firstName)
   const inputRef = useRef<HTMLInputElement | null>(null)
@@ -188,12 +197,20 @@ export function IdentityCard({ initials, firstName, tierLabel, onSaveName }: {
             the caret says what the pencil was there to say. */}
         {!editing && firstName && <EditGlyph />}
         </div>
-        <div style={subType}>
+        {/* 🔴 TIER-BADGE-01 — THE TIER USED TO BE PROSE. It rendered as 12px --mute
+            subtext, the SAME treatment as the coach sentence beside it, so the one piece
+            of state on this card read as a second clause. It is a STATUS now.
+            ⚠️ `badge` is null while the tier resolves and nothing renders — defaulting
+            would flash "FREE" at a paying subscriber on every open. */}
+        <div style={{ ...subType, display: 'flex', alignItems: 'baseline', gap: 'var(--space-2)' }}>
           {mode === 'failed'
             ? <span style={{ color: 'var(--danger)' }}>{IDENTITY_SAVE_FAILED}</span>
-            : firstName
-              ? tierLabel
-              : `${tierLabel} · ${BRAND.coachName} will use it.`}
+            : (
+              <>
+                {badge && <StatusBadge label={badge.label} tone={badge.tone} />}
+                {!firstName && <span>{`${BRAND.coachName} will use it.`}</span>}
+              </>
+            )}
         </div>
       </div>
     </div>

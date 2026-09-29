@@ -15,6 +15,8 @@
 import { useState } from 'react'
 import { notFound } from 'next/navigation'
 import { IdentityCard } from '@/components/shared/IdentityCard'
+import { TIER_BADGE } from '@/lib/tierBadge'
+import type { TierReason } from '@/lib/trial'
 
 const CASES: {
   title: string
@@ -51,6 +53,12 @@ const CASES: {
   },
 ]
 
+/** TIER-BADGE-01 — every reason the resolver can return, plus the resolving state.
+ *  ⚠️ THIS IS THE ONLY PLACE ALL FIVE CAN BE SEEN. Me is behind auth and a runner only
+ *  ever occupies one of them, so without this page the grant badge — the one 500
+ *  Make-A-Wish runners will read — ships unlooked-at. */
+const TIER_CASES: (TierReason | null)[] = [null, 'none', 'trial', 'grant', 'subscription', 'admin']
+
 export default function MePreviewPage() {
   // Never reachable in production. NODE_ENV is inlined at build time, so this
   // is dead-stripped.
@@ -85,6 +93,28 @@ export default function MePreviewPage() {
             <p style={{ fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5, margin: '10px 0 0' }}>{c.note}</p>
           </div>
         ))}
+
+        {/* TIER-BADGE-01 — the five access reasons, and the null that renders nothing. */}
+        <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: '16px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px' }}>
+            Tier badge · five reasons, one still resolving
+          </div>
+          {TIER_CASES.map((reason) => (
+            <div key={String(reason)} style={{ marginBottom: '10px' }}>
+              <div style={{ fontSize: '11px', color: 'var(--mute)', marginBottom: '3px' }}>
+                {reason === null ? "tierReason = null — still resolving, renders nothing" : `tierReason = '${reason}'`}
+              </div>
+              <div style={{ background: 'var(--bg)', padding: '12px', borderRadius: '10px' }}>
+                <IdentityCard
+                  initials="R" firstName="Russell"
+                  tierLabel={reason ? TIER_BADGE[reason].label : ''}
+                  tierReason={reason}
+                  onSaveName={async () => true}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* PROFILE-IDENTITY-01 — the live card, including the state nobody could see
             before: a SAVE THAT FAILS. Wroblewski made the error path a blocking

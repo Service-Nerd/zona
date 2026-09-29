@@ -3404,3 +3404,90 @@ rendering, not by reading.
 ⚠️ **Recorded, unresolved:** Wroblewski's objection that the door is not worth its tap while
 Strava is admin-gated. It would be settled by Strava approval or by telemetry we do not
 collect. **Nothing here has been seen on a device.**
+
+---
+
+## TIER-CHIP-01 + LEDGER-PLACEMENT-01 — 2026-09-29 — **SHIP WITH AMENDMENT / DON'T SHIP**
+
+**Founder:** *"the profile where it says pro. Can we sing about this? Can we add some
+colour somehow depending on the subscription type?"*
+
+### 📐 What the evidence step found, before any seat spoke
+
+🔴 **The label could not express what he was asking for.** `tierLabel` was three strings
+(`hasPaidAccess ? (trial ? 'Trial' : 'Pro') : 'Free'`) against **five** `TierReason`
+values. **A charity-comped runner, an admin and a paying subscriber all read "Pro"** —
+and 500 Make-A-Wish codes ship this week. `tierReason` was already held one component up
+and simply not passed down.
+
+⚠️ **It was not a chip.** 12px `--mute` subtext, the same treatment as the coach sentence
+beside it: the one piece of state on the card read as a second clause.
+
+🔴 **AND THE SITTING'S OWN BRIEF WAS WRONG, CORRECTED BEFORE THE SEATS SPOKE.** It claimed
+*"there is no status-badge primitive"*. **Two existed** — the ledger's `pending`
+(10/600/0.06em) and `CardSelect`'s `lockLabel` (9/700/0.08em) — as inline spans, already
+diverged. Measuring further: **36 distinct micro-label combinations across 171 uses**,
+against **one** documented value (`10px / 700 / uppercase / 0.08em`), and
+`typeScale.test.ts` lives in `lib/marketing/` and **does not govern the app at all.**
+
+### ⚖️ The ruling
+
+**(a) SHIP — the tier gets treatment, as STATE not celebration.** *Celebrating the peak
+week* forbids emphasis **at a high point**; a badge marks a **category** and must mark all
+five equally. **The moment any tier is styled up relative to another it becomes
+celebration and this ruling is void.**
+
+**(b) SHIP — the distinction must EXIST**, encoded from `tierReason`. Colour is
+**binary**: `--moss` held, `--mute` none. Five colours on one label is a legend.
+⚠️ **The words are the founder's**, drafted in `lib/tierBadge.ts` awaiting sign-off, with
+a named collision: the charity block already says *"Full access, free"* while `none` says
+*"Free"* — the same collapse arriving from the other direction. `grant` is drafted as
+**"Gifted"** as a holding choice, not a decision.
+
+**(c) SHIP — a shared `StatusBadge`**, at the documented micro-label. ⛔ **Silvanto named
+the rule and DECLINED to veto**, converting it into a binding condition: it ships at
+10/700/0.08em or not at all, because a component codifying a 37th variant is *"the version
+that spreads"*. Collins did not challenge.
+
+**(d) 🔴 DON'T SHIP — the identity-region placement for the ledger.** It stays leading
+`Your training`. *"Beside Pro"* is not physically available: a 44px number and a 10px
+badge cannot share a moment (Silvanto), and one is a card while the other is a label
+(Wroblewski).
+
+**(e) 🔴 `ME-PURPOSE-01` AMENDED, not excepted.** *"Me may carry a read-only card that
+reports the runner's own state; it may not carry a control that is not a door."*
+`What Kit knows` and the ledger are **two instances of one rule**. An exception list of
+two is a rule that has not been written yet.
+
+### ⚡ Recorded, unresolved
+
+**Collins vs Silvanto on sequencing.** Collins wanted the drift fixed *and* the moment
+shipped now; Silvanto would not have the primitive ship ahead of the values it uses. Both
+positions held; the badge ships at the documented values and `MICRO-LABEL-DRIFT-01`
+carries the rest. **Collins also argued, and did not win, that a green PRO pill is the
+single most copyable thing we could ship** — the record notes he may be right, and that
+the ruling ships the badge anyway because the defect is about honesty, not decoration.
+
+**Sierra declined to call it the wow moment.** *"The sing-able thing is the runner's
+number, not their receipt."* ⚠️ And **23 of 29 runners cannot reach it**: the ledger reads
+0 for everyone without completion history.
+
+### 📦 Artifacts
+
+1. **Pattern** — `ui-patterns.md` § StatusBadge (badge vs eyebrow, binary tone, no rank) +
+   the `ME-PURPOSE-01` amendment in `screen-architecture.md`.
+2. **Constant** — `MICRO_LABEL` in `StatusBadge.tsx`; `TIER_BADGE` (`Record<TierReason,…>`)
+   in `lib/tierBadge.ts`.
+3. **Mechanical check** — `statusBadge.markup.test.ts`, **14 arms, 7 falsified**, including
+   the 37th-variant regression and a tier styled up. ⚠️ It carries a **declared exemption
+   register** with a stale arm rather than a narrowed regex: its first run found three real
+   hits, **one of which was a twin inside `CardSelect` itself** — two layouts, each rolling
+   its own lock label, and I had converted only one.
+4. **Verified by computed CSS**, not a screenshot: all five at 10px/700/0.8px, two colours,
+   `background: rgba(0,0,0,0)`, and `null` rendering nothing.
+
+### ⚠️ What this does not settle
+
+**The 36-combination drift** — named, measured, filed as `MICRO-LABEL-DRIFT-01`, **not
+fixed**, and the app still has no type-scale check of any kind. Nor the founder's wow
+moment, which Sierra puts at the ledger reaching 1. **Nothing seen on a device.**
