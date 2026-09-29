@@ -64,3 +64,26 @@ Internal gaps use `var(--space-1…7)` = `4 · 8 · 12 · 16 · 24 · 32 · 48`,
 shifted by at most 4px. ⚠️ **Horizontal page padding is the SCREEN's, not this component's**, and was
 not swept — the shorthand `padding: '0 16px'` is outside the sweep's property list. Gated by
 `lib/appSpacingScale.test.ts`.
+
+## 🔴 The transform is conditional (STICKY-TRANSFORM-01, 2026-09-29)
+
+The children wrapper applies `transform: translateY(...)` and `will-change: transform`
+**only while `pull !== 0`**.
+
+**Both of those establish a CONTAINING BLOCK for their descendants**, and this wrapper sits
+between the scroller and **every screen in the app**. While it carried `translateY(0px)` and
+a permanent `will-change`, every `position: sticky` header in the product had a containing
+block that was not the scroller. Reported on an iPhone on two separate screens: *"no static
+header"*, *"has a header but does not stay static on scroll"*.
+
+⚠️ **The transform must survive the settle.** `pull` stays non-zero for the whole release
+animation and reaches 0 only at the end, so gating on the offset keeps it exactly as long as
+it is needed. **Gating on the gesture flag instead would drop it mid-animation** and the
+panel would jump from 80px to nothing rather than easing back.
+
+⚠️ **Honest limit:** the identical nesting sticks in desktop Blink, measured with and
+without the transform. This is a WebKit hypothesis that could not be verified locally (no
+full Xcode; Safari Apple-Events JavaScript and screen capture both unavailable).
+`/sticky-probe` answers it in five seconds on a device.
+
+**Guarded by** `lib/ui/stickyTransform.test.ts`.

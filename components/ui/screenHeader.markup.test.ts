@@ -77,6 +77,10 @@ const NOT_THIS_OWNER: Record<string, string> = {
     'reveals one on scroll — filed as SITE-HEADER-EDGE-01.',
   'app/wizard-preview/page.tsx:48':
     'Internal dev harness toolbar at /wizard-preview. Not a runner-facing surface.',
+  'app/sticky-probe/page.tsx:45':
+    'The WebKit sticky probe at /sticky-probe (STICKY-TRANSFORM-01). It is a DIAGNOSTIC ' +
+    'that deliberately hand-rolls the exact nesting under test, twice, with and without a ' +
+    'transformed ancestor — using the owner would defeat its purpose. 404s in production.',
 }
 
 describe('SCREEN-HEADER-01', () => {

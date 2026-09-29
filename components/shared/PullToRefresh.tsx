@@ -219,11 +219,32 @@ export default function PullToRefresh({
         )}
       </div>
 
+      {/* 🔴 THE TRANSFORM IS APPLIED ONLY WHILE THE PULL IS NON-ZERO, AND THAT IS NOT A
+          MICRO-OPTIMISATION (STICKY-TRANSFORM-01, 2026-09-29).
+          `transform` and `will-change: transform` each establish a CONTAINING BLOCK for
+          their descendants. This wrapper sits between the scroller and EVERY screen in the
+          app, so for as long as it carried `translateY(0px)` and a permanent
+          `will-change`, every `position: sticky` header in the product was resolving
+          against it rather than against the scroller.
+          👤 The founder, on an iPhone, on two different screens: *"Contact support still
+          does the pull down to load with no static header"* and *"your zones has a header
+          but does not stay static on scroll"*.
+          ⚠️ HONEST LIMIT: the identical nesting STICKS in desktop Blink — I measured it,
+          both with and without the transform — so this is a hypothesis about WebKit that I
+          could not verify here (no Xcode, Safari automation and screen capture both need
+          permissions I do not have). It is shipped anyway because it is correct on its own
+          terms: a `translateY(0px)` is a no-op that still creates a containing block, and a
+          permanent `will-change` on a wrapper around the whole app is a compositing smell
+          rather than a hint.
+          ⚠️ The transform is KEPT while settling, or the release animation would jump from
+          80px to nothing instead of easing back. `pull` is non-zero for the whole of that
+          animation and returns to 0 only at the end. `/sticky-probe` settles the engine
+          question in five seconds for whoever next has a device in hand. */}
       <div
         style={{
-          transform: `translateY(${pull}px)`,
+          transform: pull !== 0 ? `translateY(${pull}px)` : undefined,
           transition: active ? 'none' : 'transform 0.28s cubic-bezier(0.22, 1, 0.36, 1)',
-          willChange: 'transform',
+          willChange: pull !== 0 ? 'transform' : undefined,
         }}
       >
         {children}
