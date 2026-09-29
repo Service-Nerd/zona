@@ -660,31 +660,57 @@ which write the **canonical eyebrow** on aligned blocks — were counted as viol
 this register exists to prevent.** The blockers are now named per-label rather than as a
 single "needs a render".
 
-#### 🔴 `DASHBOARD-SCREEN-EXTRACT-01` — fourteen screens are local functions, so nothing can render them
+#### 🟡 `DASHBOARD-SCREEN-EXTRACT-01` — PHASE 1 SHIPPED 2026-09-29 (5 of 14)
 
-⚙️ **NO BOARD** — refactor with no behavioural or visible delta.
+⚙️ **NO BOARD** — refactor, bodies moved verbatim, no behavioural or visible delta.
 
-**Measured 2026-09-29 while render-checking copy.** 19 of 35 rewritten sentences live in
-`DashboardClient.tsx`, spread across **14 functions that are LOCAL and not exported**:
+**Measured first: 5,678 lines across 14 module-level functions, 39% of a 14,447-line file.**
+All 14 are at module scope, so they close over nothing from component state; the only
+coupling is to other module-level declarations in that file. That made a dependency ladder,
+and leaves-first is the only safe order.
 
-`QuitTab` (4) · `OrientationScreen` (2) · `SessionPopupInner` (2) · `IconMe` ·
-`ManualRunModal` · `TodayScreen` · `CoachTeaser` · `ConnectRunsBanner` ·
-`AppleHealthConnectionRow` · `HRZonesSection` · `SupportScreen` · `MeScreen` ·
-`PendingAnalysisCard` · `LockedCoachingPreview`
+✅ **PHASE 1 — the five leaves, 323 lines, 8 of the 19 rewrites now renderable:**
 
-**None can be imported, so none can be rendered anywhere but inside a signed-in session.**
-Not by a harness, not by a markup test that mounts, not by anything.
+| moved to `components/dashboard/` | lines | in-file deps taken with it |
+|---|---|---|
+| `QuitTab` | 40 | `BackHeader`, `InfoBox` (used ONLY by it) |
+| `SupportScreen` | 104 | `SUPPORT_EMAIL` (used ONLY by it) |
+| `ConnectRunsBanner` | 88 | none |
+| `PendingAnalysisCard` | 41 | none |
+| `LockedCoachingPreview` | 26 | none |
 
-⚠️ **FIFTH INSTANCE OF A CLASS THIS REPO HAS RECORDED FOUR TIMES** — *"a pattern that is a
-local variable cannot travel"* (`ACTION-ROW-01`), `SectionLabel` as a local function (the
-fourth), `PlanCalendar` writing its own because it could not import one. **Here it is not a
-pattern but fourteen whole SCREENS**, and the cost is not duplication: it is that **no screen
-in the app's largest file has ever been seen outside a live session.**
+**DashboardClient: 14,447 → 14,124 lines.** All five mounted on `/copy-preview` and
+**verified in the DOM**. ✅ **Proved verbatim mechanically**: each block diffed against
+`HEAD` — **8 of 8 byte-identical**, none left behind.
 
-**This is why `/copy-preview` covers `GeneratePlanScreen` (an exported default, which mounts
-fine) and covers none of these.** Extract them to `components/dashboard/` one at a time, each
-with a preview case. Not urgent; large; and the reason every future "can you check it
-renders?" gets a partial answer until it is done.
+🔴 **TWO BASELINE REGISTERS CAUGHT THE MOVE, BOTH CORRECTLY, AND NEITHER WAS A REGRESSION.**
+`buttonGeometry` keys controls by ORDINAL within a file, so removing 323 lines re-keyed
+nine of them — the `BUTTON-GEOMETRY-KEY-02` class again. **Proved it was a re-key before
+re-baselining: 157 controls before and after, and the multiset of geometry values differs by
+ZERO.** `hardcodedUnits` keys by FILE, so its one QuitTab entry read as "site no longer
+matches"; path corrected, entry kept.
+
+🔴 **AND `git ls-files` COULD NOT SEE THE NEW FILES UNTIL THEY WERE STAGED — THIRD TIME IN
+ONE SESSION.** A gate reported a site missing that was sitting in the new file at line 45.
+
+#### 🔴 `DASHBOARD-SCREEN-EXTRACT-02` — the nine that remain, and the three that are hard
+
+⚙️ **NO BOARD.** Continues phase 1, same leaves-first order.
+
+| function | lines | in-file deps | note |
+|---|---|---|---|
+| `IconMe` | 9 | 0 | trivial; probably belongs in `components/ui/` |
+| `HRZonesSection` | 125 | 3 | `AppleHealthPrefillButton`, `HR_CARD_ANCHOR_ID`, `calculateZones` — ⚠️ **the anchor id is §5b ask 1; check what scrolls to it** |
+| `AppleHealthConnectionRow` | 137 | 1 | `ConnectRunsScreen` |
+| `CoachTeaser` | 240 | 2 | `CoachScreen`, `FreeInsightState` |
+| `OrientationScreen` | 276 | 2 | `ZONE_DEFS`, `calculateZones` |
+| `ManualRunModal` | 559 | 3 | `fmtDurationMins`, `getReflectResponse`, `rpeColour` |
+| **`MeScreen`** | **851** | **11** | depends on `QuitTab`, `HRZonesSection`, `AppleHealthConnectionRow` — **must come after them** |
+| **`TodayScreen`** | **1555** | **19** | the biggest; needs `ManualRunModal`, `ConnectRunsBanner`, `PostRunScreen` first |
+| **`SessionPopupInner`** | **1627** | **13** | depends on `TodayScreen`, so it is LAST |
+
+⚠️ **The last three are 4,033 lines and carry real dependency graphs. They are not a
+tidy-up; each is its own build with its own regression pass.** Do not batch them.
 
 #### ✅ `NOEMDASH-JSX-TEXT-01` — SHIPPED 2026-09-29. The guard now reads JSX text
 

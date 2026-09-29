@@ -53,7 +53,12 @@ const UNIT_AFTER_INTERPOLATION = /\}\s*\/?\s*(km|mi|miles|mins?|hrs?|hours?|minu
  */
 const BASELINE: ReadonlyArray<{ file: string; snippet: string; reason: string }> = [
   {
-    file: 'app/dashboard/DashboardClient.tsx',
+    // 🔴 FILE PATH UPDATED, SITE UNCHANGED (DASHBOARD-SCREEN-EXTRACT-01, 2026-09-29).
+    // `QuitTab` moved out of DashboardClient.tsx into its own module, verbatim. The
+    // baseline's `file` is part of its KEY, so a pure relocation reads here as "this
+    // site no longer matches" — which is the arm working, not a fix. The stale-entry
+    // arm is what forced this line to be corrected rather than silently drifting.
+    file: 'components/dashboard/QuitTab.tsx',
     snippet: '${raceDistanceKm}km race',
     reason:
       'UNREACHABLE — the quit tracker. `activeSection` has a `quit` branch and nothing in the ' +

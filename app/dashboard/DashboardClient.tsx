@@ -136,6 +136,11 @@ import Button from '@/components/ui/Button'
 import Switch from '@/components/ui/Switch'
 import NavTab from '@/components/ui/NavTab'
 import IconButton from '@/components/ui/IconButton'
+import LockedCoachingPreview from '@/components/dashboard/LockedCoachingPreview'
+import PendingAnalysisCard from '@/components/dashboard/PendingAnalysisCard'
+import ConnectRunsBanner from '@/components/dashboard/ConnectRunsBanner'
+import SupportScreen from '@/components/dashboard/SupportScreen'
+import QuitTab from '@/components/dashboard/QuitTab'
 
 type Screen = 'zones' | 'today' | 'plan' | 'coach' | 'strava' | 'me' | 'calendar' | 'session' | 'generate' | 'upgrade' | 'benchmark' | 'reshape' | 'post-run' | 'founder' | 'redeem' | 'notifications' | 'recalibration'
 
@@ -11226,107 +11231,7 @@ function StravaConnectionRow() {
   )
 }
 
-/**
- * CONNECT-01 — One-shot reminder banner for users who skipped the
- * Connect-Your-Runs ceremony on first plan save.
- *
- * Render rules:
- *   • Native iOS only (no HealthKit on web; banner doesn't apply).
- *   • Shows when connect_runs_seen=false AND connect_runs_banner_dismissed_at IS NULL.
- *   • Dismiss (X button) stamps connect_runs_banner_dismissed_at; banner never returns.
- *
- * Self-contained: fetches its own row from user_settings on mount. Returns
- * null until the check resolves so it doesn't flicker into view on a fresh
- * page load before we know the state.
- */
-function ConnectRunsBanner() {
-  const [visible, setVisible] = useState<boolean | undefined>(undefined)
-  const supabase = createClient()
 
-  useEffect(() => {
-    void (async () => {
-      try {
-        const { Capacitor } = await import('@capacitor/core')
-        if (!Capacitor.isNativePlatform()) { setVisible(false); return }
-      } catch { setVisible(false); return }
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setVisible(false); return }
-      const { data } = await supabase
-        .from('user_settings')
-        .select('connect_runs_seen, connect_runs_banner_dismissed_at, strava_refresh_token, healthkit_connected_at')
-        .eq('id', user.id)
-        .single()
-      const skipped       = (data as any)?.connect_runs_seen === false
-      const notYetShown   = (data as any)?.connect_runs_banner_dismissed_at == null
-      // Suppress if any data source is live — Strava and HealthKit are co-equal.
-      const hasDataSource = !!(data as any)?.strava_refresh_token || !!(data as any)?.healthkit_connected_at
-      setVisible(skipped && notYetShown && !hasDataSource)
-    })()
-  }, [])
-
-  async function dismiss() {
-    setVisible(false)  // optimistic — instant fade
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('user_settings').upsert({
-        id: user.id,
-        connect_runs_banner_dismissed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-    } catch {
-      // Stamp failed — next session-day open will retry. Acceptable.
-    }
-  }
-
-  if (!visible) return null
-
-  return (
-    // Banner anatomy aligned to ui-patterns.md Pattern 10 (PendingAdjustmentBanner):
-    // 14px radius, 14px 16px padding. Moss accent rail (vs Pattern 10's warn)
-    // because this is a passive reminder, not a coaching warning. Rail is an
-    // absolutely-positioned 3px span per Pattern 16b § Companion.
-    <div style={{
-      position: 'relative',
-      margin: '12px 16px 0',
-      padding: '14px 16px 14px 24px',
-      background: 'var(--card)', boxShadow: 'var(--shadow-card)',
-      border: '1px solid var(--line)',
-      borderRadius: '14px',
-      display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)',
-    }}>
-      <span aria-hidden="true" style={{
-        position: 'absolute', left: '8px', top: '14px', bottom: '14px',
-        width: '3px', background: 'var(--moss)', borderRadius: '2px',
-      }} />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 600, color: 'var(--ink)', marginBottom: '2px' }}>
-          Still need your runs.
-        </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-          Apple Health connects from the Me screen. Takes about ten seconds.
-        </div>
-      </div>
-      <button
-        onClick={dismiss}
-        aria-label="Dismiss"
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          // 44pt tap target per iOS HIG. Negative margin keeps the visual ×
-          // anchored to the card edge while the hit area extends outward.
-          width: '44px', height: '44px',
-          marginTop: '-10px', marginRight: '-10px', marginBottom: '-10px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--mute)',
-          fontFamily: 'var(--font-ui)', fontSize: '18px', fontWeight: 400, lineHeight: 1,
-          flexShrink: 0,
-        }}
-      >
-        ×
-      </button>
-    </div>
-  )
-}
 
 /**
  * Apple Health connect row — iOS-native only, hidden on web.
@@ -11956,114 +11861,9 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
   )
 }
 
-// client (common on desktop web, where mailto: silently no-ops). Mirrors the
-// /support web page register and the DeleteAccountScreen sub-view structure.
-const SUPPORT_EMAIL = 'support@zonna.run'
 
-function SupportScreen({ onBack, email, hasPaidAccess, trialDaysLeft }: {
-  onBack: () => void
-  email?: string
-  hasPaidAccess?: boolean
-  trialDaysLeft?: number | null
-}) {
-  const [copied, setCopied] = useState(false)
-  const [appInfo, setAppInfo] = useState<{ version: string; build: string } | null>(null)
 
-  const platform = Capacitor.getPlatform() // 'ios' | 'android' | 'web'
-  const tier = hasPaidAccess ? ((trialDaysLeft ?? 0) > 0 ? 'Trial' : 'Pro') : 'Free'
 
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
-    CapacitorApp.getInfo()
-      .then(info => setAppInfo({ version: info.version, build: info.build }))
-      .catch(() => { /* not critical — email still sends without it */ })
-  }, [])
-
-  const versionLabel = appInfo ? `${appInfo.version} (${appInfo.build})` : platform
-
-  function buildMailto() {
-    const versionTag = appInfo?.version ? `v${appInfo.version}` : platform
-    const subject = `${BRAND.name} support · ${versionTag}`
-    const body = [
-      '',
-      '',
-      '———',
-      `Sent from ${BRAND.name} ${versionLabel} · ${platform}`,
-      `Account: ${email || '(not available)'}`,
-      `Plan: ${tier}`,
-      '(This helps us help you; feel free to delete it.)',
-    ].join('\n')
-    return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-  }
-
-  function handleEmail() {
-    window.location.href = buildMailto()
-  }
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(SUPPORT_EMAIL)
-    } catch {
-      /* address is selectable on screen as the fallback-to-the-fallback */
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-      {/* Header — back arrow top-left (ui-patterns: back arrow always top-left) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '16px 16px 8px' }}>
-        <BackButton onClick={onBack} />
-        <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
-          Contact support
-        </div>
-      </div>
-
-      <div style={{ padding: '8px 16px 40px', display: 'flex', flexDirection: 'column', gap: 'var(--space-5)', flex: 1 }}>
-        {/* Intro + expectation-setting (the anxiety-killer line) */}
-        <div style={{ background: 'var(--card)', boxShadow: 'var(--shadow-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', color: 'var(--ink)', lineHeight: 1.55 }}>
-            Something not working, or a question about your plan? Tell us.
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>
-            A real person reads this. Usually within two days.
-          </div>
-        </div>
-
-        {/* Primary CTA — email */}
-        <Button variant="primary" fullWidth
-          onClick={handleEmail}>
-          Email us
-        </Button>
-
-        {/* Fallback — copy address (covers no-mail-client case) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-            No mail app set up? Copy the address and write to us from anywhere.
-          </div>
-          <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', gap: 'var(--space-3)' }}>
-            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, userSelect: 'all', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {SUPPORT_EMAIL}
-            </span>
-            <button
-              onClick={handleCopy}
-              style={{ flexShrink: 0, padding: '5px 12px', borderRadius: '10px', border: `1px solid ${copied ? 'var(--moss)' : 'var(--line)'}`, background: copied ? 'var(--moss-soft)' : 'transparent', color: copied ? 'var(--moss)' : 'var(--mute)', fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, cursor: 'pointer', transition: 'color 0.15s, background 0.15s, border-color 0.15s' }}
-              aria-label="Copy support email address"
-            >
-              {copied ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-        </div>
-
-        {/* Transparency — what gets attached (privacy honesty, brand stance) */}
-        <div style={{ marginTop: 'auto', fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', lineHeight: 1.6 }}>
-          We add your app version, platform, and account email to the message so we can help faster. You&apos;ll see it before you send. Delete it if you&apos;d rather not.
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, stravaConnected, plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
@@ -12946,80 +12746,9 @@ function getVerdictVoice(verdict: string): { accent: string; headline: string } 
   }
 }
 
-// Loading-state sibling of RunFeedbackCard — shown while analyse-run is in flight.
-// Uses the CoachByline pulse instead of a spinner (per ui-patterns.md § CoachByline).
-// Rendered on a white card with moss rail to match the post-completion AI card —
-// the thing that's coming is the LLM read of your run.
-function PendingAnalysisCard({ onOpenCoach }: { onOpenCoach?: () => void }) {
-  return (
-    <div style={{
-      position: 'relative',
-      marginTop: 'var(--space-3)',
-      background: 'var(--card)', boxShadow: 'var(--shadow-card)',
-      borderRadius: '14px',
-      border: '1px solid var(--line)',
-      padding: '14px 16px 14px 22px',
-    }}>
-      <span aria-hidden="true" style={{
-        position: 'absolute', left: '8px', top: '14px', bottom: '14px',
-        width: '3px', borderRadius: '2px', background: 'var(--moss)',
-      }} />
-      <div style={{ marginBottom: 'var(--space-3)' }}>
-        <CoachByline working role="Reading your run" onClick={onOpenCoach} />
-      </div>
-      <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '14px', fontWeight: 400,
-        color: 'var(--ink-2)', lineHeight: 1.55,
-        marginBottom: 'var(--space-4)',
-      }}>
-        Analysing your run. Usually takes 15–30 seconds.
-      </div>
-      {/* Skeleton metric row — hint at what's coming */}
-      <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-        {['HR', 'Distance', 'Pace', 'Efficiency'].map(label => (
-          <div key={label} style={{ flex: 1 }}>
-            <div style={{ ...MICRO_LABELS.dataLabel, fontFamily: 'var(--font-ui)',
-              color: 'var(--mute)',
-              marginBottom: 'var(--space-2)' }}>{label}</div>
-            <div style={{
-              height: '3px', background: 'var(--line)', borderRadius: '2px',
-              animation: 'ai-mark-pulse 1.6s ease-in-out infinite',
-            }} />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
-// Shown for free users on completed sessions — communicates the value of
-// coaching without exposing any actual coaching data (INV-GATE-005).
-function LockedCoachingPreview({ onUpgrade, onOpenCoach }: { onUpgrade?: () => void; onOpenCoach?: () => void }) {
-  return (
-    <div style={{
-      marginTop: 'var(--space-3)',
-      background: 'var(--bg-soft)',
-      borderRadius: '14px',
-      padding: '16px 18px',
-      border: '1px solid var(--line)',
-    }}>
-      <div style={{ marginBottom: 'var(--space-3)', opacity: 0.4 }}>
-        <CoachByline onClick={onOpenCoach} />
-      </div>
-      <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '13px', fontWeight: 400,
-        color: 'var(--mute)', lineHeight: 1.55, marginBottom: 'var(--space-4)',
-      }}>
-        Kit reads here. He needs your runs first: Strava or Apple Health.
-      </div>
-      {onUpgrade && (
-        <Button variant="quiet" onClick={onUpgrade}>
-          Unlock coaching →
-        </Button>
-      )}
-    </div>
-  )
-}
+
+
 
 // Shown when polling gives up after ~40s — keeps the card slot visible
 // with a calm fallback rather than silently disappearing.
@@ -14387,60 +14116,8 @@ function PostRunScreen({
   )
 }
 
-function BackHeader({ title, onBack }: { title: string; onBack: () => void }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '16px 16px 12px' }}>
-      <BackButton onClick={onBack} />
-      <div style={{ fontSize: '18px', fontWeight: 500, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>{title}</div>
-    </div>
-  )
-}
 
-function InfoBox({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--border-col)', borderRadius: '12px', padding: '16px 18px', fontSize: '13px', lineHeight: 1.8, color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>
-      {children}
-    </div>
-  )
-}
 
-function QuitTab({ quitDays, raceDistanceKm, onBack }: { quitDays: number | null; raceDistanceKm?: number; onBack: () => void }) {
-  const days = quitDays ?? 0
-  const milestones = [
-    { days: 3,  label: 'Day 3 · Nicotine clearing' },
-    { days: 7,  label: 'Week 1' },
-    { days: 14, label: 'Day 14 · Habit breaking' },
-    { days: 30, label: 'Day 30 · Lung function' },
-    { days: 60, label: 'Day 60 · Aerobic gains' },
-  ]
-  const raceCtx = raceDistanceKm ? `a ${raceDistanceKm}km race` : 'your race'
-  return (
-    <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
-      <BackHeader title="Quit tracker" onBack={onBack} />
-      <div style={{ padding: '0 12px', paddingBottom: 'var(--space-6)' }}>
-        <div style={{ background: 'var(--card-bg)', border: '0.5px solid var(--teal-bg)', borderRadius: '16px', padding: '20px', display: 'flex', alignItems: 'center', gap: 'var(--space-5)', marginBottom: 'var(--space-3)' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '3.5rem', color: 'var(--teal)', lineHeight: 1, fontWeight: 500 }}>{days}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)', color: 'var(--teal)', marginBottom: '4px' }}>Smoke-free days</div>
-            <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.55 }}>Your aerobic capacity is recovering. The data will show it.</div>
-            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', marginTop: 'var(--space-3)' }}>
-              {milestones.map(m => (
-                <div key={m.days} style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', padding: '3px 10px', borderRadius: '20px', border: `0.5px solid ${days >= m.days ? 'var(--teal-bg)' : 'var(--border-col)'}`, color: days >= m.days ? 'var(--teal)' : 'var(--text-secondary)' }}>
-                  {m.label}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <InfoBox>
-          <strong style={{ color: 'var(--text-secondary)' }}>What quitting does to your running:</strong><br /><br />
-          <span style={{ color: 'var(--accent)' }}>48 hours</span>: CO leaves bloodstream. O₂ delivery improves immediately.<br />
-          <span style={{ color: 'var(--accent)' }}>Week 1–2</span>: Resting HR starts dropping. Recovery improves noticeably.<br />
-          <span style={{ color: 'var(--accent)' }}>Week 3–4</span>: Aerobic efficiency measurably better. Zone 2 feels easier.<br />
-          <span style={{ color: 'var(--accent)' }}>Month 2+</span>: Cardiac drift reduces. That late-run HR creep? Less of it.<br /><br />
-          <strong style={{ color: 'var(--text-secondary)' }}>Quitting while training for {raceCtx}. That's an upgrade.</strong>
-        </InfoBox>
-      </div>
-    </div>
-  )
-}
+
+
+

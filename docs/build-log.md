@@ -6,6 +6,38 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — DASHBOARD-SCREEN-EXTRACT-01 · measuring first is what made it safe
+
+**Dev.** Fourteen screens lived as local functions inside a 14,447-line file. Nothing could
+import them, so nothing could render them, so eight sentences I had rewritten that morning
+could not be checked by anything but a signed-in session.
+
+The measurement that made this tractable took two minutes and changed the whole shape of the
+job: all fourteen are declared at MODULE scope. They close over nothing from component
+state. So the only coupling is to other module-level declarations in that file, and that
+forms a dependency ladder with leaves at the bottom. Five leaves, 323 lines, out in one pass.
+
+**The honest bit.** I did not trust myself to move code by hand, so I proved it. Every block
+was diffed against HEAD after extraction: eight of eight byte-identical, none left behind.
+A move that has not been proved to be a move is a rewrite nobody reviewed, and this file is
+exactly where a stray character would never be noticed.
+
+**AI-building.** Two baseline registers went red and both were right. `buttonGeometry` keys
+each control by its ordinal within a file, so deleting 323 lines re-keyed nine of them. That
+is the same class recorded as BUTTON-GEOMETRY-KEY-02. Before re-baselining I checked whether
+any geometry had actually moved: 157 controls before, 157 after, and the multiset of values
+differing by zero. So it was provably a re-key, and the re-baseline has a reason rather than
+a shrug.
+
+Then `git ls-files` could not see the new files because they were not staged yet, and a gate
+told me a site was missing while it sat at line 45 of the file I had just written. Third
+time in one session. I have a note about this and it still caught me three times in a day.
+
+**Product.** Nine remain. Three of them are 4,033 lines with real dependency graphs, and
+they are not a tidy-up: MeScreen needs three of today's five to exist first, TodayScreen
+needs ManualRunModal and PostRunScreen, SessionPopupInner needs TodayScreen. Each is its own
+build. Said in the backlog with the ordering, so the next pass does not have to rediscover it.
+
 ## 2026-09-29 — NOEMDASH-JSX-TEXT-01 · the doc was true and the rule was not being kept
 
 **Dev.** The app's em-dash guard scans string literals. Much of what a runner reads is JSX

@@ -24,6 +24,11 @@ import { notFound } from 'next/navigation'
 import PostRaceReshapeCard from '@/components/training/PostRaceReshapeCard'
 import RaceResultSheet from '@/components/training/RaceResultSheet'
 import GeneratePlanScreen from '@/app/dashboard/GeneratePlanScreen'
+import QuitTab from '@/components/dashboard/QuitTab'
+import SupportScreen from '@/components/dashboard/SupportScreen'
+import LockedCoachingPreview from '@/components/dashboard/LockedCoachingPreview'
+import PendingAnalysisCard from '@/components/dashboard/PendingAnalysisCard'
+import ConnectRunsBanner from '@/components/dashboard/ConnectRunsBanner'
 
 const noop = () => {}
 
@@ -88,6 +93,54 @@ export default function CopyPreview() {
               onLogOnly={noop}
             />
           )}
+        </Case>
+
+        {/* ── DASHBOARD-SCREEN-EXTRACT-01 phase 1 ────────────────────────────
+            These five were module-level functions inside DashboardClient.tsx, so
+            nothing could import them and nothing could render them. They are here
+            unchanged, and between them they carry 8 of the 19 sentences that had
+            never been seen outside a signed-in session. */}
+
+        <Case
+          title="QuitTab — 4 rewrites"
+          note={'The smoking timeline: "48 hours: CO leaves bloodstream." and three siblings, each an em dash before this.'}
+        >
+          <QuitTab quitDays={12} raceDistanceKm={42.2} onBack={noop} />
+        </Case>
+
+        <Case
+          title="SupportScreen — 1 rewrite"
+          note={'Checks the diagnostics paragraph: "You’ll see it before you send. Delete it if you’d rather not."'}
+        >
+          <SupportScreen onBack={noop} email="runner@example.com" hasPaidAccess trialDaysLeft={null} />
+        </Case>
+
+        <Case
+          title="LockedCoachingPreview — 1 rewrite"
+          note={'"Kit reads here. He needs your runs first: Strava or Apple Health."'}
+        >
+          <LockedCoachingPreview onUpgrade={noop} onOpenCoach={noop} />
+        </Case>
+
+        <Case
+          title="PendingAnalysisCard — 1 rewrite"
+          note={'"Done. Your run gets analysed in the background."'}
+        >
+          <PendingAnalysisCard onOpenCoach={noop} />
+        </Case>
+
+        {/* 🔴 I PREDICTED THIS ONE WOULD NOT RENDER AND IT DOES. The note here said it
+            self-hides until its Supabase query resolves, so signed out it would show
+            nothing and its rewrite would be unverifiable. It renders. Corrected rather
+            than left standing: a comment asserting a thing is unverifiable, sitting next
+            to that thing verifying, is the same doc-versus-reality gap this whole day of
+            work has been about. Reason: `visible` starts `undefined` and the banner
+            treats not-yet-known as showable. */}
+        <Case
+          title="ConnectRunsBanner — 1 rewrite"
+          note={'"Apple Health connects from the Me screen. Takes about ten seconds." It renders signed out, which I had expected it not to.'}
+        >
+          <ConnectRunsBanner />
         </Case>
 
       </div>
