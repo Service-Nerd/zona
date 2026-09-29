@@ -731,21 +731,52 @@ honest re-baseline is one that shows the total is conserved.**
 ✅ **4 of the 6 mounted on `/copy-preview` and verified in the DOM.** ⚠️ `CoachTeaser` and
 `OrientationScreen` need a `Plan` fixture, so **3 rewrites remain unrendered.**
 
-#### 🔴 `DASHBOARD-SCREEN-EXTRACT-03` — the last three, 4,033 lines, in a forced order
+#### 🟡 `DASHBOARD-SCREEN-EXTRACT-03` — `MeScreen` SHIPPED 2026-09-29. **12 of 14 out**
 
-⚙️ **NO BOARD.** **Do not batch these. Each is its own build with its own regression pass.**
+⚙️ **NO BOARD** — refactor, bodies verbatim.
 
-| function | lines | deps | blocked on |
+✅ **`MeScreen` + 8 private helpers + `LedgerCard` + the push/device pair.
+DashboardClient 12,629 → 11,027** (**3,420 lines out of the original 14,447, 23.7%**).
+
+🔴 **38 TEST FILES HARDCODE `app/dashboard/DashboardClient.tsx` AS THEIR POPULATION.**
+Across three phases **twenty-four guard failures** had this one cause. Fixing them
+individually a third time would be the "remedy applied to one twin" failure recorded nine
+times here, so the population now has a **single owner**, `lib/testing/dashboardSources.ts`,
+derived from git and **throwing on an empty set**. All 38 read it or are proven not to need
+it; **38 of 38 pass.**
+
+🔴 **AND ONE GUARD HAD ALREADY GONE QUIETER WITHOUT GOING RED.** `appSpacingScale`'s glob
+was `app/dashboard/*.tsx` + `components/shared/*.tsx` — it never followed the eleven screens
+into `components/dashboard/`, so **1,500+ lines silently left the spacing guard and its
+violation arm passed by looking at less.** Widened in the same commit; it immediately found
+the two real 40px sites, whose exclusions were **re-read rather than re-keyed** (the file's
+own rule) and turned out to be two different decisions sharing a number.
+
+🔴 **MY DEPENDENCY DETECTOR COULD NOT SEE `async function`.** Three declarations were
+invisible to it across ALL THREE phases; `tsc` caught them each time, which is why 1 and 2
+were clean. **A measurement with a blind spot plus a compiler is not the same as a correct
+measurement.**
+
+⚠️ **`pushDevice.ts` is a SECOND module on purpose.** `dashboardHelpers.ts` promises purity
+(no JSX, no hooks, no component state); these two talk to Capacitor and carry module-scope
+token cache. **Putting them there to avoid a file would have quietly falsified a documented
+constraint** — the exact move this day's work exists to stop.
+
+✅ **Proved verbatim: 16 of 16 blocks byte-identical**, including the module-state block that
+had to move with the functions that own it. **The registers conserved again: geometry 157
+controls, multiset delta ZERO; overrides 15 → 12 + 3, and 12 + 3 = 15.**
+
+#### 🔴 `DASHBOARD-SCREEN-EXTRACT-04` — the last two, 3,182 lines
+
+⚙️ **NO BOARD.** **One build each. Do not batch.**
+
+| function | lines | deps | order |
 |---|---|---|---|
-| `MeScreen` | 851 | 11 | ✅ its dependencies are now all extracted — **this one is next** |
-| `TodayScreen` | 1555 | 19 | needs `PostRunScreen` and `AdjustmentBanner` out first |
-| `SessionPopupInner` | 1627 | 13 | depends on `TodayScreen`, so it is **last** |
+| `TodayScreen` | 1555 | 19 | needs `PostRunScreen` + `AdjustmentBanner` extracted first |
+| `SessionPopupInner` | 1627 | 13 | depends on `TodayScreen`, so **last** |
 
-⚠️ **Expect more guards to fire.** Six had the hub hardcoded this round; the next round
-will find the ones that survived only because their subject had not moved yet.
-
-⚠️ **Also still open: a `Plan` fixture for the harness**, without which `CoachTeaser`,
-`OrientationScreen` and `PlanCalendar` cannot be rendered.
+⚠️ **Expect guards to fire again** — but the population now has one owner, so the next
+round should be re-baselines and exclusion re-reads rather than blind guards.
 
 #### ✅ `NOEMDASH-JSX-TEXT-01` — SHIPPED 2026-09-29. The guard now reads JSX text
 

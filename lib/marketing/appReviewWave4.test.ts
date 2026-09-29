@@ -1,5 +1,6 @@
 // App review wave 4 — S1, A5, A6, A8 (Design Board sitting three, §§ 6g/6i).
 import { describe, it, expect } from 'vitest'
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { LOAD_RATIO } from '@/lib/coaching/constants'
@@ -8,7 +9,10 @@ const read = (f: string) => readFileSync(join(process.cwd(), f), 'utf8')
 const strip = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/^\s*\/\/.*$/gm, '')
 
-const SHELL = strip(read('app/dashboard/DashboardClient.tsx'))
+// 🔴 DASHBOARD-SCREEN-EXTRACT-03 — the A6 subject (the Me subscription card) moved
+// into `components/dashboard/MeScreen.tsx`. Reading only the shell would assert about a
+// card that is no longer in it. Population from the single owner.
+const SHELL = strip(dashboardSource())
 const LOADSHAPE = strip(read('components/shared/LoadShape.tsx'))
 
 describe('A5 — Coach speaks in shape, never score', () => {

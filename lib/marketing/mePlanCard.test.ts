@@ -1,4 +1,8 @@
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-03 — the subject of this guard moved into
+// `components/dashboard/`. A single-file read is a vacuous green after a move: no hits,
+// because the code left. Population from the single owner, which throws on an empty set.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { BRAND, PRICING } from '@/lib/brand'
@@ -12,7 +16,7 @@ import { FREE_FEATURES, PAID_FEATURES } from '@/lib/marketing/pricing'
  * plans" row — a link, not a value statement.
  */
 const CARD = readFileSync(join(process.cwd(), 'components/shared/MePlanCard.tsx'), 'utf8')
-const DASH_RAW = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
+const DASH_RAW = dashboardSource()
 /** ⚠️ Comments stripped for the "must not contain" checks. FOURTH time today a
  *  substring assertion read a comment as code: the comment explaining that the
  *  native review prompt is deliberately absent contains the words

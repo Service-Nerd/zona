@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import React from 'react'
@@ -57,7 +58,8 @@ describe('CHEVRON-OWNER-01 — one chevron, reachable', () => {
   // ⚠️ AND THE ARM THAT MATTERS MORE, because the one above only catches a COPY. This
   // catches the original failure: a control that is tappable and looks static.
   it('every tappable row in the Me summary carries the affordance', () => {
-    const src = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+    // DASHBOARD-SCREEN-EXTRACT-03 — population from the single owner, not a path.
+    const src = dashboardSource()
     const at = src.indexOf('const row = (label: string')
     expect(at, 'the row() helper moved — re-anchor this arm').toBeGreaterThan(-1)
     // Bound the region: the helper only, not the whole 12,000-line file.

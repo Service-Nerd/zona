@@ -72,7 +72,11 @@ const BASELINE: Record<string, number> = {
   // relocation from new debt, so the only honest way to re-baseline it after a move
   // is to show the total is unchanged. If these numbers had summed to 22, one of
   // them would be a real regression hiding inside a refactor.
-  'app/dashboard/DashboardClient.tsx': 15,
+  // DASHBOARD-SCREEN-EXTRACT-03: 15 → 12 + 3 (MeScreen), and 12 + 3 = 15.
+  // Second conserved redistribution in two phases. The arithmetic is the only thing
+  // that distinguishes a relocation from new debt in a file-keyed register.
+  'app/dashboard/DashboardClient.tsx': 12,
+  'components/dashboard/MeScreen.tsx': 3,
   'components/dashboard/AppleHealthConnectionRow.tsx': 1,
   'components/dashboard/CoachTeaser.tsx': 2,
   'components/dashboard/HRZonesSection.tsx': 1,

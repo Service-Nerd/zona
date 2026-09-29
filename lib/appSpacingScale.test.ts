@@ -56,11 +56,34 @@ const PROPS = '(?:marginTop|marginBottom|marginLeft|marginRight|gap|rowGap|colum
  * re-read rather than the entry re-keyed.
  */
 const EXCLUDED: ReadonlyArray<{ file: string; value: number; reason: string }> = [
-  { file: 'app/dashboard/DashboardClient.tsx', value: 40,  reason: 'deliberate end-of-section rest, 8px off the scale' },
+  // 🔴 ONE ENTRY BECAME TWO, AND THE CLAIMS WERE RE-READ RATHER THAN RE-KEYED
+  // (DASHBOARD-SCREEN-EXTRACT-03), because this file's own header demands exactly that
+  // when code moves. Both were the single DashboardClient 40px before the extraction;
+  // opening each shows they are different decisions that happened to share a number.
+  //
+  // ⚠️ They only became visible because the scan glob was widened in the same commit.
+  // Before that, both sat in `components/dashboard/` which the scanner did not read.
+  {
+    file: 'components/dashboard/MeScreen.tsx', value: 40,
+    reason: 'BOTTOM CLEARANCE, not spacing: the last padding of a scrolling column so the ' +
+      'final row clears the tab bar. Read at the site — it is `paddingBottom` on the ' +
+      'scroll container, not a gap between siblings.',
+  },
+  {
+    file: 'components/dashboard/OrientationScreen.tsx', value: 40,
+    reason: 'Deliberate end-of-section rest under the wordmark + voice-anchor stamp, ' +
+      '8px off the scale, holding the brand block apart from the content below it.',
+  },
 ]
 
 const files = (): string[] =>
-  execSync("git ls-files 'app/dashboard/*.tsx' 'components/shared/*.tsx'", { encoding: 'utf8' })
+  execSync(
+    // 🔴 `components/dashboard/*` ADDED 2026-09-29. The extraction moved eleven screens
+    // out of `app/dashboard/` and this glob did not follow them, so 1,500+ lines dropped
+    // OUT of the spacing guard and its violation arm passed by looking at less. A guard
+    // that goes quieter without going red is the worst kind of green.
+    "git ls-files 'app/dashboard/*.tsx' 'components/dashboard/*.tsx' 'components/shared/*.tsx'",
+    { encoding: 'utf8' })
     .trim().split('\n').filter(f => f && !/\.test\.tsx?$/.test(f))
 
 interface Hit { file: string; line: number; prop: string; value: number }

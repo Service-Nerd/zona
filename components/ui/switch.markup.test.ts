@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { renderToStaticMarkup } from 'react-dom/server'
 import React from 'react'
 import fs from 'node:fs'
@@ -101,7 +102,8 @@ describe('SWITCH-PRIMITIVE-01', () => {
     // instead, the switch silently starts announcing a state the product cannot
     // honour, and NOTHING else in this suite would notice: same component, same
     // markup, one identifier different.
-    const src = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    // DASHBOARD-SCREEN-EXTRACT-03 — population from the single owner, not a path.
+    const src = dashboardSource()
     const fn = src.slice(src.indexOf('function DailyPushToggleRow'))
     const body = fn.slice(0, fn.indexOf('\n}\n'))
     expect(body, 'DailyPushToggleRow no longer derives an effective state').toMatch(/const effectiveOn = enabled && !disabled/)
@@ -116,7 +118,8 @@ describe('SWITCH-PRIMITIVE-01', () => {
     // pointed at incomplete sets (sheetClose's hand-written CONSUMERS, the 44px
     // floor arm, the geometry baseline). A count that silently goes to zero
     // passes every arm above it.
-    const src = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    // DASHBOARD-SCREEN-EXTRACT-03 — population from the single owner, not a path.
+    const src = dashboardSource()
     const uses = Array.from(src.matchAll(/<Switch\b/g)).length
     expect(uses, 'the live switch count moved — say which one and why').toBe(3)
     // And the dead one is gone: SmokeToggle had ZERO call sites, residue of a

@@ -1,4 +1,8 @@
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-03 — the subject of this guard moved into
+// `components/dashboard/`. A single-file read is a vacuous green after a move: no hits,
+// because the code left. Population from the single owner, which throws on an empty set.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -12,7 +16,7 @@ import { join } from 'node:path'
  * difference and the title is what a runner reads.
  */
 
-const SHELL = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
+const SHELL = dashboardSource()
 const SHEET = readFileSync(join(process.cwd(), 'components/shared/ModifyPlanSheet.tsx'), 'utf8')
 
 const strip = (s: string) =>

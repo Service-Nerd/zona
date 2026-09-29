@@ -98,3 +98,12 @@ export function rpeColour(n: number): string {
   if (n <= 8) return 'var(--amber)'
   return 'var(--coral)'
 }
+
+// DASHBOARD-SCREEN-EXTRACT-03 — read by `PushNotificationsRow` (which left with
+// MeScreen) AND by the app-open path that stays in DashboardClient, so it is shared
+// by the same rule as the rest of this file.
+// LocalStorage flag tracking the user's explicit "off" intent. iOS won't
+// let us revoke push permission programmatically, but we control our DB
+// subscription row — toggling off deletes the row and stamps this flag
+// so the row isn't auto-recreated by the mount-time check.
+export const PUSH_OFF_KEY = 'zonna_push_disabled'

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 import { HEART_RATE_TITLE, HEART_RATE_SUB, PLAN_ADJUSTMENTS_TITLE } from './meDoors'
 import { PREFERENCES_TITLE } from './PreferencesScreen'
@@ -24,7 +25,10 @@ import { PREFERENCES_TITLE } from './PreferencesScreen'
 //
 // This arm is the CLASS, not the two instances: it derives the doors from the source.
 
-const SRC = () => readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+// 🔴 DASHBOARD-SCREEN-EXTRACT-03 — `MeScreen` and its helpers left the hub for
+// `components/dashboard/`, so a single-file read here watches a file that no longer
+// contains the subject. Population from the single owner, which throws on an empty set.
+const SRC = () => dashboardSource()
 
 /** Each `activeSection` door's body, bounded — the early return only, never the file. */
 const doors = (): { name: string; body: string }[] => {

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 import { computeLedger } from '@/lib/coaching/disciplineLedger'
 
@@ -17,7 +18,10 @@ import { computeLedger } from '@/lib/coaching/disciplineLedger'
 // or computation" — true, and precisely the blind spot: it was a change to REACH.
 // New catalogue class in `/zona-debug`: **A RELOCATION ACROSS A GATE.**
 
-const SRC = () => readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+// 🔴 DASHBOARD-SCREEN-EXTRACT-03 — `LedgerCard` and `MeScreen` both left the hub, so a
+// single-file read here would have gone vacuously green on the very guard written to
+// prove the ledger is reachable. Population from the single owner.
+const SRC = () => dashboardSource()
 
 /** The Me index render — everything after the last `activeSection` early return. */
 const ME_INDEX = () => {

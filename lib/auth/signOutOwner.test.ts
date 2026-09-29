@@ -20,7 +20,9 @@ const ALLOWED: Record<string, string> = {
     'the owner',
   'app/auth/signout/route.ts':
     'server route — @supabase/ssr cookie client, no browser session or widget to clear',
-  'app/dashboard/DashboardClient.tsx#handleDelete':
+  // Path updated, site unchanged: `DeleteAccountScreen` moved with MeScreen
+  // (DASHBOARD-SCREEN-EXTRACT-03). The stale-exemption arm is what forced this line.
+  'components/dashboard/MeScreen.tsx#handleDelete':
     'DeleteAccountScreen.handleDelete — account DELETION, not sign-out. The sign-out is ' +
     'cleanup after /api/delete-account succeeds, and the failure path must stay on the screen ' +
     'to show the error rather than navigating away.',

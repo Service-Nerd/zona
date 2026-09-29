@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
@@ -20,7 +21,10 @@ import { execSync } from 'node:child_process'
 // ⚠️ NONE OF THIS CODE WAS TOUCHED BY THE MOVE. A relocation makes correct code wrong at a
 // distance, which is why "the suite is green" says nothing about it.
 
-const SRC = () => readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+// 🔴 DASHBOARD-SCREEN-EXTRACT-03 — `MeScreen` and its helpers left the hub for
+// `components/dashboard/`, so a single-file read here watches a file that no longer
+// contains the subject. Population from the single owner, which throws on an empty set.
+const SRC = () => dashboardSource()
 
 describe('ME-DOORS-01 — navigation survives the move', () => {
   // 🔴 THE ARM FOR THE DEAD CONTROL.

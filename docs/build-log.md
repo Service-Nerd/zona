@@ -6,6 +6,38 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — DASHBOARD-SCREEN-EXTRACT-03 · thirty-eight tests all pointed at one file
+
+**Dev.** MeScreen is out. Twelve of fourteen done, and the hub is down 3,420 lines from
+where it started this morning.
+
+**The honest bit.** This phase produced twenty-four failing tests in three waves, and I
+fixed the first two waves by hand before admitting what was happening. Thirty-eight test
+files have `app/dashboard/DashboardClient.tsx` written into them as their entire
+population. Every one was correct on the day it was written. After a move, each reads a
+file that no longer contains its subject and reports clean for ever.
+
+Patching them individually a third time would have been the "remedy applied to one twin"
+failure this repo has recorded nine times, so the population now has a single owner derived
+from git, and it throws rather than returning an empty list, because an empty population
+passes every assertion built on top of it.
+
+**AI-building.** One guard had already gone quieter without going red. The spacing scale's
+glob was app/dashboard plus components/shared, and it never followed the eleven extracted
+screens, so fifteen hundred lines left its scope and the violation arm passed by looking at
+less. Widening it immediately surfaced two real sites. Their exclusion entry demanded the
+claim be re-read rather than re-keyed when code moves, so I opened both: they turned out to
+be two different decisions that happened to share the number 40.
+
+And my own dependency detector could not see `async function`. Three declarations were
+invisible to it across all three phases. tsc caught them every time, which is exactly why
+phases one and two looked clean, and is not the same thing as having measured correctly.
+
+**Product.** Two screens left. I put the push helpers in their own module rather than the
+shared one, because the shared one's header promises it is pure and these talk to Capacitor.
+Weakening a documented constraint to avoid creating a file is the move this entire day has
+been about not making.
+
 ## 2026-09-29 — DASHBOARD-SCREEN-EXTRACT-02 · six guards were watching a room the furniture had left
 
 **Dev.** Six more screens out, plus a helpers module that exists purely to stop the

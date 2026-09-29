@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 
 // ME-PURPOSE-01 (Design Board, 2026-09-28) — Me is an INDEX. Nothing lives on it.
@@ -22,7 +23,10 @@ import { readFileSync } from 'node:fs'
 // stays, and the register silently permits re-adding one. This repo has recorded that
 // exact failure in `buttonInlineOverride`.
 
-const SRC = () => readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+// 🔴 DASHBOARD-SCREEN-EXTRACT-03 — `MeScreen` and its helpers left the hub for
+// `components/dashboard/`, so a single-file read here watches a file that no longer
+// contains the subject. Population from the single owner, which throws on an empty set.
+const SRC = () => dashboardSource()
 
 const INDEX_ANCHOR = 'const hasPlan = !!(plan?.meta?.race_name)'
 

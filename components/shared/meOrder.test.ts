@@ -1,4 +1,8 @@
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-03 — the subject of this guard moved into
+// `components/dashboard/`. A single-file read is a vacuous green after a move: no hits,
+// because the code left. Population from the single owner, which throws on an empty set.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 import {
   ME_SECTION_ORDER, MIN_ITEMS_PER_HEADING,
@@ -18,7 +22,7 @@ import {
 //
 // ⚠️ Both passed tsc and the full suite. Positional structure has no type.
 
-const SRC = () => readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+const SRC = () => dashboardSource()
 
 /** The index render only — everything after the last `activeSection` early return. */
 const INDEX = () => {

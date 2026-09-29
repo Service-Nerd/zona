@@ -58,7 +58,11 @@ export const REDEEM_CODE_PLACEMENTS = [
     where: 'the paywall',
   },
   {
-    file: 'app/dashboard/DashboardClient.tsx',
+    // 🔴 PATH UPDATED, PLACEMENT UNCHANGED (DASHBOARD-SCREEN-EXTRACT-03): the Me index
+    // moved into its own module. The register is keyed by FILE, so a pure relocation
+    // reads here as "a declared placement has gone" — which is the derived-population
+    // arm doing its job, not a defect.
+    file: 'components/dashboard/MeScreen.tsx',
     // Me / profile. ⚠️ Wood's own ruling calls Me "the lowest-frequency surface in the
     // product", and the single lifetime in-app redemption happened here. It stays
     // because the founder asked for it, and because it is the only placement a runner

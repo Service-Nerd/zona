@@ -1,4 +1,8 @@
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-03 — the subject of this guard moved into
+// `components/dashboard/`. A single-file read is a vacuous green after a move: no hits,
+// because the code left. Population from the single owner, which throws on an empty set.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import React from 'react'
 import { renderToStaticMarkup as html } from 'react-dom/server'
 import { readFileSync } from 'node:fs'
@@ -178,6 +182,6 @@ const tracked = () => execSync('git ls-files', { encoding: 'utf8' })
 
   it('both former call sites now use the component', () => {
     expect(readFileSync('components/shared/CardSelect.tsx', 'utf8')).toMatch(/<StatusBadge\b/)
-    expect(readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')).toMatch(/<StatusBadge label="pending"/)
+    expect(dashboardSource()).toMatch(/<StatusBadge label="pending"/)
   })
 })
