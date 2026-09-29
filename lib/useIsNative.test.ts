@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -11,7 +12,18 @@ import { join } from 'node:path'
  * `CONNECT-01` `return` early off-native, so the button was never rendered and
  * the instruction had nothing behind it.
  */
-const DASH = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
+// 🔴 DASHBOARD-SCREEN-EXTRACT-02 — this guard had `DashboardClient.tsx` HARDCODED as
+// its whole population, and the code it watches moved into `components/dashboard/`.
+// A single-file read would then have gone VACUOUSLY GREEN: no hits, because nothing
+// it looks for is in the file any more. Six guards were in this position after the
+// extraction, and every one of them was correct until the day the file changed shape.
+// The population is now the hub PLUS everything lifted out of it.
+const DASHBOARD_SOURCES = () =>
+  execSync("git ls-files 'app/dashboard/DashboardClient.tsx' 'components/dashboard/*.ts' 'components/dashboard/*.tsx'",
+    { encoding: 'utf8' }).trim().split('\n').filter(Boolean).filter(f => !f.includes('.test.'))
+
+const DASH = DASHBOARD_SOURCES()
+  .map(f => readFileSync(join(process.cwd(), f), 'utf8')).join('\n')
 const HOOK = readFileSync(join(process.cwd(), 'lib/useIsNative.ts'), 'utf8')
 
 describe('P-10 — the no-source copy tells the truth per platform', () => {

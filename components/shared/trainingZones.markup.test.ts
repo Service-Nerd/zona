@@ -151,7 +151,10 @@ describe('ZONES-SURFACE-01 — the labels are ours', () => {
   // CoachingPrinciples §1 is titled "Polarised training — protection from grey zone".
   it('Z3 is the grey zone, on the screen and in ZONE_DEFS', () => {
     expect(screen()).toContain('Grey zone')
-    const defs = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+    // 🔴 `ZONE_DEFS` moved to `components/dashboard/dashboardHelpers.ts`
+    // (DASHBOARD-SCREEN-EXTRACT-02). Reading only DashboardClient here would have
+    // found no ZONE_DEFS at all and asserted nothing, for ever.
+    const defs = readFileSync('components/dashboard/dashboardHelpers.ts', 'utf8')
     const line = defs.split('\n').find(l => l.includes('zone: 3,') && l.includes('pctMin: 70'))
     expect(line, 'ZONE_DEFS zone 3 not found — re-anchor this arm').toBeTruthy()
     expect(line!).toContain('Grey zone')

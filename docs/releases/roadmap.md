@@ -693,33 +693,11 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 
 ### 🏃 Product — SLT priority order (reviewed 2026-06-06; **re-topped 2026-08-06**)
 
-- ⚙️ `DASHBOARD-SCREEN-EXTRACT-02` — the **9 screens still trapped** in `DashboardClient`.
-  Phase 1 took the five leaves (14,447→14,124 lines). The remaining order is FORCED by
-  dependencies: `IconMe` · `HRZonesSection` · `AppleHealthConnectionRow` · `CoachTeaser` ·
-  `OrientationScreen` · `ManualRunModal`, then **`MeScreen` (851/11 deps)**, then
-  **`TodayScreen` (1555/19)**, then **`SessionPopupInner` (1627/13)**. ⚠️ **The last three are
-  4,033 lines and each is its own build.** Detail in `backlog.md`.
-- 🔴 `MICRO-LABEL-BRAND-STAMP-01` — **NEXT, and it BLOCKS wave 3.** Nine locked brand
-  strings (`voiceAnchor` ×5, `brandStatement`, `name`, `tagline` ×2) render at 0.12–0.14em,
-  which is not a canonical role — and `DOCTRINE-01` documents 10px/0.14em while the code
-  renders 11px. Fourth role, or adopt the eyebrow? Board, then founder. `backlog.md`.
-- 🧭 `MICRO-LABEL-FIELDHINT-01` — **NEXT.** A field hint (`optional`, lowercase,
-  untracked, beside an input) fits none of the three ruled roles and survives only as an
-  exclusion. Fourth role, or body text? Board's. `backlog.md`.
-- ✅ `GATE-GLOB-SHORT-01` — **FIXED 2026-09-29** in all five gates that shared it.
-  `git ls-files "app/**/*.tsx"` read 129 files against a true 134. `backlog.md`.
-- 🔄 `MICRO-LABEL-DRIFT-01` — **vocabulary SHIPPED 2026-09-29; migration open.** Three
-  roles named, `SectionLabel` made shared, register at 132 and falling-only. **Wave 1a SHIPPED (47
-  converted, register 132 → 69); wave 1b (17 at 11px) blocked on a render, not filed and
-  forgotten.** New: `MICRO-LABEL-CHIPS-01` (16 chips governed by no check) and
-  `BUTTON-GEOMETRY-SPREAD-01` (the geometry harness cannot see through a spread, so every
-  wave shrinks its population). `backlog.md`.
-- 🧭 `LEDGER-PLACEMENT-01` — **NEXT.** Where the discipline ledger belongs on Me. Restored
-  as a defect fix to the position the registry specified; the founder asked for it *beside
-  the tier chip*, and `ME-PURPOSE-01` says nothing lives on Me. Goes to the board with the
-  tier-chip colour. `backlog.md`.
-- 💼 `LEDGER-RESET-01` — **LATER, blocked on data.** The silent reset to zero. Sutherland
-  and Wood disagree on the record and both call the hard reset a defect. `backlog.md`.
+- ⚙️ `DASHBOARD-SCREEN-EXTRACT-03` — the **last 3 screens** in `DashboardClient`
+  (**11 of 14 are out; the file is down 1,818 lines**). Forced order: **`MeScreen`**
+  (851/11 deps, now unblocked), then **`TodayScreen`** (1555/19), then
+  **`SessionPopupInner`** (1627/13). ⚠️ **4,033 lines; each is its own build.**
+  Detail in `backlog.md`.
 
 - ⚙️ `ME-SCREEN-CONTRACT-01` — **LATER.** `MeScreen` has ~40 props and no contract, because
   it is a function inside `DashboardClient.tsx` rather than its own module. Only the

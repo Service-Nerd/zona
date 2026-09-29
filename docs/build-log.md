@@ -6,6 +6,36 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — DASHBOARD-SCREEN-EXTRACT-02 · six guards were watching a room the furniture had left
+
+**Dev.** Six more screens out, plus a helpers module that exists purely to stop the
+extracted screens importing the file they just left. Eleven of fourteen done, and
+DashboardClient is 1,818 lines lighter than this morning.
+
+**The honest bit.** My dependency analysis said `AppleHealthConnectionRow` needed
+`ConnectRunsScreen`. It did not. The reference was a comment saying "same pattern as
+ConnectRunsScreen". Same for CoachTeaser and CoachScreen. That is the sixth time in one day
+I have matched a comment and treated it as code, and the sixth time the fix was to blank
+comments before measuring.
+
+**AI-building.** Eight guards went red and all eight were right, which is the most
+encouraging thing in this entry. Six of them had `DashboardClient.tsx` hardcoded as their
+entire population: the platform-flag guard, the off-plan-write guard, the button-ownership
+stepper arm, the zone-label guard reading ZONE_DEFS, the HR-anchor guard, and the two button
+registers. Every one of them was correct right up until the file changed shape, and after
+the move each would have read a file that no longer contains its subject and reported clean
+for ever. A vacuous green is the quietest way a guard dies.
+
+They now read the hub plus everything lifted out of it, derived from git rather than typed,
+and each has an arm that fails when the population is empty. I planted a dead anchor in the
+new file to prove the widened version catches what the old one structurally could not.
+
+**Product.** Two registers needed re-baselining and I made each show its arithmetic instead
+of shrugging. Geometry keys by ordinal, so 157 controls before and after with a value-multiset
+delta of zero proves a re-key rather than a regression. Inline overrides key by file, so
+21 becoming 15 plus 6 across four new files, summing back to 21, proves a relocation rather
+than new debt. A file-keyed register genuinely cannot tell those apart on its own.
+
 ## 2026-09-29 — DASHBOARD-SCREEN-EXTRACT-01 · measuring first is what made it safe
 
 **Dev.** Fourteen screens lived as local functions inside a 14,447-line file. Nothing could

@@ -13,6 +13,7 @@
 
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
+import { execSync } from 'node:child_process'
 import path from 'node:path'
 import { resolveAutoMatch, sessionDateFor } from './sessionAutoMatch'
 
@@ -22,7 +23,15 @@ const strip = (src: string) => src
   .replace(/\/\*[\s\S]*?\*\//g, blank)
   .replace(/\{\/\*[\s\S]*?\*\/\}/g, blank)
   .replace(/^[ \t]*\/\/.*$/gm, '')
-const DASH = strip(fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8'))
+// 🔴 DASHBOARD-SCREEN-EXTRACT-02 — this guard had `DashboardClient.tsx` HARDCODED as
+// its whole population, and the code it watches moved into `components/dashboard/`.
+// A single-file read would then have gone VACUOUSLY GREEN: no hits, because nothing
+// it looks for is in the file any more. Six guards were in this position after the
+// extraction, and every one of them was correct until the day the file changed shape.
+// The population is now the hub PLUS everything lifted out of it.
+const DASH = execSync("git ls-files 'app/dashboard/DashboardClient.tsx' 'components/dashboard/*.tsx'",
+  { encoding: 'utf8' }).trim().split('\n').filter(f => f && !f.includes('.test.'))
+  .map(f => strip(fs.readFileSync(path.join(ROOT, f), 'utf8'))).join('\n')
 
 describe('LOG-OFFPLAN-02 — an off-plan run writes the activity log and NOTHING else', () => {
   it('🔴 the off-plan branch never writes a completion or a score', () => {

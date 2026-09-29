@@ -693,24 +693,59 @@ matches"; path corrected, entry kept.
 🔴 **AND `git ls-files` COULD NOT SEE THE NEW FILES UNTIL THEY WERE STAGED — THIRD TIME IN
 ONE SESSION.** A gate reported a site missing that was sitting in the new file at line 45.
 
-#### 🔴 `DASHBOARD-SCREEN-EXTRACT-02` — the nine that remain, and the three that are hard
+#### 🟡 `DASHBOARD-SCREEN-EXTRACT-02` — SHIPPED 2026-09-29. **11 of 14 out; 3 remain**
 
-⚙️ **NO BOARD.** Continues phase 1, same leaves-first order.
+⚙️ **NO BOARD** — refactor, bodies verbatim.
 
-| function | lines | in-file deps | note |
+✅ **Six more screens + a shared helpers module. DashboardClient 14,124 → 12,629 lines**
+(**1,818 out of the original 14,447, 12.6%**). `IconMe`, `AppleHealthConnectionRow`,
+`CoachTeaser` (+ its `FreeInsightState` type), `OrientationScreen`, `HRZonesSection`
+(+ `AppleHealthPrefillButton`, `HR_CARD_ANCHOR_ID`), `ManualRunModal`.
+
+🔴 **`components/dashboard/dashboardHelpers.ts` EXISTS TO AVOID A CYCLE.** `calculateZones`
+is used by BOTH `OrientationScreen` and `HRZonesSection`; `rpeColour`, `fmtDurationMins` and
+`getReflectResponse` by `ManualRunModal` **and** by code that stays. Leaving them behind
+would make every extracted screen import the 14k-line file it just left. **It imports nothing
+from `DashboardClient` and must not start.**
+
+✅ **Proved verbatim: 14 of 14 blocks byte-identical**, none left behind.
+
+🔴 **THREE OF THE SIX "DEPENDENCIES" WERE COMMENTS.** `AppleHealthConnectionRow` appeared to
+need `ConnectRunsScreen` and `CoachTeaser` to need `CoachScreen` — both were prose
+(*"same pattern as…"*). Re-measured with comments blanked, `AppleHealthConnectionRow` has
+**zero** real deps. **Sixth comment-matching defect of the day, this time in my own analysis.**
+
+🔴 **EIGHT GUARDS WENT RED AND EVERY ONE WAS RIGHT. SIX HAD `DashboardClient.tsx` HARDCODED
+AS THEIR ENTIRE POPULATION** — `useIsNative`, `logOneIntention`, `buttonOwnership`,
+`trainingZones.markup` (reads `ZONE_DEFS`, which moved), `meDoorNavigation` (the HR anchor)
+and the two button registers. **A single-file read after the move is a VACUOUS GREEN: no
+hits, because the subject left.** All now read the hub PLUS its extractions, derived from
+`git ls-files`, with an arm that fails when the population is empty.
+
+⚠️ **Two registers re-baselined, each with its arithmetic shown rather than a shrug:**
+`buttonGeometry` keys by ORDINAL — **157 controls before and after, geometry-value multiset
+delta ZERO**. `buttonInlineOverride` keys by FILE — **21 → 15 + 6 across four new files, and
+15 + 6 = 21.** **A file-keyed register cannot tell a relocation from new debt, so the only
+honest re-baseline is one that shows the total is conserved.**
+
+✅ **4 of the 6 mounted on `/copy-preview` and verified in the DOM.** ⚠️ `CoachTeaser` and
+`OrientationScreen` need a `Plan` fixture, so **3 rewrites remain unrendered.**
+
+#### 🔴 `DASHBOARD-SCREEN-EXTRACT-03` — the last three, 4,033 lines, in a forced order
+
+⚙️ **NO BOARD.** **Do not batch these. Each is its own build with its own regression pass.**
+
+| function | lines | deps | blocked on |
 |---|---|---|---|
-| `IconMe` | 9 | 0 | trivial; probably belongs in `components/ui/` |
-| `HRZonesSection` | 125 | 3 | `AppleHealthPrefillButton`, `HR_CARD_ANCHOR_ID`, `calculateZones` — ⚠️ **the anchor id is §5b ask 1; check what scrolls to it** |
-| `AppleHealthConnectionRow` | 137 | 1 | `ConnectRunsScreen` |
-| `CoachTeaser` | 240 | 2 | `CoachScreen`, `FreeInsightState` |
-| `OrientationScreen` | 276 | 2 | `ZONE_DEFS`, `calculateZones` |
-| `ManualRunModal` | 559 | 3 | `fmtDurationMins`, `getReflectResponse`, `rpeColour` |
-| **`MeScreen`** | **851** | **11** | depends on `QuitTab`, `HRZonesSection`, `AppleHealthConnectionRow` — **must come after them** |
-| **`TodayScreen`** | **1555** | **19** | the biggest; needs `ManualRunModal`, `ConnectRunsBanner`, `PostRunScreen` first |
-| **`SessionPopupInner`** | **1627** | **13** | depends on `TodayScreen`, so it is LAST |
+| `MeScreen` | 851 | 11 | ✅ its dependencies are now all extracted — **this one is next** |
+| `TodayScreen` | 1555 | 19 | needs `PostRunScreen` and `AdjustmentBanner` out first |
+| `SessionPopupInner` | 1627 | 13 | depends on `TodayScreen`, so it is **last** |
 
-⚠️ **The last three are 4,033 lines and carry real dependency graphs. They are not a
-tidy-up; each is its own build with its own regression pass.** Do not batch them.
+⚠️ **Expect more guards to fire.** Six had the hub hardcoded this round; the next round
+will find the ones that survived only because their subject had not moved yet.
+
+⚠️ **Also still open: a `Plan` fixture for the harness**, without which `CoachTeaser`,
+`OrientationScreen` and `PlanCalendar` cannot be rendered.
 
 #### ✅ `NOEMDASH-JSX-TEXT-01` — SHIPPED 2026-09-29. The guard now reads JSX text
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { execSync } from 'node:child_process'
 
 // ME-DOORS-01 — 🔴 A DOOR CHANGES WHERE "BACK" MEANS, AND NOTHING WAS WATCHING.
 //
@@ -37,8 +38,23 @@ describe('ME-DOORS-01 — navigation survives the move', () => {
   // now lives behind a door. `getElementById` on a hidden subtree returns null and throws
   // nothing — it is the quietest failure in the browser.
   it('nothing scrolls to the HR card anchor any more', () => {
-    const src = SRC()
-    const hits = src.split('\n').filter(l => l.includes('HR_CARD_ANCHOR_ID') && l.includes('getElementById'))
+    // 🔴 THIS ARM READ ONE FILE, AND THE THING IT WATCHES MOVED OUT OF IT.
+    // `HR_CARD_ANCHOR_ID` and the `id=` that uses it left for
+    // `components/dashboard/HRZonesSection.tsx` in DASHBOARD-SCREEN-EXTRACT-02. A
+    // single-file scan would then have found zero hits FOREVER — a vacuous green,
+    // which is the quietest way a guard dies. The population is now derived from the
+    // code: every file that names the anchor at all.
+    const files = execSync("git ls-files 'app/**/*.tsx' 'app/*.tsx' 'components/**/*.tsx' 'components/*.tsx'",
+      { encoding: 'utf8' }).trim().split('\n')
+      .filter(f => f && !f.includes('.test.'))
+      .filter(f => readFileSync(f, 'utf8').includes('HR_CARD_ANCHOR_ID'))
+    // An empty population passes every assertion below it, so prove the set is real.
+    expect(files.length, 'no file names HR_CARD_ANCHOR_ID — the scan lost its subject')
+      .toBeGreaterThan(0)
+    const hits = files.flatMap(f =>
+      readFileSync(f, 'utf8').split('\n')
+        .filter(l => l.includes('HR_CARD_ANCHOR_ID') && l.includes('getElementById'))
+        .map(l => `${f}: ${l.trim()}`))
     expect(hits, 'an anchor scroll targets an element behind a door:\n' + hits.join('\n')).toEqual([])
   })
 

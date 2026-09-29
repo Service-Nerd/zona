@@ -63,7 +63,20 @@ const BASELINE: Record<string, number> = {
   'components/shared/BackButton.tsx': 1,
   'app/auth/login/page.tsx': 1,
   'app/dashboard/BenchmarkUpdateScreen.tsx': 1,
-  'app/dashboard/DashboardClient.tsx': 21,
+  // 🔴 21 → 15 + 6, AND THE TOTAL IS CONSERVED (DASHBOARD-SCREEN-EXTRACT-02).
+  // Six screens left DashboardClient carrying their inline overrides with them:
+  // AppleHealthConnectionRow 1 + CoachTeaser 2 + HRZonesSection 1 + ManualRunModal 2
+  // = 6, and the hub falls 21 → 15. 15 + 6 = 21.
+  //
+  // ⚠️ THE ARITHMETIC IS THE POINT. A register keyed by FILE cannot tell a
+  // relocation from new debt, so the only honest way to re-baseline it after a move
+  // is to show the total is unchanged. If these numbers had summed to 22, one of
+  // them would be a real regression hiding inside a refactor.
+  'app/dashboard/DashboardClient.tsx': 15,
+  'components/dashboard/AppleHealthConnectionRow.tsx': 1,
+  'components/dashboard/CoachTeaser.tsx': 2,
+  'components/dashboard/HRZonesSection.tsx': 1,
+  'components/dashboard/ManualRunModal.tsx': 2,
   // CHARITY-CODE-CONTROL-01 (2026-09-28): 4 -> 3. The step-one redeem door was deleted
   // and its replacement is `RedeemCodeLink`, which carries its own treatment, so one
   // hand-styled inline Button left this file for good.

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
+import { execSync } from 'node:child_process'
 import path from 'node:path'
 
 /**
@@ -367,7 +368,11 @@ describe('BUTTON-COMPONENT-01 — Button owns the CTA shape', () => {
     // "+" changed the number and told a screen-reader user nothing about the
     // RESULT — Sierra: "the tap count makes the app annoying; the silence makes
     // it unusable." The role belongs on the value readout, not the buttons.
-    const src = strip(fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8'))
+    // 🔴 The distance stepper left with `ManualRunModal` (DASHBOARD-SCREEN-EXTRACT-02).
+    // Reading only the hub would have asserted about a control that is no longer there.
+    const src = execSync("git ls-files 'app/dashboard/DashboardClient.tsx' 'components/dashboard/*.tsx'",
+      { encoding: 'utf8' }).trim().split('\n').filter(f => f && !f.includes('.test.'))
+      .map(f => strip(fs.readFileSync(path.join(ROOT, f), 'utf8'))).join('\n')
     const spins = Array.from(src.matchAll(/role="spinbutton"/g))
     expect(spins.length, 'the distance readouts lost their spinbutton role').toBe(2)
     // A role with no value is a role that announces nothing.

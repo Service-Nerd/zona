@@ -29,6 +29,10 @@ import SupportScreen from '@/components/dashboard/SupportScreen'
 import LockedCoachingPreview from '@/components/dashboard/LockedCoachingPreview'
 import PendingAnalysisCard from '@/components/dashboard/PendingAnalysisCard'
 import ConnectRunsBanner from '@/components/dashboard/ConnectRunsBanner'
+import HRZonesSection from '@/components/dashboard/HRZonesSection'
+import AppleHealthConnectionRow from '@/components/dashboard/AppleHealthConnectionRow'
+import IconMe from '@/components/dashboard/IconMe'
+import ManualRunModal from '@/components/dashboard/ManualRunModal'
 
 const noop = () => {}
 
@@ -141,6 +145,49 @@ export default function CopyPreview() {
           note={'"Apple Health connects from the Me screen. Takes about ten seconds." It renders signed out, which I had expected it not to.'}
         >
           <ConnectRunsBanner />
+        </Case>
+
+        {/* ── DASHBOARD-SCREEN-EXTRACT-02 ────────────────────────────────────
+            Four of the six second-phase extractions mount without a Plan fixture.
+            ⚠️ `CoachTeaser` and `OrientationScreen` both REQUIRE a `Plan`, so their
+            3 rewrites are still unrendered. Named rather than quietly omitted. */}
+
+        <Case
+          title="HRZonesSection — 1 rewrite"
+          note={'"…(184 bpm), usually the highest your device happened to record, not your true max." Shown when the entered max is below the age estimate.'}
+        >
+          <HRZonesSection
+            restingHR={48} maxHR={170} maxHrSource="observed" birthYear={1985}
+            onSave={async () => {}} hrZoneMethod="karvonen" hrAssumptionNote={null}
+            onOpenZones={noop}
+          />
+        </Case>
+
+        <Case
+          title="AppleHealthConnectionRow — 1 rewrite"
+          note={'"Zonna reads your runs from Apple Health to coach you. Read-only: Zonna never writes to Apple Health."'}
+        >
+          <AppleHealthConnectionRow />
+        </Case>
+
+        <Case title="IconMe — 1 rewrite (the tab glyph)" note="Both states.">
+          <span style={{ display: 'inline-flex', gap: '16px' }}>
+            <IconMe active={false} />
+            <IconMe active />
+          </span>
+        </Case>
+
+        <Case
+          title="ManualRunModal — 1 rewrite"
+          note={'"…5 km · 45 min · edit below if different" — the hint under the prefilled planned values.'}
+        >
+          <ManualRunModal
+            weekN={3} sessionKey="tue" preferredUnits="km"
+            onClose={noop} onSaved={noop}
+            sessionName="Easy run" sessionType="easy"
+            plannedDistanceKm={8} plannedDurationMins={45}
+            sessionDate="2026-09-29"
+          />
         </Case>
 
       </div>
