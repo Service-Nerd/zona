@@ -6,6 +6,34 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — SUBPAGE-TYPE-SCALE-01, part 2 · a role that lives only in a stylesheet
+
+**Dev.** Sub-page subtitles now come from the same owner the titles do.
+
+**The honest bit.** The subtitle role has shipped on eight screens since the header component
+was written, and it was never in the type-scale table. It existed only in the stylesheet. That
+sounds like a documentation nit and it is actually the mechanism: a role you cannot point at in
+review is a role people re-type. Two screens duly hand-rolled a 13px and a 14px subtitle
+sitting right next to eight screens rendering 12px, and nobody was wrong at the moment they
+wrote it.
+
+**Product.** The more interesting decision was where to stop. "Let's get everything consistent"
+is a reasonable instruction and, taken literally, it would have made two screens worse. Redeem
+and Upgrade carry fifteen-pixel body copy under their titles — a lead paragraph on a
+celebration screen, not a subtitle. Pushing that to twelve-pixel muted text would have been
+consistency eating the thing consistency is for. Four candidates rejected, and the reason is
+now in the doc so the next person does not re-litigate it.
+
+**AI-building, and this is the third time today.** The new check went green, I falsified it,
+and it passed when it should have failed. It looked for the next inline style after the title
+— and on the one screen where the title carries its own style attribute, it matched the title
+itself, found no font size, and moved on. So the exact regression it exists to catch sailed
+through. Three hollow checks in one session, all three caught by breaking the thing rather than
+by reading the code. The reading never catches them. That is the whole argument for the
+falsification step, and I keep re-learning it at the cost of the person waiting.
+
+---
+
 ## 2026-09-29 — SUBPAGE-TYPE-SCALE-01 · the rule was written down and nothing read it
 
 **Dev.** Nine pushed screens now take their title from the documented role instead of
