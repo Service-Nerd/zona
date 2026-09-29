@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/brand'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { Wordmark } from '@/components/ui/Wordmark'
 import { TextField } from '@/components/shared/TextField'
 import { sendPasswordReset, RESET_SENT_MESSAGE } from '@/lib/auth/sendPasswordReset'
@@ -130,7 +131,7 @@ export default function ResetPasswordPage() {
       <div style={{ width: '100%', maxWidth: '340px' }}>
         <div style={{ marginBottom: '48px', textAlign: 'center' }}>
           <div style={{ marginBottom: '8px' }}><Wordmark size="md" /></div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)' }}>
             {BRAND.tagline}
           </div>
         </div>

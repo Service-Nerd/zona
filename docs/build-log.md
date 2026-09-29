@@ -6,6 +6,31 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — the ninth stamp, and the stale arm that closed its own register
+
+**Dev.** The password-reset page was the one brand stamp I could not convert — the sandbox
+refuses edits to that file, and I registered it as a baseline of 1 rather than quietly
+leaving it out. The founder granted the permission and it took three lines.
+
+**The honest bit is what happened next, and it is the whole argument for the pattern.**
+The moment the ninth stamp landed, **both** registers went red. Not one: the general
+micro-label register named 27, and the brand-stamp register named 0. Neither number was
+lowered because I remembered to lower it. They were lowered because a test refused to pass
+until I did.
+
+A debt register without a stale arm is correct on the day it is written and wrong from the
+next commit onward, and it is wrong in the most expensive direction — it reads as
+outstanding work that is already done, so nobody looks.
+
+**Product.** The brand-stamp register is now at zero, which means it stops being a register
+and becomes a rule: the next brand string stamped off the role fails the build on its first
+commit rather than joining a list. I falsified that specifically, by reverting the stamp I
+had just converted, because a rule at zero has to bite on the first offence or it is just a
+number that happens to be zero.
+
+Both surfaces the board named are now measured rather than asserted: login and reset each
+render 10px / 700 / 0.8px / uppercase.
+
 ## 2026-09-29 — MICRO-LABEL-BRAND-STAMP-01 · I took a question to the board that the code had already answered
 
 **Dev.** The brand's own locked words — the voice anchor, the tagline, the brand

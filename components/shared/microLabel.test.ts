@@ -133,9 +133,11 @@ const EXEMPT = /components\/marketing\//
  *              HONEST is the only rise that is allowed, and it is recorded rather than
  *              absorbed.
  *    47 →  38  −9 of those newly-visible labels converted in the same commit
- *    36 →  28  −8 brand stamps converted (MICRO-LABEL-BRAND-STAMP-01). The 9th is
- *              `app/auth/reset/page.tsx`, blocked by the sandbox as a password-reset
- *              file edit, and registered in BRAND_STAMP_BASELINE rather than hidden.
+ *    36 →  28  −8 brand stamps converted (MICRO-LABEL-BRAND-STAMP-01).
+ *    28 →  27  −1, the 9th brand stamp. The sandbox refused the password-reset file
+ *              edit; the founder granted it. 🥇 BOTH STALE ARMS FIRED ON THE WAY IN
+ *              and named the new number — the register was lowered because a test
+ *              demanded it, not because anyone remembered.
  *    38 →  36  −2 that were never debt: `fontWeight`/`letterSpacing` were still matched
  *              with ONE SPACE, so two CANONICAL labels written on aligned blocks were
  *              counted as violations. The first over-count of the six.
@@ -144,7 +146,7 @@ const EXEMPT = /components\/marketing\//
  * one did both at once. The 47 is the debt paid; the 16 is a correction. Stated
  * separately on purpose — a single number would have hidden which was which.
  */
-const NON_CONFORMING_BASELINE = 28
+const NON_CONFORMING_BASELINE = 27
 
 const countNonConforming = () => {
   let n = 0
@@ -352,11 +354,18 @@ function brandStamps(src: string): { size: string; ls: string }[] {
   return out
 }
 
-/** 🔻 ONE, and it is blocked by tooling rather than by design: the edit to
- *  `app/auth/reset/page.tsx` was refused by the sandbox as a change to a
- *  password-reset file. Founder-owned. Lower this to 0 when it lands — the stale
- *  arm below fails the build if it is already 0 and this number was not moved. */
-const BRAND_STAMP_BASELINE = 1
+/** ✅ ZERO. Every locked BRAND string in the product renders through the role.
+ *
+ *  It was 1 for one commit: the edit to `app/auth/reset/page.tsx` was refused by the
+ *  sandbox as a password-reset file change, registered rather than hidden, and the
+ *  founder granted the permission. 🥇 THE STALE ARM IS WHAT CLOSED IT — the moment the
+ *  ninth stamp landed the build went red and named the new number. A debt register
+ *  with no stale arm would have sat at 1 forever, correct on the day it was written
+ *  and wrong from the next commit on.
+ *
+ *  ⚠️ At zero this is no longer a register, it is a RULE: any new brand stamp off the
+ *  role fails the build on its first commit. */
+const BRAND_STAMP_BASELINE = 0
 
 describe('MICRO-LABEL-BRAND-STAMP-01 — a locked brand string is an eyebrow', () => {
   const offenders = () => {

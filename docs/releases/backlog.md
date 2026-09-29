@@ -666,12 +666,11 @@ single "needs a render".
 doctrine and it was stale by four months** — and the component it describes had already
 shipped the answer. The settled-ground scan caught it before a seat spoke.
 
-🔻 **THE 9TH IS FOUNDER-OWNED AND OPEN:** `app/auth/reset/page.tsx:133` — `BRAND.tagline`
-at 11px/0.12em. **The sandbox refused the edit** as a change to a password-reset file.
-One three-line change; registered as `BRAND_STAMP_BASELINE = 1` with a stale arm so it
-cannot be quietly forgotten. Either grant the permission or make the edit by hand:
-replace the `fontSize`/`letterSpacing`/`textTransform` trio with `...MICRO_LABELS.eyebrow`
-and import it, exactly as `app/auth/login/page.tsx` now does.
+✅ **CLOSED THE SAME DAY — 9 of 9.** `app/auth/reset/page.tsx` was refused by the sandbox
+as a password-reset file edit and registered at `BRAND_STAMP_BASELINE = 1` with a stale
+arm; the founder granted the permission. 🥇 **The stale arm is what closed it** — the moment
+the ninth landed, both registers went red and named 27 and 0. **The brand-stamp register is
+now a RULE at zero**, not a debt list. Reset verified by computed CSS: 10px/700/0.8px.
 
 #### Declared exemption
 `components/marketing/**` — mockups of iOS chrome at mockup scale, already exempted for
