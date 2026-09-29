@@ -710,6 +710,11 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   forgotten.** New: `MICRO-LABEL-CHIPS-01` (16 chips governed by no check) and
   `BUTTON-GEOMETRY-SPREAD-01` (the geometry harness cannot see through a spread, so every
   wave shrinks its population). `backlog.md`.
+- 🔻 `BACK-ARROW-FLOAT-02` — **FOUNDER.** The plan-preview back arrow is a **~150px
+  captioned pill**, not a circle, and its full-row tap target was **his own ruling**.
+  Floating it is a different decision; nothing done. ⚠️ `BACK-ARROW-FLOAT-03` — the
+  wizard step's **progress line now scrolls away** while the arrow floats. Detail in
+  `backlog.md`.
 - ✅ `DASHBOARD-HARNESS-01` — **SHIPPED**, completing `DASHBOARD-SCREEN-EXTRACT-04`. All **14 of 14** extracted screens render on
   `/copy-preview` from a **generated** Plan fixture (real production input → real engine
   → `validatePlan()`), guarded against drift. ⚠️ **Signed out, so data regions show empty

@@ -812,6 +812,33 @@ but only 9 are mounted on `/copy-preview`. `TodayScreen`, `SessionPopupInner`, `
 `CoachTeaser` and `OrientationScreen` take large prop sets or a `Plan`, so **they are now
 renderable in principle and unrendered in fact.** Filed `DASHBOARD-HARNESS-01`.
 
+#### 🔻 `BACK-ARROW-FLOAT-02` — the plan-preview pill, FOUNDER-OWNED
+
+👤 **FOUNDER.** The wizard's other two arrows now float (`BACK-ARROW-FLOAT-01`). The
+**plan preview's does not**, deliberately.
+
+It is `<BackButton caption="Adjust inputs" />` — **a ~150px pill, one button, not a 44px
+circle**. The full-row tap target exists because the **founder personally restored it**:
+*"that screen is where a runner decides whether to accept a plan, one-handed."* Floating a
+150px labelled pill over plan content is a different decision from floating a circle, and
+it is his.
+
+**Three ways it could go:** float the pill as-is · float it as a bare circle and lose the
+"Adjust inputs" disambiguation (which exists because *back* is ambiguous there between the
+previous STEP and the inputs) · leave it in flow. **No default is obviously right, which is
+why nothing was done.**
+
+#### ⚠️ `BACK-ARROW-FLOAT-03` — the step screen lost its progress cue on scroll
+
+🧭 **DESIGN BOARD**, if it turns out to matter.
+
+The wizard step header was arrow + `ProgressLine` + title. The **arrow floats; the progress
+line scrolls away.** The runner keeps the exit and loses *where am I* on a long step.
+**Floating the group would keep both** and was not done because the instruction was about
+the arrow. ⚠️ **Wroblewski's standing dissent bears on this**: floating makes a control
+visible, not reachable — and a progress cue is exactly the kind of thing that is worth more
+visible than an exit already reachable by edge-swipe.
+
 #### ✅ `DASHBOARD-HARNESS-01` — SHIPPED 2026-09-29. **All 14 screens render.**
 
 ⚙️ **NO BOARD** — a fixture and a dev-only harness; no shipped surface changes.

@@ -50,6 +50,7 @@ import Button from '@/components/ui/Button'
 import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
 import BackButton from '@/components/shared/BackButton'
+import FloatingBackButton from '@/components/shared/FloatingBackButton'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -1315,9 +1316,10 @@ export default function GeneratePlanScreen({
     // and prove nothing.
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
-        <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-          {!isOnboarding && <BackButton onClick={goBack} />}
-        </div>
+        {/* BACK-ARROW-FLOAT-01 — the refusal screen's header IS the arrow, so the
+            wrapper goes with it. `flexShrink: 0` stopped the header squashing; it never
+            pinned anything, and this screen scrolls. */}
+        {!isOnboarding && <FloatingBackButton onClick={goBack} />}
         <div style={{ flex: 1, padding: '0 20px 24px' }}>
           <RefusalView
             isRefusal={errorIsRefusal}
@@ -1599,8 +1601,14 @@ export default function GeneratePlanScreen({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
       {/* Header — back button + progress */}
+      {/* BACK-ARROW-FLOAT-01 — the ARROW floats; `ProgressLine` and the title stay in
+          flow. ⚠️ THE CONSEQUENCE IS REAL AND IS THE FOUNDER'S CALL: on a long step the
+          runner keeps the exit and loses "where am I". Floating the whole header group
+          would keep both, and was NOT done because the instruction was about the arrow.
+          If the progress cue turns out to matter more than the extra 8px of content,
+          that is the change to make. */}
+      {!(isOnboarding && currentIdx === 0) && <FloatingBackButton onClick={goBack} />}
       <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-        {!(isOnboarding && currentIdx === 0) && <BackButton onClick={goBack} />}
         <ProgressLine total={realSteps.length} current={Math.max(0, realDone - 1)} />
         <div style={{ marginBottom: stepMeta.interstitial ? '20px' : '28px', marginTop: stepMeta.interstitial ? '28px' : 0 }}>
           {stepMeta.eyebrow && (
