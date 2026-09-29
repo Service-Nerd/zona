@@ -6,6 +6,43 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — MICRO-LABEL-BRAND-STAMP-01 · I took a question to the board that the code had already answered
+
+**Dev.** The brand's own locked words — the voice anchor, the tagline, the brand
+statement — turned out to be the least governed type in the product. Nine stamps,
+written nine ways: three trackings, four weights. The caption under the wordmark on the
+splash screen inherited weight 400, because nobody ever set one.
+
+**The honest bit.** I filed this as an open governance question: *a documented fourth
+treatment against a role set the board closed at three.* That framing was wrong, and the
+settled-ground scan killed it before a single seat spoke. The doc line I was treating as
+live doctrine is dated 2026-05-23 — four months **before** the board standardised eyebrow
+tracking at 0.08em, in a ruling whose own note says a competitor's 0.14em is not a reason
+to reopen it. It was stale, not competing.
+
+And then the part that actually settles it: the component that doc line describes
+**already renders through the role**, and has for some time, with a comment saying so.
+The ruling existed in code. I had written a board brief around a contradiction that did
+not exist. **Second wrong brief in two days, and the second one caught by the evidence
+step rather than by a seat.**
+
+**AI-building.** My measurement said ten labels. The tenth was a button's hand-typed
+geometry, matched only because `BRAND.name` appeared in a **sentence 200 characters
+below** the style block. Seventh wrong population this week and the first caused by the
+lookahead rather than the regex or the file glob. The gate now reads an element's own
+children — the text between `}}>` and the next `<` — and there is a test that feeds it
+exactly that button to prove it.
+
+Then the new precedent arm passed on an **empty string**: `indexOf` found the module
+comment above every `<div>`, `lastIndexOf('<div')` returned −1, and the slice was `''`,
+which contains nothing and therefore contained no violation. Fourth comment-matching
+defect this week.
+
+**Product.** Verified on the real login screen by computed CSS — 10px / 700 / 0.8px —
+because the board made that binding rather than optional. Eight of nine landed. The ninth
+is the password-reset page, which the sandbox refuses to let me edit; it is registered as
+a baseline of 1 with a stale arm, so paying it off cannot be forgotten.
+
 ## 2026-09-29 — MICRO-LABEL-WAVE-3 · my own register was calling correct code a defect
 
 **Dev.** Wave 3 was meant to be the last 36 labels. It converted none, and the reason it

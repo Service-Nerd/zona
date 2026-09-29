@@ -2757,6 +2757,31 @@ at the type layer. Precedent: *"the doc/component ground mismatch is a DEFECT"* 
 DEFENCE.** *"After the race"* at 10px and 11px. *"Hold the zone"* at 10px and 11px.
 **`optional` FOUR ways.** Same word, same job, four hands.
 
+### The brand stamp is an eyebrow (MICRO-LABEL-BRAND-STAMP-01)
+
+**A locked `BRAND` string rendered as small tracked type uses `MICRO_LABELS.eyebrow`.**
+The voice anchor under the wordmark, the tagline on login, the brand statement on the
+founder note: all the eyebrow. **There is no brand tracking.**
+
+🔴 **The brand's own words were the LEAST governed type in the product** — nine stamps
+written nine ways, across **three trackings** (0.12em ×7, 0.14em ×2) and **four weights**
+(unset/400 ×3, 500 ×2, 600 ×3, 700 ×2). The splash screen's caption under the wordmark
+**inherited 400** because nobody set one.
+
+⚠️ **Two comments asserted conformance the values contradicted** — `FounderNoteScreen`
+said *"matches Pattern 10 / Pattern 17 tracking"* at 11px/0.14em, and a splash comment
+said `{/* Tagline */}` above `BRAND.voiceAnchor`, which is a different locked string.
+**A comment claiming canonicity is not evidence of it.**
+
+🥇 **The ruling was already shipped in code.** `SessionCompleteCard` renders both the
+voice anchor and the brand statement through `MICRO_LABELS.eyebrow`. `DOCTRINE-01`'s
+registry line calling the stamp *"canonical 10px/0.14em"* predates the 0.08em
+standardisation (2026-09-20, 64:17) by four months: **superseded doc, not competing
+doctrine.** Corrected in place.
+
+Gated by `microLabel.test.ts` § MICRO-LABEL-BRAND-STAMP-01, whose scanner reads an
+element's **own children**, never a character budget — see the note there.
+
 ### 🔴 11px is not a level
 
 Every 11px micro-label resolves to one of the three above. Silvanto: *"a difference too

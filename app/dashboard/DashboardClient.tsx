@@ -2325,13 +2325,11 @@ export default function DashboardClient() {
           <Wordmark size="md" className="wordmark-splash" />
         </div>
 
-        {/* Tagline */}
-        <div style={{
+        {/* Voice anchor — NOT the tagline. 🔴 This comment said "Tagline" for
+            months over a different locked string (MICRO-LABEL-BRAND-STAMP-01). */}
+        <div style={{ ...MICRO_LABELS.eyebrow,
           fontFamily: 'var(--font-ui)',
-          fontSize: '11px',
           color: 'var(--text-muted)',
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
         }}>
           {BRAND.voiceAnchor}
         </div>
@@ -2355,7 +2353,7 @@ export default function DashboardClient() {
         <div style={{ marginBottom: 'var(--space-2)' }}>
           <Wordmark size="md" />
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 'var(--space-7)' }}>
+        <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', marginBottom: 'var(--space-7)' }}>
           {BRAND.voiceAnchor}
         </div>
 
@@ -3174,7 +3172,7 @@ function OrientationScreen({ plan, firstName, zone2Ceiling, restingHR, maxHR, on
       <div style={{ marginBottom: 'var(--space-2)' }}>
         <Wordmark size="md" />
       </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: '40px' }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', marginBottom: '40px' }}>
         {BRAND.voiceAnchor}
       </div>
 
@@ -3489,7 +3487,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
       <div style={{ marginBottom: 'var(--space-2)' }}>
         <Wordmark size="md" />
       </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 'var(--space-7)' }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', marginBottom: 'var(--space-7)' }}>
         {BRAND.voiceAnchor}
       </div>
 
@@ -3673,7 +3671,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
       <div style={{ marginBottom: 'var(--space-2)' }}>
         <Wordmark size="md" />
       </div>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 'var(--space-7)' }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', marginBottom: 'var(--space-7)' }}>
         {BRAND.voiceAnchor}
       </div>
 

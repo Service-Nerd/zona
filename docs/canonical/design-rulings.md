@@ -240,6 +240,7 @@ Sources: ADR-007, ADR-008, `brand.md` § Visual Principles, `ui-patterns.md`,
 | **Type accent, not flood.** Session colour as left border, dot or chip; never a full card background | 🟢 STANDING | Design Board |
 | **No chrome.** No stacked shadows, no gradient on gradient, no decorative dividers | 🟢 STANDING | **Design Board** (transferred 2026-09-22) |
 | **Elevation is `--shadow-card` / `--shadow-lifted`.** Do not design a new elevation system | 🟢 STANDING (P-13 correction) | Both are already warm-tinted on `26,26,26`, which is the mistake most briefs warn about and we had already avoided |
+| **A locked `BRAND` string is an eyebrow. There is no brand tracking** | 🟢 **SHIPPED** (`MICRO-LABEL-BRAND-STAMP-01`, 2026-09-29) | Nine stamps, nine ways: 3 trackings, 4 weights, the splash caption inheriting 400. **The precedent was already shipped on `SessionCompleteCard`**, and `DOCTRINE-01`'s *"canonical 10px/0.14em"* predates the 0.08em standardisation by four months — superseded doc, not doctrine |
 | **Eyebrow tracking is 0.08em** | 🟢 STANDING (standardised 2026-09-20, 64:17) | A competitor's 0.14em is explicitly not a reason to reopen it |
 | **The four numeral tokens are NOT part of the reading scale** | 🟢 STANDING | Keeping `--fs-verdict/numeral/numeral-lg/step` separate is what stops the reading scale drifting back to nineteen values (`SITE-TYPE-01`) |
 | **Every motion token collapses to `0s` under `prefers-reduced-motion`** | 🟢 STANDING | One `@media` block at the end of `globals.css`, so a component cannot forget. The JS half is the component's |

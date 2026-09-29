@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core'
 import { Browser } from '@capacitor/browser'
 import { createClient } from '@/lib/supabase/client'
 import { BRAND } from '@/lib/brand'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { NATIVE_AUTH_CALLBACK } from '@/lib/native'
 import { sendPasswordReset, RESET_SENT_MESSAGE } from '@/lib/auth/sendPasswordReset'
 import { authErrorCopy } from '@/lib/auth/authErrorCopy'
@@ -240,10 +241,9 @@ export default function LoginPage() {
           <div style={{ marginBottom: '8px' }}>
             <Wordmark size="md" />
           </div>
-          <div style={{
+          <div style={{ ...MICRO_LABELS.eyebrow,
             fontFamily: 'var(--font-ui)',
-            fontSize: '11px', color: 'var(--mute)',
-            letterSpacing: '0.12em', textTransform: 'uppercase',
+            color: 'var(--mute)',
           }}>{BRAND.tagline}</div>
         </div>
 

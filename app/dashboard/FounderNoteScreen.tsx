@@ -16,6 +16,7 @@
 // rewrite the line-by-line before final.
 
 import { BRAND } from '@/lib/brand'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { FOUNDER_STORY } from '@/lib/marketing/founderStory'
 import BackButton from '@/components/shared/BackButton'
 
@@ -30,10 +31,13 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
 
       <div style={{ padding: '8px 20px 48px', maxWidth: '480px', margin: '0 auto' }}>
 
-        {/* Eyebrow — matches Pattern 10 / Pattern 17 tracking. */}
-        <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-          color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
+        {/* Eyebrow. 🔴 This comment used to say "matches Pattern 10 / Pattern 17
+            tracking" while rendering 11px/0.14em against the eyebrow's
+            10px/0.08em — a claim of conformance beside a non-conforming value
+            (MICRO-LABEL-BRAND-STAMP-01). It now matches because it IS the role. */}
+        <div style={{ ...MICRO_LABELS.eyebrow,
+          fontFamily: 'var(--font-ui)',
+          color: 'var(--mute)',
           marginBottom: 'var(--space-4)',
         }}>
           Why {BRAND.name} exists
@@ -105,9 +109,9 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
         {/* Hairline + brand statement stamp. Same eyebrow anatomy as
             BRAND.voiceAnchor on SessionCompleteCard — quiet, present. */}
         <div style={{ height: '1px', background: 'var(--line)', margin: '0 0 20px', maxWidth: '360px' }} />
-        <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-          color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
+        <div style={{ ...MICRO_LABELS.eyebrow,
+          fontFamily: 'var(--font-ui)',
+          color: 'var(--mute)',
           marginBottom: 'var(--space-6)',
         }}>
           {BRAND.brandStatement}

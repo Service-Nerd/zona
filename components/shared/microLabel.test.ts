@@ -133,6 +133,9 @@ const EXEMPT = /components\/marketing\//
  *              HONEST is the only rise that is allowed, and it is recorded rather than
  *              absorbed.
  *    47 →  38  −9 of those newly-visible labels converted in the same commit
+ *    36 →  28  −8 brand stamps converted (MICRO-LABEL-BRAND-STAMP-01). The 9th is
+ *              `app/auth/reset/page.tsx`, blocked by the sandbox as a password-reset
+ *              file edit, and registered in BRAND_STAMP_BASELINE rather than hidden.
  *    38 →  36  −2 that were never debt: `fontWeight`/`letterSpacing` were still matched
  *              with ONE SPACE, so two CANONICAL labels written on aligned blocks were
  *              counted as violations. The first over-count of the six.
@@ -141,7 +144,7 @@ const EXEMPT = /components\/marketing\//
  * one did both at once. The 47 is the debt paid; the 16 is a correction. Stated
  * separately on purpose — a single number would have hidden which was which.
  */
-const NON_CONFORMING_BASELINE = 36
+const NON_CONFORMING_BASELINE = 28
 
 const countNonConforming = () => {
   let n = 0
@@ -294,5 +297,118 @@ describe('MICRO-LABEL-DRIFT-01 — the register can only fall', () => {
       .toBeGreaterThan(50)
     expect(literals + converted, 'the scanner stopped finding micro-labels — re-anchor it')
       .toBeGreaterThan(140)
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MICRO-LABEL-BRAND-STAMP-01 — the brand stamp is an eyebrow, not a fourth role.
+//
+// The brand's own locked words were the LEAST governed type in the product: nine
+// uppercase stamps written nine ways — three trackings (0.12em ×7, 0.14em ×2) and
+// FOUR weights (unset/400 ×3, 500 ×2, 600 ×3, 700 ×2) — on the splash, the welcome
+// screen, login, password reset, three onboarding screens and the founder note.
+//
+// 🥇 THE RULING WAS ALREADY SHIPPED IN CODE, ON THE SURFACE THE STALE DOC NAMED.
+// `SessionCompleteCard` renders both `BRAND.voiceAnchor` and `BRAND.brandStatement`
+// through `MICRO_LABELS.eyebrow`, its comment reading "Matches Pattern 10 eyebrow
+// tracking" — while `DOCTRINE-01`'s registry line (2026-05-23) claimed the stamp was
+// "canonical 10px/0.14em". That line predates the 0.08em standardisation (2026-09-20,
+// 64:17) by four months. It was superseded doc, not competing doctrine, and I filed
+// this item believing the opposite.
+//
+// 🔴 AND THE LOOKAHEAD IS THE POINT OF THIS SCANNER'S SHAPE. My own measurement said
+// TEN labels. The tenth was the `Connect` button's hand-typed geometry, matched only
+// because `BRAND.name` appeared in a SENTENCE 200 characters BELOW the style block.
+// Seventh population defect of the week and the first caused by the WINDOW rather than
+// the regex or the glob. So this arm reads only the element's OWN children — the text
+// between `}}>` and the next `<` — never a fixed character budget.
+//
+//   bound the region, never grep the neighbourhood.
+const LOCKED = /\{?BRAND\.(voiceAnchor|brandStatement|tagline|name)\b/
+
+/** Uppercase tracked type whose OWN CHILDREN are a locked BRAND string. */
+function brandStamps(src: string): { size: string; ls: string }[] {
+  const out: { size: string; ls: string }[] = []
+  const re = /fontSize:\s*'(9|10|11|12)px'/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(src)) !== null) {
+    const start = src.lastIndexOf('{{', m.index)
+    if (start === -1 || m.index - start > 600) continue
+    const end = src.indexOf('}}', m.index)
+    if (end === -1) continue
+    const blk = src.slice(start, end + 2)
+    if (!blk.includes('letterSpacing')) continue
+    if (blk.includes('MICRO_LABELS')) continue
+    if (!blk.includes("textTransform: 'uppercase'")) continue
+    // The element's own children only: from `}}>` to the next tag.
+    const openEnd = src.indexOf('>', end)
+    if (openEnd === -1) continue
+    const nextTag = src.indexOf('<', openEnd)
+    const children = src.slice(openEnd + 1, nextTag === -1 ? openEnd + 1 : nextTag)
+    if (!LOCKED.test(children)) continue
+    const ls = /letterSpacing:\s*'([^']+)'/.exec(blk)
+    out.push({ size: m[1]!, ls: ls ? ls[1]! : '?' })
+  }
+  return out
+}
+
+/** 🔻 ONE, and it is blocked by tooling rather than by design: the edit to
+ *  `app/auth/reset/page.tsx` was refused by the sandbox as a change to a
+ *  password-reset file. Founder-owned. Lower this to 0 when it lands — the stale
+ *  arm below fails the build if it is already 0 and this number was not moved. */
+const BRAND_STAMP_BASELINE = 1
+
+describe('MICRO-LABEL-BRAND-STAMP-01 — a locked brand string is an eyebrow', () => {
+  const offenders = () => {
+    const out: string[] = []
+    for (const f of tracked()) {
+      if (EXEMPT.test(f)) continue
+      for (const s of brandStamps(readFileSync(f, 'utf8'))) {
+        out.push(`${f}: ${s.size}px / ${s.ls}`)
+      }
+    }
+    return out
+  }
+
+  it('no NEW brand string is stamped outside MICRO_LABELS', () => {
+    const o = offenders()
+    expect(o.length, `brand stamps off the role: ${o.join(' · ')}`)
+      .toBeLessThanOrEqual(BRAND_STAMP_BASELINE)
+  })
+
+  it('and a baseline that is no longer met must be LOWERED in the same commit', () => {
+    // The stale arm. Without it, paying the debt leaves a number that says the
+    // opposite, and the next reader trusts it. Same shape as SWEEP-BASELINE-01.
+    expect(offenders().length, 'brand-stamp debt is paid — lower BRAND_STAMP_BASELINE')
+      .toBe(BRAND_STAMP_BASELINE)
+  })
+
+  it('the canonical precedent is real: SessionCompleteCard stamps via the role', () => {
+    // 🔴 This is the arm that makes the ruling falsifiable rather than asserted. If
+    // the precedent it rests on is reverted, the ruling loses its evidence and this
+    // goes red — not the prose in design-rulings.md.
+    const src = readFileSync('components/shared/SessionCompleteCard.tsx', 'utf8')
+    for (const str of ['BRAND.voiceAnchor', 'BRAND.brandStatement']) {
+      // 🔴 `indexOf(str)` finds the module COMMENT first, which sits above every
+      // `<div>`, so `lastIndexOf('<div')` returned -1 and the slice was ''. Fourth
+      // comment-matching defect this week. Anchor on the BRACED JSX form.
+      const i = src.indexOf(`{${str}}`)
+      expect(i, `${str} rendered on SessionCompleteCard`).toBeGreaterThan(-1)
+      // Its own style block, bounded — not a file-wide grep for MICRO_LABELS.
+      const open = src.lastIndexOf('<div style={{', i)
+      expect(src.slice(open, i)).toContain('MICRO_LABELS.eyebrow')
+    }
+  })
+
+  it('the scanner reads CHILDREN, not a character budget (the tenth label)', () => {
+    // Falsification of the fix itself: the Connect button's geometry sits directly
+    // above a sentence containing BRAND.name. A neighbourhood scan counts it; a
+    // children scan must not.
+    const bled = `
+      <Button style={{ padding: '8px 14px', fontSize: '11px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        {busy ? 'Connecting...' : 'Connect'}
+      </Button>
+      <div>{BRAND.name} reads your runs from Apple Health.</div>`
+    expect(brandStamps(bled)).toEqual([])
   })
 })
