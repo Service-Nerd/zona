@@ -916,6 +916,39 @@ registry to one row format is the better fix than encoding both. **Same lesson t
 records four times: a checker that encodes ONE way of writing something is blind to every
 other way, and people write things more than one way.**
 
+#### 🔴 `SHEET-HARNESS-01` — no sheet could be made to render on either harness
+
+⚙️ **NO BOARD** — tooling / verification gap. **Filed from `ZONES-HR-SHEET-01`, where it blocked
+the render check the board asked for.**
+
+**Measured 2026-09-29, and the control is what makes it worth filing.** Trying to render
+`HrCalibrationSheet`:
+
+- On **`/copy-preview`**: `role="dialog"` count **0**, and exactly **one** `Resting HR` label
+  (the pre-existing `HRZonesSection` case), so the sheet rendered nothing. ⚠️ **`ManualRunModal`
+  is a `Sheet` and has been mounted on that page all along, also rendering nothing.**
+- On **`/sheet-preview`** — the page that exists specifically to preview sheets and imports the
+  real primitive — clicking the new entry opened nothing, **and so did clicking a card that
+  predates any of my changes.** That control is the point: it is not the new component.
+- Console showed **401/404 on chunks**, consistent with the pages not hydrating at all, which
+  would explain `Sheet` never reaching `setMounted(true)` in its `useEffect`.
+
+🔴 **TWO CANDIDATE CAUSES AND I DID NOT SEPARATE THEM**, so both are named rather than one
+guessed: (a) the local dev server was serving pages without client JS in that session, or
+(b) `/copy-preview` is a **server component** and cannot host a portal-based sheet, which would
+make its `ManualRunModal` case **a harness showing nothing while appearing to cover the
+component** — the recorded *"a harness with a short population is the same defect as a test with
+one, and quieter"* class.
+
+**What it costs:** the two conditions the Design Board attached to `ZONES-HR-SHEET-01` (does the
+panel cover the rows it changes; is Save reachable with the keyboard up) could not be answered,
+and neither can any future sheet change.
+
+**Fix:** restart the dev server and re-run the control. If a pre-existing card still opens
+nothing on `/sheet-preview`, the harness is broken and that is the bug. If it opens, then
+`/copy-preview` is the one that cannot host sheets, and its `ManualRunModal` case should move to
+`/sheet-preview` rather than sit there rendering nothing.
+
 #### 🔴 `STICKY-INERT-FLEX-01` — the sticky guard treats `flex: 1` as a height, and it is not
 
 ⚙️ **NO BOARD** — a gate blind spot, filed not fixed.
