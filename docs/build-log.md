@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — BACK-ARROW-TITLE-COLLIDE-01 · a default that only the safe callers overrode
+
+**Dev.** Screens you can push onto now pin their header, so the floating back arrow stops
+landing on the title.
+
+**The honest bit.** He sent two screenshots to show me the zone rows looked wrong. The title in
+one of them read *"ur zones"*. He had not mentioned it and probably had not consciously seen
+it. The arrow is a 44px opaque disc starting 16px from the left; the title's text box also
+starts 16px from the left; the header did not pin. Same column, so the disc parks on the second
+character of the word and the screen looks broken for the half-second you are scrolling.
+
+**What made it a class rather than a screen.** `ScreenHeader` has a `sticky` prop. It defaulted
+to off and was switched on twice — on the two screens that are tab roots, which have no back
+arrow and therefore cannot collide with one. So the flag was only ever used by the callers that
+did not need it, and every caller that did need it inherited the wrong answer. That is a
+particular kind of bad default: it looks deliberate, because somebody clearly thought about it
+twice.
+
+**Process, and I came off worse.** The board ruled. Then I added an amendment instructing myself
+to check with the founder, and ended by asking him to choose. He replied asking why the board
+could not rule on an obvious design decision. He was right. The authority model says a ruling
+binds build and only commercial questions go up; there was no commercial question. I had turned
+a finished decision back into a question, which is how a board quietly stops being one.
+
+**AI-building.** The consumer check earned its keep: the same header renders on the marketing
+homepage inside a phone mockup, where pinning would attach it to the page and slide it out of
+the device frame. A shared default is a website change whether or not you remember the website.
+And my own new gate flagged the component that owns the prop, because its documentation comment
+contains the opt-out syntax while explaining the opt-out. Ninth time a check here has matched a
+comment. I keep writing the scan before I write the strip.
+
+---
+
 ## 2026-09-29 — ZONES-ZONE-SHEET-GONE-01 (part 2) · a shorthand reset a longhand, and he saw it before any check did
 
 **Dev.** The heart-rate zone rows look like the pace rows again.

@@ -29,7 +29,7 @@ interface ScreenHeaderProps {
 |---|---|---|---|
 | `title` | `string` | ✅ | The screen's name. Rendered at `26px / 800 / var(--font-ui) / var(--ink)` |
 | `sub` | `string` | — | Secondary line. Omitted entirely when absent — no empty element |
-| `sticky` | `boolean` | — | Default `false`. Pins the header while the screen scrolls |
+| `sticky` | `boolean` | — | **Default `true`** (BACK-ARROW-TITLE-COLLIDE-01, 2026-09-29). Pins the header while the screen scrolls. **Opting out is by name, with a reason** — `screenHeaderPinned.test.ts` holds the register, and the only current opt-out is the marketing phone mockups |
 
 There is deliberately **no `style` prop and no `className`.** Every pixel belongs to
 `.screen-header` in `globals.css`; the component's only inline style is `zIndex` from
@@ -64,8 +64,16 @@ unpins Plan and pins Notifications.
 
 | Surface | Call sites |
 |---|---|
-| App (`DashboardClient`) | Plan ✅sticky · Coach ×2 ✅sticky · Me · Notifications · Strava |
-| Website (`TabbedPhone`) | Plan · Coach stills, **not** sticky — a still should not pin |
+| App (`DashboardClient`) | Plan · Coach ×2 · Zones · Notifications · Strava — **all pinned** |
+| App (`MeScreen`) | Plan adjustments · Connections · Preferences · Your profile — **all pinned** |
+| Website (`TabbedPhone`) | Plan · Coach stills — **`sticky={false}`, declared.** A header pinned inside a fake phone pins to the PAGE, not the mockup, and slides out of the device frame |
+
+🔴 **WHY THE DEFAULT FLIPPED.** It was `false`, and the prop was passed on exactly **two**
+surfaces — `Your plan` and `Your coach` — **both tab roots, which have no back arrow and so
+cannot collide with one.** Every screen that *could* collide had never pinned. Measured: the
+floating arrow is a 44px opaque disc at **x 16–60** and `.screen-header`'s padding puts the
+**26px/800** title's text box at **x 16**, so *"Your zones"* rendered as *"ur zones"* on a
+device. **A default that only the safe callers override is not a default, it is an accident.**
 
 🔴 **The website used to hand-copy this.** Its comment said *"Same sizes, same tokens"* and was
 already false — the app pinned `var(--font-ui)`, the copy pinned neither. `realComponents.test.ts`
