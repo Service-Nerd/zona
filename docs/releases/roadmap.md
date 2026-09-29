@@ -693,6 +693,10 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 
 ### 🏃 Product — SLT priority order (reviewed 2026-06-06; **re-topped 2026-08-06**)
 
+- 🔴 `MICRO-LABEL-BRAND-STAMP-01` — **NEXT, and it BLOCKS wave 3.** Nine locked brand
+  strings (`voiceAnchor` ×5, `brandStatement`, `name`, `tagline` ×2) render at 0.12–0.14em,
+  which is not a canonical role — and `DOCTRINE-01` documents 10px/0.14em while the code
+  renders 11px. Fourth role, or adopt the eyebrow? Board, then founder. `backlog.md`.
 - 🧭 `MICRO-LABEL-FIELDHINT-01` — **NEXT.** A field hint (`optional`, lowercase,
   untracked, beside an input) fits none of the three ruled roles and survives only as an
   exclusion. Fourth role, or body text? Board's. `backlog.md`.

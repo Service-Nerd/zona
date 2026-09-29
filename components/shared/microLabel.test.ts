@@ -87,8 +87,15 @@ function microLabels(src: string): { size: string; weight: string; ls: string }[
     if (/letterSpacing: 0\b/.test(blk) || blk.includes("textTransform: 'none'")) continue
     out.push({
       size: `${m[1]}px`,
-      weight: (/fontWeight: (\d{3})/.exec(blk) ?? [, '?'])[1]!,
-      ls: (/letterSpacing: '([^']+)'/.exec(blk) ?? [, '?'])[1]!,
+      // 🔴 ALL THREE REGEXES MUST TOLERATE PADDING, not just fontSize. Wave 2 fixed the
+      // size regex and left these two on a single space, so an ALIGNED block like
+      // `fontWeight:    700,` read as '?' and a CANONICAL label was counted as debt.
+      // ⚠️ SIXTH POPULATION DEFECT, and the first that INFLATES rather than shrinks:
+      // `PendingHrCard` and `PreRunBandCard` write the exact canonical eyebrow and were
+      // both in the register. **Both directions are wrong**, and a register that
+      // over-counts is the one that gets "fixed" by editing correct code.
+      weight: (/fontWeight:\s*(\d{3})/.exec(blk) ?? [, '?'])[1]!,
+      ls: (/letterSpacing:\s*'([^']+)'/.exec(blk) ?? [, '?'])[1]!,
     })
   }
   return out
@@ -126,12 +133,15 @@ const EXEMPT = /components\/marketing\//
  *              HONEST is the only rise that is allowed, and it is recorded rather than
  *              absorbed.
  *    47 →  38  −9 of those newly-visible labels converted in the same commit
+ *    38 →  36  −2 that were never debt: `fontWeight`/`letterSpacing` were still matched
+ *              with ONE SPACE, so two CANONICAL labels written on aligned blocks were
+ *              counted as violations. The first over-count of the six.
  *
  * ⚠️ A register that shrinks because its DEFINITION narrowed is not progress, and this
  * one did both at once. The 47 is the debt paid; the 16 is a correction. Stated
  * separately on purpose — a single number would have hidden which was which.
  */
-const NON_CONFORMING_BASELINE = 38
+const NON_CONFORMING_BASELINE = 36
 
 const countNonConforming = () => {
   let n = 0

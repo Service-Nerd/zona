@@ -639,7 +639,46 @@ of them, and it currently survives only as an *exclusion*. Either it is a fourth
 it is body text and should stop looking like a label. **Two instances; both render the same
 word at two different sizes**, which is the drift this programme exists to remove.
 
-#### Waves 3+ — the 35 that remain, ALL blocked on a render
+#### ✅ Wave 3 attempt — the gate was OVER-counting, and the rest is blocked
+
+**Register 38 → 36, and the two removed were NEVER DEBT.** 🔴 **Sixth population defect,
+and the first that INFLATES:** wave 2 fixed the `fontSize` regex and left `fontWeight` and
+`letterSpacing` matching **exactly one space**, so `PendingHrCard` and `PreRunBandCard` —
+which write the **canonical eyebrow** on aligned blocks — were counted as violations.
+**A register that over-counts is the one that gets "fixed" by editing correct code.**
+
+**Wave 3 did NOT convert anything, and the reasons are measured, not asserted:**
+
+| the 36 | why it is blocked |
+|---|---|
+| **17** in `DashboardClient` | auth-gated, unrenderable; every one changes SIZE |
+| **9** locked brand strings | 🔴 see `MICRO-LABEL-BRAND-STAMP-01` below |
+| **2** field hints (`optional`) | already filed as `MICRO-LABEL-FIELDHINT-01` |
+| **8** in components with no preview page | StravaPanel, SessionSteps, DayBudgetRows, GeneratingCeremony |
+
+⚠️ **Grinding through 36 unverifiable size changes to make a number fall is precisely what
+this register exists to prevent.** The blockers are now named per-label rather than as a
+single "needs a render".
+
+#### 🔴 `MICRO-LABEL-BRAND-STAMP-01` — nine locked brand strings render at a treatment that is not a role
+
+🧭 **DESIGN BOARD**, then 👤 **FOUNDER** if the words' treatment is at stake.
+
+**Measured: 9 of the 36 remaining are locked brand strings** — `BRAND.voiceAnchor` ×5,
+`BRAND.brandStatement`, `BRAND.name`, `BRAND.tagline` ×2 — rendering at **0.12em or
+0.14em tracking**, neither of which is a canonical role (eyebrow is 0.08em).
+
+🔴 **AND THE DOC AND THE CODE ALREADY DISAGREE.** `DOCTRINE-01`'s registry entry specifies
+the brand statement at **"canonical 10px/0.14em eyebrow tracking"** — but it renders at
+**11px**, and **0.14em is not the eyebrow's tracking.** So the brand stamp is a documented
+FOURTH treatment that conflicts with the three-role set the board closed.
+
+**The question:** is the brand stamp a fourth role, or does it adopt the eyebrow? The board
+closed the set at three and said a fourth needs the board. ⚠️ **This is that case**, and
+until it rules, 9 labels cannot be converted without silently restyling the brand's own
+voice on the login screen, the founder note and the marketing homepage.
+
+
 #### Declared exemption
 `components/marketing/**` — mockups of iOS chrome at mockup scale, already exempted for
 that reason in `lib/marketing/typeScale.test.ts`.
