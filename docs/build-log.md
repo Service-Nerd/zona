@@ -6,6 +6,38 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — MICRO-LABEL-WAVE-3 · my own register was calling correct code a defect
+
+**Dev.** Wave 3 was meant to be the last 36 labels. It converted none, and the reason it
+converted none is the entry.
+
+First, the gate itself was wrong. It reported 38; my own script counted 36. Wave 2 had fixed
+the `fontSize` regex to tolerate column-aligned whitespace and **left `fontWeight` and
+`letterSpacing` matching exactly one space** — so two components writing the *canonical*
+eyebrow on aligned blocks were read as malformed and counted as debt. Sixth population
+defect in gates I wrote this week.
+
+**The honest bit.** The five before this one all under-counted. That produces a green tick
+over a short set, which is bad. This one **over-counts**, and that is bad in a way I had not
+thought about: a register that names correct code as debt is the register you "fix" by
+editing the correct code. Had I ground through wave 3 to make the number fall, I would have
+restyled two compliant labels to satisfy a broken scanner.
+
+**Product.** Then the remaining 36 stopped being a wave. Seventeen are inside an auth-gated
+12k-line file I cannot render. Eight are in components with no preview page. Two are field
+hints already filed as fitting none of the three roles. **And nine are locked brand strings**
+— the voice anchor, the brand statement, the name, the tagline — rendering at 0.12em and
+0.14em, neither of which is a role the board ratified.
+
+**AI-building.** The brand ones are the interesting failure. `DOCTRINE-01`'s registry entry
+documents the brand statement at *"canonical 10px/0.14em eyebrow tracking"*. It renders at
+11px, and 0.14em is not the eyebrow's tracking. So a treatment I would have "corrected" was
+itself documented, wrongly, against a role set the board closed at three. Converting it
+quietly would have restyled the brand's own voice on the login screen, the founder note and
+the marketing homepage — to move a number down by nine.
+
+Filed as its own board question. The wave ends at 36 and says so.
+
 ## 2026-09-29 — MICRO-LABEL-WAVE-2 · I rendered the gate and it had been counting short in two ways
 **Shipped:** 41 more labels converted, and five gates that had all been reading a short file list.
 **Dev learning:** Wave 1a was inside an auth-gated screen, so I verified it by reading. Wave 2 was mostly components, which **render** — and the first page I opened showed a label at 10px/600 that my static scan had called clean. Two causes, both in my own scanner: it matched `fontSize: '10px'` with **exactly one space**, and `CoachByline` writes its properties aligned with padding. And `git ls-files "app/**/*.tsx"` quietly returns 129 files when the truth is 134, because git's `**/` needs at least one directory level — so anything sitting directly under `app/` was invisible, including the marketing homepage.
