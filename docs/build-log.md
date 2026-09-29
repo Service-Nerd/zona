@@ -6,6 +6,44 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — SCROLL-NATIVE-01 · one undocumented line, every screen in the app
+
+**Dev.** Scrolling should rubber-band again. Sheets should stop dragging the page along
+behind them.
+
+**The honest bit.** He described it as sharp and not bouncy, which is exactly what
+`overscroll-behavior: none` does, and that line was sitting on the app's only real scroller
+with no comment next to it. Every screen in the product scrolls through that one component,
+so one undocumented word removed the platform's signature gesture everywhere at once.
+
+The reason it can simply go is the interesting part. The custom pull-to-refresh looked like
+the thing that needed it — surely the bounce would fight the gesture. It does not: the
+gesture engages only when you are already at the top, and it calls preventDefault itself
+while running, so it suppresses the native bounce directly. The property was only ever
+preventing scroll chaining, and there is a value for that which keeps the bounce. At the
+bottom of the screen the gesture cannot engage at all, so the bounce there was suppressed for
+nothing whatsoever.
+
+**Product.** The second finding is the one he did not ask about. Sheets had no
+overscroll-behavior at all, so scrolling one to its end scrolled the page behind it and the
+screen slid under the panel. That is the least native thing in the app and nobody had
+reported it, probably because it reads as "the app is a bit odd" rather than as a bug.
+
+And the document keeps its `none`. That is not an inconsistency: on iOS the window does not
+rubber-band, the scroll view inside it does. Copying that exactly is the whole point.
+
+**AI-building.** The new gate found a scroller I had not: a 200px activity list inside the
+session screen, which chained to the whole screen when you reached its end. I had enumerated
+the scrollers by grepping for `overflowY` and reading the list, and I still missed one that
+was sitting in the middle of a component I had opened twice today. Deriving the population
+and asserting over it caught what reading it did not — which is the same lesson as the
+checker anchors, arriving from a different direction.
+
+⚠️ And the honest limit: none of this is verified. Scroll feel is a thing you have in your
+hand or you do not have at all. The gate enforces the declarations, not the sensation.
+
+---
+
 ## 2026-09-29 — SUBPAGE-TYPE-SCALE-01, part 2 · a role that lives only in a stylesheet
 
 **Dev.** Sub-page subtitles now come from the same owner the titles do.
