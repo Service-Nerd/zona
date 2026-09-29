@@ -710,12 +710,10 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   forgotten.** New: `MICRO-LABEL-CHIPS-01` (16 chips governed by no check) and
   `BUTTON-GEOMETRY-SPREAD-01` (the geometry harness cannot see through a spread, so every
   wave shrinks its population). `backlog.md`.
-- ⚙️ `DASHBOARD-HARNESS-01` — **`DASHBOARD-SCREEN-EXTRACT-04` finished the extraction:
-  14 of 14 screens out, DashboardClient 14,447 → 7,155 (−50.5%), 60 of 60 blocks proved
-  byte-identical.** What remains is a **`Plan` fixture** so the five big screens
-  (`TodayScreen`, `SessionPopupInner`, `MeScreen`, `CoachTeaser`, `OrientationScreen`) can
-  be mounted on `/copy-preview`. ⚠️ **They are renderable in principle and unrendered in
-  fact.** Detail in `backlog.md`.
+- ✅ `DASHBOARD-HARNESS-01` — **SHIPPED**, completing `DASHBOARD-SCREEN-EXTRACT-04`. All **14 of 14** extracted screens render on
+  `/copy-preview` from a **generated** Plan fixture (real production input → real engine
+  → `validatePlan()`), guarded against drift. ⚠️ **Signed out, so data regions show empty
+  states**; it proves layout and copy, not anything needing a session.
 - ⚙️ `ME-SCREEN-CONTRACT-01` — **LATER.** `MeScreen` has ~40 props and no contract, because
   it is a function inside `DashboardClient.tsx` rather than its own module. Only the
   navigation surface is documented. Same root as the item below. `backlog.md`.

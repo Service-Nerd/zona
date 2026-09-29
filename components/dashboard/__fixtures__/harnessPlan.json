@@ -1,0 +1,1146 @@
+{
+  "meta": {
+    "athlete": "",
+    "handle": "",
+    "race_name": "",
+    "race_date": "2026-11-18",
+    "race_distance_km": 21.1,
+    "charity": "",
+    "plan_start": "2026-08-17",
+    "quit_date": "",
+    "resting_hr": 72,
+    "max_hr": 178,
+    "zone2_ceiling": 146,
+    "version": "2.0",
+    "last_updated": "2026-09-29",
+    "notes": "Standard plan — 21.1km, 14 weeks",
+    "primary_metric": "distance",
+    "fitness_level": "beginner",
+    "peak_km_target": 38,
+    "quality_pool_sizes": [
+      6,
+      6,
+      8,
+      7,
+      7,
+      2,
+      2
+    ],
+    "fitness_intensity_level": "intermediate",
+    "fitness_signal_note": "Your race benchmark and your training volume point to different levels (beginner on benchmark, intermediate on volume). The plan uses the more cautious of the two for how much you run, and the less cautious for how hard — building volume is where injuries come from, holding back intensity is where progress is lost.",
+    "foundation_weeks_planned": 0,
+    "goal": "finish",
+    "days_available": 3,
+    "hard_session_relationship": "love",
+    "terrain": "mixed",
+    "generated_at": "2026-09-29T13:52:51.600Z",
+    "generator_version": "2.0",
+    "generator_input": {
+      "age": 43,
+      "goal": "finish",
+      "max_hr": 178,
+      "terrain": "mixed",
+      "benchmark": {
+        "time": "0:29:00",
+        "type": "race",
+        "distance_km": 5,
+        "benchmark_date": "2026-06-30"
+      },
+      "race_date": "2026-11-18",
+      "resting_hr": 72,
+      "training_age": "<6mo",
+      "days_available": 3,
+      "race_distance_km": 21.1,
+      "current_weekly_km": 30,
+      "days_cannot_train": [
+        "tue",
+        "sun"
+      ],
+      "longest_recent_run_km": 12,
+      "preferred_long_run_day": "sat",
+      "hard_session_relationship": "love"
+    },
+    "tier": "trial",
+    "time_compressed": false,
+    "volume_constrained": false,
+    "compressed": false,
+    "compression_classification": "optimal",
+    "difficulty_band": "comfortable",
+    "volume_profile": "maintenance",
+    "volume_constraint_note": "Your weekly volume is already where this distance wants it, so this plan sharpens rather than builds. Your weekly mileage holds steady across this plan rather than climbing into the final weeks. Your biggest week comes earlier in the block, not at the end. The gains here come from the quality sessions, not from more miles. If you want it to build instead: run 4 days a week instead of 3.",
+    "terrain_effort_note": "Off-road, let effort and HR lead — the pace targets are a road reference, not a number to chase.",
+    "hard_pref_note": "You said you like hard sessions. The plan earns longer peak runs and more intensity as your training history deepens — not before your legs have proven they will take it.",
+    "age": 43,
+    "vdot": 32.1,
+    "vdot_training_anchor": 30.2,
+    "vdot_discount_applied_pct": 6,
+    "recalibration_weeks": [
+      4,
+      8
+    ],
+    "benchmark": {
+      "time": "0:29:00",
+      "type": "race",
+      "distance_km": 5,
+      "benchmark_date": "2026-06-30"
+    },
+    "training_age": "<6mo",
+    "hr_zone_method": "karvonen",
+    "hr_estimated_max": 178,
+    "hr_derived_max": 178,
+    "prep_time_status": "ok",
+    "prep_time_weeks_available": 13,
+    "prep_time_weeks_required_ok": 12,
+    "days_available_status": "ok",
+    "days_required_ok": 3
+  },
+  "phases": [
+    {
+      "name": "base",
+      "start_week": 1,
+      "end_week": 5
+    },
+    {
+      "name": "build",
+      "start_week": 6,
+      "end_week": 9
+    },
+    {
+      "name": "peak",
+      "start_week": 10,
+      "end_week": 11
+    },
+    {
+      "name": "taper",
+      "start_week": 12,
+      "end_week": 14
+    }
+  ],
+  "weeks": [
+    {
+      "n": 1,
+      "date": "2026-08-17",
+      "label": "Base — easy start",
+      "theme": "HR discipline. Slower than feels right. That is correct.",
+      "type": "normal",
+      "phase": "base",
+      "sessions": {
+        "sat": {
+          "id": "w1-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 12.5,
+          "duration_mins": 100,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run"
+        },
+        "wed": {
+          "id": "w1-wed",
+          "type": "easy",
+          "label": "Easy run — Zone 2",
+          "detail": null,
+          "distance_km": 10,
+          "duration_mins": 80,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4
+        },
+        "mon": {
+          "id": "w1-mon",
+          "type": "easy",
+          "label": "Easy run — Zone 2",
+          "detail": null,
+          "distance_km": 10,
+          "duration_mins": 80,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4
+        }
+      },
+      "long_run_hrs": 1.7,
+      "weekly_km": 33
+    },
+    {
+      "n": 2,
+      "date": "2026-08-24",
+      "label": "Base — building consistency",
+      "theme": "HR discipline. Slower than feels right. That is correct.",
+      "type": "normal",
+      "phase": "base",
+      "sessions": {
+        "sat": {
+          "id": "w2-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 13,
+          "duration_mins": 104,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run"
+        },
+        "wed": {
+          "id": "w2-wed",
+          "type": "easy",
+          "label": "Easy run — Zone 2",
+          "detail": null,
+          "distance_km": 10,
+          "duration_mins": 80,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4
+        },
+        "mon": {
+          "id": "w2-mon",
+          "type": "easy",
+          "label": "Easy run — Zone 2",
+          "detail": null,
+          "distance_km": 10,
+          "duration_mins": 80,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4
+        }
+      },
+      "long_run_hrs": 1.7,
+      "weekly_km": 33
+    },
+    {
+      "n": 3,
+      "date": "2026-08-31",
+      "label": "Base — aerobic development",
+      "theme": "HR discipline. Slower than feels right. That is correct.",
+      "type": "normal",
+      "phase": "base",
+      "sessions": {
+        "sat": {
+          "id": "w3-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 14.5,
+          "duration_mins": 116,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run"
+        },
+        "wed": {
+          "id": "w3-wed",
+          "type": "easy",
+          "label": "Easy run + strides — Zone 2",
+          "detail": null,
+          "distance_km": 11.5,
+          "duration_mins": 92,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
+        },
+        "mon": {
+          "id": "w3-mon",
+          "type": "easy",
+          "label": "Easy run — Zone 2",
+          "detail": null,
+          "distance_km": 11.5,
+          "duration_mins": 92,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4
+        }
+      },
+      "long_run_hrs": 1.9,
+      "weekly_km": 38
+    },
+    {
+      "n": 4,
+      "date": "2026-09-07",
+      "label": "Base — recovery + benchmark",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "type": "deload",
+      "phase": "base",
+      "badge": "deload",
+      "sessions": {
+        "sat": {
+          "id": "w4-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 10,
+          "duration_mins": 80,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run"
+        },
+        "wed": {
+          "id": "w4-wed",
+          "type": "hard",
+          "label": "5K time trial",
+          "detail": null,
+          "distance_km": 5,
+          "duration_mins": 33,
+          "primary_metric": "distance",
+          "zone": "Zone 4–5",
+          "rpe_target": 9,
+          "coach_notes": [
+            "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
+            "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
+            "A parkrun counts. So does a solo effort — just make it honest."
+          ]
+        },
+        "mon": {
+          "id": "w4-mon",
+          "type": "easy",
+          "label": "Easy run — Zone 2",
+          "detail": null,
+          "distance_km": 8,
+          "duration_mins": 64,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4
+        }
+      },
+      "long_run_hrs": 1.3,
+      "weekly_km": 23
+    },
+    {
+      "n": 5,
+      "date": "2026-09-14",
+      "label": "Base — aerobic discipline",
+      "theme": "HR discipline. Slower than feels right. That is correct.",
+      "type": "normal",
+      "phase": "base",
+      "sessions": {
+        "sat": {
+          "id": "w5-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 14.5,
+          "duration_mins": 116,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run"
+        },
+        "wed": {
+          "id": "w5-wed",
+          "type": "easy",
+          "label": "Easy run + strides — Zone 2",
+          "detail": null,
+          "distance_km": 11.5,
+          "duration_mins": 92,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
+        },
+        "mon": {
+          "id": "w5-mon",
+          "type": "easy",
+          "label": "Easy run — Zone 2",
+          "detail": null,
+          "distance_km": 11.5,
+          "duration_mins": 92,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4
+        }
+      },
+      "long_run_hrs": 1.9,
+      "weekly_km": 38
+    },
+    {
+      "n": 6,
+      "date": "2026-09-21",
+      "label": "Build — first quality session",
+      "theme": "One quality session. Everything else stays easy.",
+      "type": "normal",
+      "phase": "build",
+      "sessions": {
+        "sat": {
+          "id": "w6-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 16.5,
+          "duration_mins": 132,
+          "primary_metric": "duration",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run",
+          "coach_notes": [
+            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace."
+          ],
+          "duration_anchored": true
+        },
+        "wed": {
+          "id": "w6-wed",
+          "type": "quality",
+          "label": "Continuous tempo",
+          "detail": null,
+          "stimulus": "tempo",
+          "distance_km": 5,
+          "duration_mins": 37,
+          "primary_metric": "distance",
+          "zone": "Zone 3",
+          "hr_target": "146–157 bpm",
+          "pace_target": "6:22–6:40 /km",
+          "rpe_target": 7,
+          "coach_notes": [
+            "Sustainable. Same pace at the end as at the start.",
+            "Controlled effort — if you can’t say a short sentence, you’ve drifted into the grey zone."
+          ],
+          "catalogue_id": "tempo_continuous",
+          "derived_set": {
+            "version": 2,
+            "blocks": [
+              {
+                "repeat": 1,
+                "label": "sustained",
+                "steps": [
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "18 min",
+                    "pace": "6:22–6:40 /km",
+                    "pace_mode": "target",
+                    "advance": "auto",
+                    "note": "Sustainable. Same pace at the end as at the start."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "mon": {
+          "id": "w6-mon",
+          "type": "easy",
+          "label": "Easy run + strides — Zone 2",
+          "detail": null,
+          "distance_km": 13,
+          "duration_mins": 104,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
+        }
+      },
+      "long_run_hrs": 2.2,
+      "weekly_km": 35
+    },
+    {
+      "n": 7,
+      "date": "2026-09-28",
+      "label": "Build — extending the work",
+      "theme": "One quality session. Everything else stays easy.",
+      "type": "normal",
+      "phase": "build",
+      "sessions": {
+        "sat": {
+          "id": "w7-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 16.5,
+          "duration_mins": 132,
+          "primary_metric": "duration",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run",
+          "coach_notes": [
+            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace."
+          ],
+          "duration_anchored": true
+        },
+        "wed": {
+          "id": "w7-wed",
+          "type": "quality",
+          "label": "Cruise intervals",
+          "detail": null,
+          "stimulus": "tempo",
+          "distance_km": 6,
+          "duration_mins": 43,
+          "primary_metric": "distance",
+          "zone": "Zone 3",
+          "hr_target": "146–157 bpm",
+          "pace_target": "6:24–6:39 /km",
+          "rpe_target": 7,
+          "coach_notes": [
+            "Rep three is the test. Not rep one."
+          ],
+          "catalogue_id": "tempo_cruise",
+          "derived_set": {
+            "version": 2,
+            "blocks": [
+              {
+                "repeat": 2,
+                "label": "reps",
+                "steps": [
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "10 min",
+                    "pace": "6:22–6:40 /km",
+                    "pace_mode": "target",
+                    "advance": "auto",
+                    "note": "Threshold effort — comfortably hard, not a race pace."
+                  },
+                  {
+                    "role": "recovery",
+                    "modality": "jog",
+                    "length": "2 min",
+                    "pace": "7:18–8:40 /km",
+                    "pace_mode": "ceiling",
+                    "advance": "auto",
+                    "note": "Two minutes jog. Full recovery before the next rep."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "mon": {
+          "id": "w7-mon",
+          "type": "easy",
+          "label": "Easy run + strides — Zone 2",
+          "detail": null,
+          "distance_km": 13,
+          "duration_mins": 104,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
+        }
+      },
+      "long_run_hrs": 2.2,
+      "weekly_km": 36
+    },
+    {
+      "n": 8,
+      "date": "2026-10-05",
+      "label": "Build — recovery + benchmark",
+      "theme": "Deload week. One hard effort in the middle — log the result and your zones refresh for the next block.",
+      "type": "deload",
+      "phase": "build",
+      "badge": "deload",
+      "sessions": {
+        "sat": {
+          "id": "w8-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 10.5,
+          "duration_mins": 84,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run"
+        },
+        "wed": {
+          "id": "w8-wed",
+          "type": "hard",
+          "label": "5K time trial",
+          "detail": null,
+          "distance_km": 5,
+          "duration_mins": 33,
+          "primary_metric": "distance",
+          "zone": "Zone 4–5",
+          "rpe_target": 9,
+          "coach_notes": [
+            "Warm up easy for 10 minutes, then 5 km as hard as you can hold. Cool down easy.",
+            "This is a measurement, not a session. Log the time when you're done and you'll get the option to rebuild your paces around it.",
+            "A parkrun counts. So does a solo effort — just make it honest."
+          ]
+        },
+        "mon": {
+          "id": "w8-mon",
+          "type": "easy",
+          "label": "Easy run — Zone 2",
+          "detail": null,
+          "distance_km": 8,
+          "duration_mins": 64,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4
+        }
+      },
+      "long_run_hrs": 1.4,
+      "weekly_km": 24
+    },
+    {
+      "n": 9,
+      "date": "2026-10-12",
+      "label": "Build — holding the work",
+      "theme": "One quality session. Everything else stays easy.",
+      "type": "normal",
+      "phase": "build",
+      "sessions": {
+        "sat": {
+          "id": "w9-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 16.5,
+          "duration_mins": 132,
+          "primary_metric": "duration",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run",
+          "coach_notes": [
+            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace."
+          ],
+          "duration_anchored": true
+        },
+        "wed": {
+          "id": "w9-wed",
+          "type": "quality",
+          "label": "Progressive tempo",
+          "detail": null,
+          "stimulus": "tempo",
+          "distance_km": 6,
+          "duration_mins": 43,
+          "primary_metric": "distance",
+          "zone": "Zone 3",
+          "hr_target": "146–157 bpm",
+          "pace_target": "6:22–6:40 /km",
+          "rpe_target": 7,
+          "coach_notes": [
+            "Hold back early. Finish honest."
+          ],
+          "catalogue_id": "progressive_tempo",
+          "derived_set": {
+            "version": 2,
+            "blocks": [
+              {
+                "repeat": 1,
+                "label": "progression",
+                "steps": [
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "8 min",
+                    "pace": "7:18–8:40 /km",
+                    "pace_mode": "ceiling",
+                    "advance": "auto",
+                    "note": "Hold back. This is the part that makes the last third honest."
+                  },
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "8 min",
+                    "pace": null,
+                    "zone": "Z2-Z3",
+                    "advance": "auto",
+                    "note": "Let it rise. Don’t chase it."
+                  },
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "8 min",
+                    "pace": "6:22–6:40 /km",
+                    "pace_mode": "target",
+                    "advance": "auto",
+                    "note": "Threshold now. Same effort as rep three of a cruise set."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "mon": {
+          "id": "w9-mon",
+          "type": "easy",
+          "label": "Easy run + strides — Zone 2",
+          "detail": null,
+          "distance_km": 13,
+          "duration_mins": 104,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
+        }
+      },
+      "long_run_hrs": 2.2,
+      "weekly_km": 36,
+      "tune_up_callout": "Optional: drop a parkrun PB or local 5K this week. Use the result as a fitness check, not a race effort."
+    },
+    {
+      "n": 10,
+      "date": "2026-10-19",
+      "label": "Peak — consistency",
+      "theme": "Consistency. The work is the volume.",
+      "type": "normal",
+      "phase": "peak",
+      "sessions": {
+        "sat": {
+          "id": "w10-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 16.5,
+          "duration_mins": 132,
+          "primary_metric": "duration",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run",
+          "coach_notes": [
+            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it."
+          ],
+          "duration_anchored": true
+        },
+        "wed": {
+          "id": "w10-wed",
+          "type": "quality",
+          "label": "Over-unders",
+          "detail": null,
+          "distance_km": 6,
+          "duration_mins": 43,
+          "primary_metric": "distance",
+          "zone": "Zone 3",
+          "hr_target": "146–157 bpm",
+          "pace_target": "6:16–6:31 /km",
+          "rpe_target": 7,
+          "coach_notes": [
+            "The under is not the rest. That is the whole point of it."
+          ],
+          "catalogue_id": "tempo_over_under",
+          "derived_set": {
+            "version": 2,
+            "blocks": [
+              {
+                "repeat": 3,
+                "label": "reps",
+                "steps": [
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "3 min",
+                    "pace": "6:09–6:22 /km",
+                    "pace_mode": "target",
+                    "advance": "auto",
+                    "note": "The over — just past threshold. A gear change, not a surge."
+                  },
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "3 min",
+                    "pace": "6:22–6:40 /km",
+                    "pace_mode": "target",
+                    "advance": "auto",
+                    "note": "The under — back to threshold without stopping. This half is the session."
+                  },
+                  {
+                    "role": "recovery",
+                    "modality": "jog",
+                    "length": "2 min",
+                    "pace": "7:18–8:40 /km",
+                    "pace_mode": "ceiling",
+                    "advance": "auto",
+                    "note": "Two minutes easy before the next block."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "mon": {
+          "id": "w10-mon",
+          "type": "easy",
+          "label": "Easy run + strides — Zone 2",
+          "detail": null,
+          "distance_km": 13,
+          "duration_mins": 104,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
+        }
+      },
+      "long_run_hrs": 2.2,
+      "weekly_km": 36
+    },
+    {
+      "n": 11,
+      "date": "2026-10-26",
+      "label": "Peak — holding the volume",
+      "theme": "Consistency. The work is the volume.",
+      "type": "normal",
+      "phase": "peak",
+      "sessions": {
+        "sat": {
+          "id": "w11-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 16.5,
+          "duration_mins": 132,
+          "primary_metric": "duration",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run",
+          "coach_notes": [
+            "Time on feet is the point — walk breaks are fine and do not undo it. Finishing this feeling steady matters more than the pace.",
+            "Long enough that fuelling matters. Practise what you plan to use on race day, and start before you feel you need it."
+          ],
+          "duration_anchored": true
+        },
+        "wed": {
+          "id": "w11-wed",
+          "type": "quality",
+          "label": "Mile repeats",
+          "detail": null,
+          "distance_km": 6,
+          "duration_mins": 43,
+          "primary_metric": "distance",
+          "zone": "Zone 3",
+          "hr_target": "146–157 bpm",
+          "pace_target": "6:24–6:39 /km",
+          "rpe_target": 7,
+          "coach_notes": [
+            "No hiding in this one. Same pace on the last rep or the block has not worked."
+          ],
+          "catalogue_id": "threshold_mile_repeats",
+          "derived_set": {
+            "version": 2,
+            "blocks": [
+              {
+                "repeat": 2,
+                "label": "reps",
+                "steps": [
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "1600 m",
+                    "pace": "6:22–6:40 /km",
+                    "pace_mode": "target",
+                    "advance": "auto",
+                    "note": "Threshold, held. Rep three should look like rep one."
+                  },
+                  {
+                    "role": "recovery",
+                    "modality": "jog",
+                    "length": "1:30",
+                    "pace": "7:18–8:40 /km",
+                    "pace_mode": "ceiling",
+                    "advance": "auto",
+                    "note": "90 seconds. Deliberately short — clearance, not recovery."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "mon": {
+          "id": "w11-mon",
+          "type": "easy",
+          "label": "Easy run + strides — Zone 2",
+          "detail": null,
+          "distance_km": 13,
+          "duration_mins": 104,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
+        }
+      },
+      "long_run_hrs": 2.2,
+      "weekly_km": 36
+    },
+    {
+      "n": 12,
+      "date": "2026-11-02",
+      "label": "Taper — trust the work",
+      "theme": "Volume drops. Intensity stays. Trust the work you have done.",
+      "type": "normal",
+      "phase": "taper",
+      "sessions": {
+        "sat": {
+          "id": "w12-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 14.5,
+          "duration_mins": 116,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run"
+        },
+        "wed": {
+          "id": "w12-wed",
+          "type": "quality",
+          "label": "Continuous tempo",
+          "detail": null,
+          "stimulus": "tempo",
+          "distance_km": 5,
+          "duration_mins": 37,
+          "primary_metric": "distance",
+          "zone": "Zone 3",
+          "hr_target": "146–157 bpm",
+          "pace_target": "6:22–6:40 /km",
+          "rpe_target": 7,
+          "coach_notes": [
+            "Sustainable. Same pace at the end as at the start."
+          ],
+          "catalogue_id": "tempo_continuous",
+          "derived_set": {
+            "version": 2,
+            "blocks": [
+              {
+                "repeat": 1,
+                "label": "sustained",
+                "steps": [
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "18 min",
+                    "pace": "6:22–6:40 /km",
+                    "pace_mode": "target",
+                    "advance": "auto",
+                    "note": "Sustainable. Same pace at the end as at the start."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "mon": {
+          "id": "w12-mon",
+          "type": "easy",
+          "label": "Easy run + strides — Zone 2",
+          "detail": null,
+          "distance_km": 11.5,
+          "duration_mins": 92,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between.",
+            "Three week taper. Long enough for adaptation to consolidate without losing sharpness. Intensity stays, volume drops."
+          ]
+        }
+      },
+      "long_run_hrs": 1.9,
+      "weekly_km": 31
+    },
+    {
+      "n": 13,
+      "date": "2026-11-09",
+      "label": "Taper — sharpening",
+      "theme": "Volume drops. Intensity stays. Trust the work you have done.",
+      "type": "normal",
+      "phase": "taper",
+      "sessions": {
+        "sat": {
+          "id": "w13-sat",
+          "type": "easy",
+          "label": "Long run — Zone 2",
+          "detail": null,
+          "distance_km": 11.5,
+          "duration_mins": 92,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "role": "long_run"
+        },
+        "wed": {
+          "id": "w13-wed",
+          "type": "quality",
+          "label": "Progressive tempo",
+          "detail": null,
+          "stimulus": "tempo",
+          "distance_km": 5.5,
+          "duration_mins": 39,
+          "primary_metric": "distance",
+          "zone": "Zone 3",
+          "hr_target": "146–157 bpm",
+          "pace_target": "6:22–6:40 /km",
+          "rpe_target": 7,
+          "coach_notes": [
+            "Hold back early. Finish honest."
+          ],
+          "catalogue_id": "progressive_tempo",
+          "derived_set": {
+            "version": 2,
+            "blocks": [
+              {
+                "repeat": 1,
+                "label": "progression",
+                "steps": [
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "6:40",
+                    "pace": "7:18–8:40 /km",
+                    "pace_mode": "ceiling",
+                    "advance": "auto",
+                    "note": "Hold back. This is the part that makes the last third honest."
+                  },
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "6:40",
+                    "pace": null,
+                    "zone": "Z2-Z3",
+                    "advance": "auto",
+                    "note": "Let it rise. Don’t chase it."
+                  },
+                  {
+                    "role": "work",
+                    "modality": "run",
+                    "length": "6:40",
+                    "pace": "6:22–6:40 /km",
+                    "pace_mode": "target",
+                    "advance": "auto",
+                    "note": "Threshold now. Same effort as rep three of a cruise set."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "mon": {
+          "id": "w13-mon",
+          "type": "easy",
+          "label": "Easy run + strides — Zone 2",
+          "detail": null,
+          "distance_km": 9,
+          "duration_mins": 72,
+          "primary_metric": "distance",
+          "zone": "Zone 2",
+          "hr_target": "< 146 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 4,
+          "coach_notes": [
+            "4×20s strides at 5K effort, full recovery between."
+          ]
+        }
+      },
+      "long_run_hrs": 1.5,
+      "weekly_km": 26
+    },
+    {
+      "n": 14,
+      "date": "2026-11-16",
+      "label": "Race week",
+      "theme": "The work is done. Arrive rested.",
+      "type": "race",
+      "phase": "taper",
+      "badge": "race",
+      "sessions": {
+        "wed": {
+          "id": "w14-wed",
+          "type": "race",
+          "label": "Race day — 21.1 km",
+          "detail": null,
+          "distance_km": 21.1,
+          "primary_metric": "distance",
+          "coach_notes": [
+            "Start slower than feels right. First 2.5 km at Zone 2.",
+            "No new shoes, no new food."
+          ]
+        },
+        "mon": {
+          "id": "w14-mon",
+          "type": "easy",
+          "label": "Easy shakeout",
+          "detail": null,
+          "distance_km": 4.5,
+          "duration_mins": 35,
+          "primary_metric": "distance",
+          "zone": "Zone 1",
+          "hr_target": "< 136 bpm",
+          "pace_target": "7:18–8:40 /km",
+          "rpe_target": 2,
+          "coach_notes": [
+            "Short and relaxed. Wake the legs, nothing more.",
+            "4×100m strides at 5K effort, full recovery between."
+          ],
+          "role": "shakeout"
+        }
+      },
+      "long_run_hrs": null,
+      "weekly_km": 5,
+      "race_notes": "Race day. Start at Zone 2. The second half is where the race begins."
+    }
+  ]
+}

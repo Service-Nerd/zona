@@ -812,15 +812,42 @@ but only 9 are mounted on `/copy-preview`. `TodayScreen`, `SessionPopupInner`, `
 `CoachTeaser` and `OrientationScreen` take large prop sets or a `Plan`, so **they are now
 renderable in principle and unrendered in fact.** Filed `DASHBOARD-HARNESS-01`.
 
-#### 🔴 `DASHBOARD-HARNESS-01` — mount the five big screens on the harness
+#### ✅ `DASHBOARD-HARNESS-01` — SHIPPED 2026-09-29. **All 14 screens render.**
 
-🧭 **DESIGN BOARD** if it changes what is shown; ⚙️ NO BOARD for fixtures alone.
+⚙️ **NO BOARD** — a fixture and a dev-only harness; no shipped surface changes.
 
-The extraction made them importable. Five still need a **`Plan` fixture** and a realistic
-prop set before anything can look at them: `TodayScreen`, `SessionPopupInner`, `MeScreen`,
-`CoachTeaser`, `OrientationScreen`. ⚠️ **Until this lands, "can you check it renders?" still
-has a partial answer** — and 3 rewritten sentences from `NOEMDASH-JSX-TEXT-01` remain
-unverified for exactly this reason.
+✅ **`TodayScreen`, `SessionPopupInner`, `MeScreen`, `CoachTeaser` and `OrientationScreen`
+are mounted on `/copy-preview` and rendering real content** (614–1,738px of it each,
+measured in the DOM, not eyeballed). **14 of 14 screens in `components/dashboard/` are now
+renderable outside a signed-in session.**
+
+🔴 **THE FIXTURE IS GENERATED, NOT WRITTEN, AND THAT IS THE WHOLE POINT.** This repo's
+recorded defect is `'Shin splints'` hand-typed where the product emits `'shin_splints'` — a
+test passing against a plan no engine would produce. `scripts/build-harness-fixture.ts`
+takes a **REAL production input** from `real-inputs.json` (already the corpus the property
+sweep trusts), generates with the real engine at the case's **captured `plan_start`, not the
+wall clock** (the `TEST-CLOCK-PREPTIME-01` rot), and **runs `validatePlan()` before writing**.
+Result: a real 14-week half-marathon plan, **0 violations**.
+
+✅ **Guarded so it cannot become a photograph.** `harnessPlan.test.ts` re-derives the plan
+and compares; when the engine legitimately changes, it goes red and the fix is one command.
+⚠️ **`meta.generated_at` is stripped from the COMPARISON, never from the fixture** —
+`verify:parity` records this exact field reporting all 2,592 plans as changed. Stripping it
+from the stored JSON would make the fixture something the engine never emitted, which is the
+defect the file exists to prevent. **4 arms, 2 falsified** (a hand-edit goes red; a gutted
+plan goes red). 🔴 **The first falsification DID NOT APPLY** — it mutated a `tue` session
+on a 3-day-a-week plan. **A mutation that does not apply proves nothing.**
+
+🔴 **AND THE HARNESS CONTRADICTED ITSELF ON FIRST RENDER:** `TodayScreen` showed *"Week 3"*
+beside `CoachTeaser`'s *"W7 of 14"* — same runner, two weeks, because one derives the week
+from the plan's dates and the other took the index I typed. **A harness that contradicts
+itself teaches the wrong thing about the product.** The index is now derived; both read
+Week 7.
+
+⚠️ **WHAT IT STILL DOES NOT DO, said plainly:** the harness runs **signed out**, so every
+data-backed region shows its empty or error state (23 console 401s, expected, not React
+errors). It proves layout, copy and composition. **It does not prove anything that needs a
+session, and nothing has still ever run on a device.**
 
 #### ✅ `NOEMDASH-JSX-TEXT-01` — SHIPPED 2026-09-29. The guard now reads JSX text
 

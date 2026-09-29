@@ -6,6 +6,40 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — DASHBOARD-HARNESS-01 · the fixture had to be generated, not written
+
+**Dev.** All fourteen extracted screens now render on the dev harness. The five biggest
+needed a Plan, which is why they were importable-but-invisible after the extraction.
+
+**The honest bit.** The obvious move was to hand-write a Plan object, and it would have
+been wrong in a way that takes months to notice. This repo already has the scar: someone
+typed `'Shin splints'` where the product emits `'shin_splints'`, and a test passed happily
+against a plan no engine would ever produce. A harness built on invented data shows you a
+screen the runner will never see, which is worse than showing nothing, because it looks
+like evidence.
+
+So the fixture is generated: a real production input from the corpus the property sweep
+already trusts, run through the real engine at the case's captured plan start rather than
+the wall clock, and validated before it is written. Fourteen weeks, zero violations.
+
+**AI-building.** A generated fixture is still a photograph, so it needed a guard that
+re-derives the plan and compares. That immediately failed on `meta.generated_at`, which is
+the field `verify:parity` already records as having made it report all 2,592 plans as
+changed. The tempting fix is to strip it from the stored JSON. That would make the fixture
+something the engine never emitted, which is the exact defect the file exists to prevent,
+so it is stripped from the comparison instead.
+
+My first falsification didn't apply: I mutated a Tuesday session on a plan that runs three
+days a week and has no Tuesday. Second time today that a mutation silently did nothing and
+the test "passed".
+
+**Product.** The harness contradicted itself the moment it rendered. TodayScreen said
+"Week 3" while CoachTeaser said "W7 of 14" — the same runner, two different weeks, because
+one derives the week from the plan's dates and the other took the index I typed. Deriving
+it fixed both. And the thing I have to keep saying: this runs signed out, so every
+data-backed region shows an empty state. It proves layout and copy. It proves nothing that
+needs a session, and nothing has still run on a device.
+
 ## 2026-09-29 — DASHBOARD-SCREEN-EXTRACT-04 · two rules that failed silently, and one that asserts
 
 **Dev.** The last two screens are out. Fourteen of fourteen, and DashboardClient is half the
