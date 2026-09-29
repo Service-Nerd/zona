@@ -34,10 +34,8 @@ export default function FaqScreen({ onBack, onContact }: FaqScreenProps) {
         <div style={{ ...MICRO_LABELS.sectionLabel, color: 'var(--mute)', marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)' }}>
           {FAQ_TITLE}
         </div>
-        <div style={{
-          fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600,
-          color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3,
-        }}>
+        {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
+        <div className="screen-header__title">
           {FAQ_SUBTITLE}
         </div>
       </PinnedBackHeader>

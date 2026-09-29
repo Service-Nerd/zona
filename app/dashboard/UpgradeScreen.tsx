@@ -232,10 +232,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
           justifyContent: 'center', marginBottom: 'var(--space-5)',
           fontSize: '26px',
         }}>✓</div>
-        <h1 style={{
-          fontFamily: 'var(--font-brand)', fontWeight: 700,
-          fontSize: '1.5rem', color: 'var(--ink)', margin: 0,
-        }}>You&rsquo;re in.</h1>
+{/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
+        <h1 className="screen-header__title" style={{ margin: 0 }}>You&rsquo;re in.</h1>
         <p style={{
           fontFamily: 'var(--font-ui)', fontSize: '0.9375rem',
           color: 'var(--mute)', margin: '10px 0 0', lineHeight: 1.5,
@@ -290,12 +288,8 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
 
       <div style={{ flex: 1, padding: '28px 20px 32px', display: 'flex', flexDirection: 'column' }}>
         {/* Headline */}
-        <h1 style={{
-          fontFamily: 'var(--font-brand)',
-          fontWeight: 700, fontSize: '1.75rem',
-          color: 'var(--text-primary)', margin: 0,
-          lineHeight: 1.15,
-        }}>
+{/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
+        <h1 className="screen-header__title" style={{ margin: 0, lineHeight: 1.15 }}>
           {headline}
         </h1>
         <p style={{

@@ -484,7 +484,8 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
                  padding: '16px 16px 8px', zIndex: Z_LAYERS.screenHeader }}
       >
         <BackButton onClick={onBack} />
-        <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
+        {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
+        <div className="screen-header__title">
           Delete your account
         </div>
       </div>
@@ -617,7 +618,9 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
           Your training
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 'var(--space-5)' }}>
+        {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner.
+            It HAND-COPIED these exact values: right value, wrong mechanism. */}
+        <div className="screen-header__title" style={{ marginBottom: 'var(--space-5)' }}>
           Plan history
         </div>
         </div>

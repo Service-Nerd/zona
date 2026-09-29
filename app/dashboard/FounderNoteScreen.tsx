@@ -43,12 +43,8 @@ export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* Lead — single sentence, larger, sets up the problem in plain language. */}
-        <p style={{
-          fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 700,
-          color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3,
-          maxWidth: '360px',
-          margin: '0 0 24px',
-        }}>
+        {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
+        <p className="screen-header__title" style={{ margin: 0 }}>
           {FOUNDER_STORY.opener}
         </p>
 

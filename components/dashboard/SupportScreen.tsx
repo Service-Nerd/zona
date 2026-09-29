@@ -89,7 +89,8 @@ export default function SupportScreen({ onBack, email, hasPaidAccess, trialDaysL
                  padding: '16px 16px 8px', zIndex: Z_LAYERS.screenHeader }}
       >
         <BackButton onClick={onBack} />
-        <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
+        {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
+        <div className="screen-header__title">
           Contact support
         </div>
       </div>

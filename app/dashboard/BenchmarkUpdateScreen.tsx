@@ -202,7 +202,8 @@ export default function BenchmarkUpdateScreen({
           moved on. */}
       <PinnedBackHeader onClick={onBack} padding="16px 16px 0">
         <div style={{ margin: 'var(--space-4) 0 var(--space-6)' }}>
-          <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', marginBottom: 'var(--space-2)' }}>
+          {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
+          <div className="screen-header__title" style={{ marginBottom: 'var(--space-2)' }}>
             Update pace targets.
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--mute)', lineHeight: 1.55 }}>

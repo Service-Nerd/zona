@@ -97,11 +97,8 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
             }}>
               You&rsquo;re in
             </div>
-            <h1 style={{
-              fontFamily: 'var(--font-brand)', fontSize: '28px', fontWeight: 800,
-              color: 'var(--ink)', letterSpacing: '-0.5px', lineHeight: 1.2,
-              margin: '0 0 14px',
-            }}>
+            {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
+            <h1 className="screen-header__title" style={{ lineHeight: 1.2, margin: '0 0 14px' }}>
               Full access, unlocked.
             </h1>
             <p style={{
@@ -137,11 +134,8 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
             }}>
               Charity access
             </div>
-            <h1 style={{
-              fontFamily: 'var(--font-brand)', fontSize: '28px', fontWeight: 800,
-              color: 'var(--ink)', letterSpacing: '-0.5px', lineHeight: 1.2,
-              margin: '0 0 14px',
-            }}>
+            {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
+            <h1 className="screen-header__title" style={{ lineHeight: 1.2, margin: '0 0 14px' }}>
               Got a code?
             </h1>
             <p style={{

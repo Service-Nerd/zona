@@ -3999,7 +3999,9 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
           Plan adjustment
         </div>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 'var(--space-2)' }}>
+        {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner.
+            It HAND-COPIED these exact values: right value, wrong mechanism. */}
+        <div className="screen-header__title" style={{ marginBottom: 'var(--space-2)' }}>
           Reshape plan
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: 'var(--space-6)' }}>
