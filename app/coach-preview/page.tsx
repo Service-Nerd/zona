@@ -172,10 +172,32 @@ export default function CoachPreviewPage() {
         <p style={{ fontSize: '12px', color: 'var(--mute)', margin: '10px 0 0' }}>
           One card. Word and image, one eyeful. Compare against the two bordered boxes that shipped.
         </p>
+
+        {/* 🔴 NOEMDASH-JSX-TEXT-01 — THE TWO STATES THIS HARNESS DID NOT MOUNT.
+            This page's own header says it is where `ZoneRings` and `TrendCard` get
+            checked, and it carried `state: 'live'` only: no locked rings, no pending
+            trend. So the one copy line in each of those branches had never been rendered
+            by anything, which is how an em dash survived in both. A harness with a short
+            population is the same defect as a test with one, and it is quieter. */}
+        <div style={{ marginTop: '28px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+            Locked (free tier)
+          </div>
+          <ZoneRings state="locked" />
+        </div>
       </div>
 
       {/* ── Trend card: labels, and the line between the numbers ────────── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '420px', marginBottom: '28px' }}>
+        {/* 🔴 The pending state, which nothing mounted. Its explanation sheet carries
+            the "at least a 4 bpm shift" sentence — one of the 35 the em-dash guard could
+            not see, and it had never been rendered. Tap the card to open the sheet. */}
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+            Pending (paid, not enough data) — tap for the sheet
+          </div>
+          <TrendCard state="pending" />
+        </div>
         {TREND_CASES.map(({ title, note, props }) => (
           <div key={title}>
             <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
