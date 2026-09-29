@@ -6,6 +6,38 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — PTR-SUBPAGE-01 · the rule was right and the world moved under it
+
+**Dev.** Pull-to-refresh no longer fires on the Me sub-pages. It should never have been
+there: none of them has anything to refresh.
+
+**The honest bit.** The gate turning the gesture on listed four screens and carried a comment
+explaining exactly why detail screens are excluded. That comment is still true and was never
+wrong. What happened is that a later change introduced a second way to navigate — doors inside
+the Me screen — and on all eight of them the screen identifier stays `me`. So every one of
+them inherited a gesture the rule had explicitly reasoned them out of. He named four of the
+eight in a single sentence, which is a better bug report than anything my checks produced.
+
+This is the second time tonight the same shape has bitten: a default only ever overridden by
+the callers it could not hurt, and now a rule written against an axis that later stopped being
+the only one. In both cases nothing was wrong when written and nothing went red when it became
+wrong.
+
+**AI-building.** Fixing it made a test fail that had nothing to do with the nav, and that turned
+out to be the more interesting finding. There is an arm called "the nav renders on exactly the
+four screens it has tabs for". It located its subject by searching for the first line
+containing a particular fragment — and exactly one line in that 7,000-line file contains it,
+which is the pull-to-refresh gate. So the arm has spent its entire life asserting a completely
+different expression, and passed because the two lists happened to be identical. I only found
+out because I reformatted the line it was secretly reading.
+
+Worse, its premise was wrong as well. The nav does not have a four-screen expression at all; it
+renders by default and is removed by early returns. So the check could never have done what its
+name said, even pointed at the right place. It now asserts the inverse, which is a thing that
+actually exists.
+
+---
+
 ## 2026-09-29 — STICKY-TRANSFORM-01 · every screen in the app sat inside a containing block
 
 **Dev.** Pinned headers should actually pin now. They were not pinning on his phone, on any
