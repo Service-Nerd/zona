@@ -16,6 +16,8 @@ import { useState } from 'react'
 import { notFound } from 'next/navigation'
 import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/components/shared/PreferencesScreen'
 import ActionRow from '@/components/shared/ActionRow'
+import { SectionLabel } from '@/components/shared/SectionLabel'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { HEART_RATE_TITLE, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB,
   CONNECTIONS_TITLE, connectionsSubtitle, ME_SECTION_ORDER } from '@/components/shared/meDoors'
 
@@ -31,6 +33,27 @@ export default function PreferencesPreview() {
 
         {/* ME-ORDER-01 — every state of the Connections subtitle, which is the one
             string on the index that can LIE. `undefined` must render no subtitle at all. */}
+        {/* MICRO-LABEL-DRIFT-01 — the three roles, rendered. ⚠️ THIS PAGE IS ALSO THE
+            PROOF OF THE FIX: `SectionLabel` could not be imported before (it was a local
+            function inside `DashboardClient`), which is exactly why `PlanCalendar` wrote
+            its own. That it can appear here at all is the defect being closed. */}
+        <div style={{ padding: '0 16px 24px' }}>
+          <SectionLabel>Section label</SectionLabel>
+          <SectionLabel right="trailing value">With a trailing value</SectionLabel>
+          <div style={{ marginTop: 'var(--space-4)', background: 'var(--card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--line)', padding: '16px' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', color: 'var(--mute)', ...MICRO_LABELS.eyebrow }}>Eyebrow, inside a card</div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '15px', color: 'var(--ink)', marginTop: '4px' }}>The thing it captions</div>
+            <div style={{ display: 'flex', gap: 'var(--space-5)', marginTop: 'var(--space-3)' }}>
+              {[['Planned', '8 km'], ['Actual', '8.2 km']].map(([l, v]) => (
+                <div key={l}>
+                  <div style={{ fontFamily: 'var(--font-ui)', color: 'var(--mute)', ...MICRO_LABELS.dataLabel }}>{l}</div>
+                  <div style={{ fontFamily: 'var(--font-ui)', fontSize: '17px', fontWeight: 700, color: 'var(--ink)' }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div style={{ padding: '0 16px 24px' }}>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Connections, all four states

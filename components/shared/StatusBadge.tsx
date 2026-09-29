@@ -20,18 +20,14 @@
 // spreads.** `MICRO-LABEL-DRIFT-01` carries the rest.
 
 import type { CSSProperties } from 'react'
+import { MICRO_LABELS } from './microLabels'
 
 /**
  * The documented micro-label (`ui-patterns.md` § type table, "Section label").
  * ⚠️ These four values are the amendment. Changing any of them here changes every
  * status badge in the product, which is the point — and needs the board.
  */
-export const MICRO_LABEL = {
-  fontSize: '10px',
-  fontWeight: 700,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-} as const
+export const MICRO_LABEL = MICRO_LABELS.eyebrow
 
 /** `held` = the runner has access. `none` = they do not. ⚠️ TWO values, never five. */
 export type StatusTone = 'held' | 'none'

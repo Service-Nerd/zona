@@ -2736,6 +2736,48 @@ Contained-track toggle for 2–4 mutually-exclusive options. One idiom for login
 <SegmentedControl value={units} onChange={setUnits} options={[{value:'km',label:'KM'},{value:'mi',label:'MI'}]} />
 ```
 
+### Micro-labels — there are THREE, and exactly three (MICRO-LABEL-DRIFT-01)
+
+A micro-label is small tracked type. **Tracking is what makes it a label rather than body
+text**, and it is the definition the gate uses.
+
+| role | job | values | owner |
+|---|---|---|---|
+| **Section label** | a screen-level heading: `Your training`, `Setup`, `Careful Now` | **12px / 600 / 0.1em / uppercase** | `SectionLabel` |
+| **Eyebrow** | a caption inside a card: `Effort (RPE)`, `Goal race` | **10px / 700 / 0.08em / uppercase** | `MICRO_LABELS.eyebrow` |
+| **Data label** | names a value in a metric pair: `Planned`, `Actual` | **9px / 700 / 0.1em / uppercase** | `MICRO_LABELS.dataLabel` |
+
+🔴 **MEASURED BEFORE THE RULING: 171 micro-labels, 37 files, 41 distinct combinations**,
+against **one** documented value. And the documented value matched **none** of the three
+things implementing it — `SectionLabel` was 12px/none/0.1em, `PlanSectionLabel` 11px/700/0.12em.
+**The rule and the implementation had never met**, which is the `--surface-moss-wash` trap
+at the type layer. Precedent: *"the doc/component ground mismatch is a DEFECT"* (wave 1).
+
+⚠️ **SIX LABEL TEXTS RENDERED AT DIFFERENT VALUES, AND THAT IS WHAT KILLED EVERY ROLE
+DEFENCE.** *"After the race"* at 10px and 11px. *"Hold the zone"* at 10px and 11px.
+**`optional` FOUR ways.** Same word, same job, four hands.
+
+### 🔴 11px is not a level
+
+Every 11px micro-label resolves to one of the three above. Silvanto: *"a difference too
+small to read as hierarchy and too large to be nothing"* — the 1.02× step again.
+
+### ⚠️ The doc was COMPLETED, not corrected
+
+The documented value **is** the eyebrow and did not move. It described one level of a
+three-level hierarchy, so `SectionLabel`'s 12px was never a regression against it — it was
+a level the rule had not named. **That is why the veto was declined**, and the condition
+under which it would have been used is on the record: *any proposal that widened the doc
+to accommodate the existing 41.*
+
+### The register
+
+`microLabel.test.ts` holds non-conforming micro-labels as a **non-growing register**
+(`SWEEP-BASELINE-01` pattern) with an arm that fails when debt is paid and the number is
+not lowered. ⚠️ **It makes the debt visible and stops it growing. It does not make it
+shrink**, and the ruling shipped *"the vocabulary, not the migration"* — a 37-file sweep
+is not reviewable (Wroblewski).
+
 ### StatusBadge (`components/shared/StatusBadge.tsx`) — TIER-BADGE-01
 
 **The one micro-label that reports a STATE.** Not a control and not a selection.

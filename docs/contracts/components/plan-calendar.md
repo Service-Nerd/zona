@@ -86,6 +86,22 @@ and so showed km to a miles runner.
 
 ## Rendering Contract
 
+### Section labels (MICRO-LABEL-DRIFT-01, 2026-09-29)
+
+The `Past / Now / Next / Later` group headings use the **shared** `SectionLabel`
+(`components/shared/SectionLabel.tsx`), with its `right` slot for the trailing value.
+
+🔴 **They used to be `PlanSectionLabel`, a local function in this file, at 11px/700/0.12em.**
+It existed for one reason: `SectionLabel` was itself a local function inside
+`DashboardClient` and **could not be imported**. Two section labels, two type values, one
+cause. Fourth recorded instance of that trap in this codebase.
+
+⚠️ **Visible delta, named rather than absorbed:** those four labels moved **11px → 12px**
+and **0.12em → 0.1em**, and the trailing value moved to the eyebrow role
+(10px/700/0.08em). That is the convergence the ruling asked for, not an accident.
+**11px is not a level** — every 11px micro-label resolves to one of the three roles.
+
+
 - Past weeks are collapsed behind a "Load N past weeks" button. Shown when tapped.
 - Its three moss controls ("Load N past weeks", the move-confirm and the abandon-move bar) render
   through `Button` (`variant="primary"` / `"soft"`), not hand-rolled styles — `BUTTON-COMPONENT-01`,

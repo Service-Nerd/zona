@@ -3491,3 +3491,82 @@ number, not their receipt."* ⚠️ And **23 of 29 runners cannot reach it**: th
 **The 36-combination drift** — named, measured, filed as `MICRO-LABEL-DRIFT-01`, **not
 fixed**, and the app still has no type-scale check of any kind. Nor the founder's wow
 moment, which Sierra puts at the ledger reaching 1. **Nothing seen on a device.**
+
+---
+
+## MICRO-LABEL-DRIFT-01 — 2026-09-29 — **SHIP WITH AMENDMENT** (the vocabulary, not the migration)
+
+**Founder:** *"Now do the micro label drift."*
+
+### 📐 Measured, by bounding each enclosing style object rather than grepping a window
+
+**171 micro-labels, 37 files, 41 distinct combinations**, against **one** documented value.
+The documented value was the single largest group (45 uses, 26%) — **so convergence was
+the fix, not redefinition**, and the filing's fear of "widening the doc to whatever is most
+common" turned out not to apply.
+
+🔴 **The doc matched NONE of the three things implementing it:**
+
+| source | size | weight | tracking |
+|---|---|---|---|
+| `ui-patterns.md` § type table | 10px | 700 | 0.08em |
+| `SectionLabel` (local fn) | **12px** | **none (inherits 400)** | **0.1em** |
+| `PlanSectionLabel` (local fn) | **11px** | 700 | **0.12em** |
+
+⚠️ **Six label TEXTS rendered at different values** — *"After the race"* at 10px and 11px,
+**`optional` four ways.** Same word, same job. **No role argument survives that.**
+
+🔴 **`SectionLabel` was a LOCAL FUNCTION — the fourth instance of the trap.** `PlanCalendar`
+needed one, could not import it, wrote its own. The comment directly above the old function
+was itself about a previous incident of the same class. Collins: *"this codebase makes it
+easier to retype a style than to import a component, and until `components/shared/` is the
+obvious first place to look, instance five is already written."*
+
+### ⚖️ The ruling
+
+**THREE roles, because three jobs were measured** — section label (12/600/0.1em), eyebrow
+(10/700/0.08em, **the documented value, unchanged**), data label (9/700/0.1em).
+**11px is not a level.** Collins, who leads taxonomy collapse and checked himself:
+*"Three named levels is a system. Forty-one is a habit."*
+
+**The doc is COMPLETED, not corrected.** ⛔ Silvanto **declined the veto** on the grounds
+that the documented rule was *incomplete, not violated* — a 12px section label cannot
+regress a rule that never named that level — and recorded the condition under which he
+would have used it.
+
+**`SectionLabel` is now a shared component; `PlanSectionLabel` is gone.**
+
+### ⚠️ Two visible deltas, both named rather than absorbed
+
+1. **`SectionLabel` weight 400 → 600.** It set no weight and inherited (measured: no `body`
+   rule in `globals.css`). Silvanto ruled that *"an accident, not a decision"*.
+   🔴 **Size stayed 12px, so nothing reflows** — Wroblewski's condition was about reflow,
+   and a weight change is a restyle.
+2. **`PlanCalendar`'s four labels: 11px → 12px, 0.12em → 0.1em.** The convergence the
+   ruling asked for.
+
+### 🔴 The register moved before it was written, and the reason is recorded
+
+**The board was told 116. The true figure is 132.** Neither number is wrong: the sitting
+measurement scanned **≤11px**, which was correct for *"how much drift is there?"* — and the
+ruling then **created a 12px role**, so every 12px tracked label entered the population it
+governs. **The denominator moved because the ruling moved it.** A baseline taken before a
+ruling cannot be assumed valid after it.
+
+### 📦 Artifacts
+
+1. **Pattern** — `ui-patterns.md` § Micro-labels.
+2. **Constant** — `MICRO_LABELS` (three entries, closed); `StatusBadge`'s `MICRO_LABEL`
+   folded into `.eyebrow`.
+3. **Mechanical check** — `microLabel.test.ts`, **10 arms, 6 falsified**, derived population
+   with an empty-population arm, register at **132** and falling-only.
+4. **Verified by computed CSS** on `/preferences-preview`: 12/600/1.2px · 10/700/0.8px ·
+   9/700/0.9px. ⚠️ **That page is also the proof of the fix** — `SectionLabel` could not be
+   imported before, which is precisely why a second copy existed.
+
+### ⚠️ What this does not settle
+
+**132 non-conforming uses remain**, 69 of them in `DashboardClient`. This ships the
+vocabulary and a register that can only fall. **Wave 1 is named and scheduled, not filed**
+(Collins' condition). **Nothing seen on a device** — which is why zero-reflow was a
+condition rather than a preference.

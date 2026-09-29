@@ -122,6 +122,7 @@ import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
 import { StatusBadge } from '@/components/shared/StatusBadge'
+import { SectionLabel } from '@/components/shared/SectionLabel'
 import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/components/shared/PreferencesScreen'
 import { CONNECTIONS_TITLE, connectionsSubtitle, HEART_RATE_TITLE, HEART_RATE_SUB, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
 import { Chevron } from '@/components/shared/Chevron'
@@ -3871,13 +3872,9 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
 
 // ── Section label ─────────────────────────────────────────────────────────
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', padding: '0 16px', marginBottom: 'var(--space-2)', marginTop: 'var(--space-5)' }}>
-      {children}
-    </div>
-  )
-}
+// ✅ MICRO-LABEL-DRIFT-01 — the local function is gone. It lived here, unimportable, for
+// long enough that `PlanCalendar` wrote its own at different values. Now
+// `components/shared/SectionLabel.tsx`, imported above; the 8 call sites are unchanged.
 
 // ── Card wrapper ──────────────────────────────────────────────────────────
 

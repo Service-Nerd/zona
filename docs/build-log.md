@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — MICRO-LABEL-DRIFT-01 · one documented value, forty-one in the code, and the doc matched none of them
+**Shipped:** Three named micro-label roles, a shared SectionLabel, and a register that can only fall.
+**Dev learning:** The app had **171 small tracked labels in 41 different combinations**, and `ui-patterns.md` documented exactly one. The part I did not expect: the documented value matched **none** of the three components actually implementing section labels. The doc said 10px/700/0.08em; one component ran 12px with no weight at all, another ran 11px/700/0.12em. **The rule and the implementation had never met** — same shape as the ground-token defect this board ruled months ago.
+**Product/creator learning:** My instinct was to collapse everything to one value. Measuring stopped me: a screen-level heading, a caption inside a card and a label on a number are three different jobs, and flattening them would have made every screen harder to scan. **Three levels is a hierarchy. Forty-one is a habit.** The interesting bit is that the doc was not *wrong*, it was *incomplete* — it described one level of a three-level system, which is why a 12px section label was never a regression against it.
+**AI-building learning:** Six label **texts** rendered at different values — "After the race" at both 10px and 11px, and the word `optional` **four different ways**. That is what ended the argument. You cannot defend four treatments of one word as a design decision; it is four people, or one person on four days.
+**The honest bit:** I gave the board a baseline of 116 and the real number is **132**, and neither figure is wrong. I measured labels at ≤11px, which was the right population for "how much drift is there?". Then the ruling **created a 12px role**, and every 12px tracked label instantly joined the population it governs. **The denominator moved because the ruling moved it.** I have written a note about denominators before; this is the first time the ruling itself was the cause.
+**Also:** the shared component is a fourth instance of the same trap — a style written as a local function, another file needing it, unable to import it, retyping it. Collins put it best: until `components/shared/` is the obvious first place to look, instance five is already written.
+**Hook material:** The style guide documented one label. The code had forty-one. The guide matched none of them.
+**Postable?:** yes
+
 ## 2026-09-29 — TIER-BADGE-01 · he asked for colour and the measurement found a lie
 **Shipped:** A status badge on Me that tells five kinds of access apart instead of three.
 **Dev learning:** He asked whether we could "sing about" the Pro label and add colour by subscription type. The honest answer turned out to be that **the screen could not tell subscription types apart at all**. Three strings for five states, so a charity-comped runner, an admin and a paying subscriber all read the same word. Five hundred Make-A-Wish runners get codes this week. The value that would fix it was already sitting one component up, unpassed.

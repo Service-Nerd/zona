@@ -1,5 +1,6 @@
 'use client'
 
+import { SectionLabel } from '@/components/shared/SectionLabel'
 import React, { useState } from 'react'
 import type { Week, Session } from '@/types/plan'
 import type { DerivedSet } from '@/lib/plan/resolveMainSet'
@@ -276,7 +277,7 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
       {pastWeeks.length > 0 && (
         showPast ? (
           <>
-            <PlanSectionLabel>Past</PlanSectionLabel>
+            <SectionLabel>Past</SectionLabel>
             {pastWeeks.map(w => renderStrip(w, true))}
             <button onClick={() => setShowPast(false)} style={loadMoreStyle}>↑ Hide past weeks</button>
           </>
@@ -289,21 +290,21 @@ export default function PlanCalendar({ weeks, allOverrides, allCompletions, onOv
       {currentWeek && (
         <>
           {maintBoundaryIdx === 0 && <MaintSeam />}
-          <PlanSectionLabel>Now</PlanSectionLabel>
+          <SectionLabel>Now</SectionLabel>
           {renderWeek(currentWeek)}
         </>
       )}
       {nextWeek && (
         <>
           {maintBoundaryIdx === 1 && <MaintSeam />}
-          <PlanSectionLabel>Next</PlanSectionLabel>
+          <SectionLabel>Next</SectionLabel>
           {renderWeek(nextWeek)}
         </>
       )}
       {laterWeeks.length > 0 && (
         <>
           {maintBoundaryIdx === 2 && <MaintSeam />}
-          <PlanSectionLabel right={`${laterWeeks.length} week${laterWeeks.length !== 1 ? 's' : ''}`}>Later</PlanSectionLabel>
+          <SectionLabel right={`${laterWeeks.length} week${laterWeeks.length !== 1 ? 's' : ''}`}>Later</SectionLabel>
           {laterWeeks.map((w, j) => {
             // Boundary can also fall deeper inside Later (race + first maint weeks
             // still in Now/Next). Combined index of this later week is j + 2.
@@ -383,27 +384,15 @@ function MaintSeam() {
   )
 }
 
-/** Section label between week groups (Past / Now / Next / Later).
- *  Pattern: 11px 700 mute uppercase 0.12em letter-spacing. */
-function PlanSectionLabel({ children, right }: { children: React.ReactNode; right?: string }) {
-  return (
-    <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-      padding: '0 4px', marginTop: '18px',
-    }}>
-      <span style={{
-        fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
-        color: 'var(--mute)', letterSpacing: '0.12em', textTransform: 'uppercase',
-      }}>{children}</span>
-      {right && (
-        <span style={{
-          fontFamily: 'var(--font-ui)', fontSize: '10px',
-          color: 'var(--mute)', letterSpacing: '0.04em',
-        }}>{right}</span>
-      )}
-    </div>
-  )
-}
+// ✅ MICRO-LABEL-DRIFT-01 — `PlanSectionLabel` is gone. It existed ONLY because
+// `SectionLabel` was a local function inside `DashboardClient` and could not be imported,
+// so this file wrote its own at 11px/700/0.12em against the other's 12px/none/0.1em.
+// 🔴 11px IS NOT A LEVEL (Design Board): every 11px micro-label resolves to one of the
+// three roles, and this one is a section label. Now the shared component.
+// ⚠️ VISIBLE DELTA, NAMED: 11px → 12px and 0.12em → 0.1em on four labels
+// (Past / Now / Next / Later), plus the trailing value moving to the eyebrow role.
+// This is a convergence the ruling asked for, not an accident.
+
 
 function WeekCard({ week, weekNum, completions, overrides, onSessionTap, onMove, onSwap, units, preferredMetric, sessionMetricOverrides }: {
   week: Week; weekNum: number; completions: Completion[]; overrides: { week_n: number; original_day: string; new_day: string }[]

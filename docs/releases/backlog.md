@@ -535,40 +535,38 @@ say whether the Coach teaser converts better than the Me screen, which is the qu
 
 ## ⚖️ FILED 2026-09-29 — `MICRO-LABEL-DRIFT-01`
 
-### 🟡 `MICRO-LABEL-DRIFT-01` — 36 micro-label combinations against one documented value
+### 🔄 `MICRO-LABEL-DRIFT-01` — **VOCABULARY SHIPPED 2026-09-29, migration open**
 
-🧭 **DESIGN BOARD.** Named and measured at the `TIER-CHIP-01` sitting and deliberately
-NOT fixed there; the ruling says it needs its own item and the founder asked for it filed.
+🧭 **DESIGN BOARD — ruled, SHIP WITH AMENDMENT: "the vocabulary, not the migration."**
 
-**Measured** across every tracked `.tsx` under `components/` and `app/`, by size + weight +
-tracking:
+✅ **Shipped:** three named roles in `MICRO_LABELS` (section label 12/600/0.1em · eyebrow
+10/700/0.08em · data label 9/700/0.1em), `SectionLabel` promoted from a local function to a
+shared component, `PlanSectionLabel` folded in, and `microLabel.test.ts` holding the debt as
+a **non-growing register with a falling arm**.
 
-> **36 distinct combinations across 171 uses.** `ui-patterns.md` documents **one**:
-> *Section label, `--font-ui`, 700, 10px uppercase 0.08em.* The documented value accounts
-> for 44 uses directly, plus 20 where the regex did not capture the weight — so **at most
-> 64 of 171 conform, and at least 107 do not.**
+🔴 **STILL OPEN: 132 non-conforming micro-labels.** The register makes the debt visible and
+stops it growing; **it does not make it shrink, and this line is the only thing scheduling
+that.**
 
-🔴 **AND NOTHING CHECKS IT.** `typeScale.test.ts` lives in `lib/marketing/` and governs
-the marketing site only. **The app has no type-scale check of any kind.** Same split this
-repo already recorded for the em-dash guard, where the doctrine, the doc and the check
-disagreed three ways for months.
+#### Wave 1 — NAMED AND SCHEDULED (Collins' condition: scheduled, not filed)
 
-⚠️ **This is the app's version of the finding Silvanto caught on the website** — 170
-hand-typed sizes with an H1:H2 step of 1.02×, neither visible by looking. It was caught
-there because someone measured. Here it was caught because a new component had to choose a
-value and the question *"which one is correct?"* had 36 answers.
+**`DashboardClient.tsx`, 69 of the 132.** One file, one reviewable diff, and the largest
+single concentration. Method: each label classified into one of the three roles, converted
+to `MICRO_LABELS.<role>`, and **the register lowered in the same commit** — the arm fails
+otherwise.
 
-**Two known-good exemptions to carry forward, already declared in
-`statusBadge.markup.test.ts`:**
-- `components/marketing/PhoneFrame.tsx` — a mockup of iOS chrome at mockup scale, already
-  exempted for that reason in `typeScale.test.ts`.
-- The **eyebrow** family (`This week`, `Mon · Week 3`) — an eyebrow labels a REGION, a badge
-  reports a STATE. Different jobs; the drift work must decide whether they share a scale.
+⚠️ **Wroblewski's condition binds every wave:** a 37-file sweep is not reviewable, and any
+size change is a **reflow** on screens nobody has seen on a device. Convert to the role the
+label already belongs to; where converting would change a size, **say so in the commit and
+show it rendered** before landing it.
 
-**Scope when picked up:** a canonical set (probably eyebrow + badge, not one), a token or
-constant per role, an app-side check with a declared debt register, and the 107 converted
-in waves rather than a sweep. ⚠️ **Do not "fix" this by widening the documented value to
-whatever is most common** — that ratifies the drift and calls it a decision.
+#### Waves 2+ (not scheduled)
+`PlanCalendar` 7 · `StravaPanel` 5 · `ReflectionInput` 4 · `BenchmarkUpdateScreen` 3 ·
+`GeneratePlanScreen` 3 · `FounderNoteScreen` 2 · `RedeemCodeScreen` 2 · the long tail.
+
+#### Declared exemption
+`components/marketing/**` — mockups of iOS chrome at mockup scale, already exempted for
+that reason in `lib/marketing/typeScale.test.ts`.
 
 ---
 
