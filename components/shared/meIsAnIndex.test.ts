@@ -79,8 +79,12 @@ const DOORS = () => {
  * ⚠️ LOWER THESE AS BLOCKS BECOME DOORS. Never raise one.
  */
 const INLINE_BASELINE = {
-  /** `<button>` written by hand rather than reached through a pattern. */
-  rawButtons: 4,
+  /** `<button>` written by hand rather than reached through a pattern.
+   *  4 → 3 (FAQ-01, 2026-09-29): the Support contact row was hand-rolled and became
+   *  `ActionRow` when the FAQ row was added beside it. Leaving it would have shipped
+   *  two rows doing the same job looking different — `ACTION-ROW-01`'s own recorded
+   *  failure, and the twin was in the block being edited. */
+  rawButtons: 3,
   /** Toggles and switches sitting directly on the index.
    *  🔴 THE SITTING WAS TOLD **5** AND THE REAL FIGURE IS **2**. My evidence used
    *  `grep -cE 'Toggle|Switch|role="switch"'` — a LINE count with a wider pattern, which

@@ -539,6 +539,23 @@ Copy left, product right, at the site width; collapses to one column below ~420p
 
 Native `<details>`/`<summary>` — zero-JS, server-rendered, keyboard-accessible; no new interaction model. Marker reset lives in `globals.css` (`summary::-webkit-details-marker`); the `+` affordance rotates to `×` on open. Dry brand voice, prices from `PRICING`.
 
+**FAQ-01 (2026-09-29): the same markup now runs in the app, and the CONTENT has one owner.**
+`lib/faq.ts` is the single source of every question-and-answer pair; `FaqScreen` and
+`/support` render it and never declare one. Two exclusions are declared in the gate:
+`charity-runners` (code-specific entries, and the source the cleared claims were lifted
+from) and `plans.ts`'s `extraFaqs` (bound to one plan's landing page).
+
+⚠️ **The `+` → `×` rotation lives in `globals.css`**
+(`details[open] > summary > span[aria-hidden]`), so the marker must be a **direct
+`aria-hidden` span child of `summary`**. No class, no local rule.
+🔴 **And it is measured over a frame, not at `t=0`** — reading the computed transform
+immediately after setting `open` returns the identity matrix mid-transition, which reads
+as a broken marker. Nearly filed as a defect against working code.
+
+⚠️ **NO `FAQPage` JSON-LD on new surfaces.** Google retired FAQPage rich results in
+**May 2026**; we already ship the dead schema in two places (`SEO-SCHEMA-STALE-01`).
+Adding more is surface area that reads to the next person as an SEO win.
+
 ---
 
 ## Component Patterns

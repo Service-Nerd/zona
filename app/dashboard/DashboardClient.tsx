@@ -121,6 +121,7 @@ import { RecalibrationReadyTile, RecalibrationEntryScreen } from './Recalibratio
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import ActionRow from '@/components/shared/ActionRow'
+import FaqScreen, { FAQ_TITLE, FAQ_SUBTITLE } from '@/components/shared/FaqScreen'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SectionLabel } from '@/components/shared/SectionLabel'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
@@ -12131,7 +12132,7 @@ function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitCon
   recentChanges?: any[]
 }) {
   const signOut = useSignOut()
-  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'heart-rate' | 'plan-adjustments' | 'connections' | 'quit' | 'delete-account' | 'support' | 'plan-history'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'heart-rate' | 'plan-adjustments' | 'connections' | 'quit' | 'delete-account' | 'support' | 'faq' | 'plan-history'>('main')
 
   // ⚠️ BEFORE THE EARLY RETURNS. `MeScreen` returns early for every door, so a hook placed
   //   below one is a conditional hook — the React error 310 this repo has already shipped once.
@@ -12202,6 +12203,11 @@ function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitCon
   if (activeSection === 'quit')           return <QuitTab    quitDays={quitDays} raceDistanceKm={raceDistKm} onBack={() => setActiveSection('main')} />
   if (activeSection === 'delete-account') return <DeleteAccountScreen onBack={() => setActiveSection('main')} />
   if (activeSection === 'support')        return <SupportScreen onBack={() => setActiveSection('main')} email={profileEmail} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} />
+  // FAQ-01 — a door, exactly as ME-DOORS-01 defines one: the union gains a member and
+  // nothing else changes. `onContact` hands off to the contact screen rather than
+  // dead-ending, and it returns to the INDEX on back, not to the FAQ, because the
+  // runner who reached support through the FAQ has finished with the FAQ.
+  if (activeSection === 'faq')            return <FaqScreen onBack={() => setActiveSection('main')} onContact={() => setActiveSection('support')} />
   if (activeSection === 'plan-history')   return <PlanHistoryScreen onBack={() => setActiveSection('main')} />
   // ME-DOORS-01 — the first door off the index. `activeSection` ALREADY is the door
   // mechanism (quit / delete-account / support / plan-history all use it), so this
@@ -12818,21 +12824,31 @@ function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitCon
             style={{ alignSelf: 'center', marginTop: 'var(--space-4)' }} />
         )}
 
-        {/* ── Support — in-app contact (FREE; SUPPORT-01) ──────── */}
+        {/* ── Support — questions first, then contact (FREE; SUPPORT-01 + FAQ-01) ──
+            ⚠️ THE CONTACT ROW WAS HAND-ROLLED and is now `ActionRow`, because adding a
+            second row beside it would otherwise have shipped two rows doing the same job
+            looking different. That is `ACTION-ROW-01`'s own recorded failure ("the remedy
+            was applied to one twin"), and the twin was right here.
+            🔴 Its subtitle also carried an EM DASH in a sentence the runner reads. The
+            app guard could not see it: `noEmDashApp.test.ts` scans STRING LITERALS and
+            this was JSX text. Filed as `NOEMDASH-JSX-TEXT-01` (56 candidates); fixed here
+            only because this row was being rewritten anyway. */}
         <SectionLabel>Support</SectionLabel>
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-          <button
+          {/* FAQ first: a runner with a question should meet the answer before the
+              contact form. Sierra's condition at the FAQ-01 sitting was that the list
+              stays a defect log — see `shouldBeObviousOn` in `lib/faq.ts`. */}
+          <ActionRow
+            title={FAQ_TITLE}
+            subtitle={FAQ_SUBTITLE}
+            onClick={() => setActiveSection('faq')}
+            divider
+          />
+          <ActionRow
+            title="Something broken? Tell us."
+            subtitle="Email support, and a real person reads it."
             onClick={() => setActiveSection('support')}
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
-          >
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.4, marginBottom: '2px' }}>Something broken? Tell us.</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', lineHeight: 1.5 }}>
-                Email support — a real person reads it.
-              </div>
-            </div>
-            <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
-          </button>
+          />
           {/* ── P-14(a): THE PASSIVE REVIEW ROW ──────────────────────────
               We had NEITHER half of this: no passive row, no native prompt, no
               plugin — `requestReview` / `SKStoreReview` returned zero hits

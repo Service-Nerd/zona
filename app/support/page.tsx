@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { BRAND } from '@/lib/brand'
+import { WEB_FAQS } from '@/lib/faq'
 import { pageMetadata } from '@/lib/marketing/siteMeta'
 import { SiteHeader } from '@/components/marketing/SiteHeader'
 import { SiteFooter } from '@/components/marketing/SiteFooter'
@@ -93,6 +94,50 @@ export default function SupportPage() {
           <P>You can delete your account and all associated data from the Profile screen in the app. If you would like a copy of your data first, email me and I will send it.</P>
           <SubHead>Sign-in trouble</SubHead>
           <P>{BRAND.name} signs you in with Apple or Google. If you cannot get in, email <A href="mailto:support@zonna.run">support@zonna.run</A> from the address linked to your account and I will help you recover access.</P>
+        </DocSection>
+
+        {/* FAQ-01 — training questions, as disclosure (ui-patterns.md § FAQ disclosure:
+            native <details>/<summary>, zero-JS, the `+` rotating to `×` via globals.css).
+            ⚠️ PRODUCT-SCOPED ONLY. The account answers stay in the prose sections above, because
+            a single page carrying two answers to "how do I cancel" is the drift `lib/faq.ts`
+            was written to prevent, and it would have reappeared inside the fix for it.
+            ⚠️ NO FAQPage JSON-LD, against the obvious instinct: Google retired FAQPage rich
+            results in May 2026, so it earns nothing and reads to the next person as an SEO
+            win. We already ship that dead schema in two places (SEO-SCHEMA-STALE-01). */}
+        <DocSection title="Common questions">
+          <div style={{
+            border: '1px solid var(--border-col)', borderRadius: 'var(--radius-lg)',
+            background: 'var(--card-bg)', overflow: 'hidden', marginTop: '8px',
+          }}>
+            {WEB_FAQS.map((f, i) => (
+              <details key={f.q} style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border-col)' }}>
+                <summary style={{
+                  listStyle: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: '12px', padding: '15px 18px', minHeight: '44px', boxSizing: 'border-box',
+                  fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', fontWeight: 500,
+                  color: 'var(--text-primary)', lineHeight: 1.4,
+                }}>
+                  <span>{f.q}</span>
+                  {/* 🔴 NO HAND-TYPED SIZE. The first cut set `fontSize: '18px'` and
+                      `typeScale.test.ts` caught it within the hour: a marketing surface may
+                      only use scale tokens. The marker INHERITS the summary's size, which
+                      is what the homepage and charity FAQs already do, so there is nothing
+                      to tokenise and nothing to drift. */}
+                  <span aria-hidden="true" style={{
+                    color: 'var(--text-secondary)', lineHeight: 1, flexShrink: 0,
+                  }}>+</span>
+                </summary>
+                <div style={{
+                  padding: '0 18px 16px',
+                  fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)',
+                  color: 'var(--text-secondary)', lineHeight: 1.7,
+                }}>
+                  {f.a}
+                </div>
+              </details>
+            ))}
+          </div>
         </DocSection>
 
         <DocSection title="Health & safety">

@@ -60,6 +60,25 @@ function walk(p: string): string[] {
 
 const files = Array.from(new Set(SURFACES.flatMap(walk))).filter(f => !MOCKUPS.includes(f))
 
+/** 🔴 COMMENTS ARE NOT CODE, AND THIS GATE READ THEM AS CODE until 2026-09-29.
+ *
+ *  A comment written to record the REMOVAL of a hand-typed size necessarily quotes the
+ *  value it removed, so `/support`'s note — "the first cut set `fontSize: '18px'`" —
+ *  failed the very rule it was documenting. The only way to pass was to describe the
+ *  fix without naming it, which makes the comment worse.
+ *
+ *  ⚠️ FIFTH INSTANCE OF THIS CLASS IN ONE WEEK, and the first in a gate nobody touched
+ *  that week: `design-guard` and `coaching-guard` both grepped whole commands, a Me-index
+ *  arm counted `<button` inside a comment, and a new FAQ arm's `indexOf` matched the
+ *  module header. **Bound the region, never grep the file.**
+ *
+ *  Blanking rather than deleting PRESERVES OFFSETS, so reported line numbers stay honest
+ *  — the same helper shape `noEmDashApp.test.ts` already uses. */
+const blankComments = (s: string) =>
+  s.replace(/\/\*[\s\S]*?\*\//g, m => ' '.repeat(m.length))
+   .replace(/\{\/\*[\s\S]*?\*\/\}/g, m => ' '.repeat(m.length))
+   .replace(/^\s*\/\/.*$/gm, m => ' '.repeat(m.length))
+
 describe('marketing type scale', () => {
   it('covers a real set of files (a gate over nothing is not a gate)', () => {
     expect(files.length).toBeGreaterThanOrEqual(14)
@@ -73,7 +92,7 @@ describe('marketing type scale', () => {
     const used = new Set<string>()
     const offenders: string[] = []
     for (const f of files) {
-      const src = fs.readFileSync(path.join(ROOT, f), 'utf8')
+      const src = blankComments(fs.readFileSync(path.join(ROOT, f), 'utf8'))
       src.split('\n').forEach((line, i) => {
         // A literal number or a bare clamp() where a token belongs.
         const raw = line.match(/fontSize:\s*'?(?:\d|clamp\()/)

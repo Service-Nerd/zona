@@ -6,6 +6,38 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — FAQ-01 · the page he asked for was the one thing I argued against
+
+**Dev.** The ask was a FAQ page plus a section in Support. The analysis said the page was
+the wrong half: Google retired FAQPage rich results in May 2026, so a new page earns no
+search lift, and it would have been the fourth place we keep FAQs. He took the alternative
+and we extended `/support` instead.
+
+**The honest bit.** My analysis said there were three FAQ sets. There were four. The gate I
+wrote to enforce single ownership found `plans.ts`, which carries per-plan `extraFaqs` in
+DATA rather than in a page, so no amount of looking at pages would have surfaced it. The
+check found the thing the analysis for the check had missed, which is the argument for
+writing the check first.
+
+**AI-building.** Three separate gates stopped this build and every one was right. The Me
+index register noticed I had paid down debt it still claimed. The marketing type scale
+caught a hand-typed `18px` on the disclosure marker. Then it caught my **comment** about
+removing the hand-typed `18px`, because the comment necessarily quotes the value — fifth
+comment-matching defect this week, and the first in a gate nobody had touched that week.
+The only way to pass without fixing the gate was to write a worse comment, so I fixed the
+gate.
+
+I also nearly filed a defect against working code. The `+` marker read as un-rotated, twice,
+because I was reading the computed transform mid-transition. Over a frame it is exactly
+45 degrees. The board's own note warns about this in both directions: a capture artefact
+read as a defect, and a defect dismissed as a capture artefact. I managed the first.
+
+**Product.** The part I care most about is Sierra's condition, which is now mechanical
+rather than a good intention. Every entry names the screen that should have made the
+question unnecessary, and a test fails if a product question omits it. So the FAQ reads as
+a list of places the interface did not explain itself. When a screen is fixed, its question
+leaves.
+
 ## 2026-09-29 — the ninth stamp, and the stale arm that closed its own register
 
 **Dev.** The password-reset page was the one brand stamp I could not convert — the sandbox
