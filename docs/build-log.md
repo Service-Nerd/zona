@@ -6,6 +6,44 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — ZONES-HR-SHEET-01 · yesterday's reasons, quoted at a proposal nobody had made
+
+**Dev.** The heart-rate form stopped being its own screen. It is now a sheet you open from
+inside the zones screen, over the table it changes.
+
+**Product.** The board ruled the opposite a day earlier: *the form stays on Me*. Re-reading
+that ruling with the founder's actual request in hand, three of its four reasons were about a
+different proposal. Two seats had argued against putting the form **on** the zones screen —
+density, relocated taps — and nobody was proposing that. A sheet is summoned and dismissed;
+that is disclosure, which is the exact thing the craft seat's lens is built on. The third
+reason, that the Apple Health button is "a connection action", was simply false: it reads two
+numbers into two fields and its own error string tells you to go and reconnect somewhere else.
+
+**The honest bit.** My brief to the board led with a collision between the no-popups rule and
+the sheet pattern. That collision had been settled seven days earlier by a ruling I had not
+read carefully enough. The mandatory settled-ground scan caught it before any seat spoke, for
+the third time this week. What the scan found instead was better and narrower: the rule names
+two categories, the product ships three, and of nine sheets **none** is the category the rule
+permits while five are the category it forbids. That is worth an amendment by name, not an
+exception.
+
+**AI-building.** Six registers went red and every one was right. Three were arms I had written
+minutes earlier — one matched my own explanatory comments, one was bounded by a character
+budget and broke the moment I wrote a long comment inside the region, and one could not see a
+file I had not staged. Each of those three is a class already recorded in this repo, and I
+reproduced all three in one sitting. The other three were older checks that tracked the door
+this ruling removed. A ruling's register row and the checks that enforce it are separate
+registers, and only one of them is ever on anybody's list.
+
+**What I could not do.** Verify it by looking. No sheet opens on either harness in this
+environment — a card that predates my changes fails too, the JS chunks 404 and nothing
+hydrates. The measurements I do have (240px, 33.6% of the ceiling, 5.44:1 behind the scrim)
+are layout and computed colour, which do not need hydration. Nothing has run on a device, so
+whether the panel covers the rows it is changing, and whether Save survives the keyboard, are
+open questions with a build condition attached rather than answers.
+
+---
+
 ## 2026-09-29 — BACK-ARROW-FLOAT-04 · the gate said "the rest are fine" and it had never looked
 
 **Dev.** Five more pushed screens float their back arrow; two more pin arrow-and-title as a
