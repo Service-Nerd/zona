@@ -6,6 +6,40 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — SUBPAGE-TYPE-SCALE-01 · the rule was written down and nothing read it
+
+**Dev.** Nine pushed screens now take their title from the documented role instead of
+hand-rolling one.
+
+**The honest bit, and it is about my own analysis rather than the code.** He asked for a full
+analysis of sub-page typography. I produced one, handed it over with confident numbers, and it
+was wrong in two ways that cancel out to something worse than silence.
+
+I told him one screen was "the only title in the product rendering at weight 400" and called it
+a defect rather than a preference. It is a tick mark inside a green circle. Not a title. And
+the same screen's real title was invisible to me, because my scan matched sizes written in
+pixels and that one is written in rem. So in a single screen I measured the wrong element and
+missed the right one, and reported both with numbers attached.
+
+The fix is not "be more careful". The new gate reads both units, because a unit a check cannot
+read is a screen it cannot see.
+
+**Product.** The interesting part is that there was never a decision to make. The type scale
+already says screen titles are 26px, weight 800, in the UI font. It has said so the whole time.
+Nine screens drifted anyway, because the check that enforces the scale covers the marketing site
+only. The app has never had one. That is the entire explanation, and it means this was a defect
+fix rather than a design question — no board, by the authority model's own rule.
+
+**AI-building.** The first cut of the new gate made exactly the mistake my analysis had: it
+flagged two prices and a VDOT as screen titles, because they are large. I was tempted by a
+clever discriminator — an interpolated value is data, literal text is a heading — and it is
+wrong, because one of the titles I had just converted is itself interpolated. A rule that is
+wrong in one direction is worse than a short list of named exceptions, so it is three declared
+entries with reasons and an arm that fails if one goes stale. Boring beats clever when the
+clever thing has a blind spot you can already name.
+
+---
+
 ## 2026-09-29 — PTR-SUBPAGE-01 · the rule was right and the world moved under it
 
 **Dev.** Pull-to-refresh no longer fires on the Me sub-pages. It should never have been
