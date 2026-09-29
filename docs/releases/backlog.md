@@ -660,6 +660,32 @@ which write the **canonical eyebrow** on aligned blocks — were counted as viol
 this register exists to prevent.** The blockers are now named per-label rather than as a
 single "needs a render".
 
+#### 🔴 `DASHBOARD-SCREEN-EXTRACT-01` — fourteen screens are local functions, so nothing can render them
+
+⚙️ **NO BOARD** — refactor with no behavioural or visible delta.
+
+**Measured 2026-09-29 while render-checking copy.** 19 of 35 rewritten sentences live in
+`DashboardClient.tsx`, spread across **14 functions that are LOCAL and not exported**:
+
+`QuitTab` (4) · `OrientationScreen` (2) · `SessionPopupInner` (2) · `IconMe` ·
+`ManualRunModal` · `TodayScreen` · `CoachTeaser` · `ConnectRunsBanner` ·
+`AppleHealthConnectionRow` · `HRZonesSection` · `SupportScreen` · `MeScreen` ·
+`PendingAnalysisCard` · `LockedCoachingPreview`
+
+**None can be imported, so none can be rendered anywhere but inside a signed-in session.**
+Not by a harness, not by a markup test that mounts, not by anything.
+
+⚠️ **FIFTH INSTANCE OF A CLASS THIS REPO HAS RECORDED FOUR TIMES** — *"a pattern that is a
+local variable cannot travel"* (`ACTION-ROW-01`), `SectionLabel` as a local function (the
+fourth), `PlanCalendar` writing its own because it could not import one. **Here it is not a
+pattern but fourteen whole SCREENS**, and the cost is not duplication: it is that **no screen
+in the app's largest file has ever been seen outside a live session.**
+
+**This is why `/copy-preview` covers `GeneratePlanScreen` (an exported default, which mounts
+fine) and covers none of these.** Extract them to `components/dashboard/` one at a time, each
+with a preview case. Not urgent; large; and the reason every future "can you check it
+renders?" gets a partial answer until it is done.
+
 #### ✅ `NOEMDASH-JSX-TEXT-01` — SHIPPED 2026-09-29. The guard now reads JSX text
 
 ⚙️ **NO BOARD** — a defect fix restoring documented intent.
