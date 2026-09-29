@@ -62,23 +62,41 @@ import { Z_LAYERS } from '@/lib/ui/zLayers'
  * inherits the hazard: if a caller's scroller is fake, the arrow silently stops floating
  * and NOTHING goes red. That is the residual risk, and it is named rather than solved.
  */
-export default function FloatingBackButton({ onClick, ariaLabel }: {
+export default function FloatingBackButton({ onClick, ariaLabel, caption }: {
   onClick: () => void
   ariaLabel?: string
+  /** BACK-ARROW-FLOAT-02 — the plan preview's "Adjust inputs". See the note below;
+   *  a captioned float is a CHIP, not a circle, and it is shaped differently. */
+  caption?: string
 }) {
   return (
     <div
       style={{
-        position:     'sticky',
-        top:          'var(--space-4)',
-        zIndex:       Z_LAYERS.screenHeader,
-        width:        'fit-content',
-        margin:       'var(--space-4) 0 0 var(--space-4)',
-        borderRadius: '50%',
-        boxShadow:    'var(--shadow-card)',
+        position:  'sticky',
+        top:       'var(--space-4)',
+        zIndex:    Z_LAYERS.screenHeader,
+        width:     'fit-content',
+        margin:    'var(--space-4) 0 0 var(--space-4)',
+        boxShadow: 'var(--shadow-card)',
+        // 🔴 A CAPTIONED FLOAT NEEDS A GROUND, AND THIS IS NOT A PREFERENCE.
+        // `BackButton`'s captioned form is a GHOST button: only the 44px circle carries
+        // `--bg-soft`, and the label span carries NOTHING. Floated as-is, the words
+        // "Adjust inputs" would sit directly on whatever scrolls beneath them — bare
+        // text over plan content, which is worse than the smudge the shadow was added
+        // to prevent. So the wrapper becomes a small card: `--card` ground, pill radius,
+        // the same `--shadow-card`. The circle keeps its own
+        // `border: 1px solid var(--chrome-edge)`, which is what lets it read on a card
+        // rather than melting into it at 1.21:1.
+        //
+        // ⚠️ This is the system's existing pairing, not a new surface — a circle on a
+        // card is what every IconButton in the app already does. The uncaptioned float
+        // stays a bare circle precisely because it has no label needing a ground.
+        ...(caption
+          ? { background: 'var(--card)', borderRadius: '999px', padding: '0 var(--space-4) 0 0' }
+          : { borderRadius: '50%' }),
       }}
     >
-      <BackButton onClick={onClick} ariaLabel={ariaLabel} />
+      <BackButton onClick={onClick} ariaLabel={ariaLabel} caption={caption} />
     </div>
   )
 }

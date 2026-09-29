@@ -2796,6 +2796,16 @@ shadows, not one documented elevation — and `--shadow-card` is documented.
 jump on the first scroll event. ⚠️ **`width: fit-content`**, or a sticky full-width strip
 would swallow taps meant for the content behind it.
 
+**A CAPTIONED float is a CHIP, not a circle (BACK-ARROW-FLOAT-02).** Pass `caption` and
+the wrapper gains a `--card` ground and a pill radius. 🔴 **That ground is not styling:**
+`BackButton`'s captioned form is a **ghost** button — only the 44px circle carries
+`--bg-soft` and the label span carries **nothing**. Floated bare, "Adjust inputs" would be
+text sitting directly on whatever scrolls beneath it, which is worse than the smudge the
+shadow prevents. The circle keeps its own `border: 1px solid var(--chrome-edge)`, which is
+what lets it read on a card instead of melting into it at 1.21:1. ⚠️ **The uncaptioned
+float stays a bare circle** — it has no label needing a ground, and giving it one would be
+inventing a surface for a problem it does not have.
+
 🔴 **NOT for tiles or confirm surfaces.** `RecalibrationTile` and `ModifyPlanConfirm`
 keep plain `BackButton`: they are not pushed screens and own no scroller, so `sticky` would
 resolve to the page and the arrow would wander off the thing it belongs to.

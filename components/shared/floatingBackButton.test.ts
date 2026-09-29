@@ -97,10 +97,30 @@ describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
     expect((src.match(/boxShadow/g) ?? []).length, 'exactly one shadow declaration').toBe(1)
   })
 
+  it('🔴 a CAPTIONED float carries a ground, because its label has none of its own', () => {
+    // BACK-ARROW-FLOAT-02. `BackButton`'s captioned form is a GHOST button: only the 44px
+    // circle carries `--bg-soft` and the label span carries nothing. Floated without a
+    // ground, "Adjust inputs" would be bare text over whatever scrolls beneath it — worse
+    // than the smudge the shadow exists to prevent. Remove the ground and this goes red.
+    const src = readFileSync('components/shared/FloatingBackButton.tsx', 'utf8')
+    const branch = src.slice(src.indexOf('...(caption'), src.indexOf('...(caption') + 260)
+    expect(branch, 'the captioned branch needs a card ground').toContain("background: 'var(--card)'")
+    expect(branch, 'and a pill radius, not a circle').toContain("borderRadius: '999px'")
+    // The UNCAPTIONED float must stay a bare circle — it has no label needing a ground,
+    // and giving it one would be inventing a surface to solve a problem it does not have.
+    expect(branch, 'uncaptioned stays a circle').toContain("borderRadius: '50%'")
+    expect(branch, 'uncaptioned must NOT gain a background').not.toMatch(/\}\s*:\s*\{[^}]*background/)
+  })
+
   it('does not swallow taps across the top of the screen', () => {
     // A sticky FULL-WIDTH strip would sit over the whole top edge and eat taps meant for
     // the content behind it. The wrapper is the circle's size and nothing more.
     const src = readFileSync('components/shared/FloatingBackButton.tsx', 'utf8')
-    expect(src).toContain("width:        'fit-content'")
+    // 🔴 WHITESPACE-TOLERANT ON PURPOSE. The first cut asserted the exact string
+    // `width:        'fit-content'` with its column alignment, and went red the moment
+    // the style block was reformatted — nothing about the behaviour changed. That is the
+    // same brittleness as the micro-label regexes that required exactly one space and
+    // hid 13 labels. Assert the property, never the indentation.
+    expect(src).toMatch(/width:\s*'fit-content'/)
   })
 })

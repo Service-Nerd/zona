@@ -1342,8 +1342,11 @@ export default function GeneratePlanScreen({
     const { meta, weeks } = plan
     return (
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
+        {/* BACK-ARROW-FLOAT-02 — founder: "float the pill as-is". It keeps its caption,
+            and the float gives it a --card ground because the captioned form is a GHOST
+            button whose label has no background of its own. */}
+        <FloatingBackButton onClick={goBack} ariaLabel="Adjust inputs" caption="Adjust inputs" />
         <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-          <BackButton onClick={goBack} ariaLabel="Adjust inputs" caption="Adjust inputs" />
           <div style={{ marginTop: 'var(--space-4)' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '22px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>
               {meta.race_name || 'Your plan'}

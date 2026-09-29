@@ -812,21 +812,19 @@ but only 9 are mounted on `/copy-preview`. `TodayScreen`, `SessionPopupInner`, `
 `CoachTeaser` and `OrientationScreen` take large prop sets or a `Plan`, so **they are now
 renderable in principle and unrendered in fact.** Filed `DASHBOARD-HARNESS-01`.
 
-#### 🔻 `BACK-ARROW-FLOAT-02` — the plan-preview pill, FOUNDER-OWNED
+#### ✅ `BACK-ARROW-FLOAT-02` — SHIPPED 2026-09-29. The plan-preview pill floats
 
-👤 **FOUNDER.** The wizard's other two arrows now float (`BACK-ARROW-FLOAT-01`). The
-**plan preview's does not**, deliberately.
+👤 **Founder: "float the pill as-is."**
 
-It is `<BackButton caption="Adjust inputs" />` — **a ~150px pill, one button, not a 44px
-circle**. The full-row tap target exists because the **founder personally restored it**:
-*"that screen is where a runner decides whether to accept a plan, one-handed."* Floating a
-150px labelled pill over plan content is a different decision from floating a circle, and
-it is his.
+🔴 **"AS-IS" COULD NOT BE LITERAL, AND SAYING SO WAS THE WORK.** `BackButton`'s captioned
+form is a **GHOST** button: only the 44px circle carries `--bg-soft` and **the label span
+carries nothing**. Floated bare, *"Adjust inputs"* would be text on whatever scrolls
+beneath it — **worse than the smudge the shadow was added to prevent**. So the wrapper
+gains a `--card` ground and a pill radius: the system's existing **circle-on-card** pairing,
+with the circle's `--chrome-edge` border doing the separating. **Not a new surface.**
 
-**Three ways it could go:** float the pill as-is · float it as a bare circle and lose the
-"Adjust inputs" disambiguation (which exists because *back* is ambiguous there between the
-previous STEP and the inputs) · leave it in flow. **No default is obviously right, which is
-why nothing was done.**
+✅ **Measured holding at 17px across 400 / 600 / 900 / 1200px of scroll**, 154.8px wide.
+⚠️ **The uncaptioned float stays a bare circle** and the gate fails **both** ways.
 
 #### ⚠️ `BACK-ARROW-FLOAT-03` — the step screen lost its progress cue on scroll
 

@@ -286,6 +286,10 @@ export default function CopyPreview() {
                      border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)' }}
           >
             <FloatingBackButton onClick={noop} />
+            {/* BACK-ARROW-FLOAT-02 — the captioned variant, in the same scroller. Its
+                label has no ground of its own in `BackButton`, so this is where that
+                gets proved rather than assumed. */}
+            <FloatingBackButton onClick={noop} ariaLabel="Adjust inputs" caption="Adjust inputs" />
             <div style={{ padding: '0 16px' }}>
               {Array.from({ length: 18 }, (_, i) => (
                 <div key={i} style={{ background: 'var(--card)', borderRadius: '12px',
