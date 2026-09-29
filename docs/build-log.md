@@ -6,6 +6,32 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — BACK-ARROW-FLOAT-02 · "as-is" could not be literal, and saying so was the work
+
+**Dev.** The plan preview's back arrow now floats with the rest. All three wizard arrows
+and eight door screens hold their exit while the screen moves.
+
+**The honest bit.** The instruction was "float the pill as-is", and the literal reading
+would have shipped something bad. `BackButton`'s captioned form is a ghost button: only the
+44px circle carries a fill, and the label span carries nothing at all. Floated bare, the
+words "Adjust inputs" would sit directly on whatever scrolled beneath them — text over
+plan content, which is worse than the smudge the shadow was added to prevent in the first
+place.
+
+So the wrapper gained a `--card` ground and a pill radius. What makes that defensible
+rather than an invention is that it is the pairing the system already uses everywhere: a
+circle with a `--chrome-edge` border sitting on a card. Nothing new was designed.
+
+**AI-building.** An existing arm in my own gate was whitespace-coupled. It asserted
+`width:        'fit-content'` including the column alignment, and went red the moment I
+reformatted the style block — nothing about the behaviour changed. That is the same
+brittleness as the micro-label regexes that required exactly one space and hid thirteen
+labels from a scan that reported clean. Assert the property, never the indentation.
+
+**Product.** The uncaptioned float deliberately stays a bare circle. It has no label
+needing a ground, and giving it one would be inventing a surface for a problem it does not
+have. The gate now fails in both directions, so neither half can drift into the other.
+
 ## 2026-09-29 — BACK-ARROW-FLOAT-01 · the board lost the vote and won the argument
 
 **Dev.** The back arrow on a pushed screen now hovers instead of scrolling away. Same
