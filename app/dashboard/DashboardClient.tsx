@@ -3466,9 +3466,8 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
     return () => { cancelled = true }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const backBtn = (
-    <BackButton onClick={onBack} />
-  )
+  // BACK-ARROW-FLOAT-04 — the arrow supplies its own inset, so it leaves the padded div.
+  const backBtn = <FloatingBackButton onClick={onBack} />
 
   // Split into Today vs Earlier (loaded list only).
   const todayStr = new Date().toDateString()
@@ -3489,7 +3488,7 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
-      <div style={{ padding: '16px 16px 0' }}>{backBtn}</div>
+      {backBtn}
       <ScreenHeader title="Notifications" />
 
       {items === null ? (
@@ -3939,14 +3938,15 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
     } catch { /* keep visible */ } finally { setActionLoading(false) }
   }
 
-  const backBtn = (
-    <BackButton onClick={onBack} style={{ marginBottom: 'var(--space-5)' }} />
-  )
+  const backBtn = <FloatingBackButton onClick={onBack} />
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
-      <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-        {backBtn}
+      {/* BACK-ARROW-FLOAT-04 — same shape, same defect as the benchmark screen: a
+          `flexShrink: 0` header beside a body whose `overflowY: auto` can never overflow
+          under `minHeight: 100%`, so the arrow scrolled away with the page. */}
+      {backBtn}
+      <div style={{ padding: 'var(--space-5) 20px 0', flexShrink: 0 }}>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
           Plan adjustment
         </div>

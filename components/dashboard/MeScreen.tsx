@@ -45,8 +45,10 @@ import { clearWidgetState } from '@/lib/native/sharedStore'
 import { createClient } from '@/lib/supabase/client'
 import { formatDate } from '@/lib/format'
 import { getCurrentWeekIndex } from '@/lib/plan'
+import { Z_LAYERS } from '@/lib/ui/zLayers'
 import { useDisciplineLedger } from '@/lib/coaching/useDisciplineLedger'
 import { useEffect, useState } from 'react'
+import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 import { useRouter } from 'next/navigation'
 import { useSignOut } from '@/lib/auth/signOut'
 
@@ -442,6 +444,7 @@ function StravaConnectionRow() {
 }
 
 function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
+  const { ref: pinRef, scrolled: pinScrolled } = useScrolledContainer(true)
   const router = useRouter()
   const [checked, setChecked] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -470,7 +473,17 @@ function DeleteAccountScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '16px 16px 8px' }}>
+      {/* 🔴 BACK-ARROW-FLOAT-04 — PINNED AS A GROUP, NOT FLOATED. This is the OTHER
+          arrow family `useScrolledContainer` already names (`BACK-HEADER-OWNER-01`): arrow
+          and title in one row. Floating the arrow alone would tear it off its title, which
+          is exactly the wizard mistake the founder caught. Same treatment as the session
+          and post-run headers. */}
+      <div
+        ref={pinRef}
+        className={`pinned-chrome${pinScrolled ? ' pinned-chrome--scrolled' : ''}`}
+        style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                 padding: '16px 16px 8px', zIndex: Z_LAYERS.screenHeader }}
+      >
         <BackButton onClick={onBack} />
         <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
           Delete your account
@@ -593,14 +606,15 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
     return `${years} year${years === 1 ? '' : 's'} ago`
   }
 
-  const backBtn = (
-    <BackButton onClick={onBack} style={{ marginBottom: 'var(--space-5)' }} />
-  )
+  const backBtn = <FloatingBackButton onClick={onBack} />
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
-      <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
-        {backBtn}
+      {/* BACK-ARROW-FLOAT-04 — same shape, same defect as the benchmark screen: a
+          `flexShrink: 0` header beside a body whose `overflowY: auto` can never overflow
+          under `minHeight: 100%`, so the arrow scrolled away with the page. */}
+      {backBtn}
+      <div style={{ padding: 'var(--space-5) 20px 0', flexShrink: 0 }}>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
           Your training
         </div>
@@ -1300,16 +1314,21 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
             </div>
             <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
           </Button>
-          <Button variant="ghost" 
-            onClick={onOpenBenchmark} style={{ justifyContent: 'flex-start', width: '100%', padding: '14px 16px', background: 'none', borderBottom: '1px solid var(--line)', textAlign: 'left' }}>
-            <div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--ink)', fontWeight: 500, lineHeight: 1.55 }}>Race benchmark</div>
-              <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', marginTop: '1px' }}>
-                How fast. Pace targets calibrated from a recent race.
-              </div>
-            </div>
-            <div style={{ color: 'var(--mute)', marginLeft: 'var(--space-3)' }}>{chevron}</div>
-          </Button>
+          {/* 🔴 ME-BENCHMARK-DUP-01 — THE `Race benchmark` DOOR STOOD HERE AND IS GONE.
+              The founder: *"it appears twice in the me screen as Benchmark and Race
+              benchmark."* Both rows called the same `onOpenBenchmark`. The one that stays
+              is the `Benchmark` status row in "What Kit knows about you", because it
+              carries what this one could not: the age of the benchmark and the amber
+              staleness warning. That is `ZONES-SURFACE-01`'s ruling one day earlier — the
+              zones entry REPLACES the zone rows rather than adding a surface — and the
+              note left beside the Zones row already said *"same treatment as Benchmark
+              directly beneath"*, so the status row was the canonical entry and this was
+              the copy nobody removed.
+              ⚠️ WHAT IS LOST, STATED: *"How fast. Pace targets calibrated from a recent
+              race."* The status row shows the age when set and *"No benchmark: pace
+              targets are estimated"* when not, so the explanatory sentence only carried
+              the set-and-fresh case. Not rewritten into the screen's own header, which is
+              founder copy. */}
           <button
             onClick={() => setActiveSection('plan-history')}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}

@@ -276,6 +276,44 @@ export default function CopyPreview() {
             DOCUMENT, so mounting a door here would prove nothing about the app, where
             the screen scrolls inside a `height: 100dvh; overflow-y: auto` box. This
             case reproduces that box. */}
+        {/* 🔴 BACK-ARROW-FLOAT-04 — A STICKY FLEX ITEM, WHICH IS NEW. Three of the five
+            screens converted here place the float as a DIRECT CHILD of a
+            `flexDirection: column` parent; every earlier call site put it in a block
+            container. A sticky flex item is legal CSS, but `align-items: stretch` against
+            `width: fit-content` is exactly the kind of interaction this repo has been
+            wrong about by reading, so it gets rendered. The inner column also reproduces
+            the real screens' `minHeight: 100%` + `flex: 1, overflowY: auto` body, whose
+            scrollport can never overflow: the arrow must pin to the OUTER box. */}
+        <Case
+          title="FloatingBackButton — sticky inside a flex column (the converted screens)"
+          note="Scroll the box. The arrow must hold at 16px, and must not stretch full-width."
+        >
+          <div
+            id="float-flexcol"
+            style={{ height: '220px', overflowY: 'auto', background: 'var(--bg)',
+                     border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)' }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
+              <FloatingBackButton onClick={noop} />
+              <div style={{ padding: 'var(--space-5) 16px 0', flexShrink: 0 }}>
+                <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px',
+                  fontWeight: 600, color: 'var(--ink)', marginBottom: 'var(--space-6)' }}>
+                  Update pace targets.
+                </div>
+              </div>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px' }}>
+                {Array.from({ length: 14 }, (_, i) => (
+                  <div key={i} style={{ background: 'var(--card)', borderRadius: '12px',
+                    padding: '14px 16px', marginBottom: '10px', fontSize: '13px',
+                    color: 'var(--ink-2)', boxShadow: 'var(--shadow-card)' }}>
+                    Body row {i + 1}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Case>
+
         <Case
           title="FloatingBackButton — in an app-shaped scroller"
           note="Scroll the box. The arrow must hold at 16px from its top edge, not slide away."

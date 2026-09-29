@@ -16,7 +16,9 @@ import { BRAND } from '@/lib/brand'
 import type { Plan } from '@/types/plan'
 import { App as CapacitorApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
+import { Z_LAYERS } from '@/lib/ui/zLayers'
 import { useEffect, useState } from 'react'
+import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 
 // client (common on desktop web, where mailto: silently no-ops). Mirrors the
 // /support web page register and the DeleteAccountScreen sub-view structure.
@@ -28,6 +30,7 @@ export default function SupportScreen({ onBack, email, hasPaidAccess, trialDaysL
   hasPaidAccess?: boolean
   trialDaysLeft?: number | null
 }) {
+  const { ref: pinRef, scrolled: pinScrolled } = useScrolledContainer(true)
   const [copied, setCopied] = useState(false)
   const [appInfo, setAppInfo] = useState<{ version: string; build: string } | null>(null)
 
@@ -74,8 +77,17 @@ export default function SupportScreen({ onBack, email, hasPaidAccess, trialDaysL
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-      {/* Header — back arrow top-left (ui-patterns: back arrow always top-left) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: '16px 16px 8px' }}>
+      {/* 🔴 BACK-ARROW-FLOAT-04 — PINNED AS A GROUP, NOT FLOATED. This is the OTHER
+          arrow family `useScrolledContainer` already names (`BACK-HEADER-OWNER-01`): arrow
+          and title in one row. Floating the arrow alone would tear it off its title, which
+          is exactly the wizard mistake the founder caught. Same treatment as the session
+          and post-run headers. */}
+      <div
+        ref={pinRef}
+        className={`pinned-chrome${pinScrolled ? ' pinned-chrome--scrolled' : ''}`}
+        style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)',
+                 padding: '16px 16px 8px', zIndex: Z_LAYERS.screenHeader }}
+      >
         <BackButton onClick={onBack} />
         <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-brand)', letterSpacing: '-0.3px' }}>
           Contact support

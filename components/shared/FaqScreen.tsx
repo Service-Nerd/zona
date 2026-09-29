@@ -15,7 +15,7 @@
 
 import { APP_FAQS, FAQ_TITLE, FAQ_SUBTITLE } from '@/lib/faq'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
-import BackButton from '@/components/shared/BackButton'
+import FloatingBackButton from '@/components/shared/FloatingBackButton'
 
 export { FAQ_TITLE, FAQ_SUBTITLE }
 
@@ -29,7 +29,7 @@ export interface FaqScreenProps {
 export default function FaqScreen({ onBack, onContact }: FaqScreenProps) {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
-      <BackButton onClick={onBack} />
+      <FloatingBackButton onClick={onBack} />
 
       <div style={{ padding: '8px 20px 48px', maxWidth: '480px', margin: '0 auto' }}>
         <div style={{ ...MICRO_LABELS.sectionLabel, color: 'var(--mute)', marginBottom: 'var(--space-2)' }}>

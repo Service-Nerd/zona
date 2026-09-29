@@ -537,14 +537,6 @@
   },
   "components/dashboard/MeScreen.tsx#Button7": {
     "floor": 44,
-    "padY": 14,
-    "font": null,
-    "radius": null,
-    "height": 45,
-    "width": "100%"
-  },
-  "components/dashboard/MeScreen.tsx#Button8": {
-    "floor": 44,
     "padY": null,
     "font": null,
     "radius": null,

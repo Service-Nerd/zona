@@ -79,7 +79,10 @@ export function connectionsSubtitle(
  * label each.
  */
 export const ME_SECTION_ORDER: string[] = [
-  'Your training',    // Heart rate · Race benchmark · Plan history · Plan adjustments
+  // ⚠️ `Race benchmark` was here and is gone (ME-BENCHMARK-DUP-01, 2026-09-29). It was a
+  // SECOND door onto the same screen as the `Benchmark` status row above the first heading,
+  // and the status row carries the benchmark's age and staleness, which a door cannot.
+  'Your training',    // Heart rate · Start a new plan · Plan history · Plan adjustments
   'Setup',            // Preferences · Connections
   'Subscription',     // plan card · charity access · redeem a code
   'Support',

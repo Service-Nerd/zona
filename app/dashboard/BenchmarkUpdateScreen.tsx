@@ -9,7 +9,7 @@ import { DurationPicker } from '@/components/shared/DurationPicker'
 import { TextField } from '@/components/shared/TextField'
 import { Chip } from '@/components/shared/Chip'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
-import BackButton from '@/components/shared/BackButton'
+import FloatingBackButton from '@/components/shared/FloatingBackButton'
 import Button from '@/components/ui/Button'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -193,10 +193,18 @@ export default function BenchmarkUpdateScreen({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
 
-      {/* Header */}
-      <div style={{ padding: '16px 16px 0', flexShrink: 0 }}>
-        <BackButton onClick={onBack} style={{ marginBottom: 'var(--space-5)' }} />
+      {/* 🔴 BACK-ARROW-FLOAT-04 — THE FOUNDER FOUND THIS SCREEN, AND IT WAS ONE OF FIVE.
+          The arrow lived in a `flexShrink: 0` header beside a body declaring
+          `flex: 1; overflowY: auto` inside an outer of `minHeight: 100%`. `min-height` is
+          not a height, so that body can NEVER overflow: `PullToRefresh` is the real
+          scroller and this "fixed" header scrolled away with the page. Nothing was sticky,
+          nothing was wrong on the screen, and the only symptom was the arrow leaving.
+          The arrow moves OUT of the padded header so its inset is the component's, once. */}
+      <FloatingBackButton onClick={onBack} />
 
+      {/* Header. `--space-5` top padding reproduces the gap the arrow's own
+          `marginBottom` used to supply, so the title does not move. */}
+      <div style={{ padding: 'var(--space-5) 16px 0', flexShrink: 0 }}>
         <div style={{ marginBottom: 'var(--space-6)' }}>
           <div style={{ fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.3px', marginBottom: 'var(--space-2)' }}>
             Update pace targets.

@@ -826,6 +826,89 @@ with the circle's `--chrome-edge` border doing the separating. **Not a new surfa
 ✅ **Measured holding at 17px across 400 / 600 / 900 / 1200px of scroll**, 154.8px wide.
 ⚠️ **The uncaptioned float stays a bare circle** and the gate fails **both** ways.
 
+#### ✅ `BACK-ARROW-FLOAT-04` — SHIPPED 2026-09-29. Five more pushed screens, found from one report
+
+👤 **Founder: *"Update pace targets doesn't have the floating back arrow."***
+
+🔴 **HE FOUND ONE INSTANCE OF A SET OF SEVEN, AND MY OWN GATE IS WHY IT WAS ONE.**
+`BACK-ARROW-FLOAT-01` converted **8 doors** and I reported the remainder as *"inline or a
+declared exclusion"* — which is what the gate said, because its arm asserted only that the
+**two declared** exclusions still used `BackButton` and let **every other bare use pass in
+silence**. Measured population: **nine bare `<BackButton>` files**, of which **five pushed
+screens** scrolled their arrow away and **two more** were the arrow-beside-title family with
+no pin.
+
+✅ **Converted to `FloatingBackButton`:** `BenchmarkUpdateScreen` (the one he opened),
+`ReshapeScreen`, `NotificationsScreen`, `PlanHistoryScreen`, `FaqScreen`.
+✅ **Pinned as a GROUP** (`.pinned-chrome` + `useScrolledContainer`, the other arrow family
+`BACK-HEADER-OWNER-01` already names): `DeleteAccountScreen`, `SupportScreen`. Floating the
+arrow out of one of those would tear it off its own title — **the exact wizard mistake the
+founder caught in `BACK-ARROW-FLOAT-03`.**
+
+🔴 **WHY IT SCROLLED, AND IT IS A MEASURED MECHANISM NOT A GUESS.** The arrow sat in a
+`flexShrink: 0` header beside a body declaring `flex: 1; overflowY: auto`, inside an outer of
+**`minHeight: 100%`**. `min-height` is not a height, so that body can never overflow:
+`PullToRefresh` is the real scroller and the "fixed" header travelled with the page. Rendered
+in the real nesting: **`innerBodyOverflows: false`**, arrow `position: sticky`, width 44px,
+**17px from the box before and 17px after a 600px scroll.**
+
+✅ **THE GATE IS NOW AN EXHAUSTIVE REGISTER** — every bare `BackButton` file named with its
+reason, failing **both** ways: an undeclared bare use fails, and a declaration whose file no
+longer uses one fails. Plus an arm that a file declared a *pinned group* actually pins, and
+one naming the five conversions individually (*"the file imports FloatingBackButton
+somewhere"* is precisely what let this pass — `MeScreen` and `DashboardClient` both already
+imported it while still carrying a bare arrow).
+
+🔴 **AND ONE FALSIFICATION PASSED WHEN IT SHOULD HAVE FAILED** — I replaced `pinned-chrome`
+**once**, and the class appears twice per header (`pinned-chrome${...' pinned-chrome--scrolled'}`),
+so the arm correctly still found it. **The weak mutation, not the weak arm** — re-run
+replacing all occurrences, and both directions go red.
+
+⚠️ **`QuitTab` is declared, not converted:** the smoke tracker is removed from every UI
+surface, and pinning a screen no runner can reach is work with no reader.
+⚠️ **The arrow's inset moves 20px → 16px** on the three screens that padded at 20. That is
+the single owner's inset and the point of having one.
+⚠️ **Not verified on the screens themselves** — all seven are behind auth. What is measured
+is the mechanism in the real nesting, on `/copy-preview`.
+
+#### ✅ `ME-BENCHMARK-DUP-01` — SHIPPED 2026-09-29. Me's benchmark entry is said once
+
+👤 **Founder: *"it appears twice in the me screen as Benchmark and Race benchmark."***
+
+Both rows called the same `onOpenBenchmark`. **The `Benchmark` status row in "What Kit knows
+about you" stays**, because it carries what the door could not: the benchmark's age and the
+amber staleness warning. That is `ZONES-SURFACE-01`'s ruling from one day earlier — the zones
+entry **replaces** the zone rows rather than adding a surface — and the note left beside the
+Zones row already read *"same treatment as Benchmark directly beneath"*, so **the status row
+was already the canonical entry and the door was the copy nobody removed.**
+
+⚠️ **WHAT IS LOST, STATED:** *"How fast. Pace targets calibrated from a recent race."* The
+status row shows the age when set and *"No benchmark: pace targets are estimated"* when not,
+so the sentence only carried the set-and-fresh case. **Not rewritten into the screen's own
+header, which is founder copy** (§5b ask 4).
+
+✅ **Counted on the INDEX, not the file** — `onOpenBenchmark` also appears in the props list
+and the prop type, so a file-wide count reads 3 when correct and 4 when not: exactly the kind
+of number nobody notices moving. Second arm asserts the survivor is still the **status row**
+with its staleness string, because a count of 1 would stay green if it became a bare door.
+
+#### 🔴 `STICKY-INERT-FLEX-01` — the sticky guard treats `flex: 1` as a height, and it is not
+
+⚙️ **NO BOARD** — a gate blind spot, filed not fixed.
+
+`stickyScroller.test.ts` accepts `flex: 1` as evidence that an `overflowY: auto` box is
+height-constrained. **`flex: 1` constrains only when its flex container has a DEFINITE
+height.** Two screens declare `minHeight: 100%` on the container, which is a minimum, not a
+height — so the box can never overflow and is exactly the inert scrollport the guard exists
+to forbid. **Measured in a browser during `BACK-ARROW-FLOAT-04`: `scrollHeight >
+clientHeight` is `false`.**
+
+Currently harmless (the arrows pinned in those files are siblings of the inert box, not
+descendants), so **nothing sticky is captured today**. The cost is that the next sticky
+element placed *inside* one of those bodies will silently never stick, with the guard green.
+**Fix is an arm that pairs the `flex: 1` allowance with the container's own height
+declaration.**
+
 #### 🔴 `CONTRACT-COVERAGE-02` — 52 shared components have no contract, and the audit could not see it
 
 ⚙️ **NO BOARD** — documentation debt, now measured and gated.

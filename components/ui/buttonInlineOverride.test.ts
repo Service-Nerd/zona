@@ -81,7 +81,10 @@ const BASELINE: Record<string, number> = {
   'app/dashboard/DashboardClient.tsx': 5,
   'components/dashboard/SessionPopupInner.tsx': 4,
   'components/dashboard/TodayScreen.tsx': 3,
-  'components/dashboard/MeScreen.tsx': 3,
+  // ME-BENCHMARK-DUP-01 (2026-09-29): 3 → 2. DEBT PAID, not a re-key — the duplicate
+  // `Race benchmark` ghost Button was one of the three, so removing the door removed an
+  // inline override with it. The stale arm is what demanded this number come down.
+  'components/dashboard/MeScreen.tsx': 2,
   'components/dashboard/AppleHealthConnectionRow.tsx': 1,
   'components/dashboard/CoachTeaser.tsx': 2,
   'components/dashboard/HRZonesSection.tsx': 1,

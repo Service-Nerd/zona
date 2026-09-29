@@ -17,18 +17,63 @@ const UI = (): string[] =>
     { encoding: 'utf8' })
     .trim().split('\n').filter(f => f && !f.includes('.test.'))
 
-/** ⚠️ DECLARED, DATED EXCLUSIONS — not a loophole, and each names WHY it is not a pushed
- *  screen. A hovering arrow inside a tile is meaningless: it has no scroller of its own
- *  to hover against, so `position: sticky` would resolve to the page and the arrow would
- *  wander away from the tile it belongs to. */
-const NOT_PUSHED_SCREENS: Record<string, string> = {
+/** ⚠️ EVERY FILE THAT STILL USES A BARE `<BackButton>`, EACH WITH ITS REASON.
+ *
+ * 🔴 THIS USED TO BE TWO ENTRIES AND A PERMISSIVE ARM, AND THAT IS THE DEFECT THE FOUNDER
+ * FOUND. The old check asserted only that the two DECLARED exclusions still used
+ * `BackButton`; every OTHER bare use passed in silence. So `BACK-ARROW-FLOAT-01` converted
+ * eight doors, I reported the remainder as "inline or declared", and **five pushed screens
+ * were quietly left with an arrow that scrolls away** — `Update pace targets` among them,
+ * which is the one he opened. Same class as every other short population in this repo:
+ * the predicate was right and the SET was a hand-typed pair.
+ *
+ * So the register is now EXHAUSTIVE. A new bare use fails the build until it is named here,
+ * and a name left behind after its `BackButton` goes also fails. Both directions.
+ */
+const BARE_BACK_BUTTON: Record<string, string> = {
+  // ── Pinned GROUPS: arrow and title in one row, sticky together. The other arrow
+  //    family, named by `useScrolledContainer` as `BACK-HEADER-OWNER-01`. Floating the
+  //    arrow out of one of these tears it off its own title.
+  'app/dashboard/DashboardClient.tsx':
+    'holds the session and post-run headers, both `.pinned-chrome` groups, AND the two ' +
+    'converted screens - a mixed file, so the group arms below check it by position.',
+  'app/dashboard/GeneratePlanScreen.tsx':
+    'the wizard step header is a pinned GROUP (arrow + ProgressLine). BACK-ARROW-FLOAT-03: ' +
+    'floating the arrow alone let "where am I" scroll away and the founder caught it.',
+  'components/dashboard/MeScreen.tsx':
+    'DeleteAccountScreen is a pinned GROUP (arrow beside "Delete your account"); the rest ' +
+    'of the file uses FloatingBackButton.',
+  'components/dashboard/SupportScreen.tsx':
+    'a pinned GROUP - arrow beside "Contact support". BACK-ARROW-FLOAT-04.',
+
+  // ── Not pushed screens. A hovering arrow inside a tile is meaningless: it has no
+  //    scroller of its own to hover against, so `position: sticky` would resolve to the
+  //    page and the arrow would wander away from the tile it belongs to.
   'app/dashboard/RecalibrationTile.tsx':
     'a TILE, not a screen. Its arrow sits inline with `marginLeft: -10px` against the ' +
     'tile edge and owns no scroll container.',
   'components/shared/ModifyPlanConfirm.tsx':
-    'a confirm surface, not a pushed screen. It is short by construction — if it ever ' +
+    'a confirm surface, not a pushed screen. It is short by construction - if it ever ' +
     'scrolls, that is the defect, not the arrow.',
+
+  // ── The component itself.
+  'components/shared/FloatingBackButton.tsx':
+    'the wrapper that owns the floating placement. It renders the bare arrow by design.',
+
+  // ── Retired surface.
+  'components/dashboard/QuitTab.tsx':
+    'the smoke tracker, REMOVED from all UI surfaces (CLAUDE.md, Phase 1). Its BackHeader ' +
+    'is an arrow-beside-title group and would be pinned if the surface ever returned; ' +
+    'pinning a screen no runner can reach is work with no reader.',
 }
+
+/** Files that must carry a `.pinned-chrome` group rather than a floating arrow. */
+const PINNED_GROUPS = [
+  'app/dashboard/DashboardClient.tsx',
+  'app/dashboard/GeneratePlanScreen.tsx',
+  'components/dashboard/MeScreen.tsx',
+  'components/dashboard/SupportScreen.tsx',
+]
 
 describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
   it('scans a real corpus (an empty sweep is not a pass)', () => {
@@ -50,21 +95,58 @@ describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
       .toEqual([])
   })
 
-  it('every remaining bare BackButton is either inline or a DECLARED exclusion', () => {
-    // Bare uses are legitimate — an arrow beside a title, a wizard step. What must not
-    // happen is a pushed screen quietly opting out with no reason on the page.
-    const bare = UI().filter(f => {
+  it('🔴 EXHAUSTIVE: every bare BackButton file is declared, and every declaration is used', () => {
+    // The arm the founder's report replaced. Both directions, so neither a new silent
+    // opt-out nor a stale name survives.
+    const bare = UI().filter(f => readFileSync(f, 'utf8').includes('<BackButton'))
+    const declared = Object.keys(BARE_BACK_BUTTON)
+    const undeclared = bare.filter(f => !declared.includes(f))
+    expect(undeclared,
+      'a pushed screen cannot opt out of the floating arrow in silence. Convert it to ' +
+      '`FloatingBackButton`, pin it as a group, or declare it with a reason:\n' +
+      undeclared.join('\n')).toEqual([])
+    const stale = declared.filter(f => !bare.includes(f))
+    expect(stale, 'declared as a bare BackButton user but no longer one - delete the row:\n' +
+      stale.join('\n')).toEqual([])
+    // A reason with no content in it is not a reason.
+    for (const [f, why] of Object.entries(BARE_BACK_BUTTON)) {
+      expect(why.length, `${f}'s reason is too thin to be a reason`).toBeGreaterThan(40)
+    }
+  })
+
+  it('🔴 every pinned-group file actually pins something', () => {
+    // A file declared as a GROUP and carrying no `.pinned-chrome` is a screen whose arrow
+    // scrolls away with a reason written beside it. That is worse than no reason.
+    for (const f of PINNED_GROUPS) {
       const src = readFileSync(f, 'utf8')
-      return src.includes('<BackButton') && !src.includes('FloatingBackButton')
-    })
-    for (const f of Object.keys(NOT_PUSHED_SCREENS)) {
-      expect(bare, `${f} is declared as not-a-pushed-screen but no longer uses BackButton — ` +
-        'delete the exclusion').toContain(f)
+      expect(src, `${f} is declared a pinned group and pins nothing`).toContain('pinned-chrome')
+      expect(src, `${f} pins without the shared scroll-state owner, so its edge never reveals`)
+        .toContain('useScrolledContainer')
     }
-    // Every declared exclusion must still carry a reason with real content in it.
-    for (const [f, why] of Object.entries(NOT_PUSHED_SCREENS)) {
-      expect(why.length, `${f}'s exclusion reason is too thin to be a reason`).toBeGreaterThan(40)
+  })
+
+  it('🔴 the five screens the founder\'s report uncovered all float their arrow', () => {
+    // BACK-ARROW-FLOAT-04. Named individually, because "the file imports
+    // FloatingBackButton somewhere" is what let `Update pace targets` pass: MeScreen and
+    // DashboardClient both already imported it while still carrying a bare arrow.
+    const CONVERTED: Record<string, string> = {
+      'app/dashboard/BenchmarkUpdateScreen.tsx': 'onClick={onBack}',
+      'components/shared/FaqScreen.tsx':         'onClick={onBack}',
     }
+    for (const [f, marker] of Object.entries(CONVERTED)) {
+      const src = readFileSync(f, 'utf8')
+      expect(src, `${f} lost its floating arrow`).toContain('<FloatingBackButton')
+      expect(src, `${f} still has a bare arrow`).not.toContain('<BackButton')
+      expect(src).toContain(marker)
+    }
+    // The three inside mixed files are checked by their own `backBtn` binding, which is
+    // what the padded header used to hold.
+    const dc = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
+    expect((dc.match(/const backBtn = <FloatingBackButton/g) ?? []).length,
+      'NotificationsScreen and ReshapeScreen each bind a floating arrow').toBe(2)
+    const me = readFileSync('components/dashboard/MeScreen.tsx', 'utf8')
+    expect(me, 'PlanHistoryScreen lost its floating arrow')
+      .toContain('const backBtn = <FloatingBackButton')
   })
 
   it('the floating wrapper sits ABOVE content and far BELOW the nav', () => {

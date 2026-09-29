@@ -106,6 +106,34 @@ describe('ME-ORDER-01 — the index order is the constant', () => {
     expect(thin, 'a heading governing one item is a category pretending to be content:\n' + thin.join('\n')).toEqual([])
   })
 
+  // 🔴 ME-BENCHMARK-DUP-01 (founder, 2026-09-29): *"it appears twice in the me screen as
+  // Benchmark and Race benchmark."* Two rows, one destination. Nothing was wrong on either
+  // row and nothing rendered oddly - a duplicate door is invisible unless you count.
+  //
+  // ⚠️ COUNTED ON THE INDEX, NOT ON THE FILE. `onOpenBenchmark` also appears in the props
+  // list and the prop type, so a file-wide count is 3 when the screen is correct and 4 when
+  // it is not, which is exactly the kind of number nobody notices moving.
+  it('exactly one index entry routes to the benchmark screen', () => {
+    const hits = (INDEX().match(/onOpenBenchmark/g) ?? []).length
+    expect(hits,
+      'the benchmark screen has more than one door on Me. The `Benchmark` status row in ' +
+      '"What Kit knows about you" is the entry: it carries the age and the staleness ' +
+      'warning, which a plain door cannot (ZONES-SURFACE-01).').toBe(1)
+  })
+
+  it('and it is the status row that carries it, not a bare door', () => {
+    // If the surviving entry ever became a plain `ActionRow`, the count above would still
+    // be 1 and the staleness signal would be gone. The row's value and its amber warning
+    // are the reason this one won.
+    const idx = INDEX()
+    const at = idx.indexOf('onOpenBenchmark')
+    expect(at, 'the benchmark entry left the index').toBeGreaterThan(-1)
+    // Walk back to the `row(` call that owns it - the status-row helper, not a door.
+    const region = idx.slice(Math.max(0, at - 700), at)
+    expect(region, 'the benchmark entry is no longer a status row').toContain("'Benchmark',")
+    expect(region, 'the staleness warning went with it').toContain('Re-benchmark when you can')
+  })
+
   it('the identity region carries no heading', () => {
     const idx = INDEX()
     const firstLabel = idx.indexOf('<SectionLabel>')
