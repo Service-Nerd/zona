@@ -6,6 +6,37 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — ZONES-ZONE-SHEET-GONE-01 · the comment said it had moved, and it had not
+
+**Dev.** Tapping a heart-rate zone opens its explainer again. It had stopped.
+
+**The honest bit.** The founder reported it right after I had shipped a change to that exact
+screen, so the first job was to find out whether I had caused it. `git log -S` on the render
+put it a day earlier: the ruling that moved the five zone rows onto the zones screen deleted
+their sheet and never re-created it. The rows arrived as plain divs. No click handler, no
+cursor, no tap target — so there was nothing to open, nothing to throw, and nothing to notice.
+
+**What made it survive was a sentence.** The comment left behind said *"the five zone rows and
+their per-zone sheet moved to the Training Zones screen."* Only the rows moved. Anyone reading
+that file — me, twice, this week — would conclude the sheet was fine. Two other residues said
+the same thing more quietly: the hub still imported the sheet component and rendered it
+nowhere, and the old screen still held the state variable whose only job was to open it. A
+handle left behind for a surface that has moved is evidence, and I walked past all three.
+
+**AI-building.** The rule that would have caught this already exists and I wrote about it
+yesterday: *what is reached ONLY from it?* The sheet was reached only from those rows. The
+move shipped with a pattern artifact, a register row and a green suite, and nothing asserted
+the rows went anywhere. That is the same shape as the chevron that scrolled to an element
+behind a door and silently did nothing for a day. The new gate asserts the rows are controls,
+that the sheet is mounted rather than merely imported, that all five zones map to a key the
+sheet accepts, and that no dead handle reappears anywhere in the tree.
+
+I also recovered the implementation from the commit that deleted it rather than writing a new
+one. It is tempting to retype twelve lines. Retyping them would have created a second owner of
+a thing that already had one.
+
+---
+
 ## 2026-09-29 — ZONES-HR-SHEET-01 · yesterday's reasons, quoted at a proposal nobody had made
 
 **Dev.** The heart-rate form stopped being its own screen. It is now a sheet you open from
