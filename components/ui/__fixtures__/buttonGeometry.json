@@ -290,7 +290,7 @@
   "app/dashboard/DashboardClient.tsx#Button26": {
     "floor": 44,
     "padY": null,
-    "font": 12,
+    "font": null,
     "radius": null,
     "height": 44,
     "width": "auto"

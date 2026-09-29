@@ -6,6 +6,17 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — MICRO-LABEL-WAVE-1a · the analysis phase stopped me stripping sixteen chips
+**Shipped:** 47 of the app's hand-typed micro-labels converted to their ruled role.
+**Dev learning:** I walked into this build with a rule that sounded mechanical — *convert each label to the role matching its current size* — and it was wrong. The population included **sixteen chips**: small tracked labels that also carry a background and a border, which the style guide documents as a **different pattern**. All three micro-label roles are type-accent with no fill, so converting a chip would have stripped its colour. Two of them were zone-verdict chips and I was one edit away.
+**Product/creator learning:** The thing that caught it was reading six actual examples instead of trusting the summary table. My scanner said `fontWeight: ?` for 34 labels; I assumed "unset". Half were genuinely unset and half were chips whose weight sat outside my 600-character window. **A census tells you how many. Only the instances tell you what they are.**
+**AI-building learning:** **Second time today my own population was wrong.** This morning's badge gate counted the word `<button` inside a comment; this one counted chips. Both were written by me, days after I wrote the rule about deriving populations from the code rather than typing them out. The rule is right and I keep producing fresh instances of what it warns about, which suggests the rule needs a gate rather than a sentence.
+**The honest bit:** Regression found three consequences I hadn't predicted, and all three were gates doing their job. The best one: `SectionLabel` carried a hand-typed 18px inherited from the component it absorbed — **off the ruled spacing scale, and invisible for as long as it lived inside a local function.** Making it shared is what exposed it. That is the argument for shared components stated as a measurement rather than a principle.
+**And the one I'd have missed:** the button-geometry harness now reports a control's font size as `null`, because the value arrives through a spread instead of a literal. The box didn't change. But every future wave hides a few more controls from that harness, and a shrinking population is the failure mode this codebase has recorded more than any other. Filed.
+**Also:** I did not convert the seventeen labels at 11px, because every one changes size and the ruling requires a render before a size change lands. The screens are auth-gated. Shipping them to make the register fall is precisely what the register exists to prevent.
+**Hook material:** My "mechanical" conversion rule would have stripped the colour off sixteen chips.
+**Postable?:** yes
+
 ## 2026-09-29 — MICRO-LABEL-DRIFT-01 · one documented value, forty-one in the code, and the doc matched none of them
 **Shipped:** Three named micro-label roles, a shared SectionLabel, and a register that can only fall.
 **Dev learning:** The app had **171 small tracked labels in 41 different combinations**, and `ui-patterns.md` documented exactly one. The part I did not expect: the documented value matched **none** of the three components actually implementing section labels. The doc said 10px/700/0.08em; one component ran 12px with no weight at all, another ran 11px/700/0.12em. **The rule and the implementation had never met** — same shape as the ground-token defect this board ruled months ago.

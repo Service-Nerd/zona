@@ -39,6 +39,16 @@ function microLabels(src: string): { size: string; weight: string; ls: string }[
     if (end === -1) continue
     const blk = src.slice(start, end + 2)
     if (!blk.includes('letterSpacing')) continue
+    // 🔴 A CHIP IS NOT A MICRO-LABEL, and excluding it is a correction rather than a
+    // convenience. `ui-patterns.md` § Session Type Chip documents its own pattern —
+    // *"10px 700, coloured bg at 15% opacity"* — and all three micro-label roles are
+    // TYPE ACCENT WITH NO FILL ("type accent, not flood", standing).
+    //
+    // ⚠️ THIS WAS FOUND BY NEARLY BREAKING ONE. Wave 1's first classification rule was
+    // "convert by size", and two `zoneVerdictColour` chips were one step from having
+    // their documented fill stripped. **Second time in one day my population was wrong**
+    // — the StatusBadge gate counted comment text, this one counted chips.
+    if (blk.includes('background') || blk.includes('border')) continue
     out.push({
       size: `${m[1]}px`,
       weight: (/fontWeight: (\d{3})/.exec(blk) ?? [, '?'])[1]!,
@@ -68,8 +78,17 @@ const EXEMPT = /components\/marketing\//
  * the definition changed rather than the code.
  *
  * ⚠️ LOWER IT AS WAVES LAND. NEVER RAISE IT.
+ *
+ * 🔴 IT HAS MOVED TWICE, AND BOTH REASONS ARE RECORDED RATHER THAN ABSORBED:
+ *   116 → 132  the ruling created a 12px role, so 12px labels joined the population
+ *   132 →  69  −47 converted by wave 1a, and −16 CHIPS removed from the population
+ *              because they are a different documented pattern (see the filter above)
+ *
+ * ⚠️ A register that shrinks because its DEFINITION narrowed is not progress, and this
+ * one did both at once. The 47 is the debt paid; the 16 is a correction. Stated
+ * separately on purpose — a single number would have hidden which was which.
  */
-const NON_CONFORMING_BASELINE = 132
+const NON_CONFORMING_BASELINE = 69
 
 const countNonConforming = () => {
   let n = 0
@@ -149,6 +168,31 @@ describe('MICRO-LABEL-DRIFT-01 — the register can only fall', () => {
     const n = countNonConforming()
     expect(n, `debt fell to ${n} and the register still says ${NON_CONFORMING_BASELINE} — lower it`)
       .toBe(NON_CONFORMING_BASELINE)
+  })
+
+  // 🔴 THE EXCLUSION MUST STAY NARROW. `background|border` is a big hammer: widen it and
+  // the register empties without a single label being fixed. This asserts the chips it
+  // removes are a real, non-trivial population — if it ever reads 0, the filter has
+  // stopped matching and the register silently grew a blind spot.
+  it('the chip exclusion removes a real, bounded population', () => {
+    let chips = 0
+    for (const f of tracked()) {
+      if (EXEMPT.test(f)) continue
+      const src = readFileSync(f, 'utf8')
+      const re = /fontSize: '(9|10|11|12)px'/g
+      let m: RegExpExecArray | null
+      while ((m = re.exec(src)) !== null) {
+        const start = src.lastIndexOf('{{', m.index)
+        if (start === -1 || m.index - start > 600) continue
+        const end = src.indexOf('}}', m.index)
+        if (end === -1) continue
+        const blk = src.slice(start, end + 2)
+        if (!blk.includes('letterSpacing')) continue
+        if (blk.includes('background') || blk.includes('border')) chips++
+      }
+    }
+    expect(chips, 'the chip filter matches nothing — it has stopped working').toBeGreaterThan(5)
+    expect(chips, 'the chip filter is swallowing the whole population').toBeLessThan(60)
   })
 
   // ⚠️ AN EMPTY POPULATION PASSES EVERY OTHER ARM IN THIS FILE.

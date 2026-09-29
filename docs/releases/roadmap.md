@@ -694,8 +694,11 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 ### 🏃 Product — SLT priority order (reviewed 2026-06-06; **re-topped 2026-08-06**)
 
 - 🔄 `MICRO-LABEL-DRIFT-01` — **vocabulary SHIPPED 2026-09-29; migration open.** Three
-  roles named, `SectionLabel` made shared, register at 132 and falling-only. **Wave 1 is
-  named and scheduled: `DashboardClient`'s 69.** `backlog.md`.
+  roles named, `SectionLabel` made shared, register at 132 and falling-only. **Wave 1a SHIPPED (47
+  converted, register 132 → 69); wave 1b (17 at 11px) blocked on a render, not filed and
+  forgotten.** New: `MICRO-LABEL-CHIPS-01` (16 chips governed by no check) and
+  `BUTTON-GEOMETRY-SPREAD-01` (the geometry harness cannot see through a spread, so every
+  wave shrinks its population). `backlog.md`.
 - 🧭 `LEDGER-PLACEMENT-01` — **NEXT.** Where the discipline ledger belongs on Me. Restored
   as a defect fix to the position the registry specified; the founder asked for it *beside
   the tier chip*, and `ME-PURPOSE-01` says nothing lives on Me. Goes to the board with the

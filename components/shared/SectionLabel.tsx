@@ -40,13 +40,18 @@ export function SectionLabel({ children, right, style }: {
       {children}
     </span>
   )
+  // ⚠️ 18px → var(--space-4) (16px). `PlanSectionLabel` used a hand-typed 18px, which is
+  // not on the ruled spacing scale (4·8·12·16·24·32·48) — and `appSpacingScale.test.ts`
+  // could not see it while it lived inside a local function. **Folding the component into
+  // shared made the violation visible**, which is the argument for shared components
+  // restated as a measurement. A 2px delta on four labels in `PlanCalendar`, named.
   // ⚠️ Two shapes, one type. `PlanSectionLabel` existed because it needed a trailing
   // value; that is a LAYOUT difference and never justified a second set of type values.
   if (right == null) {
     return <div style={{ padding: '0 16px', marginBottom: 'var(--space-2)', marginTop: 'var(--space-5)', ...style }}>{label}</div>
   }
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '0 4px', marginTop: '18px', ...style }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '0 4px', marginTop: 'var(--space-4)', ...style }}>
       {label}
       <span style={{ fontFamily: 'var(--font-ui)', color: 'var(--mute)', ...MICRO_LABELS.eyebrow }}>{right}</span>
     </div>

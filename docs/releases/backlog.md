@@ -548,17 +548,52 @@ a **non-growing register with a falling arm**.
 stops it growing; **it does not make it shrink, and this line is the only thing scheduling
 that.**
 
-#### Wave 1 — NAMED AND SCHEDULED (Collins' condition: scheduled, not filed)
+#### ✅ Wave 1a — SHIPPED 2026-09-29
 
-**`DashboardClient.tsx`, 69 of the 132.** One file, one reviewable diff, and the largest
-single concentration. Method: each label classified into one of the three roles, converted
-to `MICRO_LABELS.<role>`, and **the register lowered in the same commit** — the arm fails
-otherwise.
+**47 labels in `DashboardClient` converted** to `MICRO_LABELS.<role>` (eyebrow 34 ·
+dataLabel 9 · sectionLabel 4). Register **132 → 69**, and that move is **two things stated
+separately on purpose**: −47 debt paid, −16 chips removed from the population.
 
-⚠️ **Wroblewski's condition binds every wave:** a 37-file sweep is not reviewable, and any
-size change is a **reflow** on screens nobody has seen on a device. Convert to the role the
-label already belongs to; where converting would change a size, **say so in the commit and
-show it rendered** before landing it.
+⚠️ **Not invisible, and not claimed to be:** 32 tracking changes and **27 weight changes,
+22 of them from unset (inheriting 400) to 700** — normal to bold. **Sizes unchanged, so
+nothing reflows**, which was Wroblewski's actual condition. Unrendered: these screens are
+auth-gated.
+
+#### 🟡 Wave 1b — the 17 at 11px, NOT shipped and deliberately so
+
+🔴 **Every one changes SIZE**, because 11px is not a level. Wroblewski's condition binds:
+*"where converting would change a size, say so in the commit and **show it rendered**
+before landing it."* **`DashboardClient`'s screens are auth-gated and I cannot render
+them**, so shipping these would be exactly the blind reflow the condition forbids.
+
+**What unblocks it:** the founder's eye on a build, a device, or `ME-SCREEN-CONTRACT-01` /
+`ME-ADJUSTMENTS-EXTRACT-01` — both already filed — which would make these screens
+previewable. **Do not ship 1b to make the register fall.**
+
+#### 🟡 `BUTTON-GEOMETRY-SPREAD-01` — the geometry harness cannot see through a spread
+
+⚙️ **NO BOARD** — tooling.
+
+Wave 1a made `buttonGeometry.test.ts` report a control as `font: 12 → null`. **The box did
+not change** — height 44, padY, width all identical, multiset checked — the harness simply
+reads a LITERAL `fontSize:` and the value now arrives via `...MICRO_LABELS.eyebrow`.
+
+⚠️ **Every future wave widens this blind spot.** The harness will quietly measure fewer
+and fewer controls as the codebase does the right thing, and a shrinking population is the
+failure this repo has recorded more than any other. **Fix: resolve a spread of a known
+constant before measuring, or fail loudly when a style object cannot be fully read.**
+
+#### 🟡 `MICRO-LABEL-CHIPS-01` — 16 chips have no check at all
+
+🧭 **DESIGN BOARD.** Found by nearly breaking two of them: wave 1's first classification
+rule was "convert by size", and two `zoneVerdictColour` chips were one step from having
+their documented fill stripped.
+
+`ui-patterns.md` documents the chip (*"10px 700, coloured bg at 15% opacity"*) and
+**nothing enforces it**. They are now excluded from the micro-label register with a
+declared reason and a bounding arm, which means **16 labels are governed by no check
+whatsoever.** They need their own, or the chip pattern needs folding into the micro-label
+system as a fourth role — which is a board question, not mine.
 
 #### Waves 2+ (not scheduled)
 `PlanCalendar` 7 · `StravaPanel` 5 · `ReflectionInput` 4 · `BenchmarkUpdateScreen` 3 ·

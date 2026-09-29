@@ -139,8 +139,10 @@ describe('TIER-BADGE-01 — it absorbed the divergent copies', () => {
   const DECLARED: { file: string; why: string }[] = [
     { file: 'components/marketing/PhoneFrame.tsx',
       why: 'marketing mockup of iOS chrome at mockup scale — already exempted with the same reason in lib/marketing/typeScale.test.ts' },
-    { file: 'app/dashboard/DashboardClient.tsx',
-      why: 'two EYEBROWS remain at 10px/600 ("This week", the day\u00b7week eyebrow). They label a region, not a state, so they are MICRO-LABEL-DRIFT-01 and not this component' },
+    // ✅ `app/dashboard/DashboardClient.tsx` WAS declared here and is now CLEAN — its two
+    //    stray eyebrows were converted by MICRO-LABEL-WAVE-1a. The stale arm below caught
+    //    it within hours of this register being written, which is exactly what it is for:
+    //    a declared exemption that outlives its reason silently re-permits the thing.
   ]
 
   it('no surface re-rolls one of the two shapes this component replaced', () => {
