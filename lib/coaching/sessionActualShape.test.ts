@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-04 — the subject moved into `components/dashboard/`.
+// A single-file read is a vacuous green after a move. Population from the single owner.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import fs from 'node:fs'
 import path from 'node:path'
 import { formatDistance } from '../format'
@@ -28,7 +31,7 @@ import { formatDistance } from '../format'
  * consumer.** Inverse of "a reserved field gains a producer".
  */
 const ROOT = path.resolve(__dirname, '../..')
-const RAW = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
+const RAW = dashboardSource()
 
 /**
  * ⚠️ COMMENTS ARE BLANKED BEFORE MATCHING, PRESERVING NEWLINES.

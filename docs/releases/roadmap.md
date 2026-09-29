@@ -710,11 +710,12 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   forgotten.** New: `MICRO-LABEL-CHIPS-01` (16 chips governed by no check) and
   `BUTTON-GEOMETRY-SPREAD-01` (the geometry harness cannot see through a spread, so every
   wave shrinks its population). `backlog.md`.
-- ⚙️ `DASHBOARD-SCREEN-EXTRACT-04` — the **last 2 screens** (`DASHBOARD-SCREEN-EXTRACT-03` shipped `MeScreen`). 12 of 14 are out and
-  DashboardClient is down **3,420 lines (23.7%)**. `TodayScreen` (1555/19 deps, needs
-  `PostRunScreen` + `AdjustmentBanner` first), then `SessionPopupInner` (1627/13, last).
-  ⚠️ **One build each.** 🔴 **38 test files hardcoded the hub path**; the population now
-  has a single owner (`lib/testing/dashboardSources.ts`). Detail in `backlog.md`.
+- ⚙️ `DASHBOARD-HARNESS-01` — **`DASHBOARD-SCREEN-EXTRACT-04` finished the extraction:
+  14 of 14 screens out, DashboardClient 14,447 → 7,155 (−50.5%), 60 of 60 blocks proved
+  byte-identical.** What remains is a **`Plan` fixture** so the five big screens
+  (`TodayScreen`, `SessionPopupInner`, `MeScreen`, `CoachTeaser`, `OrientationScreen`) can
+  be mounted on `/copy-preview`. ⚠️ **They are renderable in principle and unrendered in
+  fact.** Detail in `backlog.md`.
 - ⚙️ `ME-SCREEN-CONTRACT-01` — **LATER.** `MeScreen` has ~40 props and no contract, because
   it is a function inside `DashboardClient.tsx` rather than its own module. Only the
   navigation surface is documented. Same root as the item below. `backlog.md`.

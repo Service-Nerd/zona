@@ -75,7 +75,12 @@ const BASELINE: Record<string, number> = {
   // DASHBOARD-SCREEN-EXTRACT-03: 15 → 12 + 3 (MeScreen), and 12 + 3 = 15.
   // Second conserved redistribution in two phases. The arithmetic is the only thing
   // that distinguishes a relocation from new debt in a file-keyed register.
-  'app/dashboard/DashboardClient.tsx': 12,
+  // DASHBOARD-SCREEN-EXTRACT-04: 12 → 5 + 4 (SessionPopupInner) + 3 (TodayScreen),
+  // and 5 + 7 = 12. THIRD conserved redistribution in three phases. Across the whole
+  // extraction the hub went 21 → 5 and not one override was created or removed.
+  'app/dashboard/DashboardClient.tsx': 5,
+  'components/dashboard/SessionPopupInner.tsx': 4,
+  'components/dashboard/TodayScreen.tsx': 3,
   'components/dashboard/MeScreen.tsx': 3,
   'components/dashboard/AppleHealthConnectionRow.tsx': 1,
   'components/dashboard/CoachTeaser.tsx': 2,

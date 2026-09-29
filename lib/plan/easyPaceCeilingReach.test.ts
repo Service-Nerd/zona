@@ -12,6 +12,9 @@
 // fails when someone adds a fifth surface and forgets.
 
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-04 — the subject moved into `components/dashboard/`.
+// A single-file read is a vacuous green after a move. Population from the single owner.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 import { easyPaceAsCeiling } from './easyPaceCeiling'
 
@@ -19,13 +22,13 @@ const read = (p: string) => readFileSync(p, 'utf8')
 
 describe('P-03 — the transform reaches every surface that shows an easy pace', () => {
   it('the SESSION CARD routes its pace through the ceiling (Today + Plan)', () => {
-    const src = read('app/dashboard/DashboardClient.tsx')
+    const src = dashboardSource()
     const card = src.slice(src.indexOf('const paceBracket'), src.indexOf('const paceBracket') + 400)
     expect(card).toContain('easyPaceAsCeiling')
   })
 
   it('SESSION DETAIL still routes its pace through the ceiling (the original site)', () => {
-    const src = read('app/dashboard/DashboardClient.tsx')
+    const src = dashboardSource()
     expect(src).toContain('const paceForDetail = easyPaceAsCeiling(')
   })
 

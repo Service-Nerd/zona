@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — DASHBOARD-SCREEN-EXTRACT-04 · two rules that failed silently, and one that asserts
+
+**Dev.** The last two screens are out. Fourteen of fourteen, and DashboardClient is half the
+size it was this morning: 14,447 lines down to 7,155.
+
+**The honest bit.** I broke the file twice before getting this right, and both failures
+produced output that looked fine. The first rule matched braces from the first `{` after the
+parameter list, which on a multi-line signature is the return type's brace, and it truncated
+a function mid-body. The second rule said the function ends at the first `}` at the start of
+a line, which matched a brace inside a body and turned a 1,555-line component into a
+201-line file that still had imports, a default export and a closing brace. Nothing about
+either output announced itself as wrong.
+
+The rule that works is that the body brace is the one whose matching close sits at column
+zero. But that is not the lesson. The lesson is the assertion I added afterwards: every
+extracted block now checks its line count against the measurement taken before the cut. Had
+that been there from the start, both failures would have stopped in a second rather than
+after a broken tsc run and a revert.
+
+I stashed the broken attempt rather than checking out over it, because this morning I
+deleted an uncommitted guard extension with exactly that command. The safety hook then
+refused to let me drop the stash, which is also correct.
+
+**AI-building.** SessionPopupInner never depended on TodayScreen. I recorded a "forced
+order" in two separate phases on the strength of a comment mentioning the name. Seventh time
+today that a comment was read as code, and the first where it shaped a plan rather than just
+a measurement.
+
+**Product.** The thing I keep having to say plainly: the screens are importable now, and
+nine of fourteen are actually mounted. The five biggest need a Plan fixture before anyone
+can look at them. They are renderable in principle and unrendered in fact, which is a better
+position than this morning and is not the same as done.
+
 ## 2026-09-29 — DASHBOARD-SCREEN-EXTRACT-03 · thirty-eight tests all pointed at one file
 
 **Dev.** MeScreen is out. Twelve of fourteen done, and the hub is down 3,420 lines from

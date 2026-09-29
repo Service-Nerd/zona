@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-04 — the subject moved into `components/dashboard/`.
+// A single-file read is a vacuous green after a move. Population from the single owner.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'fs'
 import { execSync } from 'child_process'
 import { join } from 'path'
@@ -82,7 +85,7 @@ describe('no writer puts a skip reason back into fatigue_tag', () => {
   })
 
   it('the fatigue trend is filtered by the owner, not by truthiness', () => {
-    const src = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    const src = dashboardSource()
     // `if (c?.fatigue_tag)` accepted anything non-null. It must be a predicate.
     expect(src).toMatch(/isFatigueTag\(c\?\.fatigue_tag\)/)
   })
@@ -91,7 +94,7 @@ describe('no writer puts a skip reason back into fatigue_tag', () => {
     // It was inline in two places and is a WIRE FORMAT — planAdjustment.ts
     // matches 'Injury / illness' exactly and both handlers special-case
     // 'Too tired'. Two copies of a wire format is how they drift.
-    const src = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    const src = dashboardSource()
     const inlineArrays = src.match(/\['Injury \/ illness',\s*'Too tired'/g) ?? []
     expect(inlineArrays).toEqual([])
   })

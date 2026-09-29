@@ -161,205 +161,13 @@
   },
   "app/dashboard/DashboardClient.tsx#Button10": {
     "floor": 44,
-    "padY": 14,
-    "font": 13,
-    "radius": "12px",
-    "height": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
     "width": "full"
   },
   "app/dashboard/DashboardClient.tsx#Button11": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button12": {
-    "floor": 44,
-    "padY": 14,
-    "font": 13,
-    "radius": "12px",
-    "height": 44,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button13": {
-    "floor": 44,
-    "padY": 4,
-    "font": 10,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button14": {
-    "floor": 44,
-    "padY": 13,
-    "font": 12,
-    "radius": "10px",
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button15": {
-    "floor": 44,
-    "padY": 6,
-    "font": 12,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button16": {
-    "floor": 44,
-    "padY": 13,
-    "font": 12,
-    "radius": "10px",
-    "height": 44,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button17": {
-    "floor": 0,
-    "padY": 6,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button18": {
-    "floor": 0,
-    "padY": 6,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button19": {
-    "floor": 0,
-    "padY": 6,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button20": {
-    "floor": 44,
-    "padY": null,
-    "font": 12,
-    "radius": "10px",
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button21": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button22": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button23": {
-    "floor": 44,
-    "padY": null,
-    "font": 12,
-    "radius": "10px",
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button24": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button25": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button26": {
-    "floor": 0,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button27": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button28": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button29": {
-    "floor": 44,
-    "padY": 4,
-    "font": null,
-    "radius": "12px",
-    "height": 44,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button30": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button31": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button32": {
-    "floor": 44,
-    "padY": null,
-    "font": 13,
-    "radius": null,
-    "height": 46,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button33": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button34": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button35": {
     "floor": 44,
     "padY": 8,
     "font": 13,
@@ -367,7 +175,7 @@
     "height": 44,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button36": {
+  "app/dashboard/DashboardClient.tsx#Button12": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -375,23 +183,7 @@
     "height": 47,
     "width": "full"
   },
-  "app/dashboard/DashboardClient.tsx#Button37": {
-    "floor": 44,
-    "padY": 14,
-    "font": null,
-    "radius": "var(--radius-md)",
-    "height": 45,
-    "width": "100%"
-  },
-  "app/dashboard/DashboardClient.tsx#Button38": {
-    "floor": 44,
-    "padY": 14,
-    "font": null,
-    "radius": "var(--radius-md)",
-    "height": 45,
-    "width": "100%"
-  },
-  "app/dashboard/DashboardClient.tsx#Button39": {
+  "app/dashboard/DashboardClient.tsx#Button13": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -399,55 +191,7 @@
     "height": 47,
     "width": "full"
   },
-  "app/dashboard/DashboardClient.tsx#Button40": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button41": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button42": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 44,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button43": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button44": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button45": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "full"
-  },
-  "app/dashboard/DashboardClient.tsx#Button46": {
+  "app/dashboard/DashboardClient.tsx#Button14": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -455,7 +199,7 @@
     "height": 47,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button47": {
+  "app/dashboard/DashboardClient.tsx#Button15": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -463,15 +207,7 @@
     "height": 47,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button48": {
-    "floor": 44,
-    "padY": null,
-    "font": null,
-    "radius": null,
-    "height": 47,
-    "width": "auto"
-  },
-  "app/dashboard/DashboardClient.tsx#Button49": {
+  "app/dashboard/DashboardClient.tsx#Button16": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -479,7 +215,7 @@
     "height": 47,
     "width": "100%"
   },
-  "app/dashboard/DashboardClient.tsx#Button50": {
+  "app/dashboard/DashboardClient.tsx#Button17": {
     "floor": 44,
     "padY": 2,
     "font": 11,
@@ -487,7 +223,7 @@
     "height": 44,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button51": {
+  "app/dashboard/DashboardClient.tsx#Button18": {
     "floor": 44,
     "padY": null,
     "font": 11,
@@ -495,7 +231,7 @@
     "height": 44,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button52": {
+  "app/dashboard/DashboardClient.tsx#Button19": {
     "floor": 44,
     "padY": null,
     "font": 11,
@@ -503,7 +239,7 @@
     "height": 44,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button53": {
+  "app/dashboard/DashboardClient.tsx#Button20": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -511,7 +247,7 @@
     "height": 44,
     "width": "auto"
   },
-  "app/dashboard/DashboardClient.tsx#Button54": {
+  "app/dashboard/DashboardClient.tsx#Button21": {
     "floor": 44,
     "padY": 14,
     "font": null,
@@ -519,7 +255,7 @@
     "height": 45,
     "width": "100%"
   },
-  "app/dashboard/DashboardClient.tsx#Button55": {
+  "app/dashboard/DashboardClient.tsx#Button22": {
     "floor": 44,
     "padY": null,
     "font": null,
@@ -847,7 +583,271 @@
     "height": 47,
     "width": "full"
   },
+  "components/dashboard/SaveImageButton.tsx#Button1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button1": {
+    "floor": 44,
+    "padY": 14,
+    "font": 13,
+    "radius": "12px",
+    "height": 44,
+    "width": "full"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button2": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "full"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button3": {
+    "floor": 44,
+    "padY": 14,
+    "font": 13,
+    "radius": "12px",
+    "height": 44,
+    "width": "full"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button4": {
+    "floor": 44,
+    "padY": 4,
+    "font": 10,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button5": {
+    "floor": 44,
+    "padY": 13,
+    "font": 12,
+    "radius": "10px",
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button6": {
+    "floor": 44,
+    "padY": 6,
+    "font": 12,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button7": {
+    "floor": 44,
+    "padY": 13,
+    "font": 12,
+    "radius": "10px",
+    "height": 44,
+    "width": "full"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button8": {
+    "floor": 0,
+    "padY": 6,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button9": {
+    "floor": 0,
+    "padY": 6,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button10": {
+    "floor": 0,
+    "padY": 6,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button11": {
+    "floor": 44,
+    "padY": null,
+    "font": 12,
+    "radius": "10px",
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button12": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button13": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button14": {
+    "floor": 44,
+    "padY": null,
+    "font": 12,
+    "radius": "10px",
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button15": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button16": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button17": {
+    "floor": 0,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "full"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button18": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/SessionPopupInner.tsx#Button19": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "auto"
+  },
   "components/dashboard/SupportScreen.tsx#Button1": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button1": {
+    "floor": 44,
+    "padY": 4,
+    "font": null,
+    "radius": "12px",
+    "height": 44,
+    "width": "auto"
+  },
+  "components/dashboard/TodayScreen.tsx#Button2": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button3": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button4": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button5": {
+    "floor": 44,
+    "padY": null,
+    "font": 13,
+    "radius": null,
+    "height": 46,
+    "width": "auto"
+  },
+  "components/dashboard/TodayScreen.tsx#Button6": {
+    "floor": 44,
+    "padY": 14,
+    "font": null,
+    "radius": "var(--radius-md)",
+    "height": 45,
+    "width": "100%"
+  },
+  "components/dashboard/TodayScreen.tsx#Button7": {
+    "floor": 44,
+    "padY": 14,
+    "font": null,
+    "radius": "var(--radius-md)",
+    "height": 45,
+    "width": "100%"
+  },
+  "components/dashboard/TodayScreen.tsx#Button8": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button9": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button10": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button11": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 44,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button12": {
+    "floor": 44,
+    "padY": null,
+    "font": null,
+    "radius": null,
+    "height": 47,
+    "width": "full"
+  },
+  "components/dashboard/TodayScreen.tsx#Button13": {
     "floor": 44,
     "padY": null,
     "font": null,

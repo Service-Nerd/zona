@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-04 — the subject moved into `components/dashboard/`.
+// A single-file read is a vacuous green after a move. Population from the single owner.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -92,7 +95,7 @@ describe('DAYDOT-TEALKEY-01 — geometry never branches on a colour', () => {
     // Anchoring a check on the mechanism rather than the guarantee is the
     // "never match by its MESSAGE" class one layer down. What must hold is:
     // completion changes something that is not the colour.
-    const src = stripComments(readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8'))
+    const src = stripComments(dashboardSource())
     const i = src.indexOf('dot?.complete')
     expect(i, 'the day dot moved; re-point this assertion').toBeGreaterThan(0)
     const block = src.slice(Math.max(0, i - 400), i + 600)
@@ -105,7 +108,7 @@ describe('DAYDOT-TEALKEY-01 — geometry never branches on a colour', () => {
   })
 
   it('the dot producer never overwrites the type hue with a state colour', () => {
-    const src = stripComments(readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8'))
+    const src = stripComments(dashboardSource())
     const i = src.indexOf('function getDot(')
     expect(i, 'getDot moved; re-point this assertion').toBeGreaterThan(0)
     const body = src.slice(i, i + 900)
@@ -116,7 +119,7 @@ describe('DAYDOT-TEALKEY-01 — geometry never branches on a colour', () => {
   })
 
   it('the producer no longer emits the retired --teal token', () => {
-    const src = readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8')
+    const src = dashboardSource()
     const i = src.indexOf('function getDot(')
     expect(i, 'getDot moved; re-point this assertion').toBeGreaterThan(0)
     expect(src.slice(i, i + 900), "--teal is on CLAUDE.md's BANNED list").not.toMatch(/return \{ colour: 'var\(--teal\)'/)

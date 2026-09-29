@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-04 — the subject moved into `components/dashboard/`.
+// A single-file read is a vacuous green after a move. Population from the single owner.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -21,7 +24,7 @@ import path from 'node:path'
  * better COACHING.
  */
 const ROOT = path.resolve(__dirname, '../..')
-const RAW = fs.readFileSync(path.join(ROOT, 'app/dashboard/DashboardClient.tsx'), 'utf8')
+const RAW = dashboardSource()
 // Comments blanked: this file's own explanation quotes the defect, and a check
 // that fires on prose describing the bug it guards gets switched off.
 const blank = (m: string) => m.replace(/[^\n]/g, '')

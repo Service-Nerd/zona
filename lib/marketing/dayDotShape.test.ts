@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest'
+// 🔴 DASHBOARD-SCREEN-EXTRACT-04 — the subject moved into `components/dashboard/`.
+// A single-file read is a vacuous green after a move. Population from the single owner.
+import { dashboardSource } from '@/lib/testing/dashboardSources'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -33,7 +36,7 @@ const strip = (s: string) =>
   s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
 
 const CAL = strip(readFileSync(join(process.cwd(), 'components/training/PlanCalendar.tsx'), 'utf8'))
-const SHELL = strip(readFileSync(join(process.cwd(), 'app/dashboard/DashboardClient.tsx'), 'utf8'))
+const SHELL = strip(dashboardSource())
 
 describe('DESIGN-DAYDOT-CHANNEL-01 — one channel, one fact', () => {
   it('the plan row rail is the session accent, never a completion colour', () => {

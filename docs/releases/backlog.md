@@ -766,17 +766,61 @@ constraint** — the exact move this day's work exists to stop.
 had to move with the functions that own it. **The registers conserved again: geometry 157
 controls, multiset delta ZERO; overrides 15 → 12 + 3, and 12 + 3 = 15.**
 
-#### 🔴 `DASHBOARD-SCREEN-EXTRACT-04` — the last two, 3,182 lines
+#### ✅ `DASHBOARD-SCREEN-EXTRACT-04` — SHIPPED 2026-09-29. **14 of 14. DONE.**
 
-⚙️ **NO BOARD.** **One build each. Do not batch.**
+⚙️ **NO BOARD** — refactor, bodies verbatim.
 
-| function | lines | deps | order |
-|---|---|---|---|
-| `TodayScreen` | 1555 | 19 | needs `PostRunScreen` + `AdjustmentBanner` extracted first |
-| `SessionPopupInner` | 1627 | 13 | depends on `TodayScreen`, so **last** |
+✅ **`TodayScreen` (1,555) and `SessionPopupInner` (1,627) are out, with `SaveImageButton`,
+`getRestCopy` and a shared day-of-week / session-display block.
+DashboardClient 11,027 → 7,155.**
 
-⚠️ **Expect guards to fire again** — but the population now has one owner, so the next
-round should be re-baselines and exclusion re-reads rather than blind guards.
+## 🥇 The whole extraction, measured end to end
+
+| | |
+|---|---|
+| **DashboardClient** | **14,447 → 7,155 lines — 7,292 out, 50.5%** |
+| **Screens extracted** | **14 of 14**, into `components/dashboard/` |
+| **Blocks proved byte-identical** | **60 of 60** across four phases |
+| **Guard failures caused** | **49**, every one correct, none a behavioural regression |
+
+🔴 **TWO SPAN RULES FAILED SILENTLY BEFORE THE THIRD WORKED, AND BOTH PRODUCED PLAUSIBLE
+OUTPUT.** Matching braces from the first `{` after the parameters picked up a multi-line
+**RETURN TYPE's** brace and truncated `displayZonesForSession`. Switching to "ends at `\n}`"
+then matched a brace at column 0 **inside a body** and truncated `TodayScreen` from 1,555
+lines to **201** — and still wrote a file that looked like a component. **The rule that works
+is: the body brace is the one whose matching close sits at COLUMN 0.**
+✅ **The fix that matters is not the rule, it is the ASSERTION** — every extracted block now
+checks its line count against the measurement taken before the cut, so a truncation cannot
+pass as a success.
+
+🟢 **The broken attempt was STASHED, not discarded** (`git stash list` → *"broken EXTRACT-04
+attempt"*), because this morning `git checkout --` on uncommitted work deleted a guard
+extension. ⚠️ **The safety hook then refused `git stash drop`, correctly.** It is still
+there and can be dropped by hand.
+
+🔴 **`SessionPopupInner` NEVER DEPENDED ON `TodayScreen`.** The "forced order" recorded in
+EXTRACT-02 and -03 came from a **comment**. Re-measured with comments blanked: 13 deps and 7,
+not 19 and 13. **Seventh comment-match of the day, and it had been shaping the plan for two
+phases.**
+
+⚠️ **Registers conserved a THIRD time:** geometry 157 controls / multiset delta **ZERO**;
+overrides **12 → 5 + 4 + 3**, and 5 + 7 = 12. **Across the whole extraction the hub went
+21 → 5 and not one override was created or removed.**
+
+⚠️ **NOT DONE, AND IT IS THE REASON THIS WAS WORTH DOING:** the 14 screens are importable
+but only 9 are mounted on `/copy-preview`. `TodayScreen`, `SessionPopupInner`, `MeScreen`,
+`CoachTeaser` and `OrientationScreen` take large prop sets or a `Plan`, so **they are now
+renderable in principle and unrendered in fact.** Filed `DASHBOARD-HARNESS-01`.
+
+#### 🔴 `DASHBOARD-HARNESS-01` — mount the five big screens on the harness
+
+🧭 **DESIGN BOARD** if it changes what is shown; ⚙️ NO BOARD for fixtures alone.
+
+The extraction made them importable. Five still need a **`Plan` fixture** and a realistic
+prop set before anything can look at them: `TodayScreen`, `SessionPopupInner`, `MeScreen`,
+`CoachTeaser`, `OrientationScreen`. ⚠️ **Until this lands, "can you check it renders?" still
+has a partial answer** — and 3 rewritten sentences from `NOEMDASH-JSX-TEXT-01` remain
+unverified for exactly this reason.
 
 #### ✅ `NOEMDASH-JSX-TEXT-01` — SHIPPED 2026-09-29. The guard now reads JSX text
 
