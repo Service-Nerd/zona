@@ -82,6 +82,49 @@ describe('BACK-ARROW-TITLE-COLLIDE-01 — pushed screens pin their header', () =
       .toEqual([])
   })
 
+  it('🔴 the five hand-rolled-title screens pin too, via ONE owner not five copies', () => {
+    // Amendment 3 (Wroblewski): *"or we will find them in a screenshot in a week."* These
+    // could not be reached by the `ScreenHeader` default because their title is hand-rolled
+    // inside the scrolling content block. Doing them as five bespoke edits would have made
+    // five copies of one pattern — this repo's single most-recorded defect.
+    const HAND_ROLLED = [
+      'app/dashboard/UpgradeScreen.tsx',
+      'app/dashboard/FounderNoteScreen.tsx',
+      'app/dashboard/RedeemCodeScreen.tsx',
+      'app/dashboard/BenchmarkUpdateScreen.tsx',
+      'components/shared/FaqScreen.tsx',
+    ]
+    for (const f of HAND_ROLLED) {
+      const src = code(readFileSync(f, 'utf8'))
+      expect(src, `${f} must pin its arrow`).toContain('<PinnedBackHeader')
+      expect(src, `${f} still floats its arrow over its own title`)
+        .not.toContain('<FloatingBackButton')
+    }
+    // ONE owner. A hand-rolled band on any of them is the copy this arm exists to stop.
+    for (const f of HAND_ROLLED) {
+      const src = code(readFileSync(f, 'utf8'))
+      expect(src, `${f} hand-rolled a pinned band instead of using the owner`)
+        .not.toContain('pinned-chrome')
+    }
+  })
+
+  it('🔴 the owner is the only place the band is built', () => {
+    // `.pinned-chrome` legitimately appears on the two group-pinned screens and the wizard,
+    // which predate this owner. What must not grow is a SIXTH hand-rolled band.
+    const builders = UI().filter(f => /pinned-chrome/.test(code(readFileSync(f, 'utf8'))))
+    const ALLOWED = [
+      'components/shared/PinnedBackHeader.tsx',
+      'components/ui/ScreenHeader.tsx',
+      'app/dashboard/DashboardClient.tsx',      // session detail + post-run groups
+      'app/dashboard/GeneratePlanScreen.tsx',   // wizard step group
+      'components/dashboard/MeScreen.tsx',      // DeleteAccountScreen group
+      'components/dashboard/SupportScreen.tsx',
+    ]
+    const extra = builders.filter(f => !ALLOWED.includes(f))
+    expect(extra, 'a new hand-rolled pinned band — use PinnedBackHeader:\n' + extra.join('\n'))
+      .toEqual([])
+  })
+
   it('the marketing mockups are genuinely still opted out (the website must not move)', () => {
     // Consumer check, app AND website. Flipping a shared default changes the homepage, and
     // that is the one surface where pinning is actively wrong.

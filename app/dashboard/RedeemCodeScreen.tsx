@@ -21,7 +21,7 @@ import { useState } from 'react'
 import { BRAND } from '@/lib/brand'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { formatCodeInput, CODE_PREFIX } from '@/lib/charity/code'
-import FloatingBackButton from '@/components/shared/FloatingBackButton'
+import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
 
@@ -77,7 +77,10 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
-      <FloatingBackButton onClick={onBack} />
+      {/* BACK-ARROW-TITLE-COLLIDE-01 — band only: this screen's title sits INSIDE the
+          redeemed/not-redeemed conditional, so there is no single discrete header to pin
+          with it. The edge is what stops the mid-word cut. */}
+      <PinnedBackHeader onClick={onBack} maxWidth={480} />
 
       <div style={{ padding: '8px 20px 48px', maxWidth: '480px', margin: '0 auto' }}>
 

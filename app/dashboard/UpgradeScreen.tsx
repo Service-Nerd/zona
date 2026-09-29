@@ -24,7 +24,7 @@ import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFramin
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { createClient } from '@/lib/supabase/client'
 import ExternalLink from '@/components/shared/ExternalLink'
-import FloatingBackButton from '@/components/shared/FloatingBackButton'
+import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 import Button from '@/components/ui/Button'
 import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
@@ -284,7 +284,9 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
       background: 'var(--bg)',
     }}>
       {/* Back */}
-      <FloatingBackButton onClick={onBack} />
+      {/* BACK-ARROW-TITLE-COLLIDE-01 — band only; the h1 is the first thing in the
+          scrolling column and scrolls cleanly under the edge. */}
+      <PinnedBackHeader onClick={onBack} />
 
       <div style={{ flex: 1, padding: '28px 20px 32px', display: 'flex', flexDirection: 'column' }}>
         {/* Headline */}

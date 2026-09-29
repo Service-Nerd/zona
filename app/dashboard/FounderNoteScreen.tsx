@@ -18,14 +18,15 @@
 import { BRAND } from '@/lib/brand'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { FOUNDER_STORY } from '@/lib/marketing/founderStory'
-import FloatingBackButton from '@/components/shared/FloatingBackButton'
+import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 
 export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
-      {/* Back arrow — 44pt tap target, --bg-soft round button per Session
-          Detail header pattern in ui-patterns.md § Screen Templates. */}
-      <FloatingBackButton onClick={onBack} />
+      {/* BACK-ARROW-TITLE-COLLIDE-01 — the arrow sits in an opaque band. The "title"
+          here is an eyebrow plus an essay lead, so it stays in the flow and scrolls under
+          the band's EDGE rather than under a disc, mid-word. */}
+      <PinnedBackHeader onClick={onBack} maxWidth={480} />
 
       <div style={{ padding: '8px 20px 48px', maxWidth: '480px', margin: '0 auto' }}>
 

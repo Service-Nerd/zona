@@ -15,7 +15,7 @@
 
 import { APP_FAQS, FAQ_TITLE, FAQ_SUBTITLE } from '@/lib/faq'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
-import FloatingBackButton from '@/components/shared/FloatingBackButton'
+import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 
 export { FAQ_TITLE, FAQ_SUBTITLE }
 
@@ -29,19 +29,20 @@ export interface FaqScreenProps {
 export default function FaqScreen({ onBack, onContact }: FaqScreenProps) {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
-      <FloatingBackButton onClick={onBack} />
-
-      <div style={{ padding: '8px 20px 48px', maxWidth: '480px', margin: '0 auto' }}>
-        <div style={{ ...MICRO_LABELS.sectionLabel, color: 'var(--mute)', marginBottom: 'var(--space-2)' }}>
+      {/* BACK-ARROW-TITLE-COLLIDE-01 — a short, discrete title, so it pins WITH the arrow. */}
+      <PinnedBackHeader onClick={onBack} padding="16px 20px 8px" maxWidth={480}>
+        <div style={{ ...MICRO_LABELS.sectionLabel, color: 'var(--mute)', marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)' }}>
           {FAQ_TITLE}
         </div>
         <div style={{
           fontFamily: 'var(--font-brand)', fontSize: '22px', fontWeight: 600,
           color: 'var(--ink)', letterSpacing: '-0.3px', lineHeight: 1.3,
-          marginBottom: 'var(--space-6)',
         }}>
           {FAQ_SUBTITLE}
         </div>
+      </PinnedBackHeader>
+
+      <div style={{ padding: 'var(--space-6) 20px 48px', maxWidth: '480px', margin: '0 auto' }}>
 
         <div style={{
           background: 'var(--card)', borderRadius: 'var(--radius-lg)',

@@ -56,6 +56,11 @@ const BARE_BACK_BUTTON: Record<string, string> = {
     'a confirm surface, not a pushed screen. It is short by construction - if it ever ' +
     'scrolls, that is the defect, not the arrow.',
 
+  // ── The two components that OWN a back-arrow placement.
+  'components/shared/PinnedBackHeader.tsx':
+    'the pinned-band owner (BACK-ARROW-TITLE-COLLIDE-01). It renders the bare arrow by ' +
+    'design, exactly as FloatingBackButton does, and is the reason five screens do not ' +
+    'each hand-roll a band.',
   // ── The component itself.
   'components/shared/FloatingBackButton.tsx':
     'the wrapper that owns the floating placement. It renders the bare arrow by design.',
@@ -129,15 +134,21 @@ describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
     // BACK-ARROW-FLOAT-04. Named individually, because "the file imports
     // FloatingBackButton somewhere" is what let `Update pace targets` pass: MeScreen and
     // DashboardClient both already imported it while still carrying a bare arrow.
-    const CONVERTED: Record<string, string> = {
-      'app/dashboard/BenchmarkUpdateScreen.tsx': 'onClick={onBack}',
-      'components/shared/FaqScreen.tsx':         'onClick={onBack}',
-    }
-    for (const [f, marker] of Object.entries(CONVERTED)) {
+    // 🔴 THIS ARM LISTED `BenchmarkUpdateScreen` AND `FaqScreen` AS FLOATING, AND WENT RED
+    // ON BACK-ARROW-TITLE-COLLIDE-01 — correctly. Both hand-roll their own title, so the
+    // founder's device screenshots showed the floating disc free to park on it mid-word.
+    // They now pin through `PinnedBackHeader`. **The arm follows the decision rather than
+    // being deleted**: what it guards is that these screens have ONE owner for where the
+    // arrow sits, and that is still true — the owner changed.
+    const PINNED_INSTEAD: string[] = [
+      'app/dashboard/BenchmarkUpdateScreen.tsx',
+      'components/shared/FaqScreen.tsx',
+    ]
+    for (const f of PINNED_INSTEAD) {
       const src = readFileSync(f, 'utf8')
-      expect(src, `${f} lost its floating arrow`).toContain('<FloatingBackButton')
-      expect(src, `${f} still has a bare arrow`).not.toContain('<BackButton')
-      expect(src).toContain(marker)
+      expect(src, `${f} must not float its arrow over its own title`)
+        .not.toContain('<FloatingBackButton')
+      expect(src, `${f} lost its pinned header`).toContain('<PinnedBackHeader')
     }
     // The three inside mixed files are checked by their own `backBtn` binding, which is
     // what the padded header used to hold.
