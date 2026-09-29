@@ -6,6 +6,44 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — STICKY-TRANSFORM-01 · every screen in the app sat inside a containing block
+
+**Dev.** Pinned headers should actually pin now. They were not pinning on his phone, on any
+screen, and had never been.
+
+**The honest bit.** He told me twice, about two different screens, and both had shipped that
+day as "pinned" with green checks behind them. The cause is one div. `PullToRefresh` wraps
+every screen in the app to animate the pull-down, and that wrapper carried a zero-pixel
+transform and a permanent `will-change: transform`. Both of those create a containing block
+for everything inside. So every sticky header in the product was resolving against a wrapper
+that scrolls with the content, rather than against the scroller.
+
+**What I could not do, and said so.** My first instinct was the transform, so I built the
+exact nesting in a browser and measured it — and it stuck perfectly, with and without. That
+killed the hypothesis on desktop Blink. He is on WebKit. I could not test WebKit: no full
+Xcode so no simulator, Safari's automation JavaScript is switched off, and screen capture
+needs a permission I do not have. Three dead ends in a row, each one reported rather than
+quietly swapped for a weaker check.
+
+I shipped the change anyway, and the reasoning matters more than the fix: a zero-pixel
+transform is a no-op that still creates a containing block, and a permanent `will-change`
+around an entire application is a compositing smell rather than a hint. It is right on its own
+terms. If my hypothesis about WebKit is wrong, it costs nothing. What I did not do is claim it
+was proven.
+
+**AI-building.** The useful artefact here is not the fix, it is the probe: a dev-only page
+that builds the nesting twice, with and without the transform, scrolls itself and prints the
+answer in type large enough to read in a screenshot. I could not run it. Anyone with a phone
+can, in five seconds. When you cannot take a measurement, the next best thing is to leave the
+measurement behind for whoever can.
+
+**And a family worth naming.** This is the third way a sticky element can be silently not
+sticky here: pinned to a scrollport that can never scroll, pinned under a `flex: 1` treated as
+a height, and now pinned inside a containing block. None of the three throws, none logs, and
+all three look exactly like a header that simply scrolls.
+
+---
+
 ## 2026-09-29 — BACK-ARROW-TITLE-COLLIDE-01 · a default that only the safe callers overrode
 
 **Dev.** Screens you can push onto now pin their header, so the floating back arrow stops
