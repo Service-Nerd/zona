@@ -826,6 +826,33 @@ with the circle's `--chrome-edge` border doing the separating. **Not a new surfa
 ✅ **Measured holding at 17px across 400 / 600 / 900 / 1200px of scroll**, 154.8px wide.
 ⚠️ **The uncaptioned float stays a bare circle** and the gate fails **both** ways.
 
+#### 🔴 `CONTRACT-COVERAGE-02` — 52 shared components have no contract, and the audit could not see it
+
+⚙️ **NO BOARD** — documentation debt, now measured and gated.
+
+**Asked "are the contracts updated?", the audit said ALL CLEAN. It was wrong, and the way it
+was wrong is the finding.**
+
+🔴 **THE CONTRACTS ARM ONLY ASKED ONE DIRECTION.** It iterates
+`docs/contracts/components/*.md` and asks *"did a contracted component change without its
+doc?"* — so **a component with no contract is not in the population at all**, and the audit
+reports `ok` **by not looking**. **20 components shipped today with zero contracts under a
+green audit.** Same class as every other short population recorded this week: the predicate
+was right and the set was wrong.
+
+✅ **Four written** for the genuinely new shared interfaces: `FloatingBackButton`,
+`SectionLabel`, `StatusBadge`, `FaqScreen`. **20 contracts now, against 72 shared components.**
+
+✅ **Inverse arm added and falsified both ways** — delete a contract and it reports GREW;
+add one without lowering the baseline and it reports debt PAID. 🔴 **It fired on its first
+run with MY number in it:** I set the baseline to 14 (today's extractions) assuming the rest
+of the tree was contracted. **It is 52.** Writing the value before measuring the population,
+again.
+
+⚠️ **The 14 extracted screens moved VERBATIM**, so their interfaces pre-date the
+extraction; **the other 38 are older debt this arm had no way of showing until now.**
+**Falling-only: contract one and the baseline comes down in the same commit.**
+
 #### ✅ `BACK-ARROW-FLOAT-03` — SHIPPED 2026-09-29. The step header pins as a group
 
 👤 Founder: *"float the group so progress stays too."*

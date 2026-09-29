@@ -341,6 +341,48 @@ for c in docs/contracts/components/*.md; do
 done
 [ "$kfail" = 0 ] && say "  ok"
 
+say "── CONTRACTS: a SHARED component with no contract at all ──"
+# 🔴 THE ARM ABOVE ONLY ASKS ONE DIRECTION, AND THAT IS HOW 20 COMPONENTS SHIPPED
+# UNCONTRACTED UNDER A GREEN AUDIT (2026-09-29). It iterates the CONTRACTS and asks
+# "did a contracted component change without its doc?" — so a component with no
+# contract is not in the population at all, and the audit reports ok by not looking.
+# Same class as every other short population this repo has recorded: the predicate
+# was right and the set was wrong.
+#
+# This asks the inverse: a component under `components/shared/` that EXPORTS a prop
+# interface and is imported by more than one file should have a contract. Existing
+# debt is declared below so it is visible and cannot grow.
+UNCONTRACTED_BASELINE=52   # 🔴 MEASURED, NOT GUESSED. I set this to 14 first — today's
+                           # extracted screens — on the assumption the rest of the tree was
+                           # contracted. It is not: 52 shared components have no contract,
+                           # against 20 that do. The arm fired on its FIRST RUN and the
+                           # number was mine, not the code's, which is the same "wrote the
+                           # value before measuring the population" mistake recorded all
+                           # week. The 14 extractions moved VERBATIM, so their interfaces
+                           # pre-date today; the other 38 are older debt this arm had no
+                           # way of showing until now. Falling-only: contract one and the
+                           # baseline must come down in the same commit.
+missing=0
+for f in components/shared/*.tsx components/dashboard/*.tsx; do
+  [ -f "$f" ] || continue
+  case "$f" in *.test.*) continue;; esac
+  grep -q "^export default function\|^export function" "$f" || continue
+  # more than one importer (the component itself excluded)
+  users=$(grep -rl "from '@/${f%.tsx}'" app components 2>/dev/null | grep -v '\.test\.' | wc -l | tr -d ' ')
+  [ "$users" -ge 2 ] || continue
+  grep -rqs "^\*\*Component:\*\* \`$f\`" docs/contracts/components/ && continue
+  missing=$((missing+1))
+done
+if [ "$missing" -gt "$UNCONTRACTED_BASELINE" ]; then
+  say "  GREW: $missing shared components with no contract, baseline $UNCONTRACTED_BASELINE"
+  fail=1
+elif [ "$missing" -lt "$UNCONTRACTED_BASELINE" ]; then
+  say "  debt PAID: $missing (baseline $UNCONTRACTED_BASELINE) — lower UNCONTRACTED_BASELINE"
+  fail=1
+else
+  say "  $missing uncontracted, unchanged (declared debt)"
+fi
+
 say "── coaching rounds: ruling written back ──"
 # A round whose review.md still says REVIEW PENDING is a sitting whose outcome
 # was never recorded -- which is exactly how the board came to re-litigate two

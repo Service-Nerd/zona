@@ -715,6 +715,11 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   Floating it is a different decision; nothing done. ⚠️ `BACK-ARROW-FLOAT-03` — the
   wizard step's **progress line now scrolls away** while the arrow floats. Detail in
   `backlog.md`.
+- 🔴 `CONTRACT-COVERAGE-02` — **52 shared components have no contract**, and
+  `audit-docs.sh` **could not see it**: its contracts arm iterated the DOCS, so a component
+  with none was never in the population. **20 shipped uncontracted today under a green
+  audit.** 4 written, inverse arm added and falsified, debt declared and falling-only.
+  Detail in `backlog.md`.
 - ✅ `DASHBOARD-HARNESS-01` — **SHIPPED**, completing `DASHBOARD-SCREEN-EXTRACT-04`. All **14 of 14** extracted screens render on
   `/copy-preview` from a **generated** Plan fixture (real production input → real engine
   → `validatePlan()`), guarded against drift. ⚠️ **Signed out, so data regions show empty
