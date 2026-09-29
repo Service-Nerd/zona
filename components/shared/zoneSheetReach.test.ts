@@ -55,6 +55,55 @@ describe('ZONES-ZONE-SHEET-GONE-01 — a zone row goes somewhere', () => {
     }
   })
 
+  it('🔴 the HR row and its PACE twin carry the SAME border treatment', () => {
+    // 🔴 THE FOUNDER FOUND THIS ON A DEVICE: *"look inconsistent with the pace cards."*
+    // Making the HR row a `<button>` to restore the tap changed its BOX. The style read
+    // `borderTop: '1px solid var(--line)'` … then `border: 'none'` — a SHORTHAND, which
+    // resets it — then `borderTopStyle: 'solid'`, which re-enabled a top border with the
+    // DEFAULT width (medium) and DEFAULT colour (`currentColor` = `--ink`). Thick black
+    // separators on one tab, hairlines on the other.
+    //
+    // ⚠️ AND THE GATE WHOSE ENTIRE PURPOSE IS THIS COULD NOT SEE IT. `buttonGeometry`
+    // exists because "a conversion may change a button's COLOUR, never its BOX" — but
+    // `measureAll()` only reads controls on the design system, and its own comment in THIS
+    // FILE says the hand-rolled `<button>`s here are deliberately outside it. So the
+    // absolute-measurement gate is blind by construction, and the right check is a
+    // RELATIVE one: the two branches render the same row and must agree.
+    const src = readFileSync('components/shared/TrainingZonesScreen.tsx', 'utf8')
+    // 🔴 BOUNDED BY THE `style={{ … }}` OBJECT, NOT BY A BYTE BUDGET. The first cut of this
+    // arm used `slice(i, i + 900)` and went red the instant I wrote the explanatory comment
+    // above — the comment pushed the style past 900 characters. That is the THIRD character
+    // budget I have written today and the third time it has measured the wrong thing.
+    // A region measured in bytes is not a region.
+    const borders = (marker: string) => {
+      const i = src.indexOf(marker)
+      expect(i, `${marker} moved — re-anchor this gate`).toBeGreaterThan(-1)
+      const styleAt = src.indexOf('style={{', i)
+      expect(styleAt, `${marker} has no style object after it`).toBeGreaterThan(-1)
+      let depth = 0, end = styleAt
+      for (let k = src.indexOf('{', styleAt); k < src.length; k++) {
+        if (src[k] === '{') depth++
+        else if (src[k] === '}') { depth--; if (depth === 0) { end = k; break } }
+      }
+      const region = code(src.slice(styleAt, end + 1))
+      return {
+        top: /borderTop:\s*i \? '([^']+)' : '([^']+)'/.exec(region)?.slice(1, 3) ?? null,
+        // a longhand AFTER the shorthand is the defect itself
+        resetAfterTop: region.indexOf("border: 'none'") > region.indexOf('borderTop:'),
+        hasStyleLonghand: /borderTopStyle/.test(region),
+      }
+    }
+    const hr = borders('zones!.map')
+    const pace = borders('paceRows(pace!).map')
+    expect(hr.top, 'the HR row lost its border declaration').toBeTruthy()
+    expect(hr.top, 'the HR row and the pace row must declare the SAME border')
+      .toEqual(pace.top)
+    expect(hr.resetAfterTop, 'the `border` shorthand sits AFTER `borderTop` and resets it')
+      .toBe(false)
+    expect(hr.hasStyleLonghand, 'borderTopStyle re-enables a DEFAULT-width, currentColor border')
+      .toBe(false)
+  })
+
   it('🔴 no dead residue of the old location survives', () => {
     // All three, because each one on its own reads as tidy-up and together they were the
     // evidence. A residue left behind is how the next reader concludes it still works.

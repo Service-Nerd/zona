@@ -238,9 +238,18 @@ export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: 
               <button
                 key={z.zone}
                 onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)}
-                style={{ ...rowStyle, borderTop: i ? '1px solid var(--line)' : 'none',
-                         width: '100%', background: 'none', border: 'none',
-                         borderTopStyle: i ? 'solid' : undefined,
+                /* 🔴 ORDER MATTERS AND I GOT IT WRONG FIRST TIME, ON A DEVICE, IN FRONT OF
+                   THE FOUNDER. `border: 'none'` is a SHORTHAND: written after `borderTop` it
+                   resets it, and the `borderTopStyle` that followed then re-enabled a top
+                   border with the DEFAULT width (medium) and the DEFAULT colour
+                   (`currentColor`, i.e. `--ink`). The result was thick black separators on
+                   the HR rows while the pace rows kept their hairline `--line` — *"look
+                   inconsistent with the pace cards"*.
+                   The reset goes FIRST, and the row then takes exactly the same border
+                   declaration as its pace twin below. */
+                style={{ ...rowStyle, border: 'none',
+                         borderTop: i ? '1px solid var(--line)' : 'none',
+                         width: '100%', background: 'none',
                          font: 'inherit', textAlign: 'left', cursor: 'pointer' }}
               >
                 <div>

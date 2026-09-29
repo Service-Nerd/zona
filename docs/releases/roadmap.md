@@ -716,11 +716,11 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
   forgotten.** New: `MICRO-LABEL-CHIPS-01` (16 chips governed by no check) and
   `BUTTON-GEOMETRY-SPREAD-01` (the geometry harness cannot see through a spread, so every
   wave shrinks its population). `backlog.md`.
-- 🔴 `SHEET-HARNESS-01` — **NO BOARD.** No sheet could be made to render on `/copy-preview`
-  **or** `/sheet-preview` — and a card predating any change failed too, so it is not the new
-  component. Chunks 404; the pages appear not to hydrate. Blocks the two device-adjacent
-  conditions the board attached to `ZONES-HR-SHEET-01`. Two candidate causes named, not
-  guessed between. Filed from that build.
+- ✅ `SHEET-HARNESS-01` — **CLOSED same day, and my filing named two causes and got both
+  wrong.** Not a harness limit and not a server-component constraint: the **dev server's module
+  graph was corrupted by a broken intermediate state of my own edit** and kept serving a
+  poisoned bundle after the source was fixed. `preview_logs` held the compile error the whole
+  time. **A dev server that fails to compile does not stop serving.**
 - 🔴 `STICKY-INERT-FLEX-01` — **NO BOARD.** `stickyScroller.test.ts` accepts `flex: 1` as
   proof an `overflowY: auto` box is height-constrained. It constrains only under a
   **definite** height, and two screens declare `minHeight: 100%`: measured in a browser,

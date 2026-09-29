@@ -916,38 +916,37 @@ registry to one row format is the better fix than encoding both. **Same lesson t
 records four times: a checker that encodes ONE way of writing something is blind to every
 other way, and people write things more than one way.**
 
-#### 🔴 `SHEET-HARNESS-01` — no sheet could be made to render on either harness
+#### ✅ `SHEET-HARNESS-01` — CAUSE FOUND, AND MY FILING NAMED THE WRONG ONE
 
-⚙️ **NO BOARD** — tooling / verification gap. **Filed from `ZONES-HR-SHEET-01`, where it blocked
-the render check the board asked for.**
+⚙️ **NO BOARD.** **Closed 2026-09-29, hours after it was filed, by the founder reporting an
+unrelated bug.**
 
-**Measured 2026-09-29, and the control is what makes it worth filing.** Trying to render
-`HrCalibrationSheet`:
+🔴 **I FILED TWO CANDIDATE CAUSES AND BOTH WERE WRONG.** I wrote that either the dev server was
+*"serving pages without client JS"* or `/copy-preview` was a server component that **cannot host
+a portal-based sheet**. The real cause was neither, and it was mine:
 
-- On **`/copy-preview`**: `role="dialog"` count **0**, and exactly **one** `Resting HR` label
-  (the pre-existing `HRZonesSection` case), so the sheet rendered nothing. ⚠️ **`ManualRunModal`
-  is a `Sheet` and has been mounted on that page all along, also rendering nothing.**
-- On **`/sheet-preview`** — the page that exists specifically to preview sheets and imports the
-  real primitive — clicking the new entry opened nothing, **and so did clicking a card that
-  predates any of my changes.** That control is the point: it is not the new component.
-- Console showed **401/404 on chunks**, consistent with the pages not hydrating at all, which
-  would explain `Sheet` never reaching `setMounted(true)` in its `useEffect`.
+> **The dev server's module graph was corrupted by a broken intermediate state of my own edit.**
+> `⨯ ./components/shared/TrainingZonesScreen.tsx — Expected ',', got '{'`, followed by
+> `TypeError: __webpack_modules__[moduleId] is not a function` on every page it touched.
 
-🔴 **TWO CANDIDATE CAUSES AND I DID NOT SEPARATE THEM**, so both are named rather than one
-guessed: (a) the local dev server was serving pages without client JS in that session, or
-(b) `/copy-preview` is a **server component** and cannot host a portal-based sheet, which would
-make its `ManualRunModal` case **a harness showing nothing while appearing to cover the
-component** — the recorded *"a harness with a short population is the same defect as a test with
-one, and quieter"* class.
+I had already fixed that syntax error in the source — `tsc`, the suite and `npm run build` were
+all clean — **but the running dev server never recovered**, and kept serving a poisoned bundle.
+That is what produced the 401/404 chunk errors, the total absence of hydration, and therefore
+every sheet failing to mount. ⚠️ **The control I was proudest of — *"a pre-existing card fails
+too, so it is not the new component"* — was sound reasoning on a true observation, and it
+pointed me away from the answer**, because the breakage was global rather than component-scoped.
 
-**What it costs:** the two conditions the Design Board attached to `ZONES-HR-SHEET-01` (does the
-panel cover the rows it changes; is Save reachable with the keyboard up) could not be answered,
-and neither can any future sheet change.
+✅ **Fixed by `rm -rf .next/cache` and a restart.** Verified after: `/zones-preview` serves the
+zone rows as `<button … cursor: pointer>` in the server HTML.
 
-**Fix:** restart the dev server and re-run the control. If a pre-existing card still opens
-nothing on `/sheet-preview`, the harness is broken and that is the bug. If it opens, then
-`/copy-preview` is the one that cannot host sheets, and its `ManualRunModal` case should move to
-`/sheet-preview` rather than sit there rendering nothing.
+🔴 **THE LESSON IS ABOUT READING THE SERVER, NOT THE PAGE.** `preview_logs` had the compile
+error in it the whole time. I probed the DOM repeatedly, reasoned carefully about portals and
+server components, and **filed an item with two wrong causes, without once checking whether the
+thing serving the page was healthy.** ⚠️ **A dev server that has failed to compile does not
+stop serving; it serves the last thing it managed to build.**
+
+⚠️ **What remains genuinely open:** nothing from this item. The device questions belong to
+`ZONES-HR-SHEET-01`.
 
 #### 🔴 `STICKY-INERT-FLEX-01` — the sticky guard treats `flex: 1` as a height, and it is not
 
