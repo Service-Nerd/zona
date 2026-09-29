@@ -128,6 +128,7 @@ directions.
 | 4 | **What COPY names its old location?** | *"in Profile"*, *"below"*, *"under Me"*, and the marketing site. ⚠️ Note them; **do not rewrite founder copy to fit your layout** |
 | 5 | **Does it carry its own header?** | Two of three doors said their name **twice**, and **neither was wrong when written** — a card header that "parallels the row above" becomes a second title when the card becomes the screen |
 | 6 | **What ran on MOUNT?** | Behind a door it mounts later, or never. Check every consumer of the state it set |
+| 7 | **WHO IS ALLOWED TO MOUNT IT?** | 🔴 A move can cross a TIER or AUTH gate without changing a line of logic. `LEDGER-01` was FREE, branched on tier in its own code, and spent **four months** rendering only inside the paid Coach screen — its move commit said *"no change to data or computation"*, which was true. **Ask 6 asks what ran on mount; this asks who is permitted to.** Compare the feature's registry tier tag against the gate of its new home |
 
 ⚠️ **And the reason a passing suite is no comfort here:** a test written for the thing you
 moved asserts it **RENDERS**. None of them assert it **GOES** anywhere, or that anything

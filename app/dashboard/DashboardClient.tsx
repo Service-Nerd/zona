@@ -9675,12 +9675,21 @@ function SaveImageButton({ weekN, sessionDay }: { weekN: number; sessionDay: str
 // flames, no urgency, no celebration of milestones. Resets silently to 0 on a
 // broken week. Voice anchor stamp at the bottom — same anatomy as Pattern 11
 // (RestraintCard) in ui-patterns.md.
-function LedgerCard({ ledger: ledgerProp }: { ledger?: LedgerSnapshot | null }) {
+function LedgerCard({ ledger: ledgerProp, surface }: { ledger?: LedgerSnapshot | null; surface: 'me' | 'coach' }) {
   // Prefer the prefetched snapshot from the parent's orchestrated load so the
   // card is resolved on first paint. Fall back to the hook only when the prop
   // is absent (skip the hook's fetch when we already have the data).
   const hookLedger = useDisciplineLedger(ledgerProp != null)
   const ledger = ledgerProp ?? hookLedger
+  // 🔴 LEDGER-REACH-01 — THE EVENT LIVES WITH THE CARD, NOT WITH ONE OF ITS CALLERS.
+  // It fired from `CoachScreen` while the card rendered in two places would have left the
+  // Me surface silent, and `OPS-ARTIFACT-PLACEMENT-01` is an SLT decision parked on
+  // exactly this data — a second unmeasured surface makes that decision harder, not easier.
+  // ⚠️ `surface` is REQUIRED, not optional with a default: a default is how the second
+  // caller ships mislabelled, and this event's whole job is to tell the two apart.
+  // The resolved-snapshot guard is preserved: `ledger` is null while fetching, and
+  // "rendered a spinner" is not "saw the ledger".
+  useTrackOnce('ledger_view', ledger != null, { surface })
   return (
     <div style={{
       background: 'var(--card)', boxShadow: 'var(--shadow-card)',
@@ -9875,9 +9884,8 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
   // — a column nothing writes is not a measurement.
   useTrackOnce('weekly_report_open', !!weeklyReport?.headline,
     { week_n: weeklyReport?.week_n ?? null })
-  // Fires only on a RESOLVED snapshot: `disciplineLedger` is null while the hook
-  // behind it is still fetching, and "rendered a spinner" is not "saw the ledger".
-  useTrackOnce('ledger_view', !!disciplineLedger)
+  // `ledger_view` moved INTO `LedgerCard` (LEDGER-REACH-01) so both render surfaces are
+  // instrumented by one owner and carry `surface`. It is not fired here any more.
 
   const [localPhaseSummary,  setLocalPhaseSummary]  = useState<{ content: string; generated_at: string } | null>(
     cachedPhaseSummaryValid && phaseSummary ? { content: phaseSummary.content, generated_at: phaseSummary.generated_at } : null
@@ -10707,7 +10715,7 @@ function CoachScreen({ plan, currentWeek, runs, stravaLoading, stravaConnected, 
 
         {/* ── LEDGER — "Weeks within the lines" ─────────────────────────
             After the stats evidence tier. RestraintCard anatomy (Pattern 11). */}
-        <LedgerCard ledger={disciplineLedger} />
+        <LedgerCard ledger={disciplineLedger} surface="coach" />
 
         {/* ── AEROBIC TREND — the physiological answer to "am I getting
             fitter?". ONE card, founder's call 2026-09-12.
@@ -12613,6 +12621,19 @@ function MeScreen({ openSection, onOpenSectionConsumed, healthkitConnectedAt, st
         {/* ── Your training ──────────────────────────────────────── */}
         {/* Plan · HR data · display preferences — everything that shapes session cards */}
         <SectionLabel>Your training</SectionLabel>
+        {/* 🔴 LEDGER-REACH-01 — THE FREE BRANCH OF A TIER-AWARE FEATURE WAS UNREACHABLE.
+            `computeLedger` has explicit FREE criteria (≥75% of planned sessions complete, no
+            Heavy/Wrecked, no skipped quality — no HR needed) and its only render site was
+            inside the PAID Coach screen, so no free runner could ever see it. Live four
+            months, since `353cbbad`. Breaks "gate richness, never access".
+            ⚠️ THE COACH CARD STAYS. `353cbbad` moved it there with a stated, sound reason
+            (*"an identity / execution metric, not admin chrome"*) that says nothing about
+            tier. Removing it would reverse a reasoned design decision under cover of a
+            defect fix, and placement belongs to the Design Board (ADR-023).
+            ⚠️ NO PROP PASSED: `LedgerCard` falls back to `useDisciplineLedger()` when the
+            prop is absent, which is the fallback `353cbbad` built into it. One fetch. */}
+        <LedgerCard surface="me" />
+
 
         {/* Read-only plan overview */}
         {hasPlan && (

@@ -50,7 +50,27 @@ Lazy compute on every request — no cron, no cached table. Pure function `lib/c
 
 - Counter, not a streak. Resets to 0 silently on a broken week. No notifications, no push, no toast — the number returning to 0 is the only feedback.
 - Reads `plans`, `session_completions`, and (paid/trial only) `run_analysis`. No writes. RLS bypassed via service-role client.
-- No cron — fire-on-view from `useDisciplineLedger()` (MeScreen, SessionPopupInner reflect view, PostRunScreen).
+- No cron — fire-on-view from `useDisciplineLedger()`.
+
+## Consumers (LEDGER-REACH-01, 2026-09-29)
+
+| Surface | Fetches? | Tier reach |
+|---|---|---|
+| **Me index** — `<LedgerCard surface="me" />` | **yes**, via the hook (no prop passed) | **all tiers** |
+| **Coach** — `<LedgerCard ledger={…} surface="coach" />` | no — CoachScreen prefetches and passes the snapshot; the hook is skipped | paid/trial only |
+| `SessionPopupInner` reflect view | yes | reads `advancedThisWeek` for DOCTRINE-01 |
+| `PostRunScreen` | yes | same |
+
+🔴 **THE ME SURFACE IS THE TIER-CRITICAL ONE.** `computeLedger` has explicit FREE
+criteria that need no HR, and between `353cbbad` (2026-05-23) and `LEDGER-REACH-01` the
+only render site was inside the **paid** Coach screen. The route served free users a value
+nothing rendered for them. Guarded by `components/shared/ledgerReach.test.ts`, whose
+decisive arm asserts the Me render site is **ungated**, not merely present — the first
+version asserted "present" and falsification showed re-adding `hasPaidAccess` kept it green.
+
+⚠️ **`ledger_view` carries `surface: 'me' | 'coach'`**, required with no default, and is
+fired from **one place** (inside `LedgerCard`). Two render sites firing one undifferentiated
+event would have destroyed the only signal `OPS-ARTIFACT-PLACEMENT-01` is waiting on.
 - Constants: `LEDGER_FREE_MIN_COMPLETION_PCT = 0.75`, `LEDGER_PAID_MIN_ZONE_DISCIPLINE_PCT = 75`. Exported from `lib/coaching/disciplineLedger.ts` — tune-by-edit, validated by `disciplineLedger.test.ts`.
 
 ## Data scoping — PLAN-WEEK-COLLISION-01 (2026-09-18)

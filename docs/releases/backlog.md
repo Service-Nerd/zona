@@ -533,6 +533,44 @@ call site, whereas threading a `source` prop through nine giant JSX call sites i
 say whether the Coach teaser converts better than the Me screen, which is the question
 `design-rulings.md`'s killed merchandising screen could not be argued without.
 
+## ⚖️ FILED 2026-09-29 — two items from the LEDGER-REACH-01 round
+
+### 🟡 `LEDGER-PLACEMENT-01` — where the discipline ledger belongs on Me
+
+🧭 **DESIGN BOARD.** `LEDGER-REACH-01` restored the ledger to Me as a **defect fix**,
+in the position the feature registry already specified (leading `Your training`). It did
+**not** decide whether that is the right place.
+
+Two live questions it deliberately left open:
+- The founder asked for *"something beside Pro"* — i.e. **next to the identity card**.
+  That is a placement decision, not a defect, so it was not taken unilaterally.
+- ⚠️ **`ME-PURPOSE-01` says *"nothing lives on Me, every row is a door"*, and the ledger
+  is a read-only CARD, not a door.** It predates that ruling and the ruling was made
+  without it on screen. Either it is a declared exception like *What Kit knows about you*,
+  or it moves. **The board never actually decided, because nobody knew it was gone.**
+
+Data to bring: `ledger_view` now carries `surface: 'me' | 'coach'`, which is the evidence
+`OPS-ARTIFACT-PLACEMENT-01` has been parked on.
+
+### 🟡 `LEDGER-RESET-01` — the silent reset to zero
+
+💼 **SLT** (raised at `LEVELS-01`, 2026-09-29, and recorded unresolved).
+
+`LEDGER-01` resets to 0 on any broken week. Sutherland: that deletes the whole accumulated
+investment of a product whose thesis is that one bad week does not matter, and *"a thing
+you keep is a stronger commitment device than a thing you can lose"*. Wood: a durable
+artifact that never goes down **decouples the display from current behaviour** and is the
+illusion-of-progress class she holds a kill mandate for.
+
+⚠️ **They agree on the thing neither was asked about: the hard reset is a defect in a
+shipped feature.** Candidate shapes: a floor, a decay, or a "best run" held alongside the
+current count. **Not levels** — `LEVELS-01` was not built, and Kaevor #2's DON'T SHIP on
+milestones stands.
+
+**Blocked on data:** 6 users have any completed session; 3 have any `hr_in_zone_pct`.
+
+---
+
 ## ⚖️ FILED 2026-09-28 — `ME-SCREEN-CONTRACT-01`
 
 ### 🟡 `ME-SCREEN-CONTRACT-01` — MeScreen has ~40 props and no contract

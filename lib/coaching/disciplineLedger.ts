@@ -16,8 +16,14 @@
 //   - Median `run_analysis.hr_in_zone_pct` across that week's analysed runs
 //     ≥ MIN_ZONE_DISCIPLINE_PCT.
 //
-// Computed lazily on Me-screen open — no cron, no table. The function below
-// is the single source of truth.
+// Computed lazily on view — no cron, no table. The function below is the single
+// source of truth.
+//
+// 🔴 RENDERED ON TWO SURFACES (LEDGER-REACH-01, 2026-09-29): the Me index, ungated, and
+// the Coach screen, which is paid-only. This header said "Me-screen open" for FOUR MONTHS
+// after `353cbbad` moved the only render site to Coach — so the FREE criteria below
+// computed a real answer that no free runner could ever see. If you move the card again,
+// this comment and `feature-registry.md` are the two records that go stale silently.
 
 import type { Plan, Week } from '@/types/plan'
 

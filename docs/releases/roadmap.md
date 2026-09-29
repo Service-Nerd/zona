@@ -693,6 +693,13 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 
 ### 🏃 Product — SLT priority order (reviewed 2026-06-06; **re-topped 2026-08-06**)
 
+- 🧭 `LEDGER-PLACEMENT-01` — **NEXT.** Where the discipline ledger belongs on Me. Restored
+  as a defect fix to the position the registry specified; the founder asked for it *beside
+  the tier chip*, and `ME-PURPOSE-01` says nothing lives on Me. Goes to the board with the
+  tier-chip colour. `backlog.md`.
+- 💼 `LEDGER-RESET-01` — **LATER, blocked on data.** The silent reset to zero. Sutherland
+  and Wood disagree on the record and both call the hard reset a defect. `backlog.md`.
+
 - ⚙️ `ME-SCREEN-CONTRACT-01` — **LATER.** `MeScreen` has ~40 props and no contract, because
   it is a function inside `DashboardClient.tsx` rather than its own module. Only the
   navigation surface is documented. Same root as the item below. `backlog.md`.

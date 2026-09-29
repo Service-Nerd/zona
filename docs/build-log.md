@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — LEDGER-REACH-01 · he asked for a feature we built in May and hid in June
+**Shipped:** The discipline ledger renders on Me again, ungated, for every tier.
+**Dev learning:** The founder described a feature in his own words — a counter of weeks spent inside your zones, restraint rather than gamification — and it already existed, shipped four months ago, with almost that exact sentence in its module header. Then a refactor moved its only render site onto the Coach screen, which is paid-only. A FREE feature, with free criteria that need no heart-rate data, that no free user could reach. **The commit that did it says "No change to data or computation." That was true. It was a change to who could see it.**
+**Product/creator learning:** The move was not a mistake. Its reasoning is good and I would sign it today: the counter is an identity metric, not a settings item, and it frames the weekly numbers below it. What nobody asked was *who is allowed on that screen*. **The placement decision and the paywall live eight thousand lines apart in the same file**, and nothing in this codebase connects a feature's FREE/PAID tag to the gate of the screen it renders on. So the defect was invisible to the person best placed to catch it.
+**AI-building learning:** This morning I shipped a hook for exactly this class — a move changes reach, and reach is invisible at the point of the move — and its six questions still missed it. Question six asks *what ran on mount*. It needed a seventh: **who is permitted to mount it.** Both are now in the procedure, along with a new entry in the debug catalogue.
+**The honest bit:** My most important test was hollow and I only know because I broke it on purpose. It asserted the card was *present* on the Me screen. So I re-added the paywall — literally re-introducing the four-month-old bug — and the test stayed green. Present and reachable-by-a-free-user are different claims, and I had written the easy one. The fixed version bounds the enclosing JSX and asserts *ungated*.
+**Also worth saying:** I nearly moved it back and deleted the Coach card, because the SLT had recommended exactly that an hour earlier. Then I read the original commit message, which the SLT never saw, because **I wrote the brief and left it out**. Reversing a reasoned decision is a design ruling, not a defect fix. Both cards stay; the placement question is filed for the board.
+**Hook material:** He asked for a feature. We built it in May, hid it in June, and I found it by reading the registry.
+**Postable?:** yes
+
 ## 2026-09-28 — ME-ORDER-01 · the founder caught a ruling we made and never carried out
 **Shipped:** The Me index reordered, seven headings down to five, Connections turned into a door.
 **Dev learning:** The settled-ground scan answered half the question before the board opened. `screen-architecture.md` already said *"a door to data connections"* — we ruled it the same day and I didn't build it. He wasn't asking for a decision; he was catching one that had been made and dropped. **The register is only useful if you read it against what actually shipped**, and I'd read it against what I was about to write.
