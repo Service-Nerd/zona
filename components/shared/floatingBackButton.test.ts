@@ -112,6 +112,34 @@ describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
     expect(branch, 'uncaptioned must NOT gain a background').not.toMatch(/\}\s*:\s*\{[^}]*background/)
   })
 
+  it('🔴 the wizard step pins arrow AND progress as ONE group', () => {
+    // BACK-ARROW-FLOAT-03. Floating the arrow alone kept the exit and let "where am I"
+    // scroll away — the founder caught that. Splitting them again would not break
+    // anything visible; the progress cue would just quietly stop being there on long
+    // steps, which is precisely how this was missed the first time.
+    const src = readFileSync('app/dashboard/GeneratePlanScreen.tsx', 'utf8')
+    const i = src.indexOf('pinned-chrome')
+    expect(i, 'the step header is not pinned at all').toBeGreaterThan(-1)
+    // 🔴 BOUNDED BY THE CONTAINER, NOT BY A CHARACTER BUDGET — and the first cut of this
+    // arm was the budget version. `src.slice(i, i + 900)` PASSED when I moved
+    // `<ProgressLine>` out of the pinned div, because it was still within 900 characters
+    // of the class name. That is the same defect as the brand-string scan that counted a
+    // BUTTON because `BRAND.name` sat in a sentence 200 chars below it. A region measured
+    // in bytes is not a region.
+    //
+    // The container's children are indented 8 spaces and it closes at 6, so the element
+    // ends at the first `\n      </div>` after it.
+    const open = src.lastIndexOf('<div', i)
+    const close = src.indexOf('\n      </div>', i)
+    expect(close, 'could not find the pinned container\'s close').toBeGreaterThan(open)
+    const group = src.slice(open, close)
+    expect(group, 'the pinned group must contain the back arrow').toContain('<BackButton')
+    expect(group, 'and the progress line — that is the whole point of the group')
+      .toContain('<ProgressLine')
+    // The arrow must NOT also float independently, or there are two stickies.
+    expect(group).not.toContain('<FloatingBackButton')
+  })
+
   it('does not swallow taps across the top of the screen', () => {
     // A sticky FULL-WIDTH strip would sit over the whole top edge and eat taps meant for
     // the content behind it. The wrapper is the circle's size and nothing more.

@@ -4,6 +4,8 @@
 'use client'
 
 import PlanHeroMetrics from '@/components/shared/PlanHeroMetrics'
+import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
+import { Z_LAYERS } from '@/lib/ui/zLayers'
 import PlanArc from '@/components/shared/PlanArc'
 import { planArcSeries } from '@/lib/plan/weekVolume'
 import { phaseDisplayLabel } from '@/lib/coaching/weekVoice'
@@ -681,6 +683,11 @@ export default function GeneratePlanScreen({
 
   // ── Step 11 — Injuries (paid) ────────────────────────────────────────────
   const [injuries, setInjuries] = useState<string[]>([])
+
+  // BACK-ARROW-FLOAT-03 — the wizard step header pins as a group. The hook owns finding
+  // the REAL scroller; the naive "nearest ancestor with overflow-y: auto" walk once
+  // pinned a header to a box that could never scroll.
+  const { ref: stepHeaderRef, scrolled: stepHeaderScrolled } = useScrolledContainer(true)
 
   // ── Restore wizard draft from sessionStorage ──────────────────────────────
   useEffect(() => {
@@ -1603,15 +1610,28 @@ export default function GeneratePlanScreen({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
-      {/* Header — back button + progress */}
-      {/* BACK-ARROW-FLOAT-01 — the ARROW floats; `ProgressLine` and the title stay in
-          flow. ⚠️ THE CONSEQUENCE IS REAL AND IS THE FOUNDER'S CALL: on a long step the
-          runner keeps the exit and loses "where am I". Floating the whole header group
-          would keep both, and was NOT done because the instruction was about the arrow.
-          If the progress cue turns out to matter more than the extra 8px of content,
-          that is the change to make. */}
-      {!(isOnboarding && currentIdx === 0) && <FloatingBackButton onClick={goBack} />}
-      <div style={{ padding: '16px 20px 0', flexShrink: 0 }}>
+      {/* Header — back button + progress, PINNED AS A GROUP (BACK-ARROW-FLOAT-03).
+          🔴 THE ARROW ALONE WAS NOT ENOUGH, AND THE FOUNDER CALLED IT: floating only the
+          arrow kept the exit and let "where am I" scroll away. The group keeps both.
+
+          ⚠️ AND THIS IS THE PINNED BAR THE DESIGN BOARD ORIGINALLY RULED, REACHED BY A
+          DIFFERENT ROUTE. `ProgressLine` is a FULL-WIDTH 3px bar, so a floating group
+          containing it is structurally a bar, not a hovering chip. Recorded in
+          `design-rulings.md` rather than left as a coincidence — the founder's position
+          and the board's converged here.
+
+          ⚠️ `.pinned-chrome` IS REUSED, NOT REBUILT: sticky + `--bg` ground + a border
+          that starts TRANSPARENT so the header's height never changes and the first
+          scroll event is not a 1px flinch. `useScrolledContainer` finds the real
+          scroller — `position: sticky` resolves against any `overflow` ancestor EVEN ONE
+          THAT CAN NEVER SCROLL, which already left one header in this app unpinned. */}
+      <div
+        ref={stepHeaderRef}
+        className={['pinned-chrome', stepHeaderScrolled && 'pinned-chrome--scrolled']
+          .filter(Boolean).join(' ')}
+        style={{ padding: '16px 20px 0', flexShrink: 0, zIndex: Z_LAYERS.screenHeader }}
+      >
+        {!(isOnboarding && currentIdx === 0) && <BackButton onClick={goBack} />}
         <ProgressLine total={realSteps.length} current={Math.max(0, realDone - 1)} />
         <div style={{ marginBottom: stepMeta.interstitial ? '20px' : '28px', marginTop: stepMeta.interstitial ? '28px' : 0 }}>
           {stepMeta.eyebrow && (

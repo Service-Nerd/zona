@@ -2806,6 +2806,20 @@ what lets it read on a card instead of melting into it at 1.21:1. ⚠️ **The u
 float stays a bare circle** — it has no label needing a ground, and giving it one would be
 inventing a surface for a problem it does not have.
 
+**A header GROUP pins with `.pinned-chrome`, not with a floating arrow
+(BACK-ARROW-FLOAT-03).** Where the arrow shares its header with something the runner keeps
+needing — the wizard step's `ProgressLine` — **pin the group**, do not float the arrow out
+of it. Floating the arrow alone keeps the exit and lets *where am I* scroll away.
+
+⚠️ **AND THAT IS THE PINNED BAR THE BOARD ORIGINALLY RULED, REACHED BY A DIFFERENT
+ROUTE.** `ProgressLine` is a full-width 3px bar, so a group containing it is structurally a
+bar rather than a hovering chip. The founder's position and the board's converged; recorded
+rather than left as a coincidence.
+
+`.pinned-chrome` is reused, never rebuilt: sticky + `--bg` ground + a border that starts
+**transparent** so the header's height never changes and the first scroll is not a 1px
+flinch. `useScrolledContainer` finds the real scroller.
+
 🔴 **NOT for tiles or confirm surfaces.** `RecalibrationTile` and `ModifyPlanConfirm`
 keep plain `BackButton`: they are not pushed screens and own no scroller, so `sticky` would
 resolve to the page and the arrow would wander off the thing it belongs to.

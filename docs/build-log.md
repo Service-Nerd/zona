@@ -6,6 +6,31 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — BACK-ARROW-FLOAT-03 · a region measured in bytes is not a region
+
+**Dev.** The wizard step header now pins as a group, so the progress line stays with the
+back arrow instead of scrolling away.
+
+**The honest bit.** Two things worth writing down, and the second is the one that matters.
+
+First: this is the pinned bar the design board originally ruled, arrived at from the other
+direction. `ProgressLine` is a full-width 3px bar, so a group containing it is structurally
+a bar, not a hovering chip. The founder overturned the board on the lone arrow, was right
+that the arrow should hover, and then asked for the group — which puts the wizard exactly
+where the board wanted it. That convergence is on the register rather than left as a
+coincidence nobody noticed.
+
+Second: my gate arm passed when it should have failed. I bounded the region as
+`slice(i, i + 900)` — a character budget — so when I moved `<ProgressLine>` out of the
+pinned div to falsify it, the string was still within 900 characters of the class name and
+the test stayed green. That is the same defect as the brand-string scan this morning that
+counted a button because `BRAND.name` appeared in a sentence two hundred characters below
+it. A region measured in bytes is not a region. Re-bounded to the container's own JSX, it
+goes red as it should.
+
+**Product.** The arrow keeps hovering everywhere it is alone. It only stops hovering where
+it shares a header with something the runner keeps needing.
+
 ## 2026-09-29 — BACK-ARROW-FLOAT-02 · "as-is" could not be literal, and saying so was the work
 
 **Dev.** The plan preview's back arrow now floats with the rest. All three wizard arrows

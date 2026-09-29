@@ -826,16 +826,18 @@ with the circle's `--chrome-edge` border doing the separating. **Not a new surfa
 ✅ **Measured holding at 17px across 400 / 600 / 900 / 1200px of scroll**, 154.8px wide.
 ⚠️ **The uncaptioned float stays a bare circle** and the gate fails **both** ways.
 
-#### ⚠️ `BACK-ARROW-FLOAT-03` — the step screen lost its progress cue on scroll
+#### ✅ `BACK-ARROW-FLOAT-03` — SHIPPED 2026-09-29. The step header pins as a group
 
-🧭 **DESIGN BOARD**, if it turns out to matter.
+👤 Founder: *"float the group so progress stays too."*
 
-The wizard step header was arrow + `ProgressLine` + title. The **arrow floats; the progress
-line scrolls away.** The runner keeps the exit and loses *where am I* on a long step.
-**Floating the group would keep both** and was not done because the instruction was about
-the arrow. ⚠️ **Wroblewski's standing dissent bears on this**: floating makes a control
-visible, not reachable — and a progress cue is exactly the kind of thing that is worth more
-visible than an exit already reachable by edge-swipe.
+⚠️ **THIS IS THE PINNED BAR THE BOARD ORIGINALLY RULED, REACHED BY A DIFFERENT ROUTE** —
+`ProgressLine` is a full-width 3px bar. **The founder's position and the board's converged**;
+recorded rather than left as a coincidence. `.pinned-chrome` reused, not rebuilt.
+
+🔴 **My first gate arm PASSED when it should have FAILED** — bounded by a **character
+budget** (`slice(i, i + 900)`), so moving `<ProgressLine>` out still matched. **Same defect
+as the brand-string scan that counted a BUTTON 200 chars away. A region measured in bytes is
+not a region.**
 
 #### ✅ `DASHBOARD-HARNESS-01` — SHIPPED 2026-09-29. **All 14 screens render.**
 
