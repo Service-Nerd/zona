@@ -3439,10 +3439,10 @@ celebration and this ruling is void.**
 
 **(b) SHIP — the distinction must EXIST**, encoded from `tierReason`. Colour is
 **binary**: `--moss` held, `--mute` none. Five colours on one label is a legend.
-⚠️ **The words are the founder's**, drafted in `lib/tierBadge.ts` awaiting sign-off, with
-a named collision: the charity block already says *"Full access, free"* while `none` says
-*"Free"* — the same collapse arriving from the other direction. `grant` is drafted as
-**"Gifted"** as a holding choice, not a decision.
+✅ **The words are the founder's and he ruled the same day**: *"Gifted is fine, keep
+it."* The collision was named to him before he answered — the charity block says *"Full
+access, free"* while `none` says *"Free"* — and he kept **"Gifted"**, which removes the
+collapse. The residual is prose he owns.
 
 **(c) SHIP — a shared `StatusBadge`**, at the documented micro-label. ⛔ **Silvanto named
 the rule and DECLINED to veto**, converting it into a binding condition: it ships at

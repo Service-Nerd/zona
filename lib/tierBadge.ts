@@ -12,17 +12,22 @@
 // lapsed grant both resolve to `free`, so the TIER alone cannot answer "what do we say?".
 // `reason` is not decoration — it is the only thing that can.
 //
-// ── ⚠️ THE WORDS ARE THE FOUNDER'S, NOT THE BOARD'S AND NOT MINE ─────────────
+// ── ✅ THE WORDS ARE THE FOUNDER'S, AND HE HAS RULED ─────────────────────────
 // The Design Board ruled that a distinction must EXIST and how it is ENCODED. It
 // explicitly did not rule the copy: `ownership-map.md` gives voice and locked strings to
-// the founder and `brand.md`. **The five strings below are a DRAFT awaiting his sign-off.**
-// They are in one constant so that changing them is one edit, not a hunt.
+// the founder and `brand.md`.
 //
-// 🔴 AND ONE OF THEM HAS A KNOWN COLLISION HE MUST RESOLVE. The charity block already on
-// Me reads **"Full access, free"**, while `none` here reads **"Free"**. The same word
-// would then describe both a gifted place and no place at all — which is the collapse
-// this file exists to remove, arriving from the other direction. `GRANT` is drafted as
-// "Gifted" to avoid it; that is a holding choice, not a decision.
+// **"Gifted" was put to him with the collision named, and he kept it (2026-09-29):**
+// *"Gifted is fine, keep it."* So `grant` is settled, not drafted.
+//
+// ⚠️ THE RESIDUAL, STATED ONCE AND NOT CHASED. The charity block elsewhere on Me reads
+// **"Full access, free"** while `none` here reads **"Free"** — so the word "free"
+// describes a gift on one card and no access on another. It is no longer a COLLAPSE,
+// because the badge now says "Gifted" and the two never appear on the same runner's
+// screen meaning different things. It is prose the founder owns; if he ever wants them
+// aligned, this constant and that block are the two places.
+//
+// They are in one constant so that changing any of them is one edit, not a hunt.
 
 import type { TierReason } from '@/lib/trial'
 import type { StatusTone } from '@/components/shared/StatusBadge'
@@ -47,7 +52,7 @@ export interface TierBadge {
 export const TIER_BADGE: Record<TierReason, TierBadge> = {
   admin:        { label: 'Admin',  tone: 'held' },
   subscription: { label: 'Pro',    tone: 'held' },
-  grant:        { label: 'Gifted', tone: 'held' },   // ⚠️ founder sign-off — see header
+  grant:        { label: 'Gifted', tone: 'held' },   // ✅ founder-ruled 2026-09-29
   trial:        { label: 'Trial',  tone: 'held' },
   none:         { label: 'Free',   tone: 'none' },
 }

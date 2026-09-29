@@ -23,7 +23,7 @@ finding.**
 
 ## What is owed
 
-- **The five strings are the founder's**, with a live collision: the charity card says
-  *"Full access, free"* while `none` says *"Free"*.
+- ✅ **The five strings were the founder's and he ruled them, 2026-09-29:** *"Gifted is
+  fine, keep it."* Put to him with the collision named. **Settled.**
 - **`MICRO-LABEL-DRIFT-01`** — 36 combinations, 171 uses, no app-side check.
 - **Nothing has been seen on a device.**
