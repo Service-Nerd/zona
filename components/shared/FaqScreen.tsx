@@ -14,7 +14,6 @@
 // prevent.
 
 import { APP_FAQS, FAQ_TITLE, FAQ_SUBTITLE } from '@/lib/faq'
-import { MICRO_LABELS } from '@/components/shared/microLabels'
 import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 
 export { FAQ_TITLE, FAQ_SUBTITLE }
@@ -31,11 +30,22 @@ export default function FaqScreen({ onBack, onContact }: FaqScreenProps) {
     <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
       {/* BACK-ARROW-TITLE-COLLIDE-01 — a short, discrete title, so it pins WITH the arrow. */}
       <PinnedBackHeader onClick={onBack} padding="16px 20px 8px" maxWidth={480}>
-        <div style={{ ...MICRO_LABELS.sectionLabel, color: 'var(--mute)', marginTop: 'var(--space-4)', marginBottom: 'var(--space-2)' }}>
+        {/* 🔴 FAQ-TITLE-INVERTED-01 — THESE WERE THE WRONG WAY ROUND, AND THE FOUNDER SAW IT.
+            `FAQ_TITLE` ("Common questions") rendered as a tiny uppercase EYEBROW and
+            `FAQ_SUBTITLE` ("The ones people actually ask.") rendered as the 26px screen
+            title. So the runner tapped a door labelled *Common questions* and arrived at a
+            screen headlined *The ones people actually ask.*
+            ⚠️ `ME-DOORS-01` states the rule being broken, in as many words: *"a door's row
+            label and the screen's own title are the same string by definition: the runner
+            taps a word and expects to arrive at it."* Nothing enforced it, so
+            `faqTitleOrder.test.ts` now does — for every door, not just this one.
+            ⚠️ The eyebrow is GONE rather than re-pointed: title + sub is exactly what the
+            six `ScreenHeader` screens render, and a third line here would be a shape this
+            screen does not need. */}
+        <div className="screen-header__title" style={{ marginTop: 'var(--space-4)' }}>
           {FAQ_TITLE}
         </div>
-        {/* SUBPAGE-TYPE-SCALE-01 — the documented screen-title role, from its owner. */}
-        <div className="screen-header__title">
+        <div className="screen-header__sub">
           {FAQ_SUBTITLE}
         </div>
       </PinnedBackHeader>
