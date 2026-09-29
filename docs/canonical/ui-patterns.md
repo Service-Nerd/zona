@@ -1401,6 +1401,37 @@ Reference: `components/shared/RPEScale.tsx`
 
 ---
 
+### 13a. A pushed screen pins its header
+
+**BACK-ARROW-TITLE-COLLIDE-01 (Design Board, 2026-09-29).** `ScreenHeader`'s `sticky`
+defaults to **true**. Opting out is by name, with a reason, and `screenHeaderPinned.test.ts`
+holds the register.
+
+| Rule | Why |
+|---|---|
+| **A screen with a back control pins its header** | The arrow floats; if the title does not pin, the title travels under the arrow |
+| **The default is pinned, and the opt-out is declared** | 🔴 The default was `false` and the prop was passed on exactly **two** surfaces, **both tab roots with no back arrow**. Every screen that *could* collide had never pinned. A default that only the safe screens override is not a default, it is an accident |
+| **Marketing phone mockups opt out** | A header pinned inside a fake phone pins to the **page**, not the mockup, and slides out of the device frame |
+
+🔴 **THE POINT IS NOT THAT THEY OVERLAP, IT IS WHERE.** Measured: `FloatingBackButton` is a
+44px opaque disc at **x 16–60**; `.screen-header` has `padding: 16px 16px 8px`, so the
+**26px/800** title's text box also starts at **x 16**. Same column. *"Your zones"* rendered as
+*"ur zones"*.
+
+⚠️ **A disc over a card edge is what `--shadow-card` was added for. A disc stopping on the
+second character of a word reads as a rendering fault** (Silvanto). `.pinned-chrome` is `--bg`
+with an edge that appears on scroll, so content arriving underneath disappears **at a line**
+rather than **at a curve, mid-word**. That is the whole difference, and it is not taste.
+
+⚠️ **The cost, recorded rather than buried:** inside a pinned band the arrow stops being a
+hovering circle. The founder overturned this board once to get that hover — and has since
+asked for the pinned group three times (the wizard, in his own words; session detail; the two
+beside-title screens). These screens are where that decision had never been applied.
+
+⚠️ **Screens with a hand-rolled title rather than `ScreenHeader`** (`Upgrade`, `FounderNote`,
+`Redeem`, `Faq`, `BenchmarkUpdate`) are in the same class and are handled separately, because
+each needs its own layout change rather than a shared default.
+
 ### 13b. Input sheet — a form the runner summons, not a screen they travel to
 
 **ZONES-HR-SHEET-01 (Design Board, 2026-09-29).** A short form belongs in a `Sheet` opened

@@ -3152,6 +3152,55 @@ in the hand — nobody has seen it on a device.
 
 ---
 
+## BACK-ARROW-TITLE-COLLIDE-01 — 2026-09-29 — **SHIP WITH AMENDMENT**
+
+**Found in the founder's own screenshots, which he sent about something else.** *"Your zones"*
+rendered as *"ur zones"*: the floating back arrow sitting on the screen title.
+
+**Ruled:** a pushed screen **pins its header**; the arrow travels with it. `ScreenHeader`'s
+`sticky` default flips **false → true**, opt-out by name with a reason.
+
+**📐 Arithmetic, not impression.** The arrow is a 44px opaque disc at **x 16–60**;
+`.screen-header`'s `padding: 16px 16px 8px` puts the **26px/800** title's box at **x 16**. Same
+column, and the header did not pin. **Population: seven screens** — `Your zones`,
+`Notifications`, `Plan adjustments`, `Connections`, `Preferences`, `Your profile`, `Strava`.
+🔴 **And the inverse is the tell: `sticky` was passed on exactly TWO surfaces, `Your plan` and
+`Your coach`, BOTH tab roots with no back arrow. Every screen that could collide had never
+pinned.**
+
+**Silvanto:** *"It is not that they overlap, it is where."* A disc over a card edge is what the
+shadow exists for; a disc stopping on the second character of a word reads as a rendering
+fault. `.pinned-chrome` hides passing content **at a line**; a circle hides it **at a curve,
+mid-word**.
+
+🎪 **COLLINS LOST, AND IT IS RECORDED AS A LOSS.** He argued to keep the hovering disc as the
+more distinctive object and withdrew on the measurement: indenting the title clears the title
+and leaves the full-width **segmented control** in the second screenshot still being chopped,
+so the disc-preserving fix solves one element rather than the class.
+
+⚖️ **The cost is recorded, not buried:** inside a pinned band the arrow stops hovering. The
+founder overturned this board once to get the hover — **and has since asked for the pinned
+group three times** (the wizard in his own words, session detail, the two beside-title
+screens). Zhuo: these seven are not where he chose hover-over-title, they are where nobody
+applied a decision he had already made.
+
+🔴 **THE ASSISTANT TURNED A FINISHED RULING BACK INTO A QUESTION, AND THE FOUNDER CALLED IT:**
+*"why the design board can't rule on this obvious design decision."* He was right. Under
+ADR-023 a ruling binds build and only a commercial question escalates; there was none. Recorded
+because an escalation habit is how a board stops being one.
+
+🔴 **Fourth wrong premise I put in front of this board this session:** I offered the circle's
+**1.21:1** fill contrast as evidence that "a ground would not be enough", which **conflates
+contrast with opacity**. The disc is a solid fill and already occludes completely; the title is
+not showing through, it is hidden behind a disc that cuts it mid-word. That removed one
+candidate remedy and I had it backwards.
+
+**Does not settle:** whether all seven scroll far enough to collide (four unmeasured), and
+**nothing measured at 320px**, where a wrapped title puts MORE of itself in the arrow's path.
+The five hand-rolled-title screens are ruled in scope and handled separately.
+
+---
+
 ## ZONES-HR-SHEET-01 — 2026-09-29 — **SHIP WITH AMENDMENT**
 
 **Founder:** *"I don't like the heat calibration being on its own. It should be from within

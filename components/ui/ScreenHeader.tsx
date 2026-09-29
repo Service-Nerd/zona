@@ -68,13 +68,32 @@ import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 export default function ScreenHeader({
   title,
   sub,
-  sticky = false,
+  sticky = true,
 }: {
   title: string
   /** Secondary line. On Coach this names the week the whole screen reports on. */
   sub?: string
-  /** Pins the header while the screen scrolls. Only for screens whose content
-   *  keeps referring to what the header names — see the ruling above. */
+  /**
+   * Pins the header while the screen scrolls. **Defaults to TRUE**
+   * (BACK-ARROW-TITLE-COLLIDE-01, Design Board 2026-09-29).
+   *
+   * 🔴 THE DEFAULT POINTED THE WRONG WAY, AND THE FOUNDER FOUND IT ON A DEVICE.
+   * It was `false`, and it was passed explicitly on exactly TWO surfaces — `Your plan`
+   * and `Your coach` — **both tab roots, which have no back arrow and so cannot
+   * collide with one.** Every screen that COULD collide had never pinned. So the
+   * floating back arrow, a 44px opaque disc at x 16–60, sat on top of a 26px/800 title
+   * whose text box also starts at x 16: *"Your zones"* rendered as *"ur zones"*.
+   *
+   * ⚠️ THE POINT IS NOT THAT THEY OVERLAP, IT IS WHERE. A disc passing over a card
+   * edge is what `--shadow-card` was added for. A disc stopping on the second character
+   * of a word reads as a rendering fault. `.pinned-chrome` is `--bg` with an edge that
+   * appears on scroll, so content arriving underneath disappears **at a line** rather
+   * than **at a curve, mid-word** (Silvanto).
+   *
+   * ⚠️ OPT OUT BY NAME, WITH A REASON. The marketing phone mockups do
+   * (`TabbedPhone`): a header pinned inside a fake phone pins to the page, not to the
+   * mockup. `screenHeaderPinned.test.ts` requires every `sticky={false}` to be declared.
+   */
   sticky?: boolean
 }) {
   const { ref, scrolled } = useScrolledContainer(sticky)

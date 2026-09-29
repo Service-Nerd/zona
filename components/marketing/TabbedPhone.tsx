@@ -100,7 +100,10 @@ import { phaseDisplayLabel } from '@/lib/coaching/weekVoice'
 function PlanStill({ plan, block }: { plan: DemoPlanScreen; block: DemoBlockView }) {
   return (
     <>
-      <ScreenHeader title="Your plan" sub="Marathon" />
+      {/* BACK-ARROW-TITLE-COLLIDE-01 — NOT pinned: this is a phone MOCKUP on the
+          marketing homepage. A sticky header here would pin to the page, not to the fake
+          phone, and slide out of the device frame as the page scrolls. */}
+      <ScreenHeader title="Your plan" sub="Marathon" sticky={false} />
       <div style={{ padding: '0 16px 14px' }}>
         <PlanArc
           totalWeeks={block.totalWeeks}
@@ -205,7 +208,8 @@ const arc = buildRaceProgressArc(DEMO_RACE_ARC)
 function CoachStill({ block }: { block: DemoBlockView }) {
   return (
     <>
-      <ScreenHeader title="Your coach" sub={`W${block.weekN} of ${block.totalWeeks}`} />
+      {/* BACK-ARROW-TITLE-COLLIDE-01 — NOT pinned: marketing mockup, see above. */}
+      <ScreenHeader title="Your coach" sub={`W${block.weekN} of ${block.totalWeeks}`} sticky={false} />
       <div style={{
         margin: '0 12px', background: 'var(--card)', borderRadius: 16,
         border: '0.5px solid var(--line)', padding: '14px 14px 4px',

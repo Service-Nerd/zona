@@ -185,8 +185,20 @@ describe('SCREEN-HEADER-01', () => {
     const bare    = renderToStaticMarkup(React.createElement(ScreenHeader, { title: 'Your profile' }))
     expect(withSub).toContain('screen-header__sub')
     expect(bare, 'no subtitle means no empty element taking up space').not.toContain('screen-header__sub')
-    // Unpinned by default: stickiness is opt-in per the ruling.
-    expect(bare).not.toContain('pinned-chrome')
+    // 🔴 THIS ARM ASSERTED THE OPPOSITE UNTIL 2026-09-29, AND IT WAS RIGHT AT THE TIME.
+    // It read `expect(bare).not.toContain('pinned-chrome')` — "unpinned by default,
+    // stickiness is opt-in per the ruling". `BACK-ARROW-TITLE-COLLIDE-01` reversed that
+    // ruling on a measurement: the opt-in was taken on exactly TWO surfaces, both tab
+    // roots with no back arrow, so **every screen that could collide with the floating
+    // arrow had never pinned**. The founder found it on a device — a 44px opaque disc at
+    // x 16–60 sitting on a 26px/800 title whose text box also starts at x 16, rendering
+    // "Your zones" as "ur zones".
+    // The default is now PINNED and the opt-out is declared by name (the marketing phone
+    // mockups). `screenHeaderPinned.test.ts` owns that register.
+    expect(bare, 'a pushed screen must pin its header by default').toContain('pinned-chrome')
+    const optedOut = renderToStaticMarkup(
+      React.createElement(ScreenHeader, { title: 'Your plan', sticky: false }))
+    expect(optedOut, 'and an explicit opt-out must still be honoured').not.toContain('pinned-chrome')
     expect(renderToStaticMarkup(React.createElement(ScreenHeader, { title: 'Your plan', sticky: true })))
       .toContain('pinned-chrome')
     // ⚠️ SSR renders the UN-scrolled state, which is correct: a header that
