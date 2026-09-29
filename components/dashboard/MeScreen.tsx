@@ -13,7 +13,7 @@ import ActionRow from '@/components/shared/ActionRow'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import AppleHealthConnectionRow from '@/components/dashboard/AppleHealthConnectionRow'
 import BackButton from '@/components/shared/BackButton'
-import FloatingBackButton from '@/components/shared/FloatingBackButton'
+import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 import Button from '@/components/ui/Button'
 import ExternalLink from '@/components/shared/ExternalLink'
 import FaqScreen from '@/components/shared/FaqScreen'
@@ -605,22 +605,23 @@ function PlanHistoryScreen({ onBack }: { onBack: () => void }) {
     return `${years} year${years === 1 ? '' : 's'} ago`
   }
 
-  const backBtn = <FloatingBackButton onClick={onBack} />
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
       {/* BACK-ARROW-FLOAT-04 — same shape, same defect as the benchmark screen: a
           `flexShrink: 0` header beside a body whose `overflowY: auto` can never overflow
           under `minHeight: 100%`, so the arrow scrolled away with the page. */}
-      {backBtn}
-      <div style={{ padding: 'var(--space-5) 20px 0', flexShrink: 0 }}>
+      {/* BACK-ARROW-TITLE-COLLIDE-01 am.1 — arrow, eyebrow and title as ONE group. */}
+      <PinnedBackHeader onClick={onBack} padding="16px 20px 0">
+        <div style={{ paddingTop: 'var(--space-4)' }}>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
           Your training
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '26px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 'var(--space-5)' }}>
           Plan history
         </div>
-      </div>
+        </div>
+      </PinnedBackHeader>
 
       <div style={{ flex: 1, padding: '0 20px 32px', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         {status === 'loading' && (
@@ -868,8 +869,9 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   // ME-DOORS-01 door 3. Rendered here rather than extracted — see the row on the index.
   if (activeSection === 'plan-adjustments') return (
     <>
-      <FloatingBackButton onClick={() => setActiveSection('main')} />
-      <ScreenHeader title={PLAN_ADJUSTMENTS_TITLE} sub="What the engine changes, and when" />
+      {/* BACK-ARROW-TITLE-COLLIDE-01 am.1 — the arrow travels inside the band. */}
+      <ScreenHeader title={PLAN_ADJUSTMENTS_TITLE} sub="What the engine changes, and when"
+        onBack={() => setActiveSection('main')} />
       <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
   {/* ── Plan adjustments (paid/trial only) ───────────────────
        One engine, two controls: Auto-adjust runs it on a schedule,
@@ -989,8 +991,8 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   // ME-ORDER-01 door 4 — Connections. ⚠️ The rows are UNCHANGED; only their home moved.
   if (activeSection === 'connections') return (
     <>
-      <FloatingBackButton onClick={() => setActiveSection('main')} />
-      <ScreenHeader title={CONNECTIONS_TITLE} sub="Where your runs come from" />
+      <ScreenHeader title={CONNECTIONS_TITLE} sub="Where your runs come from"
+        onBack={() => setActiveSection('main')} />
       <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         <AppleHealthConnectionRow onHRFound={(rhr, mhr) => onDeviceHRFound?.(rhr, mhr)} />
         <StravaConnectionRow />
@@ -1000,8 +1002,8 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
 
   if (activeSection === 'preferences') return (
     <>
-      <FloatingBackButton onClick={() => setActiveSection('main')} />
-      <ScreenHeader title={PREFERENCES_TITLE} sub={PREFERENCES_SUBTITLE} />
+      <ScreenHeader title={PREFERENCES_TITLE} sub={PREFERENCES_SUBTITLE}
+        onBack={() => setActiveSection('main')} />
       <PreferencesScreen
         preferredUnits={preferredUnits}
         onUnitsChange={onUnitsChange}

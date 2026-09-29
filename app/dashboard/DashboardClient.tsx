@@ -119,7 +119,7 @@ const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: fa
 import { RecalibrationReadyTile, RecalibrationEntryScreen } from './RecalibrationTile'
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
-import FloatingBackButton from '@/components/shared/FloatingBackButton'
+import PinnedBackHeader from '@/components/shared/PinnedBackHeader'
 import HrCalibrationSheet from '@/components/shared/HrCalibrationSheet'
 import ActionRow from '@/components/shared/ActionRow'
 import FaqScreen, { FAQ_TITLE, FAQ_SUBTITLE } from '@/components/shared/FaqScreen'
@@ -2908,8 +2908,11 @@ export default function DashboardClient() {
               {/* ⚠️ BACK GOES WHERE YOU CAME FROM. Two entries since ME-DOORS-01: the `Zones`
                   row on the index, and the `heart-rate` door. A single hardcoded `'me'`
                   is correct for one of them and loses the runner's place in the other. */}
-              <FloatingBackButton onClick={() => { setMeOpenSection(zonesReturnSection); setScreen('me') }} />
-              <ScreenHeader title="Your zones" sub="Heart rate and pace targets" />
+              {/* BACK-ARROW-TITLE-COLLIDE-01 am.1 — the arrow travels INSIDE the band.
+                  Rendered beside it, the opaque `--bg` header covered it on scroll and the
+                  screen had a title and no way back. */}
+              <ScreenHeader title="Your zones" sub="Heart rate and pace targets"
+                onBack={() => { setMeOpenSection(zonesReturnSection); setScreen('me') }} />
               <TrainingZonesScreen zones={hrZones} pace={pace} units={preferredUnits}
                 sourceHr={restingHR && maxHR ? { resting: restingHR, max: maxHR } : null}
                 // ZONES-INPUTS-01 — the FORM stays on Me. This only navigates there,
@@ -3518,8 +3521,6 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // BACK-ARROW-FLOAT-04 — the arrow supplies its own inset, so it leaves the padded div.
-  const backBtn = <FloatingBackButton onClick={onBack} />
-
   // Split into Today vs Earlier (loaded list only).
   const todayStr = new Date().toDateString()
   const today: NotificationItem[]   = []
@@ -3539,8 +3540,7 @@ function NotificationsScreen({ onBack, onNavigate, onAllRead }: {
 
   return (
     <div style={{ minHeight: '100%', background: 'var(--bg)' }}>
-      {backBtn}
-      <ScreenHeader title="Notifications" />
+      <ScreenHeader title="Notifications" onBack={onBack} />
 
       {items === null ? (
         // Loading — static skeleton rows matching the row shape (no spinner).
@@ -3989,15 +3989,13 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
     } catch { /* keep visible */ } finally { setActionLoading(false) }
   }
 
-  const backBtn = <FloatingBackButton onClick={onBack} />
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%', background: 'var(--bg)' }}>
-      {/* BACK-ARROW-FLOAT-04 — same shape, same defect as the benchmark screen: a
-          `flexShrink: 0` header beside a body whose `overflowY: auto` can never overflow
-          under `minHeight: 100%`, so the arrow scrolled away with the page. */}
-      {backBtn}
-      <div style={{ padding: 'var(--space-5) 20px 0', flexShrink: 0 }}>
+      {/* BACK-ARROW-TITLE-COLLIDE-01 am.1 — arrow, eyebrow and title pin as ONE group.
+          The earlier diagnosis (a `flexShrink: 0` header beside a body whose `overflowY:
+          auto` can never overflow) still stands; the remedy moved on. */}
+      <PinnedBackHeader onClick={onBack} padding="16px 20px 0">
+        <div style={{ paddingTop: 'var(--space-4)' }}>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-2)' }}>
           Plan adjustment
         </div>
@@ -4007,7 +4005,8 @@ function ReshapeScreen({ plan: _plan, onBack, onReshapeApplied, onChecked, onOpe
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--mute)', lineHeight: 1.5, marginBottom: 'var(--space-6)' }}>
           {status === 'loading' ? 'Checking your recent sessions for adjustment signals.' : `Here's what ${BRAND.name} found.`}
         </div>
-      </div>
+        </div>
+      </PinnedBackHeader>
 
       <div style={{ flex: 1, padding: '0 20px 24px' }}>
         {status === 'loading' && (

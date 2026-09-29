@@ -56,6 +56,10 @@ const BARE_BACK_BUTTON: Record<string, string> = {
     'a confirm surface, not a pushed screen. It is short by construction - if it ever ' +
     'scrolls, that is the defect, not the arrow.',
 
+  'components/ui/ScreenHeader.tsx':
+    'the pinned-band owner for screens that use it. BACK-ARROW-TITLE-COLLIDE-01 am.1 put ' +
+    'the arrow INSIDE the band: rendered beside it, the opaque header covered it on scroll ' +
+    'and the screen had a title and no way back.',
   // ── The two components that OWN a back-arrow placement.
   'components/shared/PinnedBackHeader.tsx':
     'the pinned-band owner (BACK-ARROW-TITLE-COLLIDE-01). It renders the bare arrow by ' +
@@ -88,8 +92,17 @@ describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
   it('🔴 no file hand-rolls a wrapper around BackButton again', () => {
     // The exact shape that was written eight ways: a positioning div whose only child
     // is the arrow. That is what `FloatingBackButton` now owns.
+    // ⚠️ THE TWO OWNERS ARE EXEMPT, because owning that wrapper is the whole point of
+    // them: `FloatingBackButton` (the hovering circle) and `ScreenHeader` (the arrow inside
+    // the pinned band, BACK-ARROW-TITLE-COLLIDE-01 am.1).
+    const WRAPPER_OWNERS = [
+      'components/shared/FloatingBackButton.tsx',
+      'components/ui/ScreenHeader.tsx',
+      'components/shared/PinnedBackHeader.tsx',
+    ]
     const offenders: string[] = []
     for (const f of UI()) {
+      if (WRAPPER_OWNERS.includes(f)) continue
       const src = readFileSync(f, 'utf8')
       if (!src.includes('<BackButton')) continue
       const re = /<div style=\{\{[^}]*\}\}>\s*<BackButton[^/]*?\/>\s*<\/div>/g
@@ -140,9 +153,15 @@ describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
     // They now pin through `PinnedBackHeader`. **The arm follows the decision rather than
     // being deleted**: what it guards is that these screens have ONE owner for where the
     // arrow sits, and that is still true — the owner changed.
+    // 🔴 THIS LIST HAS GROWN TWICE AS THE RULING COMPLETED. Every pushed screen now pins
+    // rather than floats: the five hand-rolled ones through `PinnedBackHeader`, and the
+    // `ScreenHeader` family through its own `onBack`. The arm follows the decision.
     const PINNED_INSTEAD: string[] = [
       'app/dashboard/BenchmarkUpdateScreen.tsx',
       'components/shared/FaqScreen.tsx',
+      'app/dashboard/UpgradeScreen.tsx',
+      'app/dashboard/FounderNoteScreen.tsx',
+      'app/dashboard/RedeemCodeScreen.tsx',
     ]
     for (const f of PINNED_INSTEAD) {
       const src = readFileSync(f, 'utf8')
@@ -152,12 +171,13 @@ describe('BACK-ARROW-FLOAT-01 — one owner for where the arrow sits', () => {
     }
     // The three inside mixed files are checked by their own `backBtn` binding, which is
     // what the padded header used to hold.
-    const dc = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
-    expect((dc.match(/const backBtn = <FloatingBackButton/g) ?? []).length,
-      'NotificationsScreen and ReshapeScreen each bind a floating arrow').toBe(2)
-    const me = readFileSync('components/dashboard/MeScreen.tsx', 'utf8')
-    expect(me, 'PlanHistoryScreen lost its floating arrow')
-      .toContain('const backBtn = <FloatingBackButton')
+    // 🔴 AND THE HUB AND ME NO LONGER FLOAT AN ARROW AT ALL. Notifications and the four
+    // Me doors take `ScreenHeader onBack`; Reshape and Plan history take `PinnedBackHeader`.
+    for (const f of ['app/dashboard/DashboardClient.tsx', 'components/dashboard/MeScreen.tsx']) {
+      const src = readFileSync(f, 'utf8')
+      expect(src, `${f} floats an arrow beside a pinned header again`)
+        .not.toContain('<FloatingBackButton')
+    }
   })
 
   it('the floating wrapper sits ABOVE content and far BELOW the nav', () => {

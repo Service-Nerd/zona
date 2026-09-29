@@ -1,6 +1,7 @@
 'use client'
 
 import { Z_LAYERS } from '@/lib/ui/zLayers'
+import BackButton from '@/components/shared/BackButton'
 import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 
 /**
@@ -68,9 +69,25 @@ import { useScrolledContainer } from '@/lib/ui/useScrolledContainer'
 export default function ScreenHeader({
   title,
   sub,
+  onBack,
   sticky = true,
 }: {
   title: string
+  /**
+   * 🔴 THE BACK ARROW BELONGS INSIDE THE BAND (BACK-ARROW-TITLE-COLLIDE-01 amendment 1,
+   * completed 2026-09-29 after the founder saw it on a device).
+   *
+   * The ruling said *"a pushed screen pins its header; THE ARROW TRAVELS WITH IT"*. I
+   * implemented that for the five hand-rolled screens via `PinnedBackHeader` and, on these,
+   * only flipped `sticky` — leaving the arrow as a separate `FloatingBackButton`. **Two
+   * sticky elements at different offsets**: the header pins at `top: 0` with an opaque
+   * `--bg` ground and the arrow tries to hold at `top: 16`, so the band covers it. Scrolled,
+   * the screen had a title and NO WAY BACK.
+   *
+   * ⚠️ Same defect the founder caught on the wizard — *"float the group so progress stays
+   * too"* — reached by a different route, which is the second time that has happened.
+   */
+  onBack?: () => void
   /** Secondary line. On Coach this names the week the whole screen reports on. */
   sub?: string
   /**
@@ -108,6 +125,11 @@ export default function ScreenHeader({
       ].filter(Boolean).join(' ')}
       style={sticky ? { zIndex: Z_LAYERS.screenHeader } : undefined}
     >
+      {onBack && (
+        <div style={{ marginBottom: 'var(--space-3)' }}>
+          <BackButton onClick={onBack} />
+        </div>
+      )}
       <div className="screen-header__title">{title}</div>
       {sub && <div className="screen-header__sub">{sub}</div>}
     </div>

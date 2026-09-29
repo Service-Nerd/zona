@@ -19,6 +19,7 @@ interface ScreenHeaderProps {
   /** Secondary line. Omitted entirely when absent — no empty element. */
   sub?: string
   /** Pins the header while the screen scrolls. Default `false`. */
+  onBack?: () => void
   sticky?: boolean
 }
 ```
@@ -29,6 +30,7 @@ interface ScreenHeaderProps {
 |---|---|---|---|
 | `title` | `string` | ✅ | The screen's name. Rendered at `26px / 800 / var(--font-ui) / var(--ink)` |
 | `sub` | `string` | — | Secondary line. Omitted entirely when absent — no empty element |
+| `onBack` | `() => void` | — | **Renders the back arrow INSIDE the pinned band** (BACK-ARROW-TITLE-COLLIDE-01 am.1). 🔴 Rendered beside the header instead, the opaque `--bg` band covers a separately-floating arrow on scroll, and the screen has a title and **no way back** — found on a device |
 | `sticky` | `boolean` | — | **Default `true`** (BACK-ARROW-TITLE-COLLIDE-01, 2026-09-29). Pins the header while the screen scrolls. **Opting out is by name, with a reason** — `screenHeaderPinned.test.ts` holds the register, and the only current opt-out is the marketing phone mockups |
 
 There is deliberately **no `style` prop and no `className`.** Every pixel belongs to
