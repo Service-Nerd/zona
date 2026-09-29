@@ -182,7 +182,15 @@ afail=0
 # row. Same rule `ship-record-check.py` encodes, and the same mistake a plain
 # grep has already made twice in this repo (GTM-CHARITY-02, and again on
 # 2026-09-20 when 27 false positives read as closed).
-grep -oE '^\| *`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`? *[—/]' docs/canonical/feature-registry.md \
+# 🔴 THE FEATURE REGISTRY HAS TWO ROW FORMATS AND THIS READ ONLY ONE (2026-09-29).
+# `| ID — description |` matched; `| ID | FREE | date | ... |` did NOT, and 68 rows use it,
+# including every BACK-ARROW-FLOAT-*, ME-DOORS-01 and the whole recent wave. So `_reg` was
+# short by a fifth of the register, and the two checks built on it — "a shipped item must not
+# still be open" and the skip in the open-items arm — were BLIND to those IDs. They only ever
+# looked clean because a recent ID is usually mentioned somewhere in roadmap prose as well.
+# Same class as CONTRACT-COVERAGE-02: the arm reported ok BY NOT LOOKING. Both separators
+# now, and the ID must still be the row's FIRST CELL.
+grep -oE '^\| *`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`? *[—/|]' docs/canonical/feature-registry.md \
   | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+' | sort -u > /tmp/_reg
 # Open headers carry a *(provenance)* block; in-item emphasis bullets do not.
 # Without that discriminator this fires on narrative text, which is how four
@@ -211,7 +219,17 @@ grep -oE '^\| *`?[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`? *[—/]' docs/canonical/feature-r
   grep -oE '^### (🔲|🟡|🟠|🟢|🔵|⏸️) `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+`' docs/releases/backlog.md \
     | grep -oE '[A-Z][A-Z0-9]*(-[A-Z0-9]+)+'
 } | sort -u > /tmp/_open
+# ⚠️ DECLARED EXEMPTIONS — an ID that is legitimately BOTH shipped and open, each with its
+# reason. Added 2026-09-29, when widening `_reg` to the registry's second row format
+# surfaced the first real instance. This is a register, not a silencer: an entry with no
+# reason beside it is the thing it exists to prevent.
+#   ZONES-SURFACE-01 — the RULINGS shipped (both boards) and carry a registry row; the BUILD
+#   was re-specified afterwards on a measurement the boards did not have (the pace bands are
+#   not reachable from a client bundle, and `/api/race-times` is PAID). Ruling recorded,
+#   build open: two different objects under one ID.
+_SHIPPED_AND_OPEN_OK='ZONES-SURFACE-01'
 for id in $(comm -12 /tmp/_reg /tmp/_open); do
+  case " $_SHIPPED_AND_OPEN_OK " in *" $id "*) continue ;; esac
   say "  STILL OPEN $id (has a feature-registry row)"; afail=1; fail=1
 done
 [ "$afail" = "0" ] && say "  ok"

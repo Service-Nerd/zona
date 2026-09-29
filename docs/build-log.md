@@ -6,6 +6,70 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — BACK-ARROW-FLOAT-04 · the gate said "the rest are fine" and it had never looked
+
+**Dev.** Five more pushed screens float their back arrow; two more pin arrow-and-title as a
+group. One founder sentence: *"Update pace targets doesn't have the floating back arrow."*
+
+**The honest bit.** He found one instance of a set of seven, and the reason it was one is my
+own gate. Yesterday I converted eight doors and reported the remainder as "inline or a
+declared exclusion". That was not a guess: it was what the test said. The problem is what the
+test actually asserted, which was that the two files I had *declared* as exclusions still used
+the bare arrow. Every other bare use passed in silence. So the check had a name, a red 🔴
+comment and nine arms, and on the question "is any pushed screen still not floating" it
+returned nothing at all.
+
+The population, once I counted it from the code instead of from the check: nine files with a
+bare `<BackButton>`. Two legitimately pinned groups, two declared tiles, the component itself,
+one retired surface — and **five pushed screens whose arrow scrolls away**, plus two more in a
+second arrow family nobody had pinned.
+
+**The mechanism is worth knowing because it looks like the fix.** Those headers all carry
+`flexShrink: 0` beside a body declaring `flex: 1; overflowY: auto`, inside an outer of
+`minHeight: 100%`. That reads like a fixed header over a scrolling body. It is not:
+`min-height` is not a height, so the body can never overflow, the page scroller is the real
+one, and the "fixed" header travels with it. I rendered the exact nesting rather than reason
+about it — `scrollHeight > clientHeight` is **false** on that body, and the arrow, once
+floated, holds at 17px before and after a 600px scroll. Same family as the header that once
+sat at −800px after an 800px scroll while claiming to be sticky.
+
+**AI-building.** The fix that matters is not the five conversions, it is turning a permissive
+arm into an exhaustive register: every bare-arrow file named with its reason, failing when a
+new one appears *and* when a name outlives its file. The old arm could only catch what I had
+already thought of. And one falsification passed when it should have failed — I mutated
+`pinned-chrome` once, not knowing it appears twice per header — which is the third time this
+month a weak mutation has masqueraded as a strong check. A mutation that does not fully apply
+is indistinguishable from success.
+
+---
+
+## 2026-09-29 — ME-BENCHMARK-DUP-01 · the ruling was already made and already written down
+
+**Dev.** The Me screen had two entries onto the same benchmark screen. It has one.
+
+**Product.** Which one goes is not a taste question, and it took reading the file rather than
+looking at it. The status row in "What Kit knows about you" carries the benchmark's age and
+the amber staleness warning; the lower `Race benchmark` door carried a sentence. A ruling made
+the day before — the zones entry **replaces** the zone rows rather than adding a fifteenth
+surface — had already settled the principle, and the comment sitting beside the Zones row said
+*"same treatment as Benchmark directly beneath"* in as many words. The status row was already
+the canonical entry. The door was the copy nobody removed.
+
+**The honest bit.** Two baseline registers went red and both were right, which is what a
+register is for. One keys controls by ordinal, so deleting a button re-keys everything after
+it — I proved that was a re-key before re-baselining: eleven controls to ten, one hundred
+fifty-seven to one hundred fifty-six, and the geometry-value multiset short by exactly one
+instance of the removed shape and nothing else. The other demanded a number come down from
+three to two, which is debt genuinely paid. The difference between those two situations is
+arithmetic, and the only way to be honest about a green test is to do it.
+
+And a process slip worth recording: I landed both of today's findings in one commit under the
+other one's scope, so the hook that checks a shipped ID has a registry row and a build-log
+entry never asked about this one. The record exists because I carried it, not because the
+machinery caught me.
+
+---
+
 ## 2026-09-29 — BACK-ARROW-FLOAT-03 · a region measured in bytes is not a region
 
 **Dev.** The wizard step header now pins as a group, so the progress line stays with the
