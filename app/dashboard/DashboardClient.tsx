@@ -2369,6 +2369,7 @@ export default function DashboardClient() {
         // Own scroll context — see OrientationScreen note. Retired screen, but
         // kept scroll-safe in case the trigger is ever re-enabled.
         height: '100dvh', overflowY: 'auto',
+        overscrollBehavior: 'contain', // SCROLL-NATIVE-01 — bounce locally, never chain
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'safe center',
         background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
@@ -3217,6 +3218,7 @@ function ConnectRunsScreen({ onConnected, onSkip, onHRFound }: {
       // locked (overflow:hidden; position:fixed), so this must scroll itself or
       // the primary CTA can clip off-screen on shorter devices.
       height: '100dvh', overflowY: 'auto',
+        overscrollBehavior: 'contain', // SCROLL-NATIVE-01 — bounce locally, never chain
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'safe center',
       background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',
@@ -3401,6 +3403,7 @@ function PushOnboardingScreen({ onEnabled, onSkip }: {
   return (
     <div style={{
       height: '100dvh', overflowY: 'auto',
+        overscrollBehavior: 'contain', // SCROLL-NATIVE-01 — bounce locally, never chain
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'safe center',
       background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',

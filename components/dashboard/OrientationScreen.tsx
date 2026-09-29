@@ -68,6 +68,7 @@ export default function OrientationScreen({ plan, firstName, zone2Ceiling, resti
       // 'safe center' keeps the layout centred when it fits, but falls back to
       // top-aligned + scrollable when it overflows.
       height: '100dvh', overflowY: 'auto',
+        overscrollBehavior: 'contain', // SCROLL-NATIVE-01 — bounce locally, never chain
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'safe center',
       background: 'var(--bg)', maxWidth: '480px', margin: '0 auto',

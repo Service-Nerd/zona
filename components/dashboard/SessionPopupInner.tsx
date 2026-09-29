@@ -1555,7 +1555,10 @@ export default function SessionPopupInner({ session, weekTheme, weekN, aiNotes, 
               Couldn&apos;t load activities. Tap Back, then try again.
             </div>
           ) : stravaRuns.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', maxHeight: '200px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-4)', maxHeight: '200px', overflowY: 'auto',
+                          /* SCROLL-NATIVE-01 — a 200px list inside a screen. Without this,
+                             reaching its end scrolls the whole screen underneath it. */
+                          overscrollBehavior: 'contain' }}>
               {stravaRuns.slice(0, 20).map((run: any) => {
                 const isSelected = selectedActivity?.id === run.id
                 return (

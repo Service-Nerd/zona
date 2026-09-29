@@ -165,7 +165,23 @@ export default function PullToRefresh({
         flex: 1,
         overflowY: 'auto',
         paddingBottom: `${paddingBottom}px`,
-        overscrollBehavior: 'none',
+        // 🔴 `contain`, NOT `none` (SCROLL-NATIVE-01, 2026-09-29). Founder: *"I find it
+        // very sharp and not very smooth or bouncy."* This is the app's ONLY real scroller,
+        // so `none` was killing the rubber-band on every screen in the product.
+        //
+        // ⚠️ AND IT WAS NEVER NEEDED FOR THE PULL GESTURE, which is why it can go. The
+        // gesture engages only at `scrollTop <= 0` and calls `e.preventDefault()` in its own
+        // `touchmove` handler — it suppresses the native bounce DIRECTLY when it is running.
+        // All `overscroll-behavior` was doing here is preventing CHAINING to the document,
+        // and `contain` does exactly that while preserving the local bounce.
+        //
+        // ⚠️ At the BOTTOM the gesture never engages at all (it is top-only and
+        // downward-only), so `none` was suppressing that bounce for no reason whatsoever.
+        //
+        // The principle, applied app-wide: **the scroller bounces, the document does not,
+        // nothing chains.** `html, body` keeps `none` — stopping the whole WEBVIEW bouncing
+        // is what makes it feel like an app rather than a web page.
+        overscrollBehavior: 'contain',
         position: 'relative',
       }}
     >

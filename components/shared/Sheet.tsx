@@ -302,6 +302,10 @@ export default function Sheet({ onClose, children, maxWidth = 480, maxHeightVh =
             flex: 1, minHeight: 0,
             overflowY: 'auto',
             WebkitOverflowScrolling: 'touch',
+            // SCROLL-NATIVE-01 — without this, scrolling a sheet to its end CHAINS to the
+            // page behind it and the screen slides under the panel. A native sheet does not
+            // move the thing it is covering.
+            overscrollBehavior: 'contain',
           }}
         >
           {typeof children === 'function' ? children(close) : children}
