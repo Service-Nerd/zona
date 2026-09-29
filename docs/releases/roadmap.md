@@ -693,6 +693,11 @@ with the Coaching Board (the week-1 floor for someone who has never run, and
 
 ### 🏃 Product — SLT priority order (reviewed 2026-06-06; **re-topped 2026-08-06**)
 
+- 🧭 `MICRO-LABEL-FIELDHINT-01` — **NEXT.** A field hint (`optional`, lowercase,
+  untracked, beside an input) fits none of the three ruled roles and survives only as an
+  exclusion. Fourth role, or body text? Board's. `backlog.md`.
+- ✅ `GATE-GLOB-SHORT-01` — **FIXED 2026-09-29** in all five gates that shared it.
+  `git ls-files "app/**/*.tsx"` read 129 files against a true 134. `backlog.md`.
 - 🔄 `MICRO-LABEL-DRIFT-01` — **vocabulary SHIPPED 2026-09-29; migration open.** Three
   roles named, `SectionLabel` made shared, register at 132 and falling-only. **Wave 1a SHIPPED (47
   converted, register 132 → 69); wave 1b (17 at 11px) blocked on a render, not filed and

@@ -22,9 +22,14 @@ import { REDEEM_CODE_LABEL, REDEEM_CODE_PLACEMENTS } from './redeemCode'
 // ⚠️ IT USES `git ls-files`, SO A NEW FILE MUST BE STAGED TO BE SEEN. That is recorded
 // because it has already cost a green run on a component that existed only on disk.
 
+// 🔴 GATE-GLOB-SHORT-01 (2026-09-29): `git ls-files "app/**/*.tsx"` returns 129 files;
+// the truth is 134 — git's `**/` needs a directory level, so files sitting DIRECTLY under
+// `app/` or `components/` were invisible, including `app/page.tsx`. Measured 0 extra
+// violations today: LATENT, not costly. Fixed in all five gates that shared it.
 const tracked = (): string[] =>
-  execSync('git ls-files "app/**/*.tsx" "components/**/*.tsx"', { encoding: 'utf8' })
+  execSync('git ls-files', { encoding: 'utf8' })
     .split('\n').filter(Boolean)
+    .filter(f => /^(app|components)\/.*\.tsx$/.test(f))
 
 const OWNER = 'components/shared/RedeemCodeLink.tsx'
 

@@ -8,6 +8,7 @@
 //     Rule-engine notes get neither — provenance honesty.
 
 import CoachByline from './CoachByline'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 type Props = {
   /** Eyebrow label — default "COACH". Used only for non-AI notes. */
@@ -81,15 +82,9 @@ export default function CoachNoteBlock({
           ? <CoachByline color="warn" onClick={onChipClick} />
           : (
             <span
-              style={{
-                fontFamily:    'var(--font-ui)',
-                fontSize:      '10px',
-                fontWeight:    700,
+              style={{ ...MICRO_LABELS.eyebrow, fontFamily:    'var(--font-ui)',
                 color:         'var(--warn)',
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                lineHeight:    1,
-              }}
+                lineHeight:    1 }}
             >
               {label}
             </span>

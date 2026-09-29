@@ -27,6 +27,7 @@ import AIMark from '@/components/shared/AIMark'
 import { REFRAME_TIER } from '@/lib/coaching/constants'
 import { messageForReframeRiskReason, type ReframeRiskReason } from '@/lib/coaching/reframeRiskGate'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 // REFRAME-NOTE-LOSS-01 — the view decision lives in `ReflectionInput.logic.ts`
 // so it can be tested. 'saved' is the state that was missing: the note was
@@ -132,10 +133,7 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
           display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px',
         }}>
           <AIMark size={10} color="var(--moss)" />
-          <span style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)',
-            textTransform: 'uppercase', letterSpacing: '0.08em',
-          }}>
+          <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)' }}>
             Kit
           </span>
         </div>
@@ -176,10 +174,7 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
   if (view === 'saved') {
     return (
       <div style={{ marginBottom: '20px' }}>
-        <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--mute)',
-          textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px',
-        }}>
+        <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginBottom: '8px' }}>
           Saved
         </div>
         <div style={{
@@ -212,10 +207,7 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
         <div style={{
           display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px',
         }}>
-          <span style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--warn)',
-            textTransform: 'uppercase', letterSpacing: '0.08em',
-          }}>
+          <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn)' }}>
             Worth a check
           </span>
         </div>
@@ -270,10 +262,7 @@ export default function ReflectionInput({ weekN, sessionDay }: ReflectionInputPr
 
   return (
     <div style={{ marginBottom: '20px' }}>
-      <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--text-muted)',
-        textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px',
-      }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--text-muted)', marginBottom: '10px' }}>
         Tell me how that felt &middot; optional
       </div>
       <TextArea

@@ -28,6 +28,7 @@
 // Shape owned by the aggregate that produces it, not by this renderer.
 import type { ZoneSlice } from '@/lib/coaching/weeklyZoneAggregate'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 export type { ZoneSlice }
 
 /** Shared by every state. */
@@ -144,13 +145,8 @@ function Eyebrow({ label, meta }: { label: string; meta?: string }) {
       </span>
       {meta && (
         <span
-          style={{
-            fontFamily: 'var(--font-ui)',
-            fontSize: '10px',
-            fontWeight: 400,
-            color: 'var(--mute)',
-            letterSpacing: '0.02em',
-          }}
+          style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
+            color: 'var(--mute)' }}
         >
           {meta}
         </span>
@@ -245,14 +241,8 @@ function NumericStrip({ pct }: { pct: ZoneSlice }) {
           }}
         >
           <span
-            style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: '9px',
-              fontWeight: 700,
-              color: item.colour,
-              letterSpacing: '0.10em',
-              textTransform: 'uppercase',
-            }}
+            style={{ ...MICRO_LABELS.dataLabel, fontFamily: 'var(--font-ui)',
+              color: item.colour }}
           >
             {item.label}
           </span>

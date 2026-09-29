@@ -1,4 +1,5 @@
 // RunwayRevealCard — FIRSTRUN-MOMENTS-01a.
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 //
 // The uncovered-runway note (meta.uncovered_runway_note) is ratified, brand-voiced
 // copy written by the RULE ENGINE (foundationCompose.ts) — and until now it was
@@ -33,15 +34,9 @@ export default function RunwayRevealCard({ weeks, note }: RunwayRevealCardProps)
     >
       {/* Eyebrow — calm, positive; --moss because this is good news, not a warning. */}
       <div
-        style={{
-          fontFamily:     'var(--font-ui)',
-          fontSize:       '10px',
-          fontWeight:     700,
-          letterSpacing:  '0.14em',
-          textTransform:  'uppercase',
+        style={{ ...MICRO_LABELS.eyebrow, fontFamily:     'var(--font-ui)',
           color:          'var(--moss)',
-          marginBottom:   '6px',
-        }}
+          marginBottom:   '6px' }}
       >
         You&rsquo;re early
       </div>

@@ -100,12 +100,15 @@ describe('no below-nav bottom-sheet overlay exists anywhere in the UI', () => {
     // an rgba scrim. Scan the whole UI tree and assert none carries a z-index
     // below the nav. (Charts, rulers and the marketing frame use flex-end for
     // layout but have no fixed scrim, so they are not matched.)
-    const files = execSync('git ls-files "app/**/*.tsx" "components/**/*.tsx"', {
-      cwd: ROOT,
-      encoding: 'utf8',
-    })
+    // GATE-GLOB-SHORT-01 — see the note on the other four gates that shared this glob.
+    const files = execSync('git ls-files', { cwd: ROOT, encoding: 'utf8' })
       .split('\n')
       .filter(Boolean)
+      // ⚠️ THE PATH FILTER IS NOT OPTIONAL. Dropping the pathspec without re-adding it
+      // made this scan the WHOLE REPO and fail instantly on a non-UI file — caught in
+      // seconds, and a good reminder that "widen the population" and "remove the bound"
+      // are different operations.
+      .filter(f => /^(app|components)\/.*\.tsx$/.test(f))
       .filter(f => !f.endsWith('.test.tsx') && !f.endsWith('Sheet.tsx'))
 
     const offenders: string[] = []

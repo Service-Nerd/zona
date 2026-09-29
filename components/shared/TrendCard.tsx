@@ -19,6 +19,7 @@ import { buildTrendSparkline, type SparkBucket } from '@/lib/coaching/trendSpark
 import { paceContext } from '@/lib/coaching/trendSentence'
 import { formatPace } from '@/lib/format'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -209,7 +210,7 @@ function ExplanationSheet({
       {(close) => (
       <>
         <div style={{ padding: '0 20px 4px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 'var(--space-2)' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginBottom: 'var(--space-2)' }}>
             {eyebrow}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '24px', fontWeight: 600, color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.15 }}>

@@ -1,4 +1,5 @@
 // PlanArc — the plan's shape, one bar per week.
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 // See docs/canonical/ui-patterns.md § PlanArc.
 //
 // ⚠️ IT WAS CALLED AN ARC AND IT DREW A STRAIGHT LINE (PLAN-ARC-V2,
@@ -305,19 +306,13 @@ export default function PlanArc({
                   }}
                 />
                 <div
-                  style={{
-                    fontFamily: 'var(--font-ui)',
-                    fontSize: '10px',
-                    fontWeight: 700,
+                  style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
                     // The phase you are IN is the one worth reading.
                     color: isNow ? 'var(--moss)' : 'var(--mute)',
-                    letterSpacing: '0.06em',
-                    textTransform: 'uppercase',
                     marginTop: '4px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
+                    whiteSpace: 'nowrap' }}
                 >
                   {seg.label ?? ''}
                 </div>

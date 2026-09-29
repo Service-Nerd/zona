@@ -20,6 +20,7 @@ import type { DerivedSet } from '@/lib/plan/resolveMainSet'
 import { buildStepGroups, resolveDisplayFigures, type StepRow } from '@/lib/plan/sessionSteps'
 import { convertPaceString, formatDistance, formatDuration } from '@/lib/format'
 import type { Zone } from '@/components/shared/ZoneBar'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 /** Narrow the Session's `unknown` derived_set to a renderable v2 set. */
 function isV2DerivedSet(ds: DerivedSet | null | undefined): ds is DerivedSet {
@@ -88,7 +89,7 @@ function SectionCard({
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--line)', borderRadius: '12px', overflow: 'hidden', marginTop: 'var(--space-3)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)', padding: '8px 13px', background: tint(accent, tintPct) }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: FONT, fontSize: '12px', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase', color: accent }}>
+        <span style={{ ...MICRO_LABELS.sectionLabel, display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontFamily: FONT, color: accent }}>
           {name}
           {info && (
             <IconButton
@@ -191,7 +192,7 @@ export default function SessionSteps({
 
   return (
     <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
-      <div style={{ fontFamily: FONT, fontSize: '10px', color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 'var(--space-3)' }}>Session structure</div>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: FONT, color: 'var(--mute)', marginBottom: 'var(--space-3)' }}>Session structure</div>
 
       {/* Warm-up */}
       <SectionCard name="Warm-up" accent="var(--moss)" tintPct={13} totalStr={wuTotal} zoneStr={structure.warmup.zone} paceStr={easyPaceStr}>

@@ -123,8 +123,16 @@ describe('TIER-BADGE-01 — it absorbed the divergent copies', () => {
   // 🔴 TWO hand-rolled status badges existed and had already drifted: the ledger's
   // `pending` (10/600/0.06em) and CardSelect's `lockLabel` (9/700/0.08em). That is the
   // chevron shape — a pattern held as a local constant cannot travel.
-  const tracked = () => execSync('git ls-files "app/**/*.tsx" "components/**/*.tsx"', { encoding: 'utf8' })
-    .split('\n').filter(Boolean).filter(f => !f.includes('.test.'))
+  // 🔴 GATE-GLOB-SHORT-01 (2026-09-29): `git ls-files "app/**/*.tsx"` returns 129 files;
+// the truth is 134. git's `**/` requires at least one directory level, so every file
+// sitting DIRECTLY under `app/` or `components/` was invisible to this gate — including
+// `app/page.tsx`, the marketing homepage. Measured: 0 additional violations today, so the
+// blind spot was LATENT, not costly. Fixed in all five gates that shared it rather than
+// only the one that found it.
+const tracked = () => execSync('git ls-files', { encoding: 'utf8' })
+    .split('\n').filter(Boolean)
+    .filter(f => /^(app|components)\/.*\.tsx$/.test(f))
+    .filter(f => !f.includes('.test.'))
 
   /**
    * ⚠️ A DECLARED REGISTER, NOT A NARROWED REGEX. The first run of the arm below found

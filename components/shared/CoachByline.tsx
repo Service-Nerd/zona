@@ -20,6 +20,7 @@
 
 import AIMark from './AIMark'
 import { BRAND } from '@/lib/brand'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 interface CoachBylineProps {
   /** Animated pulse — use while AI is generating. Adds "· thinking" to role line. */
@@ -126,15 +127,9 @@ export default function CoachByline({
           {BRAND.coachName}
         </span>
         <span
-          style={{
-            fontFamily:    'var(--font-ui)',
-            fontSize:      '10px',
-            fontWeight:    600,
+          style={{ ...MICRO_LABELS.eyebrow, fontFamily:    'var(--font-ui)',
             color:         accent,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            opacity:       working ? 0.85 : 1,
-          }}
+            opacity:       working ? 0.85 : 1 }}
         >
           {roleLabel}
           {working && (

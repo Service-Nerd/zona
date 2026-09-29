@@ -19,9 +19,17 @@ import { Chevron } from './Chevron'
 // The founder caught it both times, in almost the same words. This file is what makes the
 // third time fail loudly instead.
 
+// 🔴 GATE-GLOB-SHORT-01 (2026-09-29): `git ls-files "app/**/*.tsx"` returns 129 files;
+// the truth is 134. git's `**/` requires at least one directory level, so every file
+// sitting DIRECTLY under `app/` or `components/` was invisible to this gate — including
+// `app/page.tsx`, the marketing homepage. Measured: 0 additional violations today, so the
+// blind spot was LATENT, not costly. Fixed in all five gates that shared it rather than
+// only the one that found it.
 const tracked = (): string[] =>
-  execSync('git ls-files "app/**/*.tsx" "components/**/*.tsx"', { encoding: 'utf8' })
-    .split('\n').filter(Boolean).filter(f => !f.includes('.test.'))
+  execSync('git ls-files', { encoding: 'utf8' })
+    .split('\n').filter(Boolean)
+    .filter(f => /^(app|components)\/.*\.tsx$/.test(f))
+    .filter(f => !f.includes('.test.'))
 
 const OWNER = 'components/shared/Chevron.tsx'
 

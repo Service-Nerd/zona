@@ -1,6 +1,7 @@
 'use client'
 
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 /**
  * RefusalView — what a runner sees when the engine will not build the plan
@@ -68,7 +69,7 @@ export default function RefusalView({
           this IS coach voice. No alarm colour, no raw diagnostic string: the
           message arrives already brand-voiced from the route. */}
       <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '20px', marginBottom: 'var(--space-4)' }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
+        <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
           {isRefusal ? 'Not yet' : 'Something went wrong'}
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '14px', color: 'var(--coach-ink)', lineHeight: 1.55 }}>
@@ -76,7 +77,7 @@ export default function RefusalView({
         </div>
         {isRefusal && alternatives.length > 0 && (
           <div style={{ marginTop: 'var(--space-4)', borderTop: '1px solid var(--line)', paddingTop: 'var(--space-4)' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
+            <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn)', marginBottom: 'var(--space-3)' }}>
               What would get you there
             </div>
             {alternatives.map((alt, i) => (

@@ -23,6 +23,7 @@
 'use client'
 
 import HrPendingStatusRow, { type HrPendingState } from './HrPendingStatusRow'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 interface Props {
   state:        HrPendingState
@@ -79,15 +80,9 @@ export default function PendingHrCard({ state, onRetry, isRetrying = false }: Pr
       <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
         {SKELETON_LABELS.map(label => (
           <div key={label} style={{ flex: 1 }}>
-            <div style={{
-              fontFamily:    'var(--font-ui)',
-              fontSize:      '9px',
-              fontWeight:    700,
+            <div style={{ ...MICRO_LABELS.dataLabel, fontFamily:    'var(--font-ui)',
               color:         'var(--mute)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              marginBottom:  '6px',
-            }}>{label}</div>
+              marginBottom:  '6px' }}>{label}</div>
             <div style={{
               height:       '3px',
               background:   'var(--line)',

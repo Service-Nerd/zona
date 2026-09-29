@@ -14,6 +14,7 @@ import type { Plan, GeneratorInput } from '@/types/plan'
 import { ceremonyLinesFor } from '@/lib/plan/ceremonyLines'
 import { convertDistanceString, formatDistance, type DistanceUnits } from '@/lib/format'
 import AIMark from './shared/AIMark'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 // ─── Copy ─────────────────────────────────────────────────────────────────────
 
@@ -302,10 +303,8 @@ export default function GeneratingCeremony({
                 marginBottom: '12px',
               }}>
                 <AIMark size={12} color="var(--teal)" working />
-                <span style={{
-                  fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-                  color: 'var(--teal)', letterSpacing: '0.14em', textTransform: 'uppercase',
-                }}>Generating</span>
+                <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
+                  color: 'var(--teal)' }}>Generating</span>
               </div>
               <p key={lineIdx} style={{
                 fontFamily: 'var(--font-brand)', fontSize: '20px', fontWeight: 500,

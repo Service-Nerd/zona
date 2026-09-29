@@ -20,6 +20,7 @@
 
 import type { NextGoalOption } from '@/lib/coaching/goalSequencing'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 interface Props {
   /** Voice line: finish vs goal, e.g. "You ran 2:04:00 — 6:00 inside your goal." */
@@ -35,7 +36,7 @@ export default function NextGoalCard({ achievement, options, onPick, onDismiss }
       {/* --s-race rail — race-themed, NOT the moss AI rail */}
       <span style={{ position: 'absolute', left: '8px', top: '16px', bottom: '16px', width: '3px', borderRadius: '2px', background: 'var(--s-race)' }} aria-hidden />
 
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginBottom: '8px' }}>
         What&apos;s next
       </div>
 

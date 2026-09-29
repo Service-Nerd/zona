@@ -10,6 +10,7 @@ import Sheet from './Sheet'
 import IconButton from '@/components/ui/IconButton'
 import { ZONE_COPY, type ZoneCopy } from '@/lib/coaching/zoneCopy'
 import type { ZoneKey } from '@/lib/coaching/zoneRules'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 interface Props {
   zoneKey: ZoneKey | 'Z1' | 'Z5' | null
@@ -39,11 +40,9 @@ export default function ZoneInfoSheet({ zoneKey, hrBand, onClose }: Props) {
               second of two sheets disagree with it — flagged for the board in
               that item rather than silently reversed here. */}
           <div style={{ padding: '0 20px 4px' }}>
-            <div style={{
-              fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-              color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase',
-              marginBottom: 'var(--space-2)',
-            }}>{copy.label}</div>
+            <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
+              color: 'var(--mute)',
+              marginBottom: 'var(--space-2)' }}>{copy.label}</div>
             <div style={{
               fontFamily: 'var(--font-brand)', fontSize: '24px', fontWeight: 600,
               color: 'var(--ink)', letterSpacing: '-0.4px', lineHeight: 1.15,

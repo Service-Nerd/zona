@@ -20,6 +20,7 @@ import CoachByline from '@/components/shared/CoachByline'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import type { Plan } from '@/types/plan'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -82,7 +83,7 @@ function Locked({ onUpgrade, onDismiss }: { onUpgrade: () => void; onDismiss: ()
     <div style={{ position: 'relative', background: 'var(--card)', borderRadius: '16px', padding: '16px 16px 16px 22px' }}>
       <span style={{ position: 'absolute', left: '8px', top: '16px', bottom: '16px', width: '3px', borderRadius: '2px', background: 'var(--mute)' }} aria-hidden />
 
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginBottom: '8px' }}>
         Post-race reshape
       </div>
 

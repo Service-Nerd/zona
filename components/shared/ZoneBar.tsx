@@ -11,6 +11,7 @@
 // Coherence. Zone colours and session colours are the same token by design.
 
 import React from 'react'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 export type Zone = 1 | 2 | 3 | 4 | 5
 
@@ -86,13 +87,10 @@ export default function ZoneBar({
           {([1, 2, 3, 4, 5] as Zone[]).map(z => (
             <div
               key={z}
-              style={{
-                flex: 1,
-                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 600,
+              style={{ ...MICRO_LABELS.dataLabel, flex: 1,
+                fontFamily: 'var(--font-ui)',
                 color: active.has(z) ? ZONE_COLOURS[z] : 'var(--mute)',
-                textAlign: 'center',
-                letterSpacing: '0.06em',
-              }}
+                textAlign: 'center' }}
             >
               {z}
             </div>

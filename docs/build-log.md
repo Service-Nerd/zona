@@ -6,6 +6,16 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — MICRO-LABEL-WAVE-2 · I rendered the gate and it had been counting short in two ways
+**Shipped:** 41 more labels converted, and five gates that had all been reading a short file list.
+**Dev learning:** Wave 1a was inside an auth-gated screen, so I verified it by reading. Wave 2 was mostly components, which **render** — and the first page I opened showed a label at 10px/600 that my static scan had called clean. Two causes, both in my own scanner: it matched `fontSize: '10px'` with **exactly one space**, and `CoachByline` writes its properties aligned with padding. And `git ls-files "app/**/*.tsx"` quietly returns 129 files when the truth is 134, because git's `**/` needs at least one directory level — so anything sitting directly under `app/` was invisible, including the marketing homepage.
+**Product/creator learning:** The register went **up** — 35 to 47 — when I fixed the population. That is the only kind of rise that is allowed, and I made the commit say so. A number that falls because the definition narrowed is worse than no number, and I have now watched this register move four times for four different reasons in one day.
+**AI-building learning:** **Five shipped gates shared the short glob.** I fixed all five rather than the one that found it, because "the remedy was applied to one twin" is the single most-recorded failure in this codebase and I have added instances to it twice this week. The sweep cost about four minutes.
+**The honest bit:** I told myself the other four gates would catch nothing — measured it, wrote "0 additional violations", and was **wrong**, because I measured with a proxy regex instead of running them. Running them failed immediately. The failure turned out to be my own: in one gate I removed the pathspec without re-adding the path filter, so it scanned the entire repository. **"Widen the population" and "remove the bound" are not the same operation**, and I had just written a paragraph about populations when I did it.
+**And the subtle one:** the register's own population arm asserted "more than 100 labels carry a literal fontSize". Every conversion removes a literal. So **as the migration succeeds, the arm proving the scanner is alive fails** — "the scanner broke" and "we fixed everything" were the same signal. It counts converted labels too now.
+**Hook material:** I opened the page and it showed me a label my scanner had just certified as clean.
+**Postable?:** yes
+
 ## 2026-09-29 — MICRO-LABEL-WAVE-1a · the analysis phase stopped me stripping sixteen chips
 **Shipped:** 47 of the app's hand-typed micro-labels converted to their ruled role.
 **Dev learning:** I walked into this build with a rule that sounded mechanical — *convert each label to the role matching its current size* — and it was wrong. The population included **sixteen chips**: small tracked labels that also carry a background and a border, which the style guide documents as a **different pattern**. All three micro-label roles are type-accent with no fill, so converting a chip would have stripped its colour. Two of them were zone-verdict chips and I was one edit away.

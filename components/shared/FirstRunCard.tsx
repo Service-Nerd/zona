@@ -6,6 +6,7 @@
 // card family. Content is computed by lib/plan/firstRun.ts (firstRunOfPlan).
 
 import type { FirstRun } from '@/lib/plan/firstRun'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 export default function FirstRunCard({ dayLabel, metric, effort, reassure }: FirstRun) {
   return (
@@ -19,15 +20,9 @@ export default function FirstRunCard({ dayLabel, metric, effort, reassure }: Fir
       }}
     >
       <div
-        style={{
-          fontFamily:    'var(--font-ui)',
-          fontSize:      '10px',
-          fontWeight:    700,
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
+        style={{ ...MICRO_LABELS.eyebrow, fontFamily:    'var(--font-ui)',
           color:         'var(--moss)',
-          marginBottom:  '8px',
-        }}
+          marginBottom:  '8px' }}
       >
         First up
       </div>

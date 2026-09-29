@@ -19,6 +19,7 @@ import { RACE_PROJECTIONS_COPY } from '@/components/shared/raceProjectionsCopy'
 import ZoneRings from '@/components/shared/ZoneRings'
 import TrendCard from '@/components/shared/TrendCard'
 import { RaceTimesCard } from '@/components/shared/RaceTimesCard'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 const ARC_COPY = RACE_PROJECTIONS_COPY.status.arc!
 
@@ -156,7 +157,7 @@ export default function CoachPreviewPage() {
           border: '1px solid var(--line)', padding: '18px 20px 18px 22px', position: 'relative',
         }}>
           <div style={{ position: 'absolute', left: '8px', top: '14px', bottom: '14px', width: '3px', background: 'var(--moss)', borderRadius: '2px' }} />
-          <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--moss)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '10px' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, color: 'var(--moss)', marginBottom: '10px' }}>
             Kit &middot; this week
           </div>
           <div style={{ fontSize: '17px', fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4, marginBottom: '8px' }}>

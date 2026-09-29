@@ -29,6 +29,16 @@ interface SessionStepsProps {
 
 ---
 
+
+## Micro-labels (MICRO-LABEL-WAVE-2, 2026-09-29)
+
+The step captions resolve through `MICRO_LABELS.eyebrow` (10px / 700 / 0.08em / uppercase)
+rather than hand-typed values. Enforced by `microLabel.test.ts`.
+
+⚠️ **One label in this component is still at 11px and was NOT converted.** Changing it
+changes SIZE, which is a reflow, and the ruling requires a render before a size change
+lands. It is part of the 36 remaining, tracked in `backlog.md` § Waves 3+.
+
 ## Rendering contract
 
 - **One card per phase** — Warm-up, Main set, Cool-down. Each is `--card` / `1px --line` / `12px` radius. (Race / rest / strength shapes render nothing — the caller skips them.)

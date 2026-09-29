@@ -16,6 +16,7 @@ import { Fragment } from 'react'
 import { formatClockTime, formatElapsedDelta } from '@/lib/format'
 import type { ArcPointKey, RaceProgressArc } from '@/lib/coaching/raceProgressArc'
 import type { RaceProjectionsCopy } from './raceProjectionsCopy'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 type ArcCopy = NonNullable<RaceProjectionsCopy['arc']>
 
@@ -75,11 +76,9 @@ export function RaceProgressArcRow({ arc, copy }: { arc: RaceProgressArc; copy: 
               </span>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', minWidth: 0 }}>
-              <span style={{
-                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 700,
-                color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.07em',
-                whiteSpace: 'nowrap',
-              }}>
+              <span style={{ ...MICRO_LABELS.dataLabel, fontFamily: 'var(--font-ui)',
+                color: 'var(--mute)',
+                whiteSpace: 'nowrap' }}>
                 {copy[point.key]}
               </span>
               <span style={{

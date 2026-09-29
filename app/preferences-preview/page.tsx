@@ -55,7 +55,7 @@ export default function PreferencesPreview() {
         </div>
 
         <div style={{ padding: '0 16px 24px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)', color: 'var(--mute)' }}>
             Connections, all four states
           </div>
           <div style={{ marginTop: 'var(--space-3)', background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
@@ -77,13 +77,13 @@ export default function PreferencesPreview() {
           <div style={{ marginTop: 'var(--space-2)', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)' }}>
             Row 1 is the loading state: no subtitle, because a negative it cannot know yet would be a lie.
           </div>
-          <div style={{ marginTop: 'var(--space-5)', fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ ...MICRO_LABELS.sectionLabel, marginTop: 'var(--space-5)', fontFamily: 'var(--font-ui)', color: 'var(--mute)' }}>
             Section order: {ME_SECTION_ORDER.join(' · ')}
           </div>
         </div>
 
         <div style={{ padding: '0 16px 24px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', color: 'var(--mute)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)', color: 'var(--mute)' }}>
             The doors, as the index shows them
           </div>
           <div style={{ marginTop: 'var(--space-3)', background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>

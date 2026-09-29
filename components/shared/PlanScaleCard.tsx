@@ -15,6 +15,7 @@
 // promise about a plan that can reshape.
 
 import type { PlanScale } from '@/lib/plan/planScale'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 export default function PlanScaleCard({
   totalDistance, raceDistance, hardestRun, hardestMonth,
@@ -30,15 +31,9 @@ export default function PlanScaleCard({
       }}
     >
       <div
-        style={{
-          fontFamily:    'var(--font-ui)',
-          fontSize:      '10px',
-          fontWeight:    700,
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
+        style={{ ...MICRO_LABELS.eyebrow, fontFamily:    'var(--font-ui)',
           color:         'var(--moss)',
-          marginBottom:  '8px',
-        }}
+          marginBottom:  '8px' }}
       >
         The shape of it
       </div>

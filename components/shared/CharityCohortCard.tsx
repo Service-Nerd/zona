@@ -1,4 +1,5 @@
 // CharityCohortCard — FIRSTRUN-MOMENTS-01f.
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 //
 // The honest version of "you are not alone": ONE true fact, stated once. No
 // feed, no leaderboard, no comparison — those are barred, and the SLT was
@@ -36,15 +37,9 @@ export default function CharityCohortCard({ partnerName, cohortSize }: CharityCo
       }}
     >
       <div
-        style={{
-          fontFamily:    'var(--font-ui)',
-          fontSize:      '10px',
-          fontWeight:    700,
-          letterSpacing: '0.14em',
-          textTransform: 'uppercase',
+        style={{ ...MICRO_LABELS.eyebrow, fontFamily:    'var(--font-ui)',
           color:         'var(--moss)',
-          marginBottom:  '8px',
-        }}
+          marginBottom:  '8px' }}
       >
         You&rsquo;re not the only one
       </div>

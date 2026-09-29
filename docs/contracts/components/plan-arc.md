@@ -8,6 +8,15 @@
 
 ---
 
+
+## Micro-labels (MICRO-LABEL-WAVE-2, 2026-09-29)
+
+Every small tracked label in this component resolves through `MICRO_LABELS` — the phase
+captions and week markers use `MICRO_LABELS.eyebrow` (10px / 700 / 0.08em / uppercase).
+**No hand-typed `fontSize` on a label**, which `microLabel.test.ts` enforces.
+
+✅ Verified by computed CSS on `/plan-arc-preview`: **41 labels, all canonical eyebrow.**
+
 ## Prop Interface
 
 ```typescript

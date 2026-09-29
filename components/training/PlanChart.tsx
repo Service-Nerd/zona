@@ -2,6 +2,7 @@
 
 import type { Week } from '@/types/plan'
 import { formatDate } from '@/lib/format'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 interface Props { weeks: Week[] }
 
@@ -18,12 +19,9 @@ export default function PlanChart({ weeks }: Props) {
       padding: '16px',
       marginBottom: '18px',
     }}>
-      <div style={{
-        fontFamily: "var(--font-ui)", fontSize: '10px',
-        color: 'var(--text-muted)', letterSpacing: '0.08em',
-        textTransform: 'uppercase', marginBottom: '14px',
-        display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center',
-      }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: "var(--font-ui)",
+        color: 'var(--text-muted)', marginBottom: '14px',
+        display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ letterSpacing: '0.05em' }}>Long run progression</span>
         {[
           { color: 'var(--text-muted)',  label: 'Done' },

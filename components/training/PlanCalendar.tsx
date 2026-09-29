@@ -10,6 +10,7 @@ import { sessionKmSelfPaced } from '@/lib/plan/sessionDistance'
 import { formatDistance, formatDuration, sumRoundedDistance, resolveSessionMetric, type DistanceUnits, type SessionMetric, type SessionMetricOverrides } from '@/lib/format'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 interface Completion {
   session_day: string
@@ -376,10 +377,8 @@ function MaintSeam() {
         fontFamily: 'var(--font-ui)', fontSize: '11px', fontWeight: 700,
         color: 'var(--s-recov)', letterSpacing: '0.12em', textTransform: 'uppercase',
       }}>After the race</span>
-      <span style={{
-        fontFamily: 'var(--font-ui)', fontSize: '10px',
-        color: 'var(--mute)', letterSpacing: '0.04em',
-      }}>maintenance</span>
+      <span style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
+        color: 'var(--mute)' }}>maintenance</span>
     </div>
   )
 }
@@ -783,7 +782,7 @@ function DayRow({ dayKey, session, date, isToday, isPast, isFuture, completion, 
       } as React.CSSProperties}
     >
       <div style={{ width: '40px', flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: isToday ? 'var(--moss)' : 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: isToday ? 'var(--moss)' : 'var(--mute)' }}>
           {DOW_FULL[dayKey]}
         </div>
         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: isToday ? 'var(--moss)' : 'var(--mute)', fontWeight: isToday ? 600 : 400, marginTop: '1px' }}>
@@ -1018,11 +1017,8 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
     >
       {/* Header row: week label + total km */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
-        <div style={{
-          fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600,
-          color: isRace ? 'var(--s-race)' : isMaint ? 'var(--s-recov)' : isPast ? 'var(--mute)' : 'var(--ink-2)',
-          letterSpacing: '-0.005em',
-        }}>
+        <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)',
+          color: isRace ? 'var(--s-race)' : isMaint ? 'var(--s-recov)' : isPast ? 'var(--mute)' : 'var(--ink-2)' }}>
           {isRace
             ? 'Race week'
             : isMaint
@@ -1080,10 +1076,8 @@ function WeekStripCard({ week, weekNum, completions, units, isPast = false, onTa
           }
           return (
             <div key={dayKey} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-              <div style={{
-                fontFamily: 'var(--font-ui)', fontSize: '9px', fontWeight: 600,
-                color: 'var(--mute)', textTransform: 'uppercase', letterSpacing: '0.06em',
-              }}>{(DOW_FULL as any)[dayKey].charAt(0)}</div>
+              <div style={{ ...MICRO_LABELS.dataLabel, fontFamily: 'var(--font-ui)',
+                color: 'var(--mute)' }}>{(DOW_FULL as any)[dayKey].charAt(0)}</div>
               {dot}
             </div>
           )

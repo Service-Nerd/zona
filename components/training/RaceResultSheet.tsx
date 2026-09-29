@@ -20,6 +20,7 @@ import RPEScale from '@/components/shared/RPEScale'
 import { CardSelect } from '@/components/shared/CardSelect'
 import Sheet from '@/components/shared/Sheet'
 import Button from '@/components/ui/Button'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 // Parse a finish/target time string into h/m/s. 3 parts → H:MM:SS;
 // 2 parts → MM:SS (short-race convention, e.g. "21:48" = 21m 48s).
@@ -184,7 +185,7 @@ export default function RaceResultSheet({
       <>
         {/* Header */}
         <div style={{ padding: '16px 20px 4px' }}>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--mute)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '4px' }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--mute)', marginBottom: '4px' }}>
             {raceName ?? 'Race result'}
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '24px', fontWeight: 700, color: 'var(--ink)', letterSpacing: '-0.5px', lineHeight: 1.15 }}>
@@ -196,7 +197,7 @@ export default function RaceResultSheet({
 
           {/* ── Outcome picker ─────────────────────────── */}
           <div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', letterSpacing: '0.02em', marginBottom: '10px' }}>
+            <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)', color: 'var(--ink-2)', marginBottom: '10px' }}>
               How would you call it?
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -245,7 +246,7 @@ export default function RaceResultSheet({
 
           {/* ── Intent: what you want from the weeks after (§75 Layer 5) ── */}
           <div>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '12px', fontWeight: 600, color: 'var(--ink-2)', letterSpacing: '0.02em', marginBottom: '4px' }}>
+            <div style={{ ...MICRO_LABELS.sectionLabel, fontFamily: 'var(--font-ui)', color: 'var(--ink-2)', marginBottom: '4px' }}>
               No next race yet — what now?
             </div>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '11px', color: 'var(--mute)', marginBottom: '10px' }}>

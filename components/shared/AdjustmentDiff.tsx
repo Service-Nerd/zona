@@ -16,6 +16,7 @@
 
 import { computeSessionDiff, labelSession, type SessionLike } from '@/lib/coaching/diff/sessionDiff'
 import type { DistanceUnits } from '@/lib/format'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 interface Props {
   sessionsBefore: ReadonlyArray<SessionLike | null | undefined>
@@ -83,14 +84,8 @@ export default function AdjustmentDiff({ sessionsBefore, sessionsAfter, units = 
             }}
           >
             <span
-              style={{
-                minWidth:      '32px',
-                color:         'var(--coach-ink, var(--ink))',
-                fontWeight:    600,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                fontSize:      '10px',
-              }}
+              style={{ ...MICRO_LABELS.eyebrow, minWidth:      '32px',
+                color:         'var(--coach-ink, var(--ink))' }}
             >
               {dayLabel}
             </span>

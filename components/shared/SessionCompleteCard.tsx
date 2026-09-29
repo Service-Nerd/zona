@@ -28,6 +28,7 @@ import ZoneBar, { zoneNumberForType } from './ZoneBar'
 import { getSessionLabel } from '@/lib/session-types'
 import { BRAND } from '@/lib/brand'
 import { formatDate } from '@/lib/format'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 export interface SessionCompleteCardProps {
   /** Session type — drives the chip label, zone bar, and completion copy. */
@@ -218,10 +219,8 @@ export default function SessionCompleteCard({
 
       {/* Voice anchor stamp — quiet but present. Matches Pattern 10 eyebrow
           tracking; signals "watermark" without lowering opacity. */}
-      <div style={{
-        fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-        color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
-      }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
+        color: 'var(--mute)' }}>
         {BRAND.voiceAnchor}
       </div>
 
@@ -232,10 +231,8 @@ export default function SessionCompleteCard({
       {ledgerAdvancedThisWeek && (
         <>
           <div style={{ height: '1px', background: 'var(--line)', margin: '12px 0' }} />
-          <div style={{
-            fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700,
-            color: 'var(--mute)', letterSpacing: '0.14em', textTransform: 'uppercase',
-          }}>
+          <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)',
+            color: 'var(--mute)' }}>
             {BRAND.brandStatement}
           </div>
         </>

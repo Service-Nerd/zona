@@ -50,6 +50,7 @@ import Button from '@/components/ui/Button'
 import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
 import BackButton from '@/components/shared/BackButton'
+import { MICRO_LABELS } from '@/components/shared/microLabels'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -467,7 +468,7 @@ function DifficultyCard({ band, note, alternatives }: {
 function TeaserCard({ onUpgrade }: { onUpgrade?: () => void }) {
   return (
     <div style={{ background: 'var(--warn-bg)', borderRadius: 'var(--radius-lg)', padding: '16px 18px', marginTop: 'var(--space-5)' }}>
-      <div style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', fontWeight: 700, color: 'var(--warn)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 'var(--space-2)' }}>
+      <div style={{ ...MICRO_LABELS.eyebrow, fontFamily: 'var(--font-ui)', color: 'var(--warn)', marginBottom: 'var(--space-2)' }}>
         Unlock more personalisation
       </div>
       <div style={{ fontFamily: 'var(--font-ui)', fontSize: '13px', color: 'var(--coach-ink)', lineHeight: 1.55, marginBottom: 'var(--space-4)' }}>

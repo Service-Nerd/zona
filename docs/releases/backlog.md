@@ -595,10 +595,51 @@ declared reason and a bounding arm, which means **16 labels are governed by no c
 whatsoever.** They need their own, or the chip pattern needs folding into the micro-label
 system as a fourth role — which is a board question, not mine.
 
-#### Waves 2+ (not scheduled)
-`PlanCalendar` 7 · `StravaPanel` 5 · `ReflectionInput` 4 · `BenchmarkUpdateScreen` 3 ·
-`GeneratePlanScreen` 3 · `FounderNoteScreen` 2 · `RedeemCodeScreen` 2 · the long tail.
+#### ✅ Wave 2 — SHIPPED 2026-09-29
 
+**41 labels converted across 27 files** (32, then **9 more that were invisible until the
+scanner was fixed**). Register **69 → 35 → 47 → 38** — again **two things stated
+separately: −32 debt paid, −2 population correction** (explicit opt-outs, below).
+
+⚠️ **The earlier wave-2 file list was STALE** (*"PlanCalendar 7 · StravaPanel 5 ·
+ReflectionInput 4…"*) — computed before the chip correction and before wave 1a. Superseded
+by the measured 32.
+
+🔴 **THIRD WRONG POPULATION IN TWO WAVES.** The scanner defines a micro-label as
+*"≤12px containing the substring `letterSpacing`"* — which matches labels setting
+**`letterSpacing: 0`**, i.e. ones explicitly saying **no tracking**. Two do, and both also
+set `textTransform: 'none'`: the `optional` field hints in `BenchmarkUpdateScreen` and
+`GeneratePlanScreen`. **Converting them would have forced a lowercase hint UPPERCASE.**
+Wave 1a's population included chips; wave 2's included opt-outs. **Both times the
+predicate was right and the set was wrong.**
+
+#### ✅ `GATE-GLOB-SHORT-01` — FIXED in all five gates, same commit
+
+🔴 **`git ls-files "app/**/*.tsx"` returns 129 files. The truth is 134.** git's `**/`
+requires at least one directory level, so every file sitting **directly** under `app/` or
+`components/` was invisible — `app/layout.tsx`, **`app/page.tsx` (the marketing
+homepage)**, `CapacitorBoot`, `ErrorBoundary`, `GeneratingCeremony`.
+
+**Five shipped gates shared it**: `microLabel`, `statusBadge`, `sheetPresentation`,
+`chevronOwner`, `redeemCodeUsage`. Fixed in all five rather than only the one that found
+it — that is the *remedy-applied-to-one-twin* class, recorded eight times in this repo.
+
+⚠️ **AND MY "0 ADDITIONAL VIOLATIONS" MEASUREMENT WAS WRONG.** I measured with a proxy
+regex instead of running the gates. Running them surfaced a failure immediately — which
+turned out to be **my own error** (in `sheetPresentation` I dropped the pathspec without
+re-adding the path filter, so it scanned the whole repo). **"Widen the population" and
+"remove the bound" are different operations**, and the gate caught the difference in
+seconds.
+
+#### 🟡 `MICRO-LABEL-FIELDHINT-01` — where does a field hint belong?
+
+🧭 **DESIGN BOARD.** The board ruled **three** roles and closed the set. A **field hint**
+(`optional`, lowercase, untracked, beside an input rather than above a section) fits none
+of them, and it currently survives only as an *exclusion*. Either it is a fourth role, or
+it is body text and should stop looking like a label. **Two instances; both render the same
+word at two different sizes**, which is the drift this programme exists to remove.
+
+#### Waves 3+ — the 35 that remain, ALL blocked on a render
 #### Declared exemption
 `components/marketing/**` — mockups of iOS chrome at mockup scale, already exempted for
 that reason in `lib/marketing/typeScale.test.ts`.
