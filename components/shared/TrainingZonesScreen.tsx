@@ -40,6 +40,7 @@ import type React from 'react'
 import { convertPaceString } from '@/lib/format'
 import { bandCeiling, type PaceGuide } from '@/lib/plan/paceBands'
 // CHEVRON-OWNER-01 — the one affordance. A tappable row must not look static.
+import ZoneInfoSheet from '@/components/shared/ZoneInfoSheet'
 import { Chevron } from '@/components/shared/Chevron'
 
 export type ZoneRow = {
@@ -119,6 +120,18 @@ export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: 
   /** Navigates to the HR card on Me, which remains the one place they are edited. */
   onEditHr?: () => void
 }) {
+
+  /* 🔴 ZONES-ZONE-SHEET-GONE-01 — THE PER-ZONE EXPLAINER CAME BACK.
+     Founder: *"the pop up when tapping the hr zones has gone and no longer works."*
+     It had. `ZONES-SURFACE-01` moved the five zone rows here from the Me screen and
+     **did not bring their sheet**: the rows arrived as plain `<div>`s with no tap target
+     at all, so there was nothing to open. Three residues proved it was a move that dropped
+     its passenger — a dead `ZoneInfoSheet` import left in `DashboardClient`, a dead
+     `openZone` state left in `HRZonesSection`, and that file's comment still CLAIMING the
+     sheet had moved with the rows.
+     ⚠️ §5b ask 2, *what is reached ONLY from it?* The sheet was reached only from these
+     rows. Nothing asserted they were tappable, so nothing went red. */
+  const [openZone, setOpenZone] = useState<1 | 2 | 3 | 4 | 5 | null>(null)
   const hasHr = !!zones && zones.length > 0
   const hasPace = !!pace
   const [tab, setTab] = useState<string>(hasHr ? ZONES_TAB_HR : ZONES_TAB_PACE)
@@ -222,7 +235,14 @@ export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: 
       <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
         {onHr
           ? zones!.map((z, i) => (
-              <div key={z.zone} style={{ ...rowStyle, borderTop: i ? '1px solid var(--line)' : 'none' }}>
+              <button
+                key={z.zone}
+                onClick={() => setOpenZone(z.zone as 1 | 2 | 3 | 4 | 5)}
+                style={{ ...rowStyle, borderTop: i ? '1px solid var(--line)' : 'none',
+                         width: '100%', background: 'none', border: 'none',
+                         borderTopStyle: i ? 'solid' : undefined,
+                         font: 'inherit', textAlign: 'left', cursor: 'pointer' }}
+              >
                 <div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink)', fontWeight: 500 }}>
                     <span style={{ color: z.colour, fontWeight: 700 }}>Z{z.zone}</span> {z.name}
@@ -232,7 +252,7 @@ export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: 
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: 'var(--fs-body)', color: 'var(--ink-2)', textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
                   {z.minHR}–{z.maxHR}
                 </div>
-              </div>
+              </button>
             ))
           : paceRows(pace!).map((r, i) => (
               <div key={r.name} style={{ ...rowStyle, borderTop: i ? '1px solid var(--line)' : 'none' }}>
@@ -246,6 +266,19 @@ export function TrainingZonesScreen({ zones, pace, units, sourceHr, onEditHr }: 
               </div>
             ))}
       </div>
+      {/* The per-zone explainer, restored VERBATIM from the implementation
+          `ZONES-SURFACE-01` deleted — same `ZoneInfoSheet`, same `zoneKey` mapping, same
+          live `hrBand`. Recovered from `cc68ec0b^` rather than rewritten, because a
+          re-implementation of a thing that already existed is a second owner. */}
+      {openZone !== null && (() => {
+        const z = zones?.find(zz => zz.zone === openZone)
+        if (!z) return null
+        const zoneKey = openZone === 1 ? 'Z1' : openZone === 2 ? 'Z2'
+          : openZone === 3 ? 'Z3' : openZone === 4 ? 'Z4-5' : 'Z5'
+        return <ZoneInfoSheet zoneKey={zoneKey} hrBand={{ lo: z.minHR, hi: z.maxHR }}
+                 onClose={() => setOpenZone(null)} />
+      })()}
     </div>
+
   )
 }

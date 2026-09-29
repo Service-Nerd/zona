@@ -135,7 +135,10 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
   // holds the estimate (user hasn't typed their own tested value over it).
   const showEstHint = !maxHR && estMaxHr != null && parseInt(mhr) === estMaxHr
   const [saved, setSaved] = useState(false)
-  const [openZone, setOpenZone] = useState<1 | 2 | 3 | 4 | 5 | null>(null)
+  /* ⚠️ `openZone` WAS HERE AND WAS DEAD (ZONES-ZONE-SHEET-GONE-01). It was the handle for
+     a sheet `ZONES-SURFACE-01` deleted without re-creating: state whose only job was to
+     open something that no longer existed. Clearest of the three residues showing the rows
+     had moved and their sheet had not. */
 
   const rhrNum = parseInt(rhr)
   const mhrNum = parseInt(mhr)
@@ -209,7 +212,13 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
         </Button>
       </div>
 
-      {/* ZONES-SURFACE-01 — the five zone rows and their per-zone sheet moved to the
+      {/* 🔴 THIS COMMENT CLAIMED SOMETHING THAT DID NOT HAPPEN, AND THE CLAIM IS WHY IT
+          SURVIVED. It said the rows AND their per-zone sheet moved. Only the rows moved:
+          the sheet was deleted, the new screen got plain `<div>`s with no tap target, and
+          the founder found it — *"the pop up when tapping the hr zones has gone and no
+          longer works."* Restored in `TrainingZonesScreen`, guarded by
+          `zoneSheetReach.test.ts`. Claim/computation mismatch, a catalogued class.
+          ZONES-SURFACE-01 — the five zone rows and their per-zone sheet moved to the
           Training Zones screen. The ENTRY is the "Zones" row in "What Kit knows about
           you", near the top of Me, which already states the values; a second door here,
           five blocks down and nested under the HR inputs, was the first cut and nobody
