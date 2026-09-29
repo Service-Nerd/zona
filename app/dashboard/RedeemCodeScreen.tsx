@@ -21,7 +21,7 @@ import { useState } from 'react'
 import { BRAND } from '@/lib/brand'
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { formatCodeInput, CODE_PREFIX } from '@/lib/charity/code'
-import BackButton from '@/components/shared/BackButton'
+import FloatingBackButton from '@/components/shared/FloatingBackButton'
 import { formatDate } from '@/lib/format'
 import Button from '@/components/ui/Button'
 
@@ -77,9 +77,7 @@ export default function RedeemCodeScreen({ onBack, onRedeemed }: {
 
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
-      <div style={{ padding: '16px 16px 8px' }}>
-        <BackButton onClick={onBack} />
-      </div>
+      <FloatingBackButton onClick={onBack} />
 
       <div style={{ padding: '8px 20px 48px', maxWidth: '480px', margin: '0 auto' }}>
 

@@ -13,6 +13,7 @@ import ActionRow from '@/components/shared/ActionRow'
 import AdjustmentDiff from '@/components/shared/AdjustmentDiff'
 import AppleHealthConnectionRow from '@/components/dashboard/AppleHealthConnectionRow'
 import BackButton from '@/components/shared/BackButton'
+import FloatingBackButton from '@/components/shared/FloatingBackButton'
 import Button from '@/components/ui/Button'
 import ExternalLink from '@/components/shared/ExternalLink'
 import FaqScreen from '@/components/shared/FaqScreen'
@@ -844,7 +845,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   // moves its call site, it does not rewrite it.
   if (activeSection === 'heart-rate') return (
     <>
-      <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setActiveSection('main')} /></div>
+      <FloatingBackButton onClick={() => setActiveSection('main')} />
       <ScreenHeader title={HEART_RATE_TITLE} sub={HEART_RATE_SUB} />
       <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)' }}>
         <HRZonesSection
@@ -864,7 +865,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   // ME-DOORS-01 door 3. Rendered here rather than extracted — see the row on the index.
   if (activeSection === 'plan-adjustments') return (
     <>
-      <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setActiveSection('main')} /></div>
+      <FloatingBackButton onClick={() => setActiveSection('main')} />
       <ScreenHeader title={PLAN_ADJUSTMENTS_TITLE} sub="What the engine changes, and when" />
       <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)', display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
   {/* ── Plan adjustments (paid/trial only) ───────────────────
@@ -985,7 +986,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   // ME-ORDER-01 door 4 — Connections. ⚠️ The rows are UNCHANGED; only their home moved.
   if (activeSection === 'connections') return (
     <>
-      <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setActiveSection('main')} /></div>
+      <FloatingBackButton onClick={() => setActiveSection('main')} />
       <ScreenHeader title={CONNECTIONS_TITLE} sub="Where your runs come from" />
       <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)', display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
         <AppleHealthConnectionRow onHRFound={(rhr, mhr) => onDeviceHRFound?.(rhr, mhr)} />
@@ -996,7 +997,7 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
 
   if (activeSection === 'preferences') return (
     <>
-      <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => setActiveSection('main')} /></div>
+      <FloatingBackButton onClick={() => setActiveSection('main')} />
       <ScreenHeader title={PREFERENCES_TITLE} sub={PREFERENCES_SUBTITLE} />
       <PreferencesScreen
         preferredUnits={preferredUnits}

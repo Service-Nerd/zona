@@ -6,6 +6,39 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — BACK-ARROW-FLOAT-01 · the board lost the vote and won the argument
+
+**Dev.** The back arrow on a pushed screen now hovers instead of scrolling away. Same
+circle, same size, same colour; it sits in a sticky wrapper.
+
+**The honest bit.** The founder asked whether this was one change because it should be a
+shared component. It was and it wasn't, and the gap is the interesting part. `BackButton`
+genuinely was the single arrow. Its *placement* was hand-written at twenty-five call sites
+in eight different wrapper shapes. Floating is a property of the wrapper, so there was no
+single place to make the change until one existed. That is the same failure as
+`SectionLabel` being a local function: the component travelled, the thing around it did not.
+
+**AI-building.** The board ruled a pinned bar; the founder wanted the hovering circle and
+overturned it, which is his call and is now on the register. What I did not expect is that
+measuring it would prove the board's reasoning right while leaving the founder's choice
+standing. Silvanto's objection was that the circle has no ground of its own. The numbers:
+the `--bg-soft` fill is 1.21:1 against the white card it scrolls over, and 1.07:1 against
+the screen's own background. The fill cannot separate the arrow from anything. So the
+shadow is not decoration added to justify a preference — it is the entire reason the
+hovering version is legible, and without it the arrow would not be subtle, it would be
+invisible.
+
+I also built the verification wrong the first time in my head: the harness page scrolls in
+the document, and the app scrolls inside a fixed-height box. Sticky resolves against the
+nearest overflow ancestor even one that can never scroll, which has already cost this app a
+header that was never sticky at all. So the test case reproduces an app-shaped scroller:
+17px from the top before scrolling, 17px after 400px of it.
+
+**Product.** Two dissents are on the record and both are worth keeping. Wroblewski: pinning
+makes the arrow visible, not reachable, and top-left is the hardest place a thumb goes — he
+wants iOS edge-swipe-back looked at as its own question. Sierra: this treats a symptom, and
+the symptom is that Plan history is long enough to lose its own exit.
+
 ## 2026-09-29 — DASHBOARD-HARNESS-01 · the fixture had to be generated, not written
 
 **Dev.** All fourteen extracted screens now render on the dev harness. The five biggest

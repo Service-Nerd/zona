@@ -120,6 +120,7 @@ const FounderNoteScreen = dynamic(() => import('./FounderNoteScreen'), { ssr: fa
 import { RecalibrationReadyTile, RecalibrationEntryScreen } from './RecalibrationTile'
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
+import FloatingBackButton from '@/components/shared/FloatingBackButton'
 import ActionRow from '@/components/shared/ActionRow'
 import FaqScreen, { FAQ_TITLE, FAQ_SUBTITLE } from '@/components/shared/FaqScreen'
 import { StatusBadge } from '@/components/shared/StatusBadge'
@@ -2880,7 +2881,7 @@ export default function DashboardClient() {
               {/* ⚠️ BACK GOES WHERE YOU CAME FROM. Two entries since ME-DOORS-01: the `Zones`
                   row on the index, and the `heart-rate` door. A single hardcoded `'me'`
                   is correct for one of them and loses the runner's place in the other. */}
-              <div style={{ padding: '16px 16px 0' }}><BackButton onClick={() => { setMeOpenSection(zonesReturnSection); setScreen('me') }} /></div>
+              <FloatingBackButton onClick={() => { setMeOpenSection(zonesReturnSection); setScreen('me') }} />
               <ScreenHeader title="Your zones" sub="Heart rate and pace targets" />
               <TrainingZonesScreen zones={hrZones} pace={pace} units={preferredUnits}
                 sourceHr={restingHR && maxHR ? { resting: restingHR, max: maxHR } : null}

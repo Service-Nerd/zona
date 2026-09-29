@@ -2774,6 +2774,38 @@ at the type layer. Precedent: *"the doc/component ground mismatch is a DEFECT"* 
 DEFENCE.** *"After the race"* at 10px and 11px. *"Hold the zone"* at 10px and 11px.
 **`optional` FOUR ways.** Same word, same job, four hands.
 
+### The back arrow floats (BACK-ARROW-FLOAT-01)
+
+**A pushed screen's back arrow uses `FloatingBackButton`.** It is the 44px `--bg-soft`
+circle from `BackButton`, unchanged, in a `position: sticky` wrapper that holds it 16px
+from the scroller's top edge while the screen moves beneath it.
+
+⚠️ **The component exists for the WRAPPER, not the floating.** `BackButton` was already
+the one arrow (`UI-BACKARROW-01`) — but its **placement** was hand-written at 25 call sites
+in **eight** wrapper shapes, so "make it float" had nowhere single to happen. Floating is a
+property of the wrapper. Same class as `SectionLabel`: a pattern that is a local variable
+cannot travel.
+
+🥇 **The shadow is load-bearing and here is the number.** The circle's `--bg-soft` fill
+against the `--card` white it scrolls over is **1.21:1**; against the screen's `--bg`
+ground, **1.07:1**. The fill cannot separate the arrow from what passes beneath it. Without
+`--shadow-card` the arrow is not subtle, it is **invisible**. ⚠️ "No chrome" bans *stacked*
+shadows, not one documented elevation — and `--shadow-card` is documented.
+
+⚠️ **The rest offset equals the stick offset** (both `--space-4`), so the arrow does not
+jump on the first scroll event. ⚠️ **`width: fit-content`**, or a sticky full-width strip
+would swallow taps meant for the content behind it.
+
+🔴 **NOT for tiles or confirm surfaces.** `RecalibrationTile` and `ModifyPlanConfirm`
+keep plain `BackButton`: they are not pushed screens and own no scroller, so `sticky` would
+resolve to the page and the arrow would wander off the thing it belongs to.
+
+🔴 **Residual hazard, named rather than solved:** `position: sticky` resolves against the
+nearest ancestor with `overflow` other than `visible` — **even one that can never scroll**.
+Four screens here once declared `overflow-y: auto` with no height and a header pinned to one
+was never sticky at all. If a caller's scroller is fake the arrow silently stops floating and
+**nothing goes red**. `stickyScroller.test.ts` guards the wrappers; it cannot guard intent.
+
 ### The brand stamp is an eyebrow (MICRO-LABEL-BRAND-STAMP-01)
 
 **A locked `BRAND` string rendered as small tracked type uses `MICRO_LABELS.eyebrow`.**

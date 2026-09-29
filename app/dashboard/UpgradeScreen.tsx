@@ -24,7 +24,7 @@ import { upgradeFraming, isLossFraming } from '@/lib/subscriptions/upgradeFramin
 import { authedFetch } from '@/lib/supabase/authedFetch'
 import { createClient } from '@/lib/supabase/client'
 import ExternalLink from '@/components/shared/ExternalLink'
-import BackButton from '@/components/shared/BackButton'
+import FloatingBackButton from '@/components/shared/FloatingBackButton'
 import Button from '@/components/ui/Button'
 import { RedeemCodeLink } from '@/components/shared/RedeemCodeLink'
 import type { AfterSheet } from '@/lib/subscriptions/redeemCode'
@@ -284,9 +284,7 @@ export default function UpgradeScreen({ onBack, trialExpired = false, grantExpir
       background: 'var(--bg)',
     }}>
       {/* Back */}
-      <div style={{ padding: '16px 20px 0' }}>
-        <BackButton onClick={onBack} />
-      </div>
+      <FloatingBackButton onClick={onBack} />
 
       <div style={{ flex: 1, padding: '28px 20px 32px', display: 'flex', flexDirection: 'column' }}>
         {/* Headline */}

@@ -35,6 +35,7 @@ import IconMe from '@/components/dashboard/IconMe'
 import ManualRunModal from '@/components/dashboard/ManualRunModal'
 import OrientationScreen from '@/components/dashboard/OrientationScreen'
 import CoachTeaser from '@/components/dashboard/CoachTeaser'
+import FloatingBackButton from '@/components/shared/FloatingBackButton'
 import TodayScreen from '@/components/dashboard/TodayScreen'
 import MeScreen from '@/components/dashboard/MeScreen'
 import SessionPopupInner from '@/components/dashboard/SessionPopupInner'
@@ -265,6 +266,36 @@ export default function CopyPreview() {
           note={'The free-tier Coach surface. Checks the locked report card copy.'}
         >
           <CoachTeaser plan={harnessPlan} firstName="Sam" onUpgrade={noop} />
+        </Case>
+
+        {/* 🔴 BACK-ARROW-FLOAT-01 — RENDERED IN A REAL SCROLLER, ON PURPOSE.
+            `position: sticky` resolves against the nearest ancestor with `overflow`
+            other than `visible` — even one that can never scroll. Four screens in this
+            app once declared `overflow-y: auto` with no height and a header pinned to
+            one of them was never sticky at all. The harness page scrolls in the
+            DOCUMENT, so mounting a door here would prove nothing about the app, where
+            the screen scrolls inside a `height: 100dvh; overflow-y: auto` box. This
+            case reproduces that box. */}
+        <Case
+          title="FloatingBackButton — in an app-shaped scroller"
+          note="Scroll the box. The arrow must hold at 16px from its top edge, not slide away."
+        >
+          <div
+            id="float-scroller"
+            style={{ height: '220px', overflowY: 'auto', background: 'var(--bg)',
+                     border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)' }}
+          >
+            <FloatingBackButton onClick={noop} />
+            <div style={{ padding: '0 16px' }}>
+              {Array.from({ length: 18 }, (_, i) => (
+                <div key={i} style={{ background: 'var(--card)', borderRadius: '12px',
+                  padding: '14px 16px', marginBottom: '10px', fontSize: '13px',
+                  color: 'var(--ink-2)', boxShadow: 'var(--shadow-card)' }}>
+                  A card the arrow has to survive passing over, row {i + 1}
+                </div>
+              ))}
+            </div>
+          </div>
         </Case>
 
         {/* The three biggest. Their prop sets are large because they ARE the app's

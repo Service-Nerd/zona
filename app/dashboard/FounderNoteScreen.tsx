@@ -18,16 +18,14 @@
 import { BRAND } from '@/lib/brand'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { FOUNDER_STORY } from '@/lib/marketing/founderStory'
-import BackButton from '@/components/shared/BackButton'
+import FloatingBackButton from '@/components/shared/FloatingBackButton'
 
 export default function FounderNoteScreen({ onBack }: { onBack: () => void }) {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg)' }}>
       {/* Back arrow — 44pt tap target, --bg-soft round button per Session
           Detail header pattern in ui-patterns.md § Screen Templates. */}
-      <div style={{ padding: '16px 16px 8px' }}>
-        <BackButton onClick={onBack} />
-      </div>
+      <FloatingBackButton onClick={onBack} />
 
       <div style={{ padding: '8px 20px 48px', maxWidth: '480px', margin: '0 auto' }}>
 
