@@ -6,6 +6,37 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-29 — FAQ-TITLE-INVERTED-01 · both surfaces read correctly, only the journey was wrong
+
+**Dev.** The Common questions screen now leads with "Common questions" instead of with its own
+subtitle.
+
+**Product, and this is the whole lesson.** The rule that was broken is written down, in this
+repo, in plain English: a door's row label and the screen's own title are the same string by
+definition, because the runner taps a word and expects to arrive at it. The note even explains
+why it goes wrong — *written out twice they drift, and the drift is invisible because each
+surface reads correctly on its own.*
+
+That is precisely what happened, and precisely why nothing caught it. The Me row was right:
+"Common questions", with "The ones people actually ask." underneath. The screen was right too,
+as a screen — a small label above a large headline, correctly styled, correctly spaced. Neither
+surface was wrong. The **journey** was wrong, and I have no check that walks a journey. It took
+someone tapping the door.
+
+**AI-building.** The gate I wrote to generalise this got its anchor wrong twice, and both times
+the falsification step caught it rather than the reading. First it located the constant with a
+plain search and landed on an accessibility attribute rather than the visible title, so it
+inspected the wrong element entirely and failed for a reason that had nothing to do with the
+defect. Then, once it was looking for the constant in text position, it demanded the opening
+tag be immediately before it — and real JSX puts a newline and two levels of indentation
+there.
+
+Neither mistake was visible by reading the check. Both were obvious the moment I broke the
+thing it guards and watched what happened. That is now three sessions running where the
+falsification step, not the writing step, is what made a check real.
+
+---
+
 ## 2026-09-29 — SCROLL-NATIVE-01 · one undocumented line, every screen in the app
 
 **Dev.** Scrolling should rubber-band again. Sheets should stop dragging the page along
