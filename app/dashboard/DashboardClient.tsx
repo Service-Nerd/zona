@@ -121,13 +121,14 @@ import { RecalibrationReadyTile, RecalibrationEntryScreen } from './Recalibratio
 import { nextRecalibrationDue } from '@/lib/coaching/recalibrationPrompt'
 import BackButton from '@/components/shared/BackButton'
 import FloatingBackButton from '@/components/shared/FloatingBackButton'
+import HrCalibrationSheet from '@/components/shared/HrCalibrationSheet'
 import ActionRow from '@/components/shared/ActionRow'
 import FaqScreen, { FAQ_TITLE, FAQ_SUBTITLE } from '@/components/shared/FaqScreen'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { SectionLabel } from '@/components/shared/SectionLabel'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
 import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/components/shared/PreferencesScreen'
-import { CONNECTIONS_TITLE, connectionsSubtitle, HEART_RATE_TITLE, HEART_RATE_SUB, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
+import { CONNECTIONS_TITLE, connectionsSubtitle, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB } from '@/components/shared/meDoors'
 import { Chevron } from '@/components/shared/Chevron'
 import { TrainingZonesScreen } from '@/components/shared/TrainingZonesScreen'
 // PACE-BANDS-OWNER-01 — pure, and safe across BUNDLE-BOUNDARY-01 where `ruleEngine` is not.
@@ -441,6 +442,70 @@ export default function DashboardClient() {
    *  backs: the `Zones` row on the Me index, and the `heart-rate` door. Same shape as
    *  `redeemReturnTo` above. Null means "back to the index", which is the index row's case. */
   const [zonesReturnSection, setZonesReturnSection] = useState<string | null>(null)
+  /** ZONES-HR-SHEET-01 — the HR form's only mount is a sheet on the zones screen.
+   *  ⚠️ Set by the `Zones` row when HR is UNSET, so the runner who has nothing to read is
+   *  taken straight to the thing that fixes that. Sending them to an empty zones screen to
+   *  hunt for a control would be worse than the door this replaced (Wroblewski). */
+  const [hrSheetOpen, setHrSheetOpen] = useState(false)
+
+  /**
+   * The single owner of "the runner saved their HR" (ZONES-HR-SHEET-01).
+   *
+   * ⚠️ MOVED VERBATIM out of `MeScreen`'s `onHRChange` prop, which went dead when the
+   * `Heart rate` door was removed: `MeScreen` declared it and no longer rendered anything
+   * that called it. Extracted rather than copied, because two writers of the same state is
+   * the shape of this codebase's most expensive defects.
+   */
+  const handleHrSave = async (rhr: number, mhr: number) => {
+  setRestingHR(rhr); setMaxHR(mhr)
+  // CoachingPrinciples §50 (HR-MAX-01) — a value the runner typed in Profile and
+  // saved IS a confirmation. Tag it 'user_confirmed' so the §50 asymmetry trusts
+  // it even below the age estimate (genuine low-max athletes) instead of treating
+  // it as a device floor.
+  setMaxHRSource('user_confirmed')
+  // `newZ2` removed 2026-09-24 — it was a second copy of the Z2 boundary living
+  // in a React component, and the only reason it existed is that `computeZones`
+  // was private to `ruleEngine.ts`. `applyHrToPlan` owns it now.
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    // 1. user_settings is the single source of truth for live HR values
+    await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, max_hr_source: 'user_confirmed', updated_at: new Date().toISOString() })
+    // 2. P1 — sync plan.meta so the zone2_ceiling fallback path never drifts
+    //    from user_settings. Uses savePlanForUser (not savePlanForUser archives
+    //    the plan — that's only done in the generate flow). Plain upsert here.
+    //    §50: stamp the confirmed max + provenance so INV-PLAN-MAX-HR-NOT-BELOW-
+    //    ESTIMATE-FLOOR reads a coherent state and the stale floor note clears.
+    if (plan && plan !== EMPTY_PLAN) {
+      // 🔴 PLAN-ZONE-VS-HRTARGET-01 — THIS USED TO UPDATE `meta` AND NOTHING ELSE.
+      //
+      // Every session's `hr_target` kept the band computed at generation, while
+      // the session-detail HEADER derives its bpm from `session.zone` + meta. One
+      // card therefore read "Zone 3 · 161–175 bpm" above a note saying
+      // "158–171 bpm" — measured on 6 of 22 live plans, every quality session.
+      // `applyHrToPlan` is the single owner that keeps meta and the sessions in
+      // step; it also sets `zone2_ceiling`, so the hand-rolled `newZ2` below is
+      // gone rather than left as a second copy of the Z2 boundary.
+      const withHr = applyHrToPlan(plan as never, rhr, mhr) as never as typeof plan
+      const updatedPlan = { ...withHr, meta: { ...withHr.meta, hr_derived_max: mhr, hr_max_source: 'user_confirmed', hr_zone_method: 'karvonen', hr_assumption_note: undefined } }
+      setPlan(updatedPlan as any)
+      // RESHAPE-FIX-WAVE1: savePlanForUser now throws on persistence failure.
+      // This call is deliberately fire-and-forget (the resting-HR save above
+      // is the load-bearing write; plan.meta sync is best-effort), so swallow
+      // the rejection here rather than re-architect the call shape.
+      savePlanForUser(user.id, updatedPlan as any, supabase).catch((err: unknown) => {
+        console.error('plan.meta sync failed:', err)
+      })
+    }
+    // 3. P3 — re-bucket past run analyses with new zone boundaries (fire-and-forget).
+    //    The route updates strava_activities.hr_pct_z* for Strava-sourced runs
+    //    (re-fetches HR streams from Strava API) and recomputes run_analysis
+    //    zone columns for all recent sessions. Failure is silent — stale data
+    //    is better than blocking the HR save.
+    void authedFetch('/api/recalibrate-hr', { method: 'POST' })
+  } catch {}
+}
+
 
   // PV2-H — recalibration prompt (the living plan). Status drives the entry screen.
   const [recalStatus, setRecalStatus] = useState<'idle' | 'confirming' | 'applied' | 'error'>('idle')
@@ -2779,55 +2844,7 @@ export default function DashboardClient() {
       })
     } catch {}
   }
-}} onHRChange={async (rhr: number, mhr: number) => {
-  setRestingHR(rhr); setMaxHR(mhr)
-  // CoachingPrinciples §50 (HR-MAX-01) — a value the runner typed in Profile and
-  // saved IS a confirmation. Tag it 'user_confirmed' so the §50 asymmetry trusts
-  // it even below the age estimate (genuine low-max athletes) instead of treating
-  // it as a device floor.
-  setMaxHRSource('user_confirmed')
-  // `newZ2` removed 2026-09-24 — it was a second copy of the Z2 boundary living
-  // in a React component, and the only reason it existed is that `computeZones`
-  // was private to `ruleEngine.ts`. `applyHrToPlan` owns it now.
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    // 1. user_settings is the single source of truth for live HR values
-    await supabase.from('user_settings').upsert({ id: user.id, resting_hr: rhr, max_hr: mhr, max_hr_source: 'user_confirmed', updated_at: new Date().toISOString() })
-    // 2. P1 — sync plan.meta so the zone2_ceiling fallback path never drifts
-    //    from user_settings. Uses savePlanForUser (not savePlanForUser archives
-    //    the plan — that's only done in the generate flow). Plain upsert here.
-    //    §50: stamp the confirmed max + provenance so INV-PLAN-MAX-HR-NOT-BELOW-
-    //    ESTIMATE-FLOOR reads a coherent state and the stale floor note clears.
-    if (plan && plan !== EMPTY_PLAN) {
-      // 🔴 PLAN-ZONE-VS-HRTARGET-01 — THIS USED TO UPDATE `meta` AND NOTHING ELSE.
-      //
-      // Every session's `hr_target` kept the band computed at generation, while
-      // the session-detail HEADER derives its bpm from `session.zone` + meta. One
-      // card therefore read "Zone 3 · 161–175 bpm" above a note saying
-      // "158–171 bpm" — measured on 6 of 22 live plans, every quality session.
-      // `applyHrToPlan` is the single owner that keeps meta and the sessions in
-      // step; it also sets `zone2_ceiling`, so the hand-rolled `newZ2` below is
-      // gone rather than left as a second copy of the Z2 boundary.
-      const withHr = applyHrToPlan(plan as never, rhr, mhr) as never as typeof plan
-      const updatedPlan = { ...withHr, meta: { ...withHr.meta, hr_derived_max: mhr, hr_max_source: 'user_confirmed', hr_zone_method: 'karvonen', hr_assumption_note: undefined } }
-      setPlan(updatedPlan as any)
-      // RESHAPE-FIX-WAVE1: savePlanForUser now throws on persistence failure.
-      // This call is deliberately fire-and-forget (the resting-HR save above
-      // is the load-bearing write; plan.meta sync is best-effort), so swallow
-      // the rejection here rather than re-architect the call shape.
-      savePlanForUser(user.id, updatedPlan as any, supabase).catch((err: unknown) => {
-        console.error('plan.meta sync failed:', err)
-      })
-    }
-    // 3. P3 — re-bucket past run analyses with new zone boundaries (fire-and-forget).
-    //    The route updates strava_activities.hr_pct_z* for Strava-sourced runs
-    //    (re-fetches HR streams from Strava API) and recomputes run_analysis
-    //    zone columns for all recent sessions. Failure is silent — stale data
-    //    is better than blocking the HR save.
-    void authedFetch('/api/recalibrate-hr', { method: 'POST' })
-  } catch {}
-}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} onOpenZones={(returnTo?: string) => { setZonesReturnSection(returnTo ?? null); setScreen('zones') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
+}} firstName={firstName} lastName={lastName} profileEmail={profileEmail} onSaveName={async (name: string) => { setFirstName(name); try { const { data: { user } } = await supabase.auth.getUser(); if (!user) return false; const { error } = await supabase.from('user_settings').upsert({ id: user.id, first_name: name, updated_at: new Date().toISOString() }); if (error) { setFirstName(firstName); return false } return true } catch { setFirstName(firstName); return false } }} onOpenGenerate={() => setScreen('generate')} onOpenBenchmark={() => setScreen('benchmark')} onOpenReshape={() => setScreen('reshape')} onOpenFounderNote={() => setScreen('founder')} onRecheckEntitlement={runEntitlementRecheck} onOpenZones={(returnTo?: string, editHr?: boolean) => { setZonesReturnSection(returnTo ?? null); setHrSheetOpen(!!editHr); setScreen('zones') }} charityGrantEndsAt={charityGrantEndsAt} onUpgrade={() => openUpgrade('me')} hasPaidAccess={hasPaidAccess} trialDaysLeft={trialDaysLeft} dynamicAdjustmentsEnabled={dynamicAdjustmentsEnabled} onDynamicAdjustmentsChange={async (enabled: boolean) => { setDynamicAdjustmentsEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, dynamic_adjustments_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} dailyPushEnabled={dailyPushEnabled} onDailyPushEnabledChange={async (enabled: boolean) => { setDailyPushEnabled(enabled); try { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('user_settings').upsert({ id: user.id, daily_push_enabled: enabled, updated_at: new Date().toISOString() }) } catch {} }} lastAdjustmentCheckAt={lastAdjustmentCheckAt} lastAdjustmentCheckFoundChange={lastAdjustmentCheckFoundChange} hasPendingAdjustment={!!pendingAdjustment} recentChanges={recentChanges} />}
         {/* Calendar screen retired per brand-product-alignment v2 */}
         {screen === 'session'  && activeSessionData && <SessionScreen session={activeSessionData} aiNotes={sessionNotesAreAiAuthored(activeSessionData, plan?.meta, plan?.weeks?.find(w => w.n === activeSessionData.weekN))} preloadedRuns={stravaRuns ?? []} onBack={() => setScreen(sessionOrigin)} onSaved={refreshCompletions} preferredUnits={preferredUnits} preferredMetric={preferredMetric} onSessionMetricChange={handleSessionMetricChange} savedMetricOverride={sessionMetricOverrides[`${activeSessionData.weekN}_${activeSessionData.key}`] ?? null} zone2Ceiling={effectiveZone2Ceiling ?? undefined} restingHR={restingHR} maxHR={effectiveMaxHR} aerobicPace={aerobicPace} stravaLoading={stravaLoading} runAnalysis={(activeSessionData?.weekN != null ? runAnalysisMap[activeSessionData.weekN]?.[activeSessionData?.key ?? ''] : null) ?? null} driftContext={buildDriftContext(plan, runAnalysisMap, activeSessionData?.weekN, activeSessionData?.key)} hasPaidAccess={hasPaidAccess} onUpgrade={() => openUpgrade('session')} onOpenCoach={() => setScreen('coach')} goalPace={(plan?.meta as any)?.goal_pace_per_km ?? null} guidance={guidanceMap.get(activeSessionData?.type ?? '') ?? null} nextSession={activeNextSession} onLinkedComplete={(data) => { setPostRunOrigin('session'); setActivePostRunData(data); setScreen('post-run') }} autoMatch={activeAutoMatch} />}
         {screen === 'post-run' && activePostRunData && <PostRunScreen data={activePostRunData} onBack={() => { setActivePostRunData(null); setScreen(postRunOrigin === 'session' && activeSessionData ? 'session' : 'today') }} onDone={() => {
@@ -2894,8 +2911,32 @@ export default function DashboardClient() {
                 // NOTHING — a control shipped the day before, whose test asserts it RENDERS
                 // and could not assert it GOES anywhere. A relocation makes correct code
                 // wrong without touching it.
-                onEditHr={() => { setMeOpenSection('heart-rate'); setScreen('me') }}
+                // 🔴 ZONES-HR-SHEET-01 — THIS USED TO LEAVE THE SCREEN, AND IT IS THE
+                // THIRD TIME THIS ONE CONTROL HAS MOVED. It did
+                // `setMeOpenSection('heart-rate'); setScreen('me')`: one tap out, TWO taps
+                // back, and the runner lost the table they were reading. Before that it
+                // called `getElementById(...).scrollIntoView()` at an element that had gone
+                // behind a door, returned null, and DID NOTHING for a day. Now it opens the
+                // form over the table it changes, which is the only arrangement where cause
+                // and effect are in one field of view (Sierra).
+                onEditHr={() => setHrSheetOpen(true)}
               />
+              {/* ZONES-HR-SHEET-01 — the form's ONLY mount. Founder: *"it should be from
+                  within zones."* A sheet, not a popup: `Sheet` is the app's one slide-up
+                  primitive and this authors no new surface. It closes on save, so the
+                  runner is handed the UPDATED table with nothing over it. */}
+              {hrSheetOpen && (
+                <HrCalibrationSheet
+                  onClose={() => setHrSheetOpen(false)}
+                  restingHR={restingHR}
+                  maxHR={maxHR}
+                  maxHrSource={maxHRSource}
+                  birthYear={birthYear}
+                  onSave={handleHrSave}
+                  hrZoneMethod={(plan?.meta as any)?.hr_zone_method ?? null}
+                  hrAssumptionNote={(plan?.meta as any)?.hr_assumption_note ?? null}
+                />
+              )}
             </>
           )
         })()}

@@ -210,7 +210,6 @@ export default function CopyPreview() {
           <HRZonesSection
             restingHR={48} maxHR={170} maxHrSource="observed" birthYear={1985}
             onSave={async () => {}} hrZoneMethod="karvonen" hrAssumptionNote={null}
-            onOpenZones={noop}
           />
         </Case>
 
@@ -284,6 +283,12 @@ export default function CopyPreview() {
             wrong about by reading, so it gets rendered. The inner column also reproduces
             the real screens' `minHeight: 100%` + `flex: 1, overflowY: auto` body, whose
             scrollport can never overflow: the arrow must pin to the OUTER box. */}
+        {/* ⚠️ `HrCalibrationSheet` IS NOT MOUNTED HERE, DELIBERATELY (ZONES-HR-SHEET-01).
+            Measured on this page: `role="dialog"` count is ZERO and only ONE "Resting HR"
+            label exists, so `Sheet` never mounts on this harness. That is not new:
+            `ManualRunModal` is a Sheet and has been mounted here rendering nothing. The
+            portal needs a client page and this one is a server component. The sheet is
+            previewed on `/sheet-preview`, which imports the real primitive. */}
         <Case
           title="FloatingBackButton — sticky inside a flex column (the converted screens)"
           note="Scroll the box. The arrow must hold at 16px, and must not stretch full-width."

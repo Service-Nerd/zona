@@ -14,6 +14,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import HrCalibrationSheet from '@/components/shared/HrCalibrationSheet'
 import Sheet, { NavHeightProvider } from '@/components/shared/Sheet'
 
 export default function SheetPreview() {
@@ -53,7 +54,7 @@ export default function SheetPreview() {
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 16px 150px' }}>
-        {["This week\u2019s load", 'Hitting the zone', 'Why this session', 'Your training load balance'].map(t => (
+        {["This week\u2019s load", 'Hitting the zone', 'Why this session', 'Your training load balance', 'Heart rate'].map(t => (
           <button key={t} onClick={() => setOpen(t)}
             style={{ width: '100%', textAlign: 'left', font: 'inherit', cursor: 'pointer',
                      marginTop: 12, background: 'var(--card)', border: '1px solid var(--line)',
@@ -81,6 +82,17 @@ export default function SheetPreview() {
 
       {open && (
         <NavHeightProvider value={navH}>
+        {open === 'Heart rate' ? (
+          /* ZONES-HR-SHEET-01 — the real component in the real primitive, on the harness
+             that actually renders sheets. This file's own lesson: a preview that does not
+             import the thing it previews is testing a different program. */
+          <HrCalibrationSheet
+            onClose={() => setOpen(null)}
+            restingHR={48} maxHR={170} maxHrSource="observed" birthYear={1985}
+            hrZoneMethod="karvonen" hrAssumptionNote={null}
+            onSave={() => {}}
+          />
+        ) : (
         <Sheet onClose={() => setOpen(null)} ariaLabel={open}>
           <div style={{ padding: '4px 18px 24px' }}>
             <div style={{ fontFamily: 'var(--font-brand)', fontSize: 18, fontWeight: 600, color: 'var(--ink)' }}>{open}</div>
@@ -90,6 +102,7 @@ export default function SheetPreview() {
             </div>
           </div>
         </Sheet>
+        )}
         </NavHeightProvider>
       )}
     </div>

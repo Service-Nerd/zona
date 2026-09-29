@@ -14,13 +14,26 @@ export const HEART_RATE_TITLE = 'Heart rate'
  *  the words a runner reads identical while the title is said once. */
 export const HEART_RATE_SUB = 'How hard. Training zones set from your resting and max HR.'
 
-/** ⚠️ The unset state, and it is a NUDGE, not a label.
+/** ⚠️ `HEART_RATE_UNSET_SUB` WAS HERE AND IS RETIRED (ZONES-HR-SHEET-01, 2026-09-29).
+ *  It was the `Heart rate` DOOR's unset subtitle, and the door is gone: the form now has one
+ *  mount, inside a sheet on the zones screen. Its only remaining renderer was a dev harness,
+ *  which is the inert-declaration class this repo tracks, so it goes rather than lingering as
+ *  a string nothing shows a runner. The unset state rides `ZONES_UNSET_SUB` below. */
+
+/**
+ * The `Zones` row's subtitle when heart rate is not set.
  *
- *  It replaces an amber card reading *"Set your resting and max HR BELOW to see your
- *  training zones"* — a sentence whose last word the door makes false. Zones are what the
- *  runner loses, so the consequence is what the subtitle names. No em dash: the app guard
- *  (`noEmDashApp.test.ts`) covers every string literal under `components/`. */
-export const HEART_RATE_UNSET_SUB = 'Not set, so your zones are estimated'
+ * 🔴 IT REPLACES A SENTENCE THAT NAMED THE WRONG SECTION, AND THAT WAS LIVE.
+ * The previous copy read *"Set your heart rate under Setup. Your zones lock in."* Measured:
+ * the `Heart rate` door sat under **Your training**, not Setup. Its own comment recorded it
+ * as the fix for a stale *"below"* — the remedy was applied and the DESTINATION was wrong,
+ * which is the fourth instance of that class here.
+ *
+ * ⚠️ So this names NO location at all. The row it sits on is now the door, and a subtitle
+ * that points anywhere is a subtitle that can go stale again. Names the action and the
+ * consequence, in the house voice, and nothing else.
+ */
+export const ZONES_UNSET_SUB = 'Set your resting and max HR. Your zones lock in.'
 
 export const PLAN_ADJUSTMENTS_TITLE = 'Plan adjustments'
 export const PLAN_ADJUSTMENTS_SUB = 'Auto-adjust, and what the engine watches'

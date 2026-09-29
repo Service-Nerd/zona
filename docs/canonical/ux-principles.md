@@ -101,13 +101,36 @@ The job of each screen is defined in `docs/canonical/screen-architecture.md`. Th
 | **One job per screen** | Each screen has exactly one primary purpose. **No dashboards. No noise.** | "No multi-purpose dashboards" is the same rule, not a weaker one |
 | **Calm guidance, not alerts** | Information is presented; **the user decides when to act.** Inform, do not alarm | Both halves. "Inform, do not alarm" alone loses who holds the timing |
 | **Restraint = progress** | Whitespace, brevity and silence are features. **Empty means calm, not broken** | 🔴 The empty-state clause was dropped in two of the four copies |
-| **No popups** | All interactions navigate to a full screen. **Modal overlays only for destructive confirmations (delete, disconnect). Never for information.** ⚠️ **A modal presented and owned by the OPERATING SYSTEM is outside this rule** (CHARITY-CODE-CONTROL-01, 2026-09-28) | 🔴 **`CLAUDE.md` omitted the exception entirely**, so modals read as banned outright. This is the divergence that justified the transfer. ⚠️ **And the OS clause is an AMENDMENT BY RULING, not an exception someone approved once** |
+| **No popups** | All interactions navigate to a full screen. **Modal overlays only for destructive confirmations (delete, disconnect). Never for information.** ⚠️ **A modal presented and owned by the OPERATING SYSTEM is outside this rule** (CHARITY-CODE-CONTROL-01, 2026-09-28) ⚠️ **AND A SLIDE-UP SHEET THE RUNNER ACTS IN IS A THIRD CATEGORY, PERMITTED** (ZONES-HR-SHEET-01, 2026-09-29) — see the clause below | 🔴 **`CLAUDE.md` omitted the exception entirely**, so modals read as banned outright. This is the divergence that justified the transfer. ⚠️ **And the OS clause is an AMENDMENT BY RULING, not an exception someone approved once** |
 | **Back arrow top-left** | Navigation is always predictable and reversible | — |
 | **Slide-up sheets** | Mirrored nav bar at **bottom**, not top. Never a top-right Cancel | Consistent with mobile convention, and deliberately unlike the competitor's sheet (P-02) |
 | **No red in the training UI** | Red implies danger or failure. Amber for warnings, coral for high-intensity. `--danger` (`#B84545`) for form validation and error states **only** | 🔴 Existed in `brand.md` alone; absent from the other three copies |
 
 > ⚠️ **THE OS-SHEET CLAUSE, AND WHY IT IS NARROW.** Apple's subscription-code redemption sheet (`presentCodeRedemptionSheet()`) is a modal, is not a destructive confirmation, and therefore hit this rule head on. The Design Board amended the rule **by name** rather than approving one exception, on a single ground: **we control neither its content nor its dismissal**, so the rule cannot bind it. A sheet we build is still bound. If the next OS sheet arrives with an argument that sounds like this one, check that we genuinely do not own it — `components/shared/Sheet.tsx` remains the only route for a secondary surface that is ours.
 >
+> ⚠️ **THE INPUT-SHEET CLAUSE, AND THE COUNT THAT FORCED IT** (ZONES-HR-SHEET-01, 2026-09-29).
+> This rule names **two** categories. The product has **three**, and the gap was measured
+> across all nine shipped sheets: **zero** are destructive confirmations (the only kind the
+> rule permits), **five** are information (`ZoneInfoSheet`, *"Your training load balance"*,
+> *"What this number means"*, *"Hitting the prescribed zone"*, *"Foundation Block"*), and
+> **four** are inputs (*"Log a run"*, *"How did it go?"*, *"Adjust your plan"*, *"Missed
+> session"*). **So the rule permitted a category the product never uses and described none
+> of what it ships.**
+>
+> **A slide-up sheet the runner ACTS IN — one containing an input and its save — is
+> permitted.** It is disclosure, not density: the surface is summoned by a tap and dismissed,
+> which is the opposite of a resident panel. `Sheet` is the only primitive for it (R-5 still
+> governs the shape: a sheet you act in keeps the bottom bar).
+>
+> 🔴 **What did NOT change: the information clause.** Five sheets currently sit against it.
+> They are recorded, not blessed — this clause deliberately does not retro-permit them, and
+> whether an explainer should be a sheet at all is its own question for this board.
+>
+> ⚠️ **And the reconciliation nobody had made:** `S1 § 6i` already established that *"the
+> no-popups rule governs whether a sheet EXISTS, not where its bottom edge lands"*, which
+> settles that a sheet is not automatically banned — but it never said which sheets may
+> exist. This clause is that half.
+
 > 🔴 **It is not a licence for a popup with a system-looking wrapper.** The measured precedent for that failure is the paper-grain overlay, which died because its only argument was that a competitor had one.
 
 ---

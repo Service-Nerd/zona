@@ -3152,6 +3152,54 @@ in the hand — nobody has seen it on a device.
 
 ---
 
+## ZONES-HR-SHEET-01 — 2026-09-29 — **SHIP WITH AMENDMENT**
+
+**Founder:** *"I don't like the heat calibration being on its own. It should be from within
+zones as a pop up perhaps."* ("heat" is HR; no surface in this product is called that.)
+
+**Ruled:** the HR form has **one mount**, a **sheet** opened from inside the zones screen.
+**Not a popup** — `Sheet` is the app's own primitive and this authors no new surface. The
+`Heart rate` door on Me is **removed**.
+
+🔴 **THIS REVERSES `ZONES-INPUTS-01`, RULED ONE DAY EARLIER**, and the board did not defend
+it. That ruling kept the form on Me on four grounds, and **three did not survive the code**:
+*"relocate taps, not reduce them"* (Wroblewski) and *"density, not disclosure"* (Silvanto)
+were both about putting the form **ON** the screen, and a sheet is disclosure — **yesterday's
+reasons were quoted at a proposal nobody had made**; and *"the Apple Health prefill is a
+connection action"* is false, the button reads two values into two fields and defers
+connection management by name in its own error string. The fourth, *"a set-once input"*,
+argues the same way: a set-once input should not own a permanent door on a weekly-read screen.
+
+**📐 Measured** (375×812, computed DOM/CSS): the form is **240px**, **33.6%** of the 88vh
+ceiling — Silvanto's own binding test (*"a sheet whose content cannot fit at 88vh belongs on
+a screen"*) argues the opposite way here. Behind `--scrim` the zone **bpm ranges composite to
+5.44:1, still AA**, so the numbers that change stay readable. The old path cost **1 tap out
+and 2 back**, losing the table.
+
+**Amendments (all binding):** it is the existing `Sheet`, not a popup · **one mount**, the
+door goes · **the unset path ships with it** — the `Zones` row is tappable in both states and
+opens the sheet directly · the sheet must not cover the rows it changes, and Save must be
+reachable with the keyboard up.
+
+**⚖️ The no-popups rule is amended BY NAME**, not excepted. Measured across all nine shipped
+sheets: **0 destructive confirmations** (the only category it permitted), **5 information**
+(which it forbids), **4 inputs** (which it never named). The **input-sheet clause** is in
+`ux-principles.md`. ⚠️ The five information sheets are **recorded, not blessed.**
+
+🔴 **And my brief to this board was wrong on its headline** — I called the no-popups rule and
+the sheet pattern an unreconciled collision; **`S1 § 6i` settled that on 2026-09-22**. Third
+wrong brief this week, all three caught by the evidence step rather than by a seat.
+
+🔴 **Found while scanning, live, and fixed here:** the unset `Zones` row said *"Set your heart
+rate under **Setup**"* while the door sat under **Your training** (measured offsets), **and
+the row was not tappable at all in that state.** Fourth instance of a remedy applied to the
+wrong destination.
+
+**Does not settle:** which rows sit above the panel, and the keyboard. **Nothing has run on a
+device**, and the harness could not render the sheet (see below).
+
+---
+
 ## ZONES-SURFACE-01 — 2026-09-28 — **SHIP WITH AMENDMENT** (built: NO — see scope note)
 
 **Founder, with three competitor screenshots:** *"They put their hr zones under a sub menu

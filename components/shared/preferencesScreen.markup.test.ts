@@ -40,9 +40,15 @@ describe('ME-DOORS-01 — the Preferences door', () => {
   // still reads correctly on its own, which is why nobody notices.
   it('the door label is named once and reached by both surfaces', () => {
     const dash = readFileSync('app/dashboard/DashboardClient.tsx', 'utf8')
-    for (const id of ['PREFERENCES_TITLE', 'PREFERENCES_SUBTITLE', 'HEART_RATE_TITLE', 'PLAN_ADJUSTMENTS_TITLE']) {
+    for (const id of ['PREFERENCES_TITLE', 'PREFERENCES_SUBTITLE', 'PLAN_ADJUSTMENTS_TITLE']) {
       expect(dash, `${id} is not reached from DashboardClient`).toContain(id)
     }
+    // ⚠️ `HEART_RATE_TITLE` LEFT THIS LIST ON ZONES-HR-SHEET-01 AND THE RULE FOLLOWED IT.
+    // The HR door became a sheet on the zones screen, so the constant is reached from
+    // `HrCalibrationSheet` instead. Asserted THERE rather than dropped — a title that stops
+    // being checked anywhere is how two surfaces start drifting.
+    const sheet = readFileSync('components/shared/HrCalibrationSheet.tsx', 'utf8')
+    expect(sheet, 'the sheet must take its title from the owner').toMatch(/\bHEART_RATE_TITLE\b/)
     // and the literal must NOT be typed out beside the constant
     expect(dash, 'the title was hardcoded next to the constant').not.toContain("title=\"Preferences\"")
     expect(dash, 'the title was hardcoded next to the constant').not.toContain("title=\"Heart rate\"")

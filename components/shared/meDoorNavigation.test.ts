@@ -33,8 +33,19 @@ describe('ME-DOORS-01 — navigation survives the move', () => {
     const i = src.indexOf('onEditHr={')
     expect(i, 'onEditHr moved — re-anchor this gate').toBeGreaterThan(-1)
     const handler = src.slice(i, i + 400)
-    expect(handler, 'it opens the heart-rate door').toContain("setMeOpenSection('heart-rate')")
-    expect(handler, 'scrollIntoView cannot reach an element behind a door')
+    // 🔴 THIRD DESTINATION FOR THIS ONE CONTROL, AND THE FIRST TWO BOTH FAILED THE RUNNER.
+    //   1. `getElementById(HR_CARD_ANCHOR_ID).scrollIntoView()` — the target went behind a
+    //      door, `getElementById` returned null, the optional chain swallowed it, and the
+    //      chevron did NOTHING for a day. No error, no log.
+    //   2. `setMeOpenSection('heart-rate'); setScreen('me')` — worked, but cost a two-tap
+    //      return and took the runner off the table they were reading.
+    //   3. `setHrSheetOpen(true)` — ZONES-HR-SHEET-01. Opens the form over the zones it
+    //      changes, which is the only arrangement where cause and effect are both visible.
+    // Both earlier failures stay guarded below: this arm now asserts where it GOES, which
+    // is the thing none of its predecessors did.
+    expect(handler, 'the edit control opens the HR sheet').toContain('setHrSheetOpen(true)')
+    expect(handler, 'it must not leave the zones screen').not.toContain('setScreen')
+    expect(handler, 'scrollIntoView cannot reach an element behind a door or a sheet')
       .not.toContain('scrollIntoView')
   })
 
@@ -77,8 +88,17 @@ describe('ME-DOORS-01 — navigation survives the move', () => {
     const i = src.indexOf('onOpenZones={(returnTo')
     expect(i, 'the open handler does not take an origin').toBeGreaterThan(-1)
     expect(src.slice(i, i + 200)).toContain('setZonesReturnSection')
-    // the HR door supplies its origin; the index row supplies none and lands on the index
-    expect(src).toContain("onOpenZones?.('heart-rate')")
+    // 🔴 THIS ARM ASSERTED `onOpenZones?.('heart-rate')` AND WENT RED ON ZONES-HR-SHEET-01,
+    // CORRECTLY. That door is gone: the HR form is now a sheet ON the zones screen, so the
+    // second entry point it was written for no longer exists. The mechanism stays, because
+    // `zonesReturnSection` is what makes the back arrow land where the runner came from —
+    // and a one-valued origin today is not a reason to delete the only thing that would
+    // catch a second entry being added without one.
+    //
+    // ⚠️ A ruling's REGISTER ROW and the CHECK that enforces it are two registers, and only
+    // one of them is on anybody's list. This is the second.
+    expect(src, 'the retired door must not be routed to').not.toContain("onOpenZones?.('heart-rate')")
+    expect(src, 'the index row still opens zones with no origin').toContain('onOpenZones?.()')
   })
 
   // 🔴 THE HOOK MUST SIT ABOVE EVERY EARLY RETURN. MeScreen returns early for each door, so

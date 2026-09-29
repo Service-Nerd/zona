@@ -95,7 +95,7 @@ function AppleHealthPrefillButton({ onPrefill }: { onPrefill: (rhr: number | nul
   )
 }
 
-export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZoneMethod, hrAssumptionNote, onOpenZones }: {
+export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYear, onSave, hrZoneMethod, hrAssumptionNote }: {
   restingHR: number | null
   maxHR: number | null
   /** §50 (HR-MAX-01) — provenance of the stored max, used to decide whether an
@@ -108,7 +108,11 @@ export default function HRZonesSection({ restingHR, maxHR, maxHrSource, birthYea
   /** From plan.meta.hr_assumption_note — human-readable explanation of the fallback. */
   hrAssumptionNote?: string | null
   /** ZONES-SURFACE-01 — opens the Training Zones screen. */
-  onOpenZones?: () => void
+  /* ⚠️ `onOpenZones` WAS HERE AND WAS DEAD (ZONES-HR-SHEET-01). It was declared, typed
+     and passed by three call sites, and never referenced in this component's body: it went
+     inert when `ZONES-SURFACE-01` moved the five zone rows and their chevron out to the
+     Training Zones screen. Removed rather than left, because this card now renders INSIDE
+     that screen's sheet, and a link from here to the screen it sits on is a loop. */
 }) {
   // Smart default: most people have never tested their max HR, so a blank field
   // leaves zones unconfigured. Pre-fill an age estimate (Tanaka: 208 − 0.7×age —

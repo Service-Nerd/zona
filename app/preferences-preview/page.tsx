@@ -18,7 +18,7 @@ import { PreferencesScreen, PREFERENCES_TITLE, PREFERENCES_SUBTITLE } from '@/co
 import ActionRow from '@/components/shared/ActionRow'
 import { SectionLabel } from '@/components/shared/SectionLabel'
 import { MICRO_LABELS } from '@/components/shared/microLabels'
-import { HEART_RATE_TITLE, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB,
+import { PLAN_ADJUSTMENTS_TITLE, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_PENDING_SUB,
   CONNECTIONS_TITLE, connectionsSubtitle, ME_SECTION_ORDER } from '@/components/shared/meDoors'
 
 export default function PreferencesPreview() {
@@ -88,8 +88,6 @@ export default function PreferencesPreview() {
           </div>
           <div style={{ marginTop: 'var(--space-3)', background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
             <ActionRow title={PREFERENCES_TITLE} subtitle={PREFERENCES_SUBTITLE} onClick={() => {}} divider />
-            <ActionRow title={HEART_RATE_TITLE} subtitle={HEART_RATE_UNSET_SUB} onClick={() => {}} divider />
-            <ActionRow title={HEART_RATE_TITLE} subtitle="51 / 185 bpm" onClick={() => {}} divider />
             <ActionRow title={PLAN_ADJUSTMENTS_TITLE} subtitle={PLAN_ADJUSTMENTS_SUB} onClick={() => {}} divider />
             <ActionRow title={PLAN_ADJUSTMENTS_TITLE} subtitle={PLAN_ADJUSTMENTS_PENDING_SUB} onClick={() => {}} />
           </div>

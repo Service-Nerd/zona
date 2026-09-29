@@ -17,7 +17,6 @@ import FloatingBackButton from '@/components/shared/FloatingBackButton'
 import Button from '@/components/ui/Button'
 import ExternalLink from '@/components/shared/ExternalLink'
 import FaqScreen from '@/components/shared/FaqScreen'
-import HRZonesSection from '@/components/dashboard/HRZonesSection'
 import LedgerCard from '@/components/dashboard/LedgerCard'
 import MePlanCard from '@/components/shared/MePlanCard'
 import QuitTab from '@/components/dashboard/QuitTab'
@@ -29,7 +28,7 @@ import type { Plan } from '@/types/plan'
 import type { TierReason } from '@/lib/trial'
 import type { Zone } from '@/components/shared/ZoneBar'
 import { BRAND } from '@/lib/brand'
-import { CONNECTIONS_TITLE, HEART_RATE_SUB, HEART_RATE_TITLE, HEART_RATE_UNSET_SUB, PLAN_ADJUSTMENTS_PENDING_SUB, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_TITLE, connectionsSubtitle } from '@/components/shared/meDoors'
+import { CONNECTIONS_TITLE, ZONES_UNSET_SUB, PLAN_ADJUSTMENTS_PENDING_SUB, PLAN_ADJUSTMENTS_SUB, PLAN_ADJUSTMENTS_TITLE, connectionsSubtitle } from '@/components/shared/meDoors'
 import { Capacitor } from '@capacitor/core'
 import { Chevron } from '@/components/shared/Chevron'
 import { FAQ_SUBTITLE, FAQ_TITLE } from '@/components/shared/FaqScreen'
@@ -708,7 +707,7 @@ async function hasServerSubscription(platform: 'ios' | 'web'): Promise<boolean> 
   }
 }
 
-export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, stravaConnected, plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onHRChange, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
+export default function MeScreen({ openSection, onOpenSectionConsumed, tierReason, healthkitConnectedAt, stravaConnected, plan, initials, athlete, quitDays, smokeTrackerEnabled, quitDate, onSmokeTrackerChange, theme, onThemeChange, preferredUnits, onUnitsChange, preferredMetric, onMetricChange, restingHR, maxHR, maxHrSource, birthYear, onDeviceHRFound, firstName, lastName, profileEmail, onSaveName, onOpenGenerate, onOpenBenchmark, onOpenReshape, onOpenFounderNote, onRecheckEntitlement, onOpenZones, charityGrantEndsAt, onUpgrade, hasPaidAccess, trialDaysLeft, dynamicAdjustmentsEnabled, onDynamicAdjustmentsChange, dailyPushEnabled, onDailyPushEnabledChange, lastAdjustmentCheckAt, lastAdjustmentCheckFoundChange, hasPendingAdjustment, recentChanges }: {
   /** ME-DOORS-01 — open Me AT a door instead of at the index. Consumed once, then cleared
    *  by `onOpenSectionConsumed`, so a later visit to Me lands on the index as usual. */
   openSection?: string | null
@@ -728,7 +727,10 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   theme: 'dark' | 'light' | 'auto'; onThemeChange: (t: 'dark' | 'light' | 'auto') => void
   preferredUnits: 'km' | 'mi'; onUnitsChange: (u: 'km' | 'mi') => void
   preferredMetric: 'distance' | 'duration'; onMetricChange: (m: 'distance' | 'duration') => void
-  restingHR: number | null; maxHR: number | null; maxHrSource?: 'observed' | 'user_confirmed' | null; birthYear?: number | null; onHRChange: (rhr: number, mhr: number) => void
+  restingHR: number | null; maxHR: number | null; maxHrSource?: 'observed' | 'user_confirmed' | null; birthYear?: number | null; /* ⚠️ `onHRChange` WAS HERE AND IS GONE (ZONES-HR-SHEET-01). It fed the `Heart rate`
+   door's form; with the door removed this screen declared a required prop that nothing
+   inside it called. Its owner is now `handleHrSave` on `DashboardClient`, with one
+   consumer: the HR sheet on the zones screen. */
   /** §50 (HR-MAX-01) — device-sourced HR from a Settings reconnect. Tags 'observed'
    *  provenance (a floor), distinct from onHRChange's user_confirmed manual save. */
   onDeviceHRFound?: (rhr: number | null, mhr: number | null) => void
@@ -741,7 +743,8 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   onOpenFounderNote?: () => void
   onRecheckEntitlement?: AfterSheet
   /** ZONES-SURFACE-01 — opens the Training Zones screen. */
-  onOpenZones?: (returnTo?: string) => void
+  /** ZONES-HR-SHEET-01 — `editHr` opens the HR sheet on arrival, for the unset row. */
+  onOpenZones?: (returnTo?: string, editHr?: boolean) => void
   /** GTM-CHARITY-04 — ISO end date of a live charity grant, or null. */
   charityGrantEndsAt?: string | null
   onUpgrade?: () => void
@@ -775,13 +778,13 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   recentChanges?: any[]
 }) {
   const signOut = useSignOut()
-  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'heart-rate' | 'plan-adjustments' | 'connections' | 'quit' | 'delete-account' | 'support' | 'faq' | 'plan-history'>('main')
+  const [activeSection, setActiveSection] = useState<'main' | 'preferences' | 'plan-adjustments' | 'connections' | 'quit' | 'delete-account' | 'support' | 'faq' | 'plan-history'>('main')
 
   // ⚠️ BEFORE THE EARLY RETURNS. `MeScreen` returns early for every door, so a hook placed
   //   below one is a conditional hook — the React error 310 this repo has already shipped once.
   useEffect(() => {
     if (!openSection) return
-    setActiveSection(openSection as 'preferences' | 'heart-rate' | 'plan-adjustments')
+    setActiveSection(openSection as 'preferences' | 'plan-adjustments')
     onOpenSectionConsumed?.()
   }, [openSection, onOpenSectionConsumed])
 
@@ -852,30 +855,9 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
   // runner who reached support through the FAQ has finished with the FAQ.
   if (activeSection === 'faq')            return <FaqScreen onBack={() => setActiveSection('main')} onContact={() => setActiveSection('support')} />
   if (activeSection === 'plan-history')   return <PlanHistoryScreen onBack={() => setActiveSection('main')} />
-  // ME-DOORS-01 — the first door off the index. `activeSection` ALREADY is the door
-  // mechanism (quit / delete-account / support / plan-history all use it), so this
-  // extends a union rather than inventing navigation.
-  // ME-DOORS-01 door 2. `HRZonesSection` was ALREADY a self-contained component; this
-  // moves its call site, it does not rewrite it.
-  if (activeSection === 'heart-rate') return (
-    <>
-      <FloatingBackButton onClick={() => setActiveSection('main')} />
-      <ScreenHeader title={HEART_RATE_TITLE} sub={HEART_RATE_SUB} />
-      <div style={{ padding: '0 16px', paddingBottom: 'var(--space-7)' }}>
-        <HRZonesSection
-          onOpenZones={() => onOpenZones?.('heart-rate')}
-          restingHR={restingHR}
-          maxHR={maxHR}
-          maxHrSource={maxHrSource}
-          birthYear={birthYear}
-          onSave={onHRChange}
-          hrZoneMethod={(plan?.meta as any)?.hr_zone_method ?? null}
-          hrAssumptionNote={(plan?.meta as any)?.hr_assumption_note ?? null}
-        />
-      </div>
-    </>
-  )
-
+  // ⚠️ `activeSection === 'heart-rate'` WAS A DOOR HERE (ZONES-HR-SHEET-01). The union
+  // member goes with it, so a stale `openSection` value cannot route to a screen that no
+  // longer exists. `activeSection` remains the door mechanism for the others.
   // ME-DOORS-01 door 3. Rendered here rather than extracted — see the row on the index.
   if (activeSection === 'plan-adjustments') return (
     <>
@@ -1171,9 +1153,21 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
                 // rather than the symptom. ME-DOORS-01 put the HR form behind the
                 // `Heart rate` door; this row still told the runner to set it "below",
                 // where there is now nothing. Names the door instead of a direction.
-                hrConfigured ? null : 'Set your heart rate under Setup. Your zones lock in.',
+                // 🔴 ZONES-HR-SHEET-01 — THE PREVIOUS SENTENCE NAMED THE WRONG SECTION,
+                // AND IT WAS LIVE. It read "Set your heart rate under Setup"; the `Heart
+                // rate` door sat under **Your training**. Its own comment above records it
+                // as the fix for a stale "below" — so the remedy was applied and the
+                // DESTINATION was wrong. This row IS the door now, so the copy names no
+                // location at all. Owner: `ZONES_UNSET_SUB`.
+                hrConfigured ? null : ZONES_UNSET_SUB,
                 hrConfigured ? 'set' : 'unset',
-                hrConfigured ? onOpenZones : undefined,
+                // 🔴 TAPPABLE IN BOTH STATES, WHICH IT WAS NOT. Unset passed `undefined`,
+                // so the one runner who most needed this row got a dead row and a sentence
+                // pointing at the wrong heading. Unset opens the HR sheet DIRECTLY rather
+                // than landing them on a zones screen with no zones on it (Wroblewski).
+                hrConfigured
+                  ? () => onOpenZones?.()
+                  : () => onOpenZones?.(undefined, true),
               )}
 
               {row(
@@ -1280,20 +1274,18 @@ export default function MeScreen({ openSection, onOpenSectionConsumed, tierReaso
           </div>
         )}
 
-        {/* ME-DOORS-01 door 2 — heart rate was an inline FORM on the index. ⚠️ The amber
-            nudge it replaced said *"Set your resting and max HR BELOW"*, and the word
-            `below` becomes false the moment the block moves. So the state rides on the
-            row's own subtitle instead of a second surface: `ActionRow`'s subtitle is
-            documented as "the consequence, never a restatement of the title", and an
-            unset pair IS the consequence. One control, and the nudge survives the move. */}
-        <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
-          <ActionRow
-            title={HEART_RATE_TITLE}
-            subtitle={hrConfigured ? `${restingHR} / ${maxHR} bpm` : HEART_RATE_UNSET_SUB}
-            onClick={() => setActiveSection('heart-rate')}
-          />
-        </div>
-
+        {/* 🔴 ZONES-HR-SHEET-01 — THE `Heart rate` DOOR STOOD HERE AND IS GONE.
+            Founder: *"I don't like the heat calibration being on its own. It should be from
+            within zones."* The form now has ONE mount, inside a sheet on the zones screen,
+            reached from the `Zones` row above. Two mounts would be a duplicate owner, which
+            is how this codebase's worst defects start.
+            ⚖️ This REVERSES `ZONES-INPUTS-01`, ruled one day earlier, and the reversal is in
+            `design-rulings.md` rather than made quietly. Three of that ruling's four reasons
+            did not survive the code; the fourth, *"a set-once input"*, argues the same way:
+            a set-once input should not own a permanent door on a weekly-read screen.
+            ⚠️ MEASURED: this leaves `Your training` with 3 items, above `MIN_ITEMS_PER_HEADING`
+            (2) — but a FREE runner sees 2, exactly at the floor, because `Plan adjustments`
+            is paid-gated. `meOrder.test.ts` holds that line. */}
         {/* Plan + benchmark actions — moved below zones */}
         <div style={{ background: 'var(--card)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-card)', border: '1px solid var(--line)', overflow: 'hidden' }}>
           <Button variant="ghost" 

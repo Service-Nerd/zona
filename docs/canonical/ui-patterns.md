@@ -1401,6 +1401,32 @@ Reference: `components/shared/RPEScale.tsx`
 
 ---
 
+### 13b. Input sheet — a form the runner summons, not a screen they travel to
+
+**ZONES-HR-SHEET-01 (Design Board, 2026-09-29).** A short form belongs in a `Sheet` opened
+from the surface its values govern, rather than behind its own door.
+
+| Rule | Why |
+|---|---|
+| **`Sheet` only.** Never a hand-rolled panel | Seventh-copy prevention: `SHEET-PRESENT-01` exists because seven hand-rolled sheets each invented their own z-index, animation and nav clearance, and five of seven sat below the nav |
+| **It must fit well inside 88vh** | Silvanto's binding test, inverted: *"a sheet whose content cannot fit at 88vh is evidence the content belongs on a screen."* The HR form measures **240px, 33.6%** of the ceiling. **A form that fills the sheet is a screen** |
+| **R-5 applies: a sheet you ACT IN keeps the bottom bar** | No top-right dismiss on a form. The action is the form's OWN save; a second Apply would be two owners of one verb |
+| **It closes on save** | The runner is handed the UPDATED surface with nothing over it. ⚠️ The residual, stated: they see it changed, they do not watch it change |
+| **One mount** | The form renders in the sheet and nowhere else. Two mounts is a duplicate owner of one input |
+| **It takes its title from the door-label owner** | `meDoors.ts`. A hardcoded title beside a constant is how two surfaces drift, and two of three `ME-DOORS-01` doors shipped saying their own name twice |
+
+🔴 **WHY A SHEET AND NOT A DOOR, IN ONE NUMBER.** The door cost **one tap out and two back**,
+and took the runner off the table they were reading. The sheet costs one tap and keeps it.
+Behind `--scrim` the zone bpm ranges still measure **5.44:1**, so the values that change stay
+readable — which is what makes *"one wrong value makes the whole table wrong"* teachable
+rather than merely true.
+
+⚠️ **This is a third category the no-popups rule did not name.** See `ux-principles.md`
+§ the input-sheet clause. It does **not** retro-permit the five information sheets.
+
+⚠️ **Unverified on a device:** which rows sit above the panel, and whether Save is reachable
+with the keyboard up.
+
 ### 14. Post-Log Reflect Sheet
 
 Used after any session is logged or skipped. Highest-emotion moment — treat it as such.

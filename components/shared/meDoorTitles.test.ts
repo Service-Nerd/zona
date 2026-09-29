@@ -55,7 +55,10 @@ const doors = (): { name: string; body: string }[] => {
 /** The doors this ship owns, and the title each one's ScreenHeader shows. */
 const TITLED: Record<string, string> = {
   'preferences': PREFERENCES_TITLE,
-  'heart-rate': HEART_RATE_TITLE,
+  // ⚠️ `'heart-rate': HEART_RATE_TITLE` WAS HERE AND WENT RED ON ZONES-HR-SHEET-01,
+  // correctly: that door is gone and the form is a sheet on the zones screen. The
+  // say-it-once rule did not stop applying, it MOVED — `hrSheet.test.ts` now asserts the
+  // sheet takes its title from this same owner and does not hardcode it.
   'plan-adjustments': PLAN_ADJUSTMENTS_TITLE,
 }
 
