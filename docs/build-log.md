@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-30 — OPS-SUBS-HEALTH-CONSUMER-01 · the rule was tested, documented, and read by nothing
+**Shipped:** `GET /api/ops/subscription-health`, so the definition of "somebody paid and did not get access" is consumed by code instead of being mirrored by hand in a scheduled prompt.
+
+**Dev learning:** A module can pass every test it has and still be unreachable. `subscriptionHealth.ts` had a completeness test that walks the provider list, a severity order, remedies per kind, and **no consumer** — its only references in the repo were two comments and its own test file. Every other ops probe has a route; this one didn't. The tests were green the whole time because they test the RULE and nothing tests that anything READS the rule. So the gate I wrote is not a test of the route at all (`app/**` isn't collected by vitest, the same constraint that put `webhookTrace` in `lib/`) — it asserts the one property nothing else can see: the owner has a reader outside its own directory, and that reader *imports* the rule rather than restating it.
+
+**Product/creator learning:** The dangerous part wasn't the missing route, it was the handoff that said *"added to the dashboard."* Reading that, you'd reasonably conclude the alert was wired and move on — which is what happened for two days, while the thing actually deciding what the founder saw each morning was a prompt in a cloud routine that had to be edited **by hand** to match yesterday's code change. **A record that overstates what is live is worse than one that is merely out of date**, and this repo already had that lesson written down about RevenueCat being listed as "still to add" while it was installed and wired.
+
+**AI-building learning:** My first version of the gate was hollow and I didn't spot it — `expect(src).toContain('judgeEntitlementRisk')`, which passes happily if the identifier appears only in a comment. On a route I had deliberately commented to death, that's not a hypothetical, it's the likely case. What caught it was the repo's own `hollowTestShapes.test.ts`, which failed my commit, named the line, and printed the fix (`toMatch(/\bx\b/)` or mark it `hollow-ok`). I went further and asserted against the parsed import bindings instead. **The lint against substring bias caught the check written against inertness** — third time this codebase has recorded the same class: bound the region, never grep the file.
+
+**The honest bit:** I found this while fixing something else, and only because I asked "who reads this?" before claiming the fix was complete. I had already written and committed a correction to `subscriptionHealth.ts` — improving a file that, at that moment, nothing imported. The improvement was real but it changed nothing about what the founder would see the next morning; the digest prompt did. I nearly reported it as done.
+
+**Hook material:** We shipped an alert for "a customer paid and didn't get access", tested it, documented it, wrote a handoff saying it was on the dashboard — and for two days no line of code read it.
+
+**Postable?:** yes — pairs directly with the earlier decorative-config posts, and "my own test was hollow and the repo's lint caught it" is a strong second beat.
+
+---
+
 ## 2026-09-30 — OPS-SUBS-ALERT-01 fix · the alarm fired, and it was wrong about the thing it was built for
 **Shipped:** The daily digest stops reporting an expected charity redemption as a lost sale, and both subscription webhooks now record whether a delivery came from sandbox or production.
 
