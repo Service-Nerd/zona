@@ -87,6 +87,36 @@ const KINDS: Record<SubscriptionProvider, Record<WebhookOutcome['result'], OpsEv
 }
 
 /**
+ * Which of Apple's / Stripe's two worlds this delivery came from.
+ *
+ * ⚠️ RECORDED BECAUSE THE DIGEST CANNOT OTHERWISE TELL A TEST FROM A CUSTOMER.
+ * `OPS-SUBS-ALERT-01` ranks a failed subscription write above everything else it
+ * prints, and it was right to — but every row it had to judge on 2026-09-28 was a
+ * founder sandbox redemption, indistinguishable from a lost sale because nothing
+ * recorded which world it came from. The providers both say; we simply never asked.
+ */
+export type WebhookEnvironment = 'sandbox' | 'production'
+
+/**
+ * One vocabulary from two provider spellings.
+ *
+ * ⚠️ STRINGS ONLY, DELIBERATELY. RevenueCat sends `environment: 'SANDBOX' |
+ * 'PRODUCTION'`; Stripe carries a `livemode` BOOLEAN whose polarity is the
+ * opposite way round from RevenueCat's `is_sandbox` boolean. Accepting booleans
+ * here would mean one call site silently inverting the other — the `?? 0` class
+ * this repo keeps recording. Each route converts its own boolean at the call site,
+ * where the polarity is visible beside the field name.
+ *
+ * An unrecognised value returns `null`, never a default: "we do not know which
+ * world this was" and "this was production" must not collapse into one answer.
+ */
+export function normaliseEnvironment(raw: unknown): WebhookEnvironment | null {
+  if (typeof raw !== 'string') return null
+  const v = raw.trim().toLowerCase()
+  return v === 'sandbox' || v === 'production' ? v : null
+}
+
+/**
  * The ops kind and detail for one webhook outcome.
  *
  * ⚠️ BEHAVIOURAL ONLY, NO PII AND NO PAYLOAD. The event type, the mapped status,
@@ -98,9 +128,14 @@ const KINDS: Record<SubscriptionProvider, Record<WebhookOutcome['result'], OpsEv
 export function webhookTrace(
   provider: SubscriptionProvider,
   outcome: WebhookOutcome,
+  environment?: unknown,
 ): WebhookTrace {
   const kind = KINDS[provider][outcome.result]
   const detail: Record<string, unknown> = { provider, event_type: outcome.eventType }
+  // Omitted rather than recorded as null when unknown: a row with no `environment`
+  // predates this field, and that is a different fact from "we asked and could not tell".
+  const env = normaliseEnvironment(environment)
+  if (env) detail.environment = env
 
   switch (outcome.result) {
     case 'received':

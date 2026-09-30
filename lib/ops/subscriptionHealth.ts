@@ -41,6 +41,13 @@ import type { OpsEventKind } from '@/lib/ops/recordOpsEvent'
  * `current_period_end` is rejected with a 400, and Stripe retries a 400 only
  * briefly — so there may be no second chance. A `_write_failed` returns 500, which
  * the provider retries properly, so it is recoverable on its own.
+ *
+ * 🔴 THAT REASONING IS ABOUT STRIPE AND DOES NOT TRANSFER WHOLESALE. RevenueCat's
+ * `_unusable` covers one branch that answers **200 by design** and self-heals — the
+ * pre-signup offer-code redemption. It is excluded at the ROW level by
+ * `isPreSignupRedemption`, not by removing the kind here: a `revenuecat_event_unusable`
+ * carrying any other `missing` value is still a real dropped payment, and the kind
+ * must stay listed so the completeness test below keeps covering it.
  */
 export const ENTITLEMENT_AT_RISK_KINDS: readonly OpsEventKind[] = [
   'stripe_event_unusable',
@@ -80,8 +87,61 @@ export interface AtRiskVerdict {
    *  even attribute, which is worse than an attributable one, not better. */
   affectedAccounts: number
   unattributable: number
+  /** Pre-signup offer-code redemptions seen in the window. Counted, never alerted
+   *  on — see `isPreSignupRedemption`. Reported so the path stays VISIBLE while it
+   *  stops being read as a lost sale. */
+  preSignupRedemptions: number
   headline: string
 }
+
+/**
+ * The `missing` value the RevenueCat route records for an anonymous `app_user_id`.
+ */
+export const PRE_SIGNUP_MISSING = 'app_user_id_not_a_user'
+
+/**
+ * A redemption that happened BEFORE the runner had a Zonna account — expected, and
+ * NOT a lost sale.
+ *
+ * 🔴 WHY THIS CARVE-OUT EXISTS, BECAUSE A KIND-ONLY RULE GOT IT WRONG ON ITS FIRST
+ * REAL DATA. `OPS-SUBS-ALERT-01` classified every `revenuecat_event_unusable` as
+ * money-critical and ranked it top severity, reasoning that an `_unusable` row was
+ * "rejected with a 400 and providers retry a 400 only briefly". That sentence is
+ * true of STRIPE and false of this branch: `CHARITY-OFFER-CODE-01` makes the route
+ * answer **200 on purpose**, because an anonymous id never becomes valid on its own
+ * and there is nothing to retry. The transaction re-arrives correctly keyed the
+ * moment `logIn` aliases it (`TRANSFER`), and `POST /api/subscriptions/reconcile`
+ * closes it even if that never comes.
+ *
+ * ⚠️ AND IT IS THE DESIGNED JOURNEY, NOT AN EDGE CASE. The 500 Make-A-Wish runners
+ * are told to redeem by email, THEN install, THEN create an account — so every one
+ * of them produces a row here. The offer is also deliberately created with
+ * auto-renew OFF so nobody is charged mid-taper, which makes RevenueCat emit a
+ * CANCELLATION about two minutes after EVERY redemption: a second row each. Left in
+ * the alert, the campaign's launch day would print ~1,000 red "this runner paid and
+ * is locked out" lines, on the one section whose value is that it is normally empty
+ * (NOISE-GATE-01).
+ *
+ * ⚠️ COUNTED, NOT DISCARDED. If reconcile genuinely fails the runner IS unentitled —
+ * but the evidence for that is an absent `subscriptions` row, not this event, and a
+ * pure function over `ops_events` cannot see one. So these are reported on their own
+ * line with an instruction to confirm, which is a different claim from silence.
+ *
+ * ⚠️ NARROW BY CONSTRUCTION. Only this one `missing` value on this one kind. A
+ * `revenuecat_event_unusable` carrying any other `missing` is still a real defect and
+ * still alerts, which is what keeps `ENTITLEMENT_AT_RISK_KINDS` complete at the KIND
+ * level and this carve-out honest at the ROW level.
+ */
+export function isPreSignupRedemption(row: AtRiskRow): boolean {
+  return row.kind === 'revenuecat_event_unusable'
+    && (row.detail?.missing ?? null) === PRE_SIGNUP_MISSING
+}
+
+/** What to actually do about a pre-signup redemption row. */
+export const PRE_SIGNUP_REMEDY =
+  'Expected: an offer code redeemed before the account existed. Confirm a subscriptions '
+  + 'row now exists for that runner (TRANSFER re-keys it, or /api/subscriptions/reconcile '
+  + 'closes it). Escalate ONLY if the row is still absent — the event alone is not a failure.'
 
 /** Is this a kind that means somebody paid and did not get access? */
 export function isEntitlementAtRisk(kind: string): boolean {
@@ -95,12 +155,20 @@ export function isEntitlementAtRisk(kind: string): boolean {
  * in a scheduled prompt where nothing can check it. The digest supplies the rows.
  */
 export function judgeEntitlementRisk(rows: readonly AtRiskRow[]): AtRiskVerdict {
-  const at = rows.filter(r => isEntitlementAtRisk(r.kind))
+  const flagged = rows.filter(r => isEntitlementAtRisk(r.kind))
+  const preSignupRedemptions = flagged.filter(isPreSignupRedemption).length
+  const at = flagged.filter(r => !isPreSignupRedemption(r))
+
+  const preSignupNote = preSignupRedemptions
+    ? ` Separately, ${preSignupRedemptions} pre-signup offer-code redemption(s) were recorded:`
+      + ' expected on the redeem-then-install journey, not lost sales. Confirm the entitlement landed.'
+    : ''
+
   if (at.length === 0) {
     return {
       alert: false, count: 0, worst: null,
-      affectedAccounts: 0, unattributable: 0,
-      headline: 'No subscription write has failed — every purchase became an entitlement.',
+      affectedAccounts: 0, unattributable: 0, preSignupRedemptions,
+      headline: 'No subscription write has failed — every purchase became an entitlement.' + preSignupNote,
     }
   }
 
@@ -114,11 +182,13 @@ export function judgeEntitlementRisk(rows: readonly AtRiskRow[]): AtRiskVerdict 
     worst,
     affectedAccounts: withUser.size,
     unattributable,
+    preSignupRedemptions,
     headline:
       `${at.length} subscription write(s) failed in the last ${AT_RISK_WINDOW_DAYS} days — `
       + `${withUser.size} identified account(s)`
       + (unattributable ? `, ${unattributable} UNATTRIBUTABLE (no user_id — a lost sale we cannot trace)` : '')
-      + `. These runners paid and resolveTier still reads them as unentitled.`,
+      + `. These runners paid and resolveTier still reads them as unentitled.`
+      + preSignupNote,
   }
 }
 

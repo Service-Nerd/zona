@@ -48,11 +48,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true })
   }
 
+  // Stripe's `livemode` is TRUE for live and FALSE for test — the opposite polarity
+  // from RevenueCat's `is_sandbox`. Converted here, beside the field name, so the
+  // shared trace owner never has to guess which boolean convention it was handed.
+  const stripeEnv = event.livemode ? 'production' : 'sandbox'
   const subscription = event.data.object as Stripe.Subscription
   const status = stripeToStatus(subscription.status)
 
   if (!status) {
-    const t = webhookTrace('stripe', { result: 'unhandled', eventType: event.type })
+    const t = webhookTrace('stripe', { result: 'unhandled', eventType: event.type }, stripeEnv)
     await recordOpsEvent(t.kind, { ...t.detail, stripe_status: subscription.status },
       subscription.metadata?.user_id ?? null)
     return NextResponse.json({ received: true })
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
     // here the only evidence was a console line nobody reads.
     console.error('[stripe webhook] subscription missing user_id metadata', subscription.id)
     const t = webhookTrace('stripe',
-      { result: 'unusable', eventType: event.type, missing: 'user_id' })
+      { result: 'unusable', eventType: event.type, missing: 'user_id' }, stripeEnv)
     await recordOpsEvent(t.kind, t.detail, null)
     return NextResponse.json({ error: 'Missing user_id in metadata' }, { status: 400 })
   }
@@ -74,7 +78,7 @@ export async function POST(req: NextRequest) {
   if (!periodEnd) {
     console.error('[stripe webhook] subscription missing current_period_end', subscription.id)
     const t = webhookTrace('stripe',
-      { result: 'unusable', eventType: event.type, missing: 'current_period_end' })
+      { result: 'unusable', eventType: event.type, missing: 'current_period_end' }, stripeEnv)
     await recordOpsEvent(t.kind, t.detail, userId)
     return NextResponse.json({ error: 'Missing period end' }, { status: 400 })
   }
@@ -96,7 +100,7 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error('[stripe webhook] apply_subscription_event failed', error)
     const t = webhookTrace('stripe',
-      { result: 'write_failed', eventType: event.type, status, message: error.message ?? String(error) })
+      { result: 'write_failed', eventType: event.type, status, message: error.message ?? String(error) }, stripeEnv)
     await recordOpsEvent(t.kind, t.detail, userId)
     return NextResponse.json({ error: 'DB write failed' }, { status: 500 })
   }
@@ -107,7 +111,7 @@ export async function POST(req: NextRequest) {
 
   // The HEARTBEAT. `applied: false` is the ordering guard working, not a failure.
   const t = webhookTrace('stripe',
-    { result: 'received', eventType: event.type, status, applied: applied !== false })
+    { result: 'received', eventType: event.type, status, applied: applied !== false }, stripeEnv)
   await recordOpsEvent(t.kind, t.detail, userId)
 
   return NextResponse.json({ received: true })

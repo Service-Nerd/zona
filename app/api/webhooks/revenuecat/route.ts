@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     // But RECORD it: this branch used to be silent, which is how a comp grant
     // could fail with no trace at all. If a charity runner reports a paywall
     // they should not be seeing, look here first.
-    const t = webhookTrace('revenuecat', { result: 'unhandled', eventType: rc.type })
+    const t = webhookTrace('revenuecat', { result: 'unhandled', eventType: rc.type }, rc.environment)
     await recordOpsEvent(t.kind, t.detail, rc.app_user_id ?? null)
     return NextResponse.json({ received: true })
   }
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   // Returning 500 would keep a queue spinning on a delivery we can never act on.
   if (!isSupabaseAppUserId(appUserId)) {
     const t = webhookTrace('revenuecat',
-      { result: 'unusable', eventType: rc.type, missing: 'app_user_id_not_a_user' })
+      { result: 'unusable', eventType: rc.type, missing: 'app_user_id_not_a_user' }, rc.environment)
     await recordOpsEvent(t.kind, { ...t.detail, app_user_id_shape: String(appUserId).slice(0, 24) }, null)
     return NextResponse.json({ received: true, ignored: 'anonymous app_user_id' })
   }
@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error('[revenuecat webhook] apply_subscription_event failed', error)
     const t = webhookTrace('revenuecat',
-      { result: 'write_failed', eventType: rc.type, status, message: error.message ?? String(error) })
+      { result: 'write_failed', eventType: rc.type, status, message: error.message ?? String(error) }, rc.environment)
     await recordOpsEvent(t.kind, t.detail, appUserId ?? null)
     return NextResponse.json({ error: 'DB write failed' }, { status: 500 })
   }
@@ -181,7 +181,7 @@ export async function POST(req: NextRequest) {
   // The HEARTBEAT, recorded on every delivery. `applied: false` is the ordering
   // guard working, not a failure — and until now it only ever reached a console.
   const t = webhookTrace('revenuecat',
-    { result: 'received', eventType: rc.type, status, applied: applied !== false })
+    { result: 'received', eventType: rc.type, status, applied: applied !== false }, rc.environment)
   await recordOpsEvent(t.kind, { ...t.detail, ...comped }, appUserId ?? null)
 
   return NextResponse.json({ received: true })

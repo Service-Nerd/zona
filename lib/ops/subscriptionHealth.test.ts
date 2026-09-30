@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   ENTITLEMENT_AT_RISK_KINDS, AT_RISK_WINDOW_DAYS,
   isEntitlementAtRisk, judgeEntitlementRisk, remedyFor, type AtRiskRow,
+  isPreSignupRedemption, PRE_SIGNUP_MISSING,
 } from './subscriptionHealth'
 import { webhookTrace, SUBSCRIPTION_PROVIDERS } from '@/lib/subscriptions/webhookTrace'
 
@@ -103,5 +104,74 @@ describe('judgeEntitlementRisk', () => {
     ])
     expect(v.count).toBe(3)
     expect(v.affectedAccounts).toBe(1)
+  })
+})
+
+
+// ── THE PRE-SIGNUP CARVE-OUT ────────────────────────────────────────────────
+// Falsified against the REAL production rows this alert judged on its first
+// firing. Every one of them was a founder sandbox redemption of an offer code,
+// and the alert called all four "a runner PAID and did not get access".
+const preSignup = (user_id: string | null = null): AtRiskRow => ({
+  kind: 'revenuecat_event_unusable',
+  created_at: '2026-09-28T15:39:49Z',
+  user_id,
+  detail: { provider: 'revenuecat', event_type: 'INITIAL_PURCHASE', missing: PRE_SIGNUP_MISSING },
+})
+
+describe('pre-signup offer-code redemptions are counted, not alerted on', () => {
+  it('recognises the row the RevenueCat route actually writes', () => {
+    expect(isPreSignupRedemption(preSignup())).toBe(true)
+  })
+
+  it('does NOT alert on the four rows recorded in production on 2026-09-28', () => {
+    // The real set: two INITIAL_PURCHASE, one CANCELLATION (auto-renew off fires it
+    // on every redemption), one TRANSFER — all anonymous, all self-healing.
+    const v = judgeEntitlementRisk([preSignup(), preSignup(), preSignup(), preSignup()])
+    expect(v.alert, 'four expected redemptions must not read as four lost sales').toBe(false)
+    expect(v.count).toBe(0)
+    expect(v.unattributable).toBe(0)
+    expect(v.preSignupRedemptions).toBe(4)
+    expect(v.headline).toMatch(/pre-signup offer-code redemption/)
+  })
+
+  it('keeps the carve-out NARROW — any other `missing` on the same kind still alerts', () => {
+    const other: AtRiskRow = {
+      kind: 'revenuecat_event_unusable',
+      created_at: '2026-09-28T15:39:49Z',
+      user_id: 'u1',
+      detail: { missing: 'expiration_at_ms' },
+    }
+    expect(isPreSignupRedemption(other)).toBe(false)
+    expect(judgeEntitlementRisk([other]).alert).toBe(true)
+  })
+
+  it('a kind with no detail at all is NOT swallowed by the carve-out', () => {
+    expect(isPreSignupRedemption(row('revenuecat_event_unusable'))).toBe(false)
+    expect(judgeEntitlementRisk([row('revenuecat_event_unusable')]).alert).toBe(true)
+  })
+
+  it('a real failure alongside pre-signup rows still alerts, and excludes them from the count', () => {
+    const v = judgeEntitlementRisk([
+      preSignup(), preSignup(),
+      row('stripe_event_write_failed', 'u9'),
+    ])
+    expect(v.alert).toBe(true)
+    expect(v.count, 'the two expected redemptions must not inflate a real incident').toBe(1)
+    expect(v.affectedAccounts).toBe(1)
+    expect(v.preSignupRedemptions).toBe(2)
+  })
+
+  it('still reports them when otherwise clean — counted is not the same as hidden', () => {
+    const v = judgeEntitlementRisk([preSignup()])
+    expect(v.alert).toBe(false)
+    expect(v.preSignupRedemptions).toBe(1)
+    expect(v.headline).toMatch(/Confirm the entitlement landed/)
+  })
+
+  it('the kind stays listed, so completeness still covers it', () => {
+    // The carve-out is at the ROW level on purpose. Removing the kind from the list
+    // would make a genuinely dropped RevenueCat payment invisible.
+    expect(isEntitlementAtRisk('revenuecat_event_unusable')).toBe(true)
   })
 })

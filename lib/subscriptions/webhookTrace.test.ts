@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { webhookTrace, type SubscriptionProvider, type WebhookOutcome } from './webhookTrace'
+import { webhookTrace, normaliseEnvironment, type SubscriptionProvider, type WebhookOutcome } from './webhookTrace'
 
 // OPS-SUBS-TRACE-01. What matters here is not that a mapping exists but that the
 // two providers stay SYMMETRIC: the reason this owner is shared is that the Stripe
@@ -110,5 +110,51 @@ describe('webhookTrace — no payload, no PII', () => {
         }
       }
     }
+  })
+})
+
+
+// ── ENVIRONMENT (OPS-SUBS-ALERT-01 follow-up) ───────────────────────────────
+// Recorded because the digest could not tell a founder sandbox redemption from a
+// real lost sale, and ranked both above everything else it prints.
+describe('normaliseEnvironment', () => {
+  it('accepts both provider spellings, case-insensitively', () => {
+    expect(normaliseEnvironment('SANDBOX')).toBe('sandbox')
+    expect(normaliseEnvironment('PRODUCTION')).toBe('production')
+    expect(normaliseEnvironment('sandbox')).toBe('sandbox')
+    expect(normaliseEnvironment(' Production ')).toBe('production')
+  })
+
+  it('returns null — never a default — for anything it does not recognise', () => {
+    // "we do not know which world this was" must not collapse into "production".
+    for (const v of ['', 'live', 'test', 'PROD', undefined, null, 42, {}]) {
+      expect(normaliseEnvironment(v), `${String(v)} must not resolve`).toBeNull()
+    }
+  })
+
+  it('REFUSES BOOLEANS, which is the polarity guard', () => {
+    // Stripe's `livemode` is true-for-live; RevenueCat's `is_sandbox` is
+    // true-for-sandbox. Accepting either here would let one route silently invert
+    // the other. Each converts at its own call site, beside the field name.
+    expect(normaliseEnvironment(true)).toBeNull()
+    expect(normaliseEnvironment(false)).toBeNull()
+  })
+})
+
+describe('webhookTrace records the environment', () => {
+  it('stamps it on every outcome, for both providers', () => {
+    for (const p of PROVIDERS) for (const r of RESULTS) {
+      expect(webhookTrace(p, outcomeFor(r), 'SANDBOX').detail.environment,
+        `${p}/${r} must carry the environment`).toBe('sandbox')
+    }
+  })
+
+  it('OMITS the key when unknown, rather than writing a null', () => {
+    // A row with no `environment` predates the field. That is a different fact
+    // from "we asked the provider and could not tell", and the two must not merge.
+    const d = webhookTrace('revenuecat', outcomeFor('unusable')).detail
+    expect('environment' in d).toBe(false)
+    expect(webhookTrace('stripe', outcomeFor('received'), 'nonsense').detail)
+      .not.toHaveProperty('environment')
   })
 })
