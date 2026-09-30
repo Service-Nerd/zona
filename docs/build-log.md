@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-30 — SUBS-COMPED-WRITER-01 · the migration shipped and changed nothing
+**Shipped:** Both subscription writers now decide `subscriptions.is_comped`, so a free Apple offer-code entitlement stops counting as a paying conversion.
+
+**Dev learning:** A schema migration can apply cleanly, verify cleanly, and accomplish nothing. `20260928_comped_entitlement_not_a_conversion.sql` added the column and a 6th `apply_subscription_event` parameter two days ago. It was applied today. `is_comped` read `false` for all three rows, because **no writer passed the argument** — and the parameter had a DEFAULT, which is exactly what made it invisible: the 5-arg calls kept resolving, nothing errored, and the column sat there looking implemented. Then the falsification found a second one: my population arm bounded `.rpc` to the literal `'apply_subscription_event'` with an **80-character window**, and `reconcile/route.ts` casts the rpc through a long inline function type. It was never in the population. I deleted `p_is_comped` from the route and all 16 tests stayed green. Third time a character budget has been the cause here — **a region measured in bytes is not a region.**
+
+**Product/creator learning:** The founder asked three times in a row, in escalating words, whether the thing worked — and he was right to, because I kept answering a slightly different question each time. The turn that actually helped was the one where he said *"I dont understand"* and named the mechanism: he was using Apple's own offer codes and I had been reasoning about `charity_codes`, the table he retired. **I told him a path was safe because it was "independent of the webhook" when that webhook WAS the path.** Right verdict, wrong reason — which is worth nothing when the next question is "are you sure?"
+
+**AI-building learning:** He couldn't test it. No second Apple ID, 500 codes going out today. That constraint improved the work: instead of shipping and asking him to verify, I pulled the two real redemptions out of RevenueCat's API and ran the actual `readEntitlement` over the real bytes, and probed the live RPC signature read-only with a deliberately invalid uuid (`22P02` = it got past resolution, before any write). Then I closed the one path I couldn't verify — the webhook event's field names came from documentation, never a captured body — by routing its negative verdict through the reader that IS verified. **The honest response to "I can't test this" is not more reassurance, it is removing the untested dependency.**
+
+**The honest bit:** I changed my story four times across the session and he called it out: *"You keep changing your mind and adding things to something you told me is working."* Fair. The four alarming ops rows were day 3 of a 7-day alert window over an incident already fixed — I should have run `count(*) where created_at > fix_time` in the first thirty seconds. Instead I traced the whole history and led with archaeology. And a side effect I caused: `GET /v1/subscribers/{id}` **creates** the subscriber if absent, so probing two truncated ids left two empty junk records in RevenueCat.
+
+**Hook material:** The migration applied, verified, and moved the number by zero. Then the backfill ran and `converted_real` went **2 → 0** — the migration's own comment had predicted exactly that, and it took the second half to make it true. Meanwhile: 500 free runners would have read as 500 paying conversions against a 5% conversion gate.
+
+**Postable?:** yes — "the migration that shipped and changed nothing" is a strong hook, and the default-parameter detail is the part that makes it teachable.
+
+---
+
 ## 2026-09-29 — FAQ-TITLE-INVERTED-01 · both surfaces read correctly, only the journey was wrong
 
 **Dev.** The Common questions screen now leads with "Common questions" instead of with its own

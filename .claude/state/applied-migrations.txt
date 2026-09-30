@@ -73,3 +73,4 @@
 20260924_email_consent.sql
 20260924_first_read_email_stamp.sql
 20260925_trial_conversion_real.sql
+20260928_comped_entitlement_not_a_conversion.sql

@@ -206,7 +206,10 @@ describe('the webhook re-checks a negative against the verified reader', () => {
 
   it('falls back to readEntitlement when the event says not comped', () => {
     const c = code(SRC())
-    expect(c, 'the webhook no longer consults the verified reader').toContain('readEntitlement')
+    // ⚠️ `toContain` here would also pass against `readEntitlementX` — caught by
+    // `hollowTestShapes.test.ts`, which is the substring-bias class this repo tracks.
+    expect(c, 'the webhook no longer consults the verified reader')
+      .toMatch(/\breadEntitlement\b/)
     expect(c, 'the fallback is not gated on a negative — it would fire on every renewal')
       .toMatch(/if\s*\(!comped\.is_comped/)
   })
@@ -230,6 +233,6 @@ describe('the webhook re-checks a negative against the verified reader', () => {
   })
 
   it('records which reader decided', () => {
-    expect(code(SRC())).toContain("verified_via: 'subscriber'")
+    expect(code(SRC())).toMatch(/verified_via:\s*'subscriber'/)
   })
 })
