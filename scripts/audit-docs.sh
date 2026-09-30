@@ -97,8 +97,18 @@ done <<< "$ids"
 # would make the whole audit unrunnable, which is how a check gets deleted.
 # So the baseline is stated and only GROWTH fails. Same debt-register pattern
 # as SWEEP-BASELINE-01 and the liveness baseline, and the same caveat: a
-# declared reason is not a fixed problem, and nothing here schedules the 291.
-SHIP_RECORD_DEBT_BASELINE=291
+# declared reason is not a fixed problem, and nothing here schedules the debt.
+#
+# ✅ CLEARED AND RE-BASELINED TO 0 (2026-09-30). The debt reached 0 — every
+# all-time feat/fix/perf scope now has both a registry row and a build-log
+# heading — and the baseline had been left at 291, which this script printed as
+# "improved from 291, lower the baseline" on every run. **291 units of slack: a
+# ship could lose its records 291 times and this check would still say green.**
+# That is the debt register going stale in the one direction nobody watches —
+# the register shrank and the ratchet did not follow it. Falsified at the time
+# of the change by setting the baseline to -1 against an actual 0, which
+# correctly reported GREW and failed the audit.
+SHIP_RECORD_DEBT_BASELINE=0
 say "── ship records: ALL-TIME debt (baseline ${SHIP_RECORD_DEBT_BASELINE}) ──"
 all_ids=$(git log --pretty=format:"%s" \
       | grep -oE "^(feat|fix|perf)\([^)]+\)" | sed -E 's/^(feat|fix|perf)\(//; s/\)$//' \
