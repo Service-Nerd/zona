@@ -90,10 +90,18 @@ purchase path and owns the only `subscriptions` row that exists in production.
 
 | Outcome | Ops kind | `detail` |
 |---|---|---|
-| RPC ran | `stripe_event_received` | `{ provider, event_type, status, applied }` |
-| RPC errored (→ 500) | `stripe_event_write_failed` | `{ provider, event_type, status, message }` (truncated to 300 chars) |
-| Subscription status did not map | `stripe_event_unhandled` | `{ provider, event_type, stripe_status }` |
-| Acted-on event we cannot use (→ 400) | `stripe_event_unusable` | `{ provider, event_type, missing }` — `missing` is `user_id` or `current_period_end` |
+| RPC ran | `stripe_event_received` | `{ provider, event_type, environment, status, applied }` |
+| RPC errored (→ 500) | `stripe_event_write_failed` | `{ provider, event_type, environment, status, message }` (truncated to 300 chars) |
+| Subscription status did not map | `stripe_event_unhandled` | `{ provider, event_type, environment, stripe_status }` |
+| Acted-on event we cannot use (→ 400) | `stripe_event_unusable` | `{ provider, event_type, environment, missing }` — `missing` is `user_id` or `current_period_end` |
+
+⚠️ **`environment` is `'sandbox' | 'production'`, and is OMITTED when it cannot be
+established** — a row without it predates 2026-09-30. Derived here from Stripe's
+`event.livemode`, which is **true-for-live**; RevenueCat's `is_sandbox` boolean runs the
+opposite way, so `normaliseEnvironment` refuses booleans outright and each route converts
+at its own call site, beside the field name. Added because the daily digest ranks a failed
+subscription write above everything else it prints and had no way to tell a founder
+sandbox test from a lost sale.
 
 - **`_unusable` is deliberately NOT folded into `_unhandled`.** "We have no mapping for this
   event" and "a real payment arrived that we could not apply" are different facts and lead

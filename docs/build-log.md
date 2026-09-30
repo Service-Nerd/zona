@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-30 — OPS-SUBS-ALERT-01 fix · the alarm fired, and it was wrong about the thing it was built for
+**Shipped:** The daily digest stops reporting an expected charity redemption as a lost sale, and both subscription webhooks now record whether a delivery came from sandbox or production.
+
+**Dev learning:** The alert ranked `revenuecat_event_unusable` top severity on the reasoning that such a row *"is rejected with a 400, and providers retry a 400 only briefly, so there may be no second chance."* Every word of that is true — **about Stripe.** It was written in a docblock above a list containing both providers, and the RevenueCat branch it was judging answers **200 on purpose**, because an anonymous `$RCAnonymousID:` never becomes valid and there is nothing to retry. The reasoning was sound, provider-specific, and applied to a list. **A justification written next to one member of a set quietly becomes the justification for the set.** The fix is a row-level carve-out on `missing`, never removing the kind, because the same kind carrying any other value is a genuinely dropped payment.
+
+**Product/creator learning:** The scale is what makes it matter. This is not four stale rows: it is the designed charity journey — redeem by email, then install, then sign up — so **all 500 Make-A-Wish runners produce one**, and the auto-renew-OFF choice (taken so nobody is charged mid-taper) fires a CANCELLATION two minutes after every redemption, so **two** each. Launch day opens with ~1,000 red "this runner paid and is locked out" lines in the one section whose entire value is that it is normally empty. The incident write-up from two days earlier already said *"a configuration choice is a code path"*. It is also an **alerting** path, and nobody traced it that far.
+
+**AI-building learning:** I found this by querying production rather than reading the alert's tests, which were all green and all correct — they tested the rule as written. Then the more useful finding fell out sideways: **`subscriptionHealth.ts` has no consumer at all.** Two comments and its own test are the only references; there is no `/api/ops/subscription-health` though every other probe has one. The handoff I was given said it was "added to the dashboard". So the module that exists specifically because *"the name belongs in versioned, tested code rather than in a prose prompt nothing can check"* is itself unread, and the thing that actually decides what the founder sees is a prompt in a cloud routine that I had to edit **by hand** to match. Filed as `OPS-SUBS-HEALTH-CONSUMER-01`. **A tested rule with no reader is a strongly-worded opinion.**
+
+**The honest bit:** Two of the four rows I spent time "investigating" are printed verbatim, same timestamps, in `docs/incidents/2026-09-28-offer-code-free-tier.md` — written two days earlier. I reconstructed from the database what was already written down, because I opened the tables before the incident folder. The founder's words were *"I don't understand why you seem to be starting from scratch"*, and he was right about the symptom even though the cause was a handoff that omitted two days of redemption work entirely. **Read the incidents folder before querying production: someone has usually already met your bug.** Also: I claimed "tsc clean" early on in a container with no `node_modules`, which was worth exactly nothing, and had to withdraw it.
+
+**Hook material:** We built an alarm for "a customer paid and didn't get access." Its first real firing was four sandbox tests. Left alone, its second would have been a thousand charity runners who were all fine.
+
+**Postable?:** yes — "the alarm was right about everything except which provider it was looking at", and the inert-module finding pairs with the earlier decorative-config posts.
+
+---
+
 ## 2026-09-30 — REDEEM-MECHANISM-TRUTH-01 · the page still described the screen we deleted
 **Shipped:** `/charity-runners`, the page a partner's runners are sent to, now describes the Apple offer-code flow instead of the hand-rolled code screen retired two days earlier. Plus the Make-A-Wish deck rebuilt around it.
 

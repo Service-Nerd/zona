@@ -166,9 +166,27 @@ at the RPC returned 500 with nothing durable to find it by.
 
 | Outcome | Ops kind | `detail` |
 |---|---|---|
-| RPC ran | `revenuecat_event_received` | `{ provider, event_type, status, applied }` |
-| RPC errored (→ 500) | `revenuecat_event_write_failed` | `{ provider, event_type, status, message }` (truncated to 300 chars) |
-| No status mapping | `revenuecat_event_unhandled` | `{ provider, event_type }` |
+| RPC ran | `revenuecat_event_received` | `{ provider, event_type, environment, status, applied }` |
+| RPC errored (→ 500) | `revenuecat_event_write_failed` | `{ provider, event_type, environment, status, message }` (truncated to 300 chars) |
+| No status mapping | `revenuecat_event_unhandled` | `{ provider, event_type, environment }` |
+| Anonymous `app_user_id` (→ **200**) | `revenuecat_event_unusable` | `{ provider, event_type, environment, missing: 'app_user_id_not_a_user', app_user_id_shape }` |
+
+⚠️ **`environment` is `'sandbox' | 'production'`, OMITTED when it cannot be established**
+(a row without it predates 2026-09-30). Taken straight from RevenueCat's `event.environment`.
+`normaliseEnvironment` accepts strings only: RevenueCat's `is_sandbox` is true-for-sandbox
+while Stripe's `livemode` is true-for-live, so accepting booleans would let one route
+silently invert the other.
+
+🔴 **`revenuecat_event_unusable` WITH `missing: 'app_user_id_not_a_user'` IS NOT A LOST SALE,
+and the daily digest must not lead with it.** It is the designed charity journey
+(CHARITY-OFFER-CODE-01): the runner redeems an offer code, THEN installs, THEN signs up, so
+the receipt attaches to an anonymous `$RCAnonymousID:`. The route answers **200 on purpose**
+— nothing is retryable — and the transaction re-arrives correctly keyed once `logIn` aliases
+it, with `POST /api/subscriptions/reconcile` as the backstop. An offer created with
+auto-renew OFF also emits `CANCELLATION` ~2 minutes after **every** redemption, so each
+redemption leaves two rows. `lib/ops/subscriptionHealth.ts → isPreSignupRedemption()` carves
+these out at the ROW level; the KIND stays money-critical, because the same kind carrying any
+other `missing` value is a genuinely dropped payment.
 
 - **`_received` is a HEARTBEAT, recorded on every delivery** — same reasoning as
   `strava_webhook_received` and `plan_enrich_server_saved`: a backstop nobody can see
