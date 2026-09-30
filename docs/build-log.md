@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-30 — MKT-PLAN-SEGMENT-BASIS-01 · 40% of what?
+**Shipped:** The race-pace segment on a peak long run is now measured at its own pace instead of the session's average, and the Coaching Board settled that §25's percentage is a share of the run's **duration**.
+
+**Dev learning:** One percentage, two readings, shipping side by side for weeks. `race_pace_pct: 40` meant "40% of the kilometres" in `ruleEngine.ts` and "40% of the minutes" in `sessionComposer.ts`. The reason nobody caught it is the interesting part: the **session totals** those two produce differ by about one minute (168 vs 167), because one is the arithmetic mean of the paces and the other the harmonic mean, and on realistic inputs those are close. So every duration assertion passed. What differs by 10% is the **segment**, which is the entire point of the session. **Two readings that agree on the aggregate can disagree completely on the part you care about** — and the aggregate is what the tests were watching.
+
+**Product/creator learning:** The display bug underneath it was the one a runner would actually feel. `withDistances` priced every part of the session at the average pace so the parts would sum to the total — correct for warm-up, main and cool-down, all easy; wrong for the one part deliberately run faster. A 67-minute marathon-pace segment showed as 11.96 km when the runner will cover 13.40. Someone plans their Sunday around that number. **A rounding-flavoured defect on the block's most important session is not a rounding defect.**
+
+**AI-building learning:** The conflict scan earned its keep and nearly killed my own proposal. §16 carries an amendment saying its own basis question was *"examined and deliberately left alone … Recorded so it is not re-found as a defect"* — which is precisely what I was about to do. It survived only because that dispute had **minutes on both sides**, so mine was a genuinely different question. I would not have found that by reading the section headings; it is in an amendment paragraph three sections away from where I was working. The repo's own note — *"most of this constitution's real content is now in amendments; a scan that stops at `## §N` is not a scan"* — is correct, and this is the second time it has caught something.
+
+**The honest bit:** I sized this as the backlog did, small, and it wasn't. `lr_segment_pace` is a **string**, so the composer had no numeric pace to divide by, and the fix needed `parsePaceMidpoint` — private to `invariants.ts` with fourteen call sites — extracted to its own owner first. I also had to decline the board's third artifact: it asked for an invariant, and the object it would check never enters a plan, because the composed structure is display-only. Writing "not mechanically checkable, and here is the structural reason" felt like failing the format until I found §24b's ruling had already done exactly that, for exactly that reason.
+
+**Hook material:** The same number meant two different things in two files for weeks, and the totals agreed to within a minute — so every test passed while the bit that matters was out by 10%.
+
+**Postable?:** yes — "40% of what?" is a good hook, and "extracted the shared function before the second copy existed, for once" is a satisfying counter-beat to four previous posts about doing it too late.
+
+---
+
 ## 2026-09-30 — OPS-SUBS-HEALTH-CONSUMER-01 · the rule was tested, documented, and read by nothing
 **Shipped:** `GET /api/ops/subscription-health`, so the definition of "somebody paid and did not get access" is consumed by code instead of being mirrored by hand in a scheduled prompt.
 
