@@ -50,11 +50,23 @@ reconcile cannot move a subscription backwards past a newer event it raced. A **
 entitlement (null expiry) takes the `NON_EXPIRING_GRANT_YEARS` horizon rather than a 30-day
 default that would cut a charity runner off mid-block.
 
+**`p_is_comped` (SUBS-COMPED-WRITER-01, 2026-09-30).** The 6th argument, from
+`readEntitlement(...).comped.is_comped` — true when the entitlement was granted at no
+charge (an Apple offer code). `resolveTier` does **not** read it and neither does any client
+surface: it exists so `v_trial_conversion.converted_real` stops counting a gift as a sale.
+The flag is **sticky** in `apply_subscription_event`, so a later renewal carrying no price
+cannot silently promote a gifted runner into the conversion numerator.
+
+⚠️ It is derived from `period_type` **and** a zero `price`, and it is only safe because this
+product has no Apple introductory offer (de-stacked 2026-08-06, MON-TRIAL-01) — on a product
+that offers one, a paying subscriber's first period also reads `period_type: "trial"`. That
+is App Store Connect state this repo cannot read, so the raw values ride the ops trail.
+
 Records an ops event on **every** outcome (SUBS-RECONCILE-RACE-01, 2026-09-28):
 
 | Outcome | Ops kind | `detail` |
 |---|---|---|
-| Entitlement found and written | `revenuecat_reconciled` | `{ entitlement, expires_at, offer_code }` |
+| Entitlement found and written | `revenuecat_reconciled` | `{ entitlement, expires_at, offer_code, is_comped, period_type, price_amount }` |
 | RevenueCat 404 | `revenuecat_reconcile_none` | `{ reason: 'unknown_to_revenuecat' }` |
 | No active entitlement | `revenuecat_reconcile_none` | `{ reason: 'no_active_entitlement' }` |
 | RevenueCat non-2xx / unreachable | `revenuecat_reconcile_failed` | `{ reason, status? , detail? }` |

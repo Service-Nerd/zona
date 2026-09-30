@@ -116,6 +116,42 @@ seeing, look here first.**
 A missing `event_timestamp_ms` records `revenuecat_event_no_timestamp` — see the write section
 below for why null is the correct fallback and why it must still leave a trace.
 
+### SUBS-COMPED-WRITER-01 (2026-09-30) — `p_is_comped`, and a negative that re-checks itself
+
+The route passes a 6th argument to `apply_subscription_event`: **`p_is_comped`**, true when
+the entitlement was granted at no charge (an Apple offer code). Derived by
+`compedEvidence(event.period_type, event.price)` — a free period type **and** a zero price,
+both required.
+
+🔴 **THIS ROUTE IS THE ONLY WRITER FOR ONE JOURNEY, WHICH IS WHY THE FLAG MATTERS HERE.**
+A runner who redeems while **already signed in** never reaches
+`POST /api/subscriptions/reconcile`: `resolveTier` returns reason `subscription`, and
+`shouldReconcile` refuses to run again for that reason. A flag missed here is missed
+permanently.
+
+⚠️ **THE EVENT'S FIELD NAMES ARE FROM REVENUECAT'S DOCS, NOT A CAPTURED BODY.** Per the docs
+the event uses an UPPERCASE enum (`"TRIAL"`) and a bare numeric `price`, where the subscriber
+object is lowercase with `{ amount }`. `isCompedPurchase` accepts both — but a **negative**
+verdict on an `active`-status event is re-checked against `readEntitlement`, which **is**
+verified against both real 2026-09-28 redemptions. Only a negative: a positive means the
+event shape worked and there is nothing to learn, so this costs at most one extra RevenueCat
+call per genuine purchase and none for renewals or cancellations.
+
+⚠️ **THE RE-CHECK MAY NEVER BREAK THE WRITE.** Nothing in `lib/trial.ts`, `DashboardClient`
+or any client surface reads `is_comped` (grep-verified, 0 references) — it exists only so
+`v_trial_conversion.converted_real` stops counting a gift as a sale. The look-up is wrapped,
+checks `res.ok`, and on any failure keeps the event's own verdict and carries on. A reporting
+field must not be able to cost a runner their access.
+
+`verified_via` (`'event' | 'subscriber'`) rides the heartbeat row alongside the raw
+`period_type` and `price_amount`, because when a row is ever mismarked the first question is
+which reader produced it.
+
+⚠️ **The discriminator depends on App Store Connect state this repo cannot read:** it holds
+only while the product has no introductory offer (de-stacked 2026-08-06, MON-TRIAL-01). If
+one is re-added, a paying subscriber's first period reads `period_type: "trial"` and the
+zero-price condition becomes the only thing standing between it and a mismarked row.
+
 ### OPS-SUBS-TRACE-01 (2026-09-28) — the success path leaves a row
 
 🔴 **Until this shipped, every kind this route could emit was a FAILURE branch, so a
