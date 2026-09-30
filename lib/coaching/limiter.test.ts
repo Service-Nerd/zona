@@ -338,6 +338,20 @@ describe('inferLimiter', () => {
       expect(mi?.reasoning).not.toMatch(/\dkm\b/)
     })
 
+    // 🔴 EVERY FUELING CASE USED `rpe: 8` AND THE THRESHOLD IS `>= 7`, so mutating the
+    // source to `>= 8` changed nothing any test could see (test-liveness, 2026-09-30:
+    // `perturb first numeric literal` SURVIVED). A branch guarded by a threshold needs
+    // a case AT the threshold, or the threshold itself is untested — the value could be
+    // anything from 2 to 8 and this block would stay green.
+    it('fires AT the RPE threshold, and not one below it', () => {
+      const cutShort = { ...baseInputs(), sessionType: 'long' as const,
+        plannedDistKm: 22, actualDistKm: 18 }
+      expect(inferLimiter({ ...cutShort, rpe: 7 })?.category,
+        'RPE 7 is the documented floor for a fuelling read').toBe('fueling')
+      expect(inferLimiter({ ...cutShort, rpe: 6 })?.category,
+        'RPE 6 on a short-cut long run is not a fuelling finding').not.toBe('fueling')
+    })
+
     it('does not fire when the long run was completed', () => {
       const r = inferLimiter({
         ...baseInputs(),

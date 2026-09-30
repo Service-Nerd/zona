@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { assessLongRunReadiness, minLongestRunKm, LongRunReadinessError } from './longRunReadiness'
+import { assessLongRunReadiness, minLongestRunKm, weeksToReachFloor, LongRunReadinessError } from './longRunReadiness'
 import { generateRulePlan } from './ruleEngine'
 import { GENERATION_CONFIG } from './generationConfig'
 import type { GeneratorInput } from '@/types/plan'
@@ -59,6 +59,122 @@ describe('§113 — long-run readiness', () => {
     expect(m.alternatives.join(' '), 'offer a distance that actually opens').toMatch(/10K/i)
     expect(h.alternatives.join(' '), 'do not offer a half to someone already running one')
       .not.toMatch(/half marathon/i)
+  })
+
+  // 🔴 EVERY CASE HERE USES 42.2 AND THE BRANCH IS `raceDistanceKm >= 42`, so mutating
+  // it to `> 42` changed nothing any test could see. A boundary tested only from well
+  // inside it is not tested: the number could be anything from 22 to 42 and these
+  // assertions stay green.
+  //
+  // ⚠️ THIS IS NOT THE MUTANT `test-liveness` REPORTED, AND I INITIALLY THOUGHT IT WAS.
+  // The harness scopes mutations to the bodies of the symbols the test IMPORTS, and
+  // `alternativesFor` is private — so this `>=` is outside every span and the harness
+  // never touches it. The reported survivor was the admission boundary below. Verified
+  // by hand instead: flipping this one red-fails the case below, which is why it stays.
+  //
+  // ⚠️ AND THE `42` IS A HARDCODED COACHING NUMERIC IN `lib/plan/`, which the
+  // Configuration Singularity forbids — the same function reads `21` from
+  // `GENERATION_CONFIG.LONG_RUN_READINESS_MIN_RACE_KM` four lines up. Filed as
+  // LR-ALT-42-CONFIG-01 rather than moved here, because relocating it is a
+  // `generationConfig.ts` edit and convenes the Coaching Board.
+  it('the 10K alternative appears AT the marathon boundary, not only above it', () => {
+    const at    = assessLongRunReadiness(base({ longest_recent_run_km: 2, race_distance_km: 42 }))
+    const below = assessLongRunReadiness(base({ longest_recent_run_km: 2, race_distance_km: 41.9 }))
+    expect(at.alternatives.join(' '), 'a 42 km race is a marathon and earns the 10K door')
+      .toMatch(/10K/i)
+    expect(below.alternatives.join(' '), 'below the boundary the marathon-specific door is not offered')
+      .not.toMatch(/10K/i)
+  })
+
+  // 🔴 WHY `Number.isFinite` IS THERE, ASSERTED. `typeof w === 'number'` alone admits
+  // NaN and Infinity, and `Infinity >= rampWeeks + blockWeeks` is TRUE — so a runner
+  // below the floor with an unparseable runway would be ADMITTED on a runway that does
+  // not exist. Flipping the `&&` to `||` in the source reproduces exactly that, and
+  // nothing noticed (test-liveness, 2026-09-30: `flip first && to ||` SURVIVED).
+  //
+  // ⚠️ NaN alone is NOT enough to prove the guard: `NaN >= n` is false, so it falls
+  // through to the same refusal either way. **Infinity is the case that separates them**
+  // — which is the difference between a test that kills a mutant and a test that only
+  // looks like it should.
+  it('an unparseable runway does not admit a runner below the floor', () => {
+    const below = { longest_recent_run_km: 2, race_distance_km: 42.2 }
+    for (const w of [Number.POSITIVE_INFINITY, Number.NaN]) {
+      expect(assessLongRunReadiness(base(below), w).ok,
+        `weeksAvailable=${w} must be treated as absent, never as unlimited runway`).toBe(false)
+    }
+    // And the guard has not broken the real admission it exists to allow.
+    expect(assessLongRunReadiness(base(below), 40).ok,
+      'a genuine long runway still admits — otherwise this test passes for the wrong reason').toBe(true)
+  })
+
+  // 🔴 THE MUTANT `test-liveness` ACTUALLY REPORTED (2026-09-30, `flip second >= to >`).
+  // In-span, the second `>=` is `weeksAvailable >= rampWeeks + blockWeeks` — §113
+  // Amendment 1's admission boundary. Flipped to `>`, a runner whose runway is EXACTLY
+  // enough is refused, and nothing noticed: every existing case sits well clear of the
+  // line (29 weeks admitted, 8 refused).
+  //
+  // ⚠️ THE BOUNDARY IS DERIVED FROM DOCTRINE, NOT SEARCHED FOR. A test that finds the
+  // smallest admitting value and then asserts around it is mutation-BLIND: under `>` the
+  // search simply returns one week later and the assertions still hold. So the expected
+  // week count is composed from the same two published quantities the principle names —
+  // `weeksToReachFloor` (§45's governed ramp) and `PREP_TIME_THRESHOLDS.MARATHON.block`
+  // (§44's minimum block) — and the comparison is what is under test.
+  it('a runway of EXACTLY ramp + block admits; one week less does not', () => {
+    const longest  = 2
+    const ramp     = weeksToReachFloor(longest, minLongestRunKm())
+    const block    = GENERATION_CONFIG.PREP_TIME_THRESHOLDS.MARATHON.block
+    const boundary = ramp + block
+    const below    = base({ longest_recent_run_km: longest, race_distance_km: 42.2 })
+
+    expect(assessLongRunReadiness(below, boundary).ok,
+      `${boundary} weeks (ramp ${ramp} + block ${block}) is exactly enough, and exactly enough is enough`)
+      .toBe(true)
+    expect(assessLongRunReadiness(below, boundary - 1).ok,
+      'one week short of the governed ramp plus the minimum block is a refusal').toBe(false)
+  })
+
+  // 🔴 SURFACED BY FIXING THE ONE ABOVE, AND THAT IS THE HARNESS WORKING.
+  // `test-liveness` scopes mutations to the bodies of the symbols the test IMPORTS, so
+  // importing `weeksToReachFloor` for the boundary test WIDENED the attack surface into
+  // a function nothing tested directly — and two mutants immediately survived
+  // (`flip first >= to >`, `flip first || to &&`), both on its single guard line.
+  //
+  // ⚠️ Worth stating because it looks like a regression and is the opposite: the set of
+  // mutable spans is DERIVED FROM THE IMPORTS, so a test that reaches further is
+  // measured further. Fixing one survivor legitimately reveals more.
+  //
+  // This is §45's governed ramp, and my admission test above now leans on it, so it
+  // needs to be right rather than merely present.
+  describe('weeksToReachFloor — §45s governed ramp', () => {
+    const floor = minLongestRunKm()
+
+    // `longestKm >= floorKm` → `>`: a runner ALREADY AT the floor needs no ramp. Flipped,
+    // they are handed a ramp to a distance they can already run.
+    it('a runner already AT the floor needs no ramp', () => {
+      expect(weeksToReachFloor(floor, floor), 'at the floor is not below it').toBe(0)
+      expect(weeksToReachFloor(floor + 1, floor)).toBe(0)
+    })
+
+    // `!(longestKm > 0) ||` → `&&`: absence and zero must short-circuit. Flipped, a 0 km
+    // runner falls through to `Math.log(floor / 0)` = Infinity, and `Math.ceil(Infinity)`
+    // is Infinity — a ramp no runway can ever satisfy, which silently converts
+    // "we do not know your longest run" into a permanent refusal.
+    it('a non-positive longest run yields no ramp, never an infinite one', () => {
+      for (const km of [0, -1, Number.NaN]) {
+        const w = weeksToReachFloor(km, floor)
+        expect(w, `longest=${km} must not produce an unsatisfiable ramp`).toBe(0)
+        expect(Number.isFinite(w)).toBe(true)
+      }
+    })
+
+    it('below the floor yields a finite ramp that shortens as the runner gets closer', () => {
+      const far   = weeksToReachFloor(1, floor)
+      const near  = weeksToReachFloor(floor - 0.5, floor)
+      expect(far).toBeGreaterThan(0)
+      expect(Number.isFinite(far)).toBe(true)
+      expect(near, 'a closer runner needs no more weeks than a further one')
+        .toBeLessThanOrEqual(far)
+    })
   })
 
   it('does not govern shorter races', () => {
