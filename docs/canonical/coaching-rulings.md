@@ -663,3 +663,58 @@ first. ⚠️ **Sims' §13 caveat recorded, not resolved.**
 **Artifacts:** §24b Amendment · numeric **none, structural** · invariant **not mechanically
 checkable in `validatePlan()`** — it is a display rule and the validator sees plans, not
 screens.
+
+---
+
+## `MKT-PLAN-SEGMENT-BASIS-01` — 2026-09-30 — is §25's `race_pace_pct` distance or time?
+
+**CORRECT WITH AMENDMENT — the basis is TIME.** §25 Amendment 2.
+
+Amendment 1 settled the *referent* (of the long run, not of the main set) and left the *unit*
+as prose. Two readings shipped side by side: `ruleEngine.ts:4949` as a fraction of **distance**,
+`sessionComposer.ts:162` as a fraction of **time**. On a 30 km marathon long run (easy 6:00,
+MP 5:00, 40%) that is 12 km / 60 min against 13.3 km / 67 min — **a ~10% difference in the dose
+of goal-pace running on tired legs**, while the session totals differ by ~1 minute, which is why
+nothing visibly broke.
+
+🔴 **THE CONFLICT SCAN FOUND THE THING THAT NEARLY MADE THIS A RE-PROPOSAL.** §16's 2026-09-14
+amendment records that *"§16's '20% of session time' against the code's 20% of the MAIN SET was
+examined and **deliberately left alone** … Recorded so it is not re-found as a defect."* That
+reasoning transfers — but its dispute had **minutes on both sides**. Nothing in the §16/§25
+lineage has ever been distance-based; the distance reading was introduced by the segment-duration
+fix. So this is a module deviating from a time lineage, **not** a re-litigation of settled ground.
+
+**Ruled on this constitution, not on preference:** §16 (the overridden default) says "of session
+**time**" · §9/§24's `LONG_RUN_CAP_MINUTES` bounds the quantity the percentage is taken from ·
+**Willy's own guard in Amendment 1 is stated in minutes**. Seiler: a distance fraction makes the
+dose vary with the runner's speed for no physiological reason. Sims: minutes are the more
+equitable encoding, since a distance fraction hands slower runners *more* time at goal pace for
+the same nominal percentage. McMillan: time, and the display defect matters more.
+
+⚠️ **Willy's absolute-ceiling preference is NOT discharged** — carried forward from Amendment 1,
+needs a measured distribution of peak-long-run goal-pace minutes to become a proposal.
+
+⚠️ **Seiler recorded that this cannot move §1**: intensity distribution counts **sessions**,
+plan-wide (CD-19), and never reads `duration_mins`. Any §1 gate here would be the stale-lens class
+his own seat note warns about.
+
+**Split deliberately.** The display defect shipped — `withDistances` priced **every** part at the
+session average, so a 67-minute segment at 5:00/km rendered **11.96 km against 13.40 km**, ~11%
+out on the peak block's key segment and a live ADR-015 breach. `ruleEngine.ts`'s alignment was
+deferred to `MKT-PLAN-SEGMENT-ENGINE-BASIS-01`, gated on parity / cohort:shape / measure:fitness.
+Bounded: the time basis is the weighted **harmonic** mean of paces where distance is the
+**arithmetic**, so by Cauchy–Schwarz it is never larger and no minutes ceiling can be newly
+breached.
+
+**Artifacts:** §25 Amendment 2 · numeric **none — `race_pace_pct` remains the single owner and
+`LR_RACE_SEGMENT_PCT_MIN/MAX` are unchanged; stated because inventing a constant to look complete
+is the decorative-config class** · invariant **not mechanically checkable in `validatePlan()`** —
+the composed structure is display-only (`types/plan.ts` carries `derived_set`, never
+`race_pace_segment`), so the stamped `distance_km` never enters a plan and no `Plan => Violation[]`
+can reach it. The check is `lib/plan/racePaceSegmentDistance.test.ts` (7), falsified twice: revert
+to the uniform rate → 2 red; price the segment but skip the body rebalance → a different 2 red.
+
+**Owner created:** `lib/plan/paceParse.ts` — `parsePaceMidpoint` was private to `invariants.ts`
+with **14 call sites**; `sessionComposer.ts` became its second consumer, so it was extracted
+**before** the copy existed rather than after, unlike TIER-OWNER-01, DELOAD-OWNER-01,
+SESSION-KM-01/02 and OPS-AI-OWNER-01.

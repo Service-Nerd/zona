@@ -2181,6 +2181,25 @@ Two of those rendered **on the same card**: the runner read *"Final 30–50% at 
 
 **Willy's guard, recorded.** The dose is a percentage, so it scales with the longest sessions: at 40%, a 165-minute marathon long run carries 66 minutes at marathon pace, and the longest measured peak long run (191 min) carries 76. He would prefer an absolute ceiling on top of the percentage. The board did not add one — that would be **new doctrine**, not a reading of this section, and §24's `LONG_RUN_CAP_MINUTES` already bounds the session the percentage is taken from. Filed as his stated position so a future sitting on ultra-long marathon blocks starts from it rather than rediscovering it.
 
+**Amendment 2 — the percentage is of the long run's DURATION (Coaching Board 2026-09-30, `MKT-PLAN-SEGMENT-BASIS-01`).** Amendment 1 settled the *referent* — of the long run, not of the main set — and left the *unit* as prose. Two readings then shipped side by side: `ruleEngine.ts` treated `race_pace_pct` as a fraction of **distance** (`frac × distKm`, introduced with the segment-duration fix), `sessionComposer.ts` as a fraction of **time**. On a 30 km marathon long run (easy 6:00, MP 5:00, 40%) that is a 12 km / 60 min segment against a 13.3 km / 67 min one — **the same principle, the same 40%, and a ~10% difference in the dose of goal-pace running on tired legs.**
+
+**Ruling: TIME.** The percentage is a share of the long run's **duration**. `sessionComposer.ts` was already correct; the distance reading was the deviation, so this is a defect fix restoring documented intent rather than new doctrine.
+
+**Why time, from this constitution rather than from preference:**
+- **§16, which this section overrides in magnitude, declares "20% of session *time*".** §25 ratifies a larger dose; it never changed the unit. **Nothing in the §16/§25 lineage has ever been distance-based** — even the 2026-09-14 dispute over §16's referent had minutes on both sides.
+- **§9/§24's `LONG_RUN_CAP_MINUTES` bounds the session the percentage is taken from**, as Amendment 1 says in as many words. A percentage of a minutes-bounded quantity is minutes.
+- **Willy's guard in Amendment 1 is stated entirely in minutes** ("a 165-minute long run carries 66 minutes at marathon pace"). The board reasoned in time when it set the band.
+- **Seiler:** the adaptation purchased is time at goal pace under accumulated fatigue. A distance fraction makes the dose vary with the runner's speed for no physiological reason.
+- **Sims:** minutes are the more equitable encoding. A distance fraction hands slower runners — disproportionately women in this demographic, and post-menopausal runners especially — *more* time at goal pace for the same nominal percentage.
+
+⚠️ **The time basis is always ≤ the distance basis, so no minutes ceiling can be newly breached.** The distance-basis total is the weighted *arithmetic* mean of paces; the time-basis total is the weighted *harmonic* mean. By Cauchy–Schwarz the first is never smaller. Same safety argument the engine's own comment makes for itself.
+
+⚠️ **Willy's absolute-ceiling preference is NOT discharged by this amendment.** It remains open from Amendment 1 and would need a measured distribution of peak-long-run goal-pace minutes to become a proposal.
+
+🔴 **What shipped, and what deliberately did not.** The display defect shipped: `withDistances` priced **every** part at the session's average pace, so a 67-minute segment at 5:00/km rendered as **11.96 km against 13.40 km** — out by ~11% on the key segment of the peak block, a live ADR-015 breach. The segment is now priced at its own pace with the easy body absorbing the residual, so the parts still sum to the session total exactly. **`ruleEngine.ts`'s distance→time alignment was deferred** to `MKT-PLAN-SEGMENT-ENGINE-BASIS-01` and gated on `verify:parity`, `cohort:shape` and `measure:fitness`, because the displayed segment minutes already come off the time basis: the card is coherent today, and bundling a prescription change behind a display fix is one job too many.
+
+⚠️ **Artifact 3 is a unit test, not an invariant, and the reason is structural.** `validatePlan()` operates on the plan JSON. The composed structure is **display-only** — `types/plan.ts` carries `derived_set` but never `race_pace_segment` — so the stamped `distance_km` the board asked to check never enters a plan and no invariant can reach it. The mechanical check therefore lives where the behaviour lives: `lib/plan/racePaceSegmentDistance.test.ts`, falsified twice (revert to the uniform rate → 2 red; price the segment but skip the body rebalance → a different 2 red). Recorded rather than satisfied with an invariant that could never fire, which is this repo's decorative-check class.
+
 ---
 
 ## 26. Race-week sharpening (not tempo)

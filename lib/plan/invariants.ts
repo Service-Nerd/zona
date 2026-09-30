@@ -31,6 +31,7 @@ import { zonesFromZoneString } from '@/lib/coaching/zoneRules'
 import { calendarWeeksBetween } from '@/lib/dates'
 import { parseDateLocal, formatDate, getDistanceConfig, planWeekCap } from './length'
 import { FITNESS_RANK } from './fitnessAssessment'
+import { parsePaceMidpoint } from './paceParse'
 import { sessionKmSelfPaced } from './sessionDistance'
 import { coherentGoal } from './inputs'
 
@@ -317,17 +318,9 @@ function dayGap(a: Day, b: Day): number {
  */
 const sessionKmForCheck = (s: Session | null | undefined): number | null => sessionKmSelfPaced(s)
 
-function parsePaceMidpoint(s: string): number | null {
-  const m = s.match(/^(\d+):(\d+)\s*[–-]\s*(\d+):(\d+)/)
-  if (!m) {
-    const single = s.match(/^(\d+):(\d+)/)
-    if (!single) return null
-    return parseInt(single[1], 10) + parseInt(single[2], 10) / 60
-  }
-  const fast = parseInt(m[1], 10) + parseInt(m[2], 10) / 60
-  const slow = parseInt(m[3], 10) + parseInt(m[4], 10) / 60
-  return (fast + slow) / 2
-}
+// `parsePaceMidpoint` moved to `lib/plan/paceParse.ts` (single owner,
+// MKT-PLAN-SEGMENT-BASIS-01) — `sessionComposer.ts` became its second consumer
+// and a second private copy is this repo's most-repeated defect shape.
 
 // SC-08 vo2max — the WORK minutes (time at Z4-5) of a v2 VO2max session: the
 // resolved rep count × the work step's own length. Distance reps convert via the

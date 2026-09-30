@@ -359,6 +359,41 @@ the skill's own constraint. Do not "fix" it in CSS on a guess; there is nothing 
 2. If it persists: attach **Safari → Develop → [device] → Web Inspector**, hover the band, and read
    the element. That is the only thing that will name it, and it takes a minute.
 
+## ⚖️ FILED 2026-09-30 — `MKT-PLAN-SEGMENT-ENGINE-BASIS-01`
+
+### `MKT-PLAN-SEGMENT-ENGINE-BASIS-01` — align the engine to §25 Amendment 2's time basis 🏃 COACHING BOARD (ruled) · ⚙️ measurement-gated
+
+**The ruling is already made.** §25 Amendment 2 (Coaching Board 2026-09-30) settled that
+`race_pace_pct` is a share of the long run's **duration**. `sessionComposer.ts` was already
+correct. `ruleEngine.ts:4949`'s `applyRacePaceSegmentDuration` still reads it as a fraction of
+**distance** (`segments = [{ frac: mss.race_pace_pct / 100, … }]`, then `distKm × frac`).
+
+**Deliberately deferred from the display fix, not forgotten.** The displayed segment minutes
+already come off the time basis, so the card the runner reads is coherent today. Bundling a
+prescription change behind a display fix is one job too many (SLC), and the board made the
+display fix unconditional and this conditional.
+
+**What changes.** The total becomes `distKm / (p/segMinPerKm + (1−p)/easyMinPerKm)` instead of
+`distKm × (p·segMinPerKm + (1−p)·easyMinPerKm)` — harmonic instead of arithmetic.
+
+⚠️ **Bounded and always downward.** By Cauchy–Schwarz the harmonic form is never larger, so no
+minutes ceiling (§9's `LONG_RUN_CAP_MINUTES`, `INV-PLAN-LONG-CAP-MINS`) can be newly breached.
+Measured on the board's example: 168 → 167 min. **The session is distance-anchored, so the
+kilometres the runner covers do not change at all** — only the estimated duration.
+
+**Gate before it lands, per the ruling:**
+- `npm run verify:parity` — expect a non-zero diff confined to time-target HM/marathon peak weeks
+- `npm run cohort:shape` — declare any move with a number, never re-baseline to go green
+- `npm run measure:fitness` — baseline captured at the sitting: healthy standard net build
+  **28.6%** / `neverBuilds` **12.8%**; injury standard **36.4%** / **0%**; marathon peak LR
+  **61.6%** of race; M4 (sub-4:00, renders publicly) **29.5 km / 70% / +47%**
+
+⚠️ **Reaches distance-anchored runners only.** `applyRacePaceSegmentDuration` skips sessions with
+no `distance_km`, and per SESSION-KM-01/02 beginners are duration-anchored on 95.8% of sessions,
+so this cohort is intermediate/experienced time-target HM and marathon runners in peak.
+
+⚠️ **Do not re-open the basis.** It is ruled. This item is the alignment and its measurement only.
+
 ## ⚖️ FILED 2026-09-30 — `OPS-SUBS-HEALTH-CONSUMER-01`
 
 ### ✅ `OPS-SUBS-HEALTH-CONSUMER-01` — SHIPPED 2026-09-30. Option 1: the route, not the prompt. ⚙️ NO BOARD

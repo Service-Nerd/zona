@@ -12,6 +12,7 @@ import { z } from 'zod'
 // falling back to whatever data is available; never throws.
 
 import { SESSION_FORMAT, sessionSplit } from './sessionFormat'
+import { parsePaceMidpoint } from './paceParse'
 import { isLongRun, isShakeout, isTimeTrial } from './sessionRole'
 import type { Session } from '@/types/plan'
 import type { SessionCatalogueRow } from './sessionCatalogueData'
@@ -174,7 +175,10 @@ export function composeSession(args: ComposeArgs): SessionStructure | null {
         cooldown: part(cooldownMins, 'Z1', 'Easy walk-jog finish.'),
         total_duration_mins: total,
         shape: 'long_run_with_mp',
-      }, kmPerMin)
+        // `distance_km` passed so the segment is priced at its own pace and the
+        // body absorbs the residual. This is the only shape with a part that is
+        // not run at the session's average pace.
+      }, kmPerMin, session.distance_km ?? null)
     }
 
     return withDistances({
@@ -269,20 +273,68 @@ function part(duration_mins: number, zone: string, description: string): Session
 // the SESSION's own overall pace (distance_km / duration_mins) so parts
 // always sum to the session total exactly. Applied once, centrally, rather
 // than threading a ratio through every `part(...)` call site.
-function withDistances(structure: SessionStructure, kmPerMin: number | null): SessionStructure {
+function withDistances(
+  structure: SessionStructure,
+  kmPerMin: number | null,
+  totalKm: number | null = null,
+): SessionStructure {
   if (kmPerMin == null) return structure
-  const stamp = <T extends { duration_mins: number; distance_km?: number }>(p: T): T =>
-    p.duration_mins > 0 ? { ...p, distance_km: +(p.duration_mins * kmPerMin).toFixed(2) } : p
+  const stamp = <T extends { duration_mins: number; distance_km?: number }>(p: T, rate: number): T =>
+    p.duration_mins > 0 ? { ...p, distance_km: +(p.duration_mins * rate).toFixed(2) } : p
+
+  const seg = structure.race_pace_segment
+
+  // ── MKT-PLAN-SEGMENT-BASIS-01 (Coaching Board 2026-09-30) ──────────────────
+  //
+  // 🔴 EVERY PART WAS PRICED AT THE SESSION'S AVERAGE PACE, WHICH UNDERSTATES THE
+  // ONE PART THAT IS NOT RUN AT AVERAGE PACE. On a 30 km marathon long run (easy
+  // 6:00, MP 5:00, `race_pace_pct: 40`) the 67-minute race-pace segment displayed
+  // as 10.7 km against the 13.3 km the runner actually covers — out by ~11% on the
+  // key segment of the key session of the block. ADR-015's rule is that the number
+  // shown must be the number the prescription implies, and McMillan's seat named
+  // the consequence: someone budgeting their Sunday around 10.7 km at marathon
+  // pace meets 13.3.
+  //
+  // The segment is priced at ITS OWN pace and the easy body absorbs the residual,
+  // so the parts STILL sum to the session total exactly — the property the uniform
+  // rate existed to protect. Warm-up, main and cool-down then carry an implied
+  // pace slower than average, which is correct: they are Z1/Z2 while the segment
+  // is at goal pace.
+  //
+  // ⚠️ FALLS BACK TO THE UNIFORM RATE, never to a wrong number, when the pace
+  // cannot be parsed or the arithmetic is degenerate. `parsePaceMidpoint` returns
+  // `null` rather than 0 precisely so this choice stays with the caller.
+  if (seg && seg.duration_mins > 0 && totalKm != null && totalKm > 0) {
+    const segMinPerKm = parsePaceMidpoint(seg.pace_target ?? '')
+    if (segMinPerKm != null && segMinPerKm > 0) {
+      const segKm = seg.duration_mins / segMinPerKm
+      const bodyMins = structure.warmup.duration_mins
+        + structure.main.duration_mins + structure.cooldown.duration_mins
+      const bodyKm = totalKm - segKm
+      // Degenerate only if the segment would consume the whole run, or there is no
+      // body to absorb the rest. Either means the inputs disagree; the uniform rate
+      // is wrong but bounded, so prefer it to a negative distance.
+      if (bodyKm > 0 && bodyMins > 0) {
+        const bodyRate = bodyKm / bodyMins
+        return {
+          ...structure,
+          warmup: stamp(structure.warmup, bodyRate),
+          main: stamp(structure.main, bodyRate),
+          cooldown: stamp(structure.cooldown, bodyRate),
+          race_pace_segment: { ...seg, distance_km: +segKm.toFixed(2) },
+        }
+      }
+    }
+  }
+
   return {
     ...structure,
-    warmup: stamp(structure.warmup),
-    main: stamp(structure.main),
-    cooldown: stamp(structure.cooldown),
-    // The race-pace segment is a real chunk of the run (§25, up to 40%). Stamp
-    // it too, or the parts on the card sum to (total − segment), not the total.
-    ...(structure.race_pace_segment
-      ? { race_pace_segment: stamp(structure.race_pace_segment) }
-      : {}),
+    warmup: stamp(structure.warmup, kmPerMin),
+    main: stamp(structure.main, kmPerMin),
+    cooldown: stamp(structure.cooldown, kmPerMin),
+    // The race-pace segment is a real chunk of the run (§25, up to 40%). Stamp it
+    // too, or the parts on the card sum to (total − segment), not the total.
+    ...(seg ? { race_pace_segment: stamp(seg, kmPerMin) } : {}),
   }
 }
 
