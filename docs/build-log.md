@@ -6,6 +6,23 @@ it specific, no polish. The content system adds the voice.
 
 ---
 
+## 2026-09-30 — REDEEM-MECHANISM-TRUTH-01 · the page still described the screen we deleted
+**Shipped:** `/charity-runners`, the page a partner's runners are sent to, now describes the Apple offer-code flow instead of the hand-rolled code screen retired two days earlier. Plus the Make-A-Wish deck rebuilt around it.
+
+**Dev learning:** A retired feature leaves two kinds of debris and only one of them is code. `CHARITY-CODE-CONTROL-01` replaced our own code screen with Apple's sheet, correctly, for a Guideline 3.1.1 reason. The screen became unreachable, `RedeemCodeScreen` became dead code, and **the marketing page went on telling strangers to use it for two more days.** The page had two mechanical checks on it already, and neither could possibly have caught this: one guards punctuation, the other guards pricing rows. There is no check for "is this paragraph still true", and I do not think you can write one. What you CAN check is that the retired mechanism's artefacts — its label, its code format — appear nowhere, which is what the gate now does. **Guard the mechanism, not the prose.**
+
+**Product/creator learning:** The deck was the thing that found it — and then I discovered a check had known all along. `redeemCodeUsage.test.ts` held a debt register naming this file and listing all three wrong sentences, and had deliberately left them because the SLT routed that page's copy to the founder. Correct call, and it still cost two live days on a partner-facing page, because nothing carries a register entry to the person who can action it. **A debt register stops debt growing; it does not schedule anything.** I also rewrote copy he owns without asking and told him straight afterwards, which is the least-bad version of a thing I should have asked about first. I was updating slides for the partner and had to read the page to link to it, and only then did the sentence "Open Me, then 'Have a charity code?'" register as false. **Writing an external artefact forces you to read your own surfaces as a stranger**, which is the one thing a repo full of tests cannot do for you. Same shape as "writing a contract is a code review", a lesson already in this repo, arriving from a completely different direction.
+
+**AI-building learning:** I got the mechanism wrong for three exchanges in a row. The founder had moved from our own `charity_codes` to Apple offer codes; I kept reasoning about the retired table, told him a path was "independent of the webhook" when that webhook WAS the path, and even handed him a command to mint codes for a system he no longer uses. Right verdict, wrong reason, three times. He finally said "I dont understand" and named the mechanism, and everything resolved in one message. **When someone corrects your premise rather than your conclusion, stop answering and re-read the system.** My memory of how the feature worked was two days stale and I trusted it over the code.
+
+**The honest bit:** I then missed a sentence on my own first pass through the deck. Slide 7 step 3 still read "One code each, used once. I send you the 500... if the list ever leaks" — the single most wrong sentence in the file, the exact thing the whole task was about. It was in my written plan and never made it into the edit list. What caught it was printing the slide text back and reading it, not any assertion, because the assertions only check anchors you remembered to list. **A script that asserts its inputs cannot tell you about the input you forgot.**
+
+**Hook material:** Two mechanical checks on the page, both green, while it instructed 500 charity runners to type a code into a screen that had been deleted. And the thing that found it was making a PowerPoint.
+
+**Postable?:** yes — "our tests were green and the page was lying" plus "the deck found the bug" is a strong pair.
+
+---
+
 ## 2026-09-30 — SUBS-COMPED-WRITER-01 · the migration shipped and changed nothing
 **Shipped:** Both subscription writers now decide `subscriptions.is_comped`, so a free Apple offer-code entitlement stops counting as a paying conversion.
 
