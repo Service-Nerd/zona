@@ -121,7 +121,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How long does it last?',
-    a: 'Through your training and a week past race day. When you set your race date in the app the access stretches to cover it, so it cannot run out halfway through a block. If you never get round to building a plan it lapses after 90 days, which is fair enough.',
+    a: 'Twelve months from the day you redeem it. Redeem in December and it runs to the following December, which covers a spring race and the whole block in front of it with room to spare. It does not renew and it does not start charging you at the end: it simply stops.',
   },
   {
     q: 'I have never raced this distance. Is this for me?',
@@ -274,9 +274,9 @@ export default function CharityRunnersPage() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-5)' }}>
           {[
-            ['Download the app', `${BRAND.name} is on the App Store. Sign up with Apple, Google or an email address.`],
-            ['Open Me, then "Have a charity code?"', 'It is at the bottom of the Me tab. Type the code your charity sent you. Case and dashes do not matter.'],
-            ['Build your plan', 'Tell it your race and your week. That is when your access stretches to cover race day, so it cannot run out mid-block.'],
+            ['Tap the link your charity sent', `It opens the App Store with the code already filled in. Install ${BRAND.name} and redeem in the same place, in one go.`],
+            ['Sign in', 'Apple, Google or an email address. The access is already attached to the Apple ID you redeemed with, so there is nothing else to enter.'],
+            ['Build your plan', 'Tell it your race and your week. It builds the block backwards from race day.'],
           ].map(([title, body], i) => (
             <div key={title} style={{
               display: 'flex', gap: 'var(--space-4)', alignItems: 'flex-start',
@@ -302,8 +302,9 @@ export default function CharityRunnersPage() {
           fontSize: 'var(--fs-body)', lineHeight: 1.6, color: 'var(--mute)',
           margin: '16px 0 0', borderLeft: '2px solid var(--line-strong)', paddingLeft: '14px',
         }}>
-          Codes come from your charity, not from me, and each one works once. If you think
-          you should have one and do not, ask whoever organises your place.
+          Already installed the app? Open Me and tap “Have a code?”. That opens the same
+          Apple screen, and you type the code in there. Codes come from your charity, not from
+          me: if you think you should have one and do not, ask whoever organises your place.
         </p>
       </Section>
 
@@ -418,8 +419,8 @@ export default function CharityRunnersPage() {
             Get to the start line in one piece.
           </h2>
           <p style={{ fontSize: 'var(--fs-body-lg)', lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 18px' }}>
-            That is the job, and it is a harder one than going fast. Download the app,
-            put your code in, and let it tell you to slow down.
+            That is the job, and it is a harder one than going fast. Tap your
+            charity’s link, redeem the code, and let it tell you to slow down.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)', alignItems: 'center' }}>
             <AppStoreBadge />
