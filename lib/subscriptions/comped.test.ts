@@ -193,3 +193,43 @@ describe('every subscription writer decides the flag', () => {
     expect(stale, 'a declared exemption is no longer true:\n' + stale.join('\n')).toEqual([])
   })
 })
+
+// 🔴 THE ARM FOR THE UNVERIFIED SHAPE. The webhook event's field names come from
+// RevenueCat's docs and have never been read off a captured body, while the subscriber
+// reader is proven against two real redemptions. For a runner who redeems while ALREADY
+// signed in the webhook is the only write, so a negative must be re-checked against the
+// verified reader — and that re-check must never be able to cost them access.
+describe('the webhook re-checks a negative against the verified reader', () => {
+  const SRC = () => readFileSync('app/api/webhooks/revenuecat/route.ts', 'utf8')
+  const code = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '')
+    .split('\n').filter(l => !l.trim().startsWith('//')).join('\n')
+
+  it('falls back to readEntitlement when the event says not comped', () => {
+    const c = code(SRC())
+    expect(c, 'the webhook no longer consults the verified reader').toContain('readEntitlement')
+    expect(c, 'the fallback is not gated on a negative — it would fire on every renewal')
+      .toMatch(/if\s*\(!comped\.is_comped/)
+  })
+
+  it('the fallback cannot break the write', () => {
+    const c = code(SRC())
+    const at = c.indexOf('if (!comped.is_comped')
+    expect(at).toBeGreaterThan(-1)
+    // Bounded by the block, not by a character budget — the mistake this file already
+    // made once. Walk braces from the `if` to its matching close.
+    let depth = 0, end = at
+    for (let i = c.indexOf('{', at); i < c.length; i++) {
+      if (c[i] === '{') depth++
+      else if (c[i] === '}' && --depth === 0) { end = i; break }
+    }
+    const block = c.slice(at, end)
+    expect(block, 'an unguarded fetch here can 500 the webhook and deny a real purchase')
+      .toContain('try {')
+    expect(block, 'the fallback must not throw out of the block').toContain('} catch')
+    expect(block, 'a non-ok response must not be parsed as a payload').toContain('res.ok')
+  })
+
+  it('records which reader decided', () => {
+    expect(code(SRC())).toContain("verified_via: 'subscriber'")
+  })
+})

@@ -5,6 +5,7 @@ import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { toStatus, isGrantEvent, eventAtIso, isSupabaseAppUserId, NON_EXPIRING_GRANT_YEARS } from '@/lib/subscriptions/revenuecatEvents'
 import { webhookTrace } from '@/lib/subscriptions/webhookTrace'
 import { compedEvidence } from '@/lib/subscriptions/comped'
+import { readEntitlement } from '@/lib/subscriptions/entitlement'
 
 // RevenueCat webhook docs: https://www.revenuecat.com/docs/integrations/webhooks
 // Authorization: header value compared against REVENUECAT_WEBHOOK_SECRET
@@ -118,7 +119,40 @@ export async function POST(req: NextRequest) {
   // where the subscriber object is lowercase with `{ amount }`. `isCompedPurchase`
   // accepts both; the raw values are recorded below so the first real delivery settles
   // it as fact instead of as a claim.
-  const comped = compedEvidence(rc.period_type, rc.price)
+  let comped = compedEvidence(rc.period_type, rc.price)
+
+  // 🔴 AND WHEN THE EVENT DOES NOT SAY SO, ASK THE SOURCE THAT WE HAVE VERIFIED.
+  //
+  // The subscriber-object reader is proven against BOTH real 2026-09-28 redemptions
+  // (real bytes through `readEntitlement`, not a fixture). The EVENT field names are
+  // from RevenueCat's docs and have never been read off a captured body — so a
+  // webhook-only verdict rests on an unverified shape, and for a runner who redeems
+  // while already signed in this is their ONLY write: `resolveTier` then returns
+  // reason `subscription`, `shouldReconcile` refuses to run, and a missed flag is
+  // missed permanently.
+  //
+  // ⚠️ SO A NEGATIVE IS RE-CHECKED AGAINST THE VERIFIED READER, AND A POSITIVE IS NOT.
+  // Only `false` is worth a round trip: if the event already said comped, the shape
+  // worked and there is nothing to learn. That makes this at most one extra call per
+  // genuine purchase, and zero for every renewal and cancellation.
+  //
+  // ⚠️ IT MAY NEVER BREAK THE WRITE. Entitlement does not depend on this flag (nothing
+  // in `resolveTier` or the client reads `is_comped` — grep-verified), so a failed or
+  // unconfigured look-up keeps the event's own verdict and carries on. A reporting
+  // field must not be able to cost a runner their access.
+  if (!comped.is_comped && status === 'active' && process.env.REVENUECAT_SECRET_API_KEY) {
+    try {
+      const res = await fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(appUserId)}`,
+        { headers: { Authorization: `Bearer ${process.env.REVENUECAT_SECRET_API_KEY}` }, cache: 'no-store' })
+      if (res.ok) {
+        const verified = readEntitlement(await res.json()).comped
+        if (verified.is_comped) comped = { ...verified, verified_via: 'subscriber' }
+      }
+    } catch {
+      // Keep the event's verdict. The raw values are recorded below either way, so a
+      // flag that should have been true is visible in the trail rather than lost.
+    }
+  }
 
   const { data: applied, error } = await (supabase.rpc as any)('apply_subscription_event', {
     p_user_id:    appUserId,

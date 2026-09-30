@@ -96,6 +96,15 @@ export interface CompedEvidence {
   is_comped: boolean
   period_type: string | null
   price_amount: number | null
+  /**
+   * WHICH source decided, in the ops trail.
+   *
+   * ⚠️ Not decoration. The subscriber object is verified against two real redemptions;
+   * the webhook EVENT's field names are from the docs only. So when a row is ever
+   * mismarked, the first question is which reader produced it, and a verdict that
+   * cannot say is a verdict nobody can act on.
+   */
+  verified_via?: 'event' | 'subscriber'
 }
 
 /** The raw values behind a verdict, for the ops trail. */
