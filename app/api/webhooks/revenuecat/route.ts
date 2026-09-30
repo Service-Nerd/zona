@@ -4,6 +4,7 @@ import { secretMatches } from '@/lib/security/secrets'
 import { recordOpsEvent } from '@/lib/ops/recordOpsEvent'
 import { toStatus, isGrantEvent, eventAtIso, isSupabaseAppUserId, NON_EXPIRING_GRANT_YEARS } from '@/lib/subscriptions/revenuecatEvents'
 import { webhookTrace } from '@/lib/subscriptions/webhookTrace'
+import { compedEvidence } from '@/lib/subscriptions/comped'
 
 // RevenueCat webhook docs: https://www.revenuecat.com/docs/integrations/webhooks
 // Authorization: header value compared against REVENUECAT_WEBHOOK_SECRET
@@ -105,12 +106,27 @@ export async function POST(req: NextRequest) {
       { event_type: rc.type }, appUserId ?? null)
   }
 
+  // SUBS-COMPED-WRITER-01 — the OTHER writer, and the one that handles the journey
+  // reconcile never sees: a runner who redeems while ALREADY signed in. For them this
+  // is the only write, `resolveTier` then returns reason `subscription`, and
+  // `shouldReconcile` refuses to run again — so if the flag is missed here it is
+  // missed permanently. The per-twin remedy is the class this repo has recorded eight
+  // times; both writers are done in this commit for that reason.
+  //
+  // ⚠️ THE WEBHOOK EVENT'S SHAPE IS UNVERIFIED AGAINST A REAL PAYLOAD. Per RevenueCat's
+  // webhook docs it is `period_type: "TRIAL"` (uppercase) and `price` as a bare number,
+  // where the subscriber object is lowercase with `{ amount }`. `isCompedPurchase`
+  // accepts both; the raw values are recorded below so the first real delivery settles
+  // it as fact instead of as a claim.
+  const comped = compedEvidence(rc.period_type, rc.price)
+
   const { data: applied, error } = await (supabase.rpc as any)('apply_subscription_event', {
     p_user_id:    appUserId,
     p_provider:   'revenuecat',
     p_status:     status,
     p_period_end: expiresAt,
     p_event_at:   eventAt,
+    p_is_comped:  comped.is_comped,
   })
 
   // OPS-SUBS-TRACE-01 — both outcomes leave a durable row. Awaited, not
@@ -132,7 +148,7 @@ export async function POST(req: NextRequest) {
   // guard working, not a failure — and until now it only ever reached a console.
   const t = webhookTrace('revenuecat',
     { result: 'received', eventType: rc.type, status, applied: applied !== false })
-  await recordOpsEvent(t.kind, t.detail, appUserId ?? null)
+  await recordOpsEvent(t.kind, { ...t.detail, ...comped }, appUserId ?? null)
 
   return NextResponse.json({ received: true })
 }

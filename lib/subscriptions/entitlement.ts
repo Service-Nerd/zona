@@ -17,6 +17,8 @@
 // Pure and unit-tested, because `vitest` collects `lib/**` only and this decides
 // who gets paid access.
 
+import { compedEvidence, compedFromSubscriber, type CompedEvidence } from './comped'
+
 /** The shape we care about from `GET /v1/subscribers/{app_user_id}`. */
 export interface RevenueCatSubscriber {
   subscriber?: {
@@ -28,6 +30,10 @@ export interface RevenueCatSubscriber {
       expires_date?: string | null
       /** Present when the purchase came from an offer code. */
       offer_code?: string | null
+      /** SUBS-COMPED-WRITER-01 — `"trial"` / `"normal"`. See `comped.ts`. */
+      period_type?: string | null
+      /** `{ amount, currency }` on this payload; a bare number on the webhook. */
+      price?: { amount?: number | null } | null
     }>
   }
 }
@@ -40,10 +46,21 @@ export interface EntitlementRead {
   entitlementId: string | null
   /** The offer code, when RevenueCat exposes one — this is the COHORT key. */
   offerCode: string | null
+  /**
+   * SUBS-COMPED-WRITER-01 — was this given away rather than paid for?
+   *
+   * ⚠️ Carries the RAW evidence beside the verdict, not just the boolean. The
+   * discriminator depends on App Store Connect state this repo cannot read (no
+   * introductory offer on the product), so the values behind every decision go into
+   * the ops trail. A verdict with no evidence is unfalsifiable after the fact.
+   */
+  comped: CompedEvidence
 }
 
-const NONE: EntitlementRead =
-  { entitled: false, expiresAt: null, entitlementId: null, offerCode: null }
+const NONE: EntitlementRead = {
+  entitled: false, expiresAt: null, entitlementId: null, offerCode: null,
+  comped: compedEvidence(null, null),
+}
 
 /**
  * Is this subscriber entitled right now, and until when?
@@ -77,6 +94,8 @@ export function readEntitlement(
       expiresAt: raw,
       entitlementId: id,
       offerCode: offerCodeFor(payload, e?.product_identifier),
+      comped: compedFromSubscriber(
+        payload?.subscriber?.subscriptions, e?.product_identifier),
     })
   }
   if (active.length === 0) return NONE

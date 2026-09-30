@@ -122,6 +122,10 @@ export async function POST(req: NextRequest) {
       p_status:     'active',
       p_period_end: periodEnd,
       p_event_at:   new Date().toISOString(),
+      // SUBS-COMPED-WRITER-01 — an offer-code entitlement is not a sale. The flag is
+      // STICKY in `apply_subscription_event`, so a later renewal carrying no price
+      // cannot silently promote a gifted runner into the conversion numerator.
+      p_is_comped:  read.comped.is_comped,
     })
 
   if (error) {
@@ -137,6 +141,11 @@ export async function POST(req: NextRequest) {
     entitlement: read.entitlementId,
     expires_at: read.expiresAt,
     offer_code: read.offerCode,
+    // ⚠️ THE EVIDENCE, NOT JUST THE VERDICT. `is_comped` turns on App Store Connect
+    // state this repo cannot read (that the product has no introductory offer), so
+    // the raw `period_type` and `price_amount` behind every decision are recorded.
+    // Without them a mismarked row is unfalsifiable after the fact.
+    ...read.comped,
   }, user.id)
 
   return NextResponse.json({
